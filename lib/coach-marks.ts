@@ -61,7 +61,10 @@ export const COACH_MARKS: readonly CoachMark[] = Object.freeze([
   Object.freeze({
     id: 'next-step' as const,
     title: 'Your next step',
-    body: 'The stage that comes next, taken from this project rather than from a fixed order.',
+    // Owner, 03.10.2026: in Business the rules without an answer come first,
+    // and the tip says so — it may not point at a confirm action the page no
+    // longer offers once they are answered.
+    body: 'The one thing to do next, taken from this project: the business rules without an answer first, then the stage that comes next.',
   }),
 ]);
 

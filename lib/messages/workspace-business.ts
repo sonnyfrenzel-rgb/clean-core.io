@@ -59,6 +59,39 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
 
   // The Business order — components/workspace/WorkspaceShell.tsx.
   'biz.notDeterminedRow': 'Not determined',
+  'biz.moreAboutProcess': 'More about this process',
+
+  // The business-first opening — components/workspace/BusinessOpening.tsx (owner, 03.10.2026).
+  'biz.storyLead': 'What the program does, in the order of the code. Each step with the line it was read from.',
+  'biz.storyNamesNote': 'names',
+  'biz.storyNone': 'The steps of this program could not be read from the source. The map below shows what could be drawn.',
+  'biz.decidesTitle': 'What it decides',
+  'biz.decidesNone': 'No value is hard-coded as a rule in this program.',
+  'biz.changesTitle': 'What it changes',
+  'biz.changesNoData': 'The code shows no change to stored data.',
+  'biz.howRead': 'How this was read',
+
+  // "Your next step" — components/workspace/BusinessNextStep.tsx (owner, 03.10.2026).
+  'biz.nextRulesLabel': 'Decide on the business rules',
+  'biz.nextRulesNote': 'No model call · not counted · your answers are a self-declaration',
+
+  // Business names on the map — components/workspace/WorkspaceProcess.tsx.
+  'biz.suggestNames': 'Suggest business names',
+  'biz.suggestingNames': 'Asking the model for names…',
+  'biz.suggestNamesNote':
+    'Optional. The plain names on the map are read from the code without a model and are complete. A model can propose business names; they are marked as a model proposal and every line anchor stays.',
+  'biz.namesProposed': 'Business names from the model are shown on the map, marked as a model proposal.',
+
+  // Answering the steps — components/workspace/WorkspaceProcess.tsx (owner, 03.10.2026).
+  'biz.walkLead': 'Read from the code. Walk through the steps to say what the business still needs.',
+  'biz.walkStart': 'Walk through the process',
+  'biz.walkContinue': 'Continue the walk-through',
+  'biz.walkQuestion': 'Does the business still need this step? Your answer is a self-declaration; the signed run stays as it is.',
+  'biz.walkBack': 'Back',
+  'biz.walkNext': 'Next',
+  'biz.walkClose': 'Close',
+  'biz.walkPreparing': 'This step cannot be answered yet: the reconstructed process is read again first. Answer any step on the map to start.',
+  'biz.stepNeedTitle': 'Does the business still need this step?',
 } as const;
 
 /**
@@ -98,4 +131,65 @@ export function bizReadAccess(readers: number): string {
 /** "+2" after the initials shown. */
 export function bizMoreReaders(more: number): string {
   return `+${more}`;
+}
+
+/** Why the rules come first: how many of the hard-coded rules have no answer yet. */
+export function bizNextRulesReason(open: number, total: number): string {
+  if (total === 1) return 'The one rule the code hard-codes has no answer yet. Say whether the business still needs it — keep, change, drop or clarify.';
+  if (open === total) return `None of the ${total} rules the code hard-codes has an answer yet. Say for each whether the business still needs it — keep, change, drop or clarify.`;
+  return `${open} of the ${total} rules the code hard-codes ${open === 1 ? 'has' : 'have'} no answer yet. Say for each whether the business still needs it.`;
+}
+
+/** The one primary action while rules are open: "Decide on 3 rules". */
+export function bizNextRulesAction(open: number): string {
+  return `Decide on ${open} ${open === 1 ? 'rule' : 'rules'}`;
+}
+
+/** What follows the rules — the next phase from the one phase contract. */
+export function bizNextThen(label: string, action: string): string {
+  return `After that: ${label} — ${action}.`;
+}
+
+/** Why the names could not be asked for, said instead of a button that does nothing. */
+export function bizNamesFailed(reason: string): string {
+  return `No business names were stored. ${reason} The plain names stay.`;
+}
+
+/** "For each trip:" — the loop a step of the story runs in. */
+export function bizStoryWithin(loop: string): string {
+  return `${loop}:`;
+}
+
+/** What a step checks, in the plain labels of its decision points. */
+export function bizStoryChecks(checks: readonly string[], more: number): string {
+  return `Checks: ${checks.join(' · ')}${more > 0 ? ` and ${more} more` : ''}`;
+}
+
+/** Where a step can end the run. */
+export function bizStoryStops(stops: readonly string[]): string {
+  return `Can end here: ${stops.join(' · ')}`;
+}
+
+/** "and 7 more". */
+export function bizMoreItems(n: number): string {
+  return `and ${n} more`;
+}
+
+/** The one calm line about what the code alone cannot settle. */
+export function bizOpenLine(count: number, example: string | null): string {
+  if (count === 0) return 'Every place in this code fell inside what the engine can judge — a boundary of the question, not a clean bill.';
+  const places = `${count} ${count === 1 ? 'place' : 'places'} the code alone cannot settle`;
+  return example
+    ? `${places}, for example ${example}. Each is listed with its reason under Not determined.`
+    : `${places}. Each is listed with its reason under Not determined.`;
+}
+
+/** "3 of 14 steps answered". */
+export function bizWalkAnswered(answered: number, total: number): string {
+  return `${answered} of ${total} ${total === 1 ? 'step' : 'steps'} answered.`;
+}
+
+/** "Step 3 of 14: Check price". */
+export function bizWalkStep(index: number, total: number, label: string): string {
+  return `Step ${index} of ${total}: ${label}`;
 }

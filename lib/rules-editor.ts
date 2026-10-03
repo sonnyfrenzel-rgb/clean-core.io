@@ -189,7 +189,10 @@ export function draftProblems(draft: RuleDraft): DraftProblem[] {
   for (const [ruleId, entry] of Object.entries(draft)) {
     if (!entry.state) continue;
     const note = entry.note.trim();
-    if (noteRequired(entry.state) && note === '') out.push({ ruleId, kind: 'missing' });
+    // Clarify asks somebody else; without the question and who should answer
+    // it, the open point cannot be followed up (owner, 03.10.2026). Required
+    // here, in the answering screen; what the route stores is unchanged.
+    if ((noteRequired(entry.state) || entry.state === 'clarify') && note === '') out.push({ ruleId, kind: 'missing' });
     else if (note.length > MAX_STATE_NOTE) out.push({ ruleId, kind: 'too-long' });
     else if (valueSourceRequired(entry.state) && !entry.sourceKind) out.push({ ruleId, kind: 'source-missing' });
     else if ((entry.sourceNote ?? '').trim().length > MAX_VALUE_SOURCE_NOTE) out.push({ ruleId, kind: 'too-long' });
@@ -301,6 +304,60 @@ export function rulesConfirmed(view: ProcessStateView | null): { confirmed: numb
   const total = view.subjects.filter((s) => s.kind === 'rule').length;
   const confirmed = Object.values(ruleEntries(view)).filter((e) => isConfirmedState(e.state)).length;
   return { confirmed, total };
+}
+
+/**
+ * Where the answers to the rules stand — the one reading every place on the
+ * Business view takes its rule action from (owner, 03.10.2026: the first look
+ * offered "Confirm the rule" as its primary action while that one rule was
+ * already confirmed, because it never asked).
+ *
+ * `open` are the rules without a Keep, Change or Drop on record, in the order
+ * of the code; a Clarify is an open question and stays open. `by` and `lastAt`
+ * say who answered and when, for the done state ("by you, 3 Oct 2026").
+ */
+export interface RulesStatus {
+  total: number;
+  confirmed: number;
+  open: string[];
+  /** The accounts behind the confirmed answers, each once, latest answer first. */
+  by: { uid: string; name: string }[];
+  /** Server time of the latest confirmed answer, or null when there is none. */
+  lastAt: string | null;
+}
+
+/**
+ * The status from what the process-states route answered. `null` while it has
+ * not answered, and when the read failed: then nothing is known, and no place
+ * may offer an action as if it were. "No reconstructed baseline yet" is known —
+ * nobody has answered anything — so every rule of the reading is open.
+ */
+export function rulesStatus(
+  outcome: { ok: true; view: ProcessStateView } | { ok: false; code: string } | null,
+  ruleIds: readonly string[] | null,
+): RulesStatus | null {
+  if (!outcome) return null;
+  if (!outcome.ok) {
+    if (outcome.code !== 'no-baseline' || !ruleIds) return null;
+    return { total: ruleIds.length, confirmed: 0, open: [...ruleIds], by: [], lastAt: null };
+  }
+  const subjects = outcome.view.subjects.filter((s) => s.kind === 'rule').map((s) => s.subject);
+  const entries = ruleEntries(outcome.view);
+  const answered = subjects
+    .map((id) => entries[id])
+    .filter((e): e is StateEntry => !!e && isConfirmedState(e.state))
+    .sort((a, b) => (a.confirmedAt < b.confirmedAt ? 1 : a.confirmedAt > b.confirmedAt ? -1 : 0));
+  const by: { uid: string; name: string }[] = [];
+  for (const entry of answered) {
+    if (!by.some((b) => b.uid === entry.account.uid)) by.push({ uid: entry.account.uid, name: entry.account.name });
+  }
+  return {
+    total: subjects.length,
+    confirmed: answered.length,
+    open: subjects.filter((id) => !(entries[id] && isConfirmedState(entries[id].state))),
+    by,
+    lastAt: answered[0]?.confirmedAt ?? null,
+  };
 }
 
 export { ELEMENT_STATES, STATE_LABELS, noteRequired };

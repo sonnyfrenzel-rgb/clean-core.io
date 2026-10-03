@@ -30,10 +30,24 @@
  * and never *"What happens when the order exceeds the limit?"* — the second
  * sentence is a translation, and translating is the model's job (roadmap 2.4),
  * not this file's.
+ *
+ * **And for the business reader** (owner, 03.10.2026: "Nobody understands
+ * this. What is it supposed to be for someone who can't read code?"): handed
+ * the source, the same answer also carries the question and every branch in
+ * the plain words the map already shows for that decision point and its
+ * targets (`plainLabels`, deterministic, no model) — "What happens at the
+ * decision point “Deviation percent above 5?”", "Yes: it continues with “Hold
+ * for buyer”." — and the decision point is chosen for that reader: one a
+ * business rule with a plain name stands on before a technical `sy-subrc`
+ * check. Nothing is invented: a label the wording cannot put plainly is left
+ * out of the plain answer, and the code's own question and branches stay for
+ * the IT reader, one fold down.
  */
 
 import { rulesForElement, type BusinessRule, type BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSkeleton, SkeletonEdge, SkeletonNode } from './abap/process-skeleton';
+import { plainLabels } from './abap/plain-language';
+import { plainWordingFor } from './business-card';
 import { anchorLabel } from './first-look';
 
 /** A branch of the chosen decision: where it goes, and under which condition. */
@@ -47,6 +61,12 @@ export interface AnsweredBranch {
   /** True when this branch ends the process — a rejection, an abort, a message. */
   endsFlow: boolean;
   anchor: string | null;
+  /**
+   * The branch for a business reader — "Yes: the run stops with the message
+   * “not authorized (E002)”." — in the map's plain words. Absent when the
+   * source was not handed in; null when the wording has no plain word for it.
+   */
+  plain?: string | null;
 }
 
 export interface AnsweredQuestion {
@@ -58,7 +78,15 @@ export interface AnsweredQuestion {
   anchor: string | null;
   branches: AnsweredBranch[];
   /** Rules that stand on this decision — each with its places. */
-  rules: Array<{ id: string; label: string; anchors: string[] }>;
+  rules: Array<{ id: string; label: string; anchors: string[]; sentence?: string | null }>;
+  /**
+   * The question for a business reader (owner, 03.10.2026: "What is it
+   * supposed to be for someone who can't read code?") — built from the
+   * decision point's plain label, the one the map shows, never from the ABAP
+   * condition. Absent without the source; null when the wording has nothing
+   * but a neutral label.
+   */
+  plainQuestion?: string | null;
 }
 
 export interface NoQuestion {
@@ -98,6 +126,14 @@ function ruleAnchors(rule: BusinessRule): string[] {
 export function preAnsweredQuestion(
   skeleton: ProcessSkeleton,
   ruleSet: BusinessRuleSet,
+  /**
+   * The source the skeleton was read from. With it, the decision point is
+   * chosen for a business reader and the question and every branch are also
+   * worded for one (`plainQuestion`, `plain`); the code's own question stays
+   * in `question`, for the IT reader. Without it, choice and wording are the
+   * code's alone, as before.
+   */
+  source?: string,
 ): PreAnswered {
   const gateways = skeleton.nodes.filter((n) => n.kind === 'gateway');
 
@@ -109,20 +145,29 @@ export function preAnsweredQuestion(
     };
   }
 
+  const labels = source !== undefined ? plainLabels(skeleton, source) : null;
+  const wording = source !== undefined ? plainWordingFor(source, skeleton) : null;
+  const endsSomewhere = (g: SkeletonNode) => outgoing(skeleton, g).some((e) => endsFlow(skeleton, e));
+
   const chosen =
-    gateways.find((g) => outgoing(skeleton, g).some((e) => endsFlow(skeleton, e))) ??
+    (labels ? businessChoice(ruleSet, gateways, endsSomewhere, wording, labels) : null) ??
+    gateways.find(endsSomewhere) ??
     gateways.find((g) => rulesForElement(ruleSet, g.id).length > 0) ??
     gateways[0];
 
   const edges = outgoing(skeleton, chosen);
   const branches: AnsweredBranch[] = edges.map((edge) => {
     const target = skeleton.nodes.find((n) => n.id === edge.to);
+    const ends = endsFlow(skeleton, edge);
     return {
       condition: edge.condition.length > 0 ? edge.condition : null,
       target: target?.label ?? edge.to,
       ...(edge.reason ? { reason: edge.reason } : {}),
-      endsFlow: endsFlow(skeleton, edge),
+      endsFlow: ends,
       anchor: target?.anchor ? anchorLabel(target.anchor.lineStart, target.anchor.lineEnd) : null,
+      ...(labels
+        ? { plain: plainBranch(labels.flow(edge), target ? (labels.nodes.get(target.id) ?? null) : null, target, ends, edge) }
+        : {}),
     };
   });
 
@@ -136,6 +181,86 @@ export function preAnsweredQuestion(
       id: rule.id,
       label: rule.label,
       anchors: ruleAnchors(rule),
+      ...(wording ? { sentence: wording.ruleSentence(rule) } : {}),
     })),
+    ...(labels ? { plainQuestion: plainQuestionOf(labels.nodes.get(chosen.id) ?? null) } : {}),
   };
+}
+
+/** A label that says nothing — the wording's fallback. */
+const NEUTRAL = /^(condition met|which case applies)\??$/i;
+/** Words of the code a business reader cannot follow. */
+const TECHNICAL = /sy-subrc|abap_(true|false)|<>|\b[a-z]{2}_[a-z0-9_]+\b/i;
+const STOP_PREFIX = /^(stop|stopped|rejected)\s*:\s*/i;
+
+const isPlain = (text: string): boolean => text.length > 0 && !NEUTRAL.test(text) && !TECHNICAL.test(text);
+
+/**
+ * Which decision point a business reader asks about first (owner, 03.10.2026:
+ * the plant-1000 rule or the 5 % price tolerance, over a technical sy-subrc
+ * check): one whose plain label says something, a business rule with a plain
+ * name standing on it first, a control rule — the code ends the flow on it —
+ * before the others, then one that ends the flow. Null when no decision point
+ * has a plain label; then the code's own order decides. Ties go to source order.
+ */
+function businessChoice(
+  ruleSet: BusinessRuleSet,
+  gateways: SkeletonNode[],
+  endsSomewhere: (g: SkeletonNode) => boolean,
+  wording: ReturnType<typeof plainWordingFor> | null,
+  labels: ReturnType<typeof plainLabels>,
+): SkeletonNode | null {
+  let best: SkeletonNode | null = null;
+  let bestScore = -1;
+  for (const g of gateways) {
+    if (!isPlain(labels.nodes.get(g.id)?.trim() ?? '')) continue;
+    const rules = rulesForElement(ruleSet, g.id);
+    const score =
+      (rules.some((r) => wording?.rulePhrase(r)) ? 8 : 0) +
+      (rules.some((r) => r.type === 'control') ? 4 : 0) +
+      (rules.length > 0 ? 2 : 0) +
+      (endsSomewhere(g) ? 1 : 0);
+    if (score > bestScore) {
+      best = g;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/** "What happens at the decision point “Plant 1000?”" — or null when the label says nothing plain. */
+function plainQuestionOf(label: string | null): string | null {
+  const text = label?.trim() ?? '';
+  if (!isPlain(text)) return null;
+  return `What happens at the decision point “${text.endsWith('?') ? text : `${text}?`}”`;
+}
+
+/** One branch in plain words: where it leads, and whether the run ends there. */
+function plainBranch(
+  arm: string,
+  targetLabel: string | null,
+  target: SkeletonNode | undefined,
+  ends: boolean,
+  edge: SkeletonEdge,
+): string | null {
+  const when = arm.trim() || (edge.condition.length > 0 ? 'If so' : 'Otherwise');
+  const where = targetLabel?.trim() ?? '';
+  if (TECHNICAL.test(when) || TECHNICAL.test(where)) return null;
+  if (target?.kind === 'end-error') {
+    return where
+      ? `${when}: the run stops with the message “${where.replace(STOP_PREFIX, '')}”.`
+      : `${when}: the run stops with an error message.`;
+  }
+  if (ends && target?.kind === 'end' && target.detail?.early !== true) {
+    // The normal end of a routine is not the end of the run: the step is done
+    // and the process goes on after it.
+    return `${when}: this step is done, and the process goes on.`;
+  }
+  if (ends) {
+    const why = where.replace(STOP_PREFIX, '');
+    return why && !/^done$/i.test(why)
+      ? `${when}: the run ends here — ${why.charAt(0).toLowerCase()}${why.slice(1)}.`
+      : `${when}: the run ends here.`;
+  }
+  return where ? `${when}: it continues with “${where}”.` : null;
 }

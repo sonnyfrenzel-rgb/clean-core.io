@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { FileCode2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Footprints, FileCode2, Tags, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -14,6 +14,15 @@ import CcSkeleton from '@/components/cc/Skeleton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcRunCost } from '@/components/cc/RunIndicator';
 import StartNarrativeWait from './StartNarrativeWait';
+import { useIsOwner } from './BusinessRulesEditor';
+import StateChoice from '@/components/process-states/StateChoice';
+import { publishProcessStates, useProcessStates } from '@/hooks/useProcessStates';
+import { confirmOutcomeSentence, confirmProcessStates } from '@/lib/process-states-client';
+import { elementEntries, walkOrder, walkProgress } from '@/lib/process-walk';
+import { isConfirmedState } from '@/lib/rules-editor';
+import type { ElementState } from '@/lib/process-states';
+import { namingContextOf } from '@/lib/process-naming';
+import { requestProcessNaming } from '@/lib/process-naming-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -30,7 +39,7 @@ import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
-import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, bizNamesFailed, bizShowingLines, bizWalkAnswered, bizWalkStep, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
 
@@ -117,7 +126,13 @@ export default function WorkspaceProcess({
   // Read only: opening the workspace writes nothing (roadmap 3.0.2), so a
   // missing traceability quote is not measured from here — the map is drawn
   // from the file either way, and the Documentation stage stores the quote.
-  const map = useProcessMap(projectId || null, signed, project?.name || '', availability, { measure: false });
+  /** Bumped after business names were stored, so the map reads them. */
+  const [namingRead, setNamingRead] = useState(0);
+  const map = useProcessMap(projectId || null, signed, project?.name || '', availability, {
+    measure: false,
+    reload: namingRead,
+  });
+  const owner = useIsOwner(project);
   const isS = useBreakpointS();
   const { profile } = useUserProfile();
 
@@ -129,7 +144,133 @@ export default function WorkspaceProcess({
   const [tab, setTab] = useState<'source' | 'open' | 'steps'>('source');
   const columnRef = useRef<HTMLDivElement>(null);
 
-  const model = map.model;
+  /**
+   * Business names (owner, 03.10.2026: "Also strange — and how can I generate
+   * them?"). The plain names on the map are read from the code without a model
+   * and are complete, so where no business names were ever asked for the map
+   * shows no "Business names — Not generated" notice: an absence that is the
+   * normal state read like a failure, and nothing on the page could change it.
+   * A stale or empty naming keeps its notice — that one says something.
+   */
+  const model = useMemo(
+    () =>
+      map.model && map.model.naming.state === 'not-named'
+        ? { ...map.model, naming: { ...map.model.naming, notice: null } }
+        : map.model,
+    [map.model],
+  );
+  /* ---- answering the steps (owner, 03.10.2026) ---- */
+  const { outcome: stateOutcome, reload: reloadStates } = useProcessStates(projectId, !!signed);
+  const stateView = stateOutcome?.ok ? stateOutcome.view : null;
+  const answers = useMemo(() => elementEntries(stateView), [stateView]);
+  const subjects = useMemo(
+    () => (stateView ? new Set(stateView.subjects.filter((s) => s.kind === 'element').map((s) => s.subject)) : null),
+    [stateView],
+  );
+  const order = useMemo(() => (map.model ? walkOrder(map.model, subjects) : []), [map.model, subjects]);
+  const progress = useMemo(() => walkProgress(order, answers), [order, answers]);
+  const [walk, setWalk] = useState<number | null>(null);
+  const [answering, setAnswering] = useState<{ subject: string; error: string | null } | null>(null);
+  /** One answer for one element, into the same need revision as the rules — never the signed run. */
+  const answerStep = useCallback(
+    async (subject: string, state: ElementState, note: string | null) => {
+      if (!projectId) return;
+      setAnswering({ subject, error: null });
+      let revision = stateView?.revision ?? null;
+      if (revision === null) {
+        // The need is stated about the reconstructed as-is process; it exists
+        // once the server has rebuilt it from the signed run — the same call
+        // the rules make.
+        const baseline = await ensureProcessBaseline(projectId);
+        if (!baseline.ok) {
+          setAnswering({ subject, error: revisionOutcomeSentence(baseline) });
+          return;
+        }
+        await reloadStates();
+        revision = 0;
+      }
+      const result = await confirmProcessStates(projectId, revision, [{ subject, kind: 'element', state, note }]);
+      if (result.ok) {
+        publishProcessStates(projectId, result.view);
+        setAnswering(null);
+      } else {
+        setAnswering({ subject, error: confirmOutcomeSentence(result) });
+        if (result.code === 'revision-moved') void reloadStates();
+      }
+    },
+    [projectId, stateView, reloadStates],
+  );
+  /**
+   * The map's legend, as the Business view counts it: *Confirmed* is the steps
+   * a business answer stands on, read from the need revision; *Proven* is left
+   * out, because nothing a business reader can do in this product writes it —
+   * the map file marks every element Reconstructed, and Proven would need
+   * evidence from a running system the product does not import per element.
+   * A counter that can never move is not shown where it cannot change.
+   */
+  const shownModel = useMemo(() => {
+    if (!model) return model;
+    const confirmed = Object.values(answers).filter((e) => isConfirmedState(e.state)).length;
+    const total = model.legend.reduce((sum, entry) => sum + entry.count, 0);
+    return {
+      ...model,
+      legend: model.legend
+        .filter((entry) => entry.value !== 'proven')
+        .map((entry) =>
+          entry.value === 'confirmed'
+            ? { ...entry, count: confirmed }
+            : entry.value === 'reconstructed'
+              ? { ...entry, count: Math.max(0, total - confirmed) }
+              : entry,
+        ),
+    };
+  }, [model, answers]);
+  const goToStep = useCallback(
+    (index: number) => {
+      const id = order[index];
+      const element = id ? model?.elements.find((e) => e.id === id) : undefined;
+      if (!element) return;
+      setWalk(index);
+      setPlane(element.plane);
+      setSelected(element.id);
+      setLooseRange(null);
+    },
+    [order, model],
+  );
+  const [naming, setNaming] = useState<{ busy: boolean; note: { state: 'success' | 'error'; text: string } | null }>({
+    busy: false,
+    note: null,
+  });
+  /**
+   * The one optional model action of the map: offered to the owner, only when
+   * a model can be called for this stage right now — a key, and the naming
+   * stage switched on — and only while the map has no business names. Never a
+   * silent no-op: a refusal says why, beside the button.
+   */
+  const namesOffered =
+    owner &&
+    !!signed &&
+    availability.known &&
+    availability.keyAvailable &&
+    availability.stages.naming !== false &&
+    !!model &&
+    model.naming.state !== 'named';
+  const suggestNames = useCallback(async () => {
+    if (!signed || !projectId) return;
+    setNaming({ busy: true, note: null });
+    const outcome = await requestProcessNaming(projectId, namingContextOf(signed.source), {
+      known: availability.known,
+      keyAvailable: availability.keyAvailable,
+      stages: availability.stages,
+    });
+    if (outcome.ok) {
+      setNaming({ busy: false, note: { state: 'success', text: wt('biz.namesProposed') } });
+      setNamingRead((n) => n + 1);
+    } else {
+      setNaming({ busy: false, note: { state: 'error', text: bizNamesFailed(outcome.message) } });
+    }
+  }, [signed, projectId, availability.known, availability.keyAvailable, availability.stages]);
+  const namesCost = describeRunCost({ profile, metered: false, callsModel: true });
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
     for (const element of model?.elements ?? []) out.set(element.id, element);
@@ -386,6 +527,19 @@ export default function WorkspaceProcess({
                     </span>
                   ) : null}
                 </div>
+                {owner && selectedElement && walk === null && stateView?.subjects.some((s) => s.subject === selectedElement.id) ? (
+                  <div data-workspace-step-need="" className="flex flex-col gap-2 border-b border-cc-line pb-3">
+                    <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('biz.stepNeedTitle')}</p>
+                    <StateChoice
+                      key={selectedElement.id}
+                      subject={stateView.subjects.find((s) => s.subject === selectedElement.id)!}
+                      entry={answers[selectedElement.id] ?? null}
+                      busy={answering?.subject === selectedElement.id && answering.error === null}
+                      error={answering?.subject === selectedElement.id ? answering.error : null}
+                      onConfirm={(state, note) => answerStep(selectedElement.id, state, note)}
+                    />
+                  </div>
+                ) : null}
                 {lines.length > 0 ? (
                   <div className={fullSource ? 'max-h-[28rem] overflow-y-auto' : undefined}>
                     <CcCodeSurface
@@ -483,19 +637,84 @@ export default function WorkspaceProcess({
     <div data-workspace-process={model ? 'ready' : map.status} className="flex flex-col gap-4">
       {/* The eyebrow of mockup s1. The map names itself (its own title,
           legend and provenance counts), so the card around it carries none. */}
-      <h2
-        id="workspace-process-title"
-        className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
-      >
-        {wt('biz.needAndProcess')}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2
+          id="workspace-process-title"
+          className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+        >
+          {wt('biz.needAndProcess')}
+        </h2>
+        {namesOffered ? (
+          <div data-workspace-suggest-names="" className="cc-no-print flex flex-wrap items-center gap-2">
+            <CcButton
+              variant="ghost"
+              icon={<Tags size={16} aria-hidden={true} />}
+              busy={naming.busy}
+              onClick={() => void suggestNames()}
+              data-workspace-suggest-names-button=""
+            >
+              {naming.busy ? wt('biz.suggestingNames') : wt('biz.suggestNames')}
+            </CcButton>
+            <CcRunCost cost={namesCost} />
+          </div>
+        ) : null}
+      </div>
+      {namesOffered && !naming.note ? (
+        <p className="m-0 max-w-3xl text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('biz.suggestNamesNote')}</p>
+      ) : null}
+      {naming.note ? (
+        <CcMessageStrip state={naming.note.state} announce={true}>
+          <span data-workspace-names-note={naming.note.state}>{naming.note.text}</span>
+        </CcMessageStrip>
+      ) : null}
       {coach}
+      {model && order.length > 0 ? (
+        <div
+          data-workspace-walk-bar=""
+          data-answered={progress.answered}
+          data-total={progress.total}
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+        >
+          <p className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-medium text-cc-ink">
+            {wt('biz.walkLead')}{' '}
+            <span data-workspace-walk-progress="" className="font-semibold">
+              {bizWalkAnswered(progress.answered, progress.total)}
+            </span>
+          </p>
+          {owner && walk === null ? (
+            <span className="cc-no-print">
+              <CcButton
+                icon={<Footprints size={16} aria-hidden={true} />}
+                onClick={() => goToStep(progress.resumeAt)}
+                data-workspace-walk-start=""
+              >
+                {progress.answered > 0 ? wt('biz.walkContinue') : wt('biz.walkStart')}
+              </CcButton>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      {owner && walk !== null && order[walk] && stateView !== undefined ? (
+        <WalkStep
+          index={walk}
+          total={order.length}
+          label={model?.elements.find((e) => e.id === order[walk])?.label ?? order[walk]}
+          subject={stateView?.subjects.find((s) => s.subject === order[walk]) ?? null}
+          entry={answers[order[walk]] ?? null}
+          busy={answering?.subject === order[walk] && answering.error === null}
+          error={answering?.subject === order[walk] ? answering.error : null}
+          onAnswer={(state, note) => answerStep(order[walk], state, note)}
+          onBack={walk > 0 ? () => goToStep(walk - 1) : undefined}
+          onNext={walk + 1 < order.length ? () => goToStep(walk + 1) : undefined}
+          onClose={() => setWalk(null)}
+        />
+      ) : null}
       <div data-coach-target="decision">
         <CcCard>
           {model ? (
             <ProcessMap
               key={isS ? 'steps' : 'map'}
-              model={model}
+              model={shownModel ?? model}
               source={signed.source}
               measuredAt={map.measuredAt}
               usage={project?.usageReport ?? null}
@@ -528,6 +747,72 @@ export default function WorkspaceProcess({
       </div>
       {model ? column : null}
     </div>
+  );
+}
+
+/**
+ * One step of the walk-through: where the reader is, the question, the answer
+ * with its note, and the way on. The map beside it selects the same step, so
+ * the reader sees what they are answering about.
+ */
+function WalkStep({
+  index,
+  total,
+  label,
+  subject,
+  entry,
+  busy,
+  error,
+  onAnswer,
+  onBack,
+  onNext,
+  onClose,
+}: {
+  index: number;
+  total: number;
+  label: string;
+  subject: import('@/lib/process-states').StateSubject | null;
+  entry: import('@/lib/process-states').StateEntry | null;
+  busy: boolean;
+  error: string | null;
+  onAnswer: (state: ElementState, note: string | null) => void | Promise<void>;
+  onBack?: () => void;
+  onNext?: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <section
+      data-workspace-walk=""
+      data-walk-step={index + 1}
+      aria-labelledby="workspace-walk-title"
+      className="flex flex-col gap-3 rounded-cc-card border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface p-4 shadow-cc"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 id="workspace-walk-title" className="m-0 text-[15px] leading-snug font-bold break-words text-cc-ink">
+            {bizWalkStep(index + 1, total, label)}
+          </h3>
+          <p className="m-0 mt-1 text-[13px] font-medium text-cc-ink-muted">{wt('biz.walkQuestion')}</p>
+        </div>
+        <CcButton variant="ghost" icon={<X size={16} aria-hidden={true} />} onClick={onClose} data-workspace-walk-close="">
+          {wt('biz.walkClose')}
+        </CcButton>
+      </div>
+      {subject ? (
+        <StateChoice key={subject.subject} subject={subject} entry={entry} busy={busy} error={error} onConfirm={onAnswer} />
+      ) : (
+        <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('biz.walkPreparing')}</p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CcButton icon={<ChevronLeft size={16} aria-hidden={true} />} onClick={onBack} disabled={!onBack} data-workspace-walk-back="">
+          {wt('biz.walkBack')}
+        </CcButton>
+        <CcButton onClick={onNext} disabled={!onNext} data-workspace-walk-next="">
+          {wt('biz.walkNext')}
+          <ChevronRight size={16} aria-hidden={true} />
+        </CcButton>
+      </div>
+    </section>
   );
 }
 

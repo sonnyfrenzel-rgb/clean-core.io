@@ -38,10 +38,13 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
-  // The full map, drawn from the signed run, starts in the first screen.
+  // The process stands in the first screen — since 03.10.2026 as the story of
+  // its steps in plain words, the opening of the Business view (owner: "he just
+  // wants to know more about his old process") — and the full map, drawn from
+  // the signed run, follows right under it.
+  await expect(page.locator('[data-process-story]')).toBeInViewport();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
-  await expect(page.locator('[data-workspace-process-block]')).toBeInViewport();
   // The two-node main line does not stand above it a second time.
   await expect(page.locator('[data-first-look-process="drawn"]')).toHaveCount(0);
 }
@@ -86,9 +89,10 @@ test.describe('a new project: the first look ends on the full map', () => {
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 
-    // The map directly under the answer, Next step and the work area after it.
+    // Next step first (owner, 03.10.2026), the map directly under the answer,
+    // and the work area after it.
     const order = await page.evaluate(() =>
-      ['[data-first-look]', '[data-workspace-process-block]', '[data-next-step]', '[data-workspace-status-tools]', 'nav[data-workspace-layers]'].map(
+      ['[data-next-step]', '[data-first-look]', '[data-workspace-process-block]', '[data-workspace-status-tools]', 'nav[data-workspace-layers]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
