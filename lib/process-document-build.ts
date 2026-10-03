@@ -481,7 +481,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const effectKind = (phrase: string): string => {
     if (/\bworkflow\b/i.test(phrase)) return 'Starts a workflow';
     if (/\bas a list\b/i.test(phrase)) return 'Shows a list';
-    if (/\bupload|download|file\b/i.test(phrase)) return 'Reads or writes a file';
+    // One word boundary for all three, at their start (QA 2f5e13717db7): "files" and "uploaded" count, "profile" does not.
+    if (/\b(?:upload|download|file)/i.test(phrase)) return 'Reads or writes a file';
     if (/\bthrough transaction\b/i.test(phrase)) return 'Creates a document (batch input)';
     if (/\bBAPI_|\bcreate the\b/i.test(phrase)) return 'Creates a document';
     if (/\bentry in\b|\bupdate\b|\bdelete\b|\bchange\b/i.test(phrase)) return 'Changes data';
