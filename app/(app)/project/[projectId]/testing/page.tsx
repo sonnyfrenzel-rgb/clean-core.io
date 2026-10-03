@@ -11,7 +11,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
+import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -48,7 +48,7 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
@@ -741,19 +741,48 @@ export default function TestingSandboxPage() {
     setSelectedTestCases((prev) => (prev.length ? prev : testCases.map((_, i) => i)));
   }, [testCases]);
 
+  /**
+   * What generating the scenarios needs and does not have yet (owner report
+   * 03.10.2026, v3.0.1, the Transformation agent's finding): the button was
+   * enabled, its click returned without a word when an input was stale, and
+   * nothing checked for generated code or a design, so the prompt could carry
+   * `undefined`. Each missing input is now a sentence with one action beside
+   * the button, the button is disabled while one is missing, and an enabled
+   * click always either starts (busy) or says why it did not.
+   */
+  const generatePrerequisites = generationPrerequisites(project, 'testing');
+  const generateStale = generationBlockers(project, 'testing').length > 0;
+  const generateBlocked = generatePrerequisites.length > 0 || generateStale;
+
   const handleGenerate = async () => {
-    // Not against code generated from a previous source (E01-F01-US02). The
-    // notice at the top of the page says which stage to regenerate first.
-    if (generationBlockers(project, 'testing').length > 0) return;
+    // Defensive: the button is disabled in both cases, and says why beside it.
+    if (generateBlocked) {
+      setGenError(
+        generatePrerequisites.length > 0
+          ? generatePrerequisites.map((p) => p.reason).join(' ')
+          : 'The inputs were built for a previous source; the notice at the top of the page names the stage to regenerate first.',
+      );
+      return;
+    }
     // Nor while the testing model stage is off or has no key: the proxy refuses
     // it, and "Regenerate Suite" used to start that request anyway
     // (QA full review of fc787674705f, 55b40120e11b).
-    if (!modelAvailability.enabled('testing')) return;
+    if (!modelAvailability.enabled('testing')) {
+      setGenError(
+        modelAvailability.keyAvailable
+          ? 'Generating is off: turn the testing stage back on in Settings.'
+          : 'Generating needs a model key: add your own Gemini API key in Settings.',
+      );
+      return;
+    }
     setGenError('');
     try {
       const result = await generateTestCases();
       if (result && result.testCases) {
         setSelectedTestCases(result.testCases.map((_: any, i: number) => i));
+        if (result.testCases.length === 0) {
+          setGenError('The testing model answered without a single scenario. Generate again.');
+        }
       }
     } catch (error) {
       // The console was the only place this went. A refused generation leaves
@@ -1024,6 +1053,32 @@ export default function TestingSandboxPage() {
     );
   const STEP = 'bg-cc-ink text-cc-on-dark cc-text-meta w-6 h-6 rounded-cc-row flex items-center justify-center shrink-0';
 
+  /** Why the scenarios cannot be generated now — beside the button, never in a hover title. */
+  const generateWhy = generateBlocked ? (
+    <div id="testing-generate-why" data-generation-prerequisites="" className="w-full">
+      <CcMessageStrip
+        state="information"
+        headline={testCases.length > 0 ? 'The scenarios cannot be regenerated yet.' : 'The scenarios cannot be generated yet.'}
+      >
+        <ul className="m-0 mt-2 flex list-none flex-col gap-3 p-0">
+          {generatePrerequisites.map((p) => (
+            <li key={p.id} data-generation-prerequisite={p.id} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="min-w-0">{p.reason}</span>
+              <CcLinkButton href={`/project/${String(projectId)}/${p.action.stage}`} icon={<ArrowRight size={16} aria-hidden="true" />}>
+                {p.action.label}
+              </CcLinkButton>
+            </li>
+          ))}
+          {generatePrerequisites.length === 0 && generateStale ? (
+            <li data-generation-prerequisite="stale">
+              The inputs were built for a previous source. The notice at the top of the page names the stage to regenerate first.
+            </li>
+          ) : null}
+        </ul>
+      </CcMessageStrip>
+    </div>
+  ) : null;
+
   if (loading) return <StageFrame stage="testing" className="cc-text-body text-cc-ink-muted">Loading...</StageFrame>;
   if (loadError) return (
     <StageFrame stage="testing">
@@ -1130,7 +1185,9 @@ export default function TestingSandboxPage() {
                   </CcButton>
                   <CcButton
                     onClick={handleGenerate}
-                    disabled={isGenerating || !modelAvailability.enabled('testing')}
+                    disabled={isGenerating || !modelAvailability.enabled('testing') || generateBlocked}
+                    aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
+                    data-generate-scenarios=""
                     icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
                   >
                     {isGenerating ? 'Generating...' : 'Regenerate Suite'}
@@ -1171,11 +1228,14 @@ export default function TestingSandboxPage() {
                 ) : null}
                 {/* No bounce, no second copy in a card header: the only action of
                     an empty tool, at the top of it. */}
+                {generateWhy}
                 <CcButton
                   variant="primary"
                   density="cozy"
                   onClick={handleGenerate}
-                  disabled={isGenerating}
+                  disabled={isGenerating || generateBlocked}
+                  aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
+                  data-generate-scenarios=""
                   icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ListChecks className="w-4 h-4" aria-hidden="true" />}
                 >
                   {isGenerating ? 'Generating scenarios...' : 'Generate scenarios'}
@@ -1188,6 +1248,7 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {generateWhy}
                 {/* The same message as in the empty state, because "Regenerate
                     Suite" can be refused too — and there the previous suite is
                     still on the screen, so without this the button simply

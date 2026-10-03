@@ -13,6 +13,7 @@ import {
   scenarioTest,
   scopeSummary,
 } from '../components/testing/scenario-detail';
+import { generationPrerequisites } from '../lib/workflow-steps';
 
 /**
  * The Testing stage's scenarios can be opened, and where each one can be tested
@@ -443,6 +444,89 @@ test.describe('the scenarios on the page', () => {
     await expect(legend).toBeVisible({ timeout: 90000 });
     for (const scope of ['here-mock', 'your-system', 'tenant']) await expect(legend.locator(`[data-scope-entry="${scope}"]`)).toHaveCount(1);
     await expect(page.locator('main')).not.toContainText(/\bProven\b/);
+  });
+});
+
+// ── Generating never does nothing (owner report 03.10.2026, v3.0.1) ───────────
+
+/**
+ * "Generate scenarios" was enabled while an input was missing or stale, and its
+ * click returned without a word. Every missing input is now a sentence beside
+ * the button with one action, the button is disabled while one is missing and
+ * points at the sentences, and an enabled click starts or says why it did not.
+ */
+test.describe('generating the scenarios names what is missing', () => {
+  test.describe.configure({ mode: 'serial' });
+  let account: SeededProject;
+  let noCodeId = '';
+  let nothingId = '';
+  let readyId = '';
+
+  test('the rule: testing needs a design and generated code', () => {
+    const base = { legacyCode: 'REPORT z.', analysis: '{}', solutionDesign: '# D', generatedCode: 'export const ok = true;' } as never;
+    expect(generationPrerequisites(base, 'testing')).toEqual([]);
+    const noCode = generationPrerequisites({ ...(base as object), generatedCode: '' } as never, 'testing');
+    expect(noCode.map((p) => p.id)).toEqual(['code']);
+    expect(noCode[0].action).toEqual({ label: 'Open Transformation', stage: 'transformation' });
+  });
+
+  test.beforeAll(async () => {
+    test.setTimeout(180 * 1000);
+    account = await seedStageProject({ prefix: 'tprereq', acceptTerms: true });
+    noCodeId = await cloneProject(account, 'nocode', { testCases: [], generatedCode: '' });
+    nothingId = await cloneProject(account, 'nothing', { testCases: [], generatedCode: '', solutionDesign: '' });
+    readyId = await cloneProject(account, 'ready', { testCases: [] });
+  });
+
+  async function modelOn(page: Page) {
+    await page.route('**/api/model-stages*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true }, keyAvailable: true, keySource: 'community' }),
+      }),
+    );
+  }
+
+  test('each missing input is a sentence with one action, and the button is disabled and says where', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await modelOn(page);
+    await signInThroughForm(page, account);
+    for (const [width, height] of [[1440, 900], [390, 844]] as const) {
+      await page.setViewportSize({ width, height });
+      await openTesting(page, noCodeId);
+      const why = page.locator('#testing-generate-why');
+      await expect(why).toBeVisible();
+      await expect(why.locator('[data-generation-prerequisite]')).toHaveCount(1);
+      const code = why.locator('[data-generation-prerequisite="code"]');
+      await expect(code).toContainText('No generated code yet');
+      await expect(code.getByRole('link', { name: 'Open Transformation' })).toHaveAttribute('href', `/project/${noCodeId}/transformation`);
+      const button = page.locator('[data-generate-scenarios]');
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveAttribute('aria-describedby', 'testing-generate-why');
+      await expect(button).not.toHaveAttribute('title', /./);
+      await noSidewaysScroll(page, `${width} prerequisites`);
+
+      await openTesting(page, nothingId);
+      await expect(page.locator('#testing-generate-why [data-generation-prerequisite]')).toHaveCount(2);
+      await expect(page.locator('#testing-generate-why [data-generation-prerequisite="design"]')).toBeVisible();
+      await expect(page.locator('[data-generate-scenarios]')).toBeDisabled();
+    }
+  });
+
+  test('with everything on record the button is enabled, and a click starts or says why it did not', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await modelOn(page);
+    // No model is called: the proxy answers with a refusal.
+    await page.route('**/api/gemini', (route) => route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'The model is not available in this test.' }) }));
+    await signInThroughForm(page, account);
+    await openTesting(page, readyId);
+    await expect(page.locator('#testing-generate-why')).toHaveCount(0);
+    const button = page.locator('[data-generate-scenarios]');
+    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-describedby', /./);
+    await button.click();
+    await expect(page.locator('[data-test-generation-error]')).toBeVisible({ timeout: 30000 });
   });
 });
 
