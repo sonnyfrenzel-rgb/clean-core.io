@@ -42,9 +42,12 @@ import { wt } from '@/lib/workspace-messages';
 export default function NotDeterminedCard({
   data,
   recorded = [],
+  lead,
 }: {
   data: NotDetermined;
   recorded?: readonly RecordGap[];
+  /** One sentence on what this list is, shown first — the IT view's (v3.0.1). */
+  lead?: string;
 }) {
   return (
     <CcCard
@@ -52,6 +55,11 @@ export default function NotDeterminedCard({
       count={data.noSource ? undefined : data.count}
       meta={<CcProvenanceChip value="not-determined" />}
     >
+      {lead ? (
+        <p data-not-determined-lead="" className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
+          {lead}
+        </p>
+      ) : null}
       {data.noSource ? (
         <p
           data-not-determined-state="no-source"

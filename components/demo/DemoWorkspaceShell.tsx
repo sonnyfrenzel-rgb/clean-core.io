@@ -598,7 +598,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="it-chain" className="mt-5">
             <div className="max-w-3xl">{stop('it-chain')}</div>
-            <ItAnswers projectId="demo" findings={itFindings} project={project} />
+            <ItAnswers projectId="demo" findings={itFindings} project={project} notDetermined={open} signed="demo" />
           </Place>
           {/* The IT answer first, then the layers, as in Management. */}
           {layerBar}
@@ -607,9 +607,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               {mapCard}
             </div>
           )}
-          <div className="mt-5 max-w-3xl">
-            <NotDeterminedCard data={open} />
-          </div>
+          {/* Not determined stands in the IT answer itself (v3.0.1), not here again. */}
         </>
       ) : null}
 

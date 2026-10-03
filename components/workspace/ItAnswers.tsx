@@ -11,26 +11,37 @@ import CcFilterBar from '@/components/cc/FilterBar';
 import CcSelect from '@/components/cc/Select';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcDisclosure from '@/components/cc/Disclosure';
-import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
+import { CcNoMatches } from '@/components/cc/EmptyState';
 import { CcCleanCoreLevel, CcSeverity } from '@/components/cc/Identifier';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { getAuth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { normaliseSeverity } from '@/lib/severity';
-import { itAnchorLabel, itFindingsCountLabel, wt } from '@/lib/workspace-messages';
+import {
+  itFindingsCountLabel,
+  itvLevelCounts,
+  itvLineLabel,
+  itvNoLevelLabel,
+  itvUsesCoverage,
+  wt,
+  type WorkspaceMessageKey,
+} from '@/lib/workspace-messages';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import type { Loaded } from '@/lib/management-overview';
 import type { SemanticState } from '@/lib/provenance';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import type { NotDetermined } from '@/lib/workspace-model';
+import type { RecordGap } from '@/lib/legacy-project';
+import type { CoachMarkId } from '@/lib/coach-marks';
 import {
   CHAIN_LABELS,
   chainOf,
   itFindingsView,
-  IT_QUESTION,
   type ChainLinkId,
   type ItFindingRow,
   type ItFindingsSource,
+  type ItUseRow,
 } from '@/lib/it-findings';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import {
@@ -41,59 +52,62 @@ import {
   NOT_ASSIGNED,
   filterRows,
   filtersActive,
-  isItRight,
-  itAnswerHead,
   kindBreakdown,
   kindLabelOf,
-  objectsOf,
   whereTo,
   type BucketKey,
   type ItFilters,
   type WhereTo,
 } from '@/lib/it-view';
+import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
 import ItRail from './ItRail';
+import NotDeterminedCard from './NotDeterminedCard';
 
 /**
- * The IT view — roadmap step 8.1, rebuilt to mockup v2.8 `s4` (gap audit row 6).
+ * The IT view — roadmap step 8.1, mockup v2.8 `s4`, reworked for v3.0.1 after
+ * the owner's review: *"so empty and nested, and hard to operate … the
+ * explanation dialogs are far too far down."*
  *
- * The order is the view's question, *"What exactly, where to, and is it
- * right?"*, answered top down: the answer line and the facet tiles, the next
- * step, the chain of the chosen finding, then the findings with a live filter
- * bar beside a side column holding the target profile, the route and the
- * imports. The clean core level per SAP object and every reason stand one
- * level deeper — a table and a disclosure — never removed.
+ * **One honest state, then what the engine knows.** `lib/it-state.ts` decides
+ * which of five states the project is in — no source, unread, unsigned, a
+ * signed run without findings, a signed run with findings — and writes one
+ * headline and one reason for it. Under it stand four figures in one strip,
+ * the one next action (the shell's rule-based "Next step"), and then only the
+ * sections that have content: what the code uses, the findings, and *Not
+ * determined*. The dashed "No chain to follow" and "No findings on record"
+ * boxes are gone: a project without findings says so in its headline, and
+ * names what the code uses instead.
  *
- * Everything this component says is derived in `lib/it-findings.ts` and
- * `lib/it-view.ts`; it adds no sentence of its own, and the two things it would
- * be most tempting to invent — a clean core level for a finding that names no
- * object, and a chain that looks complete because the missing link was left
- * out — it cannot, because the model hands it `null` and the reason instead.
+ * **What the code uses** comes from the findings route (`uses`, derived in
+ * `lib/it-findings-build.ts` from the same statement reader as the process
+ * map): every function module, BAPI, transaction, report and table the code
+ * calls, reads or writes, each with its lines and the clean core level the
+ * target profile's catalog gives it. It is why a program that calls three
+ * BAPIs no longer reads "0 places in the code".
  *
- * **ADR-029 is the shape of the chain.** The chain sits *above* the table, it
- * names the finding it belongs to, the table marks that finding's row, and the
- * coverage — *"Chain complete for 31 of 42 findings"* — stands beside the chain
- * rather than in a popover. A click on a link filters the table to the findings
- * whose chain says the same thing at that link.
+ * **Not determined is one number.** The figure, the list in this view and the
+ * first look below all read `notDetermined(project)` — the engine's constructs
+ * it does not judge. The 3.0 tile counted findings without a level instead,
+ * under the same name, and showed 0 beside a list of 5.
  *
- * **The findings are read from a route, not computed here.** `buildAbapEvidence`
- * reaches the 4.3 MB merged SAP catalog, and `lib/first-look.ts` states the rule
- * this follows: the workspace route does not ship a catalog to a browser to
- * recompute an answer the server can give. `GET /api/projects/{id}/findings` runs
- * the same deterministic pass the signed run makes, under the project's target
- * profile (roadmap 7.10), and answers with the rows and the snapshot it read.
- * The buckets of "where to" come from `/api/abcd-classify` through
- * `useFitByPlatform`, named with the same target.
+ * **The chain belongs to a chosen finding (ADR-029).** It sits above the
+ * findings table, names its finding, the table marks that row, and the
+ * coverage stands beside it. Unchanged; it only lost its card.
  *
- * **`null` is not "none".** Three states, as in `ManagementAnswers`: `undefined`
- * while the read is in flight, `null` when it failed or was refused, an array
- * when it answered. A screen that says "no findings" while it is still asking is
- * the same fabrication as one that shows a zero for something it did not measure.
+ * **The findings are read from a route, not computed here** — the 4.3 MB
+ * catalog stays on the server (`lib/first-look.ts`). `null` is not "none":
+ * `undefined` while the read is in flight, `null` when it failed, an answer
+ * when it answered. Nothing here is stored; the level is a view.
  */
 export default function ItAnswers({
   projectId,
   findings,
   project = null,
   nextStep = null,
+  notDetermined,
+  recorded = [],
+  signed = false,
+  coach,
 }: {
   projectId: string;
   /**
@@ -103,13 +117,22 @@ export default function ItAnswers({
    * given, nothing is fetched.
    */
   findings?: ItFindingsSource;
-  /** The project, for its target profile and its imports. `null` while it loads. */
+  /** The project, for its source, its target profile and its imports. `null` while it loads. */
   project?: Project | null;
-  /**
-   * The rule-based "Next step" card of the workspace, placed under the answer
-   * as mockup `s4` has it — rendered by the shell, never decided here.
-   */
+  /** The rule-based "Next step" of the workspace — the one primary action, under the answer. */
   nextStep?: React.ReactNode;
+  /**
+   * The one *Not determined* of the page (`lib/workspace-model.ts`), the same
+   * object the first look counts — so the figure, the list and "Your process"
+   * cannot disagree.
+   */
+  notDetermined: NotDetermined;
+  /** What a project stored by an earlier version does not carry (roadmap 3.0.2). */
+  recorded?: readonly RecordGap[];
+  /** A signed run is on record and readable; the demo, which carries none by design, passes `'demo'`. */
+  signed?: boolean | 'demo';
+  /** The coach mark for a place in this view — the tour starts here, at the top (v3.0.1). */
+  coach?: (slot: CoachMarkId) => React.ReactNode;
 }) {
   /**
    * The answer together with the project it answers for. A client navigation
@@ -119,6 +142,8 @@ export default function ItAnswers({
   const [loaded, setLoaded] = useState<{ projectId: string; source: ItFindingsSource | null } | null>(null);
   const source: ItFindingsSource | null | undefined =
     findings ?? (loaded && loaded.projectId === projectId ? loaded.source : undefined);
+  const hasSource =
+    findings !== undefined || (typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0);
   /** The reader's chosen finding. `null` means "the first one", never "none". */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The chain link the table is filtered by, or `null`. */
@@ -131,7 +156,7 @@ export default function ItAnswers({
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    if (!projectId || findings) return;
+    if (!projectId || findings || !hasSource) return;
     let cancelled = false;
     const setSource = (value: ItFindingsSource | null) => {
       if (!cancelled) setLoaded({ projectId, source: value });
@@ -148,9 +173,9 @@ export default function ItAnswers({
         });
         if (cancelled) return;
         if (!res.ok) {
-          // A refused read, a project with no source and a network fault look
-          // the same from here: nothing is known about the findings, and the
-          // model says that rather than drawing an empty table.
+          // A refused read and a network fault look the same from here: nothing
+          // is known about the findings, and the model says that rather than
+          // drawing an empty table.
           setSource(null);
           return;
         }
@@ -162,12 +187,22 @@ export default function ItAnswers({
     return () => {
       cancelled = true;
     };
-  }, [projectId, findings]);
+  }, [projectId, findings, hasSource]);
 
-  const view = useMemo(() => itFindingsView(source ?? null, selectedId), [source, selectedId]);
-  const head = useMemo(() => itAnswerHead(source ?? null), [source]);
+  /** The findings, worst level first and then by line — the order the table reads (mockup `s4`: "Level, then line"). */
+  const ordered = useMemo<ItFindingsSource | null>(
+    () => (source ? { ...source, rows: [...source.rows].sort(byLevelThenLine) } : null),
+    [source],
+  );
+  const view = useMemo(() => itFindingsView(ordered, selectedId), [ordered, selectedId]);
   const kinds = useMemo(() => kindBreakdown(view.rows), [view.rows]);
-  const objects = useMemo(() => objectsOf(view.rows), [view.rows]);
+  const uses = useMemo(() => usesSummary(source?.uses), [source]);
+
+  const state = project === null && findings === undefined ? undefined : itState({ source, hasSource, signed });
+  const opening = useMemo(
+    () => (state ? itOpening(state, source ?? null, notDetermined.noSource ? 0 : notDetermined.count) : null),
+    [state, source, notDetermined],
+  );
 
   /**
    * Where the objects go — the four buckets under the project's target
@@ -225,14 +260,14 @@ export default function ItAnswers({
     setFilters(NO_FILTERS);
     setFilterLink(null);
   }, []);
-  const showNotDetermined = useCallback(() => {
+  const showNoLevel = useCallback(() => {
     setFilters({ ...NO_FILTERS, level: 'none' });
     setFilterLink(null);
     setFiltersOpen(true);
     document.getElementById('it-findings')?.scrollIntoView({ block: 'start' });
   }, []);
 
-  if (source === undefined) {
+  if (!state || !opening || (state !== 'no-source' && source === undefined)) {
     return (
       <div data-it-view="loading" className="py-4">
         <CcSkeleton shape="cards" count={4} label={wt('it.findings')} />
@@ -243,295 +278,228 @@ export default function ItAnswers({
     );
   }
 
-  const noObject = view.rows.filter((row) => row.level === null).length;
+  const read = source ?? null;
+  const showContent = state !== 'no-source' && read !== null;
+  const noLevel = view.rows.filter((row) => row.level === null).length;
   const columns = COLUMNS.filter(
     (c) =>
       (c.key !== 'release' || catalogView !== 'classification') &&
       (c.key !== 'classification' || catalogView !== 'release'),
   );
   const barActive = filtersActive(filters) || filterLink !== null;
+  const ndCount = notDetermined.noSource ? null : notDetermined.count;
 
   return (
-    <section data-it-view="" aria-labelledby="it-answers-heading" className="cc">
-      {/* The answer, first (ADR-029): what exactly, where to, and is it right. */}
+    <section data-it-view="" data-it-state={state} aria-labelledby="it-answers-heading" className="cc">
+      {/* The tour starts here, where the reader is (v3.0.1): the first mark
+          points at the Not determined figure in the answer. */}
+      {coach ? coach('not-determined') : null}
+
+      {/* The answer, first (ADR-029): one state, one headline, one reason. */}
       <div data-it-answer="" className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
-        <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{IT_QUESTION}</p>
-        <h2 id="it-answers-heading" data-it-headline="" className="m-0 mt-1 cc-text-h2 text-cc-ink">
-          {head.title}
+        <h2 id="it-answers-heading" data-it-headline="" className="m-0 cc-text-h2 text-cc-ink">
+          {opening.title}
         </h2>
-        <p data-it-answer-coverage="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-          {head.coverage}
+        <p data-it-reason="" className="m-0 mt-2 max-w-4xl text-[13px] leading-snug font-medium text-cc-ink">
+          {opening.reason}
         </p>
-        <dl className="m-0 mt-3 grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-4">
-          <dt className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-            {wt('it.whereTo')}
-          </dt>
-          <dd data-it-where-to="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
-            {where
-              ? where.sentence
-              : fit.state === 'absent'
-                ? fit.reason
-                : wt('it.whereToReading')}
-          </dd>
-          <dt className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-            {wt('it.isItRight')}
-          </dt>
-          <dd data-it-is-right="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
-            {isItRight(view)}
-          </dd>
-        </dl>
+        {state === 'findings' ? (
+          <p data-it-where-to="" className="m-0 mt-2 max-w-4xl text-[13px] leading-snug font-medium text-cc-ink-muted">
+            <span className="font-semibold text-cc-ink">{wt('it.whereTo')}: </span>
+            {where ? where.sentence : fit.state === 'absent' ? fit.reason : wt('it.whereToReading')}
+          </p>
+        ) : null}
+
+        {showContent ? (
+          <ul
+            data-it-facts=""
+            className="m-0 mt-4 grid list-none grid-cols-2 gap-px overflow-hidden rounded-cc-row border border-cc-line bg-cc-line p-0 lg:grid-cols-4"
+          >
+            <Fact
+              id="uses"
+              label={wt('itv.factUses')}
+              value={uses ? String(uses.objects) : null}
+              coverage={uses ? itvUsesCoverage(uses.calls, uses.reads, uses.writes) : wt('itv.usesNotRecorded')}
+              provenance={uses ? 'reconstructed' : 'not-determined'}
+              href="#it-uses"
+            />
+            <Fact
+              id="findings"
+              label={wt('itv.factFindings')}
+              value={String(view.rows.length)}
+              coverage={view.rows.length > 0 ? view.figures[0].coverage.sentence : wt('itv.findingsNone')}
+              provenance="reconstructed"
+              href={view.rows.length > 0 ? '#it-findings' : undefined}
+            />
+            <Fact
+              id="level"
+              label={wt('itv.factLevels')}
+              value={uses ? (uses.levels.length > 0 ? itvLevelCounts(uses.levels) : wt('itv.levelsNone')) : null}
+              small
+              picture={
+                uses && uses.levels.length > 0 ? (
+                  <span data-it-level-bar="" className="mt-1 flex w-full min-w-0 flex-wrap gap-1">
+                    {uses.levels.map((slice) => (
+                      <span
+                        key={slice.grade}
+                        data-it-level-slice={slice.grade}
+                        style={{ flexGrow: slice.count }}
+                        className={cn(
+                          'min-h-6 rounded-cc-row border px-1 text-[12px] font-semibold whitespace-nowrap',
+                          STATE_CLASSES[gradeState(slice.grade)].bg,
+                          STATE_CLASSES[gradeState(slice.grade)].border,
+                          STATE_CLASSES[gradeState(slice.grade)].text,
+                        )}
+                      >
+                        {slice.grade} {slice.count}
+                      </span>
+                    ))}
+                  </span>
+                ) : undefined
+              }
+              coverage={wt('itv.levelsCoverage')}
+              provenance={uses && uses.levels.length > 0 ? 'imported' : 'not-determined'}
+              href={uses && uses.objects > 0 ? '#it-uses' : undefined}
+            />
+            <Fact
+              id="not-determined"
+              label={wt('itv.factNotDetermined')}
+              value={ndCount === null ? null : String(ndCount)}
+              coverage={ndCount && ndCount > 0 ? wt('itv.ndCoverage') : wt('itv.ndNone')}
+              provenance="not-determined"
+              href="#not-determined"
+              coachTarget="not-determined"
+            />
+          </ul>
+        ) : null}
       </div>
 
-      {/* The facet tiles — mockup `s4`'s row of four, each with its coverage. */}
-      <ul className="m-0 mt-4 grid grid-flow-row-dense list-none grid-cols-2 gap-2 p-0 lg:grid-cols-4">
-        <Facet
-          id="findings"
-          label={wt('it.facetFindings')}
-          value={view.unreadable ? null : String(view.rows.length)}
-          absent={view.figures[0].absentReason}
-          provenance={view.figures[0].provenance}
-          coverage={view.figures[0].coverage.sentence}
-        >
-          {kinds.length > 0 ? (
-            <ul data-it-kinds="" className="m-0 mt-1 hidden list-none p-0 sm:block">
-              {kinds.slice(0, 3).map((k) => (
-                <li key={k.kind} className="text-[12px] leading-snug font-medium text-cc-ink">
-                  <button
-                    type="button"
-                    onClick={() => setFilters({ ...NO_FILTERS, kind: k.kind })}
-                    className="min-h-6 text-left underline-offset-2 hover:underline"
-                    data-it-kind={k.kind}
-                  >
-                    {k.count} {k.label}
-                  </button>
-                </li>
-              ))}
-              {kinds.length > 3 ? (
-                <li className="text-[12px] font-medium text-cc-ink-muted">
-                  {wt('it.moreKindsLead')} {kinds.length - 3} {kinds.length - 3 === 1 ? wt('it.kind') : wt('it.kinds')}
-                </li>
-              ) : null}
-            </ul>
-          ) : null}
-        </Facet>
-
-        <Facet
-          id="level"
-          wide
-          label={wt('it.facetLevels')}
-          value={null}
-          absent={view.distribution.graded === 0 ? view.distribution.sentence : undefined}
-          provenance={view.figures[2].provenance}
-          coverage={view.distribution.coverage.sentence}
-          hideValue={view.distribution.graded > 0}
-        >
-          {view.distribution.graded > 0 ? (
-            <div data-it-level-bar="" className="mt-1 flex w-full gap-1">
-              {view.distribution.slices
-                .filter((slice) => slice.count > 0)
-                .map((slice) => (
-                  <button
-                    type="button"
-                    key={slice.grade}
-                    data-it-level-slice={slice.grade}
-                    onClick={() => setFilters({ ...NO_FILTERS, level: slice.grade })}
-                    aria-label={`${wt('it.colLevel')} ${slice.grade}: ${slice.count}`}
-                    style={{ flexGrow: slice.count }}
-                    className={cn(
-                      'min-h-6 rounded-cc-row border px-1 text-left text-[12px] font-semibold whitespace-nowrap',
-                      STATE_CLASSES[gradeState(slice.grade)].bg,
-                      STATE_CLASSES[gradeState(slice.grade)].border,
-                      STATE_CLASSES[gradeState(slice.grade)].text,
-                    )}
-                  >
-                    {slice.grade} {slice.count}
-                  </button>
-                ))}
-            </div>
-          ) : null}
-        </Facet>
-
-        <Facet
-          id="target"
-          wide
-          label={where ? `${wt('it.facetTarget')} · ${where.platformLabel}` : wt('it.facetTarget')}
-          value={null}
-          hideValue={where !== null}
-          absent={
-            where
-              ? undefined
-              : fit.state === 'absent'
-                ? fit.reason
-                : wt('it.whereToReading')
-          }
-          provenance={where ? 'imported' : 'not-determined'}
-          coverage={
-            where
-              ? `${where.byObject.size} ${where.byObject.size === 1 ? wt('it.objectSingular') : wt('it.objectPlural')} · ${
-                  where.declared ? wt('it.targetDeclared') : wt('it.targetDefault')
-                }`
-              : wt('it.objectsNotPlaced')
-          }
-        >
-          {where ? (
-            <ul data-it-buckets="" className="m-0 mt-1 grid list-none grid-cols-2 gap-x-3 p-0">
-              {where.counts.map((c) => (
-                <li key={c.bucket}>
-                  <button
-                    type="button"
-                    data-it-bucket={c.bucket}
-                    onClick={() => setFilters({ ...NO_FILTERS, bucket: c.bucket })}
-                    className={cn(
-                      'min-h-6 text-left text-[12px] leading-snug font-medium underline-offset-2 hover:underline',
-                      c.bucket === NOT_ASSIGNED ? 'text-cc-ink-muted' : 'text-cc-ink',
-                    )}
-                  >
-                    <span className="font-bold">{c.count}</span> {c.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </Facet>
-
-        <Facet
-          id="not-determined"
-          label={wt('it.notDetermined')}
-          value={view.unreadable ? null : String(noObject)}
-          absent={view.unreadable ? view.figures[0].absentReason : undefined}
-          provenance="not-determined"
-          coverage={`${noObject} ${wt('it.ofLower')} ${view.rows.length} ${view.rows.length === 1 ? wt('it.place') : wt('it.places')}`}
-        >
-          <p className="m-0 mt-1 hidden text-[12px] leading-snug font-medium text-cc-ink-muted sm:block">{wt('it.noLevelReason')}</p>
-          {noObject > 0 ? (
-            <div className="mt-2">
-              <CcButton onClick={showNotDetermined} data-it-show-not-determined="">
-                {wt('it.showThem')}
-              </CcButton>
-            </div>
-          ) : null}
-        </Facet>
-      </ul>
-
-      {/* "Next step" — the shell's rule-based card, under the answer (§2.3 item 5). */}
+      {/* The one next action — the shell's rule-based "Next step" (§2.3 item 5). */}
       {nextStep}
 
-      {/* The chain — above the table, for the chosen finding, with its coverage
-          beside it (ADR-029). */}
-      <div className="mt-4">
-        <CcCard
-          title={<span data-it-chain-title="">{view.chainTitle}</span>}
-          meta={
-            <span data-it-chain-coverage="" className="text-[11px] font-medium text-cc-ink-muted">
-              {view.chainCoverage.sentence}
-            </span>
-          }
-        >
-          {chain ? (
-            <>
-              <p className="m-0 mb-3 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('it.chainHint')}</p>
-              <ol className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-4">
-                {chain.links.map((link) => (
-                  <li
-                    key={link.id}
-                    data-it-chain-link={link.id}
-                    data-it-chain-link-determined={link.value === null ? 'no' : 'yes'}
-                    className={cn(
-                      'rounded-cc-row border bg-cc-surface px-3 py-2',
-                      filterLink === link.id ? 'border-cc-ink' : 'border-cc-field-border',
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setFilterLink(filterLink === link.id ? null : link.id)}
-                      aria-pressed={filterLink === link.id}
-                      className="block w-full min-h-6 text-left text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
-                    >
-                      {link.label}
-                    </button>
-                    {link.value === null ? (
-                      <span data-it-chain-absent="" className="mt-1 block text-[13px] font-semibold text-cc-ink-muted">
-                        {wt('it.notDetermined')}
-                      </span>
-                    ) : (
-                      <span data-it-chain-value="" className="mt-1 block text-[13px] font-bold break-words text-cc-ink">
-                        {link.value}
-                      </span>
-                    )}
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      {link.anchor ? <CcAnchor tone="unlinked">{link.anchor}</CcAnchor> : null}
-                      <CcProvenanceChip value={link.provenance} />
-                    </div>
-                    {/* The reason a link stopped is the trust reason and stays
-                        visible; what a determined link adds is one level deeper. */}
-                    {link.value === null ? (
-                      <p data-it-chain-reason="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                        {link.reason}
-                      </p>
-                    ) : (
-                      <details className="mt-1">
-                        <summary className="min-h-6 cursor-pointer text-[12px] font-semibold text-cc-ink">
-                          {wt('it.linkDetail')}
-                        </summary>
-                        <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{link.detail}</p>
-                      </details>
-                    )}
-                  </li>
-                ))}
-              </ol>
-              <p data-it-requirement-note="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {view.requirementNote}
-              </p>
-            </>
-          ) : (
-            <CcEmptyState title={wt('it.noChainTitle')}>
-              <span data-it-chain-absent-reason="">
-                {view.unreadable ? wt('it.noChainUnreadable') : wt('it.noChainEmpty')}
-              </span>
-            </CcEmptyState>
-          )}
-        </CcCard>
-      </div>
+      {showContent ? (
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-4">
+            <UsesCard uses={read.uses} summary={uses} catalogNote={profile.note} />
 
-      {/* Findings and the objects beside the side column — L: content + 360 px
-          (DESIGN.md §2.9); M and S: one column, the side column underneath. */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div id="it-findings" className="scroll-mt-4">
-            <CcCard
-              title={wt('it.findingsTitle')}
-              count={view.rows.length}
-              actions={
-                <>
-                  {view.rows.length > 0 ? (
-                    <span className="sm:hidden">
-                      <CcButton
-                        onClick={() => setFiltersOpen((v) => !v)}
-                        aria-expanded={filtersOpen}
-                        aria-controls="it-filter-bar"
-                        icon={<SlidersHorizontal size={14} aria-hidden={true} />}
-                        data-it-filter-toggle=""
-                      >
-                        {wt('it.filter')}
-                      </CcButton>
-                    </span>
+            {view.rows.length > 0 ? (
+              <div id="it-findings" className="scroll-mt-4">
+                <CcCard
+                  title={wt('itv.findingsTitle')}
+                  count={view.rows.length}
+                  actions={
+                    <>
+                      <span className="sm:hidden">
+                        <CcButton
+                          onClick={() => setFiltersOpen((v) => !v)}
+                          aria-expanded={filtersOpen}
+                          aria-controls="it-filter-bar"
+                          icon={<SlidersHorizontal size={14} aria-hidden={true} />}
+                          data-it-filter-toggle=""
+                        >
+                          {wt('it.filter')}
+                        </CcButton>
+                      </span>
+                      {filterLink ? (
+                        <CcButton onClick={() => setFilterLink(null)} data-it-clear-filter="">
+                          {wt('it.clearFilter')}
+                        </CcButton>
+                      ) : null}
+                    </>
+                  }
+                >
+                  <p data-it-lead="findings" className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
+                    {wt('itv.findingsLead')}
+                  </p>
+
+                  {/* The chain — above the table, for the chosen finding, with
+                      its coverage beside it (ADR-029). Flat: no card in the card. */}
+                  {chain ? (
+                    <div data-it-chain="" className="mb-4 border-y border-cc-line py-3">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h4 data-it-chain-title="" className="m-0 text-[13px] font-bold text-cc-ink">
+                          {view.chainTitle}
+                        </h4>
+                        <span data-it-chain-coverage="" className="text-[12px] font-medium text-cc-ink-muted">
+                          {view.chainCoverage.sentence}
+                        </span>
+                      </div>
+                      <ol className="m-0 mt-2 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-4">
+                        {chain.links.map((link) => (
+                          <li
+                            key={link.id}
+                            data-it-chain-link={link.id}
+                            data-it-chain-link-determined={link.value === null ? 'no' : 'yes'}
+                            className={cn(
+                              'rounded-cc-row border bg-cc-surface-muted px-3 py-2',
+                              filterLink === link.id ? 'border-cc-ink' : 'border-cc-line',
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setFilterLink(filterLink === link.id ? null : link.id)}
+                              aria-pressed={filterLink === link.id}
+                              className="block w-full min-h-6 text-left text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+                            >
+                              {link.label}
+                            </button>
+                            {link.value === null ? (
+                              <span data-it-chain-absent="" className="mt-1 block text-[13px] font-semibold text-cc-ink-muted">
+                                {wt('it.notDetermined')}
+                              </span>
+                            ) : (
+                              <span data-it-chain-value="" className="mt-1 block text-[13px] font-bold break-words text-cc-ink">
+                                {link.value}
+                              </span>
+                            )}
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              {link.anchor ? <CcAnchor tone="unlinked">{link.anchor}</CcAnchor> : null}
+                              <CcProvenanceChip value={link.provenance} />
+                            </div>
+                            {/* The reason a link stopped is the trust reason and
+                                stays visible; what a determined link adds is one
+                                level deeper. */}
+                            {link.value === null ? (
+                              <p data-it-chain-reason="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                                {link.reason}
+                              </p>
+                            ) : (
+                              <details className="mt-1">
+                                <summary className="min-h-6 cursor-pointer text-[12px] font-semibold text-cc-ink">
+                                  {wt('it.linkDetail')}
+                                </summary>
+                                <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{link.detail}</p>
+                              </details>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                      <p data-it-requirement-note="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                        {view.requirementNote}
+                      </p>
+                    </div>
                   ) : null}
-                  {filterLink ? (
-                    <CcButton onClick={() => setFilterLink(null)} data-it-clear-filter="">
-                      {wt('it.clearFilter')}
-                    </CcButton>
+
+                  {where ? (
+                    <ul data-it-buckets="" className="m-0 mb-3 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
+                      {where.counts.map((c) => (
+                        <li key={c.bucket}>
+                          <button
+                            type="button"
+                            data-it-bucket={c.bucket}
+                            onClick={() => setFilters({ ...NO_FILTERS, bucket: c.bucket })}
+                            className={cn(
+                              'min-h-6 text-left text-[12px] leading-snug font-medium underline-offset-2 hover:underline',
+                              c.bucket === NOT_ASSIGNED ? 'text-cc-ink-muted' : 'text-cc-ink',
+                            )}
+                          >
+                            <span className="font-bold">{c.count}</span> {c.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
-                </>
-              }
-            >
-              {view.rows.length === 0 ? (
-                <CcEmptyState title={wt('it.noFindingsTitle')}>
-                  <span data-it-findings-absent-reason="">
-                    {view.unreadable ? wt('it.noFindingsUnreadable') : wt('it.noFindingsEmpty')}
-                  </span>
-                </CcEmptyState>
-              ) : (
-                <>
+
                   <div id="it-filter-bar" data-it-filter-bar="" className={cn('mb-3 sm:block', filtersOpen ? 'block' : 'hidden')}>
                     <CcFilterBar
                       noun={wt('it.places')}
@@ -605,103 +573,254 @@ export default function ItAnswers({
                       ? itFindingsCountLabel(filtered.length, CHAIN_LABELS[filterLink].toLowerCase(), view.rows.length)
                       : wt('it.catalogViewsNote')}
                   </p>
-                </>
-              )}
-            </CcCard>
+                  {noLevel > 0 && filters.level !== 'none' ? (
+                    <div className="mt-2">
+                      <CcButton onClick={showNoLevel} data-it-show-no-level="">
+                        {itvNoLevelLabel(noLevel)}
+                      </CcButton>
+                    </div>
+                  ) : null}
+                  <p data-it-level-coverage="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+                    {view.distribution.sentence} {view.distribution.coverage.sentence}
+                  </p>
+                  {where && where.byObject.size > 0 ? (
+                    <div className="mt-2">
+                      <CcDisclosure title={wt('it.whyEachObject')} count={where.byObject.size}>
+                        <ul data-it-object-reasons="" className="m-0 list-none p-0">
+                          {[...where.byObject.values()].map((a) => (
+                            <li key={a.objectName} className="border-b border-cc-line py-2 last:border-b-0">
+                              <span className="font-mono text-[12px] font-semibold text-cc-ink">{a.objectName}</span>{' '}
+                              <span className="text-[12px] font-semibold text-cc-ink">
+                                · {a.bucket ? BUCKET_LABELS[a.bucket] : BUCKET_LABELS[NOT_ASSIGNED]}
+                              </span>
+                              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                                {a.evidence ?? a.reason?.detail ?? ''}
+                                {a.reviewTask ? ` ${a.reviewTask}` : ''}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </CcDisclosure>
+                    </div>
+                  ) : null}
+                </CcCard>
+              </div>
+            ) : null}
+
+            {/* Not determined — in this view, not at the foot of the page: the
+                same object the figure above and the first look count. */}
+            <div id="not-determined" className="scroll-mt-4">
+              <NotDeterminedCard data={notDetermined} recorded={recorded} lead={wt('itv.ndLead')} />
+            </div>
           </div>
 
-          {/* The clean core level per SAP object — the target profile's catalog,
-              one row per object, the reasons for its bucket one level deeper. */}
-          {objects.objects.length > 0 ? (
-            <CcCard title={wt('it.objectsTitle')} count={objects.objects.length}>
-              <p data-it-level-sentence="" className="m-0 mb-1 text-[13px] leading-snug font-medium text-cc-ink">
-                {view.distribution.sentence}
-              </p>
-              <p data-it-level-coverage="" className="m-0 mb-3 text-[11px] leading-snug font-medium text-cc-ink-muted">
-                {view.distribution.coverage.sentence}
-              </p>
-              <CcTable
-                caption={wt('it.objectsCaption')}
-                columns={OBJECT_COLUMNS}
-                limit={8}
-                rows={objects.objects.map((o) => ({
-                  key: o.name,
-                  cells: {
-                    object: (
-                      <span className="block">
-                        <span className="block font-mono text-[13px] font-semibold break-all text-cc-ink">{o.name}</span>
-                        {o.type ? (
-                          <span className="block text-[11px] font-medium text-cc-ink-muted">{o.type}</span>
-                        ) : null}
-                      </span>
-                    ),
-                    lines: (
-                      <span className="flex flex-wrap gap-1">
-                        {o.findings.slice(0, 4).map((f) => (
-                          <CcAnchor key={f.id} tone="unlinked" label={itAnchorLabel(f.id, f.line)}>
-                            L{f.line}
-                          </CcAnchor>
-                        ))}
-                        {o.findings.length > 4 ? (
-                          <span className="text-[11px] font-medium text-cc-ink-muted">+{o.findings.length - 4}</span>
-                        ) : null}
-                      </span>
-                    ),
-                    level:
-                      o.levels.length === 0 ? (
-                        <span className="text-[12px] font-medium text-cc-ink-muted">{wt('it.notDetermined')}</span>
-                      ) : (
-                        <span className="flex flex-wrap gap-1" data-it-object-level={o.name}>
-                          {o.levels.map((g) => (
-                            <CcCleanCoreLevel key={g} value={g} />
-                          ))}
-                        </span>
-                      ),
-                    successor: (
-                      <span className="text-[12px] font-medium break-all text-cc-ink-muted">
-                        {o.successor ?? wt('it.successorNone')}
-                      </span>
-                    ),
-                    target: <BucketCell name={o.name} where={where} fitState={fit.state} />,
-                  },
-                }))}
-              />
-              <p data-it-catalog-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
-                {profile.note}
-              </p>
-              {where ? (
-                <div className="mt-3">
-                  <CcDisclosure title={wt('it.whyEachObject')} count={where.byObject.size}>
-                    <ul data-it-object-reasons="" className="m-0 list-none p-0">
-                      {[...where.byObject.values()].map((a) => (
-                        <li key={a.objectName} className="border-b border-cc-line py-2 last:border-b-0">
-                          <span className="font-mono text-[12px] font-semibold text-cc-ink">{a.objectName}</span>{' '}
-                          <span className="text-[12px] font-semibold text-cc-ink">
-                            · {a.bucket ? BUCKET_LABELS[a.bucket] : BUCKET_LABELS[NOT_ASSIGNED]}
-                          </span>
-                          <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                            {a.evidence ?? a.reason?.detail ?? ''}
-                            {a.reviewTask ? ` ${a.reviewTask}` : ''}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </CcDisclosure>
-                </div>
-              ) : null}
-            </CcCard>
-          ) : (
-            <p data-it-level-coverage="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-              {view.distribution.sentence} {view.distribution.coverage.sentence}
-            </p>
-          )}
+          <ItRail projectId={projectId} project={project} source={read} profile={profile} demo={findings !== undefined} />
         </div>
-
-        <ItRail projectId={projectId} project={project} source={source} profile={profile} demo={findings !== undefined} />
-      </div>
+      ) : null}
     </section>
   );
 }
+
+/** Worst level first (D, C, B, A, Unknown, none), then the line. */
+function byLevelThenLine(a: ItFindingRow, b: ItFindingRow): number {
+  const rank = (g: CloudReadinessGrade | null) => (g === null ? 5 : { D: 0, C: 1, B: 2, A: 3, Unknown: 4 }[g]);
+  return rank(a.level) - rank(b.level) || a.lineStart - b.lineStart;
+}
+
+const USE_WORDS: Record<ItUseRow['use'], WorkspaceMessageKey> = {
+  call: 'itv.useCall',
+  read: 'itv.useRead',
+  write: 'itv.useWrite',
+  use: 'itv.useUse',
+};
+
+const BASIS_WORDS: Record<string, WorkspaceMessageKey> = {
+  catalog: 'itv.basisCatalog',
+  'catalog-residual': 'itv.basisResidual',
+  'own-object': 'itv.basisOwn',
+  finding: 'itv.basisFinding',
+  heuristic: 'itv.basisHeuristic',
+};
+
+const USE_COLUMNS = [
+  { key: 'object', label: wt('itv.colObject') },
+  { key: 'use', label: wt('itv.colUse') },
+  { key: 'lines', label: wt('itv.colLines') },
+  { key: 'level', label: wt('itv.colLevel') },
+  { key: 'catalog', label: wt('itv.colCatalog') },
+  { key: 'finding', label: wt('itv.colFinding') },
+] as const;
+
+/**
+ * What the code uses — one row per object and use, with its lines and the
+ * level the target profile's catalog gives it. The first sentence says what the
+ * list is and what a level is not, and is never folded away.
+ */
+function UsesCard({
+  uses,
+  summary,
+  catalogNote,
+}: {
+  uses: ItUseRow[] | undefined;
+  summary: ReturnType<typeof usesSummary>;
+  /** Which snapshot of SAP's catalog the levels come from (`catalogProfile`). */
+  catalogNote: string;
+}) {
+  return (
+    <div id="it-uses" className="scroll-mt-4">
+      <CcCard title={wt('itv.usesTitle')} count={summary ? summary.objects : undefined}>
+        <p data-it-lead="uses" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+          {wt('itv.usesLead')}
+        </p>
+        {!uses || !summary ? (
+          <p data-it-uses-state="not-recorded" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
+            {wt('itv.usesNotRecorded')}
+          </p>
+        ) : uses.length === 0 ? (
+          <p data-it-uses-state="none" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
+            {summary.sentence}
+          </p>
+        ) : (
+          <div data-it-uses="" className="mt-3">
+            <CcTable
+              caption={wt('itv.usesCaption')}
+              columns={USE_COLUMNS}
+              limit={5}
+              rows={uses.map((u) => ({
+                key: `${u.object}@${u.use}`,
+                cells: {
+                  object: (
+                    <span className="block" data-it-use={u.object} data-it-use-kind={u.kind}>
+                      <span className="block font-mono text-[13px] font-semibold break-all text-cc-ink">{u.object}</span>
+                      <span className="block text-[11px] font-medium text-cc-ink-muted">
+                        {kindWord(u.kind)}
+                        {u.custom ? ` · ${wt('itv.custom')}` : ''}
+                        {u.remote ? ` · ${wt('itv.remote')}` : ''}
+                      </span>
+                    </span>
+                  ),
+                  use: <span className="text-[12px] font-semibold text-cc-ink">{wt(USE_WORDS[u.use])}</span>,
+                  lines: (
+                    <span className="flex flex-wrap gap-1" data-it-use-lines={u.object}>
+                      {u.lines.slice(0, 4).map((line) => (
+                        <CcAnchor key={line} tone="unlinked" label={itvLineLabel(u.object, line)}>
+                          L{line}
+                        </CcAnchor>
+                      ))}
+                      {u.lines.length > 4 ? (
+                        <span className="text-[11px] font-medium text-cc-ink-muted">+{u.lines.length - 4}</span>
+                      ) : null}
+                    </span>
+                  ),
+                  level:
+                    u.level === null ? (
+                      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.levelNotAsked')}</span>
+                    ) : (
+                      <span className="block" data-it-use-level={u.object}>
+                        <CcCleanCoreLevel value={u.level} />
+                        {u.levelBasis && BASIS_WORDS[u.levelBasis] ? (
+                          <span className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
+                            {wt(BASIS_WORDS[u.levelBasis])}
+                          </span>
+                        ) : null}
+                      </span>
+                    ),
+                  catalog: (
+                    <span className="block text-[12px] font-medium text-cc-ink-muted">
+                      {[u.releaseView, u.classificationView].filter(Boolean).join(' · ') || wt('itv.levelNotAsked')}
+                    </span>
+                  ),
+                  finding: (
+                    <span className="text-[12px] font-medium text-cc-ink-muted">
+                      {u.findingIds.length > 0 ? u.findingIds.join(', ') : wt('itv.noFinding')}
+                    </span>
+                  ),
+                },
+              }))}
+            />
+            <p data-it-catalog-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+              {catalogNote}
+            </p>
+          </div>
+        )}
+      </CcCard>
+    </div>
+  );
+}
+
+/**
+ * One figure of the strip under the answer — a micro-label, the value (or *Not
+ * determined*), and its coverage. A jump to the section that holds the detail,
+ * by keyboard and by tap: no figure explains itself on hover only.
+ */
+function Fact({
+  id,
+  label,
+  value,
+  coverage,
+  provenance,
+  href,
+  small = false,
+  picture,
+  coachTarget,
+}: {
+  id: string;
+  label: string;
+  value: string | null;
+  coverage: string;
+  provenance: React.ComponentProps<typeof CcProvenanceChip>['value'];
+  href?: string;
+  /** The value is a line of text (the level counts), not one number. */
+  small?: boolean;
+  /** The value drawn rather than written — the level counts as marks; `value` is then its accessible text. */
+  picture?: React.ReactNode;
+  coachTarget?: CoachMarkId;
+}) {
+  return (
+    <li data-it-figure={id} data-coach-target={coachTarget} className="flex min-w-0 flex-col bg-cc-surface px-3 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span data-coach-point="" className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+          {label}
+        </span>
+        <CcProvenanceChip value={provenance} />
+      </div>
+      {value === null ? (
+        <span data-figure-absent="" className="mt-1 text-[13px] font-semibold text-cc-ink-muted">
+          {wt('itv.factNotRecorded')}
+        </span>
+      ) : picture ? (
+        <span data-figure-value="" role="img" aria-label={value}>
+          {picture}
+        </span>
+      ) : (
+        <span
+          data-figure-value=""
+          className={cn('mt-1 text-cc-ink', small ? 'text-[15px] leading-snug font-bold' : 'cc-text-figure leading-none')}
+        >
+          {value}
+        </span>
+      )}
+      <p data-figure-coverage="" className="m-0 mt-auto pt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+        {coverage}
+        {href ? (
+          <>
+            {' · '}
+            {/* A button, not a `#hash` link: the hash is the layer's (ADR-018). */}
+            <button
+              type="button"
+              onClick={() => document.getElementById(href.replace(/^#/, ''))?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
+              className="inline-flex min-h-6 items-center font-semibold text-cc-ink underline underline-offset-2 pointer-coarse:min-h-11"
+              data-it-figure-jump={id}
+            >
+              {wt('itv.factShow')}
+            </button>
+          </>
+        ) : null}
+      </p>
+    </li>
+  );
+}
+
 
 const COLUMNS = [
   { key: 'object', label: wt('it.colObject') },
@@ -713,13 +832,6 @@ const COLUMNS = [
   { key: 'target', label: wt('it.colTarget') },
 ] as const;
 
-const OBJECT_COLUMNS = [
-  { key: 'object', label: wt('it.colSapObject') },
-  { key: 'lines', label: wt('it.colLines') },
-  { key: 'level', label: wt('it.colLevel') },
-  { key: 'successor', label: wt('it.colSuccessor') },
-  { key: 'target', label: wt('it.colTarget') },
-] as const;
 
 const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -847,66 +959,5 @@ function ViewCell({ value }: { value: string | null }) {
     <span className="text-[12px] font-medium text-cc-ink-muted">{wt('it.viewNotAsked')}</span>
   ) : (
     <span className="text-[12px] font-medium text-cc-ink">{value}</span>
-  );
-}
-
-/**
- * One facet tile — mockup `s4`'s `.facet`: a micro-label, the figure (or *Not
- * determined* with its reason), what it is worth and its coverage.
- */
-function Facet({
-  id,
-  label,
-  value,
-  absent,
-  provenance,
-  coverage,
-  hideValue = false,
-  wide = false,
-  children,
-}: {
-  id: string;
-  /** Spans both columns on a phone — a bar or a list that needs the width. */
-  wide?: boolean;
-  label: string;
-  value: string | null;
-  absent?: string;
-  provenance: React.ComponentProps<typeof CcProvenanceChip>['value'];
-  coverage: string;
-  /** The tile's figure is its picture (a bar, a list) rather than one number. */
-  hideValue?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <li
-      data-it-figure={id}
-      className={cn(
-        'flex min-w-0 flex-col rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc',
-        wide ? 'col-span-2 sm:col-span-1' : null,
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{label}</span>
-        <CcProvenanceChip value={provenance} />
-      </div>
-      {hideValue ? null : value === null ? (
-        <span data-figure-absent="" className="mt-1 text-[13px] font-semibold text-cc-ink-muted">
-          {wt('it.notDetermined')}
-        </span>
-      ) : (
-        <span data-figure-value="" className="mt-1 cc-text-figure leading-none text-cc-ink">
-          {value}
-        </span>
-      )}
-      {absent ? (
-        <p data-figure-absent-reason="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-          {absent}
-        </p>
-      ) : null}
-      {children}
-      <p data-figure-coverage="" className="m-0 mt-auto pt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
-        {coverage}
-      </p>
-    </li>
   );
 }

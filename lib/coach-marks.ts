@@ -78,10 +78,23 @@ export interface CoachMarkContext {
   hasDecision: boolean;
   /** The project has a next stage to name. */
   hasNextStep: boolean;
+  /**
+   * The order the tour takes on this screen, when it is not the default. The
+   * tour starts where the reader is (v3.0.1, owner review of the IT view): in
+   * IT the *Not determined* count and "Next step" stand at the top and the
+   * decision far below, so IT leads with those two. Marks not named keep their
+   * default order after the named ones.
+   */
+  order?: readonly CoachMarkId[];
 }
 
 export function availableCoachMarks(context: CoachMarkContext): readonly CoachMark[] {
-  return COACH_MARKS.filter((mark) => {
+  const order = context.order ?? [];
+  const rank = (id: CoachMarkId) => {
+    const i = order.indexOf(id);
+    return i === -1 ? order.length + COACH_MARK_IDS.indexOf(id) : i;
+  };
+  return [...COACH_MARKS].sort((a, b) => rank(a.id) - rank(b.id)).filter((mark) => {
     if (mark.id === 'decision') return context.hasDecision;
     if (mark.id === 'next-step') return context.hasNextStep;
     // *Not determined* is a region of the page in every state it has, including
