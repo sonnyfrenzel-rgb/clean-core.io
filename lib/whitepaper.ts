@@ -105,7 +105,7 @@ export const FROM_LANDING = {
   processLead:
     'Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element, or the reason it has none, and names what the code cannot show instead of drawing it.',
   processFeatures: [
-    { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
+    { t: 'Every element points to its lines', d: 'Start and end events, tasks, decision points and sub-processes each carry a line anchor. Decision points keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
     { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
     { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
     { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet. There is no connection to a Signavio workspace — only files.' },
@@ -205,7 +205,7 @@ export const SUMMARY_CARDS = [
 export const PROCESS_MORE = [
   {
     t: 'Plain language first',
-    d: 'Steps carry business names and decisions read as questions, worded from the code without a model. The names the code itself uses are one switch away — “Technical names” — for the developer.',
+    d: 'Steps carry business names and decision points read as questions, worded from the code without a model. The names the code itself uses are one switch away — “Technical names” — for the developer.',
   },
   {
     t: 'Large processes stay readable',

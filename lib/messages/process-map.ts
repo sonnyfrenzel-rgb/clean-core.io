@@ -120,7 +120,7 @@ export const PROCESS_MAP_MESSAGES = {
   // BpmnEditor — the words of the draft list
   'mapEditor.kindStart': 'Start',
   'mapEditor.kindEnd': 'End',
-  'mapEditor.kindDecision': 'Decision',
+  'mapEditor.kindDecision': 'Decision point',
   'mapEditor.kindParallelSplit': 'Parallel split',
   'mapEditor.kindStep': 'Step',
   'mapEditor.kindServiceStep': 'Service step',

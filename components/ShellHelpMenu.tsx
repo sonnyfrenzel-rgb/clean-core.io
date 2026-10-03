@@ -233,7 +233,7 @@ const GROUPS: readonly ShortcutGroup[] = [
       { keys: ['Tab'], does: 'The map is one stop; the keys below move inside it' },
       { keys: ['→', '↓'], does: 'Next step along the flow' },
       { keys: ['←', '↑'], does: 'Previous step' },
-      { keys: ['↓', '↑'], does: 'At a decision: choose the branch' },
+      { keys: ['↓', '↑'], does: 'At a decision point: choose the branch' },
       { keys: ['Home', 'End'], does: 'First or last element' },
       { keys: ['Enter'], does: 'Open the source of the element, or open a sub-process' },
       { keys: ['Esc'], does: 'Close the source; the focus returns to the element' },

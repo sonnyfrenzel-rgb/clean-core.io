@@ -163,7 +163,7 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
                 plane={plane}
                 idPrefix="hero"
                 scale={0.9}
-                title={`The first steps of ${hero.process.program} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+                title={`The first steps of ${hero.process.program} as BPMN, reconstructed from the code: each step with the decision points in it that end the process. Every element carries its line anchor.`}
               />
             </div>
           </div>

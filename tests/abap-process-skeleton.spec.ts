@@ -3068,7 +3068,7 @@ ENDFORM.`);
     const ending = answer.branches.find((b) => b.condition === 'ls_vbak-lifsk IS NOT INITIAL');
     expect([ending?.target, ending?.endsFlow]).toEqual(['RETURN', true]);
 
-    expect(mapOf(RELEASE).overview).toBe('Process with 5 steps and 1 decision.');
+    expect(mapOf(RELEASE).overview).toBe('Process with 5 steps and 1 decision point.');
   });
 });
 

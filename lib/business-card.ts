@@ -369,7 +369,7 @@ export function buildBusinessCard(input: {
     {
       key: 'decisions',
       value: String(decisions.length),
-      label: decisions.length === 1 ? 'decision' : 'decisions',
+      label: decisions.length === 1 ? 'decision point' : 'decision points',
       explanation: 'Points where the program takes one path or another.',
       origin: 'engine',
     },

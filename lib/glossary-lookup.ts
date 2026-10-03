@@ -83,12 +83,16 @@ export function findGlossaryTerm(query: string): GlossaryMatch | null {
   const byLongestMatch = (a: [string, GlossaryItem], b: [string, GlossaryItem]) =>
     containedInQuery(b[1]) - containedInQuery(a[1]);
 
-  const containsTerm = entries.filter(([, item]) => containedInQuery(item) > 0).sort(byLongestMatch)[0];
+  // An `exactOnly` entry is an everyday word: matched exactly above, never
+  // because a longer question happens to contain it.
+  const containsTerm = entries
+    .filter(([, item]) => !item.exactOnly && containedInQuery(item) > 0)
+    .sort(byLongestMatch)[0];
   if (containsTerm) return { key: containsTerm[0], item: containsTerm[1] };
 
   if (q.length < 3) return null;
   const containedInTerm = entries
-    .filter(([, item]) => normalize(item.shortName).includes(q))
+    .filter(([, item]) => !item.exactOnly && normalize(item.shortName).includes(q))
     .sort((a, b) => a[1].shortName.length - b[1].shortName.length)[0];
   return containedInTerm ? { key: containedInTerm[0], item: containedInTerm[1] } : null;
 }

@@ -21,7 +21,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ask.noLine': 'no line',
   'ask.otherwise': 'otherwise',
   'ask.endsFlow': 'ends the flow here',
-  'ask.oneRule': 'One rule stands on this decision:',
+  'ask.oneRule': 'One rule stands on this decision point:',
   // CoachMarks
   'coach.next': 'Next',
   'coach.done': 'Done',
@@ -93,13 +93,13 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'firstLook.noProgramName': 'No program name in this source',
   'firstLook.sourceLine': 'Source line',
   'firstLook.noLine': 'no line',
-  'firstLook.noDecision': 'No decision — this source has no branch the engine draws as a gateway.',
+  'firstLook.noDecision': 'No decision point — this source has no branch the engine draws as a gateway.',
   'firstLook.noSource': 'No source has been staged, so there is no process to show. This is not a result.',
   'firstLook.cardTitle': 'Your process',
   'firstLook.nameNote': 'name',
   'firstLook.foundInCode': 'Found in the code',
   'firstLook.rulesTitle': 'Rules fixed in the program',
-  'firstLook.decisionsTitle': 'Decisions',
+  'firstLook.decisionsTitle': 'Decision points',
   'firstLook.derivedTitle': 'How this was derived',
   'firstLook.showCode': 'Show the code behind each line',
   'firstLook.keyFacts': 'Key facts',
@@ -304,9 +304,9 @@ export function accessUnaccountedLabel(n: number): string {
   return `${n} account${n === 1 ? '' : 's'} on the read list without a matching invitation. Please report this — it should not happen.`;
 }
 
-/** AskThisCase — the lead-in before the rules that stand on a decision. */
+/** AskThisCase — the lead-in before the rules that stand on a decision point. */
 export function askRulesLabel(n: number): string {
-  return n === 1 ? WORKSPACE_PAGE_MESSAGES['ask.oneRule'] : `${n} rules stand on this decision:`;
+  return n === 1 ? WORKSPACE_PAGE_MESSAGES['ask.oneRule'] : `${n} rules stand on this decision point:`;
 }
 
 /** LayerBar — how many layers wait under "More". */
@@ -394,12 +394,12 @@ export function firstLookShowingRules(shown: number, total: number): string {
   return `Showing ${shown} of ${total} rules.`;
 }
 
-/** FirstLook — the first decisions, and how many there are. */
+/** FirstLook — the first decision points, and how many there are. */
 export function firstLookShowingDecisions(shown: number, total: number): string {
-  return `Showing ${shown} of ${total} decisions.`;
+  return `Showing ${shown} of ${total} decision points.`;
 }
 
-/** FirstLook — the line over the decisions. */
+/** FirstLook — the line over the decision points. */
 /** "and 8 more" after the headline's three rules. */
 export function firstLookMoreRules(n: number): string {
   return `and ${n} more`;
@@ -422,7 +422,7 @@ export function firstLookOpenTitle(n: number): string {
 
 export function firstLookDecisionsLine(n: number): string {
   if (n === 0) return WORKSPACE_PAGE_MESSAGES['firstLook.noDecision'];
-  return `${n} ${n === 1 ? 'decision' : 'decisions'}, each with the condition as your code writes it.`;
+  return `${n} ${n === 1 ? 'decision point' : 'decision points'}, each with the condition as your code writes it.`;
 }
 
 /** PublicCloudFitPanel — the platform the buckets were sorted for. */

@@ -327,12 +327,12 @@ export function parseBpmn(xml: string): ParsedBpmn {
 
 /**
  * What a BPMN tag is called for a reader — the first half of an element's
- * accessible name (`DESIGN.md` §5.7: *"Decision: amount above limit? …"*).
+ * accessible name (`DESIGN.md` §5.7: *"Decision point: amount above limit? …"*).
  */
 const KIND_WORDS: Record<string, string> = {
   startEvent: 'Start',
   endEvent: 'End',
-  exclusiveGateway: 'Decision',
+  exclusiveGateway: 'Decision point',
   parallelGateway: 'Parallel split',
   task: 'Step',
   serviceTask: 'Service step',
@@ -486,7 +486,7 @@ export interface ProcessMapModel {
   /** Reconstructed · Confirmed · Proven, in that order, counted from the file. */
   legend: ProcessMapLegendEntry[];
   traceability: ProcessMapTraceability;
-  /** *"Process with 14 steps and 5 decisions."* — `DESIGN.md` §5.7. */
+  /** *"Process with 14 steps and 5 decision points."* — `DESIGN.md` §5.7. */
   overview: string;
   /** 2.4's state and its one sentence, passed through unchanged. */
   naming: { state: NamingState; notice: string | null; named: number };
@@ -543,7 +543,7 @@ export function processCounts(elements: readonly Pick<ProcessMapElement, 'tag'>[
 function overviewOf(elements: ProcessMapElement[]): string {
   const { steps, decisions } = processCounts(elements);
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-  return `Process with ${plural(steps, 'step', 'steps')} and ${plural(decisions, 'decision', 'decisions')}.`;
+  return `Process with ${plural(steps, 'step', 'steps')} and ${plural(decisions, 'decision point', 'decision points')}.`;
 }
 
 function accessibleNameOf(element: Omit<ProcessMapElement, 'accessibleName'>): string {

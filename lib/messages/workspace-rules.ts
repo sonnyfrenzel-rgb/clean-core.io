@@ -131,7 +131,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'firstLook.confirmNote': 'No model call · your answers are a self-declaration',
   'firstLook.stripTrace': 'Linked to the code',
   'firstLook.stripConfirmed': 'Rules confirmed',
-  'firstLook.stripDecisions': 'Decisions',
+  'firstLook.stripDecisions': 'Decision points',
   'firstLook.stripOpen': 'Not determined',
   'firstLook.stripRules': 'Rules in the code',
   'firstLook.stripNotDetermined': 'not determined',
@@ -315,7 +315,7 @@ export function buildUpCounter(kind: 'lines' | 'tables' | 'nodes' | 'decisions',
     case 'nodes':
       return `Process nodes ${n}`;
     case 'decisions':
-      return `Decisions ${n}`;
+      return `Decision points ${n}`;
   }
 }
 
@@ -324,9 +324,9 @@ export function buildUpRailRead(lines: number, tables: number): string {
   return `${lines.toLocaleString('en')} ${lines === 1 ? 'line' : 'lines'} · ${tables} ${tables === 1 ? 'table' : 'tables'}`;
 }
 
-/** The rail's result for "Process recognised": "10 nodes · 1 decision". */
+/** The rail's result for "Process recognised": "10 nodes · 1 decision point". */
 export function buildUpRailProcess(nodes: number, decisions: number): string {
-  return `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${decisions} ${decisions === 1 ? 'decision' : 'decisions'}`;
+  return `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${decisions} ${decisions === 1 ? 'decision point' : 'decision points'}`;
 }
 
 /** The rail's result for the rules: "3 hard-coded" or "none hard-coded". */

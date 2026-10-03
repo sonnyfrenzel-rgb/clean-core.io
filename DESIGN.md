@@ -379,7 +379,7 @@ The most used pattern — for confirming rules, inviting, capturing assumptions:
 - **Errors** show a message strip with what happened and an action ("Retry", "Run without model") —
   never a raw error text and never silently an empty result.
 - **Phases are announced:** an `aria-live="polite"` region names only the change of phase with its result
-  ("Process recognised: 14 steps, 5 decisions") — never the running counters, at most one announcement per phase.
+  ("Process recognised: 14 steps, 5 decision points") — never the running counters, at most one announcement per phase.
 - Large sources say early what is coming: "Reading 3 programs, 10,400 lines" — no estimate of a duration.
 
 ### 2.9 Density and breakpoints
@@ -579,7 +579,7 @@ moment.
 ### 5.2 The stages
 
 1. **Code read** — lines light up, counters follow the lines: lines · programs · tables · findings.
-2. **Process recognised** — the process skeleton (roadmap 2.3) grows out of the marked lines; decisions carry
+2. **Process recognised** — the process skeleton (roadmap 2.3) grows out of the marked lines; decision points carry
    their condition from the code. From here the workspace is usable.
 3. **In business language** — the technical names change once to business names, with the chip *Model proposal*. Without
    a model call (model unreachable or deselected) the stage is dropped; the skeleton keeps its technical names —
@@ -605,7 +605,7 @@ the same end state. A second visit has no build-up.
 ### 5.3 The first ten seconds after
 
 - **Two-way hover:** node → code lines light up; code line → node lifts (roadmap 2.5). The first coach
-  mark invites it: *"Select the decision."*
+  mark invites it: *"Select the decision point."*
 - **One question is already answered.** *"Ask this case"* shows, when first opened, an asked question with answer and
   anchors (*"What happens when the limit is exceeded?"*) — **derived from the branches of the code** (roadmap 2.1,
   chip *Reconstructed*), without a model call and without touching the user's quota.
@@ -696,16 +696,16 @@ The map is the core of the Business view; every way to it must also work without
 (ADR-016).
 
 - **Map and step list are equivalent.** A toggle "Map | Steps" above the map; the step list shows
-  the same content as an ordered list: step, lane, for decisions the condition from the code and the branches,
+  the same content as an ordered list: step, lane, for decision points the condition from the code and the branches,
   anchor, provenance chip. On S "Steps" is the start, "Show map" opens the map.
 - **Keyboard:** the map is **one** tab stop; inside it the arrow keys move along the flow (→/↓ next
-  step, ←/↑ previous; at a decision ↓/↑ choose the branch). Enter opens the source column, Escape closes
+  step, ←/↑ previous; at a decision point ↓/↑ choose the branch). Enter opens the source column, Escape closes
   it and returns focus to the node. `+`, `−` and `0` zoom and fit; the same commands as buttons.
 - **Focus is hover:** a focused node marks its code lines as on hover; a focused
   code line lifts its node.
-- **Screen reader:** every node is a button with a name from kind, title, anchor and provenance (*"Decision: amount above
+- **Screen reader:** every node is a button with a name from kind, title, anchor and provenance (*"Decision point: amount above
   limit? Lines 243 to 251, reconstructed"*); the map as a whole is a named group with a one-sentence overview
-  (*"Process with 14 steps and 5 decisions"*). A live region announces the stages of the build-up (§2.8).
+  (*"Process with 14 steps and 5 decision points"*). A live region announces the stages of the build-up (§2.8).
 - **Targets:** nodes at least 24 × 24 px *compact*, 44 × 44 px on touch (§2.9).
 - **Width:** The source column opens **in place of the side column** (L, XL) — its contents stay reachable as tabs
   of the same column ("Source · Not determined · What it does"). Selecting a node therefore never shifts
@@ -837,7 +837,7 @@ navigation. Therefore (ADR-032):
 2. **Path at the top.** A breadcrumb line above the map shows the level — *Order audit › Decide and process actions ›
    Set delivery block* — every link jumps back; `Alt+↑` goes up one level.
 3. **Outline on the left.** The step list from §5.7 becomes a **tree** (`role="tree"`) with the same nesting,
-   every phase with line range and counters (decisions · findings · hard-coded · not determined). Selection in the tree
+   every phase with line range and counters (decision points · findings · hard-coded · not determined). Selection in the tree
    shows the element on the map and vice versa. On S the tree is the map.
 4. **The overview is already a map of the problems.** Every collapsed subprocess carries a line with text,
    not only colour: *"2 D · 3 hard-coded · 1 not determined"*. Whoever reads the overview knows where to open.
@@ -1058,7 +1058,7 @@ Sonny 15.09.2026):
 
 ### 6.2 Want (ranked by benefit)
 
-1. **Three coach marks on the first workspace** — "Select the decision", "This is what we could not determine", "Your
+1. **Three coach marks on the first workspace** — "Select the decision point", "This is what we could not determine", "Your
    next step". Dismissible, remembered **only in the browser** — never in the account, never in the database, no usage log
    (ADR-036). "Show tips again" in the help menu brings them back.
 2. **"Ask this case"** — always the embedded help AI, expanded for 3.0 (ADR-043): in the project restricted to the

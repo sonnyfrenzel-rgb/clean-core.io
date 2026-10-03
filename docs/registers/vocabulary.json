@@ -361,6 +361,41 @@
           "note": ""
         }
       ]
+    },
+    {
+      "id": "decision-point",
+      "concept": "a branch in the code — an IF or CASE, drawn on the process map as a BPMN gateway. Not the program decision (keep, rebuild, move to SAP standard, retire), which alone is called 'decision'",
+      "source": "lib/glossary.ts ('Decision point', 'Decision'), lib/process-map.ts; owner decision 03.10.2026",
+      "en": "decision point",
+      "de": "Entscheidungspunkt",
+      "variants": [
+        {
+          "pattern": "(?<![\\d.])\\b\\d+ decisions?\\b(?! points?)",
+          "flags": "i",
+          "note": "a count of code branches as 'n decisions'"
+        },
+        {
+          "pattern": "\\bsteps?,? (and )?(\\d+ |the )?decisions?\\b(?! points?)",
+          "flags": "i",
+          "note": "the process's 'steps and decisions'"
+        },
+        {
+          "pattern": "\\b(gateways?|IF|CASE|branch(es)?) \\((as )?(a )?decisions?\\)|\\bdecisions? \\((gateways?|IF|CASE)\\b",
+          "flags": "",
+          "note": "a gateway or branch called a decision"
+        },
+        {
+          "pattern": "\\b(tasks|events),? decisions\\b(?! points?)|\\bSelect the decision\\b(?! point)|\\bDecisions (overlay|filter)\\b|\\bat a decision\\b(?! point)",
+          "flags": "i",
+          "note": "a map element, overlay or tip calling a code branch a decision"
+        },
+        {
+          "pattern": "\\b\\d+ Entscheidungen\\b|\\bSchritte und (\\d+ )?Entscheidungen\\b",
+          "flags": "",
+          "note": "German count of code branches"
+        }
+      ],
+      "exceptions": "'decision' alone stays for the program decision (DEC-1: keep, rebuild, move to SAP standard, retire) and for a business-rule decision (keep, change, drop). Identifiers in backticks are code, not text."
     }
   ],
   "retired": [

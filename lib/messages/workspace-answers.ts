@@ -172,7 +172,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.couldNotBeRead': 'could not be read',
 
   // ManagementExecutive — the decision panel on top of the Management view
-  'exec.questionLabel': 'The decision',
+  'exec.questionLabel': 'Your decision',
   'exec.thisProgram': 'this program',
   'exec.statusFacet': 'Decision',
   'exec.inTheWay': 'What stands in the way',

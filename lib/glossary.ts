@@ -76,6 +76,13 @@ export interface GlossaryItem {
   kind: 'sap' | 'product';
   /** Former or alternative names a reader may type; matched by the lookup, never displayed. */
   aliases?: readonly string[];
+  /**
+   * Answered only when a question names the term on its own or asks "What is
+   * …?" — never because a longer question merely contains the word. Set for
+   * everyday words such as *decision*: "which decisions does the code make?"
+   * is a question about the case, not a request for a definition.
+   */
+  exactOnly?: boolean;
   /** Always present. `origin: 'absent'` where no publication is recorded. */
   sourceRef: GlossarySource;
   /**
@@ -543,6 +550,29 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     sourceRef: PRODUCT_SOURCE,
     definition: 'How deep the reconstructed process is nested - a called routine drawn as its own process rather than flattened into the caller.',
     cleanCoreImplication: 'Keeping the levels apart is what lets a business reader see one process at a time instead of a thousand-line diagram.',
+  },
+  // One word, two meanings, kept apart (owner decision 03.10.2026): a branch in
+  // the code is a decision point; "decision" is what happens to the program.
+  'Decision point': {
+    term: 'Decision point',
+    shortName: 'Decision point',
+    category: 'Product',
+    kind: 'product',
+    sourceRef: PRODUCT_SOURCE,
+    exactOnly: true,
+    definition: 'A point where the code takes one path or another — an IF or CASE in the program.',
+    cleanCoreImplication: 'On the process map it is drawn as a BPMN gateway, each branch with the condition as the code writes it; it is not the decision about the program.',
+  },
+  Decision: {
+    term: 'Decision',
+    shortName: 'Decision',
+    category: 'Product',
+    kind: 'product',
+    sourceRef: PRODUCT_SOURCE,
+    exactOnly: true,
+    aliases: ['Your decision'],
+    definition: 'What happens to this program: keep, rebuild, move to SAP standard, or retire.',
+    cleanCoreImplication: 'A person takes it and confirms it in the Management view; the engine only recommends, and a decision point in the code is something else.',
   },
 };
 

@@ -7,6 +7,7 @@ import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcDisclosure from '@/components/cc/Disclosure';
+import GlossaryTerm from '@/components/GlossaryTerm';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
@@ -724,7 +725,7 @@ function CodeText({ children }: { children: string }) {
  * One key figure. The traceability figure carries the counts it was made of
  * as data attributes, so a check can recompute the percentage from them.
  */
-function Fact({ fact, label, traceability }: { fact: CardFact; label: string; traceability?: Traceability }) {
+function Fact({ fact, label, traceability }: { fact: CardFact; label: React.ReactNode; traceability?: Traceability }) {
   return (
     <li
       data-first-look-fact={fact.key}
@@ -911,7 +912,7 @@ function EndState({
               fact.key === 'rules'
                 ? wt('firstLook.stripRules')
                 : fact.key === 'decisions'
-                  ? wt('firstLook.stripDecisions')
+                  ? <GlossaryTerm termKey="Decision point">{wt('firstLook.stripDecisions')}</GlossaryTerm>
                   : wt('firstLook.stripOpen')
             }
           />
