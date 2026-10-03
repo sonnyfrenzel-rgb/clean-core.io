@@ -219,7 +219,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'analyze');
   });
 
-  test('on a phone the map opens as the step list, and nothing scrolls sideways', async ({ browser }) => {
+  test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-066)', async ({ browser }) => {
     test.setTimeout(300 * 1000);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
@@ -227,7 +227,14 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await open(page, signed);
     const process = page.locator('[data-workspace-process="ready"]');
     await expect(process).toBeVisible({ timeout: 120_000 });
-    await expect(process.getByRole('radio', { name: /Steps/ })).toHaveAttribute('aria-checked', 'true');
+    // The map itself, as on Documentation: fitted, never below 40 %, full
+    // screen one tap away; the step list stays one tab away.
+    await expect(process.getByRole('radio', { name: /Map/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(process.getByRole('radio', { name: /Steps/ })).toBeVisible();
+    const zoom = page.locator('[data-workspace-process="ready"] [data-map-zoom]').first();
+    await expect(zoom).toBeVisible({ timeout: 60_000 });
+    await expect.poll(async () => Number((await zoom.innerText()).replace(/[^\d]/g, ''))).toBeGreaterThanOrEqual(40);
+    await expect(page.locator('[data-workspace-process="ready"] [data-map-fullscreen-toggle], [data-workspace-process="ready"] [data-map-fullscreen]').first()).toBeAttached();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(1);
     await context.close();
