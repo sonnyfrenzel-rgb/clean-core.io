@@ -12,6 +12,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { findingsForOrigin, signedForOrigin, useScenarioOriginEngine } from '@/hooks/useScenarioOrigins';
 import { useTestExecution } from '@/hooks/useTestExecution';
+import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import type { Project } from '@/lib/types';
 import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -991,7 +992,9 @@ export default function TestingSandboxPage() {
   /** ADR-075 — the result from the reader's own SAP system, as the phase contract reads it. */
   const outside = outsideReading(project);
   const outsideRecordedAt = outside.state === 'none' ? null : outside.summary.recordedAt;
-  const canRecordOutside = isProjectOwner(project, getAuth().currentUser?.uid ?? null);
+  // Read through the auth store, not in render: on the server there is no auth (HTTP 500 on SSR otherwise).
+  const signedInUid = useSignedInUid();
+  const canRecordOutside = isProjectOwner(project, signedInUid);
   useEffect(() => {
     if (!isAbapCloud || !outsideRecordedAt) return undefined;
     let live = true;
