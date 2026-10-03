@@ -291,7 +291,11 @@ function Documentation({ demo }: { demo: DemoProject }) {
       {/* Owner decision 01.10.2026 — the stage a real project shows: the
           process map as the canvas, a handbook chapter beside it, the
           chapters below. The inventory and the coupled tables follow. */}
-      <DemoDocumentation process={demo.documentation.process} />
+      <DemoDocumentation
+        process={demo.documentation.process}
+        gaps={demo.analyze.coverage.unassessed.map((u) => ({ label: u.label, why: u.why, line: u.line }))}
+        levels={demo.analyze.levels}
+      />
 
       {/* Owner 02.10.2026: the long lists start folded with their count and
           one line computed from the same rows (`lib/documentation-lists.ts`). */}
