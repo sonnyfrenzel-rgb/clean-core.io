@@ -489,6 +489,7 @@ export default function WorkspaceProcess({
               // never below 40 % (`fitWhole`), with full screen and zoom; the
               // step list stays one tab away.
               defaultView="map"
+              canvasControls
               save={save}
               openLatest={openLatest}
               projectId={projectId || null}

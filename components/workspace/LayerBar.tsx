@@ -74,14 +74,17 @@ export default function WorkspaceLayerBar({
             aria-current={on ? 'true' : undefined}
             onClick={() => onSelect(layer.key)}
             className={cn(
-              'inline-flex items-center gap-1 border-b-2 px-3 py-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
+              // The label and its count each keep to one line, but may stand on
+              // two: "Need & process 8 steps · 1 decision · 2 rules" is wider
+              // than a phone (ADR-066).
+              'inline-flex max-w-full flex-wrap items-center gap-x-1 border-b-2 px-3 py-2 text-left text-[13px] pointer-coarse:min-h-11',
               on
                 ? 'border-cc-ink font-bold text-cc-ink'
                 : 'border-transparent font-medium text-cc-ink-muted',
             )}
           >
-            {layer.label}
-            <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+            <span className="whitespace-nowrap">{layer.label}</span>
+            <span className="font-cc-mono text-[11px] font-semibold whitespace-nowrap text-cc-ink-muted">
               {layer.count ?? wt('layerBar.empty')}
             </span>
           </button>

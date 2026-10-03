@@ -185,6 +185,13 @@ export interface ProcessMapProps {
    */
   layout?: 'workspace' | 'stage';
   /**
+   * Zoom, fit and full screen on the canvas, and the whole level on open —
+   * never below 40 % on a phone (`fitWhole`). Always on in the `stage`
+   * layout; the workspace asks for it too since its map opens as a map on
+   * every width (ADR-066).
+   */
+  canvasControls?: boolean;
+  /**
    * The project this map belongs to. Part of an unsaved drawing's identity, so
    * a project with the same source (a duplicate) never opens another's draft.
    */
@@ -218,6 +225,7 @@ export default function ProcessMap({
   save,
   openLatest,
   layout = 'workspace',
+  canvasControls = false,
   projectId = null,
   exportable = true,
   draftHolder,
@@ -809,7 +817,7 @@ export default function ProcessMap({
               excluded={variant.excluded}
               /* Documentation (owner 02.10.2026): the whole process on open,
                  zoom, fit and full screen — the editor's controls. */
-              controls={stage}
+              controls={stage || canvasControls}
             />
           ) : (
             <ProcessStepList
