@@ -141,8 +141,28 @@ export default function HeroWorkspace(props: HeroWorkspaceProps) {
               {props.rules.shown.map((r, i) => (
                 <span key={r.id}>
                   <span className="v">
-                    {/* The rule in plain language; the condition as the code writes it on hover and in the source card. */}
-                    {r.plain ? <span title={r.label}>{r.plain}</span> : <code title={r.label}>{r.label}</code>}
+                    {/* The rule in plain language. Tap, focus or hover it and the source card shows the
+                        condition as the code writes it, at its line — the explanation opens by tap,
+                        not only on hover (owner decision 03.10.2026). */}
+                    {snippets[String(r.line)] ? (
+                      <button
+                        type="button"
+                        className="rl"
+                        aria-controls="hero-code"
+                        aria-label={`${r.plain ?? r.label} — show the condition in the code, line ${r.line}`}
+                        onMouseEnter={() => peek(String(r.line))}
+                        onMouseLeave={back}
+                        onFocus={() => peek(String(r.line))}
+                        onBlur={back}
+                        onClick={() => pin(String(r.line))}
+                      >
+                        {r.plain ? r.plain : <code>{r.label}</code>}
+                      </button>
+                    ) : r.plain ? (
+                      <span>{r.plain}</span>
+                    ) : (
+                      <code>{r.label}</code>
+                    )}
                     {anchor(r.line)}
                   </span>
                   {i < props.rules.shown.length - 1 ? ', ' : props.rules.total > props.rules.shown.length ? ', …' : ''}

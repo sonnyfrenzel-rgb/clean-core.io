@@ -543,8 +543,8 @@ export default function Home() {
 
             <figure className="hero-shot" aria-labelledby="shot-cap">
               <figcaption className="shot-cap" id="shot-cap">
-                Demo project · fictitious code — hover or focus a line anchor or a step: its code line and its step light
-                up together. Select one to keep it.
+                Demo project · fictitious code — tap or hover a rule, a line anchor or a step: its code line and its step
+                light up together. A tap keeps it.
               </figcaption>
               <HeroWorkspace
                 program={DEMO_OBJECT_NAME}
