@@ -313,12 +313,12 @@ test.describe('the layers on the screen', () => {
     // And it does not pretend to hold rows.
     await expect(page.locator('[data-workspace-layer-rows]')).toHaveCount(0);
 
-    // The other five are reachable through "More", which is where §2.11 puts
-    // them, and opening one is a real move: the section changes, and so does
-    // the address.
-    await page.locator('[data-workspace-layer-more]').click();
-    const standard = page.locator('[data-workspace-layer-more-panel] [data-workspace-layer="standard"]');
-    await expect(standard).toBeVisible({ timeout: 15000 });
+    // The others are tabs of the same bar since 03.10.2026 — the empty ones
+    // muted and marked "empty", no "More" (owner: "no recognisable menu") —
+    // and opening one is a real move: the section changes, and so does the
+    // address.
+    const standard = page.locator('nav[data-workspace-layers] [data-workspace-layer="standard"]');
+    await expect(standard).toHaveAttribute('data-layer-empty', 'yes', { timeout: 15000 });
     await standard.click();
 
     await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Standard fit', { timeout: 15000 });
@@ -339,7 +339,8 @@ test.describe('the layers on the screen', () => {
   test('a layer with content shows it, with the line each row sits on', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${RUN_ID}#evidence`, { waitUntil: 'domcontentloaded' });
+    // IT: Architecture & dependencies is IT's section; Business no longer shows it (owner, 03.10.2026).
+    await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
 
     const section = page.locator('[data-workspace-layer-section]');
@@ -361,9 +362,10 @@ test.describe('the layers on the screen', () => {
   test('a view switch keeps the layer, and a layer switch keeps the view (ADR-018, CR-14)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${RUN_ID}?view=business#costs`, { waitUntil: 'domcontentloaded' });
+    // Evidence & controls: a section both views show (Business keeps three, owner 03.10.2026).
+    await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Costs & assumptions', {
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
       timeout: 30000,
     });
 
@@ -374,12 +376,12 @@ test.describe('the layers on the screen', () => {
       .click();
     await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
     await expect(page.locator('[data-workspace-layer-title]'), 'the view switch moved the reader to another layer').toHaveText(
-      'Costs & assumptions',
+      'Evidence & controls',
     );
-    expect(new URL(page.url()).hash).toBe('#costs');
+    expect(new URL(page.url()).hash).toBe('#evidence');
 
-    await page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]').click();
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
+    await page.locator('nav[data-workspace-layers] [data-workspace-layer="costs"]').click();
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Costs & assumptions', {
       timeout: 15000,
     });
     expect(
@@ -390,7 +392,7 @@ test.describe('the layers on the screen', () => {
   test('the view switch moves the focus with the selection on the arrow keys (QA review of a88149856dcc)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${RUN_ID}?view=business#costs`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
     const radio = (name: string) =>
       page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });

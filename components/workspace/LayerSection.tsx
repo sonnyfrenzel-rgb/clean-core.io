@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ArrowUp } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState } from '@/components/cc/EmptyState';
@@ -44,6 +45,7 @@ export default function WorkspaceLayerSection({
   reading = null,
   process = null,
   onOpenMap,
+  aboveInView = false,
 }: {
   layer: WorkspaceLayer;
   /**
@@ -55,6 +57,13 @@ export default function WorkspaceLayerSection({
   /** Scrolls to the map where this view has one (Business); elsewhere the link opens Business. */
   onOpenMap?: () => void;
   /**
+   * Business (owner, 03.10.2026): the map, its counts and the business rules
+   * already stand above this section, each once. *Need & process* then does
+   * not summarise the process or list the rules a second time — it says where
+   * they are and keeps only what is its own (the usage records).
+   */
+  aboveInView?: boolean;
+  /**
    * The project, its id and the first look's reading of its source. With them,
    * *Need & process* shows the business rules and their one editing mode
    * (mockup `s2`) and *Standard fit* its table (`s3`); without them both fall
@@ -65,15 +74,23 @@ export default function WorkspaceLayerSection({
   reading?: SourceReading | null;
 }) {
   const empty = layer.rows.length === 0;
-  const withRules = layer.key === 'need' && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
+  const needAbove = aboveInView && layer.key === 'need';
+  const withRules =
+    !needAbove && layer.key === 'need' && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
   const withFit = layer.key === 'standard' && !empty && projectId !== '';
   // The rules are shown by the editor; the rows that are left are the usage
   // records, which keep the plain row list below it.
   // The process row is the map's summary, rendered on its own below; the
   // rules are shown by the editor; the rows that are left are the usage
   // records, which keep the plain row list.
-  const processRow = layer.key === 'need' ? (layer.rows.find((row) => row.key === 'process') ?? null) : null;
-  const rows = layer.rows.filter((row) => row.key !== 'process' && !(withRules && row.key.startsWith('rule-')));
+  const processRow =
+    layer.key === 'need' && !needAbove ? (layer.rows.find((row) => row.key === 'process') ?? null) : null;
+  const rows = layer.rows.filter(
+    (row) => row.key !== 'process' && !((withRules || needAbove) && row.key.startsWith('rule-')),
+  );
+  // A long section ends with the way back to its top, where the sticky bar
+  // says which section this is (owner, 03.10.2026).
+  const long = withRules || withFit || layer.total > 3;
 
   return (
     <section
@@ -81,7 +98,7 @@ export default function WorkspaceLayerSection({
       data-workspace-layer-section={layer.key}
       data-layer-empty={empty ? 'yes' : 'no'}
       aria-labelledby={`layer-title-${layer.key}`}
-      className="scroll-mt-20"
+      className="scroll-mt-32"
     >
       <div className="flex flex-wrap items-center gap-2">
         <h2
@@ -94,6 +111,23 @@ export default function WorkspaceLayerSection({
         <CcProvenanceChip value={layer.provenance} />
       </div>
 
+      {needAbove && !empty ? (
+        <div
+          data-workspace-layer-above=""
+          className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+        >
+          <p className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-medium text-cc-ink-muted">
+            {wt('layerSection.needAbove')}
+          </p>
+          {onOpenMap ? (
+            <span className="cc-no-print">
+              <CcButton onClick={onOpenMap} data-workspace-layer-open-map="">
+                {wt('layerSection.showMap')}
+              </CcButton>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {processRow ? (
         <div
           className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
@@ -164,7 +198,7 @@ export default function WorkspaceLayerSection({
               </li>
             ))}
           </ul>
-          {!withRules && layer.total > layer.rows.length && (
+          {!withRules && !needAbove && layer.total > layer.rows.length && (
             // §2.11: the first five, and the count of what is behind them. A
             // statement of fact, not a button, until there is a place to open.
             <p
@@ -176,6 +210,23 @@ export default function WorkspaceLayerSection({
           )}
         </>
       )}
+      {long && !empty ? (
+        <p className="cc-no-print m-0 mt-3">
+          <a
+            href={`#${layer.key}`}
+            data-workspace-layer-top=""
+            onClick={(event) => {
+              // The fragment is the layer already; scroll instead of a second history entry.
+              event.preventDefault();
+              document.getElementById(layer.key)?.scrollIntoView({ block: 'start' });
+            }}
+            className="inline-flex min-h-6 items-center gap-1 text-[12px] font-semibold text-cc-ink underline underline-offset-2 pointer-coarse:min-h-11"
+          >
+            <ArrowUp size={14} aria-hidden={true} />
+            {wt('layerSection.backToTop')}
+          </a>
+        </p>
+      ) : null}
     </section>
   );
 }

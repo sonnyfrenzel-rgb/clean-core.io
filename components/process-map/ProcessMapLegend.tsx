@@ -29,7 +29,12 @@ export interface ProcessMapLegendProps {
 }
 
 export default function ProcessMapLegend({ entries, unanchored, unanchoredLabel }: ProcessMapLegendProps) {
-  const empty = entries.filter((entry) => entry.count === 0).map((entry) => entry.label);
+  // The Business view hands in its own legend (owner, 03.10.2026): Confirmed
+  // counted from the need revision and no Proven, which nothing there can
+  // move — and says beside the map, in one actionable line, how to confirm.
+  // The sentence about the two empty values is then not this legend's to say.
+  const businessLegend = !entries.some((entry) => entry.value === 'proven');
+  const empty = businessLegend ? [] : entries.filter((entry) => entry.count === 0).map((entry) => entry.label);
 
   return (
     <div data-process-map-legend="" className="flex flex-col gap-2">

@@ -12,11 +12,15 @@ import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState, type BuildUpNarrative } from './FirstLookBuildUp';
-import { requestRuleEditing, useIsOwner } from './BusinessRulesEditor';
+import { BUSINESS_RULES_ID, requestRuleEditing, useIsOwner, useSignedInUid } from './BusinessRulesEditor';
+import RulesDoneLine from './RulesDoneLine';
+import BusinessOpening, { type OpeningRule } from './BusinessOpening';
+import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
+import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import { BUILD_UP_BUDGET, buildUpStageAt } from '@/lib/first-look-buildup';
 import { START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
 import { firstLookExcerpt } from '@/lib/first-look-excerpt';
-import { rulesConfirmed, stepStrip, type StepChip } from '@/lib/rules-editor';
+import { rulesStatus, stepStrip, type RulesStatus, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import {
@@ -46,7 +50,14 @@ import { applyNaming, type ProcessNamingRecord } from '@/lib/process-naming';
 import { fetchProcessNaming } from '@/lib/process-naming-client';
 import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { TableDependency } from '@/lib/abap/table-dependencies';
-import { buildBusinessCard, headlineLead, plainWordingFor, type BusinessCard, type CardFact } from '@/lib/business-card';
+import {
+  buildBusinessCard,
+  headlineLead,
+  plainWordingFor,
+  programInputsOf,
+  type BusinessCard,
+  type CardFact,
+} from '@/lib/business-card';
 import type { Project } from '@/lib/types';
 import {
   wt,
@@ -217,6 +228,10 @@ interface Result {
   card: BusinessCard;
   /** The first steps of the first entry, in plain words — the strip of moment 4. */
   steps: { steps: StepChip[]; more: boolean };
+  /** The process as numbered steps in plain words — the Business opening (`lib/process-story.ts`). */
+  story: ProcessStory;
+  /** What the program creates and changes, in the map's plain words. */
+  changes: { changes: StoryChange[]; more: number };
 }
 
 export default function FirstLook({
@@ -230,6 +245,9 @@ export default function FirstLook({
   map = 'unsigned',
   narrative = null,
   fullMapBelow = false,
+  rulesBelow = false,
+  rulesOverride,
+  onReviewRules,
   onSettled,
 }: {
   project: Project | null;
@@ -282,6 +300,21 @@ export default function FirstLook({
    * line" (03.10.2026). Without the map below, the picture stays (ADR-059).
    */
   fullMapBelow?: boolean;
+  /**
+   * True where the business rules stand in a card of their own under this one
+   * and "Your next step" carries the rule action (Business, owner 03.10.2026).
+   * The card then lists no rule a second time and offers no rule action of its
+   * own: the same rules in two places, each with its own button, was how one
+   * of them came to ask for a confirmation that was already on record.
+   */
+  rulesBelow?: boolean;
+  /**
+   * Where the answers stand when they are not on the server — the demo keeps
+   * them in this browser. Without it the card reads the process-states route.
+   */
+  rulesOverride?: RulesStatus | null;
+  /** Where the rule action leads, when the page has its own rules card (the demo). */
+  onReviewRules?: () => void;
   /** Told when the build-up is over (end state on screen) — the tips wait for it. */
   onSettled?: (settled: boolean) => void;
 }) {
@@ -404,8 +437,15 @@ export default function FirstLook({
         traceability,
         open,
         wording: plainWordingFor(source, process.skeleton),
+        inputs: programInputsOf(process.facts, (name) => humaniseField(name, plainContext(source))),
       }),
       steps: stepStrip(process.skeleton, source),
+      story: processStory(
+        process.skeleton,
+        source,
+        new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
+      ),
+      changes: processChanges(process.skeleton, source),
     };
   }, [hasSource, source, process, named, rules, access, project]);
 
@@ -510,14 +550,20 @@ export default function FirstLook({
       .slice(0, 48)
       .map((n) => ({ number: n, tokens: tokenizeAbapLine(all[n - 1] ?? ''), highlighted: true }));
   }, [result, source]);
-  const { outcome: states } = useProcessStates(projectId, hasSource);
+  const { outcome: states } = useProcessStates(projectId, hasSource && rulesOverride === undefined);
   // No reconstructed baseline yet means nobody has confirmed anything: 0 of n,
   // which is a fact. Only a read that failed leaves the figure not determined.
-  const confirmed = useMemo(() => {
-    if (states?.ok) return rulesConfirmed(states.view);
-    if (states && states.code === 'no-baseline' && rules) return { confirmed: 0, total: rules.rules.length };
-    return null;
-  }, [states, rules]);
+  // The same reading the rules card and "Your next step" take (`rulesStatus`).
+  const status = useMemo<RulesStatus | null>(
+    () => (rulesOverride !== undefined ? rulesOverride : rulesStatus(states, rules ? rules.rules.map((r) => r.id) : null)),
+    [rulesOverride, states, rules],
+  );
+  const uid = useSignedInUid();
+  /** "Decide on rules" from the opening: the rules card of this page, in its answering mode. */
+  const decideRules = useCallback(() => {
+    document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
+    requestRuleEditing();
+  }, []);
 
   const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
 
@@ -648,7 +694,51 @@ export default function FirstLook({
                   : 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]'
               }
             >
-              <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} mapBelow={fullMapBelow} />
+              {rulesBelow ? (
+                <BusinessOpening
+                  name={proposedName ?? result.processName.name ?? wt('firstLook.noProgramName')}
+                  nameIsProposed={!!proposedName}
+                  programName={result.processName.name}
+                  nameReason={result.processName.reason ?? null}
+                  story={result.story}
+                  rules={openingRules(result.card)}
+                  rulesMore={Math.max(0, result.card.rules.length - openingRules(result.card).length)}
+                  changes={result.changes.changes}
+                  changesMore={result.changes.more}
+                  changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}
+                  open={{
+                    count: result.card.open.count,
+                    noSource: result.card.open.noSource,
+                    example: result.card.open.groups[0]?.label.toLowerCase() ?? null,
+                  }}
+                  onDecideRules={owner && !onReviewRules ? decideRules : onReviewRules}
+                  details={
+                    <EndState
+                      result={result}
+                      proposedName={proposedName}
+                      status={status}
+                      uid={uid}
+                      owner={owner}
+                      mapBelow={fullMapBelow}
+                      rulesBelow
+                      stages={shown}
+                      endStateOnly={endStateOnly}
+                    />
+                  }
+                />
+              ) : (
+                <EndState
+                  result={result}
+                  proposedName={proposedName}
+                  status={status}
+                  uid={uid}
+                  owner={owner}
+                  mapBelow={fullMapBelow}
+                  onReviewRules={onReviewRules}
+                  stages={shown}
+                  endStateOnly={endStateOnly}
+                />
+              )}
               <div className="flex min-w-0 flex-col gap-4">
                 {/* The full map stands right under this card where it is
                     signed (ADR-072); the two-node main line would only be the
@@ -670,7 +760,10 @@ export default function FirstLook({
           {/* The four stages stay on the page after the build-up: they are the
               receipt for every figure above. Folded, not removed — the process
               owner reads the answer, the sceptic opens the receipt. Open when
-              there is no answer, because then the stages are all there is. */}
+              there is no answer, because then the stages are all there is.
+              With the rules below (Business) the receipt sits in the card's one
+              details fold instead. */}
+          {result && rulesBelow ? null : (
           <div className="mt-4 border-t border-cc-line pt-2">
             <CcDisclosure title={wt('firstLook.derivedTitle')} defaultOpen={!result} level={3}>
               <ol
@@ -693,6 +786,7 @@ export default function FirstLook({
               ) : null}
             </CcDisclosure>
           </div>
+          )}
         </CcCard>
       </section>
       {live}
@@ -792,18 +886,31 @@ function Fact({ fact, label, traceability }: { fact: CardFact; label: React.Reac
 function EndState({
   result,
   proposedName,
-  confirmed,
+  status,
+  uid,
   owner,
   mapBelow = false,
+  rulesBelow = false,
+  onReviewRules,
+  stages,
+  endStateOnly,
 }: {
   result: Result;
   /** The full map stands right under the card, so the one-row strip of its first steps is not repeated. */
   mapBelow?: boolean;
   proposedName: string | null;
-  /** "Rules confirmed x of n" from the need revision, or null when it could not be read. */
-  confirmed: { confirmed: number; total: number } | null;
+  /** Where the answers to the rules stand (`rulesStatus`), or null when it could not be read. */
+  status: RulesStatus | null;
+  /** The signed-in account, so the done state can say "by you". */
+  uid: string | null;
   /** Only the owner confirms; a reader is offered to review. */
   owner: boolean;
+  /** The rules have their own card below, and "Your next step" carries the rule action. */
+  rulesBelow?: boolean;
+  onReviewRules?: () => void;
+  /** The four stages — the receipt, folded into the one details row when the rules stand below. */
+  stages: (FirstLookStage | null)[];
+  endStateOnly: boolean;
 }) {
   const { card } = result;
   const [showCode, setShowCode] = useState(false);
@@ -811,9 +918,14 @@ function EndState({
   const trace = card.facts.find((f) => f.key === 'traceability');
   const others = card.facts.filter((f) => f.key !== 'traceability');
   const openRules = () => {
-    // The rules live in the Need & process layer; the layer is chosen by the
-    // address (ADR-018), and the editor opens there for the owner.
-    window.location.hash = 'need';
+    if (onReviewRules) {
+      onReviewRules();
+      return;
+    }
+    // Outside Business the rules live in the Need & process layer; the layer
+    // is chosen by the address (ADR-018), and the editor opens there for the
+    // owner. In Business they have a block of their own.
+    if (!document.getElementById(BUSINESS_RULES_ID)) window.location.hash = 'need';
     requestRuleEditing();
   };
   // The switch shows the code *behind* a plain line; where every line is
@@ -821,9 +933,10 @@ function EndState({
   const anyPlain = card.rules.some((r) => r.sentence) || card.decisions.some((d) => d.question);
 
   return (
-    <div data-first-look-result="" className="flex flex-col gap-4">
+    <div data-first-look-result={rulesBelow ? 'details' : ''} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {proposedName ? (
+        {/* The name stands in the opening above when this is its details fold. */}
+        {rulesBelow ? null : proposedName ? (
           <div className="flex flex-wrap items-center gap-2">
             <h3
               data-first-look-proposed-name=""
@@ -834,7 +947,7 @@ function EndState({
             <CcProvenanceChip value="proposed" note={wt('firstLook.nameNote')} />
           </div>
         ) : null}
-        {proposedName ? (
+        {rulesBelow ? null : proposedName ? (
           <p
             data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
             className="m-0 font-cc-mono text-[12px] leading-tight font-medium text-cc-ink-muted"
@@ -849,7 +962,7 @@ function EndState({
             {result.processName.name ?? wt('firstLook.noProgramName')}
           </h3>
         )}
-        {result.processName.reason ? (
+        {result.processName.reason && !rulesBelow ? (
           <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{result.processName.reason}</p>
         ) : null}
         <p data-first-look-summary={card.summary.kind} className="m-0 text-[15px] leading-snug font-medium text-cc-ink">
@@ -929,10 +1042,16 @@ function EndState({
         className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 border-y border-cc-line p-0 py-2"
       >
         {trace ? <Fact fact={trace} label={wt('firstLook.stripTrace')} traceability={result.traceability} /> : null}
-        <li data-first-look-fact="rules-confirmed" data-origin={confirmed ? 'engine' : 'absent'} className="text-[13px] font-medium text-cc-ink-muted">
+        <li
+          data-first-look-fact="rules-confirmed"
+          data-origin={status ? 'engine' : 'absent'}
+          data-confirmed={status?.confirmed}
+          data-total={status?.total}
+          className="text-[13px] font-medium text-cc-ink-muted"
+        >
           {wt('firstLook.stripConfirmed')}{' '}
           <b className="font-bold text-cc-ink">
-            {confirmed ? firstLookOf(confirmed.confirmed, confirmed.total) : wt('firstLook.stripNotDetermined')}
+            {status ? firstLookOf(status.confirmed, status.total) : wt('firstLook.stripNotDetermined')}
           </b>
         </li>
         {others.map((fact) => (
@@ -988,85 +1107,90 @@ function EndState({
         </ol>
       ) : null}
 
-      {card.rules.length > 0 ? (
+      {/* The rule action follows where the answers stand (owner, 03.10.2026):
+          the count of rules still without an answer, or the done state with
+          who and when — never a confirm button over rules already confirmed.
+          Secondary, never primary: the page's one primary action is "Next
+          step". In Business the rules card and the next step carry it. */}
+      {rulesBelow || card.rules.length === 0 || !status ? null : status.open.length > 0 ? (
         <div className="cc-no-print flex flex-wrap items-center gap-3">
           <CcButton
-            variant={owner ? 'primary' : 'secondary'}
+            variant="secondary"
             onClick={openRules}
             data-first-look-confirm-rules=""
+            data-open={status.open.length}
           >
-            {firstLookConfirmRules(card.rules.length, owner)}
+            {firstLookConfirmRules(status.open.length, owner)}
             <ArrowRight size={16} aria-hidden={true} />
           </CcButton>
           <span className="text-[12px] font-medium text-cc-ink-muted">{wt('firstLook.confirmNote')}</span>
         </div>
-      ) : null}
-
-      {/* One click deeper: every rule and every decision in plain words, each
-          with its line — and the code it was read from, on request. */}
-      <div className="flex flex-col gap-1 border-t border-cc-line pt-2">
-        {anyPlain ? (
-        <div className="pt-1">
-          <CcSwitch label={wt('firstLook.showCode')} checked={showCode} onChange={setShowCode} />
+      ) : (
+        <div className="cc-no-print flex flex-wrap items-center gap-3" data-first-look-rules-done="">
+          <RulesDoneLine status={status} uid={uid} />
+          <CcButton variant="ghost" onClick={openRules} data-first-look-review-rules="">
+            {wt('rules.review')}
+          </CcButton>
         </div>
-        ) : null}
-        <CcDisclosure title={wt('firstLook.rulesTitle')} count={card.rules.length} level={3}>
-          {card.rules.length === 0 ? (
-            <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noRulesInList')}</p>
-          ) : (
-            <ul className="m-0 list-none space-y-2 p-0">
-              {card.rules.map((rule) => (
-                <li key={rule.id} data-first-look-rule={rule.id} className="flex flex-col gap-1 text-[13px] text-cc-ink">
-                  <span className="flex flex-wrap items-center gap-2">
-                    {rule.sentence ? (
-                      <span className="font-medium">{rule.sentence}</span>
-                    ) : (
-                      <CodeText>{rule.code}</CodeText>
-                    )}
-                    {rule.anchors.slice(0, 4).map((anchor) => (
-                      <Anchor key={anchor} anchor={anchor} />
-                    ))}
-                  </span>
-                  {showCode && rule.sentence ? (
-                    <span data-first-look-code="" className="flex flex-wrap items-center gap-2">
-                      <CodeText>{rule.code}</CodeText>
-                      <CcRulePropertyTag value="hard-coded" />
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CcDisclosure>
+      )}
 
-        <div data-first-look-decisions="" data-count={card.decisions.length}>
-          <CcDisclosure title={wt('firstLook.decisionsTitle')} count={card.decisions.length} level={3}>
-            {card.decisions.length === 0 ? (
-              <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noDecision')}</p>
+      {rulesBelow ? (
+        // Business: everything for the IT reader under the opening, in its
+        // one fold ("How this was read") — the code behind each line, the
+        // decision points and the receipt of how this was derived.
+        <div className="border-t border-cc-line pt-2">
+          <div>
+            <div className="flex flex-col gap-3">
+              {anyPlain ? <CcSwitch label={wt('firstLook.showCode')} checked={showCode} onChange={setShowCode} /> : null}
+              <DecisionList card={card} showCode={showCode} />
+              <ol
+                data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
+                className="m-0 flex list-none flex-col gap-2 p-0"
+              >
+                {stages.map((stage, i) => (
+                  <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
+                ))}
+              </ol>
+              <dl
+                data-first-look-meanings=""
+                className="m-0 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]"
+              >
+                {card.facts.map((fact) => (
+                  <React.Fragment key={fact.key}>
+                    <dt className="text-[12px] font-semibold text-cc-ink">{fact.label}</dt>
+                    <dd className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{fact.explanation}</dd>
+                  </React.Fragment>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // One click deeper: every rule and every decision point in plain words,
+        // each with its line — and the code it was read from, on request.
+        <div className="flex flex-col gap-1 border-t border-cc-line pt-2">
+          {anyPlain ? (
+            <div className="pt-1">
+              <CcSwitch label={wt('firstLook.showCode')} checked={showCode} onChange={setShowCode} />
+            </div>
+          ) : null}
+          <CcDisclosure title={wt('firstLook.rulesTitle')} count={card.rules.length} level={3}>
+            {card.rules.length === 0 ? (
+              <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noRulesInList')}</p>
             ) : (
               <ul className="m-0 list-none space-y-2 p-0">
-                {card.decisions.map((decision) => (
-                  <li
-                    key={decision.nodeId}
-                    data-first-look-decision={decision.nodeId}
-                    className="flex flex-col gap-1 text-[13px] text-cc-ink"
-                  >
+                {card.rules.map((rule) => (
+                  <li key={rule.id} data-first-look-rule={rule.id} className="flex flex-col gap-1 text-[13px] text-cc-ink">
                     <span className="flex flex-wrap items-center gap-2">
-                      {decision.question ? (
-                        <span className="font-medium">{decision.question}</span>
-                      ) : (
-                        <CodeText>{decision.code}</CodeText>
-                      )}
-                      <Anchor anchor={decision.anchor} />
+                      {rule.sentence ? <span className="font-medium">{rule.sentence}</span> : <CodeText>{rule.code}</CodeText>}
+                      {rule.anchors.slice(0, 4).map((anchor) => (
+                        <Anchor key={anchor} anchor={anchor} />
+                      ))}
                     </span>
-                    {decision.outcomes.length > 0 ? (
-                      <span className="text-[12px] font-medium text-cc-ink-muted">
-                        {firstLookOutcomes(decision.outcomes)}
-                      </span>
-                    ) : null}
-                    {showCode && decision.question ? (
-                      <span data-first-look-code="">
-                        <CodeText>{decision.code}</CodeText>
+                    {showCode && rule.sentence ? (
+                      <span data-first-look-code="" className="flex flex-wrap items-center gap-2">
+                        <CodeText>{rule.code}</CodeText>
+                        <CcRulePropertyTag value="hard-coded" />
                       </span>
                     ) : null}
                   </li>
@@ -1074,9 +1198,63 @@ function EndState({
               </ul>
             )}
           </CcDisclosure>
-        </div>
 
-      </div>
+          <CcDisclosure title={wt('firstLook.decisionsTitle')} count={card.decisions.length} level={3}>
+            <DecisionList card={card} showCode={showCode} />
+          </CcDisclosure>
+        </div>
+      )}
     </div>
   );
+}
+
+/** Every decision point in plain words, each with its line. */
+function DecisionList({ card, showCode }: { card: BusinessCard; showCode: boolean }) {
+  return (
+    <div data-first-look-decisions="" data-count={card.decisions.length}>
+      {card.decisions.length === 0 ? (
+        <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noDecision')}</p>
+      ) : (
+        <ul className="m-0 list-none space-y-2 p-0">
+          {card.decisions.map((decision) => (
+            <li
+              key={decision.nodeId}
+              data-first-look-decision={decision.nodeId}
+              className="flex flex-col gap-1 text-[13px] text-cc-ink"
+            >
+              <span className="flex flex-wrap items-center gap-2">
+                {decision.question ? (
+                  <span className="font-medium">{decision.question}</span>
+                ) : (
+                  <CodeText>{decision.code}</CodeText>
+                )}
+                <Anchor anchor={decision.anchor} />
+              </span>
+              {decision.outcomes.length > 0 ? (
+                <span className="text-[12px] font-medium text-cc-ink-muted">{firstLookOutcomes(decision.outcomes)}</span>
+              ) : null}
+              {showCode && decision.question ? (
+                <span data-first-look-code="">
+                  <CodeText>{decision.code}</CodeText>
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The rules of the opening's "What it decides": the featured ones first, in
+ * plain words only — a rule the wording has no sentence for is counted in
+ * "and n more", never shown as code on this level.
+ */
+function openingRules(card: BusinessCard): OpeningRule[] {
+  const ordered = [...card.featured, ...card.rules.filter((r) => !card.featured.some((f) => f.id === r.id))];
+  return ordered
+    .filter((rule) => rule.sentence !== null)
+    .slice(0, 4)
+    .map((rule) => ({ id: rule.id, text: rule.sentence as string, anchor: rule.anchors[0] ?? null }));
 }

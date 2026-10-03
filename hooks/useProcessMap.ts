@@ -105,9 +105,17 @@ export function useProcessMap(
    * For a page that promises that opening a project writes nothing to it (the
    * workspace, roadmap 3.0.2); the Documentation stage keeps measuring.
    */
-  options?: { measure?: boolean },
+  options?: {
+    measure?: boolean;
+    /**
+     * Bumped to read the stored naming again — after the reader asked a model
+     * for business names on this page (owner, 03.10.2026).
+     */
+    reload?: number;
+  },
 ): ProcessMapState {
   const measure = options?.measure !== false;
+  const reload = options?.reload ?? 0;
   const [held, setHeld] = useState<Held>({ key: '', model: null, measuredAt: null, failed: false });
 
   const source = signed?.source ?? null;
@@ -192,7 +200,7 @@ export function useProcessMap(
     return () => {
       cancelled = true;
     };
-  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, availabilitySettled, key, measure]);
+  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, availabilitySettled, key, measure, reload]);
 
   if (!key) return { status: 'idle', model: null, measuredAt: null, reason: NO_SIGNED_SOURCE };
   if (held.key !== key) return { status: 'loading', model: null, measuredAt: null, reason: null };

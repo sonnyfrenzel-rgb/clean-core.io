@@ -468,11 +468,12 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     // Management the layer bar stands in the "Process" fold (ADR-069); opening
     // a fold is remembered in this browser only, so it writes nothing either.
     await page.locator('[data-management-fold="process"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
-    await page.locator('[data-workspace-layer-more]').click();
-    const changes = page.locator('[data-workspace-layer-more-panel] [data-workspace-layer="changes"]');
-    await expect(changes).toBeVisible({ timeout: 15000 });
-    await changes.click();
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Changes & commitments', {
+    // Every section is a tab of the bar since 03.10.2026 (no "More"); Evidence
+    // & controls is one Business shows too, so it survives the switch below.
+    const evidence = page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]');
+    await expect(evidence).toBeVisible({ timeout: 15000 });
+    await evidence.click();
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
       timeout: 15000,
     });
 
@@ -488,7 +489,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     // The reload is also the "kept in URL and browser" check: the view and
     // the layer come back because the address carried them, not because
     // anything remembered them for the account.
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Changes & commitments', {
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
       timeout: 60000,
     });
 

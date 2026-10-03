@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
@@ -16,6 +17,8 @@ import WorkspaceLayerSection from './LayerSection';
 import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
 import NextStepCard from './NextStepCard';
+import BusinessNextStep from './BusinessNextStep';
+import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
@@ -42,6 +45,10 @@ import { signedSourceOf } from '@/lib/signed-source';
 import type { StartRun } from '@/hooks/useStartRun';
 import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
+import { businessNextStep } from '@/lib/business-next-step';
+import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE } from '@/lib/business-layers';
+import { rulesStatus } from '@/lib/rules-editor';
+import { useProcessStates } from '@/hooks/useProcessStates';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
   LAYERS,
@@ -73,15 +80,25 @@ type ContentBlock =
   | 'ask'
   | 'notDetermined'
   | 'statusTools'
-  | 'process';
+  | 'process'
+  | 'rules';
 
 /**
- * Business in the order of mockup s1: the answer (process name, sentence,
- * found in the code beside not determined), "Next step" near the top, the
- * map with its source column, then the folded project status with Tools /
- * Export / Invite, the anchor bar, the layer's own rows, the pre-answered
- * question — and the not-determined detail last and folded, because its count
- * and its groups already stand beside the answer at the top.
+ * Business, as the owner asked on 03.10.2026 ("show more prominently what I as
+ * a user should do here; make the Business view clearer"): **"Your next step"
+ * first** — the page's one primary action, with one sentence of why, derived
+ * from the rules' answers and the phase contract (`lib/business-next-step.ts`)
+ * — then the answer (what the program does, the found rules beside what is not
+ * determined, and the figures once), the map with its source column, the
+ * business rules in one card, and after them the folded parts: the status and
+ * tools, the other sections, the pre-answered question and the not-determined
+ * detail. That order holds at every width, so on a phone the next step is the
+ * first thing under the header and the focus order is the reading order.
+ *
+ * Before, the same page offered two primaries — "Confirm the rule" in the
+ * answer card and "Next step" under the map — and summarised the process and
+ * its rules twice ("Your process" and "Need & process"). One of the two rule
+ * actions did not read the confirmations and asked for one that was on record.
  *
  * **The map follows the answer directly** (owner, 02.10.2026: "The process
  * always has to be shown when I start a new project, with first
@@ -96,12 +113,13 @@ type ContentBlock =
  * `tests/first-look-map.spec.ts` holds it.
  */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
-  'firstLook',
-  // The map right under the answer, before Next step (ADR-072): the process
-  // is the entry of the work area, and on a 1440 × 900 screen it now starts
-  // in the first screen after the build-up instead of under the fold.
-  'process',
   'nextStep',
+  'firstLook',
+  // The map right under the answer (ADR-072): the process is the entry of the
+  // work area, and on a 1440 × 900 screen it starts in the first screen after
+  // the build-up instead of under the fold.
+  'process',
+  'rules',
   'statusTools',
   'layerBar',
   'layerSection',
@@ -331,7 +349,32 @@ export default function WorkspaceShell({
 
   // The layers count the process, the rules and the capabilities of that
   // reading (mockups s2, s3).
-  const layers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
+  const allLayers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
+  // Business shows the sections that answer its question (owner, 03.10.2026);
+  // IT and Management keep all six. The counts are the same objects, so a tab
+  // reads the same figure in every view.
+  const layers = useMemo(
+    () => (view === 'business' ? allLayers.filter((l) => BUSINESS_LAYERS.includes(l.key)) : allLayers),
+    [allLayers, view],
+  );
+
+  /**
+   * A link into a section Business no longer shows — `?view=business#costs`
+   * from an old bookmark, a mail or the search — goes where that content
+   * lives now, instead of opening an empty place: the costs to Economics, the
+   * architecture and the changes to the same section in IT. `replace`, so Back
+   * does not bounce the reader into the redirect again.
+   */
+  const router = useRouter();
+  useEffect(() => {
+    if (view !== 'business' || hashLayer === null || BUSINESS_LAYERS.includes(hashLayer)) return;
+    const elsewhere = BUSINESS_LAYER_ELSEWHERE[hashLayer];
+    router.replace(
+      elsewhere === 'economics'
+        ? stageHref({ base: `/project/${projectId}`, path: 'tco', view: 'business', from: WORKSPACE_RETURN.tools })
+        : `/project/${encodeURIComponent(projectId)}?view=it#${hashLayer}`,
+    );
+  }, [view, hashLayer, projectId, router]);
 
   /** Where the full map stands, for the first look's last moment (ADR-072). */
   const mapState: BuildUpMapState = signed
@@ -362,13 +405,41 @@ export default function WorkspaceShell({
 
   /** Deterministic, from the branches of the code. No model call (§5.3). */
   const answer: PreAnswered | null = useMemo(
-    () => (reading ? preAnsweredQuestion(reading.skeleton, reading.ruleSet) : null),
-    [reading],
+    () =>
+      reading
+        ? preAnsweredQuestion(
+            reading.skeleton,
+            reading.ruleSet,
+            // With the source, the question and its answer are also worded for a
+            // business reader (owner, 03.10.2026); the code stays one fold down.
+            typeof project?.legacyCode === 'string' ? project.legacyCode : undefined,
+          )
+        : null,
+    [reading, project?.legacyCode],
   );
 
   // Rule-based, no model call (roadmap 6.5) — `null` once every phase this
   // product can finish already is, never a step invented to fill the card.
   const nextStep = useMemo(() => nextOpenPoint(project, account), [project, account]);
+
+  /**
+   * Business: the rules first while any has no answer, then the phase step —
+   * one decision, from the same answers the rules card and the first look
+   * read (`rulesStatus`), so no two places on the page can disagree about it
+   * (owner, 03.10.2026). `null` while it is not known yet: a strip that says
+   * "Draft the design" and a second later "Decide on 1 rule" would move the
+   * one action under the reader's hand.
+   */
+  const owner = useIsOwner(project);
+  const hasSource = typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0;
+  const { outcome: ruleStates } = useProcessStates(projectId, view === 'business' && hasSource);
+  const businessStep = useMemo(() => {
+    if (view !== 'business') return null;
+    const ready = !hasSource || !project?.activeRunId || (reading !== null && ruleStates !== null);
+    if (!ready) return null;
+    const status = reading ? rulesStatus(ruleStates, reading.ruleSet.rules.map((r) => r.id)) : null;
+    return businessNextStep({ point: nextStep, rules: status, owner });
+  }, [view, hasSource, project?.activeRunId, reading, ruleStates, nextStep, owner]);
 
   // A tip that points at nothing is a claim: "Select the decision" exists only
   // where the source has one, and that is not known before the reading lands.
@@ -421,7 +492,8 @@ export default function WorkspaceShell({
   // s1) — an empty need layer then says so under the map, rather than the bar
   // pointing at Costs while the page shows the process.
   const currentLayer =
-    hashLayer ?? (view === 'business' ? 'need' : layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
+    (hashLayer && layers.some((l) => l.key === hashLayer) ? hashLayer : null) ??
+    (view === 'business' ? 'need' : layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
   // Management's "Costs" fold reads the costs layer straight, whatever layer the bar is on.
   const costsLayer = layers.find((l) => l.key === 'costs') ?? layers[0];
@@ -518,9 +590,23 @@ export default function WorkspaceShell({
           />
         </div>
       ) : null,
+    // The bar and the section it switches stand in one group: the bar is
+    // sticky within it (owner, 03.10.2026), so it stays in view while the
+    // reader is in the section and lets go where the section ends.
     layerBar: (
-      <div className="mt-5">
+      <div className="mt-5" data-workspace-layer-group="">
         <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+        <div className="mt-2">
+          <WorkspaceLayerSection
+            layer={currentLayerSection}
+            project={project}
+            projectId={projectId}
+            reading={reading}
+            process={mapSummary}
+            onOpenMap={view === 'business' ? openMap : undefined}
+            aboveInView={view === 'business'}
+          />
+        </div>
       </div>
     ),
     // The rule-based "next step" (`DESIGN.md` §2.3 item 5, §5.5, roadmap 6.5)
@@ -540,17 +626,36 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
-        {/* A bar in Business (mockup s1): one row under the answer, the one
-            primary button of the page on its right. */}
-        <NextStepCard
-          point={nextStep}
-          projectId={projectId}
-          view={view}
-          level={view === 'business' ? 3 : 2}
-          variant={view === 'business' ? 'bar' : 'card'}
-        />
+        {/* A bar in Business (mockup s1): one row at the top of the content,
+            the one primary button of the page on its right. */}
+        {view === 'business' ? (
+          businessStep ? (
+            <BusinessNextStep step={businessStep} projectId={projectId} />
+          ) : (
+            <div
+              data-next-step-pending=""
+              aria-busy="true"
+              className="min-h-[76px] rounded-cc-card border border-l-4 border-cc-line border-l-cc-line bg-cc-surface px-4 py-3"
+            >
+              <h2 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
+                {wt('nextStep.title')}
+              </h2>
+            </div>
+          )
+        ) : (
+          <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" />
+        )}
       </div>
     ),
+    // Business only: the business rules, once, in their own card under the map
+    // (owner, 03.10.2026). The rule actions of the page — "Your next step" and
+    // the first look outside Business — lead here by this block's id.
+    rules:
+      view === 'business' && reading !== null && reading.ruleSet.rules.length > 0 ? (
+        <div id={BUSINESS_RULES_ID} data-workspace-rules-block="" className="mt-5 scroll-mt-20">
+          <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />
+        </div>
+      ) : null,
     // Business only: the folded status and the tools sit under "Next step"
     // there, as in mockup s1; IT and Management keep them in the header.
     //
@@ -623,18 +728,8 @@ export default function WorkspaceShell({
       ) : null,
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
     // the anchor bar scrolls the reader here by the section's own `id`.
-    layerSection: (
-      <div className="mt-5">
-        <WorkspaceLayerSection
-          layer={currentLayerSection}
-          project={project}
-          projectId={projectId}
-          reading={reading}
-          process={mapSummary}
-          onOpenMap={view === 'business' ? openMap : undefined}
-        />
-      </div>
-    ),
+    // Rendered inside the layer group above, with its bar.
+    layerSection: null,
     // The first look — four stages, then the head of the content (§5.1, §5.5):
     // process name, traceability, the reveal line and the decisions.
     firstLook: (
@@ -651,6 +746,7 @@ export default function WorkspaceShell({
           map={mapState}
           narrative={startNarrative}
           fullMapBelow={view === 'business' && signed !== null}
+          rulesBelow={view === 'business'}
           onSettled={onFirstLookSettled}
         />
       </div>

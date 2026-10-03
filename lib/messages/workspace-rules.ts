@@ -15,7 +15,24 @@ import type { StatesReadRefusal } from '../process-states-client';
 export const WORKSPACE_RULES_MESSAGES = {
   // BusinessRulesEditor — reading
   'rules.title': 'Business rules',
-  'rules.edit': 'Edit rules',
+  // Owner, 03.10.2026: nothing in the code is edited here — the reader decides
+  // what the business needs, per rule. The entry and the title say so.
+  'rules.edit': 'Decide on rules',
+  'rules.review': 'Review rules',
+  'rules.noAnswer': 'No answer yet',
+  'rules.openFirst': 'Without an answer',
+  'rules.answeredGroup': 'Answered',
+  'rules.lead':
+    'For each rule the code hard-codes, say what the business needs: keep it, change it on purpose, drop it, or ask for clarification. This changes no line of ABAP and nothing in the signed run; it records your answer.',
+  'rules.smallPrint':
+    'Your answers carry your name and the server time — a self-declaration, not an organisational mandate. Every recording is a new need revision; earlier ones stay.',
+  'rules.keepMeaning': 'The new solution must do the same.',
+  'rules.changeMeaning': 'The new solution does it differently — say what instead.',
+  'rules.dropMeaning': 'No longer needed — say why.',
+  'rules.clarifyMeaning': 'Someone else must answer — say who and what.',
+  'rules.clarifyMissing': 'Say who should answer and what the question is — the rule stays open until then.',
+  'rules.draftKept': 'Your answers are kept in this browser tab until you record or discard them.',
+  'rules.draftRestored': 'Your unrecorded answers from earlier in this tab are back.',
   'rules.reading': 'Reading the rules of this program…',
   'rules.sourceLine': 'Source line',
   'rules.notAnswered': 'Nobody has answered for this rule yet.',
@@ -25,7 +42,7 @@ export const WORKSPACE_RULES_MESSAGES = {
     'Rules can be confirmed once the process has been reconstructed from a signed run of this source. Run the analysis first.',
   'rules.openAnalyze': 'Open Analyze',
   // BusinessRulesEditor — editing
-  'rules.editingTitle': 'Business rules — editing',
+  'rules.editingTitle': 'Decide on the business rules',
   'rules.revisionOne': 'revision 1',
   'rules.required': 'required',
   'rules.decisionFor': 'Decision for',
@@ -36,7 +53,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.dropMissing':
     'Enter why the rule is dropped — the reason is stored with the revision and shown with the rule.',
   'rules.changeMissing': 'Enter the new rule text — a change without it is a decision nobody can review later.',
-  'rules.question': 'Question to clarify',
+  'rules.question': 'Who should answer, and the question',
   'rules.clarifyInfo': 'Clarify items stay open and are not counted as confirmed until answered.',
   'rules.goToField': 'Go to the field',
   'rules.draftTitle': 'This draft',
@@ -154,6 +171,48 @@ const DECISION_LABEL: Record<ElementState, string> = {
 /** The word of one decision. `short` for the draft summary, where "Change" is enough. */
 export function rulesDecisionLabel(state: ElementState, short = false): string {
   return short && state === 'change' ? 'Change' : DECISION_LABEL[state];
+}
+
+/** "3 of 11 answered" — the progress line of the answering screen. */
+export function rulesAnsweredOf(answered: number, total: number): string {
+  return `${answered} of ${total} answered`;
+}
+
+/** The primary action of the answering screen: what it records. */
+export function rulesRecordAnswers(n: number): string {
+  return n === 0 ? 'Record answers' : `Record ${n} ${n === 1 ? 'answer' : 'answers'}`;
+}
+
+/** "as need revision 2" — beside the primary action, what the recording becomes. */
+export function rulesRecordAs(revision: number): string {
+  return `Saved as need revision ${revision}, with your name.`;
+}
+
+/** The done state of the rules: "All 11 rules are confirmed" / "The one rule is confirmed". */
+export function rulesAllConfirmed(total: number): string {
+  return total === 1 ? 'The one rule is confirmed' : `All ${total} rules are confirmed`;
+}
+
+/** Who confirmed, for the done state: "by you", "by Mara Weber", "by you and 2 others". */
+export function rulesConfirmedBy(names: readonly string[], you: boolean): string {
+  const others = names.length - (you ? 1 : 0);
+  if (you) return others === 0 ? 'by you' : `by you and ${others} ${others === 1 ? 'other' : 'others'}`;
+  if (names.length === 1) return `by ${names[0]}`;
+  return `by ${names[0]} and ${names.length - 1} ${names.length === 2 ? 'other' : 'others'}`;
+}
+
+/** The word of a recorded answer in the rules card: Kept, Changed, Dropped, Clarify. */
+export function rulesRecordedWord(state: ElementState): string {
+  switch (state) {
+    case 'keep':
+      return 'Keep';
+    case 'change':
+      return 'Changed';
+    case 'drop':
+      return 'Dropped';
+    case 'clarify':
+      return 'Clarify — open';
+  }
 }
 
 /** "Rules confirmed 3 of 7." */
@@ -354,10 +413,14 @@ export function buildUpMoreNames(n: number): string {
   return `+ ${n} more ${n === 1 ? 'name' : 'names'}`;
 }
 
-/** The primary action of the first look's end state. */
-export function firstLookConfirmRules(n: number, owner: boolean): string {
-  const rules = n === 1 ? 'the rule' : `the ${n} rules`;
-  return owner ? `Confirm ${rules}` : `Review ${rules}`;
+/**
+ * The rule action of the first look outside Business, where no "Next step"
+ * strip carries it — the count of rules still without an answer, never the
+ * total (owner, 03.10.2026: "Confirm the rule" stood over a confirmed rule).
+ */
+export function firstLookConfirmRules(open: number, owner: boolean): string {
+  if (!owner) return 'Review the rules';
+  return `Decide on ${open} ${open === 1 ? 'rule' : 'rules'}`;
 }
 
 /** "3 of 7". */

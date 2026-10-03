@@ -361,14 +361,14 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await signIn(page);
     await openWorkspace(page, 'business');
 
-    // The answer → Next step → the layer → the folded Not determined (mockup
-    // s1, s10), in the DOM and on the screen — so the focus order is the
-    // reading order (§1.6).
+    // Next step → the answer → the layer → the folded Not determined (owner,
+    // 03.10.2026: the one next action first, on a phone too), in the DOM and on
+    // the screen — so the focus order is the reading order (§1.6).
     const order = await page.evaluate(() => {
       const pick = (selector: string) => document.querySelector(selector);
       const blocks = [
-        pick('[data-first-look]'),
         pick('[data-next-step]'),
+        pick('[data-first-look]'),
         pick('[data-workspace-layer-section]'),
         pick('#not-determined'),
       ];

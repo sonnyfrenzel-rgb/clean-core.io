@@ -186,19 +186,22 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads the answer, the map, Next step, then the folded detail — in that order in the DOM (§2.9, ADR-072)', () => {
+  test('Business reads Next step, the answer, the map, the rules, then the folded detail — in that order in the DOM (§2.9)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
     expect(block, 'no Business order').not.toBeNull();
     const order = [...block![1].matchAll(/'([a-zA-Z]+)'/g)].map((m) => m[1]);
-    // The answer first — it carries the not-determined count and groups beside
-    // what was found (FirstLook), so the doubt is still answered at once.
-    expect(order[0]).toBe('firstLook');
-    // The full map right under the answer, then Next step (ADR-072: the
-    // process is the entry of the work area).
+    // The one next action first (owner, 03.10.2026: "show more prominently
+    // what I as a user should do here") — the same DOM order at every width,
+    // so on a phone it is the first thing under the header and the focus
+    // order is the reading order.
+    expect(order[0]).toBe('nextStep');
+    // Then the answer — the process in plain steps, with what is not
+    // determined in one line — and the full map right under it (ADR-072).
     expect(order.indexOf('firstLook')).toBeLessThan(order.indexOf('process'));
-    expect(order.indexOf('process')).toBeLessThan(order.indexOf('nextStep'));
-    expect(order.indexOf('nextStep')).toBeLessThan(order.indexOf('layerSection'));
+    // The business rules once, in their own card, before the sections.
+    expect(order.indexOf('process')).toBeLessThan(order.indexOf('rules'));
+    expect(order.indexOf('rules')).toBeLessThan(order.indexOf('layerBar'));
     // The detail of what is not determined is folded and last, never absent.
     expect(order[order.length - 1]).toBe('notDetermined');
   });
