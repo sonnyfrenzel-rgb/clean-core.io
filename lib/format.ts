@@ -162,3 +162,68 @@ export function formatPercent(fraction: number | null | undefined): string | nul
   }
   return `${new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(whole)}%`;
 }
+
+/*
+ * ---------- Economics: money, days, lines, ratios ----------
+ *
+ * The Economics stage printed floating-point arithmetic as it came out of the
+ * multiplication: a proposal of 0.668 × 5 days reached an input as
+ * "3.3400000000000003", a chart axis as "12.345k". Every figure that stage
+ * shows goes through one of these, so a number on screen has a stated
+ * precision and nothing else (owner, 03.10.2026).
+ */
+
+/** At most `digits` decimals, grouped — the shared core of the helpers below. */
+function decimals(value: number, digits: number): string {
+  // `|| 0` folds -0, which `Intl` would print as "-0".
+  const rounded = Math.round(value * 10 ** digits) / 10 ** digits || 0;
+  return new Intl.NumberFormat('en', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(rounded);
+}
+
+/**
+ * Money with its currency code: "EUR 12,345". Whole units from 1,000 up; below
+ * that at most two decimals, so a day rate typed as 820.5 still reads as typed.
+ * No currency, no amount — `null`, and the caller says *Not determined*.
+ */
+export function formatMoney(value: number | null | undefined, currency: string): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || !currency) return null;
+  return `${currency} ${decimals(value, Math.abs(value) >= 1000 ? 0 : 2)}`;
+}
+
+/** A count of days: at most one decimal, two below one day — "12.5", "0.07". */
+export function formatDays(value: number | null | undefined): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return decimals(value, Math.abs(value) > 0 && Math.abs(value) < 1 ? 2 : 1);
+}
+
+/** Lines of code: whole and grouped — "1,234". */
+export function formatLines(value: number | null | undefined): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return decimals(value, 0);
+}
+
+/**
+ * A value that already is a percentage (not a fraction): "-80%", "12.5%". At
+ * most one decimal (`digits` 0 for the whole numbers of DESIGN.md §3).
+ */
+export function formatPercentValue(value: number | null | undefined, digits: 0 | 1 = 0): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return `${decimals(value, digits)}%`;
+}
+
+/** A plain ratio or factor, at most two decimals — "0.15", "2.5". */
+export function formatRatio(value: number | null | undefined): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return decimals(value, 2);
+}
+
+/**
+ * A computed day figure, rounded where it is made rather than where it is
+ * shown: one decimal from one day up, two below. For values that land in an
+ * input (a taken-over proposal), where no formatter runs.
+ */
+export function roundDays(value: number): number {
+  if (!Number.isFinite(value)) return value;
+  const digits = Math.abs(value) > 0 && Math.abs(value) < 1 ? 2 : 1;
+  return Math.round(value * 10 ** digits) / 10 ** digits || 0;
+}
