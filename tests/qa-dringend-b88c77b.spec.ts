@@ -73,22 +73,19 @@ test.describe('55cf6c0ed62a · a refusal is not a transformation', () => {
   });
 
   test('it is reported as a failed generation, in the words this stage already uses', () => {
+    // Since 03.10.2026 the sentence comes from `lib/model-json.ts`, chosen by
+    // why the answer was unusable (prose, cut off, empty), so a cut-off answer
+    // is no longer called "text instead of JSON". Every variant keeps the
+    // promise that nothing was saved — `tests/model-json.spec.ts` checks each.
     const src = code(TRANSFORMATION);
-    expect(src, 'nothing tells the reader the answer was not JSON').toMatch(
-      /throw new Error\('The model answered with text instead of the JSON/,
+    expect(src, 'nothing tells the reader the answer was not usable JSON').toMatch(
+      /throw new Error\(unusableAnswerMessage\(/,
     );
-    // The same promise the empty-answer gate two branches down makes: the
-    // artefact that was there survives a bad run.
-    const parseFailure = src.slice(src.indexOf('answered with text instead of the JSON'));
-    expect(
-      parseFailure.slice(0, 200),
-      'the message does not say that nothing was saved',
-    ).toContain('Nothing was saved');
   });
 
   test('and no write can be reached before that throw', () => {
     const src = code(TRANSFORMATION);
-    const throwAt = src.indexOf('answered with text instead of the JSON');
+    const throwAt = src.indexOf('throw new Error(unusableAnswerMessage(');
     // Since 3.0.11 the server writes `status: 'transformed'`; the page's write
     // is the call that asks it to.
     const writeAt = src.indexOf('storeGeneration(projectId');

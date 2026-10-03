@@ -196,6 +196,160 @@ test('a generation that fails says so in the error strip, with Try again', async
   await shot(page, 'error-strip-390');
 });
 
+/**
+ * The model's answer, read (owner report 03.10.2026): a complete answer that
+ * was not readable JSON failed the generation on the first try and passed on
+ * the second. The answers below are fixtures served in place of `/api/gemini`;
+ * no model is called. The contract read and the store are stubbed too, so the
+ * spec sees exactly what the page asks the server to store.
+ */
+test.describe('the model answer, read', () => {
+  // The ABAP escape `\{` is in the content, as the model writes it.
+  const CAP_PACKAGE = (filler = '') => ({
+    files: [
+      { path: 'srv/service.ts', content: `export const approve = () => true;\n${filler}` },
+      { path: 'db/schema.cds', content: 'entity PurchaseOrder { key id : String; }' },
+      { path: 'package.json', content: '{"name":"po-approval"}' },
+      { path: 'Dockerfile', content: 'FROM node:22' },
+      { path: 'erp-triggers/zcl_core_event_publisher.clas.abap', content: 'lv_payload = |\\{ "banfn": "{ iv_banfn }" \\}|.' },
+    ],
+    tests: { config: 'export default {};', spec: 'test("a", () => {});' },
+  });
+
+  /** The contract allows the generation; the store is captured and answered as the server would. */
+  async function stubContract(page: Page): Promise<{ stores: string[] }> {
+    const stores: string[] = [];
+    await page.route(/\/api\/projects\/[^/]+\/contract$/, async (route) => {
+      if (route.request().method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            contract: { fingerprint: 'f'.repeat(64) },
+            decision: { ok: true, track: 'side-by-side-btp', isAbapCloud: false, sentence: 'Side-by-side, as the contract says.' },
+            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '' } },
+          }),
+        });
+      }
+      const body = route.request().postDataJSON() as { generatedCode: string; testSuite: unknown };
+      stores.push(body.generatedCode);
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          fields: {
+            generatedCode: body.generatedCode,
+            testSuite: body.testSuite,
+            status: 'transformed',
+            generationBinding: { route: { chosen: 'side-by-side-btp' }, contractId: 'AC-1', contractFingerprint: 'f'.repeat(64) },
+          },
+        }),
+      });
+    });
+    return { stores };
+  }
+
+  /** Serves the answers in order, one per call (the last one repeats); counts the calls. */
+  async function stubModel(page: Page, answers: Array<{ status: number; body: unknown }>, hold?: Promise<void>) {
+    const calls = { n: 0 };
+    await page.route('**/api/gemini**', async (route) => {
+      const i = calls.n++;
+      if (i > 0 && hold) await hold;
+      const a = answers[Math.min(i, answers.length - 1)];
+      await route.fulfill({ status: a.status, contentType: 'application/json', body: JSON.stringify(a.body) });
+    });
+    return calls;
+  }
+
+  async function open(page: Page, prefix: string) {
+    const account = await seed(prefix, { design: true, narrative: false });
+    await keyAvailable(page);
+    return account;
+  }
+
+  test('an unreadable first answer is retried once, said in the log, and the second answer is stored', async ({ page }) => {
+    const account = await open(page, 'tf-json-retry');
+    const { stores } = await stubContract(page);
+    let release!: () => void;
+    const hold = new Promise<void>((r) => { release = r; });
+    // Prose, then a fenced object that is broken inside (a missing value).
+    const broken = 'Here is the package:\n```json\n{"files": [ {"path": "srv/service.ts", "content": } ], "tests": {}}\n```\nHope this helps.';
+    const calls = await stubModel(page, [
+      { status: 200, body: { text: broken } },
+      { status: 200, body: { text: JSON.stringify(CAP_PACKAGE()) } },
+    ], hold);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${account.projectId}/transformation`);
+    // The second call is held until the log has said it is being made.
+    await expect(page.getByLabel('Generation log')).toContainText(/Retrying once — a second model call/, { timeout: 90_000 });
+    await expect.poll(() => calls.n, { timeout: 10_000 }).toBe(2);
+    release();
+    await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 60_000 });
+    await expect(page.locator('[data-transformation-error]')).toHaveCount(0);
+    expect(calls.n).toBe(2);
+    expect(stores).toHaveLength(1);
+    expect(JSON.parse(stores[0])).toEqual(CAP_PACKAGE().files);
+  });
+
+  test('a fenced, large answer is stored on the first call, its ABAP escapes intact', async ({ page }) => {
+    const account = await open(page, 'tf-json-fenced');
+    const { stores } = await stubContract(page);
+    // About 60 kB of code. The package the 668-line Z_MM_PO_APPROVAL produced
+    // on 03.10.2026 measured 21,894 characters (7,370 output tokens).
+    const big = CAP_PACKAGE('// filler line for size\n'.repeat(2500));
+    // JSON.stringify writes the ABAP `\{` as `\\{`; the model wrote `\{` raw.
+    const raw = JSON.stringify(big).split('\\\\{').join('\\{').split('\\\\}').join('\\}');
+    expect(() => JSON.parse(raw)).toThrow();
+    const fenced = '```json\n' + raw + '\n```';
+    const calls = await stubModel(page, [{ status: 200, body: { text: fenced } }]);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${account.projectId}/transformation`);
+    await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 90_000 });
+    await expect(page.locator('[data-transformation-error]')).toHaveCount(0);
+    expect(calls.n).toBe(1);
+    expect(stores).toHaveLength(1);
+    expect(JSON.parse(stores[0])).toEqual(big.files);
+  });
+
+  test('an answer cut off at the length limit, twice, says so and stores nothing', async ({ page }) => {
+    const account = await open(page, 'tf-json-truncated');
+    const { stores } = await stubContract(page);
+    // What `/api/gemini` answers when the provider reports MAX_TOKENS.
+    const calls = await stubModel(page, [{
+      status: 502,
+      body: { error: 'The model stopped before finishing its answer because it reached its output limit (model-incomplete).', code: 'model-incomplete', reason: 'truncated' },
+    }]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${account.projectId}/transformation`);
+    const strip = page.locator('[data-transformation-error]');
+    await expect(strip).toBeVisible({ timeout: 90_000 });
+    await expect(strip).toContainText("The answer was cut off at the model's length limit");
+    await expect(strip).toContainText('Nothing was saved — the previous version is untouched.');
+    await expect(strip).not.toContainText(/text instead of/i);
+    expect(calls.n).toBe(2);
+    expect(stores).toHaveLength(0);
+  });
+
+  test('invalid JSON, twice, is reported as prose and stores nothing', async ({ page }) => {
+    const account = await open(page, 'tf-json-prose');
+    const { stores } = await stubContract(page);
+    const calls = await stubModel(page, [{ status: 200, body: { text: '{"files": [ this is not json ], "tests": }' } }]);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${account.projectId}/transformation`);
+    const strip = page.locator('[data-transformation-error]');
+    await expect(strip).toBeVisible({ timeout: 90_000 });
+    await expect(strip).toContainText('The model returned prose instead of the JSON package');
+    await expect(strip).toContainText('Nothing was saved');
+    await expect(strip.getByRole('button', { name: /Try again/ })).toBeVisible();
+    expect(calls.n).toBe(2);
+    expect(stores).toHaveLength(0);
+  });
+});
+
 test.describe('generationPrerequisites', () => {
   const base = { legacyCode: 'REPORT z.', activeRunId: 'r' } as Record<string, unknown>;
 

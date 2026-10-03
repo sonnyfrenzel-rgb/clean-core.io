@@ -16,6 +16,26 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
  * neither is a stage of the workflow.
  */
 
+/**
+ * A refusal from `/api/gemini`, with the code the route named when it named
+ * one (`model-incomplete`, `stage-disabled`, …), so a stage can branch on the
+ * reason rather than on the sentence. Still an `Error` with the route's
+ * sentence as its message, so every caller that only shows the message is
+ * unchanged.
+ */
+export class GeminiCallError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+    /** With `model-incomplete`: `truncated`, `filtered`, `empty` or `unfinished` (`lib/model-completion.ts`). */
+    readonly reason?: string,
+  ) {
+    super(message);
+    this.name = 'GeminiCallError';
+  }
+}
+
 export interface GeminiResult {
   text: string;
   /**
@@ -86,9 +106,12 @@ export async function callGeminiWithReceipt(
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(
+    throw new GeminiCallError(
       errorBody.error ||
         `Gemini API request failed with status ${response.status}`,
+      response.status,
+      typeof errorBody.code === 'string' ? errorBody.code : undefined,
+      typeof errorBody.reason === 'string' ? errorBody.reason : undefined,
     );
   }
 
