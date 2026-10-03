@@ -3,6 +3,8 @@
  * Replaces all `any` project state typings across pages and hooks.
  */
 
+import type { OriginCheck, ScenarioOrigin } from './scenario-origin';
+
 export interface TestCase {
   id: string;
   name: string;
@@ -35,6 +37,16 @@ export interface TestCase {
    */
   status?: 'Passed' | 'Failed' | 'Pending' | 'Not run' | 'Simulated' | 'Skipped' | 'Todo' | 'Connectivity' | 'Error';
   message?: string;
+  /**
+   * What the scenario says it tests in the legacy source — the model's
+   * statement, validated (`lib/scenario-origin.ts`). Absent when the model named
+   * none, or named a malformed one (then `derivedFromDropped` says why).
+   */
+  derivedFrom?: ScenarioOrigin;
+  /** The deterministic check of `derivedFrom` against the signed source, as computed when the scenario was stored. */
+  derivedFromCheck?: OriginCheck;
+  /** Why a malformed statement of origin was dropped. */
+  derivedFromDropped?: string;
 }
 
 export interface TestSuite {

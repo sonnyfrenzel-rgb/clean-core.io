@@ -9,8 +9,20 @@ import {
   checkTestSuiteShape,
   testSuiteRejectionMessage,
 } from '@/app/(app)/project/[projectId]/testing/test-suite-schema';
+import { numberedSource, originPromptSection, withOriginCheck, type OriginEngine, type OriginFindingInput } from '@/lib/scenario-origin';
+import { ORIGIN_FAILED, originEngineFor, signedForOrigin } from './useScenarioOrigins';
 
-export const useTestGeneration = (projectId: string, project: Project | null, setProject: React.Dispatch<React.SetStateAction<Project | null>>) => {
+/**
+ * @param originFindings the engine's findings for the signed source, read on the
+ *   server (`findingsForOrigin`); `null` while they are not available, and a
+ *   finding a scenario names is then stored as not checked.
+ */
+export const useTestGeneration = (
+  projectId: string,
+  project: Project | null,
+  setProject: React.Dispatch<React.SetStateAction<Project | null>>,
+  originFindings: OriginFindingInput[] | null = null,
+) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState<TestCase[] | null>(null);
   // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
@@ -61,9 +73,26 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
     try {
       const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
 
+      // Owner decision 03.10.2026: every scenario is asked where in the legacy
+      // source it comes from, and the answer is checked against the source the
+      // active run signed. The engine is built here, from that source, so the
+      // check stored beside each scenario is the one this generation could make.
+      const { signed, reason: noSignedSource } = signedForOrigin(project);
+      let originEngine: OriginEngine | null = null;
+      let noEngineReason = noSignedSource;
+      try {
+        originEngine = await originEngineFor(signed, originFindings);
+      } catch (engineErr) {
+        console.error('The origin check could not read the signed source:', engineErr);
+        noEngineReason = ORIGIN_FAILED;
+      }
+      const legacyForPrompt = typeof project?.legacyCode === 'string' ? numberedSource(project.legacyCode) : '';
+      const originAsk = originPromptSection(originEngine);
+
       const prompt = isAbapCloud
         ? `Given the following context:
-        Legacy Code: ${project?.legacyCode}
+        Legacy Code (numbered lines):
+${legacyForPrompt}
         Design: ${project?.solutionDesign}
         Generated ABAP Cloud RAP Code: ${project?.generatedCode}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
@@ -81,13 +110,15 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
         - Use \`cl_abap_unit_test=>fail( ... )\` or \`cl_aunit_assert=>assert_equals( ... )\` or \`cl_aunit_assert=>assert_initial( ... )\` for assertion checking.
         
         Format the output as a JSON object with:
-        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints)
+        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom)
         - testSuite: An object with the 'code' representing the complete ABAP Unit local test class code.
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
+        ${originAsk}
         `
         : `Given the following context:
-        Legacy Code: ${project?.legacyCode}
+        Legacy Code (numbered lines):
+${legacyForPrompt}
         Design: ${project?.solutionDesign}
         Generated Node.js Code: ${project?.generatedCode}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
@@ -123,10 +154,11 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
         - NO NETWORK/DB: Tests must be 100% isolated.
         
         Format the output as a JSON object with:
-        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints)
+        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom)
         - testSuite: An object with the 'code' for 'test.ts'.
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
+        ${originAsk}
         `;
       
       const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
@@ -146,7 +178,11 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
         throw new Error(testSuiteRejectionMessage(shape.problems));
       }
 
-      const generatedTestCases: TestCase[] = result.testCases || [];
+      // A malformed `derivedFrom` is dropped and recorded as not stated; the
+      // scenario itself is kept exactly as the model wrote it.
+      const generatedTestCases: TestCase[] = ((result.testCases || []) as Array<Record<string, unknown>>).map(
+        (tc) => withOriginCheck(tc, originEngine, noEngineReason) as unknown as TestCase,
+      );
       const generatedTestSuite: TestSuite = result.testSuite || { code: '' };
       const coverageEstimate: CoverageEstimate = result.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
       const manualTestingRequirements: ManualTestRequirement[] = result.manualTestingRequirements || [];
