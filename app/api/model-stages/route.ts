@@ -10,7 +10,7 @@ import {
   QuotaError,
   updateExistingProfile,
 } from '@/lib/firebase-admin';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 
 /**
@@ -121,7 +121,9 @@ export async function POST(req: NextRequest) {
       requireCurrentTerms: true,
       isAdminClaim: decodedToken.admin === true,
     });
-    await assertRateLimit(`model_stages:${uid}:${getClientIp(req)}`, 60, 60 * 60 * 1000);
+    // Keyed on the account alone, as /api/gemini is: an address in the key
+    // gave one account a fresh allowance per address.
+    await assertRateLimit(`model_stages:${uid}`, 60, 60 * 60 * 1000);
 
     const body = await req.json().catch(() => ({}));
     // `null` is valid JSON and has no properties: read through `?.`, so it is the

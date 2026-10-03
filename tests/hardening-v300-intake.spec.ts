@@ -85,3 +85,11 @@ test.describe('the consent route', () => {
     expect(limit).toBeLessThan(src.indexOf('await recordConsent('));
   });
 });
+
+test.describe('the model-stages route', () => {
+  test('the model-stages write budget is keyed on the account alone', () => {
+    const src = read('app/api/model-stages/route.ts');
+    expect(src).toContain('await assertRateLimit(`model_stages:${uid}`, 60,');
+    expect(src).not.toContain('getClientIp');
+  });
+});
