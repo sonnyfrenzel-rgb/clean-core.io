@@ -192,7 +192,7 @@ export default function OwnCodeImport() {
   }, []);
 
   const selfFunded = runsAreSelfFunded(profile);
-  // The start signs the engine's reading and calls no model (ADR-066); what it
+  // The start signs the engine's reading and calls no model (ADR-072); what it
   // costs is the run's, said here before the click.
   const cost = describeRunCost({ profile, metered: true, callsModel: false });
   const limit =
@@ -220,7 +220,7 @@ export default function OwnCodeImport() {
       });
       // The workspace first, with the first look (owner 02.10.2026) — never
       // the Analyze tool. The workspace signs the engine's reading at once, so
-      // the full map stands after the build-up (ADR-066); Analyze takes the
+      // the full map stands after the build-up (ADR-072); Analyze takes the
       // handoff above for a later run, so nothing is asked twice.
       router.push(`/project/${docRef.id}?first=1`);
     } catch (err) {

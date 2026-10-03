@@ -9,7 +9,7 @@ import { sourceFileName } from '@/lib/source-file-name';
 import type { Project } from '@/lib/types';
 
 /**
- * The signed engine-only run a new project starts with (ADR-066), and the
+ * The signed engine-only run a new project starts with (ADR-072), and the
  * same run started by hand where a project has source and no run yet.
  *
  * Phases, each a fact about this project and this page:

@@ -2,7 +2,7 @@ import { getAuth } from '@/lib/firebase';
 import type { AssessmentTarget } from '@/lib/assessment-target';
 
 /**
- * The signed engine-only run a new project starts with (ADR-066).
+ * The signed engine-only run a new project starts with (ADR-072).
  *
  * A project used to open its workspace with source and no run, so the process
  * map — which is drawn only from source a signed run read (`lib/signed-source.ts`)

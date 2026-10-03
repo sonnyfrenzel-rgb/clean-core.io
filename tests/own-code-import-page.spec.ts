@@ -170,7 +170,7 @@ test.describe('own code: choose, check, start', () => {
     await page.click('[data-own-code-start]');
 
     // The workspace first, with the first look — never the Analyze tool (owner
-    // 02.10.2026) — and it signs the engine's reading at once (ADR-066).
+    // 02.10.2026) — and it signs the engine's reading at once (ADR-072).
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
     expect(page.url()).not.toContain('/analyze');
     const projectId = new URL(page.url()).pathname.split('/')[2];

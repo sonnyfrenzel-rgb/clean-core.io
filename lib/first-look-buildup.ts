@@ -19,7 +19,7 @@
  *
  * **The time budget** — at a pace a reader can follow (owner, 03.10.2026: "you
  * have to be able to follow everything at the right speed, not too fast";
- * ADR-066, superseding the 2.4 s of 01.10.2026): code read to 1.0 s, process
+ * ADR-072, superseding the 2.4 s of 01.10.2026): code read to 1.0 s, process
  * recognised to 3.8 s, names to 5.0 s, the rules to 6.2 s, what is not
  * determined to 7.4 s, the map from 7.4 s, the end state at 8.4 s. Every
  * moment shows the engine's own content — lit lines, grown nodes with their

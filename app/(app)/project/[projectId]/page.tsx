@@ -125,7 +125,7 @@ export default function ProjectWorkspacePage() {
 
   /**
    * The project read again after the start run signed it, so the map, the
-   * tools and Next step read the run rather than the source alone (ADR-066).
+   * tools and Next step read the run rather than the source alone (ADR-072).
    * A failed read leaves the page as it was; the run is signed either way.
    */
   const reload = useCallback(async () => {
@@ -138,7 +138,7 @@ export default function ProjectWorkspacePage() {
     }
   }, [projectId]);
 
-  // The signed engine-only run a new project starts with (ADR-066): asked for
+  // The signed engine-only run a new project starts with (ADR-072): asked for
   // by the first look of a project that has source and no run, and offered by
   // hand on any later visit. No model call; what it costs was said on the
   // screen that started the project.

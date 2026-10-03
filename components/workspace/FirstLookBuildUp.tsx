@@ -39,7 +39,7 @@ import {
 
 /**
  * The build-up of the first look — mockup screen `s0`, moments 1 to 3, and
- * since ADR-066 three more a reader can follow: the rules the program
+ * since ADR-072 three more a reader can follow: the rules the program
  * hard-codes, what could not be determined, and the full map. A rail above
  * the code names every moment and what it found, so the reader always knows
  * where the reading is and what is still to come.
@@ -227,7 +227,7 @@ export function ExcerptSvg({
   );
 }
 
-/** What the map moment says, from the start run's phase (ADR-066). */
+/** What the map moment says, from the start run's phase (ADR-072). */
 export type BuildUpMapState = 'drawn' | 'running' | 'failed' | 'unsigned';
 
 /** One moment of the rail: done, the one on screen, or still to come. */

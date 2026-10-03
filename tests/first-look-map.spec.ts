@@ -16,7 +16,7 @@ import { signInViaLanding } from './helpers/sign-in';
  * and then disappeared; but you have to be able to find your bearings first."
  * And 03.10.2026: "the complete process map has to be created directly."
  *
- * Since ADR-066 the start signs the engine's reading itself, so the first look
+ * Since ADR-072 the start signs the engine's reading itself, so the first look
  * ends on the full map, drawn from that run, right under the answer. This
  * walks the real path — own code, `?first=1`, no Analyze — and reads the first
  * screen after the build-up and again five seconds later.

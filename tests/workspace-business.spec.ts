@@ -99,7 +99,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
   }
 
-  test('the map and its source column are on the page, linked both ways, in the order of ADR-066', async ({ page }) => {
+  test('the map and its source column are on the page, linked both ways, in the order of ADR-072', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const writes: string[] = [];
@@ -137,7 +137,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     ).toHaveAttribute('data-layer-state', 'on');
     await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
-    // The order since ADR-066: answer → map → Next step → layer → folded Not determined.
+    // The order since ADR-072: answer → map → Next step → layer → folded Not determined.
     const tops = await page.evaluate(() =>
       ['[data-first-look]', '[data-workspace-process]', '[data-next-step]', '[data-workspace-layer-section]', '#not-determined'].map(
         (sel) => {
@@ -219,7 +219,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'analyze');
   });
 
-  test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-066)', async ({ browser }) => {
+  test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-072)', async ({ browser }) => {
     test.setTimeout(300 * 1000);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();

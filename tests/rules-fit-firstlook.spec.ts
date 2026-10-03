@@ -207,7 +207,7 @@ test.describe('s0 — the first look builds up out of lit lines', () => {
     expect(buildUpFrame(events, BUILD_UP_BUDGET.namesFrom).shown).toBe(events.length);
   });
 
-  test('the stages follow the paced budget of ADR-066: read, process, names, rules, open points, map', () => {
+  test('the stages follow the paced budget of ADR-072: read, process, names, rules, open points, map', () => {
     const b = BUILD_UP_BUDGET;
     expect(buildUpFrame(events, 100).stage).toBe('code-read');
     expect(buildUpFrame(events, b.processFrom).stage).toBe('process-recognised');

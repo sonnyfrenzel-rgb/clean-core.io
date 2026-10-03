@@ -69,7 +69,7 @@ import {
  *      the engine here and now, or nowhere at all. A figure with no origin is
  *      printed as a word ("not analysed"), never as `0`. Nothing in this
  *      component computes a number of its own.
- *   2. **The work is never padded; the showing is paced** (§5.4, ADR-066). Each
+ *   2. **The work is never padded; the showing is paced** (§5.4, ADR-072). Each
  *      stage's data is produced by *its own call* — stage 1 by the table read,
  *      stage 2 by the skeleton, stage 3 by the stored naming, stage 4 by the
  *      rules — and on a small source all four land in two frames. What a
@@ -102,7 +102,7 @@ const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
 
 function useReducedMotion(): boolean {
   // Read once when the state is created, so not a single frame of the
-  // build-up is painted for a reader who asked for less movement (ADR-066:
+  // build-up is painted for a reader who asked for less movement (ADR-072:
   // "the end state at once"). Both callers render this component only on the
   // client — after the profile has loaded — so there is no server render to
   // disagree with; without `matchMedia` the answer is "not reduced", and the
@@ -248,7 +248,7 @@ export default function FirstLook({
    */
   onOpenMap?: () => void;
   /**
-   * Where the full map stands (ADR-066): drawn from a signed run, being signed
+   * Where the full map stands (ADR-072): drawn from a signed run, being signed
    * by the start run, refused, or not signed. The build-up's last moment says
    * which, and waits — briefly — for a start run that is still being signed,
    * so it ends on the map rather than on an empty place for it.
@@ -422,7 +422,7 @@ export default function FirstLook({
   const skip = useCallback(() => setSkipped(true), []);
 
   /**
-   * The build-up's clock — at a pace a reader can follow (ADR-066).
+   * The build-up's clock — at a pace a reader can follow (ADR-072).
    *
    * Runs only when a build-up was asked for and nobody asked for less movement
    * or pressed Skip. The moments follow the budget in
@@ -619,7 +619,7 @@ export default function FirstLook({
               <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} mapBelow={fullMapBelow} />
               <div className="flex min-w-0 flex-col gap-4">
                 {/* The full map stands right under this card where it is
-                    signed (ADR-066); the two-node main line would only be the
+                    signed (ADR-072); the two-node main line would only be the
                     same process again, smaller. */}
                 {fullMapBelow ? null : <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />}
                 {sourceOpen ? (

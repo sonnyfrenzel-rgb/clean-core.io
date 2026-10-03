@@ -223,7 +223,7 @@ export default function BpmnCanvas({
    * The level the parent asked for, read when a new viewer has finished its
    * import. The effect below applies a change of level to a viewer that
    * exists; a level asked for while the viewer was still importing (the
-   * workspace opens a one-step top level on that step, ADR-066) was lost.
+   * workspace opens a one-step top level on that step, ADR-072) was lost.
    */
   const planeRef = useRef(plane);
   useEffect(() => {

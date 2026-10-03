@@ -71,7 +71,7 @@ test('the stage of the build-up is a live region, and it says the stage that is 
   const start = render(0);
   const end = render(60_000);
   expect(liveRegions(start), 'no live region announces the stage').toEqual(['Code read']);
-  // The last moment is the map (ADR-066).
+  // The last moment is the map (ADR-072).
   expect(liveRegions(end)).toEqual(['Process map']);
   // Only the stage: the counters change every few hundred milliseconds and
   // would talk over the reader if they were live as well.

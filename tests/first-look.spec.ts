@@ -419,7 +419,7 @@ test.describe('the first look on screen', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1400 });
     await signIn(page, ADMIN);
-    // Since ADR-066 a first visit signs the engine's reading at once. This
+    // Since ADR-072 a first visit signs the engine's reading at once. This
     // test is about a project that has no run, so that run is held back
     // here: what is checked below is that nothing claims a run's figure
     // while there is none.

@@ -24,7 +24,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.hideProjectStatus': 'Hide project status',
   'page.showTipsAgain': 'Show tips again',
 
-  // The central work area under the map — WorkspaceShell, Business (ADR-066).
+  // The central work area under the map — WorkspaceShell, Business (ADR-072).
   'hub.title': 'Work from this process',
   'hub.lead':
     'Your process, reconstructed from the old ABAP, is where everything starts. Read the same process as IT or Management, or open a tool for the next step.',

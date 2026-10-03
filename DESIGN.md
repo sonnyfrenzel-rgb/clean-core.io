@@ -583,7 +583,7 @@ moment.
    rules and next to it **Not determined**; below it the same facets as in the header (§2.3): Traceability · Rules
    confirmed · Level distribution · Not determined.
 
-**The start signs the reading** (ADR-066). Starting an example, a snippet or one's own code signs the engine's reading
+**The start signs the reading** (ADR-072). Starting an example, a snippet or one's own code signs the engine's reading
 at once — the same signed run every analysis ends in, without a narrative and without a model call, at the cost every
 start screen states before the click. The build-up names it as its last moment, "Process map", and the end state
 stands on the full map, drawn from that signed run; the map is never drawn from source no run signed.
@@ -615,7 +615,7 @@ Confetti, decorative gradients, typewriter effects, pulsing dots, loading animat
 thinking…"*, artificial minimum durations (like the six seconds the Evidence Scanner once took). Everything that costs time and
 shows nothing lowers the credibility the moment needs.
 
-**The one deliberate exception (owner decisions, 01.10.2026 and 03.10.2026, ADR-066):** the first look's build-up
+**The one deliberate exception (owner decisions, 01.10.2026 and 03.10.2026, ADR-072):** the first look's build-up
 runs at a pace a reader can follow, about 8.4 s, even when the engine is done in a few frames — code read to 1.0 s,
 process recognised to 3.8 s, names to 5.0 s, the rules in the code to 6.2 s, what is not determined to 7.4 s, the map
 to 8.4 s. A rail above the code names each moment and what it found. The moments are only worth anything if a reader
@@ -631,9 +631,9 @@ state never waits for a model (`lib/first-look-buildup.ts`).
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, *Not determined* (§5.1).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
-- **The process stays in sight** (ADR-059, ADR-066): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (IT, Management, a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map.
-- **The work area under the map** (ADR-066): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
-- **The way back** (ADR-066): "← My workspace" above the title of the object page, at every width.
+- **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (IT, Management, a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map.
+- **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
+- **The way back** (ADR-072): "← My workspace" above the title of the object page, at every width.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
 - **Side column, "Not determined":** every open spot with a reason and the next way — dynamic call, missing include,
   usage unknown (never "unused"). This column is intentional: it is the reason to trust a result.

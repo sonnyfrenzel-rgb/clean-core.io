@@ -80,7 +80,7 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
       timeout: 90000,
     });
     // The start signs the engine's reading and the map loads its chunks — the
-    // BPMN reader and the summary of Need & process (ADR-066).
+    // BPMN reader and the summary of Need & process (ADR-072).
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-workspace-layer-process]')).toBeVisible({ timeout: 60000 });
     // The Public-Cloud-Fit card asks for the engine; let it arrive and settle.

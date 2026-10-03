@@ -133,7 +133,7 @@ export default function StarterExamples({
       });
       // The same door "New project" uses: the workspace with its first look —
       // every project opens there (roadmap 3.0.1) — which signs the engine's
-      // reading at once, so the full map stands after the build-up (ADR-066).
+      // reading at once, so the full map stands after the build-up (ADR-072).
       router.push(`/project/${docRef.id}?first=1`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');

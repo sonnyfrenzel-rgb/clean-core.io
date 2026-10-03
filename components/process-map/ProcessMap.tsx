@@ -188,7 +188,7 @@ export interface ProcessMapProps {
    * Zoom, fit and full screen on the canvas, and the whole level on open —
    * never below 40 % on a phone (`fitWhole`). Always on in the `stage`
    * layout; the workspace asks for it too since its map opens as a map on
-   * every width (ADR-066).
+   * every width (ADR-072).
    */
   canvasControls?: boolean;
   /**

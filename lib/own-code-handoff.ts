@@ -29,7 +29,7 @@ export interface OwnCodeHandoff {
   /**
    * The main file the reader uploaded (`Z_CREDIT_CHECK.abap`), so the signed
    * run the workspace starts with records the file's own name rather than a
-   * placeholder (ADR-066). Absent from older callers.
+   * placeholder (ADR-072). Absent from older callers.
    */
   fileName?: string;
 }

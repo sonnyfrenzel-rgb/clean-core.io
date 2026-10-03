@@ -76,7 +76,7 @@ export default function WorkspaceLayerBar({
             className={cn(
               // The label and its count each keep to one line, but may stand on
               // two: "Need & process 8 steps · 1 decision · 2 rules" is wider
-              // than a phone (ADR-066).
+              // than a phone (ADR-072).
               'inline-flex max-w-full flex-wrap items-center gap-x-1 border-b-2 px-3 py-2 text-left text-[13px] pointer-coarse:min-h-11',
               on
                 ? 'border-cc-ink font-bold text-cc-ink'

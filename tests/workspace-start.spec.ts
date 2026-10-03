@@ -7,7 +7,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * How a project starts (ADR-066). Owner, 03.10.2026 (translated): "The start
+ * How a project starts (ADR-072). Owner, 03.10.2026 (translated): "The start
  * in the workspace after uploading a code example, or starting from an
  * example, is unsatisfying, on mobile as on desktop. … the complete process
  * map is created directly … There is also no back-to-workspace button." And:
@@ -100,7 +100,7 @@ async function mapCounts(page: Page): Promise<[number, number]> {
   return [Number(m![1]), Number(m![2])];
 }
 
-test.describe('a project starts on its full map (ADR-066)', () => {
+test.describe('a project starts on its full map (ADR-072)', () => {
   test('an example from My workspace: build-up, signed at the start, full map, Need & process agrees', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const { email, uid } = await communityAccount('ws-start');

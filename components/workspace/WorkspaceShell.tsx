@@ -93,7 +93,7 @@ type ContentBlock =
  */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
   'firstLook',
-  // The map right under the answer, before Next step (ADR-066): the process
+  // The map right under the answer, before Next step (ADR-072): the process
   // is the entry of the work area, and on a 1440 × 900 screen it now starts
   // in the first screen after the build-up instead of under the fold.
   'process',
@@ -194,7 +194,7 @@ export default function WorkspaceShell({
    */
   buildUp?: boolean;
   /**
-   * The signed engine-only run a new project starts with (ADR-066) — started
+   * The signed engine-only run a new project starts with (ADR-072) — started
    * by the page, which owns the project and reads it again once it is signed.
    * The first look's last moment and the map's place say where it stands.
    */
@@ -317,7 +317,7 @@ export default function WorkspaceShell({
   // reading (mockups s2, s3).
   const layers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
 
-  /** Where the full map stands, for the first look's last moment (ADR-066). */
+  /** Where the full map stands, for the first look's last moment (ADR-072). */
   const mapState: BuildUpMapState = signed
     ? 'drawn'
     : startRun?.phase === 'running'

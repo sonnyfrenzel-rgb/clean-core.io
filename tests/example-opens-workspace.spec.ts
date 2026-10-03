@@ -13,7 +13,7 @@ import { signInViaLanding } from './helpers/sign-in';
  * Every way an ordinary community account starts an example — or its own code —
  * lands on the project's workspace with the first look (`?first=1`), never on
  * the Analyze tool — and the workspace signs the engine's reading at once, so
- * the first look ends on the full map (ADR-066). Each entry point
+ * the first look ends on the full map (ADR-072). Each entry point
  * below runs as a fresh community account: no admin claim, no `isAdmin`, and no
  * model stage on, so nothing here waits on or pays for a model call.
  */
@@ -66,7 +66,7 @@ async function goto(page: Page, url: string) {
 
 /**
  * The workspace, with the first look grown and the full map drawn from the
- * run the start signed (ADR-066) — not the two-node main line, and never a
+ * run the start signed (ADR-072) — not the two-node main line, and never a
  * visit to Analyze.
  */
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {

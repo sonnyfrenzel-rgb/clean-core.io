@@ -186,7 +186,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads the answer, the map, Next step, then the folded detail — in that order in the DOM (§2.9, ADR-066)', () => {
+  test('Business reads the answer, the map, Next step, then the folded detail — in that order in the DOM (§2.9, ADR-072)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
     expect(block, 'no Business order').not.toBeNull();
@@ -194,7 +194,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     // The answer first — it carries the not-determined count and groups beside
     // what was found (FirstLook), so the doubt is still answered at once.
     expect(order[0]).toBe('firstLook');
-    // The full map right under the answer, then Next step (ADR-066: the
+    // The full map right under the answer, then Next step (ADR-072: the
     // process is the entry of the work area).
     expect(order.indexOf('firstLook')).toBeLessThan(order.indexOf('process'));
     expect(order.indexOf('process')).toBeLessThan(order.indexOf('nextStep'));

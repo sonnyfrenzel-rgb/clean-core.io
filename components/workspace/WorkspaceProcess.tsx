@@ -96,7 +96,7 @@ export default function WorkspaceProcess({
    */
   notDetermined: NotDetermined;
   /**
-   * The signed engine-only run a project starts with (ADR-066). Where the
+   * The signed engine-only run a project starts with (ADR-072). Where the
    * project has source and no run, the map's place shows it being signed, why
    * it was not, or — on a later visit — the one action that signs it here,
    * with its cost said before the click.
@@ -130,7 +130,7 @@ export default function WorkspaceProcess({
   const selectedElement = selected ? byId.get(selected) ?? null : null;
 
   /**
-   * Opened where the process is (ADR-066). Many programs read as one start
+   * Opened where the process is (ADR-072). Many programs read as one start
    * event, one routine and an end on the top level — the whole process sits
    * one level down, and a map that opens on "Run starts → Execute BAPI
    * creation → Done" is the two-node main line the owner rejected
@@ -255,7 +255,7 @@ export default function WorkspaceProcess({
     if (absence === 'no-source') return <div data-workspace-process="absent" data-absence="no-source" hidden />;
     // A project with source and no run, whose owner is here: the start run is
     // being signed, was refused, or — on a later visit — can be started here
-    // (ADR-066). Never an empty box that sends the reader elsewhere.
+    // (ADR-072). Never an empty box that sends the reader elsewhere.
     if (absence === 'no-run' && startRun && startRun.phase !== 'none' && startRun.phase !== 'signed') {
       const exampleName =
         project?.fromExample === true && STARTER_EXAMPLES.some((e) => e.name === project?.name) ? project?.name : undefined;
@@ -485,7 +485,7 @@ export default function WorkspaceProcess({
               onPlaneChange={setPlane}
               selected={selected}
               onSelectedChange={selectStep}
-              // The map on every width (ADR-066): on a phone it opens fitted,
+              // The map on every width (ADR-072): on a phone it opens fitted,
               // never below 40 % (`fitWhole`), with full screen and zoom; the
               // step list stays one tab away.
               defaultView="map"
