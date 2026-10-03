@@ -352,3 +352,20 @@ test('a line inside FUNCTION … ENDFUNCTION belongs to the function module, not
   expect(containerAt(containers, 3)).toMatchObject({ kind: 'event', name: 'INITIALIZATION', lineEnd: 3 });
   expect(readCallGraph(source).functionModules[0].caller).toBe('Z_FOO');
 });
+
+test('an interface method keeps its full name, so two implementations are two containers (QA full review 3f8b458bfc1a)', () => {
+  const source = [
+    'CLASS lcl_impl IMPLEMENTATION.',
+    '  METHOD if_ex_foo~check.',
+    "    PERFORM validate.",
+    '  ENDMETHOD.',
+    '  METHOD if_ex_foo~save.',
+    "    PERFORM persist.",
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+  ].join(String.fromCharCode(10));
+  const { containers } = readBlocks(readStatements(source));
+  expect(containerAt(containers, 3)).toMatchObject({ kind: 'method', name: 'IF_EX_FOO~CHECK' });
+  expect(containerAt(containers, 6)).toMatchObject({ kind: 'method', name: 'IF_EX_FOO~SAVE' });
+  expect(readCallGraph(source).performs.map((p) => p.caller)).toEqual(['IF_EX_FOO~CHECK', 'IF_EX_FOO~SAVE']);
+});
