@@ -68,7 +68,23 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'decision.confirmRefused': 'The server refused the confirmation.',
   'decision.withdrawRefused': 'The server refused the withdrawal.',
   'decision.deriving': 'Deriving the decision of this project…',
-  'decision.withdrawEllipsis': 'Withdraw decision…',
+  'decision.withdrawEllipsis': 'Withdraw to revise…',
+  'decision.restsOn': 'What it rests on',
+  'decision.timeline': 'Timeline',
+  'decision.openPoints': 'Open conditions',
+  'decision.noOpenPoints': 'No condition is open.',
+  'decision.outdated': 'outdated',
+  'decision.analysisRun': 'Analysis run',
+  'decision.technicalBasis': 'Technical basis',
+  'decision.technicalLead':
+    'The sentences the decision record itself carries, for IT readers. The record is stored and revisioned as written; this is its wording.',
+  'decision.placeBusiness': 'Business view',
+  'decision.placeIt': 'IT view',
+  'decision.placeAnalyze': 'Analyze',
+  'decision.placeDesign': 'Design',
+  'decision.placeEconomics': 'Economics',
+  'decision.stateDone': 'met',
+  'decision.stateOpen': 'open',
   'decision.confirmEllipsis': 'Confirm decision…',
   'decision.withdraw': 'Withdraw decision',
   'decision.confirm': 'Confirm decision',
@@ -120,9 +136,14 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'steering.decisionUnreadable': 'the decision of this project could not be read',
   'steering.print': 'Print / Save as PDF',
   'steering.reading': 'Reading the figures of this project…',
-  'steering.figures': 'Figures',
+  'steering.figures': 'Key figures',
   'steering.notDetermined': 'Not determined',
-  'steering.allRead': 'Every figure on this page could be read.',
+  'steering.decision': 'The decision',
+  'steering.risks': 'Risks and blockers',
+  'steering.nextSteps': 'Open points and next steps',
+  'steering.whoActs': 'Who acts',
+  'steering.openDecision': 'Open the decision',
+  'steering.line': 'line',
   // NewProject
   'newProject.createFailed': 'The project could not be created. Nothing was saved.',
   'newProject.loading': 'Loading',
@@ -371,7 +392,17 @@ export function decisionConfirmTitle(decisionId: string): string {
 
 /** DecisionCard — the withdrawal dialog's title. */
 export function decisionWithdrawTitle(decisionId: string): string {
-  return `Withdraw decision ${decisionId}?`;
+  return `Withdraw decision ${decisionId} to revise it?`;
+}
+
+/** DecisionCard — how many conditions are still open, beside their heading. */
+export function decisionOpenCount(open: number, total: number): string {
+  return open === total ? `${open} open` : `${open} of ${total} open`;
+}
+
+/** DecisionCard — the link to the place a pillar or a condition is resolved. */
+export function decisionResolveIn(place: string): string {
+  return `Resolve in ${place}`;
 }
 
 /** DecisionCard — whose confirmation it is, named in the dialog. */

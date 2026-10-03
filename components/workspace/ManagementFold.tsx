@@ -5,8 +5,8 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import { wt } from '@/lib/workspace-messages';
 
 /**
- * One named fold under the Management answer — "Evidence", "Options and the
- * decision", "Costs", "Process" (owner 03.10.2026: "an enormous number of boxes
+ * One named fold under the Management answer — "Evidence", "Costs",
+ * "Process" (owner 03.10.2026: "an enormous number of boxes
  * … at the start the user cannot grasp it"; ADR-037 "show less, lose nothing").
  *
  * Collapsed by default. The reader's choice is remembered **in this browser
@@ -20,11 +20,10 @@ import { wt } from '@/lib/workspace-messages';
  */
 const KEY = 'cc.management.fold.';
 
-export type ManagementFoldId = 'evidence' | 'options' | 'costs' | 'process';
+export type ManagementFoldId = 'evidence' | 'costs' | 'process';
 
 const TITLE: Record<ManagementFoldId, Parameters<typeof wt>[0]> = {
   evidence: 'mgmtFold.evidence',
-  options: 'mgmtFold.options',
   costs: 'mgmtFold.costs',
   process: 'mgmtFold.process',
 };

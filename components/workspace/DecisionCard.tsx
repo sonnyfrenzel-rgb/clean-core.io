@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Calculator, Circle, CircleCheck, Route, ScrollText, Users } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
+import CcDisclosure from '@/components/cc/Disclosure';
+import CcStateText from '@/components/cc/StateText';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
@@ -11,7 +13,11 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { getAuth } from '@/lib/firebase';
 import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command-client';
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
-import type { ProjectDecision, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
+import { decisionManagerView, withoutSourcePaths, type DecisionPlace, type PillarKey } from '@/lib/decision-manager';
+import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
+import { stageHref } from '@/lib/workspace-back-href';
+import { cn } from '@/lib/utils';
+import InfoPopover from './InfoPopover';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import {
   wt,
@@ -21,8 +27,8 @@ import {
   decisionDeriveFailed,
   decisionLatest,
   decisionMovedSentence,
-  decisionShowConditions,
-  decisionTimelineTitle,
+  decisionOpenCount,
+  decisionResolveIn,
   decisionWithdrawTitle,
 } from '@/lib/workspace-messages';
 
@@ -85,8 +91,6 @@ export default function DecisionCard({
   // first recorded the draft has written that draft, so "Nothing was written"
   // would be false there.
   const [refusal, setRefusal] = useState<{ headline: string; sentence: string } | null>(null);
-  const [conditionsOpen, setConditionsOpen] = useState(false);
-  const [timelineOpen, setTimelineOpen] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -129,6 +133,7 @@ export default function DecisionCard({
     return answer.draft;
   }, [answer]);
   const view = useMemo(() => (shown ? decisionCardView(shown) : null), [shown]);
+  const m = useMemo(() => (shown ? decisionManagerView(shown) : null), [shown]);
 
   const account = typeof window === 'undefined' ? null : (getAuth().currentUser?.email ?? null);
 
@@ -215,7 +220,7 @@ export default function DecisionCard({
     );
   }
 
-  if (load.state === 'failed' || !view || !shown || !answer) {
+  if (load.state === 'failed' || !view || !m || !shown || !answer) {
     return (
       <CcCard title={wt('decision.title')} meta={<CcProvenanceChip value="not-determined" />}>
         <p data-decision-card="unreadable" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
@@ -227,179 +232,249 @@ export default function DecisionCard({
 
   const isConfirmed = shown.status === 'confirmed';
   const moved = isConfirmed && !answer.unchanged;
+  const blocked = view.coverage.state === 'blocked';
 
   return (
-    <div data-decision-card="" data-decision-status={shown.status} data-decision-coverage={view.coverage.state}>
-      <CcCard
-        title={wt('decision.title')}
-        meta={
-          <>
-            <code data-decision-identity="" className="text-[12px] font-medium text-cc-ink-muted">
-              {view.identity}
-            </code>
+    <div
+      data-decision-card=""
+      data-decision-status={shown.status}
+      data-decision-coverage={view.coverage.state}
+      className="min-w-0"
+    >
+      {/* Identity and status on the left, the decision's own action on the right. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <code data-decision-identity="" className="text-[12px] font-medium text-cc-ink-muted">
+            {view.identity}
+          </code>
+          <span data-decision-state={moved ? 'outdated' : shown.status} className="inline-flex items-center gap-2">
             <CcObjectStatus value={STATUS_OF[shown.status]} />
-          </>
-        }
-        actions={
-          answer.canDecide ? (
-            isConfirmed ? (
-              <CcButton onClick={() => setAsking('withdraw')} disabled={busy} data-decision-withdraw="">
-                {wt('decision.withdrawEllipsis')}
-              </CcButton>
-            ) : (
-              <CcButton
-                variant="primary"
-                onClick={() => setAsking('confirm')}
-                disabled={busy || !view.confirmable}
-                aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}
-                data-decision-confirm=""
-              >
-                {wt('decision.confirmEllipsis')}
-              </CcButton>
-            )
-          ) : null
-        }
-      >
-        <p data-decision-summary="" className="m-0 text-[14px] leading-snug font-semibold text-cc-ink">
-          {view.summary}
-        </p>
-
-        <dl className="m-0 mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-[13px]">
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.binds')}</dt>
-          <dd className="m-0 min-w-0">
-            <ul data-decision-binds="" className="m-0 list-none space-y-1 p-0">
-              {view.bindings.map((b) => (
-                <Binding key={b.key} binding={b} />
-              ))}
-            </ul>
-          </dd>
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.run')}</dt>
-          <dd className="m-0 min-w-0">
-            <ul className="m-0 list-none p-0">
-              <Binding binding={view.run} />
-            </ul>
-          </dd>
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</dt>
-          <dd className="m-0 min-w-0" data-decision-reversible={shown.reversibility.answer}>
-            <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
-            <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">
-              {view.reversible.detail}
-            </span>
-          </dd>
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.conditions')}</dt>
-          <dd className="m-0 min-w-0">
-            <span data-decision-conditions-summary="" className="font-medium text-cc-ink">
-              {view.conditionsSummary}
-            </span>
-            {view.conditions.length > 0 ? (
-              <span className="ml-2 inline-block">
-                <CcButton
-                  variant="ghost"
-                  onClick={() => setConditionsOpen((v) => !v)}
-                  aria-expanded={conditionsOpen}
-                  aria-controls="decision-conditions"
-                  data-decision-conditions-toggle=""
-                >
-                  {conditionsOpen ? wt('decision.hideConditions') : decisionShowConditions(view.conditions.length)}
-                  <ChevronDown size={14} aria-hidden={true} />
-                </CcButton>
-              </span>
-            ) : null}
-            {conditionsOpen ? (
-              <ul id="decision-conditions" data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
-                {view.conditions.map((c) => (
-                  <li
-                    key={c.id}
-                    data-decision-condition={c.id}
-                    title={c.id}
-                    className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span data-decision-condition-status={c.status} className="text-[12px] font-semibold text-cc-ink">
-                        {CONDITION_STATUS_LABEL[c.status]}
-                      </span>
-                      <span className="text-[12px] font-medium text-cc-ink-muted">
-                        {c.statusBasis === 'derived' ? wt('decision.fromEvidence') : wt('decision.statedByAccount')}
-                      </span>
-                      <CcProvenanceChip value={c.provenance} />
-                    </div>
-                    <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{c.text}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </dd>
-        </dl>
-
-        {view.coverage.state !== 'clear' ? (
-          <p
-            id="decision-blocked-reason"
-            data-decision-coverage-sentence=""
-            className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted"
-          >
-            {view.coverage.state === 'blocked' ? wt('decision.cannotConfirmYet') : wt('decision.qualified')}{' '}
-            {view.coverage.sentence}
-          </p>
-        ) : null}
-
-        {moved ? (
-          <p data-decision-moved="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
-            {decisionMovedSentence(answer.draft.revision)}
-          </p>
-        ) : null}
-
-        {isConfirmed && answer.stored?.confirmation ? (
-          <p data-decision-confirmed-by="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
-            {decisionConfirmedBy(answer.stored.confirmation.account, answer.stored.confirmation.at.slice(0, 10))}
-          </p>
-        ) : null}
-
-        <p data-decision-self-declaration="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-          {view.selfDeclaration}
-        </p>
-
-        {refusal ? (
-          <div className="mt-3" data-decision-refusal="">
-            <CcMessageStrip state="error" headline={refusal.headline} announce={true}>
-              {refusal.sentence}
-            </CcMessageStrip>
-          </div>
-        ) : null}
-
-        {/* The timeline — folded, as the mockup folds it. */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-cc-line pt-3">
-          <h4 className="m-0 text-[13px] font-bold text-cc-ink">{decisionTimelineTitle(shown.timeline.length)}</h4>
-          {shown.timeline.length > 0 ? (
-            <span className="text-[12px] font-medium text-cc-ink-muted">
-              {decisionLatest(shown.timeline[shown.timeline.length - 1].at.slice(0, 10))}
-            </span>
-          ) : null}
-          {shown.timeline.length > 0 ? (
-            <span className="ml-auto">
-              <CcButton
-                variant="ghost"
-                onClick={() => setTimelineOpen((v) => !v)}
-                aria-expanded={timelineOpen}
-                aria-controls="decision-timeline"
-                data-decision-timeline-toggle=""
-              >
-                {timelineOpen ? wt('decision.hide') : wt('decision.show')}
-                <ChevronDown size={14} aria-hidden={true} />
-              </CcButton>
-            </span>
-          ) : null}
+            {moved ? <CcStateText state="warning">{wt('decision.outdated')}</CcStateText> : null}
+          </span>
         </div>
-        {timelineOpen ? (
-          <ol id="decision-timeline" data-decision-timeline="" className="m-0 mt-2 list-none space-y-1 p-0">
-            {shown.timeline.map((entry, i) => (
-              <li key={`${entry.at}-${entry.kind}-${i}`} className="text-[12px] leading-snug font-medium text-cc-ink">
-                <code className="text-cc-ink-muted">{entry.at.slice(0, 10)}</code> {entry.sentence}
-                {entry.account ? <span className="text-cc-ink-muted"> · {entry.account}</span> : null}
-              </li>
-            ))}
-          </ol>
+        {answer.canDecide ? (
+          isConfirmed ? (
+            <CcButton onClick={() => setAsking('withdraw')} disabled={busy} data-decision-withdraw="">
+              {wt('decision.withdrawEllipsis')}
+            </CcButton>
+          ) : (
+            <CcButton
+              // Primary only when it can be done: a blocked decision leaves the
+              // page's one primary to the step that unblocks it.
+              variant={view.confirmable ? 'primary' : 'secondary'}
+              onClick={() => setAsking('confirm')}
+              disabled={busy || !view.confirmable}
+              aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}
+              data-decision-confirm=""
+            >
+              {wt('decision.confirmEllipsis')}
+            </CcButton>
+          )
         ) : null}
-      </CcCard>
+      </div>
+
+      {/* The decided or proposed option, in big type, and one sentence of why. */}
+      <h3
+        data-decision-headline=""
+        data-management-headline=""
+        className="m-0 mt-2 cc-text-h2 leading-snug text-cc-ink"
+      >
+        {m.headline}
+      </h3>
+      <p data-decision-why="" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink">
+        {m.why}
+      </p>
+      <p data-decision-summary="" className="sr-only">
+        {view.summary}
+      </p>
+
+      {/* What it rests on: four pillars, each with its state and one plain line. */}
+      <h4 className={cn(LABEL, 'mt-4')}>{wt('decision.restsOn')}</h4>
+      <ul
+        data-decision-pillars=""
+        className="m-0 mt-2 grid list-none grid-cols-1 gap-2 p-0 min-[420px]:grid-cols-2 xl:grid-cols-4"
+      >
+        {m.pillars.map((p) => {
+          const Icon = PILLAR_ICON[p.key];
+          return (
+            <li
+              key={p.key}
+              data-decision-pillar={p.key}
+              data-decision-pillar-provenance={p.provenance}
+              className={cn(
+                'flex min-w-0 flex-col rounded-cc-row border bg-cc-surface-muted p-3',
+                p.inPlace ? 'border-cc-line' : 'border-dashed border-cc-field-border',
+              )}
+            >
+              <span className="flex items-center gap-2 text-[12px] font-bold text-cc-ink">
+                <Icon size={16} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+                {p.title}
+              </span>
+              <span className="mt-2 flex flex-wrap items-center gap-2">
+                <CcProvenanceChip value={p.provenance} />
+                {p.draft ? <CcObjectStatus value="draft" /> : null}
+              </span>
+              <span className="mt-2 text-[12px] leading-snug font-medium text-cc-ink">{p.line}</span>
+              <a
+                href={placeHref(projectId, p.place)}
+                className="mt-auto pt-2 text-[12px] font-semibold text-cc-ink underline underline-offset-2"
+              >
+                {placeLabel(p.place)}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* The open conditions: one plain line each, and where each is resolved. */}
+      <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
+        <h4 className={LABEL}>{wt('decision.openPoints')}</h4>
+        <span data-decision-conditions-summary="" className="text-[12px] font-semibold text-cc-ink">
+          {m.points.length === 0 ? wt('decision.noOpenPoints') : decisionOpenCount(m.openPoints, m.points.length)}
+        </span>
+      </div>
+      {m.points.length > 0 ? (
+        <ul data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
+          {m.points.map((pt) => (
+            <li
+              key={pt.id}
+              data-decision-condition={pt.id}
+              data-decision-condition-status={pt.status}
+              className="flex items-start gap-2"
+            >
+              {pt.done ? (
+                <CircleCheck size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink" />
+              ) : (
+                <Circle size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              )}
+              <span className="min-w-0 flex-1 text-[13px] leading-snug font-medium text-cc-ink">
+                <span className="sr-only">{pt.done ? wt('decision.stateDone') : wt('decision.stateOpen')}: </span>
+                {pt.line}
+                {pt.place ? (
+                  <>
+                    {' '}
+                    <a
+                      href={placeHref(projectId, pt.place)}
+                      className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
+                    >
+                      {decisionResolveIn(placeLabel(pt.place))}
+                    </a>
+                  </>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {/* The run it stands on, and whether it can be taken back. */}
+      <dl className="m-0 mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px]">
+        <div className="flex min-w-0 flex-wrap items-center gap-2" data-decision-binding="run" data-decision-binding-determined={view.run.value === null ? 'no' : 'yes'}>
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.analysisRun')}</dt>
+          <dd className="m-0 flex min-w-0 flex-wrap items-center gap-2">
+            <CcProvenanceChip value={view.run.provenance} />
+            {view.run.value !== null ? (
+              <code className="text-[12px] font-medium break-all text-cc-ink-muted">{view.run.value}</code>
+            ) : (
+              <span className="font-medium text-cc-ink-muted">{view.run.reason}</span>
+            )}
+          </dd>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</dt>
+          <dd className="m-0 flex items-center gap-1" data-decision-reversible={shown.reversibility.answer}>
+            <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
+            <InfoPopover subject={wt('decision.reversible')} hook="decision-reversible">
+              {withoutSourcePaths(view.reversible.detail)}
+            </InfoPopover>
+          </dd>
+        </div>
+      </dl>
+
+      {m.readiness ? (
+        <p
+          id="decision-blocked-reason"
+          data-decision-coverage-sentence=""
+          className={cn('m-0 mt-3 text-[12px] leading-snug', blocked ? 'font-semibold text-cc-ink' : 'font-medium text-cc-ink-muted')}
+        >
+          {m.readiness}
+        </p>
+      ) : null}
+
+      {moved ? (
+        <p data-decision-moved="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
+          {decisionMovedSentence(answer.draft.revision)}
+        </p>
+      ) : null}
+
+      {isConfirmed && answer.stored?.confirmation ? (
+        <p data-decision-confirmed-by="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
+          {decisionConfirmedBy(answer.stored.confirmation.account, answer.stored.confirmation.at.slice(0, 10))}
+        </p>
+      ) : null}
+
+      <p data-decision-self-declaration="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+        {view.selfDeclaration}
+      </p>
+
+      {refusal ? (
+        <div className="mt-3" data-decision-refusal="">
+          <CcMessageStrip state="error" headline={refusal.headline} announce={true}>
+            {refusal.sentence}
+          </CcMessageStrip>
+        </div>
+      ) : null}
+
+      {/* For IT readers, folded: the record's own sentences, without source file paths. */}
+      <div className="mt-3 border-t border-cc-line pt-1" data-decision-technical="">
+        <CcDisclosure title={wt('decision.technicalBasis')} count={m.technical.length} level={4} density="compact">
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('decision.technicalLead')}</p>
+          <ul className="m-0 mt-2 list-none space-y-2 p-0">
+            {view.bindings.map((b) => (
+              <Binding key={b.key} binding={b} />
+            ))}
+          </ul>
+          <dl className="m-0 mt-2 space-y-2">
+            {m.technical
+              .filter((e) => !e.key.startsWith('binding:'))
+              .map((e) => (
+                <div key={e.key} data-decision-technical-entry={e.key}>
+                  <dt className="text-[12px] font-semibold text-cc-ink-muted">
+                    {e.label}
+                    {e.key.startsWith('condition:') ? (
+                      <span className="ml-2 font-medium">
+                        {conditionBasis(view.conditions, e.key.slice('condition:'.length))}
+                      </span>
+                    ) : null}
+                  </dt>
+                  <dd className="m-0 text-[12px] leading-snug font-medium text-cc-ink">{e.text}</dd>
+                </div>
+              ))}
+          </dl>
+        </CcDisclosure>
+      </div>
+
+      {/* The timeline — folded, as the mockup folds it. */}
+      {shown.timeline.length > 0 ? (
+        <div className="border-t border-cc-line pt-1" data-decision-timeline-fold="">
+          <CcDisclosure
+            title={wt('decision.timeline')}
+            count={shown.timeline.length}
+            summary={decisionLatest(shown.timeline[shown.timeline.length - 1].at.slice(0, 10))}
+            level={4}
+            density="compact"
+          >
+            <ol id="decision-timeline" data-decision-timeline="" className="m-0 list-none space-y-1 p-0">
+              {shown.timeline.map((entry, i) => (
+                <li key={`${entry.at}-${entry.kind}-${i}`} className="text-[12px] leading-snug font-medium text-cc-ink">
+                  <code className="text-cc-ink-muted">{entry.at.slice(0, 10)}</code> {entry.sentence}
+                  {entry.account ? <span className="text-cc-ink-muted"> · {entry.account}</span> : null}
+                </li>
+              ))}
+            </ol>
+          </CcDisclosure>
+        </div>
+      ) : null}
 
       <CcMessageBox
         open={asking === 'confirm'}
@@ -433,6 +508,38 @@ export default function DecisionCard({
   );
 }
 
+const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
+
+const PILLAR_ICON: Record<PillarKey, typeof Users> = {
+  need: Users,
+  option: Route,
+  cost: Calculator,
+  contract: ScrollText,
+};
+
+const THIS_VIEW = 'management';
+
+/** Where a pillar or a condition is resolved, as a link on this page. */
+function placeHref(projectId: string, place: DecisionPlace): string {
+  if (place.kind === 'view') return `/project/${encodeURIComponent(projectId)}?view=${place.view}`;
+  // Back to this view from the stage: a link parameter, never a stored role.
+  return stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });
+}
+
+function placeLabel(place: DecisionPlace): string {
+  if (place.kind === 'view') return wt(place.view === 'business' ? 'decision.placeBusiness' : 'decision.placeIt');
+  return wt(
+    place.path === 'tco' ? 'decision.placeEconomics' : place.path === 'design' ? 'decision.placeDesign' : 'decision.placeAnalyze',
+  );
+}
+
+/** Whose status a condition carries — the evidence's or the account's — and the status itself. */
+function conditionBasis(conditions: readonly DecisionCondition[], id: string): string {
+  const c = conditions.find((x) => x.id === id);
+  if (!c) return '';
+  return `${CONDITION_STATUS_LABEL[c.status]} · ${c.statusBasis === 'derived' ? wt('decision.fromEvidence') : wt('decision.statedByAccount')}`;
+}
+
 /** One binding: what is bound, or *not determined* with its reason. */
 function Binding({ binding }: { binding: CardBinding }) {
   return (
@@ -447,9 +554,9 @@ function Binding({ binding }: { binding: CardBinding }) {
         <CcProvenanceChip value={binding.provenance} />
       </span>
       {binding.value === null ? (
-        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.reason}</span>
+        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{withoutSourcePaths(binding.reason ?? '')}</span>
       ) : binding.note ? (
-        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.note}</span>
+        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{withoutSourcePaths(binding.note)}</span>
       ) : null}
     </li>
   );

@@ -287,6 +287,7 @@ export default function ManagementOverview({
   nextStep,
   coach,
   evidenceExtra,
+  decision: decisionCard,
   children,
 }: {
   project: Project | null;
@@ -310,6 +311,8 @@ export default function ManagementOverview({
   coach?: React.ReactNode;
   /** What else belongs in the "Evidence" fold — the buckets per object, what could not be determined. */
   evidenceExtra?: React.ReactNode;
+  /** The decision record's card, shown as the hero of the panel once there is a signed run to decide on. */
+  decision?: React.ReactNode;
   /** The detailed answers of 6.4, folded under the overview (§2.11: nothing lost, nothing first). */
   children?: React.ReactNode;
 }) {
@@ -435,6 +438,7 @@ export default function ManagementOverview({
         fitDetailsHref="#public-cloud-fit"
         setTargetHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
         coach={coach}
+        decision={hasRun ? decisionCard : undefined}
       />
 
       {/* Everything behind the two cards, one action deeper (§2.11, owner
