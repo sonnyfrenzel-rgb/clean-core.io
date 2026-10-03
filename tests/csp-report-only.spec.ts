@@ -16,6 +16,9 @@ import {
 } from '../lib/csp-report';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { pageSettled } from './helpers/design-rendered';
+import { NextRequest } from 'next/server';
+import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
+import { middleware } from '../middleware';
 
 /**
  * Stage 1 of the CSP rebuild (ADR-065): the strict policy is shipped as
@@ -112,7 +115,7 @@ test.describe('CSP report-only — source', () => {
     expect(src).toContain('useEmulatorFlag: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR');
   });
 
-  test('the middleware sends the report-only header and drops incoming CSP request headers', () => {
+  test('the middleware sends the report-only header and owns the nonce request headers', () => {
     const src = read('middleware.ts');
     expect(src).toContain("response.headers.set('Content-Security-Policy-Report-Only', reportOnlyCsp);");
     expect(src).not.toContain('Reporting-Endpoints');
@@ -120,10 +123,10 @@ test.describe('CSP report-only — source', () => {
     expect(src).toContain("requestHeaders.delete('content-security-policy');");
     expect(src).toContain("requestHeaders.delete('content-security-policy-report-only');");
     expect(src).toContain("requestHeaders.delete('x-nonce');");
-    // Stage 1a: no nonce yet — the enforced header set here would hide it from
-    // Next (ADR-065), so a nonce policy would only report Next's own scripts.
-    expect(src).not.toContain('createNonce(');
+    expect(src).toMatch(/if \(nonce\) \{\s*requestHeaders\.set\('x-nonce', nonce\);\s*requestHeaders\.set\('content-security-policy-report-only', reportOnlyCsp\);/);
     expect(src).toContain('NextResponse.next({ request: { headers: requestHeaders } })');
+    // On a nonce route the enforced policy comes from next.config.mjs (ADR-065).
+    expect(src).toContain("if (!nonce) response.headers.set('Content-Security-Policy', csp);");
     // /api stays outside the matcher, so the report endpoint is never behind it.
     expect(src).toContain("source: '/((?!api|_next/static|_next/image|favicon.ico|icon.svg|screenshots|og-image).*)'");
   });
@@ -179,6 +182,51 @@ test.describe('CSP report-only — source', () => {
     expect(isNonceRoute('/dashboard')).toBe(false);
     expect(isNonceRoute('/project/abc/analyze')).toBe(true);
     expect(nonced.length).toBe(13);
+  });
+
+  test('every page gets the same enforced policy, whoever delivers it', async () => {
+    // next.config.mjs delivers the enforced policy on the nonce routes, so Next
+    // does not read it as the request's CSP. It must be the middleware's string,
+    // in every build flavour, and it must cover exactly the nonce routes.
+    const config = (await import('../next.config.mjs')) as unknown as {
+      NONCE_ROUTE_SOURCES: string[];
+      nonceRouteCspHeaders: (env: Record<string, string | undefined>) => { source: string; headers: { key: string; value: string }[] }[];
+    };
+    const saved = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+    try {
+      for (const flag of ['true', undefined]) {
+        if (flag === undefined) delete process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+        else process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = flag;
+        const fromMiddleware = middleware(new NextRequest('http://localhost/')).headers.get('content-security-policy');
+        expect(fromMiddleware, 'the middleware set no enforced policy on the landing').toBeTruthy();
+        const entries = config.nonceRouteCspHeaders({ NODE_ENV: 'production', NEXT_PUBLIC_USE_FIREBASE_EMULATOR: flag });
+        expect(entries.map((e) => e.source)).toEqual(config.NONCE_ROUTE_SOURCES);
+        for (const e of entries) {
+          expect(e.headers).toEqual([{ key: 'Content-Security-Policy', value: fromMiddleware }]);
+        }
+        // A nonce route: the middleware leaves the enforced header to the config…
+        const onNonceRoute = middleware(new NextRequest('http://localhost/project/p1/analyze'));
+        expect(onNonceRoute.headers.get('content-security-policy')).toBeNull();
+        expect(onNonceRoute.headers.get('content-security-policy-report-only')).toContain("'strict-dynamic'");
+      }
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+      else process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = saved;
+    }
+    // …and not in development, where the middleware sends none either.
+    expect(config.nonceRouteCspHeaders({ NODE_ENV: 'development' })).toEqual([]);
+
+    // The config sources and isNonceRoute name the same pages.
+    const sources = config.NONCE_ROUTE_SOURCES.map((src) => getPathMatch(src));
+    const samples = [
+      '/project/p1', '/project/p1/analyze', '/project/p1/delivery', '/project/p1/design', '/project/p1/documentation',
+      '/project/p1/tco', '/project/p1/testing', '/project/p1/transformation', '/invitation/p1/i1', '/auth/action',
+      '/survey/t1', '/unsubscribe', '/admin/design-system/first-render',
+      '/', '/dashboard', '/verify-pack', '/catalog', '/catalog/acdoca', '/project/p1/other', '/demo/analyze', '/settings',
+    ];
+    for (const url of samples) {
+      expect(sources.some((match) => match(url) !== false), `next.config sources vs isNonceRoute on ${url}`).toBe(isNonceRoute(url));
+    }
   });
 
   test('every inline <script in app/ and components/ carries a nonce or is JSON-LD through the helper', () => {
@@ -323,18 +371,52 @@ test.describe('CSP report-only — rendered', () => {
     expect(await scriptViolations(page)).toEqual([]);
   });
 
-  test('no page carries a nonce yet, whatever the request says (stage 1a)', async ({ request }) => {
-    for (const url of ['/dashboard', PER_REQUEST_PAGE]) {
-      const res = await request.get(url, {
-        headers: { 'content-security-policy-report-only': "script-src 'nonce-FORGED'", 'content-security-policy': "script-src 'nonce-FORGED'", 'x-nonce': 'FORGED' },
-      });
-      test.skip(!res.headers()['content-security-policy'], 'no CSP: a dev server');
-      expect(res.headers()['content-security-policy-report-only'], `${url}: no report-only header`).toBeTruthy();
-      expect(nonceOf(res.headers()['content-security-policy-report-only'])).toBeUndefined();
-      const html = await res.text();
-      expect(html, `${url}: a client-sent nonce reached the page`).not.toContain('FORGED');
-      expect(html).not.toMatch(/<script[^>]*\snonce=/);
+  test('a per-request page gets a fresh nonce that Next puts on every script', async ({ request }) => {
+    const first = await request.get(PER_REQUEST_PAGE);
+    test.skip(!first.headers()['content-security-policy'], 'no CSP: a dev server');
+    const second = await request.get(PER_REQUEST_PAGE);
+    const n1 = nonceOf(first.headers()['content-security-policy-report-only']);
+    const n2 = nonceOf(second.headers()['content-security-policy-report-only']);
+    expect(n1, 'no nonce in the report-only header').toBeTruthy();
+    expect(n2).toBeTruthy();
+    expect(n1, 'the nonce repeated across two requests').not.toBe(n2);
+    // The enforced policy is not the one carrying it, and it is the landing's.
+    expect(first.headers()['content-security-policy']).not.toContain('nonce-');
+    const landing = await request.get('/');
+    expect(first.headers()['content-security-policy']).toBe(landing.headers()['content-security-policy']);
+    // Every per-request route still gets the enforced policy, exactly once.
+    for (const url of ['/project/p1', '/project/p1/tco', '/invitation/p1/i1', '/auth/action', '/survey/t1', '/unsubscribe', '/admin/design-system/first-render']) {
+      const res = await request.get(url, { maxRedirects: 0 });
+      expect(res.headers()['content-security-policy'], `${url}: enforced policy`).toBe(landing.headers()['content-security-policy']);
+      expect(res.headersArray().filter((h) => h.name.toLowerCase() === 'content-security-policy'), url).toHaveLength(1);
+      expect(nonceOf(res.headers()['content-security-policy-report-only']), `${url}: no nonce`).toBeTruthy();
     }
+    expect(first.headers()['content-security-policy']).toContain("'unsafe-inline'");
+
+    for (const [res, nonce] of [[first, n1], [second, n2]] as const) {
+      const html = await res.text();
+      const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+      expect(scripts.length).toBeGreaterThan(3);
+      const without = scripts.filter((s) => !s.includes(`nonce="${nonce}"`));
+      expect(without, `scripts without the response's nonce:\n${without.join('\n')}`).toEqual([]);
+    }
+
+    // A nonce the client sends is ignored.
+    const forged = await request.get(PER_REQUEST_PAGE, {
+      headers: { 'content-security-policy-report-only': "script-src 'nonce-FORGED'", 'content-security-policy': "script-src 'nonce-FORGED'", 'x-nonce': 'FORGED' },
+    });
+    expect(await forged.text()).not.toContain('FORGED');
+  });
+
+  test('a static page never carries a nonce, whatever the request says', async ({ request }) => {
+    const res = await request.get('/dashboard', {
+      headers: { 'content-security-policy-report-only': "script-src 'nonce-FORGED'" },
+    });
+    test.skip(!res.headers()['content-security-policy'], 'no CSP: a dev server');
+    expect(nonceOf(res.headers()['content-security-policy-report-only'])).toBeUndefined();
+    const html = await res.text();
+    expect(html).not.toContain('FORGED');
+    expect(html).not.toMatch(/<script[^>]*\snonce=/);
   });
 
   test('the report endpoint answers 204 to both formats and refuses an oversized body', async ({ request }) => {
@@ -382,11 +464,23 @@ test.describe('CSP report-only — rendered', () => {
       await page.waitForSelector('main', { timeout: 30_000 });
       expect(await scriptViolations(page), 'script-src violations on /dashboard').toEqual([]);
 
-      // A project stage, loaded as a document.
+      // A project stage, loaded as a document: per request, with a nonce.
       const stage = await page.goto(`/project/${PROJECT_ID}/analyze`);
-      expect(stage!.headers()['content-security-policy-report-only']).toBeTruthy();
+      const stageNonce = nonceOf(stage!.headers()['content-security-policy-report-only']);
+      expect(stageNonce).toBeTruthy();
       await page.waitForSelector('[data-stage-title]', { timeout: 30_000 });
+      // The nonce on the scripts in the live document is the header's. Scripts
+      // inserted later by trusted code carry none and need none ('strict-dynamic').
+      const scriptNonces = await page.evaluate(() =>
+        [...document.querySelectorAll('script')].map((s) => s.nonce).filter(Boolean),
+      );
+      expect(scriptNonces.length).toBeGreaterThan(3);
+      expect(new Set(scriptNonces)).toEqual(new Set([stageNonce]));
       expect(await scriptViolations(page), 'script-src violations on the analyze stage').toEqual([]);
+
+      // The same stage, reloaded: a new nonce.
+      const again = await page.reload();
+      expect(nonceOf(again!.headers()['content-security-policy-report-only'])).not.toBe(stageNonce);
     });
   });
 });
