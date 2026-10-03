@@ -101,8 +101,6 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.plainNames': 'plain names',
   'buildUp.codeLabel': 'The source, as it is being read',
   'buildUp.processLabel': 'The process, growing out of the lines that were read',
-  'buildUp.legendNode': 'process node',
-  'buildUp.legendData': 'table read or written',
   'buildUp.railLabel': 'What the reading does, in order',
   'buildUp.railNamesPlain': 'plain names, no model',
   'buildUp.railNamesProposed': 'names proposed by a model',
@@ -111,20 +109,22 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.railMapWriting': 'writing the narrative (model)',
   'buildUp.railMapFailed': 'not signed',
   'buildUp.railMapUnsigned': 'needs a signed run',
-  'buildUp.reading': 'Reading…',
-  'buildUp.mapTitle': 'Your full process map',
-  'buildUp.mapDrawn':
-    'Signed: the server read the same source again and recorded it, without a model call. The full map stands right under your process.',
-  'buildUp.mapRunning':
-    'The server reads the same source again and signs the reading — no model call. The map is drawn from that signed run, so every step keeps its line.',
-  'buildUp.mapRunningModel':
-    'The server reads the same source again and signs it as one run, with the narrative if the model wrote one in time. The map is drawn from that signed run, so every step keeps its line.',
-  'buildUp.mapDrawnModel':
-    'Signed: the server read the same source again and recorded it as one run. The full map stands right under your process.',
-  'buildUp.mapFailed':
-    'The reading could not be signed, so the full map is not drawn. The reason and a way to try again stand where the map goes.',
-  'buildUp.mapUnsigned':
-    'The full map is drawn only from a signed run, so every step keeps its line. Where it goes, the page says how to get one.',
+  'buildUp.pause': 'Pause',
+  'buildUp.continue': 'Continue',
+  'buildUp.paused': 'Paused',
+  'buildUp.progressLabel': 'How far the reading has got',
+  'buildUp.headProcess': 'Finding the process in the code…',
+  'buildUp.headNames': 'Each step, in plain words',
+  'buildUp.headNamesProposed': 'Each step, in the names a model proposed',
+  'buildUp.headRulesReading': 'Looking for the rules in the code…',
+  'buildUp.headOpenReading': 'Looking for what the engine cannot judge…',
+  'buildUp.headMap': 'Your process, every step tied to its line',
+  'buildUp.statusDrawn': 'Signed on the server, without a model call — the full map follows below.',
+  'buildUp.statusDrawnModel': 'Signed on the server as one run — the full map follows below.',
+  'buildUp.statusRunning': 'The server reads the same source again and signs it — no model call.',
+  'buildUp.statusRunningModel': 'The server signs the same source as one run, with the narrative if it is written in time.',
+  'buildUp.statusFailed': 'The reading could not be signed — the reason and a way to try again stand where the map goes.',
+  'buildUp.statusUnsigned': 'The full map is drawn only from a signed run — where it goes, the page says how to get one.',
   // FirstLook — the end state of s0 (moment 4)
   'firstLook.showSource': 'Show source',
   'firstLook.hideSource': 'Hide source',
@@ -305,11 +305,6 @@ export function buildUpStageLabel(stage: keyof typeof BUILD_UP_STAGES): string {
   return BUILD_UP_STAGES[stage];
 }
 
-/** "Reading Z_MM_PO_APPROVAL.abap, 668 lines · FORM CHECK_LIMIT". */
-export function buildUpLive(sourceName: string, lines: number, container: string | null): string {
-  return `Reading ${sourceName}, ${lines} lines${container ? ` · ${container}` : ''}`;
-}
-
 /** One counter of the build-up. */
 export function buildUpCounter(kind: 'lines' | 'tables' | 'nodes' | 'decisions', n: number, of?: number): string {
   switch (kind) {
@@ -347,6 +342,30 @@ export function buildUpRailOpen(n: number): string {
 /** "grows out of L87". */
 export function buildUpGrowsOut(anchor: string): string {
   return `grows out of ${anchor}`;
+}
+
+/** The headline of step 1: "Reading your 668 lines…". */
+export function buildUpHeadRead(lines: number): string {
+  return `Reading your ${lines.toLocaleString('en')} ${lines === 1 ? 'line' : 'lines'}…`;
+}
+
+/** The headline of the rules step: "11 business rules are hard-coded". */
+export function buildUpHeadRules(n: number): string {
+  if (n === 0) return 'No hard-coded business rule found';
+  return n === 1 ? '1 business rule is hard-coded' : `${n} business rules are hard-coded`;
+}
+
+/** The headline of the open step: "5 points the engine cannot judge — shown, not hidden". */
+export function buildUpHeadOpen(n: number): string {
+  if (n === 0) return 'No point the engine could not judge';
+  return n === 1
+    ? '1 point the engine cannot judge — shown, not hidden'
+    : `${n} points the engine cannot judge — shown, not hidden`;
+}
+
+/** "+ 7 more". */
+export function buildUpMore(n: number): string {
+  return `+ ${n} more`;
 }
 
 /** "+ 20 more names". */
