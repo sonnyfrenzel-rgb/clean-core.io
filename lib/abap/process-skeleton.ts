@@ -674,6 +674,29 @@ function leavesDialogStep(text: string): string | null {
   return m ? `LEAVE ${m[1].replace(/\s+/g, ' ').toUpperCase()}` : null;
 }
 
+/** ADR-066 — the trigger of a FORM called by output control. */
+const OUTPUT_CONTROL = 'output control';
+
+/**
+ * ADR-066 — the SAP convention a `FORM` opener follows, as its trigger, or
+ * `null`.
+ *
+ * Output control (NAST): the output processing program (RSNAST00) performs the
+ * routine an output type names in table TNAPR (fields PGNAM / ROUTN) with two
+ * `USING` parameters, the return code and the screen flag, i.e.
+ * `FORM entry USING return_code us_screen.` The routine name is free; the
+ * two-parameter interface is the convention, in the two spellings SAP's own
+ * print programs use (`return_code us_screen`, e.g. RVADOR01;
+ * `ent_retco ent_screen`, e.g. RVADIN01).
+ */
+const OUTPUT_CONTROL_FORM =
+  /^FORM\s+[\w/]+\s+USING\s+(?:RETURN_CODE|ENT_RETCO)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s+(?:US_SCREEN|ENT_SCREEN)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s*\.?$/i;
+
+function formConvention(opener: string): string | null {
+  if (OUTPUT_CONTROL_FORM.test(opener.trim())) return OUTPUT_CONTROL;
+  return null;
+}
+
 /** `RAISE EXCEPTION …`, `RAISE cx_…`, `RAISE RESUMABLE …` — the `RAISE` that ends the flow. */
 function raisesException(statement: AbapStatement): boolean {
   return statement.keyword === 'RAISE' && !isRaiseEvent(statement.text);
@@ -1847,6 +1870,7 @@ class SkeletonBuilder {
         ...this.functionEntries(),
         ...this.methodEntries(),
         ...(this.modulesWaitForScreen ? [] : this.moduleEntries()),
+        ...this.conventionFormEntries(),
       ].sort((a, b) => a.statement.index - b.statement.index);
       return [...events, ...this.noteTriggers(outside)];
     }
@@ -1858,6 +1882,7 @@ class SkeletonBuilder {
       ...this.functionEntries(),
       ...this.methodEntries(),
       ...this.moduleEntries(),
+      ...this.conventionFormEntries(),
     ].sort((a, b) => a.statement.index - b.statement.index);
     if (calledFromOutside.length) return this.noteTriggers(calledFromOutside);
 
@@ -2320,6 +2345,38 @@ class SkeletonBuilder {
   }
 
   /**
+   * ADR-066 — a `FORM` that SAP calls by a documented convention, which no
+   * `PERFORM` of this source names. It is called from outside exactly as a
+   * `MODULE … INPUT` is, so it is an entry **beside** the event blocks and the
+   * other outside entries, not a last resort. The convention is the trigger;
+   * which output type or which standard transaction runs it is configuration
+   * outside the source, and `noteTriggers` says so.
+   */
+  private conventionFormEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    const neverPerformed = new Set(this.calls.neverPerformed);
+    for (const [name, block] of this.formBlocks) {
+      if (!neverPerformed.has(name) || this.entryOfBlock.has(block.openIndex)) continue;
+      const opener = this.statements[block.openIndex];
+      const trigger = formConvention(opener.text);
+      if (!trigger) continue;
+      const written = /^FORM\s+([\w/]+)/i.exec(opener.text);
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: written ? written[1] : name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'form',
+        trigger,
+      });
+    }
+    return out;
+  }
+
+  /**
    * The bare `FORM` — a user exit, an enhancement include. Last, and only when
    * nothing else in this source answered: a form a report performs is a step of
    * that report, and drawing it as a second beginning would double it.
@@ -2373,6 +2430,9 @@ class SkeletonBuilder {
         : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
           : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
+              : entry.trigger === OUTPUT_CONTROL
+                ? 'its interface (return code, screen flag) is the one output control calls a processing routine '
+                  + 'with (table TNAPR)'
               : entry.trigger?.startsWith('REDEFINITION OF ')
                 ? `it redefines a method of ${entry.trigger.slice(16)}, which is not in this source and is what calls it`
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`

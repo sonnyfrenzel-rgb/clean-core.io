@@ -67,3 +67,41 @@ test.describe('ALV callbacks named by literal', () => {
     expect(skeleton.notDrawn.unreached.map((u) => u.name)).toEqual(['SET_PF', 'HANDLE_UCOMM', 'PAGE_HEADER']);
   });
 });
+
+test.describe('output control processing routines (NAST, table TNAPR)', () => {
+  const source = [
+    'REPORT zprint_delivery.', //                                                 1
+    'INITIALIZATION.', //                                                         2
+    '  gv_init = abap_true.', //                                                  3
+    'FORM print_note USING return_code TYPE i us_screen TYPE c.', //              4
+    '  PERFORM read_data.', //                                                    5
+    '  IF gv_rc <> 0.', //                                                        6
+    '    return_code = gv_rc.', //                                                7
+    '  ENDIF.', //                                                                8
+    'ENDFORM.', //                                                                9
+    'FORM read_data.', //                                                         10
+    '  SELECT SINGLE * FROM likp INTO gs_likp WHERE vbeln = nast-objky.', //      11
+    'ENDFORM.', //                                                                12
+    'FORM mail_note USING ent_retco ent_screen.', //                              13
+    "  CALL FUNCTION 'SO_NEW_DOCUMENT_SEND_API1'.", //                            14
+    'ENDFORM.', //                                                                15
+    'FORM not_a_print_routine USING iv_a iv_b.', //                               16
+    '  DELETE FROM zlog WHERE id = iv_a.', //                                     17
+    'ENDFORM.', //                                                                18
+  ].join('\n');
+
+  test('a FORM with the output-control interface is an entry beside the event blocks', () => {
+    expect(starts(source)).toEqual([
+      ['INITIALIZATION', 2, 'event', undefined],
+      ['print_note', 4, 'form', 'output control'],
+      ['mail_note', 13, 'form', 'output control'],
+    ]);
+    const skeleton = buildProcessSkeleton(source);
+    // What it performs is reached through it; a FORM with another interface is not an entry.
+    expect(skeleton.notDrawn.unreached.map((u) => u.name)).toEqual(['NOT_A_PRINT_ROUTINE']);
+    // Which output type runs it is configuration outside the source: noted, not guessed.
+    const notes = skeleton.notes.filter((n) => n.reason === 'entry-trigger-not-determined');
+    expect(notes.map((n) => n.lineStart)).toEqual([4, 13]);
+    expect(notes[0].detail).toContain('output control');
+  });
+});
