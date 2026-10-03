@@ -4730,7 +4730,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "7 von 8 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 0 mit anderer Art); 2 von 6 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: g/gateway@source.abap:13 erwartet gateway in source.abap:13–13. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
+      "reason": "7 von 8 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 0 mit anderer Art); 2 von 6 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: g/gateway@source.abap:13 erwartet gateway in source.abap:13–13. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
     },
     {
       "case": "CC-032",

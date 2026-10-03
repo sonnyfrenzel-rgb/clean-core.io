@@ -777,6 +777,11 @@ function isListOutput(statement: AbapStatement): boolean {
   return !/\bTO\b/i.test(statement.text);
 }
 
+/** `RECEIVE RESULTS FROM FUNCTION …` — the results of an asynchronous RFC (see `walkStatement`). */
+function receivesResults(text: string): boolean {
+  return /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\b/i.test(text);
+}
+
 function isFileOutput(statement: AbapStatement): boolean {
   if (statement.keyword === 'TRANSFER') return true;
   return statement.keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(statement.text);
@@ -1385,6 +1390,7 @@ class SkeletonBuilder {
         else out.add('call');
       }
       if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
+      if (receivesResults(text)) out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
       if (isErrorMessage(text) || raisesException(statement)) out.add('error');
@@ -3469,6 +3475,17 @@ class SkeletonBuilder {
             returns: true,
           },
         }));
+    }
+
+    if (receivesResults(text)) {
+      // ABAP keyword documentation, `RECEIVE RESULTS FROM FUNCTION`: the
+      // receiving half of an asynchronous RFC. In the callback routine that
+      // `STARTING NEW TASK … ON END OF TASK` names, it takes over what the
+      // remote function module returned — a step with the other task, drawn
+      // as the service task the starting call is, under the module's name.
+      const name = /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase();
+      return keep(this.addNode('service-task', name ?? 'RECEIVE RESULTS', anchorOf(statement, name ? 4 : 0),
+        ctx.region, ctx.container, { detail: { receivesResults: true, returns: true } }));
     }
 
     if (isListOutput(statement) || isFileOutput(statement)) {
