@@ -3,6 +3,12 @@
 /**
  * Options with costs — roadmap 7.4, the screen half.
  *
+ * Since 03.10.2026 (owner: "you first have to find 'Take over the proposal'")
+ * the module draws two steps of the guided stage: step 3, the effort per
+ * option with the proposal and its take-over on the card itself, and step 4's
+ * verdict. The cards no longer price anything; every amount stands once, in
+ * the result.
+ *
  * The shared figures (currency, day rates, time horizon, release cadence) are
  * entered once, in the stage's checklist (`EconomicsChecklist`) — they used to
  * be asked for a second time here, beside a forecast that asked for the same day
@@ -23,6 +29,7 @@
  */
 
 import { useState } from 'react';
+import { formatDays, formatNumber } from '@/lib/format';
 import {
   COMPARISON_KIND,
   BASELINE_KINDS,
@@ -37,7 +44,6 @@ import {
   type EffortProposal,
 } from '@/lib/cost-assumptions';
 import { CircleAlert, CircleDashed } from 'lucide-react';
-import { GroupMeter } from '@/components/tco/EconomicsObjectPage';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcDisclosure from '@/components/cc/Disclosure';
@@ -268,7 +274,7 @@ export function refusalHeadline(comparison: CostComparison, options: CostOption[
   const incomplete = comparison.costs.filter((c) => !c.total).map((c) => c.label);
   switch (comparison.refusal?.code) {
     case 'assumptions-incomplete':
-      return 'No option can be priced until the open figures in the checklist above are filled in.';
+      return 'No option can be priced until your rates (step 2) and the effort per option (step 3) are in.';
     case 'option-incomplete':
       return `Not every option is complete yet: ${incomplete.join(', ')}.`;
     case 'too-few-options':
@@ -281,14 +287,71 @@ export function refusalHeadline(comparison: CostComparison, options: CostOption[
 }
 
 /**
- * The options, each a card with what it still lacks (or what it costs), its
- * fields behind "Fill in", and the verdict under them — or the refusal, which
- * is the point of roadmap 7.4.
+ * Where an option's effort figures stand — the provenance the card shows.
+ *
+ *   - `not-entered`: nothing typed, and no proposal to take over;
+ *   - `proposal`: nothing typed, a proposal from the code size is on offer;
+ *   - `from-proposal`: the reader took the proposal over — now their figure;
+ *   - `stated`: the reader typed the figure.
+ *
+ * A taken-over proposal is the reader's own figure (ADR-035: the factors are
+ * allowed "only as a proposal requiring confirmation"); it says where it came
+ * from, and it is drawn apart from a proposal nobody accepted.
+ */
+export type EffortProvenance = 'not-entered' | 'proposal' | 'from-proposal' | 'stated';
+
+export function effortProvenance(option: CostOption, proposal: EffortProposal | null): EffortProvenance {
+  const entered = option.oneOff !== null || option.perRelease !== null;
+  if (!entered) return proposal ? 'proposal' : 'not-entered';
+  return option.effortSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
+}
+
+/** The options whose effort the proposal could still fill — nothing typed yet. */
+export function pendingProposals(options: CostOption[], proposal: EffortProposal | null): CostOption[] {
+  return proposal ? options.filter((o) => effortProvenance(o, proposal) === 'proposal') : [];
+}
+
+/** What taking the proposal over writes into an option. */
+export function takeOverPatch(proposal: EffortProposal): Partial<CostOption> {
+  return { oneOff: proposal.oneOff, perRelease: proposal.perRelease, effortSource: 'proposal-confirmed' };
+}
+
+const dayRange = (low: number, high: number) => `${formatDays(low)}–${formatDays(high)}`;
+
+/** The proposal in one sentence of days, rounded as every figure here is. */
+export function proposalWords(proposal: EffortProposal): string {
+  const { oneOff, perRelease } = proposal;
+  return (
+    `${dayRange(oneOff.low.devDays, oneOff.high.devDays)} developer days and ` +
+    `${dayRange(oneOff.low.testDays, oneOff.high.testDays)} key-user days once, then ` +
+    `${formatDays(perRelease.devDays)} developer and ${formatDays(perRelease.testDays)} key-user days per release.`
+  );
+}
+
+function EffortChip({ state }: { state: EffortProvenance }) {
+  return (
+    <span data-effort-chip={state}>
+      {state === 'not-entered' ? (
+        <CcProvenanceChip value="not-determined" note="not entered" />
+      ) : state === 'proposal' ? (
+        <CcProvenanceChip value="simulation" note="proposal" />
+      ) : state === 'from-proposal' ? (
+        <CcProvenanceChip value="confirmed" note="your figure, from the proposal" />
+      ) : (
+        <CcProvenanceChip value="confirmed" note="your figure" />
+      )}
+    </span>
+  );
+}
+
+/**
+ * Step 3: one card per option — where its effort stands, the proposal and the
+ * one action that takes it over, what the option still lacks, and its fields
+ * behind "Enter my own figures".
  */
 export default function OptionComparison({
   assumptions,
   comparison,
-  currency,
   proposal,
   onPatchOption,
   editing,
@@ -297,114 +360,73 @@ export default function OptionComparison({
   assumptions: CostAssumptions;
   comparison: CostComparison;
   proposal: EffortProposal | null;
-  currency: string;
   onPatchOption: (id: string, patch: Partial<CostOption>) => void;
   /**
    * Which option cards show their fields — closed by default, so a card reads
-   * as what the option still lacks first and as a form on "Fill in". Held by
-   * the page, because "Take over per option" opens all of them.
+   * as where its effort stands first and as a form only on request.
    */
   editing: ReadonlySet<string>;
   onToggleEdit: (id: string) => void;
 }) {
   const patchOption = onPatchOption;
-  const winnerLabel = comparison.winner
-    ? comparison.costs.find((c) => c.optionId === comparison.winner)?.label
-    : null;
-  const years = assumptions.horizonYears;
-  // Open by itself once there is a lead to overturn, until the reader decides otherwise.
-  const [tippingChoice, setTippingChoice] = useState<boolean | null>(null);
-  const tippingOpen = tippingChoice ?? comparison.tippingPoints.length > 0;
+  // A figure typed by hand is the reader's own, wherever the field started from.
+  const typed = (id: string, p: Partial<CostOption>) => patchOption(id, { ...p, effortSource: 'stated' });
+  const pending = pendingProposals(assumptions.options, proposal);
   return (
-    <div className="space-y-4" data-cost-comparison="">
-      {/* One card per option: what it still lacks or what it costs, then its fields. */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <div data-cost-comparison="">
+      <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
           const needsBaseline = BASELINE_KINDS.has(option.kind);
           const groups = optionGroups(cost, option);
-          const openGroups = groups.filter((g) => g.open);
+          const state = effortProvenance(option, proposal);
+          // While the proposal is on offer, its two groups are what the button fills.
+          const openGroups = groups.filter(
+            (g) => g.open && !(state === 'proposal' && (g.key === 'one-off' || g.key === 'per-release')),
+          );
           const priced = Boolean(cost && cost.total);
           const isEditing = editing.has(option.id);
           const panelId = `cost-option-fields-${option.id}`;
           return (
-            <article
-              key={option.id}
-              data-cost-option={option.id}
-              aria-labelledby={`cost-option-title-${option.id}`}
-              // The lowest-cost option is outlined in ink, not green: lowest
-              // cost is a priced comparison, not a proof (§1.1), and the
-              // verdict below names it in words.
-              className={`cc-card flex min-w-0 flex-col gap-3 rounded-cc-card border bg-cc-surface p-4 ${
-                comparison.winner === option.id ? 'border-cc-ink' : 'border-cc-line'
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 id={`cost-option-title-${option.id}`} className="cc-text-h3 text-cc-ink">
-                  {option.label}
-                </h3>
-                {priced ? (
-                  <CcProvenanceChip value="simulation" />
-                ) : (
-                  // No figure is not a warning: it is the absence of a verdict,
-                  // and it stands neutral (§1.1).
-                  <span data-cost-option-not-determined={option.id}>
-                    <CcProvenanceChip value="not-determined" />
-                  </span>
-                )}
-              </div>
+            <li key={option.id} className="min-w-0">
+              <article
+                data-cost-option={option.id}
+                data-effort-provenance={state}
+                aria-labelledby={`cost-option-title-${option.id}`}
+                className="cc-card flex h-full min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 id={`cost-option-title-${option.id}`} className="cc-text-h3 text-cc-ink">
+                    {option.label}
+                  </h3>
+                  <EffortChip state={state} />
+                </div>
 
-              <GroupMeter
-                filled={groups.length - openGroups.length}
-                total={groups.length}
-                label={`${option.label}: mandatory groups stated`}
-              />
-
-              <div data-cost-option-result={option.id}>
-                {cost && cost.total ? (
-                  <>
-                    <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
-                      Total over {years} year{years === 1 ? '' : 's'}
-                      <CcProvenanceChip value="simulation" />
-                    </span>
-                    <p className="mt-1 cc-text-h2 text-cc-ink" data-cost-option-total={option.id}>
-                      {formatAmountRange(cost.total, currency)}
-                    </p>
-                    <dl className="mt-3 space-y-1 cc-text-cell text-cc-ink-muted">
-                      <div className="flex justify-between gap-2">
-                        <dt>One-off</dt>
-                        <dd>{formatAmountRange(cost.oneOff, currency)}</dd>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <dt>Per release &times; {cost.releasesInHorizon}</dt>
-                        <dd>{formatAmount(cost.runningTotal, currency)}</dd>
-                      </div>
-                      {needsBaseline ? (
-                        <div className="flex justify-between gap-2">
-                          <dt>Maintenance baseline</dt>
-                          <dd>{formatAmount(cost.baselineTotal, currency)}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                    {cost.coverage.state === 'unconfirmed' ? (
-                      // Something to check, so the warning state — with its
-                      // icon, never the colour alone (§2.7).
-                      <p className="mt-3 flex items-start gap-1 cc-text-cell text-cc-warning">
-                        <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
-                        <span>{cost.coverage.sentence}</span>
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
+                {state === 'proposal' && proposal ? (
+                  <div className="flex flex-col gap-2" data-cost-option-proposal={option.id}>
+                    {/* The gap stays named: a proposal is not yet a figure (ADR-035). */}
                     <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
-                      {openGroups.length === 0
-                        ? 'Its own figures are in; it waits for the open rows of the checklist.'
-                        : `${openGroups.length} mandatory group${openGroups.length === 1 ? '' : 's'} open`}
+                      Proposed for the one-off effort range and the effort per release — not yours until you take it over
                     </p>
-                    {openGroups.length > 0 ? (
-                      <ul className="m-0 mt-2 list-none space-y-1 p-0" data-cost-option-gaps={option.id}>
+                    <p className="m-0 cc-text-cell text-cc-ink">{proposalWords(proposal)}</p>
+                    <div className="cc-no-print">
+                      <CcButton
+                        variant={pending.length === 1 ? 'primary' : 'secondary'}
+                        data-cost-apply-proposal={option.id}
+                        onClick={() => patchOption(option.id, takeOverPatch(proposal))}
+                      >
+                        Take over the proposal as my figure
+                      </CcButton>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div data-cost-option-result={option.id} className="flex flex-col gap-2">
+                  {openGroups.length > 0 ? (
+                    <>
+                      <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">Still needs</p>
+                      <ul className="m-0 list-none space-y-1 p-0" data-cost-option-gaps={option.id}>
                         {openGroups.map((g) => (
                           <li key={g.key} className="flex items-center gap-2 cc-text-cell text-cc-ink">
                             <CircleDashed size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
@@ -412,117 +434,190 @@ export default function OptionComparison({
                           </li>
                         ))}
                       </ul>
-                    ) : null}
-                  </>
-                )}
-              </div>
-
-              <div className="cc-no-print">
-                <CcButton
-                  data-cost-option-edit={option.id}
-                  aria-expanded={isEditing}
-                  aria-controls={panelId}
-                  onClick={() => onToggleEdit(option.id)}
-                >
-                  {isEditing ? 'Close' : priced ? 'Change' : 'Fill in'}
-                </CcButton>
-              </div>
-
-              <div id={panelId} hidden={!isEditing} data-cost-option-fields={option.id}>
-              <div className="space-y-4 border-t border-cc-line pt-4 print:hidden">
-                <fieldset className="min-w-0 space-y-2">
-                  <legend className="cc-text-label text-cc-ink-muted">One-off effort (range)</legend>
-                  <div className="grid grid-cols-2 gap-3">
-                    {([
-                      ['low', 'devDays', 'Low · dev days'],
-                      ['low', 'testDays', 'Low · test days'],
-                      ['high', 'devDays', 'High · dev days'],
-                      ['high', 'testDays', 'High · test days'],
-                    ] as const).map(([bound, key, label]) => (
-                      <NumField
-                        key={`${bound}-${key}`}
-                        id={`${option.id}-oneoff-${bound}-${key === 'devDays' ? 'dev' : 'test'}`}
-                        label={label}
-                        value={fin(option.oneOff?.[bound][key])}
-                        onChange={(v) =>
-                          patchOption(option.id, { oneOff: withOneOffCorner(option, bound, key, v) })
-                        }
-                      />
-                    ))}
-                  </div>
-                  {proposal ? (
-                    <CcButton
-                      data-cost-apply-proposal={option.id}
-                      onClick={() =>
-                        patchOption(option.id, {
-                          oneOff: proposal.oneOff,
-                          perRelease: proposal.perRelease,
-                          effortSource: 'proposal-confirmed',
-                        })
-                      }
-                    >
-                      Take over the proposal, as my figure
-                    </CcButton>
+                    </>
                   ) : null}
-                </fieldset>
+                  <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+                    Cost:
+                    {priced ? (
+                      <span className="text-cc-ink">priced in step 4</span>
+                    ) : (
+                      // No figure is not a warning: it is the absence of a verdict (§1.1).
+                      <span data-cost-option-not-determined={option.id}>
+                        <CcProvenanceChip value="not-determined" />
+                      </span>
+                    )}
+                  </p>
+                  {priced && cost?.coverage.state === 'unconfirmed' ? (
+                    <p className="m-0 flex items-start gap-1 cc-text-cell text-cc-warning">
+                      <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
+                      <span>{cost.coverage.sentence}</span>
+                    </p>
+                  ) : null}
+                </div>
 
-                <EffortFields
-                  idPrefix={`${option.id}-per-release`}
-                  label="Recurring effort per release"
-                  value={option.perRelease}
-                  onChange={(v) => patchOption(option.id, { perRelease: v })}
-                />
+                <div className="mt-auto cc-no-print">
+                  <CcButton
+                    data-cost-option-edit={option.id}
+                    aria-expanded={isEditing}
+                    aria-controls={panelId}
+                    onClick={() => onToggleEdit(option.id)}
+                  >
+                    {isEditing
+                      ? 'Close'
+                      : state === 'proposal' || state === 'not-entered'
+                        ? 'Enter my own figures'
+                        : openGroups.length > 0
+                          ? 'Fill in'
+                          : 'Change figures'}
+                  </CcButton>
+                </div>
 
-                {needsBaseline ? (
-                  <EffortFields
-                    idPrefix={`${option.id}-baseline`}
-                    label="Maintenance baseline per year"
-                    value={option.maintenanceBaselinePerYear}
-                    onChange={(v) => patchOption(option.id, { maintenanceBaselinePerYear: v })}
-                  />
-                ) : null}
+                <div id={panelId} hidden={!isEditing} data-cost-option-fields={option.id}>
+                  <div className="space-y-4 border-t border-cc-line pt-4 print:hidden">
+                    <fieldset className="min-w-0 space-y-2">
+                      <legend className="cc-text-label text-cc-ink-muted">One-off effort (range)</legend>
+                      <div className="grid grid-cols-2 gap-3">
+                        {([
+                          ['low', 'devDays', 'Low · dev days'],
+                          ['low', 'testDays', 'Low · test days'],
+                          ['high', 'devDays', 'High · dev days'],
+                          ['high', 'testDays', 'High · test days'],
+                        ] as const).map(([bound, key, label]) => (
+                          <NumField
+                            key={`${bound}-${key}`}
+                            id={`${option.id}-oneoff-${bound}-${key === 'devDays' ? 'dev' : 'test'}`}
+                            label={label}
+                            value={fin(option.oneOff?.[bound][key])}
+                            onChange={(v) => typed(option.id, { oneOff: withOneOffCorner(option, bound, key, v) })}
+                          />
+                        ))}
+                      </div>
+                    </fieldset>
 
-                {isComparison ? (
-                  <fieldset className="min-w-0 space-y-2">
-                    <legend className="cc-text-label text-cc-ink-muted">Upgrade deferral</legend>
-                    <NumField
-                      id={`${option.id}-upgrade-delay`}
-                      label="Releases deferred"
-                      value={
-                        option.upgradeDelay?.state === 'stated'
-                          ? option.upgradeDelay.value.releasesDeferred
-                          : null
-                      }
-                      onChange={(v) =>
-                        patchOption(option.id, {
-                          upgradeDelay: v === null ? null : { state: 'stated', value: { releasesDeferred: v } },
-                        })
-                      }
-                      hint="Not priced — nothing here knows what a deferred upgrade costs. Stated, because it is part of what doing nothing is."
+                    <EffortFields
+                      idPrefix={`${option.id}-per-release`}
+                      label="Recurring effort per release"
+                      value={option.perRelease}
+                      onChange={(v) => typed(option.id, { perRelease: v })}
                     />
-                    <CcButton
-                      data-cost-delay-not-determined
-                      onClick={() =>
-                        patchOption(option.id, {
-                          upgradeDelay: {
-                            state: 'not-determined',
-                            reason: 'nobody has established how far the upgrade would slip',
-                          },
-                        })
-                      }
-                    >
-                      Not determined
-                    </CcButton>
-                  </fieldset>
-                ) : null}
-              </div>
-              </div>
-            </article>
+
+                    {needsBaseline ? (
+                      <EffortFields
+                        idPrefix={`${option.id}-baseline`}
+                        label="Maintenance baseline per year"
+                        value={option.maintenanceBaselinePerYear}
+                        onChange={(v) => patchOption(option.id, { maintenanceBaselinePerYear: v })}
+                      />
+                    ) : null}
+
+                    {isComparison ? (
+                      <fieldset className="min-w-0 space-y-2">
+                        <legend className="cc-text-label text-cc-ink-muted">Upgrade deferral</legend>
+                        <NumField
+                          id={`${option.id}-upgrade-delay`}
+                          label="Releases deferred"
+                          value={
+                            option.upgradeDelay?.state === 'stated' ? option.upgradeDelay.value.releasesDeferred : null
+                          }
+                          onChange={(v) =>
+                            patchOption(option.id, {
+                              upgradeDelay: v === null ? null : { state: 'stated', value: { releasesDeferred: v } },
+                            })
+                          }
+                          hint="Not priced — nothing here knows what a deferred upgrade costs. Stated, because it is part of what doing nothing is."
+                        />
+                        <CcButton
+                          data-cost-delay-not-determined
+                          onClick={() =>
+                            patchOption(option.id, {
+                              upgradeDelay: {
+                                state: 'not-determined',
+                                reason: 'nobody has established how far the upgrade would slip',
+                              },
+                            })
+                          }
+                        >
+                          Not determined
+                        </CcButton>
+                      </fieldset>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            </li>
           );
         })}
-      </div>
+      </ul>
+    </div>
+  );
+}
 
-      {/* The verdict — or the refusal in a few words, with the whole reason one click deeper. */}
+/**
+ * Step 4's comparison: what each option costs over the time horizon, the
+ * verdict — or the refusal, which is the point of roadmap 7.4 — and how far an
+ * assumption may move before the answer changes.
+ */
+export function OptionVerdict({
+  assumptions,
+  comparison,
+  currency,
+}: {
+  assumptions: CostAssumptions;
+  comparison: CostComparison;
+  currency: string;
+}) {
+  const winnerLabel = comparison.winner
+    ? comparison.costs.find((c) => c.optionId === comparison.winner)?.label
+    : null;
+  const years = assumptions.horizonYears;
+  const yearsWord =
+    years === null ? '' : `${formatNumber(years, { maximumFractionDigits: 1 })} year${years === 1 ? '' : 's'}`;
+  // Open by itself once there is a lead to overturn, until the reader decides otherwise.
+  const [tippingChoice, setTippingChoice] = useState<boolean | null>(null);
+  const tippingOpen = tippingChoice ?? comparison.tippingPoints.length > 0;
+  return (
+    <div className="space-y-4" data-cost-result="">
+      <ul className="m-0 list-none divide-y divide-cc-line p-0" data-cost-totals="">
+        {assumptions.options.map((option) => {
+          const cost = comparison.costs.find((c) => c.optionId === option.id);
+          const lead = comparison.winner === option.id;
+          return (
+            <li
+              key={option.id}
+              className="flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+            >
+              <div className="min-w-0">
+                <span className="cc-text-identifier text-cc-ink">{option.label}</span>
+                {lead ? <span className="ml-2 cc-text-meta font-semibold text-cc-ink">· lowest cost</span> : null}
+                {cost && cost.total ? (
+                  <span className="block cc-text-meta text-cc-ink-muted">
+                    one-off {formatAmountRange(cost.oneOff, currency)} ·{' '}
+                    {formatNumber(cost.releasesInHorizon, { maximumFractionDigits: 1 })} releases{' '}
+                    {formatAmount(cost.runningTotal, currency)}
+                    {BASELINE_KINDS.has(option.kind) ? ` · maintenance ${formatAmount(cost.baselineTotal, currency)}` : ''}
+                  </span>
+                ) : null}
+              </div>
+              {cost && cost.total ? (
+                <span className="cc-text-h3 whitespace-nowrap text-cc-ink" data-cost-option-total={option.id}>
+                  {formatAmountRange(cost.total, currency)}
+                </span>
+              ) : (
+                <span>
+                  <CcProvenanceChip value="not-determined" />
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {yearsWord ? (
+        <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+          Total over {yearsWord}, as a range from the low and high one-off effort{' '}
+          <CcProvenanceChip value="simulation" />
+        </p>
+      ) : null}
+
       <div className="border-t border-cc-line pt-4" data-cost-verdict="">
         {comparison.winner ? (
           <div data-cost-winner={comparison.winner}>
@@ -531,9 +626,8 @@ export default function OptionComparison({
             </span>
             <h3 className="mt-1 cc-text-h2 text-cc-ink">{winnerLabel}</h3>
             <p className="mt-2 cc-text-body text-cc-ink-muted">
-              Its upper bound is below every other option&rsquo;s lower bound, so the ordering does not
-              depend on where inside the one-off range the effort lands. Lowest cost is not the same as
-              best decision; this panel prices options and decides nothing.
+              Its upper bound is below every other option&rsquo;s lower bound, so the ordering does not depend on
+              where inside the one-off range the effort lands. Lowest cost is not the same as the best decision.
             </p>
           </div>
         ) : (
