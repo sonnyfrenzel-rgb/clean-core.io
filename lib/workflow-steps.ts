@@ -169,7 +169,7 @@ export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> 
  */
 export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
   analyze: 'Reads the code and signs a run — every other figure starts here.',
-  design: 'Chooses the target architecture.',
+  design: 'Chooses the target architecture. Opening it writes the solution design once with the model, where it is on — not counted against your analysis runs.',
   transformation: 'Generates the target code.',
   documentation: 'Writes the process documentation: SOP and RACI.',
   testing: 'Prepares and runs the test cases.',

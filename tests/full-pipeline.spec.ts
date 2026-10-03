@@ -292,8 +292,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // A stage is a tool of the workspace since roadmap 3.0.1: the way across is
     // the tools bar under the stage header, not a "Continue to …" button.
     await openTool(page, 'design');
-    // Since the canvas rebuild (proposal B, 01.10.2026) each section of the
-    // model's document opens from its card in the drawer.
+    // The design is written on opening (ADR-070, amended 03.10.2026) and its
+    // document opens on the group "What we build", which holds the blueprint.
     await page.locator('[data-design-section="blueprint"]').click({ timeout: 45000 });
     await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     

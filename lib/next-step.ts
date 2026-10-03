@@ -1,6 +1,6 @@
 import type { Project } from './types';
 import { phaseActionLabel, workflowSteps, workflowSummary, type PhaseKey, type RailStep } from './workflow-steps';
-import { modelAbsenceReason, modelStageEnabled, type ModelStage, type ModelStageSubject } from './model-stages';
+import { DESIGN_ON_OPEN_COST, modelAbsenceReason, modelStageEnabled, type ModelStage, type ModelStageSubject } from './model-stages';
 import type { ProvenanceValue } from './provenance';
 
 /**
@@ -242,9 +242,13 @@ export function nextOpenPoint(
   const blockedByModelSwitch =
     stage !== undefined && next.state === 'empty' && !modelStageEnabled(account ?? null, stage);
 
+  // Opening an empty Design writes the design with the model (ADR-070,
+  // amended 03.10.2026): the step says what that costs before the click.
   const reason = blockedByModelSwitch
     ? `${next.detail} ${modelAbsenceReason('stage-off', stage)}`
-    : next.detail;
+    : next.key === 'design' && next.state === 'empty'
+      ? `${next.detail} ${DESIGN_ON_OPEN_COST}`
+      : next.detail;
 
   return {
     key: next.key,

@@ -24,6 +24,11 @@ interface SecurityHardeningChecklistProps {
   securityHardening?: SecurityHardeningItem[];
   /** Optional findings from Analyze — used to map hardening items to specific constructs */
   findings?: SupportFinding[];
+  /**
+   * Inside a group of the design document (03.10.2026): no card of its own and
+   * no provenance chip — the group carries "Model proposal" once.
+   */
+  embedded?: boolean;
 }
 
 /** Maps hardening keywords to relevant construct types from the SUPPORT_MATRIX */
@@ -86,7 +91,7 @@ export const getSecurityExplanation = (req: string, pkg: string) => {
   return securityTermExplanations.default;
 };
 
-export default function SecurityHardeningChecklist({ securityHardening, findings }: SecurityHardeningChecklistProps) {
+export default function SecurityHardeningChecklist({ securityHardening, findings, embedded = false }: SecurityHardeningChecklistProps) {
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
 
   // Build a mapping of hardening item index → matched findings
@@ -115,13 +120,13 @@ export default function SecurityHardeningChecklist({ securityHardening, findings
   const explanation = activeTerm ? getSecurityExplanation(activeTerm, matchedItem?.packageOrConfig || '') : null;
 
   return (
-    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between">
+    <div className={embedded ? 'flex min-w-0 flex-col' : 'rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between'}>
       <div>
         <div className="mb-6">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="cc-text-h2 text-cc-ink">Security Hardening Checklist</h4>
+            <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Security Hardening Checklist</h4>
             {/* The checklist items are the model's; the explanations behind "Explain" are ours. */}
-            <CcProvenanceChip value="proposed" />
+            {embedded ? null : <CcProvenanceChip value="proposed" />}
           </div>
           <p className="cc-text-cell text-cc-ink-muted mt-1">Concrete actions to secure the side-by-side Node.js application.</p>
         </div>

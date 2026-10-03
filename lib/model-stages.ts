@@ -131,6 +131,26 @@ export function modelStageEnabled(subject: ModelStageSubject | null | undefined,
 export const START_NARRATIVE_CEILING_MS = 90_000;
 
 /**
+ * How long the Design stage waits for the solution design it writes on
+ * opening, in ms (owner decision 03.10.2026, ADR-070 amendment). One wait for
+ * the whole generation: the design call and, after it, the call for the
+ * proposals on the non-functional requirements. The design call is bounded by
+ * it — past the ceiling nothing is saved and the stage says so, with "Try
+ * again" — and the proposals get what is left of it; a design whose proposals
+ * did not come back in time is saved without them.
+ */
+export const DESIGN_GENERATION_CEILING_MS = 120_000;
+
+/**
+ * What opening Design costs, said where the reader arrives (the toolbar's
+ * purpose, the next step) and on the stage while it runs. Two model calls under
+ * the account's `design` switch; neither is counted against the analysis runs,
+ * which are metered once per signed run (`app/api/gemini/route.ts`).
+ */
+export const DESIGN_ON_OPEN_COST =
+  'Opening Design writes the solution design with the model once — one call for the design, one for its non-functional proposals — not counted against your analysis runs.';
+
+/**
  * The words V25-A12 asks for, in one spelling.
  *
  * A section with no model output says this. It never shows an empty box, a
