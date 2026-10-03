@@ -11,7 +11,7 @@ import {
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { logger, errMessage } from '@/lib/logger';
+import { logger, errMessage, providerErrorShape } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -461,7 +461,9 @@ export async function POST(req: NextRequest) {
         { status: error.status }
       );
     }
-    console.error('[fetch-s4-metadata] Unexpected error:', error);
+    // The class and status only: the message of an unexpected error here can
+    // quote the request body, and the body carries the connection credentials.
+    logger.error('s4 metadata fetch: unexpected error', { route: 'api/fetch-s4-metadata', error: providerErrorShape(error) });
     return NextResponse.json(
       { status: 'failed', message: 'Internal server error during metadata fetch.' },
       { status: 500 }

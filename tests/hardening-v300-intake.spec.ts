@@ -114,3 +114,11 @@ test.describe('process naming', () => {
     expect(bound).toBeLessThan(src.indexOf('namingContextOf(gate.legacyCode)'));
   });
 });
+
+test.describe('logs', () => {
+  test('the S/4 metadata route logs the class of an unexpected error, not its text', () => {
+    const src = read('app/api/fetch-s4-metadata/route.ts');
+    expect(src).not.toMatch(/console\.(error|warn|log)\(/);
+    expect(src).toContain('error: providerErrorShape(error)');
+  });
+});
