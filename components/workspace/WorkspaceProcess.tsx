@@ -75,6 +75,7 @@ export default function WorkspaceProcess({
   onWritten,
   draftHolder,
   startRun,
+  coach,
 }: {
   project: Project | null;
   projectId: string;
@@ -102,6 +103,12 @@ export default function WorkspaceProcess({
    * with its cost said before the click.
    */
   startRun?: StartRun;
+  /**
+   * The tip "Select the decision point", in the flow right above the map it
+   * explains — a floating tip over a map covers the very steps it asks the
+   * reader to select, and takes their clicks.
+   */
+  coach?: React.ReactNode;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -471,6 +478,7 @@ export default function WorkspaceProcess({
       >
         {wt('biz.needAndProcess')}
       </h2>
+      {coach}
       <div data-coach-target="decision">
         <CcCard>
           {model ? (
