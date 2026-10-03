@@ -12,7 +12,8 @@
  * release cadence **only when confirmed** · per option a one-off effort **as a
  * range** and a running effort per release · a maintenance baseline for *Keep*
  * and *Do nothing*. No model fills a field; the fixed effort factors per 1,000
- * lines are a proposal that has to be confirmed. No cost winner while any
+ * lines are a proposal that has to be confirmed, and so are the maintenance
+ * factors behind the baseline proposal (owner, 03.10.2026). No cost winner while any
  * option is missing a mandatory field.
  *
  * What this is not: `lib/tco-model.ts`. That is the demonstration forecast of
@@ -133,6 +134,14 @@ export interface CostOption {
    */
   upgradeDelay: Stated<{ releasesDeferred: number }> | null;
   effortSource: EffortSource;
+  /**
+   * Where the maintenance baseline came from: typed (`stated`, the default when
+   * absent) or a proposal the reader took over (`proposal-confirmed`). Display
+   * only, and deliberately not in the canonical form: a baseline proposal is
+   * never stored until taken over, so either way the figure is the reader's own
+   * and there is no unconfirmed state for the revision to carry.
+   */
+  baselineSource?: 'stated' | 'proposal-confirmed';
 }
 
 export interface ReleaseCadence {
@@ -219,6 +228,75 @@ export function proposeEffort(loc: number | null | undefined): EffortProposal | 
       `${f.perReleaseDev} development and ${f.perReleaseTest} test days per release). ` +
       'Nothing measured these factors. They count as an assumption of yours only once you confirm them.',
   };
+}
+
+/**
+ * The fixed maintenance factors per 1,000 lines and year, offered as a proposal
+ * for the maintenance baseline of *Keep* and *Do nothing* (owner decision
+ * 03.10.2026, recorded under ADR-035).
+ *
+ * `devPerYear` / `testPerYear` are the yearly upkeep of code that scores 100 —
+ * small fixes, a support ticket, a retest. Code further from clean core costs
+ * more to keep running, so a Clean Core Score from the signed run raises both
+ * by `(100 − score) / 100`: a score of 62 multiplies them by 1.38, a score of 0
+ * doubles them. Without a usable score the uplift is left out and the sentence
+ * says so. Nothing measured any of these factors, exactly like the effort
+ * factors above.
+ */
+export const PROPOSED_MAINTENANCE_PER_1000_LINES = {
+  devPerYear: 1.5,
+  testPerYear: 0.8,
+} as const;
+
+export interface BaselineProposal {
+  perYear: EffortDays;
+  /** The score the uplift was taken from, or `null` when there was none to use. */
+  score: number | null;
+  /** The factor the base figures were multiplied by: `1 + (100 − score) / 100`, or 1. */
+  uplift: number;
+  /** The sentence the reader confirms or rejects. Never applied silently. */
+  sentence: string;
+}
+
+/**
+ * A maintenance-baseline proposal for code of `loc` lines and, where there is
+ * one, the Clean Core Score of the signed run — or `null` when there is no line
+ * count to propose from. Like `proposeEffort`, it sets nothing: the baseline
+ * stays absent ("not determined") until the reader takes this over or types a
+ * figure. A score outside 0–100 is not a score and is left out.
+ */
+export function proposeMaintenanceBaseline(
+  loc: number | null | undefined,
+  score: number | null | undefined,
+): BaselineProposal | null {
+  if (typeof loc !== 'number' || !Number.isFinite(loc) || loc <= 0) return null;
+  const usable = typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100 ? score : null;
+  const uplift = usable === null ? 1 : 1 + (100 - usable) / 100;
+  const k = loc / 1000;
+  const f = PROPOSED_MAINTENANCE_PER_1000_LINES;
+  // Rounded where it is made, for the reason `proposeEffort` gives.
+  const perYear: EffortDays = {
+    devDays: roundDays(k * f.devPerYear * uplift),
+    testDays: roundDays(k * f.testPerYear * uplift),
+  };
+  const why =
+    usable === null
+      ? 'There is no Clean Core Score from the signed run to raise them by, so they are used as they stand.'
+      : `Raised by ${formatUplift(uplift)} for the Clean Core Score of ${usable} from the signed run: code further from clean core costs more to keep running.`;
+  return {
+    perYear,
+    score: usable,
+    uplift,
+    sentence:
+      `A proposal from ${formatLines(loc)} lines and fixed factors per 1,000 lines and year ` +
+      `(${f.devPerYear} development and ${f.testPerYear} test days). ${why} ` +
+      'Nothing measured these factors. They count as an assumption of yours only once you confirm them.',
+  };
+}
+
+/** The uplift as a multiplier a reader can read back: "×1.38". */
+export function formatUplift(uplift: number): string {
+  return `×${Number(uplift.toFixed(2))}`;
 }
 
 /* ---------- canonical form, fingerprint, revision ---------- */

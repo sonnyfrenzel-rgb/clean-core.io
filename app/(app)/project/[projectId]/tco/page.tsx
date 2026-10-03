@@ -17,6 +17,7 @@ import OptionComparison, {
   initialCostAssumptions,
   pendingProposals,
   takeOverPatch,
+  type OptionProposals,
 } from '@/components/tco/OptionComparison';
 import { CadenceField, ChecklistLine, CurrencyField, FigureField, RangeField } from '@/components/tco/EconomicsChecklist';
 import { EconomicsGuide, EconomicsStep, ProposalFactors, type EconomicsStepInfo } from '@/components/tco/EconomicsSteps';
@@ -24,7 +25,14 @@ import WorkspaceMetaLine from '@/components/workspace/MetaLine';
 import StageMetaDetails from '@/components/StageMetaDetails';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import { metaLine } from '@/lib/workspace-model';
-import { costComparison, formatAmount, proposeEffort, type CostAssumptions, type CostOption } from '@/lib/cost-assumptions';
+import {
+  costComparison,
+  formatAmount,
+  proposeEffort,
+  proposeMaintenanceBaseline,
+  type CostAssumptions,
+  type CostOption,
+} from '@/lib/cost-assumptions';
 import { comparisonChecklist, forecastChecklist, type ChecklistRow } from '@/lib/economics-checklist';
 import { formatDays, formatLines, formatNumber, formatPercentValue } from '@/lib/format';
 import { countSourceLines } from '@/lib/source-lines';
@@ -205,6 +213,15 @@ export default function TcoCalculatorPage() {
 
   const phases = workflowSteps(project);
 
+  // The maintenance-baseline proposal for Keep and Do nothing (owner,
+  // 03.10.2026): the lines, raised for a Clean Core Score of the signed run —
+  // only one that still describes the source under review. A proposal, never
+  // a default: the baseline stays absent until the reader takes it over.
+  const runScore =
+    typeof project?.cleanCoreScore === 'number' && !staleness(project).sourceChanged ? project.cleanCoreScore : null;
+  const baselineProposal = proposeMaintenanceBaseline(loc, runScore);
+  const proposals: OptionProposals = { effort: proposal, baseline: baselineProposal };
+
   if (loading) {
     return (
       <StageFrame stage="tco" className="cc min-h-screen">
@@ -268,7 +285,7 @@ export default function TcoCalculatorPage() {
     });
 
   // ---- The four steps and where each stands ----
-  const pending = pendingProposals(assumptions.options, proposal);
+  const pending = pendingProposals(assumptions.options, proposals);
   const ratesDone = rowsDone(['currency', 'dev-rate', 'test-rate', 'horizon', 'cadence']);
   const effortDone = rowsDone(['one-off', 'per-release', 'baseline', 'upgrade-delay']);
   const compared = ratesDone && effortDone;
@@ -303,9 +320,12 @@ export default function TcoCalculatorPage() {
     (fields.find((el) => el.value === '') ?? fields[0])?.focus({ preventScroll: true });
   };
   const takeOverAll = () => {
-    if (!proposal) return;
+    if (pending.length === 0) return;
     const ids = new Set(pending.map((o) => o.id));
-    setStated((a) => ({ ...a, options: a.options.map((o) => (ids.has(o.id) ? { ...o, ...takeOverPatch(proposal) } : o)) }));
+    setStated((a) => ({
+      ...a,
+      options: a.options.map((o) => (ids.has(o.id) ? { ...o, ...takeOverPatch(o, proposals) } : o)),
+    }));
   };
   const takeOverLabel = pending.length > 1 ? `Take over all ${pending.length} proposals` : 'Take over the proposal as my figure';
   const openFirstIncomplete = () => {
@@ -327,11 +347,11 @@ export default function TcoCalculatorPage() {
     if (next?.n === 3) {
       return pending.length > 0
         ? {
-            sentence: 'Take over the effort proposed from the size of your code as your own figure — you can change it afterwards.',
+            sentence: 'Take over the effort and the maintenance baseline proposed from the size of your code as your own figures — you can change them afterwards.',
             action: <CcButton variant="primary" data-economics-next-action="" data-economics-take-over-all="" onClick={() => { takeOverAll(); goTo('economics-step-effort', false); }}>{takeOverLabel}</CcButton>,
           }
         : {
-            sentence: 'Fill in what each option still needs — for Keep and Do nothing, the yearly maintenance effort.',
+            sentence: 'Fill in what each option still needs — each card names it, such as the upgrade deferral of Do nothing.',
             action: <CcButton variant="primary" data-economics-next-action="" onClick={openFirstIncomplete}>Fill in the effort</CcButton>,
           };
     }
@@ -493,7 +513,7 @@ export default function TcoCalculatorPage() {
           next={isNext(3)}
           guidance={
             proposal
-              ? 'Each option needs its effort in days. Take over the proposal from the size of your code as your own figure, or enter your own. Keep and Do nothing also need a yearly maintenance effort.'
+              ? 'Each option needs its effort in days. Take over the proposal from the size of your code as your own figure, or enter your own. Keep and Do nothing also need a yearly maintenance effort, proposed the same way.'
               : 'Each option needs its effort in days — your own figures, there is no line count to propose from. Keep and Do nothing also need a yearly maintenance effort.'
           }
           right={
@@ -510,6 +530,7 @@ export default function TcoCalculatorPage() {
             assumptions={assumptions}
             comparison={comparison}
             proposal={proposal}
+            baselineProposal={baselineProposal}
             onPatchOption={patchOption}
             editing={editingOptions}
             onToggleEdit={toggleOption}
@@ -728,7 +749,7 @@ export default function TcoCalculatorPage() {
                   {proposal ? (
                     <div>
                       <h4 className="mb-2 cc-text-h3 text-cc-ink">The proposal in step 3</h4>
-                      <ProposalFactors loc={loc} />
+                      <ProposalFactors loc={loc} baseline={baselineProposal} />
                     </div>
                   ) : null}
                   <div>

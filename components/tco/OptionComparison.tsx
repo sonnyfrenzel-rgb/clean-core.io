@@ -40,6 +40,7 @@ import {
   type CostAssumptions,
   type CostComparison,
   type CostOption,
+  type BaselineProposal,
   type EffortDays,
   type EffortProposal,
 } from '@/lib/cost-assumptions';
@@ -306,14 +307,58 @@ export function effortProvenance(option: CostOption, proposal: EffortProposal | 
   return option.effortSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
 }
 
-/** The options whose effort the proposal could still fill — nothing typed yet. */
-export function pendingProposals(options: CostOption[], proposal: EffortProposal | null): CostOption[] {
-  return proposal ? options.filter((o) => effortProvenance(o, proposal) === 'proposal') : [];
+/**
+ * Where an option's maintenance baseline stands — the same four states as its
+ * effort, or `null` for a kind that carries no baseline. The proposal from the
+ * code size (owner, 03.10.2026) is on offer while nothing is typed; it is never
+ * in the model until the reader takes it over (ADR-035).
+ */
+export function baselineProvenance(option: CostOption, proposal: BaselineProposal | null): EffortProvenance | null {
+  if (!BASELINE_KINDS.has(option.kind)) return null;
+  if (option.maintenanceBaselinePerYear == null) return proposal ? 'proposal' : 'not-entered';
+  return option.baselineSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
 }
 
-/** What taking the proposal over writes into an option. */
-export function takeOverPatch(proposal: EffortProposal): Partial<CostOption> {
-  return { oneOff: proposal.oneOff, perRelease: proposal.perRelease, effortSource: 'proposal-confirmed' };
+/** The two proposals the stage can offer: effort per option, and the maintenance baseline. */
+export interface OptionProposals {
+  effort: EffortProposal | null;
+  baseline: BaselineProposal | null;
+}
+
+/** Which parts of one option a proposal could still fill — nothing typed in them yet. */
+export function pendingParts(option: CostOption, proposals: OptionProposals): { effort: boolean; baseline: boolean } {
+  return {
+    effort: effortProvenance(option, proposals.effort) === 'proposal',
+    baseline: baselineProvenance(option, proposals.baseline) === 'proposal',
+  };
+}
+
+/**
+ * The options with anything a proposal could still fill. One option is one
+ * proposal, whichever of its parts it covers — what "Take over all N
+ * proposals" counts, and what each card offers with its one button.
+ */
+export function pendingProposals(options: CostOption[], proposals: OptionProposals): CostOption[] {
+  return options.filter((o) => {
+    const p = pendingParts(o, proposals);
+    return p.effort || p.baseline;
+  });
+}
+
+/** What taking an option's proposal over writes into it: only the parts still open. */
+export function takeOverPatch(option: CostOption, proposals: OptionProposals): Partial<CostOption> {
+  const parts = pendingParts(option, proposals);
+  const patch: Partial<CostOption> = {};
+  if (parts.effort && proposals.effort) {
+    patch.oneOff = proposals.effort.oneOff;
+    patch.perRelease = proposals.effort.perRelease;
+    patch.effortSource = 'proposal-confirmed';
+  }
+  if (parts.baseline && proposals.baseline) {
+    patch.maintenanceBaselinePerYear = proposals.baseline.perYear;
+    patch.baselineSource = 'proposal-confirmed';
+  }
+  return patch;
 }
 
 const dayRange = (low: number, high: number) => `${formatDays(low)}–${formatDays(high)}`;
@@ -328,9 +373,21 @@ export function proposalWords(proposal: EffortProposal): string {
   );
 }
 
-function EffortChip({ state }: { state: EffortProvenance }) {
+/** The maintenance baseline in one sentence of days, rounded as every figure here is. */
+export function baselineWords(proposal: BaselineProposal): string {
+  const { perYear } = proposal;
+  return `${formatDays(perYear.devDays)} developer and ${formatDays(perYear.testDays)} key-user days of maintenance per year.`;
+}
+
+function EffortChip({
+  state,
+  data = 'data-effort-chip',
+}: {
+  state: EffortProvenance;
+  data?: 'data-effort-chip' | 'data-baseline-chip';
+}) {
   return (
-    <span data-effort-chip={state}>
+    <span {...{ [data]: state }}>
       {state === 'not-entered' ? (
         <CcProvenanceChip value="not-determined" note="not entered" />
       ) : state === 'proposal' ? (
@@ -353,6 +410,7 @@ export default function OptionComparison({
   assumptions,
   comparison,
   proposal,
+  baselineProposal,
   onPatchOption,
   editing,
   onToggleEdit,
@@ -360,6 +418,8 @@ export default function OptionComparison({
   assumptions: CostAssumptions;
   comparison: CostComparison;
   proposal: EffortProposal | null;
+  /** The maintenance-baseline proposal for Keep and Do nothing, or `null` without a line count. */
+  baselineProposal: BaselineProposal | null;
   onPatchOption: (id: string, patch: Partial<CostOption>) => void;
   /**
    * Which option cards show their fields — closed by default, so a card reads
@@ -371,7 +431,8 @@ export default function OptionComparison({
   const patchOption = onPatchOption;
   // A figure typed by hand is the reader's own, wherever the field started from.
   const typed = (id: string, p: Partial<CostOption>) => patchOption(id, { ...p, effortSource: 'stated' });
-  const pending = pendingProposals(assumptions.options, proposal);
+  const proposals: OptionProposals = { effort: proposal, baseline: baselineProposal };
+  const pending = pendingProposals(assumptions.options, proposals);
   return (
     <div data-cost-comparison="">
       <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
@@ -381,10 +442,21 @@ export default function OptionComparison({
           const needsBaseline = BASELINE_KINDS.has(option.kind);
           const groups = optionGroups(cost, option);
           const state = effortProvenance(option, proposal);
-          // While the proposal is on offer, its two groups are what the button fills.
+          const baselineState = baselineProvenance(option, baselineProposal);
+          const parts = pendingParts(option, proposals);
+          // While a proposal is on offer, the groups it covers are what the button fills.
           const openGroups = groups.filter(
-            (g) => g.open && !(state === 'proposal' && (g.key === 'one-off' || g.key === 'per-release')),
+            (g) =>
+              g.open &&
+              !(parts.effort && (g.key === 'one-off' || g.key === 'per-release')) &&
+              !(parts.baseline && g.key === 'baseline'),
           );
+          const proposedFor = [
+            parts.effort ? 'the one-off effort range and the effort per release' : null,
+            parts.baseline ? 'the maintenance baseline per year' : null,
+          ]
+            .filter(Boolean)
+            .join(', and for ');
           const priced = Boolean(cost && cost.total);
           const isEditing = editing.has(option.id);
           const panelId = `cost-option-fields-${option.id}`;
@@ -393,6 +465,7 @@ export default function OptionComparison({
               <article
                 data-cost-option={option.id}
                 data-effort-provenance={state}
+                data-baseline-provenance={baselineState ?? undefined}
                 aria-labelledby={`cost-option-title-${option.id}`}
                 className="cc-card flex h-full min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4"
               >
@@ -403,18 +476,35 @@ export default function OptionComparison({
                   <EffortChip state={state} />
                 </div>
 
-                {state === 'proposal' && proposal ? (
+                {baselineState ? (
+                  <p
+                    className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted"
+                    data-cost-option-baseline={option.id}
+                  >
+                    Maintenance baseline per year:
+                    <EffortChip state={baselineState} data="data-baseline-chip" />
+                  </p>
+                ) : null}
+
+                {parts.effort || parts.baseline ? (
                   <div className="flex flex-col gap-2" data-cost-option-proposal={option.id}>
                     {/* The gap stays named: a proposal is not yet a figure (ADR-035). */}
                     <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
-                      Proposed for the one-off effort range and the effort per release — not yours until you take it over
+                      Proposed for {proposedFor} — not yours until you take it over
                     </p>
-                    <p className="m-0 cc-text-cell text-cc-ink">{proposalWords(proposal)}</p>
+                    {parts.effort && proposal ? (
+                      <p className="m-0 cc-text-cell text-cc-ink">{proposalWords(proposal)}</p>
+                    ) : null}
+                    {parts.baseline && baselineProposal ? (
+                      <p className="m-0 cc-text-cell text-cc-ink" data-cost-baseline-proposal={option.id}>
+                        {baselineWords(baselineProposal)}
+                      </p>
+                    ) : null}
                     <div className="cc-no-print">
                       <CcButton
                         variant={pending.length === 1 ? 'primary' : 'secondary'}
                         data-cost-apply-proposal={option.id}
-                        onClick={() => patchOption(option.id, takeOverPatch(proposal))}
+                        onClick={() => patchOption(option.id, takeOverPatch(option, proposals))}
                       >
                         Take over the proposal as my figure
                       </CcButton>
@@ -506,7 +596,10 @@ export default function OptionComparison({
                         idPrefix={`${option.id}-baseline`}
                         label="Maintenance baseline per year"
                         value={option.maintenanceBaselinePerYear}
-                        onChange={(v) => patchOption(option.id, { maintenanceBaselinePerYear: v })}
+                        // Typed by hand is the reader's own, wherever the field started from.
+                        onChange={(v) =>
+                          patchOption(option.id, { maintenanceBaselinePerYear: v, baselineSource: 'stated' })
+                        }
                       />
                     ) : null}
 
