@@ -5,6 +5,8 @@ import CcCard from '@/components/cc/Card';
 import { TestingMetaLine } from '@/components/testing/TestingHeader';
 import ToolSection from '@/components/testing/ToolSection';
 import HandChecks, { type HandCheckGap } from '@/components/testing/HandChecks';
+import TestScopeLegend from '@/components/testing/TestScopeLegend';
+import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import type { DemoProject } from '@/lib/demo-project';
@@ -102,6 +104,8 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
         </div>
 
         <aside aria-label="About this tool" className="flex min-w-0 flex-col gap-4">
+          {/* The same legend as in a project: what can be tested where, said once for the stage. */}
+          <TestScopeLegend isAbapCloud={null} tenantLocked={LIVE_TEST_EXECUTION.locked} />
           <CcCard title="Tenant connection" level={2}>
             <p className="m-0 cc-text-cell text-cc-ink">
               In a project, bring your own tenant (BYOT) opens a connection check, a metadata read and one read-only OData
