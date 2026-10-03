@@ -26,6 +26,7 @@ import {
   type ScenarioTest,
   type ScopeReading,
 } from './scenario-detail';
+import { scenarios } from './testing-summary';
 
 /**
  * The scenarios of the Testing stage — one row each, every row opens its
@@ -324,7 +325,7 @@ export default function ScenarioList({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 flex-col gap-2">
         <p data-scope-summary="" data-stage-output="testCases" className="m-0 cc-text-cell font-semibold text-cc-ink">
-          {summary}
+          {`${scenarios(cases.length)}: ${summary}`}
           {tenantLocked ? ' · tenant runs locked' : ''}
           {' · '}
           <a href="#testing-scope" className="font-semibold text-cc-information hover:underline">
