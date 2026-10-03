@@ -4,7 +4,19 @@
   // rationale + remediation + review date here, and be re-reviewed on expiry.
   "high": true,
   "critical": true,
-  "allowlist": []
-  // (No active exceptions. The former xlsx/SheetJS High advisories were resolved
-  //  by migrating lib/abap/usage-parser.ts to exceljs and dropping the xlsx dep.)
+  "allowlist": [
+    // GHSA-vfj7-8cjw-p6xm (braces, high) — owner decision 03.10.2026.
+    // Rationale: reached only through development tooling (the Next.js ESLint
+    // plugin and firebase-tools); nothing ships it — the deploy gate
+    // (`npm audit --omit=dev --audit-level=high`) is clean. Scoped to these two
+    // paths, so a new path into braces still fails the gate.
+    // Remediation: no fixed braces release exists yet (every version up to
+    // 3.0.3 is affected); remove both entries once one does and the lockfile
+    // moves to it.
+    // Review by: 2026-11-02.
+    "GHSA-vfj7-8cjw-p6xm|@next/eslint-plugin-next>fast-glob>micromatch>braces",
+    "GHSA-vfj7-8cjw-p6xm|firebase-tools>chokidar>braces"
+  ]
+  // (The former xlsx/SheetJS High advisories were resolved by migrating
+  //  lib/abap/usage-parser.ts to exceljs and dropping the xlsx dep.)
 }
