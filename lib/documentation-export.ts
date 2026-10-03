@@ -23,6 +23,7 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
+import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
 import {
   RACI_LETTERS,
   lettersOf,
@@ -358,8 +359,8 @@ function glanceHtml(
     const matrix = raciMatrix(steps);
     if (matrix.steps.length > 0) {
       const head = matrix.roles.map((r) => `<th>${esc(r.name)}${r.overloaded ? esc(` (Responsible on ${r.counts.R} of ${matrix.steps.length})`) : ''}</th>`).join('');
-      const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc(s.gaps.map((g) => ({ 'no-accountable': 'No Accountable', 'several-accountable': 'Several Accountable', 'no-responsible': 'No Responsible' })[g]).join(', '))}</td></tr>`).join('');
-      parts.push(`<h3>RACI matrix — Model proposal</h3><p><small>${esc(RACI_LETTERS.map((l) => `${l} ${({ R: 'Responsible', A: 'Accountable', C: 'Consulted', I: 'Informed' })[l]}`).join(' · '))}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>`);
+      const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc(s.gaps.map(raciGapWord).join(', '))}</td></tr>`).join('');
+      parts.push(`<h3>RACI matrix — Model proposal</h3><p><small>${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>`);
     }
   }
   return parts.join('\n');
