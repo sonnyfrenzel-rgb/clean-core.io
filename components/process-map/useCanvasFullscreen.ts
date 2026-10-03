@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+/** Marks the history entry full screen pushed, so Back can leave it. */
+const HISTORY_FLAG = 'ccCanvasFullscreen';
+
 /**
  * Full screen for a bpmn-js canvas — the one mechanism the editor and the
  * reading map share (owner 02.10.2026: "+ - and full screen, like everywhere else").
@@ -61,6 +64,20 @@ export function useCanvasFullscreen({
     setOverlay(false);
   }, []);
 
+  // Escape leaves the browser's own full screen too. A browser ends it on a
+  // real Escape itself; a keyboard that reaches the page (an embedded view, a
+  // synthetic key) would otherwise leave the reader inside with no key out.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (escapeInside?.current?.contains(event.target as Node | null)) return;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [fullscreen, escapeInside]);
+
   useEffect(() => {
     if (!overlay) return;
     const html = document.documentElement;
@@ -84,8 +101,43 @@ export function useCanvasFullscreen({
       const lost = !document.activeElement || document.activeElement === document.body;
       if (lost) toggleRef.current?.focus();
     }
+    // Into full screen, the focus goes with the reader: the toggle that opened
+    // it is replaced by the labelled way out, which takes it.
+    if (!wasFilled.current && filled) {
+      const active = document.activeElement;
+      if (!active || active === document.body || !rootRef.current?.contains(active)) toggleRef.current?.focus();
+    }
     wasFilled.current = filled;
+  }, [filled, rootRef]);
+
+  /**
+   * The back gesture leaves full screen (owner 03.10.2026: "get back again
+   * easily"). On a phone that is the way out a reader tries first, and without
+   * an entry of its own it left the page. Entering pushes one history entry on
+   * the same address — Next's own state copied, so its router sees its own
+   * page — and Back pops it; leaving any other way (the button, Escape) takes
+   * the entry back off, so the history is as it was.
+   */
+  const pushedRef = useRef(false);
+  useEffect(() => {
+    if (filled && !pushedRef.current) {
+      pushedRef.current = true;
+      window.history.pushState({ ...(window.history.state ?? {}), [HISTORY_FLAG]: true }, '');
+    } else if (!filled && pushedRef.current) {
+      pushedRef.current = false;
+      if (window.history.state?.[HISTORY_FLAG]) window.history.back();
+    }
   }, [filled]);
+  useEffect(() => {
+    const onPop = () => {
+      if (!pushedRef.current || window.history.state?.[HISTORY_FLAG]) return;
+      pushedRef.current = false;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+      setOverlay(false);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   return { fullscreen, overlay, filled, toggle, exit, toggleRef };
 }

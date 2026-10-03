@@ -8,6 +8,7 @@ import './process-map.css';
 import { MAP_REVEAL_EVENT, fitWhole, fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
 import { MapViewTools } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
+import { useTouchViewport } from './useTouchViewport';
 import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
 import { wrapText } from '@/lib/bpmn/text-metrics';
 
@@ -96,10 +97,19 @@ export interface BpmnCanvasProps {
    * with a bubbling `cc-map-reveal` event so the page can show its detail.
    */
   controls?: boolean;
+  /**
+   * How a level opens: `whole` — the whole level in view (the Documentation
+   * stage); `readable` — fitted down to a readable floor and otherwise from its
+   * start (the workspace). Defaults to `whole` with controls, `readable`
+   * without. Every map carries the controls since owner 03.10.2026 ("get into
+   * full screen, and back"); how the workspace map opens did not change.
+   */
+  openFit?: 'whole' | 'readable';
 }
 
 interface CanvasService extends ViewboxCanvas {
-  zoom(level?: string | number, center?: 'auto'): number;
+  zoom(level?: string | number, center?: 'auto' | { x: number; y: number }): number;
+  scroll(delta: { dx: number; dy: number }): void;
   resized(): void;
   getContainer(): HTMLElement;
   addMarker(element: string, marker: string): void;
@@ -198,13 +208,16 @@ export default function BpmnCanvas({
   lit = null,
   excluded,
   controls = false,
+  openFit,
 }: BpmnCanvasProps) {
+  const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(100);
   const { filled, toggle: toggleFullscreen, exit: exitFullscreen, toggleRef } = useCanvasFullscreen({ rootRef: frameRef });
   const filledRef = useRef(filled);
   const controlsRef = useRef(controls);
+  const fitOnOpenRef = useRef(fitOnOpen);
   /**
    * A step chosen in full screen: full screen closes first, then the choice is
    * made, then the page is told — so the chapter it opens is on screen.
@@ -243,6 +256,7 @@ export default function BpmnCanvas({
     activeRef.current = active;
     filledRef.current = filled;
     controlsRef.current = controls;
+    fitOnOpenRef.current = fitOnOpen;
   });
 
   useEffect(() => {
@@ -354,12 +368,11 @@ export default function BpmnCanvas({
         applyRovingTabIndex(host, activeRef.current);
       });
 
+      if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      else fitWithPadding(canvas);
       if (controlsRef.current) {
-        fitWhole(canvas);
         eventBus.on('canvas.viewbox.changed', () => setZoom(Math.round(canvas.zoom() * 100)));
         setZoom(Math.round(canvas.zoom() * 100));
-      } else {
-        fitWithPadding(canvas);
       }
       applyRovingTabIndex(host, activeRef.current);
 
@@ -399,7 +412,7 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    if (controlsRef.current) fitWhole(canvas);
+    if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
     else fitWithPadding(canvas);
   }, [plane]);
 
@@ -411,7 +424,9 @@ export default function BpmnCanvas({
     try {
       const canvas = viewer.get('canvas');
       canvas.resized();
-      fitWhole(canvas);
+      // Full screen shows the whole level; back on the page, the level opens as it did.
+      if (filled || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      else fitWithPadding(canvas);
     } catch {
       /* a viewer still importing has nothing to measure */
     }
@@ -425,6 +440,30 @@ export default function BpmnCanvas({
     const canvas = viewerRef.current?.get('canvas');
     if (canvas) fitWhole(canvas);
   }, []);
+
+  /**
+   * A finger moves the map (`useTouchViewport`): inline a sideways swipe pans
+   * and a vertical one scrolls the page; in full screen one finger pans every
+   * way; two fingers pinch; a double tap fits as the button does. bpmn-js
+   * itself moves only with a mouse.
+   */
+  useTouchViewport(
+    hostRef,
+    {
+      pan: (dx, dy) => viewerRef.current?.get('canvas').scroll({ dx, dy }),
+      zoom: (factor, x, y) => {
+        const canvas = viewerRef.current?.get('canvas');
+        if (canvas) canvas.zoom(Math.min(4, Math.max(0.1, canvas.zoom() * factor)), { x, y });
+      },
+      fit: () => {
+        const canvas = viewerRef.current?.get('canvas');
+        if (!canvas) return;
+        if (controlsRef.current) fitWhole(canvas);
+        else fitWithPadding(canvas);
+      },
+    },
+    { free: controls && filled, ignoreDoubleTap: '[data-map-node], .djs-overlay' },
+  );
 
   /** Enter or Space on a step in full screen chooses it the way a click does. */
   const keyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {

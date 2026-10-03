@@ -807,9 +807,13 @@ export default function ProcessMap({
               onKeyDown={handleKeyDown}
               lit={lit}
               excluded={variant.excluded}
-              /* Documentation (owner 02.10.2026): the whole process on open,
-                 zoom, fit and full screen — the editor's controls. */
-              controls={stage}
+              /* Zoom, fit and full screen on every map — the editor's controls
+                 (owner 02.10.2026 for Documentation, 03.10.2026 for the
+                 workspace: "get into full screen, and back again easily").
+                 Documentation opens on the whole process; the workspace, as
+                 before, at a readable scale. */
+              controls
+              openFit={stage ? 'whole' : 'readable'}
             />
           ) : (
             <ProcessStepList

@@ -38,6 +38,7 @@ import EditorMinimap from './EditorMinimap';
 import EditorImport from './EditorImport';
 import { CanvasFullscreenToggle, CanvasZoomControls } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
+import { useTouchViewport } from './useTouchViewport';
 import {
   elementListTabStop,
   overlapsOnLevel,
@@ -1011,6 +1012,20 @@ export default function BpmnEditor({
     // The canvas measures its box; after the box changed it has to measure again.
     modeler?.get<CanvasService>('canvas').resized();
   }, [filled, modeler]);
+
+  /** A finger moves the canvas as on the reading map (`useTouchViewport`); the modeller moves only with a mouse. */
+  useTouchViewport(
+    hostRef,
+    {
+      pan: (dx, dy) => modelerRef.current?.get<CanvasService>('canvas').scroll({ dx, dy }),
+      zoom: (factor, x, y) => {
+        const canvas = modelerRef.current?.get<CanvasService>('canvas');
+        if (canvas) canvas.zoom(Math.min(4, Math.max(0.2, canvas.zoom() * factor)), { x, y });
+      },
+      fit,
+    },
+    { free: filled, ignoreDoubleTap: '.djs-element, .djs-overlay' },
+  );
 
   /* ---------------- saving ---------------- */
 
