@@ -515,9 +515,33 @@ export function readStatements(source: string): AbapStatement[] {
     if (/^EXEC\s+SQL\b/i.test(last.text)) nativeSql = true;
     else if (/\bENDEXEC\b/i.test(last.text)) nativeSql = false;
   };
+  // ABAP keyword documentation, METHOD … BY DATABASE PROCEDURE|FUNCTION|GRAPH
+  // WORKSPACE (AMDP): the body up to ENDMETHOD is database-specific code
+  // (SQLScript on HANA), not ABAP. Its statements end with `;`, its `.` are
+  // qualified names and `"…"` quotes identifiers rather than opening a
+  // comment — read as ABAP, the first ENDMETHOD vanished into one long
+  // statement and the method ran on into the next one. The body is kept as one
+  // statement marked `nativeSql`, exactly like EXEC SQL … ENDEXEC.
+  let amdpBody = false;
+  const AMDP_OPENER = /^METHOD\s+[\w/~]+\s+BY\s+DATABASE\s+(?:PROCEDURE|FUNCTION|GRAPH\s+WORKSPACE)\b/i;
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
+    if (amdpBody) {
+      if (/^\s*ENDMETHOD\b/i.test(raw)) {
+        if (pending.chars.length) emit(out, pending, 0, pending.chars.length, true);
+        pending.chars.length = 0;
+        pending.lineAt.length = 0;
+        amdpBody = false;
+      } else {
+        // A full-line ABAP comment is still one; everything else is the body.
+        const body = raw.trim();
+        if (!body || raw.startsWith('*')) continue;
+        if (pending.chars.length) { pending.chars.push(' '); pending.lineAt.push(i + 1); }
+        for (const ch of body) { pending.chars.push(ch); pending.lineAt.push(i + 1); }
+        continue;
+      }
+    }
     if (isAbapCommentLine(raw, pending.chars.length > 0)) continue;
 
     const trimmed = stripInlineComment(raw).trim();
@@ -561,6 +585,10 @@ export function readStatements(source: string): AbapStatement[] {
       pending.lineAt.splice(0, p + 1);
       p = 0;
       outside = createLiteralScanner();
+      if (AMDP_OPENER.test(out[out.length - 1]?.text ?? '')) {
+        amdpBody = true;
+        break;
+      }
     }
   }
 

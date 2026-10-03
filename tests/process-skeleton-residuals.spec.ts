@@ -119,3 +119,38 @@ test('an early RETURN that skips setting a result parameter keeps its own end; o
   // (RETURNING). Line 24 skips only a global: still the normal end (ADR-054).
   expect(early).toEqual([8, 20]);
 });
+
+test('an AMDP method body is database code: one native statement, one read step of its USING tables', () => {
+  const source = [
+    'REPORT zamdp_usage.', //                                                      1
+    'CLASS lcl_db DEFINITION.', //                                                 2
+    '  PUBLIC SECTION.', //                                                        3
+    '    INTERFACES if_amdp_marker_hdb.', //                                       4
+    '    CLASS-METHODS totals EXPORTING VALUE(et_sum) TYPE tt_sum.', //            5
+    '    CLASS-METHODS rank IMPORTING VALUE(it_sum) TYPE tt_sum', //               6
+    '                       EXPORTING VALUE(et_rank) TYPE tt_sum.', //             7
+    'ENDCLASS.', //                                                                8
+    'CLASS lcl_db IMPLEMENTATION.', //                                             9
+    '  METHOD totals BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT', //          10
+    '                OPTIONS READ-ONLY USING vbap.', //                            11
+    '    et_sum = SELECT vbeln, SUM( netwr ) AS netwr FROM vbap', //               12
+    '             WHERE "VBAP".mandt = SESSION_CONTEXT( \'CLIENT\' ) GROUP BY vbeln;', // 13
+    '  ENDMETHOD.', //                                                             14
+    '  METHOD rank BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT OPTIONS READ-ONLY.', // 15
+    '    et_rank = SELECT * FROM :it_sum ORDER BY netwr DESC;', //                 16
+    '  ENDMETHOD.', //                                                             17
+    'ENDCLASS.', //                                                                18
+    'START-OF-SELECTION.', //                                                      19
+    '  lcl_db=>totals( IMPORTING et_sum = gt_sum ).', //                           20
+    '  lcl_db=>rank( EXPORTING it_sum = gt_sum IMPORTING et_rank = gt_rank ).', // 21
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source);
+  // The first ENDMETHOD closes the first method: the second is a method of its own.
+  const bodies = skeleton.nodes.filter((n) => n.detail?.amdp === true)
+    .map((n) => [n.kind, n.label, n.anchor?.lineStart, n.anchor?.lineEnd]);
+  expect(bodies).toEqual([['read', 'VBAP', 12, 13], ['service-task', 'RANK', 16, 16]]);
+  // Neither is a technical helper folded away; both calls are drawn as steps.
+  expect(skeleton.notDrawn.technicalHelpers).toEqual([]);
+  expect(skeleton.nodes.filter((n) => (n.anchor?.lineStart === 20 || n.anchor?.lineStart === 21) && n.kind !== 'end')
+    .map((n) => [n.anchor?.lineStart, n.kind])).toEqual([[20, 'read'], [21, 'service-task']]);
+});

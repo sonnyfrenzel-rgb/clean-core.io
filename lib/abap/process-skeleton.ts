@@ -777,6 +777,20 @@ function isListOutput(statement: AbapStatement): boolean {
   return !/\bTO\b/i.test(statement.text);
 }
 
+/** ADR-066 — `METHOD name BY DATABASE PROCEDURE|FUNCTION …`, an AMDP method; group 1 is the name. */
+const AMDP_METHOD = /^METHOD\s+([\w/~]+)\s+BY\s+DATABASE\s+(?:PROCEDURE|FUNCTION)\b/i;
+
+/**
+ * ADR-066 — the database objects an AMDP method's `USING` clause names,
+ * upper-cased. The ABAP keyword documentation requires every dictionary
+ * object the procedure accesses to be listed there; other AMDP methods named
+ * as `class=>method` are not tables and are left out.
+ */
+function amdpTables(opener: string): string[] {
+  const using = /\bUSING\s+([\s\S]+)$/i.exec(opener.replace(/\.\s*$/, ''))?.[1] ?? '';
+  return using.split(/[\s,]+/).filter((t) => /^[\w/]+$/.test(t)).map((t) => t.toUpperCase());
+}
+
 /** The words that open or close a parameter section of a `FORM` or `METHODS` signature. */
 const SIGNATURE_WORDS = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|RAISING|EXCEPTIONS|USING|TABLES|REDEFINITION|ABSTRACT|FINAL)\b/gi;
 
@@ -1414,6 +1428,14 @@ class SkeletonBuilder {
 
   private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
     const out = new Set<FormEffect>();
+    // ADR-066. An AMDP method (`METHOD m BY DATABASE PROCEDURE|FUNCTION …`)
+    // runs its body on the database: it reads the database objects its USING
+    // clause names (or, without one, at least its own parameters there). Its
+    // SQLScript is not read (`statement-reader.ts` keeps it as native code),
+    // so it is not a technical helper with nothing in it but a read step.
+    if (block.kind === 'method' && AMDP_METHOD.test(this.statements[block.openIndex].text)) {
+      out.add(amdpTables(this.statements[block.openIndex].text).length ? 'read' : 'call');
+    }
     const [from, to] = bodyRange(block);
     for (let i = from; i <= to; i++) {
       const statement = this.statements[i];
@@ -3357,7 +3379,23 @@ class SkeletonBuilder {
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
     };
 
-    if (statement.nativeSql) return { exits: incoming, outputRun: null };
+    if (statement.nativeSql) {
+      // ADR-066. The body of an AMDP method (`METHOD m BY DATABASE PROCEDURE
+      // … USING mseg.`) is one native statement that runs on the database —
+      // one read step, of the database objects its USING clause names. What
+      // the SQLScript does in detail is not read and not claimed.
+      const opener = this.statements[statement.index - 1];
+      const amdp = opener && AMDP_METHOD.exec(opener.text);
+      if (!amdp) return { exits: incoming, outputRun: null };
+      const tables = amdpTables(opener.text);
+      // Without USING it touches no dictionary object, only what it is handed:
+      // work done by the database, not a read of it.
+      return keep(tables.length
+        ? this.addNode('read', tables[0], anchorOf(statement), ctx.region, ctx.container,
+          { detail: { tables, amdp: true } })
+        : this.addNode('service-task', amdp[1].toUpperCase(), anchorOf(statement), ctx.region, ctx.container,
+          { detail: { amdp: true, returns: true } }));
+    }
     if (DECLARATIVE.has(statement.keyword)) {
       // `DATA(x) = lo->m( ).` declares and assigns in one: the assignment runs,
       // and with it the call on its right (D2).
