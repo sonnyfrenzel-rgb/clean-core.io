@@ -96,3 +96,18 @@ test('a failed project load is said, not shown as an empty stage (131d46bc4ffd)'
   expect(src).toMatch(/if \(loadError\) return \(/);
   expect(src).toContain('data-load-error');
 });
+
+test('replacing the documentation drops the business layer written from the old one (QA full review 96b39ec78c97)', () => {
+  const src = page();
+  const start = src.indexOf('const generateDocumentation = useCallback');
+  expect(start, 'the documentation generator').toBeGreaterThan(-1);
+  const body = src.slice(start, src.indexOf('}, [projectId, project, signedSource', start));
+  // One write: the new document, and the layer that described the old one cleared.
+  expect(body).toMatch(/const fields = \{ documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' \}/);
+  expect(body).toContain('tx.update(projectDoc, fields)');
+  // …from the package as well, so the handover carries no stale SOP file.
+  expect(body).toMatch(/removeFileFromWorkspace\([\s\S]*?BUSINESS_WORKSPACE_FILE/);
+  expect(src).toContain("const BUSINESS_WORKSPACE_FILE = 'docs/business-documentation.md'");
+  // …and from the screen, after the write went through.
+  expect(body.indexOf("setBusinessDocumentation('')")).toBeGreaterThan(body.indexOf('await runTransaction'));
+});
