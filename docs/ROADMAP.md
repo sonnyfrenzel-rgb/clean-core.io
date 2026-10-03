@@ -1599,6 +1599,13 @@ the copy — so the fix is one definition across all of them, not a one-number p
 UX-183 is refuted: the cited link is in the fallback dashboard; the workspace list links the
 project name to the workspace object page. UX-185 and UX-186 are deferred like UX-180.
 
+**Addendum 03.10.2026:** UX-182 is fixed (e808bc2f). Owner decision: a file that ends in a
+newline has as many lines as an editor shows; the final newline ends the last line and does not
+start an empty one. `countSourceLines` in `lib/source-lines.ts` is the one definition, and every
+user-facing or stored count uses it, the signed run's `lineCount` of new runs included; line
+indexing is unchanged. Runs signed before keep their stored count; nothing recomputes it from the
+source, so they and their audit packs still verify. `tests/source-line-count.spec.ts` holds 668.
+
 | ID | Severity | Finding | Roadmap step | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Zero findings sealed as Fully Supported | 0.8 | fixed |
@@ -1697,7 +1704,7 @@ project name to the workspace object page. UX-185 and UX-186 are deferred like U
 | UX-169 | medium | Documentation is named differently from the stage itself | D.9 | scheduled |
 | UX-170 | medium | Confirmation page without a way out on an invalid link | D.26 | scheduled |
 | UX-174 | medium | New one-off tokens for sizes and spacing without a system | Block D | scheduled |
-| UX-182 | medium | Line count of the demo program differs between list and starter card (669 vs 668) | 3.0 | scheduled |
+| UX-182 | medium | Line count of the demo program differs between list and starter card (669 vs 668) | 3.0 | fixed |
 | UX-184 | medium | Back link to the workspace labelled differently on settings | immediately | fixed |
 | UX-008 | low | Slideshow controls without names, arrow keys hijacked | 3.0.4 | fixed |
 | UX-011 | low | Confusing finding terms and language mix | 1.5 | scheduled |

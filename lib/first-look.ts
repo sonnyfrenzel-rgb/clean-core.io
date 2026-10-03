@@ -58,6 +58,7 @@ import type { ModelAbsence } from './model-stages';
 import type { RulePropertyValue } from './rule-property';
 import { notDetermined, type NotDetermined } from './workspace-model';
 import type { Project } from './types';
+import { countSourceLines } from '@/lib/source-lines';
 
 /* ------------------------------------------------------- the second visit */
 
@@ -299,7 +300,7 @@ function lineFigure(project: Project | null, source: string): FirstLookFigure {
   if (!source.trim()) {
     return { key: 'lines', label: 'lines', value: null, origin: 'absent', absentReason: 'nothing staged' };
   }
-  return { key: 'lines', label: 'lines', value: String(source.split(/\r?\n/).length), origin: 'engine' };
+  return { key: 'lines', label: 'lines', value: String(countSourceLines(source)), origin: 'engine' };
 }
 
 /**

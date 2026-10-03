@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import CcButton from '@/components/cc/Button';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { cn } from '@/lib/utils';
+import { countSourceLines } from '@/lib/source-lines';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { plainLabels } from '@/lib/abap/plain-language';
 import type { ProcessSkeleton } from '@/lib/abap/process-skeleton';
@@ -231,12 +232,15 @@ export default function FirstLookBuildUp({
   onSkip: () => void;
 }) {
   const lines = useMemo(() => source.split(/\r\n|\r|\n/), [source]);
+  // The count an editor shows: the final newline ends the last line and adds
+  // no empty one (lib/source-lines.ts). `lines` above still indexes them.
+  const totalLines = useMemo(() => countSourceLines(source), [source]);
   const events = useMemo(() => buildUpEvents(access, skeleton), [access, skeleton]);
   const drawing = useMemo(() => firstLookExcerpt(skeleton, source), [skeleton, source]);
   const nodeLines = useMemo(() => drawing.nodes.map((n) => n.line), [drawing]);
   const withExcerpt = drawing.nodes.length > 0;
   const frame = withExcerpt
-    ? excerptFrame(events, nodeLines, elapsed, lines.length)
+    ? excerptFrame(events, nodeLines, elapsed, totalLines)
     : { ...buildUpFrame(events, elapsed), grown: 0, fresh: false };
 
   // Plain names for the fallback list: the stored business names where a
@@ -258,7 +262,7 @@ export default function FirstLookBuildUp({
   const litNodeLines = new Set(lit.filter((e) => e.kind === 'node').map((e) => e.line));
   const litDataLines = new Set(lit.filter((e) => e.kind === 'data').map((e) => e.line));
   const currentLine = withExcerpt ? nodeLines[frame.grown - 1] ?? frame.counters.line : frame.current?.line ?? 1;
-  const range = codeWindow(lines.length, currentLine ?? 1, 13, 7);
+  const range = codeWindow(totalLines, currentLine ?? 1, 13, 7);
   const grownNodes = withExcerpt ? drawing.nodes.slice(0, frame.grown) : [];
   const swaps = withExcerpt
     ? grownNodes.filter((n) => n.name !== n.technicalName)
@@ -277,7 +281,7 @@ export default function FirstLookBuildUp({
           {buildUpStageLabel(stage)}
         </h2>
         <span data-first-look-reading="" className="min-w-0 text-[12px] font-medium text-cc-ink-muted">
-          {buildUpLive(sourceName, lines.length, container)}
+          {buildUpLive(sourceName, totalLines, container)}
         </span>
         {stage === 'business-language' ? (
           proposed ? (
@@ -298,7 +302,7 @@ export default function FirstLookBuildUp({
         data-first-look-counters=""
         className="m-0 flex flex-wrap gap-x-4 gap-y-1 border-y border-cc-line py-2 text-[12px] font-medium text-cc-ink-muted"
       >
-        <span>{buildUpCounter('lines', frame.counters.line, lines.length)}</span>
+        <span>{buildUpCounter('lines', frame.counters.line, totalLines)}</span>
         <span>{buildUpCounter('tables', frame.counters.tables)}</span>
         <span>{buildUpCounter('nodes', frame.counters.nodes)}</span>
         {stage !== 'code-read' ? <span>{buildUpCounter('decisions', frame.counters.decisions)}</span> : null}

@@ -33,6 +33,7 @@ import { scoreBand } from '@/lib/clean-core-score';
 import { catalogForReader } from '@/lib/messages/demo';
 import { APP_VERSION } from '@/lib/version';
 import type { DemoProject } from '@/lib/demo-project';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * The demo's Analyze stage — the object page a real project's Analyze stage
@@ -70,7 +71,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
 
   const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(a.findings)), [a.findings]);
   const rows = useMemo(() => findingRows(a.findings), [a.findings]);
-  const sourceLines = source ? source.split('\n').length : 0;
+  const sourceLines = countSourceLines(source ?? '');
 
   // The levels the server looked up, read as the real page reads its lookup.
   const levels: LevelLookup = useMemo(

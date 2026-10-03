@@ -25,6 +25,7 @@ import type { CoverageReport } from './abap/coverage';
 import type { EvidenceFinding } from './abap/evidence-model';
 import { calmTitle, findingRows, kindLabel } from './findings-view';
 import { BTP } from './sap-naming';
+import { countSourceLines } from '@/lib/source-lines';
 
 /* ---------------------------------------------------------------- routes */
 
@@ -405,7 +406,7 @@ export function fileCard(file: GeneratedFile): FileCard {
     path: file.path,
     type: hit?.[1] ?? 'other',
     role: hit?.[2] ?? 'File',
-    lines: content.length === 0 ? 0 : content.split('\n').length,
+    lines: countSourceLines(content),
     bytes: new TextEncoder().encode(content).length,
   };
 }

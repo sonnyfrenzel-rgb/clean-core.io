@@ -93,7 +93,12 @@ test.describe('the demo is a real run, not a story about one', () => {
     expect(demo.linesOfCode).toBe(source.split(/\r?\n/).filter((l) => l.trim() && !/^\s*\*/.test(l)).length);
     // Economics models on the source's line count, the one every other screen
     // states - not the code-only count (it said 550 against 669 until 01.10.2026).
-    expect(demo.economics.loc, 'the demo economics models on the whole source').toBe(source.split(/\r?\n/).length);
+    // Since 03.10.2026 (UX-182) the final newline ends the last line instead of
+    // starting an empty one, so the 668-line program counts 668, not 669.
+    expect(demo.economics.loc, 'the demo economics models on the whole source').toBe(
+      source.replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').length,
+    );
+    expect(demo.economics.loc).toBe(668);
     expect(demo.economics.loc).toBe(demo.totalLines);
   });
 

@@ -65,7 +65,7 @@ export function ChecklistLine({
   children,
 }: {
   row: ChecklistRow;
-  /** The reader's value in a few words — "800 CHF / day", "669 LoC from your source". */
+  /** The reader's value in a few words — "800 CHF / day", "668 LoC from your source". */
   summary?: ReactNode;
   /** For rows entered per option: the section that holds their fields. */
   target?: string;

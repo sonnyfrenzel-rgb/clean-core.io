@@ -21,6 +21,7 @@
 import { STARTER_EXAMPLES, type StarterExample } from './starter-examples';
 import { STAGE_EXAMPLE_FILE } from './three-views-stage';
 import { extractDataCoupling } from './abap/code-assessment';
+import { countSourceLines } from '@/lib/source-lines';
 
 /** A short code snippet shipped with the dashboard. Starts as a named project. */
 export interface ExampleSnippet {
@@ -112,5 +113,5 @@ export function describeSnippet(code: string): SnippetDescription {
   if (reads.length) shows.push(`reads ${list(reads.sort())}`);
   if (writes.length) shows.push(`writes ${list(writes.sort())}`);
   if (calls.length) shows.push(`calls ${list(calls)}`);
-  return { kind, title: headerComment(code), shows, lines: code.split(/\r?\n/).length };
+  return { kind, title: headerComment(code), shows, lines: countSourceLines(code) };
 }
