@@ -37,6 +37,7 @@
 import type { Project } from './types';
 import { workflowSteps, phaseTone, toolOnRecord, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
+import { outsideReading } from './sap-test-results';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import { INPUT_IDS, type InputManifest } from './input-manifest';
@@ -385,22 +386,31 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   // the chip for something checked against the real thing (Codex code-runner-02).
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   const recordedMockRun = receipt !== null && receipt.environment === 'mock' && receipt.verdicts.length > 0;
+  // ADR-075 — on the ABAP Cloud route the run happens in the reader's own SAP
+  // system: imported from its result file, or confirmed by the account. Never
+  // `done` (green is for an execution here); *confirmed* in the information tone.
+  const outside = outsideReading(project);
+  const outsideFailed = outside.state === 'current' && (outside.summary.failed > 0 || (outside.summary.coverage?.failed ?? 0) > 0);
   const execution: WorkspaceStatus = {
     facet: 'execution',
     label: 'Execution',
     status:
       by.testing.state === 'stale'
         ? 'partial'
-        : failed > 0
-          ? 'failed'
-          : mockOnly
-            ? 'mock-only'
-            : statusOfPhase(by.testing),
+        : by.testing.verifiedOutside
+          ? 'confirmed'
+          : failed > 0 || outsideFailed
+            ? 'failed'
+            : mockOnly
+              ? 'mock-only'
+              : statusOfPhase(by.testing),
     detail: by.testing.detail,
     from: 'testing',
     provenance:
       staleChip(by.testing) ??
-      (mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+      (outside.state === 'current'
+        ? outside.summary.kind
+        : mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],
   };
 

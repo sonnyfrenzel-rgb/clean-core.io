@@ -1,4 +1,5 @@
 import { coveringTestRunReceipt, isTestRunReceipt } from '@/lib/test-receipt';
+import { outsideCountsLine, outsideReading } from '@/lib/sap-test-results';
 
 /**
  * Where testing stands, read from what the project and this session hold.
@@ -82,6 +83,13 @@ export function deliveryTestingTitle(
   const cases = Array.isArray(list) ? list.length : 0;
   const kind = isAbapCloud ? 'ABAP Unit' : 'Sandbox';
   if (cases === 0) return 'No test suite generated';
+  // ADR-075: on the ABAP Cloud route the result comes from your own SAP system.
+  const outside = outsideReading(project as Parameters<typeof outsideReading>[0]);
+  if (outside.state === 'current') {
+    return outside.summary.kind === 'imported'
+      ? `${outsideCountsLine(outside.summary)} — ABAP Unit, imported from your SAP system`
+      : `${outsideCountsLine(outside.summary)} — ABAP Unit, confirmed by you`;
+  }
   const run = lastRun(project, null);
   if (run.kind !== 'recorded') return `Test draft: ${cases} ${kind} tests, no run on record`;
   return `${run.counts.passed} of ${cases} ${kind} tests passed`;

@@ -95,6 +95,8 @@ export interface DemoRailStep {
   proven: boolean;
   /** Always false, with `proven`. */
   mock: boolean;
+  /** Always null: the demo records no test result from any system. */
+  verifiedOutside: null;
   badge: string;
   detail: string;
 }
@@ -261,7 +263,7 @@ function railStep(
   detail: string,
 ): DemoRailStep {
   const p = PHASES.find((x) => x.key === key)!;
-  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', proven: false, mock: false, badge, detail };
+  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', proven: false, mock: false, verifiedOutside: null, badge, detail };
 }
 
 /**
