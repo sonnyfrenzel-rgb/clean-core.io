@@ -80,7 +80,8 @@ export const MODEL_STAGE_DESCRIPTIONS: Record<ModelStage, string> = {
     'Proposed business names for the steps and lanes of the process reconstructed from the code. The process, its technical names and every line anchor are computed without a model and stay as they are.',
   statements:
     'A proposed business sentence for each step of the process, asked for with a button. The sentence reconstructed from the code stays beneath each one as the evidence, and a proposal the code contradicts is marked.',
-  design: 'The target architecture blueprint and the non-functional requirements.',
+  design:
+    'The target architecture blueprint, the non-functional requirements, and — asked for with a button — clearer wording for the functional requirements. The functional requirements themselves, their lines and priorities are read from the code without a model.',
   transformation: 'The ABAP Cloud or CAP code proposal.',
   documentation: 'The technical documentation and the business blueprint.',
   testing: 'The proposed test cases and the test suite skeleton.',
