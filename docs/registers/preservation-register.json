@@ -1083,7 +1083,7 @@
           {
             "field": "businessDocumentation",
             "locator": "[data-stage-output=\"businessDocumentation\"]",
-            "why": "the SOP, RACI and audit-control tables behind the Business SOP tab; the reference case has none, so what is asserted here is that the panel is absent"
+            "why": "the SOP step strip, the RACI matrix and the folded full SOP with its control checkpoints, at the top of the stage (ADR-068); the reference case has none, so what is asserted here is that the panel is absent"
           }
         ],
         "onlyAfterARun": [],

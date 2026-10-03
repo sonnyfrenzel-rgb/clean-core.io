@@ -8,7 +8,7 @@ import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
-import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket, Printer, ExternalLink } from 'lucide-react';
+import { Download, RefreshCw, FileCode2, Briefcase, Target, Settings, Activity, Layers, Box, Rocket, Printer, ExternalLink } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import dynamic from 'next/dynamic';
@@ -32,6 +32,16 @@ import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import HandbookDrawer from '@/components/documentation/HandbookDrawer';
+import BusinessGlance from '@/components/documentation/BusinessGlance';
+import BusinessLayer from '@/components/documentation/BusinessLayer';
+import { useBusinessGlance } from '@/hooks/useBusinessGlance';
+import {
+  businessCallouts,
+  glanceHeadline,
+  notDeterminedCallout,
+  type ProcessStepRef,
+} from '@/lib/business-summary';
+import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messages';
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
@@ -68,8 +78,6 @@ import CcEmptyState from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
-import CcTable from '@/components/cc/Table';
-import CcTabs from '@/components/cc/Tabs';
 import { CcTag } from '@/components/cc/Tag';
 import { t } from '@/lib/cc-messages';
 
@@ -225,7 +233,6 @@ export default function DocumentationPage() {
   const [businessDocumentation, setBusinessDocumentation] = useState('');
   const [isGeneratingBusinessDoc, setIsGeneratingBusinessDoc] = useState(false);
   const [businessDocError, setBusinessDocError] = useState('');
-  const [activeTab, setActiveTab] = useState<'technical' | 'business'>('technical');
 
   // Roadmap 4.4 — the brief. It reads the whole program twice (the rule reader
   // and the coverage sweep), so the button says it is working and says why when
@@ -338,7 +345,12 @@ export default function DocumentationPage() {
   }, [businessDocumentation]);
 
   const generateBusinessDocumentation = useCallback(async () => {
-    if (!project || !projectId || !documentation) return;
+    if (!project || !projectId) return;
+    // Never a silent no-op (owner 03.10.2026): the reason is said where the button is.
+    if (!documentation) {
+      setBusinessDocError(wt('doc.businessNeedsDocumentation'));
+      return;
+    }
     const blocked = generationBlockers(project, 'documentation');
     if (blocked.length > 0) {
       setBusinessDocError(blocked.join(' '));
@@ -492,6 +504,51 @@ Structure the JSON exactly like this:
   /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
   const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model);
   const isPhone = useBreakpointS();
+
+  /**
+   * Owner 03.10.2026 — the business reader's first look: what the process does,
+   * where the problems are, what is not determined. Read from the handbook, the
+   * coverage sweep and the levels of the tables the code writes
+   * (`lib/business-summary.ts`); nothing is written and no model is called.
+   */
+  const glanceInputs = useBusinessGlance(
+    signedSource?.source ?? null,
+    handbook.handbook,
+    project ? catalogLookupTargetOf(project) : null,
+  );
+  const glance = useMemo(() => {
+    const hb = handbook.handbook;
+    return {
+      headline: hb ? glanceHeadline(hb) : null,
+      callouts: hb ? businessCallouts(hb, glanceInputs.levels) : [],
+      notDetermined: notDeterminedCallout(glanceInputs.gaps),
+    };
+  }, [handbook.handbook, glanceInputs]);
+
+  /**
+   * The steps of the process the business layer is keyed to — the engine
+   * document's elements, named as the map names them and with the map's
+   * provenance (a step a person confirmed reads *Confirmed*). A legacy
+   * blueprint's tasks were written by a model and carry no lines.
+   */
+  const processSteps: ProcessStepRef[] = engineDoc
+    ? engineDoc.steps.map((step) => {
+        const element = processMap.model?.elements.find((e) => e.id === step.id);
+        return {
+          id: step.id,
+          name: element?.label ?? step.businessName ?? step.technicalName,
+          technicalName: step.technicalName,
+          anchor: step.anchor,
+          provenance: element?.status ?? step.provenance,
+        };
+      })
+    : (parsedDoc?.l4_tasks ?? []).map((task: { stepId?: unknown; name?: unknown }) => ({
+        id: String(task.stepId ?? ''),
+        name: typeof task.name === 'string' && task.name ? task.name : String(task.stepId ?? ''),
+        technicalName: String(task.stepId ?? ''),
+        anchor: null,
+        provenance: 'proposed' as const,
+      }));
 
   const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
   const statementProposal = useStatementProposal(
@@ -894,7 +951,23 @@ Structure the JSON exactly like this:
   const documentationStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
 
   const downloadConfluenceHTML = () => {
-    const options = { stale: documentationStale };
+    // Owner 03.10.2026 — the file opens with the same glance the stage shows,
+    // as a table, and keeps every row of the full layer below it.
+    const options = {
+      stale: documentationStale,
+      glance: glance.headline
+        ? {
+            headline: glanceHeadlineSentence(glance.headline),
+            callouts: [...glance.callouts, ...(glance.notDetermined ? [glance.notDetermined] : [])].map((c) => ({
+              title: calloutTitle(c),
+              provenance: c.provenance,
+              evidence: c.evidence,
+              more: c.count - c.evidence.length,
+            })),
+          }
+        : undefined,
+      processSteps,
+    };
     const blob = engineDoc
       ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc, options)
       : parsedDoc
@@ -1121,204 +1194,99 @@ Structure the JSON exactly like this:
     </div>
   ) : null;
 
-  const businessPanel = (
-    <div className="space-y-6">
-      {isGeneratingBusinessDoc ? (
-        <section className={SECTION} aria-busy="true">
-          <h2 className={H2}>Mapping SOP &amp; RACI Matrix</h2>
-          <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4 max-w-2xl">
-            Gemini is evaluating executing roles, drafting operational playbook instructions, and defining target compliance checkpoints.
-          </p>
-          <CcSkeleton shape="table" label="the business layer" count={3} />
-        </section>
-      ) : parsedBusinessDoc ? (
-        <div data-stage-output="businessDocumentation" className="space-y-6">
-          {/* RACI Matrix Section */}
-          <section className={SECTION}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-              <div className="flex items-center gap-3">
-                <Users size={20} aria-hidden={true} className="text-cc-ink-muted" />
-                <div>
-                  <p className={LABEL}>Level 5</p>
-                  <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
-                    RACI Assignment Matrix <CcProvenanceChip value="proposed" />
-                  </h2>
-                </div>
-              </div>
+  /**
+   * What stands between the reader and the business layer, said before the
+   * click: the same blockers the generation itself checks
+   * (`generationBlockers`), and the documentation it is written from.
+   */
+  const businessBlockers: string[] = [
+    ...generationBlockers(project, 'documentation'),
+    ...(hasDocument ? [] : [wt('doc.businessNeedsDocumentation')]),
+  ];
 
-              {/* RACI legend — the letters the column heads carry. */}
-              <div className="flex flex-wrap items-center gap-3 cc-text-meta text-cc-ink-muted">
-                <span className={LABEL}>RACI Guide:</span>
-                <span className="inline-flex items-center gap-1"><CcTag>R</CcTag> Responsible</span>
-                <span className="inline-flex items-center gap-1"><CcTag>A</CcTag> Accountable</span>
-                <span className="inline-flex items-center gap-1"><CcTag>C</CcTag> Consulted</span>
-                <span className="inline-flex items-center gap-1"><CcTag>I</CcTag> Informed</span>
-              </div>
-            </div>
-
-            <CcTable
-              caption="RACI assignment matrix"
-              columns={[
-                { key: 'step', label: 'Step ID', width: '120px' },
-                { key: 'r', label: 'Responsible (R)' },
-                { key: 'a', label: 'Accountable (A)' },
-                { key: 'c', label: 'Consulted (C)' },
-                { key: 'i', label: 'Informed (I)' },
-              ]}
-              rows={(parsedBusinessDoc.raci_matrix || []).map((raci: any, rIdx: number) => ({
-                key: String(rIdx),
-                cells: {
-                  step: <span className="font-cc-mono">{raci.stepId}</span>,
-                  r: raci.r || 'N/A',
-                  a: raci.a || 'N/A',
-                  c: raci.c || 'N/A',
-                  i: raci.i || 'N/A',
-                },
-              }))}
-            />
-          </section>
-
-          {/* SOP Narratives Section */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Briefcase size={20} aria-hidden={true} className="text-cc-ink-muted" />
-              <div>
-                <p className={LABEL}>Level 5 SOP</p>
-                <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
-                  Standard Operating Procedures <CcProvenanceChip value="proposed" />
-                </h2>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(parsedBusinessDoc.sop_details || []).map((sop: any, sIdx: number) => (
-                <article key={sIdx} className={SECTION}>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <span className="cc-text-identifier font-cc-mono text-cc-ink">Step {sop.stepId}</span>
-                    <span className="cc-text-meta text-cc-ink-muted inline-flex items-center gap-1">
-                      <Activity size={14} aria-hidden={true} /> Target: {sop.kpiTarget}
-                    </span>
-                  </div>
-                  <h3 className={LABEL}>Operational Narrative</h3>
-                  <p className="cc-text-cell text-cc-ink mt-1 mb-3">{sop.narrative}</p>
-                  <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-                    <h3 className={LABEL}>Business Exception Fallback</h3>
-                    <p className="cc-text-cell text-cc-ink mt-1">{sop.businessException}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          {/* Internal Controls Section */}
-          <section className={SECTION}>
-            <div className="flex items-center gap-3 mb-4">
-              <Lock size={20} aria-hidden={true} className="text-cc-ink-muted" />
-              <div>
-                <p className={LABEL}>Compliance Audit</p>
-                <h2 className={clsx(H2, 'flex flex-wrap items-center gap-2')}>
-                  Risk &amp; Control Checkpoints <CcProvenanceChip value="proposed" />
-                </h2>
-              </div>
-            </div>
-            <CcTable
-              caption="Risk and control checkpoints"
-              columns={[
-                { key: 'step', label: 'Step', width: '120px' },
-                { key: 'objective', label: 'Control Objective' },
-                { key: 'mitigation', label: 'Mitigation Action' },
-                { key: 'assertion', label: 'Assertion Method' },
-              ]}
-              rows={(parsedBusinessDoc.audit_controls || []).map((ctrl: any, cIdx: number) => ({
-                key: String(cIdx),
-                cells: {
-                  step: <span className="font-cc-mono">{ctrl.stepId}</span>,
-                  objective: <span className="font-semibold">{ctrl.controlObjective}</span>,
-                  mitigation: ctrl.mitigationAction,
-                  assertion: ctrl.assertionMethod,
-                },
-              }))}
-            />
-          </section>
-        </div>
+  /**
+   * Owner 03.10.2026 — the business layer as a step strip and a RACI matrix
+   * (`components/documentation/BusinessLayer.tsx`), with the full text one
+   * fold deeper. Without a layer, the offer to propose one, in one line.
+   */
+  const businessPanel = isGeneratingBusinessDoc ? (
+    <section className={clsx(SECTION, 'mb-6')} aria-busy="true">
+      <h2 className={H2}>{wt('doc.businessGenerating')}</h2>
+      <div className="mt-3"><CcSkeleton shape="table" label="the business layer" count={3} /></div>
+    </section>
+  ) : parsedBusinessDoc ? (
+    <BusinessLayer layer={parsedBusinessDoc} process={processSteps} />
+  ) : (
+    <section
+      data-business-layer-offer=""
+      aria-labelledby="business-offer-title"
+      className="mb-6 rounded-cc-card border border-cc-field-border bg-cc-surface p-4 shadow-cc md:p-6"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 id="business-offer-title" className={H2}>{wt('doc.businessOfferTitle')}</h2>
+        <CcProvenanceChip value="proposed" />
+      </div>
+      <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-body text-cc-ink">{wt('doc.businessOfferLead')}</p>
+      {!modelAvailability.enabled('documentation') ? (
+        <NotGenerated
+          what="Business SOP and RACI layer"
+          absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+          stage="documentation"
+          hint={
+            modelAvailability.keyAvailable
+              ? 'Turn the documentation stage back on in Settings to generate it.'
+              : 'Add your own Gemini API key in Settings to generate it.'
+          }
+        />
       ) : (
-        <section data-business-layer-offer className={SECTION}>
-          <div className="max-w-3xl">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <h2 className={H2}>Generate Enterprise Business SOP &amp; RACI Matrix</h2>
-              <CcProvenanceChip value="proposed" />
-            </div>
-            <p className="cc-text-body text-cc-ink-muted mb-4">
-              Unlock business-level mapping to align technical Clean Core changes with corporate compliance frameworks and operational execution procedures.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
-                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
-                  <Users size={16} aria-hidden={true} /> RACI Assignment
-                </p>
-                <p className="cc-text-cell text-cc-ink">Maps Responsible, Accountable, Consulted, and Informed roles across all process tasks.</p>
-              </div>
-              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
-                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
-                  <Layers size={16} aria-hidden={true} /> Level 5 Narratives
-                </p>
-                <p className="cc-text-cell text-cc-ink">Drafts standard operating narratives, KPI targets, and functional exception handling guidance.</p>
-              </div>
-              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
-                <p className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
-                  <Lock size={16} aria-hidden={true} /> Internal Audit Controls
-                </p>
-                <p className="cc-text-cell text-cc-ink">Identifies key clean core control objectives, mitigating actions, and assertion evidence methods.</p>
-              </div>
-            </div>
-
-            {!modelAvailability.enabled('documentation') ? (
-              <NotGenerated
-                what="Business SOP and RACI layer"
-                absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-                stage="documentation"
-                hint={
-                  modelAvailability.keyAvailable
-                    ? 'Turn the documentation stage back on in Settings to generate it.'
-                    : 'Add your own Gemini API key in Settings to generate it.'
-                }
-              />
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <CcButton
-                  variant="primary"
-                  density="cozy"
-                  onClick={generateBusinessDocumentation}
-                  disabled={isGeneratingDoc}
-                  busy={isGeneratingBusinessDoc}
-                  icon={<Rocket size={16} aria-hidden={true} />}
-                  data-generate-business-layer
-                >
-                  Generate business layer
-                </CcButton>
-                <span data-business-layer-cost className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
-              </div>
-            )}
-
-            {businessDocError && (
-              <div className="mt-4">
-                <CcMessageStrip
-                  state="error"
-                  headline="The business layer was not generated."
-                  actions={
-                    modelAvailability.enabled('documentation')
-                      ? <CcButton onClick={generateBusinessDocumentation} disabled={isGeneratingDoc}>Try again</CcButton>
-                      : undefined
-                  }
-                >
-                  {businessDocError}
-                </CcMessageStrip>
-              </div>
-            )}
-          </div>
-        </section>
+        <div className="flex flex-wrap items-center gap-3">
+          <CcButton
+            variant="primary"
+            density="cozy"
+            onClick={generateBusinessDocumentation}
+            disabled={businessBlockers.length > 0 || isGeneratingDoc}
+            aria-describedby={businessBlockers.length > 0 ? 'business-layer-blocked' : undefined}
+            busy={isGeneratingBusinessDoc}
+            icon={<Rocket size={16} aria-hidden={true} />}
+            data-generate-business-layer
+          >
+            {wt('doc.businessGenerate')}
+          </CcButton>
+          <span data-business-layer-cost className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
+        </div>
       )}
-    </div>
+      {/* Why the button waits, in words — never a button that does nothing. */}
+      {modelAvailability.enabled('documentation') && businessBlockers.length > 0 ? (
+        <div id="business-layer-blocked" data-business-layer-blocked="" className="mt-4">
+          <CcMessageStrip
+            state="information"
+            headline={wt('doc.businessBlockedTitle')}
+            actions={!hasDocument && signedSource && processMap.model ? (
+              <CcButton onClick={generateDocumentation} busy={isGeneratingDoc} data-business-read-first="">
+                {wt('doc.businessReadFirst')}
+              </CcButton>
+            ) : undefined}
+          >
+            {businessBlockers.join(' ')}
+          </CcMessageStrip>
+        </div>
+      ) : null}
+      {businessDocError && (
+        <div className="mt-4">
+          <CcMessageStrip
+            state="error"
+            headline="The business layer was not generated."
+            actions={
+              modelAvailability.enabled('documentation') && businessBlockers.length === 0
+                ? <CcButton onClick={generateBusinessDocumentation} disabled={isGeneratingDoc}>Try again</CcButton>
+                : undefined
+            }
+          >
+            {businessDocError}
+          </CcMessageStrip>
+        </div>
+      )}
+    </section>
   );
 
   return (
@@ -1388,6 +1356,23 @@ Structure the JSON exactly like this:
           </CcMessageStrip>
         </div>
       )}
+
+      {/* Owner 03.10.2026 — the business layer is the first thing a business
+          reader sees. Not generated yet: the card that offers it comes first,
+          the one action of the screen. Generated: the answer comes first — the
+          glance with the value and the problems — and the SOP and the RACI
+          right under it. The technical documentation follows the process. */}
+      {!parsedBusinessDoc ? businessPanel : null}
+
+      <BusinessGlance
+        headline={glance.headline}
+        callouts={glance.callouts}
+        notDetermined={glance.notDetermined}
+        reading={handbook.status === 'loading' || processMap.status === 'loading'}
+        noSource={!signedSource}
+      />
+
+      {parsedBusinessDoc ? businessPanel : null}
 
       <HandbookStage
         handbook={handbook.handbook}
@@ -1488,8 +1473,8 @@ Structure the JSON exactly like this:
             </p>
             {/* Roadmap 4.4 — what the brief holds, said before it is asked for. */}
             <p data-brief-caveat className="m-0 cc-text-meta text-cc-ink-muted">
-              The PDF brief is a PDF and the BPMN file in one archive. Every statement in it names the lines it was
-              read from, or says that it is not determined. It is a summary, not a signed audit pack.
+              PDF brief: the PDF and the BPMN file in one archive, every statement with its lines or marked not
+              determined — a summary, not a signed audit pack.
             </p>
           </>
         }
@@ -1498,23 +1483,21 @@ Structure the JSON exactly like this:
             <div className="rounded-cc-row border border-cc-line p-4">
               <dt className="cc-text-h3 text-cc-ink">PDF brief</dt>
               <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                The process picture, the rules and the open questions, each with its lines, and the BPMN file beside it
-                in one archive. A summary, not a signed audit pack.
+                Process, rules and open questions with their lines, plus the BPMN file. Not a signed audit pack.
               </dd>
             </div>
             <div className="rounded-cc-row border border-cc-line p-4">
               <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
               <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
                 {hasDocument
-                  ? 'The stored documentation as an HTML page to paste into Confluence. A stale one says so at the top.'
+                  ? 'The stored documentation and the business layer as one HTML page. A stale one says so at the top.'
                   : 'Available once the documentation has been saved from the code below.'}
               </dd>
             </div>
             <div className="rounded-cc-row border border-cc-line p-4">
               <dt className="cc-text-h3 text-cc-ink">BPMN 2.0</dt>
               <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                The process as the code runs it, every task and decision with its line range, for SAP Signavio or
-                another modeller. Import has not been verified yet.
+                The process as the code runs it, with line ranges. Import into a modeller has not been verified yet.
               </dd>
             </div>
           </dl>
@@ -1546,9 +1529,9 @@ Structure the JSON exactly like this:
       <section aria-labelledby="documentation-stored" className="mt-8 mb-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">The documentation as stored</h2>
+            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Technical documentation</h2>
             <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              What the Confluence page and the handover carry, element by element, with the business layer beside it.
+              Element by element, as the Confluence page and the handover carry it.
             </p>
           </div>
           {hasDocument ? (
@@ -1574,25 +1557,7 @@ Structure the JSON exactly like this:
           </div>
         ) : hasDocument ? (
           <div id="documentation-report" data-stage-output="documentation">
-            <CcTabs
-              label="Documentation"
-              value={activeTab}
-              onChange={setActiveTab}
-              density="cozy"
-              tabs={[
-                {
-                  value: 'technical',
-                  label: engineDoc ? 'Process documentation' : 'Technical Blueprint',
-                  content: technicalPanel,
-                },
-                {
-                  value: 'business',
-                  // Said in words, not an amber dot (§2.4).
-                  label: parsedBusinessDoc ? 'Business SOP & Compliance' : 'Business SOP & Compliance · not generated',
-                  content: businessPanel,
-                },
-              ]}
-            />
+            {technicalPanel}
           </div>
         ) : (
           <div className="space-y-4">
@@ -1627,9 +1592,7 @@ Structure the JSON exactly like this:
                 )
               }
             >
-              It is read out of the whole source the active run signed: the process element by element, what each part
-              does, the update task and the lanes the code proves, every statement with its lines. No language model is
-              involved. Saving it is what the Confluence page and the handover export.
+              Read from the whole signed source, every statement with its lines. No language model is involved.
             </CcEmptyState>
           </div>
         )}
