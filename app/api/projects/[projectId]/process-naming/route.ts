@@ -65,6 +65,13 @@ export const dynamic = 'force-dynamic';
 const COLLECTION = 'process_naming';
 const DOC = 'current';
 
+/**
+ * A source bound, as in the findings route: reading the process out of the
+ * source is the expensive step, and it runs before the digest can refuse.
+ * One analysis run takes at most 256 kB, so no signed source is near it.
+ */
+const MAX_SOURCE_BYTES = 400_000;
+
 type Gate =
   | { ok: true; uid: string; projectId: string; legacyCode: unknown }
   | { ok: false; response: NextResponse };
@@ -237,6 +244,9 @@ export async function POST(
 
     if (typeof gate.legacyCode !== 'string' || gate.legacyCode.trim() === '') {
       return NextResponse.json({ error: 'This project has no source to name.', code: 'no-source' }, { status: 409 });
+    }
+    if (Buffer.byteLength(gate.legacyCode, 'utf8') > MAX_SOURCE_BYTES) {
+      return NextResponse.json({ error: 'This source is too large to name in one request.', code: 'too-large' }, { status: 413 });
     }
     const context = namingContextOf(gate.legacyCode);
     if (body.digest !== context.digest) {

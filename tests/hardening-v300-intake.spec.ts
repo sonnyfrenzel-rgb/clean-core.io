@@ -105,3 +105,12 @@ test.describe('the administrator mail routes', () => {
     });
   }
 });
+
+test.describe('process naming', () => {
+  test('process naming bounds the source before it reads the process out of it', () => {
+    const src = read('app/api/projects/[projectId]/process-naming/route.ts');
+    const bound = src.indexOf("Buffer.byteLength(gate.legacyCode, 'utf8') > MAX_SOURCE_BYTES");
+    expect(bound, 'no source bound before the naming context is built').toBeGreaterThan(0);
+    expect(bound).toBeLessThan(src.indexOf('namingContextOf(gate.legacyCode)'));
+  });
+});
