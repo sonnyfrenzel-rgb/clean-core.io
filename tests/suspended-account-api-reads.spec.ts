@@ -27,7 +27,7 @@ const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!
 const PROJECT_ID = `suspended-reads-${STAMP}`;
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
 
-const READS = ['', '/process-map', '/process-naming', '/statement-proposal', '/requirement-wording', '/process-revisions', '/process-states', '/findings', '/contract', '/decision'];
+const READS = ['', '/process-map', '/process-naming', '/statement-proposal', '/requirement-wording', '/cost-assumptions', '/process-revisions', '/process-states', '/findings', '/contract', '/decision'];
 
 type Account = { uid: string; token: string };
 let owner: Account;

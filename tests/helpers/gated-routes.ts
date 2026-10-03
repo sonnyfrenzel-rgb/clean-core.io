@@ -88,6 +88,11 @@ export const GATED_ROUTES: GatedRoute[] = [
   // on the statement-proposal route: both verbs read the project's code.
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/requirement-wording` },
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/requirement-wording`, body: { digest: 'x', text: '{}', receipt: null } },
+  // 03.10.2026 — the Economics figures, built on the requirement-wording route:
+  // GET hands out the owner's figures, POST stores them. A token from before
+  // the second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/cost-assumptions` },
+  { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/cost-assumptions`, body: {} },
   // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
   // read the project's code: GET hands out a measurement of it, POST rebuilds
   // the skeleton and the BPMN from it. A token from before the second factor
