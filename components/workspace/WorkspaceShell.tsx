@@ -2,7 +2,9 @@
 
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { BACK_LINK_CLASS } from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcDisclosure from '@/components/cc/Disclosure';
@@ -34,6 +36,10 @@ import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { createDraftHolder } from '@/lib/process-map-draft';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
 import type { SourceReading } from '@/lib/first-look';
+import type { ProcessSummary } from '@/lib/process-summary';
+import { signedSourceOf } from '@/lib/signed-source';
+import type { StartRun } from '@/hooks/useStartRun';
+import type { BuildUpMapState } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
@@ -54,7 +60,7 @@ import {
 import { recordGaps } from '@/lib/legacy-project';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
-import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
+import { hubViewLabel, pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
 type ContentBlock =
@@ -90,8 +96,11 @@ type ContentBlock =
  */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
   'firstLook',
-  'nextStep',
+  // The map right under the answer, before Next step (ADR-072): the process
+  // is the entry of the work area, and on a 1440 × 900 screen it now starts
+  // in the first screen after the build-up instead of under the fold.
   'process',
+  'nextStep',
   'statusTools',
   'layerBar',
   'layerSection',
@@ -169,6 +178,7 @@ export default function WorkspaceShell({
   onViewChange,
   account,
   buildUp = false,
+  startRun,
 }: {
   project: Project | null;
   projectId: string;
@@ -192,6 +202,12 @@ export default function WorkspaceShell({
    * reader came from.
    */
   buildUp?: boolean;
+  /**
+   * The signed engine-only run a new project starts with (ADR-072) — started
+   * by the page, which owns the project and reads it again once it is signed.
+   * The first look's last moment and the map's place say where it stands.
+   */
+  startRun?: StartRun;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -278,8 +294,53 @@ export default function WorkspaceShell({
   const openMap = useCallback(() => {
     document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
-  // The layers count the rules and capabilities of that reading (mockups s2, s3).
-  const layers = useMemo(() => workspaceLayers(project, reading), [project, reading]);
+  /**
+   * The source the active run signed, and the map of it in four numbers — so
+   * *Need & process* says what the map shows instead of "nothing on record"
+   * under it (owner, 03.10.2026). Counted the way the map counts
+   * (`lib/process-summary.ts`), on demand: the BPMN reader is not part of the
+   * first paint.
+   */
+  const signed = useMemo(() => signedSourceOf(project), [project]);
+  const [processSummary, setProcessSummary] = useState<{ source: string; summary: ProcessSummary | null } | null>(null);
+  useEffect(() => {
+    if (!signed) return;
+    let cancelled = false;
+    void import('@/lib/process-summary').then((m) => {
+      if (cancelled) return;
+      let summary: ProcessSummary | null = null;
+      try {
+        summary = m.processSummaryOf(signed.source, signed.fileName);
+      } catch {
+        summary = null;
+      }
+      setProcessSummary({ source: signed.source, summary });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [signed]);
+  const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
+
+  // The layers count the process, the rules and the capabilities of that
+  // reading (mockups s2, s3).
+  const layers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
+
+  /** Where the full map stands, for the first look's last moment (ADR-072). */
+  const mapState: BuildUpMapState = signed
+    ? 'drawn'
+    : startRun?.phase === 'running'
+      ? 'running'
+      : startRun?.phase === 'failed'
+        ? 'failed'
+        : 'unsigned';
+
+  /**
+   * The tips wait for the first look to settle: during the build-up a popover
+   * stood over the very content being built (owner, 03.10.2026).
+   */
+  const [firstLookSettled, setFirstLookSettled] = useState(!buildUp);
+  const onFirstLookSettled = useCallback((settled: boolean) => setFirstLookSettled(settled), []);
 
   /** Deterministic, from the branches of the code. No model call (§5.3). */
   const answer: PreAnswered | null = useMemo(
@@ -313,7 +374,9 @@ export default function WorkspaceShell({
    * late.
    */
   const marksReady =
-    marks.ready && (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
+    marks.ready &&
+    firstLookSettled &&
+    (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
@@ -467,7 +530,42 @@ export default function WorkspaceShell({
     ),
     // Business only: the folded status and the tools sit under "Next step"
     // there, as in mockup s1; IT and Management keep them in the header.
-    statusTools: view === 'business' ? <div data-workspace-status-tools="">{statusAndTools}</div> : null,
+    //
+    // Titled as what it is (owner, 03.10.2026: "it must be clearly
+    // recognisable that you are in the central work area, from which you
+    // start all views and tools"): the process above is the entry, and from
+    // here the same process opens in the other two views and every tool
+    // opens its step. The view buttons switch the view exactly as the
+    // segmented control does — one job, two places to reach it.
+    statusTools:
+      view === 'business' ? (
+        <section
+          data-workspace-status-tools=""
+          data-workspace-hub=""
+          aria-labelledby="workspace-hub-title"
+          className="mt-5 rounded-cc-card border border-cc-line bg-cc-surface p-4"
+        >
+          <h2 id="workspace-hub-title" className="m-0 text-[15px] leading-tight font-bold tracking-[-0.01em] text-cc-ink">
+            {wt('hub.title')}
+          </h2>
+          <p className="m-0 mt-1 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('hub.lead')}</p>
+          <div className="cc-no-print mt-3 flex flex-wrap items-stretch gap-2">
+            {WORKSPACE_VIEWS.filter((v) => v !== view).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => onViewChange(v)}
+                data-workspace-hub-view={v}
+                className="flex min-h-11 min-w-0 flex-1 basis-56 flex-col items-start rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-left hover:border-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+              >
+                <span className="text-[13px] font-semibold text-cc-ink">{hubViewLabel(VIEW_LABELS[v])}</span>
+                <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{VIEW_QUESTIONS[v]}</span>
+              </button>
+            ))}
+          </div>
+          {statusAndTools}
+        </section>
+      ) : null,
     // Business only: the process map and its linked source column (roadmap
     // 2.5, mockup s1). It stays under every layer — the map is the anchor of
     // the Business view and the chosen layer reads beside it (owner,
@@ -483,6 +581,7 @@ export default function WorkspaceShell({
             beforeWrite={stand.checkBeforeWrite}
             onWritten={stand.adopt}
             draftHolder={processDraft}
+            startRun={startRun}
           />
         </div>
       ) : null,
@@ -490,7 +589,14 @@ export default function WorkspaceShell({
     // the anchor bar scrolls the reader here by the section's own `id`.
     layerSection: (
       <div className="mt-5">
-        <WorkspaceLayerSection layer={currentLayerSection} project={project} projectId={projectId} reading={reading} />
+        <WorkspaceLayerSection
+          layer={currentLayerSection}
+          project={project}
+          projectId={projectId}
+          reading={reading}
+          process={mapSummary}
+          onOpenMap={view === 'business' ? openMap : undefined}
+        />
       </div>
     ),
     // The first look — four stages, then the head of the content (§5.1, §5.5):
@@ -503,6 +609,9 @@ export default function WorkspaceShell({
           buildUp={buildUp}
           onReading={onReading}
           onOpenMap={view === 'business' ? openMap : undefined}
+          map={mapState}
+          fullMapBelow={view === 'business' && signed !== null}
+          onSettled={onFirstLookSettled}
         />
       </div>
     ),
@@ -577,6 +686,17 @@ export default function WorkspaceShell({
       <WorkspacePrintSheet project={project} projectId={projectId} reading={reading} open={open} />
 
       <section data-workspace-header="">
+        {/* The way back to the list — on every width, the phone included,
+            where the shell bar has no room for its path. The same link as a
+            stage's "Back to workspace", one level up (owner, 03.10.2026:
+            "there is no way back to the workspace"). */}
+        <Link
+          href="/dashboard"
+          data-workspace-back=""
+          className={`${BACK_LINK_CLASS} cc-no-print mb-3 max-sm:min-h-11`}
+        >
+          <ArrowLeft size={16} aria-hidden={true} /> {wt('shell.myWorkspace')}
+        </Link>
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           {/* A basis, not only `flex-1`: with a zero basis the title never
               wraps below the view switch and, on a phone, runs under it. */}

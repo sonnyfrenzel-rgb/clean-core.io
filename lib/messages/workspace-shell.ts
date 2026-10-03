@@ -24,6 +24,11 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.hideProjectStatus': 'Hide project status',
   'page.showTipsAgain': 'Show tips again',
 
+  // The central work area under the map — WorkspaceShell, Business (ADR-072).
+  'hub.title': 'Work from this process',
+  'hub.lead':
+    'Your process, reconstructed from the old ABAP, is where everything starts. Read the same process as IT or Management, or open a tool for the next step.',
+
   // Search ⌘K — components/workspace/CommandSearch.tsx, roadmap 6.6.
   'search.title': 'Search this project',
   'search.close': 'Close search',
@@ -94,4 +99,9 @@ export function toolsNextHint(tool: string, purpose: string): string {
 /** "Open Analyze" — a link to a stage, in the status popover and in "Next step". */
 export function openStageLabel(stage: string): string {
   return `${WORKSPACE_SHELL_MESSAGES['status.open']} ${stage}`;
+}
+
+/** "Open as IT" — a view button of the work area. */
+export function hubViewLabel(view: string): string {
+  return `Open as ${view}`;
 }

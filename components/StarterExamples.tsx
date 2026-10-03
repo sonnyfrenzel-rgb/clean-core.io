@@ -132,7 +132,8 @@ export default function StarterExamples({
         fromExample: true,
       });
       // The same door "New project" uses: the workspace with its first look —
-      // every project opens there (roadmap 3.0.1).
+      // every project opens there (roadmap 3.0.1) — which signs the engine's
+      // reading at once, so the full map stands after the build-up (ADR-072).
       router.push(`/project/${docRef.id}?first=1`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');
@@ -312,7 +313,7 @@ export default function StarterExamples({
             Try it with an example
           </h2>
           <p className="mt-1 mb-0 max-w-2xl cc-text-cell text-cc-ink-muted">
-            Fictional, realistic legacy ABAP — no code of your own needed. One click and you are in the analysis.
+            Fictional, realistic legacy ABAP — no code of your own needed. One click opens your workspace with the full process map: the start signs the engine’s reading, without a model call.
           </p>
           <div className="mt-1">
           <button

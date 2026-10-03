@@ -419,6 +419,13 @@ test.describe('the first look on screen', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1400 });
     await signIn(page, ADMIN);
+    // Since ADR-072 a first visit signs the engine's reading at once. This
+    // test is about a project that has no run, so that run is held back
+    // here: what is checked below is that nothing claims a run's figure
+    // while there is none.
+    await page.route('**/api/runs/create', (route) =>
+      route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'held by the spec' }) }),
+    );
 
     await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });

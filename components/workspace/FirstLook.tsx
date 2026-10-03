@@ -10,9 +10,9 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import FirstLookBuildUp, { ExcerptSvg } from './FirstLookBuildUp';
+import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState } from './FirstLookBuildUp';
 import { requestRuleEditing, useIsOwner } from './BusinessRulesEditor';
-import { BUILD_UP_BUDGET } from '@/lib/first-look-buildup';
+import { BUILD_UP_BUDGET, buildUpStageAt } from '@/lib/first-look-buildup';
 import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesConfirmed, stepStrip, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
@@ -69,14 +69,13 @@ import {
  *      the engine here and now, or nowhere at all. A figure with no origin is
  *      printed as a word ("not analysed"), never as `0`. Nothing in this
  *      component computes a number of its own.
- *   2. **No artificial minimum duration** (§5.4, and the six seconds of the old
- *      evidence scanner it names by name). The stages are not a timeline: each
- *      is revealed by the return of *its own call* — stage 1 by the table read,
+ *   2. **The work is never padded; the showing is paced** (§5.4, ADR-072). Each
+ *      stage's data is produced by *its own call* — stage 1 by the table read,
  *      stage 2 by the skeleton, stage 3 by the stored naming, stage 4 by the
- *      rules. On a small source all four land in two frames, and that is the
- *      correct outcome rather than a missed opportunity to animate. The one
- *      thing yielded between stages is a frame, so the browser can paint what
- *      the last stage produced before the next one blocks the thread.
+ *      rules — and on a small source all four land in two frames. What a
+ *      reader sees is paced so it can be followed (owner, 03.10.2026: "not too
+ *      fast"): every moment shows that real content, none shows a wait, and
+ *      Skip and reduced motion go straight to the end.
  *   3. **A stage with nothing to show says so.** Stage 3 needs a naming from
  *      roadmap 2.4; without one it reports the reason `applyNaming` gives and
  *      the technical names stay. §5.2 calls that a valid result, so it is not
@@ -95,14 +94,27 @@ import {
 
 const HAS_WINDOW = typeof window !== 'undefined';
 
+/** How long the build-up's last moment waits for a start run that is still being signed, in ms. */
+const MAP_WAIT = 12000;
+
 /** Stage 3 without a stored naming — the technical names stay. */
 const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
 
 function useReducedMotion(): boolean {
-  // Read in an effect, never during render: the server has no `matchMedia`, and
-  // a component that guesses produces a hydration mismatch on exactly the
-  // machines that asked for less movement.
-  const [reduced, setReduced] = useState(false);
+  // Read once when the state is created, so not a single frame of the
+  // build-up is painted for a reader who asked for less movement (ADR-072:
+  // "the end state at once"). Both callers render this component only on the
+  // client — after the profile has loaded — so there is no server render to
+  // disagree with; without `matchMedia` the answer is "not reduced", and the
+  // effect below follows any later change.
+  const [reduced, setReduced] = useState(() => {
+    if (!HAS_WINDOW || typeof window.matchMedia !== 'function') return false;
+    try {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
     if (!HAS_WINDOW || typeof window.matchMedia !== 'function') return;
     let query: MediaQueryList;
@@ -200,6 +212,9 @@ export default function FirstLook({
   namingFrom = 'project',
   proposedName = null,
   onOpenMap,
+  map = 'unsigned',
+  fullMapBelow = false,
+  onSettled,
 }: {
   project: Project | null;
   projectId: string;
@@ -232,6 +247,22 @@ export default function FirstLook({
    * picture in this card is the main line only; this is the way to the rest.
    */
   onOpenMap?: () => void;
+  /**
+   * Where the full map stands (ADR-072): drawn from a signed run, being signed
+   * by the start run, refused, or not signed. The build-up's last moment says
+   * which, and waits — briefly — for a start run that is still being signed,
+   * so it ends on the map rather than on an empty place for it.
+   */
+  map?: BuildUpMapState;
+  /**
+   * True where the signed map stands directly under this card (Business). The
+   * picture of the main line then gives way to it: the same process twice,
+   * one of them a two-node excerpt, was what the owner read as "a small main
+   * line" (03.10.2026). Without the map below, the picture stays (ADR-059).
+   */
+  fullMapBelow?: boolean;
+  /** Told when the build-up is over (end state on screen) — the tips wait for it. */
+  onSettled?: (settled: boolean) => void;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
@@ -391,14 +422,19 @@ export default function FirstLook({
   const skip = useCallback(() => setSkipped(true), []);
 
   /**
-   * The build-up's clock — mockup `s0`, "Zeitbudget ≤ 3 s".
+   * The build-up's clock — at a pace a reader can follow (ADR-072).
    *
    * Runs only when a build-up was asked for and nobody asked for less movement
-   * or pressed Skip. The lines light up over the budget in
+   * or pressed Skip. The moments follow the budget in
    * `lib/first-look-buildup.ts`; the end state takes over at its end, or as
-   * soon as the engine is done if that is later — never a wait of its own.
+   * soon as the engine is done if that is later, or once the start run is
+   * signed if the map is still being signed then — at most MAP_WAIT later.
    */
   const animate = buildUp && !reduced && !skipped && hasSource;
+  const mapRef = React.useRef(map);
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map]);
   useEffect(() => {
     if (!animate || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
     let handle = 0;
@@ -406,12 +442,20 @@ export default function FirstLook({
     const tick = (now: number) => {
       const next = now - start;
       setElapsed(next);
-      if (next < BUILD_UP_BUDGET.endAt) handle = window.requestAnimationFrame(tick);
+      const waiting = mapRef.current === 'running' && next < BUILD_UP_BUDGET.endAt + MAP_WAIT;
+      if (next < BUILD_UP_BUDGET.endAt || waiting) handle = window.requestAnimationFrame(tick);
     };
     handle = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(handle);
   }, [animate, readingKey]);
-  const playing = animate && (elapsed < BUILD_UP_BUDGET.endAt || !complete);
+  // The last moment holds while the start run is still being signed — up to
+  // MAP_WAIT, never longer: a slow server is said where the map goes, not by
+  // a build-up that does not end.
+  const waitingForMap = map === 'running' && elapsed < BUILD_UP_BUDGET.endAt + MAP_WAIT;
+  const playing = animate && (elapsed < BUILD_UP_BUDGET.endAt || !complete || waitingForMap);
+  useEffect(() => {
+    onSettled?.(!playing);
+  }, [playing, onSettled]);
 
   const owner = useIsOwner(project);
   const [sourceOpen, setSourceOpen] = useState(false);
@@ -462,13 +506,17 @@ export default function FirstLook({
   // While the build-up plays, the stage on the screen is the one announced —
   // the engine is usually done long before the picture is, and announcing its
   // fourth stage while the first is painted would read the screen out of order.
-  const playingIndex = !playing
-    ? null
-    : elapsed < BUILD_UP_BUDGET.processFrom
-      ? 0
-      : elapsed < BUILD_UP_BUDGET.namesFrom
-        ? 1
-        : 2;
+  const playingStage = playing ? buildUpStageAt(elapsed) : null;
+  const playingIndex =
+    playingStage === null
+      ? null
+      : playingStage === 'code-read'
+        ? 0
+        : playingStage === 'process-recognised'
+          ? 1
+          : playingStage === 'business-language'
+            ? 2
+            : 3;
   const latest =
     (playingIndex !== null ? shown.slice(0, playingIndex + 1) : shown)
       .slice()
@@ -520,6 +568,8 @@ export default function FirstLook({
               named={named}
               elapsed={elapsed}
               onSkip={skip}
+              card={result?.card ?? null}
+              map={map}
             />
           </div>
         </section>
@@ -559,10 +609,19 @@ export default function FirstLook({
           }
         >
           {result ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
-              <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} />
+            <div
+              className={
+                fullMapBelow && !sourceOpen
+                  ? 'grid grid-cols-1 gap-4'
+                  : 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]'
+              }
+            >
+              <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} mapBelow={fullMapBelow} />
               <div className="flex min-w-0 flex-col gap-4">
-                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />
+                {/* The full map stands right under this card where it is
+                    signed (ADR-072); the two-node main line would only be the
+                    same process again, smaller. */}
+                {fullMapBelow ? null : <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />}
                 {sourceOpen ? (
                   <div data-first-look-source="" className="min-w-0">
                     <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
@@ -703,8 +762,11 @@ function EndState({
   proposedName,
   confirmed,
   owner,
+  mapBelow = false,
 }: {
   result: Result;
+  /** The full map stands right under the card, so the one-row strip of its first steps is not repeated. */
+  mapBelow?: boolean;
   proposedName: string | null;
   /** "Rules confirmed x of n" from the need revision, or null when it could not be read. */
   confirmed: { confirmed: number; total: number } | null;
@@ -858,7 +920,7 @@ function EndState({
 
       {/* The first steps, in plain words and with their lines — the map in one
           row. The full map is the process layer's; this only says it exists. */}
-      {result.steps.steps.length > 0 ? (
+      {result.steps.steps.length > 0 && !mapBelow ? (
         <ol
           aria-label={wt('firstLook.stepsLabel')}
           data-first-look-steps=""

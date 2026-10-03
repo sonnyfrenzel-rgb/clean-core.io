@@ -150,7 +150,7 @@ test.describe('own code: choose, check, start', () => {
     await expect(page.locator('[data-own-code-same-source]')).toContainText('this source was already analysed');
   });
 
-  test('"Start analysis" writes one project with the joined source, and Analyze asks the target', async ({ page }) => {
+  test('"Start analysis" writes one project with the joined source, and the workspace signs it', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signInViaLanding(page, ADMIN, PASSWORD);
@@ -170,15 +170,12 @@ test.describe('own code: choose, check, start', () => {
     await page.click('[data-own-code-start]');
 
     // The workspace first, with the first look — never the Analyze tool (owner
-    // 02.10.2026). The run starts from its Next step, in the same session, so
-    // Analyze takes the import's handoff and asks only the operating model.
+    // 02.10.2026) — and it signs the engine's reading at once (ADR-072).
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
     expect(page.url()).not.toContain('/analyze');
     const projectId = new URL(page.url()).pathname.split('/')[2];
     await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
-    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
-    await expect(page.getByRole('dialog')).toContainText('Confirm Target Operating Model', { timeout: 60000 });
+    await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
 
     // The control for the test above: the watcher does see the one write.
     expect(writes.length, 'the write watcher saw nothing — the "writes nothing" check would be vacuous').toBeGreaterThan(0);
@@ -187,7 +184,9 @@ test.describe('own code: choose, check, start', () => {
     expect(stored?.legacyCode).toContain('*>>> Clean-Core.io: include Z_MM_PO_NOTIFY · Z_MM_PO_NOTIFY.abap');
     expect(stored?.legacyCode).toContain('INCLUDE z_mm_po_log.');
     expect(stored?.fromExample).toBeUndefined();
-    expect(stored?.activeRunId).toBeUndefined();
+    // Signed by the start, over the file the reader uploaded.
+    expect(typeof stored?.activeRunId, 'the start signed no run').toBe('string');
+    expect(stored?.auditMetadata?.inputFingerprint?.fileName).toBe('Z_MM_PO_APPROVAL.abap');
   });
 
   test('on a phone the page fits and the trust card is still one click away', async ({ page }) => {
@@ -223,7 +222,7 @@ test.describe('own code: after the run, the workspace', () => {
     });
   });
 
-  test('a signed run from the import page continues in the workspace, like an example', async ({ page }) => {
+  test('the start signs the run in the workspace, without a visit to Analyze', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signInViaLanding(page, EMAIL, PASSWORD);
@@ -236,26 +235,21 @@ test.describe('own code: after the run, the workspace', () => {
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    // Said before the click: the run's cost and that no model is called.
+    await expect(page.locator('[data-own-code-cost]')).toContainText('No model call');
+    const gemini: string[] = [];
+    page.on('request', (req) => {
+      if (req.url().includes('/api/gemini')) gemini.push(req.url());
+    });
     await page.click('[data-own-code-start]');
 
-    // The workspace first, with the first look — never the Analyze tool (owner
-    // 02.10.2026). The run starts from its Next step, in the same session, so
-    // Analyze takes the import's handoff and asks only the operating model.
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
     expect(page.url()).not.toContain('/analyze');
     const projectId = new URL(page.url()).pathname.split('/')[2];
-    await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
-    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
-    await dialog.getByRole('radio', { name: /Public Cloud/ }).first().check();
-    await dialog.getByRole('button', { name: /Confirm and start the analysis/ }).click();
-
-    // Only once the run is signed, and then into the workspace with the first look.
-    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 180000 });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
     const stored = await adminGetDoc('projects', projectId);
-    expect(typeof stored?.activeRunId, 'the workspace opened before a run was signed').toBe('string');
+    expect(typeof stored?.activeRunId, 'the workspace drew a map before a run was signed').toBe('string');
+    expect(gemini, 'the start called the model').toEqual([]);
   });
 });

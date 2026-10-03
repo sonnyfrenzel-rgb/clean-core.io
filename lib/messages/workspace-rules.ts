@@ -103,6 +103,23 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.processLabel': 'The process, growing out of the lines that were read',
   'buildUp.legendNode': 'process node',
   'buildUp.legendData': 'table read or written',
+  'buildUp.railLabel': 'What the reading does, in order',
+  'buildUp.railNamesPlain': 'plain names, no model',
+  'buildUp.railNamesProposed': 'names proposed by a model',
+  'buildUp.railMapDrawn': 'drawn from the signed run',
+  'buildUp.railMapRunning': 'signing the reading',
+  'buildUp.railMapFailed': 'not signed',
+  'buildUp.railMapUnsigned': 'needs a signed run',
+  'buildUp.reading': 'Reading…',
+  'buildUp.mapTitle': 'Your full process map',
+  'buildUp.mapDrawn':
+    'Signed: the server read the same source again and recorded it, without a model call. The full map stands right under your process.',
+  'buildUp.mapRunning':
+    'The server reads the same source again and signs the reading — no model call. The map is drawn from that signed run, so every step keeps its line.',
+  'buildUp.mapFailed':
+    'The reading could not be signed, so the full map is not drawn. The reason and a way to try again stand where the map goes.',
+  'buildUp.mapUnsigned':
+    'The full map is drawn only from a signed run, so every step keeps its line. Where it goes, the page says how to get one.',
   // FirstLook — the end state of s0 (moment 4)
   'firstLook.showSource': 'Show source',
   'firstLook.hideSource': 'Hide source',
@@ -273,6 +290,9 @@ const BUILD_UP_STAGES = {
   'code-read': 'Code read',
   'process-recognised': 'Process recognised',
   'business-language': 'In business language',
+  rules: 'Rules in the code',
+  'not-determined': 'Not determined',
+  map: 'Process map',
 } as const;
 
 /** The stage's name in the build-up header — the labels of DESIGN.md §5.2. */
@@ -297,6 +317,26 @@ export function buildUpCounter(kind: 'lines' | 'tables' | 'nodes' | 'decisions',
     case 'decisions':
       return `Decisions ${n}`;
   }
+}
+
+/** The rail's result for "Code read": "98 lines · 2 tables". */
+export function buildUpRailRead(lines: number, tables: number): string {
+  return `${lines.toLocaleString('en')} ${lines === 1 ? 'line' : 'lines'} · ${tables} ${tables === 1 ? 'table' : 'tables'}`;
+}
+
+/** The rail's result for "Process recognised": "10 nodes · 1 decision". */
+export function buildUpRailProcess(nodes: number, decisions: number): string {
+  return `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${decisions} ${decisions === 1 ? 'decision' : 'decisions'}`;
+}
+
+/** The rail's result for the rules: "3 hard-coded" or "none hard-coded". */
+export function buildUpRailRules(n: number): string {
+  return n === 0 ? 'none hard-coded' : `${n} hard-coded`;
+}
+
+/** The rail's result for the open points: "7 points" or "none". */
+export function buildUpRailOpen(n: number): string {
+  return n === 0 ? 'none' : `${n} ${n === 1 ? 'point' : 'points'}`;
 }
 
 /** "grows out of L87". */

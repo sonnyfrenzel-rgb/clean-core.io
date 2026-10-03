@@ -17,6 +17,14 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.mapChanged':
     'The map is drawn only from the source the active analysis signed. The source on this project no longer matches it, or the analysis did not record it, so no map is drawn rather than one with wrong line anchors. Run the analysis again to draw it.',
   'biz.openAnalyze': 'Open Analyze',
+  'biz.mapSignTitle': 'Your full process map',
+  'biz.mapSigning':
+    'Signing the reading: the server reads the same source again and records it, without a model call. The map is drawn from that signed run, so every step keeps its line.',
+  'biz.mapSignFailed': 'The reading could not be signed, so no map is drawn',
+  'biz.mapSignRetry': 'Try again',
+  'biz.mapSignLead':
+    'The map is drawn only from a signed run, so every step keeps its line. Signing reads the same source again on the server and records it — the engine alone, without a model call.',
+  'biz.mapSign': 'Sign the reading and draw the map',
   'biz.columnLabel': 'Source column',
   'biz.tabSource': 'Source',
   'biz.tabNotDetermined': 'Not determined',

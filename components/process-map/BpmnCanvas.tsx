@@ -232,6 +232,16 @@ export default function BpmnCanvas({
   }, [exitFullscreen]);
   const viewerRef = useRef<ViewerLike | null>(null);
   const rootRef = useRef<{ id: string } | null>(null);
+  /**
+   * The level the parent asked for, read when a new viewer has finished its
+   * import. The effect below applies a change of level to a viewer that
+   * exists; a level asked for while the viewer was still importing (the
+   * workspace opens a one-step top level on that step, ADR-072) was lost.
+   */
+  const planeRef = useRef(plane);
+  useEffect(() => {
+    planeRef.current = plane;
+  }, [plane]);
   // The parent's handlers change on every render; the effect that builds the
   // diagram must not, or the viewer would be torn down on every keystroke.
   const handlers = useRef<Handlers>({ onActivate, onActiveChange, onPlaneChange });
@@ -368,8 +378,15 @@ export default function BpmnCanvas({
         applyRovingTabIndex(host, activeRef.current);
       });
 
+      // A level asked for before the canvas finished loading is entered now
+      // (workspace start, ADR-072), then the plane is fitted (mobile pass).
+      if (planeRef.current) {
+        const asked = canvas.findRoot(`${planeRef.current}_plane`) ?? canvas.findRoot(planeRef.current);
+        if (asked) canvas.setRootElement(asked);
+      }
       if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
       else fitWithPadding(canvas);
+
       if (controlsRef.current) {
         eventBus.on('canvas.viewbox.changed', () => setZoom(Math.round(canvas.zoom() * 100)));
         setZoom(Math.round(canvas.zoom() * 100));

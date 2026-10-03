@@ -6,6 +6,9 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import type { WorkspaceLayer } from '@/lib/workspace-model';
 import type { SourceReading } from '@/lib/first-look';
+import type { ProcessSummary } from '@/lib/process-summary';
+import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
 import type { Project } from '@/lib/types';
 import BusinessRulesEditor from './BusinessRulesEditor';
 import StandardFitTable from './StandardFitTable';
@@ -39,8 +42,18 @@ export default function WorkspaceLayerSection({
   project = null,
   projectId = '',
   reading = null,
+  process = null,
+  onOpenMap,
 }: {
   layer: WorkspaceLayer;
+  /**
+   * The map of the signed source, counted as the map counts it. *Need &
+   * process* summarises it here and links to it — the map itself stands once
+   * on the page (owner, 03.10.2026).
+   */
+  process?: ProcessSummary | null;
+  /** Scrolls to the map where this view has one (Business); elsewhere the link opens Business. */
+  onOpenMap?: () => void;
   /**
    * The project, its id and the first look's reading of its source. With them,
    * *Need & process* shows the business rules and their one editing mode
@@ -56,7 +69,11 @@ export default function WorkspaceLayerSection({
   const withFit = layer.key === 'standard' && !empty && projectId !== '';
   // The rules are shown by the editor; the rows that are left are the usage
   // records, which keep the plain row list below it.
-  const rows = withRules ? layer.rows.filter((row) => !row.key.startsWith('rule-')) : layer.rows;
+  // The process row is the map's summary, rendered on its own below; the
+  // rules are shown by the editor; the rows that are left are the usage
+  // records, which keep the plain row list.
+  const processRow = layer.key === 'need' ? (layer.rows.find((row) => row.key === 'process') ?? null) : null;
+  const rows = layer.rows.filter((row) => row.key !== 'process' && !(withRules && row.key.startsWith('rule-')));
 
   return (
     <section
@@ -77,6 +94,33 @@ export default function WorkspaceLayerSection({
         <CcProvenanceChip value={layer.provenance} />
       </div>
 
+      {processRow ? (
+        <div
+          className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+          data-workspace-layer-process=""
+          data-steps={process?.steps}
+          data-decisions={process?.decisions}
+          data-rules={reading?.ruleSet.rules.length ?? 0}
+        >
+          <div className="min-w-0 flex-1 basis-64">
+            <p className="m-0 text-[13px] font-bold text-cc-ink">{processRow.value}</p>
+            <p className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+              {wt('layerSection.processNote')}
+            </p>
+          </div>
+          <span className="cc-no-print">
+            {onOpenMap ? (
+              <CcButton onClick={onOpenMap} data-workspace-layer-open-map="">
+                {wt('layerSection.showMap')}
+              </CcButton>
+            ) : projectId ? (
+              <CcLinkButton href={`/project/${encodeURIComponent(projectId)}?view=business`} data-workspace-layer-open-map="">
+                {wt('layerSection.showMapBusiness')}
+              </CcLinkButton>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
       {withRules ? (
         <div className="mt-2" data-workspace-layer-rules="">
           <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />

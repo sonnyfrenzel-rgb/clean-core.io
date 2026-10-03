@@ -32,6 +32,10 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'layerBar.more': 'More',
   // LayerSection
   'layerSection.nothingOnRecord': 'Nothing on record for this layer',
+  'layerSection.processNote':
+    'Read from the source the signed run analysed, without a model — a reconstruction of the code, not evidence of how the process runs in production. What to do next stands under Next step.',
+  'layerSection.showMap': 'Show the map',
+  'layerSection.showMapBusiness': 'Show the map in Business',
   // NotDeterminedCard
   'notDetermined.title': 'Not determined',
   'notDetermined.noSource':
