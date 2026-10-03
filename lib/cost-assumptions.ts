@@ -58,6 +58,7 @@
 
 import { sha256Hex } from './artefact-digest';
 import { referenceDigest, type ManifestInput } from './input-manifest';
+import { formatLines, formatMoney, roundDays } from './format';
 
 /** Format of the assumption record. Bumped only when the canonical form changes. */
 export const COST_ASSUMPTIONS_VERSION = 1;
@@ -202,14 +203,18 @@ export function proposeEffort(loc: number | null | undefined): EffortProposal | 
   if (typeof loc !== 'number' || !Number.isFinite(loc) || loc <= 0) return null;
   const k = loc / 1000;
   const f = PROPOSED_DAYS_PER_1000_LINES;
+  // Rounded here, where the figure is made: a taken-over proposal lands in an
+  // input, and an input prints its value unformatted — 668 lines × 5 days per
+  // 1,000 came out as "3.3400000000000003" (owner, 03.10.2026).
+  const d = (factor: number) => roundDays(k * factor);
   return {
     oneOff: {
-      low: { devDays: k * f.oneOffDevLow, testDays: k * f.oneOffTestLow },
-      high: { devDays: k * f.oneOffDevHigh, testDays: k * f.oneOffTestHigh },
+      low: { devDays: d(f.oneOffDevLow), testDays: d(f.oneOffTestLow) },
+      high: { devDays: d(f.oneOffDevHigh), testDays: d(f.oneOffTestHigh) },
     },
-    perRelease: { devDays: k * f.perReleaseDev, testDays: k * f.perReleaseTest },
+    perRelease: { devDays: d(f.perReleaseDev), testDays: d(f.perReleaseTest) },
     sentence:
-      `A proposal from ${Math.round(loc).toLocaleString('en-GB')} lines and fixed factors per 1,000 lines ` +
+      `A proposal from ${formatLines(loc)} lines and fixed factors per 1,000 lines ` +
       `(${f.oneOffDevLow}–${f.oneOffDevHigh} development and ${f.oneOffTestLow}–${f.oneOffTestHigh} test days once, ` +
       `${f.perReleaseDev} development and ${f.perReleaseTest} test days per release). ` +
       'Nothing measured these factors. They count as an assumption of yours only once you confirm them.',
@@ -707,8 +712,8 @@ const REFUSAL_SENTENCES: Record<WinnerRefusalCode, (detail: string) => string> =
     `The two lowest options overlap: ${d} The difference is inside the range of the one-off effort, so which is cheaper is not established.`,
 };
 
-const money = (v: number, currency: string): string =>
-  `${currency} ${Math.round(v).toLocaleString('en-GB')}`;
+/** Whole units: a cost total is a scenario, and cents would claim a precision it has not got. */
+const money = (v: number, currency: string): string => formatMoney(Math.round(v), currency) ?? 'Not determined';
 
 const PROBES: ReadonlyArray<{
   field: TippingField;
