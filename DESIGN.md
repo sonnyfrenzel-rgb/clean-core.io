@@ -528,7 +528,7 @@ list has its own shape, its own file in the code next to `lib/provenance.ts` and
 | **Clean core level** | A · B · C · D | identifier like evidence level, colour per §1.8 | `D` |
 | **Rule property** | hard-coded in program · customizing · master data | tag: rectangle, radius 4 px, `--cc-surface-muted`, text `--cc-ink-muted`, no icon | hard-coded in program |
 | **Severity of a finding** (ADR-049) | Critical · High · Medium · Low · Info — in `lib/severity.ts` | identifier like level: rectangle, radius 4 px, the word in 12 px / 600 (§1.2); colour per §1.8 — Critical and High `error`, Medium `warning`, Low `neutral`, Info `information`; never `success` | `High` |
-| **Requirement priority** (ADR-069) | Must · Should · Could — in `lib/functional-requirements.ts` | tag: rectangle, radius 4 px, the word in 12 px / 600; Must filled ink, Should outlined ink, Could dashed muted — never a state colour, a priority is not a verdict; its reason is written beside it | `Must` |
+| **Requirement priority** (ADR-070) | Must · Should · Could — in `lib/functional-requirements.ts` | tag: rectangle, radius 4 px, the word in 12 px / 600; Must filled ink, Should outlined ink, Could dashed muted — never a state colour, a priority is not a verdict; its reason is written beside it | `Must` |
 
 A rule property says **where** a rule sits, and is never evidence; an evidence level says **how strongly**
 a standard candidate is backed, and is never a provenance. A severity says **how urgent** a finding is — it
