@@ -15,7 +15,14 @@ import {
   stepStrip,
   type RuleDraft,
 } from '../lib/rules-editor';
-import { buildUpEvents, buildUpFrame, codeWindow, BUILD_UP_BUDGET } from '../lib/first-look-buildup';
+import {
+  buildUpEvents,
+  buildUpFrame,
+  codeWindow,
+  BUILD_UP_BUDGET,
+  BUILD_UP_MIN_STEP,
+  BUILD_UP_WINDOW,
+} from '../lib/first-look-buildup';
 import { buildStandardFitView } from '../lib/standard-fit-view';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { deriveStandardCoverageFrom, type CatalogLookup } from '../lib/abap/standard-coverage';
@@ -195,16 +202,26 @@ test.describe('s0 — the first look builds up out of lit lines', () => {
 
   test('a counter only rises with a lit line, and never falls', () => {
     let last = { line: 0, tables: 0, nodes: 0, decisions: 0 };
+    const total = lines.length;
     for (let t = 0; t <= BUILD_UP_BUDGET.endAt; t += 50) {
-      const frame = buildUpFrame(events, t);
-      const lit = events.slice(0, frame.shown);
-      expect(frame.counters.nodes).toBe(lit.filter((e) => e.kind === 'node').length);
+      const frame = buildUpFrame(events, t, total);
+      // Every counter is a count of the lit lines, and every lit line is one
+      // the engine set — a data line only once the reading line has passed it.
+      // (Checked as one value per frame: an expect per event is 40,000 expects.)
+      expect(frame.shown).toBe(frame.lit.length);
+      expect(frame.lit.every((e) => events.includes(e)), `at ${t} ms a lit line is not an event`).toBe(true);
+      const ahead = frame.lit.filter((e) => e.kind === 'data' && e.line > frame.counters.line);
+      expect(ahead, `at ${t} ms a table line is lit before the reading reached it`).toEqual([]);
+      expect(frame.counters.nodes).toBe(frame.lit.filter((e) => e.kind === 'node').length);
+      expect(frame.counters.tables).toBe(new Set(frame.lit.filter((e) => e.kind === 'data').map((e) => e.table)).size);
       expect(frame.counters.line).toBeGreaterThanOrEqual(last.line);
       expect(frame.counters.tables).toBeGreaterThanOrEqual(last.tables);
       expect(frame.counters.nodes).toBeGreaterThanOrEqual(last.nodes);
       last = frame.counters;
     }
-    expect(buildUpFrame(events, BUILD_UP_BUDGET.namesFrom).shown).toBe(events.length);
+    // The reading has read every line, and every event is lit, before the names change.
+    expect(buildUpFrame(events, BUILD_UP_BUDGET.processFrom, total).counters.line).toBe(total);
+    expect(buildUpFrame(events, BUILD_UP_BUDGET.namesFrom, total).shown).toBe(events.length);
   });
 
   test('the stages follow the paced budget of ADR-072: read, process, names, rules, open points, map', () => {
@@ -217,11 +234,12 @@ test.describe('s0 — the first look builds up out of lit lines', () => {
     expect(buildUpFrame(events, b.rulesFrom).stage).toBe('rules');
     expect(buildUpFrame(events, b.openFrom).stage).toBe('not-determined');
     expect(buildUpFrame(events, b.mapFrom).stage).toBe('map');
-    // Followable, not dragging (owner 03.10.2026): every moment at least a
-    // second on screen, the whole within ten seconds.
+    // Followable, not dragging (owner 03.10.2026): every moment long enough to
+    // read its headline and see what it shows, the whole within 15 to 25 s.
     const marks = [0, b.processFrom, b.namesFrom, b.rulesFrom, b.openFrom, b.mapFrom, b.endAt];
-    for (let i = 1; i < marks.length; i += 1) expect(marks[i] - marks[i - 1]).toBeGreaterThanOrEqual(1000);
-    expect(b.endAt).toBeLessThanOrEqual(10000);
+    for (let i = 1; i < marks.length; i += 1) expect(marks[i] - marks[i - 1]).toBeGreaterThanOrEqual(BUILD_UP_MIN_STEP);
+    expect(b.endAt).toBeGreaterThanOrEqual(BUILD_UP_WINDOW.min);
+    expect(b.endAt).toBeLessThanOrEqual(BUILD_UP_WINDOW.max);
   });
 
   test('the code window stays inside the source', () => {
