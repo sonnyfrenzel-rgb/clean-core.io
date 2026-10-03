@@ -749,6 +749,13 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     for (const e of decisionManagerView(draft).technical) expect(e.text).not.toMatch(/lib\/|\.tsx?\b/);
   });
 
+  test('a confirmed decision is not offered for confirmation again', () => {
+    const draft = deriveDecisionDraft(facts()).draft;
+    expect(decisionManagerView(draft).readiness).toMatch(/^Can be confirmed/);
+    const confirmed = { ...draft, status: 'confirmed' as const };
+    expect(decisionManagerView(confirmed).readiness).not.toMatch(/Can be confirmed|Cannot be confirmed/);
+  });
+
   test('what is stored is not touched: the record keeps its own sentences and fingerprint', () => {
     const draft = deriveDecisionDraft(facts()).draft;
     const before = JSON.stringify(draft);

@@ -467,49 +467,7 @@ export default function ManagementExecutive({
       ? s.next
       : null;
 
-  return (
-    <div data-management-executive="" className="grid items-start gap-4 lg:grid-cols-12">
-      {/* The decision: question, state, the one next action, what is in the way. */}
-      <div
-        data-executive-decision=""
-        data-executive-decision-record={decision ? '' : undefined}
-        className={cn(CARD, decision ? 'lg:col-span-7' : 'lg:col-span-5')}
-      >
-        {coach}
-        {decision ? (
-          <>
-            <h2 id={headingId} data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-              <span className={cn(LABEL, 'mr-2')}>
-                <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
-              </span>
-              {s.question}
-            </h2>
-            <div className="mt-2">{decision}</div>
-          </>
-        ) : (
-          <>
-        <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-          <span className={cn(LABEL, 'mr-2')}>
-            {/* "Decision" is the program decision only; a branch in the code is
-                a decision point (owner, 03.10.2026). The term opens by tap or
-                keyboard, never on hover alone. */}
-            <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
-          </span>
-          {s.question}
-        </p>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <h2
-            id={headingId}
-            data-management-headline=""
-            className="m-0 min-w-0 flex-1 basis-56 cc-text-h2 leading-snug text-cc-ink"
-          >
-            {s.answer}
-          </h2>
-          <CcObjectStatus facet={wt('exec.statusFacet')} value={s.status} />
-        </div>
-          </>
-        )}
-
+  const nextBox = (
         <div
           data-executive-next=""
           data-coach-target="next-step"
@@ -544,6 +502,81 @@ export default function ManagementExecutive({
             </p>
           ) : null}
         </div>
+  );
+  const nextRow = (
+    <div
+      data-executive-next=""
+      data-coach-target="next-step"
+      className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-cc-row border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface-muted px-3 py-2"
+    >
+      <span className={LABEL}>{wt('nextStep.title')}</span>
+      {primary || s.next ? (
+        <>
+          <span className="min-w-0 flex-1 basis-48 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {primary ? primary.reason : s.next!.reason}
+          </span>
+          <CcLinkButton
+            href={primary ? primary.href : hrefFor(s.next!.target)}
+            variant="primary"
+            data-executive-next-action=""
+            data-next-step-key={primary?.key}
+          >
+            {primary ? primary.label : s.next!.label}
+          </CcLinkButton>
+        </>
+      ) : (
+        <span className="text-[12px] font-medium text-cc-ink-muted">{wt('exec.noNextStep')}</span>
+      )}
+    </div>
+  );
+
+  return (
+    <div data-management-executive="" className="grid items-start gap-4 lg:grid-cols-12">
+      {/* The decision: question, state, the one next action, what is in the way. */}
+      <div
+        data-executive-decision=""
+        data-executive-decision-record={decision ? '' : undefined}
+        className={cn(CARD, decision ? 'lg:col-span-7' : 'lg:col-span-5')}
+      >
+        {coach}
+        {decision ? (
+          <>
+            <h2 id={headingId} data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+              <span className={cn(LABEL, 'mr-2')}>
+                <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+              </span>
+              {s.question}
+            </h2>
+            {/* The page's one next step, as one row above the decision, so its
+                tip stands at the top of the page rather than over the folds. */}
+            {nextRow}
+            <div className="mt-3">{decision}</div>
+          </>
+        ) : (
+          <>
+        <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+          <span className={cn(LABEL, 'mr-2')}>
+            {/* "Decision" is the program decision only; a branch in the code is
+                a decision point (owner, 03.10.2026). The term opens by tap or
+                keyboard, never on hover alone. */}
+            <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+          </span>
+          {s.question}
+        </p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <h2
+            id={headingId}
+            data-management-headline=""
+            className="m-0 min-w-0 flex-1 basis-56 cc-text-h2 leading-snug text-cc-ink"
+          >
+            {s.answer}
+          </h2>
+          <CcObjectStatus facet={wt('exec.statusFacet')} value={s.status} />
+        </div>
+          </>
+        )}
+
+        {decision ? null : nextBox}
 
         {decision ? null : (
         <div data-executive-blockers="" className="mt-4">

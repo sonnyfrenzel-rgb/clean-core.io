@@ -288,7 +288,11 @@ export function decisionManagerView(decision: ProjectDecision): DecisionManagerV
     ),
   ];
   const readiness =
-    coverage.state === 'blocked'
+    decision.status === 'confirmed'
+      ? coverage.state === 'clear'
+        ? ''
+        : 'Confirmed with what is still open visible beside it.'
+      : coverage.state === 'blocked'
       ? `Cannot be confirmed yet: ${blocking.join('; ')}.`
       : coverage.state === 'qualified'
         ? 'Can be confirmed — what is still open stays visible with the decision.'
