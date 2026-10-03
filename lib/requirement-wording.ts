@@ -2,7 +2,7 @@ import { anchorHolds, sourceLines, type RequirementSet } from '@/lib/functional-
 
 /**
  * A model's proposal for clearer wording of the functional requirements —
- * v3.0.1, optional, asked for by a button only.
+ * Optional, asked for by a button only.
  *
  * The engine writes every requirement (`lib/functional-requirements.ts`): its
  * existence, its anchors, its priority, its acceptance criteria. All the model

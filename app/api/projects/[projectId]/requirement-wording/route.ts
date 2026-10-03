@@ -26,7 +26,7 @@ import {
 } from '@/lib/requirement-wording';
 
 /**
- * The model's wording proposal for the functional requirements — v3.0.1.
+ * The model's wording proposal for the functional requirements.
  *
  *   GET  → `{ record }`, the stored proposal or `null`.
  *   POST `{ digest, text, receipt }` → `{ record }`, the sentences as validated.

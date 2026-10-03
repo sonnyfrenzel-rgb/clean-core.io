@@ -4,7 +4,7 @@ import { itAnswerHead, worstLevel } from './it-view';
 
 /**
  * Which of the IT view's honest states a project is in, and the answer it
- * opens with — v3.0.1, after the owner's review of the 3.0 IT view: *"so empty
+ * opens with — after the owner's review of the 3.0 IT view: *"so empty
  * and nested … it must be clear why there is still such emptiness."*
  *
  * Before this the view drew the same frame in every state — four tiles, a

@@ -755,7 +755,7 @@ export default function TestingSandboxPage() {
 
   /**
    * What generating the scenarios needs and does not have yet (owner report
-   * 03.10.2026, v3.0.1, the Transformation agent's finding): the button was
+   * 03.10.2026, the Transformation agent's finding): the button was
    * enabled, its click returned without a word when an input was stale, and
    * nothing checked for generated code or a design, so the prompt could carry
    * `undefined`. Each missing input is now a sentence with one action beside

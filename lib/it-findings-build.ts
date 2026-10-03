@@ -157,7 +157,7 @@ const LEVEL_RANK: Record<CloudReadinessGrade, number> = { D: 0, C: 1, B: 2, A: 3
 
 /**
  * Every object the code calls, reads or writes — the IT view's answer to "what
- * exactly", whether or not a detector raised a finding on it (v3.0.1).
+ * exactly", whether or not a detector raised a finding on it.
  *
  * Why it exists: `Z_SALES_ORDER_CREATOR` calls three BAPIs and has no finding,
  * because the detectors judge violations and a local `CALL FUNCTION` is outside

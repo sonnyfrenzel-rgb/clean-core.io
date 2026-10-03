@@ -626,9 +626,9 @@ test.describe('phone: the assistant', () => {
       await page.waitForTimeout(300);
       if (!(await page.locator('#chatbot-panel').isVisible())) {
         // The floating button can be switched off at desktop widths; the shell opens it by event then.
-        const toggle = page.locator('[data-chatbot-toggle]');
-        if (await toggle.isVisible()) await toggle.click();
-        else await page.evaluate(() => window.dispatchEvent(new CustomEvent('open-chatbot')));
+        // The shell's event opens it at every width, whether or not the
+        // floating button is shown there.
+        await page.evaluate(() => window.dispatchEvent(new CustomEvent('open-chatbot')));
       }
       const panel = page.locator('#chatbot-panel');
       await expect(panel).toBeVisible();

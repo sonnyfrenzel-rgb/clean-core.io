@@ -136,7 +136,7 @@ export function EconomicsGuide({
                   href={`#${step.id}`}
                   aria-current={isNext ? 'step' : undefined}
                   className={cn(
-                    'flex min-h-11 items-center gap-3 rounded-cc-card border px-3 py-1.5 text-cc-ink no-underline md:py-2',
+                    'flex min-h-11 items-center gap-3 rounded-cc-card border px-3 py-2 text-cc-ink no-underline',
                     isNext ? 'border-cc-ink' : 'border-cc-line',
                   )}
                 >

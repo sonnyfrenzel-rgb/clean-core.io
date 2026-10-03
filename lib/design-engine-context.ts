@@ -4,7 +4,7 @@ import type { ItFindingRow } from '@/lib/it-findings';
 
 /**
  * What the solution-design prompt is given from the signed engine evidence —
- * v3.0.1 (coordinator decision 03.10.2026).
+ * (coordinator decision 03.10.2026).
  *
  * An engine-only signed run stores no model narrative (`analysis: ''`), and
  * the design used to be written from that narrative alone: with none, the

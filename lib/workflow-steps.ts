@@ -503,13 +503,13 @@ export interface GenerationPrerequisite {
  * of `generationBlockers`, which covers the other case — something on record
  * that was built for a previous source.
  *
- * Owner report 03.10.2026 (v3.0.1): Transformation's button was enabled on a
+ * Owner report 03.10.2026: Transformation's button was enabled on a
  * project with no solution design, its click checked for the design and
  * returned without a word, and `generationBlockers` was empty because nothing
  * was stale. A page shows each entry with its action and keeps its button
  * disabled while the list is not empty.
  *
- * The analysis narrative is not a prerequisite of anything here. Since v3.0.1
+ * The analysis narrative is not a prerequisite of anything here. Since 03.10.2026
  * (coordinator decision 03.10.2026) the Design stage writes its design from the
  * signed engine evidence — route, process, rules, SAP objects — and uses a
  * narrative only as further context where the run has one, so an engine-only

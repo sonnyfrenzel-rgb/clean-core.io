@@ -1,5 +1,5 @@
 /**
- * Interface text of the IT view's v3.0.1 rework — `components/workspace/
+ * Interface text of the IT view's rework of 03.10.2026 — `components/workspace/
  * ItAnswers.tsx` and `ItRail.tsx`: the one state at the top, the four figures,
  * "What the code uses" and the flattened sections.
  *

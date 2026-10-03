@@ -139,7 +139,7 @@ function modelFailureText(err: unknown): string {
 
 /**
  * The context block of the design prompt: the signed engine evidence always,
- * the run's narrative only where it has one (v3.0.1, coordinator decision
+ * the run's narrative only where it has one (coordinator decision,
  * 03.10.2026). An engine-only run used to leave the design with nothing to be
  * written from, and Transformation stopped behind it.
  */
@@ -630,7 +630,7 @@ ${responseText.substring(0, 4000)}`;
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
   /**
-   * v3.0.1 — the source the active run signed, and nothing else, for the
+   * The source the active run signed, and nothing else, for the
    * functional requirements: the same comparison the Documentation stage makes,
    * so a line anchor never points into a source the run did not see.
    */
@@ -646,7 +646,7 @@ ${responseText.substring(0, 4000)}`;
   useEffect(() => {
     engineEvidenceRef.current = { source: signedSource?.source ?? null, evidence: designEvidence };
   }, [signedSource, designEvidence]);
-  /** v3.0.1 — what the design needs on record: a source and a signed run. The narrative is not among them. */
+  /** What the design needs on record: a source and a signed run. The narrative is not among them. */
   const designPrerequisites = generationPrerequisites(project, 'design');
 
   const requirementsMissing = !project?.activeRunId
@@ -864,7 +864,7 @@ ${responseText.substring(0, 4000)}`;
       }
     />
   ) : designPrerequisites.length > 0 ? (
-    /* v3.0.1 — never silent: what is missing, in words, with the one action
+    /* Never silent: what is missing, in words, with the one action
        that puts it on record. The button stays away rather than fail. */
     <div data-design-prerequisites="" className="space-y-4">
       {designErrorStrip}

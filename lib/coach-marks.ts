@@ -80,7 +80,7 @@ export interface CoachMarkContext {
   hasNextStep: boolean;
   /**
    * The order the tour takes on this screen, when it is not the default. The
-   * tour starts where the reader is (v3.0.1, owner review of the IT view): in
+   * tour starts where the reader is (owner review of the IT view): in
    * IT the *Not determined* count and "Next step" stand at the top and the
    * decision far below, so IT leads with those two. Marks not named keep their
    * default order after the named ones.

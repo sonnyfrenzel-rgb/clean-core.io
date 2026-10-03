@@ -30,7 +30,7 @@ import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join
  *      deeper; and beside it the routes the deterministic router named on the
  *      findings. Nothing is decided here — the decision card binds the contract.
  *   3. **Imports** — the usage and ATC imports on record, inside the profile's
- *      card since v3.0.1 (§2.11: at most two side cards); without either, one
+ *      card since 03.10.2026 (§2.11: at most two side cards); without either, one
  *      sentence that says usage is *not determined* until one exists, never
  *      "unused" — no empty-state box. The routes the router named are drawn
  *      only where there are findings to name them on.

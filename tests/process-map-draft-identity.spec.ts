@@ -30,6 +30,17 @@ test('a different source in the same project is not this draft either', () => {
   expect(draftFor(null, 'project-a', SOURCE)).toBeNull();
 });
 
+/**
+ * The props of the first `<Name …/>` element. A generic such as
+ * `useRef<ProcessMapModel | null>` also starts with `<ProcessMap`, so the tag
+ * has to be followed by whitespace or the end of the tag.
+ */
+function jsxOf(src: string, name: string): string {
+  const at = src.search(new RegExp(`<${name}(?=[\\s/>])`));
+  expect(at, `no <${name}> element`).toBeGreaterThan(-1);
+  return src.slice(at, src.indexOf('/>', at));
+}
+
 test('ProcessMap holds the draft through it and keys the editor on the project', () => {
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
   expect(src).toContain('draftFor(drafts.get(), projectId, source)');
@@ -38,7 +49,7 @@ test('ProcessMap holds the draft through it and keys the editor on the project',
   // Both screens with an editor hand their project in.
   for (const rel of ['components/workspace/WorkspaceProcess.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
     const screen = fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
-    const map = screen.slice(screen.indexOf('<ProcessMap'), screen.indexOf('/>', screen.indexOf('<ProcessMap')));
+    const map = jsxOf(screen, 'ProcessMap');
     expect(map, `${rel} does not tell the map which project it shows`).toMatch(/\bprojectId=\{/);
   }
 });
@@ -70,7 +81,7 @@ test('the workspace holds the draft above the view switch and hands it down to t
   expect(mount, 'the shell does not hand its draft to the process block').toMatch(/\bdraftHolder=\{processDraft\}/);
 
   const process = read('components/workspace/WorkspaceProcess.tsx');
-  const map = process.slice(process.indexOf('<ProcessMap'), process.indexOf('/>', process.indexOf('<ProcessMap')));
+  const map = jsxOf(process, 'ProcessMap');
   expect(map, 'the process block does not pass the draft on to the map').toMatch(/\bdraftHolder=\{draftHolder\}/);
 
   const pm = read('components/process-map/ProcessMap.tsx');

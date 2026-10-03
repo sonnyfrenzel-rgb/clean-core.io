@@ -590,7 +590,7 @@ CMD ["node", "srv/service.js"]`
       // first, turns this one into a refusal instead of an overwrite.
       const generationToken = generation.token;
       const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
-      // The narrative is not required (v3.0.1): the design is written from it
+      // The narrative is not required: the design is written from it
       // and carries it, and an engine-only run has none. It used to be, and a
       // project with a design but an engine-only run could never generate.
       const businessAnalysis = analysis.trim()
@@ -974,7 +974,7 @@ CMD ["node", "srv/service.js"]`
       ? 'The transformation stage is turned off in Settings.'
       : 'No Gemini API key is available — add your own in Settings.';
   /**
-   * What is not on record yet (owner report 03.10.2026, v3.0.1). The button
+   * What is not on record yet (owner report 03.10.2026). The button
    * used to be enabled over a missing design and return from its click without
    * a word; each entry is now a sentence beside it with the one action that
    * resolves it, and the button waits until the list is empty.
@@ -1301,7 +1301,7 @@ CMD ["node", "srv/service.js"]`
       </StageHeader>
 
       {/* Why the code cannot be generated now, each reason with the one
-          action that resolves it (owner report 03.10.2026, v3.0.1). On the
+          action that resolves it (owner report 03.10.2026). On the
           page, not in a title: a phone has no hover. A stale input is said by
           the notice below, which names the stage to regenerate. */}
       {project && (prerequisites.length > 0 || modelOff) && (

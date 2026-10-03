@@ -64,7 +64,7 @@ import ItRail from './ItRail';
 import NotDeterminedCard from './NotDeterminedCard';
 
 /**
- * The IT view — roadmap step 8.1, mockup v2.8 `s4`, reworked for v3.0.1 after
+ * The IT view — roadmap step 8.1, mockup v2.8 `s4`, reworked on 03.10.2026 after
  * the owner's review: *"so empty and nested, and hard to operate … the
  * explanation dialogs are far too far down."*
  *
@@ -131,7 +131,7 @@ export default function ItAnswers({
   recorded?: readonly RecordGap[];
   /** A signed run is on record and readable; the demo, which carries none by design, passes `'demo'`. */
   signed?: boolean | 'demo';
-  /** The coach mark for a place in this view — the tour starts here, at the top (v3.0.1). */
+  /** The coach mark for a place in this view — the tour starts here, at the top. */
   coach?: (slot: CoachMarkId) => React.ReactNode;
 }) {
   /**
@@ -291,7 +291,7 @@ export default function ItAnswers({
 
   return (
     <section data-it-view="" data-it-state={state} aria-labelledby="it-answers-heading" className="cc">
-      {/* The tour starts here, where the reader is (v3.0.1): the first mark
+      {/* The tour starts here, where the reader is: the first mark
           points at the Not determined figure in the answer. */}
       {coach ? coach('not-determined') : null}
 

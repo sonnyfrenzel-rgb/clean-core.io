@@ -20,7 +20,7 @@ import {
 import { sha256Hex } from '@/lib/artefact-digest';
 
 /**
- * Functional requirements, reconstructed from the code — v3.0.1 (owner
+ * Functional requirements, reconstructed from the code (owner
  * 03.10.2026: "much better content, visualised, clear texts, copyable for a
  * requirement specification").
  *

@@ -141,7 +141,7 @@ export interface ItFindingsSource {
   coverage?: { lines: number; gaps: Array<{ label: string; count: number; firstLine: number }> };
   /**
    * What the code uses — every SAP or customer object it calls, reads or
-   * writes, whether or not a detector raised a finding on it (v3.0.1). A
+   * writes, whether or not a detector raised a finding on it. A
    * program that reaches SAP only through BAPIs has no finding and still uses
    * SAP; without this list the IT view could only say "no findings" beside a
    * process that plainly calls SAP. Optional: an answer built before it existed

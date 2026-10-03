@@ -246,7 +246,7 @@ function RailStep({
       data-state={state}
       aria-current={state === 'current' ? 'step' : undefined}
       className={cn(
-        'flex min-w-0 items-start gap-2 rounded-cc-row border px-2 py-1.5 text-[12px] leading-snug motion-safe:transition-colors motion-safe:duration-200',
+        'flex min-w-0 items-start gap-2 rounded-cc-row border px-2 py-2 text-[12px] leading-snug motion-safe:transition-colors motion-safe:duration-200',
         state === 'current' ? 'border-cc-ink bg-cc-surface' : 'border-cc-line',
         state === 'pending' ? 'bg-cc-surface-muted text-cc-ink-muted' : 'bg-cc-surface text-cc-ink',
       )}

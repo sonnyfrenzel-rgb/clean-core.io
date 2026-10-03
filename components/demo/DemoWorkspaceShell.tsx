@@ -623,7 +623,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               {mapCard}
             </div>
           )}
-          {/* Not determined stands in the IT answer itself (v3.0.1), not here again. */}
+          {/* Not determined stands in the IT answer itself, not here again. */}
         </>
       ) : null}
 

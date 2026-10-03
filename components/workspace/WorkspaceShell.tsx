@@ -123,10 +123,10 @@ const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: fals
  * answer started some 2,700 px down, under Costs and the Business blocks.
  */
 const IT_HEAD: readonly ContentBlock[] = [];
-// *Not determined* is part of IT's own answer since v3.0.1 — a figure at the
+// *Not determined* is part of IT's own answer since 03.10.2026 — a figure at the
 // top and the list beside the findings — so it is not repeated at the foot.
 const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask'];
-/** In IT the tour starts at the top, where the Not determined figure and "Next step" stand (v3.0.1). */
+/** In IT the tour starts at the top, where the Not determined figure and "Next step" stand. */
 const IT_COACH_ORDER: readonly CoachMarkId[] = ['not-determined', 'next-step', 'decision'];
 /** Without a source the answer has no Not determined figure yet; the tour starts at "Next step". */
 const IT_COACH_ORDER_NO_SOURCE: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
@@ -556,7 +556,7 @@ export default function WorkspaceShell({
                 type="button"
                 onClick={() => onViewChange(v)}
                 data-workspace-hub-view={v}
-                className="flex min-h-11 min-w-0 flex-1 basis-56 flex-col items-start rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-left hover:border-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+                className="flex min-h-11 min-w-0 flex-1 basis-56 flex-col items-start rounded-cc-row border border-cc-line px-3 py-2 text-left hover:border-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
               >
                 <span className="text-[13px] font-semibold text-cc-ink">{hubViewLabel(VIEW_LABELS[v])}</span>
                 <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{VIEW_QUESTIONS[v]}</span>
@@ -820,7 +820,7 @@ export default function WorkspaceShell({
               </div>
             )}
             nextStep={
-              // One row under the answer, its one primary button on the right (v3.0.1).
+              // One row under the answer, its one primary button on the right.
               <div className="mt-4">
                 <div className="cc-no-print">
                   <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />

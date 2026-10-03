@@ -104,7 +104,7 @@ export default function WorkspaceLayerSection({
         >
           <div className="min-w-0 flex-1 basis-64">
             <p className="m-0 text-[13px] font-bold text-cc-ink">{processRow.value}</p>
-            <p className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
               {wt('layerSection.processNote')}
             </p>
           </div>

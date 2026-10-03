@@ -25,7 +25,7 @@ import type {
 import type { RequirementWordingRecord, WordingDiscardReason } from '@/lib/requirement-wording';
 
 /**
- * Functional requirements in the Design stage — v3.0.1.
+ * Functional requirements in the Design stage.
  *
  * Read from the code by the engine (`lib/functional-requirements.ts`) when the
  * reader asks for them, never on opening and never by a model: one requirement

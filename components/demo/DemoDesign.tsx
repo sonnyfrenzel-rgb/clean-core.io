@@ -183,7 +183,7 @@ export default function DemoDesign({
         view={view}
         signOffWording={SIGN_OFF_WORDING}
       />
-      {/* v3.0.1 — the functional requirements are the engine's, so the demo
+      {/* the functional requirements are the engine's, so the demo
           has them too: read from the example in this browser, no model call. */}
       <div className="mt-8">
         <FunctionalRequirements

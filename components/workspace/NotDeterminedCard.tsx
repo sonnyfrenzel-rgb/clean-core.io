@@ -46,7 +46,7 @@ export default function NotDeterminedCard({
 }: {
   data: NotDetermined;
   recorded?: readonly RecordGap[];
-  /** One sentence on what this list is, shown first — the IT view's (v3.0.1). */
+  /** One sentence on what this list is, shown first — the IT view's. */
   lead?: string;
 }) {
   return (
