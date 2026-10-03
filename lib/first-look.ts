@@ -372,10 +372,10 @@ export function processStage(skeleton: ProcessSkeleton): FirstLookStage {
     id: 'process-recognised',
     label: STAGE_LABELS['process-recognised'],
     state: 'measured',
-    result: `${plural(steps, 'step', 'steps')}, ${plural(decisions, 'decision', 'decisions')}, ${plural(starts, 'start', 'starts')}, ${plural(ends, 'end', 'ends')}.`,
+    result: `${plural(steps, 'step', 'steps')}, ${plural(decisions, 'decision point', 'decision points')}, ${plural(starts, 'start', 'starts')}, ${plural(ends, 'end', 'ends')}.`,
     figures: [
       { key: 'steps', label: 'steps', value: String(steps), origin: 'engine' },
-      { key: 'decisions', label: 'decisions', value: String(decisions), origin: 'engine' },
+      { key: 'decisions', label: 'decision points', value: String(decisions), origin: 'engine' },
       { key: 'starts', label: 'starts', value: String(starts), origin: 'engine' },
       { key: 'ends', label: 'ends', value: String(ends), origin: 'engine' },
       {

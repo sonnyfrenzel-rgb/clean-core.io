@@ -93,7 +93,7 @@ export const CLEAN_CORE_HINT_RULES: readonly HintRule[] = Object.freeze([
   {
     id: GATEWAY_WITHOUT_CONDITION,
     label: 'Gateway without a condition',
-    about: 'A decision whose branches do not say what decides.',
+    about: 'A decision point whose branches do not say what decides.',
   },
   {
     id: LANE_RECONSTRUCTED_ONLY,
@@ -304,9 +304,9 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
       elementId: element.id,
       elementLabel: label,
       message: reconstructed
-        ? `Decision “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
+        ? `Decision point “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
           + ' the model does not say what decides here.'
-        : `Decision “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
+        : `Decision point “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
           + ' this one was drawn, not read from the code — say what decides, or leave it open.',
     });
   }

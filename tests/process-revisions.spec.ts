@@ -121,7 +121,7 @@ test.describe('what changed between two revisions', () => {
     const diff = diffProcessRevisions({ revision: 1, xml: BEFORE }, { revision: 2, xml: AFTER });
     const gateway = diff.changed.find((c) => c.id === 'n3');
 
-    expect(gateway?.kind).toBe('Decision');
+    expect(gateway?.kind).toBe('Decision point');
     expect(gateway?.anchor).toBe('line 10');
     expect(gateway?.fields).toEqual([
       { field: 'status', label: 'Status', before: 'reconstructed', after: 'confirmed' },

@@ -29,7 +29,7 @@ import type { RequirementWordingRecord, WordingDiscardReason } from '@/lib/requi
  *
  * Read from the code by the engine (`lib/functional-requirements.ts`) when the
  * reader asks for them, never on opening and never by a model: one requirement
- * per business rule, decision, early end and step that changes data, each with
+ * per business rule, decision point, early end and step that changes data, each with
  * its lines, acceptance criteria and a priority that says why. What the code
  * cannot answer is listed apart, "to be confirmed by the business".
  *
@@ -362,7 +362,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
         <CcProvenanceChip value="reconstructed" />
       </div>
       <p className="m-0 max-w-3xl text-[14px] leading-relaxed text-cc-ink-muted">
-        What the code requires, as numbered requirements: one per business rule, decision, early end and step that
+        What the code requires, as numbered requirements: one per business rule, decision point, early end and step that
         changes data, each with its lines, acceptance criteria and a priority that says why.
       </p>
     </div>

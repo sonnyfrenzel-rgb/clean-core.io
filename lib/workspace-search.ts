@@ -57,7 +57,7 @@ export const SEARCH_GROUP_ORDER: readonly SearchGroup[] = ['process', 'decision'
 
 export const SEARCH_GROUP_LABEL: Record<SearchGroup, string> = {
   process: 'Process steps',
-  decision: 'Decisions',
+  decision: 'Decision points',
   rule: 'Business rules',
   finding: 'Findings',
   code: 'Code lines',

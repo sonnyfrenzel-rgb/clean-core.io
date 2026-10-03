@@ -26,7 +26,7 @@ for (const file of ['Z_SALES_ORDER_CREATOR.txt', 'Z_MM_PO_APPROVAL.abap', 'Z_INV
     const model = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null), fileName: file });
     const summary = processSummaryOf(source, file);
     expect(summary).not.toBeNull();
-    const m = /(\d+) steps?.*?(\d+) decisions?/.exec(model.overview);
+    const m = /(\d+) steps?.*?(\d+) decision points?\b/.exec(model.overview);
     expect(m, model.overview).not.toBeNull();
     expect(summary!.steps).toBe(Number(m![1]));
     expect(summary!.decisions).toBe(Number(m![2]));
@@ -45,7 +45,7 @@ test('with the map of a signed source, Need & process is reconstructed — never
   expect(need.provenance).toBe('reconstructed');
   const row = need.rows.find((r) => r.key === 'process');
   expect(row?.value).toBe(
-    `Reconstructed: ${summary.steps} ${summary.steps === 1 ? 'step' : 'steps'}, ${summary.decisions} ${summary.decisions === 1 ? 'decision' : 'decisions'}, ${reading.ruleSet.rules.length} ${reading.ruleSet.rules.length === 1 ? 'rule' : 'rules'} hard-coded`,
+    `Reconstructed: ${summary.steps} ${summary.steps === 1 ? 'step' : 'steps'}, ${summary.decisions} ${summary.decisions === 1 ? 'decision point' : 'decision points'}, ${reading.ruleSet.rules.length} ${reading.ruleSet.rules.length === 1 ? 'rule' : 'rules'} hard-coded`,
   );
   // Without the map (no signed source) the layer says what it said before.
   const without = workspaceLayers(project, reading).find((l) => l.key === 'need')!;

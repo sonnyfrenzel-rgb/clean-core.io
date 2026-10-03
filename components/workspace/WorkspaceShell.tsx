@@ -131,6 +131,12 @@ const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook
 const IT_COACH_ORDER: readonly CoachMarkId[] = ['not-determined', 'next-step', 'decision'];
 /** Without a source the answer has no Not determined figure yet; the tour starts at "Next step". */
 const IT_COACH_ORDER_NO_SOURCE: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
+/**
+ * Management has a place for one tip only, "Your next step" on its answer. The
+ * other two have no slot there, and a tour that starts with a mark this view
+ * cannot show shows nothing at all.
+ */
+const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];
 
 /**
  * Management opens with its answer (ADR-029): the decision with the page's ONE
@@ -374,6 +380,7 @@ export default function WorkspaceShell({
     hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
     order: view === 'it' ? (open.noSource ? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER) : undefined,
+    only: view === 'management' ? MANAGEMENT_COACH_MARKS : undefined,
   });
 
   /**
@@ -390,6 +397,10 @@ export default function WorkspaceShell({
     firstLookSettled &&
     (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
+  // "Select the decision point" stands right above the map where Business has
+  // one, in the flow; elsewhere above "Ask this case", whose question is one.
+  const decisionTipAtMap =
+    view === 'business' && signed !== null && processSummary?.source === signed.source && !!processSummary.summary;
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
   // many of the seven facets have anything on record at all, which is a fact
@@ -594,6 +605,19 @@ export default function WorkspaceShell({
             onWritten={stand.adopt}
             draftHolder={processDraft}
             startRun={startRun}
+            coach={
+              decisionTipAtMap ? (
+                <div className="cc-no-print">
+                  <CoachMarkNote
+                    mark={currentMark}
+                    slot="decision"
+                    form="inline"
+                    onDismiss={marks.dismiss}
+                    onDismissAll={marks.dismissAll}
+                  />
+                </div>
+              ) : undefined
+            }
           />
         </div>
       ) : null,
@@ -635,14 +659,16 @@ export default function WorkspaceShell({
     // out of the branches of the code and without a model call.
     ask: answer ? (
       <div className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}>
-        <div className="cc-no-print">
-          <CoachMarkNote
-            mark={currentMark}
-            slot="decision"
-            onDismiss={marks.dismiss}
-            onDismissAll={marks.dismissAll}
-          />
-        </div>
+        {decisionTipAtMap ? null : (
+          <div className="cc-no-print">
+            <CoachMarkNote
+              mark={currentMark}
+              slot="decision"
+              onDismiss={marks.dismiss}
+              onDismissAll={marks.dismissAll}
+            />
+          </div>
+        )}
         <AskThisCase answer={answer} />
       </div>
     ) : null,

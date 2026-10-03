@@ -94,10 +94,10 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
   return new URL(page.url()).pathname.split('/')[2];
 }
 
-/** "Process with 8 steps and 1 decision." → [8, 1] */
+/** "Process with 8 steps and 1 decision point." → [8, 1] */
 async function mapCounts(page: Page): Promise<[number, number]> {
   const text = (await page.locator('[data-workspace-process="ready"] [data-process-map-overview]').first().textContent()) ?? '';
-  const m = /(\d+) steps?.*?(\d+) decisions?/.exec(text);
+  const m = /(\d+) steps?.*?(\d+) decision points?\b/.exec(text);
   expect(m, `the map's overview says no counts: "${text}"`).not.toBeNull();
   return [Number(m![1]), Number(m![2])];
 }

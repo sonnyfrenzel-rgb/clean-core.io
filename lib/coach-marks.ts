@@ -50,8 +50,8 @@ export interface CoachMark {
 export const COACH_MARKS: readonly CoachMark[] = Object.freeze([
   Object.freeze({
     id: 'decision' as const,
-    title: 'Select the decision',
-    body: 'A decision carries the condition as your code writes it, and the lines it stands on.',
+    title: 'Select the decision point',
+    body: 'A decision point carries the condition as your code writes it, and the lines it stands on.',
   }),
   Object.freeze({
     id: 'not-determined' as const,
@@ -86,6 +86,8 @@ export interface CoachMarkContext {
    * default order after the named ones.
    */
   order?: readonly CoachMarkId[];
+  /** The marks this screen has a place for, when not all three. */
+  only?: readonly CoachMarkId[];
 }
 
 export function availableCoachMarks(context: CoachMarkContext): readonly CoachMark[] {
@@ -95,6 +97,7 @@ export function availableCoachMarks(context: CoachMarkContext): readonly CoachMa
     return i === -1 ? order.length + COACH_MARK_IDS.indexOf(id) : i;
   };
   return [...COACH_MARKS].sort((a, b) => rank(a.id) - rank(b.id)).filter((mark) => {
+    if (context.only && !context.only.includes(mark.id)) return false;
     if (mark.id === 'decision') return context.hasDecision;
     if (mark.id === 'next-step') return context.hasNextStep;
     // *Not determined* is a region of the page in every state it has, including
@@ -144,4 +147,119 @@ export function nextCoachMark(
   dismissed: readonly CoachMarkId[],
 ): CoachMark | null {
   return available.find((mark) => !dismissed.includes(mark.id)) ?? null;
+}
+
+/* ------------------------------------------------------------- placement */
+
+/**
+ * Where a coach mark stands on the page — beside its target, never over it.
+ *
+ * The tip used to sit under the target's title, inside the target, and after
+ * the start build-up it covered the very text it pointed at; in the IT view it
+ * covered the *Not determined* value and the *Open Design* button beside it.
+ * The rule now, in this order: below the target, to its right, to its left,
+ * above it — beside before above, so the tip stays at the height of what it
+ * explains rather than over the text that leads to it — the first place that covers neither the target nor a primary
+ * action and that stands within one screen of the target's top. If no place is
+ * clean and near, the first clean one; if none is clean, below the target,
+ * which by construction never covers the target itself.
+ *
+ * Pure: rectangles in, a rectangle out, all in viewport coordinates. The
+ * component measures, this decides, and a spec can hold the decision without
+ * a browser.
+ */
+export const COACH_WIDTH = 320;
+export const COACH_GAP = 12;
+const EDGE = 16;
+
+export interface CoachRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+export interface CoachViewport {
+  width: number;
+  height: number;
+  /** The bottom of the sticky bar — nothing counts as visible above it. */
+  top: number;
+  scrollY: number;
+}
+
+export type CoachSide = 'below' | 'above' | 'right' | 'left';
+
+export interface CoachPlacement {
+  side: CoachSide;
+  /** Viewport coordinates of the popover's corner. */
+  top: number;
+  left: number;
+  /** Offset of the arrow along the edge that faces the target. */
+  arrow: number;
+}
+
+export function rectsIntersect(a: CoachRect, b: CoachRect): boolean {
+  return a.left < b.left + b.width && b.left < a.left + a.width && a.top < b.top + b.height && b.top < a.top + a.height;
+}
+
+export function placeCoachMark(input: {
+  target: CoachRect;
+  point: CoachRect;
+  popover: { width: number; height: number };
+  avoid: readonly CoachRect[];
+  viewport: CoachViewport;
+}): CoachPlacement {
+  const { target: t, point, popover: p, viewport: v } = input;
+  const clampX = (x: number) => Math.min(Math.max(EDGE, x), Math.max(EDGE, v.width - p.width - EDGE));
+  const x = clampX(point.left);
+  const arrowX = Math.min(Math.max(16, point.left - x + 16), p.width - 24);
+  const sideY = Math.min(Math.max(16, point.top - t.top + 16), Math.max(16, p.height - 24));
+  const candidates: CoachPlacement[] = [
+    { side: 'below', top: t.top + t.height + COACH_GAP, left: x, arrow: arrowX },
+    { side: 'right', top: t.top, left: t.left + t.width + COACH_GAP, arrow: sideY },
+    { side: 'left', top: t.top, left: t.left - COACH_GAP - p.width, arrow: sideY },
+    { side: 'above', top: t.top - COACH_GAP - p.height, left: x, arrow: arrowX },
+  ];
+  const box = (c: CoachPlacement): CoachRect => ({ top: c.top, left: c.left, width: p.width, height: p.height });
+  const onPage = (c: CoachPlacement) => c.left >= EDGE - 0.5 && c.left + p.width <= v.width - EDGE + 0.5 && c.top + v.scrollY >= 0;
+  const clean = (c: CoachPlacement) => onPage(c) && !rectsIntersect(box(c), t) && !input.avoid.some((r) => rectsIntersect(box(c), r));
+  // Near: the tip and the start of its target fit on one screen together.
+  const head = Math.min(t.height, 120);
+  const near = (c: CoachPlacement) =>
+    Math.max(c.top + p.height, t.top + head) - Math.min(c.top, t.top) <= v.height - v.top - EDGE;
+  return candidates.find((c) => clean(c) && near(c)) ?? candidates.find(clean) ?? candidates[0];
+}
+
+/**
+ * How far to scroll so a mark and its target are both in view — 0 when they
+ * already are. On a phone the mark is a sheet over the bottom of the screen,
+ * so the target is brought to the top of the part the sheet leaves free.
+ */
+export function scrollToShow(input: { target: CoachRect; popover: CoachRect; sheet: boolean; viewport: CoachViewport }): number {
+  const { target: t, popover: p, viewport: v } = input;
+  const top = v.top + EDGE;
+  if (input.sheet) {
+    const free = p.top - COACH_GAP;
+    const fits = t.top >= top && t.top + t.height <= free;
+    return fits ? 0 : Math.round(t.top - top);
+  }
+  const from = Math.min(t.top, p.top);
+  const to = Math.max(t.top + Math.min(t.height, 120), p.top + p.height);
+  if (from >= top && to <= v.height - EDGE) return 0;
+  return Math.round(from - top);
+}
+
+/**
+ * The element a mark points at: of everything carrying its
+ * `data-coach-target`, the smallest one that is on screen — in IT the Not
+ * determined figure of the answer rather than the whole list further down.
+ */
+export function coachTargetFor(id: CoachMarkId): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  const all = Array.from(document.querySelectorAll<HTMLElement>(`[data-coach-target="${id}"]`));
+  const shown = all
+    .map((el) => ({ el, r: el.getBoundingClientRect() }))
+    .filter(({ r }) => r.width > 0 && r.height > 0)
+    .sort((a, b) => a.r.width * a.r.height - b.r.width * b.r.height);
+  return shown[0]?.el ?? all[0] ?? null;
 }

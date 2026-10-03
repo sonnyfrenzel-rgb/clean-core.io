@@ -24,6 +24,7 @@ import type { ExecutiveFigure, ExecutiveSummary, ExecutiveTarget } from '@/lib/m
 import { STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
 import { PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 import InfoPopover from './InfoPopover';
+import GlossaryTerm from '@/components/GlossaryTerm';
 
 /**
  * The decision panel on top of the Management view — what a manager reads in
@@ -437,7 +438,12 @@ export default function ManagementExecutive({
       <div data-executive-decision="" className={cn(CARD, 'lg:col-span-5')}>
         {coach}
         <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-          <span className={cn(LABEL, 'mr-2')}>{wt('exec.questionLabel')}</span>
+          <span className={cn(LABEL, 'mr-2')}>
+            {/* "Decision" is the program decision only; a branch in the code is
+                a decision point (owner, 03.10.2026). The term opens by tap or
+                keyboard, never on hover alone. */}
+            <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+          </span>
           {s.question}
         </p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">

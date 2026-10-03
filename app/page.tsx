@@ -562,7 +562,7 @@ export default function Home() {
                         idPrefix="hero"
                         fit
                         maxHeight={520}
-                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decision points in it that end the process. Every element carries its line anchor.`}
                       />
                     </div>
                     {/* A phone gets the same excerpt drawn narrow, at its own width, never scrolled sideways. */}
@@ -833,7 +833,7 @@ export default function Home() {
             <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} vertical={referenceVertical} title={referenceProcess.program} />
             <div className="feat4">
               {[
-                { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
+                { t: 'Every element points to its lines', d: 'Start and end events, tasks, decision points and sub-processes each carry a line anchor. Decision points keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
                 { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
                 { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
                 { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet. There is no connection to a Signavio workspace — only files.' },

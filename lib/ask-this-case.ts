@@ -105,7 +105,7 @@ export function preAnsweredQuestion(
     return {
       kind: 'none',
       reason:
-        'This source has no branch — no IF, no CASE, no CHECK on business data. There is therefore no decision to answer in advance, and nothing here is a question the code did not ask.',
+        'This source has no branch — no IF, no CASE, no CHECK on business data. There is therefore no decision point to answer in advance, and nothing here is a question the code did not ask.',
     };
   }
 

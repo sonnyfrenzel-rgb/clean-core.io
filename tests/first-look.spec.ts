@@ -289,7 +289,7 @@ test.describe('the question that is already answered', () => {
 test.describe('the three coach marks', () => {
   test('are the three of DESIGN.md §6.2, in its order', () => {
     expect(COACH_MARKS.map((m) => m.title)).toEqual([
-      'Select the decision',
+      'Select the decision point',
       'This is what we could not determine',
       'Your next step',
     ]);

@@ -886,7 +886,7 @@ class ModelBuilder {
   }
 }
 
-/** "2 decisions · 1 error end": the two first things a phase's plane holds, counted. */
+/** "2 decision points · 1 error end": the two first things a phase's plane holds, counted. */
 export function factOf(inner: ExportContainer): string | undefined {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const nodes = inner.nodes;
@@ -896,7 +896,7 @@ export function factOf(inner: ExportContainer): string | undefined {
   const writes = [...new Set(nodes.flatMap((n) => n.writes))];
   const calls = nodes.filter((n) => n.tag === 'serviceTask' || n.tag === 'sendTask' || n.tag === 'callActivity').length;
   const parts = [
-    decisions ? count(decisions, 'decision', 'decisions') : '',
+    decisions ? count(decisions, 'decision point', 'decision points') : '',
     errors ? count(errors, 'error end', 'error ends') : '',
     reads.length === 1 ? `reads ${reads[0]}` : reads.length ? count(reads.length, 'table read', 'table reads') : '',
     writes.length === 1 ? `writes ${writes[0]}` : writes.length ? count(writes.length, 'table written', 'tables written') : '',

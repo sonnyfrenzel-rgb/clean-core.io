@@ -80,7 +80,7 @@ test.describe('QA24-A10: the whole program reaches the document', () => {
     expect(sentence, 'the limit is not in any business statement').toBeTruthy();
     expect(processDocumentationToMarkdown(doc)).toContain('50000.00');
     // The decision itself is a step, with the same line.
-    const decision = doc.steps.find((s) => s.kind === 'Decision' && s.technicalName.includes('50000.00'));
+    const decision = doc.steps.find((s) => s.kind === 'Decision point' && s.technicalName.includes('50000.00'));
     expect(decision?.anchor?.lineStart).toBe(line);
   });
 

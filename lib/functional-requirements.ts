@@ -479,11 +479,11 @@ function ruleDraft(ctx: Ctx, rule: BusinessRule): Draft | null {
         {
           given: `a record with another ${only ? only[1].replace(/\s+\S+$/, '') : lcFirst(humaniseField(name, ctx.plain))} than ${p?.literal ?? 'this value'}`,
           when: 'the program runs',
-          then: `the record is not processed (to be confirmed: the code declares ${p?.literal ?? 'the value'} but no decision tests it directly)`,
+          then: `the record is not processed (to be confirmed: the code declares ${p?.literal ?? 'the value'} but no decision point tests it directly)`,
         },
       ],
       priority: 'should',
-      priorityReason: `A value hard-coded in the program (${firstLine}); no decision tests it directly, so where it takes effect is to be confirmed.`,
+      priorityReason: `A value hard-coded in the program (${firstLine}); no decision point tests it directly, so where it takes effect is to be confirmed.`,
       objects: [],
     };
   }
@@ -599,7 +599,7 @@ function decisionDrafts(ctx: Ctx, coveredGateways: Set<string>): Draft[] {
     const opened = [step, ...arms.flatMap((a) => a.nodes).map((n) => (n.expandsTo ? ctx.stepOfRegion.get(n.expandsTo) ?? null : null))];
     out.push({
       statement,
-      rationale: `Preserves the decision at ${lineRef(node.anchor)}: ${conditional.edge.condition}.`,
+      rationale: `Preserves the decision point at ${lineRef(node.anchor)}: ${conditional.edge.condition}.`,
       basis: { kind: 'decision', ref: node.id },
       stepId: step.id,
       anchors,

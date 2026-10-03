@@ -57,12 +57,19 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
 
   // Destructured, not passed whole: the caller builds the context object inline,
   // so a dependency on the object itself is a new array on every render.
-  const { hasDecision, hasNextStep, order } = context;
+  const { hasDecision, hasNextStep, order, only } = context;
   // Keyed on the ids, not the array: the caller may build it inline.
   const orderKey = (order ?? []).join('|');
+  const onlyKey = only ? only.join('|') : null;
   const available = useMemo(
-    () => availableCoachMarks({ hasDecision, hasNextStep, order: orderKey ? (orderKey.split('|') as CoachMarkId[]) : undefined }),
-    [hasDecision, hasNextStep, orderKey],
+    () =>
+      availableCoachMarks({
+        hasDecision,
+        hasNextStep,
+        order: orderKey ? (orderKey.split('|') as CoachMarkId[]) : undefined,
+        only: onlyKey === null ? undefined : (onlyKey.split('|').filter(Boolean) as CoachMarkId[]),
+      }),
+    [hasDecision, hasNextStep, orderKey, onlyKey],
   );
 
   const next = dismissed === null ? null : nextCoachMark(available, dismissed);

@@ -465,7 +465,7 @@ export function buildOverlays(
   const overlays: OverlayDefinition[] = [
     { key: 'hard-coded', label: 'Hard-coded', ids: [...hardCoded.keys()], marks: hardCoded },
     { key: 'not-determined', label: 'Not determined', ids: [...notDetermined.keys()], marks: notDetermined },
-    { key: 'decisions', label: 'Decisions', ids: [...decisions.keys()], marks: decisions },
+    { key: 'decisions', label: 'Decision points', ids: [...decisions.keys()], marks: decisions },
   ];
   return rulesState === 'ready' ? overlays : overlays.filter((overlay) => overlay.key !== 'hard-coded');
 }
@@ -484,7 +484,7 @@ export interface PlaneProblems {
   elements: number;
   /** The lines of the source this level was read from, when anything on it is anchored. */
   lines: { lineStart: number; lineEnd: number } | null;
-  /** *"2 decisions · 3 hard-coded · 1 not determined"* — §5.9 item 4. */
+  /** *"2 decision points · 3 hard-coded · 1 not determined"* — §5.9 item 4. */
   counters: string;
   /** What is **not determined** on this level, in one sentence. Never empty. */
   text: string;
@@ -539,7 +539,7 @@ export function planeProblems(
 
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const counters = [
-    plural(decisions, 'decision', 'decisions'),
+    plural(decisions, 'decision point', 'decision points'),
     `${hardCoded.length} hard-coded`,
     `${unanchored.length} not determined`,
   ].join(' · ');

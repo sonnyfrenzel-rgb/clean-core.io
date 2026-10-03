@@ -709,7 +709,7 @@ export function workspaceLayers(
         needRows.length > 0
           ? [
               process ? plural(process.steps, 'step') : null,
-              process ? plural(process.decisions, 'decision') : null,
+              process ? plural(process.decisions, 'decision point') : null,
               ruleRows.length > 0 ? plural(ruleRows.length, 'rule') : null,
               usageRows.length > 0 ? plural(usageRows.length, 'object with usage') : null,
             ]
@@ -892,11 +892,11 @@ export function toolMark(tool: { key: PhaseKey; state: PhaseState }): {
 export { phaseTone };
 
 /**
- * "Reconstructed: 6 steps, 1 decision, 2 rules hard-coded" — the Need &
+ * "Reconstructed: 6 steps, 1 decision point, 2 rules hard-coded" — the Need &
  * process row for the map of the signed source. The numbers are the map's own
  * (`lib/process-summary.ts`); the rules are the rule reader's.
  */
 export function processSummarySentence(process: ProcessSummary, rules: number): string {
   const n = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
-  return `Reconstructed: ${n(process.steps, 'step', 'steps')}, ${n(process.decisions, 'decision', 'decisions')}, ${n(rules, 'rule', 'rules')} hard-coded`;
+  return `Reconstructed: ${n(process.steps, 'step', 'steps')}, ${n(process.decisions, 'decision point', 'decision points')}, ${n(rules, 'rule', 'rules')} hard-coded`;
 }
