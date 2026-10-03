@@ -25,8 +25,9 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// Roadmap 17.10's `statement-proposal` is built on the naming route and held to the same gate.
-const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'process-revisions', 'process-states'] as const;
+// Roadmap 17.10's `statement-proposal` is built on the naming route and held to the same gate,
+// and 3.0.1's `requirement-wording` on `statement-proposal`.
+const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'requirement-wording', 'process-revisions', 'process-states'] as const;
 const routeSource = (name: string) =>
   fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', name, 'route.ts'), 'utf8');
 
