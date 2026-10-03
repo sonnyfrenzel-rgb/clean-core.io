@@ -672,7 +672,10 @@ jobs:
       ? `/project/${projectId}?view=management`
       : stage === 'delivery'
         ? '#audit-pack'
-        : `/project/${projectId}/${stage}`;
+        : stage === 'testing' && isAbapCloud
+          ? // ADR-075: on the ABAP Cloud route the result is recorded there.
+            `/project/${projectId}/testing#testing-sap-result`
+          : `/project/${projectId}/${stage}`;
   const neededWhere = (stage: StillNeeded['stage']) =>
     stage === 'management' ? 'Management view' : PHASES.find((p) => p.key === stage)?.label ?? stage;
 

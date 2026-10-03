@@ -70,6 +70,22 @@ export interface CanvasService {
   focus?(): void;
 }
 
+/**
+ * The sub-processes above and at the plane on show, outermost first — the
+ * editor's level path. A plane of a collapsed sub-process has that
+ * sub-process as its business object; the top plane has the process (or the
+ * collaboration), and an empty path.
+ */
+export function editorLevelPath(root: Shape | null): { plane: string; name: string }[] {
+  const path: { plane: string; name: string }[] = [];
+  let bo: BusinessObject | undefined = root?.businessObject;
+  while (bo && bo.id && /(SubProcess|Transaction)$/.test(bo.$type ?? '')) {
+    path.unshift({ plane: bo.id, name: bo.name ?? '' });
+    bo = bo.$parent as BusinessObject | undefined;
+  }
+  return path;
+}
+
 export interface ModelingService {
   createShape(shape: Shape, position: Point, parent: Shape): Shape;
   connect(source: Shape, target: Shape): unknown;

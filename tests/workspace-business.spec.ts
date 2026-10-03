@@ -137,9 +137,11 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     ).toHaveAttribute('data-layer-state', 'on');
     await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
-    // The order since ADR-072: answer → map → Next step → layer → folded Not determined.
+    // The order since 03.10.2026 (owner: "show more prominently what I as a
+    // user should do here"): Next step → answer → map → rules → layer → folded
+    // Not determined.
     const tops = await page.evaluate(() =>
-      ['[data-first-look]', '[data-workspace-process]', '[data-next-step]', '[data-workspace-layer-section]', '#not-determined'].map(
+      ['[data-next-step]', '[data-first-look]', '[data-workspace-process]', '[data-workspace-rules-block]', '[data-workspace-layer-section]', '#not-determined'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;

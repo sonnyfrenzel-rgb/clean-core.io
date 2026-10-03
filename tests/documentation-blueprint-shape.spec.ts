@@ -240,33 +240,43 @@ test.describe('the documentation is read from the code, and a legacy blueprint s
     }
   });
 
+  /**
+   * The model switched off for this browser: `/api/model-stages` answers with
+   * no key, so opening the stage writes only what the engine reads and calls no
+   * model (owner 03.10.2026 — the business layer starts on its own only where a
+   * model is available).
+   */
+  async function modelOff(page: import('@playwright/test').Page) {
+    await page.route('**/api/model-stages', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ stages: {}, keyAvailable: false, keySource: null }),
+    }));
+  }
+
   /** Signs in through the real form, as the other rendered specs do. */
   async function signIn(page: import('@playwright/test').Page) {
     await signInViaLanding(page, EMAIL, PASSWORD);
   }
 
-  test('the button reads the whole source, calls no model and stores the engine form', async ({ page }) => {
+  test('opening the stage reads the whole source, calls no model and stores the engine form', async ({ page }) => {
     test.setTimeout(180 * 1000);
     let modelCalls = 0;
     await page.route('**/api/gemini', (route) => {
       modelCalls += 1;
       return route.abort();
     });
+    await modelOff(page);
 
     await signIn(page);
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
 
-    // Nothing is written by opening the stage.
-    const generate = page.locator('[data-generate-blueprint]');
-    await expect(generate).toBeEnabled({ timeout: 60000 });
-    expect((await adminGetDoc('projects', PROJECT_ID))?.documentation ?? null).toBeNull();
-
-    await generate.click();
+    // Owner 03.10.2026: opening the stage writes the document — no click.
     const view = page.locator('[data-engine-documentation]');
-    await expect(view).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-doc-gaps]')).toContainText('Process owner');
-    await expect(page.locator('[data-doc-statements]')).toContainText('50000.00');
-
+    await expect(view).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-process-document]')).toBeVisible();
+    await expect(page.locator('[data-doc-section="questions"]')).toContainText('Who owns this process');
+    await expect(page.locator('[data-doc-section="rules"]')).toContainText('50000.00');
     const stored = await adminGetDoc('projects', PROJECT_ID);
     const doc = JSON.parse(String(stored?.documentation));
     expect(doc.format).toBe('engine-process-documentation');

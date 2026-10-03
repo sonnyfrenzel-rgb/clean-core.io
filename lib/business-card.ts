@@ -30,6 +30,7 @@
 
 import type { BusinessRule, BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSkeleton } from './abap/process-skeleton';
+import type { ProcessFacts } from './abap/process-facts';
 import {
   conditionToPhrase,
   humaniseField,
@@ -258,6 +259,7 @@ const NAMED_TABLES = 3;
 export function summaryOf(
   dependencies: readonly Pick<TableDependency, 'table' | 'access'>[],
   wording: PlainWording,
+  inputs?: ProgramInputs | null,
 ): CardSummary {
   const reads: string[] = [];
   const writes: string[] = [];
@@ -265,13 +267,7 @@ export function summaryOf(
     if (d.access === 'read' && !reads.includes(d.table)) reads.push(d.table);
     if (d.access === 'write' && !writes.includes(d.table)) writes.push(d.table);
   }
-  if (reads.length === 0 && writes.length === 0) {
-    return {
-      kind: 'none',
-      sentence: 'The program names no database table, so this view cannot say what data it works on.',
-      technical: '',
-    };
-  }
+  if (reads.length === 0 && writes.length === 0) return summaryWithoutTables(inputs ?? null);
   const part = (verb: string, tables: string[]): string => {
     const worded = tables
       .map((t) => wording.table(t))
@@ -295,6 +291,80 @@ export function summaryOf(
     writes.length > 0 ? `changes ${writes.join(', ')}` : null,
   ].filter((c): c is string => c !== null);
   return { kind: 'touches', sentence: sentences.join(' '), technical: technical.join(' · ') };
+}
+
+/**
+ * What a program works on when it names no table — its inputs, the calls it
+ * makes and whether it prints a list, all read off the statements (owner,
+ * 03.10.2026: "The program names no database table, so this view cannot say
+ * what data it works on" told the reader what the page could not say, not
+ * what the program does).
+ */
+export interface ProgramInputs {
+  /** `PARAMETERS` and `SELECT-OPTIONS`, by their names in the code, in order. */
+  parameters: string[];
+  /** Function modules called, each once. */
+  functionModules: string[];
+  transactions: number;
+  submits: number;
+  /** Subroutines the source defines. */
+  routines: number;
+  /** True when the program writes a classic list (`WRITE`). */
+  listOutput: boolean;
+}
+
+const INPUT_KEYWORDS = new Set(['PARAMETERS', 'PARAMETER', 'SELECT-OPTIONS']);
+
+export function programInputsOf(facts: ProcessFacts, name: (raw: string) => string = (raw) => raw): ProgramInputs {
+  const parameters: string[] = [];
+  let listOutput = false;
+  for (const statement of facts.statements) {
+    if (statement.keyword === 'WRITE') listOutput = true;
+    if (!INPUT_KEYWORDS.has(statement.keyword)) continue;
+    const raw = statement.text.replace(/^\S+\s*:?\s*/, '').split(/[\s(,.]/)[0]?.trim();
+    if (!raw || !/^[A-Za-z_][\w/]*$/.test(raw)) continue;
+    // Named as a reader would name it where the wording knows a word for it
+    // ("Personnel number"), else as the code names it.
+    const shown = name(raw.toUpperCase()) || raw.toUpperCase();
+    if (!parameters.includes(shown)) parameters.push(shown);
+  }
+  const fms = [...new Set(facts.calls.functionModules.map((f) => f.name).filter((n): n is string => !!n))];
+  return {
+    parameters,
+    functionModules: fms,
+    transactions: facts.calls.transactions.length,
+    submits: facts.calls.submits.length,
+    routines: facts.calls.forms.length,
+    listOutput,
+  };
+}
+
+/** The sentence for a program that names no table — what it does work on, not what the page cannot say. */
+export function summaryWithoutTables(inputs: ProgramInputs | null): CardSummary {
+  if (!inputs) {
+    return { kind: 'none', sentence: 'It names no database table.', technical: '' };
+  }
+  const parts: string[] = [];
+  if (inputs.parameters.length > 0) {
+    parts.push(`${inputs.parameters.length === 1 ? 'its input' : 'its inputs'} ${joinList(inputs.parameters)}`);
+  }
+  if (inputs.functionModules.length > 0) parts.push(plural(inputs.functionModules.length, 'function module call', 'function module calls'));
+  if (inputs.transactions > 0) parts.push(plural(inputs.transactions, 'transaction call', 'transaction calls'));
+  if (inputs.submits > 0) parts.push(plural(inputs.submits, 'call of another program', 'calls of other programs'));
+  const list = inputs.listOutput ? 'prints a list' : null;
+  const works =
+    parts.length > 0
+      ? `It works with ${joinList(parts)}${list ? `, and ${list}` : ''}.`
+      : list
+        ? `It ${list}.`
+        : 'Its inputs and calls are not visible in the code either.';
+  const technical = [
+    inputs.parameters.length > 0 ? `inputs ${inputs.parameters.join(', ')}` : null,
+    inputs.functionModules.length > 0 ? `calls ${inputs.functionModules.join(', ')}` : null,
+  ]
+    .filter((c): c is string => c !== null)
+    .join(' · ');
+  return { kind: 'none', sentence: `It names no database table. ${works}`, technical };
 }
 
 function cardRule(rule: BusinessRule, wording: PlainWording): CardRule {
@@ -343,6 +413,8 @@ export function buildBusinessCard(input: {
   traceability: Traceability;
   open: NotDetermined;
   wording?: PlainWording;
+  /** What the program works on when it names no table — `programInputsOf`. */
+  inputs?: ProgramInputs | null;
 }): BusinessCard {
   const wording = input.wording ?? NO_WORDING;
   const rules = input.ruleSet.rules.map((r) => cardRule(r, wording));
@@ -393,7 +465,7 @@ export function buildBusinessCard(input: {
   ];
 
   return {
-    summary: summaryOf(input.dependencies, wording),
+    summary: summaryOf(input.dependencies, wording, input.inputs ?? null),
     facts,
     featured: featuredRules(rules, input.ruleSet),
     rules,

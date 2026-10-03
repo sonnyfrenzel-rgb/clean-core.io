@@ -131,6 +131,7 @@ test.describe('a stage as a tool, rendered', () => {
             el.getAttribute('data-workspace-tool-mark-meaning'),
             el.querySelectorAll('[data-workspace-tool-mark="check"]').length,
             el.querySelectorAll('[data-workspace-tool-mark="dot"]').length,
+            el.querySelectorAll('[data-workspace-tool-mark="half"]').length,
           ].join(':'),
         ),
       );
@@ -139,10 +140,10 @@ test.describe('a stage as a tool, rendered', () => {
       // Each mark is the tools-bar rule (ADR-060, owner 02.10.2026): a check
       // where the tool was used, a dot where it is out of date, nothing else.
       for (const r of reading) {
-        const [key, state, meaning, checks, dots] = r.split(':');
+        const [key, state, meaning, checks, dots, halves] = r.split(':');
         const want = toolMark({ key: key as PhaseKey, state: state as PhaseState });
-        expect(`${key}:${meaning}:${checks}:${dots}`, `${st}: ${key}`).toBe(
-          `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}`,
+        expect(`${key}:${meaning}:${checks}:${dots}:${halves}`, `${st}: ${key}`).toBe(
+          `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}:${want.kind === 'half' ? 1 : 0}`,
         );
       }
       // The legend stands beside "Tools" on every stage.
@@ -199,6 +200,7 @@ test.describe('a stage as a tool, rendered', () => {
         const want = toolMark(step);
         await expect(link.locator('[data-workspace-tool-mark="check"]'), `demo ${st}: ${step.key} check`).toHaveCount(want.kind === 'check' ? 1 : 0);
         await expect(link.locator('[data-workspace-tool-mark="dot"]'), `demo ${st}: ${step.key} dot`).toHaveCount(want.kind === 'dot' ? 1 : 0);
+        await expect(link.locator('[data-workspace-tool-mark="half"]'), `demo ${st}: ${step.key} started`).toHaveCount(want.kind === 'half' ? 1 : 0);
         await expect(link, `demo ${st}: ${step.key} claims proof`).not.toHaveAccessibleName(/prove|proof|verif/i);
       }
       // The way back, above the tools, as on a project's stage (owner 02.10.2026).

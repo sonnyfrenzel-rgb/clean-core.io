@@ -23,6 +23,7 @@ import { STATE_CLASSES } from '@/components/cc/state';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import { SUPPORT_LEVEL_STATE } from '@/lib/support-level';
 import { callGemini } from '@/lib/gemini';
+import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import type { Project } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
@@ -732,10 +733,8 @@ CMD ["node", "srv/service.js"]`
 
       console.log('Transforming code for project:', projectRef.current?.name);
 
-      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
-      
       let filesArray: ProjectFile[] = [];
-      
+
       // An answer that is not the agreed JSON is a failed *generation*, not a
       // file. This used to end in a catch that wrapped the raw text as
       // `srv/service.ts`: a refusal, a quota notice or any stretch of prose
@@ -745,21 +744,42 @@ CMD ["node", "srv/service.js"]`
       // review of b88c77b, 55cf6c0ed62a). It is reported the same way an empty
       // answer is, a few lines down — nothing is saved, the previous artefact
       // stands.
-      let result: unknown;
-      try {
-        result = JSON.parse(responseText || '{}');
-      } catch {
-        // One attempt at an object inside a markdown fence is still worth
-        // making: that is a formatting slip, not a refusal.
-        const match = responseText?.match(/\{[\s\S]*\}/);
-        try {
-          result = match ? JSON.parse(match[0]) : undefined;
-        } catch {
-          result = undefined;
+      //
+      // Owner report 03.10.2026: a complete answer for Z_MM_PO_APPROVAL failed
+      // here on the first try and passed on the second. The model had written
+      // the ABAP escape `\{` into a JSON string (`lib/model-json.ts` holds the
+      // evidence). The request now carries the stage's schema
+      // (`lib/model-response-schema.ts`), the parse tolerates the spelling
+      // slips it can read without guessing, and an answer that is still
+      // unusable — not JSON, or cut off — gets one automatic second call before
+      // the reader sees an error. Each call is its own proxy request, counted
+      // against the account's rate limit like any other; the log says when the
+      // second one is made. Nothing is stored from a failed attempt.
+      const MAX_ATTEMPTS = 2;
+      let result: Record<string, unknown> | null = null;
+      let failure: UnusableAnswer = 'not-json';
+      let attempts = 0;
+      while (!result && attempts < MAX_ATTEMPTS) {
+        if (attempts > 0) {
+          const notice = retryNotice(failure);
+          setTransformationLog(prev => [...prev, notice]);
         }
+        attempts++;
+        let responseText: string;
+        try {
+          responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
+        } catch (callErr) {
+          const unusable = unusableFromModelError(callErr);
+          if (!unusable) throw callErr;
+          failure = unusable;
+          continue;
+        }
+        const read = parseModelJsonObject(responseText);
+        if (read.ok) result = read.value;
+        else failure = read.reason;
       }
-      if (!result || typeof result !== 'object') {
-        throw new Error('The model answered with text instead of the JSON this stage asked for. Nothing was saved — the previous version is untouched. Try the generation again.');
+      if (!result) {
+        throw new Error(unusableAnswerMessage(failure, attempts));
       }
 
       const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };

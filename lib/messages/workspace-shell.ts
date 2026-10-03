@@ -42,18 +42,20 @@ export const WORKSPACE_SHELL_MESSAGES = {
 
   // The tools, the status line and "Next step" — ToolBar, StatusLine, NextStepCard.
   'tools.label': 'Tools',
-  // What the mark beside a tool says to a screen reader and in its tooltip:
-  // has this tool been used in this project (Sonny 02.10.2026, ADR-060). It
-  // never says how strong the record is — that is the stepper's and the chips'.
-  // Since 03.10.2026 the check means the tool's own output is on record —
-  // Analyze a signed run, not a staged source.
-  'tools.mark.used': 'on record',
+  // What the mark beside a tool says to a screen reader (ADR-060). It never
+  // says how strong the record is — that is the stepper's and the chips'.
+  // Owner 03.10.2026: "a check must mean done" — the check is a phase that is
+  // done; output that is on record without being done is "started".
+  'tools.mark.done': 'done',
+  'tools.mark.started': 'started, not done',
   'tools.mark.stale': 'out of date',
-  'tools.mark.usedHint': 'Something of this tool is on record for this project',
+  'tools.mark.doneHint': 'Done for this project',
+  'tools.mark.startedHint': 'Started — something of this tool is on record, and its work is not done',
   'tools.mark.staleHint': 'Out of date — inputs changed since',
   // The legend beside "Tools" and at the top of the phone menu.
   'tools.legend.label': 'What the marks mean:',
-  'tools.legend.used': 'on record',
+  'tools.legend.done': 'done',
+  'tools.legend.started': 'started',
   'tools.legend.stale': 'out of date',
   // Which tool, for what, and which one next (owner 03.10.2026). Guidance,
   // not a mark: kept apart from the `tools.` words, which never speak of proof.

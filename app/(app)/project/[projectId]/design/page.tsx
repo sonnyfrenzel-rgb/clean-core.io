@@ -3,11 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
-import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-react';
@@ -18,17 +18,12 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
-import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff, { architectureOptionLabel, type TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { withPreviewPolicy } from '@/lib/export-preview';
-
-// Helper imports from components
-import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
-import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrations';
 
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -37,14 +32,6 @@ import StageFooter from '@/components/StageFooter';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
-import ArchitectureOverview from '@/components/design/ArchitectureOverview';
-import SyncPatternCard from '@/components/design/SyncPatternCard';
-import ProjectBlueprintExplorer from '@/components/design/ProjectBlueprintExplorer';
-import ApiEndpointsCatalog from '@/components/design/ApiEndpointsCatalog';
-import ApiBusinessHubMapping from '@/components/design/ApiBusinessHubMapping';
-import CloudServiceIntegrations from '@/components/design/CloudServiceIntegrations';
-import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChecklist';
-import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
 import FunctionalRequirements from '@/components/design/FunctionalRequirements';
@@ -53,10 +40,9 @@ import { getRunCapabilities } from '@/lib/run-capabilities';
 import LegacyRunBanner from '@/components/LegacyRunBanner';
 import SectionBoundary from '@/components/SectionBoundary';
 import type { NFRData } from '@/components/design/NonFunctionalRequirements';
-import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
-import { detectFindings, summarize } from '@/lib/abap/findings-detector';
+import type { SupportFinding } from '@/lib/abap/class-model';
+import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
-import type { SourceFile } from '@/lib/abap/findings-detector';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import { workflowSteps, staleness, previousBasis, generationPrerequisites } from '@/lib/workflow-steps';
@@ -71,6 +57,18 @@ import DesignCanvasStage, { type DesignDocSection } from '@/components/design/De
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { DESIGN_GENERATION_CEILING_MS } from '@/lib/model-stages';
+import { isProjectOwner } from '@/lib/project-readers';
+import {
+  claimDesignLease,
+  designInFlight,
+  designLeaseKey,
+  otherTabWriting,
+  releaseDesignLease,
+  trackDesignGeneration,
+} from '@/lib/design-generation-lease';
+import DesignWritingState from '@/components/design/DesignWritingState';
+import DesignDocument, { isSideBySideDesign } from '@/components/design/DesignDocument';
 
 
 /**
@@ -184,26 +182,38 @@ const DESIGN_ANSWER_REMINDER =
 
 const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
+/** Said when the generation outlasts `DESIGN_GENERATION_CEILING_MS`. */
+const CEILING_TEXT = `The model did not answer within ${Math.round(DESIGN_GENERATION_CEILING_MS / 1000)} s. Nothing was saved — try again.`;
+
+/** This tab, for the lease another tab reads (`lib/design-generation-lease.ts`). */
+const DESIGN_TAB = Math.random().toString(36).slice(2);
+
+/** How long a fresh lease is given to settle across tabs before the model is called. */
+const LEASE_SETTLE_MS = 250;
+
 export default function DesignPage() {
   const { projectId } = useParams();
-  const { profile } = useUserProfile();
+  useUserProfile();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
   const modelAvailability = useModelAvailability();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [design, setDesign] = useState('');
-  const router = useRouter();
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [nfrData, setNfrData] = useState<NFRData | null>(null);
   const [designError, setDesignError] = useState<string | null>(null);
-
-
-  const [activeTerm, setActiveTerm] = useState<string | null>(null);
-  const [activeService, setActiveService] = useState<any | null>(null);
-  const [copied, setCopied] = useState(false);
+  /**
+   * When the solution design this page is writing was started, or `null`
+   * (ADR-070, amended 03.10.2026: Design writes it on opening). `elsewhereSince`
+   * is the same for a generation another tab of this browser holds.
+   */
+  const [generatingSince, setGeneratingSince] = useState<number | null>(null);
+  const [elsewhereSince, setElsewhereSince] = useState<number | null>(null);
+  const generating = generatingSince !== null;
+  /** The signed-in account owns the project; an invited reader never starts a generation. */
+  const [isOwner, setIsOwner] = useState(false);
   const projectRef = useRef(project);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Re-derive findings from project.legacyCode for construct coupling
   const findings = useMemo<SupportFinding[]>(() => {
@@ -217,28 +227,6 @@ export default function DesignPage() {
     }
   }, [project?.legacyCode]);
 
-  // Check localStorage for dismissed banner
-  useEffect(() => {
-    if (projectId) {
-      const key = `signoff-banner-dismissed-${projectId}`;
-      setBannerDismissed(localStorage.getItem(key) === 'true');
-    }
-  }, [projectId]);
-
-  const dismissBanner = () => {
-    setBannerDismissed(true);
-    if (projectId) {
-      localStorage.setItem(`signoff-banner-dismissed-${projectId}`, 'true');
-    }
-  };
-
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-
   useEffect(() => {
     projectRef.current = project;
   }, [project]);
@@ -246,19 +234,90 @@ export default function DesignPage() {
   /** The signed source and the server's evidence, for the design prompt — kept current below. */
   const engineEvidenceRef = useRef<{ source: string | null; evidence: DesignEvidence | null }>({ source: null, evidence: null });
 
-  const generateDesign = useCallback(async (analysis: string | null) => {
-    setLoading(true);
+  /**
+   * The design on record now, read again — what a page adopts when another
+   * writer (a tab, an earlier mount of this page) saved one, so it is shown
+   * instead of being paid for a second time.
+   */
+  const adoptStoredDesign = useCallback(async () => {
+    try {
+      const stored = await loadProjectAndHydrate(projectId as string);
+      if (stored) {
+        setProject(stored);
+        if (stored.solutionDesign) {
+          setDesign(stored.solutionDesign);
+          setNfrData((stored as { nonFunctionalRequirements?: NFRData | null }).nonFunctionalRequirements ?? null);
+        }
+      }
+    } catch (err) {
+      console.error('[Design] The stored design could not be read again:', err);
+    } finally {
+      setElsewhereSince(null);
+      setGeneratingSince(null);
+    }
+  }, [projectId]);
+
+  /**
+   * Writes the solution design. `open` is the generation the stage starts by
+   * itself when it is opened; `asked` is the reader's own Regenerate or Try
+   * again. Only `open` defers to a design another writer saved meanwhile — an
+   * asked regeneration is asked for.
+   */
+  const generateDesign = useCallback((analysis: string | null, mode: 'open' | 'asked' = 'asked'): Promise<void> => {
+    const id = projectId as string;
+    // Never twice: a generation of this page already running (StrictMode, a
+    // second mount) is waited for, and one another tab holds is not repeated.
+    const running = designInFlight(id);
+    if (running) {
+      setGeneratingSince((since) => since ?? Date.now());
+      return running.then(adoptStoredDesign, adoptStoredDesign);
+    }
+    if (!claimDesignLease(id, DESIGN_TAB)) {
+      setElsewhereSince(otherTabWriting(id, DESIGN_TAB)?.since ?? Date.now());
+      return Promise.resolve();
+    }
+    return trackDesignGeneration(id, (async () => {
+    setGeneratingSince(Date.now());
     setDesignError(null);
-    setLoadingMessage('Architecting solution design...');
+    // Two tabs can take the lease in the same moment; storage settles on one
+    // value, and the tab whose lease it is not steps back before any model call.
+    await new Promise((resolve) => setTimeout(resolve, LEASE_SETTLE_MS));
+    const rival = otherTabWriting(id, DESIGN_TAB);
+    if (rival) {
+      setGeneratingSince(null);
+      setElsewhereSince(rival.since);
+      return;
+    }
+    setLoadingMessage('Writing the solution design (model)…');
     // The run whose analysis the caller handed in, captured before the model
     // call. The page says a design is built on the run the server signed; a
     // response that lands after another tab activated a new run would otherwise
     // be stored as that run's design, and it would not read as stale either,
     // because it differs from the design the new run recorded (codex usp-02).
     const writtenFromRun = projectRef.current?.activeRunId ?? null;
+    // The design this page showed when it started — none, or one written for a
+    // previous basis. Another design on record means somebody else wrote one.
+    const seenDesign = projectRef.current?.solutionDesign ?? '';
+    // One wait for the whole generation (`DESIGN_GENERATION_CEILING_MS`).
+    let ceilingTimer: ReturnType<typeof setTimeout> | undefined;
+    const ceiling = new Promise<never>((_, reject) => {
+      ceilingTimer = setTimeout(
+        () => reject(new DesignGenerationError(CEILING_TEXT)),
+        DESIGN_GENERATION_CEILING_MS,
+      );
+    });
+    ceiling.catch(() => undefined);
     try {
       const db = getDb();
       const projData = await loadProjectAndHydrate(projectId as string);
+      if (mode === 'open' && projData?.solutionDesign && projData.solutionDesign !== seenDesign) {
+        // Saved by another writer since this page read the project: shown, not paid for again.
+        console.log('[Design] A design was saved meanwhile; showing it instead of writing another.');
+        setProject(projData);
+        setDesign(projData.solutionDesign);
+        setNfrData((projData as { nonFunctionalRequirements?: NFRData | null }).nonFunctionalRequirements ?? null);
+        return;
+      }
       const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
       const designContext = await designContextFor(analysis, engineEvidenceRef.current);
       const isAbapCloud = !isSideBySideRoute(route);
@@ -353,9 +412,10 @@ ${DESIGN_ANSWER_REMINDER}`;
 
       let responseText: string;
       try {
-        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design');
+        responseText = await Promise.race([callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design'), ceiling]);
       } catch (err: unknown) {
         console.error('[Design] Model call failed:', err);
+        if (err instanceof DesignGenerationError) throw err;
         throw new DesignGenerationError(modelFailureText(err));
       }
       
@@ -397,7 +457,9 @@ ${DESIGN_ANSWER_REMINDER}`;
         } catch { /* the prompt goes without the engine's list */ }
         const nfrPrompt = nfrLib.nfrProposalPrompt(nfrSet, responseText);
 
-        const nfrResponse = await callGemini(nfrPrompt, PRODUCT_GEMINI_MODEL, true, 'design');
+        // What is left of the ceiling: proposals that do not come back in time
+        // are left out, the design is saved without them.
+        const nfrResponse = await Promise.race([callGemini(nfrPrompt, PRODUCT_GEMINI_MODEL, true, 'design'), ceiling]);
         if (nfrResponse) {
           try {
             const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
@@ -416,10 +478,17 @@ ${DESIGN_ANSWER_REMINDER}`;
       } catch { /* NFR generation failure is non-critical */ }
 
       const projectDoc = doc(db, 'projects', projectId as string);
+      const savedElsewhere: { data: Record<string, unknown> | null } = { data: null };
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(projectDoc);
         if ((snap.data()?.activeRunId ?? null) !== writtenFromRun) {
           throw new DesignGenerationError('The analysis of this project changed while the design was being generated, so nothing was saved. Reload the stage and generate it again.');
+        }
+        // A design opened by itself never writes over one another writer saved
+        // while this one was being written; that one is kept and shown.
+        if (mode === 'open' && String(snap.data()?.solutionDesign ?? '') !== seenDesign) {
+          savedElsewhere.data = snap.data() ?? null;
+          return;
         }
         // Codex architecture-02: refused by name before the commit rather than
         // failing in it, when the design would push the project past 1 MiB.
@@ -436,6 +505,13 @@ ${DESIGN_ANSWER_REMINDER}`;
           nonFunctionalRequirements: nfrForDesign ?? deleteField(),
         });
       });
+      if (savedElsewhere.data) {
+        const other = savedElsewhere.data;
+        setDesign(String(other.solutionDesign ?? ''));
+        setNfrData((other.nonFunctionalRequirements as NFRData | undefined) ?? null);
+        setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: String(other.solutionDesign ?? '') } : prev);
+        return;
+      }
       setDesign(responseText);
       setNfrData(nfrForDesign as NFRData | null);
       setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: responseText } : prev);
@@ -443,35 +519,71 @@ ${DESIGN_ANSWER_REMINDER}`;
       console.error('[Design] Generation FAILED:', err);
       setDesignError(err instanceof DesignGenerationError ? err.message : GENERATION_FAILED_TEXT);
     } finally {
-      setLoading(false);
+      clearTimeout(ceilingTimer);
+      setGeneratingSince(null);
       setLoadingMessage('');
     }
-  }, [projectId, profile?.byokConfigured]);
+    })().finally(() => releaseDesignLease(id, DESIGN_TAB)));
+  }, [projectId, adoptStoredDesign]);
 
   const generateDesignRef = useRef(generateDesign);
   useEffect(() => {
     generateDesignRef.current = generateDesign;
   }, [generateDesign]);
 
-  // The analysis the page would generate a first design from, held until
-  // `/api/model-stages` has answered. `loading` stays true meanwhile.
-  const [autoAnalysis, setAutoAnalysis] = useState<string | null>(null);
+  // The contract and the findings the canvas is drawn from (server routes; the
+  // catalog never reaches the browser). Re-read after a sign-off, which can
+  // move the contract's chosen route.
+  const [evidenceVersion, setEvidenceVersion] = useState(0);
+  const designEvidence = useDesignEvidence(projectId as string, Boolean(project), evidenceVersion);
+
+  // The generation the stage starts on opening (ADR-070, amended 03.10.2026),
+  // held until `/api/model-stages` has answered: with the stage off or no key,
+  // nothing is asked of the model and the reason is on screen instead.
+  const [autoStart, setAutoStart] = useState<{ narrative: string | null } | null>(null);
   const designAvailable = modelAvailability.enabled('design');
+  // It also waits for the contract and the findings (a few hundred ms), so
+  // the prompt carries the route and the levels as a Regenerate would.
+  const evidenceSettled = designEvidence.state !== 'loading';
   useEffect(() => {
-    if (autoAnalysis === null || modelAvailability.loading) return;
+    if (autoStart === null || modelAvailability.loading || !evidenceSettled) return;
     // Started from a task, not from the effect body: the effect only decides
-    // that the answer is in; a dependency change before it runs reschedules it.
+    // that the answer is in; a dependency change before it runs reschedules it,
+    // and StrictMode's second run finds the first one cleared.
     const timer = setTimeout(() => {
-      setAutoAnalysis(null);
+      setAutoStart(null);
       if (designAvailable) {
-        console.log('[Design] Auto-generating design from analysis');
-        generateDesignRef.current(autoAnalysis);
-      } else {
-        setLoading(false);
+        console.log('[Design] Writing the solution design on opening');
+        void generateDesignRef.current(autoStart.narrative, 'open');
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [autoAnalysis, modelAvailability.loading, designAvailable]);
+  }, [autoStart, modelAvailability.loading, designAvailable, evidenceSettled]);
+
+  // A tab that is closed or reloaded mid-generation gives its lease back, so
+  // the next opening is not kept waiting for a call nobody will save.
+  useEffect(() => {
+    const id = projectId as string;
+    const release = () => releaseDesignLease(id, DESIGN_TAB);
+    window.addEventListener('pagehide', release);
+    return () => window.removeEventListener('pagehide', release);
+  }, [projectId]);
+
+  // Another tab of this browser is writing it: its design is read when its
+  // lease ends, or when the lease would have run out.
+  useEffect(() => {
+    if (elsewhereSince === null) return undefined;
+    const key = designLeaseKey(projectId as string);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === key && !event.newValue) void adoptStoredDesign();
+    };
+    window.addEventListener('storage', onStorage);
+    const timer = setTimeout(() => void adoptStoredDesign(), Math.max(1_000, elsewhereSince + DESIGN_GENERATION_CEILING_MS + 15_000 - Date.now()));
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      clearTimeout(timer);
+    };
+  }, [elsewhereSince, projectId, adoptStoredDesign]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -491,18 +603,40 @@ ${DESIGN_ANSWER_REMINDER}`;
       if (data) {
         // Batch all state updates together to prevent layout shift ("wobble")
         setProject(data);
+        const stored = data as { nonFunctionalRequirements?: NFRData | null };
+        const stale = staleness(data);
+        // Written on opening (ADR-070, amended 03.10.2026) when there is none
+        // on record, or the one on record was written for a previous basis —
+        // never again when a current one is there, which would cost a model
+        // call for nothing. Only by the owner: an invited reader reads.
+        const wanted = !data.solutionDesign || (stale.design && !stale.sourceChanged);
+        const owner = isProjectOwner(data, getAuth().currentUser?.uid ?? null);
+        setIsOwner(owner);
+        const canStart = owner && !stale.sourceChanged && !data._runLoadFailed && generationPrerequisites(data, 'design').length === 0;
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
             // Restore persisted NFR data if available
-            if ((data as any).nonFunctionalRequirements) {
-              setNfrData((data as any).nonFunctionalRequirements);
+            if (stored.nonFunctionalRequirements) {
+              setNfrData(stored.nonFunctionalRequirements);
+            }
+        }
+        if (wanted && canStart) {
+            const elsewhere = otherTabWriting(projectId as string, DESIGN_TAB);
+            if (elsewhere) {
+              setElsewhereSince(elsewhere.since);
+            } else {
+              // Started above once the stage's availability is known (QA
+              // 6c4734f60aa8): a stage that is off, or has no key, gets its
+              // reason on screen instead of a request the proxy will refuse.
+              // The narrative is further context where the run has one.
+              const narrative = data.analysis
+                ? typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis
+                : null;
+              setAutoStart({ narrative });
             }
             setLoading(false);
-        } else if (data.analysis && !staleness(data).sourceChanged) {
-            // Started below once the stage's availability is known (QA
-            // 6c4734f60aa8): a stage that is off, or has no key, gets its
-            // reason on screen instead of a request the proxy will refuse.
-            setAutoAnalysis(typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis);
+        } else if (data.solutionDesign) {
+            setLoading(false);
         } else if (data._runLoadFailed) {
             // The run (which holds the analysis) could not be read — surface it instead
             // of a silent empty state, so the real cause (permissions/network) is visible.
@@ -512,9 +646,9 @@ ${DESIGN_ANSWER_REMINDER}`;
             setDesignError('Could not load the analysis run. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in stage 1.');
             setLoading(false);
         } else {
-            // No narrative (an engine-only run) or no run at all: nothing is
-            // generated on opening. The empty state offers "Generate the design"
-            // from the engine evidence, or names what is missing.
+            // No run, no source, a source changed after the run, or a reader:
+            // nothing is generated on opening. The document region names what
+            // is missing, or offers "Generate the design".
             setLoading(false);
         }
       } else {
@@ -627,11 +761,6 @@ ${DESIGN_ANSWER_REMINDER}`;
     };
   }, [design, project?.name]);
 
-  // The contract and the findings the canvas is drawn from (server routes; the
-  // catalog never reaches the browser). Re-read after a sign-off, which can
-  // move the contract's chosen route.
-  const [evidenceVersion, setEvidenceVersion] = useState(0);
-  const designEvidence = useDesignEvidence(projectId as string, Boolean(project), evidenceVersion);
   const deploymentModel: 'public' | 'private' | null =
     project?.s4Deployment === 'public' ? 'public' : project?.s4Deployment === 'private' ? 'private' : null;
   const canvasModel = useMemo(
@@ -695,7 +824,9 @@ ${DESIGN_ANSWER_REMINDER}`;
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
 
   const regenerate = () => {
-    if (stale.sourceChanged) {
+    if (!isOwner) {
+      setDesignError('Only the owner of this project writes its design. Invited readers read it.');
+    } else if (stale.sourceChanged) {
       // The analysis on file describes a previous source (QA f9aea437967e).
       setDesignError('The source changed after the signed run. Re-run the analysis in stage 1 first; a design generated now would describe the previous source.');
     } else if (designPrerequisites.length > 0) {
@@ -706,9 +837,25 @@ ${DESIGN_ANSWER_REMINDER}`;
       const narrative = project?.analysis
         ? typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis
         : null;
-      generateDesign(narrative);
+      void generateDesign(narrative, 'asked');
     }
   };
+
+  // The wait, wherever the design is being written: this page, an earlier
+  // mount of it, or another tab. A start still waiting for the model switch
+  // shows it too, so the stage never flashes an empty state before it.
+  const pendingOpen = autoStart !== null && (modelAvailability.loading || designAvailable);
+  const writingSince = generatingSince ?? elsewhereSince;
+  const writingState =
+    writingSince !== null || pendingOpen ? (
+      <DesignWritingState
+        // `pendingOpen` has not started yet; it counts from its first second.
+        since={writingSince}
+        step={loadingMessage}
+        elsewhere={generatingSince === null && elsewhereSince !== null}
+        replacing={Boolean(design)}
+      />
+    ) : null;
 
   if (loading && !design) return (
     <StageFrame stage="design" className="min-h-screen">
@@ -718,8 +865,8 @@ ${DESIGN_ANSWER_REMINDER}`;
         <div role="status" className="flex items-center gap-3 border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
           <RefreshCw size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted motion-safe:animate-spin" />
           <div className="min-w-0">
-            <h2 className="m-0 cc-text-h2 text-cc-ink">Designing Solution...</h2>
-            <p className="m-0 cc-text-cell text-cc-ink-muted">{loadingMessage || 'Loading project data...'}</p>
+            <h2 className="m-0 cc-text-h2 text-cc-ink">Opening Design…</h2>
+            <p className="m-0 cc-text-cell text-cc-ink-muted">Loading project data…</p>
           </div>
         </div>
         <div className="p-4 sm:p-8">
@@ -731,97 +878,26 @@ ${DESIGN_ANSWER_REMINDER}`;
 
   // Built after the loading return: the markdown renderer needs a DOM, and
   // the server render never has a design to show.
-  /** The nine sections a structured design carries, in the order the document reads. */
+  /**
+   * The nine sections a structured design carries, in the order the document
+   * reads. The structured design is shown by `DesignDocument` since 03.10.2026;
+   * these count what is written, for the tab's label. The older text form is
+   * still shown from here, as the overview.
+   */
   const docSections: DesignDocSection[] = (() => {
-    const proposed = (body: React.ReactNode, name: string) => <SectionBoundary name={name}>{body}</SectionBoundary>;
     if (parsedDesign) {
       const d = parsedDesign;
-      const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
       const nfrTopics = nfrData ? Object.values(nfrData).filter((v) => typeof v === 'string' && v.trim()).length : 0;
       return [
-        {
-          key: 'overview',
-          title: 'Architecture overview',
-          written: Boolean(d.architectureOverview.approachDescription),
-          excerpt: d.architectureOverview.approachDescription,
-          meta: d.architectureOverview.runtimePlatform || undefined,
-          content: proposed(
-            <div className="space-y-8">
-              <LegacyRunBanner capabilities={caps} projectId={projectId as string} />
-              {/* No model-drawn diagram any more (owner decision 01.10.2026):
-                  the engine-built canvas above is the one architecture picture;
-                  the model's text stays here as its proposal. */}
-              <ArchitectureOverview overview={d.architectureOverview} />
-            </div>,
-            'Architecture Overview',
-          ),
-        },
-        {
-          key: 'blueprint',
-          title: 'Project blueprint',
-          written: d.nodeAppBlueprint.projectStructure.length > 0,
-          meta: count(d.nodeAppBlueprint.projectStructure.length, 'file', 'files'),
-          content: proposed(<ProjectBlueprintExplorer projectStructure={d.nodeAppBlueprint.projectStructure} />, 'Project Blueprint'),
-        },
-        {
-          key: 'endpoints',
-          title: 'API endpoints',
-          written: d.nodeAppBlueprint.apiEndpoints.length > 0,
-          meta: count(d.nodeAppBlueprint.apiEndpoints.length, 'endpoint', 'endpoints'),
-          content: proposed(<ApiEndpointsCatalog apiEndpoints={d.nodeAppBlueprint.apiEndpoints} />, 'API Endpoints'),
-        },
-        {
-          key: 'mapping',
-          title: 'SAP standard API mapping',
-          written: (d.sapStandardApiMapping || []).length > 0,
-          meta: count((d.sapStandardApiMapping || []).length, 'mapping', 'mappings'),
-          content: proposed(<ApiBusinessHubMapping sapStandardApiMapping={d.sapStandardApiMapping} />, 'Business Accelerator Hub Mapping'),
-        },
-        {
-          key: 'cloud',
-          title: 'Cloud services',
-          written: d.cloudServices.length > 0,
-          meta: count(d.cloudServices.length, 'service', 'services'),
-          content: proposed(<CloudServiceIntegrations cloudServices={d.cloudServices} />, 'Cloud Service Integrations'),
-        },
-        {
-          key: 'sync',
-          title: 'Data sync pattern',
-          written: Boolean(d.dataSync.description),
-          excerpt: d.dataSync.patternName,
-          content: proposed(<SyncPatternCard dataSync={d.dataSync} />, 'Data Sync'),
-        },
-        {
-          key: 'security',
-          title: 'Security hardening',
-          written: d.securityHardening.length > 0,
-          meta: count(d.securityHardening.length, 'requirement', 'requirements'),
-          content: proposed(<SecurityHardeningChecklist securityHardening={d.securityHardening} findings={findings} />, 'Security Hardening'),
-        },
-        {
-          key: 'roadmap',
-          title: 'Roadmap',
-          written: d.roadmap.length > 0,
-          meta: count(d.roadmap.length, 'phase', 'phases'),
-          content: proposed(<ModernizationRoadmap roadmap={d.roadmap} />, 'Modernization Roadmap'),
-        },
-        {
-          key: 'nfr',
-          title: 'Non-functional requirements',
-          written: nfrTopics > 0,
-          meta: nfrTopics ? count(nfrTopics, 'topic', 'topics') : undefined,
-          // The requirements are read from the code below the document; the
-          // model's text stands there, per category, as its proposal.
-          content: (
-            <p data-nfr-moved="" className="m-0 text-[14px] text-cc-ink">
-              The non-functional requirements are read from the code, with their lines, in the section{' '}
-              <a href="#non-functional-requirements" className="font-semibold text-cc-information underline-offset-2 hover:underline">
-                Non-functional requirements
-              </a>{' '}
-              below. The model&rsquo;s proposals{nfrTopics ? ` for ${count(nfrTopics, 'topic', 'topics')}` : ''} stand there under each category, marked as proposals.
-            </p>
-          ),
-        },
+        { key: 'overview', title: 'Architecture overview', written: Boolean(d.architectureOverview.approachDescription) },
+        { key: 'blueprint', title: 'Project blueprint', written: d.nodeAppBlueprint.projectStructure.length > 0 },
+        { key: 'endpoints', title: 'API endpoints', written: d.nodeAppBlueprint.apiEndpoints.length > 0 },
+        { key: 'mapping', title: 'SAP standard API mapping', written: (d.sapStandardApiMapping || []).length > 0 },
+        { key: 'cloud', title: 'Cloud services', written: d.cloudServices.length > 0 },
+        { key: 'sync', title: 'Data sync pattern', written: Boolean(d.dataSync.description) },
+        { key: 'security', title: 'Security hardening', written: d.securityHardening.length > 0 },
+        { key: 'roadmap', title: 'Roadmap', written: d.roadmap.length > 0 },
+        { key: 'nfr', title: 'Non-functional requirements', written: nfrTopics > 0 },
       ];
     }
     // The older text form: one document, read as the overview. The rest is
@@ -853,6 +929,36 @@ ${DESIGN_ANSWER_REMINDER}`;
     ];
   })();
 
+  /**
+   * The structured design as one document (owner 03.10.2026: overview first,
+   * then groups by question). The route's reason is the engine's — the
+   * contract's sentence for the route the design is written for — and only
+   * where none was read, the run's recommendation.
+   */
+  const structuredDocument = parsedDesign ? (() => {
+    const sideBySide = isSideBySideDesign(parsedDesign);
+    const contractRead = designEvidence.state === 'ready' ? designEvidence.contract : null;
+    // The contract's headline — what is built and what was rejected — for the
+    // route the design is written for; never for the other one.
+    const sameRoute = contractRead?.route.chosen === (sideBySide ? 'side-by-side-cap' : 'in-app-rap');
+    const routeReason = contractRead && sameRoute && contractRead.summary
+      ? { text: sapNamesForDisplay(contractRead.summary), source: 'architecture contract, read from the code' }
+      : project?.recommendationJustification
+        ? { text: sapNamesForDisplay(project.recommendationJustification), source: 'the run’s recommendation' }
+        : null;
+    const nfrTopics = nfrData ? Object.values(nfrData).filter((v) => typeof v === 'string' && v.trim()).length : 0;
+    return (
+      <DesignDocument
+        design={parsedDesign}
+        routeReason={routeReason}
+        levels={designEvidence.state === 'ready' ? designEvidence.findings : null}
+        findings={findings}
+        nfrTopics={nfrTopics}
+        banner={<LegacyRunBanner capabilities={caps} projectId={projectId as string} />}
+      />
+    );
+  })() : null;
+
   // A failed generation, worded for the reader, with the one action that
   // could change it. It used to be drawn only on the empty stage, so a failed
   // *re*generation left the old design on screen and said nothing.
@@ -862,35 +968,44 @@ ${DESIGN_ANSWER_REMINDER}`;
       headline="Generation failed."
       announce
       actions={
-        modelAvailability.enabled('design') ? (
-          <CcButton variant="secondary" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
-            {design ? 'Regenerate' : 'Retry Generation'}
+        // Without a design the empty state below carries "Try again"; one
+        // button for one action.
+        design && designAvailable && isOwner ? (
+          <CcButton variant="secondary" icon={<RefreshCw size={16} aria-hidden={true} />} busy={generating} onClick={regenerate}>
+            Try again
           </CcButton>
         ) : undefined
       }
     >
       {designError}
-      {!design && ' This may happen with large ABAP programs. The retry uses a condensed analysis context.'}
     </CcMessageStrip>
   ) : null;
 
   // The document region when there is no document yet: the stage's reason, or
   // the one action that makes one.
-  const documentFallback = design ? null : !modelAvailability.enabled('design') ? (
+  const documentFallback = design ? null : writingState ? (
+    writingState
+  ) : !modelAvailability.enabled('design') ? (
     /* Roadmap 1.2 / V25-A12 — a button that can only fail is worse than
        no button. The stage says which of the two reasons applies and
        what would change it, instead of offering a generation that the
-       server will refuse. */
-    <NotGenerated
-      what="Solution design blueprint"
-      absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-      stage="design"
-      hint={
-        modelAvailability.keyAvailable
-          ? 'Turn the design stage back on in Settings to generate it.'
-          : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
-      }
-    />
+       server will refuse. The engine's parts — canvas, contract and both
+       requirement lists — stand without a model and are shown regardless. */
+    <div data-design-model-off={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'} className="flex flex-col gap-2">
+      <NotGenerated
+        what="Solution design blueprint"
+        absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+        stage="design"
+        hint={
+          modelAvailability.keyAvailable
+            ? 'Turn the design stage back on in Settings to generate it.'
+            : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
+        }
+      />
+      <Link href="/settings" data-design-settings-link="" className="self-start text-[14px] font-semibold text-cc-information underline-offset-2 hover:underline">
+        Open Settings
+      </Link>
+    </div>
   ) : designPrerequisites.length > 0 ? (
     /* Never silent: what is missing, in words, with the one action
        that puts it on record. The button stays away rather than fail. */
@@ -912,6 +1027,12 @@ ${DESIGN_ANSWER_REMINDER}`;
         </span>
       </CcMessageStrip>
     </div>
+  ) : project && !isOwner ? (
+    /* An invited reader reads: nothing is generated for them, and no button
+       offers a write the rules refuse. */
+    <CcMessageStrip state="information" headline="No solution design on record yet.">
+      <span data-design-reader-note="">The owner of this project writes it; it appears here once it is saved.</span>
+    </CcMessageStrip>
   ) : (
     <div className="space-y-4">
       {designErrorStrip}
@@ -919,14 +1040,14 @@ ${DESIGN_ANSWER_REMINDER}`;
         illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
         title="No solution design yet"
         action={
-          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate} data-design-generate="">
+          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={generating} onClick={regenerate} data-design-generate="">
             {designError ? 'Try again' : 'Generate the design'}
           </CcButton>
         }
       >
         {project?.analysis
-          ? 'Generated from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. One model call; the result is a model proposal.'
-          : 'Generated from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. One model call; the result is a model proposal.'}
+          ? 'Written from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'
+          : 'Written from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. Two model calls, the design and its non-functional proposals, not counted against your analysis runs; the result is a model proposal.'}
       </CcEmptyState>
     </div>
   );
@@ -1055,8 +1176,8 @@ ${DESIGN_ANSWER_REMINDER}`;
                 <CcButton
                   variant="ghost"
                   icon={<RefreshCw size={16} aria-hidden={true} />}
-                  busy={loading}
-                  disabled={!designAvailable || stale.sourceChanged}
+                  busy={generating}
+                  disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
                   data-design-regenerate=""
                   onClick={regenerate}
                 >
@@ -1111,12 +1232,20 @@ ${DESIGN_ANSWER_REMINDER}`;
           }
           locked={project?.approvedByArchitect === true}
           onRegenerate={regenerate}
-          regenerateDisabled={!designAvailable || stale.sourceChanged}
-          regenerating={loading}
+          regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
+          regenerating={generating}
           legacyCode={project?.legacyCode || ''}
           sections={docSections}
+          document={structuredDocument}
           documentFallback={documentFallback}
-          documentNotice={designErrorStrip}
+          documentNotice={
+            writingState || designErrorStrip ? (
+              <div className="flex flex-col gap-3">
+                {writingState}
+                {designErrorStrip}
+              </div>
+            ) : null
+          }
           routingRationale={
             caps.hasRoutingEvidence ? (
               <SectionBoundary name="Routing Rationale">

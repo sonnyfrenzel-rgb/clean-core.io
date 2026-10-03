@@ -10,7 +10,6 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
 import { Download, RefreshCw, FileCode2, Briefcase, Target, Settings, Activity, Layers, Box, Rocket, Printer, ExternalLink } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import NotGenerated from '@/components/NotGenerated';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
@@ -43,6 +42,17 @@ import {
 } from '@/lib/business-summary';
 import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messages';
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
+import { useProcessDocument } from '@/hooks/useProcessDocument';
+import ProcessDocumentView from '@/components/documentation/ProcessDocumentView';
+import { processDocumentBlocks, processDocumentFileName } from '@/lib/process-document';
+import {
+  BUSINESS_LAYER_CEILING_MS,
+  businessLayerInFlight,
+  claimBusinessLayerLease,
+  releaseBusinessLayerLease,
+  trackBusinessLayer,
+} from '@/lib/documentation-generation-lease';
+import { modelAbsenceReason } from '@/lib/model-stages';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
@@ -344,7 +354,21 @@ export default function DocumentationPage() {
     }
   }, [businessDocumentation]);
 
-  const generateBusinessDocumentation = useCallback(async () => {
+  /**
+   * Owner 03.10.2026 — the business layer is written when the stage opens,
+   * as Design writes its design: once, by the owner's browser, only while
+   * nothing current is on record. These hold one generation per tab and
+   * page (`lib/documentation-generation-lease.ts`), the moment it started for
+   * the "seconds waited" line, and the documentation each automatic start was
+   * made for, so a failed start is never repeated by itself.
+   */
+  const tabId = useRef<string | null>(null);
+  const [businessStartedAt, setBusinessStartedAt] = useState<number | null>(null);
+  const [businessElapsed, setBusinessElapsed] = useState(0);
+  const [otherTabWriting, setOtherTabWriting] = useState(false);
+  const autoBusinessFor = useRef<string | null>(null);
+
+  async function runBusinessGeneration(): Promise<void> {
     if (!project || !projectId) return;
     // Never a silent no-op (owner 03.10.2026): the reason is said where the button is.
     if (!documentation) {
@@ -358,9 +382,15 @@ export default function DocumentationPage() {
     }
 
     const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    
+
     setIsGeneratingBusinessDoc(true);
     setBusinessDocError('');
+    setBusinessStartedAt(Date.now());
+    setBusinessElapsed(0);
+    // The ceiling: past it the page stops waiting, saves nothing and offers
+    // "Try again". The call itself may still finish on the server.
+    const ceiling = new AbortController();
+    const timer = setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS);
     
     // Roadmap 3.0.5: the engine document goes in as its Markdown — the process
     // element by element with its BPMN ids, and the business statements of the
@@ -418,7 +448,15 @@ Structure the JSON exactly like this:
 }`;
 
       console.log('Generating business process compliance for project:', project.name);
-      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation');
+      let responseText: string;
+      try {
+        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation', ceiling.signal);
+      } catch (err) {
+        if (ceiling.signal.aborted) {
+          throw new Error(`The model did not answer within ${Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} seconds, so nothing was saved.`);
+        }
+        throw err;
+      }
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -443,6 +481,11 @@ Structure the JSON exactly like this:
         if (current.activeRunId !== writtenFromRun || current.documentation !== writtenFromDocumentation) {
           throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
         }
+        // Another browser stored a layer for this documentation meanwhile:
+        // that one is kept, and shown, instead of being written over.
+        if (typeof current.businessDocumentation === 'string' && current.businessDocumentation.trim()) {
+          return { kept: current.businessDocumentation as string, code: (current.generatedCode ?? project.generatedCode) as string };
+        }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, BUSINESS_WORKSPACE_FILE, formatBusinessDocsToMarkdown(responseText));
         // Codex architecture-02: the layer is written twice — as itself and
         // into the package — so it is refused by name before the commit when
@@ -450,21 +493,43 @@ Structure the JSON exactly like this:
         const size = checkProjectWrite(current, { businessDocumentation: responseText, generatedCode: merged }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
         tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
-        return merged;
+        return { kept: null, code: merged };
       });
 
       // Shown only once it is stored (52487ee4cacc): a layer the transaction
       // refused is not this project's business documentation.
-      setBusinessDocumentation(responseText);
-      setProject(prev => prev ? { ...prev, businessDocumentation: responseText, generatedCode: updatedCode } : null);
-      
+      const storedLayer = updatedCode.kept ?? responseText;
+      setBusinessDocumentation(storedLayer);
+      setProject(prev => prev ? { ...prev, businessDocumentation: storedLayer, generatedCode: updatedCode.code } : null);
+
     } catch (err: unknown) {
       console.error('Business documentation generation error:', err);
       setBusinessDocError(err instanceof Error ? err.message : String(err));
     } finally {
+      clearTimeout(timer);
       setIsGeneratingBusinessDoc(false);
+      setBusinessStartedAt(null);
     }
+  }
+
+  const generateBusinessDocumentation = useCallback(async () => {
+    if (!project || !projectId) return;
+    const leaseId = Array.isArray(projectId) ? projectId[0] : projectId;
+    // No double call: a generation of this project already running in this
+    // page, or a live lease of another tab, is waited for, not repeated.
+    if (businessLayerInFlight(leaseId)) return;
+    if (!tabId.current) tabId.current = `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const tab = tabId.current;
+    if (!claimBusinessLayerLease(leaseId, tab)) {
+      setOtherTabWriting(true);
+      return;
+    }
+    setOtherTabWriting(false);
+    const run = runBusinessGeneration();
+    await trackBusinessLayer(leaseId, run).finally(() => releaseBusinessLayerLease(leaseId, tab));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project, documentation, engineDoc]);
+
 
   /**
    * Roadmap 2.6 — the source the active run signed, and nothing else.
@@ -557,6 +622,29 @@ Structure the JSON exactly like this:
     modelAvailability,
   );
   const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
+
+  /**
+   * Owner 03.10.2026 — the process description, built as soon as the stage
+   * opens: engine only, no model call, nothing written. The run's narrative
+   * and the stored statement proposals are read where they exist and shown as
+   * proposals (`lib/process-document-build.ts`).
+   */
+  const proposalInputs = useMemo(
+    () => (statementProposal.view?.state === 'proposed'
+      ? statementProposal.view.statements.map((st) => ({
+          text: st.text,
+          anchors: st.anchors.map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })),
+          contradicts: st.contradiction !== null,
+        }))
+      : null),
+    [statementProposal.view],
+  );
+  const processDocument = useProcessDocument(
+    signedSource?.source ?? null,
+    processMap.model,
+    typeof project?.analysis === 'string' && project.analysis.trim() ? project.analysis : null,
+    proposalInputs,
+  );
 
   /**
    * Roadmap 3.0.5, Weg C — the documentation is read out of the code.
@@ -658,6 +746,84 @@ Structure the JSON exactly like this:
       setIsGeneratingDoc(false);
     }
   }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason]);
+
+  /**
+   * Generate on open (owner 03.10.2026, analogous to Design).
+   *
+   * 1. The engine document is stored as soon as the owner opens the stage of a
+   *    project whose signed source has none — or has one read from another
+   *    source. Engine only: no model, no cost, no click. A stored legacy
+   *    blueprint is not replaced by itself (the reader decides that), and a
+   *    stale state nothing would change is left to the button.
+   * 2. The business layer follows when the model is available for this stage,
+   *    the stored document is current and no layer is on record — once per
+   *    documentation, never on a reader's visit, never twice at once
+   *    (`lib/documentation-generation-lease.ts`), and never again by itself
+   *    after a failure: "Try again" is the reader's.
+   */
+  const autoDocFor = useRef<string | null>(null);
+  const signedDigest = useMemo(() => (signedSource ? sha256Hex(signedSource.source) : null), [signedSource]);
+  useEffect(() => {
+    if (!project || !isOwner || !signedSource || !signedDigest || !processMap.model || isGeneratingDoc) return;
+    const stored = readStoredDocumentation(documentation);
+    const needs = stored.kind === 'none' || (stored.kind === 'engine' && stored.doc.sourceSha256 !== signedDigest);
+    if (!needs || generationBlockers(project, 'documentation').length > 0) return;
+    const key = `${project.activeRunId ?? ''}|${signedDigest}`;
+    if (autoDocFor.current === key) return;
+    autoDocFor.current = key;
+    void generateDocumentation();
+  }, [project, isOwner, signedSource, signedDigest, processMap.model, isGeneratingDoc, documentation, generateDocumentation]);
+
+  const businessAutoReady = Boolean(
+    project && isOwner && engineDoc && signedDigest && engineDoc.sourceSha256 === signedDigest
+    && !businessDocumentation.trim() && !isGeneratingBusinessDoc && !isGeneratingDoc
+    && modelAvailability.known && !modelAvailability.loading && modelAvailability.enabled('documentation')
+    && generationBlockers(project, 'documentation').length === 0,
+  );
+  useEffect(() => {
+    if (!businessAutoReady || !project) return;
+    const key = `${project.activeRunId ?? ''}|${sha256Hex(documentation)}`;
+    if (autoBusinessFor.current === key) return;
+    autoBusinessFor.current = key;
+    void generateBusinessDocumentation();
+  }, [businessAutoReady, project, documentation, generateBusinessDocumentation]);
+
+  // A generation this page started before it was mounted again (leaving the
+  // stage and coming back): show it as running and pick up what it stored.
+  useEffect(() => {
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    if (!idStr) return;
+    const running = businessLayerInFlight(idStr);
+    if (!running || isGeneratingBusinessDoc) return;
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      setIsGeneratingBusinessDoc(true);
+      setBusinessStartedAt(Date.now());
+      setBusinessElapsed(0);
+    });
+    running.finally(async () => {
+      if (cancelled) return;
+      try {
+        const fresh = await loadProjectAndHydrate(idStr);
+        if (!cancelled && fresh?.businessDocumentation) setBusinessDocumentation(fresh.businessDocumentation);
+      } finally {
+        if (!cancelled) {
+          setIsGeneratingBusinessDoc(false);
+          setBusinessStartedAt(null);
+        }
+      }
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  // The seconds waited, said while the model writes.
+  useEffect(() => {
+    if (businessStartedAt === null) return;
+    const tick = setInterval(() => setBusinessElapsed(Math.round((Date.now() - businessStartedAt) / 1000)), 1000);
+    return () => clearInterval(tick);
+  }, [businessStartedAt]);
 
   /**
    * Roadmap 2.9 — the open level and the selection live in the URL.
@@ -968,13 +1134,25 @@ Structure the JSON exactly like this:
         : undefined,
       processSteps,
     };
-    const blob = engineDoc
-      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc, options)
+    const blob = engineDoc && processDocument.document
+      ? buildEngineConfluenceHtml(processDocument.document, parsedBusinessDoc, { ...options, projectName: project?.name })
       : parsedDoc
         ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc, options)
         : null;
     if (!blob) return;
     saveAs(blob, confluenceFileName(project?.name));
+  };
+
+  /** The process description as Markdown or Word — the same document, the same order (`processDocumentBlocks`). */
+  const downloadProcessDocument = async (format: 'md' | 'docx') => {
+    const built = processDocument.document;
+    if (!built) return;
+    const { blocksMarkdown, blocksDocx } = await import('@/lib/requirements-export');
+    const blocks = processDocumentBlocks(built, { projectName: project?.name || built.program, date: new Date().toISOString().slice(0, 10) });
+    const blob = format === 'md'
+      ? new Blob([blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
+      : await blocksDocx(blocks);
+    saveAs(blob, processDocumentFileName(project?.name, format));
   };
 
   if (loading) return (
@@ -1007,10 +1185,11 @@ Structure the JSON exactly like this:
    */
   const businessCostLine = `One model call (${PRODUCT_GEMINI_MODEL})${
     modelAvailability.keySource === 'byok' ? ', with your own Gemini key' : ''
-  }. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.`;
+  }. Opening Documentation writes it once when none is on record; it is not counted against your analysis runs and counts toward the hourly limit on model calls of this account.`;
 
-  const technicalPanel = engineDoc ? (
+  const tracePanel = engineDoc ? (
     <ProcessDocumentationView
+      appendix
       doc={engineDoc}
       proposal={{
         view: statementProposal.view,
@@ -1021,6 +1200,20 @@ Structure the JSON exactly like this:
         onRequest: statementProposal.request,
       }}
     />
+  ) : null;
+  const technicalPanel = engineDoc ? (
+    processDocument.document ? (
+      <ProcessDocumentView document={processDocument.document} appendix={tracePanel} />
+    ) : processDocument.status === 'failed' ? (
+      <div className="space-y-4">
+        <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace below is complete.</CcMessageStrip>
+        {tracePanel}
+      </div>
+    ) : (
+      <div className={SECTION} aria-busy="true">
+        <CcSkeleton shape="text" label="the process description" count={4} />
+      </div>
+    )
   ) : parsedDoc ? (
     <div className="space-y-6">
       {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this
@@ -1210,8 +1403,14 @@ Structure the JSON exactly like this:
    * fold deeper. Without a layer, the offer to propose one, in one line.
    */
   const businessPanel = isGeneratingBusinessDoc ? (
-    <section className={clsx(SECTION, 'mb-6')} aria-busy="true">
-      <h2 className={H2}>{wt('doc.businessGenerating')}</h2>
+    <section data-business-layer-offer="" data-business-layer-writing="" className={clsx(SECTION, 'mb-6')} aria-busy="true">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className={H2}>{wt('doc.businessGenerating')}</h2>
+        <CcProvenanceChip value="proposed" />
+      </div>
+      <p role="status" className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+        {businessStartedAt === null ? 0 : businessElapsed} s of at most {Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} s. {businessCostLine}
+      </p>
       <div className="mt-3"><CcSkeleton shape="table" label="the business layer" count={3} /></div>
     </section>
   ) : parsedBusinessDoc ? (
@@ -1228,16 +1427,10 @@ Structure the JSON exactly like this:
       </div>
       <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-body text-cc-ink">{wt('doc.businessOfferLead')}</p>
       {!modelAvailability.enabled('documentation') ? (
-        <NotGenerated
-          what="Business SOP and RACI layer"
-          absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-          stage="documentation"
-          hint={
-            modelAvailability.keyAvailable
-              ? 'Turn the documentation stage back on in Settings to generate it.'
-              : 'Add your own Gemini API key in Settings to generate it.'
-          }
-        />
+        <p data-not-generated="Business SOP and RACI layer" data-business-layer-off="" className="m-0 cc-text-cell text-cc-ink-muted">
+          {modelAbsenceReason(modelAvailability.keyAvailable ? 'stage-off' : 'no-key', 'documentation')}{' '}
+          <a href="/settings" className="text-cc-ink underline">Settings</a>
+        </p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
           <CcButton
@@ -1270,6 +1463,11 @@ Structure the JSON exactly like this:
             {businessBlockers.join(' ')}
           </CcMessageStrip>
         </div>
+      ) : null}
+      {otherTabWriting ? (
+        <p data-business-layer-other-tab="" className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
+          Another tab of this browser is writing the business layer right now. Reload this stage when it is done.
+        </p>
       ) : null}
       {businessDocError && (
         <div className="mt-4">
@@ -1439,7 +1637,7 @@ Structure the JSON exactly like this:
               <span className="inline-flex flex-col items-start gap-1">
                 <CcButton
                   onClick={downloadConfluenceHTML}
-                  disabled={isGeneratingDoc}
+                  disabled={isGeneratingDoc || (Boolean(engineDoc) && !processDocument.document)}
                   data-export-confluence={documentationStale ? 'stale' : 'current'}
                   aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
                   aria-label="Export Confluence"
@@ -1454,6 +1652,16 @@ Structure the JSON exactly like this:
                   </span>
                 )}
               </span>
+            ) : null}
+            {processDocument.document ? (
+              <>
+                <CcButton onClick={() => void downloadProcessDocument('md')} data-export-process-md="" icon={<FileCode2 size={14} aria-hidden={true} />}>
+                  Markdown
+                </CcButton>
+                <CcButton onClick={() => void downloadProcessDocument('docx')} data-export-process-docx="" icon={<Download size={14} aria-hidden={true} />}>
+                  Word
+                </CcButton>
+              </>
             ) : null}
             {signedSource ? (
               <CcButton variant="secondary" onClick={downloadBPMN} icon={<Download size={14} aria-hidden={true} />}>
@@ -1490,7 +1698,7 @@ Structure the JSON exactly like this:
               <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
               <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
                 {hasDocument
-                  ? 'The stored documentation and the business layer as one HTML page. A stale one says so at the top.'
+                  ? 'The process description, the business layer and the technical trace as one HTML page to paste into Confluence. A stale one says so at the top. The same document as Markdown and Word.'
                   : 'Available once the documentation has been saved from the code below.'}
               </dd>
             </div>
@@ -1529,9 +1737,11 @@ Structure the JSON exactly like this:
       <section aria-labelledby="documentation-stored" className="mt-8 mb-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Technical documentation</h2>
+            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
             <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              Element by element, as the Confluence page and the handover carry it.
+              Written from the code when the stage opens, no model call: purpose, trigger, the steps, rules, exceptions,
+              effects, integrations, controls and open questions, the technical trace last — as the Confluence page,
+              the Markdown and the Word file carry it.
             </p>
           </div>
           {hasDocument ? (

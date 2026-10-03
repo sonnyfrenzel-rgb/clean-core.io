@@ -33,6 +33,11 @@
  *     the owner's rule forbids, so it is not done.
  */
 
+import { abapMethodMatches } from '@/lib/abap-unit-method';
+
+/** The one matching rule, shared with the import of a result file from the reader's SAP system. */
+export { abapMethodMatches };
+
 /** Where a scenario can be tested. */
 export type ScenarioScope = 'here-mock' | 'your-system' | 'not-determined';
 
@@ -183,29 +188,6 @@ export type ScenarioTest =
     }
   | { kind: 'not-found'; reason: string }
   | { kind: 'no-suite'; reason: string };
-
-/** "TC_01" and "tc-01" compare equal; "tc_1" is not a prefix of "tc_10". */
-function normalisedId(raw: string): string {
-  return raw
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
-
-/** Does an ABAP method name refer to this scenario id? Exactly, or as a prefix followed by `_`. */
-export function abapMethodMatches(methodName: string, id: string): boolean {
-  const name = normalisedId(methodName);
-  const key = normalisedId(id);
-  if (!key) return false;
-  if (name === key || name.startsWith(`${key}_`)) return true;
-  // `tc01_create` for the id `TC_01`: the same characters without separators,
-  // as long as the id is not the start of a longer number (`tc010`).
-  const compactName = name.replace(/_/g, '');
-  const compactKey = key.replace(/_/g, '');
-  if (!compactName.startsWith(compactKey)) return false;
-  const next = compactName.charAt(compactKey.length);
-  return next === '' || (/[a-z]/.test(next) && /\d$/.test(compactKey));
-}
 
 /** The test id the runner reads off a `node:test` title: the first token, up to a colon, space or `#`. */
 export function runnerIdOfTitle(title: string): string {

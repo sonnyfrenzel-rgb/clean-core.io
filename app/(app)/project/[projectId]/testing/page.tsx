@@ -65,8 +65,11 @@ import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
-import ScenarioList, { type ScenarioCase, type ScenarioRunResult } from '@/components/testing/ScenarioList';
+import ScenarioList, { type ScenarioCase, type ScenarioOutsideResult, type ScenarioRunResult } from '@/components/testing/ScenarioList';
 import TestScopeLegend from '@/components/testing/TestScopeLegend';
+import SapResultCard from '@/components/testing/SapResultCard';
+import { outsideChipNote, outsideCountsLine, outsideReading, summaryOf, type OutsideTestRecord } from '@/lib/sap-test-results';
+import { isProjectOwner } from '@/lib/project-readers';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -265,6 +268,12 @@ export default function TestingSandboxPage() {
   );
   const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError } = useTestExecution(projectId as string, runProject, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
+  /**
+   * ADR-075 — the full record of a result from the reader's own SAP system
+   * (`test_results/current`, per-scenario results and unmatched methods). The
+   * summary the phase contract reads is on the project document already.
+   */
+  const [sapRecord, setSapRecord] = useState<OutsideTestRecord | null>(null);
   /** The run console is folded until a run (or the reader) opens it. */
   const [showConsole, setShowConsole] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -979,6 +988,46 @@ export default function TestingSandboxPage() {
 
   /** ABAP Cloud route: the suite is an ABAP Unit class, which nothing here can run (`lib/test-runnability.ts`). */
   const isAbapCloud = isAbapUnitRoute(project);
+  /** ADR-075 — the result from the reader's own SAP system, as the phase contract reads it. */
+  const outside = outsideReading(project);
+  const outsideRecordedAt = outside.state === 'none' ? null : outside.summary.recordedAt;
+  const canRecordOutside = isProjectOwner(project, getAuth().currentUser?.uid ?? null);
+  useEffect(() => {
+    if (!isAbapCloud || !outsideRecordedAt) return undefined;
+    let live = true;
+    (async () => {
+      try {
+        const token = await getAuth().currentUser?.getIdToken();
+        if (!token) return;
+        const res = await fetch(`/api/projects/${encodeURIComponent(String(projectId))}/test-results`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = (await res.json().catch(() => null)) as { record?: OutsideTestRecord | null } | null;
+        if (live && res.ok && body?.record) setSapRecord(body.record);
+      } catch (err) {
+        // The summary on the project still drives the phase; only the per-scenario chips wait.
+        console.error('The test results from your SAP system could not be read:', err);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [isAbapCloud, outsideRecordedAt, projectId]);
+  /** The record the server answered with, folded into the project the page holds. */
+  const onOutsideRecorded = (record: OutsideTestRecord) => {
+    setSapRecord(record);
+    setProject((prev) => (prev ? { ...prev, outsideTestResult: summaryOf(record) } : prev));
+  };
+  /** Per scenario: the imported result, or the confirmation for the class — only while it is current. */
+  const outsideOf = (index: number): ScenarioOutsideResult | null => {
+    if (outside.state !== 'current') return null;
+    if (outside.summary.kind === 'confirmed') {
+      return { kind: 'confirmed', classPassed: outside.verifies, at: outside.summary.recordedAt };
+    }
+    if (!sapRecord || sapRecord.recordedAt !== outside.summary.recordedAt) return null;
+    const r = sapRecord.results[index];
+    return r ? { kind: 'imported', outcome: r.outcome, message: r.message, at: sapRecord.recordedAt } : null;
+  };
 
   /** The engine's coverage report and the program's routines, read from the source on the project. */
   const program = useMemo(() => readProgram(project?.legacyCode), [project?.legacyCode]);
@@ -1150,6 +1199,7 @@ export default function TestingSandboxPage() {
           run={run}
           blocked={testRunBlocked(project)}
           isAbapCloud={isAbapCloud}
+          outside={outside}
           handChecks={{
             count: program ? program.gaps.length : null,
             lines: program ? program.gaps.map((g) => g.firstLine) : [],
@@ -1307,9 +1357,19 @@ export default function TestingSandboxPage() {
             data-testing-step="run"
             step={{
               n: 2,
-              word: isAbapCloud ? 'Not run here' : undefined,
+              // ADR-075: on the ABAP Cloud route the step shows the result from
+              // the reader's own SAP system once one is on record.
+              word: isAbapCloud
+                ? outside.state === 'current'
+                  ? outside.verifies
+                    ? 'No failure in your SAP system'
+                    : 'Failing or incomplete in your SAP system'
+                  : 'Not run here'
+                : undefined,
               state: isAbapCloud
-                ? 'unavailable'
+                ? outside.state === 'current' && outside.verifies
+                  ? 'done'
+                  : 'unavailable'
                 : testCases.length === 0
                   ? 'waiting'
                   : run.kind === 'recorded' || run.kind === 'session'
@@ -1345,7 +1405,15 @@ export default function TestingSandboxPage() {
                     : `Runs all ${scenarios(testCases.length)} in an isolated runner against SAP mocks — not in your S/4HANA system. A pass here is “${RUNNER_PASS}”, not proof in your system.`
             }
           >
-            {isAbapCloud ? (
+            {isAbapCloud && outside.state === 'current' ? (
+              <p data-testing-run-outside={outside.summary.kind} className="m-0 flex flex-wrap items-center gap-2 cc-text-cell text-cc-ink">
+                <CcProvenanceChip value={outside.summary.kind} note={outsideChipNote(outside.summary.kind)} />
+                <span>{outsideCountsLine(outside.summary)} — run in your SAP system, not here.</span>
+                <a href="#testing-sap-result" className="font-semibold text-cc-information hover:underline">
+                  See the result
+                </a>
+              </p>
+            ) : isAbapCloud ? (
               // Said before the click, not after it: the hook used to answer the
               // click with a run it made up in the browser.
               <div data-testing-run-unavailable="">
@@ -1486,6 +1554,26 @@ export default function TestingSandboxPage() {
                       )}
           </ToolSection>
 
+          {/* ── The result from your SAP system — the ABAP Cloud route's way to a
+              verdict (ADR-075, owner 03.10.2026). Its own section beside step
+              2, so the step that cannot run here keeps no button. ── */}
+          {isAbapCloud && testCases.length > 0 ? (
+            <ToolSection
+              id="testing-sap-result"
+              data-testing-sap-result=""
+              title="Record the result from your SAP system"
+              lead="Nothing here runs ABAP Unit. Bring the result from the system that did: the result file, or your confirmation that the class ran."
+            >
+              <SapResultCard
+                projectId={String(projectId)}
+                canRecord={canRecordOutside}
+                reading={outside}
+                record={sapRecord}
+                onRecorded={onOutsideRecorded}
+              />
+            </ToolSection>
+          ) : null}
+
           {/* ── Step 3: what a tester checks by hand ── */}
           <ToolSection
             id="testing-hand"
@@ -1543,7 +1631,9 @@ export default function TestingSandboxPage() {
               aside={testCases.length}
               lead={
                 isAbapCloud
-                  ? 'Written by the testing model from the generated code — one row each; open a row for everything it holds. They have no verdict here: ABAP Unit runs in your own system.'
+                  ? outside.state === 'current'
+                    ? 'Written by the testing model from the generated code — one row each, with the result from your SAP system; open a row for everything it holds.'
+                    : 'Written by the testing model from the generated code — one row each; open a row for everything it holds. They have no verdict here: ABAP Unit runs in your own system.'
                   : 'Written by the testing model from the generated code — one row each, with its last verdict; open a row for everything it holds.'
               }
             >
@@ -1562,6 +1652,7 @@ export default function TestingSandboxPage() {
                 tenantLocked={LIVE_TEST_EXECUTION.locked}
                 projectName={project?.name}
                 origin={originEngine}
+                outsideOf={isAbapCloud ? outsideOf : undefined}
                 onShowOutput={testResults ? () => {
                   setShowConsole(true);
                   requestAnimationFrame(() => document.querySelector('[data-testing-console]')?.scrollIntoView({ block: 'start' }));

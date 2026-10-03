@@ -37,7 +37,8 @@ export type { NFRData } from '@/lib/non-functional-requirements';
  * options").
  *
  * Read from the code by the engine (`lib/non-functional-requirements.ts`)
- * when the reader asks, never by a model and never on opening: authorization
+ * as soon as the section opens (owner 03.10.2026: "when I click Design,
+ * everything should be generated directly"), never by a model: authorization
  * checks, records with a date and a user, error messages, commit and rollback,
  * customer tables, SELECT patterns, what the program changes and calls
  * remotely — each as `NFR-nn` with its lines. What the code cannot know is a
@@ -79,22 +80,6 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function readFlag(key: string): boolean {
-  try {
-    return window.localStorage.getItem(key) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeFlag(key: string): void {
-  try {
-    window.localStorage.setItem(key, '1');
-  } catch {
-    /* a private window keeps no flag; the button is still there */
-  }
-}
-
 function PriorityChip({ value }: { value: RequirementPriority }) {
   return (
     <span
@@ -127,8 +112,7 @@ function tileLines(c: NfrCategorySummary): [string, string] {
   ];
 }
 
-export default function NonFunctionalRequirements({ projectId, projectName, fileName, source, missingReason, proposals, levels }: NonFunctionalRequirementsProps) {
-  const flagKey = projectId ? `cc-nfr-derived-${projectId}` : null;
+export default function NonFunctionalRequirements({ projectName, fileName, source, missingReason, proposals, levels }: NonFunctionalRequirementsProps) {
   const [set, setSet] = useState<NfrSet | null>(null);
   const [state, setState] = useState<'idle' | 'deriving' | 'ready' | 'failed'>('idle');
   const [tab, setTab] = useState<'list' | 'questions'>('list');
@@ -146,21 +130,20 @@ export default function NonFunctionalRequirements({ projectId, projectName, file
       await new Promise((resolve) => setTimeout(resolve, 0));
       setSet(lib.buildNfrSet({ source }));
       setState('ready');
-      if (flagKey) writeFlag(flagKey);
     } catch (err) {
       console.error('[Design] Non-functional requirements could not be read:', err);
       setState('failed');
     }
-  }, [source, flagKey]);
+  }, [source]);
 
-  // A reader who asked once gets them again on the next visit — still read
-  // from the code, still without a model.
+  // Read on opening: the engine needs no model and costs nothing, so there is
+  // no reason to make the reader ask (owner 03.10.2026, ADR-074 amendment). A
+  // failed read waits for "Try again" instead of looping.
   useEffect(() => {
-    if (!flagKey || !source || state !== 'idle') return;
-    if (!readFlag(flagKey)) return;
+    if (!source || state !== 'idle') return;
     const timer = setTimeout(() => void derive(), 0);
     return () => clearTimeout(timer);
-  }, [flagKey, source, state, derive]);
+  }, [source, state, derive]);
 
   // A changed source is read again; the shown set never describes another text.
   useEffect(() => {
@@ -290,22 +273,28 @@ export default function NonFunctionalRequirements({ projectId, projectName, file
             Nothing was stored. Try again; if it fails again, the source has a construct the engine does not read yet.
           </CcMessageStrip>
         ) : null}
-        <div className="flex flex-wrap items-center gap-3">
-          <CcButton
-            variant="primary"
-            density="cozy"
-            icon={<ListChecks size={16} aria-hidden={true} />}
-            busy={state === 'deriving'}
-            disabled={!source}
-            data-nfr-derive=""
-            onClick={() => void derive()}
-          >
-            {state === 'deriving' ? 'Reading the code…' : 'Derive non-functional requirements'}
-          </CcButton>
-          <span data-nfr-cost="" className="text-[13px] text-cc-ink-muted">
-            Read from the code by the engine — no model call, no cost.
-          </span>
-        </div>
+        {source ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {state === 'failed' ? (
+              <CcButton
+                variant="primary"
+                density="cozy"
+                icon={<ListChecks size={16} aria-hidden={true} />}
+                data-nfr-derive=""
+                onClick={() => void derive()}
+              >
+                Try again
+              </CcButton>
+            ) : (
+              <span role="status" data-nfr-reading="" className="text-[14px] font-semibold text-cc-ink">
+                Reading the code…
+              </span>
+            )}
+            <span data-nfr-cost="" className="text-[13px] text-cc-ink-muted">
+              Read from the code by the engine — no model call, no cost.
+            </span>
+          </div>
+        ) : null}
         {proposalCount ? (
           <p className="m-0 text-[13px] text-cc-ink-muted">
             The design model wrote proposals for {proposalCount} of these topics with the design. They are shown beside what
@@ -463,7 +452,7 @@ export default function NonFunctionalRequirements({ projectId, projectName, file
               <dt className="font-semibold text-cc-ink">Why {PRIORITY_WORD[r.priority]}</dt>
               <dd className="m-0 text-cc-ink [overflow-wrap:anywhere]">{r.priorityReason}</dd>
               <dt className="font-semibold text-cc-ink">Names</dt>
-              <dd className="m-0 font-cc-mono text-cc-ink [overflow-wrap:anywhere]">{r.objects.length ? r.objects.join(', ') : <span className="font-cc-sans text-cc-ink-muted">No object named at these lines.</span>}</dd>
+              <dd className="m-0 font-cc-mono text-cc-ink [overflow-wrap:anywhere]">{r.objects.length ? r.objects.join(', ') : <span className="font-sans text-cc-ink-muted">No object named at these lines.</span>}</dd>
               <dt className="font-semibold text-cc-ink">Provenance</dt>
               <dd className="m-0 flex flex-wrap items-center gap-2 text-cc-ink">
                 <CcProvenanceChip value="reconstructed" />

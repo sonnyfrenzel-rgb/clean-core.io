@@ -12,6 +12,8 @@ import CcTabs from '@/components/cc/Tabs';
 import CcDateText from '@/components/cc/DateText';
 import CcDialog from '@/components/cc/Dialog';
 import CcMessageBox from '@/components/cc/MessageBox';
+import CcCanvasDrawer from '@/components/cc/CanvasDrawer';
+import { ccModalOpen } from '@/components/cc/modal';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
 import { ArchitectureList, ARCHITECTURE_ZOOM, fitArchitectureScale, fitArchitectureToBox } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
@@ -78,6 +80,12 @@ export interface DesignCanvasStageProps {
   /** The source, for the lines the Evidence tab quotes. */
   legacyCode: string;
   sections: DesignDocSection[];
+  /**
+   * The structured design as one document (`DesignDocument`, 03.10.2026): an
+   * overview, then groups by question. Set, it replaces the section cards;
+   * `sections` still counts what is written for the tab's label.
+   */
+  document?: React.ReactNode | null;
   /** The document region when there is no document: an empty state, a reason, an error. */
   documentFallback: React.ReactNode | null;
   /** A failed (re)generation, worded for the reader. */
@@ -244,6 +252,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     regenerating,
     legacyCode,
     sections,
+    document: structuredDocument = null,
     documentFallback,
     documentNotice,
     routingRationale,
@@ -260,6 +269,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const deviation = Boolean(contract?.route.deviation);
   const [panelTab, setPanelTab] = useState<'decision' | 'contract' | 'alternatives' | 'evidence'>('decision');
   const [selected, setSelected] = useState<string | null>(null);
+  /** The evidence of the chosen box, shown in full screen over the drawing (`CcCanvasDrawer`). */
+  const [fullDetail, setFullDetail] = useState(false);
   // 'fit' follows the column; a number is the reader's own zoom.
   const [zoomChoice, setZoom] = useState<number | 'fit'>('fit');
   // A callback ref: the canvas mounts only once the contract has been read.
@@ -334,6 +345,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const [zoomBeforeFull, setZoomBeforeFull] = useState<number | 'fit'>('fit');
   if (filledSeen !== filled) {
     setFilledSeen(filled);
+    setFullDetail(false);
     if (filled) {
       setZoomBeforeFull(zoomChoice);
       setZoom('fit');
@@ -376,7 +388,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     const onKey = (event: KeyboardEvent) => {
       const root = stageRef.current;
       if (!root) return;
-      if (event.key === 'Escape' && !event.defaultPrevented) {
+      // A dialog over full screen, or the evidence drawer, has Escape first.
+      if (event.key === 'Escape' && !event.defaultPrevented && !ccModalOpen()) {
         // The browser leaves its own full screen on Escape itself; this is for
         // the overlay, and for a browser that hands the key to the page.
         event.preventDefault();
@@ -508,6 +521,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const select = (key: string) => {
     setSelected(key);
     setPanelTab('evidence');
+    // The side panel is outside full screen; there the evidence opens over the drawing.
+    if (filled) setFullDetail(true);
   };
 
   const chosenAlt = contract?.alternatives.find((a) => a.verdict === 'chosen') ?? null;
@@ -864,6 +879,11 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
 
   const documentTab = documentFallback ? (
     <div>{documentFallback}</div>
+  ) : structuredDocument ? (
+    <div data-stage-output="solutionDesign" id="design-report">
+      {documentNotice ? <div className="mb-4">{documentNotice}</div> : null}
+      {structuredDocument}
+    </div>
   ) : (
     <div data-stage-output="solutionDesign" id="design-report">
       {documentNotice ? <div className="mb-4">{documentNotice}</div> : null}
@@ -1106,6 +1126,14 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                 ) : null}
               </div>
               {board}
+              <CcCanvasDrawer
+                open={filled && fullDetail && selected !== null}
+                title="Evidence"
+                onClose={() => setFullDetail(false)}
+                data-design-fullscreen-evidence=""
+              >
+                {evidenceTab}
+              </CcCanvasDrawer>
               {view === 'canvas' && model ? (
                 <div
                   aria-label="Legend"

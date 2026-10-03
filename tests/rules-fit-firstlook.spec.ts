@@ -94,7 +94,9 @@ test.describe('s2 — the rule-editing mode', () => {
     expect(draftChoices(draft, {})).toEqual([]);
   });
 
-  test('only Change and Drop without a reason block a save; Keep and Clarify never do', () => {
+  // Owner, 03.10.2026: Clarify asks somebody else, so it needs the question —
+  // required in the answering screen like the reason of Change and Drop.
+  test('Change and Drop without a reason and Clarify without its question block a save; Keep never does', () => {
     const [a, b, c, d] = rules.map((r) => r.id);
     const draft: RuleDraft = {
       ...draftFrom(rules, {}),
@@ -103,8 +105,8 @@ test.describe('s2 — the rule-editing mode', () => {
       [c]: { state: 'drop', note: '   ' },
       [d]: { state: 'clarify', note: '' },
     };
-    expect(draftProblems(draft).map((p) => p.ruleId)).toEqual([b, c].sort());
-    expect(draftSummary(rules, draft).missing.sort()).toEqual([b, c].sort());
+    expect(draftProblems(draft).map((p) => p.ruleId)).toEqual([b, c, d].sort());
+    expect(draftSummary(rules, draft).missing.sort()).toEqual([b, c, d].sort());
   });
 
   test('a Change with a reason but no value source is summarised as a missing source, not a missing reason', () => {

@@ -4,6 +4,10 @@ import path from 'path';
 import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
+import { buildProcessDocument } from '../lib/process-document-build';
+import { buildReadingExports } from '../lib/bpmn/export';
+import { buildProcessMapModel } from '../lib/process-map';
+import { applyNaming, namingContextOf } from '../lib/process-naming';
 
 /**
  * Three stages assemble an HTML document out of values the model wrote from the
@@ -56,17 +60,29 @@ test('the documentation export escapes every value the model wrote', () => {
   expect(left, `unescaped in the documentation export: ${left.join(', ')}`).toEqual([]);
 });
 
-test('the engine documentation export (3.0.5) escapes every value it prints', () => {
-  // Names from the naming stage are model output, and every technical name,
-  // condition and business statement is a token of the customer's source.
+test('the engine documentation export escapes every value it prints', () => {
+  // Since 03.10.2026 the page is the process description: every value is the
+  // engine's reading of the customer's source or a model's text. The
+  // template interpolates escaped values, the section strings assembled from
+  // them, and the helpers defined at the top of the function — each of which
+  // escapes what it prints (read here, and fed hostile text below).
   const src = read(DOCS_EXPORT);
   expect(src).toContain('const engineHtml = `');
-  const left = modelValues(src, 'const engineHtml = `', 'new Blob([engineHtml]');
+  const fn = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
+  const helpers = /^(esc|lines|para|item|table|empty|h2|proposal|processOverviewSvg|glanceHtml)\(/;
+  const assembled = /^(pathRows|subSteps|more|exportCSS|[A-Za-z]+Section)$/;
+  const left = modelValues(fn, 'export function buildEngineConfluenceHtml', 'new Blob([engineHtml]')
+    .filter((e) => !helpers.test(e) && !assembled.test(e));
   expect(left, `unescaped in the engine documentation export: ${left.join(', ')}`).toEqual([]);
-  const rows = src.slice(src.indexOf('const stepRows = '), src.indexOf('const engineHtml = `'));
-  const raw = [...rows.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim())
-    .filter((e) => !e.startsWith('esc(') && e !== 'name' && !e.includes('?'));
-  expect(raw, `unescaped in the engine documentation rows: ${raw.join(', ')}`).toEqual([]);
+  // The helpers print through `esc` and nothing else.
+  for (const name of ['lines', 'para', 'item', 'table', 'empty', 'h2', 'proposal']) {
+    const at = fn.indexOf(`const ${name} = `);
+    expect(at, `helper ${name} is gone`).toBeGreaterThan(-1);
+    const body = fn.slice(at, fn.indexOf(';\n', at));
+    const raw = [...body.matchAll(/\$\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g)].map((m) => m[1].trim())
+      .filter((e) => !e.startsWith('esc(') && !helpers.test(e) && !e.includes('?') && !e.includes('.map('));
+    expect(raw, `helper ${name} prints unescaped: ${raw.join(', ')}`).toEqual([]);
+  }
 });
 
 test('the engine documentation export carries the business layer, escaped and marked as a proposal', () => {
@@ -75,13 +91,13 @@ test('the engine documentation export carries the business layer, escaped and ma
   const src = read(DOCS_EXPORT);
   const engine = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
   expect(engine).toContain('const businessSection = parsedBusinessDoc');
-  expect(engine).toMatch(/<\/ul>\s*\$\{businessSection\}\s*<\/body>/);
+  expect(engine).toMatch(/\$\{questionsSection\}\s*\$\{businessSection\}\s*\$\{appendixSection\}\s*<\/body>/);
   expect(engine).toContain('Business layer — Model proposal');
-  const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const engineHtml = `'));
+  const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const a = document.appendix'));
   for (const field of ['raci_matrix', 'sop_details', 'audit_controls']) expect(section).toContain(field);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
-  const raw = all.filter((e) => !e.startsWith('esc('));
+  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
 });
 
@@ -371,27 +387,26 @@ test("neither the API Hub mapping table nor the markdown export puts the model's
 // unescaped interpolation there would pass it. This feeds hostile text into
 // every field the engine export writes and reads the file that comes out.
 test('the engine documentation export escapes every value it writes, whatever the model or the code put there', async () => {
+  // Every text of a real process description replaced by markup: what the
+  // code, the naming stage or a model could put into any field.
   const evil = '<img src=x onerror=alert(1)>';
-  const engine = {
-    processName: evil,
-    disclaimer: evil,
-    fileName: evil,
-    lineCount: 3,
-    overview: evil,
-    traceability: { sentence: evil },
-    steps: [
-      { id: evil, kind: evil, technicalName: evil, businessName: evil, lane: evil, statementId: 's1', anchor: { lineStart: 1, lineEnd: 2 }, undetermined: null },
-      { id: 'b', kind: 'k', technicalName: evil, businessName: null, lane: null, statementId: null, anchor: null, undetermined: { reason: evil } },
-    ],
-    statements: [{ id: 's1', text: evil, anchors: [] }],
-    notDetermined: [{ subject: evil, reason: evil }],
-  } as unknown as Parameters<typeof buildEngineConfluenceHtml>[0];
+  const source = fs.readFileSync(path.join(process.cwd(), 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
+  const { bpmn, technical } = buildReadingExports(source, { processName: 'x', sourceFileName: 'x.abap' });
+  const map = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null, 'no-key'), fileName: 'x.abap' });
+  const real = buildProcessDocument({ source, map, narrative: JSON.stringify({ asIsContext: 'It approves [L591-600].' }) });
+  const poison = (value: unknown, key = ''): unknown => {
+    if (typeof value === 'string') return key === 'kind' && (value === 'step' || value === 'gate') ? value : evil;
+    if (Array.isArray(value)) return value.map((v) => poison(v));
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, poison(v, k)]));
+    return value;
+  };
+  const engine = poison(real) as typeof real;
   const business = {
     raci_matrix: [{ stepId: evil, r: evil, a: evil, c: evil, i: evil }],
     sop_details: [{ stepId: evil, narrative: evil, businessException: evil, kpiTarget: evil }],
     audit_controls: [{ stepId: evil, controlObjective: evil, mitigationAction: evil, assertionMethod: evil }],
   };
-  const html = await buildEngineConfluenceHtml(engine, business).text();
+  const html = await buildEngineConfluenceHtml(engine, business, { projectName: evil }).text();
   expect(html).not.toContain('<img');
   expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
 });

@@ -16,6 +16,8 @@ import { CcRulePropertyTag } from '@/components/cc/Tag';
 import FirstLook from '@/components/workspace/FirstLook';
 import NotDeterminedCard from '@/components/workspace/NotDeterminedCard';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
+import { BUSINESS_LAYERS } from '@/lib/business-layers';
+import type { RulesStatus } from '@/lib/rules-editor';
 import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
@@ -283,6 +285,18 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const [reading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
   const rules = useMemo(() => (reading ? revealedRules(reading.ruleSet) : []), [reading]);
+  /** The demo's answers, kept in this browser, in the shape every rule action reads. */
+  const demoRulesStatus = useMemo<RulesStatus | null>(() => {
+    if (!reading) return null;
+    const confirmed = rules.filter((r) => state.confirmedRules.includes(r.id));
+    return {
+      total: rules.length,
+      confirmed: confirmed.length,
+      open: rules.filter((r) => !state.confirmedRules.includes(r.id)).map((r) => r.id),
+      by: [],
+      lastAt: null,
+    };
+  }, [reading, rules, state.confirmedRules]);
   // Need & process holds the map and the rules here; the layer model counts
   // usage imports under it, which a demo has none of, and would mark it "empty".
   const layers = useMemo(
@@ -356,15 +370,19 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       />
     </CcCard>
   );
+  // Business shows the sections that answer its question, as the workspace
+  // does (owner, 03.10.2026, `lib/business-layers.ts`).
+  const viewLayers = view === 'business' ? layers.filter((l) => BUSINESS_LAYERS.includes(l.key)) : layers;
+  const shownLayer: LayerKey = viewLayers.some((l) => l.key === currentLayer) ? currentLayer : 'need';
   const layerBar = (
     <div className="mt-5">
-      <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+      <WorkspaceLayerBar layers={viewLayers} current={shownLayer} onSelect={selectLayer} />
     </div>
   );
   const layerSection =
-    currentLayer === 'need' ? null : (
+    shownLayer === 'need' ? null : (
       <div className="mt-5 max-w-3xl">
-        <WorkspaceLayerSection layer={currentLayerSection} />
+        <WorkspaceLayerSection layer={viewLayers.find((l) => l.key === shownLayer) ?? currentLayerSection} />
       </div>
     );
 
@@ -490,12 +508,18 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="reveal" className="mt-5">
             <div className="max-w-3xl">{stop('reveal')}</div>
+            {/* The rules card stands below, with the confirmations this
+                browser holds — the card reads the same answers instead of a
+                route the demo has no record in, and offers no second rule
+                action of its own (owner, 03.10.2026). */}
             <FirstLook
               project={project}
               projectId="demo"
               buildUp={false}
               onReading={onReading}
               namingFrom="none"
+              rulesBelow
+              rulesOverride={demoRulesStatus}
             />
           </Place>
 

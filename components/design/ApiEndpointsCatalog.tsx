@@ -12,6 +12,11 @@ interface ApiEndpoint {
 
 interface ApiEndpointsCatalogProps {
   apiEndpoints?: ApiEndpoint[];
+  /**
+   * Inside a group of the design document (03.10.2026): no card of its own and
+   * no provenance chip — the group carries "Model proposal" once.
+   */
+  embedded?: boolean;
 }
 
 const COLUMNS = [
@@ -20,15 +25,15 @@ const COLUMNS = [
   { key: 'description', label: 'Action Description' },
 ] as const;
 
-export default function ApiEndpointsCatalog({ apiEndpoints }: ApiEndpointsCatalogProps) {
+export default function ApiEndpointsCatalog({ apiEndpoints, embedded = false }: ApiEndpointsCatalogProps) {
   if (!apiEndpoints || apiEndpoints.length === 0) return null;
 
   return (
-    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc lg:col-span-2 flex flex-col">
+    <div className={embedded ? 'flex min-w-0 flex-col' : 'rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc lg:col-span-2 flex flex-col'}>
       <div className="mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h4 className="cc-text-h2 text-cc-ink">Target API Catalog</h4>
-          <CcProvenanceChip value="proposed" />
+          <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Target API Catalog</h4>
+          {embedded ? null : <CcProvenanceChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">Proposed API layer handling the transformed legacy transaction capability.</p>
       </div>

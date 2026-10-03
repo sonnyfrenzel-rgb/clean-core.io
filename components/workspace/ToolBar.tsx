@@ -22,25 +22,58 @@ export interface WorkspaceTool {
 }
 
 /**
- * The small mark after a tool's name. It answers one question — has this tool
- * been used in this project? (ADR-060, amended by Sonny 02.10.2026) — and not
+ * The small mark after a tool's name. It answers where the tool's work stands
+ * (ADR-060, amended by Sonny 03.10.2026: "a check must mean done") — and not
  * how strong what it produced is; that stays with the workspace's status line
- * and the status chips ("Proven", "Demonstrated · mock").
+ * and the status chips ("Proven", "Demonstrated · mock", "Imported").
  *
- *   - a small green check where something of the phase is on record and it is
- *     not out of date (`toolMark` → `used`);
+ *   - a small green check where the tool's phase is done (`toolMark` → `done`);
+ *   - a half-filled circle in the information colour where the tool's own
+ *     output is on record and its work is not done (`started`);
  *   - an amber dot where the phase is out of date: its inputs changed since;
  *   - nothing where nothing is on record.
  *
  * The colour is never the only carrier: each mark has its words for a screen
- * reader, appended to the link's name ("Analyze (used)"), a tooltip, and the
- * legend beside "Tools" says the same in text.
+ * reader, appended to the link's name ("Testing (started, not done)"), and the
+ * legend beside "Tools" says the same in text. The shapes differ too — a
+ * check, a half circle, a dot — so the three read apart without colour.
  */
-function MarkGlyph({ kind }: { kind: 'check' | 'dot' }) {
-  return kind === 'check' ? (
-    <Check size={14} strokeWidth={3} aria-hidden={true} data-workspace-tool-mark="check" className="text-cc-success" />
-  ) : (
-    <span aria-hidden={true} data-workspace-tool-mark="dot" className="inline-block h-2 w-2 rounded-full bg-cc-warning-mark" />
+function MarkGlyph({ kind, size = 'bar' }: { kind: 'check' | 'half' | 'dot'; size?: 'bar' | 'legend' }) {
+  if (kind === 'check') {
+    return (
+      <Check
+        size={size === 'bar' ? 14 : 12}
+        strokeWidth={3}
+        aria-hidden={true}
+        data-workspace-tool-mark={size === 'bar' ? 'check' : undefined}
+        className="text-cc-success"
+      />
+    );
+  }
+  if (kind === 'half') {
+    // A ring with its left half filled — "begun", in the information ink.
+    const px = size === 'bar' ? 12 : 10;
+    return (
+      <svg
+        width={px}
+        height={px}
+        viewBox="0 0 12 12"
+        aria-hidden={true}
+        focusable="false"
+        data-workspace-tool-mark={size === 'bar' ? 'half' : undefined}
+        className="text-cc-information"
+      >
+        <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <span
+      aria-hidden={true}
+      data-workspace-tool-mark={size === 'bar' ? 'dot' : undefined}
+      className="inline-block h-2 w-2 rounded-full bg-cc-warning-mark"
+    />
   );
 }
 
@@ -73,7 +106,13 @@ function toolGuide(tool: WorkspaceTool, tools: readonly WorkspaceTool[], next: P
     PHASE_PURPOSE[tool.key],
     tool.key === next ? wt('toolGuide.recommended') : null,
     phaseNeeds(tool, tools),
-    mark.meaning === 'used' ? `${wt('tools.mark.usedHint')}.` : mark.meaning === 'stale' ? `${wt('tools.mark.staleHint')}.` : null,
+    mark.meaning === 'done'
+      ? `${wt('tools.mark.doneHint')}.`
+      : mark.meaning === 'started'
+        ? `${wt('tools.mark.startedHint')}.`
+        : mark.meaning === 'stale'
+          ? `${wt('tools.mark.staleHint')}.`
+          : null,
   ].filter((line): line is string => Boolean(line));
 }
 
@@ -92,8 +131,8 @@ function NextTag() {
 
 /**
  * What the marks mean, in text — beside "Tools" on the open bar and at the top
- * of the phone menu. Both entries always, so the legend does not change shape
- * with the project.
+ * of the phone menu. All three entries always, so the legend does not change
+ * shape with the project.
  */
 function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
   return (
@@ -105,12 +144,16 @@ function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
       )}
     >
       <span className="sr-only">{wt('tools.legend.label')}</span>
-      <span className="inline-flex items-center gap-1">
-        <Check size={12} strokeWidth={3} aria-hidden={true} className="text-cc-success" />
-        {wt('tools.legend.used')}
+      <span data-tools-legend-entry="done" className="inline-flex items-center gap-1">
+        <MarkGlyph kind="check" size="legend" />
+        {wt('tools.legend.done')}
       </span>
-      <span className="inline-flex items-center gap-1">
-        <span aria-hidden={true} className="inline-block h-2 w-2 rounded-full bg-cc-warning-mark" />
+      <span data-tools-legend-entry="started" className="inline-flex items-center gap-1">
+        <MarkGlyph kind="half" size="legend" />
+        {wt('tools.legend.started')}
+      </span>
+      <span data-tools-legend-entry="stale" className="inline-flex items-center gap-1">
+        <MarkGlyph kind="dot" size="legend" />
         {wt('tools.legend.stale')}
       </span>
     </p>

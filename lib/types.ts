@@ -93,6 +93,14 @@ export interface Project {
    * an execution.
    */
   testRunReceipt?: import('./test-receipt').TestRunReceipt;
+  /**
+   * ADR-075 — the summary of a test result from the reader's own SAP system,
+   * imported from a result file or confirmed by the account. Written only by
+   * `/api/projects/{id}/test-results` with the Admin SDK, beside the full
+   * record in `test_results/current`; like `testRunReceipt` it is not in the
+   * client update allowlist (`lib/sap-test-results.ts`).
+   */
+  outsideTestResult?: import('./sap-test-results').OutsideTestSummary;
   coverageEstimate?: CoverageEstimate;
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;

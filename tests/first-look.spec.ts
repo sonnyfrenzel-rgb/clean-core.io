@@ -458,7 +458,11 @@ test.describe('the first look on screen', () => {
     expect(findings?.origin, 'a project with no run reported a finding count').toBe('absent');
     expect(findings?.text).toContain('not analysed');
 
-    // Traceability, the reveal line and the decisions are all on the screen.
+    // Traceability, the reveal line and the decision points are all on the
+    // page — in Business one fold down, under "How this was read", since the
+    // opening leads with the process in plain words (owner, 03.10.2026).
+    const fold = page.getByRole('button', { name: /How this was read/ });
+    if (await fold.count()) await fold.first().click();
     await expect(page.locator('[data-first-look-traceability]')).toBeVisible();
     await expect(page.locator('[data-first-look-reveal]')).toBeVisible();
     await expect(page.locator('[data-first-look-decisions]')).toHaveAttribute('data-count', /[1-9]/);
@@ -541,7 +545,17 @@ test.describe('the first look on screen', () => {
     await expect(card).toBeVisible({ timeout: 60000 });
     await expect(card).toHaveAttribute('data-ask-this-case', 'answered');
 
-    const question = (await page.locator('[data-ask-question]').textContent()) || '';
+    // The question a business reader reads is the decision point's plain
+    // label (owner, 03.10.2026); the code's own question, condition as the
+    // source writes it, stays under "Show the code".
+    const wording = await card.getAttribute('data-ask-wording');
+    if (wording === 'plain') {
+      const plain = (await page.locator('[data-ask-question]').textContent()) || '';
+      expect(plain.startsWith('What happens at the decision point')).toBe(true);
+      await card.getByRole('button', { name: /Show the code/ }).click();
+    }
+    const question =
+      ((await page.locator(wording === 'plain' ? '[data-ask-code-question]' : '[data-ask-question]').textContent()) || '').trim();
     expect(question.startsWith('What happens when ')).toBe(true);
     // The condition is the source's own text, not a paraphrase.
     const condition = question.replace(/^What happens when /, '').replace(/\?$/, '');
@@ -552,8 +566,9 @@ test.describe('the first look on screen', () => {
     expect(note).toContain('No model call');
     expect(note).toContain('Not counted');
 
-    // And at least one branch ends the flow, with a line behind it.
-    await expect(page.locator('[data-ask-branch="ends-flow"]').first()).toBeVisible();
+    // And every branch is there, with a line behind it.
+    await expect(page.locator('[data-ask-code-branch]').first()).toBeVisible();
+    await expect(card.locator('[data-cc-anchor]').first()).toBeVisible();
   });
 
   test('the three coach marks appear one at a time and go away for good', async ({ page }) => {

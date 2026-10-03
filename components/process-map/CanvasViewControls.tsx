@@ -94,8 +94,10 @@ export function CanvasFullscreenToggle({
 }
 
 /**
- * The reading map's row: zoom and fit on the left, full screen on the right —
- * the editor's toolbar without the editing tools.
+ * The reading map's row: where the reader is and the way up first, then zoom,
+ * fit and the map's own toggles, full screen on the right — the editor's
+ * toolbar without the editing tools. The row is inside the frame that goes
+ * full screen, so the level path and the way up are there in both.
  */
 export function MapViewTools({
   zoom,
@@ -104,6 +106,8 @@ export function MapViewTools({
   filled,
   onToggleFullscreen,
   fullscreenRef,
+  levelPath,
+  tools,
 }: {
   zoom: number;
   onZoomBy: (factor: number) => void;
@@ -111,6 +115,10 @@ export function MapViewTools({
   filled: boolean;
   onToggleFullscreen: () => void;
   fullscreenRef?: React.Ref<HTMLButtonElement>;
+  /** The level path and the way up (`ProcessBreadcrumb`). */
+  levelPath?: React.ReactNode;
+  /** More of the map's own toggles, after fit. */
+  tools?: React.ReactNode;
 }) {
   return (
     <div
@@ -119,10 +127,14 @@ export function MapViewTools({
       aria-label={wt('map.canvasTools')}
       className="flex shrink-0 items-start gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
     >
-      {/* The zoom group wraps on a narrow screen; the full-screen toggle keeps
-          the top right corner, where a reader looks for the way out. */}
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <CanvasZoomControls scope="map" zoom={zoom} onZoomBy={onZoomBy} onFit={onFit} />
+      {/* The groups wrap on a narrow screen; the full-screen toggle keeps the
+          top right corner, where a reader looks for the way out. */}
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+        {levelPath ? <div data-map-level-path="" className="min-w-0">{levelPath}</div> : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <CanvasZoomControls scope="map" zoom={zoom} onZoomBy={onZoomBy} onFit={onFit} />
+          {tools}
+        </div>
       </div>
       <span className="shrink-0">
         <CanvasFullscreenToggle scope="map" filled={filled} onToggle={onToggleFullscreen} buttonRef={fullscreenRef} />

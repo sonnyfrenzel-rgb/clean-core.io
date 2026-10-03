@@ -11,6 +11,7 @@ import { coveringTestRunReceipt, executedPasses } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { PROFILE_INPUT_ID } from './assessment-profile';
 import { liveProfileDigest, recordedProfileOf } from './assessment-target';
+import { outsideCountsLine, outsideReading, outsideShortfall, type OutsideKind } from './sap-test-results';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -89,6 +90,18 @@ export interface RailStep {
    * `proven` is.
    */
   mock: boolean;
+  /**
+   * The phase is `done` on a result from the reader's own SAP system, not on an
+   * execution here (ADR-075, owner 03.10.2026): `imported` from an ABAP Unit
+   * result file, or `confirmed` by the signed-in account — a self-declaration.
+   * Only the testing phase (and the delivery phase that rests on it) sets it,
+   * only on the ABAP Cloud route, where nothing here runs the suite.
+   *
+   * Kept beside `proven` and never folded into it: `proven` means an execution
+   * happened here, and this is the record of one that happened elsewhere. It
+   * is `done`, never green, and `null` whenever the phase is not `done`.
+   */
+  verifiedOutside: OutsideKind | null;
   /** A few words for a badge — "Test draft", "Model estimate". */
   badge: string;
   /** What is on record, in the product's own words. */
@@ -156,7 +169,7 @@ export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> 
  */
 export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
   analyze: 'Reads the code and signs a run — every other figure starts here.',
-  design: 'Chooses the target architecture.',
+  design: 'Chooses the target architecture. Opening it writes the solution design once with the model, where it is on — not counted against your analysis runs.',
   transformation: 'Generates the target code.',
   documentation: 'Writes the process documentation: SOP and RACI.',
   testing: 'Prepares and runs the test cases.',
@@ -165,10 +178,12 @@ export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
 });
 
 /**
- * Whether a tool has something of its own on record for this project — the
- * one question its green check answers (ADR-060, amended by the owner on
- * 03.10.2026: "green check on Analyze, and 'Run the analysis' as the next step
- * — a contradiction").
+ * Whether a tool has something of its own on record for this project (ADR-060,
+ * amended by the owner on 03.10.2026: "green check on Analyze, and 'Run the
+ * analysis' as the next step — a contradiction"). Since the second amendment
+ * of the same day ("a check must mean done") the green check is a `done` phase
+ * alone, and this decides the *started* mark of a `partial` one
+ * (`toolMark` in `lib/workspace-model.ts`).
  *
  * `done` always counts. `partial` counts only where the partial record is the
  * tool's own output — a generated design waiting for its sign-off, a test
@@ -608,7 +623,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
 
   // `proven` is opt-in and can only ever be true on a `done` phase: a phase that
   // forgets to claim it is amber, which is the safe direction. Roadmap 1.7.
-  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven' | 'mock'> & { proven?: boolean; mock?: boolean };
+  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven' | 'mock' | 'verifiedOutside'> & {
+    proven?: boolean;
+    mock?: boolean;
+    verifiedOutside?: OutsideKind | null;
+  };
   const phase = (key: PhaseKey, s: PhaseFacts): RailStep => {
     const p = PHASES.find((x) => x.key === key)!;
     return {
@@ -622,6 +641,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
       done: s.state === 'done',
       proven: s.state === 'done' && s.proven === true,
       mock: s.state === 'done' && s.proven === true && s.mock === true,
+      verifiedOutside: s.state === 'done' && s.proven !== true ? s.verifiedOutside ?? null : null,
     };
   };
 
@@ -719,9 +739,36 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // screen shows what the receipt says. The strings on their own are still not
   // the record — they are what a reader may annotate — which is why the proven
   // branch asks for both and the branch under it exists at all.
+  // ADR-075 — on the ABAP Cloud route the suite runs only in the reader's own
+  // SAP system, so its result comes from there: an imported result file or the
+  // account's confirmation, server-written and bound to the run, code, test
+  // class and scenario list it was given for (`lib/sap-test-results.ts`).
+  const outside = outsideReading(project);
   let testing: RailStep;
   if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
+  } else if (outside.state === 'current') {
+    const s = outside.summary;
+    const counts = outsideCountsLine(s);
+    testing = outside.verifies
+      ? phase('testing', {
+          state: 'done',
+          verifiedOutside: s.kind,
+          badge: s.kind === 'imported' ? 'Imported · passed' : 'Confirmed by you',
+          detail:
+            s.kind === 'imported'
+              ? `${counts} in your SAP system — imported from an ABAP Unit result file. Not run here.`
+              : `You confirmed ${counts} in your SAP system, run on ${s.ranOn} — a self-declaration. Not run here.`,
+        })
+      : phase('testing', {
+          state: 'partial',
+          badge: s.failed > 0 || (s.coverage?.failed ?? 0) > 0 ? 'Failures · your system' : 'Incomplete',
+          detail:
+            (s.kind === 'imported'
+              ? `Imported from your SAP system: ${counts}.`
+              : `You confirmed ${counts} in your SAP system, run on ${s.ranOn}.`) +
+            ` ${outsideShortfall(s)} Record a passing run to hand over.`,
+        });
   } else if (tests.passed === tests.total && tests.attestedPasses === tests.total) {
     // Proven: every case carries a verdict that is the result of an execution,
     // and an attributable run reported that execution. `testEvidence` refuses to
@@ -753,7 +800,10 @@ export function workflowSteps(project: Project | null): RailStep[] {
       detail:
         `Test draft: ${plural(tests.total, 'case')} generated, no test run on record.` +
         (tests.simulated > 0 ? ` ${tests.simulated} simulated — a simulation is not a test run.` : '') +
-        (tests.connectivity > 0 ? ` ${tests.connectivity} connectivity checks reached the tenant — not tests of the code.` : ''),
+        (tests.connectivity > 0 ? ` ${tests.connectivity} connectivity checks reached the tenant — not tests of the code.` : '') +
+        (outside.state === 'earlier'
+          ? ' A result from your SAP system is on record for an earlier run, code, test class or scenario list — record it again.'
+          : ''),
     });
   } else {
     testing = phase('testing', {
@@ -822,11 +872,22 @@ export function workflowSteps(project: Project | null): RailStep[] {
         state: 'done',
         proven: testing.proven,
         mock: testing.mock,
-        badge: testing.proven ? (testing.mock ? 'Ready · mock tests' : 'Ready') : 'Unverified',
+        verifiedOutside: testing.verifiedOutside,
+        badge: testing.proven
+          ? (testing.mock ? 'Ready · mock tests' : 'Ready')
+          : testing.verifiedOutside === 'imported'
+            ? 'Ready · imported tests'
+            : testing.verifiedOutside === 'confirmed'
+              ? 'Ready · confirmed tests'
+              : 'Unverified',
         detail: testing.mock
           ? 'Code, documentation and a passing sandbox test run against mocks are on record — not a run against an SAP system. Whether to deploy remains an architect’s decision.'
           : testing.proven
           ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.'
+          : testing.verifiedOutside === 'imported'
+          ? 'Code, documentation and a passing ABAP Unit run imported from your SAP system are on record — run there, not here. Whether to deploy remains an architect’s decision.'
+          : testing.verifiedOutside === 'confirmed'
+          ? 'Code, documentation and your confirmation that the ABAP Unit class passed in your SAP system are on record — a self-declaration, not a run here. Whether to deploy remains an architect’s decision.'
           : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
       })
     : !hasGenerated && tests.total === 0 && !hasDocs
@@ -854,6 +915,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     done: false,
     proven: false,
     mock: false,
+    verifiedOutside: null,
     badge,
     detail,
   });
@@ -897,7 +959,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     hasDesign && s.design
       ? stale(design, `Designed for ${prevBasis} — regenerate it against the current analysis.`)
       : hasDesign && s.signOff
-        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
+        ? { ...design, state: 'partial', done: false, proven: false, verifiedOutside: null, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
         : design,
     hasGenerated && s.code
       ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)

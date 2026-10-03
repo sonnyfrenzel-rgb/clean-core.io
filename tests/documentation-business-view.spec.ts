@@ -24,6 +24,7 @@ import {
   describedSteps,
   engineDocumentationOf,
   fixtureSource,
+  processDocumentOf,
   FIXTURE_FILE,
 } from './helpers/business-layer-fixture';
 
@@ -134,29 +135,28 @@ test.describe('the SOP and the RACI, as data', () => {
 });
 
 test.describe('the Confluence export', () => {
-  test('keeps every SOP step and every RACI row, and adds the glance as tables', async () => {
-    const html = await buildEngineConfluenceHtml(DOC, LAYER, {
-      glance: {
-        headline: 'Reads purchase requisition (EBAN) — in 11 steps.',
-        callouts: [{ title: '9 business rules are hard-coded in the program', provenance: 'reconstructed', more: 0, evidence: [{ label: 'plant 1000', ref: 'BR-004', anchor: { lineStart: 87, lineEnd: 87 } }] }],
-      },
-    }).text();
-    // The full layer, unchanged.
+  test('keeps every SOP step and every RACI row, after the process description and before the trace', async () => {
+    // Owner 03.10.2026: the page opens with the process description; the
+    // business layer follows it as a model proposal, the technical trace last.
+    const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), LAYER, { processSteps: STEPS }).text();
     expect(html).toContain('Business layer — Model proposal');
-    for (const row of LAYER.raci_matrix) expect(html).toContain(`<code>${row.stepId}</code></td><td>${row.r || 'N/A'}</td>`);
+    for (const row of LAYER.raci_matrix) expect(html).toContain(`<code>${row.stepId}</code></td><td>${row.r || 'Not determined'}</td>`);
     for (const sop of LAYER.sop_details) {
       expect(html).toContain(`<code>${sop.stepId}</code>`);
       if (sop.narrative) expect(html).toContain(sop.narrative);
     }
-    // The glance: callout with its evidence, the SOP strip and the matrix, each row.
-    expect(html).toContain('data-glance-export');
-    expect(html).toContain('BR-004 · L87 · plant 1000');
+    // The SOP strip and the matrix as tables, each row.
     for (const row of LAYER.raci_matrix) {
       expect(html).toContain(`data-glance-sop-step="${row.stepId}"`);
       expect(html).toContain(`data-glance-raci-step="${row.stepId}"`);
     }
     expect(html).toContain('SOP steps — Model proposal');
     expect(html).toContain('RACI matrix — Model proposal');
+    // A missing value reads "Not determined", never a default (ADR-068).
+    expect(html.slice(html.indexOf('data-business-layer'))).not.toContain('N/A');
+    const at = (marker: string) => html.indexOf(marker);
+    expect(at('data-doc-section="questions"')).toBeLessThan(at('data-business-layer'));
+    expect(at('data-business-layer')).toBeLessThan(at('data-doc-section="appendix"'));
   });
 });
 
@@ -270,18 +270,25 @@ test.describe('the Documentation stage in a browser', () => {
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(0);
   });
 
-  test('without a business layer the first card offers to generate it, above the technical documentation', async ({ page }) => {
+  test('without a business layer and without a model the first card says why, above the process description', async ({ page }) => {
     test.setTimeout(300 * 1000);
+    // With a model, opening the stage writes the layer itself
+    // (tests/documentation-on-open.spec.ts); here none can be called.
+    await page.route('**/api/model-stages', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ stages: {}, keyAvailable: false, keySource: null }),
+    }));
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });
     const offer = page.locator('[data-business-layer-offer]');
     await expect(offer).toBeVisible({ timeout: 120000 });
     await expect(offer.locator('[data-provenance="proposed"]')).toBeVisible();
-    // The action, or — where no model can be called — the reason, never a silent nothing.
-    const action = offer.getByRole('button', { name: 'Generate the business SOP & RACI' });
-    if (await action.count()) await expect(action).toBeVisible();
-    else await expect(offer.locator('[data-not-generated], [data-business-layer-blocked]').first()).toBeVisible();
+    // No model: the reason in one line, and the way to Settings — never a silent nothing.
+    await expect(offer.locator('[data-business-layer-off]')).toBeVisible();
+    await expect(offer.locator('[data-business-layer-off] a[href="/settings"]')).toBeVisible();
+    await expect(offer.getByRole('button', { name: 'Generate the business SOP & RACI' })).toHaveCount(0);
     await expect(page.locator('[data-stage-output="documentation"]')).toBeVisible();
     const y = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
     // The first card of the stage: above the glance, the map and the technical documentation.

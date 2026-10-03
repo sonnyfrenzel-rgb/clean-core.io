@@ -39,6 +39,7 @@ import { routeLabel, sapNamesForDisplay } from './sap-naming';
 import { buildEvidenceChain, type EvidenceChain } from './evidence-chain';
 import { sha256Hex } from './artefact-digest';
 import { toDate } from './format';
+import { outsideChipNote, outsideCountsLine, outsideReading, outsideShortfall } from './sap-test-results';
 
 /* ------------------------------------------------------------------ links */
 
@@ -327,6 +328,8 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
   const testPhase = phase('testing');
   const ev = testEvidence(project);
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  // ADR-075 — a result from the reader's own SAP system, on the ABAP Cloud route.
+  const outside = outsideReading(project);
   const tests = ev.total === 0
     ? link('tests', {
         provenance: 'not-determined', provenanceNote: null, value: null, by: null, at: null,
@@ -338,6 +341,25 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
           value: `${plural(ev.total, 'test case')} written`,
           by: null, at: null, missing: testPhase.detail,
         })
+      : outside.state === 'current'
+        ? link('tests', {
+            // Imported from a result file, or the account's word: never *Proven*,
+            // because nothing here executed the class.
+            provenance: outside.summary.kind,
+            provenanceNote: outsideChipNote(outside.summary.kind),
+            value:
+              outside.summary.kind === 'imported'
+                ? `${outsideCountsLine(outside.summary)} in your SAP system`
+                : `${outsideCountsLine(outside.summary)} — ${outside.summary.system}, ${outside.summary.ranOn}`,
+            by: outside.summary.recordedBy,
+            at: outside.summary.recordedAt,
+            missing: [
+              outsideShortfall(outside.summary),
+              outside.summary.kind === 'imported'
+                ? 'Run in your SAP system and imported from its result file — not run here, and not part of the signed audit pack.'
+                : 'Your statement that the class ran — a self-declaration, not a record of the run, and not part of the signed audit pack.',
+            ].filter(Boolean).join(' '),
+          })
       : receipt && ev.attestedPasses + ev.attestedFailures > 0
         ? link('tests', {
             // The only runner is the sandbox (`TestRunReceipt.environment` is
@@ -515,6 +537,18 @@ export function confirmationsOf(project: HandoverProject): Confirmation[] {
   if (receipt?.executedBy) {
     out.push({ what: 'Ran the test suite in the sandbox', account: receipt.executedBy, at: receipt.executedAt || null, provenance: 'demonstrated-mock' });
   }
+  const outside = outsideReading(project);
+  if (outside.state === 'current') {
+    const s = outside.summary;
+    out.push({
+      what: s.kind === 'imported'
+        ? `Imported the ABAP Unit result from your SAP system: ${outsideCountsLine(s)}`
+        : `Confirmed the ABAP Unit class ran in your SAP system: ${outsideCountsLine(s)}`,
+      account: s.recordedBy,
+      at: s.recordedAt,
+      provenance: s.kind,
+    });
+  }
   const decision = storedDecisionOf(project);
   for (const c of decision?.conditions ?? []) {
     if (c.attestation) {
@@ -550,6 +584,16 @@ export function handoverTimeline(project: HandoverProject): TimelineEntry[] {
   if (target) push(isoOf(project.architectSignOffAt), `Target architecture confirmed: ${target}`, str(project.approvedBy));
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   if (receipt) push(receipt.executedAt || null, 'Test suite ran in the sandbox', receipt.executedBy || null);
+  const outside = outsideReading(project);
+  if (outside.state === 'current') {
+    push(
+      outside.summary.recordedAt,
+      outside.summary.kind === 'imported'
+        ? 'ABAP Unit result imported from your SAP system'
+        : 'ABAP Unit run in your SAP system confirmed — a self-declaration',
+      outside.summary.recordedBy,
+    );
+  }
   const decision = storedDecisionOf(project);
   for (const e of decision?.timeline ?? []) {
     // The run's own entry is already above, from the run itself.
@@ -607,7 +651,7 @@ export function handoverNextStep(
     };
   }
   const testing = phase('testing');
-  if (!testing.proven) {
+  if (!testing.proven && !testing.verifiedOutside) {
     return {
       kind: 'open',
       headline: 'Run the test suite',
@@ -621,7 +665,9 @@ export function handoverNextStep(
     return {
       kind: 'open',
       headline: 'Confirm the decision',
-      reason: `Code, documentation and a recorded test run are there; no confirmed decision is. ${travels}`,
+      reason: testing.verifiedOutside
+        ? `Code, documentation and ${testing.verifiedOutside === 'imported' ? 'a passing test result imported from your SAP system' : 'your confirmation that the tests passed in your SAP system (a self-declaration)'} are there; no confirmed decision is. ${travels}`
+        : `Code, documentation and a recorded test run are there; no confirmed decision is. ${travels}`,
       href: `/project/${projectId}?view=management`,
       action: 'Open the Management view',
     };
@@ -750,7 +796,7 @@ export function handoverGroups(
       ? 'No test suite generated.'
       : tests.state === 'stale'
         ? `${tests.value} — made for a previous source.`
-        : tests.provenance === 'demonstrated-mock'
+        : tests.provenance === 'demonstrated-mock' || tests.provenance === 'imported' || tests.provenance === 'confirmed'
           ? tests.value!
           : ranWithoutVerdict
             ? `${tests.value}, the recorded run returned no pass or fail`
@@ -820,7 +866,14 @@ export function handoverStillNeeded(
   const tests = by('tests');
   if (tests.state === 'open') add('tests', 'An executed test suite — no suite generated yet', 'testing');
   else if (tests.state === 'stale') add('tests', 'A test suite for the current source', 'testing');
-  else if (tests.provenance !== 'demonstrated-mock') add('tests', `An executed test suite — ${tests.value}, none run`, 'testing');
+  else if (tests.provenance === 'imported' || tests.provenance === 'confirmed') {
+    // ADR-075: a result from your SAP system completes this line only when it
+    // verifies the phase — no failure, every scenario with a result.
+    const outside = outsideReading(project);
+    if (outside.state === 'current' && !outside.verifies) {
+      add('tests', `Passing tests from your SAP system — ${outsideShortfall(outside.summary) ?? 'not every scenario passed'}`, 'testing');
+    }
+  } else if (tests.provenance !== 'demonstrated-mock') add('tests', `An executed test suite — ${tests.value}, none run`, 'testing');
 
   // Always open: `buildHandoverChain` never finds a stored simulation.
   add('economics', 'A cost model — figures entered in Economics are not stored, so none travels with the package', 'tco');
@@ -889,6 +942,17 @@ export function handoverFacets(
       ? { key: 'quality', label: 'Quality', value: 'Stale', sub: 'Written for a previous source', provenance: 'stale', basis: phase('testing').detail }
       : tests.provenance === 'demonstrated-mock'
         ? { key: 'quality', label: 'Quality', value: ev.attestedFailures > 0 ? 'Failing' : 'Run on record', sub: `${tests.value} · sandbox, against mocks`, provenance: 'demonstrated-mock', basis: 'A recorded sandbox run against mocks — not an SAP system.' }
+        : tests.provenance === 'imported' || tests.provenance === 'confirmed'
+        ? {
+            key: 'quality',
+            label: 'Quality',
+            value: phase('testing').verifiedOutside ? 'Passed in your system' : 'Failing or incomplete',
+            sub: tests.value!,
+            provenance: tests.provenance,
+            basis: tests.provenance === 'imported'
+              ? 'An ABAP Unit result imported from a file of your SAP system — not a run here.'
+              : 'Your confirmation that the ABAP Unit class ran in your SAP system — a self-declaration, not a run here.',
+          }
         : { key: 'quality', label: 'Quality', value: 'Incomplete', sub: `${plural(ev.total, 'scenario')} written, none run`, provenance: 'proposed', basis: 'Test cases written by the language model; no recorded run stands behind any verdict.' };
 
   return [handover, pack, decisionFacet, quality];
@@ -906,6 +970,7 @@ export function handoverStatusLine(project: HandoverProject, chain: readonly Han
   const run = chain.find((l) => l.key === 'run')!;
   const decision = chain.find((l) => l.key === 'decision')!;
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const outside = outsideReading(project);
   const mc = project.auditMetadata?.modelCard;
   const engine = str(project.analyzerVersion) ?? mc?.engineVersion ?? null;
   const model = mc?.model ? mc.model : mc?.modelParticipation === 'none' ? 'no model' : 'model not recorded';
@@ -922,7 +987,14 @@ export function handoverStatusLine(project: HandoverProject, chain: readonly Han
         : { key: 'decision', label: 'Decision', value: 'not confirmed', tone: 'neutral' },
     receipt
       ? { key: 'receipts', label: 'Receipts', value: 'sandbox test run', tone: 'information' }
-      : { key: 'receipts', label: 'Receipts', value: 'none', tone: 'neutral' },
+      : outside.state === 'current'
+        ? {
+            key: 'receipts',
+            label: 'Receipts',
+            value: outside.summary.kind === 'imported' ? 'ABAP Unit result imported from your system' : 'ABAP Unit run confirmed by you',
+            tone: 'information',
+          }
+        : { key: 'receipts', label: 'Receipts', value: 'none', tone: 'neutral' },
     { key: 'engine', label: 'Engine', value: `${engine ?? 'not recorded'} · ${model}`, tone: 'information' },
   ];
 }

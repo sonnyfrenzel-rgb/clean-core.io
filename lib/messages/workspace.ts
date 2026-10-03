@@ -22,12 +22,14 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ask.otherwise': 'otherwise',
   'ask.endsFlow': 'ends the flow here',
   'ask.oneRule': 'One rule stands on this decision point:',
+  'ask.showCode': 'Show the code',
   // CoachMarks
   'coach.next': 'Next',
   'coach.done': 'Done',
   'coach.dismissAll': 'Dismiss all',
   // LayerBar
-  'layerBar.label': 'Layers',
+  'layerBar.label': 'Sections of this process',
+  'layerBar.lead': 'Sections',
   'layerBar.empty': 'empty',
   'layerBar.more': 'More',
   // LayerSection
@@ -36,6 +38,9 @@ export const WORKSPACE_PAGE_MESSAGES = {
     'Read from the source the signed run analysed, without a model — a reconstruction of the code, not evidence of how the process runs in production. What to do next stands under Next step.',
   'layerSection.showMap': 'Show the map',
   'layerSection.showMapBusiness': 'Show the map in Business',
+  'layerSection.backToTop': 'Back to top of section',
+  'layerSection.needAbove':
+    'The process map, its counts and the business rules of this section stand above, in the order you read them.',
   // NotDeterminedCard
   'notDetermined.title': 'Not determined',
   'notDetermined.noSource':

@@ -87,10 +87,19 @@ test.describe('the components cannot be overridden from outside', () => {
       expect(src, `${rel} switches the page inert by itself`).not.toMatch(/setAttribute\('inert'/);
       expect(src, `${rel} is not announced as modal`).toContain('aria-modal="true"');
       expect(src, `${rel} is not named by its title`).toContain('aria-labelledby={titleId}');
-      expect(src, `${rel} is not portalled to body, so inert would switch it off too`).toMatch(
-        /createPortal\([\s\S]*document\.body/,
+      // Portalled to `body`, or to the element in full screen while there is
+      // one (owner 03.10.2026: a dialog over a canvas in full screen was drawn
+      // nowhere) — through the one helper, never a target of its own.
+      expect(src, `${rel} is not portalled through the shared target`).toMatch(
+        /createPortal\([\s\S]*target,/,
       );
+      expect(src).toContain('useCcPortalTarget()');
     }
+    const modal = read('components/cc/modal.ts');
+    expect(modal, 'the portal target is not body outside full screen').toMatch(/document\.fullscreenElement as HTMLElement \| null\) \?\? document\.body/);
+    // A layer inside the full-screen element keeps its own ancestors live:
+    // inert goes on the siblings at every level up to body, not on body's children only.
+    expect(modal).toMatch(/node !== document\.body && node\.parentElement/);
   });
 
   test('the toast cannot be asked for an error', () => {

@@ -39,7 +39,9 @@ import EditorImport from './EditorImport';
 import { CanvasFullscreenToggle, CanvasZoomControls } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
+import ProcessBreadcrumb, { useLevelUpKey } from './ProcessBreadcrumb';
 import {
+  editorLevelPath,
   elementListTabStop,
   overlapsOnLevel,
   svgToPng,
@@ -394,6 +396,8 @@ export interface BpmnEditorProps {
    * (Codex review code-demo-02).
    */
   exportable?: boolean;
+  /** The name of the top level in the level path; the file name without it. */
+  processName?: string;
 }
 
 /** A row of the list beside the canvas. */
@@ -452,6 +456,7 @@ export default function BpmnEditor({
   save,
   openLatest,
   exportable = true,
+  processName,
 }: BpmnEditorProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -481,6 +486,13 @@ export default function BpmnEditor({
   const [importedOutside, setImportedOutside] = useState<ReadonlySet<string>>(new Set());
   const [importing, setImporting] = useState<{ fileName: string; outcome: ImportOutcome | null; saved: string | null; refused?: string | null } | null>(null);
   const [importSaving, setImportSaving] = useState(false);
+  /**
+   * The level on show — the sub-processes down to it, outermost first; empty
+   * at the top. Read off the canvas whenever its root changes: bpmn-js's own
+   * drill-down arrow, the level path, `Alt+↑`, Back in full screen.
+   */
+  const [levelPath, setLevelPath] = useState<{ plane: string; name: string }[]>([]);
+  const topRootRef = useRef<Shape | null>(null);
   /** Incremented on every change to the draft — see `draft-save.ts`. */
   const changeCountRef = useRef(0);
   /** An imported file on the canvas is unsaved even when the command stack is empty. */
@@ -576,6 +588,14 @@ export default function BpmnEditor({
         setZoom(Math.round(canvas.zoom() * 100));
       });
       setZoom(Math.round(canvas.zoom() * 100));
+      const readLevel = () => {
+        const root = canvas.getRootElement();
+        const path = editorLevelPath(root);
+        if (path.length === 0) topRootRef.current = root;
+        setLevelPath(path);
+      };
+      eventBus.on('root.set', readLevel);
+      readLevel();
 
       setModeler(built);
 
@@ -1003,10 +1023,26 @@ export default function BpmnEditor({
     }
   }, [baseXml, fileName, importing, load, outsideOf, save]);
 
-  /** Full screen — the mechanism the reading map shares (`useCanvasFullscreen`). */
+  /** Open a level on the canvas: null for the top, otherwise a sub-process id. */
+  const openLevel = useCallback((plane: string | null) => {
+    const canvas = modelerRef.current?.get<CanvasService>('canvas');
+    if (!canvas) return;
+    const target = plane ? canvas.findRoot(`${plane}_plane`) : topRootRef.current;
+    if (target && target !== canvas.getRootElement()) canvas.setRootElement(target);
+  }, []);
+  const levelNow = levelPath.length ? levelPath[levelPath.length - 1].plane : null;
+  const levelCrumbs = useMemo(() => [
+    { plane: null as string | null, label: processName || fileName, outline: '' },
+    ...levelPath.map((step) => ({ plane: step.plane as string | null, label: labels.get(step.plane) ?? (step.name || step.plane), outline: '' })),
+  ], [fileName, labels, levelPath, processName]);
+  // `Alt+↑` one level up, as on the reading map (the reading map's own binding is off while editing).
+  useLevelUpKey(levelPath.length ? () => openLevel(levelPath.length > 1 ? levelPath[levelPath.length - 2].plane : null) : null);
+
+  /** Full screen — the mechanism the reading map shares (`useCanvasFullscreen`), levels included. */
   const { fullscreen, overlay, filled, toggle: toggleFullscreen, toggleRef: fullscreenToggleRef } = useCanvasFullscreen({
     rootRef,
     escapeInside: hostRef,
+    level: { current: levelNow, set: openLevel },
   });
   useEffect(() => {
     // The canvas measures its box; after the box changed it has to measure again.
@@ -1099,6 +1135,14 @@ export default function BpmnEditor({
         aria-label={wt('editor.toolbarLabel')}
         className={`flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2 ${keep}`}
       >
+        {/* The level path and the way up, the reading map's own, once the
+            reader is below the top (bpmn-js's breadcrumb is hidden for it). */}
+        {levelPath.length ? (
+          <>
+            <ProcessBreadcrumb crumbs={levelCrumbs} onOpen={openLevel} />
+            <span aria-hidden={true} className="h-6 border-l border-cc-line" />
+          </>
+        ) : null}
         <CcIconButton data-editor-undo="" label={wt('editor.undo')} disabled={!canUndo} onClick={undo}>
           <Undo2 size={16} aria-hidden={true} />
         </CcIconButton>

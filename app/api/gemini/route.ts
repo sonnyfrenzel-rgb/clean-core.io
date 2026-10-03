@@ -30,6 +30,7 @@ import {
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { resolveRequestedModel } from '@/lib/gemini-model-choice';
+import { responseSchemaForStage } from '@/lib/model-response-schema';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -336,14 +337,18 @@ export async function POST(request: NextRequest) {
 
     // No quota reservation here — metering happens once per analysis run in
     // /api/runs/create. See the module header.
+    const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage) : undefined;
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER))
       : await callWithRetry(async () => {
           const result = await ai!.models.generateContent({
             model,
             contents: prompt,
+            // A stage whose answer has a fixed shape sends it as a schema, so
+            // the provider decodes against it rather than taking JSON mode as
+            // a suggestion (`lib/model-response-schema.ts`, 03.10.2026).
             config: jsonResponse
-              ? { responseMimeType: 'application/json' }
+              ? { responseMimeType: 'application/json', ...(responseSchema ? { responseJsonSchema: responseSchema } : {}) }
               : undefined,
           });
           return {
@@ -367,7 +372,7 @@ export async function POST(request: NextRequest) {
         finishReason: completion.finishReason,
       });
       return NextResponse.json(
-        { error: incompleteAnswerMessage(completion.reason), code: MODEL_INCOMPLETE_CODE },
+        { error: incompleteAnswerMessage(completion.reason), code: MODEL_INCOMPLETE_CODE, reason: completion.reason },
         { status: 502 },
       );
     }

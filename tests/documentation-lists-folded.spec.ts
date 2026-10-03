@@ -23,6 +23,7 @@ import {
   statementsSummary,
   stepsSummary,
 } from '../lib/documentation-lists';
+import { sentenceKey } from '../lib/process-document';
 
 /**
  * Owner feedback 02.10.2026 on the Documentation stage (translated): "leave the
@@ -89,6 +90,20 @@ async function expectTheRule(page: Page): Promise<{ long: string[]; short: strin
     }
   }
   return { long, short };
+}
+
+/**
+ * The model switched off for this browser: `/api/model-stages` answers with
+ * no key, so opening the stage writes only what the engine reads and calls no
+ * model (owner 03.10.2026 — the business layer starts on its own only where a
+ * model is available).
+ */
+async function modelOff(page: import('@playwright/test').Page) {
+  await page.route('**/api/model-stages', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ stages: {}, keyAvailable: false, keySource: null }),
+  }));
 }
 
 async function open(list: Locator): Promise<void> {
@@ -190,6 +205,7 @@ test.describe('the signed-in Documentation stage', () => {
   test('long lists start folded with count and summary, open to every row, and print and export in full', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
+    await modelOff(page);
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-engine-documentation]')).toBeAttached({ timeout: 90000 });
@@ -209,7 +225,9 @@ test.describe('the signed-in Documentation stage', () => {
     await expect(steps.locator('[data-cc-disclosure-trigger]')).toContainText(`(${doc.steps.length})`);
     await expect(steps.locator('[data-cc-disclosure-summary]')).toHaveText(stepsSummary(doc.steps));
     const statements = page.locator('[data-doc-list="statements"]');
-    await expect(statements.locator('[data-cc-disclosure-summary]')).toHaveText(statementsSummary(doc.statements));
+    // The trace is the appendix of the process description: each sentence once.
+    const unique = doc.statements.filter((st, i) => doc.statements.findIndex((x) => sentenceKey(x.text) === sentenceKey(st.text)) === i);
+    await expect(statements.locator('[data-cc-disclosure-summary]')).toHaveText(statementsSummary(unique));
 
     // Print: every folded list is on paper, every row of it.
     await page.emulateMedia({ media: 'print' });
@@ -225,7 +243,7 @@ test.describe('the signed-in Documentation stage', () => {
     await expect(steps.locator('[data-doc-step]')).toHaveCount(doc.steps.length);
     await expect(steps.locator('[data-doc-step]').last()).toBeVisible();
     await open(statements);
-    await expect(statements.locator('[data-cc-disclosure-region] ul > li')).toHaveCount(doc.statements.length);
+    await expect(statements.locator('[data-cc-disclosure-region] ul > li')).toHaveCount(unique.length);
     await expect(statements).toContainText('50000.00');
     // And it closes again with the keyboard.
     const trigger = steps.locator('[data-cc-disclosure-trigger]');
@@ -241,10 +259,10 @@ test.describe('the signed-in Documentation stage', () => {
     await download.saveAs(file);
     const html = fs.readFileSync(file, 'utf8');
     fs.unlinkSync(file);
-    const table = html.slice(html.indexOf('<h2>The process, element by element</h2>'), html.indexOf('<h2>Business statements'));
-    expect(table.match(/<tr><td><code>/g)?.length, 'the export lost element rows').toBe(doc.steps.length);
-    const list = html.slice(html.indexOf('<h2>Business statements'), html.indexOf('<h2>Not determined'));
-    expect(list.match(/<li>/g)?.length, 'the export lost statements').toBe(doc.statements.length);
+    // The trace stands last, as the appendix: every element, every sentence once.
+    expect(html.indexOf('data-doc-section="appendix"')).toBeGreaterThan(html.indexOf('data-doc-section="questions"'));
+    expect(html.match(/data-trace-element=""/g)?.length, 'the export lost element rows').toBe(doc.steps.length);
+    expect(html.match(/data-trace-statement=""/g)?.length, 'the export lost statements').toBe(unique.length);
   });
 });
 

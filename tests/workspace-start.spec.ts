@@ -156,11 +156,13 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await expect(tab).not.toContainText('empty');
     const section = page.locator('[data-workspace-layer-section="need"]');
     await expect(section).not.toContainText('Nothing on record');
-    const summary = section.locator('[data-workspace-layer-process]');
-    await expect(summary).toBeVisible({ timeout: 30000 });
-    await expect(summary).toHaveAttribute('data-steps', String(steps));
-    await expect(summary).toHaveAttribute('data-decisions', String(decisions));
+    // The tab counts what the map counts. The section itself no longer repeats
+    // the summary in Business, where the map and the rules stand above it
+    // (owner, 03.10.2026: the same numbers once); it says where they are.
     await expect(tab).toContainText(`${steps} step`);
+    await expect(tab).toContainText(`${decisions} decision point`);
+    await expect(section.locator('[data-workspace-layer-process]')).toHaveCount(0);
+    await expect(section.locator('[data-workspace-layer-above]')).toBeVisible({ timeout: 30000 });
   });
 
   test('on a phone: the build-up, the full map, the way back — no horizontal scroll', async ({ page }) => {

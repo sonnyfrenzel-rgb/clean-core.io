@@ -4,7 +4,7 @@ import React, { useId } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '@/lib/cc-messages';
 import CcButton from './Button';
-import { useCcHydrated, useCcModal } from './modal';
+import { useCcHydrated, useCcModal, useCcPortalTarget } from './modal';
 
 /**
  * Confirmation before something that cannot be taken back — `DESIGN.md` §2.6.
@@ -55,11 +55,12 @@ export default function CcMessageBox({
   // `CcDialog`. The box itself takes the first focus, not the confirm button,
   // so a stray Enter cannot delete anything.
   const hydrated = useCcHydrated();
+  const target = useCcPortalTarget();
   const shown = open && hydrated;
   const boxRef = useCcModal<HTMLDivElement>({ open: shown, onClose: onCancel, initialFocus: 'container' });
   const titleId = useId();
 
-  if (!shown) return null;
+  if (!shown || !target) return null;
 
   return createPortal(
     <div data-cc-message-box-layer="" className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4">
@@ -93,6 +94,6 @@ export default function CcMessageBox({
         </div>
       </div>
     </div>,
-    document.body,
+    target,
   );
 }

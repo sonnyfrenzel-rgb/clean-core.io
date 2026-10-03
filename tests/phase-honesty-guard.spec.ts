@@ -387,14 +387,15 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
     //    status line's and the chips' to say — checked above, from the contract.
     const first = (key: string) => seen[key][0].stage;
     // Economics' `partial` is the signed run as its baseline, not an estimate
-    // anybody made: since 03.10.2026 the check means the tool's own output is
-    // on record (ADR-060 amended, `toolOnRecord`), so it carries none — on both bars.
+    // anybody made, so it carries no mark — on both bars. Since the owner's
+    // second amendment of 03.10.2026 ("a check must mean done", ADR-060) the
+    // check is a phase that is `done`, and every other phase here is.
     const ON_RECORD = [...PROVEN, ...UNPROVEN].filter((k) => k !== 'tco');
     expect(first('tco').tone, 'tco: a baseline is marked as if an estimate were on record').toBe('none');
     expect(first('tco').tick).toBe(false);
     expect(seen.tco[0].workspace.tick).toBe(false);
     for (const key of ON_RECORD) {
-      expect(first(key).tone, `${key}: the bar should mark it used`).toBe('used');
+      expect(first(key).tone, `${key}: the bar should mark it done`).toBe('done');
       for (const row of seen[key]) {
         expect(`${row.stage.name} ${row.workspace.name}`, `${key}: a bar claims proof`).not.toMatch(/prove|proof|verif/i);
       }

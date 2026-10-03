@@ -9,6 +9,7 @@ import CcWhyPopover from '@/components/cc/WhyPopover';
 import StageMetaDetails from '@/components/StageMetaDetails';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { countsLine, type LastRun } from './testing-summary';
+import { outsideChipNote, outsideCountsLine, type OutsideReading } from '@/lib/sap-test-results';
 
 /**
  * The head of the Testing tool — proposal A (Fiori object page), owner decision
@@ -121,9 +122,12 @@ export default function TestingHeader({
   handChecks,
   tenantLocked,
   status,
+  outside,
 }: {
   scenarios: ScenarioFacet;
   run: LastRun;
+  /** ADR-075 — on the ABAP Cloud route, the result from the reader's own SAP system. */
+  outside?: OutsideReading;
   /** Running is off: the suite or its code was built for an earlier source. */
   blocked: boolean;
   isAbapCloud: boolean;
@@ -136,7 +140,30 @@ export default function TestingHeader({
   let runFigure: React.ReactNode;
   let runSub: React.ReactNode;
   let runProvenance: ProvenanceValue = 'not-determined';
-  if (run.kind === 'recorded') {
+  if (isAbapCloud && outside?.state === 'current') {
+    const s = outside.summary;
+    runFigure =
+      s.kind === 'imported' ? (
+        <>
+          <span className={FIGURE}>{s.coverage?.passed ?? 0}</span>
+          <span className={UNIT}>of {s.scenarioCount} passed</span>
+        </>
+      ) : (
+        <>
+          <span className={FIGURE}>{s.passed}</span>
+          <span className={UNIT}>of {s.passed + s.failed} passed</span>
+        </>
+      );
+    runSub = (
+      <>
+        <CcDateText value={s.recordedAt} format="datetime" /> · {outsideCountsLine(s)} — in your SAP system, not here
+        <span className="mt-1 block">
+          <CcProvenanceChip value={s.kind} note={outsideChipNote(s.kind)} />
+        </span>
+      </>
+    );
+    runProvenance = s.kind;
+  } else if (run.kind === 'recorded') {
     runFigure = (
       <>
         <span className={FIGURE}>{run.counts.passed}</span>
