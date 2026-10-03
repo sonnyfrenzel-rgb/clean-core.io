@@ -135,8 +135,12 @@ test.describe('the module carries the guards the page used to be grepped for', (
 
 test('the page runs this model and keeps no copy of it', () => {
   const page = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+  // Since 03.10.2026 the page reaches the model through the four steps of
+  // `lib/economics-record.ts`, which the phase contract reads too.
+  const steps = readFileSync(join(process.cwd(), 'lib/economics-record.ts'), 'utf8');
   expect(page).toContain("from '@/lib/tco-model'");
-  expect(page).toContain('tcoForecast({');
+  expect(page).toContain('economicsProgress({');
+  expect(steps).toContain('tcoForecast({');
   // The arithmetic that used to sit in the page's useMemo.
   expect(page, 'the adaptation factor lives in the model').not.toMatch(/const factor = \(100 - scoreAfter\)/);
   expect(page, 'and so does the ROI').not.toMatch(/const roiYear1 =/);

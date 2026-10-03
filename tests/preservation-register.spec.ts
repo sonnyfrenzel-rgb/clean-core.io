@@ -963,12 +963,14 @@ test.describe('the register matches the code', () => {
       expect(text, 'something writes `presentation` now — update L-09').not.toMatch(/\bpresentation:\s/);
     }
 
-    // L-08: Economics is skipped by "continue" and can never be done.
+    // L-08: Economics is skipped by "continue", is done only from stored
+    // figures that complete its four steps (03.10.2026), and is never proven.
     expect(limit('L-08').subject).toBe('economics');
     expect(contract).toContain("s.key !== 'tco'");
     const economics = contract.slice(contract.indexOf('const economics ='), contract.indexOf('const gaps ='));
     expect(economics.length).toBeGreaterThan(0);
-    expect(economics, 'Economics can be done now — update L-08').not.toMatch(/state: 'done'/);
+    expect(economics, 'Economics is done from something else now — update L-08').toMatch(/econProgress\.complete\s*\?\s*phase\('tco', \{\s*state: 'done'/);
+    expect(economics, 'Economics claims proof now — update L-08').not.toMatch(/proven:\s*true/);
   });
 });
 

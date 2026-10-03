@@ -97,6 +97,10 @@ test.beforeAll(async () => {
 });
 
 async function openEconomics(page: import('@playwright/test').Page, projectId: string) {
+  // The figures are stored with the project since 03.10.2026; every test here
+  // starts from an empty stage, so what an earlier test stored is set aside.
+  // A document that is not a record reads as nothing stored.
+  await adminSetDoc(`projects/${projectId}/cost_assumptions`, 'current', { reset: true });
   await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
   await page.goto(`/project/${projectId}/tco`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
