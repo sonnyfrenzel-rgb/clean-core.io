@@ -201,6 +201,19 @@ test.describe('levels in full screen and inline — desktop', () => {
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
     await page.waitForTimeout(400);
     expect(await levelOf(frame), 'Escape changed the level').toBe(sub);
+
+    // QA 7e0254da77f0: up inline, then in and out of full screen at the top —
+    // taking full screen's entry off must not restore the sub-process the
+    // history below it was opened on.
+    await up.click();
+    await expect.poll(() => levelOf(frame)).toBe('top');
+    await toggle.click();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await page.waitForTimeout(400);
+    await toggle.click();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
+    await page.waitForTimeout(600);
+    expect(await levelOf(frame), 'leaving full screen restored an earlier level').toBe('top');
   });
 
   test('the Documentation map keeps the level in the address in full screen; the editor walks its own levels there', async ({ page }) => {

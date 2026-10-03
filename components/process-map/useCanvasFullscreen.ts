@@ -154,6 +154,8 @@ export function useCanvasFullscreen({
   });
   /** How many levels deep this full screen's history is; −1 outside full screen. */
   const depthRef = useRef(-1);
+  /** Set while leaving takes full screen's own entry back off: that Back is not a move. */
+  const unwindingRef = useRef(false);
   const levelNow = level ? level.current : null;
 
   useEffect(() => {
@@ -166,7 +168,12 @@ export function useCanvasFullscreen({
     } else if (!filled && depthRef.current >= 0) {
       depthRef.current = -1;
       const state = window.history.state;
-      if (state?.[HISTORY_FLAG] === scope && state?.[DEPTH_KEY] === 0) window.history.back();
+      if (state?.[HISTORY_FLAG] === scope && state?.[DEPTH_KEY] === 0) {
+        // The entry underneath may be a level entry of an earlier full screen:
+        // taking ours off must not restore its level (QA 7e0254da77f0).
+        unwindingRef.current = true;
+        window.history.back();
+      }
     }
   }, [filled, scope]);
 
@@ -195,6 +202,10 @@ export function useCanvasFullscreen({
 
   useEffect(() => {
     const onPop = () => {
+      if (unwindingRef.current) {
+        unwindingRef.current = false;
+        return;
+      }
       const state = window.history.state;
       const ours = state?.[HISTORY_FLAG] === scope;
       if (depthRef.current >= 0) {

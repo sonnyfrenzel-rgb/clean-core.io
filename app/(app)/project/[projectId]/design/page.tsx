@@ -46,6 +46,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import { workflowSteps, staleness, previousBasis, generationPrerequisites } from '@/lib/workflow-steps';
+import { designOnOpen } from '@/lib/design-on-open';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -605,14 +606,16 @@ ${DESIGN_ANSWER_REMINDER}`;
         setProject(data);
         const stored = data as { nonFunctionalRequirements?: NFRData | null };
         const stale = staleness(data);
-        // Written on opening (ADR-070, amended 03.10.2026) when there is none
-        // on record, or the one on record was written for a previous basis —
-        // never again when a current one is there, which would cost a model
-        // call for nothing. Only by the owner: an invited reader reads.
-        const wanted = !data.solutionDesign || (stale.design && !stale.sourceChanged);
+        // Written on opening (ADR-070, amended 03.10.2026): `designOnOpen`.
         const owner = isProjectOwner(data, getAuth().currentUser?.uid ?? null);
         setIsOwner(owner);
-        const canStart = owner && !stale.sourceChanged && !data._runLoadFailed && generationPrerequisites(data, 'design').length === 0;
+        const { wanted, canStart } = designOnOpen({
+          hasDesign: Boolean(data.solutionDesign),
+          stale,
+          owner,
+          runLoadFailed: Boolean(data._runLoadFailed),
+          missingPrerequisites: generationPrerequisites(data, 'design').length,
+        });
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
             // Restore persisted NFR data if available

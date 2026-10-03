@@ -124,10 +124,13 @@ test.describe('what opening Design costs, said before the click', () => {
     expect(DESIGN_ON_OPEN_COST).toMatch(/not counted against your analysis runs/);
     const analysed = { name: 'p', legacyCode: 'REPORT z.', activeRunId: 'r', status: 'analyzed', analysis: '{}', cleanCoreScore: 50 } as unknown as Project;
     const point = nextOpenPoint(analysed);
-    if (point?.key === 'design') expect(point.reason).toContain(DESIGN_ON_OPEN_COST);
+    // QA f1d02d0dd36e: the next step is Design here, so the check is never skipped.
+    expect(point?.key).toBe('design');
+    expect(point?.reason).toContain(DESIGN_ON_OPEN_COST);
     // With the stage off nothing is written on opening, and the step says so instead.
     const off = nextOpenPoint(analysed, { modelStages: { design: false } });
-    if (off?.key === 'design') expect(off.reason).not.toContain(DESIGN_ON_OPEN_COST);
+    expect(off?.key).toBe('design');
+    expect(off?.reason).not.toContain(DESIGN_ON_OPEN_COST);
   });
 });
 
