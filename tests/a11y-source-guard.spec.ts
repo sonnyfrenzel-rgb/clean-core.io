@@ -53,7 +53,11 @@ test.describe('keyboard shortcuts list only keys that work (§5.9 item 12)', () 
     expect(read('components/process-map/ProcessSearch.tsx')).toMatch(/metaKey \|\| event\.ctrlKey/);
     // Alt+↑ — one level up on the map.
     expect(menu).toContain("keys: ['Alt', '↑']");
-    expect(read('components/process-map/ProcessMap.tsx')).toMatch(/event\.altKey \|\| event\.key !== 'ArrowUp'/);
+    // The binding is shared by the reading map and the editor (owner 03.10.2026:
+    // one level up in full screen too), and both use it.
+    expect(read('components/process-map/ProcessBreadcrumb.tsx')).toMatch(/event\.altKey \|\| event\.key !== 'ArrowUp'/);
+    expect(read('components/process-map/ProcessMap.tsx')).toContain('useLevelUpKey(');
+    expect(read('components/process-map/BpmnEditor.tsx')).toContain('useLevelUpKey(');
     // Home / End and Escape on the map.
     const map = read('components/process-map/ProcessMap.tsx');
     expect(map).toContain("event.key === 'Home'");

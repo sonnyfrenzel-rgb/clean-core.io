@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { t } from '@/lib/cc-messages';
 import CcIconButton from './IconButton';
-import { useCcHydrated, useCcModal } from './modal';
+import { useCcHydrated, useCcModal, useCcPortalTarget } from './modal';
 
 /**
  * A dialog for a form or an explanation — `DESIGN.md` §2.6, §2.7.
@@ -112,6 +112,7 @@ export default function CcDialog(props: CcDialogProps) {
   }
 
   const hydrated = useCcHydrated();
+  const target = useCcPortalTarget();
   const shown = open && hydrated;
   const dialogRef = useCcModal<HTMLDivElement>({
     open: shown,
@@ -121,7 +122,7 @@ export default function CcDialog(props: CcDialogProps) {
   const titleId = useId();
   const leadId = useId();
 
-  if (!shown) return null;
+  if (!shown || !target) return null;
 
   const body = (
     <>
@@ -216,6 +217,6 @@ export default function CcDialog(props: CcDialogProps) {
         )}
       </div>
     </div>,
-    document.body,
+    target,
   );
 }

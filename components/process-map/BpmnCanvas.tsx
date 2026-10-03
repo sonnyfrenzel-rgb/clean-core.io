@@ -55,6 +55,8 @@ export interface BpmnCanvasNode {
   anchor?: string | null;
   /** A phase's counted fact, drawn above its anchor ("2 decisions · 1 error end"). */
   fact?: string | null;
+  /** The level a collapsed sub-process opens; null or absent for every other element. */
+  opensPlane?: string | null;
 }
 
 export interface BpmnCanvasProps {
@@ -105,6 +107,16 @@ export interface BpmnCanvasProps {
    * full screen, and back"); how the workspace map opens did not change.
    */
   openFit?: 'whole' | 'readable';
+  /**
+   * The level path and the way up (`ProcessBreadcrumb`), drawn first in the
+   * control row — inline and in full screen alike, since the row is inside
+   * the frame that goes full screen.
+   */
+  levelPath?: React.ReactNode;
+  /** More controls for the row (the outline toggle, the help), after fit. */
+  tools?: React.ReactNode;
+  /** A panel under the row, inside the frame (the keyboard help). */
+  toolsPanel?: React.ReactNode;
 }
 
 interface CanvasService extends ViewboxCanvas {
@@ -158,6 +170,8 @@ interface Handlers {
   onActivate: (elementId: string) => void;
   onActiveChange: (elementId: string) => void;
   onPlaneChange: (plane: string | null) => void;
+  /** A collapsed sub-process clicked in full screen: its level opens there. */
+  onDrill: (elementId: string, plane: string) => void;
 }
 
 /**
@@ -209,12 +223,26 @@ export default function BpmnCanvas({
   excluded,
   controls = false,
   openFit,
+  levelPath,
+  tools,
+  toolsPanel,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(100);
-  const { filled, toggle: toggleFullscreen, exit: exitFullscreen, toggleRef } = useCanvasFullscreen({ rootRef: frameRef });
+  // The level goes with full screen: Back walks the levels opened in it before
+  // it leaves (`useCanvasFullscreen`). Read through a ref, so the hook sees the
+  // parent's handler of this render.
+  const planeHandler = useRef(onPlaneChange);
+  useEffect(() => {
+    planeHandler.current = onPlaneChange;
+  });
+  const setLevel = useCallback((next: string | null) => planeHandler.current(next), []);
+  const { filled, toggle: toggleFullscreen, exit: exitFullscreen, toggleRef } = useCanvasFullscreen({
+    rootRef: frameRef,
+    level: { current: plane, set: setLevel },
+  });
   const filledRef = useRef(filled);
   const controlsRef = useRef(controls);
   const fitOnOpenRef = useRef(fitOnOpen);
@@ -244,7 +272,15 @@ export default function BpmnCanvas({
   }, [plane]);
   // The parent's handlers change on every render; the effect that builds the
   // diagram must not, or the viewer would be torn down on every keystroke.
-  const handlers = useRef<Handlers>({ onActivate, onActiveChange, onPlaneChange });
+  const handlers = useRef<Handlers>({
+    onActivate,
+    onActiveChange,
+    onPlaneChange,
+    onDrill: (id, opens) => {
+      onPlaneChange(opens);
+      onActivate(id);
+    },
+  });
   const activeRef = useRef<string | null>(active);
   /**
    * The focus was on a node when the diagram was torn down. A new model from
@@ -262,6 +298,13 @@ export default function BpmnCanvas({
       onActivate: (id) => (filledRef.current ? chooseOutOfFullscreen(() => onActivate(id)) : onActivate(id)),
       onActiveChange,
       onPlaneChange,
+      // In full screen a sub-process opens its level in place — the reader
+      // went to full screen to read the process, and stays there (owner
+      // 03.10.2026). It is selected too, as Enter selects it on the page.
+      onDrill: (id, opens) => {
+        onPlaneChange(opens);
+        onActivate(id);
+      },
     };
     activeRef.current = active;
     filledRef.current = filled;
@@ -328,6 +371,10 @@ export default function BpmnCanvas({
 
         button.addEventListener('click', () => {
           handlers.current.onActiveChange(id);
+          if (filledRef.current && node.opensPlane) {
+            handlers.current.onDrill(id, node.opensPlane);
+            return;
+          }
           handlers.current.onActivate(id);
         });
         button.addEventListener('focus', () => handlers.current.onActiveChange(id));
@@ -368,14 +415,42 @@ export default function BpmnCanvas({
       }
 
       // Drilling into a sub-process is bpmn-js's own behaviour on a collapsed
-      // shape; the parent is told so that a level can live in the URL (2.9).
-      eventBus.on('root.changed', () => {
+      // shape (the arrow at its foot); the parent is told so that the level
+      // path, the way up and the address follow (2.9). diagram-js announces a
+      // new root as `root.set`. This listened for `root.changed`, an event
+      // nothing fires: the arrow opened the level on the canvas while the
+      // path still said the top, with no way up (owner 03.10.2026).
+      eventBus.on('root.set', () => {
         const root = canvas.getRootElement();
         const id = root?.id ?? '';
         const isTop = !id || id === rootRef.current?.id;
-        handlers.current.onPlaneChange(isTop ? null : id.replace(/_plane$/, ''));
+        const next = isTop ? null : id.replace(/_plane$/, '');
+        const hadFocus = host.contains(document.activeElement);
+        if (next !== planeRef.current) {
+          handlers.current.onPlaneChange(next);
+          // Opened by bpmn-js's own arrow: shown the way a level asked for by
+          // the page is shown, after bpmn-js has placed it.
+          requestAnimationFrame(() => {
+            try {
+              if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+              else fitWithPadding(canvas);
+            } catch {
+              /* the viewer went in the meantime */
+            }
+          });
+        }
         // A new plane brings new drill-down arrows with it, each focusable.
         applyRovingTabIndex(host, activeRef.current);
+        // The node that had the focus is on the level just left, and hidden:
+        // the focus goes to the level on show rather than to <body>.
+        if (hadFocus) {
+          requestAnimationFrame(() => {
+            const focused = document.activeElement;
+            if (focused && focused !== document.body && focused.getClientRects().length > 0) return;
+            const shown = [...host.querySelectorAll<HTMLButtonElement>('[data-map-node]')].filter((b) => b.getClientRects().length > 0);
+            (shown.find((b) => b.tabIndex === 0) ?? shown[0])?.focus();
+          });
+        }
       });
 
       // A level asked for before the canvas finished loading is entered now
@@ -429,9 +504,38 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
+    if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
     else fitWithPadding(canvas);
   }, [plane]);
+
+  /**
+   * The box changed size — the outline folded, the details opened or closed,
+   * the window moved: measure again and show the level in the new box (owner
+   * 03.10.2026: the map gets the freed width). Small changes (a scroll bar)
+   * leave the reader's zoom alone.
+   */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || typeof ResizeObserver === 'undefined') return undefined;
+    let last = { width: host.clientWidth, height: host.clientHeight };
+    const observer = new ResizeObserver(() => {
+      const size = { width: host.clientWidth, height: host.clientHeight };
+      if (Math.abs(size.width - last.width) < 8 && Math.abs(size.height - last.height) < 8) return;
+      last = size;
+      const viewer = viewerRef.current;
+      if (!viewer || size.width === 0 || size.height === 0) return;
+      try {
+        const canvas = viewer.get('canvas');
+        canvas.resized();
+        if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+        else fitWithPadding(canvas);
+      } catch {
+        /* a viewer still importing has nothing to measure */
+      }
+    });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
 
   /** Full screen changed the box: measure again, and show the whole level in it. */
   useEffect(() => {
@@ -482,14 +586,18 @@ export default function BpmnCanvas({
     { free: controls && filled, ignoreDoubleTap: '[data-map-node], .djs-overlay' },
   );
 
-  /** Enter or Space on a step in full screen chooses it the way a click does. */
+  /**
+   * Enter or Space on a step in full screen chooses it the way a click does.
+   * On a collapsed sub-process it opens the level, and full screen stays.
+   */
   const keyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
     const choosing = event.key === 'Enter' || event.key === ' ';
-    if (controls && filled && choosing && (event.target as HTMLElement).dataset?.mapNode) {
+    const id = (event.target as HTMLElement).dataset?.mapNode;
+    if (controls && filled && choosing && id && !nodes.get(id)?.opensPlane) {
       chooseOutOfFullscreen(() => undefined);
     }
     onKeyDown(event);
-  }, [chooseOutOfFullscreen, controls, filled, onKeyDown]);
+  }, [chooseOutOfFullscreen, controls, filled, nodes, onKeyDown]);
 
   /** Roving tabindex and the selection mark, read back off the diagram's own DOM. */
   useEffect(() => {
@@ -547,7 +655,10 @@ export default function BpmnCanvas({
       className={
         controls && filled
           ? 'cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line'
-          : 'cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[520px]'
+          : // The window's height less the page header and the map's own row,
+            // between a floor a level can be read in and a ceiling a reader can
+            // still scroll past (owner 03.10.2026: more room for the map).
+            'cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[clamp(480px,calc(100dvh-14rem),860px)]'
       }
       ref={hostRef}
     />
@@ -558,6 +669,7 @@ export default function BpmnCanvas({
       ref={frameRef}
       data-map-canvas-frame=""
       data-map-fullscreen={filled ? 'true' : 'false'}
+      data-map-plane={plane ?? 'top'}
       className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
     >
       <MapViewTools
@@ -567,7 +679,10 @@ export default function BpmnCanvas({
         filled={filled}
         onToggleFullscreen={toggleFullscreen}
         fullscreenRef={toggleRef}
+        levelPath={levelPath}
+        tools={tools}
       />
+      {toolsPanel}
       {canvasElement}
     </div>
   );
