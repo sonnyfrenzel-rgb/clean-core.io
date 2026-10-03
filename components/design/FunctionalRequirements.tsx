@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, ClipboardCopy, Copy, FileDown, FileText, ListChecks, PenLine } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -183,6 +183,8 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
   const [step, setStep] = useState<string>('all');
   const [openRows, setOpenRows] = useState<Set<string>>(() => new Set());
   const [toast, setToast] = useState<string | null>(null);
+  /** The inputs the shown set was read from. */
+  const builtFrom = useRef<{ source: string; levels: FunctionalRequirementsProps['levels'] } | null>(null);
 
   const derive = useCallback(async () => {
     if (!source) return;
@@ -192,6 +194,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
       // Let the "reading" state paint before the engine takes the thread.
       await new Promise((resolve) => setTimeout(resolve, 0));
       const built = lib.buildRequirementSet({ source, levels });
+      builtFrom.current = { source, levels };
       setSet(built);
       setState('ready');
       if (flagKey) writeFlag(flagKey);
@@ -210,20 +213,26 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
     return () => clearTimeout(timer);
   }, [flagKey, source, state, derive]);
 
-  // New levels after the findings route answered: read again so the objects carry them.
+  // New levels after the findings route answered: read again so the objects
+  // carry them. Keyed on what the shown set was built from rather than on a
+  // trimmed dependency list, so the read that just finished is not repeated
+  // and a changed source is read again too (QA review of 55b47b8a, a4150ed00890).
   useEffect(() => {
     if (state !== 'ready' || !levels || !source) return;
+    const from = builtFrom.current;
+    if (from && from.source === source && from.levels === levels) return;
     let cancelled = false;
     (async () => {
       const lib = await import('@/lib/functional-requirements');
-      if (!cancelled) setSet(lib.buildRequirementSet({ source, levels }));
+      if (cancelled) return;
+      const built = lib.buildRequirementSet({ source, levels });
+      builtFrom.current = { source, levels };
+      setSet(built);
     })().catch(() => undefined);
     return () => {
       cancelled = true;
     };
-    // Only when the levels arrive, not on every render of the page.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [levels]);
+  }, [state, source, levels]);
 
   // The stored wording proposal, applied only to the source it was made for.
   useEffect(() => {
@@ -448,12 +457,22 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
                     <PriorityChip value={r.priority} />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <p data-fr-statement="" className="m-0 text-[15px] font-semibold leading-snug text-cc-ink [overflow-wrap:anywhere]">
-                      {proposed ?? r.statement}
-                    </p>
+                    {/* Each sentence carries the chip of where it came from: the
+                        model's wording its "proposed" chip, the engine's its
+                        "reconstructed" one (QA review of 55b47b8a, e7757800247f). */}
+                    <div className="flex min-w-0 flex-wrap items-start gap-2">
+                      <p data-fr-statement="" className="m-0 min-w-0 text-[15px] font-semibold leading-snug text-cc-ink [overflow-wrap:anywhere]">
+                        {proposed ?? r.statement}
+                      </p>
+                      {proposed ? (
+                        <span data-fr-statement-provenance="">
+                          <CcProvenanceChip value="proposed" note="wording" />
+                        </span>
+                      ) : null}
+                    </div>
                     {proposed ? (
-                      <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-cc-ink-muted [overflow-wrap:anywhere]">
-                        <CcProvenanceChip value="proposed" note="wording" />
+                      <p data-fr-engine-wording="" className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-cc-ink-muted [overflow-wrap:anywhere]">
+                        <CcProvenanceChip value="reconstructed" />
                         <span>Engine wording: {r.statement}</span>
                       </p>
                     ) : null}
