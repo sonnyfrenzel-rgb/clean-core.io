@@ -6,7 +6,20 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { fillEconomics } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
-import { proposeEffort } from '../lib/cost-assumptions';
+import {
+  costComparison,
+  proposeEffort,
+  proposeMaintenanceBaseline,
+  PROPOSED_MAINTENANCE_PER_1000_LINES,
+  type CostAssumptions,
+} from '../lib/cost-assumptions';
+import {
+  baselineProvenance,
+  initialCostAssumptions,
+  pendingProposals,
+  takeOverPatch,
+  type OptionProposals,
+} from '../components/tco/OptionComparison';
 import { formatDays, formatMoney, formatPercentValue, formatRatio, roundDays } from '../lib/format';
 
 /**
@@ -53,6 +66,95 @@ test.describe('the formatting rules', () => {
       const all = [p.oneOff.low, p.oneOff.high, p.perRelease].flatMap((d) => [d.devDays, d.testDays]);
       for (const v of all) expect(String(v), `${loc} lines`).not.toMatch(RAW_FLOAT);
     }
+  });
+});
+
+/**
+ * The maintenance-baseline proposal for Keep and Do nothing (owner decision
+ * 03.10.2026, ADR-035 addendum): derived from the lines and the signed run's
+ * score, labelled a proposal, and never in the model until taken over.
+ */
+test.describe('the maintenance-baseline proposal', () => {
+  test('is the lines times fixed factors, raised for the signed score, and rounded where it is made', () => {
+    const f = PROPOSED_MAINTENANCE_PER_1000_LINES;
+    const withScore = proposeMaintenanceBaseline(668, 62)!;
+    expect(withScore.uplift).toBeCloseTo(1.38, 10);
+    expect(withScore.perYear).toEqual({
+      devDays: roundDays(0.668 * f.devPerYear * 1.38),
+      testDays: roundDays(0.668 * f.testPerYear * 1.38),
+    });
+    expect(withScore.perYear).toEqual({ devDays: 1.4, testDays: 0.74 });
+    expect(withScore.sentence).toMatch(/Clean Core Score of 62/);
+
+    // No score, or a figure that is not one: no uplift, and the sentence says so.
+    for (const score of [null, undefined, -1, 101, NaN]) {
+      const p = proposeMaintenanceBaseline(8500, score)!;
+      expect(p.score, String(score)).toBeNull();
+      expect(p.uplift).toBe(1);
+      expect(p.perYear).toEqual({ devDays: 12.8, testDays: 6.8 });
+      expect(p.sentence).toMatch(/no Clean Core Score/);
+    }
+    for (const loc of [null, undefined, 0, -5, NaN]) expect(proposeMaintenanceBaseline(loc, 62)).toBeNull();
+
+    for (const loc of [33, 420, 668, 8500, 12345]) {
+      for (const score of [0, 7, 33, 62, 99, 100, null]) {
+        const { devDays, testDays } = proposeMaintenanceBaseline(loc, score)!.perYear;
+        for (const v of [devDays, testDays]) expect(String(v), `${loc} lines, score ${score}`).not.toMatch(RAW_FLOAT);
+      }
+    }
+  });
+
+  test('is offered for Keep and Do nothing only, and is not in the model before it is taken over', () => {
+    const proposals: OptionProposals = { effort: proposeEffort(668), baseline: proposeMaintenanceBaseline(668, 62) };
+    const seed = initialCostAssumptions();
+    const states = Object.fromEntries(seed.options.map((o) => [o.id, baselineProvenance(o, proposals.baseline)]));
+    expect(states).toEqual({ 'do-nothing': 'proposal', keep: 'proposal', standard: null });
+    expect(baselineProvenance(seed.options[0], null), 'no line count, nothing to propose').toBe('not-entered');
+
+    // A complete set of figures — except the baselines, which only the proposal offers.
+    const base: CostAssumptions = {
+      ...seed,
+      currency: 'EUR',
+      devDayRate: 820,
+      testDayRate: 640,
+      horizonYears: 5,
+      releaseCadence: { perYear: 2, confirmed: true },
+      options: seed.options.map((o) => ({
+        ...o,
+        ...takeOverPatch({ ...o, kind: 'standard' }, { ...proposals, baseline: null }),
+        upgradeDelay: o.kind === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
+      })),
+    };
+    for (const o of base.options) expect(o.maintenanceBaselinePerYear, o.id).toBeNull();
+    const before = costComparison(base);
+    for (const id of ['do-nothing', 'keep']) {
+      const cost = before.costs.find((c) => c.optionId === id)!;
+      expect(cost.total, `${id} is not priced on a proposal nobody took over`).toBeNull();
+      expect(cost.coverage.gaps.map((g) => g.code)).toContain('option-baseline-missing');
+    }
+    expect(before.winner).toBeNull();
+    expect(pendingProposals(base.options, proposals).map((o) => o.id)).toEqual(['do-nothing', 'keep']);
+
+    // Taken over: the figure lands in the option, its provenance says so, and only now is it priced.
+    const after: CostAssumptions = {
+      ...base,
+      options: base.options.map((o) => ({ ...o, ...takeOverPatch(o, proposals) })),
+    };
+    for (const id of ['do-nothing', 'keep']) {
+      const o = after.options.find((x) => x.id === id)!;
+      expect(o.maintenanceBaselinePerYear).toEqual({ devDays: 1.4, testDays: 0.74 });
+      expect(o.baselineSource).toBe('proposal-confirmed');
+      expect(baselineProvenance(o, proposals.baseline)).toBe('from-proposal');
+      // The effort the reader already had is not touched by the baseline's take-over.
+      expect(o.effortSource).toBe('proposal-confirmed');
+      expect(costComparison(after).costs.find((c) => c.optionId === id)!.total).not.toBeNull();
+    }
+    expect(after.options.find((o) => o.id === 'standard')!.maintenanceBaselinePerYear).toBeNull();
+    expect(pendingProposals(after.options, proposals)).toEqual([]);
+
+    // A figure typed over a taken-over one is the reader's own.
+    const typed = { ...after.options[0], maintenanceBaselinePerYear: { devDays: 3, testDays: 1 }, baselineSource: 'stated' as const };
+    expect(baselineProvenance(typed, proposals.baseline)).toBe('stated');
   });
 });
 
@@ -141,11 +243,30 @@ test.describe('the guided stage', () => {
       await expect(page.locator(`[data-cost-option="${id}"] [data-effort-chip="proposal"]`)).toContainText('Simulation');
     }
 
-    // One option, by its own button.
+    // The maintenance baseline is proposed for Keep and Do nothing, and for nothing else.
+    const baseline = proposeMaintenanceBaseline(LOC, 62)!;
+    for (const id of ['do-nothing', 'keep']) {
+      const card = page.locator(`[data-cost-option="${id}"]`);
+      await expect(card).toHaveAttribute('data-baseline-provenance', 'proposal');
+      await expect(card.locator('[data-baseline-chip="proposal"]')).toContainText('Simulation');
+      await expect(card.locator(`[data-cost-baseline-proposal="${id}"]`)).toHaveText(
+        `${formatDays(baseline.perYear.devDays)} developer and ${formatDays(baseline.perYear.testDays)} key-user days of maintenance per year.`,
+      );
+    }
+    await expect(page.locator('[data-cost-option="standard"]')).not.toHaveAttribute('data-baseline-provenance', /.*/);
+    await expect(page.locator('[data-cost-baseline-proposal]')).toHaveCount(2);
+    // Not in the model before it is taken over: the field is empty, the option unpriced.
+    await page.click('[data-cost-option-edit="keep"]');
+    await expect(page.locator('[data-cost-field="keep-baseline-dev"]')).toHaveValue('');
+    await page.click('[data-cost-option-edit="keep"]');
+
+    // One option, by its own button — its effort and its baseline in one action.
     await page.click('[data-cost-apply-proposal="keep"]');
     const keep = page.locator('[data-cost-option="keep"]');
     await expect(keep).toHaveAttribute('data-effort-provenance', 'from-proposal');
+    await expect(keep).toHaveAttribute('data-baseline-provenance', 'from-proposal');
     await expect(keep.locator('[data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
+    await expect(keep.locator('[data-baseline-chip="from-proposal"]')).toContainText('your figure, from the proposal');
     await expect(keep.locator('[data-cost-apply-proposal]')).toHaveCount(0);
 
     // The rest in one action.
@@ -153,7 +274,16 @@ test.describe('the guided stage', () => {
     for (const id of ['do-nothing', 'standard']) {
       await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'from-proposal');
     }
+    await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-baseline-provenance', 'from-proposal');
     await expect(page.locator('[data-economics-take-over-all]')).toHaveCount(0);
+
+    // The taken-over baseline is in the input, rounded; typing over it makes it the reader's own.
+    await page.click('[data-cost-option-edit="do-nothing"]');
+    const baselineDev = page.locator('[data-cost-field="do-nothing-baseline-dev"]');
+    await expect(baselineDev).toHaveValue(String(baseline.perYear.devDays));
+    await baselineDev.fill('3');
+    await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-baseline-provenance', 'stated');
+    await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
 
     // The taken-over figures are rounded in the input too, and editing one makes it a typed figure.
     await page.click('[data-cost-option-edit="standard"]');

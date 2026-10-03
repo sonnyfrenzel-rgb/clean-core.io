@@ -4,7 +4,12 @@ import React, { type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcStateText from '@/components/cc/StateText';
-import { PROPOSED_DAYS_PER_1000_LINES } from '@/lib/cost-assumptions';
+import {
+  PROPOSED_DAYS_PER_1000_LINES,
+  PROPOSED_MAINTENANCE_PER_1000_LINES,
+  formatUplift,
+  type BaselineProposal,
+} from '@/lib/cost-assumptions';
 import { formatDays, formatLines } from '@/lib/format';
 
 /**
@@ -216,17 +221,27 @@ export function EconomicsStep({
 
 /**
  * The fixed factors the per-option proposal is computed from, per 1,000 lines
- * (`PROPOSED_DAYS_PER_1000_LINES`) — written out, so a reader sees what the
- * "Take over" button would put into an option before pressing it.
+ * (`PROPOSED_DAYS_PER_1000_LINES`), and the maintenance factors per 1,000
+ * lines and year behind the baseline proposal for Keep and Do nothing
+ * (`PROPOSED_MAINTENANCE_PER_1000_LINES`, owner 03.10.2026) — written out, so a
+ * reader sees what the "Take over" button would put into an option before
+ * pressing it.
  */
-export function ProposalFactors({ loc }: { loc: number }) {
+export function ProposalFactors({ loc, baseline }: { loc: number; baseline?: BaselineProposal | null }) {
   const f = PROPOSED_DAYS_PER_1000_LINES;
+  const m = PROPOSED_MAINTENANCE_PER_1000_LINES;
   const n = (v: number) => formatDays(v) ?? String(v);
   const tiles = [
-    { key: 'dev-once', label: 'Dev days once', value: `${n(f.oneOffDevLow)}–${n(f.oneOffDevHigh)}` },
-    { key: 'test-once', label: 'Test days once', value: `${n(f.oneOffTestLow)}–${n(f.oneOffTestHigh)}` },
-    { key: 'dev-release', label: 'Dev days per release', value: n(f.perReleaseDev) },
-    { key: 'test-release', label: 'Test days per release', value: n(f.perReleaseTest) },
+    { key: 'dev-once', label: 'Dev days once', value: `${n(f.oneOffDevLow)}–${n(f.oneOffDevHigh)}`, unit: 'per 1,000 lines' },
+    { key: 'test-once', label: 'Test days once', value: `${n(f.oneOffTestLow)}–${n(f.oneOffTestHigh)}`, unit: 'per 1,000 lines' },
+    { key: 'dev-release', label: 'Dev days per release', value: n(f.perReleaseDev), unit: 'per 1,000 lines' },
+    { key: 'test-release', label: 'Test days per release', value: n(f.perReleaseTest), unit: 'per 1,000 lines' },
+    ...(baseline
+      ? [
+          { key: 'dev-maintenance', label: 'Maintenance dev days', value: n(m.devPerYear), unit: 'per 1,000 lines and year' },
+          { key: 'test-maintenance', label: 'Maintenance test days', value: n(m.testPerYear), unit: 'per 1,000 lines and year' },
+        ]
+      : []),
   ];
   return (
     <>
@@ -239,7 +254,7 @@ export function ProposalFactors({ loc }: { loc: number }) {
           >
             <span className="cc-text-label text-cc-ink-muted">{t.label}</span>
             <span className="mt-1 cc-text-figure text-cc-ink">{t.value}</span>
-            <span className="cc-text-meta font-medium text-cc-ink-muted">per 1,000 lines</span>
+            <span className="cc-text-meta font-medium text-cc-ink-muted">{t.unit}</span>
           </li>
         ))}
       </ul>
@@ -247,6 +262,15 @@ export function ProposalFactors({ loc }: { loc: number }) {
         Fixed factors on {formatLines(loc)} lines; nothing measured them. They count as your assumption only once you
         confirm them.
       </p>
+      {baseline ? (
+        <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted" data-economics-baseline-formula="">
+          The maintenance baseline of Keep and Do nothing is the lines in thousands times the maintenance factors
+          {baseline.score === null
+            ? ' — there is no Clean Core Score from the signed run, so no uplift is applied'
+            : ` times 1 + (100 − score) / 100, which is ${formatUplift(baseline.uplift)} for the score of ${baseline.score} from the signed run: code further from clean core costs more to keep running`}
+          . Proposed here: {n(baseline.perYear.devDays)} dev and {n(baseline.perYear.testDays)} test days per year.
+        </p>
+      ) : null}
     </>
   );
 }
