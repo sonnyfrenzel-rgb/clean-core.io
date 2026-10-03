@@ -81,7 +81,10 @@ test('6f3dc15e6f7b · generation waits for the model switch and respects it', ()
   expect(src).toContain('const busy = loading && !autoGenerationBlocked;');
   expect(src).toMatch(/files\.length === 0 && !busy \?/);
   // And the button cannot be pressed while the stage is off or keyless.
-  expect(src).toMatch(/disabled=\{blockers\.length > 0 \|\| modelOff !== null\}/);
+  // Since v3.0.1 one condition holds every reason, and each is said on the page
+  // (tests/transformation-prerequisites.spec.ts).
+  expect(src).toMatch(/const canGenerate = project !== null && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
+  expect(src).toMatch(/disabled=\{!canGenerate\}/);
 });
 
 test('c1c94b3caae4 · there is no "proceed" that could look recommended without a package', () => {
