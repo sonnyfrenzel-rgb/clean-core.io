@@ -17,8 +17,12 @@ import RulesDoneLine from './RulesDoneLine';
 import BusinessOpening, { type OpeningRule } from './BusinessOpening';
 import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
-import { BUILD_UP_BUDGET, buildUpStageAt } from '@/lib/first-look-buildup';
-import { START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
+import {
+  BUILD_UP_BUDGET,
+  BUILD_UP_MAP_WAIT,
+  BUILD_UP_MAP_WAIT_WITH_MODEL,
+  buildUpStageAt,
+} from '@/lib/first-look-buildup';
 import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesStatus, stepStrip, type RulesStatus, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
@@ -107,16 +111,16 @@ import {
 
 const HAS_WINDOW = typeof window !== 'undefined';
 
-/** How long the build-up's last moment waits for a start run that is still being signed, in ms. */
-const MAP_WAIT = 12000;
-
 /**
- * How long it holds when the start writes the narrative first (owner decision
- * 03.10.2026): the start's own ceiling for the model, then the signing. The
- * start ends the wait for the model itself at its ceiling, so this is the cap
- * of a cap — the build-up never holds without end.
+ * How long the build-up's last moment waits for a start run that is still
+ * being signed, and how long when the start writes the narrative first — both
+ * counted from the end of the build-up, both set with its pace
+ * (`lib/first-look-buildup.ts`). The start ends the wait for the model itself
+ * at its ceiling, so the second is the cap of a cap — the build-up never holds
+ * without end.
  */
-const MAP_WAIT_WITH_MODEL = START_NARRATIVE_CEILING_MS + MAP_WAIT;
+const MAP_WAIT = BUILD_UP_MAP_WAIT;
+const MAP_WAIT_WITH_MODEL = BUILD_UP_MAP_WAIT_WITH_MODEL;
 
 /** The states in which the start run is still under way. */
 function mapPending(map: BuildUpMapState): boolean {
@@ -492,6 +496,12 @@ export default function FirstLook({
    * signed if the map is still being signed then — at most MAP_WAIT later.
    */
   const animate = buildUp && !reduced && !skipped && hasSource;
+  // Pause stops the clock where it stands; Continue runs it on from there
+  // (owner, 03.10.2026: a first-time reader may want to look longer).
+  const [paused, setPaused] = useState(false);
+  const togglePause = useCallback(() => setPaused((p) => !p), []);
+  const pause = useMemo(() => ({ paused, onToggle: togglePause }), [paused, togglePause]);
+  const clockRef = React.useRef({ key: readingKey, elapsed: 0 });
   const mapRef = React.useRef(map);
   useEffect(() => {
     mapRef.current = map;
@@ -505,18 +515,21 @@ export default function FirstLook({
     holdRef.current = sawWriting ? MAP_WAIT_WITH_MODEL : MAP_WAIT;
   }, [sawWriting]);
   useEffect(() => {
-    if (!animate || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
+    if (!animate || paused || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
+    // A new source starts from the beginning; a pause runs on from where it stood.
+    if (clockRef.current.key !== readingKey) clockRef.current = { key: readingKey, elapsed: 0 };
     let handle = 0;
-    const start = window.performance.now();
+    const start = window.performance.now() - clockRef.current.elapsed;
     const tick = (now: number) => {
       const next = now - start;
+      clockRef.current.elapsed = next;
       setElapsed(next);
       const waiting = mapPending(mapRef.current) && next < BUILD_UP_BUDGET.endAt + holdRef.current;
       if (next < BUILD_UP_BUDGET.endAt || waiting) handle = window.requestAnimationFrame(tick);
     };
     handle = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(handle);
-  }, [animate, readingKey]);
+  }, [animate, readingKey, paused]);
   // The last moment holds while the start run is still under way — up to
   // MAP_WAIT, or with the model the start's ceiling and MAP_WAIT, never longer:
   // a slow server is said where the map goes, not by a build-up that does not
@@ -648,6 +661,8 @@ export default function FirstLook({
               card={result?.card ?? null}
               map={map}
               narrative={narrative}
+              pause={pause}
+              story={result?.story ?? null}
             />
           </div>
         </section>

@@ -626,17 +626,22 @@ thinking…"*, artificial minimum durations (like the six seconds the Evidence S
 shows nothing lowers the credibility the moment needs.
 
 **The one deliberate exception (owner decisions, 01.10.2026 and 03.10.2026, ADR-072):** the first look's build-up
-runs at a pace a reader can follow, about 8.4 s, even when the engine is done in a few frames — code read to 1.0 s,
-process recognised to 3.8 s, names to 5.0 s, the rules in the code to 6.2 s, what is not determined to 7.4 s, the map
-to 8.4 s. A rail above the code names each moment and what it found. The moments are only worth anything if a reader
-can see them: lines lighting up, the process growing out of them, the names changing once, the rules and the open
-points with their lines. Every frame shows real content — lit source lines and the engine's own nodes with their
-anchors, counters that only rise with a lit line — so it is not a wait without content. The last moment waits, at
-most 12 s, for the start's signed run, so the build-up ends on the full map; with the model on it waits for the
-narrative as well, at most 90 s, saying so with the seconds waited and a way not to wait (owner decision
-03.10.2026). The limits stay: "Skip" is always visible, `prefers-reduced-motion` and Skip go straight to the end state,
-a second visit has no build-up, and the end state never waits for a model — the map's place says what is still
-being written and signed (`lib/first-look-buildup.ts`).
+runs at a pace a first-time reader can follow, about 20 s (within 15–25 s), even when the engine is done in a few frames
+— code read to 2.5 s, process recognised to 8.5 s, names to 11 s, the rules in the code to 14.5 s, what is not
+determined to 17.5 s, the map to 20 s; no step under 2.5 s. Each step says one headline — what it means for the reader
+— and moves one thing: the reading line runs through the source with its line counter, the nodes grow on the map out of
+the line the code centres on, the names change once, the rules and then the open points light at their lines and gather
+over the dimmed map, and the code gives way to the numbered story the Business view opens on, each step with its line,
+while the whole map settles beside it. The step strip is six icons on
+a progress line; counters are one quiet line under the headline. Every frame shows real content — lit source lines and
+the engine's own nodes with their anchors, counters that only rise with a lit line — so it is not a wait without
+content; motion is transform and opacity only. The last moment waits, at most 8 s, for the start's signed run, so the
+build-up ends on the full map; with the model on it waits for the narrative as well, up to the 90 s ceiling counted from
+the build-up's start, saying so with the seconds waited and a way not to wait — only if it is still pending when the
+build-up ends (owner decisions 03.10.2026). The limits stay: "Skip" is always visible, "Pause" stops the clock and
+"Continue" runs it on, `prefers-reduced-motion` and Skip go straight to the end state, a second visit has no build-up,
+and the end state never waits for a model — the map's place says what is still being written and signed
+(`lib/first-look-buildup.ts`).
 
 ### 5.5 What is there afterwards
 

@@ -5,6 +5,7 @@ import { build } from 'esbuild';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readSource, readTableAccess } from '../lib/first-look';
+import { countSourceLines } from '../lib/source-lines';
 
 /**
  * What the build-up of the first look tells a screen reader (QA review of
@@ -22,6 +23,8 @@ const OUT = path.resolve(ROOT, 'tmp', 'first-look-buildup-view');
 const SRC = fs
   .readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8')
   .replace(/\r\n/g, '\n');
+
+const LINES = countSourceLines(SRC);
 
 type BuildUp = (props: Record<string, unknown>) => React.ReactElement;
 let FirstLookBuildUp: BuildUp;
@@ -70,9 +73,12 @@ function liveRegions(html: string): string[] {
 test('the stage of the build-up is a live region, and it says the stage that is on screen', () => {
   const start = render(0);
   const end = render(60_000);
-  expect(liveRegions(start), 'no live region announces the stage').toEqual(['Code read']);
+  // One headline per step, the one sentence the step means for the reader
+  // (owner, 03.10.2026) — and it is the one live region at every moment.
+  expect(liveRegions(start), 'no live region announces the stage').toEqual([`Reading your ${LINES} lines…`]);
   // The last moment is the map (ADR-072).
-  expect(liveRegions(end)).toEqual(['Process map']);
+  expect(liveRegions(end)).toEqual(['Your process, every step tied to its line']);
+  for (let t = 0; t <= 20_000; t += 500) expect(liveRegions(render(t)), `at ${t} ms`).toHaveLength(1);
   // Only the stage: the counters change every few hundred milliseconds and
   // would talk over the reader if they were live as well.
   expect(start).not.toMatch(/data-first-look-counters=""[^>]*aria-live/);
