@@ -31,9 +31,12 @@ export default function BusinessNextStep({
   step,
   projectId,
   onDecideRules,
+  base,
 }: {
   step: Step;
   projectId: string;
+  /** Where the stages live — `/demo` for the demo; the project's by default. */
+  base?: string;
   /** Where "Decide on n rules" leads when the page has its own rules card (the demo). */
   onDecideRules?: () => void;
 }) {
@@ -45,6 +48,7 @@ export default function BusinessNextStep({
         view="business"
         level={2}
         variant="bar"
+        base={base}
       />
     );
   }

@@ -51,6 +51,7 @@ export default function NextStepCard({
   view,
   level = 3,
   variant = 'card',
+  base,
 }: {
   point: NextOpenPoint | null;
   projectId: string;
@@ -73,7 +74,10 @@ export default function NextStepCard({
    * only stops the card from standing as tall as the answer above it.
    */
   variant?: 'card' | 'bar';
+  /** Where the stages live — `/project/<id>` by default, `/demo` for the demo. */
+  base?: string;
 }) {
+  const stagesBase = base ?? `/project/${projectId}`;
   // The layer the reader is in travels with the link, so the way back returns to it.
   const layer = useWorkspaceLayer();
   if (variant === 'bar') {
@@ -109,7 +113,7 @@ export default function NextStepCard({
           <CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />
           {point !== null ? (
             <CcLinkButton
-              href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
+              href={stageHref({ base: stagesBase, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
               variant="primary"
             >
               {point.action}
@@ -147,7 +151,7 @@ export default function NextStepCard({
             </p>
             <div className="mt-3">
               <CcLinkButton
-                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
+                href={stageHref({ base: stagesBase, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
                 variant="primary"
               >
                 {point.action}

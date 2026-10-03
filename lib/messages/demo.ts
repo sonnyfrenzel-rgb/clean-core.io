@@ -28,6 +28,8 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',
   'demo.readingRules': 'Reading the rules out of the source…',
+  'demo.nextAfterReading':
+    'In the demo the engine’s reading stands in for Analyze — a demo is never signed — so the next phase is the first one after it.',
   'demo.rulesThisBrowser':
     'In the demo your answers are kept in this browser only: nothing is recorded on the server, and a demo is never signed.',
   'demo.thisBrowser': 'this browser',

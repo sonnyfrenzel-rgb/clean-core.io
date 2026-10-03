@@ -21,6 +21,7 @@ import { plainWordingFor } from '@/lib/business-card';
 import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
 import DemoRulesCard from '@/components/demo/DemoRulesCard';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
+import { nextOpenPointOf } from '@/lib/next-step';
 import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
@@ -323,6 +324,17 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const [hydrated, setHydrated] = useState(false);
   /** The demo's rules card is answering (the product's "Decide on rules"). */
   const [rulesEditing, setRulesEditing] = useState(false);
+  /**
+   * The next phase of the demo's own rail, by the product's rule (`nextOpenPointOf`).
+   * A demo can never sign a run, so Analyze can never be "done" here; the engine's
+   * reading stands in for it, and the step is the first phase after it — said so
+   * in the step's own selection line rather than claimed as on record.
+   */
+  const demoNextPoint = useMemo(() => {
+    const rail = demo.rail.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s));
+    const point = nextOpenPointOf(rail, true);
+    return point ? { ...point, selection: wt('demo.nextAfterReading') } : null;
+  }, [demo.rail]);
   useEffect(() => {
     setState(workspaceStateOf(readDemoState()));
     setHydrated(true);
@@ -581,11 +593,18 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             {/* The product's one next step (owner, 03.10.2026): while a rule has no
                 answer it is to decide on the rules, and it leads to the demo's
                 own rules card. A demo has no phase contract to name the step after. */}
-            {demoRulesStatus && demoRulesStatus.open.length > 0 ? (
+            {demoRulesStatus ? (
               <div className="mb-4">
                 <BusinessNextStep
-                  step={{ kind: 'rules', open: demoRulesStatus.open, total: demoRulesStatus.total, then: null }}
+                  step={
+                    demoRulesStatus.open.length > 0
+                      ? { kind: 'rules', open: demoRulesStatus.open, total: demoRulesStatus.total, then: demoNextPoint }
+                      : demoNextPoint
+                        ? { kind: 'phase', point: demoNextPoint }
+                        : { kind: 'none' }
+                  }
                   projectId="demo"
+                  base="/demo"
                   onDecideRules={openDemoRules}
                 />
               </div>
