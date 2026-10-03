@@ -1405,7 +1405,7 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-643 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
 | SEC-2026-644 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
 | SEC-2026-645 | low | P3 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
-| SEC-2026-646 | medium | P2 | own step: admin ceilings, needs Sonny's decision | scheduled |
+| SEC-2026-646 | medium | P2 | owner decision 03.10.2026: no admin ceiling for now | accepted risk |
 | SEC-2026-647 | low | P3 | with the next rules deploy (Sonny's go) | scheduled |
 | SEC-2026-648 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-649 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
@@ -1416,6 +1416,22 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-654 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-655 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-656 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-674 | medium | P2 | CSP rebuild - approved 03.10.2026, in progress | scheduled |
+| SEC-2026-675 | low | P3 | CSP rebuild - approved 03.10.2026, in progress | scheduled |
+| SEC-2026-676 | medium | P3 | with the next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-677 | medium | P2 | owner decision 03.10.2026: no admin ceiling for now | accepted risk |
+| SEC-2026-678 | low | P3 | 3.0.0 re-release audit intake - fixed immediately | fixed |
+
+**Audit of the v3.0.0 re-release (`69b4f52`), 03.10.2026: 2 high, 5 medium, 15 low — all
+111 candidates verified; 1 fixed, 3 scheduled, 1 accepted risk, 17 refuted, the inbox is
+empty.** 22 new register entries (SEC-2026-657 to -678), each checked at the cited line of
+`69b4f52`; most repeat decisions of the `ab3dc34` audit on unchanged code. Both reported
+as high are refuted (SEC-2026-657, -658), as were their predecessors; the reasons are in
+the sealed register. Fixed on the 3.0 integration branch, not yet on `main`: SEC-2026-678
+(P3). Scheduled: SEC-2026-674 (P2) and -675 (P3) to the CSP rebuild, which Sonny approved
+on 03.10.2026 and which is in progress; SEC-2026-676 (P3) goes with the next rules deploy,
+like SEC-2026-647. Accepted risk: SEC-2026-646 and its repeat SEC-2026-677 — Sonny decided
+on 03.10.2026 that no admin ceiling is needed for now.
 
 **Audit of v3.0.0 (`ab3dc34`), 03.10.2026: 1 high, 11 medium, 15 low — all 106
 candidates verified; 9 fixed, 5 scheduled, 13 refuted, the inbox is empty.** 27 new
