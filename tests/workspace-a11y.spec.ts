@@ -67,7 +67,7 @@ async function signIn(page: Page): Promise<void> {
 async function openWorkspace(page: Page, view: 'business' | 'it' | 'management'): Promise<void> {
   await page.goto(`/project/${PROJECT_ID}?view=${view}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
-  // Management keeps the first look in its "Process" fold (ADR-066, owner
+  // Management keeps the first look in its "Process" fold (ADR-069, owner
   // 03.10.2026: at most three things above the fold) — open it, so what is
   // checked below is the whole page.
   if (view === 'management') {

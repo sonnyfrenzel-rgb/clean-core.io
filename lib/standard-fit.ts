@@ -11,7 +11,7 @@ import type { PhaseState } from './workflow-steps';
 import type { ProvenanceValue } from './provenance';
 
 /**
- * Fit to standard — one headline figure for the Management view (ADR-066,
+ * Fit to standard — one headline figure for the Management view (ADR-069,
  * owner 03.10.2026: "for Public Cloud a clear fit-to-standard value — not only
  * the four buckets … what prevents standard here and what does not").
  *

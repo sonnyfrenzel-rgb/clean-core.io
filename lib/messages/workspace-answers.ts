@@ -194,7 +194,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.evidenceBehind': 'The evidence behind these figures',
   'exec.forTheDecision': 'For the decision:',
 
-  // The fit-to-standard card (ADR-066) — ManagementExecutive.
+  // The fit-to-standard card (ADR-069) — ManagementExecutive.
   'stdFit.title': 'Fit to standard',
   'stdFit.ownMeasure': 'Clean-Core.io measure, not an SAP figure',
   'stdFit.notDetermined': 'Not determined',

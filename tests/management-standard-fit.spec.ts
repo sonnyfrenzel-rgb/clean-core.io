@@ -14,7 +14,7 @@ import type { FitByPlatform, FitResult, Loaded } from '../lib/management-overvie
 import type { ItFindingRow, ItFindingsSource } from '../lib/it-findings';
 
 /**
- * Fit to standard — ADR-066, owner 03.10.2026: "for Public Cloud a clear
+ * Fit to standard — ADR-069, owner 03.10.2026: "for Public Cloud a clear
  * fit-to-standard value — not only the four buckets, but clearly more visual:
  * what prevents standard here and what does not", and "on desktop, use the
  * whole screen".

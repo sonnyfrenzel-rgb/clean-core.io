@@ -239,7 +239,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       proposal: routeLabel(demo.design.recommendedRoute),
     });
   }, [management, fit, findingsRead, demo.rail, demo.design.recommendedRoute]);
-  // Fit to standard (ADR-066) from the demo's own engine reading. A demo can
+  // Fit to standard (ADR-069) from the demo's own engine reading. A demo can
   // never be signed, so the card says so beside the figure (`basis: 'demo'`).
   const demoFit = useMemo(
     () =>

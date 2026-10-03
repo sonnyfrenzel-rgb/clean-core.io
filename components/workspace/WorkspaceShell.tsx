@@ -117,7 +117,7 @@ const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook
 
 /**
  * Management opens with its answer (ADR-029): the decision with the page's ONE
- * next action, beside fit to standard (ADR-066) — the full width of the frame
+ * next action, beside fit to standard (ADR-069) — the full width of the frame
  * (ADR-063), not a narrow column. Everything else stands in four named folds,
  * collapsed until opened (owner 03.10.2026): Evidence, Options and the
  * decision, Costs, Process. "Next step" is not a card of its own here: it is

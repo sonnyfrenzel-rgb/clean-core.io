@@ -390,7 +390,7 @@ export default function ManagementOverview({
       }),
     [project, hasSource, hasRun, steps, overview, fit, decision],
   );
-  // Fit to standard (ADR-066): from the signed run's evidence only.
+  // Fit to standard (ADR-069): from the signed run's evidence only.
   const fitFigure = useMemo(
     () =>
       standardFit({

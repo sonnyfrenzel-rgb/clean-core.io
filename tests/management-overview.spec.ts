@@ -505,7 +505,7 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await expect(panel.locator('[data-management-headline]')).toContainText(/Decision DEC-1 is open/, { timeout: 60000 });
     await expect(panel.locator('[data-executive-blocker]').first()).toBeVisible();
     await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
-    // Beside the decision, fit to standard (ADR-066); the four figures, the
+    // Beside the decision, fit to standard (ADR-069); the four figures, the
     // bucket bar of every object and the phases one action deeper, in "Evidence".
     await expect(panel.locator('#standard-fit')).toBeVisible();
     const evidence = page.locator('[data-executive-evidence]');

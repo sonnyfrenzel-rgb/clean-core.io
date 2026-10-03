@@ -32,7 +32,7 @@ import InfoPopover from './InfoPopover';
  * Two cards side by side on a wide screen, stacked on a phone (owner
  * 03.10.2026: "use the whole screen", and at most three things above the
  * fold): **the decision** — the question, where it stands, the ONE next action
- * and what is in its way — and **fit to standard** (ADR-066) — one figure, the
+ * and what is in its way — and **fit to standard** (ADR-069) — one figure, the
  * SAP objects across the four buckets, and by name what blocks the standard
  * path and what does not. The four figures, where every object stands and the
  * evidence per phase are `ExecutiveEvidence`, which the caller puts into its
@@ -227,7 +227,7 @@ function FitList({
 }
 
 /**
- * The fit-to-standard card (ADR-066). The figure first, labelled as this
+ * The fit-to-standard card (ADR-069). The figure first, labelled as this
  * product's own measure; under it the SAP objects across the four buckets as
  * one bar in three groups — what has a released path, what blocks it, what is
  * not counted — with every count in words; then the objects by name, each
