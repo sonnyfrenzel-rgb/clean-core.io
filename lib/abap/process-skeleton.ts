@@ -3643,6 +3643,14 @@ class SkeletonBuilder {
     for (const { node, statementIndex, region } of this.earlyEnds) {
       const last = this.regionLast.get(region.key);
       if (last === undefined || !region.endNodeId) continue;
+      // ADR-066. `LEAVE SCREEN`, `LEAVE TO SCREEN n` and `LEAVE LIST-PROCESSING`
+      // are never the routine's normal end, wherever they stand: the ABAP
+      // keyword documentation has them end the current dialog step on the spot
+      // — the rest of the screen's flow logic (the PAI/PBO modules after this
+      // one) does not run, and the runtime goes on with screen n (or back to
+      // the caller for 0). `ENDMODULE` hands back to that flow logic. So the
+      // end stays its own even with nothing drawn behind it in the module.
+      if (leavesDialogStep(this.statements[statementIndex].text)) continue;
       if (this.skipsSomething(statementIndex, last, drawn.get(region.key) ?? new Set())) continue;
       for (const edge of this.edges) if (edge.to === node.id) edge.to = region.endNodeId;
       dropped.add(node.id);

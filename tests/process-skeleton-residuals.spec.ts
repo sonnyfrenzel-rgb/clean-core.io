@@ -54,3 +54,29 @@ test('CLOSE DATASET completes the file: a file step, joined to a TRANSFER right 
   const run = skeleton.nodes.find((n) => n.anchor?.lineStart === 9)!;
   expect([run.kind, run.anchor?.lineEnd, run.detail?.statements]).toEqual(['output', 10, 2]);
 });
+
+test('LEAVE TO SCREEN ends the dialog step: its own end, even as the last statement of a PAI module', () => {
+  const source = [
+    'PROGRAM zdialog_leave.', //                                                   1
+    'MODULE user_command_0100 INPUT.', //                                          2
+    '  CASE ok_code.', //                                                          3
+    "    WHEN 'SAVE'.", //                                                         4
+    '      UPDATE zorder SET done = abap_true WHERE id = gv_id.', //               5
+    '      LEAVE TO SCREEN 0.', //                                                 6
+    "    WHEN 'BACK'.", //                                                         7
+    '      LEAVE TO SCREEN 0.', //                                                 8
+    '  ENDCASE.', //                                                               9
+    'ENDMODULE.', //                                                               10
+    'MODULE exit_0100 INPUT.', //                                                  11
+    '  gv_id = 0.', //                                                             12
+    '  RETURN.', //                                                                13
+    'ENDMODULE.', //                                                               14
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source);
+  const ends = (from: number, to: number) => skeleton.nodes
+    .filter((n) => n.kind === 'end' && (n.anchor?.lineStart ?? 0) >= from && (n.anchor?.lineStart ?? 0) <= to)
+    .map((n) => [n.anchor?.lineStart, n.label]);
+  expect(ends(2, 10)).toEqual([[10, 'user_command_0100 INPUT'], [6, 'LEAVE TO SCREEN'], [8, 'LEAVE TO SCREEN']]);
+  // A RETURN with nothing drawn behind it is still the normal end (ADR-054).
+  expect(ends(11, 14)).toEqual([[14, 'exit_0100 INPUT']]);
+});

@@ -1873,7 +1873,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 1,
+          "compared": 2,
           "total": 11,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -1899,7 +1899,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 9 Sollknoten verglichen (3 getroffen, 1 ohne Knoten, 0 mit anderer Art); 1 von 11 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 10 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Weniger als die Hälfte der Sollknoten war vergleichbar; das Ergebnis trägt keine Aussage. Nicht vergleichbar: p/action@source.abap:6 — keine Brücke für „action\" an „SET PF-STATUS 'MAIN'\", i/event@source.abap:8 — keine Brücke für „event\" an „MODULE user_command_0100 INPUT\", m/action@source.abap:12 — keine Brücke für „action\" an „gv_route = 'MANAGER_ROUTE'\", a/action@source.abap:14 — keine Brücke für „action\" an „gv_route = 'AUTO_ROUTE'\" … (+1)."
+      "reason": "4 von 9 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 11 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 9 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Weniger als die Hälfte der Sollknoten war vergleichbar; das Ergebnis trägt keine Aussage. Nicht vergleichbar: p/action@source.abap:6 — keine Brücke für „action\" an „SET PF-STATUS 'MAIN'\", i/event@source.abap:8 — keine Brücke für „event\" an „MODULE user_command_0100 INPUT\", m/action@source.abap:12 — keine Brücke für „action\" an „gv_route = 'MANAGER_ROUTE'\", a/action@source.abap:14 — keine Brücke für „action\" an „gv_route = 'AUTO_ROUTE'\" … (+1)."
     },
     {
       "case": "CC-013",
