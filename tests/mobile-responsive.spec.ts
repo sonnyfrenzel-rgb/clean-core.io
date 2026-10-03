@@ -585,7 +585,13 @@ async function assistantLayout(page: Page, label: string): Promise<string[]> {
     const chips = [...document.querySelectorAll('[data-chatbot-suggestions] button')].map(rect).filter((r): r is Box => r !== null);
     const input = document.querySelector('#chatbot-panel input');
     const close = document.querySelector('#chatbot-panel [aria-label="Close the assistant"]');
+    // The floating toggle closes the panel too; where it is shown, the panel
+    // must not stand on it (CI of b879ad8b: the second tap hit the sheet).
+    const toggle = document.querySelector('[data-chatbot-toggle]');
+    const panel = document.querySelector('#chatbot-panel');
     return {
+      toggle: rect(toggle),
+      panel: rect(panel),
       list: rect(list),
       answer: rect(answer),
       chips,
@@ -610,6 +616,10 @@ async function assistantLayout(page: Page, label: string): Promise<string[]> {
   const inside = (b: Box | null) => b !== null && b.top >= -1 && b.left >= -1 && b.bottom <= m.vv.height + 1 && b.right <= m.vv.width + 1;
   if (!inside(m.input)) broken.push(`${label}: the input is outside the visible screen`);
   if (!inside(m.close)) broken.push(`${label}: the close button is outside the visible screen`);
+  if (m.toggle && m.panel && inside(m.toggle)) {
+    const covers = m.toggle.left < m.panel.right && m.toggle.right > m.panel.left && m.toggle.top < m.panel.bottom && m.toggle.bottom > m.panel.top;
+    if (covers) broken.push(`${label}: the panel covers the floating toggle`);
+  }
   return broken;
 }
 
