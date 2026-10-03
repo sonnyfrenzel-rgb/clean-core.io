@@ -80,3 +80,42 @@ test('LEAVE TO SCREEN ends the dialog step: its own end, even as the last statem
   // A RETURN with nothing drawn behind it is still the normal end (ADR-054).
   expect(ends(11, 14)).toEqual([[14, 'exit_0100 INPUT']]);
 });
+
+test('an early RETURN that skips setting a result parameter keeps its own end; one that skips nothing does not', () => {
+  const source = [
+    'REPORT zearly_result.', //                                                    1
+    'START-OF-SELECTION.', //                                                      2
+    '  PERFORM check_order CHANGING gv_ok.', //                                    3
+    '  NEW lcl_price( )->net( ).', //                                              4
+    'FORM check_order CHANGING cv_ok TYPE abap_bool.', //                          5
+    '  SELECT SINGLE vbeln FROM vbak INTO gv_vbeln WHERE vbeln = gv_id.', //       6
+    '  IF gv_vbeln IS INITIAL.', //                                                7
+    '    RETURN.', //                                                              8
+    '  ENDIF.', //                                                                 9
+    '  cv_ok = abap_true.', //                                                     10
+    'ENDFORM.', //                                                                 11
+    'CLASS lcl_price DEFINITION.', //                                              12
+    '  PUBLIC SECTION.', //                                                        13
+    '    METHODS net RETURNING VALUE(rv_net) TYPE netwr.', //                      14
+    'ENDCLASS.', //                                                                15
+    'CLASS lcl_price IMPLEMENTATION.', //                                          16
+    '  METHOD net.', //                                                            17
+    '    SELECT SINGLE netwr FROM vbak INTO gv_net WHERE vbeln = gv_id.', //       18
+    '    IF gv_net IS INITIAL.', //                                                19
+    '      RETURN.', //                                                            20
+    '    ENDIF.', //                                                               21
+    '    rv_net = gv_net * 2.', //                                                 22
+    '    IF gv_net > 100.', //                                                     23
+    '      RETURN.', //                                                            24
+    '    ENDIF.', //                                                               25
+    '    gv_log = gv_net.', //                                                     26
+    '  ENDMETHOD.', //                                                             27
+    'ENDCLASS.', //                                                                28
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source);
+  const early = skeleton.nodes.filter((n) => n.kind === 'end' && n.detail?.early === true)
+    .map((n) => n.anchor?.lineStart);
+  // Line 8 skips `cv_ok = abap_true` (CHANGING), line 20 skips `rv_net = …`
+  // (RETURNING). Line 24 skips only a global: still the normal end (ADR-054).
+  expect(early).toEqual([8, 20]);
+});
