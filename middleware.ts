@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildReportOnlyPolicy, CSP_REPORT_GROUP, CSP_REPORT_PATH } from '@/lib/csp-report-only';
 
 /**
  * F-03: Content-Security-Policy Middleware
@@ -90,8 +91,43 @@ export function middleware(request: NextRequest) {
     ...(useEmulator ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
-  const response = NextResponse.next();
+  // ┌─────────────────────────────────────────────────────────────────────────┐
+  // │ Report-only CSP — stage 1 of the CSP rebuild (ADR-065)                  │
+  // │                                                                         │
+  // │ A stricter policy is sent as Content-Security-Policy-Report-Only NEXT   │
+  // │ TO the enforced policy above, which is unchanged. It blocks nothing;    │
+  // │ violations go to /api/csp-report and appear as `csp-report` lines in    │
+  // │ the Cloud Run log. It keeps every host the Google sign-in block above   │
+  // │ names. Builder and reasoning: lib/csp-report-only.ts.                   │
+  // │                                                                         │
+  // │ The nonce variant (nonce + 'strict-dynamic', no 'unsafe-inline' in      │
+  // │ script-src) is not switched on here. Next.js copies every header this   │
+  // │ middleware sets on the response into the request it renders, and reads  │
+  // │ content-security-policy BEFORE content-security-policy-report-only. As  │
+  // │ long as the enforced policy (no nonce) is set here, Next renders its    │
+  // │ scripts without a nonce, and a nonce policy would only report them all. │
+  // │ See ADR-065 for the decision that needs.                                │
+  // │                                                                         │
+  // │ Incoming CSP request headers are dropped, so a client can never choose  │
+  // │ the nonce Next renders.                                                 │
+  // │                                                                         │
+  // │ Enforcing anything stricter is a later step, taken only after real      │
+  // │ traffic — including the real Google sign-in — shows no violations.      │
+  // └─────────────────────────────────────────────────────────────────────────┘
+  const reportOnlyCsp = buildReportOnlyPolicy({
+    nodeEnv: process.env.NODE_ENV,
+    useEmulatorFlag: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
+  });
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete('content-security-policy');
+  requestHeaders.delete('content-security-policy-report-only');
+  requestHeaders.delete('x-nonce');
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Content-Security-Policy-Report-Only', reportOnlyCsp);
+  response.headers.set('Reporting-Endpoints', `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`);
 
   return response;
 }
