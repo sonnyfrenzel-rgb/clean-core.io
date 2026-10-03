@@ -29,6 +29,7 @@ import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { objectSites, sitesByElement } from '@/lib/process-overlays';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
+import type { ProcessDocumentation } from '@/lib/process-documentation';
 import { buildProcessHandbook, handbookToData, type ProcessHandbookData } from '@/lib/process-handbook';
 import { buildProcessDocument } from '@/lib/process-document-build';
 import type { ProcessDocument } from '@/lib/process-document';
@@ -232,7 +233,7 @@ export interface DemoProject {
      * Null when the reader could not get through the file.
      */
     /** `document`: the process description the stage writes when it opens (ADR-077), or null if it could not be built. */
-    process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null } | null;
+    process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   };
 
   testing: {
@@ -425,11 +426,13 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     // opens (ADR-077) — the same builder over the same source, no narrative.
     let document: ProcessDocument | null = null;
     try {
-      document = buildProcessDocument({ source, map: full, engine });
+      const built = buildProcessDocument({ source, map: full, engine });
+      // The product's note names the signed run the source came from; a demo has none.
+      document = { ...built, note: built.note.replace('from the source the signed run analysed', 'from the example source — a demo is never signed') };
     } catch {
       document = null;
     }
-    return { model, handbook: handbookToData(handbook), document };
+    return { model, handbook: handbookToData(handbook), document, engine };
   } catch {
     return null;
   }

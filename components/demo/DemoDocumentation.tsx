@@ -12,6 +12,8 @@ import { UNANCHORED } from '@/lib/process-naming';
 import { handbookFromData, type ProcessHandbookData } from '@/lib/process-handbook';
 import BusinessGlance from '@/components/documentation/BusinessGlance';
 import ProcessDocumentView from '@/components/documentation/ProcessDocumentView';
+import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
+import type { ProcessDocumentation } from '@/lib/process-documentation';
 import type { ProcessDocument } from '@/lib/process-document';
 import { businessCallouts, glanceHeadline, notDeterminedCallout, type GlanceGap } from '@/lib/business-summary';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
@@ -32,7 +34,7 @@ export default function DemoDocumentation({
   gaps,
   levels,
 }: {
-  process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null } | null;
+  process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   /** The coverage sweep's constructs — the demo's own, read on the server. */
   gaps: GlanceGap[];
   /** Levels by `gradeKey(name, use)`, looked up on the server as a real project's route would. */
@@ -156,10 +158,10 @@ export default function DemoDocumentation({
           <h2 id="demo-process-description" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
           <p className="m-0 mt-1 mb-3 cc-text-cell text-cc-ink-muted">
             Written from the code when the stage opens, no model call: purpose, trigger, the steps, rules, exceptions,
-            effects, integrations, controls and open questions. A real project exports it as a Confluence page, Markdown
-            and Word; the demo exports nothing.
+            effects, integrations, controls and open questions, the technical trace last — as the Confluence page,
+            the Markdown and the Word file carry it. The demo exports nothing.
           </p>
-          <ProcessDocumentView document={process.document} />
+          <ProcessDocumentView document={process.document} appendix={<ProcessDocumentationView appendix doc={process.engine} />} />
         </section>
       ) : null}
     </div>
