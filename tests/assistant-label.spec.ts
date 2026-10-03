@@ -220,7 +220,7 @@ test.describe('what the header button promises, and what opens', () => {
     await openFromShell(page);
 
     // What actually opened: the general assistant, not the case one.
-    await expect(page.locator('[data-chatbot-title]')).toHaveText('SAP Modernization Assistant');
+    await expect(page.locator('[data-chatbot-title]')).toHaveText('Clean-Core.io Assistant');
     await expect(page.locator('[data-chatbot-scope]')).not.toContainText('evidence of this project');
     await expectIndependentQuestionNote(page);
   });

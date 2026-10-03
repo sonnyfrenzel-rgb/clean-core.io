@@ -643,10 +643,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               <PenLine size={16} aria-hidden className="shrink-0 text-cc-ink-muted" />
               <div className="min-w-0">
                 <h2 id="chatbot-panel-title" className="m-0 cc-text-h3 text-cc-ink" data-chatbot-title="">
-                  {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
+                  {projectId ? 'Ask this case' : 'Clean-Core.io Assistant'}
                 </h2>
                 <p className="m-0 cc-text-meta text-cc-ink-muted">
-                  {projectId ? 'Evidence of this project, and the glossary' : 'Product and SAP help'}
+                  {projectId ? 'Evidence of this project, and the glossary' : 'Help with Clean-Core.io and its clean core method'}
                 </p>
               </div>
             </div>
@@ -669,7 +669,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   ? 'Inside a project this assistant answers only from the evidence of this project. An answer is shown only when it cites at least one source line of this project, and it lists the lines it cites — that does not prove every sentence in it. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
                   : inDemo
                   ? 'In the demo this assistant makes no model call: it answers a glossary term from its entry, and nothing else.'
-                  : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
+                  : 'Answers questions about Clean-Core.io and the clean core concepts it works with. It is not SAP product support.'}
               </p>
             </div>
 
@@ -802,7 +802,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     id={id}
                     type="text"
                     aria-describedby={describedBy}
-                    placeholder={projectId ? 'Ask about this case…' : 'Ask about SAP or the product…'}
+                    placeholder={projectId ? 'Ask about this case…' : 'Ask about Clean-Core.io or clean core…'}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     disabled={loading}
