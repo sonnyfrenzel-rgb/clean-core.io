@@ -589,9 +589,14 @@ moment.
    confirmed · Level distribution · Not determined.
 
 **The start signs the reading** (ADR-072). Starting an example, a snippet or one's own code signs the engine's reading
-at once — the same signed run every analysis ends in, without a narrative and without a model call, at the cost every
-start screen states before the click. The build-up names it as its last moment, "Process map", and the end state
-stands on the full map, drawn from that signed run; the map is never drawn from source no run signed.
+at once — the same signed run every analysis ends in, at the cost every start screen states before the click. The
+build-up names it as its last moment, "Process map", and the end state stands on the full map, drawn from that signed
+run; the map is never drawn from source no run signed. With the model on (the account's analysis stage and a key —
+owner decision 03.10.2026), the start asks the model for the analysis narrative at the first moment of the build-up,
+with the Analyze prompt, and the one signed run carries it; the last moment waits for it with "Writing the narrative
+(model)…", the seconds waited and "Go on without the narrative", 90 s at most. Without an answer in time the same run
+is signed with the engine's reading alone, and the page says the narrative was not written, why, and offers *Write the
+narrative in Analyze* with its cost. With the model off there is no model call.
 
 **The model does not hold up the build-up** (ADR-025). The ≤ 3 s apply to stages 1, 2 and 4 — they come from the
 engine. Stage 3 needs a model call and may take longer: after 3 s at the latest stage 4 is there with technical
@@ -627,9 +632,11 @@ to 8.4 s. A rail above the code names each moment and what it found. The moments
 can see them: lines lighting up, the process growing out of them, the names changing once, the rules and the open
 points with their lines. Every frame shows real content — lit source lines and the engine's own nodes with their
 anchors, counters that only rise with a lit line — so it is not a wait without content. The last moment waits, at
-most 12 s, for the start's signed run, so the build-up ends on the full map. The limits stay: "Skip" is always
-visible, `prefers-reduced-motion` and Skip go straight to the end state, a second visit has no build-up, and the end
-state never waits for a model (`lib/first-look-buildup.ts`).
+most 12 s, for the start's signed run, so the build-up ends on the full map; with the model on it waits for the
+narrative as well, at most 90 s, saying so with the seconds waited and a way not to wait (owner decision
+03.10.2026). The limits stay: "Skip" is always visible, `prefers-reduced-motion` and Skip go straight to the end state,
+a second visit has no build-up, and the end state never waits for a model — the map's place says what is still
+being written and signed (`lib/first-look-buildup.ts`).
 
 ### 5.5 What is there afterwards
 
