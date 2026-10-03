@@ -2,7 +2,6 @@
 
 import React, { useId, useState, useSyncExternalStore } from 'react';
 import { ChevronRight, Copy, Download } from 'lucide-react';
-import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCodeSurface from '@/components/cc/CodeSurface';
 import CcDateText from '@/components/cc/DateText';
@@ -27,6 +26,15 @@ import {
   type ScopeReading,
 } from './scenario-detail';
 import { scenarios } from './testing-summary';
+import { OriginChip, OriginDetails } from './ScenarioOrigin';
+import { countOrigins, originSummary, readScenarioOrigin, type OriginEngine, type OriginReading } from '@/lib/scenario-origin';
+
+/** The engine a scenario's origin is checked against, or why there is none (`useScenarioOriginEngine`). */
+export interface ScenarioOriginContext {
+  engine: OriginEngine | null;
+  signedSha256: string | null;
+  reason: string;
+}
 
 /**
  * The scenarios of the Testing stage — one row each, every row opens its
@@ -124,11 +132,17 @@ export function ScenarioDetails({
   runAt,
   tenantLocked,
   onShowOutput,
+  origin,
+  sourceLines,
 }: {
   tc: ScenarioCase;
   isAbapCloud: boolean;
   test: ScenarioTest;
   where: ScopeReading;
+  /** Where the scenario says it comes from, and the check of it. */
+  origin: OriginReading;
+  /** The signed source the check read; its anchors open these lines. */
+  sourceLines: readonly string[] | null;
   run: ScenarioRunResult;
   /** When the recorded run was, where the result comes from a receipt. */
   runAt: string | null;
@@ -158,28 +172,7 @@ export function ScenarioDetails({
             </dd>
           </div>
         ))}
-        <div data-scenario-derived="" className="min-w-0 md:col-span-2">
-          <dt className={cn(LABEL, 'mb-1')}>Derived from — business rule or finding</dt>
-          <dd className="m-0">
-            {derived ? (
-              <div className="flex flex-col gap-1">
-                <p className="m-0 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">{derived.text}</p>
-                {derived.anchors.length > 0 ? (
-                  <span className="flex flex-wrap gap-1">
-                    {derived.anchors.map((a) => (
-                      <CcAnchor key={a} tone="unlinked" label={`Source ${a.replace('L', 'line ')}, as the model states it`}>
-                        {a}
-                      </CcAnchor>
-                    ))}
-                  </span>
-                ) : null}
-                <span className="cc-text-meta text-cc-ink-muted">As the model states it — not checked against the source.</span>
-              </div>
-            ) : (
-              <Missing> — the scenario names no business rule, finding or source line.</Missing>
-            )}
-          </dd>
-        </div>
+        <OriginDetails reading={origin} legacy={derived} sourceLines={sourceLines} />
       </dl>
 
       <div data-scenario-test={test.kind} className="min-w-0">
@@ -246,6 +239,7 @@ export default function ScenarioList({
   tenantLocked,
   projectName,
   onShowOutput,
+  origin,
 }: {
   cases: ScenarioCase[];
   isAbapCloud: boolean;
@@ -260,6 +254,8 @@ export default function ScenarioList({
   tenantLocked: boolean;
   projectName?: string;
   onShowOutput?: () => void;
+  /** The origin check's engine; without one every origin reads "not checked", with the reason. */
+  origin: ScenarioOriginContext;
 }) {
   const isPhone = useIsPhone();
   const [open, setOpen] = useState<Set<number>>(() => new Set());
@@ -272,6 +268,9 @@ export default function ScenarioList({
     return { test, where: scenarioScope(test, isAbapCloud) };
   });
   const summary = scopeSummary(countScopes(readings.map((r) => r.where.scope)));
+  const origins = cases.map((tc) => readScenarioOrigin(tc, origin.engine, origin.signedSha256, origin.reason));
+  const originCounts = countOrigins(origins.map((o) => o.check));
+  const sourceLines = origin.engine ? origin.engine.sourceLines : null;
   const classWord = isAbapCloud ? 'test class' : 'test suite';
 
   const toggleOpen = (i: number) => {
@@ -318,6 +317,8 @@ export default function ScenarioList({
       runAt={runAt}
       tenantLocked={tenantLocked}
       onShowOutput={onShowOutput}
+      origin={origins[i]}
+      sourceLines={sourceLines}
     />
   );
 
@@ -331,6 +332,11 @@ export default function ScenarioList({
           <a href="#testing-scope" className="font-semibold text-cc-information hover:underline">
             What can be tested where
           </a>
+        </p>
+        <p data-origin-summary="" className="m-0 cc-text-cell text-cc-ink">
+          <span className="font-semibold">Origin: </span>
+          {originSummary(originCounts)}
+          {originCounts.notChecked > 0 && !origin.engine && origin.reason ? <span className="text-cc-ink-muted">{` — ${origin.reason}`}</span> : null}
         </p>
         <p data-testing-next="" className="m-0 cc-text-cell text-cc-ink">
           {isAbapCloud
@@ -423,6 +429,7 @@ export default function ScenarioList({
                   </button>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 pl-6">
                     <ScopeWord scope={readings[i].where.scope} />
+                    <OriginChip outcome={origins[i].check.outcome} />
                     {/* The last verdict, from the receipt or this session — never the status string stored on the case. */}
                     <span data-scenario-verdict={result.verdict === 'Passed' ? 'pass' : result.verdict === 'Failed' ? 'fail' : result.verdict ? 'none' : 'not-run'}>
                       <VerdictWord verdict={result.verdict} />

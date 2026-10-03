@@ -60,9 +60,11 @@ const ASKED: ReadonlyArray<{ key: string; label: string; alternatives?: string[]
 ];
 
 /**
- * Keys under which a model may name what the scenario derives from. The prompt
- * asks for none of them; when one is there it is shown, with any line numbers
- * in it read as anchors.
+ * Keys under which a model may name what the scenario derives from. Since the
+ * owner decision of 03.10.2026 the prompt asks for a structured `derivedFrom`
+ * (`lib/scenario-origin.ts`), which is validated and checked against the
+ * source. The other keys are what scenarios stored before that may carry: free
+ * text, shown with any line numbers in it read as anchors, and never checked.
  */
 const DERIVED_FROM_KEYS = [
   'derivedFrom',
@@ -80,7 +82,7 @@ const DERIVED_FROM_KEYS = [
 ] as const;
 
 /** Keys the details show elsewhere, or that are not the scenario's content. */
-const NOT_A_FIELD = new Set(['id', 'name', 'status', 'message']);
+const NOT_A_FIELD = new Set(['id', 'name', 'status', 'message', 'derivedFromCheck', 'derivedFromDropped']);
 
 /** Any stored value as text, or null when it says nothing. Objects become JSON, never `[object Object]`. */
 export function textOf(value: unknown): string | null {
@@ -151,6 +153,8 @@ export function derivedFrom(tc: Record<string, unknown> | null | undefined): Der
   if (!tc || typeof tc !== 'object') return null;
   const parts: string[] = [];
   for (const key of DERIVED_FROM_KEYS) {
+    // A structured `derivedFrom` is the checked statement, read by `readScenarioOrigin` — not free text.
+    if (key === 'derivedFrom' && tc[key] !== null && typeof tc[key] === 'object') continue;
     const value = valueOf(tc[key]);
     if (value === null) continue;
     parts.push(...(Array.isArray(value) ? value : [value]));

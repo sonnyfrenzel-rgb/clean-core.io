@@ -9,6 +9,8 @@ import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
+import { useProjectEvidence } from '@/hooks/useProjectEvidence';
+import { findingsForOrigin, signedForOrigin, useScenarioOriginEngine } from '@/hooks/useScenarioOrigins';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import type { Project } from '@/lib/types';
 import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
@@ -237,7 +239,17 @@ export default function TestingSandboxPage() {
   const [odataExpandedEntity, setOdataExpandedEntity] = useState<string | null>(null);
   const [odataCatalogSearch, setOdataCatalogSearch] = useState('');
 
-  const { isGenerating, testCases, generateTestCases, storedSuiteRejected } = useTestGeneration(projectId as string, project, setProject);
+  /**
+   * Owner decision 03.10.2026: a scenario states where in the legacy source it
+   * comes from, and that statement is checked against the source the active
+   * run signed — its rules and decision points derived here, its findings read
+   * by the server with the run's catalog.
+   */
+  const originSha = useMemo(() => signedForOrigin(project).signed?.sha256 ?? null, [project]);
+  const originEvidence = useProjectEvidence(projectId as string, !!originSha, `${project?.activeRunId ?? ''}#${originSha ?? ''}`);
+  const originFindings = useMemo(() => findingsForOrigin(originEvidence, originSha), [originEvidence, originSha]);
+  const originEngine = useScenarioOriginEngine(project, originFindings);
+  const { isGenerating, testCases, generateTestCases, storedSuiteRejected } = useTestGeneration(projectId as string, project, setProject, originFindings);
   /** Why the last generation attempt produced nothing. Empty when none has failed. */
   const [genError, setGenError] = useState('');
   /**
@@ -1549,6 +1561,7 @@ export default function TestingSandboxPage() {
                 runAt={run.kind === 'recorded' ? run.at : null}
                 tenantLocked={LIVE_TEST_EXECUTION.locked}
                 projectName={project?.name}
+                origin={originEngine}
                 onShowOutput={testResults ? () => {
                   setShowConsole(true);
                   requestAnimationFrame(() => document.querySelector('[data-testing-console]')?.scrollIntoView({ block: 'start' }));
