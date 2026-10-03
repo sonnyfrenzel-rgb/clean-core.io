@@ -69,9 +69,13 @@ export function itvLevelCounts(levels: ReadonlyArray<{ grade: string; count: num
   return levels.map((l) => `${l.grade} ${l.count}`).join(' · ');
 }
 
-/** The button under the findings that shows the places with no object. */
+/**
+ * The button under the findings that shows the places naming no object — short,
+ * because a button does not wrap on a phone; the level sentence beside the
+ * table says why they carry no level.
+ */
 export function itvNoLevelLabel(n: number): string {
-  return `${n} ${n === 1 ? 'place names' : 'places name'} no object, so ${n === 1 ? 'it carries' : 'they carry'} no level · Show them`;
+  return `Show ${n} ${n === 1 ? 'place' : 'places'} without a level`;
 }
 
 /** "Show all 12 objects" is the table's; this is the line anchor's accessible name. */

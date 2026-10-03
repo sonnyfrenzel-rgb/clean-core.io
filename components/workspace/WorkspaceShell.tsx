@@ -117,6 +117,8 @@ const IT_HEAD: readonly ContentBlock[] = [];
 const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask'];
 /** In IT the tour starts at the top, where the Not determined figure and "Next step" stand (v3.0.1). */
 const IT_COACH_ORDER: readonly CoachMarkId[] = ['not-determined', 'next-step', 'decision'];
+/** Without a source the answer has no Not determined figure yet; the tour starts at "Next step". */
+const IT_COACH_ORDER_NO_SOURCE: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
 
 /**
  * Management opens with its answer, then "Next step" (ADR-029, §2.3 item 5);
@@ -296,7 +298,7 @@ export default function WorkspaceShell({
   const marks = useCoachMarks({
     hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
-    order: view === 'it' ? IT_COACH_ORDER : undefined,
+    order: view === 'it' ? (open.noSource ? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER) : undefined,
   });
 
   /**

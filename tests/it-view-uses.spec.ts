@@ -98,7 +98,9 @@ test.describe('what the code uses, derived on the server', () => {
     expect(clean.title).not.toBe('No findings in the staged source');
     expect(clean.title).toContain('3 calls');
     expect(clean.reason).toContain('BAPI_SALESORDER_CREATEFROMDAT2 (level B)');
-    expect(itOpening('unsigned', built, 5).title).toContain('No signed run yet');
+    // Unsigned gives the same answer, said to be unsigned first.
+    expect(itOpening('unsigned', built, 5).title).toBe(clean.title);
+    expect(itOpening('unsigned', built, 5).reason).toMatch(/^No signed run yet/);
   });
 
   test('in IT the tour starts at the top; elsewhere the order is unchanged', () => {
@@ -110,7 +112,7 @@ test.describe('what the code uses, derived on the server', () => {
       'next-step',
     ]);
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/order: view === 'it' \? IT_COACH_ORDER : undefined/);
+    expect(shell).toMatch(/order: view === 'it' \? \(open\.noSource \? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER\) : undefined/);
   });
 });
 

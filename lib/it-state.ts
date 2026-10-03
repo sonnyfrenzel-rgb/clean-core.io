@@ -1,6 +1,5 @@
 import type { CloudReadinessGrade } from './abap/abcd-classification';
 import type { ItFindingsSource, ItUseRow } from './it-findings';
-import { distinctFindingCount, placesInTheCode } from './it-findings';
 import { itAnswerHead, worstLevel } from './it-view';
 
 /**
@@ -176,18 +175,14 @@ export function itOpening(
         reason: `${itAnswerHead(null).coverage} Reload the page; the source on the project is unchanged.`,
       };
     case 'unsigned': {
+      // The same answer the signed states give, said to be unsigned first: the
+      // engine's reading is shown, never withheld, and never passed off as signed.
       const rows = source?.rows ?? [];
-      const f = distinctFindingCount(rows);
+      const content = itOpening(rows.length === 0 ? 'clean' : 'findings', source, notDetermined);
       return {
         state,
-        title: 'No signed run yet — this is the engine’s reading of the staged source',
-        reason:
-          `${uses ? `${uses.sentence} ` : ''}` +
-          (rows.length === 0
-            ? `The detectors raised no clean core finding ${read}.`
-            : `The detectors raised ${f} ${f === 1 ? 'finding' : 'findings'} at ${rows.length} ${placesInTheCode(rows.length)}.`) +
-          ' Nothing here is signed until the analysis runs.' +
-          open,
+        title: content.title,
+        reason: `No signed run yet — this is the engine’s reading of the staged source, and nothing here is signed until the analysis runs. ${content.reason}`,
       };
     }
     case 'clean': {

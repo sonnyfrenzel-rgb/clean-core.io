@@ -303,7 +303,7 @@ export default function ItAnswers({
         <p data-it-reason="" className="m-0 mt-2 max-w-4xl text-[13px] leading-snug font-medium text-cc-ink">
           {opening.reason}
         </p>
-        {state === 'findings' ? (
+        {view.rows.length > 0 ? (
           <p data-it-where-to="" className="m-0 mt-2 max-w-4xl text-[13px] leading-snug font-medium text-cc-ink-muted">
             <span className="font-semibold text-cc-ink">{wt('it.whereTo')}: </span>
             {where ? where.sentence : fit.state === 'absent' ? fit.reason : wt('it.whereToReading')}
@@ -318,7 +318,8 @@ export default function ItAnswers({
             <Fact
               id="uses"
               label={wt('itv.factUses')}
-              value={uses ? String(uses.objects) : null}
+              // One per object and use — the rows of the table below, and the sum of the three counts beside it.
+              value={uses && read ? String(read.uses?.length ?? 0) : null}
               coverage={uses ? itvUsesCoverage(uses.calls, uses.reads, uses.writes) : wt('itv.usesNotRecorded')}
               provenance={uses ? 'reconstructed' : 'not-determined'}
               href="#it-uses"
@@ -668,7 +669,7 @@ function UsesCard({
 }) {
   return (
     <div id="it-uses" className="scroll-mt-4">
-      <CcCard title={wt('itv.usesTitle')} count={summary ? summary.objects : undefined}>
+      <CcCard title={wt('itv.usesTitle')} count={uses ? uses.length : undefined}>
         <p data-it-lead="uses" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
           {wt('itv.usesLead')}
         </p>
