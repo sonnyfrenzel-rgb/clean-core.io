@@ -53,7 +53,7 @@ export const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray
 /**
  * The changes since the version an account accepted. Only an archived, i.e.
  * published, version is a point to count from: an account that accepted a date
- * that was never published (on dev, the 6 October draft of v2.2.0 before the
+ * that was never published (on dev, the 6 October draft of the current Terms before the
  * release moved to 3 October) compared newer than every entry and saw an empty
  * "What changed" (owner, 03.10.2026). Such an account, and any case that would
  * leave nothing, sees the changes of the version in force.

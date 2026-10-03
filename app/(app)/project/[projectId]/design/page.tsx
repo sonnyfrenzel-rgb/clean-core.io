@@ -171,7 +171,7 @@ ${engine}`;
 
 /**
  * The last words of the design prompt. Since the prompt carries the engine
- * evidence as a JSON object after the schema (v3.0.1), the model has answered
+ * evidence as a JSON object after the schema (03.10.2026), the model has answered
  * in that object's spirit now and then: a design with no `nodeAppBlueprint`,
  * which `checkDesignResponse` rightly refuses and the reader then has to
  * regenerate (CI of b879ad8b, one of two live calls). The schema is restated
