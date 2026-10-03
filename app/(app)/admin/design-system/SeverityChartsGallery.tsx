@@ -95,7 +95,7 @@ export default function SeverityChartsGallery() {
   }));
 
   return (
-    <div data-cc-demo="severity-charts" className="grid gap-3 md:grid-cols-2">
+    <div data-cc-demo="severity-charts" className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <CcCard title="Severity of a finding" count={SEVERITY_VALUES.length}>
         <div className="flex flex-col gap-3">
           <div data-cc-demo-severities="" className="flex flex-wrap items-center gap-2">

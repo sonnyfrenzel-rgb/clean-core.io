@@ -35,7 +35,7 @@ export default function FormControlsGallery() {
   const [reason, setReason] = useState('');
 
   return (
-    <div data-cc-demo="form-controls" className="grid gap-3 md:grid-cols-2">
+    <div data-cc-demo="form-controls" className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <CcCard title="Checkbox and switch">
         <div className="flex flex-col gap-2">
           <CcCheckbox

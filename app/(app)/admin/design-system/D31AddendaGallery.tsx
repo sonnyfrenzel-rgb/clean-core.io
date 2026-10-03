@@ -35,7 +35,7 @@ export default function D31AddendaGallery() {
   ];
 
   return (
-    <div data-cc-demo="d31" className="grid gap-3 md:grid-cols-2">
+    <div data-cc-demo="d31" className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <CcCard title="Verdicts — an SVG chart that counts states">
         <div data-cc-demo-verdict-chart="" className="flex flex-col items-center gap-3">
           <TestingPieChart

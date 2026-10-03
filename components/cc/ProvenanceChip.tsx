@@ -75,16 +75,19 @@ export default function CcProvenanceChip({ value, note }: CcProvenanceChipProps)
       data-cc-form={entry.form}
       title={entry.meaning}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-px align-middle',
-        'text-[11px] font-semibold leading-4 whitespace-nowrap',
+        // The word never breaks; a long note wraps inside the chip instead of
+        // pushing a phone page wider than its screen (360 px, measured on the
+        // Transformation stage).
+        'inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-px align-middle',
+        'text-[11px] font-semibold leading-4',
         state.text,
         entry.form === 'filled' ? cn(state.bg, state.border) : state.borderStrong,
         FORM_CLASSES[entry.form],
       )}
     >
       {Icon ? <Icon size={13} aria-hidden={true} /> : null}
-      <span data-cc-provenance-label>{entry.label}</span>
-      {note ? <span className="font-medium">· {note}</span> : null}
+      <span data-cc-provenance-label className="shrink-0 whitespace-nowrap">{entry.label}</span>
+      {note ? <span className="min-w-0 font-medium [overflow-wrap:anywhere]">· {note}</span> : null}
     </span>
   );
 }

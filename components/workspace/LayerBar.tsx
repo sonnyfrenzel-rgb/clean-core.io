@@ -74,7 +74,8 @@ export default function WorkspaceLayerBar({
             aria-current={on ? 'true' : undefined}
             onClick={() => onSelect(layer.key)}
             className={cn(
-              'inline-flex items-center gap-1 border-b-2 px-3 py-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
+              // A long layer name wraps on a phone rather than widening the page.
+              'inline-flex max-w-full items-center gap-1 border-b-2 px-3 py-2 text-left text-[13px] sm:whitespace-nowrap pointer-coarse:min-h-11',
               on
                 ? 'border-cc-ink font-bold text-cc-ink'
                 : 'border-transparent font-medium text-cc-ink-muted',
