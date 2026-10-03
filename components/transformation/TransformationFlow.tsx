@@ -226,7 +226,7 @@ export default function TransformationFlowChart({
                 {files === null ? 'The demo stops here' : 'No code generated yet'}
               </text>
               <text x={FX + 12} y={TOP + 70} fontSize={11} fill="var(--cc-ink-muted)">
-                {files === null ? 'no model call, so no files' : 'run the engine to write it'}
+                {files === null ? 'no model call, so no files' : 'choose Generate code to write it'}
               </text>
             </g>
           ) : (

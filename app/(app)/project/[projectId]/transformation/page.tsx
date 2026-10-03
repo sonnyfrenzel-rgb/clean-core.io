@@ -43,7 +43,7 @@ import TransformationObjectPage from '@/components/transformation/Transformation
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
 import { EVIDENCE_UNREAD, useProjectEvidence } from '@/hooks/useProjectEvidence';
-import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
@@ -590,8 +590,13 @@ CMD ["node", "srv/service.js"]`
       // first, turns this one into a refusal instead of an overwrite.
       const generationToken = generation.token;
       const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
-      if (!legacyCode.trim() || !design.trim() || !analysis.trim()) {
-        throw new Error('The source, the analysis or the solution design is no longer on this project, so there is nothing to generate from. Nothing was generated.');
+      // The narrative is not required (v3.0.1): the design is written from it
+      // and carries it, and an engine-only run has none. It used to be, and a
+      // project with a design but an engine-only run could never generate.
+      const businessAnalysis = analysis.trim()
+        || 'No model narrative — the signed run holds the engine\'s evidence only. Take the business intent from the Solution Design below.';
+      if (!legacyCode.trim() || !design.trim()) {
+        throw new Error('The source or the solution design is no longer on this project, so there is nothing to generate from. Nothing was generated — reload the stage to see what is on record.');
       }
       setContractRefusal(null);
       setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
@@ -611,7 +616,7 @@ CMD ["node", "srv/service.js"]`
         ${legacyCode}
         
         Business Analysis:
-        ${analysis}
+        ${businessAnalysis}
         
         Solution Design:
         ${design}
@@ -672,7 +677,7 @@ CMD ["node", "srv/service.js"]`
         ${legacyCode}
         
         Business Analysis:
-        ${analysis}
+        ${businessAnalysis}
         
         Solution Design:
         ${design}
@@ -858,7 +863,9 @@ CMD ["node", "srv/service.js"]`
       setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
     } catch (err) {
       console.error('Transformation Error:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred during code transformation.');
+      setError(err instanceof Error && err.message.trim()
+        ? err.message
+        : 'The generation stopped with an unexpected error. Nothing was saved — try the generation again.');
     } finally {
       generationInFlight.current = false;
       setLoading(false);
@@ -898,7 +905,7 @@ CMD ["node", "srv/service.js"]`
             const hasServiceTs = parsedFiles.some(f => f.path === 'srv/service.ts');
             setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (parsedFiles[0]?.path || ''));
             setLoading(false);
-          } else if (data.legacyCode && data.solutionDesign && data.analysis && generationBlockers(data, 'transformation').length === 0) {
+          } else if (generationPrerequisites(data, 'transformation').length === 0 && generationBlockers(data, 'transformation').length === 0) {
             // Not from a design written for a previous source (E01-F01-US02).
             // The page used to generate from whatever design was there.
             // The inputs are read again by the generation itself, together
@@ -909,12 +916,12 @@ CMD ["node", "srv/service.js"]`
             setLoading(false);
           }
         } else {
-          setError('Project not found.');
+          setError('This project was not found. Go back to your workspace and open it from there.');
           setLoading(false);
         }
       } catch (err) {
         console.error('Fetch Project Error:', err);
-        setError('Failed to load project data.');
+        setError('The project could not be loaded. Reload the page to try again.');
         setLoading(false);
       }
     };
@@ -966,6 +973,18 @@ CMD ["node", "srv/service.js"]`
     : modelAvailability.keyAvailable
       ? 'The transformation stage is turned off in Settings.'
       : 'No Gemini API key is available — add your own in Settings.';
+  /**
+   * What is not on record yet (owner report 03.10.2026, v3.0.1). The button
+   * used to be enabled over a missing design and return from its click without
+   * a word; each entry is now a sentence beside it with the one action that
+   * resolves it, and the button waits until the list is empty.
+   */
+  const prerequisites = generationPrerequisites(project, 'transformation');
+  const canGenerate = project !== null && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  /** Once a package exists the button replaces it, and says so. */
+  const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
+  /** The first reason the code cannot be generated now, for the empty package card. */
+  const whyNotGenerated = prerequisites[0]?.reason ?? (blockers.length > 0 ? blockers.join(' ') : modelOff);
   const staleNotes = [
     ...blockers,
     ...(phases.find((p) => p.key === 'transformation')?.state === 'stale'
@@ -1185,7 +1204,7 @@ CMD ["node", "srv/service.js"]`
                       stage="transformation"
                       hint={
                         modelAvailability.enabled('transformation')
-                          ? 'Run the engine above to generate it from the signed analysis and the approved design.'
+                          ? whyNotGenerated ?? 'Use Generate code above to have the model propose it from the signed analysis and the approved design.'
                           : modelAvailability.keyAvailable
                             ? 'Turn the transformation stage back on in Settings to generate it.'
                             : 'Add your own Gemini API key in Settings to generate it.'
@@ -1247,15 +1266,19 @@ CMD ["node", "srv/service.js"]`
             <CcButton
               icon={<RefreshCw size={16} aria-hidden="true" />}
               busy={busy}
+              // Disabled only while something is missing, and then the reason
+              // stands as text under the header (`data-generation-prerequisites`)
+              // or in the stale notice — never in a hover title alone. An
+              // enabled click always starts the generation, which ends in the
+              // code, a contract refusal or the error strip.
               onClick={() => {
-                if (modelOff === null && blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
-                  generateTransformation();
-                }
+                if (canGenerate) generateTransformation();
               }}
-              disabled={blockers.length > 0 || modelOff !== null}
-              title={blockers.length > 0 ? blockers.join(' ') : modelOff ?? undefined}
+              disabled={!canGenerate}
+              aria-describedby={!canGenerate && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
+              data-generate-code=""
             >
-              Re-Run Engine
+              {generateLabel}
             </CcButton>
             <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
               Copy Code
@@ -1276,6 +1299,38 @@ CMD ["node", "srv/service.js"]`
           </span>
         )}
       </StageHeader>
+
+      {/* Why the code cannot be generated now, each reason with the one
+          action that resolves it (owner report 03.10.2026, v3.0.1). On the
+          page, not in a title: a phone has no hover. A stale input is said by
+          the notice below, which names the stage to regenerate. */}
+      {project && (prerequisites.length > 0 || modelOff) && (
+        <div id="tf-generate-why" data-generation-prerequisites="" className="mb-6">
+          <CcMessageStrip
+            state="information"
+            headline={files.length > 0 ? 'The code cannot be regenerated yet.' : 'The code cannot be generated yet.'}
+          >
+            <ul className="m-0 mt-2 flex list-none flex-col gap-3 p-0">
+              {prerequisites.map((p) => (
+                <li key={p.id} data-generation-prerequisite={p.id} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0">{p.reason}</span>
+                  <CcLinkButton href={`/project/${String(projectId)}/${p.action.stage}`} icon={<ArrowRight size={16} aria-hidden="true" />}>
+                    {p.action.label}
+                  </CcLinkButton>
+                </li>
+              ))}
+              {modelOff && (
+                <li data-generation-prerequisite="model" className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0">{modelOff}</span>
+                  <CcLinkButton href="/settings" icon={<ArrowRight size={16} aria-hidden="true" />}>
+                    Open Settings
+                  </CcLinkButton>
+                </li>
+              )}
+            </ul>
+          </CcMessageStrip>
+        </div>
+      )}
 
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
@@ -1307,8 +1362,16 @@ CMD ["node", "srv/service.js"]`
       )}
 
       {error && (
-        <div className="mb-6">
-          <CcMessageStrip state="error" announce>
+        <div className="mb-6" data-transformation-error="">
+          <CcMessageStrip
+            state="error"
+            announce
+            actions={canGenerate ? (
+              <CcButton onClick={() => generateTransformation()} icon={<RefreshCw size={16} aria-hidden="true" />}>
+                Try again
+              </CcButton>
+            ) : undefined}
+          >
             {error}
           </CcMessageStrip>
         </div>
@@ -1363,9 +1426,7 @@ CMD ["node", "srv/service.js"]`
             <div className="rounded-cc-row border border-dashed border-cc-line bg-cc-surface p-4">
               <p className="m-0 cc-text-h3 text-cc-ink">No transformed code yet</p>
               <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                {blockers.length > 0
-                  ? blockers.join(' ')
-                  : modelOff ?? 'The code is generated from the signed analysis and the approved design when you run the engine.'}
+                {whyNotGenerated ?? 'The model proposes the code from the signed analysis and the approved design when you choose Generate code.'}
               </p>
             </div>
           }

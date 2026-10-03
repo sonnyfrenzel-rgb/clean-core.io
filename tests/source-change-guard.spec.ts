@@ -278,7 +278,7 @@ test.describe('server side', () => {
 
     await page.goto(`/project/${PROJECT_ID}/transformation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('button:has-text("Re-Run Engine")')).toBeDisabled();
+    await expect(page.locator('[data-generate-code]')).toBeDisabled();
   });
 
   test('regenerating and re-confirming lifts it', async ({ request }) => {
