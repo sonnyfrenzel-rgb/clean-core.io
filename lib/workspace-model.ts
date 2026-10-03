@@ -37,6 +37,7 @@
 import type { Project } from './types';
 import { workflowSteps, phaseTone, toolOnRecord, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
+import { outsideReading } from './sap-test-results';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import { INPUT_IDS, type InputManifest } from './input-manifest';
@@ -385,22 +386,31 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   // the chip for something checked against the real thing (Codex code-runner-02).
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   const recordedMockRun = receipt !== null && receipt.environment === 'mock' && receipt.verdicts.length > 0;
+  // ADR-075 — on the ABAP Cloud route the run happens in the reader's own SAP
+  // system: imported from its result file, or confirmed by the account. Never
+  // `done` (green is for an execution here); *confirmed* in the information tone.
+  const outside = outsideReading(project);
+  const outsideFailed = outside.state === 'current' && (outside.summary.failed > 0 || (outside.summary.coverage?.failed ?? 0) > 0);
   const execution: WorkspaceStatus = {
     facet: 'execution',
     label: 'Execution',
     status:
       by.testing.state === 'stale'
         ? 'partial'
-        : failed > 0
-          ? 'failed'
-          : mockOnly
-            ? 'mock-only'
-            : statusOfPhase(by.testing),
+        : by.testing.verifiedOutside
+          ? 'confirmed'
+          : failed > 0 || outsideFailed
+            ? 'failed'
+            : mockOnly
+              ? 'mock-only'
+              : statusOfPhase(by.testing),
     detail: by.testing.detail,
     from: 'testing',
     provenance:
       staleChip(by.testing) ??
-      (mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+      (outside.state === 'current'
+        ? outside.summary.kind
+        : mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],
   };
 
@@ -861,30 +871,38 @@ export function workspaceTools(
 }
 
 /**
- * The mark after a tool's name. It answers one question — "has this tool
- * something of its own on record for this project?" — and not "is it proven"
- * (ADR-060, amended by Sonny 02.10.2026 and again 03.10.2026):
+ * The mark after a tool's name (ADR-060, amended by Sonny 02.10.2026, 03.10.2026
+ * and again 03.10.2026: "a check must mean done"):
  *
- *   - **used** — the tool's own output is on record (`toolOnRecord` in
- *     `lib/workflow-steps.ts`) and it is not out of date: a small green check.
- *     Analyze earns it with a signed run, never with a staged source: a check
- *     beside "Run the analysis" was a contradiction on the owner's screen;
+ *   - **done** — the tool's phase is `done` in `lib/workflow-steps.ts`: a small
+ *     green check. Testing earns it with a passing run — against mocks, or on
+ *     the ABAP Cloud route a result from the reader's own SAP system (ADR-075)
+ *     — never with scenarios that were only written. Because the next step is
+ *     the first phase that is not `done` (`nextPhaseKey`), the tool marked
+ *     "Next" can never carry the check;
+ *   - **started** — the tool's own output is on record (`toolOnRecord`) but
+ *     its phase is `partial`: a design awaiting its sign-off, scenarios nobody
+ *     ran. A half-filled circle in the information colour, never green. Analyze
+ *     with a staged source, Economics and Delivery have no output of their own
+ *     in `partial`, so they carry no mark there;
  *   - **out of date** — the phase is `stale`, built for an earlier source: an
  *     amber dot, never a check;
  *   - nothing on record of its own: no mark.
  *
- * How strong the record is (proven, demonstrated against mocks, model draft)
- * stays with the status line and the status chips; the bar does not encode it, and
- * its words never say "proven" or "verified". `words` is the catalogue key a
- * screen reader hears instead of the colour, and the bar's legend says the same.
+ * How strong the record is (proven, demonstrated against mocks, imported,
+ * confirmed, model draft) stays with the status line and the status chips; the
+ * bar does not encode it, and its words never say "proven" or "verified".
+ * `words` is the catalogue key a screen reader hears instead of the colour,
+ * and the bar's legend says the same.
  */
 export function toolMark(tool: { key: PhaseKey; state: PhaseState }): {
-  kind: 'check' | 'dot' | 'none';
-  meaning: 'used' | 'stale' | 'none';
-  words: 'tools.mark.used' | 'tools.mark.stale' | null;
+  kind: 'check' | 'half' | 'dot' | 'none';
+  meaning: 'done' | 'started' | 'stale' | 'none';
+  words: 'tools.mark.done' | 'tools.mark.started' | 'tools.mark.stale' | null;
 } {
   if (tool.state === 'stale') return { kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' };
-  if (toolOnRecord(tool)) return { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
+  if (tool.state === 'done') return { kind: 'check', meaning: 'done', words: 'tools.mark.done' };
+  if (toolOnRecord(tool)) return { kind: 'half', meaning: 'started', words: 'tools.mark.started' };
   return { kind: 'none', meaning: 'none', words: null };
 }
 

@@ -88,6 +88,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   // on the statement-proposal route: both verbs read the project's code.
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/requirement-wording` },
   { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/requirement-wording`, body: { digest: 'x', text: '{}', receipt: null } },
+  // ADR-075 — test results from the reader's own SAP system. GET hands out the
+  // record of a run; POST records one, and with it whether the handover can go.
+  { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/test-results` },
+  { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/test-results`, body: { action: 'confirm', passed: 1, failed: 0, system: 'S4D / 100', ranOn: '2026-10-01' } },
   // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
   // read the project's code: GET hands out a measurement of it, POST rebuilds
   // the skeleton and the BPMN from it. A token from before the second factor

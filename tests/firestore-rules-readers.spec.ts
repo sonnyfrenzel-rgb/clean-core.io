@@ -255,7 +255,7 @@ test('6 · a reader reads the project including its ABAP, and writes nothing any
   // Every subcollection the product writes under a project, one by one. `runs`
   // is the only one with a rule of its own (`allow write: if false`); the rest
   // have no match block at all, which is a deny — asserted rather than assumed.
-  for (const sub of ['runs', 'invitations', 'process_states', 'process_revisions', 'process_map', 'process_naming', 'statement_proposal', 'requirement_wording']) {
+  for (const sub of ['runs', 'invitations', 'process_states', 'process_revisions', 'process_map', 'process_naming', 'statement_proposal', 'requirement_wording', 'test_results']) {
     expect(await denied(() => setDoc(doc(db, 'projects', SHARED, sub, `x-${stamp}`), { tampered: true })), `write ${sub}`).toBe(true);
     expect(await denied(() => getDocs(collection(db, 'projects', SHARED, sub))), `read ${sub}`).toBe(true);
   }

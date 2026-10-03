@@ -28,6 +28,7 @@ import {
 import { scenarios } from './testing-summary';
 import { OriginChip, OriginDetails } from './ScenarioOrigin';
 import { countOrigins, originSummary, readScenarioOrigin, type OriginEngine, type OriginReading } from '@/lib/scenario-origin';
+import type { OutsideScenarioResult } from '@/lib/sap-test-results';
 
 /** The engine a scenario's origin is checked against, or why there is none (`useScenarioOriginEngine`). */
 export interface ScenarioOriginContext {
@@ -75,6 +76,30 @@ export type ScenarioCase = Record<string, unknown> & { id?: unknown; name?: unkn
 export interface ScenarioRunResult {
   verdict: string | null;
   message: string | null;
+}
+
+/**
+ * ADR-075 — what the reader's own SAP system said about one scenario, on the
+ * ABAP Cloud route: from an imported result file (per scenario), or from the
+ * account's confirmation (for the class as a whole).
+ */
+export type ScenarioOutsideResult =
+  | { kind: 'imported'; outcome: OutsideScenarioResult['outcome']; message: string | null; at: string }
+  | { kind: 'confirmed'; classPassed: boolean; at: string };
+
+/** The chip a row and its details wear for a result from the reader's SAP system. */
+function OutsideWord({ result }: { result: ScenarioOutsideResult }) {
+  if (result.kind === 'confirmed') {
+    return <CcProvenanceChip value="confirmed" note={result.classPassed ? 'class passed · by you' : 'class had failures · by you'} />;
+  }
+  if (result.outcome === 'none') {
+    return (
+      <CcStateText state="neutral" hollow>
+        No result in the file
+      </CcStateText>
+    );
+  }
+  return <CcProvenanceChip value="imported" note={result.outcome} />;
 }
 
 const LABEL = 'cc-text-label text-cc-ink-muted';
@@ -134,6 +159,7 @@ export function ScenarioDetails({
   onShowOutput,
   origin,
   sourceLines,
+  outside,
 }: {
   tc: ScenarioCase;
   isAbapCloud: boolean;
@@ -148,6 +174,8 @@ export function ScenarioDetails({
   runAt: string | null;
   tenantLocked: boolean;
   onShowOutput?: () => void;
+  /** The result from the reader's SAP system, on the ABAP Cloud route. */
+  outside?: ScenarioOutsideResult | null;
 }) {
   const fields = scenarioFields(tc);
   const derived = derivedFrom(tc);
@@ -197,9 +225,21 @@ export function ScenarioDetails({
       </div>
 
       <div data-scenario-last-run="" className="min-w-0">
-        <h3 className={cn(LABEL, 'm-0 mb-2')}>Last mock run</h3>
-        {isAbapCloud ? (
-          <p className="m-0 cc-text-cell text-cc-ink-muted">No run here — ABAP Unit runs in your own SAP system, which gives this scenario its result.</p>
+        <h3 className={cn(LABEL, 'm-0 mb-2')}>{isAbapCloud ? 'Result from your SAP system' : 'Last mock run'}</h3>
+        {isAbapCloud && outside ? (
+          <div data-scenario-outside-detail="" className="flex flex-col gap-1">
+            <span className="flex flex-wrap items-center gap-2">
+              <OutsideWord result={outside} />
+              <span className="cc-text-meta text-cc-ink-muted">
+                {outside.kind === 'imported' ? 'imported' : 'confirmed'} <CcDateText value={outside.at} format="datetime" /> · not run here
+              </span>
+            </span>
+            {outside.kind === 'imported' && outside.message ? (
+              <p className="m-0 font-cc-mono text-[12px] text-cc-ink [overflow-wrap:anywhere]">{outside.message}</p>
+            ) : null}
+          </div>
+        ) : isAbapCloud ? (
+          <p className="m-0 cc-text-cell text-cc-ink-muted">No run here — ABAP Unit runs in your own SAP system, which gives this scenario its result. Record it under “Record the result from your SAP system”.</p>
         ) : run.verdict ? (
           <div className="flex flex-col gap-1">
             <span className="flex flex-wrap items-center gap-2">
@@ -240,6 +280,7 @@ export default function ScenarioList({
   projectName,
   onShowOutput,
   origin,
+  outsideOf,
 }: {
   cases: ScenarioCase[];
   isAbapCloud: boolean;
@@ -256,6 +297,8 @@ export default function ScenarioList({
   onShowOutput?: () => void;
   /** The origin check's engine; without one every origin reads "not checked", with the reason. */
   origin: ScenarioOriginContext;
+  /** ADR-075 — the result from the reader's SAP system for the scenario at this index, if any. */
+  outsideOf?: (index: number) => ScenarioOutsideResult | null;
 }) {
   const isPhone = useIsPhone();
   const [open, setOpen] = useState<Set<number>>(() => new Set());
@@ -319,6 +362,7 @@ export default function ScenarioList({
       onShowOutput={onShowOutput}
       origin={origins[i]}
       sourceLines={sourceLines}
+      outside={isAbapCloud && outsideOf ? outsideOf(i) : null}
     />
   );
 
@@ -377,6 +421,7 @@ export default function ScenarioList({
           const isOpen = !isPhone && open.has(i);
           const detailsId = `${baseId}-details-${i}`;
           const result = resultOf(tc);
+          const outside = isAbapCloud && outsideOf ? outsideOf(i) : null;
           const isSelected = selected.includes(i);
           return (
             <li
@@ -430,10 +475,18 @@ export default function ScenarioList({
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 pl-6">
                     <ScopeWord scope={readings[i].where.scope} />
                     <OriginChip outcome={origins[i].check.outcome} />
-                    {/* The last verdict, from the receipt or this session — never the status string stored on the case. */}
-                    <span data-scenario-verdict={result.verdict === 'Passed' ? 'pass' : result.verdict === 'Failed' ? 'fail' : result.verdict ? 'none' : 'not-run'}>
-                      <VerdictWord verdict={result.verdict} />
-                    </span>
+                    {/* On the ABAP Cloud route, the result from the reader's own SAP
+                        system (ADR-075); elsewhere the last verdict, from the
+                        receipt or this session — never the status string stored on the case. */}
+                    {outside ? (
+                      <span data-scenario-outside={outside.kind === 'imported' ? outside.outcome : outside.classPassed ? 'confirmed-passed' : 'confirmed-failed'}>
+                        <OutsideWord result={outside} />
+                      </span>
+                    ) : (
+                      <span data-scenario-verdict={result.verdict === 'Passed' ? 'pass' : result.verdict === 'Failed' ? 'fail' : result.verdict ? 'none' : 'not-run'}>
+                        <VerdictWord verdict={result.verdict} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
