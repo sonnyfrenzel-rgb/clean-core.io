@@ -424,25 +424,18 @@ test.describe('CSP report-only — rendered', () => {
     // browser spec reports from the same one (the emulator hosts alone are
     // connect-src violations of the report-only policy). A 429 here is the
     // limiter doing its job; wait for the window, and accept nothing else.
-    test.setTimeout(120_000);
-    const legacyReport = JSON.stringify({ 'csp-report': { 'document-uri': 'http://localhost/x?t=1', 'effective-directive': 'script-src-elem', 'blocked-uri': 'inline' } });
-    let legacyStatus = 0;
-    for (const until = Date.now() + 90_000; Date.now() < until; ) {
-      legacyStatus = (await request.post(CSP_REPORT_PATH, { headers: { 'content-type': 'application/csp-report' }, data: legacyReport })).status();
-      if (legacyStatus !== 429) break;
-      await new Promise((r) => setTimeout(r, 5_000));
-    }
-    expect(legacyStatus).toBe(204);
-    const modern = await request.post(CSP_REPORT_PATH, {
-      headers: { 'content-type': 'application/reports+json' },
-      data: JSON.stringify([{ type: 'csp-violation', body: { documentURL: 'http://localhost/', effectiveDirective: 'connect-src', blockedURL: 'https://x.example/a' } }]),
-    });
-    expect(modern.status()).toBe(204);
-    const big = await request.post(CSP_REPORT_PATH, {
-      headers: { 'content-type': 'application/csp-report' },
-      data: JSON.stringify({ 'csp-report': { pad: 'x'.repeat(20 * 1024) } }),
-    });
-    expect(big.status()).toBe(413);
+    test.setTimeout(150_000);
+    const until = Date.now() + 120_000;
+    const post = async (contentType: string, data: string) => {
+      for (;;) {
+        const status = (await request.post(CSP_REPORT_PATH, { headers: { 'content-type': contentType }, data })).status();
+        if (status !== 429 || Date.now() > until) return status;
+        await new Promise((r) => setTimeout(r, 5_000));
+      }
+    };
+    expect(await post('application/csp-report', JSON.stringify({ 'csp-report': { 'document-uri': 'http://localhost/x?t=1', 'effective-directive': 'script-src-elem', 'blocked-uri': 'inline' } }))).toBe(204);
+    expect(await post('application/reports+json', JSON.stringify([{ type: 'csp-violation', body: { documentURL: 'http://localhost/', effectiveDirective: 'connect-src', blockedURL: 'https://x.example/a' } }]))).toBe(204);
+    expect(await post('application/csp-report', JSON.stringify({ 'csp-report': { pad: 'x'.repeat(20 * 1024) } }))).toBe(413);
   });
 
   test.describe('signed in', () => {

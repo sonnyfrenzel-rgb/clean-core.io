@@ -119,6 +119,8 @@ export default function SapResultCard({ projectId, canRecord, reading, record, o
       } else {
         setError(out.error ?? 'The confirmation could not be recorded.');
       }
+    } catch {
+      setError('The confirmation could not be sent. Check the connection and try again.');
     } finally {
       setBusy(null);
     }

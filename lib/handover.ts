@@ -666,7 +666,7 @@ export function handoverNextStep(
       kind: 'open',
       headline: 'Confirm the decision',
       reason: testing.verifiedOutside
-        ? `Code, documentation and passing test results from your SAP system are there; no confirmed decision is. ${travels}`
+        ? `Code, documentation and ${testing.verifiedOutside === 'imported' ? 'a passing test result imported from your SAP system' : 'your confirmation that the tests passed in your SAP system (a self-declaration)'} are there; no confirmed decision is. ${travels}`
         : `Code, documentation and a recorded test run are there; no confirmed decision is. ${travels}`,
       href: `/project/${projectId}?view=management`,
       action: 'Open the Management view',
