@@ -64,3 +64,16 @@ test('2b515958f925 — an RFC call does not make CAP persistence a "perfect fit"
   expect(fit).not.toMatch(/perfect fit|safely isolates/i);
   expect(fit, 'it names what chose the route').toMatch(/RFC/i);
 });
+
+test('b0bad443beaa — a classic enhancement or a dynpro is not rated "Highly Compatible" with ABAP Cloud (QA full review of 69b4f522e5ea)', () => {
+  const ENHANCEMENT = 'REPORT zcc_enh.\nENHANCEMENT 1 zenh_order.\n  lv_x = 1.\nENDENHANCEMENT.';
+  const DYNPRO = 'REPORT zcc_dyn.\nCALL SCREEN 100.';
+  for (const code of [ENHANCEMENT, DYNPRO]) {
+    const report = route(code, 'private');
+    expect(report.recommendedRoute, `${code}: the route stays on-stack`).toBe('In-App (ABAP Cloud)');
+    expect(report.comparativeAnalysis.inAppABAPCloud.technicalFeasibility, code).toBe('Partially Compatible');
+    expect(report.comparativeAnalysis.inAppABAPCloud.fitDetails, code).not.toMatch(/excellent fit/i);
+    expect(checkpoint(report, 'In-App Developer').evaluation, code).not.toMatch(/^High compatibility|Standard reads/);
+    expect(checkpoint(report, 'Side-by-Side').evaluation, code).not.toMatch(/Simple reads/);
+  }
+});
