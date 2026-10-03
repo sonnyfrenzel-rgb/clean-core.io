@@ -14,7 +14,8 @@ import {
   starterExampleIsFree,
   type QuotaSubject,
 } from '@/lib/run-quota-rule';
-import { describeStarterExampleCost, starterExampleFootnote } from '@/lib/run-cost';
+import { describeStarterExampleCost, startModelLine, starterExampleFootnote } from '@/lib/run-cost';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { describeSnippet, exampleTiers, START_HERE_WHY, type ExampleSnippet } from '@/lib/example-catalog';
 import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
@@ -91,6 +92,10 @@ export default function StarterExamples({
   const [search, setSearch] = useState('');
   const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
   const costId = useId();
+  // Whether the start asks the model for the narrative (owner decision
+  // 03.10.2026): the account's analysis stage and a key, said before the click.
+  const model = useModelAvailability();
+  const startCallsModel = model.enabled('analyze');
 
   const limit = account?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK;
   const atLimit = quotaExhausted(account);
@@ -313,7 +318,9 @@ export default function StarterExamples({
             Try it with an example
           </h2>
           <p className="mt-1 mb-0 max-w-2xl cc-text-cell text-cc-ink-muted">
-            Fictional, realistic legacy ABAP — no code of your own needed. One click opens your workspace with the full process map: the start signs the engine’s reading, without a model call.
+            {startCallsModel
+              ? 'Fictional, realistic legacy ABAP — no code of your own needed. One click opens your workspace with the full process map: the start signs the engine’s reading, with the narrative the model writes meanwhile.'
+              : 'Fictional, realistic legacy ABAP — no code of your own needed. One click opens your workspace with the full process map: the start signs the engine’s reading, without a model call.'}
           </p>
           <div className="mt-1">
           <button
@@ -413,7 +420,8 @@ export default function StarterExamples({
       {/* The cost rule in one line; the full rule one click away. */}
       <div data-examples-cost="" className="relative mt-4 flex flex-wrap items-center gap-2">
         <p className="m-0 cc-text-meta text-cc-ink-muted">
-          Free the first time for each example; a snippet or a repeat uses a run.
+          Free the first time for each example; a snippet or a repeat uses a run.{' '}
+          <span data-examples-model={startCallsModel ? 'calls' : 'none'}>{startModelLine(startCallsModel)}</span>
         </p>
         <button
           type="button"

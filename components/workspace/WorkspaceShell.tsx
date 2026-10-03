@@ -23,6 +23,7 @@ import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
 import ManagementFold from './ManagementFold';
 import FirstLook from './FirstLook';
+import StartNarrativeMissing from './StartNarrativeMissing';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
 import type { CoachMarkId } from '@/lib/coach-marks';
@@ -39,7 +40,7 @@ import type { SourceReading } from '@/lib/first-look';
 import type { ProcessSummary } from '@/lib/process-summary';
 import { signedSourceOf } from '@/lib/signed-source';
 import type { StartRun } from '@/hooks/useStartRun';
-import type { BuildUpMapState } from './FirstLookBuildUp';
+import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
@@ -330,10 +331,21 @@ export default function WorkspaceShell({
   const mapState: BuildUpMapState = signed
     ? 'drawn'
     : startRun?.phase === 'running'
-      ? 'running'
+      ? startRun.step === 'narrative'
+        ? 'writing'
+        : 'running'
       : startRun?.phase === 'failed'
         ? 'failed'
         : 'unsigned';
+
+  /** The start's narrative, when the model is on (owner decision 03.10.2026). */
+  const startNarrative: BuildUpNarrative | null = useMemo(
+    () =>
+      startRun && startRun.callsModel
+        ? { since: startRun.narrativeSince, onContinue: startRun.continueWithout, withModel: true }
+        : null,
+    [startRun],
+  );
 
   /**
    * The tips wait for the first look to settle: during the build-up a popover
@@ -603,6 +615,9 @@ export default function WorkspaceShell({
     // process name, traceability, the reveal line and the decisions.
     firstLook: (
       <div className="mt-5">
+        {startRun?.narrativeMissing ? (
+          <StartNarrativeMissing project={project} projectId={projectId} view={view} missing={startRun.narrativeMissing} />
+        ) : null}
         <FirstLook
           project={project}
           projectId={projectId}
@@ -610,6 +625,7 @@ export default function WorkspaceShell({
           onReading={onReading}
           onOpenMap={view === 'business' ? openMap : undefined}
           map={mapState}
+          narrative={startNarrative}
           fullMapBelow={view === 'business' && signed !== null}
           onSettled={onFirstLookSettled}
         />

@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { ArrowRight, Check, CircleDashed } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import StartNarrativeWait from './StartNarrativeWait';
 import { cn } from '@/lib/utils';
 import { countSourceLines } from '@/lib/source-lines';
 import { tokenizeAbapLine } from '@/lib/process-map';
@@ -227,8 +228,21 @@ export function ExcerptSvg({
   );
 }
 
-/** What the map moment says, from the start run's phase (ADR-072). */
-export type BuildUpMapState = 'drawn' | 'running' | 'failed' | 'unsigned';
+/**
+ * What the map moment says, from the start run's phase (ADR-072). `writing` is
+ * the start with the model on, while the narrative is being written (owner
+ * decision 03.10.2026); `running` is the signing itself.
+ */
+export type BuildUpMapState = 'drawn' | 'writing' | 'running' | 'failed' | 'unsigned';
+
+/** The start's wait for the narrative: since when, and the way not to wait. */
+export interface BuildUpNarrative {
+  /** `Date.now()` when the wait began; null when nothing is being written. */
+  since: number | null;
+  onContinue: () => void;
+  /** True when this start asked the model — the map moment then says so. */
+  withModel: boolean;
+}
 
 /** One moment of the rail: done, the one on screen, or still to come. */
 function RailStep({
@@ -276,6 +290,7 @@ export default function FirstLookBuildUp({
   onSkip,
   card = null,
   map = 'unsigned',
+  narrative = null,
 }: {
   source: string;
   sourceName: string;
@@ -292,7 +307,10 @@ export default function FirstLookBuildUp({
   card?: BusinessCard | null;
   /** Where the full map stands: drawn from a signed run, being signed, refused, or not signed. */
   map?: BuildUpMapState;
+  /** The start's narrative, when the model is on. */
+  narrative?: BuildUpNarrative | null;
 }) {
+  const withModel = narrative?.withModel === true;
   const lines = useMemo(() => source.split(/\r\n|\r|\n/), [source]);
   // The count an editor shows: the final newline ends the last line and adds
   // no empty one (lib/source-lines.ts). `lines` above still indexes them.
@@ -357,7 +375,9 @@ export default function FirstLookBuildUp({
     map:
       map === 'drawn'
         ? wt('buildUp.railMapDrawn')
-        : map === 'running'
+        : map === 'writing'
+          ? wt('buildUp.railMapWriting')
+          : map === 'running'
           ? wt('buildUp.railMapRunning')
           : map === 'failed'
             ? wt('buildUp.railMapFailed')
@@ -549,15 +569,23 @@ export default function FirstLookBuildUp({
           {stage === 'map' ? (
             <div data-first-look-moment="map" data-map={map} className="flex flex-col gap-2 rounded-cc-card border border-cc-line px-3 py-2">
               <p className="m-0 text-[13px] font-bold text-cc-ink">{wt('buildUp.mapTitle')}</p>
-              <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {map === 'drawn'
-                  ? wt('buildUp.mapDrawn')
-                  : map === 'running'
-                    ? wt('buildUp.mapRunning')
-                    : map === 'failed'
-                      ? wt('buildUp.mapFailed')
-                      : wt('buildUp.mapUnsigned')}
-              </p>
+              {map === 'writing' && narrative?.since != null ? (
+                <StartNarrativeWait since={narrative.since} onContinue={narrative.onContinue} />
+              ) : (
+                <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                  {map === 'drawn'
+                    ? withModel
+                      ? wt('buildUp.mapDrawnModel')
+                      : wt('buildUp.mapDrawn')
+                    : map === 'running' || map === 'writing'
+                      ? withModel
+                        ? wt('buildUp.mapRunningModel')
+                        : wt('buildUp.mapRunning')
+                      : map === 'failed'
+                        ? wt('buildUp.mapFailed')
+                        : wt('buildUp.mapUnsigned')}
+                </p>
+              )}
             </div>
           ) : null}
 

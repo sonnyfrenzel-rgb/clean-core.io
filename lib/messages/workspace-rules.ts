@@ -108,6 +108,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.railNamesProposed': 'names proposed by a model',
   'buildUp.railMapDrawn': 'drawn from the signed run',
   'buildUp.railMapRunning': 'signing the reading',
+  'buildUp.railMapWriting': 'writing the narrative (model)',
   'buildUp.railMapFailed': 'not signed',
   'buildUp.railMapUnsigned': 'needs a signed run',
   'buildUp.reading': 'Reading…',
@@ -116,6 +117,10 @@ export const WORKSPACE_RULES_MESSAGES = {
     'Signed: the server read the same source again and recorded it, without a model call. The full map stands right under your process.',
   'buildUp.mapRunning':
     'The server reads the same source again and signs the reading — no model call. The map is drawn from that signed run, so every step keeps its line.',
+  'buildUp.mapRunningModel':
+    'The server reads the same source again and signs it as one run, with the narrative if the model wrote one in time. The map is drawn from that signed run, so every step keeps its line.',
+  'buildUp.mapDrawnModel':
+    'Signed: the server read the same source again and recorded it as one run. The full map stands right under your process.',
   'buildUp.mapFailed':
     'The reading could not be signed, so the full map is not drawn. The reason and a way to try again stand where the map goes.',
   'buildUp.mapUnsigned':

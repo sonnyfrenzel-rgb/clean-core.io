@@ -10,9 +10,10 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState } from './FirstLookBuildUp';
+import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState, type BuildUpNarrative } from './FirstLookBuildUp';
 import { requestRuleEditing, useIsOwner } from './BusinessRulesEditor';
 import { BUILD_UP_BUDGET, buildUpStageAt } from '@/lib/first-look-buildup';
+import { START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
 import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesConfirmed, stepStrip, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
@@ -96,6 +97,19 @@ const HAS_WINDOW = typeof window !== 'undefined';
 
 /** How long the build-up's last moment waits for a start run that is still being signed, in ms. */
 const MAP_WAIT = 12000;
+
+/**
+ * How long it holds when the start writes the narrative first (owner decision
+ * 03.10.2026): the start's own ceiling for the model, then the signing. The
+ * start ends the wait for the model itself at its ceiling, so this is the cap
+ * of a cap — the build-up never holds without end.
+ */
+const MAP_WAIT_WITH_MODEL = START_NARRATIVE_CEILING_MS + MAP_WAIT;
+
+/** The states in which the start run is still under way. */
+function mapPending(map: BuildUpMapState): boolean {
+  return map === 'running' || map === 'writing';
+}
 
 /** Stage 3 without a stored naming — the technical names stay. */
 const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
@@ -213,6 +227,7 @@ export default function FirstLook({
   proposedName = null,
   onOpenMap,
   map = 'unsigned',
+  narrative = null,
   fullMapBelow = false,
   onSettled,
 }: {
@@ -254,6 +269,11 @@ export default function FirstLook({
    * so it ends on the map rather than on an empty place for it.
    */
   map?: BuildUpMapState;
+  /**
+   * The start's narrative when the model is on: the build-up's last moment
+   * shows the wait, with the way not to wait (owner decision 03.10.2026).
+   */
+  narrative?: BuildUpNarrative | null;
   /**
    * True where the signed map stands directly under this card (Business). The
    * picture of the main line then gives way to it: the same process twice,
@@ -435,6 +455,14 @@ export default function FirstLook({
   useEffect(() => {
     mapRef.current = map;
   }, [map]);
+  // Once the start has been seen writing the narrative, the last moment may
+  // hold for the model's ceiling as well as for the signing.
+  const [sawWriting, setSawWriting] = useState(map === 'writing');
+  if (map === 'writing' && !sawWriting) setSawWriting(true);
+  const holdRef = React.useRef(MAP_WAIT);
+  useEffect(() => {
+    holdRef.current = sawWriting ? MAP_WAIT_WITH_MODEL : MAP_WAIT;
+  }, [sawWriting]);
   useEffect(() => {
     if (!animate || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
     let handle = 0;
@@ -442,16 +470,18 @@ export default function FirstLook({
     const tick = (now: number) => {
       const next = now - start;
       setElapsed(next);
-      const waiting = mapRef.current === 'running' && next < BUILD_UP_BUDGET.endAt + MAP_WAIT;
+      const waiting = mapPending(mapRef.current) && next < BUILD_UP_BUDGET.endAt + holdRef.current;
       if (next < BUILD_UP_BUDGET.endAt || waiting) handle = window.requestAnimationFrame(tick);
     };
     handle = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(handle);
   }, [animate, readingKey]);
-  // The last moment holds while the start run is still being signed — up to
-  // MAP_WAIT, never longer: a slow server is said where the map goes, not by
-  // a build-up that does not end.
-  const waitingForMap = map === 'running' && elapsed < BUILD_UP_BUDGET.endAt + MAP_WAIT;
+  // The last moment holds while the start run is still under way — up to
+  // MAP_WAIT, or with the model the start's ceiling and MAP_WAIT, never longer:
+  // a slow server is said where the map goes, not by a build-up that does not
+  // end.
+  const waitingForMap =
+    mapPending(map) && elapsed < BUILD_UP_BUDGET.endAt + (sawWriting ? MAP_WAIT_WITH_MODEL : MAP_WAIT);
   const playing = animate && (elapsed < BUILD_UP_BUDGET.endAt || !complete || waitingForMap);
   useEffect(() => {
     onSettled?.(!playing);
@@ -570,6 +600,7 @@ export default function FirstLook({
               onSkip={skip}
               card={result?.card ?? null}
               map={map}
+              narrative={narrative}
             />
           </div>
         </section>
