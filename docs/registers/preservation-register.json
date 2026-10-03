@@ -2373,7 +2373,7 @@
           },
           {
             "module": "components/workspace/NextStepCard.tsx",
-            "evidence": "{openStageLabel(point.label)}"
+            "evidence": "{point.action}"
           }
         ],
         "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."

@@ -1,5 +1,5 @@
 import type { Project } from './types';
-import { workflowSteps, workflowSummary, type PhaseKey, type RailStep } from './workflow-steps';
+import { phaseActionLabel, workflowSteps, workflowSummary, type PhaseKey, type RailStep } from './workflow-steps';
 import { modelAbsenceReason, modelStageEnabled, type ModelStage, type ModelStageSubject } from './model-stages';
 import type { ProvenanceValue } from './provenance';
 
@@ -131,6 +131,13 @@ export interface NextOpenPoint {
   /** The route segment under `/project/{id}/`, straight from the phase contract. */
   path: string;
   /**
+   * What the one primary button says — "Run the analysis", "Draft the design"
+   * (`phaseActionLabel`). The same words in every view and on the list report,
+   * so the next step is never "Open Analyze" in one place and "Run the
+   * analysis" in another (owner 03.10.2026).
+   */
+  action: string;
+  /**
    * Why this point is open, in the product's own words. Always the phase
    * contract's own `detail` — never a pleasantry — with one addition: when
    * generating it needs a model the account has switched off, the sentence
@@ -243,6 +250,7 @@ export function nextOpenPoint(
     key: next.key,
     label: next.label,
     path: next.path,
+    action: phaseActionLabel(next, typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0),
     reason,
     selection: selectionSentence(steps, next),
     provenance: NEXT_STEP_PROVENANCE,

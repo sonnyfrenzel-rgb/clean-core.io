@@ -5,11 +5,12 @@ import { Check, ChevronDown, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { cn } from '@/lib/utils';
-import { type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
+import { nextPhaseKey, PHASE_PURPOSE, phaseNeeds, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import { toolMark, type WorkspaceView } from '@/lib/workspace-model';
 import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN, type WorkspaceReturnPoint } from '@/lib/workspace-back-href';
-import { wt } from '@/lib/workspace-messages';
+import { toolsNextHint, wt } from '@/lib/workspace-messages';
+import InfoPopover from './InfoPopover';
 
 export interface WorkspaceTool {
   key: PhaseKey;
@@ -46,14 +47,46 @@ function MarkGlyph({ kind }: { kind: 'check' | 'dot' }) {
 function ToolMark({ tool }: { tool: WorkspaceTool }) {
   const mark = toolMark(tool);
   if (mark.kind === 'none' || !mark.words) return null;
-  const hint = wt(mark.meaning === 'used' ? 'tools.mark.usedHint' : 'tools.mark.staleHint');
+  // No `title` tooltip any more (owner 03.10.2026: hover only works on a
+  // desktop). The mark's meaning is in the legend, in the link's name for a
+  // screen reader, and in the tool's information popover — on every device.
   return (
     <>
-      <span aria-hidden={true} title={hint} className="inline-flex items-center">
+      <span aria-hidden={true} data-workspace-tool-mark-glyph="" className="inline-flex items-center">
         <MarkGlyph kind={mark.kind} />
       </span>
       <span className="sr-only">({wt(mark.words)})</span>
     </>
+  );
+}
+
+/**
+ * What a tool is for and where it stands, in the words every surface shares —
+ * the purpose from `PHASE_PURPOSE`, "Recommended next step." on the one tool
+ * the phase contract names next, and why a tool cannot do anything yet. The
+ * same lines are the link's accessible description, the information popover
+ * on the open bar, and the visible line under each tool in the phone menu.
+ */
+function toolGuide(tool: WorkspaceTool, tools: readonly WorkspaceTool[], next: PhaseKey | null): string[] {
+  const mark = toolMark(tool);
+  return [
+    PHASE_PURPOSE[tool.key],
+    tool.key === next ? wt('toolGuide.recommended') : null,
+    phaseNeeds(tool, tools),
+    mark.meaning === 'used' ? `${wt('tools.mark.usedHint')}.` : mark.meaning === 'stale' ? `${wt('tools.mark.staleHint')}.` : null,
+  ].filter((line): line is string => Boolean(line));
+}
+
+/** The small "Next" tag on the one recommended tool — words, not only a colour. */
+function NextTag() {
+  return (
+    <span
+      aria-hidden={true}
+      data-workspace-tool-next-tag=""
+      className="rounded-[4px] border border-cc-ink px-1 text-[11px] leading-4 font-semibold text-cc-ink"
+    >
+      {wt('toolGuide.next')}
+    </span>
   );
 }
 
@@ -109,7 +142,7 @@ function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
  */
 function ToolsNav({
   tools,
-  link,
+  link: link_,
   current,
   open,
   surface,
@@ -142,23 +175,69 @@ function ToolsNav({
     return () => document.removeEventListener('keydown', onKey);
   }, [menuOpen]);
 
-  const links = tools.map((tool) => {
+  const next = nextPhaseKey(tools);
+  const nextTool = next ? tools.find((t) => t.key === next) ?? null : null;
+  const anyNeedsRun = tools.some((t) => phaseNeeds(t, tools) !== null);
+  // One line under the tools: which one next and what it does, and — while
+  // there is no signed run — that the others wait for one. Visible on every
+  // device; no hover needed.
+  const hint = nextTool
+    ? [toolsNextHint(nextTool.label, PHASE_PURPOSE[nextTool.key]), anyNeedsRun ? wt('toolGuide.othersNeedRun') : null]
+        .filter(Boolean)
+        .join(' ')
+    : wt('toolGuide.nothingOpen');
+
+  const link = (tool: WorkspaceTool, place: 'bar' | 'menu') => {
     const mark = toolMark(tool);
+    const guide = toolGuide(tool, tools, next);
+    const describedBy = `${panelId}-${place}-${tool.key}-guide`;
     return (
+      <React.Fragment key={tool.key}>
       <CcLinkButton
-        key={tool.key}
         data-workspace-tool={tool.key}
         data-phase-state={tool.state}
         data-workspace-tool-mark-meaning={mark.meaning}
         data-workspace-tool-mark-kind={mark.kind}
+        data-workspace-tool-next={tool.key === next ? '' : undefined}
+        describedBy={describedBy}
         current={tool.key === current}
-        href={stageHref({ ...link, path: tool.path })}
+        href={stageHref({ ...link_, path: tool.path })}
       >
         {tool.label}
         <ToolMark tool={tool} />
+        {tool.key === next ? <NextTag /> : null}
       </CcLinkButton>
+      {/* Outside the link, so it is the link's description and not part of its name. */}
+      <span id={describedBy} data-workspace-tool-guide="" className="sr-only">
+        {guide.join(' ')}
+      </span>
+      </React.Fragment>
     );
-  });
+  };
+
+  const barItems = tools.map((tool) => (
+    <span key={tool.key} data-workspace-tool-item={tool.key} className="inline-flex items-center gap-1">
+      {link(tool, 'bar')}
+      <InfoPopover subject={tool.label} hook={`tool-${tool.key}`}>
+        {toolGuide(tool, tools, next).map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))}
+      </InfoPopover>
+    </span>
+  ));
+
+  // In the phone menu the purpose stands under each tool as text: there is room
+  // for it, and a menu is where a reader is choosing.
+  const menuItems = tools.map((tool) => (
+    <div key={tool.key} data-workspace-tool-item={tool.key} className="flex flex-col items-stretch gap-1">
+      {link(tool, 'menu')}
+      <span aria-hidden={true} data-workspace-tool-purpose="" className="px-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+        {toolGuide(tool, tools, next).slice(0, 3).join(' ')}
+      </span>
+    </div>
+  ));
 
   // Hidden by width, so the open bar and the menu are never both reachable at
   // once. Open: the bar from 601 px, the menu on a phone (§2.9). Otherwise the
@@ -181,7 +260,10 @@ function ToolsNav({
           </span>
           <ToolsLegend />
         </span>
-        {links}
+        {barItems}
+        <p data-tools-hint="bar" className="m-0 basis-full text-[12px] leading-snug font-medium text-cc-ink-muted">
+          {hint}
+        </p>
       </nav>
       <div ref={menuRef} {...hook('menu')} className={cn('relative cc-no-print', menuHidden)}>
         <CcButton
@@ -197,10 +279,13 @@ function ToolsNav({
           <div
             id={panelId}
             data-workspace-tools-panel=""
-            className="absolute left-0 z-20 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
+            className="absolute left-0 z-20 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
           >
             <ToolsLegend inMenu />
-            {links}
+            <p data-tools-hint="menu" className="m-0 text-[12px] leading-snug font-semibold text-cc-ink">
+              {hint}
+            </p>
+            {menuItems}
           </div>
         )}
       </div>

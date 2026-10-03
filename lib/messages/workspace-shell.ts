@@ -40,14 +40,22 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // What the mark beside a tool says to a screen reader and in its tooltip:
   // has this tool been used in this project (Sonny 02.10.2026, ADR-060). It
   // never says how strong the record is — that is the stepper's and the chips'.
-  'tools.mark.used': 'used',
+  // Since 03.10.2026 the check means the tool's own output is on record —
+  // Analyze a signed run, not a staged source.
+  'tools.mark.used': 'on record',
   'tools.mark.stale': 'out of date',
-  'tools.mark.usedHint': 'Used in this project',
+  'tools.mark.usedHint': 'Something of this tool is on record for this project',
   'tools.mark.staleHint': 'Out of date — inputs changed since',
   // The legend beside "Tools" and at the top of the phone menu.
   'tools.legend.label': 'What the marks mean:',
-  'tools.legend.used': 'used',
+  'tools.legend.used': 'on record',
   'tools.legend.stale': 'out of date',
+  // Which tool, for what, and which one next (owner 03.10.2026). Guidance,
+  // not a mark: kept apart from the `tools.` words, which never speak of proof.
+  'toolGuide.next': 'Next',
+  'toolGuide.recommended': 'Recommended next step.',
+  'toolGuide.othersNeedRun': 'The other tools need a signed run first.',
+  'toolGuide.nothingOpen': 'Nothing is open — every tool this release can finish has its record.',
   'status.label': 'Project status',
   'status.open': 'Open',
   'nextStep.title': 'Next step',
@@ -71,6 +79,16 @@ export function searchNothingMatches(query: string): string {
 /** "Source line L231" — the accessible name of a hit's line anchor. */
 export function searchSourceLineLabel(anchor: string): string {
   return `${WORKSPACE_SHELL_MESSAGES['search.sourceLine']} ${anchor}`;
+}
+
+/** "About Analyze" — the accessible name of an information button. */
+export function infoAboutLabel(subject: string): string {
+  return `About ${subject}`;
+}
+
+/** "Next: Analyze — Reads the code and signs a run." — the hint row under the tools. */
+export function toolsNextHint(tool: string, purpose: string): string {
+  return `Next: ${tool} — ${purpose}`;
 }
 
 /** "Open Analyze" — a link to a stage, in the status popover and in "Next step". */

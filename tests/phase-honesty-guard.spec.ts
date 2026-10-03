@@ -386,19 +386,27 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
     //    colour, and nothing on either bar claims proof. Proof strength is the
     //    status line's and the chips' to say — checked above, from the contract.
     const first = (key: string) => seen[key][0].stage;
-    for (const key of [...PROVEN, ...UNPROVEN]) {
+    // Economics' `partial` is the signed run as its baseline, not an estimate
+    // anybody made: since 03.10.2026 the check means the tool's own output is
+    // on record (ADR-060 amended, `toolOnRecord`), so it carries none — on both bars.
+    const ON_RECORD = [...PROVEN, ...UNPROVEN].filter((k) => k !== 'tco');
+    expect(first('tco').tone, 'tco: a baseline is marked as if an estimate were on record').toBe('none');
+    expect(first('tco').tick).toBe(false);
+    expect(seen.tco[0].workspace.tick).toBe(false);
+    for (const key of ON_RECORD) {
       expect(first(key).tone, `${key}: the bar should mark it used`).toBe('used');
       for (const row of seen[key]) {
         expect(`${row.stage.name} ${row.workspace.name}`, `${key}: a bar claims proof`).not.toMatch(/prove|proof|verif/i);
       }
     }
     expect(
-      [...new Set([...PROVEN, ...UNPROVEN].map((k) => first(k).colour))],
+      [...new Set(ON_RECORD.map((k) => first(k).colour))],
       'a used tool is painted differently by what stands behind it',
     ).toHaveLength(1);
 
-    // 4. Something on record is a check in both, `partial` included (Economics).
-    for (const key of [...PROVEN, ...UNPROVEN]) {
+    // 4. The tool's own record is a check in both, `partial` included where it
+    //    is the tool's own output.
+    for (const key of ON_RECORD) {
       expect(first(key).tick, `${key}: stage bar tick`).toBe(true);
       expect(seen[key][0].workspace.tick, `${key}: workspace bar tick`).toBe(true);
     }

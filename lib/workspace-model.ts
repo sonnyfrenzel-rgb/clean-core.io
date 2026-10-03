@@ -35,7 +35,7 @@
  */
 
 import type { Project } from './types';
-import { workflowSteps, phaseTone, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
+import { workflowSteps, phaseTone, toolOnRecord, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
@@ -837,28 +837,30 @@ export function workspaceTools(
 }
 
 /**
- * The mark after a tool's name. It answers one question — "has this tool been
- * used in this project?" — and not "is it proven" (ADR-060, amended by Sonny
- * 02.10.2026: "small green check marks for a tool already used once"):
+ * The mark after a tool's name. It answers one question — "has this tool
+ * something of its own on record for this project?" — and not "is it proven"
+ * (ADR-060, amended by Sonny 02.10.2026 and again 03.10.2026):
  *
- *   - **used** — something of the phase is on record (`done` or `partial`) and
- *     it is not out of date: a small green check;
+ *   - **used** — the tool's own output is on record (`toolOnRecord` in
+ *     `lib/workflow-steps.ts`) and it is not out of date: a small green check.
+ *     Analyze earns it with a signed run, never with a staged source: a check
+ *     beside "Run the analysis" was a contradiction on the owner's screen;
  *   - **out of date** — the phase is `stale`, built for an earlier source: an
  *     amber dot, never a check;
- *   - nothing on record: no mark.
+ *   - nothing on record of its own: no mark.
  *
  * How strong the record is (proven, demonstrated against mocks, model draft)
  * stays with the status line and the status chips; the bar does not encode it, and
  * its words never say "proven" or "verified". `words` is the catalogue key a
  * screen reader hears instead of the colour, and the bar's legend says the same.
  */
-export function toolMark(tool: { state: PhaseState }): {
+export function toolMark(tool: { key: PhaseKey; state: PhaseState }): {
   kind: 'check' | 'dot' | 'none';
   meaning: 'used' | 'stale' | 'none';
   words: 'tools.mark.used' | 'tools.mark.stale' | null;
 } {
   if (tool.state === 'stale') return { kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' };
-  if (tool.state === 'done' || tool.state === 'partial') return { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
+  if (toolOnRecord(tool)) return { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
   return { kind: 'none', meaning: 'none', words: null };
 }
 

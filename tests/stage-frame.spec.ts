@@ -13,7 +13,7 @@ import {
 } from '../lib/workspace-back-href';
 import { LAYERS, toolMark, workspaceLayers } from '../lib/workspace-model';
 import { buildDemoProject } from '../lib/demo-project';
-import type { PhaseState } from '../lib/workflow-steps';
+import type { PhaseKey, PhaseState } from '../lib/workflow-steps';
 
 /**
  * The seven stages are tools of the workspace (ADR-008, ADR-050, mockup s8).
@@ -140,7 +140,7 @@ test.describe('a stage as a tool, rendered', () => {
       // where the tool was used, a dot where it is out of date, nothing else.
       for (const r of reading) {
         const [key, state, meaning, checks, dots] = r.split(':');
-        const want = toolMark({ state: state as PhaseState });
+        const want = toolMark({ key: key as PhaseKey, state: state as PhaseState });
         expect(`${key}:${meaning}:${checks}:${dots}`, `${st}: ${key}`).toBe(
           `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}`,
         );

@@ -1,4 +1,4 @@
-import { staleness, workflowSteps, workflowSummary, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
+import { phaseActionLabel, staleness, workflowSteps, workflowSummary, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import type { Project } from '@/lib/types';
 
 /**
@@ -79,30 +79,13 @@ export interface ProjectProgress {
   next: { label: string; path: string } | null;
 }
 
-/** "Next: Run the analysis" — what pressing the link starts, per phase and its state. */
+/**
+ * "Next: Run the analysis" — what pressing the link starts, per phase and its
+ * state. The wording lives with the phase contract (`phaseActionLabel`), so the
+ * list report and "Next step" in every view say the same words.
+ */
 function nextActionLabel(step: RailStep, hasSource: boolean): string {
-  if (step.key === 'analyze') {
-    if (!hasSource) return 'Upload the code';
-    return step.state === 'stale' ? 'Run the analysis again' : 'Run the analysis';
-  }
-  if (step.state === 'stale') return `Bring ${step.label} up to date`;
-  const started = step.state === 'partial';
-  switch (step.key) {
-    case 'design':
-      return started ? 'Confirm the design' : 'Draft the design';
-    case 'transformation':
-      return started ? 'Review the generated code' : 'Generate the code';
-    case 'documentation':
-      return started ? 'Review the documentation' : 'Write the documentation';
-    case 'testing':
-      return started ? 'Run the tests' : 'Prepare the tests';
-    case 'tco':
-      return 'Estimate the costs';
-    case 'delivery':
-      return 'Hand over the package';
-    default:
-      return `Open ${step.label}`;
-  }
+  return phaseActionLabel(step, hasSource);
 }
 
 export function stepOfLabel(n: number, total: number): string {
