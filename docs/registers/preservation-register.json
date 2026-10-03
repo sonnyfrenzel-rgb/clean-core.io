@@ -858,15 +858,17 @@
           {
             "field": "solutionDesign",
             "from": "project",
-            "why": "prompt input; auto-generation requires it"
-          },
-          {
-            "field": "analysis",
-            "from": "run",
-            "why": "prompt input; auto-generation requires it"
+            "via": "generationPrerequisites",
+            "why": "prompt input; without it generationPrerequisites names the missing design and the button waits (v3.0.1)"
           }
         ],
         "optional": [
+          {
+            "field": "analysis",
+            "from": "run",
+            "via": "fetchGenerationDecision",
+            "why": "prompt input when the run has a narrative; an engine-only run has none, and the design carries it (v3.0.1)"
+          },
           {
             "field": "extensibilityRoute",
             "from": "project",

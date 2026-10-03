@@ -390,6 +390,78 @@ export function generationBlockers(
   return out;
 }
 
+/** One thing a generation needs that is not on record yet, and the one action that puts it there. */
+export interface GenerationPrerequisite {
+  id: 'source' | 'design' | 'code';
+  /** A sentence the page shows as text next to its button — never only as a hover title. */
+  reason: string;
+  /** The stage whose page resolves it, and the words on the link there. */
+  action: { label: string; stage: PhaseKey };
+}
+
+/**
+ * What has to be on record before `target` can be generated at all. The sibling
+ * of `generationBlockers`, which covers the other case — something on record
+ * that was built for a previous source.
+ *
+ * Owner report 03.10.2026 (v3.0.1): Transformation's button was enabled on a
+ * project with no solution design, its click checked for the design and
+ * returned without a word, and `generationBlockers` was empty because nothing
+ * was stale. A page shows each entry with its action and keeps its button
+ * disabled while the list is not empty.
+ *
+ * The analysis narrative is not a prerequisite of the generation itself — the
+ * design is written from it, so a design on record carries it. It decides only
+ * which action resolves a missing design: the Design stage writes one only from
+ * a narrative, and an engine-only run has none (`/api/runs/create` stores an
+ * empty string), so the way forward is the analysis, not the Design page.
+ *
+ * Documentation reads its process from the code without a model and states
+ * its own preconditions, so for it only a missing source counts here.
+ */
+export function generationPrerequisites(
+  project: Project | null,
+  target: 'transformation' | 'documentation' | 'testing',
+): GenerationPrerequisite[] {
+  if (!project) return [];
+  const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
+  // A project from before signed runs may hold the narrative as an object.
+  const analysis: unknown = (project as { analysis?: unknown }).analysis;
+  const narrative = has(analysis) || (typeof analysis === 'object' && analysis !== null);
+  if (!has(project.legacyCode)) {
+    return [{
+      id: 'source',
+      reason: 'There is no ABAP source on this project yet.',
+      action: { label: 'Open Analyze', stage: 'analyze' },
+    }];
+  }
+  const out: GenerationPrerequisite[] = [];
+  if (target !== 'documentation' && !has(project.solutionDesign)) {
+    out.push(
+      narrative
+        ? {
+            id: 'design',
+            reason: 'No solution design yet. The code is generated from the design, so generate and review it in Design first.',
+            action: { label: 'Open Design', stage: 'design' },
+          }
+        : {
+            id: 'design',
+            reason:
+              'No solution design yet, and none can be written: the design is written from the analysis narrative, and the signed run has none — the engine analysed the code without a model. Run the analysis with the model on, then generate the design.',
+            action: { label: 'Run the analysis', stage: 'analyze' },
+          },
+    );
+  }
+  if (target === 'testing' && !hasGeneratedPackage(project.generatedCode)) {
+    out.push({
+      id: 'code',
+      reason: 'No generated code yet. The scenarios are written from the target code.',
+      action: { label: 'Open Transformation', stage: 'transformation' },
+    });
+  }
+  return out;
+}
+
 /**
  * Whether `generatedCode` holds code. A non-empty string was enough, so a
  * serialised package with no files — `'[]'` — marked Transformation generated
