@@ -26,7 +26,9 @@ import {
   grownCount,
   revealedCount,
   settleProgress,
+  storyRevealed,
 } from '../lib/first-look-buildup';
+import { processStory } from '../lib/process-story';
 
 /**
  * The pace of the first look's build-up — owner, 03.10.2026 (translated): "The
@@ -115,6 +117,11 @@ test.describe('the frames (pure)', () => {
       expect(revealedCount(4, stage, to - 800)).toBe(4);
       expect(revealedCount(0, stage, to)).toBe(0);
     }
+    // The last step lands on the numbered story, one step after another, whole before the end.
+    expect(storyRevealed(6, BUILD_UP_BUDGET.mapFrom - 1)).toBe(0);
+    expect(storyRevealed(6, BUILD_UP_BUDGET.mapFrom)).toBe(1);
+    expect(storyRevealed(6, BUILD_UP_BUDGET.mapFrom + 1600)).toBe(6);
+    expect(BUILD_UP_BUDGET.endAt - (BUILD_UP_BUDGET.mapFrom + 1600)).toBeGreaterThanOrEqual(800);
     expect(settleProgress(BUILD_UP_BUDGET.mapFrom - 1)).toBe(0);
     expect(settleProgress(BUILD_UP_BUDGET.endAt)).toBe(1);
   });
@@ -142,8 +149,9 @@ test.describe('the markup', () => {
     FirstLookBuildUp = require(path.join(OUT, 'FirstLookBuildUp.cjs')).default as BuildUp;
   });
 
-  function render(elapsed: number, paused: boolean | null = false): string {
+  function render(elapsed: number, paused: boolean | null = false, withStory = false): string {
     const reading = readSource(SRC);
+    const story = withStory ? processStory(reading.skeleton, SRC) : null;
     return renderToStaticMarkup(
       React.createElement(FirstLookBuildUp, {
         source: SRC,
@@ -154,6 +162,7 @@ test.describe('the markup', () => {
         elapsed,
         onSkip: () => {},
         pause: paused === null ? null : { paused, onToggle: () => {} },
+        story,
       }),
     );
   }
@@ -178,6 +187,24 @@ test.describe('the markup', () => {
     }
     expect(headlines.size, 'two steps say the same headline').toBe(BUILD_UP_STAGES.length);
     expect(render(0)).toContain(`Reading your ${TOTAL} lines…`);
+  });
+
+  test('the last step lands on the numbered story the Business view opens on, each step with its line', () => {
+    const reading = readSource(SRC);
+    const story = processStory(reading.skeleton, SRC);
+    expect(story.steps.length).toBeGreaterThan(2);
+    // Before the last step the code stands; in it the story takes the code's place.
+    expect(render(BUILD_UP_BUDGET.openFrom + 500, false, true)).not.toContain('data-first-look-story');
+    expect(render(BUILD_UP_BUDGET.openFrom + 500, false, true)).toContain('data-first-look-code-panel');
+    const last = render(BUILD_UP_BUDGET.endAt - 100, false, true);
+    expect(last).toContain(`data-first-look-story="" data-steps="${story.steps.length}"`);
+    expect(last).not.toContain('data-first-look-code-panel');
+    for (const step of story.steps) {
+      expect(last).toContain(step.text.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
+      if (step.anchor) expect(last).toContain(step.anchor);
+    }
+    // Without a story yet, the last step keeps the code — never an empty place.
+    expect(render(BUILD_UP_BUDGET.endAt - 100)).toContain('data-first-look-code-panel');
   });
 
   test('Pause stands beside Skip while the build-up plays, and says Continue once paused', () => {

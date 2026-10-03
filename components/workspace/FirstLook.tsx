@@ -662,6 +662,7 @@ export default function FirstLook({
               map={map}
               narrative={narrative}
               pause={pause}
+              story={result?.story ?? null}
             />
           </div>
         </section>

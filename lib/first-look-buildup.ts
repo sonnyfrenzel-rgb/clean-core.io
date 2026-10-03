@@ -29,7 +29,7 @@
  *   | business language   | 8.5 s  | 2.5 s | the names change once                    |
  *   | rules in the code   | 11.0 s | 3.5 s | each rule lights at its line, collected  |
  *   | not determined      | 14.5 s | 3.0 s | each open point marked at its line       |
- *   | map                 | 17.5 s | 2.5 s | the whole process settles into view      |
+ *   | map                 | 17.5 s | 2.5 s | the numbered story, the map settles       |
  *
  * Why 20 s and not 8 or 30: a headline of four to nine words takes a first-time
  * reader about two seconds to read, and then the eye wants a moment on what it
@@ -195,6 +195,18 @@ export function revealedCount(count: number, stage: 'rules' | 'not-determined', 
   if (elapsed >= to) return count;
   const p = clamp01((elapsed - from) / ((to - from) * (2 / 3)));
   return Math.max(1, Math.ceil(p * count));
+}
+
+/**
+ * How many of the story's `count` numbered steps the last step shows at
+ * `elapsed`: one after another over its first 1.6 s, so the reader can follow
+ * them in order and still sees the whole story before the end state takes
+ * over with the same story.
+ */
+export function storyRevealed(count: number, elapsed: number): number {
+  const b = BUILD_UP_BUDGET;
+  if (count === 0 || elapsed < b.mapFrom) return 0;
+  return Math.max(1, Math.ceil(clamp01((elapsed - b.mapFrom) / 1600) * count));
 }
 
 /** How far the map has settled into its whole view, 0 to 1 — 0 before the map step. */

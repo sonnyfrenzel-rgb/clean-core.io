@@ -23,11 +23,13 @@ import {
   grewAt,
   revealedCount,
   settleProgress,
+  storyRevealed,
   type BuildUpEvent,
   type BuildUpStage,
 } from '@/lib/first-look-buildup';
 import { firstLookExcerpt, type ExcerptDrawing, type ExcerptNode } from '@/lib/first-look-excerpt';
 import type { BusinessCard } from '@/lib/business-card';
+import type { ProcessStory } from '@/lib/process-story';
 import {
   wt,
   buildUpCounter,
@@ -42,6 +44,7 @@ import {
   buildUpRailRead,
   buildUpRailRules,
   buildUpStageLabel,
+  bizStoryWithin,
   firstLookOpenGroup,
 } from '@/lib/workspace-messages';
 
@@ -63,8 +66,10 @@ import {
  *      code and joins a list over the dimmed map;
  *   5. *n points the engine cannot judge — shown, not hidden* — the same, for
  *      the open points, marked as not determined;
- *   6. *Your process, every step tied to its line* — the code steps back and
- *      the whole process settles into view.
+ *   6. *Your process, every step tied to its line* — the code gives way to the
+ *      process as numbered steps in plain words, each with its line — the
+ *      story the Business view opens on (`lib/process-story.ts`) — and the
+ *      whole map settles into view beside it.
  *
  * The step strip is six icons on a progress line; the labels and what each step
  * found are there for a screen reader and on hover, not as text over the code.
@@ -480,6 +485,44 @@ function CodePanel({
   );
 }
 
+/**
+ * The last step: the process as the numbered story the Business view opens on,
+ * each step with its line, appearing one after another where the code stood —
+ * the code steps back and the business leads (mockup `s0`).
+ */
+function StoryPanel({ story, shown }: { story: ProcessStory; shown: number }) {
+  return (
+    <ol
+      data-first-look-story=""
+      data-steps={story.steps.length}
+      className="m-0 flex min-w-0 list-none flex-col gap-2 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface p-3 md:h-[440px]"
+    >
+      {story.steps.map((step, i) => (
+        <li
+          key={`${step.nodeId}-${i}`}
+          className="grid grid-cols-[28px_minmax(0,1fr)] items-start gap-x-3 motion-safe:transition-opacity motion-safe:duration-300"
+          style={{ opacity: i < shown ? 1 : 0 }}
+          aria-hidden={i < shown ? undefined : true}
+        >
+          <span
+            aria-hidden={true}
+            className="inline-flex size-7 items-center justify-center rounded-full bg-cc-surface-muted text-[13px] font-bold text-cc-ink"
+          >
+            {i + 1}
+          </span>
+          <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 pt-1 text-[14px] leading-snug font-semibold text-cc-ink">
+            <span className="min-w-0 break-words">
+              {step.within ? `${bizStoryWithin(step.within)} ` : null}
+              {step.text}
+            </span>
+            {step.anchor ? <span className="font-cc-mono text-[11px] font-medium text-cc-ink-muted">{step.anchor}</span> : null}
+          </p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /** "L52-74" → 52. */
 function lineOf(anchor: string | null | undefined): number | null {
   const m = anchor ? /^L(\d+)/.exec(anchor) : null;
@@ -498,6 +541,7 @@ export default function FirstLookBuildUp({
   map = 'unsigned',
   narrative = null,
   pause = null,
+  story = null,
 }: {
   source: string;
   sourceName: string;
@@ -518,6 +562,8 @@ export default function FirstLookBuildUp({
   narrative?: BuildUpNarrative | null;
   /** Pause and continue, when the parent's clock can be paused. */
   pause?: BuildUpPause | null;
+  /** The process as numbered steps — the last step lands on it; null while the engine has not returned it. */
+  story?: ProcessStory | null;
 }) {
   const withModel = narrative?.withModel === true;
   const lines = useMemo(() => source.split(/\r\n|\r|\n/), [source]);
@@ -555,7 +601,11 @@ export default function FirstLookBuildUp({
   const paused = pause?.paused === true;
 
   // The rules and the open points, revealed one after another in their steps.
-  const rules = card?.rules ?? [];
+  // The decisive rules first — the ones the end state's headline names — then
+  // the rest in source order; four are named, the others counted.
+  const rules = card
+    ? [...card.featured, ...card.rules.filter((r) => !card.featured.some((f) => f.id === r.id))]
+    : [];
   const groups = card?.open.groups ?? [];
   const rulesShown = stage === 'rules' ? revealedCount(Math.min(rules.length, 4), 'rules', elapsed) : 0;
   const groupsShown = stage === 'not-determined' ? revealedCount(Math.min(groups.length, 4), 'not-determined', elapsed) : 0;
@@ -652,8 +702,12 @@ export default function FirstLookBuildUp({
               : wt('buildUp.headMap');
 
   const progress = Math.min(1, elapsed / BUILD_UP_BUDGET.endAt);
-  const collecting = stage === 'rules' || stage === 'not-determined';
+  // A collecting step dims the map only when it has something to gather over
+  // it; with no rule or no open point the process stays in plain sight.
+  const collecting = (stage === 'rules' && rulesShown > 0) || (stage === 'not-determined' && groupsShown > 0);
   const waitingForNarrative = over && map === 'writing' && narrative?.since != null;
+  const storySteps = story?.steps.length ?? 0;
+  const storyShown = stage === 'map' && storySteps > 0 ? storyRevealed(storySteps, elapsed) : 0;
 
   return (
     <div data-first-look-buildup={stage} data-paused={paused ? 'true' : 'false'} className="flex min-w-0 flex-col gap-4">
@@ -754,22 +808,30 @@ export default function FirstLookBuildUp({
       {/* The code on one side, the process on the other; on a phone the
           process is drawn below the code. */}
       <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <CodePanel
-          lines={lines}
-          total={totalLines}
-          focus={focus}
-          marks={marks}
-          gliding={stage !== 'code-read'}
-          strong={frame.fresh || collecting}
-          dimmed={stage === 'business-language' || stage === 'map'}
-          caption={sourceName}
-        />
+        {storyShown > 0 && story ? (
+          <StoryPanel story={story} shown={storyShown} />
+        ) : (
+          <CodePanel
+            lines={lines}
+            total={totalLines}
+            focus={focus}
+            marks={marks}
+            gliding={stage !== 'code-read'}
+            strong={frame.fresh || collecting}
+            dimmed={stage === 'business-language' || stage === 'map'}
+            caption={sourceName}
+          />
+        )}
 
         <div className="relative h-[360px] min-w-0 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface md:h-[440px]">
           <div
             className={cn('h-full motion-safe:transition-opacity motion-safe:duration-500', collecting && 'opacity-30')}
           >
-            {withExcerpt ? (
+            {stage === 'code-read' ? (
+              <p className="m-0 grid h-full place-items-center px-6 text-center text-[13px] font-medium text-cc-ink-muted">
+                {wt('buildUp.processHere')}
+              </p>
+            ) : withExcerpt ? (
               <ExcerptSvg
                 drawing={drawing}
                 grown={frame.grown}

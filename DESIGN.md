@@ -631,7 +631,8 @@ runs at a pace a first-time reader can follow, about 20 s (within 15–25 s), ev
 determined to 17.5 s, the map to 20 s; no step under 2.5 s. Each step says one headline — what it means for the reader
 — and moves one thing: the reading line runs through the source with its line counter, the nodes grow on the map out of
 the line the code centres on, the names change once, the rules and then the open points light at their lines and gather
-over the dimmed map, and the code steps back while the whole process settles into view. The step strip is six icons on
+over the dimmed map, and the code gives way to the numbered story the Business view opens on, each step with its line,
+while the whole map settles beside it. The step strip is six icons on
 a progress line; counters are one quiet line under the headline. Every frame shows real content — lit source lines and
 the engine's own nodes with their anchors, counters that only rise with a lit line — so it is not a wait without
 content; motion is transform and opacity only. The last moment waits, at most 8 s, for the start's signed run, so the

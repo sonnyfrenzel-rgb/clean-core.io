@@ -131,6 +131,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.paused': 'Paused',
   'buildUp.progressLabel': 'How far the reading has got',
   'buildUp.headProcess': 'Finding the process in the code…',
+  'buildUp.processHere': 'The process grows here, out of the lines being read.',
   'buildUp.headNames': 'Each step, in plain words',
   'buildUp.headNamesProposed': 'Each step, in the names a model proposed',
   'buildUp.headRulesReading': 'Looking for the rules in the code…',
