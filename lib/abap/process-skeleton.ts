@@ -692,8 +692,20 @@ const OUTPUT_CONTROL = 'output control';
 const OUTPUT_CONTROL_FORM =
   /^FORM\s+[\w/]+\s+USING\s+(?:RETURN_CODE|ENT_RETCO)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s+(?:US_SCREEN|ENT_SCREEN)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s*\.?$/i;
 
+/**
+ * Form-based user exits (SD, LE, MM): SAP's standard programs perform FORM
+ * routines named `USEREXIT_…` that the customer fills in the user-exit
+ * includes the standard program ships for it — `USEREXIT_SAVE_DOCUMENT_PREPARE`
+ * in MV45AFZZ (SAPMV45A, sales order), `USEREXIT_…` in MV50AFZ1 (deliveries),
+ * RV60AFZZ (billing) and the like. The prefix is the convention: the standard
+ * program, not this source, calls them.
+ */
+const USER_EXIT = 'user exit';
+const USER_EXIT_FORM = /^FORM\s+USEREXIT_\w+/i;
+
 function formConvention(opener: string): string | null {
   if (OUTPUT_CONTROL_FORM.test(opener.trim())) return OUTPUT_CONTROL;
+  if (USER_EXIT_FORM.test(opener)) return USER_EXIT;
   return null;
 }
 
@@ -2430,6 +2442,8 @@ class SkeletonBuilder {
         : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
           : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
+              : entry.trigger === USER_EXIT
+                ? 'its name USEREXIT_… is the user-exit convention of the SAP standard program that performs it'
               : entry.trigger === OUTPUT_CONTROL
                 ? 'its interface (return code, screen flag) is the one output control calls a processing routine '
                   + 'with (table TNAPR)'

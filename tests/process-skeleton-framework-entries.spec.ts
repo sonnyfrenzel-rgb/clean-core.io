@@ -105,3 +105,32 @@ test.describe('output control processing routines (NAST, table TNAPR)', () => {
     expect(notes[0].detail).toContain('output control');
   });
 });
+
+test.describe('form-based user exits (USEREXIT_*)', () => {
+  test('a USEREXIT_ FORM beside a function module is an entry of its own, noted as a user exit', () => {
+    const source = [
+      'FUNCTION z_credit_log.', //                                                1
+      '  INSERT zcredit_log FROM is_log.', //                                     2
+      'ENDFUNCTION.', //                                                          3
+      'FORM userexit_save_document_prepare.', //                                  4
+      "  IF vbak-auart = 'ZOR'.", //                                              5
+      '    PERFORM check_limit.', //                                            6
+      '  ENDIF.', //                                                            7
+      'ENDFORM.', //                                                              8
+      'FORM check_limit.', //                                                     9
+      '  SELECT SINGLE klimk FROM knkk INTO gv_limit WHERE kunnr = vbak-kunnr.', // 10
+      'ENDFORM.', //                                                              11
+      'FORM unused_helper.', //                                                   12
+      '  UPDATE zcredit_log SET done = abap_true.', //                            13
+      'ENDFORM.', //                                                              14
+    ].join('\n');
+    expect(starts(source)).toEqual([
+      ['z_credit_log', 1, 'function', undefined],
+      ['userexit_save_document_prepare', 4, 'form', 'user exit'],
+    ]);
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.notDrawn.unreached.map((u) => u.name)).toEqual(['UNUSED_HELPER']);
+    const note = skeleton.notes.find((n) => n.reason === 'entry-trigger-not-determined' && n.lineStart === 4);
+    expect(note?.detail).toContain('user-exit convention');
+  });
+});
