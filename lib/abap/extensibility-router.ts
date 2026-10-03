@@ -244,6 +244,21 @@ export function routeExtensibility(
   // only once it is replaced (QA full review of v2.20.0, e08f739fe79e).
   const privateStandardWrites = deploymentModel === 'private' && standardWrites.length > 0;
 
+  // Constructs that force no side-by-side split but do not run unchanged in
+  // ABAP Cloud either: classic enhancements, dynpros, classic ALV, SUBMIT,
+  // update tasks, legacy mail and unreleased APIs. They stay on-stack only
+  // once replaced, so they may not leave the In-App track rated "Highly
+  // Compatible" with "standard reads" as its reason (QA full review
+  // b0bad443beaa). Reads and writes to the customer's own tables are not
+  // among them: ABAP Cloud reads and writes its own tables.
+  const ON_STACK_REWORK: ReadonlySet<string> = new Set(['dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input']);
+  const reworkKinds = [...new Set([
+    ...enhancements.map((f) => f.kind),
+    ...findings.filter((f) => ON_STACK_REWORK.has(f.kind)).map((f) => f.kind),
+  ])];
+  const onStackRework = reworkKinds.length > 0;
+  const reworkList = reworkKinds.map(labelFor).join(', ');
+
   // What this router can say about persistence: a count, not a fit.
   const writeSummary =
     standardWrites.length === 0 && customWrites.length === 0
@@ -376,6 +391,8 @@ export function routeExtensibility(
         ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.`
         : privateStandardWrites
         ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.`
+        : onStackRework
+        ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud; it stays on-stack once replaced by released APIs, a released BAdI or a Fiori/RAP equivalent.`
         : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
@@ -385,6 +402,8 @@ export function routeExtensibility(
       question: 'Does the extension require external persistency, non-ABAP runtime, or decoupling?',
       evaluation: needsBtp
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
+        : onStackRework
+        ? `Optional. Nothing found requires a separate ${BTP} runtime; what was found — ${reworkList} — is replaced on-stack.`
         : `Optional. Simple reads do not justify the architectural overhead of a separate ${BTP} runtime.`,
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: 'Target: decoupled from the S/4HANA core, with its own lifecycle. Not established for the analysed code.'
@@ -410,13 +429,15 @@ export function routeExtensibility(
   const modificationBlocks = modifications.length > 0;
 
   const inAppABAPCloud: ComparativeTrack = {
-    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp || privateStandardWrites ? 'Partially Compatible' : 'Highly Compatible',
+    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp || privateStandardWrites || onStackRework ? 'Partially Compatible' : 'Highly Compatible',
     fitDetails: modificationBlocks
       ? `Not reachable as it stands. ${modifications.length} core modification(s) sit inside SAP standard code and have to be reset via SPAU before any ABAP Cloud target applies.`
       : needsBtp
       ? `Requires refactoring: ${btpTriggerList} must be replaced with released APIs or decoupled.`
       : privateStandardWrites
       ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by a released write API, a BAPI or a RAP action.`
+      : onStackRework
+      ? `Requires refactoring: ${reworkList} must be replaced by released APIs, a released BAdI or a Fiori/RAP equivalent before the code runs on ABAP Cloud.`
       : 'Excellent fit. On-stack RAP execution provides high performance and direct access to standard released views.',
     pros: [
       'High-performance database access (local reads)',

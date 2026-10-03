@@ -417,3 +417,23 @@ test.describe('a rule tied to no process element says why', () => {
     }]);
   });
 });
+
+test('a WHEN arm naming a constant reads the constant, which is then not declaration-only (QA full review b64e0d3ad7c1)', () => {
+  const source = [
+    'REPORT z.',
+    "CONSTANTS c_approved TYPE c VALUE 'A'.",
+    'DATA status TYPE c.',
+    'START-OF-SELECTION.',
+    '  CASE status.',
+    '    WHEN c_approved.',
+    "      WRITE 'ok'.",
+    '    WHEN OTHERS.',
+    "      WRITE 'no'.",
+    '  ENDCASE.',
+  ].join('\n');
+  const when = readBusinessRules(source).candidates.filter((c) => c.origin === 'when');
+  expect(when.map((c) => [c.subject, c.values, c.viaConstant?.name])).toEqual([['status', ['A'], 'c_approved']]);
+  const set = deriveBusinessRules(source);
+  expect(set.rules.map((rule) => rule.withoutProcessElement?.reason ?? null)).not.toContain('declaration-only');
+  expect(set.rules.some((rule) => rule.processElements.length > 0)).toBe(true);
+});

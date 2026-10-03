@@ -87,6 +87,20 @@ const H2 = 'cc-text-h2 text-cc-ink';
  */
 const DOCUMENTATION_WORKSPACE_FILE = 'docs/process-documentation.md';
 
+/** The workspace file of the business layer (SOP, RACI, controls). */
+const BUSINESS_WORKSPACE_FILE = 'docs/business-documentation.md';
+
+/** The workspace package without one file; `generatedCode` as stored, or `[]`. */
+const removeFileFromWorkspace = (generatedCode: string, filePath: string): string => {
+  try {
+    const parsed = JSON.parse(generatedCode);
+    if (Array.isArray(parsed)) return JSON.stringify(parsed.filter((f: { path?: string }) => f?.path !== filePath));
+  } catch {
+    // Not a package: nothing in it can be the business layer's file.
+  }
+  return generatedCode;
+};
+
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
   if (generatedCode) {
@@ -417,7 +431,7 @@ Structure the JSON exactly like this:
         if (current.activeRunId !== writtenFromRun || current.documentation !== writtenFromDocumentation) {
           throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
         }
-        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, BUSINESS_WORKSPACE_FILE, formatBusinessDocsToMarkdown(responseText));
         // Codex architecture-02: the layer is written twice — as itself and
         // into the package — so it is refused by name before the commit when
         // the project would outgrow its 1 MiB document.
@@ -559,18 +573,27 @@ Structure the JSON exactly like this:
         if (current.activeRunId !== builtFromRun || current.legacyCode !== signedSource.source) {
           throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
         }
-        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built));
+        // The business layer (RACI, SOP, controls) was written from the
+        // documentation this replaces, keyed to its step ids. Kept, it would be
+        // shown and exported as current beside a document whose elements it
+        // does not describe (QA full review 96b39ec78c97) — so it goes with the
+        // document it was built on, from the project and from the package.
+        const merged = removeFileFromWorkspace(
+          addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built)),
+          BUSINESS_WORKSPACE_FILE,
+        );
         // Codex architecture-02, as for the business layer above.
-        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged }, projectDoc.path, 'update');
+        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
-        tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
+        tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' });
         return merged;
       });
 
       // Shown only once it is stored: a document the transaction refused is
       // not this project's documentation.
       setDocumentation(stored);
-      setProject(prev => prev ? { ...prev, documentation: stored, generatedCode: updatedCode, status: 'documented' } : null);
+      setBusinessDocumentation('');
+      setProject(prev => prev ? { ...prev, documentation: stored, generatedCode: updatedCode, status: 'documented', businessDocumentation: '' } : null);
     } catch (err: unknown) {
       console.error('Documentation generation error:', err);
       setDocError(err instanceof Error ? err.message : String(err));

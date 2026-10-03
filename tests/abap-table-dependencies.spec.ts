@@ -6,6 +6,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { createLiteralScanner } from '../lib/abap/statement-reader';
 import type { DataCouplingEntry } from '../lib/types';
+import { SIDE_BY_SIDE_ROUTE } from '../lib/sap-naming';
 
 /**
  * The dependencies the engine could not see, and the ones it invented — roadmap
@@ -671,5 +672,23 @@ test.describe('a reserved-namespace table is neither custom nor standard (45a8a7
     const r = recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code));
     expect(r.architecture).toBe('rap');
     expect(r.justification).toContain('standard table read');
+  });
+});
+
+test.describe('a custom-table write does not force Side-by-Side (QA full review b9216259ba46)', () => {
+  const CUSTOM_WRITE = 'FORM save.\n  UPDATE zorders FROM ls_order.\nENDFORM.';
+  const route = (target?: string) =>
+    recommendArchitecture(CUSTOM_WRITE, extractCodeInventory(CUSTOM_WRITE), extractDataCoupling(CUSTOM_WRITE), target);
+
+  test('without a Side-by-Side target, the write stays On-Stack RAP and names both options', () => {
+    const r = route();
+    expect(r.architecture).toBe('rap');
+    expect(r.justification).not.toContain('requires decoupled Side-by-Side');
+    expect(r.justification).toMatch(/on-stack/i);
+    expect(r.justification).toMatch(/Side-by-Side/);
+  });
+
+  test('a Side-by-Side deployment target breaks the tie towards CAP', () => {
+    expect(route(SIDE_BY_SIDE_ROUTE).architecture).toBe('cap');
   });
 });

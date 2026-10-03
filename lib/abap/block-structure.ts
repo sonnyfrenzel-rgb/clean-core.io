@@ -152,7 +152,10 @@ function isEventStatement(statement: AbapStatement): boolean {
 }
 
 function nameOf(statement: AbapStatement, kind: BlockKind): string {
-  const m = new RegExp(`^${kind}\\s+([\\w/]+)`, 'i').exec(statement.text);
+  // `METHOD if_ex_foo~check` implements an interface method: the component
+  // selector `~` belongs to the name, or every method of one interface would
+  // read as one container (QA full review 3f8b458bfc1a).
+  const m = new RegExp(`^${kind}\\s+([\\w/~]+)`, 'i').exec(statement.text);
   return m ? m[1].toUpperCase() : '';
 }
 

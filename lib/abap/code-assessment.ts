@@ -553,11 +553,18 @@ export function recommendArchitecture(
   const existingRouteIsBTP = isSideBySideRoute(extensibilityRoute);
 
   // Decision logic
+  // A write to a customer table does not force Side-by-Side: a RAP business
+  // object on the customer table stays on-stack (developer extensibility), as
+  // the data-coupling recommendation for the same write says. The deployment
+  // route breaks the tie (QA full review b9216259ba46).
   if (customTableWrites > 0) {
     return {
-      architecture: 'cap',
-      confidence: Math.min(95, 70 + customTableWrites * 5),
-      justification: `${customTableWrites} custom table write operation(s) detected. Custom persistence requires decoupled Side-by-Side model.`,
+      architecture: existingRouteIsBTP ? 'cap' : 'rap',
+      confidence: 60,
+      justification: `${customTableWrites} custom table write operation(s) detected. Custom persistence can stay on-stack as a RAP business object on the customer table or move Side-by-Side; `
+        + (existingRouteIsBTP
+          ? 'the project\'s deployment target is Side-by-Side.'
+          : 'without a Side-by-Side deployment target, On-Stack RAP is the default.'),
     };
   }
 

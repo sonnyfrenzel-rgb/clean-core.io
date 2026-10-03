@@ -786,8 +786,18 @@ function readWhenArm(
   }
 
   for (const token of tokenize(context.conditionText)) {
-    if (!token.literal) continue;
-    const value = unquote(token);
+    // `WHEN c_approved` compares the selector with the constant's value, as
+    // `IF status = c_approved` does: resolve it through the constant index,
+    // or the arm is dropped and the constant reads as declared but never used
+    // (QA full review b64e0d3ad7c1). A variable or keyword (`OR`) resolves to
+    // nothing and states no value here.
+    const valued = token.literal ? null : valueOf(token, reader.constants);
+    if (!token.literal && !valued) continue;
+    if (valued?.technicalConstant) {
+      reject(reader, 'technische-konstante', `${selector} = ${token.text}`, context.range);
+      continue;
+    }
+    const value = valued ? valued.values[0] : unquote(token);
     if (TRUTH_VALUE.has(value.trim().toLowerCase())) {
       reject(reader, 'technischer-wert', `${selector} = ${token.text}`, context.range);
       continue;
@@ -811,11 +821,12 @@ function readWhenArm(
       conditionText: context.conditionText,
       valueOffset: token.start,
       operator: '=',
-      literal: token.text,
+      literal: valued ? valued.literal : token.text,
       values: [value],
       subject: selector,
       subjectKind: 'case-selector',
       classifyName: selector,
+      viaConstant: valued?.viaConstant,
       selectorAt: { lineStart: branch.lineStart, lineEnd: branch.lineStart },
       lineStart: context.range.lineStart,
       lineEnd: context.range.lineEnd,
