@@ -70,6 +70,7 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { hubViewLabel, pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import { workflowSteps } from '@/lib/workflow-steps';
+import { pricedOptions } from '@/lib/economics-record';
 import type { Project } from '@/lib/types';
 
 type ContentBlock =
@@ -505,6 +506,7 @@ export default function WorkspaceShell({
     () => (project?._economics ? workflowSteps(project).find((s) => s.key === 'tco')?.state ?? null : null),
     [project],
   );
+  const costScenario = useMemo(() => (project?._economics ? pricedOptions(project._economics) : null), [project]);
   const costsSummary =
     costsState === 'done'
       ? wt('mgmtFold.costsPriced')
@@ -598,7 +600,7 @@ export default function WorkspaceShell({
               // the conditions and the timeline. It writes only through the
               // commands route, so the Stand check of 6.9 hangs off it.
               <div id="decision-card">
-                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
+                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} costScenario={costScenario} />
               </div>
             }
             coach={

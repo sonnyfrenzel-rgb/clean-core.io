@@ -28,6 +28,9 @@ import {
 } from '../lib/steering-one-pager';
 import { decisionManagerView } from '../lib/decision-manager';
 import type { StandardFit } from '../lib/standard-fit';
+import { ECONOMICS_RECORD_FORMAT, ECONOMICS_START_INPUTS, pricedOptions, serializeEconomics, validateEconomicsPayload, type EconomicsRecord } from '../lib/economics-record';
+import { costAssumptionsRevision, type CostAssumptions } from '../lib/cost-assumptions';
+import { initialCostAssumptions } from '../components/tco/OptionComparison';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -249,6 +252,60 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
     expect(levels?.value).toBe('A 1 · B 0 · C 1 · D 0 · Unknown 0');
     expect(levels?.value).toBe(itFindingsView(src.findings).distribution.slices.map((s) => `${s.grade} ${s.count}`).join(' · '));
     expect(levels?.meaning).toContain('2 of 3 places in the code in this run');
+  });
+
+  test('with no finding graded, the levels are the SAP objects the risks name — never "no finding" beside a level-C risk', () => {
+    // Seen on Z_SALES_ORDER_CREATOR (03.10.2026): the levels said "the engine
+    // raised no finding to grade" while the risks beside it listed two level-C BAPIs.
+    const page = steeringOnePager(full({ findings: { ...findings, rows: [] } }));
+    const levels = page.figures.find((f) => f.key === 'levels');
+    expect(levels?.value).toBe('C 1 · D 1');
+    expect(levels?.absentReason).toBeNull();
+    expect(levels?.provenance).toBe('imported');
+    for (const r of page.risks) expect(levels?.value).toContain(`${r.level} `);
+    // Without a fit to read either, it stays not determined, with its reason.
+    const none = steeringOnePager(full({ findings: { ...findings, rows: [] }, fit: { state: 'not-determined', why: 'no-run', reason: 'No signed run.', platform: null } as StandardFit }));
+    expect(none.figures.find((f) => f.key === 'levels')?.absentReason).toBe('the engine raised no finding to grade');
+  });
+
+  test('a cost scenario stored on Economics prices the costs figure and the pillar, never as an amount', () => {
+    const seed = initialCostAssumptions();
+    const assumptions: CostAssumptions = {
+      ...seed,
+      currency: 'EUR',
+      devDayRate: 820,
+      testDayRate: 640,
+      horizonYears: 5,
+      releaseCadence: { perYear: 2, confirmed: true },
+      options: seed.options.map((o) => ({
+        ...o,
+        oneOff: { low: { devDays: 1, testDays: 0.5 }, high: { devDays: 3, testDays: 1 } },
+        perRelease: { devDays: 1.7, testDays: 1.2 },
+        maintenanceBaselinePerYear: o.kind === 'standard' ? null : { devDays: 3, testDays: 1 },
+        upgradeDelay: o.kind === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
+        effortSource: 'proposal-confirmed' as const,
+        ...(o.kind === 'standard' ? {} : { baselineSource: 'proposal-confirmed' as const }),
+      })),
+    };
+    const checked = validateEconomicsPayload(JSON.parse(serializeEconomics({ assumptions, inputs: { ...ECONOMICS_START_INPUTS } })));
+    if (!checked.ok) throw new Error(checked.error);
+    const econ: EconomicsRecord = {
+      formatVersion: ECONOMICS_RECORD_FORMAT,
+      ...checked.value,
+      revision: costAssumptionsRevision(checked.value.assumptions),
+      basis: { runId: 'run-1', score: null },
+      savedAt: '2026-10-03T12:00:00.000Z',
+    };
+    const { priced, total } = pricedOptions(econ);
+    expect(priced).toBeGreaterThan(0);
+    const page = steeringOnePager(full({ project: { ...signed, _economics: econ } as Project }));
+    const costs = page.figures.find((f) => f.key === 'costs');
+    expect(costs?.value).toBe(`${priced} of ${total} priced`);
+    expect(costs?.provenance).toBe('simulation');
+    expect(containsAmount(costs?.value ?? '')).toBe(false);
+    expect(page.nextSteps.map((s) => s.key)).not.toContain('costs');
+    const d = page.decision;
+    if (d.state === 'ready') expect(d.pillars.find((p) => p.key === 'cost')?.provenance).not.toBe('proven');
   });
 
   test('fit to standard is the card’s figure, and its blockers are the risks', () => {

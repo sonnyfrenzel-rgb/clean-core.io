@@ -226,7 +226,9 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
 
   /* ---------------------------------------------------------- decision */
   let decision: SteeringDecision;
-  const manager = src.decision ? decisionManagerView(src.decision) : null;
+  const storedEcon = src.project?._economics ?? null;
+  const storedScenario = storedEcon ? pricedOptions(storedEcon) : null;
+  const manager = src.decision ? decisionManagerView(src.decision, storedScenario) : null;
   if (src.decision && manager) {
     decision = {
       state: 'ready',
@@ -294,6 +296,23 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
       value: it.distribution.slices.map((s) => `${s.grade} ${s.count}`).join(' · '),
       absentReason: null,
       meaning: it.distribution.coverage.sentence,
+      provenance: 'imported',
+      levels,
+      evidence: to.it,
+    });
+  } else if (fit.state === 'ready' && fit.blockers.length + fit.clear.length > 0) {
+    // No finding carries a level, but the SAP objects the code uses do — the
+    // same objects and levels the risks below name, so the two never disagree.
+    const objects = [...fit.blockers, ...fit.clear];
+    const levels = (['A', 'B', 'C', 'D'] as const)
+      .map((grade) => ({ grade, count: objects.filter((o) => o.level === grade).length }))
+      .filter((l) => l.count > 0);
+    figures.push({
+      key: 'levels',
+      label: 'Clean core levels',
+      value: levels.map((l) => `${l.grade} ${l.count}`).join(' · '),
+      absentReason: null,
+      meaning: `Per SAP object this code uses (${objects.length}), from SAP’s classification.`,
       provenance: 'imported',
       levels,
       evidence: to.it,

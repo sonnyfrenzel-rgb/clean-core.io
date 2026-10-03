@@ -712,6 +712,14 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     // Never invented: the cost revision is not bound, and the pillar says so.
     expect(by.cost.provenance).toBe('not-determined');
     expect(by.cost.line).toMatch(/No cost assumptions entered yet/);
+    // Figures stored on Economics but bound to no decision: the pillar says how
+    // far they price, and that they are not bound — never "none entered", never
+    // in place, never an amount (merge of economics-persist, 03.10.2026).
+    const stored = Object.fromEntries(decisionManagerView(draft, { priced: 2, total: 3 }).pillars.map((p) => [p.key, p]));
+    expect(stored.cost.line).toBe('2 of 3 options priced in Economics — not bound to this decision.');
+    expect(stored.cost.provenance).toBe('not-determined');
+    expect(stored.cost.inPlace).toBe(false);
+    expect(decisionManagerView(draft, { priced: 0, total: 3 }).pillars.find((p) => p.key === 'cost')?.line).toMatch(/No cost assumptions entered yet/);
     // Green is reserved for proven: no pillar of a decision is proven.
     for (const p of m.pillars) expect(p.provenance).not.toBe('proven');
     expect(decisionHeadline(null)).toBe('No option chosen yet');

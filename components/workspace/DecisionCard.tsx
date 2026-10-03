@@ -13,7 +13,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { getAuth } from '@/lib/firebase';
 import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command-client';
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
-import { decisionManagerView, withoutSourcePaths, type DecisionPlace, type PillarKey } from '@/lib/decision-manager';
+import { decisionManagerView, withoutSourcePaths, type DecisionPlace, type PillarKey, type StoredCostScenario } from '@/lib/decision-manager';
 import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import { stageHref } from '@/lib/workspace-back-href';
 import { cn } from '@/lib/utils';
@@ -76,8 +76,11 @@ export default function DecisionCard({
   projectId,
   beforeWrite,
   onChanged,
+  costScenario = null,
 }: {
   projectId: string;
+  /** The figures stored on the Economics stage, while the decision binds none of them. */
+  costScenario?: StoredCostScenario | null;
   /** The Stand check of roadmap 6.9: a write against an overtaken screen stops first. */
   beforeWrite?: () => Promise<boolean>;
   /** Called after a command wrote the decision, so other readers of it reread. */
@@ -133,7 +136,7 @@ export default function DecisionCard({
     return answer.draft;
   }, [answer]);
   const view = useMemo(() => (shown ? decisionCardView(shown) : null), [shown]);
-  const m = useMemo(() => (shown ? decisionManagerView(shown) : null), [shown]);
+  const m = useMemo(() => (shown ? decisionManagerView(shown, costScenario) : null), [shown, costScenario]);
 
   const account = typeof window === 'undefined' ? null : (getAuth().currentUser?.email ?? null);
 

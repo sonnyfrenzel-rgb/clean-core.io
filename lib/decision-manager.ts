@@ -129,7 +129,13 @@ function undecidedOf(decision: ProjectDecision): number | null {
 
 const elements = (n: number) => `${n} process element${n === 1 ? '' : 's'}`;
 
-function pillarOf(decision: ProjectDecision, key: PillarKey): DecisionPillar {
+/**
+ * What the Economics stage has stored, when the decision binds no cost
+ * revision of it yet: how many options its figures price (never an amount).
+ */
+export type StoredCostScenario = { priced: number; total: number };
+
+function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostScenario | null = null): DecisionPillar {
   const b = decision.bindings.find((x) => x.key === key) ?? null;
   const revision = b?.revision ?? null;
   const provenance: ProvenanceValue = b && revision !== null ? b.provenance : 'not-determined';
@@ -163,7 +169,9 @@ function pillarOf(decision: ProjectDecision, key: PillarKey): DecisionPillar {
   if (key === 'cost') {
     const line =
       !b || revision === null
-        ? !b || /no cost assumptions were stated/i.test(b.notDeterminedReason ?? '')
+        ? stored && stored.priced > 0
+          ? `${stored.priced} of ${stored.total} options priced in Economics — not bound to this decision.`
+          : !b || /no cost assumptions were stated/i.test(b.notDeterminedReason ?? '')
           ? 'No cost assumptions entered yet, so no option is priced.'
           : 'The cost assumptions are incomplete, so no amount is shown.'
         : provenance === 'simulation'
@@ -267,9 +275,9 @@ const BLOCKING_WORDS: Partial<Record<DecisionGapCode, string>> = {
   'option-not-chosen': 'no target architecture is signed off',
 };
 
-export function decisionManagerView(decision: ProjectDecision): DecisionManagerView {
+export function decisionManagerView(decision: ProjectDecision, stored: StoredCostScenario | null = null): DecisionManagerView {
   const coverage = decisionCoverage(decision);
-  const pillars = (['need', 'option', 'cost', 'contract'] as const).map((k) => pillarOf(decision, k));
+  const pillars = (['need', 'option', 'cost', 'contract'] as const).map((k) => pillarOf(decision, k, stored));
   const option = decision.bindings.find((b) => b.key === 'option')?.revision ?? null;
   const inPlace = pillars.filter((p) => p.inPlace).length;
   const points = decision.conditions.map(decisionPoint);
