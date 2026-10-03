@@ -5,6 +5,8 @@ import { applyNaming, namingContextOf } from '../../lib/process-naming';
 import { buildProcessMapModel } from '../../lib/process-map';
 import { buildProcessDocumentation } from '../../lib/process-documentation-build';
 import type { ProcessDocumentation } from '../../lib/process-documentation';
+import { buildProcessDocument } from '../../lib/process-document-build';
+import type { ProcessDocument } from '../../lib/process-document';
 
 /**
  * A stored engine documentation and a business layer for it — the fixture the
@@ -30,6 +32,13 @@ export function engineDocumentationOf(source: string): ProcessDocumentation {
   const bpmn = buildBpmnExportFromSource(source, { processName: FIXTURE_FILE, sourceFileName: FIXTURE_FILE });
   const map = buildProcessMapModel({ bpmn, named: applyNaming(namingContextOf(source), null), fileName: FIXTURE_FILE });
   return buildProcessDocumentation({ source, map });
+}
+
+/** The process description of the same source, as the stage and the Confluence page render it. */
+export function processDocumentOf(source: string): ProcessDocument {
+  const bpmn = buildBpmnExportFromSource(source, { processName: FIXTURE_FILE, sourceFileName: FIXTURE_FILE });
+  const map = buildProcessMapModel({ bpmn, named: applyNaming(namingContextOf(source), null), fileName: FIXTURE_FILE });
+  return buildProcessDocument({ source, map });
 }
 
 /** The top-level steps a model would describe: no events, no decisions. */

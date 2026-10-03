@@ -342,16 +342,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // One name for the stage everywhere (UX-169): the title is the stepper's label.
     await page.waitForSelector('h1[data-stage-title]:has-text("Documentation")', { timeout: 45000 });
 
-    // Roadmap 3.0.5: the documentation is read out of the code by the engine —
-    // the button waits until the map of the signed source is read.
-    const startButton = page.locator('[data-generate-blueprint]');
-    try {
-      await expect(startButton).toBeEnabled({ timeout: 60000 });
-      await startButton.click();
-      console.log('Reading the process documentation from the code...');
-    } catch (e) {
-      console.log('Documentation already exists, skipping click.');
-    }
+    // Roadmap 3.0.5: the documentation is read out of the code by the engine;
+    // since 03.10.2026 opening the stage writes it, without a click.
 
     await expect(page.locator('[data-engine-documentation]')).toBeVisible({ timeout: 60000 });
     console.log('Stage 4 Complete: process documentation read from the code.');

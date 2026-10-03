@@ -281,7 +281,7 @@ export function requirementsFileName(projectName: string, ext: 'md' | 'docx'): s
  * functional set into blocks of its own.
  * ==================================================================== */
 
-type DocBlock =
+export type DocBlock =
   | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string }
   | { k: 'p'; text: string; strong?: boolean; em?: boolean }
   | { k: 'note'; text: string }
@@ -290,7 +290,7 @@ type DocBlock =
   | { k: 'ol'; items: string[] }
   | { k: 'code'; items: Array<{ label: string; quote: string }> };
 
-function blocksMarkdown(blocks: DocBlock[]): string {
+export function blocksMarkdown(blocks: DocBlock[]): string {
   const out: string[] = [];
   for (const b of blocks) {
     if (b.k === 'h') out.push(`${'#'.repeat(b.level)} ${b.text}`, '');
@@ -365,11 +365,11 @@ const PACKAGE_PARTS: Record<string, string> = {
   'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
 };
 
-function blocksDocxParts(blocks: DocBlock[]): Record<string, string> {
+export function blocksDocxParts(blocks: DocBlock[]): Record<string, string> {
   return { ...PACKAGE_PARTS, 'word/styles.xml': STYLES_WITH_H4, 'word/document.xml': blocksDocument(blocks) };
 }
 
-async function blocksDocx(blocks: DocBlock[]): Promise<Blob> {
+export async function blocksDocx(blocks: DocBlock[]): Promise<Blob> {
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
   for (const [name, content] of Object.entries(blocksDocxParts(blocks))) zip.file(name, content);
@@ -546,7 +546,7 @@ export const nfrDocx = (set: NfrSet, meta: NfrExportMeta): Promise<Blob> => bloc
  * Functional open topics the non-functional questions ask more precisely —
  * left out of the specification so the reader is not asked twice.
  */
-const FR_TOPICS_COVERED_BY_NFR = new Set(['authorization', 'retention', 'volume']);
+export const FR_TOPICS_COVERED_BY_NFR: ReadonlySet<string> = new Set(['authorization', 'retention', 'volume']);
 
 function frBlocks(set: RequirementSet, meta: RequirementsExportMeta): DocBlock[] {
   const out: DocBlock[] = [];

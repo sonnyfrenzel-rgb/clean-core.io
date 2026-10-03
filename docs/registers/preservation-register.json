@@ -1080,7 +1080,7 @@
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
             "text": "{json:project.documentation.l1_domain.name}",
-            "why": "the reference case seeds a legacy blueprint, which is still shown under the earlier-form notice with its domain name at the top; an engine document renders the process element by element in the same container"
+            "why": "the reference case seeds a legacy blueprint, which is still shown under the earlier-form notice with its domain name at the top; an engine document renders the process description (purpose to open questions, the technical trace as its appendix) in the same container"
           },
           {
             "field": "businessDocumentation",
