@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Trash2, Search, UserX, UserCheck, Globe } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, UserX, UserCheck, Globe } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
 import { formatDateTime } from '@/lib/format';
 import CcButton from '@/components/cc/Button';
@@ -508,6 +508,13 @@ export default function AdminConsole() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      {/* The way back, as on Settings: one label everywhere, and a link because
+          it goes somewhere (owner, 03.10.2026: no button back to the workspace). */}
+      <div>
+        <CcLinkButton href="/dashboard" variant="ghost" icon={<ArrowLeft size={16} aria-hidden={true} />}>
+          Back to workspace
+        </CcLinkButton>
+      </div>
       {/* Header */}
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">

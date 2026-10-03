@@ -32,3 +32,8 @@ test('the settings page links back with the shared label', () => {
   const src = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'settings', 'page.tsx'), 'utf8');
   expect(src).toMatch(/>\s*Back to workspace\s*<\/CcLinkButton>/);
 });
+
+test('the admin console links back to the workspace with the shared label (owner, 03.10.2026)', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'admin', 'page.tsx'), 'utf8');
+  expect(src).toMatch(/<CcLinkButton href="\/dashboard"[\s\S]{0,200}?>\s*Back to workspace\s*<\/CcLinkButton>/);
+});
