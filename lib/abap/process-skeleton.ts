@@ -955,7 +955,7 @@ interface WalkContext {
  * says "this is callable from outside", and every one of them is a word that
  * stands in the source rather than a reading of what the program means.
  */
-type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form' | 'callback';
+type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form' | 'callback' | 'enhancement';
 
 interface EntryPoint {
   statement: AbapStatement;
@@ -1066,6 +1066,8 @@ class SkeletonBuilder {
   private performedFrom = new Map<string, string[]>();
   /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
   private functionBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
+  /** `ENHANCEMENT n name.` … `ENDENHANCEMENT.` at program level — ADR-066. */
+  private enhancementBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
   /**
    * Methods a class **definition** in this source declares callable from outside,
    * keyed `CLASS=>METHOD` (an interface prefix as `CLASS=>ZIF~`; an interface's
@@ -1175,6 +1177,7 @@ class SkeletonBuilder {
     for (const [name, block] of this.formBlocks) this.routineBlocks.set(name, block);
     this.readMethodImplementations();
     this.readFunctionBlocks();
+    this.readEnhancementBlocks();
     this.readMethodVisibility();
     this.readSelectionScreen();
     this.readMethodCallSites();
@@ -1966,6 +1969,7 @@ class SkeletonBuilder {
         ...this.methodEntries(),
         ...(this.modulesWaitForScreen ? [] : this.moduleEntries()),
         ...this.conventionFormEntries(),
+        ...this.enhancementEntries(),
       ].sort((a, b) => a.statement.index - b.statement.index);
       return [...events, ...this.noteTriggers(outside)];
     }
@@ -1978,6 +1982,7 @@ class SkeletonBuilder {
       ...this.methodEntries(),
       ...this.moduleEntries(),
       ...this.conventionFormEntries(),
+      ...this.enhancementEntries(),
     ].sort((a, b) => a.statement.index - b.statement.index);
     if (calledFromOutside.length) return this.noteTriggers(calledFromOutside);
 
@@ -2137,6 +2142,7 @@ class SkeletonBuilder {
       // named here: an event block ends where a function module begins.
       return this.isEventStatement(this.statements[i])
         || this.statements[i].keyword === 'FUNCTION'
+        || this.statements[i].keyword === 'ENHANCEMENT'
         || (block !== undefined
           && (block.kind === 'form' || block.kind === 'module' || block.kind === 'class'
             || block.kind === 'interface' || block.kind === 'define'));
@@ -2447,6 +2453,48 @@ class SkeletonBuilder {
    * which output type or which standard transaction runs it is configuration
    * outside the source, and `noteTriggers` says so.
    */
+  /**
+   * ADR-066 — `ENHANCEMENT n name.` … `ENDENHANCEMENT.` standing at program
+   * level. The ABAP keyword documentation: the block is the source code plug-in
+   * of an enhancement implementation, and the program it enhances runs it at
+   * its enhancement option (an implicit one at the start or end of a routine,
+   * or an `ENHANCEMENT-POINT`/`-SECTION`). That program is not this source, so
+   * it is an entry of its own; which enhancement option is noted, not guessed.
+   * One inside a FORM or method is part of that routine's flow and is not here.
+   */
+  private readEnhancementBlocks(): void {
+    const open: number[] = [];
+    for (let i = 0; i < this.statements.length; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql) continue;
+      if (statement.keyword === 'ENHANCEMENT') {
+        if (!(this.structure.enclosing[i] ?? []).length) open.push(i);
+        continue;
+      }
+      if (statement.keyword !== 'ENDENHANCEMENT' || !open.length) continue;
+      const openIndex = open.pop() as number;
+      const name = /^ENHANCEMENT\s+\d+\s+([\w/]+)/i.exec(this.statements[openIndex].text)?.[1];
+      this.enhancementBlocks.push({ name: name ?? 'ENHANCEMENT', openIndex, closeIndex: i });
+    }
+    this.enhancementBlocks.sort((a, b) => a.openIndex - b.openIndex);
+  }
+
+  private enhancementEntries(): EntryPoint[] {
+    return this.enhancementBlocks.map((enh) => {
+      this.entryOfBlock.add(enh.openIndex);
+      return {
+        statement: this.statements[enh.openIndex],
+        lastIndex: enh.closeIndex - 1,
+        endStatement: this.statements[enh.closeIndex],
+        label: enh.name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'enhancement' as const,
+        trigger: 'enhancement',
+      };
+    });
+  }
+
   private conventionFormEntries(): EntryPoint[] {
     const out: EntryPoint[] = [];
     const neverPerformed = new Set(this.calls.neverPerformed);
@@ -2520,8 +2568,11 @@ class SkeletonBuilder {
     for (const entry of entries) {
       const what = entry.origin === 'function' ? 'function module'
         : entry.origin === 'method' ? 'method'
-          : entry.origin === 'module' ? 'screen module' : 'subroutine';
-      const proof = entry.trigger === 'public' ? 'its class declares it in the PUBLIC SECTION'
+          : entry.origin === 'module' ? 'screen module'
+            : entry.origin === 'enhancement' ? 'enhancement implementation' : 'subroutine';
+      const proof = entry.origin === 'enhancement'
+        ? 'it is an ENHANCEMENT … ENDENHANCEMENT block, which the enhanced program runs at its enhancement option'
+        : entry.trigger === 'public' ? 'its class declares it in the PUBLIC SECTION'
         : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
           : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
@@ -2631,13 +2682,14 @@ class SkeletonBuilder {
         const block = this.blockAt.get(j);
         const boundary = j > i && (this.isEventStatement(this.statements[j])
           || this.statements[j].keyword === 'FUNCTION'
+          || this.statements[j].keyword === 'ENHANCEMENT'
           || (block !== undefined && (block.kind === 'form' || block.kind === 'module'
             || block.kind === 'class' || block.kind === 'interface' || block.kind === 'define')));
         if (boundary) break;
         inEvent.add(j);
       }
     }
-    for (const fn of this.functionBlocks) {
+    for (const fn of [...this.functionBlocks, ...this.enhancementBlocks]) {
       for (let i = fn.openIndex; i <= Math.min(fn.closeIndex, this.statements.length - 1); i++) inEvent.add(i);
     }
     const out: AbapStatement[] = [];

@@ -134,3 +134,28 @@ test.describe('form-based user exits (USEREXIT_*)', () => {
     expect(note?.detail).toContain('user-exit convention');
   });
 });
+
+test.describe('enhancement implementations (ENHANCEMENT … ENDENHANCEMENT)', () => {
+  test('a program-level ENHANCEMENT block is an entry beside the other outside entries, noted', () => {
+    const source = [
+      'FUNCTION z_embargo_check.', //                                               1
+      '  SELECT SINGLE * FROM zembargo INTO gs_e WHERE land1 = iv_land1.', //       2
+      'ENDFUNCTION.', //                                                            3
+      'ENHANCEMENT 1 ZEI_ORDER_SAVE.    "active version', //                        4
+      "  IF vbak-auart = 'ZEX'.", //                                                5
+      "    CALL FUNCTION 'Z_EMBARGO_CHECK' EXPORTING iv_land1 = vbak-land1.", //   6
+      '  ENDIF.', //                                                              7
+      'ENDENHANCEMENT.', //                                                         8
+    ].join('\n');
+    expect(starts(source)).toEqual([
+      ['z_embargo_check', 1, 'function', undefined],
+      ['ZEI_ORDER_SAVE', 4, 'enhancement', 'enhancement'],
+    ]);
+    const skeleton = buildProcessSkeleton(source);
+    const region = skeleton.regions.find((r) => r.anchor?.lineStart === 4);
+    expect(skeleton.nodes.filter((n) => n.region === region?.key).map((n) => [n.kind, n.anchor?.lineStart]))
+      .toEqual(expect.arrayContaining([['gateway', 5], ['service-task', 6], ['end', 8]]));
+    const note = skeleton.notes.find((n) => n.reason === 'entry-trigger-not-determined' && n.lineStart === 4);
+    expect(note?.detail).toContain('enhancement option');
+  });
+});
