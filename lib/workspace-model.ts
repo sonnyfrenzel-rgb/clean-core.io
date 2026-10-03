@@ -45,6 +45,7 @@ import { assessCoverage, type UnassessedConstruct } from './abap/coverage';
 import type { BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSummary } from './process-summary';
 import { capabilityKeyOf } from './abap/standard-coverage';
+import { pricedOptions } from './economics-record';
 
 /* ------------------------------------------------------------------ views */
 
@@ -657,8 +658,41 @@ export function workspaceLayers(
   ];
 
   /* ------------------------------------------------------------ costs */
+  // The figures stored on the Economics stage (03.10.2026). Never an amount
+  // here: amounts originate in Economics and stand there, next to their
+  // assumptions (ADR-022) — this layer says whether a scenario is on record,
+  // how far it is, and which revision of the assumptions it is.
+  const econ = hasRun ? project?._economics ?? null : null;
+  const tcoStep = econ ? workflowSteps(project).find((s) => s.key === 'tco') ?? null : null;
+  const priced = econ ? pricedOptions(econ) : null;
+  const economicsRows: LayerRow[] = econ && priced
+    ? [
+        {
+          key: 'scenario',
+          label: 'Your cost figures',
+          value:
+            tcoStep?.state === 'done'
+              ? 'stored — every option priced, a scenario on your figures, not a quote'
+              : tcoStep?.state === 'stale'
+                ? 'stored against an earlier score — check them in Economics'
+                : 'stored — not every option priced yet',
+          anchor: null,
+        },
+        { key: 'priced', label: 'Options priced from your figures', value: `${priced.priced} of ${priced.total}`, anchor: null },
+        {
+          key: 'horizon',
+          label: 'Currency and time horizon',
+          value: `${econ.assumptions.currency || 'no currency stated'} · ${
+            typeof econ.assumptions.horizonYears === 'number' ? plural(econ.assumptions.horizonYears, 'year') : 'no time horizon'
+          }`,
+          anchor: null,
+        },
+        { key: 'revision', label: 'Cost assumptions revision', value: econ.revision, anchor: null },
+      ]
+    : [];
   const costsRows: LayerRow[] = hasRun
     ? [
+        ...economicsRows,
         {
           key: 'basis',
           label: 'Basis',
@@ -747,10 +781,16 @@ export function workspaceLayers(
       label: 'Costs & assumptions',
       hash: '#costs',
       // A signed run is what Economics models from, not a priced figure: nothing is
-      // estimated until someone enters their own day rates and effort, and nothing
-      // here stores those. So the layer says what is true of a lone run — the model
-      // has its basis and no price yet — instead of "model estimate".
-      count: costsRows.length > 0 ? 'not priced yet' : null,
+      // estimated until someone enters their own day rates and effort. Without
+      // stored figures the layer says what is true of a lone run — the model has
+      // its basis and no price yet — instead of "model estimate"; with them, how
+      // many options they price.
+      count:
+        costsRows.length === 0
+          ? null
+          : priced
+            ? `${priced.priced} of ${priced.total} options priced · scenario`
+            : 'not priced yet',
       missing: runUnreadable
         ? 'Economics models costs from a signed run, and the one on record could not be read.'
         : 'Economics models costs from a signed run; there is none.',

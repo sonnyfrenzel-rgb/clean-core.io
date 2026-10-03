@@ -136,7 +136,7 @@ test.describe('the point says why it is this one', () => {
       expect(sentence, `${step.key} is missing from the count without being named`).toContain(step.label);
     }
     expect(sentence).toContain(`${steps.length - 1 - skipped.length} of the ${steps.length - 1} phases before it`);
-    expect(sentence).toMatch(/nothing in this release can complete it/i);
+    expect(sentence).toMatch(/never the step the path waits on/i);
   });
 
   test('the first phase has nothing before it — and says so, instead of counting zero', () => {
@@ -199,7 +199,7 @@ test.describe('the hint names its origin, in the one vocabulary', () => {
 test.describe('"nothing is open" is a claim, and it is checked', () => {
   test('it is stated once, in the module, and says what Economics is', () => {
     expect(NOTHING_OPEN).toMatch(/nothing is open/i);
-    expect(NOTHING_OPEN, 'the one phase that never finishes goes unmentioned').toMatch(/economics/i);
+    expect(NOTHING_OPEN, 'the one phase the path passes over goes unmentioned').toMatch(/economics/i);
   });
 
   test('wherever it would be shown, the phase contract agrees with it', () => {

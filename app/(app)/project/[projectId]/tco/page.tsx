@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { tcoForecast, TCO_TARGET_SCORE, type TcoForecastRow } from '@/lib/tco-model';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { TCO_TARGET_SCORE, type TcoForecastRow } from '@/lib/tco-model';
 import { useParams } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -33,7 +33,18 @@ import {
   type CostAssumptions,
   type CostOption,
 } from '@/lib/cost-assumptions';
-import { comparisonChecklist, forecastChecklist, type ChecklistRow } from '@/lib/economics-checklist';
+import { type ChecklistRow } from '@/lib/economics-checklist';
+import {
+  ECONOMICS_START_INPUTS,
+  economicsProgress,
+  readEconomicsRecord,
+  restoreAssumptions,
+  serializeEconomics,
+  validateEconomicsPayload,
+  type EconomicsPayload,
+} from '@/lib/economics-record';
+import { getAuth } from '@/lib/firebase';
+import { isProjectOwner } from '@/lib/project-readers';
 import { formatDays, formatLines, formatNumber, formatPercentValue } from '@/lib/format';
 import { countSourceLines } from '@/lib/source-lines';
 import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
@@ -43,6 +54,11 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import BusinessValuePlan from '@/components/tco/BusinessValuePlan';
+
+/** The size the forecast models when there is no source to count. */
+const DEFAULT_LOC = 8500;
+/** How long the page waits after the last change before it saves. */
+const SAVE_DELAY_MS = 800;
 
 /** A tile inside a step card: outlined, no second shadow. */
 const INNER = 'cc-card rounded-cc-card border border-cc-line bg-cc-surface';
@@ -104,6 +120,14 @@ const RechartsChart = dynamic(() => import('recharts').then(mod => {
  * proposal factors and the running-cost breakdown sit in "How this is
  * calculated"; they explain a result, they do not help reach one.
  *
+ * The figures are stored with the project since 03.10.2026 (owner: "if you go
+ * to another tool and back to Economics, the values are gone"): loaded when
+ * the stage opens, saved as the reader works — about 800 ms after the last
+ * change, when a field is left, and before the page is left — through
+ * `/api/projects/{id}/cost-assumptions`. A save that fails says so beside the
+ * steps and offers to retry; an invited reader sees the owner's figures
+ * read-only. They are a scenario, never part of a signed run or audit pack.
+ *
  * Money honesty is unchanged and visible: every amount comes from the reader's
  * own figures and carries *Simulation*; nothing has a default; no cheapest
  * option is named while an option is incomplete (`lib/cost-assumptions.ts`);
@@ -120,6 +144,13 @@ export default function TcoCalculatorPage() {
   // The line count of the uploaded source, so the slider's range can hold it
   // (QA 246b1ea24dbc): a 420-line upload used to be drawn at 1,000.
   const [sourceLoc, setSourceLoc] = useState<number | null>(null);
+  // Whether the signed-in account owns the project — an invited reader sees
+  // the stored figures read-only. Until the stored figures are in the fields,
+  // nothing is saved: an empty form must not overwrite them.
+  const [isOwner, setIsOwner] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
+  const [save, setSave] = useState<SaveState>({ state: 'idle' });
+  const tokenRef = useRef<string | null>(null);
 
   // Model inputs.
   //
@@ -127,11 +158,11 @@ export default function TcoCalculatorPage() {
   // no savings forecast is shown"). They used to start at €900, €650 and
   // €15,000 — "standard enterprise SAP guidelines" that nobody here supplied.
   // The two day rates are the comparison's too: one field each, for both.
-  const [loc, setLoc] = useState(8500); // Lines of custom code
+  const [loc, setLoc] = useState(DEFAULT_LOC); // Lines of custom code
   const [devRate, setDevRate] = useState<number | null>(null); // Developer day rate, in the currency stated
   const [userRate, setUserRate] = useState<number | null>(null); // Test and key-user day rate, same currency
-  const [upgradeFreq, setUpgradeFreq] = useState(1); // Release upgrades per year — an assumption until moved
-  const [fpFreq, setFpFreq] = useState(2); // Feature pack updates per year — an assumption until moved
+  const [upgradeFreq, setUpgradeFreq] = useState(ECONOMICS_START_INPUTS.upgradesPerYear); // Release upgrades per year — an assumption until moved
+  const [fpFreq, setFpFreq] = useState(ECONOMICS_START_INPUTS.featurePacksPerYear); // Feature pack updates per year — an assumption until moved
   const [upgradesStated, setUpgradesStated] = useState(false);
   const [featurePacksStated, setFeaturePacksStated] = useState(false);
   const [oneTimeCost, setOneTimeCost] = useState<number | null>(null); // One-time modernisation budget
@@ -177,6 +208,34 @@ export default function TcoCalculatorPage() {
             setLoc(lines);
             setSourceLoc(lines);
           }
+          // The figures stored for this project, into every field and step.
+          const owner = isProjectOwner(data, getAuth().currentUser?.uid ?? null);
+          setIsOwner(owner);
+          const rec = data._economics ?? null;
+          if (rec) {
+            const a = restoreAssumptions(rec.assumptions);
+            setCurrency(a.currency);
+            setDevRate(a.devDayRate);
+            setUserRate(a.testDayRate);
+            setStated(a);
+            if (rec.inputs.loc !== null) setLoc(rec.inputs.loc);
+            setUpgradeFreq(rec.inputs.upgradesPerYear);
+            setUpgradesStated(rec.inputs.upgradesStated);
+            setFpFreq(rec.inputs.featurePacksPerYear);
+            setFeaturePacksStated(rec.inputs.featurePacksStated);
+            setOneTimeCost(rec.inputs.oneTimeBudget);
+          }
+          setSave(
+            !owner
+              ? { state: 'read-only' }
+              : data._economicsLoadFailed
+                ? { state: 'unread' }
+                : rec
+                  ? { state: 'saved' }
+                  : { state: 'idle' },
+          );
+          setHydrated(true);
+          if (owner) getAuth().currentUser?.getIdToken().then((t) => { tokenRef.current = t; }).catch(() => undefined);
         }
       } catch (err) {
         console.error("Failed to load project:", err);
@@ -188,22 +247,150 @@ export default function TcoCalculatorPage() {
     fetchProject();
   }, [projectId]);
 
-  // The forecast. A demonstration, not a business case: the effort
-  // coefficients, the 85% test effect and the target score are assumptions
-  // (CR-23). It lives in `lib/tco-model.ts` — the page shows it, the spec runs
-  // it, and neither carries its own copy of the arithmetic (roadmap 0.17).
-  const calculations = useMemo(
-    () => tcoForecast({
-      loc,
-      devRate,
-      userRate,
-      upgradeFreq,
-      fpFreq,
-      oneTimeCost,
-      scoreBefore: typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null,
-    }),
-    [project, loc, devRate, userRate, upgradeFreq, fpFreq, oneTimeCost],
+  // The forecast and the four steps, decided in `lib/economics-record.ts` so
+  // the stage and the phase contract read one rule. The forecast is a
+  // demonstration, not a business case: the effort coefficients, the 85% test
+  // effect and the target score are assumptions (CR-23), in `lib/tco-model.ts`.
+  const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
+  const sourceChanged = staleness(project).sourceChanged;
+  const progress = useMemo(
+    () =>
+      economicsProgress({
+        assumptions,
+        loc,
+        sourceLoc,
+        upgradesPerYear: upgradeFreq,
+        upgradesStated,
+        featurePacksPerYear: fpFreq,
+        featurePacksStated,
+        oneTimeBudget: oneTimeCost,
+        score: baselineScore,
+        sourceChanged,
+      }),
+    [assumptions, loc, sourceLoc, upgradeFreq, upgradesStated, fpFreq, featurePacksStated, oneTimeCost, baselineScore, sourceChanged],
   );
+  const calculations = progress.calculations;
+
+  // ---- Stored with the project: load on open, save as the reader works ----
+  const payload = useMemo<EconomicsPayload>(
+    () => ({
+      assumptions,
+      inputs: {
+        loc: loc === (sourceLoc ?? DEFAULT_LOC) ? null : loc,
+        upgradesPerYear: upgradeFreq,
+        upgradesStated,
+        featurePacksPerYear: fpFreq,
+        featurePacksStated,
+        oneTimeBudget: oneTimeCost,
+      },
+    }),
+    [assumptions, loc, sourceLoc, upgradeFreq, upgradesStated, fpFreq, featurePacksStated, oneTimeCost],
+  );
+  const serialized = useMemo(() => serializeEconomics(payload), [payload]);
+  const latestRef = useRef(serialized);
+  /** What is stored — or, before the first save, what was loaded. */
+  const storedRef = useRef<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef(false);
+  const againRef = useRef(false);
+  const canSaveRef = useRef(false);
+  useEffect(() => {
+    latestRef.current = serialized;
+    canSaveRef.current = hydrated && isOwner && save.state !== 'unread';
+  });
+
+  const endpoint = `/api/projects/${encodeURIComponent(String(projectId))}/cost-assumptions`;
+  const flushRef = useRef<(options?: { force?: boolean; leaving?: boolean }) => Promise<void>>(async () => undefined);
+  const flush = useCallback(
+    async (options: { force?: boolean; leaving?: boolean } = {}) => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (!canSaveRef.current) return;
+      const body = latestRef.current;
+      if (!options.force && body === storedRef.current) return;
+      const checked = validateEconomicsPayload(JSON.parse(body));
+      if (!checked.ok) {
+        if (!options.leaving) setSave({ state: 'failed', message: checked.error });
+        return;
+      }
+      if (options.leaving) {
+        // The page is going away: one request that outlives it, with the token
+        // already in hand — there is no time left to ask for a fresh one.
+        if (!tokenRef.current) return;
+        void fetch(endpoint, {
+          method: 'POST',
+          keepalive: true,
+          headers: { Authorization: `Bearer ${tokenRef.current}`, 'Content-Type': 'application/json' },
+          body,
+        }).catch(() => undefined);
+        return;
+      }
+      if (inFlightRef.current) {
+        againRef.current = true;
+        return;
+      }
+      inFlightRef.current = true;
+      setSave({ state: 'saving' });
+      try {
+        const token = await getAuth().currentUser?.getIdToken();
+        if (!token) throw new Error('you are signed out');
+        tokenRef.current = token;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body,
+        });
+        const answer = (await res.json().catch(() => null)) as { record?: unknown; error?: string } | null;
+        const record = res.ok ? readEconomicsRecord(answer?.record) : null;
+        if (!record) {
+          setSave({ state: 'failed', message: answer?.error || `the server answered ${res.status}` });
+        } else {
+          storedRef.current = body;
+          setSave({ state: 'saved' });
+          // The phase and the tool's check read the stored record, so they move now.
+          setProject((p) => (p ? { ...p, _economics: record, _economicsLoadFailed: false } : p));
+        }
+      } catch (err) {
+        setSave({ state: 'failed', message: err instanceof Error && err.message ? err.message : 'the connection failed' });
+      } finally {
+        inFlightRef.current = false;
+        if (againRef.current) {
+          againRef.current = false;
+          if (latestRef.current !== storedRef.current) void flushRef.current();
+        }
+      }
+    },
+    [endpoint],
+  );
+  useEffect(() => {
+    flushRef.current = flush;
+  }, [flush]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    // The first render with the loaded figures is the baseline, not a change.
+    if (storedRef.current === null) {
+      storedRef.current = serialized;
+      return;
+    }
+    if (serialized === storedRef.current || !canSaveRef.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => void flushRef.current(), SAVE_DELAY_MS);
+  }, [serialized, hydrated]);
+
+  // Before the page goes away — another tool, a reload, a closed tab.
+  useEffect(() => {
+    const leave = () => {
+      if (latestRef.current !== storedRef.current) void flushRef.current({ leaving: true });
+    };
+    window.addEventListener('pagehide', leave);
+    return () => {
+      window.removeEventListener('pagehide', leave);
+      leave();
+    };
+  }, []);
 
   // Paper gets §7.1 from the `.cc` wrapper below: ink on white, cards
   // outlined, no tool bars. The page itself adds nothing for print.
@@ -250,28 +437,18 @@ export default function TcoCalculatorPage() {
   // b23daef11548). Without one the forecast declines, and the stage still
   // compares options — their figures are the reader's own, not derived from a
   // score (roadmap 7.4).
-  const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
-  const sourceChanged = staleness(project).sourceChanged;
-  const forecastPossible = !(baselineScore === null || baselineScore >= TCO_TARGET_SCORE || sourceChanged);
+  const forecastPossible = progress.forecastPossible;
   const fiveYear = calculations?.cumulativeSavings5Yr ?? [];
 
-  const comparisonRows = comparisonChecklist(assumptions);
-  const forecastRows = forecastPossible
-    ? forecastChecklist({ loc, sourceLoc, oneTimeCost, upgradesStated, featurePacksStated })
-    : [];
-  const allRows = [...comparisonRows, ...forecastRows];
+  const allRows = [...progress.comparisonRows, ...progress.forecastRows];
   const row = (key: ChecklistRow['key']) => allRows.find((r) => r.key === key)!;
-  const rowsDone = (keys: ChecklistRow['key'][]) =>
-    keys.every((k) => {
-      const r = allRows.find((x) => x.key === k);
-      return !r || r.status === 'done';
-    });
   // The two day rates are the forecast's too; only where there is a forecast
   // do they carry its names (the print footer and its specs read them).
   const forecastName = (name: string): Record<`data-${string}`, string> =>
     forecastPossible ? { 'data-tco-cost': name } : {};
-  const forecastShown = forecastPossible && calculations !== null && Boolean(currency);
   const meta = metaLine(project, projectId as string);
+  // The score the stored figures were priced against — `undefined` while nothing is stored.
+  const storedScore = project?._economics ? project._economics.basis.score : undefined;
   const metaEntries = [
     { key: 'lines', label: 'lines', value: sourceLoc === null ? null : formatNumber(sourceLoc) ?? String(sourceLoc) },
     ...meta.filter((m) => m.key === 'catalog' || m.key === 'engine'),
@@ -286,12 +463,11 @@ export default function TcoCalculatorPage() {
 
   // ---- The four steps and where each stands ----
   const pending = pendingProposals(assumptions.options, proposals);
-  const ratesDone = rowsDone(['currency', 'dev-rate', 'test-rate', 'horizon', 'cadence']);
-  const effortDone = rowsDone(['one-off', 'per-release', 'baseline', 'upgrade-delay']);
-  const compared = ratesDone && effortDone;
-  const forecastWaits = forecastPossible && !forecastShown;
+  const ratesDone = progress.rates;
+  const effortDone = progress.effort;
+  const compared = progress.compared;
   const steps: EconomicsStepInfo[] = [
-    { n: 1, id: 'economics-step-codebase', title: 'Your codebase', state: sourceLoc === null ? 'input' : 'done' },
+    { n: 1, id: 'economics-step-codebase', title: 'Your codebase', state: progress.codebase ? 'done' : 'input' },
     { n: 2, id: 'economics-step-rates', title: 'Your rates', state: ratesDone ? 'done' : 'input' },
     {
       n: 3,
@@ -303,7 +479,7 @@ export default function TcoCalculatorPage() {
       n: 4,
       id: 'economics-step-result',
       title: 'Result',
-      state: !compared ? 'waiting' : forecastWaits ? 'input' : 'done',
+      state: !compared ? 'waiting' : progress.result ? 'done' : 'input',
       waitingFor: !ratesDone && !effortDone ? 'steps 2 and 3' : !ratesDone ? 'step 2' : 'step 3',
     },
   ];
@@ -383,7 +559,32 @@ export default function TcoCalculatorPage() {
         </StageMetaDetails>
       </div>
 
-      <div className="mt-4 flex flex-col gap-5">
+      {/* Every change is saved as the reader works; leaving a field saves at once. */}
+      <div className="mt-4 flex flex-col gap-5" onBlur={() => void flush()}>
+        <EconomicsSaveLine save={save} onRetry={() => void flush({ force: true })} />
+
+        {storedScore !== undefined && storedScore !== baselineScore && !sourceChanged ? (
+          <div data-economics-basis-moved="">
+            <CcMessageStrip
+              state="warning"
+              headline="Your figures were stored against another score"
+              actions={
+                isOwner ? (
+                  <CcButton onClick={() => void flush({ force: true })} data-economics-keep-figures="">
+                    Keep my figures for this run
+                  </CcButton>
+                ) : undefined
+              }
+            >
+              They were stored when the signed run said {storedScore ?? 'no score'}; it now says{' '}
+              {baselineScore ?? 'no score'}. The maintenance-baseline proposal and the savings forecast start from the
+              score, so check your figures before you rely on them.
+            </CcMessageStrip>
+          </div>
+        ) : null}
+
+        {/* An invited reader reads the owner's figures; nothing here is theirs to change. */}
+        <fieldset disabled={!isOwner} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0" data-economics-editable={isOwner ? 'true' : 'false'}>
         <EconomicsGuide
           steps={steps}
           next={next}
@@ -536,6 +737,7 @@ export default function TcoCalculatorPage() {
             onToggleEdit={toggleOption}
           />
         </EconomicsStep>
+        </fieldset>
 
         {/* Step 4 — the comparison, the forecast, and how both are calculated. */}
         <EconomicsStep
@@ -604,6 +806,7 @@ export default function TcoCalculatorPage() {
                       </CcMessageStrip>
                     </div>
 
+                    <fieldset disabled={!isOwner} className="m-0 min-w-0 space-y-4 border-0 p-0">
                     <div className="max-w-md">
                       <FigureField
                         label="One-time modernisation budget"
@@ -640,6 +843,7 @@ export default function TcoCalculatorPage() {
                         />
                       </ChecklistLine>
                     </ul>
+                    </fieldset>
 
                     {/* No forecast from figures nobody entered (E12-F01-US02). */}
                     {!(calculations && currency) && (
@@ -895,5 +1099,56 @@ function BreakdownRow({ title, note, amount, days }: { title: string; note: stri
         <span className="cc-text-meta text-cc-ink-muted">{days}</span>
       </div>
     </div>
+  );
+}
+
+/** Where the stored figures stand, as the line above the steps says it. */
+type SaveState =
+  | { state: 'idle' }
+  | { state: 'saving' }
+  | { state: 'saved' }
+  | { state: 'failed'; message: string }
+  | { state: 'unread' }
+  | { state: 'read-only' };
+
+/**
+ * One quiet line: saved, saving, or not saved — and then why, with a retry. A
+ * failed save is never silent: the figures on screen are not the stored ones
+ * until it succeeds.
+ */
+function EconomicsSaveLine({ save, onRetry }: { save: SaveState; onRetry: () => void }) {
+  if (save.state === 'failed' || save.state === 'unread') {
+    return (
+      <div data-economics-save={save.state} role="status" aria-live="polite" className="cc-no-print">
+        <CcMessageStrip
+          state="error"
+          headline={save.state === 'failed' ? 'Not saved' : 'Your stored figures could not be read'}
+          actions={
+            save.state === 'failed' ? (
+              <CcButton onClick={onRetry} data-economics-save-retry="">Retry</CcButton>
+            ) : (
+              <CcButton onClick={() => window.location.reload()}>Reload</CcButton>
+            )
+          }
+        >
+          {save.state === 'failed'
+            ? `Your latest figures are not stored yet: ${save.message}`
+            : 'Nothing you enter here is saved until they can be, so stored figures are never overwritten. Reload the page to try again.'}
+        </CcMessageStrip>
+      </div>
+    );
+  }
+  const words =
+    save.state === 'saving'
+      ? 'Saving…'
+      : save.state === 'saved'
+        ? 'Saved — your figures are stored with the project.'
+        : save.state === 'read-only'
+          ? "Read-only — the owner's figures, as stored with the project."
+          : 'Your figures are saved with the project as you enter them.';
+  return (
+    <p data-economics-save={save.state} role="status" aria-live="polite" className="cc-no-print m-0 cc-text-meta text-cc-ink-muted">
+      {words}
+    </p>
   );
 }

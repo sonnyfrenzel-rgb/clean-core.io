@@ -92,6 +92,11 @@ export const GATED_ROUTES: GatedRoute[] = [
   // record of a run; POST records one, and with it whether the handover can go.
   { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/test-results` },
   { file: 'app/api/projects/[projectId]/test-results/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/test-results`, body: { action: 'confirm', passed: 1, failed: 0, system: 'S4D / 100', ranOn: '2026-10-01' } },
+  // 03.10.2026 — the Economics figures, built on the requirement-wording route:
+  // GET hands out the owner's figures, POST stores them. A token from before
+  // the second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/cost-assumptions` },
+  { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/cost-assumptions`, body: {} },
   // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
   // read the project's code: GET hands out a measurement of it, POST rebuilds
   // the skeleton and the BPMN from it. A token from before the second factor

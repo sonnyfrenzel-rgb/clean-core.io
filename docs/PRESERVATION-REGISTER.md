@@ -211,9 +211,10 @@ has an assertion in the guard so that fixing it forces the register to be update
   the project, and the run carries `status: 'completed'`. Every hydrated project
   therefore reads `completed`, whatever the project document says. Harmless only
   because `lib/workflow-steps.ts` refuses to read `status` at all.
-- **L-08 — Economics cannot be completed in this release**, and
+- **L-08 — Economics is done only from stored figures, and never proven**, and
   `workflowSummary().next` skips it so "continue" never parks there. Deliberate
-  (CR-23 / E12-F02).
+  (CR-23 / E12-F02): since 03.10.2026 the figures are stored, and the phase is
+  done once they complete the stage's four steps — a scenario, never evidence.
 
 Three further observations are recorded in the JSON's per-stage `errors` rather
 than as limits, because they are about error handling rather than about the

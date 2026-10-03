@@ -55,7 +55,9 @@ test.describe('the page', () => {
     // calculation (roadmap 0.17, QA finding f3428b0782a9); the behaviour it
     // guards is exercised in `tests/tco-model.spec.ts`.
     expect(model()).toMatch(/if \(devRate === null \|\| userRate === null \|\| oneTimeCost === null\) return null;/);
-    expect(src(), 'and the page asks the model for it').toContain('tcoForecast({');
+    // The page asks through the stage's four steps (`lib/economics-record.ts`, 03.10.2026).
+    expect(src(), 'and the page asks the model for it').toContain('economicsProgress({');
+    expect(fs.readFileSync(path.join(process.cwd(), 'lib', 'economics-record.ts'), 'utf8')).toContain('tcoForecast({');
   });
 
   test('says "no payback in the model" rather than a negative period', () => {

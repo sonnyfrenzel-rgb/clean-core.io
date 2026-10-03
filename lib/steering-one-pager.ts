@@ -4,6 +4,8 @@ import { DECISION_BINDINGS, type ProjectDecision } from './project-decision';
 import type { ProvenanceValue } from './provenance';
 import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
+import { pricedOptions } from './economics-record';
+import { workflowSteps } from './workflow-steps';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
@@ -271,6 +273,30 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
         anchors: [],
       });
     }
+  }
+
+  /* ------------------------------------------- the scenario in Economics */
+  // The figures stored on the Economics stage (03.10.2026): how many options
+  // they price, and the revision of the assumptions — never an amount, which
+  // stands in Economics next to its assumptions (ADR-022). Bound to a decision
+  // or not, the stored scenario is its own fact.
+  const econ = src.project?._economics ?? null;
+  if (econ) {
+    const { priced, total } = pricedOptions(econ);
+    const tco = workflowSteps(src.project).find((s) => s.key === 'tco');
+    figures.push({
+      key: 'cost-scenario',
+      group: 'costs',
+      label: 'options priced from your figures in Economics',
+      value: `${priced} of ${total}`,
+      coverage:
+        `cost assumptions revision ${econ.revision}` +
+        (tco?.state === 'stale' ? ' · stored against an earlier score, to be checked' : '') +
+        ' · a scenario on your own figures, not a quote · amounts are shown in Economics only, next to their assumptions',
+      provenance: 'simulation',
+      evidence: to.economics,
+      anchors: [],
+    });
   }
 
   const order = (g: SteeringGroup) => STEERING_GROUPS.indexOf(g);

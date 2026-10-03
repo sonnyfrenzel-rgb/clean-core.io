@@ -396,18 +396,18 @@
     {
       "id": "L-08",
       "subject": "economics",
-      "statement": "Economics can never be PhaseState 'done' in this release, and workflowSummary().next skips it.",
-      "consequence": "Deliberate (CR-23 / E12-F02): the model runs on assumed effort coefficients, not observed costs.",
+      "statement": "Economics is PhaseState 'done' only when its stored figures complete the stage's four steps, is never proven, and workflowSummary().next skips it either way.",
+      "consequence": "Deliberate (CR-23 / E12-F02; figures stored since 03.10.2026): a cost scenario on the reader's own figures, with a savings forecast on assumed effort coefficients, is never evidence and never the step the path waits on.",
       "evidence": "lib/workflow-steps.ts, the `economics` phase and workflowSummary.",
       "workspace": {
         "kind": "shown",
         "where": [
           {
             "module": "lib/next-step.ts",
-            "evidence": "Economics stays a model estimate, which nothing in this release can complete."
+            "evidence": "Economics is a scenario on your own figures, never a step the path waits on."
           }
         ],
-        "note": "Costs never reaches done, and \"Nothing is open\" says why."
+        "note": "Costs reaches done only from stored figures, never proven, and \"Nothing is open\" says why it is passed over."
       }
     }
   ],

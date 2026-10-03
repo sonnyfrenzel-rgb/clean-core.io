@@ -115,7 +115,7 @@ test.describe('the contract', () => {
     expect(s.design.badge).toBe('Awaiting sign-off');
   });
 
-  test('Economics is visible and never claims to be done in this release', () => {
+  test('Economics is visible and never claims to be done without stored figures', () => {
     expect(byKey(acceptanceProject()).tco).toMatchObject({ state: 'partial', badge: 'Model estimate' });
     expect(byKey({ name: 'No run', legacyCode: 'REPORT z.' } as Project).tco.state).toBe('empty');
     // And "continue" does not park the reader there for good.

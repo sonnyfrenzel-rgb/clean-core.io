@@ -11,6 +11,8 @@ import {
 } from './management-overview';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
+import type { Project } from './types';
+import { pricedOptions } from './economics-record';
 
 /**
  * The decision panel on top of the Management view — what a manager reads in
@@ -46,8 +48,22 @@ import type { ProvenanceValue } from './provenance';
 /** What stands behind the costs, as far as the decision record says. */
 export type ExecutiveCosts =
   | { state: 'bound'; revision: string; provenance: ProvenanceValue; note: string | null }
+  /**
+   * No cost revision in the decision record, and figures stored on the
+   * Economics stage (03.10.2026): a scenario on record, not bound to anything.
+   */
+  | { state: 'stored'; revision: string; priced: number; total: number; complete: boolean; stale: boolean }
   | { state: 'not-entered'; reason: string }
   | { state: 'unknown'; reason: string };
+
+/** The Economics figures stored for the project, as far as the executive answer may say them — no amount. */
+export interface StoredCosts {
+  revision: string;
+  priced: number;
+  total: number;
+  complete: boolean;
+  stale: boolean;
+}
 
 export interface ExecutiveSource {
   /** The program the decision is about — `Z_MM_PO_APPROVAL`. */
@@ -154,15 +170,29 @@ const PHASE_WORD: Record<PhaseTone, string> = {
   none: 'nothing on record',
 };
 
-/** What the cost binding of a decision record says, without an amount. */
-export function costsFromDecision(decision: Loaded<DecisionRead>): ExecutiveCosts {
-  if (decision.state === 'loading') return { state: 'unknown', reason: 'still being read' };
-  if (decision.state === 'absent') return { state: 'unknown', reason: decision.reason };
+/**
+ * What the cost binding of a decision record says, without an amount — and,
+ * where the record binds none, whether figures are stored on the Economics
+ * stage (`stored`), so a priced scenario is not reported as "not entered".
+ */
+export function costsFromDecision(decision: Loaded<DecisionRead>, stored: StoredCosts | null = null): ExecutiveCosts {
+  const fromStore = (): ExecutiveCosts | null => (stored ? { state: 'stored', ...stored } : null);
+  if (decision.state === 'loading') return fromStore() ?? { state: 'unknown', reason: 'still being read' };
+  if (decision.state === 'absent') return fromStore() ?? { state: 'unknown', reason: decision.reason };
   const cost = decisionShown(decision.value).bindings.find((b) => b.key === 'cost') ?? null;
   if (!cost || cost.revision === null) {
-    return { state: 'not-entered', reason: cost?.notDeterminedReason?.trim() || 'No cost assumptions were stated.' };
+    return fromStore() ?? { state: 'not-entered', reason: cost?.notDeterminedReason?.trim() || 'No cost assumptions were stated.' };
   }
   return { state: 'bound', revision: cost.revision, provenance: cost.provenance, note: cost.note };
+}
+
+/** The stored Economics figures of a project, without an amount — `null` when none are stored. */
+export function storedCostsOf(project: Project | null, steps: readonly RailStep[]): StoredCosts | null {
+  const econ = project?._economics ?? null;
+  if (!econ) return null;
+  const tco = steps.find((s) => s.key === 'tco');
+  const { priced, total } = pricedOptions(econ);
+  return { revision: econ.revision, priced, total, complete: tco?.state === 'done', stale: tco?.state === 'stale' };
 }
 
 const ECONOMICS: ExecutiveAction = {
@@ -363,6 +393,20 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
               : costs.note ?? 'the comparison names no cheapest option yet',
           provenance: costs.provenance === 'simulation' ? 'simulation' : 'not-determined',
           coverage: `cost revision ${costs.revision}`,
+          action: { ...ECONOMICS, label: 'Open in Economics' },
+        }
+      : costs.state === 'stored'
+      ? {
+          key: 'costs',
+          value: 'Simulation',
+          absentWord: 'Not entered',
+          meaning: costs.stale
+            ? 'costs on your own figures, stored against an earlier score — check them; a scenario, not a quote'
+            : costs.complete
+              ? 'costs on your own figures, every option priced — a scenario, not a quote; amounts stand in Economics'
+              : `costs on your own figures, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
+          provenance: 'simulation',
+          coverage: `cost assumptions revision ${costs.revision}, stored in Economics and not bound to a decision`,
           action: { ...ECONOMICS, label: 'Open in Economics' },
         }
       : {

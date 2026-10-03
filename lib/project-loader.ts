@@ -4,6 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getDb } from './firebase';
 import { Project } from './types';
 import { isProjectOwner } from './project-readers';
+import { readEconomicsRecord, type EconomicsRecord } from './economics-record';
 
 /**
  * The project document with its active run spread over it.
@@ -118,10 +119,52 @@ export function readerAnswerOf(ok: boolean, body: unknown): NonNullable<ReaderAn
   return body as NonNullable<ReaderAnswer>;
 }
 
+/** How the read of the stored Economics figures went. */
+export type EconomicsRead = { kind: 'found'; record: EconomicsRecord | null } | { kind: 'failed' };
+
+/**
+ * The Economics figures stored for this project (owner report 03.10.2026).
+ *
+ * They sit at `projects/{id}/cost_assumptions/current`, which `firestore.rules`
+ * leaves to the Admin SDK, so the read goes through the route — for the owner
+ * and an invited reader alike. A refused or unreadable answer is `failed`, never
+ * "nothing stored": the stage must not save an empty form over figures it
+ * merely could not read.
+ */
+export async function readStoredEconomics(projectId: string): Promise<EconomicsRead> {
+  try {
+    // On a fresh page load the session is still being restored; the Firestore
+    // reads wait for it on their own, a bare fetch has to.
+    const auth = getAuth();
+    await auth.authStateReady();
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) return { kind: 'failed' };
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/cost-assumptions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return { kind: 'failed' };
+    const body = (await res.json().catch(() => null)) as { record?: unknown } | null;
+    if (!body || !('record' in body)) return { kind: 'failed' };
+    return { kind: 'found', record: body.record === null ? null : readEconomicsRecord(body.record) };
+  } catch {
+    return { kind: 'failed' };
+  }
+}
+
+/** The project with what the Economics read found — in memory only, never persisted. */
+export function withEconomics(project: Project, read: EconomicsRead): Project {
+  return read.kind === 'found'
+    ? { ...project, _economics: read.record, _economicsLoadFailed: false }
+    : { ...project, _economics: null, _economicsLoadFailed: true };
+}
+
 export async function loadProjectAndHydrate(projectId: string): Promise<Project | null> {
   const db = getDb();
   const docRef = doc(db, 'projects', projectId);
   const viewerUid = getAuth().currentUser?.uid ?? null;
+  // Alongside the project and run reads, not after them: one more request on
+  // every stage that opens, and no extra wait.
+  const economics = readStoredEconomics(projectId);
 
   // Two attempts: a reader whose run moved between the project read and the
   // run read reads the project again once, and is told if it moved again.
@@ -169,7 +212,7 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
     // read of its own, which would load the source code twice (`lib/shell-context.ts`).
     announceShellProject(projectId, data.name);
 
-    return hydrateProject(docSnap.id, data, run);
+    return withEconomics(hydrateProject(docSnap.id, data, run), await economics);
   }
   return null;
 }

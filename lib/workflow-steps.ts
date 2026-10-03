@@ -12,6 +12,8 @@ import { isEngineDocumentation } from './process-documentation';
 import { PROFILE_INPUT_ID } from './assessment-profile';
 import { liveProfileDigest, recordedProfileOf } from './assessment-target';
 import { outsideCountsLine, outsideReading, outsideShortfall, type OutsideKind } from './sap-test-results';
+import { recordProgress } from './economics-record';
+import { countSourceLines } from './source-lines';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -192,8 +194,12 @@ export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
  *
  *   - Analyze `partial` is a staged source (or a run that could not be read) —
  *     an upload, not an analysis. Its check means a signed run.
- *   - Economics `partial` is "the signed run is the baseline"; nothing records
- *     whether a cost estimate was ever made (the figures are not stored).
+ *   - Economics `partial` is either "the signed run is the baseline" (no
+ *     figures stored) or figures stored with a step still open. Its output is
+ *     a priced scenario, and an incomplete set of figures prices nothing —
+ *     every amount reads "Not determined" — so its check means `done`: the
+ *     four steps of the stage done, from the stored record (decided
+ *     03.10.2026, the owner's "4 of 4 done, but no green check").
  *   - Delivery `partial` is "review material only" — other tools' output;
  *     nothing was handed over.
  *
@@ -207,8 +213,9 @@ export function toolOnRecord(step: { key: PhaseKey; state: PhaseState }): boolea
 
 /**
  * The phase the product recommends next, or `null` once nothing is open — the
- * rule of `workflowSummary` (Economics passed over, because nothing in this
- * release can complete it) for any rail, the demo's included.
+ * rule of `workflowSummary` (Economics passed over: a cost scenario is the
+ * reader's choice, never the step the path waits on) for any rail, the demo's
+ * included.
  */
 export function nextPhaseKey(steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>): PhaseKey | null {
   const open = steps.find((s) => s.state !== 'done' && s.key !== 'tco');
@@ -826,22 +833,51 @@ export function workflowSteps(project: Project | null): RailStep[] {
     });
   }
 
-  // There is nothing in this release that could complete Economics: the model
-  // runs on assumed effort coefficients, not on costs anybody observed (CR-23,
-  // E12-F02). It is visible, and it says what it is.
+  // Economics is the reader's scenario on their own figures, stored since
+  // 03.10.2026 at `projects/{id}/cost_assumptions/current` (owner report: "4 of
+  // 4 done, but no green check; … the values are gone"). The loader reads that
+  // record into `_economics`; nothing here reads `status`.
+  //
+  //   - nothing stored: the signed run is the baseline, nothing is estimated —
+  //     `partial`, as before, and the tool carries no check (`toolOnRecord`);
+  //   - figures stored and the four steps of the stage done
+  //     (`economicsProgress`, the stage's own step logic): `done`, never
+  //     proven — a scenario on the reader's figures, not a quote, and the
+  //     savings forecast runs on assumed coefficients (CR-23, E12-F02);
+  //   - figures stored, some step still open: `partial`;
+  //   - figures stored against another score than the signed run's now:
+  //     `stale` below — they were priced for a different reading of the code.
+  const econ = project?._economics ?? null;
+  const sourceLines = hasCode ? countSourceLines(project!.legacyCode as string) : null;
+  const econProgress = econ && hasRun && !runUnreadable
+    ? recordProgress(econ, { sourceLoc: sourceLines, score, sourceChanged: staleness(project).sourceChanged })
+    : null;
   const economics = runUnreadable
     ? phase('tco', {
         state: 'empty',
         badge: 'No baseline',
         detail: 'The signed run could not be read — the cost model has no Clean Core score to start from.',
       })
+    : hasRun && econ && econProgress
+    ? econProgress.complete
+      ? phase('tco', {
+          state: 'done',
+          badge: 'Scenario priced',
+          detail:
+            'Every option is priced from your own figures, which are stored with the project — a scenario, not a quote. ' +
+            'The savings forecast uses assumed effort coefficients, not observed costs.',
+        })
+      : phase('tco', {
+          state: 'partial',
+          badge: 'Figures started',
+          detail: `Your cost figures are stored; ${econProgress.doneCount} of 4 steps are done, so not every option is priced yet.`,
+        })
     : hasRun
     ? phase('tco', {
         state: 'partial',
         badge: 'Model estimate',
-        // The run is the baseline, not an estimate: the cost figures are
-        // entered on the Economics stage and not stored, so nothing here knows
-        // whether an estimate was ever computed (QA full review of v2.20.0).
+        // The run is the baseline, not an estimate: no cost figures are stored
+        // for this project, so nothing has been priced (QA full review of v2.20.0).
         detail: 'The signed run is the baseline. An estimate needs your cost figures and uses assumed effort coefficients, not observed costs.',
       })
     : phase('tco', {
@@ -849,6 +885,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
         badge: 'No baseline',
         detail: 'No signed run — the cost model starts from its Clean Core score.',
       });
+  // The figures were stored against a score the signed run no longer has.
+  const econScoreMoved = Boolean(econ && econProgress && econ.basis.score !== score);
 
   const gaps = [
     !hasGenerated && 'no generated code',
@@ -968,7 +1006,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
     tests.total > 0 && s.tests ? stale(testing, `Test cases written for ${prevBasis} — regenerate the suite.`) : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
-      : economics,
+      : econScoreMoved
+        ? stale(
+            economics,
+            `Your cost figures were stored against a Clean Core Score of ${econ!.basis.score ?? 'none'}; the signed run now says ${score ?? 'none'}. Check them in Economics.`,
+            'Out of date',
+          )
+        : economics,
     blockers.length > 0
       ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
       : delivery,
@@ -979,8 +1023,9 @@ export function workflowSteps(project: Project | null): RailStep[] {
  * How far along, and where "continue" should go.
  *
  * `next` is the first phase in order that is not done. Economics is passed over
- * for that purpose only: nothing in this release can complete it, and a
- * continue button that parks the reader there for good is not a way forward.
+ * for that purpose only: a cost scenario on the reader's own figures is theirs
+ * to make or not (it can be done since its figures are stored, 03.10.2026),
+ * and a continue button that parks every reader there is not a way forward.
  */
 export function workflowSummary(steps: RailStep[]) {
   const doneCount = steps.filter((s) => s.done).length;

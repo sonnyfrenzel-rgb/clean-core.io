@@ -168,26 +168,39 @@ test.describe('the guided stage', () => {
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     } catch { /* already connected */ }
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, SIGN_IN);
+    ownerUid = cred.user.uid;
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Econ', lastName: 'Guide', email: EMAIL, tier: 'pilot', status: 'approved',
       activatedAt: new Date(), transformationsUsed: 1, transformationsLimit: 5,
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
     });
-    const legacyCode = Array.from({ length: LOC }, (_, i) => `WRITE: / 'line ${i}'.`).join('\n');
-    await adminSetDoc('projects', PROJECT, {
-      name: 'Economics guidance fixture', userId: cred.user.uid, createdAt: new Date(), status: 'analyzed',
-      legacyCode, analysis: JSON.stringify({ cleanCoreScore: 62 }), cleanCoreScore: 62, activeRunId: RUN_ID,
-    });
-    await adminSetDoc(`projects/${PROJECT}/runs`, RUN_ID, {
-      runId: RUN_ID, projectId: PROJECT, userId: cred.user.uid,
-      createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
-    });
   });
 
+  // One fresh project per test: the figures are stored with the project since
+  // 03.10.2026, so a project shared by the tests would carry one test's
+  // figures into the next.
+  let ownerUid = '';
+  let opened = 0;
+  async function seedFresh(): Promise<string> {
+    const id = `${PROJECT}-${++opened}`;
+    const runId = `${RUN_ID}-${opened}`;
+    const legacyCode = Array.from({ length: LOC }, (_, i) => `WRITE: / 'line ${i}'.`).join('\n');
+    await adminSetDoc('projects', id, {
+      name: 'Economics guidance fixture', userId: ownerUid, createdAt: new Date(), status: 'analyzed',
+      legacyCode, analysis: JSON.stringify({ cleanCoreScore: 62 }), cleanCoreScore: 62, activeRunId: runId,
+    });
+    await adminSetDoc(`projects/${id}/runs`, runId, {
+      runId, projectId: id, userId: ownerUid,
+      createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
+    });
+    return id;
+  }
+
   async function open(page: Page, width: number, height: number) {
+    const project = await seedFresh();
     await page.setViewportSize({ width, height });
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
-    await page.goto(`/project/${PROJECT}/tco`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${project}/tco`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
   }
 

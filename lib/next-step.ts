@@ -25,9 +25,9 @@ import type { ProvenanceValue } from './provenance';
  * always names *some* phase — even a fully finished project resolves to
  * Delivery, because the cursor has to land somewhere. What tells the two
  * apart is whether that phase is itself `done`: if it is, every phase the
- * contract can ever finish already has been (Economics is permanently excused
- * — nothing in this release can complete it, CR-23 / E12-F02 — and
- * `workflowSummary` already skips it for exactly this reason), and this module
+ * contract can ever finish already has been (Economics is excused — a cost
+ * scenario on the reader's own figures is never the step the path waits on,
+ * and `workflowSummary` skips it for exactly this reason), and this module
  * says so rather than manufacturing a step nobody asked for.
  *
  * **A switched-off model is not something to send a reader at.** Four of the
@@ -91,7 +91,7 @@ import type { ProvenanceValue } from './provenance';
  * The phases whose own artefact this release can only produce with a model
  * call. `analyze` is not in this map on purpose (see the module doc above);
  * `tco` and `delivery` are absent because neither is ever the phase this
- * module points at — `workflowSummary` excuses Economics, and Delivery's own
+ * module points at — `workflowSummary` passes over Economics, and Delivery's own
  * reason is never "nothing generated", it is "material or a run is missing".
  */
 const PHASE_MODEL_STAGE: Partial<Record<PhaseKey, ModelStage>> = {
@@ -116,13 +116,14 @@ export const NEXT_STEP_PROVENANCE: ProvenanceValue = 'reconstructed';
  * checkable — `tests/next-step-provenance.spec.ts` asserts it against the phase
  * contract whenever it is shown — and a claim written into JSX is not.
  *
- * The second clause is true of every project this can be shown for: Economics
- * never reaches `done` in this release (CR-23 / E12-F02), so "everything is
- * finished" would be the one thing here that is not on record.
+ * The second clause is true whether or not Economics is done: a cost scenario
+ * on the reader's own figures is never the step the path waits on
+ * (`workflowSummary`), so "nothing is open" is never a claim about it, and it
+ * is never more than a scenario (CR-23 / E12-F02).
  */
 export const NOTHING_OPEN =
   'Nothing is open. Every phase this product can finish has its own evidence on record; ' +
-  'Economics stays a model estimate, which nothing in this release can complete.';
+  'Economics is a scenario on your own figures, never a step the path waits on.';
 
 export interface NextOpenPoint {
   key: PhaseKey;
@@ -189,7 +190,7 @@ export interface NextOpenPoint {
  *     because the alternative is a sentence that quietly reports "5 of 6" and
  *     leaves the reader to work out which one slipped. What it must never do is
  *     invent a cause: it names the phase and states the one thing that is on
- *     record about it, that nothing in this release completes it.
+ *     record about it, that a cost scenario is never the step the path waits on.
  */
 export function selectionSentence(steps: readonly RailStep[], next: RailStep): string {
   const at = steps.findIndex((s) => s.key === next.key);
@@ -211,8 +212,8 @@ export function selectionSentence(steps: readonly RailStep[], next: RailStep): s
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
   return (
     `${before.length - open.length} of the ${before.length} phases before it are on record; ` +
-    `${list} ${names.length === 1 ? 'is' : 'are'} passed over, because nothing in this release can complete ` +
-    `${names.length === 1 ? 'it' : 'them'}; ${first}`
+    `${list} ${names.length === 1 ? 'is' : 'are'} passed over, because a cost scenario on your own figures is ` +
+    `never the step the path waits on; ${first}`
   );
 }
 

@@ -182,6 +182,15 @@ export interface Project {
   // instead of silently rendering an empty state. See lib/project-loader.ts.
   _runLoadFailed?: boolean;
   _runLoadError?: string;
+
+  // In-memory only (never persisted): the Economics figures stored at
+  // `projects/{id}/cost_assumptions/current`, read by loadProjectAndHydrate
+  // through `/api/projects/{id}/cost-assumptions` (owner report 03.10.2026).
+  // `null` when none are stored; absent when nobody read them (a bare project
+  // document, the dashboard). `_economicsLoadFailed` when the read failed — a
+  // failed read is not "nothing stored", and the stage does not save over it.
+  _economics?: import('./economics-record').EconomicsRecord | null;
+  _economicsLoadFailed?: boolean;
 }
 
 /**
