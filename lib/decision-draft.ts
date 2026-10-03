@@ -25,10 +25,11 @@
  *     off (roadmap 0.7, bound to its run since 8.8). Nothing else in the
  *     product records a chosen option; a recommendation nobody signed off is
  *     not one, so it is not read.
- *   - **cost** — never bound here. The option comparison of 7.4 is held in the
- *     Economics page's own state and not stored, so there is no revision to
- *     name; the binding says so with 7.4's own sentence rather than inventing
- *     one.
+ *   - **cost** — never bound here. The option comparison of 7.4 is stored
+ *     with the project since 03.10.2026 (`lib/economics-record.ts`), but
+ *     binding one of its revisions into a decision is not built, so there is
+ *     no revision to name; the binding says so with 7.4's own sentence rather
+ *     than inventing one.
  *   - **need** — the newest confirmed need revision (roadmap 3.5), counted
  *     against the subjects of the reconstructed process by the route.
  *   - **contract** — the architecture contract of the run; for an option that
@@ -137,8 +138,8 @@ function draftAt(facts: DecisionDraftFacts, revision: number, draftedAt: string)
     runId: facts.runId,
     evidenceDigest: facts.evidenceDigest,
     contract: facts.contract,
-    // 7.4's comparison is not stored anywhere a server could read it, so no
-    // cost revision is bound — see the header.
+    // Binding a revision of 7.4's stored comparison into a decision is not
+    // built, so no cost revision is bound — see the header.
     assumptions: null,
     comparison: null,
     chosenOptionId: option ? `${facts.signedOffArchitecture} · ${option.label}` : null,

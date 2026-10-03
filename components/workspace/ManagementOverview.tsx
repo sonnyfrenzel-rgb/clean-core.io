@@ -31,6 +31,7 @@ import ManagementFold from './ManagementFold';
 import { standardFit } from '@/lib/standard-fit';
 import {
   costsFromDecision,
+  storedCostsOf,
   executiveSubject,
   managementExecutive,
   type ExecutiveTarget,
@@ -386,7 +387,7 @@ export default function ManagementOverview({
         steps,
         overview,
         fit,
-        costs: costsFromDecision(decision),
+        costs: costsFromDecision(decision, storedCostsOf(project, steps)),
       }),
     [project, hasSource, hasRun, steps, overview, fit, decision],
   );

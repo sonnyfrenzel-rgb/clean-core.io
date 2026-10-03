@@ -199,7 +199,7 @@ test.describe('the seven statuses', () => {
     expect(s.confirmed).toBe('draft');
     // Every generated case carries an executed pass.
     expect(s.execution).toBe('done');
-    // Nothing in this release can finish Economics.
+    // No Economics figures are stored on this fixture, so it is not finished.
     expect(s.costs).toBe('partial');
     expect(s.handover).toBe('done');
   });

@@ -39,6 +39,7 @@ import { routeLabel, sapNamesForDisplay } from './sap-naming';
 import { buildEvidenceChain, type EvidenceChain } from './evidence-chain';
 import { sha256Hex } from './artefact-digest';
 import { toDate } from './format';
+import { pricedOptions } from './economics-record';
 
 /* ------------------------------------------------------------------ links */
 
@@ -361,16 +362,39 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
             missing: testPhase.detail,
           });
 
-  const economics = link('economics', {
-    provenance: 'not-determined',
-    provenanceNote: null,
-    value: null,
-    by: null,
-    at: null,
-    missing: runId
-      ? 'Cost figures are entered on the Economics stage and not stored, so no simulation travels with the package.'
-      : 'No signed run — the cost model starts from its score.',
-  });
+  // The figures stored on the Economics stage (03.10.2026). A scenario on the
+  // reader's own figures, not evidence: it stays with the project and is never
+  // part of the signed audit pack, and no amount is shown here (ADR-022).
+  const tcoPhase = phase('tco');
+  const econ = runId ? (project._economics ?? null) : null;
+  const economics = econ
+    ? (() => {
+        const { priced, total } = pricedOptions(econ);
+        return link('economics', {
+          stale: tcoPhase.state === 'stale',
+          provenance: tcoPhase.state === 'stale' ? 'stale' : 'simulation',
+          provenanceNote: tcoPhase.state === 'stale' ? 'stored against an earlier score' : 'your own figures',
+          value: `Scenario: ${priced} of ${total} options priced from your figures`,
+          by: 'Your figures, stored with the project',
+          at: str(econ.savedAt),
+          missing:
+            tcoPhase.state === 'stale'
+              ? tcoPhase.detail
+              : tcoPhase.state === 'done'
+                ? 'A scenario, not a quote. It stays with the project and is not part of the signed audit pack.'
+                : 'Not every option is priced yet. A scenario, not a quote, and not part of the signed audit pack.',
+        });
+      })()
+    : link('economics', {
+        provenance: 'not-determined',
+        provenanceNote: null,
+        value: null,
+        by: null,
+        at: null,
+        missing: runId
+          ? 'No cost figures are stored for this project yet — enter your own in Economics.'
+          : 'No signed run — the cost model starts from its score.',
+      });
 
   const decisionLink = !decision || decision.status === 'withdrawn' || decision.status === 'superseded'
     ? link('decision', {
@@ -822,8 +846,9 @@ export function handoverStillNeeded(
   else if (tests.state === 'stale') add('tests', 'A test suite for the current source', 'testing');
   else if (tests.provenance !== 'demonstrated-mock') add('tests', `An executed test suite — ${tests.value}, none run`, 'testing');
 
-  // Always open: `buildHandoverChain` never finds a stored simulation.
-  add('economics', 'A cost model — figures entered in Economics are not stored, so none travels with the package', 'tco');
+  const econ = by('economics');
+  if (econ.state === 'open') add('economics', 'A cost scenario — no figures are stored in Economics yet', 'tco');
+  else if (econ.state === 'stale') add('economics', 'A cost scenario checked against the current score', 'tco');
 
   const decision = by('decision');
   if (decision.provenance !== 'confirmed') add('decision', 'A confirmed decision — it is confirmed in the Management view', 'management');

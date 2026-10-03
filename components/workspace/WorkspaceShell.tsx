@@ -62,6 +62,7 @@ import { recordGaps } from '@/lib/legacy-project';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { hubViewLabel, pageStatusOnRecord, wt } from '@/lib/workspace-messages';
+import { workflowSteps } from '@/lib/workflow-steps';
 import type { Project } from '@/lib/types';
 
 type ContentBlock =
@@ -425,6 +426,22 @@ export default function WorkspaceShell({
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
   // Management's "Costs" fold reads the costs layer straight, whatever layer the bar is on.
   const costsLayer = layers.find((l) => l.key === 'costs') ?? layers[0];
+  // With figures stored on the Economics stage the fold says how far they are,
+  // never an amount — the amounts stand in Economics (ADR-022).
+  const costsState = useMemo(
+    () => (project?._economics ? workflowSteps(project).find((s) => s.key === 'tco')?.state ?? null : null),
+    [project],
+  );
+  const costsSummary =
+    costsState === 'done'
+      ? wt('mgmtFold.costsPriced')
+      : costsState === 'stale'
+        ? wt('mgmtFold.costsStale')
+        : costsState === 'partial'
+          ? wt('mgmtFold.costsStarted')
+          : costsLayer.count
+            ? wt('mgmtFold.costsEmpty')
+            : costsLayer.missing;
 
   /**
    * The status line and the toolbar with Export and "Invite to view" — in
@@ -899,7 +916,7 @@ export default function WorkspaceShell({
               <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
             </div>
           </ManagementFold>
-          <ManagementFold id="costs" summary={costsLayer.count ? wt('mgmtFold.costsEmpty') : costsLayer.missing}>
+          <ManagementFold id="costs" summary={costsSummary}>
             {/* The amounts live in Economics, as a simulation; the costs layer
                 itself is one tab of the bar under "Process". */}
             <CcLinkButton

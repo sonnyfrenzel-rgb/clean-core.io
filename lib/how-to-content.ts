@@ -185,13 +185,14 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
     details: [
       'It starts from the Clean Core Score of the signed run and models nothing without one.',
       'It has no default cost figures: until you enter your own, it names what is missing and shows no forecast.',
-      'Nothing you enter is stored, so a reload starts over.',
-      'This phase is never marked complete.',
+      'What you enter is stored with the project as you type, so it is still there when you come back.',
+      'The phase is marked complete once your figures price every option; it stays a scenario, never a quote.',
     ],
     questions: [
       {
-        question: 'Why is Economics never marked complete?',
-        answer: 'It runs on assumed effort coefficients, not on costs anybody observed.',
+        question: 'When is Economics marked complete?',
+        answer:
+          'When your own stored figures price every option and the four steps are done. It is never shown as proven: the savings forecast runs on assumed effort coefficients, not on costs anybody observed.',
       },
       {
         question: 'Does the analysis put a price on my code?',

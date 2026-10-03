@@ -124,8 +124,8 @@ test.describe('nextOpenPoint reads the one phase contract, nothing else', () => 
   });
 
   test('Economics is never the open point, even when it is the only thing not done', () => {
-    // Every phase workflowSummary can ever call "done" is done; Economics
-    // itself can never reach `done` in this release (CR-23 / E12-F02).
+    // Every phase workflowSummary can ever call "done" is done; Economics has
+    // no stored figures here, and even done it is never the step the path waits on.
     const project = finished();
     const steps = workflowSteps(project);
     expect(steps.find((s) => s.key === 'tco')!.done, 'the fixture is not accidentally finishing tco').toBe(false);
