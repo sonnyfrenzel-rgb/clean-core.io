@@ -102,12 +102,15 @@ test.describe('testing page — QA full review of fc787674705f', () => {
 
   test('regenerating respects the model stage (55b40120e11b)', () => {
     const gen = handler('handleGenerate');
-    const guard = gen.indexOf("if (!modelAvailability.enabled('testing')) return;");
+    // Since the Testing rework (c79e041f) the guard also says why instead of
+    // returning silently; it still stands before the request.
+    const guard = gen.indexOf("if (!modelAvailability.enabled('testing')) {");
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(gen.indexOf('generateTestCases()'));
+    expect(gen.slice(guard, gen.indexOf('generateTestCases()'))).toMatch(/setGenError\([\s\S]*?\);\s*return;/);
     const r = rendered();
     const btn = r.slice(r.lastIndexOf('<CcButton', r.indexOf("'Regenerate Suite'")), r.indexOf("'Regenerate Suite'"));
-    expect(btn).toContain("disabled={isGenerating || !modelAvailability.enabled('testing')}");
+    expect(btn).toContain("disabled={isGenerating || !modelAvailability.enabled('testing')");
     expect(r).toContain('data-regenerate-unavailable');
   });
 
