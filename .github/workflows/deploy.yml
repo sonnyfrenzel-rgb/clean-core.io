@@ -528,7 +528,7 @@ jobs:
             --allow-unauthenticated
             --service-account=clean-core-run@cleancore-491216.iam.gserviceaccount.com
             ${{ steps.env-ctx.outputs.app_network_flags }}
-            --set-build-env-vars=NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }},NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }},NODE_OPTIONS=--max-old-space-size=4096
+            --set-build-env-vars=NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }},NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }},NODE_OPTIONS=--max-old-space-size=4096,NEXT_DEPLOYMENT_ID=${{ github.sha }}
           env_vars: |
             NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
             NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}

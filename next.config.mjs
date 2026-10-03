@@ -84,6 +84,14 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Do not leak the framework via the X-Powered-By header (ZAP 10037).
   poweredByHeader: false,
+  // Skew protection. A tab opened before a deploy kept its webpack runtime and
+  // then loaded chunks of the new build into it: "Cannot read properties of
+  // undefined (reading 'call')" and "(0 , j.getAuth) is not a function" on dev
+  // (owner, 02./03.10.2026). With a deployment id Next tags its assets and its
+  // navigation requests, and a client of another deployment does a full page
+  // load instead of mixing two builds. deploy.yml passes the commit as a build
+  // variable; without one (local builds, CI's validate job) nothing changes.
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID || undefined,
   htmlLimitedBots,
   async headers() {
     return [

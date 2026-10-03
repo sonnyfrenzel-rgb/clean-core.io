@@ -19,7 +19,11 @@ export default function ErrorBoundary({
     const msg = error?.message || '';
     const isChunkError =
       error?.name === 'ChunkLoadError' ||
-      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg);
+      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg) ||
+      // Two builds mixed in one tab: a chunk of the new build asks the old
+      // runtime for a module it does not have ("reading 'call'"), or calls an
+      // export under a name the other build mangled differently.
+      /reading 'call'\)|^\(0\s*,\s*[\w$]+\.[\w$]+\) is not a function/.test(msg);
     if (isChunkError && typeof window !== 'undefined') {
       const KEY = 'cc_chunk_reload_at';
       const last = Number(sessionStorage.getItem(KEY) || 0);
