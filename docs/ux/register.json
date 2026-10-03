@@ -2178,6 +2178,90 @@
       "status": "eingeplant",
       "step": "Block D",
       "updatedAt": "2026-09-28T06:18:31.009Z"
+    },
+    {
+      "id": "UX-175",
+      "fingerprint": "582e57f93e3f",
+      "title": "Unklares Akronym BYOT in Admin-Aktionen statt konsistenter Tenant-Bezeichnung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:08.648Z",
+      "status": "widerlegt",
+      "reason": "BYOT is the product's term for this access, spelled out and explained where the user requests it (app/(app)/project/[projectId]/testing/page.tsx:1662-1665, 2462-2465) and in the knowledge base (app/(app)/knowledge/page.tsx:41-42). The admin button uses the same term on an admin-only screen.",
+      "updatedAt": "2026-10-03T01:33:08.648Z"
+    },
+    {
+      "id": "UX-176",
+      "fingerprint": "db462d474ad5",
+      "title": "Interaktives Element in CcMessageBox ohne zugängliche ARIA-Rolle",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:08.812Z",
+      "status": "widerlegt",
+      "reason": "The backdrop at components/cc/MessageBox.tsx:66-71 is already aria-hidden (line 69) and only catches mouse clicks. useCcModal (line 59) gives the dialog its focus trap, Escape to close (onClose: onCancel) and initial focus; the Cancel button is the keyboard route. That is the recommended pattern.",
+      "updatedAt": "2026-10-03T01:33:08.812Z"
+    },
+    {
+      "id": "UX-177",
+      "fingerprint": "3fb3cf6a4d51",
+      "title": "Klick-Interaktion in MessageBox ohne ARIA-Rolle und Tastatursteuerung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:09.118Z",
+      "status": "widerlegt",
+      "reason": "The backdrop at components/cc/MessageBox.tsx:66-71 is already aria-hidden (line 69) and only catches mouse clicks. useCcModal (line 59) gives the dialog its focus trap, Escape to close (onClose: onCancel) and initial focus; the Cancel button is the keyboard route. That is the recommended pattern.",
+      "updatedAt": "2026-10-03T01:33:09.118Z"
+    },
+    {
+      "id": "UX-178",
+      "fingerprint": "c36caac403bc",
+      "title": "MessageBox-Backdrop mit Klickhandler besitzt keine semantische Rolle",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:09.340Z",
+      "status": "widerlegt",
+      "reason": "The backdrop at components/cc/MessageBox.tsx:66-71 is already aria-hidden (line 69) and only catches mouse clicks. useCcModal (line 59) gives the dialog its focus trap, Escape to close (onClose: onCancel) and initial focus; the Cancel button is the keyboard route. That is the recommended pattern.",
+      "updatedAt": "2026-10-03T01:33:09.340Z"
+    },
+    {
+      "id": "UX-179",
+      "fingerprint": "67131a7923e6",
+      "title": "Fehler beim Löschen eines Projekts bleibt im Dialog ohne Rückmeldung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:09.718Z",
+      "status": "widerlegt",
+      "reason": "Not reachable for an account in good standing. Since 3.0.1, app/(app)/dashboard/layout.tsx renders the 3.0 list (MyWorkspaceSwitch) for every such account, and its delete shows a failure via setActionError (components/workspace/WorkspaceListReport.tsx:496). The old page with handleDeleteProject renders only for suspended accounts, accounts still being activated, or accounts without a profile (tests/workspace-list-report.spec.ts:132-147 asserts [data-dashboard] count 0).",
+      "updatedAt": "2026-10-03T01:33:09.718Z"
+    },
+    {
+      "id": "UX-180",
+      "fingerprint": "a343c04d3148",
+      "title": "30 neue Willkür-Tokens für Breiten und Abstände unterlaufen das Design-System",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:09.926Z",
+      "status": "zurückgestellt",
+      "reason": "Token clean-up is not release-relevant; after 3.0 with the design-system sweep.",
+      "updatedAt": "2026-10-03T01:33:09.926Z"
+    },
+    {
+      "id": "UX-181",
+      "fingerprint": "1b6b7a565a33",
+      "title": "Stufenname 'Economics' weicht von der URL '/tco' und bestehenden Bezeichnungen ab",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "ab3dc34c3c3330d602ece408c28ee5e4fb56d57e",
+      "createdAt": "2026-10-03T01:33:10.093Z",
+      "status": "zurückgestellt",
+      "reason": "Changing the URL /tco needs redirects and link migration; after 3.0. The visible name Economics is the decided one.",
+      "updatedAt": "2026-10-03T01:33:10.093Z"
     }
   ]
 }
