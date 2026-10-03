@@ -56,7 +56,7 @@ ${exportModule}`;
 // and no button here that writes it, so the section is left out rather than
 // shown as an empty "Not generated" box.
 test('the business value section is left out when the run has no narrative', () => {
-  const src = read('components', 'tco', 'BusinessValuePlan.tsx');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'components', 'tco', 'BusinessValuePlan.tsx'), 'utf8');
   expect(src).toMatch(/if \(!data\) return null;/);
   expect(src).not.toContain('<NotGenerated');
 });
