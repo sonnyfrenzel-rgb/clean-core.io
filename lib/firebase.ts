@@ -1,6 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator } from 'firebase/auth';
-import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator, terminate } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
 
 // F-09: Firestore SDK noise is silenced via the SDK's own logger below.
@@ -43,6 +43,20 @@ export function getDb(): Firestore {
             } catch (err) {
                 console.warn('[FIREBASE] Firestore emulator connection warning/already connected:', err);
             }
+            // A page that goes away never closes its Firestore channels on its
+            // own: the SDK sends WebChannel's `TYPE=terminate` only when the
+            // instance is terminated. The production backend expires an
+            // abandoned session; the emulator keeps it, with its listeners, and
+            // queues into it every later change to what they watched — 1.5 MB
+            // in the six sessions one run of tests/documentation-on-open.spec.ts
+            // left behind (04.10.2026). Every page a spec navigates away from
+            // used to leave one, for the rest of the run. Terminating on the
+            // way out sends the close as a beacon. Emulator builds only; a page
+            // kept in the back/forward cache (`persisted`) keeps its connection.
+            window.addEventListener('pagehide', (event) => {
+                if (event.persisted || !dbInstance) return;
+                void terminate(dbInstance).catch(() => undefined);
+            });
         }
     }
     return dbInstance;
