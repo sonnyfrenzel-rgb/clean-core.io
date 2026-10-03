@@ -4,7 +4,8 @@ import path from 'path';
 import { adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { toolMark, workspaceTools } from '../lib/workspace-model';
-import { PHASE_PURPOSE, workflowSteps } from '../lib/workflow-steps';
+import { nextPhaseKey, PHASE_PURPOSE, workflowSteps } from '../lib/workflow-steps';
+import { outsideSubjectOf } from '../lib/sap-test-results';
 import { hydrateProject } from '../lib/project-loader';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -20,9 +21,14 @@ import type { Project } from '../lib/types';
  * tool already used once."
  *
  * Amended 03.10.2026 by the owner: "green check on Analyze, and 'Run the
- * analysis' as the next step — a contradiction". The check now means the
- * tool's OWN output is on record (`toolOnRecord`): Analyze a signed run, never
- * a staged source; Economics and Delivery never for what other tools made.
+ * analysis' as the next step — a contradiction". The check meant the tool's
+ * OWN output is on record (`toolOnRecord`): Analyze a signed run, never a
+ * staged source; Economics and Delivery never for what other tools made.
+ *
+ * Amended again the same day: "The tests are green, but you're supposed to do
+ * the tests — that contradicts itself." A check now means the phase is `done`;
+ * the tool's own output on a `partial` phase is "started" (a half circle in the
+ * information colour); the tool marked Next never carries a check.
  *
  * What holds it:
  *   - the mark is derived from the phase state in `workflowSteps` alone and
@@ -95,19 +101,21 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     }
   });
 
-  test('a check where the tool\'s own output is on record, a dot where it is out of date, nothing otherwise', () => {
-    const used = { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
+  test('a check where the phase is done, a half circle where the tool\'s own work is started, a dot where it is out of date, nothing otherwise', () => {
+    const done = { kind: 'check', meaning: 'done', words: 'tools.mark.done' };
+    const started = { kind: 'half', meaning: 'started', words: 'tools.mark.started' };
     const none = { kind: 'none', meaning: 'none', words: null };
-    expect(toolMark({ key: 'design', state: 'done' })).toEqual(used);
-    // A generated design awaiting its sign-off, a test draft: the tool's own output.
-    expect(toolMark({ key: 'design', state: 'partial' })).toEqual(used);
-    expect(toolMark({ key: 'testing', state: 'partial' })).toEqual(used);
+    expect(toolMark({ key: 'design', state: 'done' })).toEqual(done);
+    // A generated design awaiting its sign-off, a test draft: the tool's own
+    // output, and its work not done — started, never a check (owner 03.10.2026).
+    expect(toolMark({ key: 'design', state: 'partial' })).toEqual(started);
+    expect(toolMark({ key: 'testing', state: 'partial' })).toEqual(started);
     // A staged source is an upload, not an analysis; a baseline is not a cost
     // estimate; review material is other tools' output (owner 03.10.2026).
     expect(toolMark({ key: 'analyze', state: 'partial' })).toEqual(none);
     expect(toolMark({ key: 'tco', state: 'partial' })).toEqual(none);
     expect(toolMark({ key: 'delivery', state: 'partial' })).toEqual(none);
-    expect(toolMark({ key: 'analyze', state: 'done' })).toEqual(used);
+    expect(toolMark({ key: 'analyze', state: 'done' })).toEqual(done);
     expect(toolMark({ key: 'analyze', state: 'stale' })).toEqual({ kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' });
     expect(toolMark({ key: 'design', state: 'empty' })).toEqual(none);
     // Proof strength is not the bar's to say: a proven phase and an unproven one
@@ -115,6 +123,53 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     const proven = { key: 'testing' as const, state: 'done' as const, proven: true };
     const unproven = { key: 'testing' as const, state: 'done' as const, proven: false };
     expect(toolMark(proven)).toEqual(toolMark(unproven));
+  });
+
+  test('scenarios written and not run are started, never a check; a passing result from your SAP system earns it', () => {
+    const run = hydrateProject('t', { ...analyzedDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: analyzedRun('t', 'u', 'r') });
+    const abap = {
+      ...run,
+      extensibilityRoute: 'ABAP Cloud (RAP)',
+      solutionDesign: '# Target\n',
+      generatedCode: 'CLASS zcl_x DEFINITION. ENDCLASS.',
+      testSuite: { code: 'CLASS ltcl_x DEFINITION FOR TESTING. ENDCLASS.' },
+      testCases: [{ id: 'TC_01', name: 'one' }, { id: 'TC_02', name: 'two' }],
+    } as unknown as Project;
+    const draft = workflowSteps(abap).find((s) => s.key === 'testing')!;
+    expect(draft.state).toBe('partial');
+    expect(toolMark(draft)).toMatchObject({ kind: 'half', meaning: 'started' });
+
+    const subject = outsideSubjectOf(abap);
+    const passing = {
+      ...abap,
+      outsideTestResult: {
+        v: 1, kind: 'imported', subject, recordedAt: '2026-10-03T10:00:00.000Z', recordedBy: 'owner@example.com',
+        scenarioCount: 2, passed: 2, failed: 0, skipped: 0,
+        coverage: { passed: 2, failed: 0, skipped: 0, none: 0 },
+        file: { name: 'r.xml', sha256: 'a'.repeat(64), format: 'junit' }, system: null, ranOn: null,
+      },
+    } as unknown as Project;
+    const testing = workflowSteps(passing).find((s) => s.key === 'testing')!;
+    expect(testing).toMatchObject({ state: 'done', proven: false, verifiedOutside: 'imported' });
+    expect(toolMark(testing)).toMatchObject({ kind: 'check', meaning: 'done' });
+  });
+
+  test('the tool marked Next never carries a check', () => {
+    const run = hydrateProject('n', { ...analyzedDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: analyzedRun('n', 'u', 'r') });
+    const fixtures: Array<Project | null> = [
+      null,
+      { name: 'fresh', legacyCode: SOURCE } as Project,
+      run,
+      { ...run, solutionDesign: '# Target\n' } as Project,
+      { ...run, solutionDesign: '# Target\n', approvedByArchitect: true, generatedCode: 'x', testCases: [{ id: 'TC_01' }] } as unknown as Project,
+      hydrateProject('s', { ...staleDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: staleRun('s', 'u', 'r') }),
+    ];
+    for (const project of fixtures) {
+      const steps = workflowSteps(project);
+      const next = nextPhaseKey(steps);
+      if (!next) continue;
+      expect(toolMark(steps.find((s) => s.key === next)!).kind, `${next} is next and carries a check`).not.toBe('check');
+    }
   });
 
   test('a fresh project shows no check on Analyze; a signed run earns it', () => {
@@ -139,7 +194,10 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
   test('the marks and the legend never claim proof', () => {
     const toolWords = Object.entries(WORKSPACE_MESSAGES).filter(([key]) => key.startsWith('tools.'));
     expect(toolWords.map(([key]) => key)).toEqual(
-      expect.arrayContaining(['tools.mark.used', 'tools.mark.stale', 'tools.legend.used', 'tools.legend.stale']),
+      expect.arrayContaining([
+        'tools.mark.done', 'tools.mark.started', 'tools.mark.stale',
+        'tools.legend.done', 'tools.legend.started', 'tools.legend.stale',
+      ]),
     );
     for (const [key, words] of toolWords) {
       expect(words, `${key} claims proof`).not.toMatch(/prove|proof|verif|confirm|evidence|signed/i);
@@ -200,6 +258,7 @@ test.describe('the toolbar, rendered', () => {
         title: el.querySelector('[title]')?.getAttribute('title') ?? null,
         checks: el.querySelectorAll('[data-workspace-tool-mark="check"]').length,
         dots: el.querySelectorAll('[data-workspace-tool-mark="dot"]').length,
+        halves: el.querySelectorAll('[data-workspace-tool-mark="half"]').length,
       })),
     );
   }
@@ -263,7 +322,8 @@ test.describe('the toolbar, rendered', () => {
       // The legend says what the marks mean, in text, beside "Tools".
       const legend = bar.locator('[data-tools-legend="bar"]');
       await expect(legend, `${view}: the legend`).toBeVisible();
-      await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.used']);
+      await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.done']);
+      await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.started']);
       await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.stale']);
 
       // No tool is ever named proven or verified here.
@@ -273,7 +333,7 @@ test.describe('the toolbar, rendered', () => {
 
     // The check is green — the success token, not a near-green — and the words say why.
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
-    await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.used'));
+    await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
     await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName('Economics');
     const [tick, legendTick, success] = await analyze.evaluate((el) => {
       const toRgb = (value: string) => {
@@ -310,7 +370,7 @@ test.describe('the toolbar, rendered', () => {
     expect(ring.width).toBeGreaterThanOrEqual(2);
   });
 
-  test('a stale Analyze: no check, the amber dot, "out of date" in words and tooltip; a used Design keeps its check', async ({ page }) => {
+  test('a stale Analyze: no check, the amber dot, "out of date" in words; a started Design wears the half circle, not a check', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, acct);
@@ -337,14 +397,36 @@ test.describe('the toolbar, rendered', () => {
       marks.filter((m) => m.checks > 0).map((m) => m.key),
       'a check on an out-of-date tool, or none on a used one',
     ).toEqual(steps.filter((s) => toolMark(s).kind === 'check').map((s) => s.key));
-    expect(marks.find((m) => m.key === 'design')?.checks, 'Design is on record and current').toBe(1);
+    // Design is on record and current, and awaiting its sign-off: started, not done.
+    expect(steps.find((s) => s.key === 'design')?.state, 'the fixture\'s design is not partial').toBe('partial');
+    expect(marks.find((m) => m.key === 'design')?.checks, 'a design awaiting its sign-off carries a check').toBe(0);
+    expect(marks.find((m) => m.key === 'design')?.halves, 'Design is started').toBe(1);
 
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze.locator('[data-workspace-tool-mark="dot"]')).toHaveCount(1);
     await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.stale'));
     await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName(
-      named('Design', 'tools.mark.used'),
+      named('Design', 'tools.mark.started'),
     );
+    // The half circle is the information ink, never the success green.
+    const [half, information, success] = await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="design"]').evaluate((el) => {
+      const toRgb = (value: string) => {
+        const probe = document.createElement('span');
+        probe.style.color = value;
+        document.body.appendChild(probe);
+        const rgb = getComputedStyle(probe).color;
+        probe.remove();
+        return rgb;
+      };
+      const root = getComputedStyle(document.documentElement);
+      return [
+        getComputedStyle(el.querySelector('[data-workspace-tool-mark="half"]') as Element).color,
+        toRgb(root.getPropertyValue('--cc-information').trim()),
+        toRgb(root.getPropertyValue('--cc-success').trim()),
+      ];
+    });
+    expect(half).toBe(information);
+    expect(half).not.toBe(success);
     // The dot is the warning mark, and the legend shows the same one.
     const [dot, legendDot] = await analyze.evaluate((el) => [
       getComputedStyle(el.querySelector('[data-workspace-tool-mark="dot"]') as Element).backgroundColor,
@@ -372,13 +454,14 @@ test.describe('the toolbar, rendered', () => {
     // The legend first, before the first tool, in text.
     const legend = panel.locator('[data-tools-legend="menu"]');
     await expect(legend).toBeVisible();
-    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.used']);
+    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.done']);
+    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.started']);
     await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.stale']);
     expect(
       await panel.evaluate((el) => el.firstElementChild?.getAttribute('data-tools-legend')),
       'the legend is not at the top of the menu',
     ).toBe('menu');
-    await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.used'));
+    await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
     await expect(panel.locator('a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toBeVisible();
     await expect(panel.locator('a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
     // In the menu every tool says what it is for, as text — no hover needed.

@@ -178,10 +178,12 @@ export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
 });
 
 /**
- * Whether a tool has something of its own on record for this project — the
- * one question its green check answers (ADR-060, amended by the owner on
- * 03.10.2026: "green check on Analyze, and 'Run the analysis' as the next step
- * — a contradiction").
+ * Whether a tool has something of its own on record for this project (ADR-060,
+ * amended by the owner on 03.10.2026: "green check on Analyze, and 'Run the
+ * analysis' as the next step — a contradiction"). Since the second amendment
+ * of the same day ("a check must mean done") the green check is a `done` phase
+ * alone, and this decides the *started* mark of a `partial` one
+ * (`toolMark` in `lib/workspace-model.ts`).
  *
  * `done` always counts. `partial` counts only where the partial record is the
  * tool's own output — a generated design waiting for its sign-off, a test

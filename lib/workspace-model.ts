@@ -871,30 +871,38 @@ export function workspaceTools(
 }
 
 /**
- * The mark after a tool's name. It answers one question — "has this tool
- * something of its own on record for this project?" — and not "is it proven"
- * (ADR-060, amended by Sonny 02.10.2026 and again 03.10.2026):
+ * The mark after a tool's name (ADR-060, amended by Sonny 02.10.2026, 03.10.2026
+ * and again 03.10.2026: "a check must mean done"):
  *
- *   - **used** — the tool's own output is on record (`toolOnRecord` in
- *     `lib/workflow-steps.ts`) and it is not out of date: a small green check.
- *     Analyze earns it with a signed run, never with a staged source: a check
- *     beside "Run the analysis" was a contradiction on the owner's screen;
+ *   - **done** — the tool's phase is `done` in `lib/workflow-steps.ts`: a small
+ *     green check. Testing earns it with a passing run — against mocks, or on
+ *     the ABAP Cloud route a result from the reader's own SAP system (ADR-075)
+ *     — never with scenarios that were only written. Because the next step is
+ *     the first phase that is not `done` (`nextPhaseKey`), the tool marked
+ *     "Next" can never carry the check;
+ *   - **started** — the tool's own output is on record (`toolOnRecord`) but
+ *     its phase is `partial`: a design awaiting its sign-off, scenarios nobody
+ *     ran. A half-filled circle in the information colour, never green. Analyze
+ *     with a staged source, Economics and Delivery have no output of their own
+ *     in `partial`, so they carry no mark there;
  *   - **out of date** — the phase is `stale`, built for an earlier source: an
  *     amber dot, never a check;
  *   - nothing on record of its own: no mark.
  *
- * How strong the record is (proven, demonstrated against mocks, model draft)
- * stays with the status line and the status chips; the bar does not encode it, and
- * its words never say "proven" or "verified". `words` is the catalogue key a
- * screen reader hears instead of the colour, and the bar's legend says the same.
+ * How strong the record is (proven, demonstrated against mocks, imported,
+ * confirmed, model draft) stays with the status line and the status chips; the
+ * bar does not encode it, and its words never say "proven" or "verified".
+ * `words` is the catalogue key a screen reader hears instead of the colour,
+ * and the bar's legend says the same.
  */
 export function toolMark(tool: { key: PhaseKey; state: PhaseState }): {
-  kind: 'check' | 'dot' | 'none';
-  meaning: 'used' | 'stale' | 'none';
-  words: 'tools.mark.used' | 'tools.mark.stale' | null;
+  kind: 'check' | 'half' | 'dot' | 'none';
+  meaning: 'done' | 'started' | 'stale' | 'none';
+  words: 'tools.mark.done' | 'tools.mark.started' | 'tools.mark.stale' | null;
 } {
   if (tool.state === 'stale') return { kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' };
-  if (toolOnRecord(tool)) return { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
+  if (tool.state === 'done') return { kind: 'check', meaning: 'done', words: 'tools.mark.done' };
+  if (toolOnRecord(tool)) return { kind: 'half', meaning: 'started', words: 'tools.mark.started' };
   return { kind: 'none', meaning: 'none', words: null };
 }
 
