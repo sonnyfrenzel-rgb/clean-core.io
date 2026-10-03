@@ -11,6 +11,8 @@ import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
 import { handbookFromData, type ProcessHandbookData } from '@/lib/process-handbook';
 import BusinessGlance from '@/components/documentation/BusinessGlance';
+import ProcessDocumentView from '@/components/documentation/ProcessDocumentView';
+import type { ProcessDocument } from '@/lib/process-document';
 import { businessCallouts, glanceHeadline, notDeterminedCallout, type GlanceGap } from '@/lib/business-summary';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
@@ -30,7 +32,7 @@ export default function DemoDocumentation({
   gaps,
   levels,
 }: {
-  process: { model: ProcessMapModel; handbook: ProcessHandbookData } | null;
+  process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null } | null;
   /** The coverage sweep's constructs — the demo's own, read on the server. */
   gaps: GlanceGap[];
   /** Levels by `gradeKey(name, use)`, looked up on the server as a real project's route would. */
@@ -147,6 +149,19 @@ export default function DemoDocumentation({
           </p>
         }
       />
+      {/* The process description a real project writes when the stage opens
+          (ADR-077) — the same builder over the example, without a narrative. */}
+      {process?.document ? (
+        <section aria-labelledby="demo-process-description" data-demo-process-document="" className="mt-8 mb-8">
+          <h2 id="demo-process-description" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
+          <p className="m-0 mt-1 mb-3 cc-text-cell text-cc-ink-muted">
+            Written from the code when the stage opens, no model call: purpose, trigger, the steps, rules, exceptions,
+            effects, integrations, controls and open questions. A real project exports it as a Confluence page, Markdown
+            and Word; the demo exports nothing.
+          </p>
+          <ProcessDocumentView document={process.document} />
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -30,6 +30,8 @@ import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { objectSites, sitesByElement } from '@/lib/process-overlays';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
 import { buildProcessHandbook, handbookToData, type ProcessHandbookData } from '@/lib/process-handbook';
+import { buildProcessDocument } from '@/lib/process-document-build';
+import type { ProcessDocument } from '@/lib/process-document';
 import { routeLabel } from '@/lib/sap-naming';
 import {
   DEMO_OBJECT_NAME,
@@ -229,7 +231,8 @@ export interface DemoProject {
      * plain names, chapters, rules and exceptions are all the engine's.
      * Null when the reader could not get through the file.
      */
-    process: { model: ProcessMapModel; handbook: ProcessHandbookData } | null;
+    /** `document`: the process description the stage writes when it opens (ADR-077), or null if it could not be built. */
+    process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null } | null;
   };
 
   testing: {
@@ -307,7 +310,7 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'documentation',
       'partial',
       demo.documentation.process ? 'Read from the code' : 'Inventory only',
-      `${demo.documentation.process ? `${demo.documentation.process.handbook.chapters.length} handbook chapters read from the code, ` : ''}${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The business layer comes from a model in a real run.`,
+      `${demo.documentation.process ? `${demo.documentation.process.document ? 'A process description and ' : ''}${demo.documentation.process.handbook.chapters.length} handbook chapters read from the code, ` : ''}${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The business layer comes from a model in a real run.`,
     ),
     railStep(
       'testing',
@@ -407,17 +410,26 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     const nav = buildNavigation(full);
     const calls = readCallGraph(source);
     const sites = sitesByElement(full, nav, objectSites(readTableDependencies(source), calls), calls);
+    const engine = buildProcessDocumentation({ source, map: full });
     const handbook = buildProcessHandbook({
       model: full,
       nav,
-      doc: buildProcessDocumentation({ source, map: full }),
+      doc: engine,
       rules: deriveBusinessRules(source),
       sites,
       source,
     });
     // The technical file is the toggle's; the demo draws the plain reading only.
     const model: ProcessMapModel = { ...full, technicalXml: undefined };
-    return { model, handbook: handbookToData(handbook) };
+    // The process description a real project's Documentation stage writes when it
+    // opens (ADR-077) — the same builder over the same source, no narrative.
+    let document: ProcessDocument | null = null;
+    try {
+      document = buildProcessDocument({ source, map: full, engine });
+    } catch {
+      document = null;
+    }
+    return { model, handbook: handbookToData(handbook), document };
   } catch {
     return null;
   }
