@@ -420,11 +420,19 @@ test.describe('CSP report-only — rendered', () => {
   });
 
   test('the report endpoint answers 204 to both formats and refuses an oversized body', async ({ request }) => {
-    const legacy = await request.post(CSP_REPORT_PATH, {
-      headers: { 'content-type': 'application/csp-report' },
-      data: JSON.stringify({ 'csp-report': { 'document-uri': 'http://localhost/x?t=1', 'effective-directive': 'script-src-elem', 'blocked-uri': 'inline' } }),
-    });
-    expect(legacy.status()).toBe(204);
+    // The endpoint allows 60 reports a minute per address, and in CI every
+    // browser spec reports from the same one (the emulator hosts alone are
+    // connect-src violations of the report-only policy). A 429 here is the
+    // limiter doing its job; wait for the window, and accept nothing else.
+    test.setTimeout(120_000);
+    const legacyReport = JSON.stringify({ 'csp-report': { 'document-uri': 'http://localhost/x?t=1', 'effective-directive': 'script-src-elem', 'blocked-uri': 'inline' } });
+    let legacyStatus = 0;
+    for (const until = Date.now() + 90_000; Date.now() < until; ) {
+      legacyStatus = (await request.post(CSP_REPORT_PATH, { headers: { 'content-type': 'application/csp-report' }, data: legacyReport })).status();
+      if (legacyStatus !== 429) break;
+      await new Promise((r) => setTimeout(r, 5_000));
+    }
+    expect(legacyStatus).toBe(204);
     const modern = await request.post(CSP_REPORT_PATH, {
       headers: { 'content-type': 'application/reports+json' },
       data: JSON.stringify([{ type: 'csp-violation', body: { documentURL: 'http://localhost/', effectiveDirective: 'connect-src', blockedURL: 'https://x.example/a' } }]),

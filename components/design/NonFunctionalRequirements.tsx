@@ -463,7 +463,7 @@ export default function NonFunctionalRequirements({ projectId, projectName, file
               <dt className="font-semibold text-cc-ink">Why {PRIORITY_WORD[r.priority]}</dt>
               <dd className="m-0 text-cc-ink [overflow-wrap:anywhere]">{r.priorityReason}</dd>
               <dt className="font-semibold text-cc-ink">Names</dt>
-              <dd className="m-0 font-cc-mono text-cc-ink [overflow-wrap:anywhere]">{r.objects.length ? r.objects.join(', ') : <span className="font-cc-sans text-cc-ink-muted">No object named at these lines.</span>}</dd>
+              <dd className="m-0 font-cc-mono text-cc-ink [overflow-wrap:anywhere]">{r.objects.length ? r.objects.join(', ') : <span className="font-sans text-cc-ink-muted">No object named at these lines.</span>}</dd>
               <dt className="font-semibold text-cc-ink">Provenance</dt>
               <dd className="m-0 flex flex-wrap items-center gap-2 text-cc-ink">
                 <CcProvenanceChip value="reconstructed" />

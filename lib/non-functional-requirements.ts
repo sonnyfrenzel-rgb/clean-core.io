@@ -15,6 +15,7 @@ import {
   type RequirementPriority,
 } from '@/lib/functional-requirements';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { BTP } from '@/lib/sap-naming';
 
 /**
  * Non-functional requirements, read from the code (owner 03.10.2026: "rewrite
@@ -1426,7 +1427,7 @@ export function buildNfrSet(input: { source: string }): NfrSet {
 
 /** Words a model uses in every answer; naming them is not naming this program. */
 const COMMON_WORDS = new Set([
-  'SAP', 'ABAP', 'BTP', 'CAP', 'RAP', 'API', 'APIS', 'ETL', 'ILM', 'SARA', 'SLA', 'SLAS', 'KPI', 'KPIS', 'IAM', 'GOBD', 'SOX', 'GDPR',
+  ...BTP.toUpperCase().split(' '), 'ABAP', 'CAP', 'RAP', 'API', 'APIS', 'ETL', 'ILM', 'SARA', 'SLA', 'SLAS', 'KPI', 'KPIS', 'IAM', 'GOBD', 'SOX', 'GDPR',
   'DSGVO', 'RFC', 'HANA', 'CDS', 'OData', 'ODATA', 'REST', 'JSON', 'XML', 'SQL', 'UI', 'UX', 'HTTP', 'HTTPS', 'JWT', 'XSUAA', 'IDOC',
   'DLQ', 'BAPI', 'BAPIS', 'S4', 'S4HANA', 'ERP', 'ECC', 'DDIC', 'AIF', 'SM13', 'SM37', 'SLG1', 'SM21', 'ST22',
 ]);
