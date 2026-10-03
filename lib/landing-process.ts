@@ -9,6 +9,7 @@ import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { notDetermined } from '@/lib/workspace-model';
 import { tokenizeAbapLine, type CodeToken } from '@/lib/process-map';
 import { heroRulePhrase, pickHeroRules } from '@/lib/landing-hero';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * The process pictures of the public landing page — roadmap 3.0.6.
@@ -258,7 +259,7 @@ function buildProcess(
     process: {
       fileName,
       program,
-      lines: source.replace(/\n$/, '').split('\n').length,
+      lines: countSourceLines(source),
       planes,
       flowNodes: all.length,
       anchored: all.filter((n) => n.source.anchor).length,

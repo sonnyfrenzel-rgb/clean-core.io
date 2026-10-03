@@ -37,6 +37,7 @@ import {
 } from '@/lib/firestore-doc-size';
 import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -637,7 +638,12 @@ export async function POST(req: NextRequest) {
       inputFingerprint: {
         sha256: hashHex,
         fileName: targetFileName,
-        lineCount: legacyCode.split('\n').length,
+        // The editor's count (UX-182, 03.10.2026): a final newline adds no line.
+        // Runs signed before then hold `split('\n').length`, one more for such a
+        // file. They keep it: nothing recomputes this field from the source —
+        // verification hashes the stored payload, and only `sha256` is compared
+        // with a source — so an old run and its audit pack still verify.
+        lineCount: countSourceLines(legacyCode),
         byteSize: encoder.encode(legacyCode).byteLength,
         objectType: detectObjectType(legacyCode),
       },
@@ -868,7 +874,7 @@ export async function POST(req: NextRequest) {
               inputFingerprint: {
                 sha256: hashHex,
                 fileName: targetFileName,
-                lineCount: legacyCode.split('\n').length,
+                lineCount: countSourceLines(legacyCode),
                 byteSize: encoder.encode(legacyCode).byteLength,
                 uploadedAt: new Date().toISOString(),
                 objectType: detectObjectType(legacyCode),

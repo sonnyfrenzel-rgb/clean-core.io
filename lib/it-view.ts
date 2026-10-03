@@ -67,7 +67,7 @@ export function worstLevel(rows: readonly ItFindingRow[]): { grade: CloudReadine
 export interface ItAnswerHead {
   /** "25 findings at 31 places in the code · 2 places at level D" — the first line of the IT view. */
   title: string;
-  /** What the engine read, beside it: "in 669 lines · 9 constructs not assessed". */
+  /** What the engine read, beside it: "in 668 lines · 9 constructs not assessed". */
   coverage: string;
 }
 

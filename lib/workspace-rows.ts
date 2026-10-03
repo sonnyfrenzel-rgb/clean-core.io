@@ -3,6 +3,7 @@ import { formatIsoDate } from '@/lib/format';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import { staleness, workflowSteps, workflowSummary } from '@/lib/workflow-steps';
 import { projectProgress, type ProjectStage } from '@/lib/project-progress';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * One row of "My workspace" — `DESIGN.md` §2.2, §2.4, mockup s7.
@@ -149,7 +150,7 @@ export function toWorkspaceRow(
     typeof recordedLines === 'number'
       ? recordedLines
       : hasSource
-        ? source.split(/\r?\n/).length
+        ? countSourceLines(source)
         : null;
 
   const { status, detail } = projectStatus(project);

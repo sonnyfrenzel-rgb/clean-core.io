@@ -48,7 +48,7 @@ import { signInViaLanding } from './helpers/sign-in';
  * **Measured, not chosen.** What the two full-size examples actually contain, on
  * 2026-09-18:
  *
- *   - `Z_MM_PO_APPROVAL.abap` (669 lines) — **3 tasks**: the includes
+ *   - `Z_MM_PO_APPROVAL.abap` (668 lines) — **3 tasks**: the includes
  *     `Z_MM_PO_NOTIFY` (L470) and `Z_MM_PO_LOG` (L512), and the dynamic
  *     `CALL FUNCTION lv_fm_name` (L502).
  *   - `ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap` (1001 lines) — **0 tasks**.

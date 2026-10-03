@@ -33,6 +33,7 @@ import { looksLikeAbap } from './abap-input-check';
 import { scanCodeContent } from './staged-code-scan';
 import { extractDataCoupling } from './abap/code-assessment';
 import { readStatements } from './abap/statement-reader';
+import { countSourceLines } from '@/lib/source-lines';
 
 /** `MAX_ANALYSED_SOURCE_BYTES` in `app/api/runs/create/route.ts`. */
 export const OWN_CODE_MAX_SOURCE_BYTES = 256 * 1024;
@@ -192,11 +193,6 @@ export function classifySource(text: string, file: string): { object: string; ro
   return { object: baseObjectName(file), role: 'include' };
 }
 
-function lineCount(text: string): number {
-  if (text.length === 0) return 0;
-  return text.replace(/\r?\n$/, '').split(/\r?\n/).length;
-}
-
 /**
  * Read one ABAP source from bytes. `issues` holds what refuses it (then
  * `source` is null) or what the reader should know (encoding).
@@ -219,7 +215,7 @@ export function readSourceBytes(file: string, bytes: Uint8Array): { source: OwnC
       file,
       role,
       text,
-      lines: lineCount(text),
+      lines: countSourceLines(text),
       bytes: new TextEncoder().encode(text).length,
       encoding,
     },
@@ -378,7 +374,7 @@ export function countSource(source: string): OwnCodeCounts {
     if (entry.accessType === 'Write' || entry.accessType === 'Read/Write') tablesWritten.push(entry.tableName);
   }
   return {
-    lines: lineCount(source),
+    lines: countSourceLines(source),
     routines,
     tablesRead: tablesRead.sort(),
     tablesWritten: tablesWritten.sort(),

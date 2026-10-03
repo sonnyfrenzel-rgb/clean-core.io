@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { FileCode2, Layers, Search, FileType, AlertTriangle, Check, Box, Plug, Cog, Database, ListOrdered, PhoneOutgoing } from 'lucide-react';
 import { formatNumber } from '@/lib/format';
+import { countSourceLines } from '@/lib/source-lines';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import SupportLevelMark from './SupportLevelMark';
@@ -25,7 +26,7 @@ export default function PreAnalysisPreview({ code, fileName }: PreAnalysisPrevie
     if (!code || code.trim().length < 10) return null;
 
     const lines = code.split(/\r?\n/);
-    const loc = lines.length;
+    const loc = countSourceLines(code);
     const nonEmpty = lines.filter(l => l.trim().length > 0).length;
 
     // Detect ABAP object type

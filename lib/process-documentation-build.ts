@@ -16,6 +16,7 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { stripModelMarkdown } from '@/lib/model-text';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * The builder of the stage-4 document — roadmap 3.0.5, Weg C.
@@ -165,7 +166,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     processName: map.processName,
     fileName: map.fileName,
     sourceSha256: sha256Hex(source),
-    lineCount: source.split('\n').length,
+    lineCount: countSourceLines(source),
     overview: map.overview,
     traceability: { ...map.traceability },
     naming: { ...map.naming },

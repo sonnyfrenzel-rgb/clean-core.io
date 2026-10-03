@@ -166,7 +166,9 @@ test.describe('the target profile names the snapshot that answered', () => {
     const src = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
     const built = findingsOf(src, 'Z_MM_PO_APPROVAL.abap', 'private', 'pce-latest');
     expect(built.catalog?.registryKey).toBe('pce-latest');
-    expect(built.coverage?.lines).toBe(src.split(/\r?\n/).length);
+    // As an editor counts them: the final newline adds no line (UX-182).
+    expect(built.coverage?.lines).toBe(src.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n').length);
+    expect(built.coverage?.lines).toBe(668);
     expect(built.rows.every((r) => typeof r.kindLabel === 'string' && r.kindLabel.length > 0)).toBe(true);
     expect(findingsOf(src, 'Z_MM_PO_APPROVAL.abap').catalog?.registryKey).toBe('latest');
   });

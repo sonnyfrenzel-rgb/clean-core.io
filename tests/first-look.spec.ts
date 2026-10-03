@@ -131,7 +131,9 @@ test.describe('every number comes from the run, or is a word', () => {
   test('the line count prefers the one the run signed, and says which it is', () => {
     const counted = codeReadStage(projectWith({ legacyCode: BRANCHING }), readTables(BRANCHING));
     expect(figure(counted.figures, 'lines').origin).toBe('engine');
-    expect(figure(counted.figures, 'lines').value).toBe(String(BRANCHING.split('\n').length));
+    // BRANCHING ends in a newline; it ends the last line and adds none (UX-182).
+    expect(BRANCHING.endsWith('\n')).toBe(true);
+    expect(figure(counted.figures, 'lines').value).toBe(String(BRANCHING.split('\n').length - 1));
 
     const signed = codeReadStage(
       projectWith({

@@ -7,6 +7,7 @@ import { getCatalogSnapshotRef, gradeSapObjectUse } from '@/lib/abap/catalog-ser
 import { routeKindLabel } from '@/lib/abap/extensibility-router';
 import { CLASSIC_VIEW_META, CLOUD_VIEW_META, type ObjectUse } from '@/lib/abap/abcd-classification';
 import type { ItFindingRow, ItFindingsSource } from './it-findings';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * The rows of `lib/it-findings.ts`, derived from one ABAP source — roadmap 8.1.
@@ -78,11 +79,6 @@ function rowOf(
   };
 }
 
-/** Lines of the source as an editor counts them — CRLF and LF alike. */
-function lineCount(source: string): number {
-  return source.split(/\r?\n/).length;
-}
-
 /**
  * The rows of one source — pulled out so nothing about it depends on a request.
  *
@@ -139,7 +135,7 @@ export function findingsOf(
     rulesDerived: rules.rules.length,
     catalog: getCatalogSnapshotRef(catalogSnapshot),
     coverage: {
-      lines: lineCount(source),
+      lines: countSourceLines(source),
       gaps: evidence.coverage.gaps.map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
     },
   };

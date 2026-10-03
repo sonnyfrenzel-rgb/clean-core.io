@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { sourceLineCount } from '@/lib/source-lines';
+import { countSourceLines } from '@/lib/source-lines';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility, type ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import {
@@ -489,7 +489,7 @@ export function buildDemoProject(): DemoProject {
     subject: DEMO_SUBJECT,
     sourceFile: DEMO_SOURCE_FILE,
     deployment: DEMO_DEPLOYMENT,
-    totalLines: sourceLineCount(source),
+    totalLines: countSourceLines(source),
     linesOfCode,
     catalogVersion: getMergedCatalogVersion(),
     catalogSnapshot,
@@ -521,8 +521,8 @@ export function buildDemoProject(): DemoProject {
     },
     // The same line count the Economics stage of a real project models on -
     // not the code-only count above, which made the demo say 550 where every
-    // other screen says 669 (lib/source-lines.ts).
-    economics: { loc: sourceLineCount(source), scoreBefore: route.cleanCoreScore },
+    // other screen says 668 (lib/source-lines.ts).
+    economics: { loc: countSourceLines(source), scoreBefore: route.cleanCoreScore },
     delivery: { missing: missingForHandover(), missingAt: MISSING_AT },
   };
 

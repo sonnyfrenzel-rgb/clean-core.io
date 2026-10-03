@@ -2,6 +2,7 @@ import { assessCoverage } from '@/lib/abap/coverage';
 import { readCallGraph } from '@/lib/abap/call-graph';
 import type { HandCheckGap } from './HandChecks';
 import type { StripBand, StripMark } from './ProgramStrip';
+import { countSourceLines } from '@/lib/source-lines';
 
 /**
  * What the Testing tool reads from the source itself — the engine's coverage
@@ -29,7 +30,7 @@ export function readProgram(source: string | null | undefined): ProgramReading |
     bands = [];
   }
   return {
-    lines: code.split('\n').length,
+    lines: countSourceLines(code),
     gaps: coverage.gaps.map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine, why: whyOf(g.gap) })),
     // One mark per kind, at its first line — the rows of the list above the strip.
     marks: coverage.gaps.map((g) => ({ line: g.firstLine, label: `${g.count} × ${g.label.toLowerCase()}` })),

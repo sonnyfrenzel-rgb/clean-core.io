@@ -116,6 +116,7 @@ import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
+import { countSourceLines } from '@/lib/source-lines';
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -894,7 +895,7 @@ export default function AnalyzePage() {
     );
   };
   const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(evidenceFindings)), [evidenceFindings]);
-  const sourceLines = legacyCode ? legacyCode.split('\n').length : 0;
+  const sourceLines = countSourceLines(legacyCode ?? '');
 
   /** The head's facets and status line, the same in both kinds of report. */
   const answerFacts = (route: string | null | undefined) => {
