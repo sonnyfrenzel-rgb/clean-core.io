@@ -1082,7 +1082,7 @@ export default function SettingsPage() {
           calls the router. */}
       <div>
         <CcLinkButton href="/dashboard" variant="ghost" icon={<ArrowLeft size={16} aria-hidden={true} />}>
-          Back to My workspace
+          Back to workspace
         </CcLinkButton>
       </div>
 
