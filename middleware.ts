@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildReportOnlyPolicy, createNonce, isNonceRoute } from '@/lib/csp-report-only';
 
 /**
  * F-03: Content-Security-Policy Middleware
@@ -90,8 +91,55 @@ export function middleware(request: NextRequest) {
     ...(useEmulator ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
-  const response = NextResponse.next();
-  response.headers.set('Content-Security-Policy', csp);
+  // ┌─────────────────────────────────────────────────────────────────────────┐
+  // │ Report-only CSP — stage 1 of the CSP rebuild (ADR-065)                  │
+  // │                                                                         │
+  // │ A stricter policy is sent as Content-Security-Policy-Report-Only NEXT   │
+  // │ TO the enforced policy above, which is unchanged. It blocks nothing;    │
+  // │ violations go to /api/csp-report and appear as `csp-report` lines in    │
+  // │ the Cloud Run log. It keeps every host the Google sign-in block above   │
+  // │ names. Builder and reasoning: lib/csp-report-only.ts.                   │
+  // │                                                                         │
+  // │ Pages rendered per request (isNonceRoute) get the nonce variant:        │
+  // │ nonce + 'strict-dynamic', no 'unsafe-inline' in script-src. Static and  │
+  // │ ISR pages keep their caching and today's script-src: their HTML is      │
+  // │ shared by every visitor and cannot carry a per-request nonce.           │
+  // │                                                                         │
+  // │ Next.js copies every header this middleware sets on the response into   │
+  // │ the request it renders, and reads the nonce from                        │
+  // │ content-security-policy BEFORE content-security-policy-report-only. So  │
+  // │ on the nonce routes the enforced policy — the SAME string — is          │
+  // │ delivered by next.config.mjs headers() instead of from here; otherwise  │
+  // │ Next would render its scripts without the nonce. A spec holds the two   │
+  // │ strings equal and checks every nonce route still gets the enforced      │
+  // │ header (tests/csp-report-only.spec.ts).                                 │
+  // │                                                                         │
+  // │ Incoming CSP request headers are dropped, so a client can never choose  │
+  // │ the nonce Next renders, and a static page never receives one.           │
+  // │                                                                         │
+  // │ Enforcing anything stricter is a later step, taken only after real      │
+  // │ traffic — including the real Google sign-in — shows no violations.      │
+  // └─────────────────────────────────────────────────────────────────────────┘
+  const nonce = isNonceRoute(request.nextUrl.pathname) ? createNonce() : undefined;
+  const reportOnlyCsp = buildReportOnlyPolicy({
+    nonce,
+    nodeEnv: process.env.NODE_ENV,
+    useEmulatorFlag: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
+  });
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete('content-security-policy');
+  requestHeaders.delete('content-security-policy-report-only');
+  requestHeaders.delete('x-nonce');
+  if (nonce) {
+    requestHeaders.set('x-nonce', nonce);
+    requestHeaders.set('content-security-policy-report-only', reportOnlyCsp);
+  }
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  // On a nonce route next.config.mjs sets this same policy (see the box above).
+  if (!nonce) response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Content-Security-Policy-Report-Only', reportOnlyCsp);
 
   return response;
 }

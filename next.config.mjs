@@ -17,6 +17,67 @@ const { HTML_LIMITED_BOT_UA_RE } = require('next/dist/shared/lib/router/utils/ht
 const ANSWER_ENGINE_BOTS = 'GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User|CCBot|Amazonbot|meta-externalagent';
 const htmlLimitedBots = new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|${ANSWER_ENGINE_BOTS}`, 'i');
 
+/**
+ * The enforced Content-Security-Policy for the pages rendered per request
+ * (ADR-065, CSP rebuild stage 1b).
+ *
+ * `middleware.ts` sets the enforced policy for every other page, and its
+ * string is the reference: this is a copy of it, and
+ * `tests/csp-report-only.spec.ts` fails if the two ever differ. The policy is
+ * the same; only who delivers it differs, and for one reason. Next.js copies
+ * every header the middleware sets on a response into the request it renders,
+ * and takes the script nonce from `content-security-policy` before
+ * `content-security-policy-report-only`. Set by the middleware, the enforced
+ * policy (which has no nonce) would always win, and Next would render its
+ * scripts without the nonce the report-only policy is there to measure.
+ * Headers from this file reach the response only, never the request.
+ *
+ * Not in development: the middleware sends no CSP there (the dev server needs
+ * eval), and neither does this.
+ */
+function enforcedCsp(useEmulator) {
+  const emulatorConnectSrc = useEmulator ? ' http://127.0.0.1:* http://localhost:*' : '';
+  return [
+    `default-src 'self'`,
+    `script-src 'self' 'unsafe-inline' https://cleancore-491216.firebaseapp.com https://apis.google.com`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `img-src 'self' data: https: blob:`,
+    `font-src 'self' data: https://fonts.gstatic.com`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com https://accounts.google.com wss://*.firebaseio.com${emulatorConnectSrc}`,
+    `frame-src 'self' https://cleancore-491216.firebaseapp.com https://accounts.google.com`,
+    `frame-ancestors 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `object-src 'none'`,
+    ...(useEmulator ? [] : [`upgrade-insecure-requests`]),
+  ].join('; ');
+}
+
+/**
+ * The per-request pages, as `headers()` sources. The same set as
+ * `isNonceRoute` in `lib/csp-report-only.ts`; the spec checks that both name
+ * exactly the same pages.
+ */
+export const NONCE_ROUTE_SOURCES = [
+  '/project/:projectId',
+  '/project/:projectId/:stage(analyze|delivery|design|documentation|tco|testing|transformation)',
+  '/invitation/:projectId/:invitationId',
+  '/auth/action',
+  '/survey/:token',
+  '/unsubscribe',
+  '/admin/design-system/first-render',
+];
+
+/** The enforced-policy header entries for the per-request pages; empty in development. */
+export function nonceRouteCspHeaders(env = process.env) {
+  if (env.NODE_ENV === 'development') return [];
+  const value = enforcedCsp(env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true');
+  return NONCE_ROUTE_SOURCES.map((source) => ({
+    source,
+    headers: [{ key: 'Content-Security-Policy', value }],
+  }));
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -26,6 +87,7 @@ const nextConfig = {
   htmlLimitedBots,
   async headers() {
     return [
+      ...nonceRouteCspHeaders(),
       {
         // API responses are JSON — lock them down with a restrictive CSP so a scanner
         // (and browsers) see an explicit policy on every /api response (ZAP 10038).
