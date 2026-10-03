@@ -96,7 +96,10 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // it: 17→18 nodes, 14→15 edges.
   ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 17, 5, 2, 0, 0, 1, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 3, 1, 0, 0, 1, 0],
-  ['Z_INVOICE_EXTRACTOR.txt', 18, 14, 4, 1, 0, 0, 0, 0],
+  // ADR-066 residuals (03.10.2026): `CLOSE DATASET` after the TRANSFER loop of
+  // EXPORT_TO_APPLICATION_SERVER is a file step of its own, on that routine's
+  // plane: 18→19 nodes, 14→15 edges.
+  ['Z_INVOICE_EXTRACTOR.txt', 19, 15, 4, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 20, 17, 6, 1, 0, 0, 0, 0],
   [PO, 124, 125, 23, 1, 13, 147, 0, 0],
   // Roadmap 2.14: this one had **no** entry point and drew nothing at all.
@@ -1546,7 +1549,11 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
       'ENDFORM.',
     ].join('\n'));
     expect(single.nodes.filter((n) => n.kind === 'parallel-gateway')).toHaveLength(0);
-    expect(single.nodes.filter((n) => n.kind === 'service-task')).toHaveLength(1);
+    // The starting call is one service task; since ADR-066's residual rules the
+    // callback's RECEIVE RESULTS is a service task of its own, in the callback.
+    expect(single.nodes.filter((n) => n.kind === 'service-task' && n.detail?.startingNewTask)).toHaveLength(1);
+    expect(single.nodes.filter((n) => n.kind === 'service-task' && n.detail?.receivesResults)
+      .map((n) => n.container)).toEqual(['on_end']);
 
     // Two calls, but nothing in the source waits for them and no callback takes
     // a result: §5.8 draws a parallel gateway *only* where the code proves
@@ -1581,7 +1588,9 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
       'ENDFORM.',
     ].join('\n'));
     expect(skeleton.nodes.filter((n) => n.kind === 'parallel-gateway')).toHaveLength(0);
-    expect(skeleton.nodes.filter((n) => n.kind === 'service-task')).toHaveLength(2);
+    expect(skeleton.nodes.filter((n) => n.kind === 'service-task' && n.detail?.startingNewTask)).toHaveLength(2);
+    expect(skeleton.nodes.filter((n) => n.kind === 'service-task' && !n.detail?.startingNewTask)
+      .map((n) => [n.container, n.detail?.receivesResults])).toEqual([['on_end', true]]);
     expect(skeleton.nodes.filter((n) => n.kind === 'write')).toHaveLength(1);
   });
 
@@ -2353,7 +2362,11 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     ]);
     const region = skeleton.regions.find((r) => r.anchor?.lineStart === 6);
     const inside = skeleton.nodes.filter((n) => n.region === region?.key).map((n) => [n.kind, n.anchor?.lineStart]);
-    expect(inside).toEqual(expect.arrayContaining([['gateway', 8], ['end', 9], ['write', 11], ['end', 13]]));
+    // RECEIVE RESULTS is the step the `sy-subrc` check reads, so the check is
+    // that step's error boundary (2.15), as after any other drawn step.
+    expect(inside).toEqual(expect.arrayContaining([
+      ['service-task', 7], ['error-boundary', 8], ['end', 9], ['write', 11], ['end', 13],
+    ]));
     // The trigger is written down, so it is not "not determined".
     expect(skeleton.notes.filter((n) => n.reason === 'entry-trigger-not-determined')).toEqual([]);
     // A callback of a call nothing reaches is not reached either.
