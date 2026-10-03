@@ -202,17 +202,30 @@ test('a browser that refuses storage still gets the demo and the tour', async ({
   await expect(await onlyStop(page)).toHaveAttribute('data-demo-tour-station', TOUR_STATIONS[0].place);
 });
 
-test('confirming a rule and the route changes this browser only, and "Reset demo" throws it away', async ({ page }) => {
+test('answering the rules as the product asks them changes this browser only, and "Reset demo" throws it away', async ({ page }) => {
   test.setTimeout(240 * 1000);
   await page.setViewportSize({ width: 1440, height: 1400 });
   await signIn(page, ADMIN);
   await openDemo(page, '?view=business');
-  const confirm = page.locator('[data-demo-confirm-rule]').first();
-  await expect(confirm).toHaveAttribute('aria-pressed', 'false', { timeout: 60000 });
-  await confirm.click();
-  await expect(confirm).toHaveAttribute('aria-pressed', 'true');
+  // The product's "Decide on rules", its four answers, and its checks.
+  await page.locator('[data-demo-rules-edit]').click({ timeout: 60000 });
+  const cards = page.locator('[data-demo-rule-edit]');
+  const first = (await cards.nth(0).getAttribute('data-demo-rule-edit'))!;
+  const second = (await cards.nth(1).getAttribute('data-demo-rule-edit'))!;
+  await expect(cards.nth(0).locator('[data-rule-option]')).toHaveText([/Keep/, /Change/, /Drop/, /Clarify/]);
+  await cards.nth(0).locator('[data-rule-option="keep"]').click();
+  await cards.nth(1).locator('[data-rule-option="clarify"]').click();
+  // A Clarify without its question is not recorded.
+  await page.click('[data-demo-rules-record]');
+  await expect(page.locator('[data-demo-rules-editor]')).toBeVisible();
+  await cards.nth(1).locator('textarea').fill('Purchasing: is plant 1000 still the central warehouse?');
+  await page.click('[data-demo-rules-record]');
+  const row = (id: string) => page.locator(`[data-demo-rule="${id}"]`);
+  await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'keep');
+  await expect(row(second)).toHaveAttribute('data-demo-rule-answer', 'clarify');
+  // Kept in this browser: the answers are there after a reload.
   await openDemo(page, '?view=business');
-  await expect(page.locator('[data-demo-confirm-rule]').first()).toHaveAttribute('aria-pressed', 'true', { timeout: 60000 });
+  await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'keep', { timeout: 60000 });
   await page.click('[data-demo-reset]');
-  await expect(page.locator('[data-demo-confirm-rule]').first()).toHaveAttribute('aria-pressed', 'false');
+  await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'none');
 });

@@ -91,8 +91,8 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
   {
     place: 'confirm-rule',
     view: 'business',
-    title: 'Confirm a rule',
-    body: 'A rule stays reconstructed until a person confirms it. Here the confirmation is kept in this browser and nowhere else.',
+    title: 'Decide on rules',
+    body: 'Say for each rule what the business needs: keep, change, drop or clarify. A rule stays reconstructed until someone answers; here the answers are kept in this browser and nowhere else.',
   },
   {
     place: 'standard-fit',

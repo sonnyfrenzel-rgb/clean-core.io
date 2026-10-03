@@ -169,7 +169,7 @@ function Anchors({ anchors }: { anchors: readonly string[] }) {
 }
 
 /** The rule's name, its id and its property. */
-function RuleName({ rule }: { rule: EditorRule }) {
+export function RuleName({ rule }: { rule: EditorRule }) {
   return (
     <div className="flex min-w-0 flex-col items-start gap-1">
       <span
@@ -190,7 +190,7 @@ function RuleName({ rule }: { rule: EditorRule }) {
 }
 
 /** The rule in plain words, the ABAP it was read from, and its lines. */
-function RuleSentence({ rule }: { rule: EditorRule }) {
+export function RuleSentence({ rule }: { rule: EditorRule }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rule.sentence ? (
@@ -251,7 +251,7 @@ function RuleRecord({ entry }: { entry: StateEntry | undefined }) {
  * account's statement about where the business keeps the value, not a reading
  * of the code, so nothing here is pre-filled from the engine.
  */
-function ValueSourceFields({
+export function ValueSourceFields({
   rule,
   rules,
   entry,
@@ -343,7 +343,7 @@ const CHOICE_MEANING: Record<ElementState, 'rules.keepMeaning' | 'rules.changeMe
  * keys move and choose, as in any radio group; each card is a tap target of
  * its own on a phone.
  */
-function DecisionGroup({
+export function DecisionGroup({
   rule,
   value,
   onChange,

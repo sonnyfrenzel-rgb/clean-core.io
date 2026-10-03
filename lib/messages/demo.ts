@@ -28,6 +28,8 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',
   'demo.readingRules': 'Reading the rules out of the source…',
+  'demo.rulesThisBrowser':
+    'In the demo your answers are kept in this browser only: nothing is recorded on the server, and a demo is never signed.',
   'demo.thisBrowser': 'this browser',
   'demo.sourceLine': 'Source line',
   'demo.withdraw': 'Withdraw',

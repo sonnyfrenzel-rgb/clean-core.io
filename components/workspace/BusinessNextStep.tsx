@@ -30,9 +30,12 @@ import { bizNextRulesAction, bizNextRulesReason, bizNextThen, wt } from '@/lib/w
 export default function BusinessNextStep({
   step,
   projectId,
+  onDecideRules,
 }: {
   step: Step;
   projectId: string;
+  /** Where "Decide on n rules" leads when the page has its own rules card (the demo). */
+  onDecideRules?: () => void;
 }) {
   if (step.kind !== 'rules') {
     return (
@@ -47,6 +50,10 @@ export default function BusinessNextStep({
   }
 
   const open = () => {
+    if (onDecideRules) {
+      onDecideRules();
+      return;
+    }
     document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
     requestRuleEditing();
   };
