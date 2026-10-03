@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildReportOnlyPolicy, CSP_REPORT_GROUP, CSP_REPORT_PATH } from '@/lib/csp-report-only';
+import { buildReportOnlyPolicy } from '@/lib/csp-report-only';
 
 /**
  * F-03: Content-Security-Policy Middleware
@@ -127,7 +127,6 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
   response.headers.set('Content-Security-Policy-Report-Only', reportOnlyCsp);
-  response.headers.set('Reporting-Endpoints', `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`);
 
   return response;
 }

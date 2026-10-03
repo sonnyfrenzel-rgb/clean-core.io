@@ -41,9 +41,17 @@
  * This module is imported by the middleware (edge runtime): no Node imports.
  */
 
-/** The browser's reporting group name, declared in `Reporting-Endpoints`. */
-export const CSP_REPORT_GROUP = 'csp-endpoint';
-/** Where both `report-uri` and `report-to` deliver. Excluded from the middleware matcher (`/api`). */
+/**
+ * Where `report-uri` delivers. Excluded from the middleware matcher (`/api`).
+ *
+ * `report-uri` only, no `report-to`: a browser that knows `report-to` ignores
+ * `report-uri` once both are present, and the Reporting API delivered nothing
+ * within two minutes in the test browser, while `report-uri` arrived at once.
+ * A stage whose purpose is to measure cannot depend on a channel that was not
+ * seen working. The endpoint already reads the `report-to` format, so adding it
+ * later is one directive and one `Reporting-Endpoints` header, once delivery has
+ * been seen in a real browser on dev.
+ */
 export const CSP_REPORT_PATH = '/api/csp-report';
 
 /** The Firebase auth domain (firebase-config.json `authDomain`). Required for Google sign-in, see middleware.ts. */
@@ -115,7 +123,6 @@ export function buildReportOnlyPolicy({ nonce, nodeEnv, useEmulatorFlag }: Repor
     // `upgrade-insecure-requests` is ignored in a report-only policy, so it is
     // not repeated here; the enforced policy carries it.
     `report-uri ${CSP_REPORT_PATH}`,
-    `report-to ${CSP_REPORT_GROUP}`,
   ].join('; ');
 }
 

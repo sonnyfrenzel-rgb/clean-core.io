@@ -10,8 +10,8 @@ import {
 /**
  * Receives Content-Security-Policy violation reports from browsers (ADR-065).
  *
- * The report-only policy set in `middleware.ts` points `report-uri` and
- * `report-to` here. Browsers send these without credentials, so the route is
+ * The report-only policy set in `middleware.ts` points `report-uri` here; the
+ * `report-to` format is read too, for the day that directive is added. Browsers send these without credentials, so the route is
  * unauthenticated by necessity; `/api` is outside the middleware matcher, and
  * the route performs no origin check because browsers do not send a useful
  * one for reports.

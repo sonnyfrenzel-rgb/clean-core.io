@@ -80,7 +80,8 @@ test.describe('CSP report-only — source', () => {
     expect(directive(policy, 'object-src')).toBe("object-src 'none'");
     expect(directive(policy, 'frame-ancestors')).toBe("frame-ancestors 'none'");
     expect(directive(policy, 'report-uri')).toBe(`report-uri ${CSP_REPORT_PATH}`);
-    expect(directive(policy, 'report-to')).toBe('report-to csp-endpoint');
+    // report-uri only: a browser that knows report-to would ignore it (see CSP_REPORT_PATH).
+    expect(directive(policy, 'report-to')).toBe('');
   });
 
   test('a static page gets no nonce, and every other directive is the strict one', () => {
@@ -114,7 +115,7 @@ test.describe('CSP report-only — source', () => {
   test('the middleware sends the report-only header and drops incoming CSP request headers', () => {
     const src = read('middleware.ts');
     expect(src).toContain("response.headers.set('Content-Security-Policy-Report-Only', reportOnlyCsp);");
-    expect(src).toContain("response.headers.set('Reporting-Endpoints'");
+    expect(src).not.toContain('Reporting-Endpoints');
     // A client cannot choose the nonce Next renders, and a static page never gets one.
     expect(src).toContain("requestHeaders.delete('content-security-policy');");
     expect(src).toContain("requestHeaders.delete('content-security-policy-report-only');");
@@ -315,7 +316,7 @@ test.describe('CSP report-only — rendered', () => {
     // Static page: shared HTML, so no nonce (ADR-065).
     expect(nonceOf(reportOnly)).toBeUndefined();
     expect(await a.text()).not.toMatch(/<script[^>]*\snonce=/);
-    expect(a.headers()['reporting-endpoints']).toBe(`csp-endpoint="${CSP_REPORT_PATH}"`);
+    expect(a.headers()['reporting-endpoints']).toBeUndefined();
 
     await watchViolations(page);
     await page.goto('/');
