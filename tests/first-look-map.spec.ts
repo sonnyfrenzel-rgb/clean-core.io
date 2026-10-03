@@ -14,12 +14,12 @@ import { signInViaLanding } from './helpers/sign-in';
  * Owner, 02.10.2026 (translated): "The process must always be shown when I
  * start a new project, with the first look — the process was there briefly
  * and then disappeared; but you have to be able to find your bearings first."
+ * And 03.10.2026: "the complete process map has to be created directly."
  *
- * What he saw: the build-up drew the process beside the code, and when it
- * ended (~2.4 s) the card turned into the answer without it, while the BPMN
- * map stood ~1,070 px down, under the fold, behind status, tools and the
- * anchor bar. This walks the real path — own code, the run, `?first=1` — and
- * reads the first screen after the build-up and again five seconds later.
+ * Since ADR-066 the start signs the engine's reading itself, so the first look
+ * ends on the full map, drawn from that run, right under the answer. This
+ * walks the real path — own code, `?first=1`, no Analyze — and reads the first
+ * screen after the build-up and again five seconds later.
  */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -37,23 +37,16 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 /** What stands in the first screen, at the top of the page. */
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
-  // Complete after the build-up; its end state on the visit after the run.
   await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
-  // The process the build-up drew is still there, whole, in plain words.
-  const picture = page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]');
-  await expect(picture).toBeInViewport();
-  expect(await picture.locator('[data-first-look-node]').count()).toBeGreaterThan(1);
-  // Drawn whole: the last node the excerpt walks ends inside the picture, not under its edge.
-  const cut = await picture.evaluate((svg) => {
-    const frame = svg.parentElement!.getBoundingClientRect();
-    return [...svg.querySelectorAll('[data-first-look-node]')].some((n) => n.getBoundingClientRect().bottom > frame.bottom + 1);
-  });
-  expect(cut, 'a node of the picture is cut off at its lower edge').toBe(false);
-  // And the full map is on the page, ready, straight under the answer and Next step.
-  await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible();
+  // The full map, drawn from the signed run, starts in the first screen.
+  const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
+  await expect(map).toBeVisible();
+  await expect(page.locator('[data-workspace-process-block]')).toBeInViewport();
+  // The two-node main line does not stand above it a second time.
+  await expect(page.locator('[data-first-look-process="drawn"]')).toHaveCount(0);
 }
 
-test.describe('a new project: the process stays with the first look', () => {
+test.describe('a new project: the first look ends on the full map', () => {
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
     const cred = await createUserWithEmailAndPassword(clientAuth, EMAIL, PASSWORD);
@@ -68,7 +61,7 @@ test.describe('a new project: the process stays with the first look', () => {
     });
   });
 
-  test('own code → first look → run → workspace: the process is on the first screen and still there 5 s later', async ({ page }) => {
+  test('own code → first look → signed at the start: the map is on the first screen and still there 5 s later', async ({ page }) => {
     test.setTimeout(400 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
@@ -80,40 +73,22 @@ test.describe('a new project: the process stays with the first look', () => {
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    const visited: string[] = [];
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) visited.push(frame.url());
+    });
     await page.click('[data-own-code-start]');
 
-    // The workspace first, with the first look — never the Analyze tool (owner
-    // 02.10.2026). The run starts from its Next step, in the same session, so
-    // Analyze takes the import's handoff and asks only the operating model.
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
-    expect(page.url()).not.toContain('/analyze');
-    const projectId = new URL(page.url()).pathname.split('/')[2];
-    // The build-up runs on this first visit, and the process picture stands
-    // when it is done — before any run (ADR-059).
+    // The build-up runs on this first visit, and its last moment is the map.
     await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]')).toBeVisible();
-    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
-    await dialog.getByRole('radio', { name: /Public Cloud/ }).first().check();
-    await dialog.getByRole('button', { name: /Confirm and start the analysis/ }).click();
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 180000 });
-
-    // Back in the workspace after the signed run: the map's block is on the page.
-    await expect(page.locator('[data-workspace-process-block]')).toHaveCount(1, { timeout: 60000 });
-
-    // The answer, the picture of the process, the map under it — the first
-    // look's end state now, since its build-up was seen before the run.
-    await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible({ timeout: 30000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 
-    // The map directly under the answer and Next step — status, tools and the
-    // anchor bar come after it, not between.
+    // The map directly under the answer, Next step and the work area after it.
     const order = await page.evaluate(() =>
-      ['[data-first-look]', '[data-next-step]', '[data-workspace-process-block]', '[data-workspace-status-tools]', 'nav[data-workspace-layers]'].map(
+      ['[data-first-look]', '[data-workspace-process-block]', '[data-next-step]', '[data-workspace-status-tools]', 'nav[data-workspace-layers]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -126,9 +101,6 @@ test.describe('a new project: the process stays with the first look', () => {
     // And it stays.
     await page.waitForTimeout(5000);
     await firstScreen(page);
-
-    // The picture leads to the whole map.
-    await page.click('[data-first-look-open-map]');
-    await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeInViewport();
+    expect(visited.filter((u) => u.includes('/analyze')), 'the start went through Analyze').toEqual([]);
   });
 });

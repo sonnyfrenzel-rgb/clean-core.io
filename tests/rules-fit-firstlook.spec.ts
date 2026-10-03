@@ -207,12 +207,21 @@ test.describe('s0 — the first look builds up out of lit lines', () => {
     expect(buildUpFrame(events, BUILD_UP_BUDGET.namesFrom).shown).toBe(events.length);
   });
 
-  test('the stages follow the budget of s0: code read, process recognised, names', () => {
+  test('the stages follow the paced budget of ADR-066: read, process, names, rules, open points, map', () => {
+    const b = BUILD_UP_BUDGET;
     expect(buildUpFrame(events, 100).stage).toBe('code-read');
-    expect(buildUpFrame(events, 1000).stage).toBe('process-recognised');
-    expect(buildUpFrame(events, 2000).stage).toBe('business-language');
-    expect(buildUpFrame(events, 2000).named).toBe(true);
-    expect(BUILD_UP_BUDGET.endAt).toBeLessThanOrEqual(3000);
+    expect(buildUpFrame(events, b.processFrom).stage).toBe('process-recognised');
+    expect(buildUpFrame(events, b.namesFrom).stage).toBe('business-language');
+    expect(buildUpFrame(events, b.namesFrom).named).toBe(true);
+    expect(buildUpFrame(events, b.namesFrom - 1).named).toBe(false);
+    expect(buildUpFrame(events, b.rulesFrom).stage).toBe('rules');
+    expect(buildUpFrame(events, b.openFrom).stage).toBe('not-determined');
+    expect(buildUpFrame(events, b.mapFrom).stage).toBe('map');
+    // Followable, not dragging (owner 03.10.2026): every moment at least a
+    // second on screen, the whole within ten seconds.
+    const marks = [0, b.processFrom, b.namesFrom, b.rulesFrom, b.openFrom, b.mapFrom, b.endAt];
+    for (let i = 1; i < marks.length; i += 1) expect(marks[i] - marks[i - 1]).toBeGreaterThanOrEqual(1000);
+    expect(b.endAt).toBeLessThanOrEqual(10000);
   });
 
   test('the code window stays inside the source', () => {

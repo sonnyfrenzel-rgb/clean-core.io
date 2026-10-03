@@ -11,9 +11,9 @@ import { signInViaLanding } from './helpers/sign-in';
  * the workspace with the first look always opens first, and not Analyze."
  *
  * Every way an ordinary community account starts an example — or its own code —
- * lands on the project's workspace with the first look (`?first=1`, the
- * build-up and the process it draws, ADR-059), never on the Analyze tool; and a
- * project's first run, started on Analyze, returns there too. Each entry point
+ * lands on the project's workspace with the first look (`?first=1`), never on
+ * the Analyze tool — and the workspace signs the engine's reading at once, so
+ * the first look ends on the full map (ADR-066). Each entry point
  * below runs as a fresh community account: no admin claim, no `isAdmin`, and no
  * model stage on, so nothing here waits on or pays for a model call.
  */
@@ -64,7 +64,11 @@ async function goto(page: Page, url: string) {
   }
 }
 
-/** The workspace, with the first look grown and the process it drew still there. */
+/**
+ * The workspace, with the first look grown and the full map drawn from the
+ * run the start signed (ADR-066) — not the two-node main line, and never a
+ * visit to Analyze.
+ */
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
   expect(page.url(), 'an example landed on the Analyze tool').not.toContain('/analyze');
@@ -74,11 +78,11 @@ async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   await expect(look).toBeVisible({ timeout: 60000 });
   await expect(look).toHaveAttribute('data-first-look', /^(building|complete|end-state)$/, { timeout: 60000 });
   await expect(look).toHaveAttribute('data-first-look', /^(complete|end-state)$/, { timeout: 90000 });
-  const picture = page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]');
-  await expect(picture, 'the first look drew no process').toBeVisible({ timeout: 30000 });
-  // And it stays after the build-up (ADR-059).
+  const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
+  await expect(map, 'the start drew no full map').toBeVisible({ timeout: 60000 });
+  // And it stays.
   await page.waitForTimeout(3000);
-  await expect(picture).toBeVisible();
+  await expect(map).toBeVisible();
   expect(page.url()).not.toContain('/analyze');
   return projectId;
 }
@@ -135,7 +139,7 @@ test.describe('an example opens the workspace with the first look, never Analyze
     await expectWorkspaceWithFirstLook(page);
   });
 
-  test('from "New project", own code — and its first run on Analyze returns to the workspace', async ({ page }) => {
+  test('from "New project", own code — the workspace signs the reading, no Analyze in between', async ({ page }) => {
     test.setTimeout(480 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-owncode');
@@ -151,21 +155,8 @@ test.describe('an example opens the workspace with the first look, never Analyze
     await page.click('[data-own-code-start]');
     const projectId = await expectWorkspaceWithFirstLook(page);
 
-    // The run starts from the workspace's Next step, on the Analyze tool …
-    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
-    await dialog.getByRole('radio', { name: /Private Cloud/ }).first().check();
-    const boxes = dialog.locator('input[type=checkbox]');
-    for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
-    await dialog.getByRole('button', { name: /Confirm and start the analysis/ }).click();
-
-    // … and once it is signed, the project is back in its workspace.
-    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 240000 });
-    expect(page.url()).not.toContain('/analyze');
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-first-look]')).toHaveAttribute('data-first-look', /^(complete|end-state)$/, { timeout: 90000 });
-    await expect(page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]')).toBeVisible({ timeout: 30000 });
+    // The run is on record, so Next step has moved past Analyze.
+    await expect(page.locator('[data-next-step]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`)).toHaveCount(0);
   });
 });

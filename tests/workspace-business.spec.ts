@@ -99,7 +99,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
   }
 
-  test('the map and its source column are on the page, linked both ways, in the order of s1', async ({ page }) => {
+  test('the map and its source column are on the page, linked both ways, in the order of ADR-066', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const writes: string[] = [];
@@ -137,9 +137,9 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     ).toHaveAttribute('data-layer-state', 'on');
     await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
-    // The order of s1: answer → Next step → map → layer → folded Not determined.
+    // The order since ADR-066: answer → map → Next step → layer → folded Not determined.
     const tops = await page.evaluate(() =>
-      ['[data-first-look]', '[data-next-step]', '[data-workspace-process]', '[data-workspace-layer-section]', '#not-determined'].map(
+      ['[data-first-look]', '[data-workspace-process]', '[data-next-step]', '[data-workspace-layer-section]', '#not-determined'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
