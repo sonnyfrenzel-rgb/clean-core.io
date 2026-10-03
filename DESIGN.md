@@ -257,12 +257,16 @@ From top to bottom:
    an icon, a provenance chip carries only the nine values from `lib/provenance.ts`.
 3. **Toolbar:** the seven stages as tools (Analyze … Delivery), left-aligned; on the right export and
    sharing. From breakpoint L open side by side in every view; below L open in IT and a "Tools" menu in
-   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). Each tool says whether it has been
-   used in this project: a small green check where something of its phase is on record and current, an amber dot
+   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). Each tool says whether it has
+   something of its own on record in this project: a small green check where the tool's own output is on record and
+   current (Analyze: a signed run, never a staged source — `toolOnRecord`, amended 03.10.2026), an amber dot
    where it is out of date (inputs changed since), nothing where nothing is on record. A legend in text ("used ·
    out of date") stands beside "Tools" and at the top of the phone menu; each mark has a tooltip and its words for
    a screen reader. The bar says nothing about proof — that stays with the stepper and the status chips, and the
-   mark is never called "proven" or "verified" (the one exception to "green says proven", ADR-060).
+   mark is never called "proven" or "verified" (the one exception to "green says proven", ADR-060). No hover-only
+   tooltip: every tool carries its purpose (`PHASE_PURPOSE`) as its accessible description and behind a tap- and
+   keyboard-reachable "i"; the phone menu prints it under each tool; the tool the phase contract names next carries
+   a "Next" tag, and one line under the bar says which tool is next and what it does (ADR-060, 03.10.2026).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
    missing (§2.11).
@@ -634,7 +638,7 @@ visit has no build-up, and the end state never waits for a model (`lib/first-loo
 |---|---|---|
 | **Business** | Do I still need this, and what changes for me? | Process, business rules (hidden ones too), standard fit with scope item ID, Not determined |
 | **IT** | What exactly, where to, and is it right? | Findings with line and both catalog views, successor API, chain object → meaning → decision → target, architecture contract |
-| **Management** | What do I risk, what do I decide? | Clean-Core readiness with rule version and history, Public-Cloud fit, four buckets (Retire · Keep · Rebuild · No catalogued path), open decision, costs only as *Simulation* |
+| **Management** | What do I risk, what do I decide? | The decision with its one next action beside **fit to standard** (ADR-066: one figure, the SAP objects across the four buckets, what blocks the standard path and what does not, by name); readiness with rule version and history, the four buckets per object (Retire · Keep · Rebuild · No catalogued path), the open decision and costs only as *Simulation* in folds below |
 
 The chain **object → meaning → decision → target → status** can be clicked through in every view, and every number states
 its coverage ("42 findings in 907 of 907 lines · 2 includes not read"). On S the chain is a list
@@ -1101,6 +1105,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.5 | 03.10.2026 | Management on the whole frame with one fit-to-standard figure (ADR-066, owner 03.10.2026): the decision and its one next action beside fit to standard, the SAP objects across the four buckets and what blocks the standard path by name; the rest in four folds (Evidence, Options and the decision, Costs, Process), collapsed and remembered in the browser only. The tools bar's check means the tool's own output is on record — Analyze a signed run — and every tool says what it is for without hover (ADR-060 amended 03.10.2026) |
 | 1.8.4 | 02.10.2026 | The switch for everyone (roadmap 3.0.1, ADR-061): every account opens its projects in the workspace and "My workspace" is the list report; the stepper, its rail and the linear stage footer are gone; a demo stage's "Back to workspace" leads to the demo workspace (§2.3, the header of a stage; §5.10) |
 | 1.8.3 | 02.10.2026 | One frame for every stage (ADR-063, owner 02.10.2026): the seven tools and the demo stages stand in the workspace's 1536 px column, header and content at the same x on every tool: §2.3 the header of a stage, §2.9 XL |
 | 1.8.2 | 02.10.2026 | The tools bar marks use, not proof (ADR-060 amended, Sonny 02.10.2026): a green check for a used tool, an amber dot for an out-of-date one, a text legend beside "Tools" and in the phone menu: §2.3 item 3, the navigation table, the header of a stage |
