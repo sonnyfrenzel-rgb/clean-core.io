@@ -352,6 +352,21 @@ test.describe('capture', () => {
 test.describe('capture the landing page views', () => {
   test.skip(process.env.CAPTURE_LANDING !== '1', 'set CAPTURE_LANDING=1 to run');
 
+  /**
+   * A process map is drawn after the page stands (the canvas is a client-only
+   * import), so a picture taken too early shows an empty white box. Where a
+   * map is on the page, wait until it has drawn its nodes.
+   */
+  const waitForDrawnMaps = async (page: Page) => {
+    const canvas = page.locator('[data-process-map-canvas]');
+    try {
+      await canvas.first().waitFor({ state: 'attached', timeout: 15000 });
+    } catch {
+      return; // no map on this page
+    }
+    await expect.poll(() => page.locator('[data-map-node]').count(), { timeout: 90000 }).toBeGreaterThan(5);
+  };
+
   /** A fresh community account in the emulator — no admin claim — signed in on `page`. */
   const signIn = async (page: Page) => {
     if (!getApps().length) initializeApp(firebaseConfig);
@@ -397,6 +412,7 @@ test.describe('capture the landing page views', () => {
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
       // The dev server's own badge is not part of the product.
       await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' });
+      await waitForDrawnMaps(page);
       await page.waitForTimeout(2500);
       await assertNoTermsGate(page, `/demo/workspace${query}`);
       if (process.env.CAPTURE_LANDING_DEBUG) {
@@ -538,6 +554,7 @@ test.describe('capture the landing page views', () => {
         }
         await expect(page.getByTestId('demo-forecast')).toBeVisible({ timeout: 10000 });
       }
+      await waitForDrawnMaps(page);
       // No focus ring and no hover state in the picture.
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
       await page.mouse.move(0, 0);
@@ -548,14 +565,26 @@ test.describe('capture the landing page views', () => {
         await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full-stage-${phase.key}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
         await page.evaluate(() => window.scrollTo(0, 0));
       }
-      const box = (await title.boundingBox())!;
-      const wide = phase.key === 'design';
+      // Documentation is a process description written when the stage opens (ADR-077):
+      // its picture starts at that description, below the map and the chapters.
+      const focus = phase.key === 'documentation' && !fromRun ? page.locator('[data-demo-process-document]').first() : null;
+      if (focus) {
+        // Clear of the sticky shell header.
+        await focus.evaluate((node) => {
+          (node as HTMLElement).style.scrollMarginTop = '110px';
+          node.scrollIntoView({ block: 'start' });
+        });
+        await page.waitForTimeout(800);
+      }
+      const box = (await (focus ?? title).boundingBox())!;
+      // Design's canvas and the process description use the frame's full width.
+      const wide = phase.key === 'design' || focus !== null;
       const width = wide ? 1408 : 1248;
       const clip = {
         // From the frame's left edge (ADR-063: every stage starts at the same x), not a fixed offset.
         x: Math.max(0, Math.min(Math.round(box.x) - 16, 1440 - width)),
         // The demo's tags, or the real page's eyebrow and back link, above the title.
-        y: Math.max(0, Math.round(box.y - (fromRun ? 60 : 48))),
+        y: Math.max(0, Math.round(box.y - (focus ? 24 : fromRun ? 60 : 48))),
         width,
         height: Math.round((width * 900) / 1248),
       };

@@ -23,10 +23,10 @@ is not affiliated with or endorsed by SAP SE.
 [clean-core.io](https://clean-core.io) · source: [github.com/sonnyfrenzel-rgb/clean-core.io](https://github.com/sonnyfrenzel-rgb/clean-core.io) ·
 Apache License 2.0 · release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
-![The Documentation tool of the demo project Z_MM_PO_APPROVAL: what the process does for the business, read from the code, above the process reconstructed as BPMN, each step with the line it came from, and the first chapter beside it](public/landing/stage-documentation.jpg)
+![The Documentation tool of the demo project Z_MM_PO_APPROVAL: the process description written from the code — purpose and scope, trigger and inputs, every statement with the lines it was read from](public/landing/stage-documentation.jpg)
 
-*The demo project `Z_MM_PO_APPROVAL` (fictitious code): the process the program runs, read
-from the code and drawn as BPMN. Captured from the workspace by
+*The demo project `Z_MM_PO_APPROVAL` (fictitious code): the process description the Documentation
+tool writes from the code when it opens. Captured from the workspace by
 `tests/capture-screens.spec.ts` (`CAPTURE_LANDING=1`). No mockup images.*
 
 Read more: [the whitepaper](https://clean-core.io/whitepaper) (also as PDF) · [how it works,

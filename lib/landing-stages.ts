@@ -77,7 +77,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
     ],
     worker: 'engine',
     provenance: ['reconstructed', 'proposed'],
-    shows: 'what the process does for the business — its hard-coded rules and early ends with their lines — above the process map read from the code beside its first chapter',
+    shows: 'the top of the process description written from the code: what the program does and for whom, what is in and out of scope, and the selection screen and tables it starts from, every statement with its lines',
   },
   testing: {
     lines: [
