@@ -1405,7 +1405,7 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-643 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
 | SEC-2026-644 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
 | SEC-2026-645 | low | P3 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
-| SEC-2026-646 | medium | P2 | own step: admin ceilings, needs Sonny's decision | scheduled |
+| SEC-2026-646 | medium | P2 | owner decision 03.10.2026: no admin ceiling for now | accepted risk |
 | SEC-2026-647 | low | P3 | with the next rules deploy (Sonny's go) | scheduled |
 | SEC-2026-648 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-649 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
@@ -1416,6 +1416,22 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-654 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-655 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
 | SEC-2026-656 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-674 | medium | P2 | CSP rebuild - approved 03.10.2026, in progress | scheduled |
+| SEC-2026-675 | low | P3 | CSP rebuild - approved 03.10.2026, in progress | scheduled |
+| SEC-2026-676 | medium | P3 | with the next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-677 | medium | P2 | owner decision 03.10.2026: no admin ceiling for now | accepted risk |
+| SEC-2026-678 | low | P3 | 3.0.0 re-release audit intake - fixed immediately | fixed |
+
+**Audit of the v3.0.0 re-release (`69b4f52`), 03.10.2026: 2 high, 5 medium, 15 low — all
+111 candidates verified; 1 fixed, 3 scheduled, 1 accepted risk, 17 refuted, the inbox is
+empty.** 22 new register entries (SEC-2026-657 to -678), each checked at the cited line of
+`69b4f52`; most repeat decisions of the `ab3dc34` audit on unchanged code. Both reported
+as high are refuted (SEC-2026-657, -658), as were their predecessors; the reasons are in
+the sealed register. Fixed on the 3.0 integration branch, not yet on `main`: SEC-2026-678
+(P3). Scheduled: SEC-2026-674 (P2) and -675 (P3) to the CSP rebuild, which Sonny approved
+on 03.10.2026 and which is in progress; SEC-2026-676 (P3) goes with the next rules deploy,
+like SEC-2026-647. Accepted risk: SEC-2026-646 and its repeat SEC-2026-677 — Sonny decided
+on 03.10.2026 that no admin ceiling is needed for now.
 
 **Audit of v3.0.0 (`ab3dc34`), 03.10.2026: 1 high, 11 medium, 15 low — all 106
 candidates verified; 9 fixed, 5 scheduled, 13 refuted, the inbox is empty.** 27 new
@@ -1574,6 +1590,15 @@ an invitation) needs Sonny to weigh it against forwarded links.
 
 **Addendum 24.09.2026:** UX-148 and UX-152 are scheduled and built after Sonny's decision (option B in each case) — the invitation page names the inviter and the expiry date to the invited, confirmed account before acceptance (c6f7494); the tenant approval page no longer acts on opening, and both links of a request together are valid exactly once (3a56171). They will be marked as fixed when the next UX review on `main` confirms it.
 
+**Delta review of 69b4f52 (v3.0.0 re-release, 03.10.2026, 3 model calls, $0.30):** five
+findings were undecided. UX-184 is fixed: settings said "Back to My workspace" where every
+other page says "Back to workspace" (`tests/back-link-wording.spec.ts` holds it). UX-182 is
+scheduled for 3.0: the product counts lines two ways — a file ending in a newline is 669 by
+`split` (`lib/source-lines.ts`, the signed run, the IT view) and 668 in the starter list and
+the copy — so the fix is one definition across all of them, not a one-number patch.
+UX-183 is refuted: the cited link is in the fallback dashboard; the workspace list links the
+project name to the workspace object page. UX-185 and UX-186 are deferred like UX-180.
+
 | ID | Severity | Finding | Roadmap step | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Zero findings sealed as Fully Supported | 0.8 | fixed |
@@ -1672,6 +1697,8 @@ an invitation) needs Sonny to weigh it against forwarded links.
 | UX-169 | medium | Documentation is named differently from the stage itself | D.9 | scheduled |
 | UX-170 | medium | Confirmation page without a way out on an invalid link | D.26 | scheduled |
 | UX-174 | medium | New one-off tokens for sizes and spacing without a system | Block D | scheduled |
+| UX-182 | medium | Line count of the demo program differs between list and starter card (669 vs 668) | 3.0 | scheduled |
+| UX-184 | medium | Back link to the workspace labelled differently on settings | immediately | fixed |
 | UX-008 | low | Slideshow controls without names, arrow keys hijacked | 3.0.4 | fixed |
 | UX-011 | low | Confusing finding terms and language mix | 1.5 | scheduled |
 | UX-013 | low | Preview contradicts editability, start misleading | 1.5 | scheduled |
@@ -1715,6 +1742,8 @@ an invitation) needs Sonny to weigh it against forwarded links.
 | UX-155 | low | Workspace loading empty for sighted users, only sr-only text | 1.4 | scheduled |
 | UX-156 | low | Back link in two capitalisations | 1.5 | scheduled |
 | UX-164 | low | Back link in two spellings | 1.5 | scheduled |
+| UX-185 | low | One-off width tokens without a connection to the system | — | deferred |
+| UX-186 | low | One-off width tokens in the delivery layouts | — | deferred |
 ---
 
 ## 14. QA findings from the full review

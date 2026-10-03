@@ -2262,6 +2262,67 @@
       "status": "zurückgestellt",
       "reason": "Changing the URL /tco needs redirects and link migration; after 3.0. The visible name Economics is the decided one.",
       "updatedAt": "2026-10-03T01:33:10.093Z"
+    },
+    {
+      "id": "UX-182",
+      "fingerprint": "466a55c8e327",
+      "title": "Line count of the demo program differs between list and starter card (669 vs 668)",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
+      "createdAt": "2026-10-03T03:55:30.148Z",
+      "status": "eingeplant",
+      "step": "3.0",
+      "updatedAt": "2026-10-03T03:55:30.148Z"
+    },
+    {
+      "id": "UX-183",
+      "fingerprint": "0fbeb6e518fa",
+      "title": "Project name skips the workspace and duplicates Continue",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
+      "createdAt": "2026-10-03T03:55:30.278Z",
+      "status": "widerlegt",
+      "reason": "The cited list is the old dashboard (app/(app)/dashboard/page.tsx:470), which renders only for suspended, activating or profile-less accounts. Screenshot 02-dashboard-desktop-s1 shows WorkspaceListReport via MyWorkspaceSwitch, where the project name links row.href = /project/<id>, the workspace object page (components/workspace/WorkspaceListReport.tsx:546, lib/workspace-rows.ts:176), not the next stage.",
+      "updatedAt": "2026-10-03T03:55:30.278Z"
+    },
+    {
+      "id": "UX-184",
+      "fingerprint": "743606ce5961",
+      "title": "Back link to the workspace labelled differently on settings",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
+      "createdAt": "2026-10-03T03:55:30.407Z",
+      "status": "behoben",
+      "step": "sofort",
+      "updatedAt": "2026-10-03T03:55:30.531Z",
+      "fixedIn": "0ccba01f"
+    },
+    {
+      "id": "UX-185",
+      "fingerprint": "ecd52ef72f0c",
+      "title": "One-off width tokens without a connection to the system",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
+      "createdAt": "2026-10-03T03:55:30.663Z",
+      "status": "zurückgestellt",
+      "reason": "Same as UX-180: token clean-up of one-off widths is not release-relevant; after 3.0 with the design-system sweep. sm:min-w-[34rem] on the doc table (clean-core-explained/page.tsx:234) is a deliberate scroll threshold for a wide table.",
+      "updatedAt": "2026-10-03T03:55:30.663Z"
+    },
+    {
+      "id": "UX-186",
+      "fingerprint": "84ada2854365",
+      "title": "One-off width tokens in the delivery layouts",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
+      "createdAt": "2026-10-03T03:55:30.794Z",
+      "status": "zurückgestellt",
+      "reason": "Same as UX-180: token clean-up of one-off widths is not release-relevant; after 3.0 with the design-system sweep. The 360px side column (delivery/page.tsx:728, DemoDelivery.tsx:143) is the mockup's fixed rail width and is shared by both delivery views.",
+      "updatedAt": "2026-10-03T03:55:30.794Z"
     }
   ]
 }

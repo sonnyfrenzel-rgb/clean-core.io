@@ -449,7 +449,7 @@ export async function POST(req: NextRequest) {
       ];
 
       // For SAP API Hub, the URL structure is different
-      if (body.authType === 'sap_hub' || resolvedUrl.includes('sandbox.api.sap.com')) {
+      if (resolvedBody.authType === 'sap_hub' || resolvedUrl.includes('sandbox.api.sap.com')) {
         urlCandidates.unshift(`${resolvedUrl}${resolvedUrl.endsWith('/') ? '' : '/'}${cleanPath}/$metadata`);
       }
 
