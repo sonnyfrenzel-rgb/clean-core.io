@@ -10,6 +10,7 @@ import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
 import { declineMark, declinedInThisSignIn } from '@/lib/terms-decline';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 
 /**
@@ -130,6 +131,99 @@ const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray<{ lead
     ],
   },
 ];
+
+/** One block of the Terms as the archive page renders it. */
+type TermsTextBlock =
+  | { kind: 'heading'; level: 2 | 3; text: string }
+  | { kind: 'list'; items: string[] }
+  | { kind: 'paragraph'; lines: string[] };
+
+/**
+ * The wording being accepted, read inside the gate.
+ *
+ * On a phone, "Read the Terms" in a new tab is a tab switch most people do not
+ * find their way back from (03.10.2026, owner report). So the gate can show
+ * the text itself. It reads the archive page of `TERMS_VERSION`, which is
+ * prerendered from `docs/terms/<version>.md` — the exact wording whose digest
+ * the consent record carries — and takes only the text of its article, element
+ * by element. Text, never markup: nothing fetched reaches `innerHTML`.
+ */
+async function loadTermsText(): Promise<TermsTextBlock[]> {
+  const res = await fetch(`/terms/versions/${TERMS_VERSION}`, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(String(res.status));
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  const article = doc.querySelector('[data-archived-text]');
+  if (!article) throw new Error('no text');
+  const blocks: TermsTextBlock[] = [];
+  for (const el of Array.from(article.children)) {
+    const tag = el.tagName.toLowerCase();
+    const text = (el.textContent ?? '').trim();
+    if (tag === 'h2' || tag === 'h3') blocks.push({ kind: 'heading', level: tag === 'h2' ? 2 : 3, text });
+    else if (tag === 'ul' || tag === 'ol')
+      blocks.push({ kind: 'list', items: Array.from(el.querySelectorAll('li')).map((li) => (li.textContent ?? '').trim()) });
+    else if (text) {
+      const lines = Array.from(el.children).map((line) => (line.textContent ?? '').trim()).filter(Boolean);
+      blocks.push({ kind: 'paragraph', lines: lines.length ? lines : [text] });
+    }
+  }
+  if (!blocks.length) throw new Error('empty');
+  return blocks;
+}
+
+function TermsInline() {
+  const [open, setOpen] = useState(false);
+  const [blocks, setBlocks] = useState<TermsTextBlock[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next && !blocks) {
+      setFailed(false);
+      loadTermsText().then(setBlocks, () => setFailed(true));
+    }
+  };
+
+  return (
+    <div data-terms-gate-inline={open ? 'open' : 'closed'} className="mt-4">
+      <CcDisclosure title="Read the Terms here" open={open} onOpenChange={onOpenChange}>
+        <div data-terms-gate-terms-text="" className="space-y-3 rounded-cc-row border border-cc-line p-3 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">
+          {blocks ? (
+            blocks.map((block, i) =>
+              block.kind === 'heading' ? (
+                block.level === 2 ? (
+                  <h3 key={i} className="m-0 cc-text-h2 text-cc-ink">{block.text}</h3>
+                ) : (
+                  <h4 key={i} className="m-0 pt-2 font-semibold text-cc-ink">{block.text}</h4>
+                )
+              ) : block.kind === 'list' ? (
+                <ul key={i} className="m-0 list-disc space-y-1 pl-5 text-cc-ink-muted">
+                  {block.items.map((item, j) => (
+                    <li key={j}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i} className="m-0">
+                  {block.lines.map((line, j) => (
+                    <span key={j}>
+                      {j > 0 ? <br /> : null}
+                      {line}
+                    </span>
+                  ))}
+                </p>
+              ),
+            )
+          ) : failed ? (
+            <p className="m-0 text-cc-ink-muted">
+              The text could not be loaded here. Use &ldquo;Read the Terms&rdquo; below; this question stays open until you answer it.
+            </p>
+          ) : (
+            <p className="m-0 text-cc-ink-muted" aria-live="polite">Loading the Terms&hellip;</p>
+          )}
+        </div>
+      </CcDisclosure>
+    </div>
+  );
+}
 
 export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
@@ -280,7 +374,9 @@ export default function TermsReacceptGate() {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 cc-text-identifier">
+      <TermsInline />
+
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 cc-text-identifier">
         <Link
           href="/terms"
           target="_blank"
@@ -362,7 +458,7 @@ export default function TermsReacceptGate() {
             </div>
           </div>
           <div className="mt-4">{details}</div>
-          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">{actions}</div>
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2 max-sm:flex-col max-sm:items-stretch max-sm:[&>*]:min-h-11 max-sm:[&>*]:whitespace-normal">{actions}</div>
         </div>
       </div>
     );

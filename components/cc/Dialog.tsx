@@ -52,6 +52,17 @@ import { useCcHydrated, useCcModal } from './modal';
  *
  * The layer sits on `z-cc-overlay` (`app/globals.css`), above every floating
  * helper — nothing may cover a question the page is asking.
+ *
+ * **On a phone** (narrower than `sm`, or a viewport no taller than 640 px — a
+ * phone in landscape) the header holds the title alone, and the lead moves to
+ * the top of the scrolling body. With the lead in the fixed header, the terms
+ * gate's long explanation plus its stacked buttons left a strip of body a few
+ * lines tall on a 360 × 640 screen (03.10.2026). The actions stack full width
+ * there, the main action last, every one 44 px tall, and the layer keeps clear
+ * of the safe-area insets. The height cap there is the layer's own box
+ * (`max-h-full`), not only `100dvh`: a browser without `dvh` drops that
+ * declaration, and a dialog with no cap overflows the screen top and bottom
+ * with its buttons off it. Wider and taller screens are unchanged.
  */
 type CcDialogDismiss =
   | {
@@ -87,6 +98,10 @@ interface CcDialogOwnProps {
 
 const KEEP_OPEN = () => undefined;
 
+/** A phone: narrower than `sm`, or no taller than 640 px (a phone in landscape). */
+const PHONE_HIDDEN = 'max-sm:hidden [@media(max-height:640px)]:hidden';
+const PHONE_SHOWN = 'max-sm:block [@media(max-height:640px)]:block';
+
 export default function CcDialog(props: CcDialogProps) {
   const { open, title, lead, children, actions, onSubmit, size = 'default' } = props;
   const dismissible = props.dismissible !== false;
@@ -112,14 +127,25 @@ export default function CcDialog(props: CcDialogProps) {
     <>
       <div
         data-cc-dialog-body=""
-        className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[14px] font-medium leading-relaxed text-cc-ink"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 text-[14px] font-medium leading-relaxed text-cc-ink max-sm:px-4"
       >
+        {lead ? (
+          // The phone copy of the lead (see above). The header copy carries the
+          // id the dialog is described by, so this one stays out of the tree.
+          <p
+            data-cc-dialog-lead-body=""
+            aria-hidden={true}
+            className={'mt-0 mb-4 hidden text-[13px] font-medium leading-snug text-cc-ink-muted ' + PHONE_SHOWN}
+          >
+            {lead}
+          </p>
+        ) : null}
         {children}
       </div>
       {actions ? (
         <div
           data-cc-dialog-actions=""
-          className="flex flex-wrap justify-end gap-2 border-t border-cc-line px-5 py-3"
+          className="flex flex-wrap justify-end gap-2 border-t border-cc-line px-5 py-3 max-sm:flex-col max-sm:flex-nowrap max-sm:items-stretch max-sm:px-4 max-sm:[&>*]:min-h-11 max-sm:[&>*]:w-full max-sm:[&>*]:whitespace-normal"
         >
           {actions}
         </div>
@@ -134,7 +160,7 @@ export default function CcDialog(props: CcDialogProps) {
       {...layerData}
       data-cc-dialog-layer=""
       data-cc-dismissible={dismissible ? undefined : 'false'}
-      className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4"
+      className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4 max-sm:pt-[max(0.5rem,env(safe-area-inset-top))] max-sm:pr-[max(0.5rem,env(safe-area-inset-right))] max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:pl-[max(0.5rem,env(safe-area-inset-left))]"
     >
       {/* Dimmed, and deliberately not a way out — see above. */}
       <div data-cc-scrim="" aria-hidden={true} className="absolute inset-0 bg-cc-overlay/45" />
@@ -148,17 +174,19 @@ export default function CcDialog(props: CcDialogProps) {
         data-cc-dialog=""
         data-cc-dialog-size={size}
         className={
-          'relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog ' +
+          'relative flex max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col max-sm:max-h-full [@media(max-height:640px)]:max-h-full rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog ' +
           (size === 'wide' ? 'max-w-3xl' : 'max-w-lg')
         }
       >
-        <div className="flex items-start gap-3 border-b border-cc-line px-5 py-4">
+        <div className="flex items-start gap-3 border-b border-cc-line px-5 py-4 max-sm:px-4 max-sm:py-3">
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="m-0 text-[15px] font-bold text-cc-ink">
+            <h2 id={titleId} className="m-0 text-[15px] font-bold text-cc-ink [overflow-wrap:anywhere]">
               {title}
             </h2>
             {lead ? (
-              <p id={leadId} className="mt-1 mb-0 text-[13px] font-medium leading-snug text-cc-ink-muted">
+              // Hidden on a phone, where the body shows it instead; still the
+              // dialog's description, because `aria-describedby` reads hidden text.
+              <p id={leadId} className={'mt-1 mb-0 text-[13px] font-medium leading-snug text-cc-ink-muted ' + PHONE_HIDDEN}>
                 {lead}
               </p>
             ) : null}
