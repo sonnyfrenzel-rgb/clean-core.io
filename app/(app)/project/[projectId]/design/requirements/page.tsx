@@ -17,6 +17,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useDesignEvidence } from '@/hooks/useDesignEvidence';
 import { useProcessStates } from '@/hooks/useProcessStates';
+import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -67,7 +68,9 @@ export default function RequirementsPage() {
     })();
   }, [id]);
 
-  const owner = isProjectOwner(project, account.uid);
+  // The uid from the auth store, so a sign-in change after loading is followed (QA 9ac48179a33c).
+  const signedInUid = useSignedInUid();
+  const owner = isProjectOwner(project, signedInUid);
   const designEvidence = useDesignEvidence(id, Boolean(project), 0);
   const { outcome } = useProcessStates(id, Boolean(project));
 

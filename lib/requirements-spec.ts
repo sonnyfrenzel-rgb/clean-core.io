@@ -1024,6 +1024,16 @@ export function readSpecSummary(value: unknown): SpecSummary | null {
   return { functional, nonFunctional, openDecisions, clarify: n(v.clarify) ?? 0, accepted, revision, savedAt: v.savedAt, derivedFrom: v.derivedFrom };
 }
 
+/**
+ * Whether a stored specification is out of date. Without a signed source to
+ * compare against (the source changed after the run, or no run is active) it
+ * cannot be shown current, so it is not (QA 72a895528ffa).
+ */
+export function specIsStale(summary: SpecSummary | null, signedSha256: string | null): boolean {
+  if (!summary) return false;
+  return !signedSha256 || summary.derivedFrom !== signedSha256;
+}
+
 /** One line for the handover: what the specification holds, never more than it holds. */
 export function specHandoverLine(summary: SpecSummary | null, signedSha256: string | null): string | null {
   if (!summary) return null;

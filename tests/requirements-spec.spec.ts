@@ -336,3 +336,12 @@ test.describe('the exports', () => {
     expect(blocks[2].k).toBe('pagebreak');
   });
 });
+
+test('a stored specification without a signed source to compare against is not current (QA 72a895528ffa)', async () => {
+  const { specIsStale } = await import('../lib/requirements-spec');
+  const summary = { functional: 1, nonFunctional: 1, openDecisions: 0, clarify: 0, accepted: 0, revision: 1, savedAt: '2026-10-04T12:00:00.000Z', derivedFrom: 'abc' };
+  expect(specIsStale(null, null)).toBe(false);
+  expect(specIsStale(summary, 'abc')).toBe(false);
+  expect(specIsStale(summary, 'def')).toBe(true);
+  expect(specIsStale(summary, null)).toBe(true);
+});

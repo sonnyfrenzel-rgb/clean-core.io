@@ -7,7 +7,7 @@ import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { readSpecSummary, specHandoverLine } from '@/lib/requirements-spec';
+import { readSpecSummary, specHandoverLine, specIsStale } from '@/lib/requirements-spec';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
@@ -307,7 +307,7 @@ export default function DeliveryPage() {
    */
   const signedSource = useMemo(() => signedSourceOf(project as HandoverProject | null), [project]);
   const specSummary = readSpecSummary((project as { requirementsSpec?: unknown } | null)?.requirementsSpec);
-  const specStale = Boolean(specSummary && signedSource && specSummary.derivedFrom !== sha256Hex(signedSource.source));
+  const specStale = specIsStale(specSummary, signedSource ? sha256Hex(signedSource.source) : null);
 
   const downloadBpmn = async () => {
     if (!signedSource || handoverBlocked) return;
