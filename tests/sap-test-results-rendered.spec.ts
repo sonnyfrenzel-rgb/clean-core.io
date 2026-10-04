@@ -44,11 +44,13 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
   let account: SeededProject;
   let importId = '';
   let confirmId = '';
+  let emptyId = '';
+  let readId = '';
 
-  async function abapClone(suffix: string): Promise<string> {
+  async function abapClone(suffix: string, overrides: Record<string, unknown> = {}): Promise<string> {
     const base = await adminGetDoc('projects', account.projectId);
     const id = `${account.projectId}-${suffix}`;
-    await adminSetDoc('projects', id, {
+    const fields: Record<string, unknown> = {
       ...base,
       extensibilityRoute: 'In-App Extension (ABAP Cloud)',
       approvedByArchitect: true,
@@ -58,7 +60,11 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
       testCases: SCENARIOS,
       activeRunId: account.runId,
       createdAt: new Date(),
-    });
+      ...overrides,
+    };
+    // An override of `undefined` removes the field (Firestore refuses the value itself).
+    for (const k of Object.keys(fields)) if (fields[k] === undefined) delete fields[k];
+    await adminSetDoc('projects', id, fields);
     const run = await adminGetDoc(`projects/${account.projectId}/runs`, account.runId);
     await adminSetDoc(`projects/${id}/runs`, account.runId, { ...run, projectId: id });
     return id;
@@ -69,6 +75,8 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     account = await seedStageProject({ prefix: 'sapres-ui', acceptTerms: true });
     importId = await abapClone('import');
     confirmId = await abapClone('confirm');
+    emptyId = await abapClone('empty', { testCases: [], testSuite: undefined });
+    readId = await abapClone('read');
   });
 
   test('upload a JUnit XML: every row wears Imported · passed, and Delivery takes it', async ({ page }) => {
@@ -172,5 +180,66 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await expect(link).toContainText('Not run here — your statement that it ran in your SAP system (S4D / 100, 2026-10-02)');
     await expect(link).not.toContainText(/proven|verified/i);
     await expect(page.locator('[data-still-needed-item="tests"]')).toHaveCount(0);
+  });
+
+  // QA b8524354846a: before any scenario the result section is not drawn, so
+  // its anchor named nothing; the link now leads to step 1, which exists.
+  test('no scenarios yet: Delivery links to the step that writes them, and that step exists', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, account);
+    await openDelivery(page, emptyId);
+    const item = page.locator('[data-still-needed-item="tests"]');
+    await expect(item).toBeVisible();
+    await expect(item.locator('a')).toHaveAttribute('href', `/project/${emptyId}/testing#testing-write`);
+
+    await openTesting(page, emptyId);
+    await expect(page.locator('#testing-write')).toBeVisible();
+    await expect(page.locator('[data-testing-sap-result]')).toHaveCount(0);
+  });
+
+  // QA 263cde0a6b23: a failed read of the full record was logged once and the
+  // rows stayed without their results for the session.
+  test('reading the result record: a transient failure is retried; a lasting one says so, with Retry', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, account);
+    await openTesting(page, readId);
+    const card = page.locator('[data-testing-sap-result]');
+    const answered = page.waitForResponse((r) => r.url().includes('/test-results') && r.request().method() === 'POST');
+    await card.locator('[data-sap-result-file]').setInputFiles({ name: 'aunit-result.xml', mimeType: 'application/xml', buffer: Buffer.from(JUNIT) });
+    expect((await answered).status()).toBe(200);
+    const row = page.locator('[data-scenario-row][data-scenario-id="TC_01"] [data-scenario-outside="passed"]');
+    await expect(row).toBeVisible({ timeout: 30000 });
+
+    // One failed GET, then the server: the second attempt brings the rows back.
+    let gets = 0;
+    let failFirst = 1;
+    await page.route(/\/api\/projects\/[^/]+\/test-results$/, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      gets++;
+      if (gets <= failFirst) return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'unavailable' }) });
+      return route.continue();
+    });
+    await openTesting(page, readId);
+    await expect(row).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-sap-result-read-failed]')).toHaveCount(0);
+    expect(gets).toBe(2);
+
+    // Every attempt fails: the page says the read failed — not that there is no
+    // result — and Retry reads again.
+    gets = 0;
+    failFirst = 3;
+    await openTesting(page, readId);
+    const failed = page.locator('[data-sap-result-read-failed]');
+    await expect(failed).toBeVisible({ timeout: 30000 });
+    await expect(failed).toContainText('could not be read');
+    await expect(failed).toContainText('not a missing result');
+    expect(gets).toBe(3);
+    await expect(row).toHaveCount(0);
+    await failed.getByRole('button', { name: 'Retry' }).click();
+    await expect(row).toBeVisible({ timeout: 30000 });
+    await expect(failed).toHaveCount(0);
+    expect(gets).toBe(4);
   });
 });

@@ -669,6 +669,13 @@ jobs:
   const engineVersion = (typeof hp.analyzerVersion === 'string' && hp.analyzerVersion) || modelCard?.engineVersion || null;
   const artefactCount = 6;
 
+  /**
+   * The Testing stage draws its "record the result" section only once
+   * scenarios exist; before that the anchor names nothing and the link landed
+   * at the top of a page with no such section (QA b8524354846a). Without
+   * scenarios the link leads to step 1, where they are written.
+   */
+  const hasScenarios = Array.isArray(project.testCases) && project.testCases.length > 0;
   /** Where each still-needed line is made, as a link a reader can follow. */
   const neededHref = (stage: StillNeeded['stage']) =>
     stage === 'management'
@@ -677,7 +684,7 @@ jobs:
         ? '#audit-pack'
         : stage === 'testing' && isAbapCloud
           ? // ADR-075: on the ABAP Cloud route the result is recorded there.
-            `/project/${projectId}/testing#testing-sap-result`
+            `/project/${projectId}/testing#${hasScenarios ? 'testing-sap-result' : 'testing-write'}`
           : `/project/${projectId}/${stage}`;
   const neededWhere = (stage: StillNeeded['stage']) =>
     stage === 'management' ? 'Management view' : PHASES.find((p) => p.key === stage)?.label ?? stage;

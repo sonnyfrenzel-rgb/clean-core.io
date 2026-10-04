@@ -217,14 +217,17 @@ export function unusableFromModelError(err: unknown): UnusableAnswer | null {
   return null;
 }
 
-/** The progress line shown before the one automatic retry. */
-export function retryNotice(first: UnusableAnswer): string {
+/**
+ * The progress line shown before the one automatic retry. `noun` names what
+ * the stage asked for — `package` for Transformation, `test suite` for Testing.
+ */
+export function retryNotice(first: UnusableAnswer, noun = 'package'): string {
   const what =
     first === 'truncated' || first === 'unbalanced'
       ? 'The first answer was cut off before it was complete.'
       : first === 'empty'
         ? 'The first answer was empty.'
-        : 'The first answer was not the JSON package this stage asked for.';
+        : `The first answer was not the JSON ${noun} this stage asked for.`;
   return `${what} Retrying once — a second model call …`;
 }
 
@@ -233,17 +236,17 @@ export function retryNotice(first: UnusableAnswer): string {
  * keeps the stage's promise that nothing was saved, and none calls a cut-off
  * answer "text instead of JSON".
  */
-export function unusableAnswerMessage(reason: UnusableAnswer, attempts: number): string {
+export function unusableAnswerMessage(reason: UnusableAnswer, attempts: number, noun = 'package'): string {
   const kept = 'Nothing was saved — the previous version is untouched.';
   const tries = attempts > 1 ? ` This happened on both attempts (the stage retries once on its own).` : '';
   switch (reason) {
     case 'truncated':
-      return `The answer was cut off at the model's length limit — the package for this program did not fit in one answer.${tries} ${kept} Try the generation again; if it is cut off again, the program is too large to transform in one answer — generate from a smaller part of it.`;
+      return `The answer was cut off at the model's length limit — the ${noun} for this program did not fit in one answer.${tries} ${kept} Try the generation again; if it is cut off again, the program is too large to transform in one answer — generate from a smaller part of it.`;
     case 'unbalanced':
       return `The answer ended before its JSON was complete, so it was cut off.${tries} ${kept} Try the generation again.`;
     case 'empty':
       return `The model returned an empty answer.${tries} ${kept} Try the generation again.`;
     default:
-      return `The model returned prose instead of the JSON package this stage asked for.${tries} ${kept} Try again.`;
+      return `The model returned prose instead of the JSON ${noun} this stage asked for.${tries} ${kept} Try again.`;
   }
 }
