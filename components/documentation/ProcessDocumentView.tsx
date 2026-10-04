@@ -273,10 +273,8 @@ function ScopeList({ title, items }: { title: string; items: PdText[] }) {
       <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
         {items.map((s, i) => (
           <li key={i} className="min-w-0 cc-text-cell text-cc-ink">
-            {s.text}
-            {s.detail || s.anchors.length ? (
-              <span className="mt-1 flex flex-wrap items-center gap-1"><Tech>{s.detail}</Tech><Anchors anchors={s.anchors} max={2} /></span>
-            ) : null}
+            {s.text}{' '}
+            <span className="inline-flex flex-wrap items-center gap-1 align-middle"><Tech>{s.detail}</Tech><Anchors anchors={s.anchors} max={1} /></span>
           </li>
         ))}
       </ul>
@@ -289,24 +287,19 @@ function StepItem({ step }: { step: PdStep }) {
   const [open, setOpen] = useState(false);
   const id = `pd-step-${step.number}`;
   return (
-    <li data-doc-main-step={step.number} className="relative flex min-w-0 gap-3 pb-3">
+    <li data-doc-main-step={step.number} className="relative flex min-w-0 gap-3 pb-2">
       <span aria-hidden={true} className="relative z-[1] inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-cc-ink px-1 text-[12px] font-semibold text-cc-on-dark">
         {step.number}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="m-0 cc-text-identifier text-cc-ink">
-            {stepName(step)}
+          <p className="m-0 min-w-0 flex-1 basis-80 cc-text-cell text-cc-ink-muted">
+            <span className="cc-text-identifier text-cc-ink">{stepName(step)}</span>
             {step.businessName ? <> <CcProvenanceChip value="proposed" note="name" /></> : null}
-          </p>
-          <span className="inline-flex flex-wrap items-center gap-1"><Tech>{step.technicalName}</Tech><Anchors anchors={step.anchors} max={2} /></span>
-        </div>
-        {step.line || details.length > 1 ? (
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            {step.line}
+            {step.line ? <> — {step.line}</> : null}
             {details.length > 1 ? (
               <>
-                {step.line ? ' ' : null}
+                {' '}
                 {/* The step's details one tap deeper (DESIGN.md §2.11); a file prints them in its appendix. */}
                 <button
                   type="button"
@@ -321,7 +314,8 @@ function StepItem({ step }: { step: PdStep }) {
               </>
             ) : null}
           </p>
-        ) : null}
+          <span className="inline-flex flex-wrap items-center gap-1"><Tech>{step.technicalName}</Tech><Anchors anchors={step.anchors} max={2} /></span>
+        </div>
         {step.proposal ? (
           <p data-doc-proposal="" className="m-0 mt-1 cc-text-cell text-cc-ink">
             <CcProvenanceChip value="proposed" /> {step.proposal.text}
@@ -379,13 +373,22 @@ function QuestionItem({ q }: { q: PdQuestion }) {
   );
 }
 
+/** "2 block the design · 1 blocks the cutover" — what a group holds up, by kind. */
+function blockingWords(questions: PdQuestion[]): string {
+  return (['design', 'cutover'] as const)
+    .map((kind) => [kind, questions.filter((q) => q.blocks === kind).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([kind, n]) => `${n} ${n === 1 ? 'blocks' : 'block'} the ${kind}`)
+    .join(' · ');
+}
+
 function QuestionGroup({ group, defaultOpen }: { group: PdQuestionGroup; defaultOpen: boolean }) {
   return (
     <div data-question-group={group.theme} className="min-w-0 border-t border-cc-line pt-1">
       <CcDisclosure
         title={group.title}
         count={group.questions.length}
-        summary={group.blocking ? `${group.blocking} ${group.blocking === 1 ? 'blocks' : 'block'} the design or the cutover` : undefined}
+        summary={group.blocking ? blockingWords(group.questions) : undefined}
         defaultOpen={defaultOpen}
         level={4}
         density="compact"
@@ -480,7 +483,7 @@ export default function ProcessDocumentView({
         <ol data-doc-steps="" className="relative m-0 list-none p-0 before:absolute before:bottom-4 before:left-3 before:top-2 before:w-px before:bg-cc-line">
           {doc.overview.path.map((entry) =>
             entry.kind === 'gate' ? (
-              <li key={entry.id} data-doc-gate="" className="relative flex min-w-0 items-start gap-3 pb-3">
+              <li key={entry.id} data-doc-gate="" className="relative flex min-w-0 items-start gap-3 pb-2">
                 <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center">
                   <span className="block h-3 w-3 rotate-45 border border-cc-ink bg-cc-surface" />
                 </span>
@@ -511,17 +514,16 @@ export default function ProcessDocumentView({
 
         <SectionCard id="integrations" lead={outline.leads.integrations}>
           {t.integrations ? (
-            <ul data-doc-integrations="" className="m-0 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2">
+            <ul data-doc-integrations="" className="m-0 flex list-none flex-col gap-2 p-0">
               {t.integrations.rows.map((row, i) => {
                 const Icon = integrationIcon(row.cells[1]);
                 return (
-                  <li key={i} className="flex min-w-0 items-start gap-2 rounded-cc-row border border-cc-line p-2">
+                  <li key={i} className="flex min-w-0 items-start gap-2">
                     <Icon size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
-                    <div className="min-w-0">
-                      <p className="m-0 cc-text-cell text-cc-ink">{row.cells[0]}</p>
-                      <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">{row.cells[1]}</p>
-                      <Source row={row} />
-                    </div>
+                    <p className="m-0 min-w-0 cc-text-cell text-cc-ink">
+                      {row.cells[0]} <span className="cc-text-meta font-medium text-cc-ink-muted">· {row.cells[1]}</span>{' '}
+                      <span className="inline-flex flex-wrap items-center gap-1 align-middle"><Source row={row} /></span>
+                    </p>
                   </li>
                 );
               })}

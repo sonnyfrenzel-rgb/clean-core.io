@@ -130,9 +130,11 @@ test.describe('the SOP and the RACI, as data', () => {
   test('the matrix is roles × steps and says where it has gaps', () => {
     const matrix = raciMatrix(sopSteps(LAYER, STEPS));
     expect(matrix.steps).toHaveLength(LAYER.raci_matrix.length);
-    expect(matrix.roles.map((r) => r.name)).toEqual(expect.arrayContaining(['Purchasing Clerk', 'Process Owner', 'Finance Lead', 'Internal Audit']));
+    // Six columns at most (owner 04.10.2026); the roles that only consult or are informed are listed under the matrix.
+    expect(matrix.roles.map((r) => r.name)).toEqual(expect.arrayContaining(['Purchasing Clerk', 'Process Owner', 'Finance Lead']));
+    expect(matrix.roles.length).toBeLessThanOrEqual(6);
+    expect([...matrix.roles, ...matrix.moreRoles].map((r) => r.name)).toEqual(expect.arrayContaining(['Internal Audit', 'Compliance Officer']));
     expect(matrix.steps[2].gaps).toContain('no-accountable');
-    expect(matrix.moreRoles).toEqual([]);
     expect(matrix.steps[5].gaps).toContain('several-accountable');
     expect(matrix.roles.find((r) => r.name === 'Purchasing Clerk')!.overloaded).toBe(true);
     expect(matrix.roles.find((r) => r.name === 'Process Owner')!.overloaded).toBe(false);
@@ -268,6 +270,9 @@ test.describe('the Documentation stage in a browser', () => {
     // The strip: every step, in order, with its anchor and a provenance chip.
     const strip = page.locator('[data-sop-step]');
     await expect(strip).toHaveCount(LAYER.sop_details.length);
+    // The strip shows its first row; "Show all" opens the rest (nothing at full length by default).
+    await expect(page.locator(`[data-sop-step="${UNKNOWN_STEP_ID}"]`)).toBeHidden();
+    await page.locator('[data-sop-strip-all]').click();
     await expect(page.locator(`[data-sop-step="${UNKNOWN_STEP_ID}"] [data-provenance="proposed"]`)).toBeVisible();
     await expect(strip.first().locator('[data-cc-anchor="linked"]')).toBeVisible();
 
@@ -324,7 +329,10 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(page.locator('[data-raci-key]')).toBeVisible();
     await expect(matrix.locator('[data-raci-gap="no-accountable"]')).toHaveCount(1);
     await expect(page.locator('[data-raci-gaps="0"]')).toHaveCount(0);
-    const sideways = await matrix.evaluate((el) => Math.max(0, ...[el, ...el.querySelectorAll('*')].map((n) => (n as HTMLElement).scrollWidth - (n as HTMLElement).clientWidth)));
+    // Every box that could scroll sideways (the table's scroll container among them) holds its content.
+    const sideways = await matrix.evaluate((el) => Math.max(0, ...[el, ...el.querySelectorAll('*')]
+      .filter((n) => n === el || ['auto', 'scroll'].includes(getComputedStyle(n).overflowX))
+      .map((n) => (n as HTMLElement).scrollWidth - (n as HTMLElement).clientWidth)));
     expect(sideways, 'the RACI matrix scrolls sideways at 1440').toBeLessThanOrEqual(0);
     // The owner can ask for a new proposal; nothing is called by itself.
     await expect(page.locator('[data-regenerate-business-layer]')).toBeVisible();

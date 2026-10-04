@@ -120,8 +120,10 @@ function Missing() {
 
 /* ------------------------------------------------------------- the strip */
 
-/** On a phone a list shows its first five and "Show all" (`DESIGN.md` §2.11); from S upwards every step. */
+/** On a phone a list shows its first five and "Show all" (`DESIGN.md` §2.11). */
 const PHONE_ROWS = 5;
+/** From S upwards the strip shows its first row of four and "Show all" (owner 04.10.2026: nothing at full length by default). */
+const STRIP_ROWS = 4;
 
 function SopStrip({ steps }: { steps: SopStep[] }) {
   const [all, setAll] = useState(false);
@@ -137,7 +139,7 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
           className={cn(
             'min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
             step.step ? 'border-cc-line' : 'border-dashed border-cc-field-border',
-            !all && i >= PHONE_ROWS ? 'hidden sm:flex print:flex' : 'flex',
+            all ? 'flex' : i >= STRIP_ROWS ? 'hidden print:flex' : 'flex',
           )}
         >
           <div className="flex min-w-0 items-start gap-2">
@@ -160,10 +162,10 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
         </li>
       ))}
     </ol>
-    {steps.length > PHONE_ROWS + 1 ? (
-      <div className="mt-2 sm:hidden">
-        <CcButton variant="ghost" aria-expanded={all} onClick={() => setAll((v) => !v)}>
-          {all ? showFirstLabel(PHONE_ROWS) : showAllLabel(steps.length)}
+    {steps.length > STRIP_ROWS ? (
+      <div className="mt-2">
+        <CcButton variant="ghost" aria-expanded={all} onClick={() => setAll((v) => !v)} data-sop-strip-all="">
+          {all ? showFirstLabel(STRIP_ROWS) : showAllLabel(steps.length)}
         </CcButton>
       </div>
     ) : null}

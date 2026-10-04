@@ -351,7 +351,7 @@ export function buildEngineConfluenceHtml(
 
   const purposeSection = `${h2('purpose')}${lead('purpose')}
     ${p.proposal ? proposal(p.proposal.text, p.proposal.anchors, 'Worded by the analysis model from the same source; the engine reading below is the evidence.') : ''}
-    ${para(p.users)}
+    <p>${esc(p.users.text)} <small>${esc(sourceText({ tech: p.users.detail ?? null, anchors: p.users.anchors }))}</small></p>
     ${table(['Scope', 'What', SOURCE_COLUMN], [
       ...p.inScope.map((s) => ['In scope', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
       ...p.outOfScope.map((s) => ['Outside this code', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
