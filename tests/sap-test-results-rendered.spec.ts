@@ -44,11 +44,12 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
   let account: SeededProject;
   let importId = '';
   let confirmId = '';
+  let emptyId = '';
 
-  async function abapClone(suffix: string): Promise<string> {
+  async function abapClone(suffix: string, overrides: Record<string, unknown> = {}): Promise<string> {
     const base = await adminGetDoc('projects', account.projectId);
     const id = `${account.projectId}-${suffix}`;
-    await adminSetDoc('projects', id, {
+    const fields: Record<string, unknown> = {
       ...base,
       extensibilityRoute: 'In-App Extension (ABAP Cloud)',
       approvedByArchitect: true,
@@ -58,7 +59,11 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
       testCases: SCENARIOS,
       activeRunId: account.runId,
       createdAt: new Date(),
-    });
+      ...overrides,
+    };
+    // An override of `undefined` removes the field (Firestore refuses the value itself).
+    for (const k of Object.keys(fields)) if (fields[k] === undefined) delete fields[k];
+    await adminSetDoc('projects', id, fields);
     const run = await adminGetDoc(`projects/${account.projectId}/runs`, account.runId);
     await adminSetDoc(`projects/${id}/runs`, account.runId, { ...run, projectId: id });
     return id;
@@ -69,6 +74,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     account = await seedStageProject({ prefix: 'sapres-ui', acceptTerms: true });
     importId = await abapClone('import');
     confirmId = await abapClone('confirm');
+    emptyId = await abapClone('empty', { testCases: [], testSuite: undefined });
   });
 
   test('upload a JUnit XML: every row wears Imported · passed, and Delivery takes it', async ({ page }) => {
@@ -172,5 +178,21 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await expect(link).toContainText('Not run here — your statement that it ran in your SAP system (S4D / 100, 2026-10-02)');
     await expect(link).not.toContainText(/proven|verified/i);
     await expect(page.locator('[data-still-needed-item="tests"]')).toHaveCount(0);
+  });
+
+  // QA b8524354846a: before any scenario the result section is not drawn, so
+  // its anchor named nothing; the link now leads to step 1, which exists.
+  test('no scenarios yet: Delivery links to the step that writes them, and that step exists', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, account);
+    await openDelivery(page, emptyId);
+    const item = page.locator('[data-still-needed-item="tests"]');
+    await expect(item).toBeVisible();
+    await expect(item.locator('a')).toHaveAttribute('href', `/project/${emptyId}/testing#testing-write`);
+
+    await openTesting(page, emptyId);
+    await expect(page.locator('#testing-write')).toBeVisible();
+    await expect(page.locator('[data-testing-sap-result]')).toHaveCount(0);
   });
 });
