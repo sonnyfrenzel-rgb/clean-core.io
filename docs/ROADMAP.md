@@ -1422,6 +1422,19 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-676 | medium | P3 | with the next rules deploy (Sonny's go) | scheduled |
 | SEC-2026-677 | medium | P2 | owner decision 03.10.2026: no admin ceiling for now | accepted risk |
 | SEC-2026-678 | low | P3 | 3.0.0 re-release audit intake - fixed immediately | fixed |
+| SEC-2026-681 | high | P1 | 3.0.x security hardening - next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-682 | high | P1 | 3.0.x security hardening - app fix now, rules second line with next rules deploy (Sonny's go) | fixed |
+| SEC-2026-683 | low | P3 | 3.0.x security hardening - same fix as SEC-b6716f0-03 | fixed |
+| SEC-2026-684 | high | P1 | 3.0.x CI hardening - needs Sonny's go (workflow change) | scheduled |
+| SEC-2026-695 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
+| SEC-2026-699 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
+| SEC-2026-704 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | scheduled |
+| SEC-2026-705 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | scheduled |
+| SEC-2026-706 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | scheduled |
+| SEC-2026-707 | low | P3 | with the next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-708 | low | P3 | 3.0.x security hardening | scheduled |
+| SEC-2026-709 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
+| SEC-2026-710 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
 
 **Audit of the v3.0.0 re-release (`69b4f52`), 03.10.2026: 2 high, 5 medium, 15 low — all
 111 candidates verified; 1 fixed, 3 scheduled, 1 accepted risk, 17 refuted, the inbox is
