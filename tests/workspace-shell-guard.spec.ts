@@ -647,7 +647,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
 
     // Business folds the seven away; open them, because what this test is about
     // is what they say, not where they are.
-    await page.click('[data-workspace-status-fold] button');
+    await page.click('[data-workspace-status-toggle]');
     await page.waitForSelector('[data-workspace-status-line]');
 
     // No window to race: measuring a colour mid-transition passes or fails by
@@ -692,7 +692,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
 
     // A fold folds back (QA review of 247b20c16e38): the row stays, and the
     // same button closes what it opened.
-    const fold = page.locator('[data-workspace-status-fold] button');
+    const fold = page.locator('[data-workspace-status-toggle]');
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
     await fold.click();
     await expect(page.locator('[data-workspace-status-line]'), 'the project status cannot be folded again').toHaveCount(0);
@@ -712,7 +712,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(page.locator('[data-workspace-status-line]'), 'IT opens with the statuses folded').toHaveCount(0);
     await expect(page.locator('[data-workspace-meta]'), 'IT opens with the meta line behind Details').toHaveCount(0);
     await expect(page.locator('[data-workspace-status-summary-provenance] [data-cc-object-status-label]')).toHaveText('done');
-    await page.click('[data-workspace-status-fold] button');
+    await page.click('[data-workspace-status-toggle]');
     await page.waitForSelector('[data-workspace-status-line]');
     // Seven statuses, seven "Why?" — and each is the status itself, not a "?" beside it.
     await expect(page.locator('[data-workspace-status] [data-cc-why][data-cc-why-form="statement"]')).toHaveCount(7);

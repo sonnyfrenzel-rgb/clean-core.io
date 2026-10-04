@@ -557,7 +557,7 @@ export default function WorkspaceShell({
             </span>
             <span className="cc-no-print ml-auto">
               {/* A fold folds back (QA review of 247b20c16e38). */}
-              <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen}>
+              <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen} data-workspace-status-toggle="">
                 {statusOpen ? wt('page.hideProjectStatus') : wt('page.showProjectStatus')}
                 <ChevronDown size={14} aria-hidden={true} className={statusOpen ? 'rotate-180' : undefined} />
               </CcButton>

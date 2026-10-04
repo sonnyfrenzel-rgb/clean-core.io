@@ -510,7 +510,7 @@ test.describe('the reference cases, opened in the workspace', () => {
       // The status line is one folded row in every view since 04.10.2026
       // (ADR-026 note); one click opens the seven, each its own "Why?".
       await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-      await page.locator('[data-workspace-status-fold] button[aria-expanded="false"]').click({ timeout: 60000 });
+      await page.locator('[data-workspace-status-toggle][aria-expanded="false"]').click({ timeout: 60000 });
       await page.waitForSelector('[data-workspace-status-line]', { timeout: 60000 });
 
       for (const [facet, value] of Object.entries(rc.workspace.statusLine)) {
