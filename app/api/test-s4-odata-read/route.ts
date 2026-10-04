@@ -8,6 +8,7 @@ import {
   readBoundedJson,
   TOKEN_BODY_LIMITS,
   ODATA_BODY_LIMITS,
+  ResponseLimitError,
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
@@ -175,6 +176,9 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
 }
 
 
+/** What one connection-test request may carry (the form, a destination JSON). */
+const REQUEST_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 15_000 };
+
 export async function POST(req: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(req);
@@ -206,7 +210,21 @@ export async function POST(req: NextRequest) {
       throw rateErr;
     }
 
-    const body = await req.json();
+    // Bounded like the routes beside it: the unbounded JSON read buffered any size of body
+    // before a field was looked at (SEC-b6716f0-19). A connection form with a
+    // destination JSON is a few kilobytes.
+    const raw = await readBoundedBody(req, REQUEST_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
+    if (raw === null) {
+      return NextResponse.json({ status: 'failed', message: 'The request is too large.' }, { status: 413 });
+    }
+    let body: any;
+    try {
+      const parsed: unknown = JSON.parse(raw || 'null');
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+      body = parsed;
+    } catch {
+      return NextResponse.json({ status: 'failed', message: 'Expected a JSON object.' }, { status: 400 });
+    }
     const { entitySet } = body;
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
