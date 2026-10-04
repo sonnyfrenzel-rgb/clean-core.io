@@ -8,28 +8,37 @@ import { buildProcessDocument } from '../lib/process-document-build';
 import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import {
   PROCESS_DOCUMENT_SECTIONS,
+  QUESTION_THEMES,
   businessSentences,
   documentTexts,
   isBusinessStatement,
   isTrivialStatement,
-  processDocumentBlocks,
   sentenceKey,
+  sentencesOf,
+  wordCount,
   type ProcessDocument,
 } from '../lib/process-document';
+import { documentOutline, longTables, processDocumentBlocks } from '../lib/process-document-outline';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
 import { escapeHtml } from '../lib/export-safety';
 
 /**
- * The process description of the Documentation stage (owner 03.10.2026:
- * "Nobody can understand that. Endless lists and nothing coherent for
- * successors.") — as data, over the two examples the owner looked at.
+ * The process description of the Documentation stage — as data, over the two
+ * examples the owner looked at.
  *
- * What it holds: the sections in the order of a process description; a
- * business part without "the field … is set to …" and without a sentence
- * twice; every step and every rule on its lines; the technical trace whole,
- * in the appendix; and one builder behind the page, the Confluence page, the
- * Markdown and the Word file.
+ * Owner 03.10.2026: "Nobody can understand that. Endless lists and nothing
+ * coherent for successors." Owner 04.10.2026: "far too long, complex,
+ * linguistically complicated and not enterprise-ready … much smarter-looking,
+ * to the point and more concise."
+ *
+ * What it holds: a one-page summary on top (at most five rules and risks, six
+ * key figures, two or three short sentences); every section opening with one
+ * line of at most twenty words; a body in business words — no program names in
+ * the plain lines — about half as long as before; and nothing lost: every text
+ * the builder wrote stands in the export's body or appendix, the technical
+ * trace whole. One outline behind the page, the Confluence page, the Markdown
+ * and the Word file.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -57,22 +66,61 @@ function documentOf(file: string) {
 }
 
 const htmlOf = async (doc: ProcessDocument) => buildEngineConfluenceHtml(doc, null, { projectName: doc.program }).text();
+const markdownOf = (doc: ProcessDocument) => blocksMarkdown(processDocumentBlocks(doc, { projectName: doc.program }));
+/** The body of the Markdown — everything above the appendix. */
+const bodyOf = (md: string) => md.slice(0, md.indexOf('## Appendix'));
+
+/** A name only the program uses: `BAPI_PO_CREATE1`, `gs_eban-frgkz`, `ZMM_PO_APPR`. */
+const PROGRAM_NAME = /\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|\b[a-z][a-z0-9]*_[a-z0-9_-]+\b|\bZ[A-Z0-9_]{3,}\b/;
 
 for (const [file] of EXAMPLES) {
   test.describe(file, () => {
-    test('the sections stand in the order of a process description, in the export and the Markdown', async () => {
+    test('the summary comes first, then the sections in the order of a process description', async () => {
       const { doc } = documentOf(file);
       const html = await htmlOf(doc);
       const order = [...html.matchAll(/data-doc-section="([a-z]+)"/g)].map((m) => m[1]);
       expect(order).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
-      const md = blocksMarkdown(processDocumentBlocks(doc, { projectName: doc.program }));
+      const md = markdownOf(doc);
       const headings = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-      expect(headings).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.title));
-      // No table before the first section: a pasted page opens with its purpose.
-      expect(html.indexOf('<table')).toBeGreaterThan(html.indexOf('data-doc-section="purpose"'));
-      // The diagram is in the file, not a link to a screen.
+      expect(headings).toEqual(['At a glance', ...PROCESS_DOCUMENT_SECTIONS.map((s) => s.title)]);
+      // The cover and the summary stand before section 1; the diagram after the overview's heading.
+      expect(html.indexOf('data-doc-cover')).toBeLessThan(html.indexOf('data-glance-export'));
+      expect(html.indexOf('data-glance-export')).toBeLessThan(html.indexOf('data-doc-section="purpose"'));
       expect(html).toContain('<svg');
       expect(html.indexOf('<svg')).toBeGreaterThan(html.indexOf('data-doc-section="overview"'));
+    });
+
+    test('at a glance: two or three short sentences, six key figures, at most five rules and risks', () => {
+      const { doc } = documentOf(file);
+      const o = documentOutline(doc);
+      expect(doc.glance.summary.length).toBeGreaterThanOrEqual(1);
+      expect(doc.glance.summary.length).toBeLessThanOrEqual(3);
+      expect(o.glance.figures.map((f) => f.label)).toEqual(['Steps', 'Decision points', 'Business rules', 'Exceptions', 'Integrations', 'Open questions']);
+      expect(doc.glance.points.length).toBeLessThanOrEqual(5);
+      for (const p of doc.glance.points) expect(p.anchors.length, p.text).toBeGreaterThan(0);
+      // Rules before risks; a rule names its id.
+      const kinds = doc.glance.points.map((p) => p.kind);
+      expect([...kinds].sort((a, b) => (a === b ? 0 : a === 'rule' ? -1 : 1))).toEqual(kinds);
+      for (const p of doc.glance.points.filter((x) => x.kind === 'rule')) expect(p.ref).toMatch(/^BR-\d+$/);
+    });
+
+    test('plain language: every summary sentence, lead and step line has at most twenty words and no program names', () => {
+      const { doc } = documentOf(file);
+      const o = documentOutline(doc);
+      const plain = [
+        ...doc.glance.summary.map((s) => s.text.replace(doc.program, 'The program')),
+        doc.glance.trigger.text,
+        ...Object.values(o.leads),
+        ...doc.overview.path.flatMap((e) => (e.kind === 'step' ? [e.line] : [])).filter(Boolean),
+        ...doc.purpose.outOfScope.map((s) => s.text),
+        doc.purpose.users.text,
+      ];
+      const tables = doc.trigger.data.map((d) => d.name);
+      for (const text of plain) {
+        for (const sentence of sentencesOf(text)) expect(wordCount(sentence), sentence).toBeLessThanOrEqual(20);
+        expect(text, 'a program name in a plain line').not.toMatch(PROGRAM_NAME);
+        for (const t of tables) expect(text.split(/[^A-Z0-9_/]+/), `${t} in a plain line: ${text}`).not.toContain(t);
+      }
     });
 
     test('the business part says nothing trivial and nothing twice', () => {
@@ -102,7 +150,7 @@ for (const [file] of EXAMPLES) {
       for (const list of [doc.rules, doc.exceptions, doc.outputs, doc.integrations, doc.controls]) {
         for (const row of list) expect(row.anchors.length, JSON.stringify(row)).toBeGreaterThan(0);
       }
-      for (const s of doc.purpose.summary) expect(s.anchors.length).toBeGreaterThan(0);
+      for (const s of doc.glance.summary) expect(s.anchors.length).toBeGreaterThan(0);
       const lines = doc.lineCount;
       const all = [...steps.flatMap((s) => s.anchors), ...doc.rules.flatMap((r) => r.anchors)];
       for (const a of all) {
@@ -118,13 +166,12 @@ for (const [file] of EXAMPLES) {
       expect(new Set(inAppendix).size).toBe(inAppendix.length);
       expect(new Set(inAppendix)).toEqual(new Set(engine.statements.map((s) => sentenceKey(s.text))));
       expect(doc.appendix.elements.map((e) => e.id)).toEqual(engine.steps.map((s) => s.id));
-      // A shared sentence stands at its first element and the others point there.
       const shown = doc.appendix.elements.filter((e) => e.does).map((e) => sentenceKey(e.does!));
       expect(new Set(shown).size).toBe(shown.length);
       expect(doc.appendix.merged).toBe(engine.statements.length - new Set(engine.statements.map((s) => sentenceKey(s.text))).size);
     });
 
-    test('the page builder, the Confluence page, the Markdown and the Word file say the same', async () => {
+    test('nothing is lost: the Confluence page, the Markdown and the Word file carry every text, in the body or the appendix', async () => {
       const { doc } = documentOf(file);
       const html = await htmlOf(doc);
       const blocks = processDocumentBlocks(doc, { projectName: doc.program });
@@ -136,6 +183,23 @@ for (const [file] of EXAMPLES) {
         const xml = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         expect(word.includes(xml) || word.includes(xml.replace(/"/g, '&quot;')), `the Word file lost: ${text}`).toBe(true);
       }
+      // Every row of a table the body shortens stands whole in the appendix.
+      const appendix = md.slice(md.indexOf('## Appendix'));
+      for (const t of longTables(documentOutline(doc))) {
+        expect(appendix).toContain(`#### ${t.caption} (${t.rows.length})`);
+        for (const r of t.rows) expect(appendix, r.cells.join(' | ')).toContain(`| ${r.cells.map((c) => c.replace(/\|/g, '\\|')).join(' | ')} |`);
+      }
+    });
+
+    test('the Word file maps headings to Word styles, prints real tables and starts the appendix on a new page', () => {
+      const { doc } = documentOf(file);
+      const xml = blocksDocxParts(processDocumentBlocks(doc, { projectName: doc.program }))['word/document.xml'];
+      expect(xml).toContain('<w:pStyle w:val="Title"/>');
+      expect(xml).toContain('<w:pStyle w:val="Heading1"/>');
+      expect((xml.match(/<w:tbl>/g) ?? []).length).toBeGreaterThan(5);
+      const pageBreaks = [...xml.matchAll(/<w:br w:type="page"\/>/g)].map((m) => m.index!);
+      expect(pageBreaks.length).toBe(2);
+      expect(pageBreaks[1]).toBeLessThan(xml.indexOf('Appendix: technical trace'));
     });
 
     test('deterministic: the same source gives the same document', () => {
@@ -148,33 +212,66 @@ for (const [file] of EXAMPLES) {
 }
 
 test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
-  test('purpose, trigger and main path name the business, not the variables', () => {
+  test('the body is about half as long as before, and the summary names the business', () => {
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
-    const purpose = doc.purpose.summary.map((s) => s.text).join(' ');
-    expect(purpose).toContain('purchase requisition (EBAN)');
-    expect(purpose).toContain('creates the purchase order (BAPI_PO_CREATE1)');
+    // Before 04.10.2026 the body (everything above the appendix) was 2,801
+    // words by this count; the owner asked for about half.
+    const body = wordCount(bodyOf(markdownOf(doc)));
+    expect(body, `the body has ${body} words`).toBeLessThanOrEqual(1650);
+    const summary = doc.glance.summary.map((s) => s.text).join(' ');
+    expect(summary).toContain('creates the purchase order');
+    expect(summary).toContain('the purchase requisition');
+    expect(summary).not.toContain('BAPI_PO_CREATE1');
+    // The program's names are kept — in the source column, not in the sentence.
+    expect(doc.glance.summary[0].detail).toContain('BAPI_PO_CREATE1');
+  });
+
+  test('inputs, rules and messages keep their facts', () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
     expect(doc.trigger.selection.map((i) => i.name)).toEqual(['p_banfn', 'p_bnfpo', 'p_file', 'p_test']);
     expect(doc.trigger.selection[0]).toMatchObject({ meaning: 'Purchase requisition number', required: true });
     const steps = doc.overview.path.filter((e) => e.kind === 'step');
     expect(steps.length).toBeGreaterThanOrEqual(5);
     expect(steps.length).toBeLessThanOrEqual(12);
     expect(steps[0].name).toBe('Check authority');
-    // The 50,000 limit is a rule with its line, in words.
     const limit = doc.rules.find((r) => r.ref === 'BR-010')!;
     expect(limit.condition).toContain('50000.00');
     expect(limit.anchors.some((a) => a.lineStart === 422)).toBe(true);
-    // The message the user sees, with its line.
-    expect(doc.exceptions.some((e) => e.message?.includes('Purchase requisition not found'))).toBe(true);
-    // Open questions: the owner is asked once, and only there.
-    expect(doc.questions.filter((q) => /owns this process/.test(q.question))).toHaveLength(1);
+    // The threshold rules lead the summary's points.
+    expect(doc.glance.points.slice(0, 2).map((p) => p.ref)).toEqual(['BR-009', 'BR-010']);
+    const notFound = doc.exceptions.find((e) => e.shown?.includes('Purchase requisition not found'))!;
+    expect(notFound.messageRef).toBe('E001 · ZMM_PO');
+    expect(notFound.message).toContain('Error E001 of class ZMM_PO');
   });
 
-  test('each open question is asked once', () => {
+  test('open questions: one plain line each, numbered Q1…, grouped by theme, what blocks first, near-duplicates asked once', () => {
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
-    const keys = doc.questions.map((q) => sentenceKey(q.question));
-    expect(new Set(keys).size).toBe(keys.length);
-    // The volume question is the non-functional one; the functional duplicate is not asked again.
-    expect(doc.questions.filter((q) => /How many records does one run handle/.test(q.question))).toHaveLength(1);
+    const qs = doc.questions;
+    expect(qs.map((q) => q.number)).toEqual(qs.map((_, i) => i + 1));
+    // No ABAP and no line numbers in a question; the names stand aside.
+    for (const q of qs) {
+      expect(q.question, q.question).not.toMatch(/\b[a-z][a-z0-9]*_[a-z0-9_-]+\b|\bCASE\b|\bat L\d+/);
+      expect(q.question, q.question).not.toMatch(/\bZ[A-Z0-9_]{3,}\b/);
+    }
+    // Themes in their order; within a theme, what blocks the design or the cutover first.
+    const rank = (t: string) => QUESTION_THEMES.findIndex((x) => x.key === t);
+    for (let i = 1; i < qs.length; i += 1) {
+      expect(rank(qs[i].theme)).toBeGreaterThanOrEqual(rank(qs[i - 1].theme));
+      if (qs[i].theme === qs[i - 1].theme && qs[i].blocks) expect(qs[i - 1].blocks, `Q${qs[i].number}`).not.toBeNull();
+    }
+    // The two takeover questions are one, with both tables; the old ids stay in the trace.
+    const takeover = qs.find((q) => q.refs.includes('TBD-02'))!;
+    expect(takeover.refs).toEqual(['TBD-02', 'TBD-03']);
+    expect(takeover.detail).toBe('ZMM_PO_APPR, ZMM_PO_ATTACH');
+    expect(takeover.blocks).toBe('cutover');
+    expect(qs.find((q) => q.refs.includes('C-01'))!.refs).toEqual(['C-01', 'C-02']);
+    // The owner is asked once.
+    expect(qs.filter((q) => /owns this process/.test(q.question))).toHaveLength(1);
+    expect(qs.filter((q) => /How many records/.test(q.question))).toHaveLength(1);
+    // The unreached rule is asked in plain words; its ABAP stands aside.
+    const unreached = qs.find((q) => q.refs.includes('TBC-02'))!;
+    expect(unreached.question).toBe('Is rule BR-007 still needed, although the program never reaches it?');
+    expect(unreached.detail).toContain('knttp');
   });
 });
 
@@ -197,8 +294,8 @@ test.describe('model wording, only as a proposal', () => {
     expect(doc.purpose.proposal!.text).toContain('approves emergency purchase requisitions');
     expect(doc.purpose.proposal!.text).not.toContain('very important');
     expect(doc.purpose.proposal!.anchors).toEqual([{ lineStart: 591, lineEnd: 600 }]);
-    // The engine's purpose stays beside it.
-    expect(doc.purpose.summary.length).toBeGreaterThan(0);
+    // The engine's summary stays beside it.
+    expect(doc.glance.summary.length).toBeGreaterThan(0);
   });
 
   test('a statement proposal stands at its step; one that contradicts the code is left out', () => {

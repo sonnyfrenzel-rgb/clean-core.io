@@ -5,6 +5,7 @@ import { assessCoverage } from '@/lib/abap/coverage';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { anchorNarrative } from '@/lib/abap/narrative-anchors';
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
+import { callWord, plainOf, plainStepLine, readerQuestions, tablesPhrase, tableWord, thirdPerson, type RawQuestion } from '@/lib/process-document-words';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
 import { buildNfrSet, type NfrSet, NFR_OWNER_LABEL } from '@/lib/non-functional-requirements';
@@ -20,6 +21,7 @@ import {
   PROCESS_DOCUMENT_FORMAT,
   PROCESS_DOCUMENT_FORMAT_VERSION,
   PROCESS_DOCUMENT_NOTE,
+  QUESTION_THEMES,
   isBusinessStatement,
   linesLabel,
   sentenceKey,
@@ -32,8 +34,9 @@ import {
   type PdInput,
   type PdIntegration,
   type PdPathEntry,
+  type PdPoint,
   type PdProposal,
-  type PdQuestion,
+  type PdQuestionTheme,
   type PdRule,
   type PdStep,
   type PdSubStep,
@@ -145,6 +148,8 @@ interface CodeMessage {
   line: number;
   type: string;
   id: string | null;
+  /** The message class, when the statement or the REPORT names one. */
+  cls: string | null;
   text: string | null;
   words: string;
 }
@@ -173,17 +178,18 @@ export function readMessages(source: string): CodeMessage[] {
         line: i + 1,
         type,
         id,
+        cls,
         text: shown,
         words: `${MESSAGE_TYPE[type] ?? 'Message'} ${id}${cls ? ` of class ${cls}` : ''}${shown ? `: “${shown}”` : ' (its text is maintained in the message class, not in the code)'}`,
       });
     } else if (literal) {
       const type = literal[2].toUpperCase();
       const shown = literal[1].replace(/''/g, "'").trim();
-      out.push({ line: i + 1, type, id: null, text: shown, words: `${MESSAGE_TYPE[type] ?? 'Message'}: “${shown}”` });
+      out.push({ line: i + 1, type, id: null, cls: null, text: shown, words: `${MESSAGE_TYPE[type] ?? 'Message'}: “${shown}”` });
     } else if (byId) {
       const type = byId[2].toUpperCase();
       const id = `${type}${byId[3]}`;
-      out.push({ line: i + 1, type, id, text: null, words: `${MESSAGE_TYPE[type] ?? 'Message'} ${id} of class ${byId[1].toUpperCase()} (its text is maintained in the message class, not in the code)` });
+      out.push({ line: i + 1, type, id, cls: byId[1].toUpperCase(), text: null, words: `${MESSAGE_TYPE[type] ?? 'Message'} ${id} of class ${byId[1].toUpperCase()} (its text is maintained in the message class, not in the code)` });
     }
   });
   return out;
@@ -194,6 +200,12 @@ function outcomeOfMessage(type: string): string {
   if (type === 'A' || type === 'X') return 'The run terminates.';
   if (type === 'W') return 'A warning is shown; the run continues.';
   return 'A message is shown; the run continues.';
+}
+
+/** `E001 · ZMM_PO` — the message's number and class, for the source column. */
+function messageRefOf(m: CodeMessage): string | null {
+  const parts = [m.id, m.cls].filter((x): x is string => !!x);
+  return parts.length ? parts.join(' · ') : null;
 }
 
 /* --------------------------------------------------------------- routines */
@@ -344,12 +356,11 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       return [...seen.values()];
     };
     const early = ids.map((x) => byId.get(x)).filter((e) => !!e && (e.early || e.tag === 'boundaryEvent')).length;
-    const facts = summaryOf(
-      distinct((s) => s.kind === 'table' && s.use === 'read'),
-      distinct((s) => s.kind === 'table' && s.use === 'write'),
-      distinct((s) => s.kind !== 'table'),
-      early,
-    );
+    const reads = distinct((s) => s.kind === 'table' && s.use === 'read');
+    const writes = distinct((s) => s.kind === 'table' && s.use === 'write');
+    const called = distinct((s) => s.kind !== 'table');
+    const facts = summaryOf(reads, writes, called, early);
+    const line = plainStepLine(reads, writes, called, early);
 
     const does: PdText[] = [];
     for (const x of ids) {
@@ -398,6 +409,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       businessName: cleanName(element.businessName),
       anchors,
       facts,
+      line,
       does,
       proposal,
       subSteps: shown,
@@ -490,11 +502,15 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   };
   const outputs: PdEffect[] = effectReqs.map((r) => {
     const phrase = effectPhrase(r.statement);
+    const engineWords = presentTense(phrase);
+    const objects = r.objects.map((o) => o.name);
+    const plain = plainOf(engineWords, objects);
     return {
       kind: effectKind(phrase),
-      what: presentTense(phrase),
-      objects: r.objects.map((o) => o.name),
+      what: plain.text,
+      objects: [...new Set([...objects, ...plain.names])],
       anchors: distinctAnchors(r.anchors),
+      full: plain.text === engineWords ? null : engineWords,
     };
   });
   const listElements = map.elements.filter((e) => e.technicalName.toUpperCase() === 'WRITE' && e.anchor);
@@ -504,14 +520,16 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       what: 'Writes lines to a list on the screen or in the job output',
       objects: [],
       anchors: distinctAnchors(listElements.slice(0, 6).map((e) => e.anchor)),
+      full: null,
     });
   }
   for (const reg of engine.effects.registrations) {
     outputs.push({
       kind: 'Update task',
-      what: `Registers ${reg.module ?? 'a module named at run time'} for the update task; it runs when the changes are saved.`,
+      what: 'Registers a module for the update task; it runs when the changes are saved.',
       objects: reg.module ? [reg.module] : [],
       anchors: [copy(reg.anchor)],
+      full: `Registers ${reg.module ?? 'a module named at run time'} for the update task; it runs when the changes are saved.`,
     });
   }
 
@@ -535,9 +553,12 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     }
     const effect = effectFor(name);
     const element = elementFor(line, caller);
+    const known = callWord(name);
     const purpose = effect
-      ? presentTense(effectPhrase(effect.statement))
-      : element
+      ? plainOf(presentTense(effectPhrase(effect.statement)), effect.objects.map((o) => o.name)).text
+      : known && element
+        ? `${cap(thirdPerson(known))} in the step ${q(nameOf(element))}.`
+        : element
         ? `Used in the step ${q(nameOf(element))}.`
         : caller
           ? `Called in routine ${caller}.`
@@ -585,18 +606,20 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     const s = r.statement;
     let condition = '';
     let effect = '';
+    let full: string | null = null;
     let m: RegExpExecArray | null;
     if ((m = /^The system shall handle the case where (.+?) separately in (.+?)\.$/.exec(s))) {
       condition = cap(m[1]);
-      effect = `Takes a path of its own in ${m[2]}`;
+      effect = `Handled separately in ${m[2]}`;
     } else if ((m = /^The system shall process only (.+?)\.$/.exec(s))) {
-      condition = 'Always — a constant in the code';
-      effect = `Processes only ${m[1]}; no decision point tests the constant directly`;
+      condition = 'Always (fixed in the code)';
+      effect = `Processes only ${m[1]}`;
+      full = `${s} No decision point tests the constant directly.`;
     } else if ((m = /^The system shall keep the fixed value (.+?) for (.+?)\.$/.exec(s))) {
-      condition = 'Always — a constant in the code';
+      condition = 'Always (fixed in the code)';
       effect = `Keeps the fixed value ${m[1]} for ${m[2]}`;
     } else if ((m = /^The system shall use these fixed values in (.+?): (.+?)\.$/.exec(s))) {
-      condition = 'Always — values written into the code';
+      condition = 'Always (fixed in the code)';
       effect = `Uses ${m[2]} in ${m[1]}`;
     } else if ((m = /^The system shall (.+?) when (.+?)(?:; otherwise it shall (.+?))?\.$/.exec(s))) {
       condition = cap(m[2]);
@@ -610,14 +633,14 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     }
     const ref = r.basis.kind === 'rule' && r.basis.ref ? r.basis.ref : r.basis.kind === 'fixed-values' ? 'Fixed values' : 'Decision point';
     if (r.basis.kind === 'rule' && r.basis.ref) ruleIdsShown.add(r.basis.ref);
-    rules.push({ ref, where: stepLabel(r.stepId), condition, effect, anchors: distinctAnchors(r.anchors) });
+    rules.push({ ref, where: stepLabel(r.stepId), condition, effect, anchors: distinctAnchors(r.anchors), full: full ?? s });
   }
   // A rule the requirements did not word (none today) still gets its row, in the rule set's words.
   for (const rule of ruleSet?.rules ?? []) {
     if (ruleIdsShown.has(rule.id) || rule.withoutProcessElement?.reason === 'unreached') continue;
     const first = rule.sentences[0]?.anchors[0];
     if (!first || !reachedLine(first.lineStart)) continue;
-    rules.push({ ref: rule.id, where: rule.sources[0]?.routine ?? null, condition: rule.label, effect: rule.text, anchors: [copy(first)] });
+    rules.push({ ref: rule.id, where: rule.sources[0]?.routine ?? null, condition: rule.label, effect: rule.text, anchors: [copy(first)], full: null });
   }
 
   /* -------------------------------------------------- 5. exceptions */
@@ -643,6 +666,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       what: e.label,
       where,
       message: near?.words ?? null,
+      shown: near?.text ?? null,
+      messageRef: near ? messageRefOf(near) : null,
       outcome,
       anchors: distinctAnchors([a, near ? anchor(near.line) : null]),
     });
@@ -655,7 +680,9 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
         what: `${entry.label} — ${o.when}`,
         where: 'Main path',
         message: null,
-        outcome: 'The run ends; the steps after this decision point do not run.',
+        shown: null,
+        messageRef: null,
+        outcome: 'The run ends; the later steps do not run.',
         anchors: entry.anchor ? [entry.anchor] : [],
       });
     }
@@ -668,6 +695,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       what: m.text ? cap(m.text.replace(/[:\s]+$/, '')) : `${MESSAGE_TYPE[m.type] ?? 'Message'} ${m.id ?? ''}`.trim(),
       where: element ? nameOf(element) : r?.name ?? null,
       message: m.words,
+      shown: m.text,
+      messageRef: messageRefOf(m),
       outcome: outcomeOfMessage(m.type),
       anchors: [anchor(m.line)],
     });
@@ -686,35 +715,58 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     retry: 'Retry',
     'update-task': 'Update task',
   };
+  // One plain line per kind of control; the engine's sentence, with the
+  // program's names and lines, is kept for the appendix.
+  const CONTROL_WORDS: Record<string, string> = {
+    'authority-check': 'Checks the user’s authorization before it goes on.',
+    'change-document': 'Writes change documents for its changes.',
+    'record-table': 'Keeps a record of each case in a custom table.',
+    'application-log': 'Writes an application log.',
+    'bapi-return': 'Checks the result of the SAP call for errors.',
+    'unit-of-work': 'Saves related changes together, or undoes them together.',
+    retry: 'Tries a failed call again.',
+    'update-task': 'Saves its changes through the update task.',
+  };
+  const namesIn = (text: string) => [...new Set(text.match(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b/g) ?? [])];
   const controls: PdControl[] = [];
   for (const r of nfr?.requirements ?? []) {
     const word = CONTROL_SIGNALS[r.signal];
     if (!word) continue;
-    const text = cap(r.rationale.replace(/^Because\s+/i, '').replace(/^the program\b/i, 'The program'));
-    controls.push({ kind: word, text, ref: r.id, anchors: distinctAnchors(r.anchors) });
+    const full = cap(r.rationale.replace(/^Because\s+/i, '').replace(/^the program\b/i, 'The program'));
+    const names = namesIn(full);
+    controls.push({ kind: word, text: CONTROL_WORDS[r.signal] ?? full, ref: r.id, anchors: distinctAnchors(r.anchors), detail: names.length ? names.join(', ') : null, full });
   }
-  for (const event of engine.effects.events) {
-    if (!reachedLine(event.anchor.lineStart)) continue;
+  // Every save, and every undo, as one row: where they are is in the lines.
+  const reachedEvents = engine.effects.events.filter((event) => reachedLine(event.anchor.lineStart));
+  const saveWords = (event: (typeof reachedEvents)[number]) => (event.kind === 'commit'
+    ? `${event.token} saves every change made so far${event.andWait === null ? '; whether it waits for the update is decided at run time' : event.andWait ? ' and waits for the update' : ' without waiting for the update'}.`
+    : `${event.token} undoes the changes not yet saved.`);
+  for (const kindOf of ['commit', 'rollback'] as const) {
+    const events = reachedEvents.filter((event) => (kindOf === 'commit' ? event.kind === 'commit' : event.kind !== 'commit'));
+    if (!events.length) continue;
+    const n = events.length;
     controls.push({
-      kind: event.kind === 'commit' ? 'Saving changes' : 'Undoing changes',
-      text: event.kind === 'commit'
-        ? `${event.token} saves every change made so far${event.andWait === null ? '; whether it waits for the update is decided at run time' : event.andWait ? ' and waits for the update' : ' without waiting for the update'}.`
-        : `${event.token} undoes the changes not yet saved.`,
+      kind: kindOf === 'commit' ? 'Saving changes' : 'Undoing changes',
+      text: kindOf === 'commit'
+        ? n === 1 ? 'Saves its changes in one place.' : `Saves its changes in ${n} separate places in one run.`
+        : n === 1 ? 'Undoes unsaved changes in one place.' : `Undoes unsaved changes in ${n} places.`,
       ref: null,
-      anchors: [copy(event.anchor)],
+      anchors: distinctAnchors(events.map((event) => event.anchor)),
+      detail: [...new Set(events.map((event) => event.token))].join(', '),
+      full: events.map(saveWords).join(' '),
     });
   }
   controls.sort((x, y) => (x.anchors[0]?.lineStart ?? 0) - (y.anchors[0]?.lineStart ?? 0));
 
   /* -------------------------------------------------- 9. questions */
 
-  const questions: PdQuestion[] = [];
+  const raw: RawQuestion[] = [];
   const asked = new Set<string>();
-  const ask = (qn: PdQuestion) => {
+  const ask = (qn: RawQuestion) => {
     const key = sentenceKey(qn.question);
     if (asked.has(key)) return;
     asked.add(key);
-    questions.push(qn);
+    raw.push(qn);
   };
   const nfrQuestions = nfr?.questions ?? [];
   const nfrHas = (category: string) => nfrQuestions.some((x) => x.category === category);
@@ -731,10 +783,10 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     const entry = gapQuestion[gap.subject];
     if (entry?.skip) continue;
     gapNo += 1;
-    ask({ id: `Q-${String(gapNo).padStart(2, '0')}`, owner: 'Business', question: entry?.question ?? `${gap.subject}: ${NOT_DETERMINED_LABEL}.`, why: gap.reason, anchors: [] });
+    ask({ id: `Q-${String(gapNo).padStart(2, '0')}`, owner: 'Business', question: entry?.question ?? `${gap.subject}: ${NOT_DETERMINED_LABEL}.`, why: gap.reason, anchors: [], origin: { kind: 'gap', subject: gap.subject } });
   }
-  for (const o of frOpen) ask({ id: o.id, owner: 'Business', question: o.question, why: o.why, anchors: distinctAnchors(o.anchors) });
-  for (const x of nfrQuestions) ask({ id: x.id, owner: NFR_OWNER_LABEL[x.owner] as PdQuestion['owner'], question: x.question, why: x.evidence, anchors: distinctAnchors(x.anchors) });
+  for (const o of frOpen) ask({ id: o.id, owner: 'Business', question: o.question, why: o.why, anchors: distinctAnchors(o.anchors), origin: { kind: 'fr', topic: o.topic } });
+  for (const x of nfrQuestions) ask({ id: x.id, owner: NFR_OWNER_LABEL[x.owner] as RawQuestion['owner'], question: x.question, why: x.evidence, anchors: distinctAnchors(x.anchors), origin: { kind: 'nfr', category: x.category } });
   const askedDynamic = (fr?.open ?? []).some((o) => o.topic === 'dynamic-call');
   let covNo = 0;
   for (const gap of coverage) {
@@ -750,12 +802,15 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
         : `What does the dynamic call at ${rangeWords(anchor(gap.line))} reach?`,
       why: gap.why,
       anchors: [anchor(gap.line)],
+      origin: { kind: 'coverage', what: include ? 'include' : 'dynamic' },
     });
   }
+  // Worded for the reader, near-duplicates asked once, grouped and numbered
+  // (owner 04.10.2026: "far too complex, long, not visualised and boring").
+  const questions = readerQuestions(raw, QUESTION_THEMES.map((t) => t.key as PdQuestionTheme));
 
   /* -------------------------------------------------- 1. purpose and scope */
 
-  const readNames = data.slice(0, 3).map((d) => (d.meaning ? `${lc(d.meaning)} (${d.name})` : d.name));
   // The effects that matter most to a business reader, each once: two ways to
   // create the same purchase order are one effect in a purpose sentence.
   const ranked = [...effectReqs].sort((a, b) => effectRank(effectPhrase(a.statement)) - effectRank(effectPhrase(b.statement)));
@@ -767,41 +822,63 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     effectHeads.add(head);
     rankedEffects.push(r);
   }
-  const effectWords = rankedEffects.slice(0, 3).map((r) => lc(presentTense(effectPhrase(r.statement))));
-  const moreEffects = Math.max(0, effectReqs.length - effectWords.length);
   const kindWord = kind === 'report' ? 'report' : kind === 'function' ? 'function module' : kind === 'class' ? 'class' : 'program';
-  const summary: PdText[] = [];
-  summary.push({
-    text: `${program} is a custom ABAP ${kindWord}${inputs.length ? ` that a user starts from a selection screen (${joinAnd(inputs.slice(0, 4).map((i) => lc(i.meaning)))}${inputs.length > 4 ? ` and ${inputs.length - 4} more` : ''})` : ''}.`,
-    anchors: distinctAnchors([anchor(programLine), ...inputs.slice(0, 4).map((i) => i.anchor)]),
+
+  // At a glance: what it does, in two short sentences of business words.
+  const glanceSummary: PdText[] = [];
+  const plainEffects = rankedEffects.slice(0, 3).map((r) => {
+    const objects = r.objects.map((o) => o.name);
+    const plain = plainOf(presentTense(effectPhrase(r.statement)), objects);
+    return { text: lc(plain.text), names: plain.names, anchor: r.anchors[0] };
   });
-  const body: string[] = [];
-  if (readNames.length) body.push(`reads ${joinAnd(readNames)}${data.length > 3 ? ` and ${data.length - 3} more table${data.length - 3 === 1 ? '' : 's'}` : ''}`);
-  body.push(`goes through ${steps.length} step${steps.length === 1 ? '' : 's'}${decisions ? ` with ${decisions} decision point${decisions === 1 ? '' : 's'}` : ''}`);
-  if (effectWords.length) body.push(`and along the way ${joinAnd(effectWords)}${moreEffects ? `; ${moreEffects} further effect${moreEffects === 1 ? ' is' : 's are'} listed under outputs and effects` : ''}`);
-  summary.push({
-    text: `It ${body.length > 2 ? `${body[0]}, ${body[1]} ${body[2]}` : body.join(' ')}.`.replace(/\s+/g, ' '),
-    anchors: distinctAnchors([
-      ...data.slice(0, 3).map((d) => d.anchors[0]),
-      ...rankedEffects.slice(0, 3).flatMap((r) => r.anchors.slice(0, 1)),
-      ...steps.slice(0, 1).flatMap((s) => s.anchors.slice(0, 1)),
-    ]),
-  });
+  if (plainEffects.length) {
+    glanceSummary.push({
+      text: `${program} ${joinAnd(plainEffects.map((e) => e.text))}.`,
+      anchors: distinctAnchors(plainEffects.map((e) => e.anchor)),
+      detail: [...new Set(plainEffects.flatMap((e) => e.names))].join(', ') || null,
+    });
+  } else {
+    glanceSummary.push({
+      text: `${program} is a custom ABAP ${kindWord} that changes no data.`,
+      anchors: [anchor(programLine)],
+    });
+  }
+  if (data.length) {
+    glanceSummary.push({
+      text: `It reads ${tablesPhrase(data.map((d) => d.name))}.`,
+      anchors: distinctAnchors(data.slice(0, 3).map((d) => d.anchors[0])),
+      detail: data.map((d) => d.name).join(', '),
+    });
+  }
+  const glanceTrigger: PdText = {
+    text: kind === 'report'
+      ? inputs.length
+        ? `A user, from a selection screen with ${inputs.length} input${inputs.length === 1 ? '' : 's'}; it may also run as a background job.`
+        : 'A user, without a selection screen; it may also run as a background job.'
+      : kind === 'function'
+        ? 'Another program calls it; the caller is not in this code.'
+        : kind === 'class'
+          ? 'Other programs call its methods; the callers are not in this code.'
+          : 'The code does not show what starts it.',
+    anchors: start[0]?.anchors ?? [anchor(programLine)],
+    detail: inputs.length ? inputs.map((i) => i.name.toUpperCase()).join(', ') : null,
+  };
 
   const authority = calls.authorityChecks.filter((c) => reachedLine(c.lineStart) && c.object);
   const users: PdText = authority.length
     ? {
-        text: `Who runs it is not written in the code. The authorization check${authority.length === 1 ? '' : 's'} on ${joinAnd([...new Set(authority.map((c) => c.object!.toUpperCase()))])} limit${authority.length === 1 ? 's' : ''} who can complete it.`,
+        text: 'An authorization check limits who can complete it.',
         anchors: distinctAnchors(authority.map((c) => anchor(c.lineStart, c.lineEnd))),
+        detail: [...new Set(authority.map((c) => c.object!.toUpperCase()))].join(', '),
       }
     : {
-        text: 'Who runs it is not written in the code, and the code checks no authorization of its own.',
+        text: 'The code checks no authorization of its own.',
         anchors: [anchor(programLine)],
       };
 
   const inScope: PdText[] = [
     {
-      text: `The ${engine.lineCount} lines of ${engine.fileName}, as far as an entry point reaches them: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${rules.length} rule${rules.length === 1 ? '' : 's'} and fixed value${rules.length === 1 ? '' : 's'}.`,
+      text: `The process in ${engine.fileName}: ${steps.length} step${steps.length === 1 ? '' : 's'}, ${decisions} decision point${decisions === 1 ? '' : 's'}, ${rules.length} rule${rules.length === 1 ? '' : 's'}.`,
       anchors: [anchor(1, Math.max(1, engine.lineCount))],
     },
   ];
@@ -809,32 +886,80 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const readOnlyCustom = data.filter((d) => d.owner === 'Customer' && !allSites.some((s) => s.name === d.name && s.use === 'write'));
   outOfScope.push(readOnlyCustom.length
     ? {
-        text: `Customizing and master data the program only reads — ${joinAnd(readOnlyCustom.slice(0, 4).map((d) => d.name))}${readOnlyCustom.length > 4 ? ` and ${readOnlyCustom.length - 4} more` : ''} are maintained outside this code.`,
+        text: `Settings and master data in ${readOnlyCustom.length === 1 ? 'a custom table' : `${readOnlyCustom.length} custom tables`} it only reads.`,
         anchors: distinctAnchors(readOnlyCustom.slice(0, 4).map((d) => d.anchors[0])),
+        detail: readOnlyCustom.map((d) => d.name).join(', '),
       }
-    : { text: 'Customizing and master data: what the tables the program reads contain is maintained outside this code.', anchors: [] });
-  outOfScope.push({ text: 'Jobs, variants and schedules that start the program, and manual steps before and after a run.', anchors: [] });
+    : { text: 'Customizing and master data in the tables it reads.', anchors: [] });
+  outOfScope.push({ text: 'Jobs, variants and schedules that start it, and manual steps around a run.', anchors: [] });
   const sapCalls = integrations.filter((i) => !/^\(/.test(i.name) && !isCustomerObject(i.name));
   if (sapCalls.length) {
     outOfScope.push({
-      text: `What the called SAP functions and transactions do inside SAP — ${joinAnd(sapCalls.slice(0, 4).map((i) => i.name))}${sapCalls.length > 4 ? ` and ${sapCalls.length - 4} more` : ''}.`,
+      text: sapCalls.length === 1 ? 'What the SAP function it calls does inside SAP.' : `What the ${sapCalls.length} SAP functions and transactions it calls do inside SAP.`,
       anchors: distinctAnchors(sapCalls.slice(0, 4).map((i) => i.anchors[0])),
+      detail: sapCalls.map((i) => i.name).join(', '),
     });
   }
   const unreached = skeleton.notDrawn.unreached;
   if (unreached.length) {
     outOfScope.push({
-      text: `${unreached.length} routine${unreached.length === 1 ? '' : 's'} no entry point reaches — ${joinAnd(unreached.slice(0, 3).map((u) => u.name.toUpperCase()))}${unreached.length > 3 ? ` and ${unreached.length - 3} more` : ''}. ${unreached.length === 1 ? 'It stands' : 'They stand'} in the appendix, not in the process.`,
+      text: `${unreached.length === 1 ? 'One routine' : `${unreached.length} routines`} no entry point reaches; the appendix lists ${unreached.length === 1 ? 'it' : 'them'}.`,
       anchors: distinctAnchors(unreached.slice(0, 3).map((u) => anchor(u.lineStart, u.lineEnd))),
+      detail: unreached.map((u) => u.name.toUpperCase()).join(', '),
     });
   }
   const includes = coverage.filter((g) => /Include ([\w/]+) was not uploaded/i.test(g.why));
   if (includes.length) {
     outOfScope.push({
-      text: `Include${includes.length === 1 ? '' : 's'} whose source was not uploaded: ${joinAnd(includes.map((g) => /Include ([\w/]+)/i.exec(g.why)![1].toUpperCase()))}.`,
+      text: `${includes.length === 1 ? 'One include' : `${includes.length} includes`} whose source was not uploaded.`,
       anchors: includes.map((g) => anchor(g.line)),
+      detail: includes.map((g) => /Include ([\w/]+)/i.exec(g.why)![1].toUpperCase()).join(', '),
     });
   }
+
+  // The 3–5 points a reader must know: the weightiest rules (a threshold
+  // first), then what the code shows as a risk — SAP data changed directly,
+  // values fixed in the code, changes saved in several places.
+  const ruleRank = (r: PdRule) => (/\b(?:above|below|at most|at least|more than|less than|over|under)\b/i.test(r.condition) ? 0 : 1);
+  const weighty = rules
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => /^BR-\d+$/.test(r.ref) && !/^Always/.test(r.condition))
+    .sort((x, y) => ruleRank(x.r) - ruleRank(y.r) || x.i - y.i)
+    .slice(0, 3)
+    .map(({ r }): PdPoint => ({ kind: 'rule', ref: r.ref, text: `${r.condition} → ${lc(r.effect)}.`, detail: null, anchors: r.anchors.slice(0, 2) }));
+  const risks: PdPoint[] = [];
+  const sapWrites = allSites.filter((s) => s.kind === 'table' && s.use === 'write' && !isCustomerObject(s.name) && reachedLine(s.line));
+  if (sapWrites.length) {
+    const names = [...new Set(sapWrites.map((s) => s.name))];
+    risks.push({
+      kind: 'risk',
+      ref: null,
+      text: `Changes SAP data directly: ${[...new Set(names.map((n) => tableWord(n) ?? 'an SAP table'))].join(', ')}.`,
+      detail: names.join(', '),
+      anchors: distinctAnchors(sapWrites.slice(0, 3).map((s) => anchor(s.line))),
+    });
+  }
+  const fixedRules = rules.filter((r) => /^Always/.test(r.condition));
+  if (fixedRules.length) {
+    risks.push({
+      kind: 'risk',
+      ref: null,
+      text: `${fixedRules.length === 1 ? 'One value is' : `${fixedRules.length} values are`} fixed in the code, not in customizing.`,
+      detail: [...new Set(fixedRules.map((r) => r.ref))].join(', '),
+      anchors: distinctAnchors(fixedRules.slice(0, 3).flatMap((r) => r.anchors.slice(0, 1))),
+    });
+  }
+  const commits = engine.effects.events.filter((e) => e.kind === 'commit' && reachedLine(e.anchor.lineStart));
+  if (commits.length > 1) {
+    risks.push({
+      kind: 'risk',
+      ref: null,
+      text: `Saves its changes in ${commits.length} separate places; a failure in between leaves part of them saved.`,
+      detail: [...new Set(commits.map((e) => e.token))].join(', '),
+      anchors: distinctAnchors(commits.map((e) => e.anchor)),
+    });
+  }
+  const points: PdPoint[] = [...weighty, ...risks].slice(0, 5);
 
   let purposeProposal: PdProposal | null = null;
   if (input.narrative) {
@@ -875,7 +1000,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     entries: entryLabels.filter((r) => r.anchor).map((r) => ({ label: r.label.toUpperCase(), line: r.anchor!.lineStart })),
   });
 
-  const overviewSentence = `${steps.length} step${steps.length === 1 ? '' : 's'} on the main path${decisions ? `, ${decisions} decision point${decisions === 1 ? '' : 's'} in all` : ''}. Sub-steps are listed under each step; the full map is on the Documentation stage and in the BPMN 2.0 file.`;
+  const endingGates = path.filter((e) => e.kind === 'gate' && e.outcomes.some((o) => o.ends)).length;
+  const overviewSentence = `${steps.length} step${steps.length === 1 ? '' : 's'} on the main path${endingGates ? `; ${endingGates} decision point${endingGates === 1 ? '' : 's'} between them can end the run` : ''}.`;
 
   return {
     format: PROCESS_DOCUMENT_FORMAT,
@@ -885,9 +1011,10 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     lineCount: engine.lineCount,
     sourceSha256: engine.sourceSha256,
     note: PROCESS_DOCUMENT_NOTE,
-    purpose: { summary, users, inScope, outOfScope, proposal: purposeProposal },
+    glance: { summary: glanceSummary, trigger: glanceTrigger, points },
+    purpose: { users, inScope, outOfScope, proposal: purposeProposal },
     trigger: { start, selection: inputs, data },
-    overview: { sentence: overviewSentence, traceability: engine.traceability.sentence, path },
+    overview: { sentence: overviewSentence, traceability: engine.traceability.sentence, path, decisions },
     rules,
     exceptions,
     outputs,
