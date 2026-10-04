@@ -101,6 +101,13 @@ export interface Project {
    * client update allowlist (`lib/sap-test-results.ts`).
    */
   outsideTestResult?: import('./sap-test-results').OutsideTestSummary;
+  /**
+   * What the requirements specification holds (ADR-078): counts, the revision
+   * and the source it was read from. Written only by
+   * `/api/projects/{id}/requirements-spec` with the Admin SDK, beside the
+   * document in `requirements_spec/current`; not in the client allowlist.
+   */
+  requirementsSpec?: import('./requirements-spec').SpecSummary;
   coverageEstimate?: CoverageEstimate;
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;

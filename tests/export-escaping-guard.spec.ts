@@ -8,6 +8,10 @@ import { buildProcessDocument } from '../lib/process-document-build';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
+import { buildRequirementSet } from '../lib/functional-requirements';
+import { buildNfrSet } from '../lib/non-functional-requirements';
+import { buildSpecDraft } from '../lib/requirements-spec';
+import { specConfluenceHtml, specDocxParts } from '../lib/requirements-spec-export';
 
 /**
  * Three stages assemble an HTML document out of values the model wrote from the
@@ -409,4 +413,16 @@ test('the engine documentation export escapes every value it writes, whatever th
   const html = await buildEngineConfluenceHtml(engine, business, { projectName: evil }).text();
   expect(html).not.toContain('<img');
   expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+});
+
+test('the requirements specification escapes every value in its Confluence page and its Word file (ADR-078)', () => {
+  const source = "REPORT z_x.\nIF sy-uname = 'X'.\n  MESSAGE e001(zz).\nENDIF.\n";
+  const spec = buildSpecDraft({ projectName: '<b>p</b>', fr: buildRequirementSet({ source }), nfr: buildNfrSet({ source }) });
+  spec.purpose = '<script>alert(1)</script> [x](javascript:alert(1))';
+  spec.glossary = [{ term: '<img src=x onerror=1>', meaning: '"quoted" & <i>' }];
+  const meta = { date: '2026-10-04', fileName: '<f>.abap', sourceSha256: 'a'.repeat(64), revision: 1, author: '<a@b>', history: [] };
+  const html = specConfluenceHtml(spec, meta);
+  expect(html).not.toMatch(/<script|<img|<b>p|href="javascript/i);
+  const doc = specDocxParts(spec, meta)['word/document.xml'];
+  expect(doc).not.toMatch(/<script|<img|<b>p/);
 });
