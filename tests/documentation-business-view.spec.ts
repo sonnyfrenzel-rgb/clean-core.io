@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
@@ -43,8 +43,9 @@ import {
  *     and gains the glance as tables;
  *   - in a browser: the callouts carry anchors, the RACI matrix is roles ×
  *     steps, the full SOP is one click away, a phone has no sideways scroll,
- *     and without a business layer the first card offers to generate it above
- *     the technical documentation.
+ *     and without a business layer the card that offers it follows the process
+ *     description (owner 04.10.2026: the description leads, ADR-077 amended);
+ *   - an invited reader reads the same order and is offered no generation.
  */
 
 const SOURCE = fixtureSource();
@@ -160,6 +161,20 @@ test.describe('the Confluence export', () => {
   });
 });
 
+/** Description (with its glance) -> business layer -> map -> technical trace, top to bottom. */
+async function expectReadingOrder(page: Page) {
+  const top = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
+  const order = [
+    '[data-stage-output="documentation"]',
+    '[data-business-sop], [data-business-layer-offer]',
+    '[data-handbook-stage]',
+    '[data-doc-section="appendix"]',
+  ];
+  for (let i = 1; i < order.length; i += 1) {
+    expect(await top(order[i - 1]), `${order[i - 1]} does not stand above ${order[i]}`).toBeLessThan(await top(order[i]));
+  }
+}
+
 test.describe('the Documentation stage in a browser', () => {
   const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const EMAIL = `doc-biz-${STAMP}@cleancore-test.io`;
@@ -167,6 +182,7 @@ test.describe('the Documentation stage in a browser', () => {
   const WITH = `doc-biz-${STAMP}`;
   const WITHOUT = `doc-biz-none-${STAMP}`;
   const RUN_ID = `doc-biz-run-${STAMP}`;
+  const READER_EMAIL = `doc-biz-reader-${STAMP}@cleancore-test.io`;
 
   test.beforeAll(async () => {
     test.setTimeout(120 * 1000);
@@ -186,6 +202,15 @@ test.describe('the Documentation stage in a browser', () => {
       sha256: sha256Hex(SOURCE), fileName: FIXTURE_FILE, lineCount: SOURCE.split('\n').length,
       byteSize: SOURCE.length, objectType: 'Report', uploadedAt: new Date().toISOString(),
     };
+    // An invited reader of both projects (the `readers` list an accepted
+    // invitation writes) — the same stage, read only.
+    const readerCred = await createUserWithEmailAndPassword(auth, READER_EMAIL, PASSWORD);
+    const readerUid = readerCred.user.uid;
+    await adminSetDoc('users', readerUid, {
+      firstName: 'Doc', lastName: 'Reader', email: READER_EMAIL,
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
+      transformationsUsed: 0, transformationsLimit: 50, createdAt: new Date(),
+    });
     for (const [id, business] of [[WITH, JSON.stringify(LAYER)], [WITHOUT, '']] as const) {
       await adminSetDoc('projects', id, {
         name: 'Business view fixture', userId: uid, createdAt: new Date(), status: 'documented',
@@ -198,6 +223,7 @@ test.describe('the Documentation stage in a browser', () => {
         businessDocumentation: business,
         activeRunId: RUN_ID,
         inputFingerprint: fingerprint,
+        readers: [readerUid],
       });
       const unsignedRun = {
         runId: RUN_ID, projectId: id, userId: uid,
@@ -223,14 +249,15 @@ test.describe('the Documentation stage in a browser', () => {
       await expect(callout.locator('[data-cc-anchor]').first(), `callout ${i} has no anchor`).toBeVisible();
     }
 
-    // The glance and the SOP come before the map and the technical documentation.
-    const top = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
+    // Owner 04.10.2026 (ADR-077 amended): the page reads like the document —
+    // the process description (the glance its opening), then the SOP, then the
+    // map to explore, then the technical trace.
     const sop = page.locator('[data-business-sop]');
     await expect(sop).toBeVisible();
     await expect(sop.locator('[data-provenance="proposed"]').first()).toBeVisible();
-    expect(await top('[data-business-glance]')).toBeLessThan(await top('[data-business-sop]'));
-    expect(await top('[data-business-sop]')).toBeLessThan(await top('[data-handbook-stage]'));
-    expect(await top('[data-business-sop]')).toBeLessThan(await top('[data-stage-output="documentation"]'));
+    await expect(page.locator('[data-process-document] [data-business-glance="embedded"]')).toBeVisible();
+    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
+    await expectReadingOrder(page);
 
     // The strip: every step, in order, with its anchor and a provenance chip.
     const strip = page.locator('[data-sop-step]');
@@ -270,7 +297,7 @@ test.describe('the Documentation stage in a browser', () => {
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(0);
   });
 
-  test('without a business layer and without a model the first card says why, above the process description', async ({ page }) => {
+  test('without a business layer and without a model the card says why, right after the process description', async ({ page }) => {
     test.setTimeout(300 * 1000);
     // With a model, opening the stage writes the layer itself
     // (tests/documentation-on-open.spec.ts); here none can be called.
@@ -291,10 +318,40 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(offer.getByRole('button', { name: 'Generate the business SOP & RACI' })).toHaveCount(0);
     await expect(page.locator('[data-stage-output="documentation"]')).toBeVisible();
     const y = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
-    // The first card of the stage: above the glance, the map and the technical documentation.
-    expect(await y('[data-business-layer-offer]')).toBeLessThan(await y('[data-business-glance]'));
+    // Right after the process description, above the map (owner 04.10.2026).
+    expect(await y('[data-stage-output="documentation"]')).toBeLessThan(await y('[data-business-layer-offer]'));
     expect(await y('[data-business-layer-offer]')).toBeLessThan(await y('[data-handbook-stage]'));
-    expect(await y('[data-business-layer-offer]')).toBeLessThan(await y('[data-stage-output="documentation"]'));
     await expect(page.getByRole('tab', { name: /Business SOP/ })).toHaveCount(0);
+  });
+
+  test('an invited reader reads the same order, and nothing offers to generate', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    // A model is available: the reader still starts nothing and is offered nothing.
+    await page.route('**/api/model-stages', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community' }),
+    }));
+    let calls = 0;
+    await page.route('**/api/gemini', (route) => { calls += 1; return route.abort(); });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInViaLanding(page, READER_EMAIL, PASSWORD);
+
+    await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 120000 });
+    await expect(page.locator('[data-process-document]')).toBeVisible({ timeout: 120000 });
+    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
+    await expectReadingOrder(page);
+    await expect(page.locator('[data-regenerate-documentation]')).toHaveCount(0);
+    await expect(page.locator('[data-export-process-md]')).toBeVisible();
+
+    await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });
+    const offer = page.locator('[data-business-layer-offer]');
+    await expect(offer).toBeVisible({ timeout: 120000 });
+    await expect(offer.locator('[data-business-layer-reader]')).toBeVisible();
+    await expect(page.locator('[data-generate-business-layer]')).toHaveCount(0);
+    await expect(page.locator('[data-regenerate-documentation]')).toHaveCount(0);
+    await page.waitForTimeout(2000);
+    expect(calls, 'a reader visit called the model').toBe(0);
   });
 });

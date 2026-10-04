@@ -8,6 +8,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { BusinessCallout, CalloutKind, GlanceAnchor, GlanceEvidence, GlanceHeadline } from '@/lib/business-summary';
 import { calloutTitle, calloutWhy, glanceHeadlineSentence, moreEvidence, wt } from '@/lib/workspace-messages';
+import { sectionTitle } from '@/lib/process-document';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,7 +24,13 @@ import { cn } from '@/lib/utils';
  *
  * Every callout carries its evidence — a line, a rule id, a table with its
  * line — and the rules that pick them are in `lib/business-summary.ts`. This
- * file draws; it decides nothing.
+ * file draws; it decides nothing. *
+ * Since 04.10.2026 (owner: the stage leads with the process description,
+ * ADR-077 amended) the glance is the opening of that description, not a band
+ * above it: `questionsHref` embeds it. Embedded, its headings sit one level
+ * down and the not-determined box gives way to one line that points at
+ * section 9 — the description asks every open question there, once
+ * (`DESIGN.md` §2.11, "nothing twice").
  */
 
 export interface BusinessGlanceProps {
@@ -35,6 +42,11 @@ export interface BusinessGlanceProps {
   reading: boolean;
   /** No signed source: nothing could be read or checked. */
   noSource?: boolean;
+  /**
+   * Embedded in the process description: where its open questions stand. The
+   * not-determined points are then counted here and listed there.
+   */
+  questionsHref?: string;
 }
 
 const ICONS: Record<CalloutKind, React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>> = {
@@ -73,7 +85,8 @@ function Evidence({ kind, item }: { kind: CalloutKind; item: GlanceEvidence }) {
   );
 }
 
-function Callout({ callout }: { callout: BusinessCallout }) {
+function Callout({ callout, embedded }: { callout: BusinessCallout; embedded: boolean }) {
+  const Title = embedded ? 'h4' : 'h3';
   const Icon = ICONS[callout.kind];
   const more = callout.count - callout.evidence.length;
   return (
@@ -85,7 +98,7 @@ function Callout({ callout }: { callout: BusinessCallout }) {
       <div className="flex items-start gap-2">
         <Icon size={16} aria-hidden={true} className={cn('mt-0.5 shrink-0', STATE_CLASSES[callout.tone].text)} />
         <div className="min-w-0">
-          <h3 className="m-0 cc-text-h3 text-cc-ink">{calloutTitle(callout)}</h3>
+          <Title className="m-0 cc-text-h3 text-cc-ink">{calloutTitle(callout)}</Title>
           <p className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">{calloutWhy(callout)}</p>
         </div>
       </div>
@@ -99,7 +112,55 @@ function Callout({ callout }: { callout: BusinessCallout }) {
   );
 }
 
-export default function BusinessGlance({ headline, callouts, notDetermined, reading, noSource = false }: BusinessGlanceProps) {
+export default function BusinessGlance({ headline, callouts, notDetermined, reading, noSource = false, questionsHref }: BusinessGlanceProps) {
+  if (questionsHref) {
+    return (
+      <section
+        data-business-glance="embedded"
+        aria-labelledby="business-glance-title"
+        className="min-w-0 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
+      >
+        <p className="m-0 cc-text-label text-cc-ink-muted">{wt('doc.glanceLabel')}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h3 id="business-glance-title" className="m-0 cc-text-h2 text-cc-ink">{wt('doc.glanceTitle')}</h3>
+          <CcProvenanceChip value="reconstructed" />
+        </div>
+        <p data-glance-headline="" className="m-0 mt-2 cc-text-body text-cc-ink">
+          {headline ? glanceHeadlineSentence(headline) : reading ? wt('doc.glanceReading') : wt('doc.glanceNone')}
+        </p>
+        {callouts.length > 0 ? (
+          <ul data-business-callouts="" className="m-0 mt-3 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+            {callouts.map((callout) => (
+              <Callout key={callout.kind} callout={callout} embedded />
+            ))}
+          </ul>
+        ) : null}
+        {headline ? <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.glanceDerived')}</p> : null}
+        {notDetermined && notDetermined.count > 0 ? (
+          <p data-glance-not-determined={String(notDetermined.count)} className="m-0 mt-3 flex flex-wrap items-center gap-2 cc-text-cell text-cc-ink">
+            <CcProvenanceChip value="not-determined" />
+            <span>
+              {calloutTitle(notDetermined)}. {calloutWhy(notDetermined)}{' '}
+              {/* Scrolled to, not navigated to: the stage keeps the map's level
+                  in the address (`#map=`), and a fragment would replace it. */}
+              <a
+                href={questionsHref}
+                onClick={(event) => {
+                  const target = document.getElementById(questionsHref.replace(/^#/, ''));
+                  if (!target) return;
+                  event.preventDefault();
+                  target.scrollIntoView({ block: 'start' });
+                }}
+                className="text-cc-ink underline"
+              >
+                Each is asked in {sectionTitle('questions')}
+              </a>
+            </span>
+          </p>
+        ) : null}
+      </section>
+    );
+  }
   return (
     <section
       data-business-glance=""
@@ -118,7 +179,7 @@ export default function BusinessGlance({ headline, callouts, notDetermined, read
         {callouts.length > 0 ? (
           <ul data-business-callouts="" className="m-0 mt-3 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
             {callouts.map((callout) => (
-              <Callout key={callout.kind} callout={callout} />
+              <Callout key={callout.kind} callout={callout} embedded={false} />
             ))}
           </ul>
         ) : null}
