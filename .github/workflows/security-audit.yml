@@ -61,8 +61,11 @@ jobs:
     needs: scope
     if: needs.scope.outputs.mode == 'full' || needs.scope.outputs.mode == 'self-test'
     runs-on: ubuntu-latest
-    # About fifty small consultant calls, four at a time, then the CISO — roughly half an hour.
-    timeout-minutes: 120
+    # Up to 128 consultant calls of 50,000 characters, three at a time (lib/team.mjs consultantConcurrency), then the
+    # CISO. At the 2.8 minutes per call measured at v3.0.2 that is about two hours of consultants and up to an hour of
+    # CISO verification (25 calls, four at a time), with room for rate-limit waits. 120 minutes until
+    # 04.10.2026, when the batches were halved and the calls doubled (owner's go). GitHub's limit is 360.
+    timeout-minutes: 300
     # The artifact's name travels as an output: "Re-run failed jobs" on delivery
     # raises run_attempt without re-running this job, so a name rebuilt there would
     # point at an artifact that does not exist (finding 566a50b8581a).

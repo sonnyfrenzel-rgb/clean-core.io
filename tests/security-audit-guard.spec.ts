@@ -36,9 +36,10 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(AUDIT.router.maxPrice.output).toBeGreaterThan(0);
     // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches. Owner decision, 01.10.2026:
     // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling; 28 USD since
-    // 04.10.2026 (owner's go) with the consultants' output at 48k. An upper bound;
+    // 04.10.2026 (owner's go) with the consultants' output at 48k; 46 USD the same day ("fair share + 46 USD"),
+    // with 128 calls of half the size. An upper bound;
     // what counts against it is the cost OpenRouter reports.
-    expect(AUDIT.maxCostUsd).toBe(28);
+    expect(AUDIT.maxCostUsd).toBe(46);
     // $0.20 until 01.10.2026; at the Auto Router's price ceiling the self-test's CISO reserve alone is $0.20.
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.35);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
@@ -508,18 +509,27 @@ test.describe('the audit pipeline', () => {
     for (const b of full.batches as { chars: number }[]) expect(b.chars).toBeLessThanOrEqual(800);
 
     // With a call limit, what does not fit is named — never dropped.
-    const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: hugeParts.length + 3, pinned: {} });
+    // Owner decision, 04.10.2026 ("fair share"): the limit is shared out one call
+    // at a time to every consultant that still needs one, no longer spent first
+    // come in declaration order — at v3.0.2 that left ci-cloud-ai with no call.
+    // Needs here: appsec-api 2 + parts, frontend-supply-chain 2, ci-cloud-ai 1.
+    const H = hugeParts.length;
+    const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: H + 3, pinned: {} });
+    expect(plan.shares).toEqual({ 'appsec-api': { need: H + 2, calls: H }, 'identity-crypto': { need: 0, calls: 0 }, 'data-rules': { need: 0, calls: 0 }, 'frontend-supply-chain': { need: 2, calls: 2 }, 'ci-cloud-ai': { need: 1, calls: 1 } });
     const read = plan.batches.flatMap((b: { consultant: string; files: { path: string }[] }) => b.files.map((f) => `${b.consultant}:${f.path}`));
-    // Each small file needs its own call (400 characters plus path and header, 800 per call): the routes, every part of the large file, the component — then the limit.
+    // Each small file needs its own call (400 characters plus path and header, 800 per call). The last consultant
+    // gets its call, and the one that needs most gives up its last two: the final parts of the large file.
     // Exact multiplicity, in order: every small file once, the large file once per part — a file sent twice would pass a set.
-    expect(read).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', ...Array(hugeParts.length).fill('appsec-api:lib/huge.ts'), 'frontend-supply-chain:components/X.tsx']);
-    expect(plan.notRead).toEqual([
-      { path: 'package.json', reason: `outside the ${hugeParts.length + 3}-call limit` },
-      { path: '.github/workflows/x.yml', reason: `outside the ${hugeParts.length + 3}-call limit` },
-    ]);
+    expect(read).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', ...Array(H - 2).fill('appsec-api:lib/huge.ts'), 'frontend-supply-chain:components/X.tsx', 'frontend-supply-chain:package.json', 'ci-cloud-ai:.github/workflows/x.yml']);
+    // Named with the consultant's share, and a file read in part says how much of it was not.
+    expect(plan.notRead).toEqual([{ path: 'lib/huge.ts', reason: `outside the ${H + 3}-call limit (appsec-api: ${H} of ${H + 2} calls) (2 of ${H} parts)` }]);
+    // A limit below the total need still gives every consultant with code a call before any gets a second.
+    const tight = planBatches(files, prepare, { batchChars: 800, maxCalls: 3, pinned: {} });
+    expect(tight.batches.map((b: { consultant: string }) => b.consultant)).toEqual(['appsec-api', 'frontend-supply-chain', 'ci-cloud-ai']);
     // Every in-scope file is accounted for exactly once: read (its parts counted as one file), pattern scan, or named as not read.
     const readFiles = read.map((r: string) => r.split(':')[1]).filter((p: string, i: number, all: string[]) => p !== all[i - 1]);
-    const accounted = [...readFiles, ...plan.patternOnly, ...plan.notRead.map((n: { path: string }) => n.path)];
+    // A file read in part is both read and named; it is accounted for once.
+    const accounted = [...new Set([...readFiles, ...plan.patternOnly, ...plan.notRead.map((n: { path: string }) => n.path)])];
     expect(accounted.sort()).toEqual(files.map((f) => f.path).sort());
     // A single line longer than a call is cut where it must be, not dropped — and a numbered line keeps its number in every piece.
     const { splitText } = await lib('pipeline.mjs');
@@ -532,6 +542,32 @@ test.describe('the audit pipeline', () => {
     expect(oversized.map((p: string, i: number) => (i === 0 ? p : p.replace(/^41[23]\|… /, ''))).join('').startsWith(`412|${'a'.repeat(30)}`)).toBe(true);
     // A self-test reads only its files.
     expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'], pinned: {} }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+  });
+
+  test('the call limit is shared fairly: every consultant with code is read, and none takes more than an equal share it needs', async () => {
+    // Owner decision, 04.10.2026 ("fair share + 46 USD"). Until then the limit was
+    // spent first come in declaration order: the 60 calls of v3.0.2 went to
+    // appsec-api 24, identity-crypto 3, data-rules 6, frontend-supply-chain 27 —
+    // and ci-cloud-ai, last in the list, never read .github/workflows or scripts/**.
+    const { fairShares, planBatches, numbered } = await lib('pipeline.mjs');
+    const { AUDIT, CONSULTANTS } = await lib('team.mjs');
+    expect(fairShares({ a: 51, b: 6, c: 27, d: 271, e: 24 }, 128)).toEqual({ a: 36, b: 6, c: 27, d: 35, e: 24 });
+    expect(fairShares({ a: 5, b: 0, c: 5 }, 3)).toEqual({ a: 2, b: 0, c: 1 });
+    expect(fairShares({ a: 2, b: 1 }, 100)).toEqual({ a: 2, b: 1 });
+    expect(fairShares({ a: 2 }, 0)).toEqual({ a: 0 });
+
+    // On the repository as it is: every consultant gets a call, and the plan stays inside the limit.
+    const { inventory } = await lib('surface.mjs');
+    const prepare = (p: string) => (fs.existsSync(path.resolve(ROOT, p)) ? numbered(fs.readFileSync(path.resolve(ROOT, p), 'utf8')) : '');
+    const plan = planBatches(inventory(), prepare);
+    expect(plan.batches.length).toBeLessThanOrEqual(AUDIT.maxConsultantCalls);
+    for (const consultant of Object.keys(CONSULTANTS)) expect(plan.shares[consultant].calls, `${consultant} gets no call`).toBeGreaterThan(0);
+    // Only a consultant that could not be given all it needs has files outside the limit, and they say whose share it was.
+    for (const n of plan.notRead as { reason: string }[]) {
+      const who = /\(([a-z-]+): (\d+) of (\d+) calls\)/.exec(n.reason);
+      expect(who, n.reason).not.toBeNull();
+      expect(Number(who![2])).toBeLessThan(Number(who![3]));
+    }
   });
 
   test('a pinned reference file is in every call of its consultant, and a failed call cannot take it away', async () => {
@@ -725,13 +761,14 @@ test.describe('the audit pipeline', () => {
     expect(read('scripts/security/lib/pipeline.mjs')).toContain('NOT verified.');
   });
 
-  test('a rate limit on the last call cannot lose the report: both calls wait up to about 12 minutes', async () => {
+  test('a rate limit on the last call cannot lose the report: both calls wait up to about 14 minutes', async () => {
     const { AUDIT } = await lib('team.mjs');
     // The CI self-tests of e3a7853 and 5a284ee lost their report to HTTP 429 on the CISO call after ~100 s of retries.
-    expect(AUDIT.rateLimitRetries).toBe(8);
+    // 8 retries until 04.10.2026; 9 since (owner's go), after four 429s among the consultant calls of v3.0.2.
+    expect(AUDIT.rateLimitRetries).toBe(9);
     const pauses = Array.from({ length: AUDIT.rateLimitRetries }, (_, i) => AUDIT.rateLimitDelayMs(i));
-    expect(pauses).toEqual([15_000, 30_000, 60_000, 120_000, 120_000, 120_000, 120_000, 120_000]);
-    expect(pauses.reduce((a: number, b: number) => a + b, 0)).toBe(705_000);
+    expect(pauses).toEqual([15_000, 30_000, 60_000, 120_000, 120_000, 120_000, 120_000, 120_000, 120_000]);
+    expect(pauses.reduce((a: number, b: number) => a + b, 0)).toBe(825_000);
     const src = read('scripts/security/audit.mjs');
     // All three model calls wait the same way: the two consultants' and the two
     // halves of the CISO's answer.
@@ -1045,11 +1082,17 @@ test.describe('the audit pipeline', () => {
     expect(src.indexOf('AUDIT.minDeepReadRatio')).toBeLessThan(src.indexOf('const plannedCheck'));
   });
 
-  test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', () => {
+  test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', async () => {
     const src = read('scripts/security/audit.mjs');
     expect(src).toMatch(/fits: \(committed, chars\) => committed \+ estimate\(chars, consultantTokens\) \+ cisoReserve <= cap,/);
     expect(src).toMatch(/const run = await runConsultants\(\{/);
-    expect(src).toMatch(/concurrency: SELF_TEST \? 1 : AUDIT\.concurrency,/);
+    // The consultants have their own concurrency since 04.10.2026 (owner's go: fewer at once, fewer 429s); the
+    // CISO's verification keeps `concurrency`.
+    expect(src).toMatch(/const run = await runConsultants\(\{\s+batches: plan\.batches,\s+capUsd: cap,\s+concurrency: SELF_TEST \? 1 : AUDIT\.consultantConcurrency,/);
+    expect(src).toMatch(/const check = await runVerification\(\{\s+batches: sendable,\s+capUsd: cap,\s+concurrency: SELF_TEST \? 1 : AUDIT\.concurrency,/);
+    const { AUDIT } = await lib('team.mjs');
+    expect(AUDIT.consultantConcurrency).toBe(3);
+    expect(AUDIT.consultantConcurrency).toBeLessThan(AUDIT.concurrency);
     expect(src).toMatch(/const costUsd = !run\.failedCalls && !check\.failedCalls && !check\.lostAttempts && !narrativeLost && usages\.every/);
     // Secrets found in the code become findings without their value; a public-by-design key does not.
     expect(src).toMatch(/secretHits\.filter\(\(h\) => h\.path !== 'outgoing message' && !isPublicByDesign\(h\)\)/);
@@ -1258,12 +1301,15 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 
-  test('the budget: 20 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
+  test('the budget: 46 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
     const { AUDIT } = await lib('team.mjs');
     // 5 USD from 24.09.2026; 20 USD since the owner's decision of 01.10.2026, with the Auto Router at `high` and
-    // every estimate at its price ceiling; 28 USD since 04.10.2026 with the consultants' output at 48k — the worst
-    // case below is about $21.6.
-    expect(AUDIT.maxCostUsd).toBe(28);
+    // every estimate at its price ceiling; 28 USD on 04.10.2026 with the consultants' output at 48k; 46 USD the
+    // same day ("fair share + 46 USD"), with calls of 50,000 characters and 128 of them — the worst case below is
+    // about $36.6 against a limit of $36.8.
+    expect(AUDIT.maxCostUsd).toBe(46);
+    expect(AUDIT.batchChars).toBe(50_000);
+    expect(AUDIT.maxConsultantCalls).toBe(128);
     expect(AUDIT.consultantOutputTokens).toBeGreaterThanOrEqual(48_000);
     expect(AUDIT.verificationBatchSize).toBe(20);
     expect(AUDIT.maxVerificationCalls * AUDIT.verificationBatchSize, 'room for v2.18.0 unmerged').toBeGreaterThanOrEqual(194);

@@ -23,11 +23,13 @@ even one candidate got its code, confirmed nothing — and the mail said
 > Auto Router (`openrouter/auto`) at cost tier **`high`**, under a price ceiling of
 > **$1.50 input / $4.50 output per M tokens** (`provider.max_price`, `AUDIT.router` in
 > `scripts/security/lib/team.mjs`). Every reserve and estimate is made at that ceiling;
-> what counts against the cap is the actual `usage.cost`. The cap is now **$28 per
-> release** (was $5, then $20; $28 since 04.10.2026 with the consultants' output doubled
-> to 48,000 tokens after the v3.0.1 audit was cut off twice): at the ceiling the CISO
-> reserve alone is about $5.90 and a whole run at its worst case about $21.60, under 80 %
-> of the cap. The self-test cap is $0.35 (was
+> what counts against the cap is the actual `usage.cost`. The cap is now **$46 per
+> release** (was $5, then $20, then $28 on 04.10.2026 with the consultants' output doubled
+> to 48,000 tokens after the v3.0.1 audit was cut off twice; $46 the same day, owner's
+> decision "fair share + 46 USD", after v3.0.2 failed the read floor again at 84 %):
+> at the ceiling the CISO reserve alone is about $5.95 and a whole run at its worst case
+> about $36.55 (128 consultant calls of 50,000 characters at 48,000 output tokens), under
+> 80 % of the cap ($36.80). The self-test cap is $0.35 (was
 > $0.20, which the self-test's CISO reserve alone now fills); the live self-test of
 > 01.10.2026 made 3 calls, all answered by z-ai/glm-5.3, for $0.0293.
 >
@@ -55,7 +57,8 @@ even one candidate got its code, confirmed nothing — and the mail said
                    │       files with domain, API routes with auth markers, dangerous sinks,
                    │       workflow permissions, Firestore rule blocks, CSP, npm audit
                    │    2. five consultants: every file of their domain in full, with line numbers and
-                   │       redacted, plus their map entries — on 15.09.2026 461 files in 51 calls, four at a time; a large file in parts
+                   │       redacted, plus their map entries — calls of 50,000 characters, at most 128, the limit shared
+                   │       fairly across the five; three at a time; a large file in parts
                    │    3. candidates: consultant findings de-duplicated (file, nearby lines, finding class),
                    │       ordered by severity, named K-001 …
                    │    4. CISO verifies in batches of 20, each candidate with the code at its locations
@@ -159,10 +162,10 @@ DeepSeek V4.1 Flash: **0.22 $ per M input tokens, 0.66 $ per M output tokens**
 
 | Measure | Effect |
 |---|---|
-| **Budget 20 $ per audit (since 01.10.2026; 5 $ from 24.09.2026, previously 3 $) — estimated at the price ceiling, checked before every call against what was actually spent** | a call that by the estimate would break it does not take place; the files of a consultant call are listed as not read in depth, the candidates of a verification call as "not verified" in the report. All 25 verification calls and the narrative are reserved in advance, before a consultant spends anything. Hard limit: the credit limit on the OpenRouter key |
-| Worst case of a full audit | Since 01.10.2026, at the $1.50/$4.50 ceiling: 60 consultant calls ≈ 9.10 $ + 25 verification calls and the narrative ≈ 5.90 $ = **≈ 14.90 $** — the test keeps it under 80 % of the budget. Until then (DeepSeek): ≈ 2.20 $. Expected per release (estimate, not measured): around 1 $, of which about 0.10–0.20 $ for 150–200 candidates in 8–10 verification calls |
+| **Budget 46 $ per audit (since 04.10.2026; 28 $ earlier that day, 20 $ from 01.10.2026, 5 $ from 24.09.2026, previously 3 $) — estimated at the price ceiling, checked before every call against what was actually spent** | a call that by the estimate would break it does not take place; the files of a consultant call are listed as not read in depth, the candidates of a verification call as "not verified" in the report. All 25 verification calls and the narrative are reserved in advance, before a consultant spends anything. Hard limit: the credit limit on the OpenRouter key |
+| Worst case of a full audit | Since 04.10.2026, at the $1.50/$4.50 ceiling: 128 consultant calls of 50,000 characters at 48,000 output tokens ≈ 30.60 $ + 25 verification calls and the narrative ≈ 5.95 $ = **≈ 36.55 $** — the test keeps it under 80 % of the budget (36.80 $). From 01.10.2026: 60 calls of 100,000 characters at 24,000 tokens, ≈ 14.90 $. Until then (DeepSeek): ≈ 2.20 $. Expected per release (estimate, not measured): around 1 $, of which about 0.10–0.20 $ for 150–200 candidates in 8–10 verification calls |
 | Split by domain | every file is read by exactly one consultant or, for test files, checked only via the map |
-| 100,000 characters per consultant call, at most 60 calls, four at a time; a larger file is read in parts | measured on 15.09.2026: a call with 284,000 characters ran 16.6 min and ended without a readable answer, one with 100,000 characters answered in 177 s for 0.007 $. Today 461 files in 51 calls, worst-case estimate 0.94 $, around half an hour. The budget counts every running call at its worst case until it is billed |
+| 50,000 characters per consultant call, at most 128 calls shared fairly across the consultants, three at a time; a larger file is read in parts | measured on 15.09.2026: a call with 284,000 characters ran 16.6 min and ended without a readable answer, one with 100,000 characters answered in 177 s for 0.007 $. 100,000 characters, 60 calls and four at a time until 04.10.2026: the audits of v3.0.1 and v3.0.2 failed the read floor (84 %, 81 %, 84 %), the failed calls mostly cut off at their output limit, some HTTP 429; and the limit, spent first come in declaration order, had left ci-cloud-ai without a single call. Since then (owner's decision "fair share + 46 USD") every consultant that still needs a call gets one in turn (`fairShares` in `lib/pipeline.mjs`), and a file outside the limit is named with its consultant's share. Planned at b56d36e4: identity-crypto 6, data-rules 27, ci-cloud-ai 24 calls (all their files), appsec-api 36 of 51, frontend-supply-chain 35 of 271 (its domain also takes every tests-and-config file) — 318 files. Reading every file of the old plan plus all of ci-cloud-ai would take 168 calls and a cap of 58 $. Around two hours of consultants at the 2.8 minutes per call measured at v3.0.2; the audit job's timeout is 300 minutes. The budget counts every running call at its worst case until it is billed |
 | Audit only on `main` releases | no audit and since 16.09.2026 also no self-test per push to `dev` — security is checked thoroughly at the release, not by sampling at the push |
 | Self-test on two files with 0.20 $ | only by hand now: `SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs` with `OPENROUTER_API_KEY` locally; no workflow triggers it |
 
@@ -240,7 +243,7 @@ Old reports remain readable only with the old key.
 | `audit` red, "HTTP 404 … no provider matches the data policy" | no provider of the model satisfies `data_collection: deny` | check the model's provider list at OpenRouter; change models only as a step of its own |
 | Report names files "outside the … cost cap" or "model call failed" | budget or a single call | the rest of the audit stands; the files are listed under scope and limits |
 | Subject "nicht vollständig geprüft: X von Y Kandidaten verifiziert" ("not fully checked: X of Y candidates verified") | verification calls failed (log: `CISO verification calls failed: <Wort> ×n`), budget exhausted or more than 500 candidates | the verified findings stand; the list "Nicht verifiziert" ("not verified") is open, not empty — check `kritisch`/`hoch` in it by hand at the location (skill `security-audit-intake`). If calls failed, restart the run |
-| "model call failed: OpenRouter answered HTTP 429" or "the audit did not produce a report (CISO call: … HTTP 429)" | the provider's rate limit despite eight retries — with its waiting time (up to 120 s per attempt, i.e. up to 16 minutes) or 15 s, 30 s, 60 s, then 120 s, together around 12 minutes (since 15.09.2026; previously six with around 100 s, on which the self-tests of e3a7853 and 5a284ee failed) | restart the run (`gh run rerun <id>`); if it persists, lower `concurrency` in `team.mjs` as a step of its own. Provider fallback for the same model (`allow_fallbacks`) is deliberately off and may only be changed with Sonny's decision |
+| "model call failed: OpenRouter answered HTTP 429" or "the audit did not produce a report (CISO call: … HTTP 429)" | the provider's rate limit despite nine retries — with its waiting time (up to 120 s per attempt, i.e. up to 18 minutes) or 15 s, 30 s, 60 s, then 120 s, together around 14 minutes (nine since 04.10.2026, eight from 15.09.2026; previously six with around 100 s, on which the self-tests of e3a7853 and 5a284ee failed) | restart the run (`gh run rerun <id>`); if it persists, lower `consultantConcurrency` (consultants) or `concurrency` (CISO verification) in `team.mjs` as a step of its own. Provider fallback for the same model (`allow_fallbacks`) is deliberately off and may only be changed with Sonny's decision |
 | `deliver` red, "Resend rejected … HTTP 4xx" | mail key or sender domain | check the Resend account; the report is kept as an artefact for 90 days |
 | Session start reports "produced no readable report", all three jobs green | until 17.09.2026: two `inbox.mjs --brief` at the same time (a resumed session start launched the hook twice) downloaded into the same directory, and `gh run download` does not overwrite an existing file — the report of e3817ce was readable the whole time. Since the fix every call downloads into its own directory (`fetchSealed` in `lib/envelope.mjs`) | `node scripts/security/inbox.mjs <sha>`; if it opens the report, it was not a fault of the audit |
 | No mail after a `dev` push | the workflow runs only on `main` | expected |
