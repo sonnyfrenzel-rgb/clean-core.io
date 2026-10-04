@@ -218,7 +218,7 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
       </div>
       <h3 id="pd-glance" className="m-0 mt-1 cc-text-h2 text-cc-ink">{doc.program}</h3>
       <p className="m-0 mt-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted">
-        {doc.fileName} · {doc.lineCount} lines · SHA-256 {doc.sourceSha256.slice(0, 12)}…
+        {doc.fileName} · {doc.lineCount} lines
       </p>
       <div data-glance-summary="" className="mt-3 max-w-4xl space-y-1">
         {g.summary.map((s, i) => (
