@@ -15,21 +15,35 @@
  * (`tests/export-escaping-guard.spec.ts` reads this file for that).
  */
 import { escapeHtml } from '@/lib/utils';
-import { EXPORT_STYLE_ELEMENT } from '@/lib/export-style';
+import { EXPORT_COLORS, EXPORT_FONT_MONO, EXPORT_STYLE_ELEMENT } from '@/lib/export-style';
 import { NOT_DETERMINED_LABEL } from '@/lib/process-documentation';
 import {
   EMPTY_SECTION,
   MODEL_PROPOSAL_LABEL,
-  appendixLead,
-  gateLine,
-  groupTitle,
   linesLabel,
   sectionTitle,
-  stepLine,
   type PdText,
   type ProcessDocument,
   type ProcessDocumentSection,
 } from '@/lib/process-document';
+import {
+  COMPLETE_TABLES,
+  SOURCE_COLUMN,
+  appendixLead,
+  longTables,
+  moreRowsLine,
+  documentOutline,
+  gateSentence,
+  groupTitle,
+  questionSourceRows,
+  questionTable,
+  sourceText,
+  stepDetailLines,
+  stepName,
+  wordingRows,
+  type PdSectionKey,
+  type PdTable,
+} from '@/lib/process-document-outline';
 import { processOverviewSvg } from '@/lib/process-overview-svg';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
 import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
@@ -261,14 +275,33 @@ export function confluenceFileName(projectName: string | undefined): string {
 }
 
 /**
- * The Confluence page of the process description (owner 03.10.2026) — the
- * same `ProcessDocument` the stage renders, in the order a successor reads
- * it: purpose and scope, trigger and inputs, the process overview with its
- * diagram, decision points and rules, exceptions, outputs, integrations,
- * controls, open questions — then the business layer when a model wrote one,
- * marked as a proposal, and the technical trace last, as an appendix. No
- * table stands before the first section, and nothing is folded: a pasted
- * page has no disclosure to open.
+ * The few classes of the process description's page on top of the shared
+ * stylesheet: the muted source column, the cover, the figure tiles and the
+ * appendix on a page of its own. Only our class names and the export colours.
+ */
+const PROCESS_DOC_CSS = `<style>
+    .lead { color: ${EXPORT_COLORS.inkMuted}; margin: -4px 0 12px; }
+    td.src { color: ${EXPORT_COLORS.inkMuted}; font-size: 12px; font-family: ${EXPORT_FONT_MONO}; white-space: normal; }
+    table.cover td { border: 0; padding: 2px 16px 2px 0; }
+    table.cover td:first-child { color: ${EXPORT_COLORS.inkMuted}; font-size: 12px; font-weight: 600; width: 140px; }
+    .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 12px 0 16px; }
+    .figure { border: 1px solid ${EXPORT_COLORS.line}; border-radius: 12px; padding: 10px 12px; }
+    .figure .value { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+    .figure .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: ${EXPORT_COLORS.inkMuted}; margin: 0; }
+    .appendix { break-before: page; }
+  </style>`;
+
+/**
+ * The Confluence page of the process description (owner 03.10.2026, tightened
+ * 04.10.2026: "far too long … much smarter-looking, to the point") — the same
+ * outline the stage renders (`lib/process-document-outline.ts`): a cover with
+ * program, source, version, date and status; *At a glance* with what it does,
+ * who starts it, six key figures, the rules and risks to know and the main
+ * path; then sections 1 to 9, each a one-line lead and a compact table whose
+ * last column carries the program's names and lines; then the business layer
+ * when a model wrote one, marked as a proposal; and the appendix last, on a
+ * page of its own in print. Nothing is folded: a pasted page has no disclosure
+ * to open, so what the stage folds stands in the appendix.
  *
  * Every value is the engine's reading of the customer's source or a model's
  * text, and every one goes through `escapeHtml`; the section strings are
@@ -281,82 +314,75 @@ export function buildEngineConfluenceHtml(
 ): Blob {
   const esc = escapeHtml;
   const staleSection = staleNoteHtml(options);
+  const o = documentOutline(document, { projectName: options?.projectName });
   const lines = (anchors: PdText['anchors']) => esc(linesLabel(anchors));
   const para = (t: PdText) => `<p>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</p>`;
   const item = (t: PdText) => `<li>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</li>`;
   const proposal = (text: string, anchors: PdText['anchors'], engineWord: string) =>
     `<p class="card accent-information"><span class="tag tone-information">${esc(MODEL_PROPOSAL_LABEL)}</span> ${esc(text)}${anchors.length ? ` <small>${lines(anchors)}</small>` : ''}<br><small>${esc(engineWord)}</small></p>`;
-  const table = (head: string[], rows: string[][]) =>
+  const table = (head: string[], rows: string[][], muted: number[] = []) =>
     `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
-      .map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`)
+      .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
       .join('')}</tbody></table>`;
+  const tableOf = (t: PdTable | null, whole = false) => (t
+    ? `${table([...t.head, SOURCE_COLUMN], (whole ? t.rows : t.rows.slice(0, t.first)).map((r) => [...r.cells, sourceText(r)]), [t.head.length])}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
+    : '');
   const empty = (key: keyof typeof EMPTY_SECTION) => `<p class="muted">${esc(EMPTY_SECTION[key])}</p>`;
   const h2 = (key: ProcessDocumentSection) => `<h2 data-doc-section="${esc(key)}">${esc(sectionTitle(key))}</h2>`;
+  const lead = (key: PdSectionKey) => `<p class="lead">${esc(o.leads[key])}</p>`;
   const p = document.purpose;
 
-  const headerSection = `<h1>${esc(`Process description — ${options?.projectName || document.program}`)}</h1>
-    <p class="meta">${esc(`${document.fileName} · ${document.lineCount} lines · SHA-256 ${document.sourceSha256.slice(0, 16)}…`)}</p>
-    <p><em>${esc(document.note)}</em></p>`;
+  const docCSS = PROCESS_DOC_CSS;
 
-  const purposeSection = `${h2('purpose')}
-    ${p.summary.map(para).join('')}
-    ${p.proposal ? proposal(p.proposal.text, p.proposal.anchors, 'Worded by the analysis model from the same source; the engine sentences above are the evidence.') : ''}
+  const coverSection = `<div class="header" data-doc-cover="">
+    <h1>${esc(o.title)}</h1>
+    <table class="cover"><tbody>${o.cover.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table>
+    <p class="muted"><span class="tag tone-information">${esc('Reconstructed')}</span> ${esc(o.note)}</p>
+  </div>`;
+
+  const glanceSection = `<h2 data-glance-export="">${esc('At a glance')}</h2>
+    <div class="summary-box">
+      ${o.glance.summary.map(para).join('')}
+      <p><strong>${esc('Started by:')}</strong> ${esc(o.glance.trigger.text)}</p>
+    </div>
+    <div class="figures">${o.glance.figures.map((f) => `<div class="figure"><p class="value">${esc(String(f.value))}</p><p class="label">${esc(f.label)}</p></div>`).join('')}</div>
+    ${o.glance.points.length ? `<h3>${esc('Rules and risks to know')}</h3><ul>${o.glance.points.map((pt) => `<li>${pt.ref ? `<strong>${esc(pt.ref)}</strong> ` : ''}${esc(pt.text)} <small>${esc([pt.detail, linesLabel(pt.anchors)].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>` : ''}
+    <p class="meta">${esc(`Main path: ${o.glance.path}`)}</p>`;
+
+  const purposeSection = `${h2('purpose')}${lead('purpose')}
+    ${p.proposal ? proposal(p.proposal.text, p.proposal.anchors, 'Worded by the analysis model from the same source; the engine reading below is the evidence.') : ''}
     ${para(p.users)}
-    <h3>${esc('In scope')}</h3><ul>${p.inScope.map(item).join('')}</ul>
-    <h3>${esc('Not in scope — not in this code')}</h3><ul>${p.outOfScope.map(item).join('')}</ul>`;
+    ${table(['Scope', 'What', SOURCE_COLUMN], [
+      ...p.inScope.map((s) => ['In scope', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+      ...p.outOfScope.map((s) => ['Outside this code', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+    ], [2])}`;
 
-  const t = document.trigger;
-  const triggerSection = `${h2('trigger')}
-    ${!t.start.length && !t.selection.length ? empty('trigger') : ''}
-    ${t.start.map(para).join('')}
-    ${t.selection.length ? `<h3>${esc('Selection screen')}</h3>${table(['Field', 'Meaning', 'Kind', 'Required', 'Default', 'Line'], t.selection.map((i) => [i.name.toUpperCase(), i.meaning, i.kind, i.required ? 'Yes' : 'No', i.defaultValue ?? '—', linesLabel([i.anchor])]))}` : ''}
-    ${t.data.length ? `<h3>${esc('Data the process reads')}</h3>${table(['Table', 'Business object', 'Owner', 'Lines'], t.data.map((d) => [d.name, d.meaning ?? '—', d.owner, linesLabel(d.anchors)]))}` : ''}`;
+  const triggerSection = `${h2('trigger')}${lead('trigger')}
+    ${o.tables.inputs ? `<h3>${esc(o.tables.inputs.caption)}</h3>${tableOf(o.tables.inputs)}` : ''}
+    ${o.tables.data ? `<h3>${esc(o.tables.data.caption)}</h3>${tableOf(o.tables.data)}` : ''}`;
 
-  const pathRows = document.overview.path.map((entry) => {
-    if (entry.kind === 'gate') return `<p class="note">${esc(gateLine(entry))}</p>`;
-    const subSteps = entry.subSteps
-      .map((s) => `<li>${esc(`${s.depth > 1 ? '– ' : ''}${s.kind}: ${s.label}`)}${s.anchor ? ` <small>${lines([s.anchor])}</small>` : ''}</li>`)
-      .join('');
-    const more = entry.moreSubSteps > 0 ? `<li><em>${esc(`and ${entry.moreSubSteps} more — see the appendix`)}</em></li>` : '';
-    return `<h3 data-doc-step="">${esc(`${entry.number}. ${entry.businessName ?? entry.name}`)}</h3>
-      <p class="meta">${esc(stepLine(entry))}</p>
-      ${entry.facts ? `<p>${esc(entry.facts)}</p>` : ''}
-      ${entry.proposal ? proposal(entry.proposal.text, entry.proposal.anchors, `Engine: ${entry.does.map((d) => d.text).join(' ') || entry.facts || entry.name}`) : ''}
-      ${entry.does.map(para).join('')}
-      ${subSteps || more ? `<ul>${subSteps}${more}</ul>` : ''}`;
-  }).join('\n');
-  const overviewSection = `${h2('overview')}
-    <p>${esc(document.overview.sentence)}</p>
+  const overviewSection = `${h2('overview')}${lead('overview')}
     <div class="card">${processOverviewSvg(document.overview.path, document.program)}</div>
-    <p><small>${esc(document.overview.traceability)}</small></p>
-    ${pathRows}`;
+    ${tableOf(o.tables.steps)}`;
 
-  const rulesSection = `${h2('rules')}${document.rules.length
-    ? table(['Rule', 'Where', 'Condition', 'Effect', 'Lines'], document.rules.map((r) => [r.ref, r.where ?? 'Whole program', r.condition, r.effect, linesLabel(r.anchors)]))
-    : empty('rules')}`;
-  const exceptionsSection = `${h2('exceptions')}${document.exceptions.length
-    ? table(['What happens', 'Where', 'Message the user sees', 'Outcome', 'Lines'], document.exceptions.map((e) => [e.what, e.where ?? '—', e.message ?? 'None at this point', e.outcome, linesLabel(e.anchors)]))
-    : empty('exceptions')}`;
-  const outputsSection = `${h2('outputs')}${document.outputs.length
-    ? table(['Effect', 'What', 'Objects', 'Lines'], document.outputs.map((e) => [e.kind, e.what, e.objects.join(', ') || '—', linesLabel(e.anchors)]))
-    : empty('outputs')}`;
-  const integrationsSection = `${h2('integrations')}${document.integrations.length
-    ? table(['Called', 'Kind', 'Purpose', 'Lines'], document.integrations.map((i) => [i.name, i.kind, i.purpose, linesLabel(i.anchors)]))
-    : empty('integrations')}`;
-  const controlsSection = `${h2('controls')}${document.controls.length
-    ? table(['Control', 'What the code does', 'Ref', 'Lines'], document.controls.map((c) => [c.kind, c.text, c.ref ?? '—', linesLabel(c.anchors)]))
-    : empty('controls')}`;
-  const questionsSection = `${h2('questions')}${document.questions.length
-    ? `<p>${esc('Not determined from the code. Each question is asked once; the lines name what raises it.')}</p>${table(['ID', 'Owner', 'Question', 'Why the code cannot answer it', 'Lines'], document.questions.map((q) => [q.id, q.owner, q.question, q.why, q.anchors.length ? linesLabel(q.anchors) : 'not in the code']))}`
-    : empty('questions')}`;
+  const rulesSection = `${h2('rules')}${lead('rules')}${o.tables.rules ? tableOf(o.tables.rules) : empty('rules')}`;
+  const exceptionsSection = `${h2('exceptions')}${lead('exceptions')}${o.tables.exceptions ? tableOf(o.tables.exceptions) : empty('exceptions')}`;
+  const outputsSection = `${h2('outputs')}${lead('outputs')}${o.tables.outputs ? tableOf(o.tables.outputs) : empty('outputs')}`;
+  const integrationsSection = `${h2('integrations')}${lead('integrations')}${o.tables.integrations ? tableOf(o.tables.integrations) : empty('integrations')}`;
+  const controlsSection = `${h2('controls')}${lead('controls')}${o.tables.controls ? tableOf(o.tables.controls) : empty('controls')}`;
+  const questionsSection = `${h2('questions')}${lead('questions')}${o.questions.groups.length
+    ? o.questions.groups.map((g) => `<h3 data-question-group="${esc(g.theme)}">${esc(`${g.title} (${g.questions.length})`)}</h3>${tableOf(questionTable(g))}`).join('')
+    : ''}`;
 
   // The business layer the stage shows: written by a model from the process,
   // marked as a proposal, escaped like the rest. A field the model left empty
-  // reads "Not determined", never a default (ADR-068).
+  // reads "Not determined", never a default (ADR-068). The matrix is the
+  // normalised one (`lib/business-summary.ts`, `raciMatrix`): a small set of
+  // roles, the rest listed beside it, a step without an Accountable named.
   const nd = NOT_DETERMINED_LABEL;
   const businessSection = parsedBusinessDoc
     ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
-    <p><em>${esc('Written by a language model from the process description above. Not derived from the code, and not verified.')}</em></p>
+    <p><em>${esc('Written by a language model from the process description above. Not derived from the code, and not verified; the roles are a proposal for the business to confirm.')}</em></p>
     ${glanceHtml(undefined, parsedBusinessDoc, options?.processSteps ?? processStepsFromDocument(document))}
     <h3>${esc('RACI assignment')}</h3>
     <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${(parsedBusinessDoc.raci_matrix || [])
@@ -373,22 +399,37 @@ export function buildEngineConfluenceHtml(
     : '';
 
   const a = document.appendix;
-  const appendixSection = `${h2('appendix')}
+  const stepDetailsSection = document.overview.path.map((entry) => entry.kind === 'gate'
+    ? `<p class="note">${esc(gateSentence(entry))}</p>`
+    : `<h4 data-doc-step="">${esc(`${entry.number}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
+  const long = longTables(o);
+  const completeSection = long.length
+    ? `<h3>${esc(COMPLETE_TABLES)}</h3>${long.map((t) => `<h4>${esc(`${t.caption} (${t.rows.length})`)}</h4>${tableOf(t, true)}`).join('')}`
+    : '';
+  const appendixSection = `<div class="appendix">${h2('appendix')}
     <p><em>${esc(appendixLead(a))}</em></p>
-    <h3>${esc('A.1 Process elements')}</h3>
+    <h3>${esc('A.1 Step details')}</h3>
+    ${stepDetailsSection}
+    ${completeSection}
+    <h3>${esc('A.3 Wording as read from the code')}</h3>
+    ${table(['Section', 'Item', 'As read from the code', 'Lines'], wordingRows(document), [3])}
+    ${document.questions.length ? `<h3>${esc('A.4 Sources of the open questions')}</h3>${table(['No.', 'Source ids', 'Why the code cannot answer it', 'As the engine asked'], questionSourceRows(document), [1])}` : ''}
+    <h3>${esc('A.5 Process elements')}</h3>
     <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${a.elements
       .map((e) => `<tr data-trace-element=""><td><code>${esc(e.id)}</code><br>${esc(e.kind)}</td><td>${esc(e.name)}</td><td>${e.does ? esc(e.does) : e.sameAs ? `<small>${esc(`As at ${e.sameAs}`)}</small>` : ''}</td><td>${esc(e.evidence)}</td></tr>`)
       .join('')}</tbody></table>
-    <h3>${esc('A.2 Statements by routine')}</h3>
+    <h3>${esc('A.6 Statements by routine')}</h3>
     ${a.groups.map((g) => `<h4>${esc(groupTitle(g))}</h4><ul>${g.statements.map((s) => `<li data-trace-statement="">${esc(s.text)} <small>${lines(s.anchors)}</small></li>`).join('')}</ul>`).join('')}
-    ${a.luw.length ? `<h3>${esc('A.3 Saving changes')}</h3><ul>${a.luw.map(item).join('')}</ul>` : ''}
-    ${a.lanes.length ? `<h3>${esc('A.4 Lanes the code proves')}</h3><ul>${a.lanes.map(item).join('')}</ul>` : ''}`;
+    ${a.luw.length ? `<h3>${esc('A.7 Saving changes')}</h3><ul>${a.luw.map(item).join('')}</ul>` : ''}
+    ${a.lanes.length ? `<h3>${esc('A.8 Lanes the code proves')}</h3><ul>${a.lanes.map(item).join('')}</ul>` : ''}
+  </div>`;
 
-  // The stylesheet every stage export shares (`lib/export-style.ts`).
+  // The stylesheet every stage export shares (`lib/export-style.ts`), and this page's own few classes.
   const exportCSS = EXPORT_STYLE_ELEMENT;
-  const engineHtml = `<html><head><meta charset="utf-8">${exportCSS}</head><body>
+  const engineHtml = `<html><head><meta charset="utf-8"><title>${esc(o.title)}</title>${exportCSS}${docCSS}</head><body>
     ${staleSection}
-    ${headerSection}
+    ${coverSection}
+    ${glanceSection}
     ${purposeSection}
     ${triggerSection}
     ${overviewSection}
