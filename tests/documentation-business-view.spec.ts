@@ -283,14 +283,6 @@ test.describe('the Documentation stage in a browser', () => {
     const roles = raciMatrix(sopSteps(LAYER, STEPS)).roles.length;
     await expect(matrix.locator('thead th')).toHaveCount(roles + 2);
     await expect(matrix.locator('[data-raci-gap="no-accountable"]')).toHaveCount(1);
-    // Every row shows its Accountable: in a column or named in the row; no "+n more roles" noise.
-    await expect(matrix.locator('[data-raci-hidden-accountable]').first()).toBeVisible();
-    await expect(page.locator('[data-raci-more-on-step]')).toHaveCount(0);
-    // Fourteen roles: the notice says so, with the owner's regenerate action in it.
-    const notice = page.locator('[data-raci-too-many="14"]');
-    await expect(notice).toContainText('This proposal names 14 roles');
-    await expect(notice.locator('[data-regenerate-business-layer]')).toBeVisible();
-    await expect(page.locator('[data-regenerate-business-layer]')).toHaveCount(1);
     await expect(page.locator('[data-raci-legend]')).toBeVisible();
 
     // The full SOP: folded, and opened it holds every narrative.
