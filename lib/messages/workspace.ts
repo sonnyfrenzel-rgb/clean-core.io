@@ -49,6 +49,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
     'Every construct in this source falls inside the detectors that ran. That is the boundary of the question the engine answered — not a clean bill of health.',
   'notDetermined.sourceLine': 'Source line',
   'notDetermined.recordTitle': "Not in this project's record",
+  // NotDeterminedFold — Management (owner, 04.10.2026)
+  'notDetermined.itDetail': "The engine's reason for each line is in the IT view",
   // RevisionStand
   'revision.movedHeadline': 'This process has moved on.',
   'revision.keep': 'Keep this Stand',
@@ -479,4 +481,10 @@ export function newProjectCatalogLine(file: string, entries: string): string {
 /** NewProject — an example's length and size. */
 export function newProjectExampleSize(lines: string, size: string): string {
   return `${lines} lines · ${size}`;
+}
+
+/** "11 places the code alone cannot settle, of 5 kinds" — the folded row of *Not determined* in Management. */
+export function notDeterminedFoldSummary(count: number, kinds: number): string {
+  const places = count === 1 ? '1 place the code alone cannot settle' : `${count} places the code alone cannot settle`;
+  return kinds > 1 ? `${places}, of ${kinds} kinds` : places;
 }
