@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
@@ -48,16 +48,21 @@ export default function RequirementsPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
-  /** Who is signed in — read in the browser only; the server render has no account. */
-  const [account, setAccount] = useState<{ uid: string | null; email: string | null }>({ uid: null, email: null });
+  /**
+   * Who is signed in — from the auth store, so a sign-in change after loading
+   * is followed (QA 9ac48179a33c, d7a17834d658); the server render has none.
+   */
+  const accountEmail = useSyncExternalStore(
+    (listener) => getAuth().onAuthStateChanged(() => listener()),
+    () => getAuth().currentUser?.email ?? null,
+    () => null,
+  );
 
   useEffect(() => {
     (async () => {
       try {
         const data = await loadProjectAndHydrate(id);
         if (!enforceActiveRun(data, id)) return;
-        const user = getAuth().currentUser;
-        setAccount({ uid: user?.uid ?? null, email: user?.email ?? null });
         setProject(data);
       } catch (err) {
         console.error('[Requirements] Project could not be loaded:', err);
@@ -68,7 +73,6 @@ export default function RequirementsPage() {
     })();
   }, [id]);
 
-  // The uid from the auth store, so a sign-in change after loading is followed (QA 9ac48179a33c).
   const signedInUid = useSignedInUid();
   const owner = isProjectOwner(project, signedInUid);
   const designEvidence = useDesignEvidence(id, Boolean(project), 0);
@@ -140,7 +144,7 @@ export default function RequirementsPage() {
           ruleStates={ruleStates}
           proposals={proposals}
           route={route}
-          accountEmail={account.email}
+          accountEmail={accountEmail}
           engineReading={
             <>
               <FunctionalRequirements
