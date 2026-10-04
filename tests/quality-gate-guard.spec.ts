@@ -24,7 +24,7 @@ test('the validate job runs it, after the build and before the tests', () => {
   const validate = wf.slice(wf.indexOf('  validate:'), wf.indexOf('  security:'));
   const build = validate.indexOf('run: npm run build');
   const typecheck = validate.indexOf('run: npm run typecheck');
-  const e2e = validate.indexOf('run: npx playwright test');
+  const e2e = validate.indexOf('npx playwright test --shard=');
   expect(typecheck, 'no typecheck step in the validate job').toBeGreaterThan(-1);
   // A missing build is -1, which is "before" everything (QA full review of
   // fc787674705f, 4a2e26a0fa4a) — and so is a missing test run.
@@ -46,4 +46,21 @@ test('the deploy gate and Security CI block on the same severity', () => {
   expect(read('.github/workflows/deploy.yml')).toContain('npm audit --omit=dev --audit-level=high');
   const auditCi = read('audit-ci.jsonc');
   expect(auditCi).toMatch(/"high":\s*true/);
+});
+
+test('the E2E step runs every shard of the suite, each on fresh emulators, and fails when any shard fails', () => {
+  // 04.10.2026: one emulator for the whole suite collapsed after an hour (abandoned
+  // Firestore channels). Sharding must not drop a test or hide a red shard.
+  const wf = read('.github/workflows/deploy.yml');
+  const validate = wf.slice(wf.indexOf('  validate:'), wf.indexOf('  security:'));
+  const step = validate.slice(validate.indexOf('- name: Run End-to-End Tests'), validate.indexOf('env:', validate.indexOf('- name: Run End-to-End Tests')));
+  const shards = step.match(/for shard in ([\d ]+); do/);
+  expect(shards, 'no shard loop').not.toBeNull();
+  const list = shards![1].trim().split(/\s+/).map(Number);
+  expect(step).toContain(`npx playwright test --shard="$shard/${list.length}"`);
+  expect(list).toEqual(Array.from({ length: list.length }, (_, i) => i + 1));
+  expect(step).toContain('|| status=1');
+  expect(step).toMatch(/exit "\$status"\s*$/);
+  expect(step).toContain('emulators:start --only auth,firestore --project=cleancore-491216');
+  expect(step, 'a skipped or filtered shard').not.toMatch(/--grep|--last-failed|--only-changed|test\.skip/);
 });

@@ -103,7 +103,29 @@ jobs:
         run: npm run typecheck
 
       - name: Run End-to-End Tests
-        run: npx playwright test
+        # Three shards, each on fresh emulators (04.10.2026). The browser
+        # Firestore SDK never closes the channel of a page Playwright closes,
+        # and the emulator never expires one: it keeps the listeners and
+        # queues every later write into them. Over the whole suite that grew
+        # until the emulator answered DEADLINE_EXCEEDED after about an hour
+        # (runs 37152757092, 37162239309). Every test still runs; a failed
+        # shard fails the step once all three have run.
+        run: |
+          status=0
+          for shard in 1 2 3; do
+            if [ "$shard" -gt 1 ]; then
+              pkill -f 'emulators:start' || true
+              pkill -f 'cloud-firestore-emulator' || true
+              for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ > /dev/null || break; sleep 1; done
+              npx firebase emulators:start --only auth,firestore --project=cleancore-491216 > "/tmp/emulators-$shard.log" 2>&1 &
+              for i in $(seq 1 90); do
+                if curl -sf http://127.0.0.1:8080/ > /dev/null && curl -sf http://127.0.0.1:9099/ > /dev/null; then break; fi
+                sleep 2
+              done
+            fi
+            npx playwright test --shard="$shard/3" || status=1
+          done
+          exit "$status"
         env:
           # F-11: server-side test key only — do NOT expose a NEXT_PUBLIC_ (client-bundled) key.
           GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
