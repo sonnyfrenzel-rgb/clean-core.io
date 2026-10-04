@@ -15,6 +15,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.glanceNone': 'The process has not been read from a signed analysis yet.',
   'doc.glanceDerived': 'Counted from the code. Each point names its line or rule.',
   'doc.levelPending': 'level',
+  'doc.directWriteLevels': 'Clean-core level of the SAP data it changes:',
   'doc.notDeterminedNone': 'Nothing the detectors stepped over. That is the limit of what they check, not a clean bill.',
   'doc.notDeterminedReading': 'Checking what the detectors could not judge…',
   'doc.notDeterminedNoSource': 'No signed source here, so nothing was checked.',
@@ -45,11 +46,15 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.raciC': 'Consulted',
   'doc.raciI': 'Informed',
   'doc.raciGapCheck': 'Check',
-  'doc.raciGapNoAccountable': 'No Accountable',
+  'doc.raciGapNoAccountable': 'No Accountable named — to clarify',
   'doc.raciGapSeveralAccountable': 'Several Accountable',
   'doc.raciGapNoResponsible': 'No Responsible',
   'doc.raciOk': 'Complete',
   'doc.raciCaption': 'RACI matrix: process steps by role',
+  'doc.raciMoreRoles': 'More roles the proposal names',
+  'doc.raciKey': 'Role names',
+  'doc.raciProposalNote': 'The roles are a proposal for the business to confirm.',
+  'doc.businessRegenerate': 'Regenerate SOP and RACI',
 
   'doc.businessOfferTitle': 'Business SOP and RACI',
   'doc.businessOfferLead':
@@ -133,7 +138,7 @@ export function raciLetterWord(letter: RaciLetter): string {
 
 export function raciGapWord(gap: RaciStepGap): string {
   return {
-    'no-accountable': 'No Accountable',
+    'no-accountable': 'No Accountable named — to clarify',
     'several-accountable': 'Several Accountable',
     'no-responsible': 'No Responsible',
   }[gap];

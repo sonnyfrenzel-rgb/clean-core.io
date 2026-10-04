@@ -9,6 +9,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcStateText from '@/components/cc/StateText';
 import CcTable from '@/components/cc/Table';
 import {
+  MANY_RACI_ROLES,
   RACI_LETTERS,
   lettersOf,
   raciMatrix,
@@ -120,8 +121,10 @@ function Missing() {
 
 /* ------------------------------------------------------------- the strip */
 
-/** On a phone a list shows its first five and "Show all" (`DESIGN.md` §2.11); from S upwards every step. */
+/** On a phone a list shows its first five and "Show all" (`DESIGN.md` §2.11). */
 const PHONE_ROWS = 5;
+/** From S upwards the strip shows its first row of four and "Show all" (owner 04.10.2026: nothing at full length by default). */
+const STRIP_ROWS = 4;
 
 function SopStrip({ steps }: { steps: SopStep[] }) {
   const [all, setAll] = useState(false);
@@ -137,7 +140,7 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
           className={cn(
             'min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
             step.step ? 'border-cc-line' : 'border-dashed border-cc-field-border',
-            !all && i >= PHONE_ROWS ? 'hidden sm:flex print:flex' : 'flex',
+            all ? 'flex' : i >= STRIP_ROWS ? 'hidden print:flex' : 'flex',
           )}
         >
           <div className="flex min-w-0 items-start gap-2">
@@ -160,10 +163,10 @@ function SopStrip({ steps }: { steps: SopStep[] }) {
         </li>
       ))}
     </ol>
-    {steps.length > PHONE_ROWS + 1 ? (
-      <div className="mt-2 sm:hidden">
-        <CcButton variant="ghost" aria-expanded={all} onClick={() => setAll((v) => !v)}>
-          {all ? showFirstLabel(PHONE_ROWS) : showAllLabel(steps.length)}
+    {steps.length > STRIP_ROWS ? (
+      <div className="mt-2">
+        <CcButton variant="ghost" aria-expanded={all} onClick={() => setAll((v) => !v)} data-sop-strip-all="">
+          {all ? showFirstLabel(STRIP_ROWS) : showAllLabel(steps.length)}
         </CcButton>
       </div>
     ) : null}
@@ -199,7 +202,7 @@ function GapWords({ gaps }: { gaps: Array<Parameters<typeof raciGapWord>[0]> }) 
   );
 }
 
-function RaciSection({ steps }: { steps: SopStep[] }) {
+function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.ReactNode }) {
   const matrix = useMemo(() => raciMatrix(steps), [steps]);
   const overloaded = matrix.roles.filter((r) => r.overloaded);
   const gapLines = raciGapLines(
@@ -214,9 +217,22 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
           {wt('doc.raciTitle')} <CcProvenanceChip value="proposed" />
+          <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.raciProposalNote')}</span>
         </h3>
         <Legend />
       </div>
+      {matrix.totalRoles > MANY_RACI_ROLES ? (
+        <div data-raci-too-many={matrix.totalRoles} className="flex flex-col gap-2 rounded-cc-row border border-cc-warning-border bg-cc-warning-bg p-3">
+          <p className="m-0 flex items-start gap-2 cc-text-cell text-cc-ink">
+            <TriangleAlert size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-warning" />
+            <span>
+              This proposal names {matrix.totalRoles} roles — more than a process of this size needs.
+              {action ? ' Regenerate SOP and RACI for a smaller set.' : ' The owner can regenerate it for a smaller set.'}
+            </span>
+          </p>
+          {action}
+        </div>
+      ) : null}
       {matrix.steps.length === 0 ? (
         <p className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.raciNoRows')}</p>
       ) : (
@@ -239,8 +255,13 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
             <CcTable
               caption={wt('doc.raciCaption')}
               columns={[
-                { key: 'step', label: wt('doc.sopStepColumn'), width: '240px' },
-                ...matrix.roles.map((role) => ({ key: `role-${role.name}`, label: role.name })),
+                { key: 'step', label: wt('doc.sopStepColumn'), width: '220px' },
+                ...matrix.roles.map((role) => ({
+                  key: `role-${role.name}`,
+                  // A long role name is shortened in the head; the key under the
+                  // matrix names it in full — read, not hovered (owner 04.10.2026).
+                  label: role.short === role.name ? role.name : `${role.short}`,
+                })),
                 { key: 'check', label: wt('doc.raciGapCheck') },
               ]}
               rows={matrix.steps.map((step) => ({
@@ -265,11 +286,48 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
                       ];
                     }),
                   ),
-                  check: <GapWords gaps={step.gaps} />,
+                  check: (
+                    <span className="inline-flex flex-col gap-1">
+                      <GapWords gaps={step.gaps} />
+                      {/* An Accountable whose role is not a column is named here — never hidden. */}
+                      {step.hiddenAccountable.length ? (
+                        <span data-raci-hidden-accountable="" className="inline-flex items-center gap-1 cc-text-meta text-cc-ink">
+                          <RaciChip letter="A" /> {step.hiddenAccountable.join(', ')}
+                        </span>
+                      ) : null}
+                    </span>
+                  ),
                 },
               }))}
             />
+            {matrix.roles.some((r) => r.short !== r.name) ? (
+              <p data-raci-key="" className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">
+                <span className="text-cc-ink">{wt('doc.raciKey')}:</span>{' '}
+                {matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ')}
+              </p>
+            ) : null}
           </div>
+          {matrix.moreRoles.length ? (
+            <div data-raci-more-roles={matrix.moreRoles.length}>
+              <CcDisclosure title={wt('doc.raciMoreRoles')} count={matrix.moreRoles.length} density="compact"
+                summary={matrix.moreRoles.slice(0, 3).map((r) => r.name).join(' · ')}>
+                <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                  {matrix.moreRoles.map((role) => (
+                    <li key={role.name} className="min-w-0 cc-text-cell text-cc-ink">
+                      <span className="font-semibold">{role.name}</span>{' '}
+                      <span className="text-cc-ink-muted">
+                        {matrix.steps
+                          .map((s) => ({ s, letters: lettersOf(s, role.name) }))
+                          .filter((x) => x.letters.length)
+                          .map((x) => `${x.letters.join('')} on ${x.s.number}`)
+                          .join(', ')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CcDisclosure>
+            </div>
+          ) : null}
 
           {/* On a phone: one entry per step, the roles under it — no sideways scroll. */}
           <ol data-raci-list="" className="m-0 flex list-none flex-col gap-2 p-0 sm:hidden">
@@ -376,12 +434,17 @@ function FullSop({ steps, layer }: { steps: SopStep[]; layer: StoredBusinessLaye
 export default function BusinessLayer({
   layer,
   process,
+  action,
 }: {
   layer: StoredBusinessLayer;
   /** The steps of the process read from the code, in flow order. */
   process: ProcessStepRef[];
+  /** The owner's "Regenerate SOP and RACI", with its cost line — absent for a reader. */
+  action?: React.ReactNode;
 }) {
   const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
+  // Too many roles: the regenerate action stands in the notice above the matrix, not twice.
+  const tooMany = useMemo(() => raciMatrix(steps).totalRoles > MANY_RACI_ROLES, [steps]);
   return (
     <section
       data-stage-output="businessDocumentation"
@@ -395,8 +458,9 @@ export default function BusinessLayer({
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
       <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">{wt('doc.sopLead')}</p>
+      {action && !tooMany ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
       <SopStrip steps={steps} />
-      <RaciSection steps={steps} />
+      <RaciSection steps={steps} action={tooMany ? action : undefined} />
       <FullSop steps={steps} layer={layer} />
     </section>
   );

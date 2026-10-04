@@ -11,7 +11,7 @@ import { anchorText } from '@/lib/bpmn/layout';
 import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
 import { handbookFromData, type ProcessHandbookData } from '@/lib/process-handbook';
-import BusinessGlance from '@/components/documentation/BusinessGlance';
+import BusinessGlance, { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { wt } from '@/lib/workspace-messages';
@@ -118,13 +118,12 @@ export default function DemoDocumentation({
     );
   }
 
-  const glanceBlock = (embedded: boolean) => glance ? (
+  const glanceBlock = glance ? (
     <BusinessGlance
       headline={glance.headline}
       callouts={glance.callouts}
       notDetermined={glance.notDetermined}
       reading={false}
-      questionsHref={embedded ? '#pd-questions' : undefined}
     />
   ) : null;
 
@@ -138,12 +137,11 @@ export default function DemoDocumentation({
         <section aria-labelledby="demo-process-description" data-demo-process-document="" className="mb-8">
           <h2 id="demo-process-description" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
           <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
-            Written from the code when the stage opens, no model call. Its appendix, the technical trace, stands at the
-            foot of this page; the Confluence page, the Markdown and the Word file carry the same document. The demo exports nothing.
+            Written from the code when the stage opens, no model call. A project exports the same document; its appendix stands at the foot of this page. The demo exports nothing.
           </p>
-          <ProcessDocumentView document={process.document} summary={glanceBlock(true)} />
+          <ProcessDocumentView document={process.document} summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null} />
         </section>
-      ) : glanceBlock(false)}
+      ) : glanceBlock}
 
       {businessLayer ? (
         <section

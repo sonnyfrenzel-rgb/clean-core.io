@@ -194,12 +194,16 @@ function para(content: string, style?: string): string {
   return `<w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ''}${content}</w:p>`;
 }
 
-function docxTable(head: string[], rows: string[][]): string {
-  const cell = (t: string, header: boolean) =>
-    `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${para(run(t, { bold: header }))}</w:tc>`;
+function docxTable(head: string[], rows: string[][], muted: readonly number[] = []): string {
+  const cell = (t: string, header: boolean, grey: boolean) =>
+    `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${para(grey && !header ? mutedRun(t) : run(t, { bold: header }))}</w:tc>`;
+  // A header row of empty cells (a key–value table) is left out.
+  const headRow = head.some((h) => h.trim())
+    ? [`<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${head.map((h, i) => cell(h, true, muted.includes(i))).join('')}</w:tr>`]
+    : [];
   return `<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr>${[
-    `<w:tr><w:trPr><w:tblHeader/></w:trPr>${head.map((h) => cell(h, true)).join('')}</w:tr>`,
-    ...rows.map((r) => `<w:tr>${r.map((c) => cell(c, false)).join('')}</w:tr>`),
+    ...headRow,
+    ...rows.map((r) => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((c, i) => cell(c, false, muted.includes(i))).join('')}</w:tr>`),
   ].join('')}</w:tbl>${para('')}`;
 }
 
@@ -210,6 +214,11 @@ function docxKeyTable(rows: Array<[string, string]>): string {
   return `<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr>${rows
     .map(([k, v]) => `<w:tr>${cell(k, true)}${cell(v, false)}</w:tr>`)
     .join('')}</w:tbl>${para('')}`;
+}
+
+/** Small grey text — the source column of names and lines. */
+function mutedRun(text: string): string {
+  return `<w:r><w:rPr><w:color w:val="4B5563"/><w:sz w:val="17"/></w:rPr><w:t xml:space="preserve">${x(text)}</w:t></w:r>`;
 }
 
 function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string {
@@ -295,7 +304,8 @@ export type DocBlock =
   | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string }
   | { k: 'p'; text: string; strong?: boolean; em?: boolean }
   | { k: 'note'; text: string }
-  | { k: 'table'; head: string[]; rows: string[][] }
+  /** `muted`: columns printed small and grey (a source column of names and lines). */
+  | { k: 'table'; head: string[]; rows: string[][]; muted?: number[] }
   | { k: 'kv'; items: Array<[string, string]> }
   | { k: 'ol'; items: string[] }
   | { k: 'code'; items: Array<{ label: string; quote: string }> }
@@ -305,6 +315,8 @@ export type DocBlock =
   | { k: 'titlepage'; title: string; subtitle: string; rows: Array<[string, string]>; note: string }
   /** A table of contents, written out (no field to update in Word). */
   | { k: 'toc'; items: Array<{ level: 1 | 2; text: string }> }
+  | { k: 'ul'; items: string[] }
+  /** A new page in Word and in print; nothing in Markdown. */
   | { k: 'pagebreak' };
 
 export function blocksMarkdown(blocks: DocBlock[]): string {
@@ -314,7 +326,7 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
     else if (b.k === 'p') out.push(b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text, '');
     else if (b.k === 'note') out.push(`> ${b.text}`, '');
     else if (b.k === 'table') {
-      out.push(`| ${b.head.join(' | ')} |`, `|${b.head.map(() => '---').join('|')}|`);
+      out.push(`| ${b.head.map(mdCell).join(' | ')} |`, `|${b.head.map(() => '---').join('|')}|`);
       for (const r of b.rows) out.push(`| ${r.map(mdCell).join(' | ')} |`);
       out.push('');
     } else if (b.k === 'kv') {
@@ -322,6 +334,9 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
       out.push('');
     } else if (b.k === 'ol') {
       b.items.forEach((t, i) => out.push(`${i + 1}. ${t}`));
+      out.push('');
+    } else if (b.k === 'ul') {
+      b.items.forEach((t) => out.push(`- ${t}`));
       out.push('');
     } else if (b.k === 'code' && b.items.length) {
       out.push('```abap', ...b.items.map((a) => `* ${a.label}\n${a.quote}`), '```', '');
@@ -357,6 +372,7 @@ export function blocksHtml(blocks: DocBlock[]): string {
         .join('')}</tbody></table>`);
     } else if (b.k === 'kv') parts.push(`<ul>${b.items.map(([k, v]) => `<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`);
     else if (b.k === 'ol') parts.push(`<ol>${b.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`);
+    else if (b.k === 'ul') parts.push(`<ul>${b.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`);
     else if (b.k === 'code' && b.items.length) {
       parts.push(`<pre style="font-family:Consolas,monospace;font-size:12px;background:#f8fafc;padding:6px">${b.items.map((a) => `${esc(a.label)}  ${esc(a.quote)}`).join('\n')}</pre>`);
     } else if (b.k === 'rich') parts.push(richHtml(b.text));
@@ -405,9 +421,11 @@ function blocksDocument(blocks: DocBlock[]): string {
     if (block.k === 'h') b.push(para(run(block.text), HEADING_STYLE[block.level]));
     else if (block.k === 'p') b.push(para(run(block.text, { bold: block.strong, italic: block.em })));
     else if (block.k === 'note') b.push(para(run(block.text, { italic: true })));
-    else if (block.k === 'table') b.push(docxTable(block.head, block.rows));
+    else if (block.k === 'table') b.push(docxTable(block.head, block.rows, block.muted));
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
     else if (block.k === 'ol') block.items.forEach((t, i) => b.push(para(run(`${i + 1}. ${t}`))));
+    else if (block.k === 'ul') block.items.forEach((t) => b.push(para(run(`•  ${t}`))));
+    else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
     else if (block.k === 'code') {
       for (const a of block.items) {
         b.push(para(run(`${a.label}  `, { mono: true }) + a.quote.split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + run(l, { mono: true })).join('')));
@@ -421,7 +439,7 @@ function blocksDocument(blocks: DocBlock[]): string {
     } else if (block.k === 'toc') {
       b.push(para(run('Contents'), 'Heading1'));
       for (const item of block.items) b.push(`<w:p><w:pPr><w:ind w:left="${item.level === 2 ? 440 : 0}"/></w:pPr>${run(item.text)}</w:p>`);
-    } else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+    }
   }
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 }

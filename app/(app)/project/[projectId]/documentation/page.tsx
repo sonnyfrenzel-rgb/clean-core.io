@@ -31,7 +31,7 @@ import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import HandbookDrawer from '@/components/documentation/HandbookDrawer';
-import BusinessGlance from '@/components/documentation/BusinessGlance';
+import BusinessGlance, { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import BusinessLayer from '@/components/documentation/BusinessLayer';
 import { useBusinessGlance } from '@/hooks/useBusinessGlance';
 import {
@@ -44,7 +44,8 @@ import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messag
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
 import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
-import { processDocumentBlocks, processDocumentFileName } from '@/lib/process-document';
+import { processDocumentFileName } from '@/lib/process-document';
+import { processDocumentBlocks } from '@/lib/process-document-outline';
 import {
   BUSINESS_LAYER_CEILING_MS,
   businessLayerInFlight,
@@ -367,8 +368,16 @@ export default function DocumentationPage() {
   const [businessElapsed, setBusinessElapsed] = useState(0);
   const [otherTabWriting, setOtherTabWriting] = useState(false);
   const autoBusinessFor = useRef<string | null>(null);
+  /**
+   * The stored layer an owner asked to replace ("Regenerate SOP and RACI",
+   * owner 04.10.2026: "unrealistically many roles"). Set only by that click;
+   * the transaction replaces exactly this layer and keeps any other one.
+   */
+  const replaceLayer = useRef<string | null>(null);
 
   async function runBusinessGeneration(): Promise<void> {
+    const replacing = replaceLayer.current;
+    replaceLayer.current = null;
     if (!project || !projectId) return;
     // Never a silent no-op (owner 03.10.2026): the reason is said where the button is.
     if (!documentation) {
@@ -408,7 +417,9 @@ Based on the following ${stepsDescription}, generate the corresponding Business 
 CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 - Write exclusively in business and process terms. Describe WHAT happens for the business and WHO is responsible — never HOW it is implemented technically.
 - Do NOT mention any technical or IT concept. Forbidden terms: source code, API/OData/CDS/CAP/RAP/SDK, database/table/Z-table, JSON/schema/payload, HANA, deployment/pipeline, HTTP, latency/milliseconds, unit test, retry/rollback. All technical detail already lives in the separate Technical Blueprint and must NOT be repeated here.
-- RACI roles must be ORGANIZATIONAL/BUSINESS roles only (e.g. Process Owner, Master Data Steward, Business Unit Lead, Compliance Officer, Internal Audit, Finance, Supply Chain Manager). Avoid IT roles (Developer, Architect, IT Operations, System).
+- RACI roles: a SMALL, REALISTIC set for this one process — typically 4 to 6 roles, never more than 7 in the whole matrix. Use short, generic role names (e.g. Requester, Buyer, Approver, Purchasing Lead, Process Owner, Finance), not the job titles of a large corporation, and REUSE the same roles across the steps. For a step the program runs on its own, name the business role that is responsible for its outcome.
+- Every step has EXACTLY ONE Accountable ("a") and at least one Responsible ("r"). Consulted ("c") and Informed ("i") only where they matter; leave them empty otherwise. If you cannot tell who is accountable for a step, leave "a" empty rather than guessing.
+- The roles are a proposal the business will confirm; do not invent organisational detail the process does not show. Avoid IT roles (Developer, Architect, System).
 - KPIs must be BUSINESS KPIs (e.g. process cycle time, data accuracy / quality %, first-pass yield, compliance adherence %, exception rate). Never technical metrics (write success rate, response time in ms, schema adherence).
 - Exceptions and controls must be BUSINESS actions (escalation, four-eyes / dual approval, manual review, segregation of duties, periodic control testing, exception-report review) — not technical remediation.
 
@@ -423,10 +434,10 @@ Structure the JSON exactly like this:
   "raci_matrix": [
     {
       "stepId": "Task1",
-      "r": "Responsible business role who performs the step (e.g. Master Data Steward)",
-      "a": "Accountable business role, single owner (e.g. Process Owner)",
-      "c": "Consulted business role (e.g. Compliance Officer, Business Unit Lead)",
-      "i": "Informed business role (e.g. Finance, Internal Audit)"
+      "r": "Responsible role who performs the step (e.g. Buyer)",
+      "a": "Exactly one Accountable role (e.g. Purchasing Lead)",
+      "c": "Consulted role, only where it matters (e.g. Approver), else empty",
+      "i": "Informed role, only where it matters (e.g. Requester), else empty"
     }
   ],
   "sop_details": [
@@ -483,7 +494,9 @@ Structure the JSON exactly like this:
         }
         // Another browser stored a layer for this documentation meanwhile:
         // that one is kept, and shown, instead of being written over.
-        if (typeof current.businessDocumentation === 'string' && current.businessDocumentation.trim()) {
+        // A regeneration replaces the layer it was asked for, and only that one.
+        if (typeof current.businessDocumentation === 'string' && current.businessDocumentation.trim()
+          && (replacing === null || current.businessDocumentation !== replacing)) {
           return { kept: current.businessDocumentation as string, code: (current.generatedCode ?? project.generatedCode) as string };
         }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, BUSINESS_WORKSPACE_FILE, formatBusinessDocsToMarkdown(responseText));
@@ -1221,10 +1234,10 @@ Structure the JSON exactly like this:
     />
   ) : null;
   /**
-   * Owner 04.10.2026 (ADR-077 amended) — the glance opens the description
-   * rather than standing above it: what the process does and where its
-   * problems are, then section 1. Its not-determined points are counted here
-   * and asked once, in section 9.
+   * The glance of ADR-068. A process description opens with its own summary
+   * (owner 04.10.2026, ADR-077 amended twice), so for one the stage adds only
+   * the clean-core levels of the SAP data it changes; the full glance stands
+   * on its own above a legacy blueprint, which has no description.
    */
   const glanceProps = {
     headline: glance.headline,
@@ -1241,7 +1254,7 @@ Structure the JSON exactly like this:
     processDocument.document ? (
       <ProcessDocumentView
         document={processDocument.document}
-        summary={<BusinessGlance {...glanceProps} questionsHref="#pd-questions" />}
+        summary={<DirectWriteLevels callouts={glance.callouts} />}
       />
     ) : processDocument.status === 'failed' ? (
       <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace at the foot of this page is complete.</CcMessageStrip>
@@ -1453,7 +1466,33 @@ Structure the JSON exactly like this:
       <div className="mt-3"><CcSkeleton shape="table" label="the business layer" count={3} /></div>
     </section>
   ) : parsedBusinessDoc ? (
-    <BusinessLayer layer={parsedBusinessDoc} process={processSteps} />
+    <BusinessLayer
+      layer={parsedBusinessDoc}
+      process={processSteps}
+      action={isOwner && modelAvailability.enabled('documentation') ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <CcButton
+              variant="secondary"
+              density="cozy"
+              onClick={() => {
+                replaceLayer.current = businessDocumentation;
+                void generateBusinessDocumentation();
+              }}
+              disabled={businessBlockers.length > 0 || isGeneratingDoc}
+              icon={<RefreshCw size={16} aria-hidden={true} />}
+              data-regenerate-business-layer=""
+            >
+              {wt('doc.businessRegenerate')}
+            </CcButton>
+            <span className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
+          </div>
+          {businessDocError ? (
+            <CcMessageStrip state="error" headline="The business layer was not generated again.">{businessDocError}</CcMessageStrip>
+          ) : null}
+        </div>
+      ) : undefined}
+    />
   ) : (
     <section
       data-business-layer-offer=""
@@ -1628,8 +1667,7 @@ Structure the JSON exactly like this:
           <div className="min-w-0 max-w-3xl">
             <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
             <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              Written from the code when the stage opens, no model call. Its appendix, the technical trace, stands at the
-              foot of this page; the Confluence page, the Markdown and the Word file carry the same document.
+              Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
             </p>
           </div>
           {hasDocument ? (

@@ -367,14 +367,26 @@ export type RaciStepGap = 'no-accountable' | 'several-accountable' | 'no-respons
 
 export interface RaciRole {
   name: string;
+  /** A short form for a narrow column head ("PCC"); the full name is always shown beside the matrix. */
+  short: string;
   counts: Record<RaciLetter, number>;
   /** Responsible on more than half the steps, and on at least three. */
   overloaded: boolean;
 }
 
 export interface RaciMatrix {
+  /** The roles drawn as columns — at most `MAX_RACI_COLUMNS`, the ones that carry most. */
   roles: RaciRole[];
-  steps: Array<SopStep & { gaps: RaciStepGap[] }>;
+  /** Roles the model named beyond those — listed under the matrix with their letters, never dropped. */
+  moreRoles: RaciRole[];
+  steps: Array<SopStep & {
+    gaps: RaciStepGap[];
+    more: Array<{ role: string; letters: RaciLetter[] }>;
+    /** The step's Accountable when its role is not a column — said in the row, never hidden. */
+    hiddenAccountable: string[];
+  }>;
+  /** Every role the proposal names; above `MANY_RACI_ROLES` the stage says the proposal is too large. */
+  totalRoles: number;
   /** Steps with at least one gap. */
   gapCount: number;
 }
@@ -383,37 +395,100 @@ export interface RaciMatrix {
 export const OVERLOAD_MIN_STEPS = 3;
 
 /**
- * Roles × steps. Only steps the layer has a RACI row for take part; a role is
- * every name the rows use, in the order of how much it carries (R, then A).
+ * The columns a matrix draws (owner 04.10.2026: "unrealistically many roles in
+ * the RACI" — fourteen job titles, and the table scrolled sideways at 1440 px).
+ * A realistic process has four to six roles; six columns plus the step and the
+ * check fit a desktop without scrolling. The model is asked for a small set
+ * (the prompt in the Documentation page), and this guard holds for any answer,
+ * old or new: the six roles that carry most become columns, the others are
+ * listed under the matrix with their letters per step. Nothing is merged and
+ * nothing is invented.
+ */
+export const MAX_RACI_COLUMNS = 6;
+
+/** More roles than this, and the stage says the proposal is larger than a process of this size needs. */
+export const MANY_RACI_ROLES = 7;
+
+/** A head longer than this is shortened to its initials; the full name stands in the key under the matrix. */
+const SHORT_HEAD = 16;
+
+function shortName(name: string, taken: Set<string>): string {
+  if (name.length <= SHORT_HEAD) return name;
+  const words = name.replace(/\([^)]*\)/g, ' ').split(/[\s/&-]+/).filter((w) => /^[A-Za-z]/.test(w) && !/^(of|and|the|for)$/i.test(w));
+  let short = words.map((w) => w[0].toUpperCase()).join('') || name.slice(0, 3).toUpperCase();
+  let n = 2;
+  while (taken.has(short)) short = `${short}${n++}`;
+  taken.add(short);
+  return short;
+}
+
+/**
+ * Roles × steps. Only steps the layer has a RACI row for take part. The roles
+ * are every name the rows use (a name in any case is one role), ranked by what
+ * they carry — Accountable and Responsible first, then Consulted and Informed,
+ * then the order they first appear — so the same layer gives the same matrix.
+ * The gaps are read over every role, drawn or listed: a step without an
+ * Accountable says so ("No Accountable named — to clarify"), and none is made
+ * up for it.
  */
 export function raciMatrix(steps: SopStep[]): RaciMatrix {
   const withRaci = steps.filter((s) => s.hasRaci);
-  const roles = new Map<string, RaciRole>();
+  const roles = new Map<string, RaciRole & { first: number }>();
+  let seen = 0;
   for (const step of withRaci) {
     for (const letter of RACI_LETTERS) {
       for (const name of step.roles[letter]) {
         const key = name.toLowerCase();
-        const role = roles.get(key) ?? { name, counts: { R: 0, A: 0, C: 0, I: 0 }, overloaded: false };
+        const role = roles.get(key) ?? { name, short: name, counts: { R: 0, A: 0, C: 0, I: 0 }, overloaded: false, first: seen++ };
         role.counts[letter] += 1;
         roles.set(key, role);
       }
     }
   }
   const half = withRaci.length / 2;
-  const list = [...roles.values()].map((role) => ({
-    ...role,
-    overloaded: role.counts.R >= OVERLOAD_MIN_STEPS && role.counts.R > half,
-  }));
-  list.sort((a, b) => b.counts.R - a.counts.R || b.counts.A - a.counts.A || a.name.localeCompare(b.name, 'en'));
+  const weight = (r: RaciRole) => r.counts.A + r.counts.R;
+  const ranked = [...roles.values()]
+    .map((role) => ({ ...role, overloaded: role.counts.R >= OVERLOAD_MIN_STEPS && role.counts.R > half }))
+    .sort((a, b) => weight(b) - weight(a) || (b.counts.C + b.counts.I) - (a.counts.C + a.counts.I) || a.first - b.first);
+  const taken = new Set<string>();
+  const list: RaciRole[] = ranked.map((role) => ({ name: role.name, counts: role.counts, overloaded: role.overloaded, short: shortName(role.name, taken) }));
+  // The columns: first the Accountables, chosen so that as many steps as
+  // possible show theirs (greedy cover — the role that covers most uncovered
+  // steps first); then the roles that carry most fill the rest.
+  const key = (n: string) => n.toLowerCase();
+  const chosen: RaciRole[] = [];
+  const uncovered = new Set(withRaci.filter((st) => st.roles.A.length > 0).map((st) => st.stepId));
+  while (chosen.length < MAX_RACI_COLUMNS && uncovered.size > 0) {
+    let best: RaciRole | null = null;
+    let bestCount = 0;
+    for (const role of list) {
+      if (chosen.includes(role)) continue;
+      const count = withRaci.filter((st) => uncovered.has(st.stepId) && st.roles.A.some((a) => key(a) === key(role.name))).length;
+      if (count > bestCount) { best = role; bestCount = count; }
+    }
+    if (!best) break;
+    chosen.push(best);
+    for (const st of withRaci) if (st.roles.A.some((a) => key(a) === key(best!.name))) uncovered.delete(st.stepId);
+  }
+  for (const role of list) {
+    if (chosen.length >= MAX_RACI_COLUMNS) break;
+    if (!chosen.includes(role)) chosen.push(role);
+  }
+  const shown = list.filter((r) => chosen.includes(r));
+  const moreRoles = list.filter((r) => !chosen.includes(r));
 
   const rowsOut = withRaci.map((step) => {
     const gaps: RaciStepGap[] = [];
     if (step.roles.A.length === 0) gaps.push('no-accountable');
     if (step.roles.A.length > 1) gaps.push('several-accountable');
     if (step.roles.R.length === 0) gaps.push('no-responsible');
-    return { ...step, gaps };
+    const more = moreRoles
+      .map((role) => ({ role: role.name, letters: lettersOf(step, role.name) }))
+      .filter((m) => m.letters.length > 0);
+    const hiddenAccountable = step.roles.A.filter((a) => !shown.some((r) => key(r.name) === key(a)));
+    return { ...step, gaps, more, hiddenAccountable };
   });
-  return { roles: list, steps: rowsOut, gapCount: rowsOut.filter((s) => s.gaps.length > 0).length };
+  return { roles: shown, moreRoles, steps: rowsOut, gapCount: rowsOut.filter((s) => s.gaps.length > 0).length, totalRoles: list.length };
 }
 
 /** The letters one role holds on one step, in R-A-C-I order. */

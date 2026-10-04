@@ -73,13 +73,13 @@ test('the engine documentation export escapes every value it prints', () => {
   const src = read(DOCS_EXPORT);
   expect(src).toContain('const engineHtml = `');
   const fn = src.slice(src.indexOf('export function buildEngineConfluenceHtml'), src.indexOf('new Blob([engineHtml]'));
-  const helpers = /^(esc|lines|para|item|table|empty|h2|proposal|processOverviewSvg|glanceHtml)\(/;
+  const helpers = /^(esc|lines|para|item|table|tableOf|lead|empty|h2|proposal|processOverviewSvg|glanceHtml)\(/;
   const assembled = /^(pathRows|subSteps|more|exportCSS|[A-Za-z]+Section)$/;
   const left = modelValues(fn, 'export function buildEngineConfluenceHtml', 'new Blob([engineHtml]')
     .filter((e) => !helpers.test(e) && !assembled.test(e));
   expect(left, `unescaped in the engine documentation export: ${left.join(', ')}`).toEqual([]);
   // The helpers print through `esc` and nothing else.
-  for (const name of ['lines', 'para', 'item', 'table', 'empty', 'h2', 'proposal']) {
+  for (const name of ['lines', 'para', 'item', 'table', 'tableOf', 'lead', 'empty', 'h2', 'proposal']) {
     const at = fn.indexOf(`const ${name} = `);
     expect(at, `helper ${name} is gone`).toBeGreaterThan(-1);
     const body = fn.slice(at, at + fn.slice(at).search(/;\r?\n/));

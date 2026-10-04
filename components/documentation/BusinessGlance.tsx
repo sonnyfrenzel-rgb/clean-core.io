@@ -8,7 +8,6 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { BusinessCallout, CalloutKind, GlanceAnchor, GlanceEvidence, GlanceHeadline } from '@/lib/business-summary';
 import { calloutTitle, calloutWhy, glanceHeadlineSentence, moreEvidence, wt } from '@/lib/workspace-messages';
-import { sectionTitle } from '@/lib/process-document';
 import { cn } from '@/lib/utils';
 
 /**
@@ -25,12 +24,13 @@ import { cn } from '@/lib/utils';
  * Every callout carries its evidence — a line, a rule id, a table with its
  * line — and the rules that pick them are in `lib/business-summary.ts`. This
  * file draws; it decides nothing. *
- * Since 04.10.2026 (owner: the stage leads with the process description,
- * ADR-077 amended) the glance is the opening of that description, not a band
- * above it: `questionsHref` embeds it. Embedded, its headings sit one level
- * down and the not-determined box gives way to one line that points at
- * section 9 — the description asks every open question there, once
- * (`DESIGN.md` §2.11, "nothing twice").
+ * Since 04.10.2026 (owner: "far too long … no visualisations", ADR-077
+ * amended twice) a process description opens with its own summary
+ * (`ProcessDocumentView`), which says the same things shorter: what it does,
+ * the key figures, the rules and risks. This glance stands on its own only
+ * above a legacy blueprint, which has no description; for a description the
+ * stage adds just `DirectWriteLevels` — the clean-core level of the SAP data
+ * it changes, which only the page can look up.
  */
 
 export interface BusinessGlanceProps {
@@ -42,11 +42,6 @@ export interface BusinessGlanceProps {
   reading: boolean;
   /** No signed source: nothing could be read or checked. */
   noSource?: boolean;
-  /**
-   * Embedded in the process description: where its open questions stand. The
-   * not-determined points are then counted here and listed there.
-   */
-  questionsHref?: string;
 }
 
 const ICONS: Record<CalloutKind, React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>> = {
@@ -112,55 +107,7 @@ function Callout({ callout, embedded }: { callout: BusinessCallout; embedded: bo
   );
 }
 
-export default function BusinessGlance({ headline, callouts, notDetermined, reading, noSource = false, questionsHref }: BusinessGlanceProps) {
-  if (questionsHref) {
-    return (
-      <section
-        data-business-glance="embedded"
-        aria-labelledby="business-glance-title"
-        className="min-w-0 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
-      >
-        <p className="m-0 cc-text-label text-cc-ink-muted">{wt('doc.glanceLabel')}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h3 id="business-glance-title" className="m-0 cc-text-h2 text-cc-ink">{wt('doc.glanceTitle')}</h3>
-          <CcProvenanceChip value="reconstructed" />
-        </div>
-        <p data-glance-headline="" className="m-0 mt-2 cc-text-body text-cc-ink">
-          {headline ? glanceHeadlineSentence(headline) : reading ? wt('doc.glanceReading') : wt('doc.glanceNone')}
-        </p>
-        {callouts.length > 0 ? (
-          <ul data-business-callouts="" className="m-0 mt-3 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
-            {callouts.map((callout) => (
-              <Callout key={callout.kind} callout={callout} embedded />
-            ))}
-          </ul>
-        ) : null}
-        {headline ? <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.glanceDerived')}</p> : null}
-        {notDetermined && notDetermined.count > 0 ? (
-          <p data-glance-not-determined={String(notDetermined.count)} className="m-0 mt-3 flex flex-wrap items-center gap-2 cc-text-cell text-cc-ink">
-            <CcProvenanceChip value="not-determined" />
-            <span>
-              {calloutTitle(notDetermined)}. {calloutWhy(notDetermined)}{' '}
-              {/* Scrolled to, not navigated to: the stage keeps the map's level
-                  in the address (`#map=`), and a fragment would replace it. */}
-              <a
-                href={questionsHref}
-                onClick={(event) => {
-                  const target = document.getElementById(questionsHref.replace(/^#/, ''));
-                  if (!target) return;
-                  event.preventDefault();
-                  target.scrollIntoView({ block: 'start' });
-                }}
-                className="text-cc-ink underline"
-              >
-                Each is asked in {sectionTitle('questions')}
-              </a>
-            </span>
-          </p>
-        ) : null}
-      </section>
-    );
-  }
+export default function BusinessGlance({ headline, callouts, notDetermined, reading, noSource = false }: BusinessGlanceProps) {
   return (
     <section
       data-business-glance=""
@@ -220,5 +167,31 @@ export default function BusinessGlance({ headline, callouts, notDetermined, read
         )}
       </aside>
     </section>
+  );
+}
+
+/**
+ * The clean-core level of each SAP table the process changes directly — the
+ * one fact of the glance a process description cannot print by itself, because
+ * the level comes from the catalog lookup the page makes (ADR-062). A level not
+ * yet answered reads *Not determined*, never a default.
+ */
+export function DirectWriteLevels({ callouts }: { callouts: BusinessCallout[] }) {
+  const writes = callouts.find((c) => c.kind === 'direct-write');
+  if (!writes || writes.evidence.length === 0) return null;
+  return (
+    <div data-direct-write-levels="" className="mt-4 flex flex-wrap items-center gap-2">
+      <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.directWriteLevels')}</span>
+      {writes.evidence.map((item, i) => (
+        <span key={`${item.ref ?? item.label}-${i}`} className="inline-flex items-center gap-1 cc-text-meta text-cc-ink">
+          {item.label}
+          {item.ref && item.ref !== item.label ? <span className="font-cc-mono text-cc-ink-muted">{item.ref}</span> : null}
+          {item.level !== undefined ? (
+            item.level ? <CcCleanCoreLevel value={item.level} /> : <CcProvenanceChip value="not-determined" note={wt('doc.levelPending')} />
+          ) : null}
+        </span>
+      ))}
+      {writes.count > writes.evidence.length ? <span className="cc-text-meta font-medium text-cc-ink-muted">{moreEvidence(writes.count - writes.evidence.length)}</span> : null}
+    </div>
   );
 }

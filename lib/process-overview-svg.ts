@@ -44,11 +44,11 @@ export function processOverviewSvg(path: readonly PdPathEntry[], title: string):
       parts.push(`<line x1="${n(CX)}" y1="${n(prevBottom)}" x2="${n(CX)}" y2="${n(top - 2)}" stroke="${C.fieldBorder}" stroke-width="1.5" marker-end="url(#pd-arrow)"/>`);
       parts.push(`<rect x="${n(CX - BOX_W / 2)}" y="${n(top)}" width="${n(BOX_W)}" height="${n(BOX_H)}" rx="8" fill="${C.surfaceMuted}" stroke="${C.ink}" stroke-width="1"/>`);
       parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y - 3)}" font-size="13" font-weight="700" fill="${C.ink}">${esc(clip(`${entry.number}. ${entry.businessName ?? entry.name}`))}</text>`);
-      parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y + 14)}" font-size="11" fill="${C.inkMuted}">${esc(clip(`${linesLabel(entry.anchors.slice(0, 2)) || 'lines not determined'} · ${entry.technicalName}`, 48))}</text>`);
-      if (entry.subSteps.length + entry.moreSubSteps > 0) {
-        const count = entry.subSteps.length + entry.moreSubSteps;
-        parts.push(`<text x="${n(CX + BOX_W / 2 + 10)}" y="${n(y + 4)}" font-size="11" fill="${C.inkMuted}">${esc(`${count} sub-step${count === 1 ? '' : 's'}`)}</text>`);
-      }
+      // The plain line under the name; the lines and the sub-steps beside the box, muted.
+      parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y + 14)}" font-size="11" fill="${C.inkMuted}">${esc(clip(entry.line || entry.technicalName, 44))}</text>`);
+      const count = entry.subSteps.length + entry.moreSubSteps;
+      const side = [linesLabel(entry.anchors.slice(0, 2)) || 'lines not determined', count > 0 ? `${count} sub-step${count === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+      parts.push(`<text x="${n(CX + BOX_W / 2 + 10)}" y="${n(y + 4)}" font-size="11" fill="${C.inkMuted}">${esc(side)}</text>`);
       prevBottom = y + BOX_H / 2;
     } else {
       const r = 16;
