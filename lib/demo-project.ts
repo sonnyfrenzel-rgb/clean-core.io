@@ -477,7 +477,11 @@ function analyzeViewOf(
 }
 
 export function buildDemoProject(): DemoProject {
-  const source = fs.readFileSync(DEMO_PATH, 'utf8');
+  // Line feeds only, as `lib/demo-workspace.ts` reads it: the process description
+  // hashes the source it is given (`sourceSha256`), so a CRLF checkout on Windows
+  // and the LF image in CI recorded different engine outputs for the same engine
+  // (CI red 04.10.2026 — the hash's `\r` strip cannot reach inside a digest).
+  const source = fs.readFileSync(DEMO_PATH, 'utf8').replace(/\r\n/g, '\n');
   const lines = source.split(/\r?\n/);
   const linesOfCode = lines.filter((l) => l.trim() && !/^\s*\*/.test(l)).length;
 

@@ -204,7 +204,8 @@ test.describe('what the phase contract makes of a stored record', () => {
     expect(step).toMatchObject({ state: 'done', done: true, proven: false, badge: 'Scenario priced' });
     expect(step.detail).toMatch(/not a quote/);
     expect(toolOnRecord(step)).toBe(true);
-    expect(toolMark(step)).toMatchObject({ kind: 'check', meaning: 'used' });
+    // A check means done (ADR-060 as amended 03.10.2026) — and done is still not proven.
+    expect(toolMark(step)).toMatchObject({ kind: 'check', meaning: 'done', words: 'tools.mark.done' });
   });
 
   test('figures started: partial, and no check — an incomplete set prices nothing', () => {
