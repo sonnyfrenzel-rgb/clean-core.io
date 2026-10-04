@@ -533,6 +533,7 @@ list has its own shape, its own file in the code next to `lib/provenance.ts` and
 | **Rule property** | hard-coded in program · customizing · master data | tag: rectangle, radius 4 px, `--cc-surface-muted`, text `--cc-ink-muted`, no icon | hard-coded in program |
 | **Severity of a finding** (ADR-049) | Critical · High · Medium · Low · Info — in `lib/severity.ts` | identifier like level: rectangle, radius 4 px, the word in 12 px / 600 (§1.2); colour per §1.8 — Critical and High `error`, Medium `warning`, Low `neutral`, Info `information`; never `success` | `High` |
 | **Requirement priority** (ADR-070) | Must · Should · Could — in `lib/functional-requirements.ts` | tag: rectangle, radius 4 px, the word in 12 px / 600; Must filled ink, Should outlined ink, Could dashed muted — never a state colour, a priority is not a verdict; its reason is written beside it | `Must` |
+| **Requirement status** (ADR-078) | Draft · Accepted · Needs clarification · Rejected — in `lib/requirement-status.ts` | identifier: rectangle, radius 4 px, icon and word in 12 px / 600 on white, border and word in the state's foreground — Draft neutral, Accepted `information` (a self-declaration, never `success`), Needs clarification `warning`, Rejected `error` | `Accepted` |
 
 A rule property says **where** a rule sits, and is never evidence; an evidence level says **how strongly**
 a standard candidate is backed, and is never a provenance. A severity says **how urgent** a finding is — it
@@ -1132,6 +1133,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.7 | 04.10.2026 | The requirements of the Design tool are one module with a workspace of its own (ADR-078, owner 04.10.2026): a card on Design, the specification as one document with decisions, full text and exports; the requirement status as a fixed list of its own (§4.1) |
 | 1.8.6 | 04.10.2026 | The tour starts at the next step (owner 04.10.2026, "next step first"): the three coach marks in the order the page shows them, no scrolling until the reader presses "Next"; the demo tour reaches the process map before Not determined, as an own project does (§6.1.2, §6.2) |
 | 1.8.5 | 03.10.2026 | Management on the whole frame with one fit-to-standard figure (ADR-069, owner 03.10.2026): the decision and its one next action beside fit to standard, the SAP objects across the four buckets and what blocks the standard path by name; the rest in four folds (Evidence, Options and the decision, Costs, Process), collapsed and remembered in the browser only. The tools bar's check means the tool's own output is on record — Analyze a signed run — and every tool says what it is for without hover (ADR-060 amended 03.10.2026) |
 | 1.8.4 | 02.10.2026 | The switch for everyone (roadmap 3.0.1, ADR-061): every account opens its projects in the workspace and "My workspace" is the list report; the stepper, its rail and the linear stage footer are gone; a demo stage's "Back to workspace" leads to the demo workspace (§2.3, the header of a stage; §5.10) |
