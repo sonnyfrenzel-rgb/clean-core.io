@@ -45,6 +45,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
   let importId = '';
   let confirmId = '';
   let emptyId = '';
+  let readId = '';
 
   async function abapClone(suffix: string, overrides: Record<string, unknown> = {}): Promise<string> {
     const base = await adminGetDoc('projects', account.projectId);
@@ -75,6 +76,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     importId = await abapClone('import');
     confirmId = await abapClone('confirm');
     emptyId = await abapClone('empty', { testCases: [], testSuite: undefined });
+    readId = await abapClone('read');
   });
 
   test('upload a JUnit XML: every row wears Imported · passed, and Delivery takes it', async ({ page }) => {
@@ -194,5 +196,50 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await openTesting(page, emptyId);
     await expect(page.locator('#testing-write')).toBeVisible();
     await expect(page.locator('[data-testing-sap-result]')).toHaveCount(0);
+  });
+
+  // QA 263cde0a6b23: a failed read of the full record was logged once and the
+  // rows stayed without their results for the session.
+  test('reading the result record: a transient failure is retried; a lasting one says so, with Retry', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, account);
+    await openTesting(page, readId);
+    const card = page.locator('[data-testing-sap-result]');
+    const answered = page.waitForResponse((r) => r.url().includes('/test-results') && r.request().method() === 'POST');
+    await card.locator('[data-sap-result-file]').setInputFiles({ name: 'aunit-result.xml', mimeType: 'application/xml', buffer: Buffer.from(JUNIT) });
+    expect((await answered).status()).toBe(200);
+    const row = page.locator('[data-scenario-row][data-scenario-id="TC_01"] [data-scenario-outside="passed"]');
+    await expect(row).toBeVisible({ timeout: 30000 });
+
+    // One failed GET, then the server: the second attempt brings the rows back.
+    let gets = 0;
+    let failFirst = 1;
+    await page.route(/\/api\/projects\/[^/]+\/test-results$/, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      gets++;
+      if (gets <= failFirst) return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'unavailable' }) });
+      return route.continue();
+    });
+    await openTesting(page, readId);
+    await expect(row).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-sap-result-read-failed]')).toHaveCount(0);
+    expect(gets).toBe(2);
+
+    // Every attempt fails: the page says the read failed — not that there is no
+    // result — and Retry reads again.
+    gets = 0;
+    failFirst = 3;
+    await openTesting(page, readId);
+    const failed = page.locator('[data-sap-result-read-failed]');
+    await expect(failed).toBeVisible({ timeout: 30000 });
+    await expect(failed).toContainText('could not be read');
+    await expect(failed).toContainText('not a missing result');
+    expect(gets).toBe(3);
+    await expect(row).toHaveCount(0);
+    await failed.getByRole('button', { name: 'Retry' }).click();
+    await expect(row).toBeVisible({ timeout: 30000 });
+    await expect(failed).toHaveCount(0);
+    expect(gets).toBe(4);
   });
 });

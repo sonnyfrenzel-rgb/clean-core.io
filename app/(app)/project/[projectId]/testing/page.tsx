@@ -146,6 +146,9 @@ const testRunBlocked = (project: Project | null): boolean =>
   workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale';
 
 /** Main column and a 360 px side column, as in proposal A; one column below `lg`. */
+/** Reads of the SAP result record before the page says it failed, and the pause that grows between them. */
+const SAP_RECORD_READS = 3;
+const SAP_RECORD_BACKOFF_MS = 800;
 const RAIL_GRID = 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start';
 
 const AUTH_TYPE_OPTIONS = [
@@ -993,27 +996,47 @@ export default function TestingSandboxPage() {
   // Read through the auth store, not in render: on the server there is no auth (HTTP 500 on SSR otherwise).
   const signedInUid = useSignedInUid();
   const canRecordOutside = isProjectOwner(project, signedInUid);
+  /**
+   * Whether the full record could be read. A transient failure used to be
+   * logged and never retried, and the scenario rows stayed without their
+   * results for the session (QA 263cde0a6b23). Now the read is retried twice
+   * with a growing pause, and a read that still fails says so with a Retry —
+   * the rows are never left looking as if there were no result.
+   */
+  const [sapRecordRead, setSapRecordRead] = useState<'idle' | 'reading' | 'failed'>('idle');
+  /** Bumped by the Retry button: a new round of attempts. */
+  const [sapReadRound, setSapReadRound] = useState(0);
   useEffect(() => {
     if (!isAbapCloud || !outsideRecordedAt) return undefined;
     let live = true;
     (async () => {
-      try {
-        const token = await getAuth().currentUser?.getIdToken();
-        if (!token) return;
-        const res = await fetch(`/api/projects/${encodeURIComponent(String(projectId))}/test-results`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const body = (await res.json().catch(() => null)) as { record?: OutsideTestRecord | null } | null;
-        if (live && res.ok && body?.record) setSapRecord(body.record);
-      } catch (err) {
-        // The summary on the project still drives the phase; only the per-scenario chips wait.
-        console.error('The test results from your SAP system could not be read:', err);
+      setSapRecordRead('reading');
+      for (let attempt = 0; attempt < SAP_RECORD_READS; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, SAP_RECORD_BACKOFF_MS * attempt));
+        if (!live) return;
+        try {
+          const token = await getAuth().currentUser?.getIdToken();
+          if (!token) throw new Error('Not signed in.');
+          const res = await fetch(`/api/projects/${encodeURIComponent(String(projectId))}/test-results`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const body = (await res.json().catch(() => null)) as { record?: OutsideTestRecord | null } | null;
+          if (!res.ok || !body || !('record' in body)) throw new Error(`HTTP ${res.status}`);
+          if (!live) return;
+          if (body.record) setSapRecord(body.record);
+          setSapRecordRead('idle');
+          return;
+        } catch (err) {
+          // The summary on the project still drives the phase; only the per-scenario chips wait.
+          console.error(`The test results from your SAP system could not be read (attempt ${attempt + 1} of ${SAP_RECORD_READS}):`, err);
+        }
       }
+      if (live) setSapRecordRead('failed');
     })();
     return () => {
       live = false;
     };
-  }, [isAbapCloud, outsideRecordedAt, projectId]);
+  }, [isAbapCloud, outsideRecordedAt, projectId, sapReadRound]);
   /** The record the server answered with, folded into the project the page holds. */
   const onOutsideRecorded = (record: OutsideTestRecord) => {
     setSapRecord(record);
@@ -1575,6 +1598,23 @@ export default function TestingSandboxPage() {
               title="Record the result from your SAP system"
               lead="Nothing here runs ABAP Unit. Bring the result from the system that did: the result file, or your confirmation that the class ran."
             >
+              {sapRecordRead === 'failed' && outside.state !== 'none' ? (
+                <div data-sap-result-read-failed="" className="mb-3">
+                  <CcMessageStrip
+                    state="warning"
+                    headline="The result could not be read"
+                    actions={
+                      <CcButton variant="secondary" density="cozy" onClick={() => setSapReadRound((n) => n + 1)}>
+                        Retry
+                      </CcButton>
+                    }
+                  >
+                    A result from your SAP system is on record, but its full record could not be read
+                    {outside.summary.kind === 'imported' ? ', so the scenario rows do not show their results' : ''}. This is a
+                    read failure, not a missing result.
+                  </CcMessageStrip>
+                </div>
+              ) : null}
               <SapResultCard
                 projectId={String(projectId)}
                 canRecord={canRecordOutside}
