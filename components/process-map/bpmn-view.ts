@@ -88,8 +88,20 @@ export function fitWhole(canvas: ViewboxCanvas): void {
     canvas.viewbox({ x: inner.x + inner.width / 2 - width / 2, y: inner.y + inner.height / 2 - height / 2, width, height });
     return;
   }
-  // Floored: from the start of the level (top left), as the reading map does.
-  canvas.viewbox({ x: inner.x - MARGIN / scale, y: inner.y - MARGIN / scale, width, height });
+  // Floored: from the start of the level, as the reading map does — from its
+  // top, and across the whole width where the width fits at the floor (a
+  // phone's narrow layout, ADR-072 amended 04.10.2026), else from its left.
+  const across = inner.width * scale <= outer.width - 2 * MARGIN;
+  const x = across ? inner.x + inner.width / 2 - width / 2 : inner.x - MARGIN / scale;
+  canvas.viewbox({ x, y: inner.y - MARGIN / scale, width, height });
+}
+
+/**
+ * The widest drawing, in BPMN units, a canvas this wide shows across at the
+ * phone's floor — what the phone's narrow layout is laid out for.
+ */
+export function phoneFitWidth(canvasWidth: number): number {
+  return (canvasWidth - 2 * MARGIN) / NARROW_MIN_SCALE;
 }
 
 /** Dispatched (bubbling) on the map's frame after a step was chosen in full screen. */

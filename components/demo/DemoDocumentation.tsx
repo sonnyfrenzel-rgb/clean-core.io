@@ -6,6 +6,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import HandbookDrawer from '@/components/documentation/HandbookDrawer';
 import type { BpmnCanvasNode } from '@/components/process-map/BpmnCanvas';
+import { phoneLayout } from '@/components/process-map/phone-layout';
 import { anchorText } from '@/lib/bpmn/layout';
 import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
@@ -58,6 +59,24 @@ export default function DemoDocumentation({
   const [active, setActive] = useState<string | null>(null);
   const [plane, setPlane] = useState<string | null>(null);
   const [focusToken, setFocusToken] = useState(0);
+  // On a phone, the same process laid out narrower (ADR-072, amended
+  // 04.10.2026). The demo's payload carries no source, so it is fetched from
+  // the published example the demo was built from — only on a phone, and only
+  // drawn when its process is byte for byte the one the demo shows.
+  const phoneXml = useMemo(
+    () => (model
+      ? phoneLayout({
+        source: () => fetch(`/starter-examples/${encodeURIComponent(model.fileName)}`)
+          .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+          .then((text) => text.replace(/\r\n/g, '\n')),
+        processName: model.processName,
+        fileName: model.fileName,
+        readingXml: model.xml,
+        technical: false,
+      })
+      : undefined),
+    [model],
+  );
 
   const nodes = useMemo(
     () => new Map<string, BpmnCanvasNode>((model?.elements ?? []).map((e) => [e.id, {
@@ -160,6 +179,7 @@ export default function DemoDocumentation({
           map={
             <BpmnCanvas
               xml={model.xml}
+              phoneXml={phoneXml}
               label={`${model.processName}. ${model.overview}`}
               nodes={nodes}
               plane={plane}
