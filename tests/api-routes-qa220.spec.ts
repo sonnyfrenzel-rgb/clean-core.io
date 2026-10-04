@@ -155,7 +155,9 @@ test.describe('the OData read', () => {
     expect(call).not.toBeNull();
     expect(call![1]).toContain('${decodedToken.uid}');
     expect(Number(call![2])).toBeLessThanOrEqual(60);
-    expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('await req.json()'));
+    // Since SEC-b6716f0-19 the body is read through the bounded reader.
+    expect(src.indexOf('readBoundedBody(req')).toBeGreaterThan(-1);
+    expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('readBoundedBody(req'));
   });
 
   test('never continues a declared scheme without its credential', () => {

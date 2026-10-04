@@ -13,6 +13,7 @@ import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { costAssumptionsRevision } from '@/lib/cost-assumptions';
+import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import {
   ECONOMICS_COLLECTION,
   ECONOMICS_DOC,
@@ -132,13 +133,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
   }
 }
 
+const BODY_LIMITS = { maxBytes: ECONOMICS_LIMITS.maxBodyChars * 4, timeoutMs: 15_000 };
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
-    const raw = await req.text().catch(() => '');
-    if (raw.length > ECONOMICS_LIMITS.maxBodyChars) {
+    // Read through the bounded reader: the unbounded text read buffered the whole body
+    // before the length check below could refuse it (SEC-b6716f0-33). Four
+    // bytes per character is the most UTF-8 needs, so the character limit
+    // below stays the one that decides.
+    const raw = await readBoundedBody(req, BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
+    if (raw === null || raw.length > ECONOMICS_LIMITS.maxBodyChars) {
       return NextResponse.json({ error: 'The figures are too large to store.', code: 'too-large' }, { status: 413 });
     }
     let body: unknown;

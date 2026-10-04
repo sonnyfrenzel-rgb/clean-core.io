@@ -408,7 +408,10 @@ export async function POST(req: NextRequest) {
     // — unwrapping a top-level array and dropping the three figures the model
     // must not own — are therefore performed here instead, where the run is
     // signed. The page still normalises its *own* copy for the screen.
-    let finalAnalysisText = analysis || '';
+    // Text or nothing: a number or a boolean here used to reach `.trim()` below
+    // after the evidence was built and the unit reserved, and end in a 500
+    // (SEC-b6716f0-15). An object is read below and stringified there.
+    let finalAnalysisText: string = typeof analysis === 'string' ? analysis : '';
     let gapsList: ModelGap[] = [];
     try {
       let analysisObj: any = null;

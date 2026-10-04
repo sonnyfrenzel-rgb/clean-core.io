@@ -8,7 +8,7 @@ import {
   assertMfaSatisfied,
   QuotaError,
 } from '@/lib/firebase-admin';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -121,9 +121,11 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   }
 
   // The route sends mail to an address the caller types. Without a ceiling it is
-  // a mailer.
+  // a mailer. Per account, not per account and address: with the client
+  // address in the key every new source address was a fresh budget of mails
+  // (SEC-b6716f0-46) — the account is already the narrower identity.
   try {
-    await assertRateLimit(`invitations:${decodedToken.uid}:${getClientIp(req)}`, INVITATION_SEND_RATE_LIMIT, 60 * 60 * 1000);
+    await assertRateLimit(`invitations:${decodedToken.uid}`, INVITATION_SEND_RATE_LIMIT, 60 * 60 * 1000);
   } catch (rateErr: unknown) {
     const q = rateErr as { message?: string; status?: number };
     return {

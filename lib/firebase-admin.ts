@@ -1455,6 +1455,15 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   batch.set(db.collection('users').doc(targetUid), {
     status: 'suspended',
     transformationsLimit: 0,
+    // A suspension withdraws administrator rights as well. `isAdmin()` in
+    // firestore.rules honours this mirror at once, while the `admin` claim in
+    // an ID token minted before the suspension lives up to an hour; without
+    // it a suspended administrator kept every admin branch of the rules for
+    // that hour — other profiles, uploads, tickets, and an unrestricted update
+    // of their own profile back to `approved` (SEC-b6716f0-03). The server
+    // drops the claim on the same mirror (`withoutWithdrawnAdminClaim`).
+    // Reinstating an administrator is an explicit grant (`setAdminClaim`).
+    isAdmin: false,
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
   batch.set(db.collection('registration_requests').doc(targetUid), {
