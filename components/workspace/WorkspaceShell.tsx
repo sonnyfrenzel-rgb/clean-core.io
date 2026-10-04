@@ -534,7 +534,7 @@ export default function WorkspaceShell({
       {/* The project status — one folded row in every view (ADR-026, note
           of 04.10.2026). The fold is a fold: the seven statuses are one click
           away, never removed (§2.11), and each status is its own "Why?". */}
-      <div className="mt-4">
+      <div className="mt-3">
         <div
           data-workspace-status-fold=""
           className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
@@ -550,7 +550,7 @@ export default function WorkspaceShell({
                 <span data-workspace-status-summary-provenance="" className="inline-flex items-center gap-2">
                   <CcObjectStatus value={provenanceStatus.status} facet={provenanceStatus.label} />
                   {provenanceStatus.provenance ? <CcProvenanceChip value={provenanceStatus.provenance} /> : null}
-                  <span aria-hidden={true} className="text-cc-ink-muted">·</span>
+                  <span aria-hidden={true} className="text-cc-ink-muted max-[600px]:hidden">·</span>
                 </span>
               ) : null}
               <span>{started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}</span>
@@ -574,8 +574,12 @@ export default function WorkspaceShell({
         </div>
       </div>
 
-      <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-4 flex flex-wrap items-start justify-between gap-3">
-        <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
+      <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-3 flex flex-wrap items-start justify-between gap-3">
+        {/* The tools take the row's width and wrap inside it, so Export and
+            "Invite to view" stay beside them instead of under the hint line. */}
+        <div className="min-w-0 flex-1 basis-96 max-[600px]:flex-none max-[600px]:basis-auto">
+          <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
+        </div>
         {/* Export and "Invite to view" (mockup s1) — in every view: what
             leaves the building and who may read it are not perspectives. */}
         <WorkspaceHeadActions
