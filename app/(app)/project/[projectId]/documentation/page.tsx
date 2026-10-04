@@ -31,7 +31,7 @@ import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import HandbookDrawer from '@/components/documentation/HandbookDrawer';
-import BusinessGlance from '@/components/documentation/BusinessGlance';
+import BusinessGlance, { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import BusinessLayer from '@/components/documentation/BusinessLayer';
 import { useBusinessGlance } from '@/hooks/useBusinessGlance';
 import {
@@ -44,7 +44,8 @@ import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messag
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
 import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
-import { processDocumentBlocks, processDocumentFileName } from '@/lib/process-document';
+import { processDocumentFileName } from '@/lib/process-document';
+import { processDocumentBlocks } from '@/lib/process-document-outline';
 import {
   BUSINESS_LAYER_CEILING_MS,
   businessLayerInFlight,
@@ -1221,10 +1222,10 @@ Structure the JSON exactly like this:
     />
   ) : null;
   /**
-   * Owner 04.10.2026 (ADR-077 amended) — the glance opens the description
-   * rather than standing above it: what the process does and where its
-   * problems are, then section 1. Its not-determined points are counted here
-   * and asked once, in section 9.
+   * The glance of ADR-068. A process description opens with its own summary
+   * (owner 04.10.2026, ADR-077 amended twice), so for one the stage adds only
+   * the clean-core levels of the SAP data it changes; the full glance stands
+   * on its own above a legacy blueprint, which has no description.
    */
   const glanceProps = {
     headline: glance.headline,
@@ -1241,7 +1242,7 @@ Structure the JSON exactly like this:
     processDocument.document ? (
       <ProcessDocumentView
         document={processDocument.document}
-        summary={<BusinessGlance {...glanceProps} questionsHref="#pd-questions" />}
+        summary={<DirectWriteLevels callouts={glance.callouts} />}
       />
     ) : processDocument.status === 'failed' ? (
       <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace at the foot of this page is complete.</CcMessageStrip>
@@ -1628,8 +1629,7 @@ Structure the JSON exactly like this:
           <div className="min-w-0 max-w-3xl">
             <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
             <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              Written from the code when the stage opens, no model call. Its appendix, the technical trace, stands at the
-              foot of this page; the Confluence page, the Markdown and the Word file carry the same document.
+              Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
             </p>
           </div>
           {hasDocument ? (

@@ -15,6 +15,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.glanceNone': 'The process has not been read from a signed analysis yet.',
   'doc.glanceDerived': 'Counted from the code. Each point names its line or rule.',
   'doc.levelPending': 'level',
+  'doc.directWriteLevels': 'Clean-core level of the SAP data it changes:',
   'doc.notDeterminedNone': 'Nothing the detectors stepped over. That is the limit of what they check, not a clean bill.',
   'doc.notDeterminedReading': 'Checking what the detectors could not judge…',
   'doc.notDeterminedNoSource': 'No signed source here, so nothing was checked.',
