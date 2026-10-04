@@ -13,6 +13,7 @@ import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf, NAMING_FORMAT_VERSION } from '../lib/process-naming';
 import { nextOpenPoint } from '../lib/next-step';
+import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import type { ProcessStateView, StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
 import { adminSetDoc } from './helpers/admin-seed';
@@ -237,6 +238,22 @@ test.describe('the Business view on screen', () => {
     expect(res.ok).toBe(true);
   }
 
+  /**
+   * The tips dismissed, for the two tests that measure where things stand on
+   * the screen. A first visit shows the tour, and its first tip scrolls the
+   * page to the map 0.8 s and 1.5 s after it appears (`CoachMarks.tsx`,
+   * owner 03.10.2026) — on CI that landed between the
+   * scroll and the measurement, so the bar measured 240 px and the next step
+   * -1888 px. The tour has its own spec (`coach-mark-placement.spec.ts`); here
+   * the layout is measured without it.
+   */
+  async function withoutTips(page: Page) {
+    await page.addInitScript(
+      ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
+      [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
+    );
+  }
+
   async function open(page: Page, id: string) {
     await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
@@ -361,8 +378,10 @@ test.describe('the Business view on screen', () => {
   test('the section bar is a named tab list without Costs and Architecture, sticky, moved by arrow keys', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await withoutTips(page);
     await signInThroughForm(page, account);
     await open(page, ids.po);
+    await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
     const tabs = page.getByRole('tablist', { name: 'Sections of this process' });
     await expect(tabs).toBeVisible();
     await expect(tabs.locator('[data-workspace-layer="costs"]')).toHaveCount(0);
@@ -376,6 +395,15 @@ test.describe('the Business view on screen', () => {
     await expect(tabs.getByRole('tab', { name: /Standard fit/ })).toBeFocused();
 
     // Sticky: scrolled into the section, the bar stays under the shell bar.
+    // Only once the section is taller than the screen: Standard fit reads its table
+    // after the tab is chosen, and scrolled while it is still 85 px tall the
+    // page sits at its own end, the wheel moves nothing, and the bar is measured
+    // in the flow (240 px on CI) instead of stuck.
+    await expect
+      .poll(() => page.locator('[data-workspace-layer-section]').evaluate((el) => el.getBoundingClientRect().height - window.innerHeight), {
+        timeout: 60_000,
+      })
+      .toBeGreaterThan(0);
     await page.locator('[data-workspace-layer-section]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
     await page.mouse.wheel(0, 300);
     const top = await page.locator('nav[data-workspace-layers]').evaluate((el) => el.getBoundingClientRect().top);
@@ -458,8 +486,10 @@ test.describe('the Business view on screen', () => {
     test.setTimeout(300_000);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
+    await withoutTips(page);
     await signInThroughForm(page, account);
     await open(page, ids.po);
+    await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
     const tops = await page.evaluate(() =>
       ['[data-next-step]', '[data-first-look]'].map((sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1),
     );
