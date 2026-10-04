@@ -82,7 +82,7 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
   if (mark.kind === 'none' || !mark.words) return null;
   // No `title` tooltip any more (owner 03.10.2026: hover only works on a
   // desktop). The mark's meaning is in the legend, in the link's name for a
-  // screen reader, and in the tool's information popover — on every device.
+  // screen reader, and in "What the tools do" — on every device.
   return (
     <>
       <span aria-hidden={true} data-workspace-tool-mark-glyph="" className="inline-flex items-center">
@@ -97,8 +97,9 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
  * What a tool is for and where it stands, in the words every surface shares —
  * the purpose from `PHASE_PURPOSE`, "Recommended next step." on the one tool
  * the phase contract names next, and why a tool cannot do anything yet. The
- * same lines are the link's accessible description, the information popover
- * on the open bar, and the visible line under each tool in the phone menu.
+ * same lines are the link's accessible description, the tool's entry in "What
+ * the tools do" on the open bar, and the visible line under each tool in the
+ * phone menu.
  */
 function toolGuide(tool: WorkspaceTool, tools: readonly WorkspaceTool[], next: PhaseKey | null): string[] {
   const mark = toolMark(tool);
@@ -258,18 +259,27 @@ function ToolsNav({
     );
   };
 
+  // One link per tool on the open bar, and no "i" after each (owner,
+  // 04.10.2026: seven "i" made the header "far too complex and untidy"). What a
+  // tool is for stays the link's accessible description, the line under the
+  // bar names the next one, and "What the tools do" opens all seven at once —
+  // on a tap or a key, never on hover.
   const barItems = tools.map((tool) => (
-    <span key={tool.key} data-workspace-tool-item={tool.key} className="inline-flex items-center gap-1">
+    <span key={tool.key} data-workspace-tool-item={tool.key} className="inline-flex items-center">
       {link(tool, 'bar')}
-      <InfoPopover subject={tool.label} hook={`tool-${tool.key}`}>
-        {toolGuide(tool, tools, next).map((line) => (
-          <span key={line} className="block">
-            {line}
-          </span>
-        ))}
-      </InfoPopover>
     </span>
   ));
+  const guidePanel = (
+    <ul data-tools-guide="" className="m-0 list-none space-y-2 p-0">
+      {tools.map((tool) => (
+        <li key={tool.key} data-tools-guide-entry={tool.key}>
+          <span className="font-semibold">{tool.label}</span>
+          {' — '}
+          {toolGuide(tool, tools, next).join(' ')}
+        </li>
+      ))}
+    </ul>
+  );
 
   // In the phone menu the purpose stands under each tool as text: there is room
   // for it, and a menu is where a reader is choosing.
@@ -295,18 +305,23 @@ function ToolsNav({
       <nav
         {...hook('open')}
         aria-label={wt('tools.label')}
-        className={cn('cc-no-print flex flex-wrap items-center gap-2', barHidden)}
+        className={cn('cc-no-print flex min-w-0 flex-wrap items-center gap-2', barHidden)}
       >
-        <span className="flex flex-col gap-1">
-          <span aria-hidden={true} className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-            {wt('tools.label')}
-          </span>
-          <ToolsLegend />
+        <span aria-hidden={true} className="mr-1 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+          {wt('tools.label')}
         </span>
         {barItems}
-        <p data-tools-hint="bar" className="m-0 basis-full text-[12px] leading-snug font-medium text-cc-ink-muted">
-          {hint}
-        </p>
+        {/* One line under the tools: the next one and what it does, what the
+            marks mean, and the one way to read what every tool does. */}
+        <div className="flex basis-full flex-wrap items-center gap-x-4 gap-y-1">
+          <p data-tools-hint="bar" className="m-0 min-w-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {hint}
+          </p>
+          <ToolsLegend />
+          <InfoPopover subject={wt('toolGuide.whatTheyDo')} label={wt('toolGuide.whatTheyDo')} hook="tools-guide">
+            {guidePanel}
+          </InfoPopover>
+        </div>
       </nav>
       <div ref={menuRef} {...hook('menu')} className={cn('relative cc-no-print', menuHidden)}>
         <CcButton

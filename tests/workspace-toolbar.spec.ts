@@ -473,24 +473,29 @@ test.describe('the toolbar, rendered', () => {
     await context.close();
   });
 
-  test('on a touch screen the "i" of a tool opens its purpose on a tap, and a second tap closes it', async ({ browser }) => {
+  test('on a touch screen "What the tools do" opens every purpose on a tap, and a second tap closes it', async ({ browser }) => {
     test.setTimeout(240 * 1000);
     // A tablet in landscape: wide enough for the open bar, and no hover at all.
+    // One disclosure for the seven tools, no "i" after each (owner 04.10.2026).
     const context = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await signInThroughForm(page, acct);
     await open(page, ANALYZED, 'management');
-    const info = page.locator('[data-workspace-tools="open"] button[data-info-popover="tool-testing"]');
-    await expect(info).toBeVisible();
-    await expect(info).toHaveAccessibleName('About Testing');
+    const bar = page.locator('[data-workspace-tools="open"]');
+    await expect(bar.locator('button[data-info-popover^="tool-"]'), 'a per-tool "i" is back').toHaveCount(0);
+    const guide = bar.locator('button[data-info-popover="tools-guide"]');
+    await expect(guide).toBeVisible();
+    await expect(guide).toHaveAccessibleName(/What the tools do/);
     // The target grows to 44 px under a coarse pointer (DESIGN.md §2.9).
-    const box = await info.boundingBox();
-    expect(box!.width).toBeGreaterThanOrEqual(44);
-    await info.tap();
-    const panel = page.locator('[data-info-popover-panel="tool-testing"]');
+    const box = await guide.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    await guide.tap();
+    const panel = page.locator('[data-info-popover-panel="tools-guide"]');
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText(PHASE_PURPOSE.testing);
-    await info.tap();
+    await expect(panel.locator('[data-tools-guide-entry]')).toHaveCount(7);
+    await expect(panel.locator('[data-tools-guide-entry="testing"]')).toContainText(PHASE_PURPOSE.testing);
+    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
+    await guide.tap();
     await expect(panel).toHaveCount(0);
     await context.close();
   });

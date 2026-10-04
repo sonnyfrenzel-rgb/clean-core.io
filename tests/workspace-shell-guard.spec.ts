@@ -647,7 +647,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
 
     // Business folds the seven away; open them, because what this test is about
     // is what they say, not where they are.
-    await page.click('[data-workspace-status-fold] button');
+    await page.click('[data-workspace-status-toggle]');
     await page.waitForSelector('[data-workspace-status-line]');
 
     // No window to race: measuring a colour mid-transition passes or fails by
@@ -692,7 +692,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
 
     // A fold folds back (QA review of 247b20c16e38): the row stays, and the
     // same button closes what it opened.
-    const fold = page.locator('[data-workspace-status-fold] button');
+    const fold = page.locator('[data-workspace-status-toggle]');
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
     await fold.click();
     await expect(page.locator('[data-workspace-status-line]'), 'the project status cannot be folded again').toHaveCount(0);
@@ -704,10 +704,19 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
 
-    // IT opens the meta line and the seven statuses (ADR-026).
+    // IT has the same calm header as Business since 04.10.2026 (ADR-026
+    // note): the seven statuses in one folded row whose summary names the
+    // provenance status, the meta line behind "Details". Both one click away.
     expect(await openWorkspace(page, FULL_ID, '?view=it')).toBe('shell');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
+    await expect(page.locator('[data-workspace-status-line]'), 'IT opens with the statuses folded').toHaveCount(0);
+    await expect(page.locator('[data-workspace-meta]'), 'IT opens with the meta line behind Details').toHaveCount(0);
+    await expect(page.locator('[data-workspace-status-summary-provenance] [data-cc-object-status-label]')).toHaveText('done');
+    await page.click('[data-workspace-status-toggle]');
     await page.waitForSelector('[data-workspace-status-line]');
+    // Seven statuses, seven "Why?" — and each is the status itself, not a "?" beside it.
+    await expect(page.locator('[data-workspace-status] [data-cc-why][data-cc-why-form="statement"]')).toHaveCount(7);
+    await page.click('[data-workspace-details-toggle]');
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;}' });
 
     const chips = await page.locator('[data-workspace-status]').evaluateAll((els) =>
@@ -730,7 +739,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     expect(by.confirmed.colour).not.toBe(by.provenance.colour);
     expect(by.execution.colour).toBe(by.provenance.colour);
 
-    // The meta line is open in IT and reads the manifest the run signed.
+    // The meta line, opened, reads the manifest the run signed.
     const meta = await page
       .locator('[data-workspace-meta-value]')
       .evaluateAll((els) =>

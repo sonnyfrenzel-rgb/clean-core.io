@@ -30,6 +30,12 @@ import { openStageLabel, wt } from '@/lib/workspace-messages';
  * rendered guard can read what an empty project actually paints rather than
  * what a source file claims it would.
  *
+ * **The status is its own "Why?"** (owner, 04.10.2026: seven "?" beside seven
+ * statuses made the header "far too complex and untidy"). The word and its dot
+ * are the button (`CcWhyPopover` with a `trigger`); the provenance chip stands
+ * after it, outside the button, so the button's name stays "Why: Need not
+ * started" and the chip keeps its own place.
+ *
  * **Every status has its "Why?"** (`DESIGN.md` §2.10, roadmap 3.0.3). The
  * reason used to live in a `title` attribute only — on record in the DOM, out
  * of reach on a phone and for a keyboard. The popover states each phase the
@@ -73,7 +79,7 @@ export default function WorkspaceStatusLine({
       id={view ? WORKSPACE_RETURN.status : undefined}
       data-workspace-status-line=""
       aria-label={wt('status.label')}
-      className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0"
+      className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0"
     >
       {statuses.map((entry) => (
         <li
@@ -81,11 +87,10 @@ export default function WorkspaceStatusLine({
           data-workspace-status={entry.facet}
           data-status={entry.status}
           title={entry.detail}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1"
         >
-          <CcObjectStatus value={entry.status} facet={entry.label} />
-          {entry.provenance ? <CcProvenanceChip value={entry.provenance} /> : null}
           <CcWhyPopover
+            trigger={<CcObjectStatus value={entry.status} facet={entry.label} />}
             subject={`${entry.label} ${objectStatus(entry.status).label}`}
             provenance={entry.provenance ?? 'reconstructed'}
             basis={
@@ -122,6 +127,7 @@ export default function WorkspaceStatusLine({
               )
             }
           />
+          {entry.provenance ? <CcProvenanceChip value={entry.provenance} /> : null}
         </li>
       ))}
     </ul>

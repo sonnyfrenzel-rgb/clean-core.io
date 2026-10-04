@@ -27,6 +27,7 @@ import {
 import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import ManagementExecutive, { ExecutiveEvidence, StackedBar, Swatch, type ExecutivePrimary } from './ManagementExecutive';
+import { openSteeringOnePager } from '@/lib/steering-open';
 import ManagementFold from './ManagementFold';
 import { standardFit } from '@/lib/standard-fit';
 import {
@@ -440,6 +441,7 @@ export default function ManagementOverview({
         setTargetHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
         coach={coach}
         decision={hasRun ? decisionCard : undefined}
+        onOpenOnePager={openSteeringOnePager}
       />
 
       {/* Everything behind the two cards, one action deeper (§2.11, owner

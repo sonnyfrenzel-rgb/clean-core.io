@@ -22,6 +22,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.nothingOnRecord': 'Nothing on record yet for any of the seven',
   'page.showProjectStatus': 'Show project status',
   'page.hideProjectStatus': 'Hide project status',
+  'page.statusTapHint': 'Tap a status to see what it rests on and open the tool behind it.',
   'page.showTipsAgain': 'Show tips again',
 
   // The central work area under the map — WorkspaceShell, Business (ADR-072).
@@ -62,6 +63,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'toolGuide.next': 'Next',
   'toolGuide.recommended': 'Recommended next step.',
   'toolGuide.othersNeedRun': 'The other tools need a signed run first.',
+  'toolGuide.whatTheyDo': 'What the tools do',
   'toolGuide.nothingOpen': 'Nothing is open — every tool this release can finish has its record.',
   'status.label': 'Project status',
   'status.open': 'Open',

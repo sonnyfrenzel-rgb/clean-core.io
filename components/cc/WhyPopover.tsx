@@ -33,6 +33,15 @@ export interface CcWhyPopoverProps {
   evidence?: React.ReactNode;
   /** ISO 8601, `2026-09-15` — §3 wants the machine form in metadata. */
   recorded?: string;
+  /**
+   * What the reader taps instead of a lone "?" — the status itself ("Need ○
+   * not started"). The whole statement is then the target, so a row of seven
+   * statements does not carry seven "?" beside them (owner, 04.10.2026: the IT
+   * header was "far too complex and untidy"). Opens on a tap, a click, Enter or
+   * Space, never on hover; 24 px tall, 44 px on a phone and under a coarse
+   * pointer, like the "?".
+   */
+  trigger?: React.ReactNode;
 }
 
 export default function CcWhyPopover({
@@ -41,6 +50,7 @@ export default function CcWhyPopover({
   basis,
   evidence,
   recorded,
+  trigger,
 }: CcWhyPopoverProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -76,31 +86,51 @@ export default function CcWhyPopover({
 
   return (
     <span className="relative inline-flex align-middle">
-      <button
-        ref={triggerRef}
-        type="button"
-        data-cc-why=""
-        aria-label={`${t('why.label')}: ${subject}`}
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-        onClick={() => (open ? close() : setOpen(true))}
-        className={
-          // The target and the glyph are two sizes (WG-03, roadmap 3.0.4). The
-          // ring stays 24px everywhere; the button around it grows to 44×44 on
-          // a phone (breakpoint S, §2.9) and under a coarse pointer, because
-          // there the "?" is the one thing a thumb has to hit (§2.10). Negative
-          // margins keep the row from growing by the difference.
-          'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-transparent p-0 ' +
-          'max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11 pointer-coarse:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11'
-        }
-      >
-        <span
-          aria-hidden={true}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-cc-ink-muted text-[11px] leading-none font-bold text-cc-ink-muted"
+      {trigger ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          data-cc-why=""
+          data-cc-why-form="statement"
+          aria-label={`${t('why.label')}: ${subject}`}
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          onClick={() => (open ? close() : setOpen(true))}
+          className={
+            'inline-flex min-h-6 items-center rounded-cc-row border border-transparent bg-transparent px-1 text-left ' +
+            'hover:border-cc-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus ' +
+            'max-[600px]:min-h-11 pointer-coarse:min-h-11'
+          }
         >
-          ?
-        </span>
-      </button>
+          {trigger}
+        </button>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          data-cc-why=""
+          aria-label={`${t('why.label')}: ${subject}`}
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          onClick={() => (open ? close() : setOpen(true))}
+          className={
+            // The target and the glyph are two sizes (WG-03, roadmap 3.0.4). The
+            // ring stays 24px everywhere; the button around it grows to 44×44 on
+            // a phone (breakpoint S, §2.9) and under a coarse pointer, because
+            // there the "?" is the one thing a thumb has to hit (§2.10). Negative
+            // margins keep the row from growing by the difference.
+            'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-transparent p-0 ' +
+            'max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11 pointer-coarse:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11'
+          }
+        >
+          <span
+            aria-hidden={true}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-cc-ink-muted text-[11px] leading-none font-bold text-cc-ink-muted"
+          >
+            ?
+          </span>
+        </button>
+      )}
 
       {open ? (
         <div

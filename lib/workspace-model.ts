@@ -852,6 +852,8 @@ export interface NotDeterminedItem {
   why: string;
   /** The line anchor, `L502`. */
   anchor: string;
+  /** Which limit of the engine it is — the key Management groups by (`lib/not-determined-plain.ts`). */
+  gap?: UnassessedConstruct['gap'];
 }
 
 export interface NotDetermined {
@@ -887,6 +889,7 @@ export function notDetermined(project: Project | null): NotDetermined {
     label: u.label,
     why: u.why,
     anchor: `L${u.line}`,
+    gap: u.gap,
   }));
   return { items, count: items.length, noSource: false };
 }

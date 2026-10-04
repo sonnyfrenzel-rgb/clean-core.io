@@ -30,6 +30,7 @@ import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/cc-messages';
 import { wt } from '@/lib/workspace-messages';
+import { STEERING_ANCHOR, STEERING_OPEN_EVENT } from '@/lib/steering-open';
 import { TONE_CLASS } from './ManagementExecutive';
 
 /**
@@ -161,6 +162,30 @@ export default function SteeringOnePager({
     setOpen(true);
   };
 
+  // Opened from the decision card or the Export menu (`lib/steering-open.ts`),
+  // or by a link to `#steering-one-pager`: open, then bring the page into view.
+  const [reveal, setReveal] = useState(0);
+  useEffect(() => {
+    const onOpen = () => {
+      setHistory(undefined);
+      setFindings(undefined);
+      setDecision(undefined);
+      setProcess(undefined);
+      setOpen(true);
+      setReveal((n) => n + 1);
+    };
+    if (window.location.hash === `#${STEERING_ANCHOR}`) onOpen();
+    window.addEventListener(STEERING_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(STEERING_OPEN_EVENT, onOpen);
+  }, []);
+  useEffect(() => {
+    if (reveal === 0) return;
+    const frame = window.requestAnimationFrame(() =>
+      document.getElementById(STEERING_ANCHOR)?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [reveal]);
+
   const findingsLoaded = useMemo<Loaded<ItFindingsSource>>(
     () =>
       findings === undefined
@@ -206,7 +231,7 @@ export default function SteeringOnePager({
 
   if (!open) {
     return (
-      <div data-steering-one-pager="closed" className="cc-no-print">
+      <div id={STEERING_ANCHOR} data-steering-one-pager="closed" className="cc-no-print scroll-mt-20">
         <CcButton variant="ghost" density="compact" icon={<FileText size={14} />} onClick={openFresh}>
           {STEERING_TITLE}
         </CcButton>
@@ -245,10 +270,11 @@ const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted
 function SteeringSheet({ pager, onClose }: { pager: SteeringPage | null; onClose: () => void }) {
   return (
     <section
+      id={STEERING_ANCHOR}
       data-steering-one-pager="open"
       data-steering-print=""
       aria-labelledby="steering-one-pager-heading"
-      className="cc min-w-0 rounded-cc-card border border-cc-line bg-cc-surface p-4"
+      className="cc min-w-0 scroll-mt-20 rounded-cc-card border border-cc-line bg-cc-surface p-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

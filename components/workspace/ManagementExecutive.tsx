@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { FileText } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
@@ -24,6 +26,7 @@ import type { ExecutiveFigure, ExecutiveSummary, ExecutiveTarget } from '@/lib/m
 import { NO_SAP_DEPENDENCY_TITLE, STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
 import { PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 import InfoPopover from './InfoPopover';
+import { STEERING_TITLE } from '@/lib/steering-one-pager';
 import GlossaryTerm from '@/components/GlossaryTerm';
 
 /**
@@ -433,6 +436,7 @@ export default function ManagementExecutive({
   setTargetHref,
   coach,
   decision,
+  onOpenOnePager,
 }: {
   summary: ExecutiveSummary;
   /** Turns a target into a link on this surface — a stage of the project, or of the demo. */
@@ -458,8 +462,28 @@ export default function ManagementExecutive({
    * "the decision must be shown, placed prominently").
    */
   decision?: React.ReactNode;
+  /**
+   * Opens the steering one-pager — a secondary button at the top of the
+   * decision card, where a manager looks (owner, 04.10.2026: "much better but
+   * hardly findable"). Never primary: the next step keeps the page's one
+   * primary button.
+   */
+  onOpenOnePager?: () => void;
 }) {
   const s = summary;
+  const onePager = onOpenOnePager ? (
+    <span className="cc-no-print shrink-0">
+      <CcButton
+        variant="secondary"
+        density="compact"
+        icon={<FileText size={14} aria-hidden={true} />}
+        onClick={onOpenOnePager}
+        data-executive-one-pager=""
+      >
+        {STEERING_TITLE}
+      </CcButton>
+    </span>
+  ) : null;
   // The decision's own step stays as a link when it goes somewhere the primary
   // button does not — never a second button saying the same thing.
   const decisionStep =
@@ -550,12 +574,15 @@ export default function ManagementExecutive({
         {coach}
         {decision ? (
           <>
-            <h2 id={headingId} data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-              <span className={cn(LABEL, 'mr-2')}>
-                <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
-              </span>
-              {s.question}
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+              <h2 id={headingId} data-executive-question="" className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+                <span className={cn(LABEL, 'mr-2')}>
+                  <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+                </span>
+                {s.question}
+              </h2>
+              {onePager}
+            </div>
             {/* The page's one next step, as one row above the decision, so its
                 tip stands at the top of the page rather than over the folds. */}
             {nextRow}
@@ -563,7 +590,8 @@ export default function ManagementExecutive({
           </>
         ) : (
           <>
-        <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <p data-executive-question="" className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-semibold text-cc-ink-muted">
           <span className={cn(LABEL, 'mr-2')}>
             {/* "Decision" is the program decision only; a branch in the code is
                 a decision point (owner, 03.10.2026). The term opens by tap or
@@ -572,6 +600,8 @@ export default function ManagementExecutive({
           </span>
           {s.question}
         </p>
+        {onePager}
+        </div>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <h2
             id={headingId}

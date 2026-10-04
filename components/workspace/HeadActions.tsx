@@ -9,6 +9,7 @@ import { getAuth } from '@/lib/firebase';
 import { saveAs } from '@/lib/fileSaver';
 import { loadProjectAccess, type ProjectAccessList } from '@/lib/project-readers-client';
 import { signedSourceOf } from '@/lib/signed-source';
+import { openSteeringOnePager } from '@/lib/steering-open';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { HEAD_INITIALS, readerInitials } from '@/lib/workspace-head';
 import type { WorkspaceView } from '@/lib/workspace-model';
@@ -79,7 +80,8 @@ export function ReadAccessLine({ projectId, refreshKey = 0 }: { projectId: strin
  *
  *   - **Export** opens a short menu: the process as BPMN 2.0 (the same export
  *     the Documentation stage writes, from the source the active run signed —
- *     offered only when there is one), printing this view, and the Delivery
+ *     offered only when there is one), printing this view, in Management the
+ *     steering one-pager (one A4 page, saved as PDF by the browser), and the Delivery
  *     stage, where the signed delivery package and the audit pack are made.
  *   - **Invite to view** opens the invitation dialog the dashboard uses
  *     (`InviteReaderDialog`), and only for the owner: an invited reader cannot
@@ -178,6 +180,20 @@ export default function WorkspaceHeadActions({
             >
               {wt('biz.exportPrint')}
             </CcButton>
+            {/* The steering one-pager where a manager exports things (owner,
+                04.10.2026: "hardly findable"). It stands under the decision in
+                Management, so the entry is offered there. */}
+            {view === 'management' ? (
+              <CcButton
+                onClick={() => {
+                  setExportOpen(false);
+                  openSteeringOnePager();
+                }}
+                data-workspace-export-one-pager=""
+              >
+                {wt('biz.exportOnePager')}
+              </CcButton>
+            ) : null}
             <CcLinkButton
               href={stageHref({ base: `/project/${projectId}`, path: 'delivery', view, from: WORKSPACE_RETURN.tools })}
               data-workspace-export-delivery=""

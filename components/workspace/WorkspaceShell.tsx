@@ -9,6 +9,8 @@ import { BACK_LINK_CLASS } from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcDisclosure from '@/components/cc/Disclosure';
+import CcObjectStatus from '@/components/cc/ObjectStatus';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
 import WorkspaceStatusLine from './StatusLine';
@@ -16,6 +18,7 @@ import WorkspaceLayerBar from './LayerBar';
 import WorkspaceLayerSection from './LayerSection';
 import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
+import NotDeterminedFold from './NotDeterminedFold';
 import NextStepCard from './NextStepCard';
 import BusinessNextStep from './BusinessNextStep';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
@@ -179,13 +182,14 @@ const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
  * everything it says about the project is derived in `lib/workspace-model.ts`
  * so that the honesty of it is testable in one place rather than seven.
  *
- * **The header is not the same in all three views** (ADR-026, ADR-037). In
- * Business the content leads: the meta line sits behind "Details" and the seven
- * statuses fold into one plain-language "Project status" row, because
- * "Traceability" and "catalog releaseInfo fb0df9f2" ask for knowledge a process
- * owner does not have and cost the line that mattered. In IT everything is
- * open, including the toolbar. In Management the statuses are open and the meta
- * line is not.
+ * **One header in all three views** (ADR-026, ADR-037, note of 04.10.2026).
+ * The meta line sits behind "Details" and the seven statuses fold into one
+ * "Project status" row in every view — IT and Management see the provenance
+ * status in the folded row, Business its plain sentence — because "catalog
+ * releaseInfo fb0df9f2" and seven statuses with seven "?" cost every reader the
+ * line that mattered. The tools stay open in IT from M up. In Business the
+ * status row and the tools stand under "Next step"; in IT and Management in the
+ * header.
  *
  * **Three navigations, three jobs** (ADR-018). The view orders the same content
  * and lives in `?view=`; the layer jumps within this page and lives in the URL
@@ -483,11 +487,12 @@ export default function WorkspaceShell({
   // about this project and not a number borrowed from a mockup.
   const started = statuses.filter((s) => s.status !== 'not-started').length;
 
-  // Business folds the meta line and the statuses away; IT opens both; Management
-  // opens the statuses only.
-  const metaVisible = view === 'it' || detailsOpen;
-  const statusVisible = view === 'it' || view === 'management' || statusOpen;
+  // One header in all three views (owner, 04.10.2026: the IT and Management
+  // headers were "far too complex and untidy" beside Business): the meta line
+  // behind "Details", the statuses in one folded row, the tools in one bar.
+  const metaVisible = detailsOpen;
   const toolsOpen = view === 'it';
+  const provenanceStatus = statuses.find((s) => s.facet === 'provenance') ?? null;
 
   // The reader's own choice wins, empty or not — an empty layer opened from
   // "More" is a place, and saying so is the whole of roadmap 6.2. Without a
@@ -526,35 +531,55 @@ export default function WorkspaceShell({
    */
   const statusAndTools = (
     <>
-      {/* The status line — open in IT and Management, one folded row in
-          Business (ADR-026). The fold is a fold: the statuses are one click
-          away, never removed (§2.11). */}
-      <div className="mt-4">
-        {view === 'business' ? (
-          <div
-            data-workspace-status-fold=""
-            className="flex flex-wrap items-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
-          >
+      {/* The project status — one folded row in every view (ADR-026, note
+          of 04.10.2026). The fold is a fold: the seven statuses are one click
+          away, never removed (§2.11), and each status is its own "Why?". */}
+      <div className="mt-3">
+        <div
+          data-workspace-status-fold=""
+          className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
               {wt('page.projectStatus')}
             </span>
-            <span data-workspace-status-summary className="text-[13px] font-medium text-cc-ink">
-              {started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}
+            <span data-workspace-status-summary className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-cc-ink">
+              {/* IT and Management read where the evidence comes from first;
+                  Business keeps its plain sentence (ADR-026). */}
+              {view !== 'business' && provenanceStatus ? (
+                <span data-workspace-status-summary-provenance="" className="inline-flex items-center gap-2">
+                  <CcObjectStatus value={provenanceStatus.status} facet={provenanceStatus.label} />
+                  {provenanceStatus.provenance ? <CcProvenanceChip value={provenanceStatus.provenance} /> : null}
+                  <span aria-hidden={true} className="text-cc-ink-muted max-[600px]:hidden">·</span>
+                </span>
+              ) : null}
+              <span>{started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}</span>
             </span>
             <span className="cc-no-print ml-auto">
               {/* A fold folds back (QA review of 247b20c16e38). */}
-              <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen}>
+              <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen} data-workspace-status-toggle="">
                 {statusOpen ? wt('page.hideProjectStatus') : wt('page.showProjectStatus')}
                 <ChevronDown size={14} aria-hidden={true} className={statusOpen ? 'rotate-180' : undefined} />
               </CcButton>
             </span>
           </div>
-        ) : null}
-        {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} view={view} />}
+          {statusOpen ? (
+            <div className="mt-2 border-t border-cc-line pt-2">
+              <WorkspaceStatusLine statuses={statuses} projectId={projectId} view={view} />
+              <p data-workspace-status-hint="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {wt('page.statusTapHint')}
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-4 flex flex-wrap items-start justify-between gap-3">
-        <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
+      <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-3 flex flex-wrap items-start justify-between gap-3">
+        {/* The tools take the row's width and wrap inside it, so Export and
+            "Invite to view" stay beside them instead of under the hint line. */}
+        <div className="min-w-0 flex-1 basis-96 max-[600px]:flex-none max-[600px]:basis-auto">
+          <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
+        </div>
         {/* Export and "Invite to view" (mockup s1) — in every view: what
             leaves the building and who may read it are not perspectives. */}
         <WorkspaceHeadActions
@@ -613,8 +638,15 @@ export default function WorkspaceShell({
             evidenceExtra={
               <>
                 <PublicCloudFitPanel project={project} />
+                {/* Folded and grouped by kind in Management (owner, 04.10.2026:
+                    "keep that folded"); the line-by-line list with the engine's
+                    reasons stays in IT. */}
                 <div id="not-determined">
-                  <NotDeterminedCard data={open} recorded={recorded} />
+                  <NotDeterminedFold
+                    data={open}
+                    recorded={recorded}
+                    itHref={`/project/${encodeURIComponent(projectId)}?view=it#not-determined`}
+                  />
                 </div>
               </>
             }
@@ -905,18 +937,16 @@ export default function WorkspaceShell({
                 onKeep={stand.keep}
                 onRefresh={stand.refresh}
               />
-              {view !== 'it' && (
-                <span className="cc-no-print">
-                  <CcButton
-                    onClick={() => setDetailsOpen((v) => !v)}
-                    aria-expanded={detailsOpen}
-                    data-workspace-details-toggle=""
-                  >
-                    {wt('page.details')}
-                    <ChevronDown size={14} aria-hidden={true} className={detailsOpen ? 'rotate-180' : undefined} />
-                  </CcButton>
-                </span>
-              )}
+              <span className="cc-no-print">
+                <CcButton
+                  onClick={() => setDetailsOpen((v) => !v)}
+                  aria-expanded={detailsOpen}
+                  data-workspace-details-toggle=""
+                >
+                  {wt('page.details')}
+                  <ChevronDown size={14} aria-hidden={true} className={detailsOpen ? 'rotate-180' : undefined} />
+                </CcButton>
+              </span>
             </div>
             {metaVisible && (
               <div className="mt-2">
