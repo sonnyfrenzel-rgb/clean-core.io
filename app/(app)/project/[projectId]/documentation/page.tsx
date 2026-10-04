@@ -43,7 +43,7 @@ import {
 import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messages';
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
-import ProcessDocumentView from '@/components/documentation/ProcessDocumentView';
+import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentBlocks, processDocumentFileName } from '@/lib/process-document';
 import {
   BUSINESS_LAYER_CEILING_MS,
@@ -63,7 +63,7 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
 import { useStatementProposal } from '@/hooks/useStatementProposal';
-import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
+import { buildNavigation, levelOf, parseMapAddress, resolveMapAddress } from '@/lib/process-navigation';
 import {
   ensureProcessBaseline,
   fetchLatestRevision,
@@ -861,6 +861,25 @@ Structure the JSON exactly like this:
   }, [mapNav, resolved, address.plane, address.node, replaceAddress]);
 
   /**
+   * Owner 04.10.2026 — the map stands below the process description now, so
+   * a link that names a level or an element (`#map=…`) is taken to the map
+   * once it is drawn. Read from the address the page was opened with, once;
+   * a level opened later moves nothing.
+   */
+  const exploreRef = useRef<HTMLElement | null>(null);
+  const openedOnMapLink = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (openedOnMapLink.current !== null) return;
+    const opened = parseMapAddress(window.location.hash);
+    openedOnMapLink.current = opened.plane !== null || opened.node !== null;
+  }, []);
+  useEffect(() => {
+    if (!openedOnMapLink.current || !processMap.model || !exploreRef.current) return;
+    openedOnMapLink.current = false;
+    exploreRef.current.scrollIntoView({ block: 'start' });
+  }, [processMap.model, loading]);
+
+  /**
    * A level the reader opens keeps the selection only when the selection is on
    * it. Without that, walking up with a crumb would be undone at once: the
    * address resolves an element before a level, so a selection left behind on
@@ -1201,14 +1220,31 @@ Structure the JSON exactly like this:
       }}
     />
   ) : null;
+  /**
+   * Owner 04.10.2026 (ADR-077 amended) — the glance opens the description
+   * rather than standing above it: what the process does and where its
+   * problems are, then section 1. Its not-determined points are counted here
+   * and asked once, in section 9.
+   */
+  const glanceProps = {
+    headline: glance.headline,
+    callouts: glance.callouts,
+    notDetermined: glance.notDetermined,
+    reading: handbook.status === 'loading' || processMap.status === 'loading',
+    noSource: !signedSource,
+  };
+  /** The technical trace, last on the page — after the business layer and the map. */
+  const appendixPanel = engineDoc ? (
+    <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
+  ) : null;
   const technicalPanel = engineDoc ? (
     processDocument.document ? (
-      <ProcessDocumentView document={processDocument.document} appendix={tracePanel} />
+      <ProcessDocumentView
+        document={processDocument.document}
+        summary={<BusinessGlance {...glanceProps} questionsHref="#pd-questions" />}
+      />
     ) : processDocument.status === 'failed' ? (
-      <div className="space-y-4">
-        <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace below is complete.</CcMessageStrip>
-        {tracePanel}
-      </div>
+      <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace at the foot of this page is complete.</CcMessageStrip>
     ) : (
       <div className={SECTION} aria-busy="true">
         <CcSkeleton shape="text" label="the process description" count={4} />
@@ -1222,6 +1258,9 @@ Structure the JSON exactly like this:
       <div data-legacy-blueprint>
         <CcMessageStrip state="warning">{LEGACY_BLUEPRINT_NOTICE}</CcMessageStrip>
       </div>
+
+      {/* No description to open with, so the glance stands on its own. */}
+      <BusinessGlance {...glanceProps} />
 
       {/* L1 & L2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1426,7 +1465,13 @@ Structure the JSON exactly like this:
         <CcProvenanceChip value="proposed" />
       </div>
       <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-body text-cc-ink">{wt('doc.businessOfferLead')}</p>
-      {!modelAvailability.enabled('documentation') ? (
+      {/* An invited reader reads: no button offers a write the rules refuse,
+          and the owner's model settings are not the reader's business. */}
+      {project && !isOwner ? (
+        <p data-business-layer-reader="" className="m-0 cc-text-cell text-cc-ink-muted">
+          Not on record yet. The owner of this project writes it; it appears here once it is saved.
+        </p>
+      ) : !modelAvailability.enabled('documentation') ? (
         <p data-not-generated="Business SOP and RACI layer" data-business-layer-off="" className="m-0 cc-text-cell text-cc-ink-muted">
           {modelAbsenceReason(modelAvailability.keyAvailable ? 'stage-off' : 'no-key', 'documentation')}{' '}
           <a href="/settings" className="text-cc-ink underline">Settings</a>
@@ -1449,7 +1494,7 @@ Structure the JSON exactly like this:
         </div>
       )}
       {/* Why the button waits, in words — never a button that does nothing. */}
-      {modelAvailability.enabled('documentation') && businessBlockers.length > 0 ? (
+      {isOwner && modelAvailability.enabled('documentation') && businessBlockers.length > 0 ? (
         <div id="business-layer-blocked" data-business-layer-blocked="" className="mt-4">
           <CcMessageStrip
             state="information"
@@ -1499,10 +1544,9 @@ Structure the JSON exactly like this:
         ]}
       />
 
-      {/* Owner decision 01.10.2026 — proposal B, "canvas first": a slim title
-          with the two exports a reader takes away, the process map as the
-          stage, one chapter of the handbook beside it, the chapters in a drawer
-          below. The frame (progress, header, back link) is shared and unstyled
+      {/* A slim title with the two exports of the map a reader takes away
+          (the PDF brief and BPMN); the description's own exports stand at its
+          head. The frame (progress, header, back link) is shared and unstyled
           here; everything under it is this stage's. */}
       <StageHeader tools={{ steps: phases, current: 'documentation' }}
         stage="documentation"
@@ -1555,87 +1599,48 @@ Structure the JSON exactly like this:
         </div>
       )}
 
-      {/* Owner 03.10.2026 — the business layer is the first thing a business
-          reader sees. Not generated yet: the card that offers it comes first,
-          the one action of the screen. Generated: the answer comes first — the
-          glance with the value and the problems — and the SOP and the RACI
-          right under it. The technical documentation follows the process. */}
-      {!parsedBusinessDoc ? businessPanel : null}
-
-      <BusinessGlance
-        headline={glance.headline}
-        callouts={glance.callouts}
-        notDetermined={glance.notDetermined}
-        reading={handbook.status === 'loading' || processMap.status === 'loading'}
-        noSource={!signedSource}
-      />
-
-      {parsedBusinessDoc ? businessPanel : null}
-
-      <HandbookStage
-        handbook={handbook.handbook}
-        reading={handbook.status === 'loading' || processMap.status === 'loading'}
-        model={processMap.model}
-        selected={resolved.node}
-        onSelect={selectElement}
-        source={signedSource?.source ?? null}
-        freshness={documentationStale ? 'stale' : hasDocument ? 'current' : 'not-saved'}
-        map={signedSource && processMap.model ? (
-          <div data-process-map-section="">
-            <ProcessMap
-              layout="stage"
-              /* `DESIGN.md` §5.7 — the steps on a phone, the map elsewhere. */
-              defaultView={isPhone ? 'steps' : 'map'}
-              model={processMap.model}
-              source={signedSource.source}
-              measuredAt={processMap.measuredAt}
-              /* Roadmap 6.3 — the Usage overlay, and only when there is an
-                 import. `usageReport` is a server-written field (roadmap 0.7);
-                 this reads it and never writes it. */
-              usage={project?.usageReport ?? null}
-              catalogTarget={project ? catalogLookupTargetOf(project) : null}
-              plane={resolved.plane}
-              onPlaneChange={openPlane}
-              selected={resolved.node}
-              onSelectedChange={selectElement}
-              save={saveProcessModel}
-              openLatest={openLatestRevision}
-              projectId={typeof projectId === 'string' ? projectId : null}
-            />
-          </div>
-        ) : (
-          <div className="rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted p-4">
-            <p className="m-0 cc-text-h3 text-cc-ink">
-              {signedSource && processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
-            </p>
-            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              {signedSource
-                ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
-                : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
-            </p>
-          </div>
-        )}
-      />
-
-      <HandbookDrawer
-        handbook={handbook.handbook}
-        reading={handbook.status === 'loading'}
-        selectedChapter={resolved.node ? (handbook.handbook?.chapterOf.get(resolved.node) ?? null) : null}
-        onSelect={selectElement}
-        exportActions={
-          <>
-            {signedSource && processMap.model ? (
-              <CcButton onClick={downloadBrief} busy={isBuildingBrief} icon={<Printer size={14} aria-hidden={true} />}>
-                PDF
+      {/* Two different things used to share one heading. A blocked start is a
+          refusal before anything is read; a refused answer is a reading that
+          happened and produced something this stage cannot display. */}
+      {docError && (
+        <div data-doc-error={docRejected ? 'rejected' : 'blocked'} className="mb-6">
+          <CcMessageStrip
+            state="error"
+            headline={docRejected ? 'Generation failed' : 'Generation blocked'}
+            actions={docRejected && isOwner ? (
+              <CcButton onClick={generateDocumentation} disabled={!signedSource || !processMap.model || isGeneratingDoc}>
+                Try again
               </CcButton>
-            ) : null}
-            {/* The Confluence page waits for a stored documentation — there is
-                nothing to export before one exists. A stale one stays
-                exportable, and neither the button nor the file hides that it
-                is stale (owner decision 30.09.2026, QA c8ae21453b3b). */}
-            {hasDocument ? (
+            ) : undefined}
+          >
+            {docError}
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {/* Owner 04.10.2026 (ADR-077 amended) — the stage reads top-down like
+          the document a business reader opens: the process description first,
+          with what it does for the business as its opening and its exports at
+          its head; the business layer a model proposes right after it; the map
+          with its chapters to explore below; the technical trace last. */}
+      <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 max-w-3xl">
+            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+              Written from the code when the stage opens, no model call. Its appendix, the technical trace, stands at the
+              foot of this page; the Confluence page, the Markdown and the Word file carry the same document.
+            </p>
+          </div>
+          {hasDocument ? (
+            <div data-documentation-exports="" className="flex flex-wrap items-start gap-2">
+              {/* The Confluence page waits for a stored documentation — there is
+                  nothing to export before one exists. A stale one stays
+                  exportable, and neither the button nor the file hides that it
+                  is stale (owner decision 30.09.2026, QA c8ae21453b3b). */}
               <span className="inline-flex flex-col items-start gap-1">
                 <CcButton
+                  density="cozy"
                   onClick={downloadConfluenceHTML}
                   disabled={isGeneratingDoc || (Boolean(engineDoc) && !processDocument.document)}
                   data-export-confluence={documentationStale ? 'stale' : 'current'}
@@ -1652,110 +1657,30 @@ Structure the JSON exactly like this:
                   </span>
                 )}
               </span>
-            ) : null}
-            {processDocument.document ? (
-              <>
-                <CcButton onClick={() => void downloadProcessDocument('md')} data-export-process-md="" icon={<FileCode2 size={14} aria-hidden={true} />}>
-                  Markdown
+              {processDocument.document ? (
+                <>
+                  <CcButton density="cozy" onClick={() => void downloadProcessDocument('md')} data-export-process-md="" icon={<FileCode2 size={14} aria-hidden={true} />}>
+                    Markdown
+                  </CcButton>
+                  <CcButton density="cozy" onClick={() => void downloadProcessDocument('docx')} data-export-process-docx="" icon={<Download size={14} aria-hidden={true} />}>
+                    Word
+                  </CcButton>
+                </>
+              ) : null}
+              {isOwner ? (
+                <CcButton
+                  variant="secondary"
+                  density="cozy"
+                  onClick={generateDocumentation}
+                  disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+                  busy={isGeneratingDoc}
+                  data-regenerate-documentation
+                  icon={<RefreshCw size={16} aria-hidden={true} />}
+                >
+                  {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
                 </CcButton>
-                <CcButton onClick={() => void downloadProcessDocument('docx')} data-export-process-docx="" icon={<Download size={14} aria-hidden={true} />}>
-                  Word
-                </CcButton>
-              </>
-            ) : null}
-            {signedSource ? (
-              <CcButton variant="secondary" onClick={downloadBPMN} icon={<Download size={14} aria-hidden={true} />}>
-                BPMN 2.0
-              </CcButton>
-            ) : null}
-          </>
-        }
-        exportNotes={
-          <>
-            {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part that is
-                not established — whether it lands in Signavio or SAP Build — in
-                the same breath, never on hover. */}
-            <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
-              <CcTag>BPMN 2.0 XML</CcTag>
-              <span data-export-caveat>Import into SAP Signavio or SAP Build has not been verified yet.</span>
-            </p>
-            {/* Roadmap 4.4 — what the brief holds, said before it is asked for. */}
-            <p data-brief-caveat className="m-0 cc-text-meta text-cc-ink-muted">
-              PDF brief: the PDF and the BPMN file in one archive, every statement with its lines or marked not
-              determined — a summary, not a signed audit pack.
-            </p>
-          </>
-        }
-        exportPanel={
-          <dl className="m-0 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-cc-row border border-cc-line p-4">
-              <dt className="cc-text-h3 text-cc-ink">PDF brief</dt>
-              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                Process, rules and open questions with their lines, plus the BPMN file. Not a signed audit pack.
-              </dd>
+              ) : null}
             </div>
-            <div className="rounded-cc-row border border-cc-line p-4">
-              <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
-              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                {hasDocument
-                  ? 'The process description, the business layer and the technical trace as one HTML page to paste into Confluence. A stale one says so at the top. The same document as Markdown and Word.'
-                  : 'Available once the documentation has been saved from the code below.'}
-              </dd>
-            </div>
-            <div className="rounded-cc-row border border-cc-line p-4">
-              <dt className="cc-text-h3 text-cc-ink">BPMN 2.0</dt>
-              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                The process as the code runs it, with line ranges. Import into a modeller has not been verified yet.
-              </dd>
-            </div>
-          </dl>
-        }
-      />
-
-      {/* Two different things used to share one heading. A blocked start is a
-          refusal before anything is read; a refused answer is a reading that
-          happened and produced something this stage cannot display. */}
-      {docError && (
-        <div data-doc-error={docRejected ? 'rejected' : 'blocked'} className="mt-6">
-          <CcMessageStrip
-            state="error"
-            headline={docRejected ? 'Generation failed' : 'Generation blocked'}
-            actions={docRejected ? (
-              <CcButton onClick={generateDocumentation} disabled={!signedSource || !processMap.model || isGeneratingDoc}>
-                Try again
-              </CcButton>
-            ) : undefined}
-          >
-            {docError}
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {/* One level deeper: the documentation as it is stored and exported —
-          the engine's document element by element, and the business layer a
-          model may propose on top of it. */}
-      <section aria-labelledby="documentation-stored" className="mt-8 mb-8">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
-            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              Written from the code when the stage opens, no model call: purpose, trigger, the steps, rules, exceptions,
-              effects, integrations, controls and open questions, the technical trace last — as the Confluence page,
-              the Markdown and the Word file carry it.
-            </p>
-          </div>
-          {hasDocument ? (
-            <CcButton
-              variant="primary"
-              density="cozy"
-              onClick={generateDocumentation}
-              disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
-              busy={isGeneratingDoc}
-              data-regenerate-documentation
-              icon={<RefreshCw size={16} aria-hidden={true} />}
-            >
-              {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
-            </CcButton>
           ) : null}
         </div>
 
@@ -1769,6 +1694,14 @@ Structure the JSON exactly like this:
           <div id="documentation-report" data-stage-output="documentation">
             {technicalPanel}
           </div>
+        ) : project && !isOwner ? (
+          /* An invited reader reads: nothing is written on their visit, and no
+             button offers a write the rules refuse. */
+          <CcMessageStrip state="information" headline="No process description on record yet.">
+            <span data-documentation-reader-note="">
+              The owner of this project writes it by opening this stage; it appears here once it is saved.
+            </span>
+          </CcMessageStrip>
         ) : (
           <div className="space-y-4">
             {/* Said before either branch, because it is true in both. */}
@@ -1808,6 +1741,132 @@ Structure the JSON exactly like this:
         )}
       </section>
 
+      {/* The business layer — who does what, who is accountable — a model's
+          proposal on top of the description, so it follows it. Not on record:
+          the card that offers it, or says why it cannot run. */}
+      {businessPanel}
+
+      {/* Explore the process: the map as the code runs it, a chapter beside
+          it, the chapters in a drawer below (owner decision 01.10.2026,
+          proposal B). The level and the selection stay in the address. */}
+      <section
+        ref={exploreRef}
+        aria-labelledby="documentation-explore"
+        data-documentation-explore=""
+        className="mb-8 scroll-mt-24"
+      >
+        <h2 id="documentation-explore" className="m-0 cc-text-h2 text-cc-ink">Explore the process</h2>
+        <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
+          The process drawn from the code, with the chapter of each step beside it. Select a step to read its chapter;
+          a link to this page keeps the level and the step that are open.
+        </p>
+        <HandbookStage
+          handbook={handbook.handbook}
+          reading={handbook.status === 'loading' || processMap.status === 'loading'}
+          model={processMap.model}
+          selected={resolved.node}
+          onSelect={selectElement}
+          source={signedSource?.source ?? null}
+          freshness={documentationStale ? 'stale' : hasDocument ? 'current' : 'not-saved'}
+          map={signedSource && processMap.model ? (
+            <div data-process-map-section="">
+              <ProcessMap
+                layout="stage"
+                /* `DESIGN.md` §5.7 — the steps on a phone, the map elsewhere. */
+                defaultView={isPhone ? 'steps' : 'map'}
+                model={processMap.model}
+                source={signedSource.source}
+                measuredAt={processMap.measuredAt}
+                /* Roadmap 6.3 — the Usage overlay, and only when there is an
+                   import. `usageReport` is a server-written field (roadmap 0.7);
+                   this reads it and never writes it. */
+                usage={project?.usageReport ?? null}
+                catalogTarget={project ? catalogLookupTargetOf(project) : null}
+                plane={resolved.plane}
+                onPlaneChange={openPlane}
+                selected={resolved.node}
+                onSelectedChange={selectElement}
+                save={saveProcessModel}
+                openLatest={openLatestRevision}
+                projectId={typeof projectId === 'string' ? projectId : null}
+              />
+            </div>
+          ) : (
+            <div className="rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted p-4">
+              <p className="m-0 cc-text-h3 text-cc-ink">
+                {signedSource && processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
+              </p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                {signedSource
+                  ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
+                  : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
+              </p>
+            </div>
+          )}
+        />
+
+        <HandbookDrawer
+          handbook={handbook.handbook}
+          reading={handbook.status === 'loading'}
+          selectedChapter={resolved.node ? (handbook.handbook?.chapterOf.get(resolved.node) ?? null) : null}
+          onSelect={selectElement}
+          exportActions={
+            <>
+              {signedSource && processMap.model ? (
+                <CcButton onClick={downloadBrief} busy={isBuildingBrief} icon={<Printer size={14} aria-hidden={true} />}>
+                  PDF
+                </CcButton>
+              ) : null}
+              {signedSource ? (
+                <CcButton variant="secondary" onClick={downloadBPMN} icon={<Download size={14} aria-hidden={true} />}>
+                  BPMN 2.0
+                </CcButton>
+              ) : null}
+            </>
+          }
+          exportNotes={
+            <>
+              {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part that is
+                  not established — whether it lands in Signavio or SAP Build — in
+                  the same breath, never on hover. */}
+              <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+                <CcTag>BPMN 2.0 XML</CcTag>
+                <span data-export-caveat>Import into SAP Signavio or SAP Build has not been verified yet.</span>
+              </p>
+              {/* Roadmap 4.4 — what the brief holds, said before it is asked for. */}
+              <p data-brief-caveat className="m-0 cc-text-meta text-cc-ink-muted">
+                PDF brief: the PDF and the BPMN file in one archive, every statement with its lines or marked not
+                determined — a summary, not a signed audit pack.
+              </p>
+            </>
+          }
+          exportPanel={
+            <dl className="m-0 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-cc-row border border-cc-line p-4">
+                <dt className="cc-text-h3 text-cc-ink">PDF brief</dt>
+                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                  Process, rules and open questions with their lines, plus the BPMN file. Not a signed audit pack.
+                </dd>
+              </div>
+              <div className="rounded-cc-row border border-cc-line p-4">
+                <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
+                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                  {hasDocument
+                    ? 'The process description, the business layer and the technical trace as one HTML page to paste into Confluence. A stale one says so at the top. The same document as Markdown and Word.'
+                    : 'Available once the process description above has been saved.'}
+                </dd>
+              </div>
+              <div className="rounded-cc-row border border-cc-line p-4">
+                <dt className="cc-text-h3 text-cc-ink">BPMN 2.0</dt>
+                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                  The process as the code runs it, with line ranges. Import into a modeller has not been verified yet.
+                </dd>
+              </div>
+            </dl>
+          }
+        />
+      </section>
+
       {/* Roadmap 3.2 — what was kept, and what changed between two of them. */}
       {signedSource && (
         <section data-process-revisions-section className={clsx(SECTION, 'mb-8')}>
@@ -1825,6 +1884,10 @@ Structure the JSON exactly like this:
           />
         </section>
       )}
+
+      {/* The technical trace — the description's appendix, last on the page
+          as it is last in every export. */}
+      {!isGeneratingDoc && appendixPanel ? <div className="mb-8">{appendixPanel}</div> : null}
 
       {/* Level 4 task specification — a dialog (§2.6). Focus in, Tab kept
           inside, Escape closes, focus back to the button that opened it: the

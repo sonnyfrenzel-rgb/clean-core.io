@@ -566,7 +566,7 @@ test.describe('capture the landing page views', () => {
         await page.evaluate(() => window.scrollTo(0, 0));
       }
       // Documentation is a process description written when the stage opens (ADR-077):
-      // its picture starts at that description, below the map and the chapters.
+      // its picture starts at that description, which leads the stage (ADR-077 amended 04.10.2026).
       const focus = phase.key === 'documentation' && !fromRun ? page.locator('[data-demo-process-document]').first() : null;
       if (focus) {
         // Clear of the sticky shell header.

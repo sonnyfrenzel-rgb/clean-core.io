@@ -20,8 +20,10 @@ import {
  * page, the Markdown and the `.docx` render the same `ProcessDocument`, so the
  * screen and the files say the same thing in the same order.
  *
- * Sections 1 to 9 are open: they are the document. The technical trace comes
- * last, under its own heading, with its long lists folded (`appendix`).
+ * Sections 1 to 9 are open: they are the document. The technical trace is
+ * `ProcessDocumentAppendix`, rendered by the stage at its foot — after the
+ * business layer and the map (owner 04.10.2026, ADR-077 amended): a reader
+ * opens the description, and the trace is where a document keeps its appendix.
  */
 
 const SECTION = 'rounded-cc-card border border-cc-line bg-cc-surface p-4 md:p-6 shadow-cc min-w-0';
@@ -78,13 +80,16 @@ function Proposal({ text, anchors }: { text: string; anchors: PdText['anchors'] 
 export default function ProcessDocumentView({
   document: doc,
   mapHref,
-  appendix,
+  summary,
 }: {
   document: ProcessDocument;
   /** Where the live map stands on this page — the diagram of section 3. */
   mapHref?: string;
-  /** The technical trace, rendered by the caller (the folded element and statement lists). */
-  appendix?: React.ReactNode;
+  /**
+   * What the process does for the business, at a glance (`BusinessGlance`
+   * embedded) — the opening of the description, before section 1.
+   */
+  summary?: React.ReactNode;
 }) {
   const p = doc.purpose;
   const t = doc.trigger;
@@ -93,6 +98,8 @@ export default function ProcessDocumentView({
       <p className="m-0 max-w-3xl cc-text-meta text-cc-ink-muted">
         <CcProvenanceChip value="reconstructed" /> {doc.fileName} · {doc.lineCount} lines. {doc.note}
       </p>
+
+      {summary}
 
       <Section id="purpose">
         {p.summary.map((s, i) => <Para key={i} t={s} />)}
@@ -222,11 +229,23 @@ export default function ProcessDocumentView({
         ) : <Empty id="questions" />}
       </Section>
 
-      <section data-doc-section="appendix" aria-labelledby="pd-appendix" className="min-w-0 pt-2">
-        <h3 id="pd-appendix" className="m-0 cc-text-h2 text-cc-ink">{sectionTitle('appendix')}</h3>
-        <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-cell text-cc-ink-muted">{appendixLead(doc.appendix)}</p>
-        {appendix}
-      </section>
     </div>
+  );
+}
+
+/**
+ * The appendix of the process description — the technical trace, every element
+ * and every statement with its lines. Its own block so the stage can put it
+ * last, below the business layer and the map; the exports keep it last too.
+ */
+export function ProcessDocumentAppendix({ document: doc, children }: { document: ProcessDocument | null; children: React.ReactNode }) {
+  return (
+    <section data-doc-section="appendix" aria-labelledby="pd-appendix" className="min-w-0">
+      <h2 id="pd-appendix" className="m-0 cc-text-h2 text-cc-ink">{sectionTitle('appendix')}</h2>
+      <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-cell text-cc-ink-muted">
+        {doc ? appendixLead(doc.appendix) : 'Every element and every statement the engine read, grouped by routine, each with its lines.'}
+      </p>
+      {children}
+    </section>
   );
 }

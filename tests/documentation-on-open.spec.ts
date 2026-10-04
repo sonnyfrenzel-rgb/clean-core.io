@@ -137,12 +137,17 @@ test.describe('the Documentation stage on opening', () => {
     await expect(writing).toContainText('One model call');
     await expect(writing).toContainText('not counted against your analysis runs');
 
-    // The process description, its sections in order.
+    // The process description, its sections in order; the appendix stands
+    // apart at the foot of the page (owner 04.10.2026), still last.
     await expect(page.locator('[data-process-document]')).toBeVisible({ timeout: 120000 });
-    const order = await page.locator('[data-process-document] [data-doc-section]').evaluateAll(
+    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
+    const order = await page.locator('[data-doc-section]').evaluateAll(
       (els) => els.map((e) => e.getAttribute('data-doc-section')),
     );
     expect(order).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
+    // The description is the first thing under the header, the map below it.
+    const description = (await page.locator('[data-process-document]').boundingBox())!.y;
+    expect(description).toBeLessThan((await page.locator('[data-handbook-stage]').boundingBox())!.y);
 
     await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 60000 });
     expect(calls.n, 'the business layer was asked for more than once').toBe(1);
