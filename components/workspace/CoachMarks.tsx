@@ -219,11 +219,21 @@ export default function CoachMarkNote({
     const pop = popRef.current;
     if (!target || !pop) return;
     scrolledFor.current = key;
+    const viewport = { width: document.documentElement.clientWidth, height: window.innerHeight, top: stickyTop(), scrollY: window.scrollY };
+    const targetRect = rectOf(target.getBoundingClientRect());
+    const sheet = isS && !inline;
+    // The edge the sheet takes now, decided as `measureSheet` decides it: the
+    // state may not have caught up with this mark yet, and a target scrolled to
+    // the top of the screen would land behind a sheet docked there.
+    const dock = sheet
+      ? dockSheet({ target: targetRect, sheetHeight: pop.offsetHeight, avoid: primaryActions(pop), viewport })
+      : undefined;
     const by = scrollToShow({
-      target: rectOf(target.getBoundingClientRect()),
+      target: targetRect,
       popover: rectOf(pop.getBoundingClientRect()),
-      sheet: isS && !inline,
-      viewport: { width: document.documentElement.clientWidth, height: window.innerHeight, top: stickyTop(), scrollY: window.scrollY },
+      sheet,
+      dock,
+      viewport,
     });
     if (by !== 0) window.scrollBy({ top: by, behavior: reducedMotion() ? 'auto' : 'smooth' });
   }, [showing, mark, isS, inline, place]);
