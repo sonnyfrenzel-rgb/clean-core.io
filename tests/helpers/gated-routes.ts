@@ -97,6 +97,11 @@ export const GATED_ROUTES: GatedRoute[] = [
   // the second factor reaches neither.
   { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/cost-assumptions` },
   { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/cost-assumptions`, body: {} },
+  // ADR-078 (04.10.2026) — the requirements specification, built on the
+  // cost-assumptions route: GET hands out the owner's document, POST stores it.
+  // A token from before the second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/requirements-spec/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/requirements-spec` },
+  { file: 'app/api/projects/[projectId]/requirements-spec/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/requirements-spec`, body: {} },
   // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
   // read the project's code: GET hands out a measurement of it, POST rebuilds
   // the skeleton and the BPMN from it. A token from before the second factor

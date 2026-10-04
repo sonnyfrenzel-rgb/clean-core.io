@@ -27,8 +27,9 @@ import path from 'path';
 
 // Roadmap 17.10's `statement-proposal` is built on the naming route and held to the same gate,
 // and 3.0.1's `requirement-wording` on `statement-proposal`; the Economics
-// figures' `cost-assumptions` (03.10.2026) on `requirement-wording`; `test-results` (ADR-075) on the same gate.
-const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'process-revisions', 'process-states'] as const;
+// figures' `cost-assumptions` (03.10.2026) on `requirement-wording`; `test-results` (ADR-075) on the same gate;
+// the requirements specification's `requirements-spec` (ADR-078, 04.10.2026) on `cost-assumptions`.
+const ROUTES = ['process-map', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'requirements-spec', 'process-revisions', 'process-states'] as const;
 const routeSource = (name: string) =>
   fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'projects', '[projectId]', name, 'route.ts'), 'utf8');
 
