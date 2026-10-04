@@ -169,7 +169,8 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await expect(link.locator('[data-provenance="confirmed"]')).toContainText('self-declaration');
     await expect(link).toContainText('S4D / 100');
     await expect(link.locator('[data-delivery-testing]')).toContainText('confirmed by you');
-    await expect(link).toContainText('Not run here — your statement that it ran in your SAP system');
+    await expect(link).toContainText('Not run here — your statement that it ran in your SAP system (S4D / 100, 2026-10-02)');
+    await expect(link).not.toContainText(/proven|verified/i);
     await expect(page.locator('[data-still-needed-item="tests"]')).toHaveCount(0);
   });
 });

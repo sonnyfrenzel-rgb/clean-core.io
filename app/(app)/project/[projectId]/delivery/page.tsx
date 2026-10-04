@@ -885,7 +885,7 @@ jobs:
                                         outsideShortfall(outsideTests.summary),
                                         outsideTests.summary.kind === 'imported'
                                           ? 'Not run here — the result was imported from your SAP system'
-                                          : 'Not run here — your statement that it ran in your SAP system',
+                                          : `Not run here — your statement that it ran in your SAP system (${[outsideTests.summary.system, outsideTests.summary.ranOn].filter(Boolean).join(', ')})`,
                                       ].filter(Boolean).join(' ')
                                   : recordedTestRun.kind === 'recorded'
                                     ? (recordedTestRun.counts.passed === testCaseCount
