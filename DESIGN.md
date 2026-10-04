@@ -264,9 +264,11 @@ From top to bottom:
    out of date") stands beside "Tools" and at the top of the phone menu; each mark has a tooltip and its words for
    a screen reader. The bar says nothing about proof — that stays with the stepper and the status chips, and the
    mark is never called "proven" or "verified" (the one exception to "green says proven", ADR-060). No hover-only
-   tooltip: every tool carries its purpose (`PHASE_PURPOSE`) as its accessible description and behind a tap- and
-   keyboard-reachable "i"; the phone menu prints it under each tool; the tool the phase contract names next carries
-   a "Next" tag, and one line under the bar says which tool is next and what it does (ADR-060, 03.10.2026).
+   tooltip: every tool carries its purpose (`PHASE_PURPOSE`) as its accessible description, and one tap- and
+   keyboard-reachable "What the tools do" at the end of the line under the bar opens all seven purposes at once —
+   no "i" after each tool (04.10.2026); the phone menu prints it under each tool; the tool the phase contract names
+   next carries a "Next" tag, and the line under the bar says which tool is next and what it does, beside the legend
+   (ADR-060, 03.10.2026, 04.10.2026).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
    missing (§2.11).
@@ -276,11 +278,15 @@ From top to bottom:
    "Unsaved changes" and a **message popover** (§2.6) with the number of check notes (roadmap step 3.3). Every
    save is a revision (roadmap step 3.2). Outside editing there is no footer.
 
-**The header per view** (ADR-026). In **Business** the content leads, not the project status: below the title stand the
+**The header per view** (ADR-026; one header in all three views since 04.10.2026). The meta line stands behind
+"Details" beside the title and the seven statuses are one folded "Project status" row in **every** view; in IT and
+Management its summary leads with the provenance status and its chip, and opened, each status is its own "Why?" (the
+word and its dot are the button, no separate "?"). The paragraph below describes Business, which keeps its plain
+sentence. In **Business** the content leads, not the project status: below the title stand the
 plain-language sentence, the disclosure line with *Not determined* and the "Next step" card; facets and status line are collapsed into
 **one** line "Project status", in plain language ("Steps linked to code 92 % · Rules confirmed 0 of 7 · Show
 project status"), without level distribution and without *Not determined* — that is already in the disclosure line. In
-**Management** and **IT** facets and status line are open. Anchor bar and tools exist in every view — the
+**Management** and **IT** the status row stands in the header, folded as well (04.10.2026). Anchor bar and tools exist in every view — the
 tools open side by side from breakpoint L in every view, below it in IT as an open bar and in Business and
 Management as a "Tools" menu (§2.11, ADR-060). Below the
 view switcher stands one sentence on which question the view answers; "About this view" opens the paragraph on it (§6.1).
@@ -420,8 +426,8 @@ For first-time users less is more — the depth stays, it just does not come fir
   at most three supporting blocks. Everything else lies one action deeper — collapsed with a count ("Business rules (7)
   · Show"), never removed.
 - **Nothing twice.** A number stands in one place; whoever needs it in a second place gets a reference.
-- **Metadata on demand.** The mono meta line (project ID, manifest, revision, source state, engine, rules) is open in IT,
-  in Business and Management behind "Details".
+- **Metadata on demand.** The mono meta line (project ID, manifest, revision, source state, engine, rules, catalog)
+  stands behind "Details" in every view, IT included (04.10.2026); one click selects a value whole for copying.
 - **Tools by view.** From breakpoint L the toolbar is open in every view (ADR-060); below L it is open in IT and
   a "Tools" menu in Business and Management.
 - **Layers with content first.** The anchor bar shows layers with content; empty ones are under "More" and say there what is

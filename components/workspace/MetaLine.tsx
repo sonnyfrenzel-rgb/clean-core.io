@@ -13,9 +13,9 @@ import { wt } from '@/lib/workspace-messages';
  * (roadmap 0.5), which is server-written and outside the client allowlist of
  * `firestore.rules` — the only reason a line like this is worth printing.
  *
- * Open in IT; behind "Details" in Business and Management (§2.11), because a
- * process owner reading "catalog releaseInfo fb0df9f2" learns nothing and loses
- * the line that mattered.
+ * Behind "Details" in every view (§2.11; IT too since the owner's note of
+ * 04.10.2026 on ADR-026): two lines of hashes under the title cost every
+ * reader the line that mattered, and one click brings them back unchanged.
  *
  * A value that nothing recorded reads **"not recorded"** rather than an em dash
  * or an empty cell. A run signed before the manifest existed genuinely has none,
@@ -52,7 +52,8 @@ export default function WorkspaceMetaLine({ entries }: { entries: MetaEntry[] })
             data-workspace-meta-value={entry.key}
             data-recorded={entry.value === null ? 'no' : 'yes'}
             className={
-              entry.value === null ? 'm-0 font-medium text-cc-neutral italic' : 'm-0 font-semibold text-cc-ink'
+              // One click selects the whole value, ready to copy (owner, 04.10.2026).
+              entry.value === null ? 'm-0 font-medium text-cc-neutral italic' : 'm-0 font-semibold text-cc-ink select-all break-all'
             }
           >
             {entry.value ?? META_ABSENT}
