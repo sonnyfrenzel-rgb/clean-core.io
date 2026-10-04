@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.2] — 2026-10-04
+
+A follow-up to 3.0.1 on the same day: what the first hours of 3.0.1 showed, and the
+review agents made able to finish a release.
+
+### What everyone notices
+
+- **Documentation leads with the process description:** its business summary opens it,
+  then the nine sections; the SOP and RACI follow, then "Explore the process" with the map
+  and its chapters, then the technical trace as the appendix (ADR-077, amended). The demo
+  shows the same order.
+- **The tour starts at your next step** in every view and never scrolls the page on its
+  own; it moves only when you go on to the next tip. On a phone no tip covers its target
+  or the next-step button.
+- **Testing reads model answers like Transformation:** a fixed answer format, tolerant
+  reading, one automatic retry, and an empty test suite is refused before anything is
+  saved — the previous suite stays.
+- **Delivery's link to the tests** lands on the first step when no scenario is written
+  yet; the result from your SAP system is read again when a read fails, and a failed read
+  is said, never shown as "no result".
+
+### Review agents
+
+- The UX review of a release may answer with up to 48,000 tokens; the security audit's
+  consultants too, with its cap at 28 USD (owner's decisions, 04.10.2026).
+
 ## [v3.0.1] — 2026-10-04
 
 The first release after the 3.0 soft go-live. It works through what the owner found using
