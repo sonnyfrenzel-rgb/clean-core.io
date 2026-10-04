@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent, KeyboardEvent, ClipboardEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent, KeyboardEvent, ClipboardEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   signInWithPopup,
@@ -55,6 +55,35 @@ const AUTH_TITLE: Record<AuthMode, string> = {
   mfa: 'Two-Factor Auth',
 };
 
+/**
+ * Said on the sign-in screen when the page was loaded fresh on the second-factor
+ * step. The pending sign-in lives only in this page's memory (Firebase's
+ * `MultiFactorResolver`), so a reload, a phone discarding the tab while the
+ * reader fetched the code from the authenticator app, or a switch to a new
+ * build loses it. Without this the dialog quietly fell back to "Welcome Back"
+ * and the reader had to guess why their sign-in had not counted.
+ */
+const MFA_INTERRUPTED =
+  'The page reloaded while it was waiting for your authenticator code, so that sign-in was not completed. Sign in again; the code is asked for straight after.';
+
+/** What a failed Google sign-in says. Every outcome has words; none returns silently. */
+function googleSignInMessage(code: string, message?: string): string {
+  switch (code) {
+    case 'auth/popup-blocked':
+      return 'Pop-up was blocked by your browser. Please allow pop-ups for clean-core.io and try again.';
+    case 'auth/popup-closed-by-user':
+      return 'The Google window was closed before the sign-in finished. Nothing was changed; choose Google Account to start again.';
+    case 'auth/cancelled-popup-request':
+      return 'A second Google window replaced the first one, so the first sign-in was dropped. Choose Google Account once and finish in the window that opens.';
+    case 'auth/network-request-failed':
+      return 'The sign-in could not reach Google. Check your connection and choose Google Account again.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Write to info@clean-core.io if you think this is a mistake.';
+    default:
+      return `Google Sign-In failed (${code || message || 'unknown'}). Please try Email/Password sign-in or contact support.`;
+  }
+}
+
 /** A link inside running text: ink and underlined, never a surface of its own. */
 const INLINE_LINK = 'font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information';
 
@@ -105,6 +134,15 @@ function OrContinueWith() {
         <span className="bg-cc-surface px-3 cc-text-label text-cc-ink-muted">or continue with</span>
       </p>
     </div>
+  );
+}
+
+/** Under the Google button while its window is open: where the sign-in continues. */
+function GooglePendingHint() {
+  return (
+    <p data-google-pending="" role="status" className="m-0 text-center text-[12px] font-medium text-cc-ink-muted">
+      Continue in the Google window. If you closed it, the button is ready again shortly.
+    </p>
   );
 }
 
@@ -171,30 +209,28 @@ export default function LandingModals() {
   // screen holds. There is no signed-in user to keep and nothing to sign out —
   // the old `pendingMfaUser` was exactly the session the finding was about.
   const [mfaCode, setMfaCode] = useState<string[]>(['', '', '', '', '', '']);
-  const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
-
-  /** Routes a sign-in error into the second-factor screen when that is what it is. */
-  const interceptSecondFactor = (error: unknown): boolean => {
-    const code = (error as { code?: string } | null)?.code;
-    if (code !== 'auth/multi-factor-auth-required') return false;
-    setMfaResolver(getMultiFactorResolver(auth, error as Parameters<typeof getMultiFactorResolver>[1]));
-    setMfaCode(['', '', '', '', '', '']);
-    setAuthError('');
-    setAuthMode('mfa');
-    updateQueryParams('auth', 'mfa');
-    return true;
+  const [mfaResolver, setMfaResolverState] = useState<MultiFactorResolver | null>(null);
+  // The same resolver, readable from an effect without waiting for a render.
+  const mfaResolverRef = useRef<MultiFactorResolver | null>(null);
+  const setMfaResolver = (resolver: MultiFactorResolver | null) => {
+    mfaResolverRef.current = resolver;
+    setMfaResolverState(resolver);
   };
 
-  // Sync auth mode with search param
-  useEffect(() => {
-    if (authParam === 'signin' || authParam === 'signup' || authParam === 'forgot') {
-      setAuthMode(authParam);
-    }
-  }, [authParam]);
+  // A notice that is not an error: why the reader is back on this screen.
+  const [authNotice, setAuthNotice] = useState('');
 
-  // Declared above the effect that calls it: an arrow function hoists no value,
-  // so the effect below was reading it out of the temporal dead zone. It works
-  // today only because effects run after the render that initialises the const.
+  // One Google window at a time. A second `signInWithPopup` cancels the first,
+  // and while the first window is still opening Firebase cannot close it: it
+  // stays on screen, orphaned. Signing in there completes at Google and is then
+  // ignored here, with no error — the "it only worked the second time" the owner
+  // reported (04.10.2026). A ref, not state: the second click of a double click
+  // arrives before React has re-rendered the button as busy.
+  const googleInFlight = useRef(false);
+  const [googlePending, setGooglePending] = useState(false);
+
+  // Declared above everything that calls it: an arrow function hoists no value,
+  // so a caller declared earlier would read it out of the temporal dead zone.
   const updateQueryParams = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
@@ -204,6 +240,57 @@ export default function LandingModals() {
     }
     router.replace(`/?${params.toString()}`);
   };
+
+  /** Routes a sign-in error into the second-factor screen when that is what it is. */
+  const interceptSecondFactor = (error: unknown): boolean => {
+    const code = (error as { code?: string } | null)?.code;
+    if (code !== 'auth/multi-factor-auth-required') return false;
+    setMfaResolver(getMultiFactorResolver(auth, error as Parameters<typeof getMultiFactorResolver>[1]));
+    setMfaCode(['', '', '', '', '', '']);
+    setAuthError('');
+    setAuthNotice('');
+    setAuthMode('mfa');
+    updateQueryParams('auth', 'mfa');
+    return true;
+  };
+
+  // Sync auth mode with search param
+  useEffect(() => {
+    if (authParam === 'signin' || authParam === 'signup' || authParam === 'forgot') {
+      setAuthMode(authParam);
+    } else if (authParam === 'mfa' && !mfaResolverRef.current) {
+      // `?auth=mfa` with no pending sign-in in memory: this page was loaded
+      // fresh on the second-factor step (see MFA_INTERRUPTED). Say so, and put
+      // the address back on the step the reader is actually on.
+      setAuthMode('signin');
+      setAuthNotice(MFA_INTERRUPTED);
+      updateQueryParams('auth', 'signin');
+    }
+    // `updateQueryParams` is recreated every render; the step is what this follows.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authParam]);
+
+  // A page load that finds a session already in place while the address still
+  // asks for the sign-in — the page reloaded after Google or the second factor
+  // had finished but before it moved on (a reload, a discarded tab, a switch to
+  // a new build). Asking again would read as a failed first attempt; the
+  // sign-in has happened, so go where it was going. Once, for the load itself:
+  // a sign-in made in this dialog navigates on its own.
+  useEffect(() => {
+    if (!auth) return;
+    let cancelled = false;
+    void auth.authStateReady().then(() => {
+      if (cancelled || !auth.currentUser) return;
+      const step = new URLSearchParams(window.location.search).get('auth');
+      if (step !== 'signin' && step !== 'mfa') return;
+      setIsNavigating(true);
+      router.replace(afterSignIn);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle Google redirect result (fallback from signInWithPopup)
   useEffect(() => {
@@ -222,13 +309,17 @@ export default function LandingModals() {
       })
       .catch((err) => {
         if (interceptSecondFactor(err)) return;
-        console.error('[getRedirectResult] Error:', err);
+        console.error('[getRedirectResult] Error:', err?.code);
+        // A redirect that came back with an error used to end in the console
+        // only, with the reader looking at an unchanged sign-in screen.
+        setAuthError(googleSignInMessage(err?.code || '', err?.message));
       });
   }, [auth, router, afterSignIn]);
 
   const closeAuthModal = async () => {
     setMfaResolver(null);
     setAuthError('');
+    setAuthNotice('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -239,9 +330,16 @@ export default function LandingModals() {
   };
 
   const handleSignIn = async () => {
+    if (googleInFlight.current) return;
+    googleInFlight.current = true;
+    setGooglePending(true);
+    setAuthError('');
+    setAuthNotice('');
+    let signedIn = false;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+      signedIn = true;
 
       // A first-time Google user gets no profile here on purpose.
       //
@@ -266,18 +364,20 @@ export default function LandingModals() {
     } catch (error: any) {
       if (interceptSecondFactor(error)) return;
       const code = error?.code || '';
-      // A closed popup, or a second click that superseded the first popup, is
-      // not an error: the reader changed their mind or clicked twice.
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        return;
-      }
-      console.error('Error signing in with popup:', error);
-      // Log the actual error for debugging — don't silently redirect
-      console.error('[handleSignIn] Google popup error code:', code, 'message:', error?.message);
-      if (code === 'auth/popup-blocked') {
-        setAuthError('Pop-up was blocked by your browser. Please allow pop-ups for clean-core.io and try again.');
+      console.error('[handleSignIn] Google popup error code:', code);
+      // A closed window is the reader's own choice, so it is a notice rather
+      // than an error — but it is said. Both it and a superseded window used to
+      // return in silence, which looked exactly like a sign-in that had failed.
+      if (code === 'auth/popup-closed-by-user') {
+        setAuthNotice(googleSignInMessage(code));
       } else {
-        setAuthError(`Google Sign-In failed (${code || error?.message || 'unknown'}). Please try Email/Password sign-in or contact support.`);
+        setAuthError(googleSignInMessage(code, error?.message));
+      }
+    } finally {
+      // Free for the next attempt — unless this one is on its way in.
+      if (!signedIn) {
+        googleInFlight.current = false;
+        setGooglePending(false);
       }
     }
   };
@@ -285,6 +385,7 @@ export default function LandingModals() {
   const handleEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setAuthNotice('');
     setIsSubmitting(true);
     try {
       // On an enrolled account this throws before any session exists and the
@@ -933,10 +1034,13 @@ export default function LandingModals() {
                   density="cozy"
                   onClick={handleSignIn}
                   disabled={!agreedGDPR || !agreedTerms}
+                  busy={googlePending}
                   icon={<GoogleMark />}
+                  data-google-signin=""
                 >
                   Google Account
                 </CcButton>
+                {googlePending && <GooglePendingHint />}
                 {(!agreedGDPR || !agreedTerms) && (
                   <p className="m-0 text-center text-[12px] font-medium text-cc-ink-muted">
                     Accept the data protection notice and the terms above to continue with Google.
@@ -1016,6 +1120,11 @@ export default function LandingModals() {
                 </p>
               </div>
 
+              {authNotice && (
+                <div data-auth-notice="">
+                  <CcMessageStrip state="warning">{authNotice}</CcMessageStrip>
+                </div>
+              )}
               {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
 
               <div className="flex flex-col">
@@ -1026,10 +1135,18 @@ export default function LandingModals() {
 
               <OrContinueWith />
 
-              <div className="flex flex-col">
-                <CcButton variant="ghost" density="cozy" onClick={handleSignIn} icon={<GoogleMark />}>
+              <div className="flex flex-col gap-2">
+                <CcButton
+                  variant="ghost"
+                  density="cozy"
+                  onClick={handleSignIn}
+                  busy={googlePending}
+                  icon={<GoogleMark />}
+                  data-google-signin=""
+                >
                   Google Account
                 </CcButton>
+                {googlePending && <GooglePendingHint />}
               </div>
 
               <p className="m-0 text-center text-[12px] font-medium leading-relaxed text-cc-ink-muted">
