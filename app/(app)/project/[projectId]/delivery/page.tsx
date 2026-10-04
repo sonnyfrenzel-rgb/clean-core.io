@@ -77,6 +77,7 @@ import {
   DeliveryStillNeeded,
 } from '@/components/delivery/DeliveryObjectPage';
 import { deliveryTestingTitle, lastRun, countsLine } from '@/components/testing/testing-summary';
+import { outsideReading, outsideShortfall } from '@/lib/sap-test-results';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 
 /** The documentation stage's name, as the stepper spells it (UX-169). */
@@ -161,6 +162,8 @@ export default function DeliveryPage() {
   } = testEvidence(project);
   /** The run the Testing stage reports — a covering receipt, or none. */
   const recordedTestRun = lastRun(project, null);
+  /** ADR-075: a result from the reader's own SAP system, which the title above names. */
+  const outsideTests = outsideReading(project as Parameters<typeof outsideReading>[0]);
   const phases = workflowSteps(project);
   const testingPhase = phases.find((p) => p.key === 'testing')!;
   const deliveryPhase = phases.find((p) => p.key === 'delivery')!;
@@ -874,6 +877,16 @@ jobs:
                                 ? 'Nothing to verify'
                                 : testingPhase.state === 'stale'
                                   ? `Written for ${previousBasis(project)} — regenerate in stage 5`
+                                  // The result from your SAP system: the scenarios carry no
+                                  // verdict of this tool's own, and counting them "without a
+                                  // result" under "2 of 2 passed" contradicted the title.
+                                  : outsideTests.state === 'current'
+                                    ? [
+                                        outsideShortfall(outsideTests.summary),
+                                        outsideTests.summary.kind === 'imported'
+                                          ? 'Not run here — the result was imported from your SAP system'
+                                          : 'Not run here — your statement that it ran in your SAP system',
+                                      ].filter(Boolean).join(' ')
                                   : recordedTestRun.kind === 'recorded'
                                     ? (recordedTestRun.counts.passed === testCaseCount
                                         ? (isAbapCloud ? 'ADT: every generated test returned a pass' : 'Sandbox: every generated test returned a pass')
