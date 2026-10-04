@@ -73,6 +73,12 @@ type Change = (mutate: (spec: RequirementsSpec) => RequirementsSpec, change: str
 
 const H3 = 'm-0 text-[15px] font-bold text-cc-ink';
 
+/** A heading at the level the document's outline gives it. */
+function Heading({ level, children, ...rest }: { level: 3 | 4 | 5 } & React.HTMLAttributes<HTMLHeadingElement>) {
+  const Tag = (`h${level}` as 'h3' | 'h4' | 'h5');
+  return <Tag {...rest}>{children}</Tag>;
+}
+
 function SectionHeading({ id, number, title, children }: { id: string; number: string; title: string; children?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-cc-line pb-2">
@@ -234,6 +240,7 @@ function RequirementEditor({ r, onChange, onDone }: { r: SpecRequirement; onChan
 
 function RequirementBlock({
   r,
+  level,
   number,
   editable,
   editing,
@@ -246,6 +253,8 @@ function RequirementBlock({
   onOpenDecision,
 }: {
   r: SpecRequirement;
+  /** h3 under section 3, h4 under a category of section 4 — no level skipped. */
+  level: 3 | 4;
   number: string;
   editable: boolean;
   editing: boolean;
@@ -268,11 +277,11 @@ function RequirementBlock({
     >
       <header className="flex min-w-0 flex-col gap-2 min-[700px]:flex-row min-[700px]:items-start min-[700px]:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
-          <h4 id={`req-${r.id}-title`} className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">
+          <Heading level={level} id={`req-${r.id}-title`} className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">
             <span className="mr-2 font-cc-mono text-[13px] text-cc-ink-muted">{number}</span>
             <span data-spec-req-id="" className="mr-2 font-cc-mono text-[13px] text-cc-ink">{r.id}</span>
             <span className={cn(r.status === 'rejected' && 'line-through decoration-cc-ink-muted')}>{r.title}</span>
-          </h4>
+          </Heading>
           <span className="flex flex-wrap items-center gap-2">
             <PriorityTag value={r.priority} />
             <StatusTag value={r.status} />
@@ -333,7 +342,7 @@ function RequirementBlock({
           </dl>
           {r.acceptance.length ? (
             <div className="min-w-0">
-              <h5 className="m-0 mb-2 text-[13px] font-semibold text-cc-ink">Acceptance criteria</h5>
+              <Heading level={(level + 1) as 4 | 5} className="m-0 mb-2 text-[13px] font-semibold text-cc-ink">Acceptance criteria</Heading>
               <ol className="m-0 flex list-none flex-col gap-2 p-0">
                 {r.acceptance.map((c, i) => (
                   <li key={i} data-spec-criterion="" className="grid min-w-0 gap-1 rounded-cc-row bg-cc-surface-muted px-3 py-2 text-[13px] min-[700px]:grid-cols-3 min-[700px]:gap-3">
@@ -471,11 +480,12 @@ export default function SpecDocument({
     />
   );
 
-  const requirementList = (list: SpecRequirement[], prefix: string) =>
+  const requirementList = (list: SpecRequirement[], prefix: string, level: 3 | 4) =>
     list.map((r, i) => (
       <RequirementBlock
         key={r.id}
         r={r}
+        level={level}
         number={`${prefix}${i + 1}`}
         editable={editable}
         editing={editing === `req:${r.id}`}
@@ -651,7 +661,7 @@ export default function SpecDocument({
           <span className="text-[12px] font-semibold text-cc-ink-muted">{counts.functional} in force</span>
         </SectionHeading>
         <p className="m-0 text-[13px] text-cc-ink-muted">What the solution shall do, each with why, how it is accepted, and where in the current program it comes from.</p>
-        <div>{requirementList(functional, '3.')}</div>
+        <div>{requirementList(functional, '3.', 3)}</div>
         {editable ? (
           <span className="cc-no-print max-sm:hidden">
             <CcButton variant="ghost" icon={<Plus size={16} aria-hidden={true} />} onClick={() => add('functional')} data-spec-add="functional">
@@ -672,7 +682,7 @@ export default function SpecDocument({
               <span className="mr-2 font-cc-mono text-cc-ink-muted">4.{ci + 1}</span>
               {SPEC_NFR_CATEGORY_LABEL[c]}
             </h3>
-            {requirementList(nonFunctional.filter((r) => r.category === c), `4.${ci + 1}.`)}
+            {requirementList(nonFunctional.filter((r) => r.category === c), `4.${ci + 1}.`, 4)}
           </div>
         ))}
         {editable ? (
@@ -751,13 +761,14 @@ export default function SpecDocument({
         <div data-spec-trace="">
           <CcTable
             caption="Traceability matrix"
+            limit={12}
             columns={[
               { key: 'req', label: 'Requirement' },
-              { key: 'lines', label: 'Code lines' },
-              { key: 'rules', label: 'Rules' },
-              { key: 'steps', label: 'Process step' },
-              { key: 'decisions', label: 'Decisions' },
-              { key: 'status', label: 'Status' },
+              { key: 'lines', label: 'Code lines', width: '150px' },
+              { key: 'rules', label: 'Rules', width: '84px' },
+              { key: 'steps', label: 'Process step', width: '170px' },
+              { key: 'decisions', label: 'Decisions', width: '150px' },
+              { key: 'status', label: 'Status', width: '170px' },
             ]}
             rows={trace.map((t) => ({
               key: t.id,
@@ -769,7 +780,7 @@ export default function SpecDocument({
                   </a>
                 ),
                 lines: <span className="font-cc-mono [overflow-wrap:anywhere]">{t.lines || '—'}</span>,
-                rules: <span className="font-cc-mono">{t.rules.join(', ') || '—'}</span>,
+                rules: <span className="font-cc-mono whitespace-nowrap">{t.rules.join(', ') || '—'}</span>,
                 steps: t.steps.join(', ') || '—',
                 decisions: t.decisions.length ? (
                   <span className="flex flex-wrap gap-1">

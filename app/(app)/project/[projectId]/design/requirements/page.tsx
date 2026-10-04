@@ -47,12 +47,16 @@ export default function RequirementsPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
+  /** Who is signed in — read in the browser only; the server render has no account. */
+  const [account, setAccount] = useState<{ uid: string | null; email: string | null }>({ uid: null, email: null });
 
   useEffect(() => {
     (async () => {
       try {
         const data = await loadProjectAndHydrate(id);
         if (!enforceActiveRun(data, id)) return;
+        const user = getAuth().currentUser;
+        setAccount({ uid: user?.uid ?? null, email: user?.email ?? null });
         setProject(data);
       } catch (err) {
         console.error('[Requirements] Project could not be loaded:', err);
@@ -63,8 +67,7 @@ export default function RequirementsPage() {
     })();
   }, [id]);
 
-  const uid = getAuth().currentUser?.uid ?? null;
-  const owner = isProjectOwner(project, uid);
+  const owner = isProjectOwner(project, account.uid);
   const designEvidence = useDesignEvidence(id, Boolean(project), 0);
   const { outcome } = useProcessStates(id, Boolean(project));
 
@@ -134,7 +137,7 @@ export default function RequirementsPage() {
           ruleStates={ruleStates}
           proposals={proposals}
           route={route}
-          accountEmail={getAuth().currentUser?.email ?? null}
+          accountEmail={account.email}
           engineReading={
             <>
               <FunctionalRequirements

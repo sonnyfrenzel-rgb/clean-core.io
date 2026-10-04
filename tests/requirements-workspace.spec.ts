@@ -282,6 +282,22 @@ test('a failed save says so and keeps the edit; Retry stores it', async ({ brows
   await context.close();
 });
 
+test('Delivery lists the specification among the artefacts — what it holds, never as proven', async ({ browser }) => {
+  test.setTimeout(300_000);
+  const { context, page } = await signedInPage(browser, OWNER);
+  await noModel(page);
+  await page.goto(`/project/${PROJECT}/delivery`, { waitUntil: 'domcontentloaded' });
+  const line = page.locator('[data-delivery-spec]');
+  await expect(line).toBeVisible({ timeout: 120_000 });
+  await expect(line).toContainText(/Requirements specification: \d+ requirements \(\d+ functional, \d+ non-functional\), \d+ open decisions?\./);
+  await expect(line).toContainText('Not part of the signed audit pack.');
+  const card = line.locator('xpath=ancestor::li[1]');
+  await expect(card.locator('[data-provenance="proven"]')).toHaveCount(0);
+  await card.scrollIntoViewIfNeeded();
+  await shot(page, 'delivery-1440');
+  await context.close();
+});
+
 test('an invited reader reads, opens a decision and exports — and writes nothing', async ({ browser }) => {
   test.setTimeout(300_000);
   const { context, page } = await signedInPage(browser, READER);
@@ -294,6 +310,8 @@ test('an invited reader reads, opens a decision and exports — and writes nothi
   await expect(page.locator('[data-spec-card]')).toHaveAttribute('data-spec-card', /draft|ready/, { timeout: 120_000 });
   await openWorkspace(page);
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-mode', 'reader');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot(page, 'reader-top-1440');
   await expect(page.locator('[data-spec-req="FR-001"] [data-spec-req-statement] strong')).toHaveText('NB', { timeout: 60_000 });
   await expect(page.locator('[data-spec-req-edit]')).toHaveCount(0);
   await expect(page.locator('[data-spec-edit]')).toHaveCount(0);

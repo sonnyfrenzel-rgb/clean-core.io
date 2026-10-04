@@ -79,6 +79,8 @@ export const ROUTES: RouteDef[] = [
   { key: 'trust', route: '/trust', session: 'public', url: '/trust', ready: ['h1'] },
   { key: 'how-to', route: '/how-to', session: 'public', url: '/how-to', ready: ['h1'] },
   { key: 'demo-analyze', route: '/demo/[stage] (analyze)', session: 'public', url: '/demo/analyze', ready: ['h1'] },
+  // ADR-078: the Design tool's requirements workspace, in the demo and on the seeded project.
+  { key: 'demo-requirements', route: '/demo/[stage]/requirements', session: 'public', url: '/demo/design/requirements', ready: ['[data-spec-workspace][data-spec-state="ready"]'] },
   // Every signed-in account's since 3.0.1; a visitor is sent to sign in and back (DemoWorkspaceShell).
   { key: 'demo-workspace', route: '/demo/workspace', session: 'signed-in', url: '/demo/workspace', ready: ['[data-demo-ready="true"] h1', FIRST_LOOK_DONE] },
   { key: 'settings', route: '/settings', session: 'signed-in', url: '/settings', ready: ['h1'] },
@@ -98,6 +100,13 @@ export const ROUTES: RouteDef[] = [
     url: `/project/{project}/${stage}`,
     ready: ['[data-stage-title]'],
   })),
+  {
+    key: 'stage-design-requirements',
+    route: '/project/[id]/design/requirements',
+    session: 'signed-in',
+    url: '/project/{project}/design/requirements',
+    ready: ['[data-stage-title]', '[data-spec-workspace]:not([data-spec-state="loading"])'],
+  },
 ];
 
 /**
