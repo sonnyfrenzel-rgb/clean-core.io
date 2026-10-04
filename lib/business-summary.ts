@@ -379,7 +379,14 @@ export interface RaciMatrix {
   roles: RaciRole[];
   /** Roles the model named beyond those — listed under the matrix with their letters, never dropped. */
   moreRoles: RaciRole[];
-  steps: Array<SopStep & { gaps: RaciStepGap[]; more: Array<{ role: string; letters: RaciLetter[] }> }>;
+  steps: Array<SopStep & {
+    gaps: RaciStepGap[];
+    more: Array<{ role: string; letters: RaciLetter[] }>;
+    /** The step's Accountable when its role is not a column — said in the row, never hidden. */
+    hiddenAccountable: string[];
+  }>;
+  /** Every role the proposal names; above `MANY_RACI_ROLES` the stage says the proposal is too large. */
+  totalRoles: number;
   /** Steps with at least one gap. */
   gapCount: number;
 }
@@ -398,6 +405,9 @@ export const OVERLOAD_MIN_STEPS = 3;
  * nothing is invented.
  */
 export const MAX_RACI_COLUMNS = 6;
+
+/** More roles than this, and the stage says the proposal is larger than a process of this size needs. */
+export const MANY_RACI_ROLES = 7;
 
 /** A head longer than this is shortened to its initials; the full name stands in the key under the matrix. */
 const SHORT_HEAD = 16;
@@ -442,8 +452,30 @@ export function raciMatrix(steps: SopStep[]): RaciMatrix {
     .sort((a, b) => weight(b) - weight(a) || (b.counts.C + b.counts.I) - (a.counts.C + a.counts.I) || a.first - b.first);
   const taken = new Set<string>();
   const list: RaciRole[] = ranked.map((role) => ({ name: role.name, counts: role.counts, overloaded: role.overloaded, short: shortName(role.name, taken) }));
-  const shown = list.slice(0, MAX_RACI_COLUMNS);
-  const moreRoles = list.slice(MAX_RACI_COLUMNS);
+  // The columns: first the Accountables, chosen so that as many steps as
+  // possible show theirs (greedy cover — the role that covers most uncovered
+  // steps first); then the roles that carry most fill the rest.
+  const key = (n: string) => n.toLowerCase();
+  const chosen: RaciRole[] = [];
+  const uncovered = new Set(withRaci.filter((st) => st.roles.A.length > 0).map((st) => st.stepId));
+  while (chosen.length < MAX_RACI_COLUMNS && uncovered.size > 0) {
+    let best: RaciRole | null = null;
+    let bestCount = 0;
+    for (const role of list) {
+      if (chosen.includes(role)) continue;
+      const count = withRaci.filter((st) => uncovered.has(st.stepId) && st.roles.A.some((a) => key(a) === key(role.name))).length;
+      if (count > bestCount) { best = role; bestCount = count; }
+    }
+    if (!best) break;
+    chosen.push(best);
+    for (const st of withRaci) if (st.roles.A.some((a) => key(a) === key(best!.name))) uncovered.delete(st.stepId);
+  }
+  for (const role of list) {
+    if (chosen.length >= MAX_RACI_COLUMNS) break;
+    if (!chosen.includes(role)) chosen.push(role);
+  }
+  const shown = list.filter((r) => chosen.includes(r));
+  const moreRoles = list.filter((r) => !chosen.includes(r));
 
   const rowsOut = withRaci.map((step) => {
     const gaps: RaciStepGap[] = [];
@@ -453,9 +485,10 @@ export function raciMatrix(steps: SopStep[]): RaciMatrix {
     const more = moreRoles
       .map((role) => ({ role: role.name, letters: lettersOf(step, role.name) }))
       .filter((m) => m.letters.length > 0);
-    return { ...step, gaps, more };
+    const hiddenAccountable = step.roles.A.filter((a) => !shown.some((r) => key(r.name) === key(a)));
+    return { ...step, gaps, more, hiddenAccountable };
   });
-  return { roles: shown, moreRoles, steps: rowsOut, gapCount: rowsOut.filter((s) => s.gaps.length > 0).length };
+  return { roles: shown, moreRoles, steps: rowsOut, gapCount: rowsOut.filter((s) => s.gaps.length > 0).length, totalRoles: list.length };
 }
 
 /** The letters one role holds on one step, in R-A-C-I order. */

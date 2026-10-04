@@ -9,6 +9,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcStateText from '@/components/cc/StateText';
 import CcTable from '@/components/cc/Table';
 import {
+  MANY_RACI_ROLES,
   RACI_LETTERS,
   lettersOf,
   raciMatrix,
@@ -201,7 +202,7 @@ function GapWords({ gaps }: { gaps: Array<Parameters<typeof raciGapWord>[0]> }) 
   );
 }
 
-function RaciSection({ steps }: { steps: SopStep[] }) {
+function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.ReactNode }) {
   const matrix = useMemo(() => raciMatrix(steps), [steps]);
   const overloaded = matrix.roles.filter((r) => r.overloaded);
   const gapLines = raciGapLines(
@@ -220,6 +221,18 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
         </h3>
         <Legend />
       </div>
+      {matrix.totalRoles > MANY_RACI_ROLES ? (
+        <div data-raci-too-many={matrix.totalRoles} className="flex flex-col gap-2 rounded-cc-row border border-cc-warning-border bg-cc-warning-bg p-3">
+          <p className="m-0 flex items-start gap-2 cc-text-cell text-cc-ink">
+            <TriangleAlert size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-warning" />
+            <span>
+              This proposal names {matrix.totalRoles} roles — more than a process of this size needs.
+              {action ? ' Regenerate SOP and RACI for a smaller set.' : ' The owner can regenerate it for a smaller set.'}
+            </span>
+          </p>
+          {action}
+        </div>
+      ) : null}
       {matrix.steps.length === 0 ? (
         <p className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.raciNoRows')}</p>
       ) : (
@@ -276,9 +289,10 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
                   check: (
                     <span className="inline-flex flex-col gap-1">
                       <GapWords gaps={step.gaps} />
-                      {step.more.length ? (
-                        <span data-raci-more-on-step="" className="cc-text-meta font-medium text-cc-ink-muted">
-                          +{step.more.length} more {step.more.length === 1 ? 'role' : 'roles'}
+                      {/* An Accountable whose role is not a column is named here — never hidden. */}
+                      {step.hiddenAccountable.length ? (
+                        <span data-raci-hidden-accountable="" className="inline-flex items-center gap-1 cc-text-meta text-cc-ink">
+                          <RaciChip letter="A" /> {step.hiddenAccountable.join(', ')}
                         </span>
                       ) : null}
                     </span>
@@ -429,6 +443,8 @@ export default function BusinessLayer({
   action?: React.ReactNode;
 }) {
   const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
+  // Too many roles: the regenerate action stands in the notice above the matrix, not twice.
+  const tooMany = useMemo(() => raciMatrix(steps).totalRoles > MANY_RACI_ROLES, [steps]);
   return (
     <section
       data-stage-output="businessDocumentation"
@@ -442,9 +458,9 @@ export default function BusinessLayer({
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
       <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">{wt('doc.sopLead')}</p>
-      {action ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
+      {action && !tooMany ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
       <SopStrip steps={steps} />
-      <RaciSection steps={steps} />
+      <RaciSection steps={steps} action={tooMany ? action : undefined} />
       <FullSop steps={steps} layer={layer} />
     </section>
   );

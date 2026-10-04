@@ -43,10 +43,18 @@ test('fourteen roles: six columns, the other eight listed under the matrix, none
     const more = step.more.reduce((n, m) => n + m.letters.length, 0);
     expect(shown + more, step.stepId).toBe(given);
   }
-  // The columns are the roles that carry most: Accountable and Responsible.
-  const weight = (r: (typeof matrix.roles)[number]) => r.counts.A + r.counts.R;
-  const lightestShown = Math.min(...matrix.roles.map(weight));
-  for (const r of matrix.moreRoles) expect(weight(r), r.name).toBeLessThanOrEqual(lightestShown);
+  // The columns are chosen for the Accountables first (coordinator 04.10.2026):
+  // every step shows its Accountable — in a column, or named in the row.
+  for (const step of matrix.steps) {
+    for (const a of step.roles.A) {
+      const inColumn = matrix.roles.some((r) => r.name.toLowerCase() === a.toLowerCase());
+      expect(inColumn || step.hiddenAccountable.includes(a), `${step.stepId}: ${a}`).toBe(true);
+      expect(inColumn && step.hiddenAccountable.includes(a)).toBe(false);
+    }
+  }
+  // Six columns, all of them Accountable somewhere: the cover goes before the fill.
+  expect(matrix.roles.every((r) => r.counts.A > 0)).toBe(true);
+  expect(matrix.totalRoles).toBe(14);
   // A long name gets a short head; the full name stays the role's name.
   for (const r of matrix.roles) expect(r.short.length, r.name).toBeLessThanOrEqual(16);
   expect(new Set(matrix.roles.map((r) => r.short)).size).toBe(matrix.roles.length);
@@ -79,6 +87,17 @@ test('a small layer is drawn whole, with its names as heads', () => {
   expect(matrix.roles.every((r) => r.short === r.name)).toBe(true);
   expect(matrix.moreRoles).toEqual([]);
   expect(matrix.gapCount).toBe(0);
+  expect(matrix.steps[0].hiddenAccountable).toEqual([]);
+});
+
+test('when the Accountables fit the columns, every row shows its A in a column', () => {
+  // Seven roles, three of them Accountable: all three become columns.
+  const rows = STEPS.slice(0, 6).map((st, i) => ({
+    stepId: st.id, r: ['Buyer', 'Requester', 'Approver', 'Finance', 'IT support', 'Buyer'][i], a: ['Purchasing Lead', 'Process Owner', 'Controller'][i % 3], c: 'Auditor', i: 'Requester',
+  }));
+  const matrix = raciMatrix(sopSteps({ raci_matrix: rows, sop_details: [] }, STEPS));
+  for (const a of ['Purchasing Lead', 'Process Owner', 'Controller']) expect(matrix.roles.map((r) => r.name)).toContain(a);
+  for (const st of matrix.steps) expect(st.hiddenAccountable).toEqual([]);
 });
 
 test('the Confluence page carries the six columns, the key and the further roles', async () => {
@@ -87,6 +106,7 @@ test('the Confluence page carries the six columns, the key and the further roles
   const section = html.slice(html.indexOf('RACI matrix — Model proposal'));
   for (const r of matrix.roles) expect(section).toContain(`<th>${r.short}`);
   for (const r of matrix.moreRoles) expect(section).toContain(`<li>${r.name}: `);
+  for (const st of matrix.steps) for (const a of st.hiddenAccountable) expect(section).toContain(`A: ${a}`);
   for (const r of matrix.roles.filter((x) => x.short !== x.name)) expect(section).toContain(`${r.short} = ${r.name}`);
   expect(html).toContain('No Accountable named — to clarify');
 });
