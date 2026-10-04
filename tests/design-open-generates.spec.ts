@@ -168,7 +168,7 @@ test.describe('opening Design', () => {
     await expect(page.locator('[data-design-writing]')).toHaveCount(0);
   });
 
-  test('reads the non-functional requirements without a click; the functional ones keep their button', async ({ page }) => {
+  test('the requirements are one module: Design shows its card, nothing is read until the workspace starts it', async ({ page }) => {
     test.setTimeout(300_000);
     const seeded = await seedUndesigned('design-open-nfr');
     const log: ModelLog = { design: 0, proposals: 0 };
@@ -176,14 +176,15 @@ test.describe('opening Design', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, seeded.email, PASSWORD);
     await openDesign(page, seeded.projectId);
-    const nfr = page.locator('[data-non-functional-requirements]');
-    await expect(nfr).toHaveAttribute('data-nfr-state', 'ready', { timeout: 60_000 });
-    expect(await nfr.locator('[data-nfr-row]').count()).toBeGreaterThan(0);
-    await expect(nfr.locator('[data-nfr-derive]')).toHaveCount(0);
-    // The owner's exception: the functional requirements stay on demand.
-    const fr = page.locator('[data-functional-requirements]');
-    await expect(fr.locator('[data-fr-derive]')).toBeVisible();
-    await expect(fr.locator('[data-fr-row]')).toHaveCount(0);
+    // ADR-078 (04.10.2026): one card instead of the two lists, with what it
+    // costs and where it stands, and one way into the workspace.
+    const card = page.locator('[data-spec-card]');
+    await expect(card).toBeVisible({ timeout: 120_000 });
+    await expect(card).toHaveAttribute('data-spec-card', 'not-started');
+    await expect(card.locator('[data-spec-card-cost]')).toContainText('no model call');
+    await expect(page.locator('[data-functional-requirements]')).toHaveCount(0);
+    await expect(page.locator('[data-non-functional-requirements]')).toHaveCount(0);
+    await expect(card.locator('[data-spec-open]')).toHaveAttribute('href', `/project/${seeded.projectId}/design/requirements`);
   });
 
   test('with the model off: no call, the reason with a way to Settings, and the engine parts all there', async ({ page }) => {
@@ -200,7 +201,7 @@ test.describe('opening Design', () => {
     await expect(off.locator('a[data-design-settings-link]')).toHaveAttribute('href', '/settings');
     // The engine's parts stand without a model.
     await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-non-functional-requirements]')).toHaveAttribute('data-nfr-state', 'ready', { timeout: 60_000 });
+    await expect(page.locator('[data-spec-card]')).toBeVisible({ timeout: 60_000 });
     await page.waitForTimeout(2_000);
     expect(log).toEqual({ design: 0, proposals: 0 });
     await expect(page.locator('[data-design-writing]')).toHaveCount(0);

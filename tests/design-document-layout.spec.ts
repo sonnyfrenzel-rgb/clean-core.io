@@ -201,7 +201,7 @@ test.describe('the design document', () => {
     await page.keyboard.press('Escape');
     // The non-functional requirements are linked, not repeated.
     await page.locator('[data-design-group-toggle="secure"]').click();
-    await expect(page.locator('[data-design-group="secure"] a[href="#non-functional-requirements"]')).toBeVisible();
+    await expect(page.locator('[data-design-group="secure"] a[href="#requirements"]')).toBeVisible();
   });
 
   test('the SAP API mapping is a table, each legacy object with its clean core level', async ({ page }) => {

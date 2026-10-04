@@ -33,8 +33,8 @@ import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-
 
 // Extracted Subcomponents
 import RoutingRationale from '@/components/design/RoutingRationale';
-import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
-import FunctionalRequirements from '@/components/design/FunctionalRequirements';
+import RequirementsEntryCard, { type SpecCardState } from '@/components/requirements/RequirementsEntryCard';
+import { readSpecSummary } from '@/lib/requirements-spec';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import LegacyRunBanner from '@/components/LegacyRunBanner';
@@ -781,7 +781,7 @@ ${DESIGN_ANSWER_REMINDER}`;
 
   /**
    * The source the active run signed, and nothing else, for the
-   * functional requirements: the same comparison the Documentation stage makes,
+   * requirements and the design prompt: the same comparison the Documentation stage makes,
    * so a line anchor never points into a source the run did not see.
    */
   const signedSource = useMemo(() => {
@@ -806,6 +806,18 @@ ${DESIGN_ANSWER_REMINDER}`;
       : 'The source changed after the signed run, or the run carries no fingerprint of it. Re-run the analysis in stage 1; the requirements are read only from the source the run signed.';
 
   const caps = getRunCapabilities(project);
+
+  // The requirements module's state, from the summary its route writes onto
+  // the project (ADR-078): not started, a draft with open decisions, or ready.
+  const specSummary = readSpecSummary((project as { requirementsSpec?: unknown } | null)?.requirementsSpec);
+  const signedSha = signedSource ? sha256Hex(signedSource.source) : null;
+  const specCardState: SpecCardState = specSummary
+    ? {
+        kind: specSummary.openDecisions === 0 && specSummary.clarify === 0 ? 'ready' : 'draft',
+        summary: specSummary,
+        stale: signedSha !== null && specSummary.derivedFrom !== signedSha,
+      }
+    : { kind: 'not-started' };
 
   const phases = workflowSteps(project);
   // E01-F01-US02: a design or a sign-off left over from a previous source.
@@ -1265,34 +1277,12 @@ ${DESIGN_ANSWER_REMINDER}`;
         />
       </div>
 
-      <div className="mb-12" id="functional-requirements">
-        <FunctionalRequirements
-          projectId={projectId as string}
-          projectName={project?.name || ''}
-          fileName={signedSource?.fileName || 'source.abap'}
-          source={signedSource?.source ?? null}
-          missingReason={signedSource ? null : requirementsMissing}
-          levels={designEvidence.state === 'ready' ? designEvidence.findings : null}
-          wording={{
-            enabled: designAvailable,
-            reason: designAvailable
-              ? null
-              : modelAvailability.keyAvailable
-                ? 'the Design stage is switched off in Settings.'
-                : 'no Gemini key is available for this account; add your own in Settings.',
-          }}
-        />
-      </div>
-
-      <div className="mb-12 scroll-mt-24" id="non-functional-requirements">
-        <NonFunctionalRequirements
-          projectId={projectId as string}
-          projectName={project?.name || ''}
-          fileName={signedSource?.fileName || 'source.abap'}
-          source={signedSource?.source ?? null}
-          missingReason={signedSource ? null : requirementsMissing}
-          proposals={nfrData}
-          levels={designEvidence.state === 'ready' ? designEvidence.findings : null}
+      <div className="mb-12">
+        <RequirementsEntryCard
+          href={`/project/${encodeURIComponent(projectId as string)}/design/requirements`}
+          state={specCardState}
+          reader={Boolean(project) && !isOwner}
+          blocked={signedSource ? null : requirementsMissing}
         />
       </div>
 
