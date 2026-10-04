@@ -176,9 +176,6 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
 }
 
 
-/** What one connection-test request may carry (the form, a destination JSON). */
-const REQUEST_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 15_000 };
-
 export async function POST(req: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(req);
@@ -212,8 +209,9 @@ export async function POST(req: NextRequest) {
 
     // Bounded like the routes beside it: the unbounded JSON read buffered any size of body
     // before a field was looked at (SEC-b6716f0-19). A connection form with a
-    // destination JSON is a few kilobytes.
-    const raw = await readBoundedBody(req, REQUEST_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
+    // destination JSON is a few kilobytes, so the shared 64 KiB ceiling of a token
+    // answer is ample (one pair of limits, tests/bounded-body.spec.ts).
+    const raw = await readBoundedBody(req, TOKEN_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
     if (raw === null) {
       return NextResponse.json({ status: 'failed', message: 'The request is too large.' }, { status: 413 });
     }
