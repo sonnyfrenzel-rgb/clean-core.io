@@ -1022,7 +1022,7 @@ Goal: keep lowering the threshold to the first own use.
   this file: the same stage headers (§2.3), tokens, chips and messages as in an own project. The demo
   stays a separate route without a path to signing, quota and export — what is new is the look, not this boundary.
 - **The tour** — more coach marks than in an own project, because this is where one learns: around twelve stations along the
-  way — reveal · Not determined · process map and source column · layers of a large process · confirming a
+  way — reveal · process map and source column · layers of a large process · Not determined · confirming a
   rule · standard fit · IT chain · Management view · four buckets · costs as simulation · decision ·
   handover (views in the order Business · IT · Management, ADR-044). A station appears only when one arrives at its place; only ever one; *"3 of 12"* as text; "Next",
   "Pause tour", "End tour". Progress only in the browser (ADR-036).
@@ -1072,7 +1072,11 @@ Sonny 15.09.2026):
 
 1. **Three coach marks on the first workspace** — "Select the decision point", "This is what we could not determine", "Your
    next step". Dismissible, remembered **only in the browser** — never in the account, never in the database, no usage log
-   (ADR-036). "Show tips again" in the help menu brings them back.
+   (ADR-036). "Show tips again" in the help menu brings them back. The tour starts at "Your next step", the page's one
+   primary action, in every view and at every width, and then follows the page in reading order (Business: next step,
+   the decision point at the map, Not determined; IT: next step, the Not determined figure, the decision). A tip never
+   moves the page by itself: only "Next" (or "Show tips again") scrolls, once, smoothly unless reduced motion is asked
+   for. On S no tip covers its target or the next step's button.
 2. **"Ask this case"** — always the embedded help AI, expanded for 3.0 (ADR-043): in the project restricted to the
    project's evidence, answers with anchors; outside it, product and SAP help; one assistant, not a second chat; the first,
    pre-answered question comes from the code without a model call (§5.3).
@@ -1128,6 +1132,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.6 | 04.10.2026 | The tour starts at the next step (owner 04.10.2026, "next step first"): the three coach marks in the order the page shows them, no scrolling until the reader presses "Next"; the demo tour reaches the process map before Not determined, as an own project does (§6.1.2, §6.2) |
 | 1.8.5 | 03.10.2026 | Management on the whole frame with one fit-to-standard figure (ADR-069, owner 03.10.2026): the decision and its one next action beside fit to standard, the SAP objects across the four buckets and what blocks the standard path by name; the rest in four folds (Evidence, Options and the decision, Costs, Process), collapsed and remembered in the browser only. The tools bar's check means the tool's own output is on record — Analyze a signed run — and every tool says what it is for without hover (ADR-060 amended 03.10.2026) |
 | 1.8.4 | 02.10.2026 | The switch for everyone (roadmap 3.0.1, ADR-061): every account opens its projects in the workspace and "My workspace" is the list report; the stepper, its rail and the linear stage footer are gone; a demo stage's "Back to workspace" leads to the demo workspace (§2.3, the header of a stage; §5.10) |
 | 1.8.3 | 02.10.2026 | One frame for every stage (ADR-063, owner 02.10.2026): the seven tools and the demo stages stand in the workspace's 1536 px column, header and content at the same x on every tool: §2.3 the header of a stage, §2.9 XL |

@@ -240,12 +240,13 @@ test.describe('the Business view on screen', () => {
 
   /**
    * The tips dismissed, for the two tests that measure where things stand on
-   * the screen. A first visit shows the tour, and its first tip scrolls the
-   * page to the map 0.8 s and 1.5 s after it appears (`CoachMarks.tsx`,
-   * owner 03.10.2026) — on CI that landed between the
-   * scroll and the measurement, so the bar measured 240 px and the next step
-   * -1888 px. The tour has its own spec (`coach-mark-placement.spec.ts`); here
-   * the layout is measured without it.
+   * the screen. A first visit shows the tour, whose first tip stands in the
+   * flow above "Next step" and moves what follows down by its height. (It
+   * used to scroll the page to the map 0.8 s and 1.5 s after it appeared; on
+   * CI that landed between the scroll and the measurement, so the bar
+   * measured 240 px and the next step -1888 px. Since 04.10.2026 a tip moves
+   * the page only after "Next".) The tour has its own spec
+   * (`coach-mark-placement.spec.ts`); here the layout is measured without it.
    */
   async function withoutTips(page: Page) {
     await page.addInitScript(
@@ -497,6 +498,17 @@ test.describe('the Business view on screen', () => {
     expect(tops[0]).toBeLessThan(tops[1]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the Business view scrolls sideways on a phone').toBeLessThanOrEqual(1);
+    // The map's canvas stands inside its card: its right edge (border included)
+    // is not cut off by the card. What the canvas draws inside it is a matter
+    // of zoom (ADR-072: never below 40 % on a phone), panned by touch.
+    const canvas = page.locator('[data-workspace-process="ready"] [data-process-map-canvas]').first();
+    await expect(canvas).toBeVisible({ timeout: 90_000 });
+    const edges = await canvas.evaluate((el) => {
+      const card = el.closest('.cc-card') ?? el.parentElement!;
+      return { canvas: el.getBoundingClientRect().right, card: card.getBoundingClientRect().right, screen: document.documentElement.clientWidth };
+    });
+    expect(edges.canvas, 'the map canvas runs past the right edge of its card').toBeLessThanOrEqual(edges.card + 0.5);
+    expect(edges.card, 'the map card runs past the screen').toBeLessThanOrEqual(edges.screen + 0.5);
     await page.locator('[data-rules-edit]').click();
     await expect(page.locator('[data-rules-editor="edit"]')).toBeVisible({ timeout: 30_000 });
     const overflowEditing = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

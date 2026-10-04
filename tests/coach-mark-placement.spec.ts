@@ -1,11 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { signInViaLanding } from './helpers/sign-in';
-import { availableCoachMarks, placeCoachMark, rectsIntersect, scrollToShow, type CoachRect } from '../lib/coach-marks';
+import { availableCoachMarks, dockSheet, placeCoachMark, rectsIntersect, scrollToShow, type CoachRect } from '../lib/coach-marks';
 
 /**
  * A coach mark stands beside what it explains, never over it.
@@ -21,6 +23,14 @@ import { availableCoachMarks, placeCoachMark, rectsIntersect, scrollToShow, type
  *
  * The pure half holds the rule; the rendered half holds it on the real page
  * after a real start, at 1440 and at 390.
+ *
+ * **Next step first** (owner, 04.10.2026). The tour starts at "Your next
+ * step", the page's one primary action, and then follows the page. Its first
+ * tip used to be the map's, and it scrolled the page to the map 0.8 s and
+ * 1.5 s after it appeared — on a phone the reader was carried past the next
+ * step before reading it. Now the first tip leaves the page where it is, and
+ * only "Next" scrolls. The rendered half walks the whole tour and checks
+ * every tip.
  */
 
 const rect = (top: number, left: number, width: number, height: number): CoachRect => ({ top, left, width, height });
@@ -70,11 +80,35 @@ test.describe('placeCoachMark — the rule', () => {
     expect(scrollToShow({ target: rect(1500, 16, 200, 32), popover: sheet, sheet: true, viewport: phone })).toBe(1500 - 57 - 16);
     expect(scrollToShow({ target: rect(300, 16, 200, 32), popover: sheet, sheet: true, viewport: phone })).toBe(0);
   });
+
+  test('on a phone the sheet stands at the bottom, or at the top where the bottom would cover', () => {
+    const phone = { width: 390, height: 844, top: 57, scrollY: 0 };
+    // Target high up: the bottom is free.
+    expect(dockSheet({ target: rect(120, 16, 358, 80), sheetHeight: 180, avoid: [], viewport: phone })).toBe('bottom');
+    // Target low on the screen: the sheet goes to the top rather than move the page.
+    expect(dockSheet({ target: rect(700, 16, 358, 80), sheetHeight: 180, avoid: [], viewport: phone })).toBe('top');
+    // The next step's button low on the screen counts as much as the target.
+    expect(dockSheet({ target: rect(400, 16, 358, 80), sheetHeight: 180, avoid: [rect(760, 16, 160, 44)], viewport: phone })).toBe('top');
+    // Neither edge clean: the bottom, as before.
+    expect(dockSheet({ target: rect(60, 16, 358, 800), sheetHeight: 180, avoid: [], viewport: phone })).toBe('bottom');
+  });
 });
 
 test('a view offers only the marks it has a place for — Management shows its one tip, not none', () => {
   expect(availableCoachMarks({ hasDecision: true, hasNextStep: true, only: ['next-step'] }).map((m) => m.id)).toEqual(['next-step']);
-  expect(availableCoachMarks({ hasDecision: true, hasNextStep: true }).map((m) => m.id)).toEqual(['decision', 'not-determined', 'next-step']);
+  // Business reads its page: the next step, the decision point at the map, the open points at the foot.
+  expect(availableCoachMarks({ hasDecision: true, hasNextStep: true }).map((m) => m.id)).toEqual(['next-step', 'decision', 'not-determined']);
+});
+
+test('the first tip never scrolls the page by itself; "Next" does, smoothly unless reduced motion is asked for', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '../components/workspace/CoachMarks.tsx'), 'utf8');
+  // No timed corrections after a tip appears.
+  expect(src).not.toMatch(/setTimeout/);
+  // The scroll waits for the reader.
+  expect(src).toMatch(/if \(!mark\.follow\) return;/);
+  expect(src).toMatch(/behavior: reducedMotion\(\) \? 'auto' : 'smooth'/);
+  const hook = fs.readFileSync(path.resolve(__dirname, '../hooks/useCoachMarks.ts'), 'utf8');
+  expect(hook).toMatch(/const \[follow, setFollow\] = useState\(false\);/);
 });
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -117,9 +151,8 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
 async function measure(page: Page, id: string) {
   const mark = page.locator(`[data-coach-mark="${id}"]`);
   await expect(mark).toBeVisible({ timeout: 60000 });
-  // The mark brings itself and its target into view, and checks again within
-  // the first second and a half while the page settles.
-  await page.waitForTimeout(1800);
+  // After "Next" the page scrolls smoothly to the mark; let it land.
+  await page.waitForTimeout(600);
   // Settled: the same position and scroll four samples in a row.
   let last = '';
   let same = 0;
@@ -166,22 +199,91 @@ function holds(m: Measured, form: string, what: string) {
   expect(m.target!.top, `${what}: target above the screen`).toBeGreaterThanOrEqual(0);
   expect(m.target!.top, `${what}: target below the screen`).toBeLessThan(m.viewport.height);
   for (const a of m.actions) expect(rectsIntersect(m.mark, a), `${what}: tip covers a primary action ${JSON.stringify(a)}`).toBe(false);
+  // Inside the screen: never cut off at a side, and a floating tip or a sheet
+  // never past the top or the bottom either. An inline tip is in the flow, so
+  // only its start has to be on screen.
+  expect(m.mark.left, `${what}: tip leaves the screen on the left`).toBeGreaterThanOrEqual(0);
+  expect(m.mark.left + m.mark.width, `${what}: tip leaves the screen on the right`).toBeLessThanOrEqual(m.viewport.width + 0.5);
+  expect(m.mark.top, `${what}: tip starts above the screen`).toBeGreaterThanOrEqual(0);
+  expect(m.mark.top, `${what}: tip starts below the screen`).toBeLessThan(m.viewport.height);
+  if (form !== 'inline') {
+    expect(m.mark.top + m.mark.height, `${what}: tip ends below the screen`).toBeLessThanOrEqual(m.viewport.height + 0.5);
+  }
+}
+
+/** Saves what the reader sees at this step of the tour, when COACH_SHOTS names a folder. */
+async function shot(page: Page, name: string) {
+  const dir = process.env.COACH_SHOTS;
+  if (!dir) return;
+  await page.screenshot({ path: path.join(dir, `${name}.png`) });
+}
+
+async function next(page: Page, id: string) {
+  await page.click(`[data-coach-mark-dismiss="${id}"]`);
 }
 
 for (const vp of [
-  { name: 'desktop 1440', width: 1440, height: 900, itForm: 'popover' },
-  { name: 'phone 390', width: 390, height: 844, itForm: 'sheet' },
+  { name: 'desktop 1440', slug: 'desktop', width: 1440, height: 900, touch: false, floatForm: 'popover' },
+  { name: 'phone 390', slug: 'phone', width: 390, height: 844, touch: true, floatForm: 'sheet' },
 ]) {
-  test(`after the build-up, a tip does not cover its target or the primary action — ${vp.name}`, async ({ page }) => {
-    test.setTimeout(360 * 1000);
-    await startExample(page, { width: vp.width, height: vp.height });
-    // Business, "1 of 3": in the flow right above the map it is about.
-    holds(await measure(page, 'decision'), 'inline', 'Business, Select the decision point');
+  test.describe(vp.name, () => {
+    test.use({ hasTouch: vp.touch });
 
-    // IT, "1 of 3": the Not determined figure, with "Draft the design" right under it.
-    const id = new URL(page.url()).pathname.split('/')[2];
-    await page.evaluate(() => window.localStorage.removeItem('cc.workspace.coachMarks.dismissed'));
-    await page.goto(`/project/${id}?view=it`, { waitUntil: 'domcontentloaded' });
-    holds(await measure(page, 'not-determined'), vp.itForm, 'IT, This is what we could not determine');
+    test(`the tour starts at the next step, follows the page, and no tip covers its target or the primary action — ${vp.name}`, async ({ page }) => {
+      test.setTimeout(420 * 1000);
+      await startExample(page, { width: vp.width, height: vp.height });
+
+      // Business, "1 of 3": "Your next step", in the flow right above the bar —
+      // and the page has not moved to show it: the reader is where they were.
+      const mark = page.locator('[data-coach-mark]');
+      await expect(mark).toHaveAttribute('data-coach-mark', 'next-step', { timeout: 60000 });
+      const before = await page.evaluate(() => window.scrollY);
+      holds(await measure(page, 'next-step'), 'inline', 'Business, Your next step');
+      await expect(mark).toContainText('1 of 3');
+      await page.waitForTimeout(1500);
+      expect(await page.evaluate(() => window.scrollY), 'the first tip scrolled the page by itself').toBe(before);
+      await shot(page, `${vp.slug}-business-1-next-step`);
+
+      // "Next": the decision point, in the flow right above the map.
+      await next(page, 'next-step');
+      holds(await measure(page, 'decision'), 'inline', 'Business, Select the decision point');
+      await shot(page, `${vp.slug}-business-2-decision`);
+
+      // "Next": what could not be determined, at the foot of the page.
+      await next(page, 'decision');
+      holds(await measure(page, 'not-determined'), vp.floatForm, 'Business, This is what we could not determine');
+      await shot(page, `${vp.slug}-business-3-not-determined`);
+      await next(page, 'not-determined');
+      await expect(mark).toHaveCount(0);
+
+      // IT: "Next step" under the answer, then the Not determined figure in
+      // the answer, then the decision further down.
+      const id = new URL(page.url()).pathname.split('/')[2];
+      await page.evaluate(() => window.localStorage.removeItem('cc.workspace.coachMarks.dismissed'));
+      await page.goto(`/project/${id}?view=it`, { waitUntil: 'domcontentloaded' });
+      await expect(mark).toHaveAttribute('data-coach-mark', 'next-step', { timeout: 60000 });
+      // On a phone IT's header fills the first screen and the answer starts
+      // under it. The tip waits at the next step rather than pull the page
+      // there; the reader meets it on the way down.
+      const itBefore = await page.evaluate(() => window.scrollY);
+      await page.waitForTimeout(1500);
+      expect(await page.evaluate(() => window.scrollY), 'IT: the first tip scrolled the page by itself').toBe(itBefore);
+      await mark.scrollIntoViewIfNeeded();
+      holds(await measure(page, 'next-step'), 'inline', 'IT, Your next step');
+      await shot(page, `${vp.slug}-it-1-next-step`);
+      await next(page, 'next-step');
+      holds(await measure(page, 'not-determined'), vp.floatForm, 'IT, This is what we could not determine');
+      await shot(page, `${vp.slug}-it-2-not-determined`);
+      await next(page, 'not-determined');
+      holds(await measure(page, 'decision'), vp.floatForm, 'IT, Select the decision point');
+      await shot(page, `${vp.slug}-it-3-decision`);
+
+      // Management: its one tip, "Your next step" on the answer.
+      await page.evaluate(() => window.localStorage.removeItem('cc.workspace.coachMarks.dismissed'));
+      await page.goto(`/project/${id}?view=management`, { waitUntil: 'domcontentloaded' });
+      await expect(mark).toHaveAttribute('data-coach-mark', 'next-step', { timeout: 60000 });
+      holds(await measure(page, 'next-step'), vp.floatForm, 'Management, Your next step');
+      await shot(page, `${vp.slug}-management-1-next-step`);
+    });
   });
 }

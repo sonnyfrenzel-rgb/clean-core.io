@@ -45,6 +45,14 @@ export interface CoachMark {
    */
   position?: number;
   total?: number;
+  /**
+   * The reader moved the tour here — "Next" on the mark before, or "Show tips
+   * again". Only then may the page scroll to this mark. A mark that simply
+   * appears (the first one on a first visit) leaves the page where the reader
+   * is: the tour once scrolled a phone past "Your next step" to the map, twice,
+   * a second after the first tip appeared (owner, 04.10.2026).
+   */
+  follow?: boolean;
 }
 
 export const COACH_MARKS: readonly CoachMark[] = Object.freeze([
@@ -69,6 +77,16 @@ export const COACH_MARKS: readonly CoachMark[] = Object.freeze([
 ]);
 
 /**
+ * The order of the tour where a view names none: the order the Business view
+ * shows them. "Next step first" (owner, 03.10.2026): Business opens with the
+ * one next step, then the process — the map and its decision points — and
+ * the open points at the foot. The tour reads the page the same way, so it
+ * starts at the page's one primary action and never sends the reader past it.
+ * `DESIGN.md` §6.2 names the three tips; this is the order they are shown in.
+ */
+export const COACH_MARK_TOUR_ORDER: readonly CoachMarkId[] = ['next-step', 'decision', 'not-determined'];
+
+/**
  * The key. Not namespaced per project on purpose: the three tips teach the
  * screen, not the case, and showing them again for every new project would make
  * "dismissed" meaningless.
@@ -82,10 +100,10 @@ export interface CoachMarkContext {
   /** The project has a next stage to name. */
   hasNextStep: boolean;
   /**
-   * The order the tour takes on this screen, when it is not the default. The
-   * tour starts where the reader is (owner review of the IT view): in
-   * IT the *Not determined* count and "Next step" stand at the top and the
-   * decision far below, so IT leads with those two. Marks not named keep their
+   * The order the tour takes on this screen, when it is not
+   * `COACH_MARK_TOUR_ORDER`. Every view starts at its "Next step" and then
+   * follows its own page: in IT the *Not determined* figure stands in the
+   * answer at the top and the decision far below. Marks not named keep the
    * default order after the named ones.
    */
   order?: readonly CoachMarkId[];
@@ -97,7 +115,7 @@ export function availableCoachMarks(context: CoachMarkContext): readonly CoachMa
   const order = context.order ?? [];
   const rank = (id: CoachMarkId) => {
     const i = order.indexOf(id);
-    return i === -1 ? order.length + COACH_MARK_IDS.indexOf(id) : i;
+    return i === -1 ? order.length + COACH_MARK_TOUR_ORDER.indexOf(id) : i;
   };
   return [...COACH_MARKS].sort((a, b) => rank(a.id) - rank(b.id)).filter((mark) => {
     if (context.only && !context.only.includes(mark.id)) return false;
@@ -237,6 +255,7 @@ export function placeCoachMark(input: {
  * How far to scroll so a mark and its target are both in view — 0 when they
  * already are. On a phone the mark is a sheet over the bottom of the screen,
  * so the target is brought to the top of the part the sheet leaves free.
+ * Used only when the reader moved the tour on (`CoachMark.follow`).
  */
 export function scrollToShow(input: { target: CoachRect; popover: CoachRect; sheet: boolean; viewport: CoachViewport }): number {
   const { target: t, popover: p, viewport: v } = input;
@@ -250,6 +269,33 @@ export function scrollToShow(input: { target: CoachRect; popover: CoachRect; she
   const to = Math.max(t.top + Math.min(t.height, 120), p.top + p.height);
   if (from >= top && to <= v.height - EDGE) return 0;
   return Math.round(from - top);
+}
+
+/**
+ * Where the phone's sheet stands: at the bottom of the screen, unless there it
+ * would cover the mark's target or a primary action ("Your next step"'s button
+ * above all) and at the top it would not. The sheet never moves the page to
+ * make room — a first tip leaves the reader where they are — so it moves
+ * itself instead. If neither edge is clean, the bottom.
+ */
+export function dockSheet(input: {
+  target: CoachRect | null;
+  sheetHeight: number;
+  avoid: readonly CoachRect[];
+  viewport: CoachViewport;
+}): 'bottom' | 'top' {
+  const { viewport: v, sheetHeight: h } = input;
+  const width = v.width - 2 * EDGE;
+  const at = (top: number): CoachRect => ({ top, left: EDGE, width, height: h });
+  const covers = (box: CoachRect) =>
+    (input.target !== null && rectsIntersect(box, input.target)) || input.avoid.some((r) => rectsIntersect(box, r));
+  if (!covers(at(v.height - EDGE - h))) return 'bottom';
+  return covers(at(sheetTop(v))) ? 'bottom' : 'top';
+}
+
+/** The top edge of a sheet docked at the top: under the sticky bar. */
+export function sheetTop(viewport: CoachViewport): number {
+  return viewport.top + 8;
 }
 
 /**

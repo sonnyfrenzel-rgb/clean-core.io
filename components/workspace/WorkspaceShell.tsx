@@ -147,10 +147,12 @@ const IT_HEAD: readonly ContentBlock[] = [];
 // *Not determined* is part of IT's own answer since 03.10.2026 — a figure at the
 // top and the list beside the findings — so it is not repeated at the foot.
 const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask'];
-/** In IT the tour starts at the top, where the Not determined figure and "Next step" stand. */
-const IT_COACH_ORDER: readonly CoachMarkId[] = ['not-determined', 'next-step', 'decision'];
-/** Without a source the answer has no Not determined figure yet; the tour starts at "Next step". */
-const IT_COACH_ORDER_NO_SOURCE: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
+/**
+ * In IT the tour starts at "Next step", the page's one primary action right
+ * under the answer, then the Not determined figure in that answer, then the
+ * decision far below — the same start as every view (`COACH_MARK_TOUR_ORDER`).
+ */
+const IT_COACH_ORDER: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
 /**
  * Management has a place for one tip only, "Your next step" on its answer. The
  * other two have no slot there, and a tour that starts with a mark this view
@@ -453,7 +455,7 @@ export default function WorkspaceShell({
   const marks = useCoachMarks({
     hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
-    order: view === 'it' ? (open.noSource ? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER) : undefined,
+    order: view === 'it' ? IT_COACH_ORDER : undefined,
     only: view === 'management' ? MANAGEMENT_COACH_MARKS : undefined,
   });
 
@@ -646,34 +648,40 @@ export default function WorkspaceShell({
     // this card. Directly under the `h1` in IT and Management, so its title is
     // an `h2` there, or the outline would skip a level (§2.3, §8).
     nextStep: (
-      <div className={view === 'business' ? 'mt-4' : 'mt-5 max-w-3xl'} data-coach-target="next-step">
+      <div className={view === 'business' ? 'mt-4' : 'mt-5 max-w-3xl'}>
+        {/* The tour starts here (owner, 04.10.2026: next step first), in the
+            flow right above the bar: a floating tip below it would stand over
+            the first look, and on a phone a sheet over the bar's button. */}
         <div className="cc-no-print">
           <CoachMarkNote
             mark={currentMark}
             slot="next-step"
+            form="inline"
             onDismiss={marks.dismiss}
             onDismissAll={marks.dismissAll}
           />
         </div>
         {/* A bar in Business (mockup s1): one row at the top of the content,
             the one primary button of the page on its right. */}
-        {view === 'business' ? (
-          businessStep ? (
-            <BusinessNextStep step={businessStep} projectId={projectId} />
+        <div data-coach-target="next-step">
+          {view === 'business' ? (
+            businessStep ? (
+              <BusinessNextStep step={businessStep} projectId={projectId} />
+            ) : (
+              <div
+                data-next-step-pending=""
+                aria-busy="true"
+                className="min-h-[76px] rounded-cc-card border border-l-4 border-cc-line border-l-cc-line bg-cc-surface px-4 py-3"
+              >
+                <h2 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
+                  {wt('nextStep.title')}
+                </h2>
+              </div>
+            )
           ) : (
-            <div
-              data-next-step-pending=""
-              aria-busy="true"
-              className="min-h-[76px] rounded-cc-card border border-l-4 border-cc-line border-l-cc-line bg-cc-surface px-4 py-3"
-            >
-              <h2 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
-                {wt('nextStep.title')}
-              </h2>
-            </div>
-          )
-        ) : (
-          <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" />
-        )}
+            <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" />
+          )}
+        </div>
       </div>
     ),
     // Business only: the business rules, once, in their own card under the map
@@ -794,7 +802,11 @@ export default function WorkspaceShell({
             />
           </div>
         )}
-        <AskThisCase answer={answer} />
+        {/* What "Select the decision point" points at where the map does not
+            stand on this page — the tip's own slot stays outside it. */}
+        <div data-coach-target={decisionTipAtMap ? undefined : 'decision'}>
+          <AskThisCase answer={answer} />
+        </div>
       </div>
     ) : null,
     // Everything the engine could not work out, with its reason — the reason
@@ -988,11 +1000,20 @@ export default function WorkspaceShell({
             )}
             nextStep={
               // One row under the answer, its one primary button on the right.
+              // The tour's first tip stands in the flow right above it.
               <div className="mt-4">
                 <div className="cc-no-print">
-                  <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
+                  <CoachMarkNote
+                    mark={currentMark}
+                    slot="next-step"
+                    form="inline"
+                    onDismiss={marks.dismiss}
+                    onDismissAll={marks.dismissAll}
+                  />
                 </div>
-                <NextStepCard point={nextStep} projectId={projectId} view={view} level={3} variant="bar" />
+                <div data-coach-target="next-step">
+                  <NextStepCard point={nextStep} projectId={projectId} view={view} level={3} variant="bar" />
+                </div>
               </div>
             }
           />

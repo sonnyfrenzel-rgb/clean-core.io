@@ -131,7 +131,7 @@ export default function ItAnswers({
   recorded?: readonly RecordGap[];
   /** A signed run is on record and readable; the demo, which carries none by design, passes `'demo'`. */
   signed?: boolean | 'demo';
-  /** The coach mark for a place in this view — the tour starts here, at the top. */
+  /** The coach mark for a place in this view — Not determined, in the answer at the top. */
   coach?: (slot: CoachMarkId) => React.ReactNode;
 }) {
   /**
@@ -291,8 +291,8 @@ export default function ItAnswers({
 
   return (
     <section data-it-view="" data-it-state={state} aria-labelledby="it-answers-heading" className="cc">
-      {/* The tour starts here, where the reader is: the first mark
-          points at the Not determined figure in the answer. */}
+      {/* The tour's second mark points at the Not determined figure in the
+          answer; the first stands at "Next step" right under it. */}
       {coach ? coach('not-determined') : null}
 
       {/* The answer, first (ADR-029): one state, one headline, one reason. */}

@@ -8,8 +8,10 @@ import { coachPositionLabel, wt } from '@/lib/workspace-messages';
 import {
   COACH_WIDTH,
   coachTargetFor,
+  dockSheet,
   placeCoachMark,
   scrollToShow,
+  sheetTop,
   type CoachPlacement,
   type CoachMark,
   type CoachMarkId,
@@ -31,16 +33,24 @@ import {
  * page's primary action. The tip used to sit under the target's title, inside
  * the target, and covered the very text it pointed at (owner review after the
  * start build-up). It moves with that element on resize, fold and font change
- * (a `ResizeObserver`), and when a mark appears the page scrolls so that the
- * mark and its target are both in view.
+ * (a `ResizeObserver`).
+ *
+ * **The page moves only when the reader moves the tour.** The first tip of a
+ * visit appears where it is and leaves the page alone: it used to scroll the
+ * page to itself, twice, within a second and a half — on a phone that carried
+ * the reader past "Your next step" to the map (owner, 04.10.2026). After
+ * "Next" (or "Show tips again") the page scrolls once, smoothly unless the
+ * reader asked for reduced motion, so the new mark and its target are in
+ * view. The tour itself starts at the next step (`COACH_MARK_TOUR_ORDER`).
  *
  * **In the flow above a target with no free side.** The process map fills the
  * screen; its tip stands right above it (`form="inline"`) and covers nothing.
  *
- * **A bottom sheet on S.** On a phone a floating bubble covers the very thing
- * it explains, so the mark is a sheet pinned to the bottom of the viewport,
- * and the target is scrolled into the part of the screen the sheet leaves
- * free.
+ * **A sheet on S.** On a phone a floating bubble covers the very thing it
+ * explains, so the mark is a sheet pinned to the bottom of the viewport — or
+ * to the top, where the bottom would cover its target or a primary action
+ * (`dockSheet`). After "Next" the target is scrolled into the part of the
+ * screen the sheet leaves free.
  *
  * **In the flow for the keyboard.** The popover and the sheet stay in the DOM
  * right where their slot is, so Tab reaches them where the reader is — the
@@ -114,6 +124,7 @@ export default function CoachMarkNote({
   const popRef = useRef<HTMLDivElement>(null);
   const scrolledFor = useRef<string | null>(null);
   const [place, setPlace] = useState<(CoachPlacement & { top: number; left: number }) | null>(null);
+  const [sheetEdge, setSheetEdge] = useState<{ edge: 'bottom' | 'top'; top: number }>({ edge: 'bottom', top: 0 });
   const showing = mark !== null && mark.id === slot;
   const inline = form === 'inline';
 
@@ -156,50 +167,65 @@ export default function CoachMarkNote({
     };
   }, [showing, isS, inline, measure, slot]);
 
-  // Once per mark: bring the mark and its target into view together. The page
-  // may still be settling when a mark appears (the map fits itself, a fold
-  // opens), so the check runs again twice within the first second and a half
-  // — and only then; after that the reader's own scrolling is left alone.
-  const timers = useRef<number[]>([]);
-  useEffect(() => {
-    // The reader takes over: no further correction once they scroll, touch or type.
-    const stop = () => {
-      timers.current.forEach((t) => window.clearTimeout(t));
-      timers.current = [];
+  // The sheet's edge on a phone: wherever it covers neither its target nor a
+  // primary action. Measured again when the reader scrolls or the screen
+  // turns, because the sheet stays put while the page moves under it.
+  const measureSheet = useCallback(() => {
+    const pop = popRef.current;
+    if (!mark || !pop) return;
+    const target = findTarget(slotRef.current, mark.id);
+    const viewport = { width: document.documentElement.clientWidth, height: window.innerHeight, top: stickyTop(), scrollY: window.scrollY };
+    const edge = dockSheet({
+      target: target ? rectOf(target.getBoundingClientRect()) : null,
+      sheetHeight: pop.offsetHeight,
+      avoid: primaryActions(pop),
+      viewport,
+    });
+    const top = sheetTop(viewport);
+    setSheetEdge((prev) => (prev.edge === edge && prev.top === top ? prev : { edge, top }));
+  }, [mark]);
+
+  useLayoutEffect(() => {
+    if (!showing || !isS || inline) return undefined;
+    measureSheet();
+    let frame = 0;
+    const later = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(measureSheet);
     };
-    const events = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
-    events.forEach((e) => window.addEventListener(e, stop, { passive: true }));
+    window.addEventListener('scroll', later, { passive: true });
+    window.addEventListener('resize', later);
     return () => {
-      stop();
-      events.forEach((e) => window.removeEventListener(e, stop));
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', later);
+      window.removeEventListener('resize', later);
     };
-  }, []);
+  }, [showing, isS, inline, measureSheet]);
+
+  // Once per mark, and only when the reader moved the tour here: bring the
+  // mark and its target into view together. A mark that simply appears — the
+  // first of a visit — leaves the page where the reader is.
   useEffect(() => {
     if (!showing || !mark) {
-      // Gone — "Show tips again" brings it back, and then it scrolls again.
+      // Gone — "Show tips again" brings it back, and then it may scroll again.
       scrolledFor.current = null;
       return;
     }
     const key = `${mark.id}:${isS ? 's' : 'l'}`;
     if (scrolledFor.current === key) return;
+    if (!mark.follow) return;
     if (!isS && !inline && !place) return;
-    if (!findTarget(slotRef.current, mark.id) || !popRef.current) return;
+    const target = findTarget(slotRef.current, mark.id);
+    const pop = popRef.current;
+    if (!target || !pop) return;
     scrolledFor.current = key;
-    const bringIntoView = (behavior: ScrollBehavior) => {
-      const target = findTarget(slotRef.current, mark.id);
-      const pop = popRef.current;
-      if (!target || !pop || scrolledFor.current !== key) return;
-      const by = scrollToShow({
-        target: rectOf(target.getBoundingClientRect()),
-        popover: rectOf(pop.getBoundingClientRect()),
-        sheet: isS && !inline,
-        viewport: { width: document.documentElement.clientWidth, height: window.innerHeight, top: stickyTop(), scrollY: window.scrollY },
-      });
-      if (by !== 0) window.scrollBy({ top: by, behavior });
-    };
-    bringIntoView(reducedMotion() ? 'auto' : 'smooth');
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [800, 1500].map((ms) => window.setTimeout(() => bringIntoView('auto'), ms));
+    const by = scrollToShow({
+      target: rectOf(target.getBoundingClientRect()),
+      popover: rectOf(pop.getBoundingClientRect()),
+      sheet: isS && !inline,
+      viewport: { width: document.documentElement.clientWidth, height: window.innerHeight, top: stickyTop(), scrollY: window.scrollY },
+    });
+    if (by !== 0) window.scrollBy({ top: by, behavior: reducedMotion() ? 'auto' : 'smooth' });
   }, [showing, mark, isS, inline, place]);
 
   if (!mark || !showing) return null;
@@ -253,8 +279,10 @@ export default function CoachMarkNote({
           ref={popRef}
           data-coach-mark={mark.id}
           data-coach-form="sheet"
+          data-coach-dock={sheetEdge.edge}
           role="note"
           aria-label={mark.title}
+          style={sheetEdge.edge === 'top' ? { top: `${sheetEdge.top}px`, bottom: 'auto' } : undefined}
           className="fixed inset-x-4 bottom-4 z-cc-overlay flex flex-col gap-2 rounded-cc-card bg-cc-surface-dark px-4 py-3 text-cc-on-dark shadow-cc-dialog"
         >
           <span className="flex items-start gap-2">
