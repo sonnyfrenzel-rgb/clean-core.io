@@ -30,6 +30,7 @@ import {
   type ProcessSearchHit,
 } from '@/lib/process-navigation';
 import BpmnCanvas from './BpmnCanvas';
+import { phoneLayout } from './phone-layout';
 import { anchorText } from '@/lib/bpmn/layout';
 import type { OpenedRevision, SaveProcessModel } from './BpmnEditor';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
@@ -253,6 +254,14 @@ export default function ProcessMap({
    */
   const [technical, setTechnical] = useState(false);
   const model = useMemo(() => (technical ? technicalView(modelProp) : modelProp), [modelProp, technical]);
+  // On a phone the canvas draws the same process laid out narrower, built
+  // from this source for the canvas only (ADR-072, amended 04.10.2026). The
+  // editor, drafts, revisions and downloads go on reading `model.xml`.
+  const technicalShown = technical && Boolean(modelProp.technicalXml);
+  const phoneXml = useMemo(
+    () => phoneLayout({ source, processName: modelProp.processName, fileName: modelProp.fileName, readingXml: model.xml, technical: technicalShown }),
+    [source, modelProp.processName, modelProp.fileName, model.xml, technicalShown],
+  );
 
   const view = viewProp ?? viewLocal;
   const selected = selectedProp !== undefined ? selectedProp : selectedLocal;
@@ -847,6 +856,7 @@ export default function ProcessMap({
           {view === 'map' ? (
             <BpmnCanvas
               xml={model.xml}
+              phoneXml={phoneXml}
               label={`${model.processName}. ${model.overview}`}
               nodes={canvasNodes}
               plane={plane}

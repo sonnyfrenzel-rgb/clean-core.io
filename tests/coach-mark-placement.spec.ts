@@ -81,6 +81,36 @@ test.describe('placeCoachMark — the rule', () => {
     expect(scrollToShow({ target: rect(300, 16, 200, 32), popover: sheet, sheet: true, viewport: phone })).toBe(0);
   });
 
+  test('on a phone a sheet docked at the top has the target scrolled to just below it, never behind it', () => {
+    // QA 86f984ca90aa: the target went to the top of the screen, where the sheet stood.
+    const phone = { width: 390, height: 844, top: 57, scrollY: 0 };
+    const docked = rect(57 + 8, 16, 358, 184);
+    const below = 57 + 8 + 184 + 12;
+    // Far down the page, and the next step's button holds the bottom: the sheet docks at the top.
+    const far = rect(1500, 16, 200, 32);
+    expect(dockSheet({ target: far, sheetHeight: 184, avoid: [rect(760, 16, 160, 44)], viewport: phone })).toBe('top');
+    const by = scrollToShow({ target: far, popover: docked, sheet: true, dock: 'top', viewport: phone });
+    expect(by).toBe(1500 - below);
+    // After the scroll the target is in view and clear of the sheet.
+    const after = rect(far.top - by, far.left, far.width, far.height);
+    expect(rectsIntersect(after, docked)).toBe(false);
+    expect(after.top + after.height).toBeLessThanOrEqual(phone.height);
+    // Already below the sheet and on screen: no scroll.
+    expect(scrollToShow({ target: rect(500, 16, 200, 32), popover: docked, sheet: true, dock: 'top', viewport: phone })).toBe(0);
+    // Behind the sheet: scrolled down out from under it (a negative scroll).
+    const hidden = rect(120, 16, 200, 32);
+    const up = scrollToShow({ target: hidden, popover: docked, sheet: true, dock: 'top', viewport: phone });
+    expect(rectsIntersect(rect(hidden.top - up, 16, 200, 32), docked)).toBe(false);
+    // The popover measured where it stood before the dock moved: the dock decides, not the stale rectangle.
+    const stale = rect(644, 16, 358, 184);
+    expect(scrollToShow({ target: far, popover: stale, sheet: true, dock: 'top', viewport: phone })).toBe(1500 - below);
+    // Without a dock, a popover in the upper half is read as docked at the top.
+    expect(scrollToShow({ target: far, popover: docked, sheet: true, viewport: phone })).toBe(1500 - below);
+    // The page passes the dock it decides at the moment of the scroll.
+    const src = fs.readFileSync(path.resolve(__dirname, '../components/workspace/CoachMarks.tsx'), 'utf8');
+    expect(src).toMatch(/scrollToShow\(\{[\s\S]{0,200}dock,/);
+  });
+
   test('on a phone the sheet stands at the bottom, or at the top where the bottom would cover', () => {
     const phone = { width: 390, height: 844, top: 57, scrollY: 0 };
     // Target high up: the bottom is free.

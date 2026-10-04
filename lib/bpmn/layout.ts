@@ -114,6 +114,15 @@ export interface LayoutOptions {
    * the circle, so nothing hangs out to the left of the main line.
    */
   narrow?: boolean;
+  /**
+   * Per plane, by container id: most columns in one row, in place of `wrap`
+   * where it answers a number. The phone's view of a reading map (ADR-072,
+   * amended 04.10.2026): a level too wide for the card wraps after fewer
+   * columns. A view only — nothing exported or stored is laid out with it.
+   */
+  wrapOf?: (containerId: string) => number | undefined;
+  /** Width of a note that explains a whole plane. Default {@link NOTE_W}. */
+  noteWidth?: number;
 }
 
 /** The spacing a layout works with — the normal one, or `compact`. */
@@ -133,10 +142,12 @@ interface Spacing {
   taskMin: number;
   /** Phone drawing: labels right of and under the main line, not left of it. */
   narrow: boolean;
+  /** Width of a note that explains a whole plane. */
+  note: number;
 }
 
-const NORMAL: Spacing = { col: 56, row: 44, grow: 18, flowAlong: 36, flowAcross: 30, eventMain: 28, labelSteps: [24, 36], dock: 21, clear: 8, taskMin: 170, narrow: false };
-const COMPACT: Spacing = { col: 22, row: 28, grow: 6, flowAlong: 26, flowAcross: 16, eventMain: 6, labelSteps: [4, 12, 24], dock: 6, clear: 3, taskMin: 170, narrow: false };
+const NORMAL: Spacing = { col: 56, row: 44, grow: 18, flowAlong: 36, flowAcross: 30, eventMain: 28, labelSteps: [24, 36], dock: 21, clear: 8, taskMin: 170, narrow: false, note: 560 };
+const COMPACT: Spacing = { col: 22, row: 28, grow: 6, flowAlong: 26, flowAcross: 16, eventMain: 6, labelSteps: [4, 12, 24], dock: 6, clear: 3, taskMin: 170, narrow: false, note: 560 };
 const NARROW: Spacing = { ...COMPACT, taskMin: 128, narrow: true };
 
 /* ------------------------------------------------------------------ *
@@ -162,7 +173,8 @@ const MAX_TASK_LINES = 3;
 export const BOUNDARY_ROOM = 26;
 /** Extra height of a collapsed sub-process: its marker sits under the anchor. */
 export const MARKER_ROOM = 30;
-const NOTE_W = 560;
+/** Width of a note that explains a whole plane (`Spacing.note`). */
+export const NOTE_W = NORMAL.note;
 const POOL_H = 60;
 const POOL_GAP = 40;
 
@@ -244,7 +256,11 @@ function labelBlock(text: string, anchor: string | null, maxWidth: number): { li
 export function layoutModel(model: ExportModel, options: LayoutOptions = {}): DiagramLayout {
   const direction = options.direction ?? 'LR';
   const planes = new Map<string, PlaneLayout>();
-  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap, options.compact ? (options.narrow && direction === 'TB' ? NARROW : COMPACT) : NORMAL));
+  const base = options.compact ? (options.narrow && direction === 'TB' ? NARROW : COMPACT) : NORMAL;
+  const sp = options.noteWidth ? { ...base, note: options.noteWidth } : base;
+  for (const container of model.containers) {
+    planes.set(container.id, layoutContainer(container, direction, options.wrapOf?.(container.id) ?? options.wrap, sp));
+  }
 
   if (!model.pools.length) return { planes, direction };
 
@@ -684,8 +700,8 @@ function attemptPlane(
   let top = ORIGIN_Y;
   for (const note of container.annotations) {
     if (note.nodeId) continue;
-    const height = noteHeight(note.text, NOTE_W);
-    plane.shapes.set(note.id, { x: ORIGIN_X, y: top, width: NOTE_W, height });
+    const height = noteHeight(note.text, sp.note);
+    plane.shapes.set(note.id, { x: ORIGIN_X, y: top, width: sp.note, height });
     top += height + 50;
   }
 

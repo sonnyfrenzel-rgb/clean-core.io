@@ -255,12 +255,28 @@ export function placeCoachMark(input: {
  * How far to scroll so a mark and its target are both in view — 0 when they
  * already are. On a phone the mark is a sheet over the bottom of the screen,
  * so the target is brought to the top of the part the sheet leaves free.
+ * A sheet docked at the top (`dockSheet`) leaves the part under it free: the
+ * target is brought to just below the sheet, never behind it.
  * Used only when the reader moved the tour on (`CoachMark.follow`).
  */
-export function scrollToShow(input: { target: CoachRect; popover: CoachRect; sheet: boolean; viewport: CoachViewport }): number {
+export function scrollToShow(input: {
+  target: CoachRect;
+  popover: CoachRect;
+  sheet: boolean;
+  /** Where the sheet stands; without it, read from where the popover is. */
+  dock?: 'top' | 'bottom';
+  viewport: CoachViewport;
+}): number {
   const { target: t, popover: p, viewport: v } = input;
   const top = v.top + EDGE;
   if (input.sheet) {
+    const dock = input.dock ?? (p.top + p.height / 2 < v.height / 2 ? 'top' : 'bottom');
+    if (dock === 'top') {
+      // The sheet's own top, wherever the popover was measured: under the sticky bar.
+      const below = sheetTop(v) + p.height + COACH_GAP;
+      const fits = t.top >= below && t.top + t.height <= v.height - EDGE;
+      return fits ? 0 : Math.round(t.top - below);
+    }
     const free = p.top - COACH_GAP;
     const fits = t.top >= top && t.top + t.height <= free;
     return fits ? 0 : Math.round(t.top - top);

@@ -5,7 +5,8 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
-import { MAP_REVEAL_EVENT, fitWhole, fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, phoneFitWidth, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
@@ -62,6 +63,13 @@ export interface BpmnCanvasNode {
 export interface BpmnCanvasProps {
   /** The BPMN 2.0 XML of roadmap 2.6. */
   xml: string;
+  /**
+   * The phone's view of `xml` (ADR-072, amended 04.10.2026): on a canvas
+   * narrower than {@link NARROW_CANVAS}, the same process laid out to fit that
+   * width at the 40 % floor (`phone-layout.ts`), or null to draw `xml`. Drawn
+   * only here; nothing is stored or exported from it.
+   */
+  phoneXml?: PhoneXml;
   /** A sentence about the map as a whole — *"Process with 14 steps and 5 decisions."* */
   label: string;
   /** Accessible names and evidence, by BPMN element id. */
@@ -210,6 +218,7 @@ function applyRovingTabIndex(host: HTMLElement, active: string | null): void {
 
 export default function BpmnCanvas({
   xml,
+  phoneXml,
   label,
   nodes,
   plane,
@@ -292,8 +301,17 @@ export default function BpmnCanvas({
    * focus back to the node it was on.
    */
   const refocusRef = useRef(false);
+  /**
+   * The phone's view: the provider of this render, whether the viewer on
+   * show was built for a phone-wide canvas, and a count that rebuilds it when
+   * the canvas crosses that width (a phone turned, a window resized).
+   */
+  const phoneRef = useRef(phoneXml);
+  const narrowRef = useRef(false);
+  const [layoutPass, setLayoutPass] = useState(0);
 
   useEffect(() => {
+    phoneRef.current = phoneXml;
     handlers.current = {
       onActivate: (id) => (filledRef.current ? chooseOutOfFullscreen(() => onActivate(id)) : onActivate(id)),
       onActiveChange,
@@ -320,13 +338,24 @@ export default function BpmnCanvas({
     const build = async () => {
       const host = hostRef.current;
       if (!host) return;
+      // A phone-wide canvas draws the phone's view of the same process, when
+      // there is one; any failure draws `xml` as it is.
+      const width = host.clientWidth;
+      narrowRef.current = width > 0 && width < NARROW_CANVAS;
+      const phone = phoneRef.current;
+      let drawn = xml;
+      if (phone && narrowRef.current) {
+        drawn = (await phone(phoneFitWidth(width)).catch(() => null)) ?? xml;
+        if (cancelled) return;
+      }
+      host.setAttribute('data-map-layout', drawn === xml ? 'reading' : 'phone');
       const { default: NavigatedViewer } = await import('bpmn-js/lib/NavigatedViewer');
       if (cancelled) return;
       viewer = new NavigatedViewer({ container: host, textRenderer: textRendererConfig(host), bpmnRenderer: rendererColors(host) }) as unknown as ViewerLike;
       viewerRef.current = viewer;
 
       try {
-        await viewer.importXML(xml);
+        await viewer.importXML(drawn);
       } catch {
         // A file this build wrote and cannot read back is a defect, not a state
         // to draw: the step list beside this canvas shows the same process and
@@ -490,7 +519,7 @@ export default function BpmnCanvas({
       }
       viewerRef.current = null;
     };
-  }, [xml, nodes]);
+  }, [xml, nodes, layoutPass]);
 
   /** The plane the parent asks for. */
   useEffect(() => {
@@ -522,6 +551,12 @@ export default function BpmnCanvas({
       const size = { width: host.clientWidth, height: host.clientHeight };
       if (Math.abs(size.width - last.width) < 8 && Math.abs(size.height - last.height) < 8) return;
       last = size;
+      // Across the phone's width the other layout is drawn: build again.
+      if (phoneRef.current && size.width > 0 && (size.width < NARROW_CANVAS) !== narrowRef.current) {
+        narrowRef.current = size.width < NARROW_CANVAS;
+        setLayoutPass((n) => n + 1);
+        return;
+      }
       const viewer = viewerRef.current;
       if (!viewer || size.width === 0 || size.height === 0) return;
       try {

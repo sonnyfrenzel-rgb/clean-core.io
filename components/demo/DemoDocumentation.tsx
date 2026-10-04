@@ -6,6 +6,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import HandbookDrawer from '@/components/documentation/HandbookDrawer';
 import type { BpmnCanvasNode } from '@/components/process-map/BpmnCanvas';
+import { phoneLayout } from '@/components/process-map/phone-layout';
 import { anchorText } from '@/lib/bpmn/layout';
 import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
@@ -37,6 +38,7 @@ export default function DemoDocumentation({
   gaps,
   levels,
   businessLayer,
+  source = null,
 }: {
   process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   /** The coverage sweep's constructs — the demo's own, read on the server. */
@@ -45,6 +47,11 @@ export default function DemoDocumentation({
   levels: Record<string, CloudReadinessGrade>;
   /** What stands where a real project shows its business layer — the demo makes no model call. */
   businessLayer?: React.ReactNode;
+  /**
+   * The example the demo was built from, read on the server for this stage
+   * only — what the phone's narrow map layout is laid out from.
+   */
+  source?: string | null;
 }) {
   const handbook = useMemo(() => (process ? handbookFromData(process.handbook) : null), [process]);
   /** The same glance a real project opens with (owner 03.10.2026). */
@@ -58,6 +65,15 @@ export default function DemoDocumentation({
   const [active, setActive] = useState<string | null>(null);
   const [plane, setPlane] = useState<string | null>(null);
   const [focusToken, setFocusToken] = useState(0);
+  // On a phone, the same process laid out narrower (ADR-072, amended
+  // 04.10.2026), from the example the server read for this stage; drawn only
+  // when its process is byte for byte the one the demo shows.
+  const phoneXml = useMemo(
+    () => (model && source
+      ? phoneLayout({ source, processName: model.processName, fileName: model.fileName, readingXml: model.xml, technical: false })
+      : undefined),
+    [model, source],
+  );
 
   const nodes = useMemo(
     () => new Map<string, BpmnCanvasNode>((model?.elements ?? []).map((e) => [e.id, {
@@ -160,6 +176,7 @@ export default function DemoDocumentation({
           map={
             <BpmnCanvas
               xml={model.xml}
+              phoneXml={phoneXml}
               label={`${model.processName}. ${model.overview}`}
               nodes={nodes}
               plane={plane}
