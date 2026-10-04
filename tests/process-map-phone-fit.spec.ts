@@ -184,7 +184,7 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await frame.locator('[data-map-node]').nth(2).click();
     const details = page.locator('[data-process-map-details]');
     await expect(details).toBeVisible();
-    await expect(details).toContainText(/L\d+/);
+    await expect(details).toContainText(/line \d+/);
   });
 
   test('the workspace (Business): a small example that fits keeps its layout', async ({ page }) => {
