@@ -1,7 +1,7 @@
 import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
-import { anchorText, flowText, layoutModel, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
+import { anchorText, flowText, layoutModel, NOTE_W, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
 export const READING_WRAP = 6;
@@ -59,6 +59,10 @@ export interface BpmnExportOptions {
   direction?: Direction;
   /** Most columns in one row before a band continues below (`LayoutOptions.wrap`). */
   wrap?: number;
+  /** Per plane, in place of `wrap` (`LayoutOptions.wrapOf`) — the phone's view only, never a file. */
+  wrapOf?: (containerId: string) => number | undefined;
+  /** Width of a plane's note (`LayoutOptions.noteWidth`) — the phone's view only, never a file. */
+  noteWidth?: number;
 }
 
 export interface BpmnExportStats {
@@ -118,7 +122,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     id: 'note-reconstruction',
     text: reconstructionNote(options, anchored, nodes.length),
   });
-  const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap });
+  const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap, wrapOf: options.wrapOf, noteWidth: options.noteWidth });
 
   const elementNode: Record<string, string> = {};
   const dataByElement: Record<string, ElementData> = {};
@@ -226,6 +230,90 @@ export function buildReadingExports(
     bpmn: buildBpmnExport(skeleton, { ...options, source, names: 'plain', wrap: READING_WRAP }),
     technical: buildBpmnExport(skeleton, { ...options, source, wrap: READING_WRAP }),
   };
+}
+
+/** Columns per row of a level the phone's view narrows, and the fewest it goes to. */
+export const PHONE_WRAP = 3;
+export const PHONE_MIN_WRAP = 2;
+
+/**
+ * The phone's view of a reading map (ADR-072, amended 04.10.2026).
+ *
+ * A level drawn with {@link READING_WRAP} columns can be far wider than a card
+ * on a phone: the main path of Z_MM_PO_APPROVAL is some 1,350 units, and a
+ * phone's floor of 40 % shows about 650 of them. Each level wider than
+ * `fitWidth` is laid out again with fewer columns per row — three, or two
+ * where three cannot fit — and the plane's note is no wider than the card.
+ *
+ * **A view, never a file.** The result is the same process as `readingXml` —
+ * the same elements, ids, names, flows, traces and documentation; only the
+ * diagram interchange (`bpmndi`) differs — and it is built for the canvas on a
+ * phone and nowhere else. Nothing exported, downloaded, edited, compared or
+ * stored is laid out with it: those all go on reading `buildReadingExports`,
+ * which this does not touch. Checked here, not assumed: if the process part
+ * of the result is not byte-identical to that of `readingXml` (a source or a
+ * name that does not belong to it), the answer is `null` and the canvas draws
+ * `readingXml` as it is. `null` too when every level already fits.
+ */
+export function buildPhoneReadingXml(
+  source: string,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion'>,
+  view: { readingXml: string; technical: boolean; fitWidth: number },
+): string | null {
+  const fit = Math.floor(view.fitWidth);
+  if (!(fit > 0)) return null;
+  const desk = planeWidths(view.readingXml);
+  if (![...desk.values()].some((w) => w > fit)) return null;
+  const keyOf = (id: string) => (desk.has(`${id}_plane`) ? `${id}_plane` : 'plane');
+  // Half the columns where the level is at most twice the card; otherwise two.
+  const chosen = (key: string) => {
+    const w = desk.get(key) ?? 0;
+    if (w <= fit) return undefined;
+    return w <= 2 * fit ? PHONE_WRAP : PHONE_MIN_WRAP;
+  };
+  const skeleton = buildProcessSkeleton(source);
+  const build = (wrapOf: (key: string) => number | undefined) =>
+    buildBpmnExport(skeleton, {
+      ...options,
+      source,
+      names: view.technical ? undefined : 'plain',
+      wrap: READING_WRAP,
+      wrapOf: (id) => wrapOf(keyOf(id)),
+      noteWidth: Math.min(NOTE_W, fit),
+    }).xml;
+  let xml = build(chosen);
+  // A level that three columns did not bring into the card: two.
+  const retry = new Set([...planeWidths(xml)].filter(([key, w]) => w > fit && chosen(key) === PHONE_WRAP).map(([key]) => key));
+  if (retry.size) xml = build((key) => (retry.has(key) ? PHONE_MIN_WRAP : chosen(key)));
+  return processPart(xml) === processPart(view.readingXml) ? xml : null;
+}
+
+/** Everything of a BPMN file but its diagram interchange: the process itself. */
+function processPart(xml: string): string {
+  const at = xml.indexOf('<bpmndi:BPMNDiagram');
+  return at < 0 ? xml : xml.slice(0, at);
+}
+
+/** Plane id (`plane`, `<container>_plane`) → width of everything drawn on it. */
+function planeWidths(xml: string): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const part of xml.split('<bpmndi:BPMNPlane').slice(1)) {
+    const id = /\bid="([^"]+)"/.exec(part)?.[1];
+    if (!id) continue;
+    const body = part.slice(0, Math.max(0, part.indexOf('</bpmndi:BPMNPlane>')));
+    let min = Infinity;
+    let max = -Infinity;
+    for (const m of body.matchAll(/<dc:Bounds x="(-?[\d.]+)" y="-?[\d.]+" width="([\d.]+)"/g)) {
+      min = Math.min(min, Number(m[1]));
+      max = Math.max(max, Number(m[1]) + Number(m[2]));
+    }
+    for (const m of body.matchAll(/<di:waypoint x="(-?[\d.]+)"/g)) {
+      min = Math.min(min, Number(m[1]));
+      max = Math.max(max, Number(m[1]));
+    }
+    out.set(id, max > min ? max - min : 0);
+  }
+  return out;
 }
 
 /** A file name for the download: the name, reduced to characters every file system keeps. */
