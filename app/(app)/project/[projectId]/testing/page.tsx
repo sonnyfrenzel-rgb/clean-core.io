@@ -253,7 +253,7 @@ export default function TestingSandboxPage() {
   const originEvidence = useProjectEvidence(projectId as string, !!originSha, `${project?.activeRunId ?? ''}#${originSha ?? ''}`);
   const originFindings = useMemo(() => findingsForOrigin(originEvidence, originSha), [originEvidence, originSha]);
   const originEngine = useScenarioOriginEngine(project, originFindings);
-  const { isGenerating, testCases, generateTestCases, storedSuiteRejected } = useTestGeneration(projectId as string, project, setProject, originFindings);
+  const { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying: genRetrying } = useTestGeneration(projectId as string, project, setProject, originFindings);
   /** Why the last generation attempt produced nothing. Empty when none has failed. */
   const [genError, setGenError] = useState('');
   /**
@@ -800,11 +800,9 @@ export default function TestingSandboxPage() {
     setGenError('');
     try {
       const result = await generateTestCases();
+      // An answer without a scenario is refused in the hook, before the write.
       if (result && result.testCases) {
         setSelectedTestCases(result.testCases.map((_: any, i: number) => i));
-        if (result.testCases.length === 0) {
-          setGenError('The testing model answered without a single scenario. Generate again.');
-        }
       }
     } catch (error) {
       // The console was the only place this went. A refused generation leaves
@@ -1305,6 +1303,11 @@ export default function TestingSandboxPage() {
                 >
                   {isGenerating ? 'Generating scenarios...' : 'Generate scenarios'}
                 </CcButton>
+                {genRetrying ? (
+                  <p data-test-generation-retry="" role="status" className="m-0 cc-text-cell text-cc-ink-muted">
+                    {genRetrying}
+                  </p>
+                ) : null}
                 {genError && (
                   <p data-test-generation-error role="alert" className="m-0 cc-text-cell font-semibold leading-relaxed text-cc-error">
                     {genError}
@@ -1318,6 +1321,11 @@ export default function TestingSandboxPage() {
                     Suite" can be refused too — and there the previous suite is
                     still on the screen, so without this the button simply
                     appears to do nothing. */}
+                {genRetrying ? (
+                  <p data-test-generation-retry="" role="status" className="m-0 cc-text-cell text-cc-ink-muted">
+                    {genRetrying}
+                  </p>
+                ) : null}
                 {genError && (
                   <div data-test-generation-error>
                     <CcMessageStrip state="error">{genError}</CcMessageStrip>

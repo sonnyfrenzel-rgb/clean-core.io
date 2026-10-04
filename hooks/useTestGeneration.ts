@@ -5,12 +5,16 @@ import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import {
   checkTestSuiteShape,
   testSuiteRejectionMessage,
 } from '@/app/(app)/project/[projectId]/testing/test-suite-schema';
 import { numberedSource, originPromptSection, withOriginCheck, type OriginEngine, type OriginFindingInput } from '@/lib/scenario-origin';
 import { ORIGIN_FAILED, originEngineFor, signedForOrigin } from './useScenarioOrigins';
+
+/** What the testing stage asks the model for, in the retry and failure sentences. */
+const TEST_SUITE_NOUN = 'test suite';
 
 /**
  * @param originFindings the engine's findings for the signed source, read on the
@@ -25,6 +29,8 @@ export const useTestGeneration = (
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState<TestCase[] | null>(null);
+  /** The progress line while the one automatic second call runs; `null` otherwise. */
+  const [retrying, setRetrying] = useState<string | null>(null);
   // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
   // first render, while the project was still loading: a saved suite never appeared after a reload, and the page
   // offered to generate it again (QA review of a0c108513165).
@@ -161,9 +167,42 @@ ${legacyForPrompt}
         ${originAsk}
         `;
       
-      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
-      
-      const result = JSON.parse(responseText || '{}');
+      // The same standard as the Transformation stage (owner report
+      // 03.10.2026, `lib/model-json.ts`): the request carries the stage's
+      // schema (`lib/model-response-schema.ts`), the parse tolerates the
+      // spelling slips it can read without guessing — a fence, prose around
+      // the object, an escape such as ABAP's `\{` inside a string — and an
+      // answer that is still unusable (not JSON, cut off, empty) gets one
+      // automatic second call. A content-filter block, a rate limit or a
+      // switched-off stage is not retried: the same request meets the same
+      // refusal. Nothing is stored from a failed attempt.
+      //
+      // A plain `JSON.parse(responseText || '{}')` used to stand here: an
+      // empty answer became `{}`, passed the shape check (every field may be
+      // absent) and was stored as a suite with no scenarios.
+      const MAX_ATTEMPTS = 2;
+      let result: Record<string, unknown> | null = null;
+      let failure: UnusableAnswer = 'not-json';
+      let attempts = 0;
+      while (!result && attempts < MAX_ATTEMPTS) {
+        if (attempts > 0) setRetrying(retryNotice(failure, TEST_SUITE_NOUN));
+        attempts++;
+        let responseText: string;
+        try {
+          responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
+        } catch (callErr) {
+          const unusable = unusableFromModelError(callErr);
+          if (!unusable) throw callErr;
+          failure = unusable;
+          continue;
+        }
+        const read = parseModelJsonObject(responseText);
+        if (read.ok) result = read.value;
+        else failure = read.reason;
+      }
+      if (!result) {
+        throw new Error(unusableAnswerMessage(failure, attempts, TEST_SUITE_NOUN));
+      }
 
       // Parsing is not validation. `JSON.parse` proves the answer was JSON and
       // nothing else, and every `|| []` / `|| {}` fallback below waves a truthy
@@ -178,14 +217,28 @@ ${legacyForPrompt}
         throw new Error(testSuiteRejectionMessage(shape.problems));
       }
 
+      // The shape check has run, so each field is absent or of its type.
+      const answer = result as {
+        testCases?: Array<Record<string, unknown>>;
+        testSuite?: TestSuite;
+        coverageEstimate?: CoverageEstimate;
+        manualTestingRequirements?: ManualTestRequirement[];
+      };
+
+      // An answer without a single scenario is no suite. It used to be stored
+      // — over the suite that was there — and only then reported.
+      if (!answer.testCases || answer.testCases.length === 0) {
+        throw new Error('The model answered without a single test scenario. Nothing was saved — the previous version is untouched. Generate again.');
+      }
+
       // A malformed `derivedFrom` is dropped and recorded as not stated; the
       // scenario itself is kept exactly as the model wrote it.
-      const generatedTestCases: TestCase[] = ((result.testCases || []) as Array<Record<string, unknown>>).map(
+      const generatedTestCases: TestCase[] = answer.testCases.map(
         (tc) => withOriginCheck(tc, originEngine, noEngineReason) as unknown as TestCase,
       );
-      const generatedTestSuite: TestSuite = result.testSuite || { code: '' };
-      const coverageEstimate: CoverageEstimate = result.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
-      const manualTestingRequirements: ManualTestRequirement[] = result.manualTestingRequirements || [];
+      const generatedTestSuite: TestSuite = answer.testSuite || { code: '' };
+      const coverageEstimate: CoverageEstimate = answer.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
+      const manualTestingRequirements: ManualTestRequirement[] = answer.manualTestingRequirements || [];
       
       setGenerated(generatedTestCases);
       
@@ -204,9 +257,10 @@ ${legacyForPrompt}
       console.error(err);
       throw err;
     } finally {
+      setRetrying(null);
       setIsGenerating(false);
     }
   };
 
-  return { isGenerating, testCases, generateTestCases, storedSuiteRejected };
+  return { isGenerating, testCases, generateTestCases, storedSuiteRejected, retrying };
 };

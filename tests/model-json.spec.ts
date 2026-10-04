@@ -7,7 +7,9 @@ import {
   unusableFromModelError,
   type UnusableAnswer,
 } from '../lib/model-json';
-import { TRANSFORMATION_RESPONSE_SCHEMA, responseSchemaForStage } from '../lib/model-response-schema';
+import { TESTING_RESPONSE_SCHEMA, TRANSFORMATION_RESPONSE_SCHEMA, responseSchemaForStage } from '../lib/model-response-schema';
+import { parseScenarioOrigin } from '../lib/scenario-origin';
+import { checkTestSuiteShape } from '../app/(app)/project/[projectId]/testing/test-suite-schema';
 
 /**
  * Reading a model answer as a JSON object (owner report 03.10.2026: the
@@ -126,9 +128,10 @@ test.describe('retry and messages', () => {
 });
 
 test.describe('the Transformation response schema', () => {
-  test('is sent for the transformation stage only', () => {
+  test('is sent for the transformation stage, the testing stage has its own, the others none', () => {
     expect(responseSchemaForStage('transformation')).toBe(TRANSFORMATION_RESPONSE_SCHEMA);
-    for (const stage of ['analyze', 'naming', 'statements', 'design', 'documentation', 'testing'] as const) {
+    expect(responseSchemaForStage('testing')).toBe(TESTING_RESPONSE_SCHEMA);
+    for (const stage of ['analyze', 'naming', 'statements', 'design', 'documentation'] as const) {
       expect(responseSchemaForStage(stage)).toBeUndefined();
     }
     expect(responseSchemaForStage(undefined)).toBeUndefined();
@@ -138,5 +141,57 @@ test.describe('the Transformation response schema', () => {
     expect(TRANSFORMATION_RESPONSE_SCHEMA.required).toEqual(['files', 'tests']);
     expect(TRANSFORMATION_RESPONSE_SCHEMA.properties.files.items.required).toEqual(['path', 'content']);
     expect(TRANSFORMATION_RESPONSE_SCHEMA.properties.tests.required).toEqual(['config', 'spec']);
+  });
+});
+
+/**
+ * The Testing stage, brought to the same standard (its answer carries the test
+ * class or test file inside a JSON string, so the same `\{` can appear).
+ */
+test.describe('the Testing response schema and messages', () => {
+  test('requires the four fields the hook stores, and the fields the page reads', () => {
+    expect(TESTING_RESPONSE_SCHEMA.required).toEqual(['testCases', 'testSuite', 'manualTestingRequirements', 'coverageEstimate']);
+    expect(TESTING_RESPONSE_SCHEMA.properties.testCases.items.required).toEqual(['id', 'name', 'category', 'description', 'priority']);
+    expect(TESTING_RESPONSE_SCHEMA.properties.testSuite.required).toEqual(['code']);
+    expect(TESTING_RESPONSE_SCHEMA.properties.manualTestingRequirements.items.required).toEqual(['area', 'reason', 'verificationSteps']);
+    expect(TESTING_RESPONSE_SCHEMA.properties.coverageEstimate.required).toEqual(['percentage', 'explanation', 'missingCoverage']);
+    // `derivedFrom` stays optional: the prompt says to leave it out rather than guess.
+    expect(TESTING_RESPONSE_SCHEMA.properties.testCases.items.required).not.toContain('derivedFrom');
+  });
+
+  test('an answer of the schema shape passes the shape check, and its string lines are read by the origin parser', () => {
+    const answer = {
+      testCases: [{
+        id: 'TC_01', name: 'n', category: 'Unit', description: 'd', priority: 'High',
+        steps: ['a'], validationPoints: ['b'],
+        derivedFrom: { kind: 'rule', ref: 'BR-009', lines: ['412', '412-414'], quote: 'IF x.' },
+      }],
+      testSuite: { code: 'lv = |\\{ x \\}|.' },
+      manualTestingRequirements: [{ area: 'a', reason: 'r', verificationSteps: ['s'] }],
+      coverageEstimate: { percentage: 70, explanation: 'e', missingCoverage: 'm' },
+    };
+    expect(checkTestSuiteShape(answer)).toEqual({ ok: true, problems: [] });
+    const origin = parseScenarioOrigin(answer.testCases[0].derivedFrom);
+    expect(origin.state).toBe('stated');
+    expect(origin.state === 'stated' && origin.origin.lines).toEqual([{ start: 412, end: 412 }, { start: 412, end: 414 }]);
+  });
+
+  test('a test class with the ABAP escape \\{ is read, its text intact', () => {
+    const raw = '{"testCases":[{"id":"TC_01","name":"n","category":"Unit","description":"d","priority":"High"}],"testSuite":{"code":"lv_json = |\\{ \\"a\\": 1 \\}|."},"manualTestingRequirements":[],"coverageEstimate":{"percentage":1,"explanation":"e","missingCoverage":"m"}}';
+    expect(() => JSON.parse(raw)).toThrow(/escaped character/);
+    const r = parseModelJsonObject(raw);
+    expect(r.ok && (r.value.testSuite as { code: string }).code).toBe('lv_json = |\\{ "a": 1 \\}|.');
+  });
+
+  test('the messages name a test suite, not a package, and keep "Nothing was saved"', () => {
+    for (const reason of ['truncated', 'unbalanced', 'empty', 'not-json'] as const) {
+      const m = unusableAnswerMessage(reason, 2, 'test suite');
+      expect(m).toContain('Nothing was saved — the previous version is untouched.');
+      expect(m).not.toMatch(/package/);
+      expect(retryNotice(reason, 'test suite')).not.toMatch(/package/);
+    }
+    expect(unusableAnswerMessage('not-json', 1, 'test suite')).toMatch(/^The model returned prose instead of the JSON test suite this stage asked for\./);
+    // The default is still the Transformation stage's word.
+    expect(unusableAnswerMessage('not-json', 1)).toContain('JSON package');
   });
 });
