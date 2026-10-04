@@ -13,7 +13,7 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/': '2026-10-04',
   '/clean-core-explained': '2026-10-03',
   '/first-run': '2026-10-03',
-  '/how-to': '2026-10-03',
+  '/how-to': '2026-10-04',
   '/knowledge': '2026-10-03',
   '/abap-custom-code-analysis': '2026-10-03',
   '/clean-core-score': '2026-10-03',

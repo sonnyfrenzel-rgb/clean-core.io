@@ -10,6 +10,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.3] — 2026-10-04
+
+What the owner found reading 3.0.2 as a manager, an IT reader and a business reader, and a
+specification an external implementer can build from.
+
+### What everyone notices
+
+- **A requirements workspace in Design:** functional and non-functional requirements are
+  one module, started from one card on Design. It opens a specification document — title
+  page, contents, nine sections from purpose to glossary, a traceability matrix — read
+  from the code, completed by your decisions in side panels with suggested answers, edited
+  in a controlled format, saved as you work, in full-screen focus mode, and exported as
+  Word, Markdown, Confluence or print. Model wording stays an opt-in proposal; the
+  specification is not part of the signed audit pack (ADR-078).
+- **Documentation reads like the other tools:** a one-page summary with key figures, the
+  main path, the rules and risks to know; sections as cards; steps as a timeline; open
+  questions as a grouped decision list with what blocks the design first; 43 % fewer
+  words, with everything else in the appendix (ADR-077, amended). The RACI shows every
+  Accountable and says when a proposal names more roles than the process needs.
+- **One calm header in every view:** the technical metadata sits behind Details, the
+  project status is one folded row, the tools are one row with a single "What the tools
+  do". In Management, Not determined is folded and grouped by kind, and the steering
+  one-pager opens from the decision card and from Export.
+- **Google sign-in works on the first attempt:** a second click no longer leaves a stray
+  Google window, and a reload during the second-factor step says what happened instead
+  of returning silently to the sign-in screen.
+- **The process map fits a phone** at a readable zoom: on a narrow screen the main path is
+  laid out in fewer columns; the BPMN file you export or edit is unchanged.
+
+### Review agents
+
+- The security audit gives each of its five consultants a fair share of calls, so the
+  pipeline and cloud files are read again, in smaller batches; its cap is 46 USD (owner's
+  decision, 04.10.2026).
+
 ## [v3.0.2] — 2026-10-04
 
 A follow-up to 3.0.1 on the same day: what the first hours of 3.0.1 showed, and the
