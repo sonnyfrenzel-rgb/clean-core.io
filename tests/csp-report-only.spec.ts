@@ -181,7 +181,9 @@ test.describe('CSP report-only — source', () => {
     expect(isNonceRoute('/')).toBe(false);
     expect(isNonceRoute('/dashboard')).toBe(false);
     expect(isNonceRoute('/project/abc/analyze')).toBe(true);
-    expect(nonced.length).toBe(13);
+    // 14 since 04.10.2026: the requirements workspace under Design (ADR-078).
+    expect(isNonceRoute('/project/abc/design/requirements')).toBe(true);
+    expect(nonced.length).toBe(14);
   });
 
   test('every page gets the same enforced policy, whoever delivers it', async () => {

@@ -156,6 +156,8 @@ export function createNonce(): string {
  */
 const NONCE_ROUTES: readonly RegExp[] = [
   /^\/project\/[^/]+(?:\/(?:analyze|delivery|design|documentation|tco|testing|transformation))?\/?$/,
+  // The requirements workspace under Design (ADR-078, 04.10.2026).
+  /^\/project\/[^/]+\/design\/requirements\/?$/,
   /^\/invitation\/[^/]+\/[^/]+\/?$/,
   /^\/auth\/action\/?$/,
   /^\/survey\/[^/]+\/?$/,
