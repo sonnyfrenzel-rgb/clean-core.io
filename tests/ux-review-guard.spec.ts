@@ -174,6 +174,8 @@ test.describe('spend stays within an estimated budget per mode', () => {
     expect(BUDGETS['self-test'].maxCostUsd).toBeLessThanOrEqual(0.3);
     // 8k output cut the self-test of a88149856dcc mid-JSON; its one call must still fit the cap at 16k.
     expect(BUDGETS['self-test'].maxOutputTokens).toBeGreaterThanOrEqual(16_000);
+    // 04.10.2026 (owner's go): a release review cut off at 24k output left the release unreviewed.
+    expect(BUDGETS.delta.maxOutputTokens).toBeGreaterThanOrEqual(48_000);
     const selfTestCall = estimateCostUsd({ chars: BUDGETS['self-test'].maxBatchChars, images: BUDGETS['self-test'].maxImagesPerCall, maxOutputTokens: BUDGETS['self-test'].maxOutputTokens });
     expect(selfTestCall).toBeLessThan(BUDGETS['self-test'].maxCostUsd);
     // Since 01.10.2026 the price is the ceiling the request carries (provider.max_price), not a model's list price.

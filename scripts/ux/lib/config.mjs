@@ -45,8 +45,11 @@ export const TOKENS_PER_IMAGE = 1_600;
 export const BUDGETS = {
   /** The whole product, area by area, then one end-to-end synthesis. */
   full: { maxCostUsd: 6, maxBatchChars: 360_000, maxBatches: 12, maxImagesPerCall: 16, maxOutputTokens: 40_000, effort: 'medium', synthesisEffort: 'high' },
-  /** One release on main. */
-  delta: { maxCostUsd: 1.5, maxBatchChars: 240_000, maxBatches: 3, maxImagesPerCall: 12, maxOutputTokens: 24_000, effort: 'medium', synthesisEffort: 'medium' },
+  /**
+   * One release on main. Output 48k since 04.10.2026 (owner's go): at 24k the review of
+   * the v3.0.1 release (ee1927d67341) ran out mid-JSON twice and produced no report.
+   */
+  delta: { maxCostUsd: 1.5, maxBatchChars: 240_000, maxBatches: 3, maxImagesPerCall: 12, maxOutputTokens: 48_000, effort: 'medium', synthesisEffort: 'medium' },
   /**
    * The agent itself changed on dev: the whole chain once, small. Never a checkpoint.
    * Output 16k since 01.10.2026 (owner's go): at 8k the router's model ran out mid-JSON
