@@ -52,6 +52,7 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.exportBpmn': 'Process as BPMN 2.0 file',
   'biz.exportBpmnAbsent': 'The BPMN file is written from the source a signed analysis read. There is none for this project yet.',
   'biz.exportPrint': 'Print this view',
+  'biz.exportOnePager': 'Steering one-pager (1 page, print or PDF)',
   'biz.exportDelivery': 'Delivery package and audit pack',
   'biz.exportFailed': 'The file could not be written. Nothing was downloaded.',
   'biz.invite': 'Invite to view',
