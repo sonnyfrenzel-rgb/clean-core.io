@@ -3,6 +3,31 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 03.–04.10.2026 — 3.0.1, 3.0.2, 3.0.3 live
+
+**Live:** v3.0.3 on clean-core.io since 04.10.2026 (main `b6716f07`); v3.0.1 and v3.0.2 went out the
+same day. What each brought is in `CHANGELOG.md`. The CI runs the E2E suite in three shards on fresh
+emulators (the emulator kept every abandoned Firestore channel and collapsed after an hour).
+
+**On dev, not yet on main:** security intake of the 3.0.3 audit (§12, IDs only) — app fixes and the
+register; waits for Sonny's go for main.
+
+**Waits for Sonny:**
+- Firestore rules: the next rules deploy carries the scheduled §12 items (draft and tests prepared
+  outside the repository); Sonny deploys (`npm run deploy:rules`, then `npm run rules:verify`).
+- CI hardening (§12): a workflow change, needs his go.
+- UX review of a release: fails at the model's output limit (24k, 48k); parked for 3.0.x by Sonny.
+  Recommendation: cap the findings per call. The capture branch `test/ux-capture-workspace` (workspace
+  screens for the UX agent) waits with it — it needs an area in `scripts/ux` (machinery, his go).
+- Security audit coverage: at the 46 USD cap the audit reads 318 files; the full surface needs ~58 USD.
+
+**Open, small:**
+- Six dependency advisories (high) with fixes available, from the 3.0.3 audit's dependency scan.
+- The requirements card sits at the foot of the Design page — move it up.
+- Some rule texts still carry code values (e.g. "Role DEPT_HEAD"); a field glossary would let the
+  engine name them in business terms.
+- Low QA findings on test quality (source-text guards where a rendered test would be stronger).
+
 ## Session 30.09.2026 — Block D, wave 2
 
 **Done (on dev):** D.6 Shell Bar (56 px, path instead of "Back to My Workspace", ARIA menus, sign-out as a
