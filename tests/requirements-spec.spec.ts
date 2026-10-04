@@ -7,6 +7,7 @@ import { applyMark, isSafeHref, normalizeRich, parseRich, richHtml, richMarkdown
 import {
   answerDecision,
   buildSpecDraft,
+  businessTitle,
   decisionOpen,
   mergeReading,
   nextHistory,
@@ -101,6 +102,18 @@ test.describe('the engine draft', () => {
       expect(r.target.trim(), r.id).not.toBe('');
       expect(r.method.trim(), r.id).not.toBe('');
     }
+  });
+
+  test('a functional requirement has a business title from its plain wording; the rule id stays in the source', () => {
+    const spec = draft();
+    const fr1 = spec.requirements.find((r) => r.id === 'FR-001')!;
+    expect(fr1.title).toBe('Process only document type NB');
+    expect(fr1.source.rules).toEqual(['BR-001']);
+    for (const r of spec.requirements.filter((x) => x.kind === 'functional')) {
+      expect(r.title, r.id).not.toMatch(/^The system shall|Whole program|BR-\d/);
+      expect(r.title.length, r.id).toBeLessThanOrEqual(72);
+    }
+    expect(businessTitle('The system shall let the user enter a very long list of inputs such as purchase requisition number, item, file and test run before a run.')).toMatch(/ …$/);
   });
 
   test('statements carry no program variable — those stay in the source column', () => {

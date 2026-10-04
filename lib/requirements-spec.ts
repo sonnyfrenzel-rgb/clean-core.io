@@ -1,5 +1,4 @@
 import {
-  BASIS_LABEL,
   PRIORITY_LABEL,
   anchorList,
   type FunctionalRequirement,
@@ -511,11 +510,23 @@ export function suggestedOptions(question: string, category: SpecNfrCategory | '
   }
 }
 
-function frTitle(fr: RequirementSet, r: FunctionalRequirement): string {
-  const step = stepLabelOf(fr, r.stepId);
-  const where = step ? step.replace(/^\d+\.\s*/, '') : 'Whole program';
-  if (r.basis.kind === 'rule' && r.basis.ref && /^BR-\d+$/.test(r.basis.ref)) return `Business rule ${r.basis.ref} · ${where}`;
-  return `${BASIS_LABEL[r.basis.kind]} · ${where}`;
+/**
+ * A business title for a functional requirement, from its plain statement:
+ * "The system shall process only document type NB." reads "Process only
+ * document type NB". The rule id and the step stay in the source column.
+ */
+export function businessTitle(statement: string, max = 70): string {
+  let t = plainText(statement).replace(/^the (?:system|new solution) shall\s+/i, '').replace(/[.\s]+$/, '').trim();
+  if (!t) return 'Requirement';
+  t = t[0].toUpperCase() + t.slice(1);
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[,;:\s]+$/, '')} …`;
+}
+
+function frTitle(r: FunctionalRequirement): string {
+  return businessTitle(r.statement);
 }
 
 function frRationale(fr: RequirementSet, r: FunctionalRequirement): string {
@@ -612,7 +623,7 @@ export function buildSpecDraft(input: SpecDraftInput): RequirementsSpec {
       id: r.id,
       kind: 'functional',
       category: null,
-      title: frTitle(fr, r),
+      title: frTitle(r),
       statement: normalizeRich(plainText(r.statement)),
       rationale: normalizeRich(frRationale(fr, r)),
       acceptance: r.acceptance.map((c) => ({ given: plainText(c.given), when: plainText(c.when), then: plainText(c.then) })),

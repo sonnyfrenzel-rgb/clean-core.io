@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpenText, Download, FileText, History, ListChecks, Maximize2, Minimize2, Printer, RefreshCw } from 'lucide-react';
+import { FileText, History, ListChecks, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
@@ -18,6 +18,7 @@ import { useSpecAutosave, type SpecSaveState } from '@/hooks/useSpecAutosave';
 import SpecOverview from '@/components/requirements/SpecOverview';
 import SpecDocument, { SPEC_SECTIONS } from '@/components/requirements/SpecDocument';
 import DecisionDialog from '@/components/requirements/DecisionDialog';
+import ExportMenu from '@/components/requirements/ExportMenu';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { saveAs } from '@/lib/fileSaver';
 import type { ObjectLevelInput } from '@/lib/functional-requirements';
@@ -261,6 +262,27 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
     };
   }, [stale, source, fresh, levels, projectName, ruleStates, proposals, route]);
   const drift = stale && spec && fresh ? specDrift(spec, fresh) : null;
+
+  /* ---------------- the model's wording, where one was asked for ---------------- */
+  // Stored by the requirement-wording route after the server checked it
+  // against the lines (ADR-070); offered beside each statement as a model
+  // proposal, only for the source it was made for, and never applied by itself.
+  const [wording, setWording] = useState<Record<string, string> | null>(null);
+  const hasSpec = spec !== null;
+  useEffect(() => {
+    if (mode === 'demo' || !projectId || !sourceSha || !hasSpec) return;
+    let cancelled = false;
+    (async () => {
+      const [lib, headers] = await Promise.all([import('@/lib/requirement-wording'), authHeader()]);
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/requirement-wording`, { headers });
+      if (!res.ok) return;
+      const body = (await res.json()) as { record?: unknown };
+      if (!cancelled && lib.isRequirementWordingRecord(body.record) && body.record.digest === sourceSha) setWording(body.record.wording);
+    })().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, projectId, sourceSha, hasSpec]);
 
   /* ---------------- edits ---------------- */
   const derivedFrom = meta.derivedFrom ?? sourceSha;
@@ -521,26 +543,28 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
       onChange={change}
       onOpenDecision={setDecisionId}
       onAddDecision={() => setAdding(true)}
+      wording={stale ? null : wording}
     />
   );
 
   const documentTab = (
-    <div className="flex min-w-0 flex-col gap-6">
-      <SpecOverview counts={counts!} />
-      {counts!.openDecisions > 0 ? (
-        <div data-spec-next-decision="" className="flex flex-wrap items-center justify-between gap-3 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc">
-          <p className="m-0 text-[14px] text-cc-ink">
-            <b className="font-semibold">{counts!.openDecisions} open decision{counts!.openDecisions === 1 ? '' : 's'}</b> — the specification is ready to hand over once each is answered.
-          </p>
-          <CcButton
-            variant={canDecide ? 'primary' : 'ghost'}
-            onClick={() => setDecisionId(spec.decisions.find((d) => !d.answer || d.answer.kind === 'later' || !d.answer.value)?.id ?? null)}
-            data-spec-decide-next=""
-          >
-            {canDecide ? 'Decide the next one' : 'Read the next one'}
-          </CcButton>
-        </div>
-      ) : null}
+    <div className="flex min-w-0 flex-col gap-4">
+      <SpecOverview
+        counts={counts!}
+        action={
+          counts!.openDecisions > 0 ? (
+            <CcButton
+              variant={canDecide ? 'primary' : 'ghost'}
+              onClick={() => setDecisionId(spec.decisions.find((d) => !d.answer || d.answer.kind === 'later' || !d.answer.value)?.id ?? null)}
+              data-spec-decide-next=""
+            >
+              {canDecide ? 'Decide the next one' : 'Read the next one'}
+            </CcButton>
+          ) : (
+            <span data-spec-ready="" className="text-[13px] font-semibold text-cc-ink">No open decision — ready to export.</span>
+          )
+        }
+      />
       <div
         ref={rootRef}
         data-spec-fulltext-root={fullFilled ? 'on' : 'off'}
@@ -616,18 +640,7 @@ export default function RequirementsWorkspace(props: RequirementsWorkspaceProps)
           {fullFilled ? null : fullToggle}
           {mode !== 'demo' ? (
             <>
-              <CcButton variant="ghost" icon={<FileText size={16} aria-hidden={true} />} onClick={() => void download('docx')} data-spec-export="docx">
-                Word
-              </CcButton>
-              <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} onClick={() => void download('md')} data-spec-export="md">
-                Markdown
-              </CcButton>
-              <CcButton variant="ghost" icon={<BookOpenText size={16} aria-hidden={true} />} onClick={() => void download('html')} data-spec-export="html">
-                Confluence
-              </CcButton>
-              <CcButton variant="ghost" icon={<Printer size={16} aria-hidden={true} />} onClick={() => window.print()} data-spec-export="print">
-                Print / PDF
-              </CcButton>
+              <ExportMenu onExport={(kind) => (kind === 'print' ? window.print() : void download(kind))} />
               <CcButton variant="ghost" icon={<History size={16} aria-hidden={true} />} onClick={() => setHistoryOpen(true)} data-spec-history="">
                 History
               </CcButton>

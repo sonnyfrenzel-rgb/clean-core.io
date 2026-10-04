@@ -251,6 +251,7 @@ function RequirementBlock({
   onMove,
   onDelete,
   onOpenDecision,
+  proposal,
 }: {
   r: SpecRequirement;
   /** h3 under section 3, h4 under a category of section 4 — no level skipped. */
@@ -265,6 +266,8 @@ function RequirementBlock({
   onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
   onOpenDecision: (id: string) => void;
+  /** The model's wording for this requirement, when one was asked for and differs. */
+  proposal: string | null;
 }) {
   return (
     <article
@@ -309,6 +312,22 @@ function RequirementBlock({
       ) : (
         <>
           <RichTextView text={r.statement} className="text-[15px] font-semibold" data-spec-req-statement="" />
+          {proposal ? (
+            <div data-spec-req-proposal={r.id} className="flex min-w-0 flex-col gap-2 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2">
+              <span className="flex flex-wrap items-center gap-2">
+                <CcProvenanceChip value="proposed" note="wording" />
+                <span className="text-[12px] font-semibold text-cc-ink-muted">Clearer wording proposed by a model and checked against the lines — not applied.</span>
+              </span>
+              <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]">{proposal}</p>
+              {editable ? (
+                <span className="cc-no-print">
+                  <CcButton variant="ghost" data-spec-req-use-wording={r.id} onClick={() => onChange({ ...r, statement: proposal }, `Took the model's wording for ${r.id}`)}>
+                    Use this wording
+                  </CcButton>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           <dl className="m-0 grid min-w-0 gap-x-4 gap-y-2 text-[13px] min-[700px]:grid-cols-[150px_minmax(0,1fr)]">
             {r.kind === 'non-functional' ? (
               <>
@@ -445,6 +464,7 @@ export default function SpecDocument({
   onChange,
   onOpenDecision,
   onAddDecision,
+  wording = null,
 }: {
   spec: RequirementsSpec;
   counts: SpecCounts;
@@ -454,6 +474,8 @@ export default function SpecDocument({
   onChange: Change;
   onOpenDecision: (id: string) => void;
   onAddDecision: () => void;
+  /** The model's wording per engine requirement id (`FR-001`), for the source the document stands on. */
+  wording?: Readonly<Record<string, string>> | null;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<SpecRequirement | null>(null);
@@ -496,8 +518,15 @@ export default function SpecDocument({
         onMove={(dir) => onChange((s) => moveRequirement(s, r.id, dir), `Moved ${r.id}`)}
         onDelete={() => setDeleting(r)}
         onOpenDecision={onOpenDecision}
+        proposal={proposalFor(r)}
       />
     ));
+
+  function proposalFor(r: SpecRequirement): string | null {
+    if (r.kind !== 'functional' || !r.source.engineRef || !wording) return null;
+    const w = wording[r.source.engineRef];
+    return typeof w === 'string' && w.trim() && w.trim() !== r.statement.trim() ? w.trim() : null;
+  }
 
   const add = (kind: SpecKind, category: SpecNfrCategory | null = null) => {
     let createdId = '';
@@ -764,11 +793,11 @@ export default function SpecDocument({
             limit={12}
             columns={[
               { key: 'req', label: 'Requirement' },
-              { key: 'lines', label: 'Code lines', width: '150px' },
+              { key: 'lines', label: 'Code lines', width: '130px' },
               { key: 'rules', label: 'Rules', width: '84px' },
-              { key: 'steps', label: 'Process step', width: '170px' },
-              { key: 'decisions', label: 'Decisions', width: '150px' },
-              { key: 'status', label: 'Status', width: '170px' },
+              { key: 'steps', label: 'Process step', width: '150px' },
+              { key: 'decisions', label: 'Decisions', width: '130px' },
+              { key: 'status', label: 'Status', width: '150px' },
             ]}
             rows={trace.map((t) => ({
               key: t.id,

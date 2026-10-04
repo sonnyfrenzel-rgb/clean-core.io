@@ -10,6 +10,7 @@ import { signInViaLanding } from './helpers/sign-in';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
+import { buildRequirementSet } from '../lib/functional-requirements';
 
 /**
  * The requirements workspace of the Design tool on screen (ADR-078): the card
@@ -28,7 +29,8 @@ const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 const OWNER = `reqws-owner-${STAMP}@cleancore-test.io`;
 const READER = `reqws-reader-${STAMP}@cleancore-test.io`;
 const PROJECT = `reqws-${STAMP}`;
-const SHOTS = path.join(__dirname, '..', 'test-results', 'requirements-workspace');
+const SHOTS = process.env.SPEC_SHOTS || path.join(__dirname, '..', 'test-results', 'requirements-workspace');
+const WORDED = 'The system shall process only purchase requisitions of release group ZE (model wording fixture).';
 const SOURCE = fs.readFileSync(path.join(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
 
 async function adminSetDoc(collection: string, id: string, data: Record<string, unknown>) {
@@ -92,6 +94,15 @@ test.beforeAll(async () => {
     legacyCode: SOURCE, analysis: JSON.stringify({ cleanCoreScore: 60 }), cleanCoreScore: 60,
     solutionDesign: '# Target architecture\n\nFixture.\n', activeRunId: runId, inputFingerprint: fingerprint, auditMetadata: { inputFingerprint: fingerprint },
   });
+  // A wording proposal as the requirement-wording route stores it after a model call.
+  await adminSetDoc(`projects/${PROJECT}/requirement_wording`, 'current', {
+    formatVersion: 1,
+    digest: buildRequirementSet({ source: SOURCE }).sourceSha256,
+    wording: { 'FR-002': WORDED },
+    discarded: [],
+    origin: { source: 'model', receipt: 'verified', provider: 'test', modelId: 'test', byok: false, issuedAt: null, textSha256: null },
+    proposedAt: new Date().toISOString(),
+  });
   const unsigned = { runId, projectId: PROJECT, userId: owner, createdAt: new Date().toISOString(), status: 'completed', inputFingerprint: fingerprint };
   const runHash = recomputeStoredRunHash(unsigned);
   await adminSetDoc(`projects/${PROJECT}/runs`, runId, { ...unsigned, runHash, signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!) });
@@ -124,8 +135,19 @@ test('Design shows one card; the workspace opens on its own address and starts o
   await expect(page.locator('[data-spec-req="FR-001"] [data-spec-req-lines]')).toHaveText(/^L\d+/);
   await expect(page.locator('[data-spec-req-kind="non-functional"]').first()).toBeVisible();
   await expect(page.locator('[data-spec-figure="open"] [data-spec-figure-value]')).not.toHaveText('0');
+  // A business title, the rule id in the source column.
+  await expect(page.locator('#req-FR-001-title')).toContainText('Process only document type NB');
+  await expect(page.locator('#req-FR-001-title')).not.toContainText('Whole program');
+  await expect(page.locator('[data-spec-req="FR-001"] [data-spec-req-source]')).toContainText('BR-001');
+  // The overview is a strip; the document starts within the first screen at 1440 × 900.
   await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(page.locator('[data-spec-overview-panel]')).toHaveCount(0);
+  const top = await page.locator('[data-spec-document]').evaluate((el) => el.getBoundingClientRect().top);
+  expect(top, 'the document starts below the first screen').toBeLessThan(900);
   await shot(page, 'workspace-top-1440');
+  await page.locator('[data-spec-overview-toggle]').click();
+  await expect(page.locator('[data-spec-bar="status"]')).toBeVisible();
+  await page.locator('[data-spec-overview-toggle]').click();
   expect(calls).toEqual([]);
   await context.close();
 });
@@ -163,6 +185,28 @@ test('the owner edits a requirement with the formatting bar and sets its status;
   const stored = await adminGetDoc(`projects/${PROJECT}/requirements_spec`, 'current');
   const fr1 = (stored?.spec?.requirements as Array<{ id: string; statement: string }>).find((r) => r.id === 'FR-001');
   expect(fr1?.statement).toBe('The system shall process only document type **NB**.');
+  await context.close();
+});
+
+test('the model’s wording is offered beside a statement — marked, never applied until asked', async ({ browser }) => {
+  test.setTimeout(300_000);
+  const { context, page } = await signedInPage(browser, OWNER);
+  await noModel(page);
+  await openWorkspace(page);
+  const req = page.locator('[data-spec-req="FR-002"]');
+  const proposal = req.locator('[data-spec-req-proposal="FR-002"]');
+  await expect(proposal).toBeVisible({ timeout: 60_000 });
+  await expect(proposal.locator('[data-provenance="proposed"]')).toBeVisible();
+  await expect(proposal).toContainText(WORDED);
+  await expect(req.locator('[data-spec-req-statement]')).not.toContainText('model wording fixture');
+  // Only where a wording exists.
+  await expect(page.locator('[data-spec-req-proposal="FR-003"]')).toHaveCount(0);
+  await proposal.locator('[data-spec-req-use-wording="FR-002"]').click();
+  await expect(req.locator('[data-spec-req-statement]')).toHaveText(WORDED);
+  await expect(proposal).toHaveCount(0);
+  await saved(page);
+  const stored = await adminGetDoc(`projects/${PROJECT}/requirements_spec`, 'current');
+  expect((stored?.spec?.requirements as Array<{ id: string; statement: string }>).find((r) => r.id === 'FR-002')?.statement).toBe(WORDED);
   await context.close();
 });
 
@@ -238,6 +282,7 @@ test('the exports carry the edit, escaped, with the provenance words; Word opens
   await noModel(page);
   await openWorkspace(page);
   const text = async (kind: string) => {
+    await page.locator('[data-spec-export-menu]').click();
     const [d] = await Promise.all([page.waitForEvent('download'), page.locator(`[data-spec-export="${kind}"]`).click()]);
     return { name: d.suggestedFilename(), body: fs.readFileSync((await d.path())!) };
   };
@@ -322,6 +367,7 @@ test('an invited reader reads, opens a decision and exports — and writes nothi
   await expect(dialog.locator('[data-spec-decision-record]')).toHaveCount(0);
   await shot(page, 'reader-decision-1440');
   await page.keyboard.press('Escape');
+  await page.locator('[data-spec-export-menu]').click();
   const [d] = await Promise.all([page.waitForEvent('download'), page.locator('[data-spec-export="md"]').click()]);
   expect(d.suggestedFilename()).toMatch(/\.md$/);
   await page.waitForTimeout(1_500);
@@ -367,7 +413,7 @@ test('the demo shows the engine’s draft read-only and stores nothing', async (
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-mode', 'demo', { timeout: 90_000 });
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-state', 'ready', { timeout: 90_000 });
   await expect(page.locator('[data-spec-req]').first()).toBeVisible();
-  await expect(page.locator('[data-spec-export]')).toHaveCount(0);
+  await expect(page.locator('[data-spec-export-menu]')).toHaveCount(0);
   await expect(page.locator('[data-spec-req-edit]')).toHaveCount(0);
   await shot(page, 'demo-1440');
   expect(calls).toEqual([]);
