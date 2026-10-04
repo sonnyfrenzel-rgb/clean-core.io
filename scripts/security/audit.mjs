@@ -107,7 +107,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   const run = await runConsultants({
     batches: plan.batches,
     capUsd: cap,
-    concurrency: SELF_TEST ? 1 : AUDIT.concurrency,
+    concurrency: SELF_TEST ? 1 : AUDIT.consultantConcurrency,
     messageFor: (batch, i) => ({ system: CONSULTANTS[batch.consultant].prompt, user: clean('outgoing message', consultantMessage({ surface, batch, index: i, count: plan.batches.length })) }),
     fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
     worstCase: (chars) => estimate(chars, consultantTokens),

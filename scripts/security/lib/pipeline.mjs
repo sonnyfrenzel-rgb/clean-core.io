@@ -19,8 +19,38 @@ export function consultantFor(file) {
 }
 
 /**
+ * The call limit split fairly across the consultants: one call at a time to every consultant that still needs one,
+ * in turn, until the limit or every need is met (max-min fairness). A consultant that needs fewer calls than an
+ * equal share leaves the rest to the others, and every consultant with code gets at least one call as long as the
+ * limit is at least the number of consultants.
+ *
+ * Owner decision, 04.10.2026 ("fair share"): until then the limit was spent first come, in declaration order. The
+ * release audits of v3.0.1 and v3.0.2 planned 60 calls as appsec-api 24, identity-crypto 3, data-rules 6,
+ * frontend-supply-chain 27 and ci-cloud-ai none — the workflows and scripts/** were never read in depth. A share
+ * proportional to each consultant's need was measured and not taken: frontend-supply-chain also reads every
+ * tests-and-config file and needs about 70 % of all calls, so at 128 calls appsec-api would have had 17 of its 51.
+ *
+ * @param needs    consultant -> calls it needs to read all its files
+ * @returns        consultant -> calls granted (never more than it needs)
+ */
+export function fairShares(needs, maxCalls) {
+  const shares = Object.fromEntries(Object.keys(needs).map((k) => [k, 0]));
+  let left = Math.max(0, maxCalls);
+  for (;;) {
+    const wanting = Object.keys(needs).filter((k) => shares[k] < needs[k]);
+    if (!wanting.length || !left) return shares;
+    for (const k of wanting) {
+      if (!left) break;
+      shares[k]++;
+      left--;
+    }
+  }
+}
+
+/**
  * Every in-scope file goes to exactly one consultant or to the pattern scan; each consultant's files are packed
- * into calls of at most `batchChars` prepared characters. What does not fit is named, never dropped.
+ * into calls of at most `batchChars` prepared characters, and the call limit is shared out by `fairShares`. What
+ * does not fit into a consultant's share is named with that share, never dropped.
  *
  * @param files    surface map `files.list`: [{ path, domain }]
  * @param prepare  (path) => the text the model receives (numbered and redacted by the caller)
@@ -37,8 +67,9 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
     else patternOnly.push(f.path);
   }
 
-  const batches = [];
-  const notRead = [];
+  // First every consultant's files are packed as if there were no limit, so its need is known; then the limit is
+  // shared out and each consultant keeps the first calls of its share.
+  const packed = new Map();
   for (const [consultant, list] of assigned) {
     // The reference files of this consultant, read once and copied into every
     // call it makes. They are charged against the batch budget like any other
@@ -47,11 +78,8 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
     const pinnedPaths = (pinnedFor[consultant] || []).filter((p) => !only || only.includes(p));
     const pinned = pinnedPaths.map((path) => ({ path, text: prepare(path) })).filter((p) => p.text);
     const pinnedChars = pinned.reduce((n, p) => n + p.text.length + p.path.length + 64, 0);
-    const newBatch = () => {
-      const b = { consultant, files: [], pinned, chars: pinnedChars };
-      batches.push(b);
-      return b;
-    };
+    const own = [];
+    const order = [];
     let current = null;
     for (const f of [...list].sort((a, b) => a.path.localeCompare(b.path))) {
       // A pinned file is already in every call of this consultant; packing it a
@@ -59,23 +87,35 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
       if (pinned.some((p) => p.path === f.path)) continue;
       // A file larger than one call is read in consecutive parts; its line numbers are the file's own.
       const parts = splitText(prepare(f.path), batchChars - pinnedChars - f.path.length - 64);
-      const skipped = [];
+      order.push({ path: f.path, parts: parts.length });
       parts.forEach((text, k) => {
         const size = text.length + f.path.length + 64;
         if (!current || current.chars + size > batchChars) {
-          if (batches.length >= maxCalls) {
-            skipped.push(k);
-            return;
-          }
-          current = newBatch();
+          current = { consultant, files: [], pinned, chars: pinnedChars };
+          own.push(current);
         }
         current.files.push({ path: f.path, text, part: parts.length > 1 ? `${k + 1}/${parts.length}` : null });
         current.chars += size;
       });
-      if (skipped.length) notRead.push({ path: f.path, reason: `outside the ${maxCalls}-call limit${parts.length > 1 ? ` (${skipped.length} of ${parts.length} parts)` : ''}` });
+    }
+    packed.set(consultant, { own, order });
+  }
+
+  const shares = fairShares(Object.fromEntries([...packed].map(([k, v]) => [k, v.own.length])), maxCalls);
+  const batches = [];
+  const notRead = [];
+  for (const [consultant, { own, order }] of packed) {
+    const share = shares[consultant];
+    batches.push(...own.slice(0, share));
+    const skipped = new Map();
+    for (const b of own.slice(share)) for (const f of b.files) skipped.set(f.path, (skipped.get(f.path) || 0) + 1);
+    for (const { path, parts } of order) {
+      const n = skipped.get(path);
+      if (!n) continue;
+      notRead.push({ path, reason: `outside the ${maxCalls}-call limit (${consultant}: ${share} of ${own.length} calls)${parts > 1 ? ` (${n} of ${parts} parts)` : ''}` });
     }
   }
-  return { batches, patternOnly, notRead };
+  return { batches, patternOnly, notRead, shares: Object.fromEntries([...packed].map(([k, v]) => [k, { need: v.own.length, calls: shares[k] }])) };
 }
 
 /**

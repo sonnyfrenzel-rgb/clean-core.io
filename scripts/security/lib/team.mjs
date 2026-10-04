@@ -49,8 +49,14 @@ export const AUDIT = {
    * Owner decision, 04.10.2026: 20 → 28 USD, with the consultants' output doubled to 48,000 tokens. The audit
    * of v3.0.1 (ee1927d67341, run 37178920266) failed twice below the read floor (84 %, 81 %), most calls cut off
    * at 24,000 tokens by the router's reasoning-heavy models. The worst case is now about $21.6, under 80 % of $28.
+   *
+   * Owner decision, 04.10.2026 ("fair share + 46 USD"): 28 → 46 USD, with calls half the size, 60 → 128 of them,
+   * and the limit shared fairly across the consultants (lib/pipeline.mjs fairShares). The audit of v3.0.2
+   * (b56d36e4, run 37189324755) failed below the read floor again (84 %): calls cut off at 48,000 tokens and
+   * four rate limits. The worst case is now 128 × $0.239 + $5.95 ≈ $36.6, under 80 % of $46 ($36.8); a 129th
+   * call would leave six cents.
    */
-  maxCostUsd: 28,
+  maxCostUsd: 46,
   /**
    * The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail.
    * $0.20 until 01.10.2026; at the Auto Router's ceiling the CISO reserve of a self-test alone is $0.20 and the
@@ -63,10 +69,23 @@ export const AUDIT = {
    * Numbered source per consultant call, in characters. Measured 15.09.2026: one call on 284,000 characters at
    * effort high ran 16.6 minutes and ended without a readable answer; 100,000 characters at effort medium answered
    * in 177 s for 0.007 USD. Small calls, several at once.
+   *
+   * 100,000 until 04.10.2026; halved by the owner's decision of that day after the audits of v3.0.1 and v3.0.2
+   * failed below the read floor, most failed calls cut off at their output limit (not-json-cut-at-length,
+   * no-content-cut-at-length). Half the code to read is less to reason about in the same 48,000 tokens.
    */
-  batchChars: 100_000,
-  /** Calls for all consultants together; what does not fit is named in the report as not read in depth. */
-  maxConsultantCalls: 60,
+  batchChars: 50_000,
+  /**
+   * Calls for all consultants together, shared fairly among them (lib/pipeline.mjs fairShares); what does not fit
+   * a consultant's share is named in the report as not read in depth, with that share.
+   *
+   * 60 until 04.10.2026; 128 since, with `batchChars` halved — the largest number whose worst case stays under
+   * 80 % of `maxCostUsd`. Planned at b56d36e4: identity-crypto 6, data-rules 27 and ci-cloud-ai 24 calls — every
+   * file of theirs — appsec-api 36 of 51 and frontend-supply-chain 35 of 271 (its domain includes every
+   * tests-and-config file); 318 files in all. The 60 calls before had planned 321 files, appsec-api complete and
+   * ci-cloud-ai not at all. Every file of that plan plus all of ci-cloud-ai takes 168 calls, a cap of $58.
+   */
+  maxConsultantCalls: 128,
   /**
    * The share of the files this run planned to read in depth that must actually
    * have been read, or the audit fails instead of reporting (scripts/security/audit.mjs).
@@ -118,16 +137,26 @@ export const AUDIT = {
   consultantEffort: 'medium',
   cisoEffort: 'medium',
   requestTimeoutMs: 20 * 60_000,
-  /** Consultant calls running at once; the cap reserves the worst case of each (lib/pipeline.mjs runConsultants). */
+  /**
+   * Calls running at once; the cap reserves the worst case of each (lib/pipeline.mjs runBounded). `concurrency` is
+   * the CISO's verification; the consultants have their own since 04.10.2026 (owner's go): four at a time drew
+   * HTTP 429 on four of the 60 calls of v3.0.2, and the 128 smaller calls now run three at a time. At the
+   * 2.8 minutes a call took on average in that run (42 minutes, 60 calls, four at a time) that is about two hours
+   * of consultants, plus the CISO — the audit job's `timeout-minutes` is 300 (.github/workflows/security-audit.yml).
+   */
   concurrency: 4,
+  consultantConcurrency: 3,
   /**
    * A rate limit is retried with the provider's own wait, or with these pauses: 15 s, 30 s, 60 s, then 120 s. The first
    * local self-test met HTTP 429 twice in a row; the CI self-tests of e3a7853 and 5a284ee (15.09.2026) lost the report
    * when the CISO call was still limited after six retries of 5–30 s (about 100 s). Our own pauses for eight retries
    * add up to about 12 minutes; a provider that names its wait (Retry-After, honoured up to 120 s each) can stretch
    * that to 16 minutes per call. A rate limit is rejected before generation, so waiting costs time, not money.
+   *
+   * 8 until 04.10.2026; one more since (owner's go, with the smaller batches): nine pauses add up to about
+   * 14 minutes.
    */
-  rateLimitRetries: 8,
+  rateLimitRetries: 9,
   rateLimitDelayMs: (attempt) => Math.min(120_000, 15_000 * 2 ** attempt),
   /** Lines around each cited location that the CISO receives to verify a finding against. */
   contextLines: 15,
@@ -166,6 +195,9 @@ const shared = [
  * `batchChars` of 100,000, so roughly a quarter of each data-rules call, and
  * `lib/sanitize-html.ts` is 6.3 kB, about six per cent. That is the price of
  * not guessing, and it is why this is not a longer list.
+ *
+ * Since 04.10.2026 `batchChars` is 50,000, and `firestore.rules` takes about half of every data-rules call: the
+ * consultant needs 27 calls instead of 6, all of them inside its fair share. Still the price of not guessing.
  */
 export const PINNED = {
   'data-rules': ['firestore.rules'],
