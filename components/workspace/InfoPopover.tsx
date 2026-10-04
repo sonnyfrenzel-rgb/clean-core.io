@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { infoAboutLabel } from '@/lib/workspace-messages';
 
@@ -26,6 +27,7 @@ export default function InfoPopover({
   children,
   align = 'left',
   hook,
+  label,
 }: {
   /** What the text is about — "Analyze". Goes into the accessible name: "About Analyze". */
   subject: string;
@@ -34,6 +36,11 @@ export default function InfoPopover({
   align?: 'left' | 'right';
   /** A `data-` hook for specs, put on the button. */
   hook?: string;
+  /**
+   * Visible words instead of the "i" — "What the tools do". The words are then
+   * the button's name, and the panel is wider: it holds a list, not a line.
+   */
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -64,26 +71,41 @@ export default function InfoPopover({
 
   return (
     <span className="relative inline-flex align-middle">
-      <button
-        ref={buttonRef}
-        type="button"
-        data-info-popover={hook ?? ''}
-        aria-label={infoAboutLabel(subject)}
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-        onClick={() => setOpen((v) => !v)}
-        className={
-          'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-transparent p-0 ' +
-          'max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11 pointer-coarse:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11'
-        }
-      >
-        <span
-          aria-hidden={true}
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-cc-ink-muted font-cc-mono text-[11px] leading-none font-bold text-cc-ink-muted"
+      {label ? (
+        <button
+          ref={buttonRef}
+          type="button"
+          data-info-popover={hook ?? ''}
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex min-h-6 items-center gap-1 bg-transparent p-0 text-[12px] font-semibold text-cc-ink underline underline-offset-2 max-[600px]:min-h-11 pointer-coarse:min-h-11"
         >
-          i
-        </span>
-      </button>
+          {label}
+          <ChevronDown size={12} aria-hidden={true} className={open ? 'rotate-180' : undefined} />
+        </button>
+      ) : (
+        <button
+          ref={buttonRef}
+          type="button"
+          data-info-popover={hook ?? ''}
+          aria-label={infoAboutLabel(subject)}
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          onClick={() => setOpen((v) => !v)}
+          className={
+            'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-transparent p-0 ' +
+            'max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11 pointer-coarse:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11'
+          }
+        >
+          <span
+            aria-hidden={true}
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-cc-ink-muted font-cc-mono text-[11px] leading-none font-bold text-cc-ink-muted"
+          >
+            i
+          </span>
+        </button>
+      )}
       {open ? (
         <div
           ref={panelRef}
@@ -91,7 +113,8 @@ export default function InfoPopover({
           role="note"
           data-info-popover-panel={hook ?? ''}
           className={cn(
-            'absolute top-full z-cc-popover mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left text-[12px] leading-snug font-medium text-cc-ink shadow-cc-dialog',
+            'absolute top-full z-cc-popover mt-1 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left text-[12px] leading-snug font-medium text-cc-ink shadow-cc-dialog',
+            label ? 'w-96' : 'w-64',
             align === 'right' ? 'right-0' : 'left-0',
           )}
         >
