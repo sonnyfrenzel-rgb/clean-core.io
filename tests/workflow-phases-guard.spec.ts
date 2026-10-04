@@ -286,8 +286,8 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
 
     // The tools bar, on a stage page (it replaced the stepper, roadmap 3.0.1) —
     // and Economics is the sixth tool. A test draft is started, never done:
-    // `partial` in the phase state; the bar marks it "used" (ADR-060 amended),
-    // because the bar says use, not proof.
+    // `partial` in the phase state; the bar marks it "started", a half circle,
+    // never the check (ADR-060 as amended 03.10.2026: a check means done).
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
     const bar = page.locator('[data-stage-tools="open"]');
     await bar.waitFor({ timeout: 30000 });
@@ -297,7 +297,8 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     const toolTesting = bar.locator('a[data-workspace-tool="testing"]');
     // The bar stands before the project is read (every phase empty); wait for the reading.
     await expect(toolTesting).toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });
-    await expect(toolTesting).toHaveAttribute('data-workspace-tool-mark-meaning', 'used');
+    await expect(toolTesting).toHaveAttribute('data-workspace-tool-mark-meaning', 'started');
+    await expect(toolTesting).toHaveAttribute('data-workspace-tool-mark-kind', 'half');
     await expect(toolTesting, 'the bar calls a test draft proven').not.toHaveAccessibleName(/prove|proof|verif/i);
 
     // Delivery
