@@ -23,9 +23,11 @@ even one candidate got its code, confirmed nothing — and the mail said
 > Auto Router (`openrouter/auto`) at cost tier **`high`**, under a price ceiling of
 > **$1.50 input / $4.50 output per M tokens** (`provider.max_price`, `AUDIT.router` in
 > `scripts/security/lib/team.mjs`). Every reserve and estimate is made at that ceiling;
-> what counts against the cap is the actual `usage.cost`. The cap is now **$20 per
-> release** (was $5): at the ceiling the CISO reserve alone is about $5.90 and a whole run
-> at its worst case about $14.90, under 80 % of the cap. The self-test cap is $0.35 (was
+> what counts against the cap is the actual `usage.cost`. The cap is now **$28 per
+> release** (was $5, then $20; $28 since 04.10.2026 with the consultants' output doubled
+> to 48,000 tokens after the v3.0.1 audit was cut off twice): at the ceiling the CISO
+> reserve alone is about $5.90 and a whole run at its worst case about $21.60, under 80 %
+> of the cap. The self-test cap is $0.35 (was
 > $0.20, which the self-test's CISO reserve alone now fills); the live self-test of
 > 01.10.2026 made 3 calls, all answered by z-ai/glm-5.3, for $0.0293.
 >

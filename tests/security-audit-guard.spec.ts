@@ -35,9 +35,10 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(AUDIT.router.maxPrice.input).toBeGreaterThan(0);
     expect(AUDIT.router.maxPrice.output).toBeGreaterThan(0);
     // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches. Owner decision, 01.10.2026:
-    // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling. An upper bound;
+    // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling; 28 USD since
+    // 04.10.2026 (owner's go) with the consultants' output at 48k. An upper bound;
     // what counts against it is the cost OpenRouter reports.
-    expect(AUDIT.maxCostUsd).toBe(20);
+    expect(AUDIT.maxCostUsd).toBe(28);
     // $0.20 until 01.10.2026; at the Auto Router's price ceiling the self-test's CISO reserve alone is $0.20.
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.35);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
@@ -1260,8 +1261,10 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
   test('the budget: 20 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
     const { AUDIT } = await lib('team.mjs');
     // 5 USD from 24.09.2026; 20 USD since the owner's decision of 01.10.2026, with the Auto Router at `high` and
-    // every estimate at its price ceiling — the worst case below is about $14.9.
-    expect(AUDIT.maxCostUsd).toBe(20);
+    // every estimate at its price ceiling; 28 USD since 04.10.2026 with the consultants' output at 48k — the worst
+    // case below is about $21.6.
+    expect(AUDIT.maxCostUsd).toBe(28);
+    expect(AUDIT.consultantOutputTokens).toBeGreaterThanOrEqual(48_000);
     expect(AUDIT.verificationBatchSize).toBe(20);
     expect(AUDIT.maxVerificationCalls * AUDIT.verificationBatchSize, 'room for v2.18.0 unmerged').toBeGreaterThanOrEqual(194);
     const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.router.maxPrice.input + (out / 1e6) * AUDIT.router.maxPrice.output;

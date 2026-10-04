@@ -45,8 +45,12 @@ export const AUDIT = {
    * case (60 consultant calls at 24,000 output tokens, plus that reserve) is about $14.9, and $20 keeps it under
    * 80 % of the cap (tests/security-audit-guard.spec.ts). The cap is an upper bound; what is counted against it
    * is the cost OpenRouter reports for each call.
+   *
+   * Owner decision, 04.10.2026: 20 → 28 USD, with the consultants' output doubled to 48,000 tokens. The audit
+   * of v3.0.1 (ee1927d67341, run 37178920266) failed twice below the read floor (84 %, 81 %), most calls cut off
+   * at 24,000 tokens by the router's reasoning-heavy models. The worst case is now about $21.6, under 80 % of $28.
    */
-  maxCostUsd: 20,
+  maxCostUsd: 28,
   /**
    * The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail.
    * $0.20 until 01.10.2026; at the Auto Router's ceiling the CISO reserve of a self-test alone is $0.20 and the
@@ -74,8 +78,8 @@ export const AUDIT = {
    * are not counted against it — those are named in the report, by design.
    */
   minDeepReadRatio: 0.85,
-  /** Includes reasoning tokens. */
-  consultantOutputTokens: 24_000,
+  /** Includes reasoning tokens. 48k since 04.10.2026 (owner's go): at 24k most failed calls were cut off. */
+  consultantOutputTokens: 48_000,
   /** Per verification call — at most `verificationBatchSize` findings plus reasoning. */
   cisoOutputTokens: 40_000,
   /**

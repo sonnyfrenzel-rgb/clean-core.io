@@ -119,7 +119,7 @@ Revoke: `gh variable set QA_REVIEW_ENABLED --body false`.
 ## Security agent — full audit of every release on `main` (since 2026-09-15)
 
 `.github/workflows/security-audit.yml`: a CISO and five consultants (OpenRouter Auto Router, cost tier high,
-a pipeline of model calls without tools, budget 20 USD) audit the whole codebase; the
+a pipeline of model calls without tools, budget 28 USD) audit the whole codebase; the
 German report is mailed to Sonny, sealed with `docs/security/audit-public-key.pem`. After a
 push to `main`, or when the session start reports untriaged findings, use the
 `security-audit-intake` skill: `node scripts/security/inbox.mjs <sha>`, verify each finding,
