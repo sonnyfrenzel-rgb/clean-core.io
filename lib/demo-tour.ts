@@ -38,9 +38,9 @@ import type { WorkspaceView } from '@/lib/workspace-model';
 /** The regions of the demo workspace a station can stand in. One station each. */
 export const TOUR_PLACES = [
   'reveal',
-  'not-determined',
   'process-map',
   'process-levels',
+  'not-determined',
   'confirm-rule',
   'standard-fit',
   'it-chain',
@@ -71,12 +71,6 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     body: 'Each rule is a condition the program checks, said in plain words, with the lines it stands on and the code behind it one click away.',
   },
   {
-    place: 'not-determined',
-    view: 'business',
-    title: 'What we could not determine',
-    body: 'Every construct the engine did not judge is named here, with its reason and its line. This list is why the rest of the screen can be trusted.',
-  },
-  {
     place: 'process-map',
     view: 'business',
     title: 'The process map and its source',
@@ -87,6 +81,12 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     view: 'business',
     title: 'Levels of a large process',
     body: 'A sub-process has its own level. Pick a level to see only its steps; the path above the map says where you are.',
+  },
+  {
+    place: 'not-determined',
+    view: 'business',
+    title: 'What we could not determine',
+    body: 'Every construct the engine did not judge is named here, with its reason and its line. This list is why the rest of the screen can be trusted.',
   },
   {
     place: 'confirm-rule',

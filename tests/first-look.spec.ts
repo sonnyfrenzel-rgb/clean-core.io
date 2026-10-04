@@ -297,7 +297,8 @@ test.describe('the three coach marks', () => {
 
   test('a mark with nothing to point at is not offered', () => {
     const withDecision = availableCoachMarks({ hasDecision: true, hasNextStep: true });
-    expect(withDecision.map((m) => m.id)).toEqual(['decision', 'not-determined', 'next-step']);
+    // The tour's order, not §6.2's listing: next step first (owner, 04.10.2026).
+    expect(withDecision.map((m) => m.id)).toEqual(['next-step', 'decision', 'not-determined']);
 
     const without = availableCoachMarks({ hasDecision: false, hasNextStep: false });
     expect(without.map((m) => m.id)).toEqual(['not-determined']);
@@ -305,8 +306,8 @@ test.describe('the three coach marks', () => {
 
   test('one at a time, and gone once dismissed', () => {
     const available = availableCoachMarks({ hasDecision: true, hasNextStep: true });
-    expect(nextCoachMark(available, [])?.id).toBe('decision');
-    expect(nextCoachMark(available, ['decision'])?.id).toBe('not-determined');
+    expect(nextCoachMark(available, [])?.id).toBe('next-step');
+    expect(nextCoachMark(available, ['next-step'])?.id).toBe('decision');
     expect(nextCoachMark(available, ['decision', 'not-determined', 'next-step'])).toBeNull();
   });
 
@@ -578,13 +579,13 @@ test.describe('the first look on screen', () => {
 
     const mark = page.locator('[data-coach-mark]');
     await expect(mark).toHaveCount(1, { timeout: 60000 });
-    await expect(mark).toHaveAttribute('data-coach-mark', 'decision');
+    await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
 
+    await page.click('[data-coach-mark-dismiss="next-step"]');
+    await expect(mark).toHaveAttribute('data-coach-mark', 'decision');
     await page.click('[data-coach-mark-dismiss="decision"]');
     await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
     await page.click('[data-coach-mark-dismiss="not-determined"]');
-    await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
-    await page.click('[data-coach-mark-dismiss="next-step"]');
     await expect(mark).toHaveCount(0);
 
     // Gone across a reload, because the browser remembers — and nothing else does.

@@ -45,12 +45,19 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
   // again is worse than showing it one frame late, and the server has no
   // `localStorage` to read during the first pass anyway.
   const [dismissed, setDismissed] = useState<CoachMarkId[] | null>(null);
+  // Whether the reader moved the tour to the mark now shown — "Next", or
+  // "Show tips again". False on arrival: the first tip of a visit never moves
+  // the page (`CoachMark.follow`).
+  const [follow, setFollow] = useState(false);
 
   useEffect(() => {
     setDismissed(readDismissedMarks());
     // "Show tips again" in the help menu clears storage and says so; the list
     // held here is read again rather than left hiding the tips (roadmap 3.0.7).
-    const again = () => setDismissed(readDismissedMarks());
+    const again = () => {
+      setFollow(true);
+      setDismissed(readDismissedMarks());
+    };
     window.addEventListener(SHOW_TIPS_EVENT, again);
     return () => window.removeEventListener(SHOW_TIPS_EVENT, again);
   }, []);
@@ -81,10 +88,11 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
   const current = useMemo(() => {
     const mark = available.find((m) => m.id === nextId);
     if (!mark) return null;
-    return { ...mark, position: available.indexOf(mark) + 1, total };
-  }, [available, nextId, total]);
+    return { ...mark, position: available.indexOf(mark) + 1, total, follow };
+  }, [available, nextId, total, follow]);
 
   const dismiss = useCallback((id: CoachMarkId) => {
+    setFollow(true);
     setDismissed((prev) => {
       const next = [...new Set([...(prev ?? []), id])];
       writeDismissedMarks(next);
@@ -99,6 +107,7 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
   }, [available]);
 
   const reset = useCallback(() => {
+    setFollow(true);
     clearDismissedMarks();
     setDismissed([]);
   }, []);

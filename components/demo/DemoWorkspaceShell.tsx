@@ -415,7 +415,10 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     const el = document.querySelector('[data-demo-tour-station], [data-demo-tour-invitation]');
     if (!el) return;
     scrollPending.current = false;
-    el.scrollIntoView({ block: 'center' });
+    // Only after the reader moved the tour on, and smoothly unless they asked
+    // for reduced motion — the same rule as the coach marks of a project.
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    el.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
   });
 
   const stop = (place: TourPlace) => (
@@ -625,15 +628,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             />
           </Place>
 
-          <Place place="not-determined">
-            {stop('not-determined')}
-            {/* Folded, with its count: nine reasons in full pushed the map two
-                screens down. Simple on top, complete one click deeper. */}
-            <CcDisclosure title={wt('demo.notDeterminedPoints')} count={open.count} level={3}>
-              <NotDeterminedCard data={open} />
-            </CcDisclosure>
-          </Place>
-
           {layerBar}
           {layerSection}
 
@@ -662,6 +656,17 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                 ))}
               </ul>
             </CcCard>
+          </Place>
+
+          {/* Under the map, as in an own project, where the open points stand
+              after the process: the tour reaches the map before them in both
+              (owner, 04.10.2026). Folded, with its count — simple on top,
+              complete one click deeper. */}
+          <Place place="not-determined">
+            {stop('not-determined')}
+            <CcDisclosure title={wt('demo.notDeterminedPoints')} count={open.count} level={3}>
+              <NotDeterminedCard data={open} />
+            </CcDisclosure>
           </Place>
 
           <Place place="confirm-rule" className="mt-5">

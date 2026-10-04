@@ -115,16 +115,17 @@ test.describe('what the code uses, derived on the server', () => {
     expect(itOpening('unsigned', built, 5).reason).toMatch(/^No signed run yet/);
   });
 
-  test('in IT the tour starts at the top; elsewhere the order is unchanged', () => {
-    const it = availableCoachMarks({ hasDecision: true, hasNextStep: true, order: ['not-determined', 'next-step', 'decision'] });
-    expect(it.map((m) => m.id)).toEqual(['not-determined', 'next-step', 'decision']);
+  test('in IT the tour starts at "Next step", then the figure in the answer; Business reads its own page', () => {
+    const it = availableCoachMarks({ hasDecision: true, hasNextStep: true, order: ['next-step', 'not-determined', 'decision'] });
+    expect(it.map((m) => m.id)).toEqual(['next-step', 'not-determined', 'decision']);
     expect(availableCoachMarks({ hasDecision: true, hasNextStep: true }).map((m) => m.id)).toEqual([
+      'next-step',
       'decision',
       'not-determined',
-      'next-step',
     ]);
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/order: view === 'it' \? \(open\.noSource \? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER\) : undefined/);
+    expect(shell).toMatch(/const IT_COACH_ORDER: readonly CoachMarkId\[\] = \['next-step', 'not-determined', 'decision'\];/);
+    expect(shell).toMatch(/order: view === 'it' \? IT_COACH_ORDER : undefined/);
   });
 });
 
@@ -202,10 +203,13 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     // (3) Evidence with content draws no dashed empty box in the IT view.
     await expect(view.locator('[data-cc-empty-state]')).toHaveCount(0);
 
-    // (4) The explanation starts at the top: the first tip of the tour points at
-    // the Not determined figure in the answer, not at the foot of the page.
+    // (4) The explanation starts at the top: the first tip of the tour stands at
+    // "Next step" under the answer, the second at the Not determined figure in
+    // it — never at the foot of the page.
     const mark = page.locator('[data-coach-mark]').first();
     await expect(mark).toBeVisible({ timeout: 30000 });
+    await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
+    await page.click('[data-coach-mark-dismiss="next-step"]');
     await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
     const markBox = await mark.boundingBox();
     const answerBox = await page.locator('[data-it-answer]').boundingBox();

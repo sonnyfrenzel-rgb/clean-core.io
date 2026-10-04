@@ -48,9 +48,9 @@ test.describe('the stations', () => {
   test('about twelve, in the order of §6.1.2, from the reveal to the handover', () => {
     expect(TOUR_STATIONS.map((s) => s.place)).toEqual([
       'reveal',
-      'not-determined',
       'process-map',
       'process-levels',
+      'not-determined',
       'confirm-rule',
       'standard-fit',
       'it-chain',
