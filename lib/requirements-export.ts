@@ -9,6 +9,7 @@ import {
   type NfrSet,
   type NonFunctionalRequirement,
 } from '@/lib/non-functional-requirements';
+import { parseRich, richHtml, richMarkdown, type RichInline } from '@/lib/rich-text';
 import {
   BASIS_LABEL,
   PRIORITY_LABEL,
@@ -202,6 +203,15 @@ function docxTable(head: string[], rows: string[][]): string {
   ].join('')}</w:tbl>${para('')}`;
 }
 
+/** A two-column table of facts — the title page — without a header row. */
+function docxKeyTable(rows: Array<[string, string]>): string {
+  const cell = (t: string, key: boolean) =>
+    `<w:tc><w:tcPr>${key ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/><w:tcW w:w="1400" w:type="pct"/>' : ''}</w:tcPr>${para(run(t, { bold: key }))}</w:tc>`;
+  return `<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr>${rows
+    .map(([k, v]) => `<w:tr>${cell(k, true)}${cell(v, false)}</w:tr>`)
+    .join('')}</w:tbl>${para('')}`;
+}
+
 function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string {
   const b: string[] = [];
   b.push(para(run(`Functional requirements — ${meta.projectName}`), 'Title'));
@@ -288,7 +298,14 @@ export type DocBlock =
   | { k: 'table'; head: string[]; rows: string[][] }
   | { k: 'kv'; items: Array<[string, string]> }
   | { k: 'ol'; items: string[] }
-  | { k: 'code'; items: Array<{ label: string; quote: string }> };
+  | { k: 'code'; items: Array<{ label: string; quote: string }> }
+  /** Text in the restricted format of `lib/rich-text.ts` — parsed, never passed through. */
+  | { k: 'rich'; text: string }
+  /** The title page of a specification: title, one line under it, a table of facts. */
+  | { k: 'titlepage'; title: string; subtitle: string; rows: Array<[string, string]>; note: string }
+  /** A table of contents, written out (no field to update in Word). */
+  | { k: 'toc'; items: Array<{ level: 1 | 2; text: string }> }
+  | { k: 'pagebreak' };
 
 export function blocksMarkdown(blocks: DocBlock[]): string {
   const out: string[] = [];
@@ -308,12 +325,25 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
       out.push('');
     } else if (b.k === 'code' && b.items.length) {
       out.push('```abap', ...b.items.map((a) => `* ${a.label}\n${a.quote}`), '```', '');
+    } else if (b.k === 'rich') {
+      const md = richMarkdown(b.text);
+      if (md) out.push(md, '');
+    } else if (b.k === 'titlepage') {
+      out.push(`# ${b.title}`, '', `*${b.subtitle}*`, '', '| | |', '|---|---|');
+      for (const [k, v] of b.rows) out.push(`| ${mdCell(k)} | ${mdCell(v)} |`);
+      out.push('', `> ${b.note}`, '');
+    } else if (b.k === 'toc') {
+      out.push('## Contents', '');
+      for (const item of b.items) out.push(`${item.level === 2 ? '  ' : ''}- ${item.text}`);
+      out.push('');
+    } else if (b.k === 'pagebreak') {
+      out.push('---', '');
     }
   }
   return out.join('\n');
 }
 
-function blocksHtml(blocks: DocBlock[]): string {
+export function blocksHtml(blocks: DocBlock[]): string {
   const td = 'style="border:1px solid #cbd5e1;padding:4px 6px;vertical-align:top"';
   const th = 'style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;background:#f1f5f9"';
   const parts: string[] = [];
@@ -329,9 +359,42 @@ function blocksHtml(blocks: DocBlock[]): string {
     else if (b.k === 'ol') parts.push(`<ol>${b.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`);
     else if (b.k === 'code' && b.items.length) {
       parts.push(`<pre style="font-family:Consolas,monospace;font-size:12px;background:#f8fafc;padding:6px">${b.items.map((a) => `${esc(a.label)}  ${esc(a.quote)}`).join('\n')}</pre>`);
-    }
+    } else if (b.k === 'rich') parts.push(richHtml(b.text));
+    else if (b.k === 'titlepage') {
+      parts.push(`<section class="title-page"><h1>${esc(b.title)}</h1><p><em>${esc(b.subtitle)}</em></p><table style="border-collapse:collapse"><tbody>${b.rows
+        .map(([k, v]) => `<tr><th ${th}>${esc(k)}</th><td ${td}>${esc(v)}</td></tr>`)
+        .join('')}</tbody></table><p><em>${esc(b.note)}</em></p></section>`);
+    } else if (b.k === 'toc') {
+      parts.push(`<nav aria-label="Contents"><h2>Contents</h2><ul>${b.items.map((i) => `<li${i.level === 2 ? ' style="margin-left:16px"' : ''}>${esc(i.text)}</li>`).join('')}</ul></nav>`);
+    } else if (b.k === 'pagebreak') parts.push('<hr style="page-break-after:always;break-after:page;border:0">');
   }
   return parts.join('\n');
+}
+
+function inlineRuns(nodes: readonly RichInline[], opts: { bold?: boolean; italic?: boolean } = {}): string {
+  return nodes
+    .map((n) => {
+      if (n.t === 'text') return n.v.split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + run(l, opts)).join('');
+      if (n.t === 'code') return run(n.v, { ...opts, mono: true });
+      if (n.t === 'b') return inlineRuns(n.c, { ...opts, bold: true });
+      if (n.t === 'i') return inlineRuns(n.c, { ...opts, italic: true });
+      // Word gets the target in brackets: a hyperlink needs a relationship part, and the text is what matters.
+      return inlineRuns(n.c, opts) + run(` (${n.href})`, opts);
+    })
+    .join('');
+}
+
+/** Text in the restricted format as WordprocessingML paragraphs — every text node escaped by `run`. */
+export function richDocx(text: string): string {
+  return parseRich(text)
+    .map((blk) =>
+      blk.t === 'p'
+        ? para(inlineRuns(blk.c))
+        : blk.items
+            .map((item, i) => `<w:p><w:pPr><w:ind w:left="360" w:hanging="240"/></w:pPr>${run(blk.t === 'ul' ? '• ' : `${i + 1}. `)}${inlineRuns(item)}</w:p>`)
+            .join(''),
+    )
+    .join('');
 }
 
 const HEADING_STYLE: Record<1 | 2 | 3 | 4 | 5, string> = { 1: 'Title', 2: 'Heading1', 3: 'Heading2', 4: 'Heading3', 5: 'Heading4' };
@@ -349,7 +412,16 @@ function blocksDocument(blocks: DocBlock[]): string {
       for (const a of block.items) {
         b.push(para(run(`${a.label}  `, { mono: true }) + a.quote.split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + run(l, { mono: true })).join('')));
       }
-    }
+    } else if (block.k === 'rich') b.push(richDocx(block.text));
+    else if (block.k === 'titlepage') {
+      b.push(para(run(block.title), 'Title'));
+      b.push(para(run(block.subtitle, { italic: true })));
+      b.push(docxKeyTable(block.rows));
+      b.push(para(run(block.note, { italic: true })));
+    } else if (block.k === 'toc') {
+      b.push(para(run('Contents'), 'Heading1'));
+      for (const item of block.items) b.push(`<w:p><w:pPr><w:ind w:left="${item.level === 2 ? 440 : 0}"/></w:pPr>${run(item.text)}</w:p>`);
+    } else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
   }
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 }

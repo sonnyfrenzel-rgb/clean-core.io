@@ -7,6 +7,8 @@ import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { readSpecSummary, specHandoverLine } from '@/lib/requirements-spec';
+import { sha256Hex } from '@/lib/artefact-digest';
 import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -16,7 +18,7 @@ import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
-import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText, Workflow, FlaskConical, Package, ArrowRight } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText, Workflow, FlaskConical, Package, ArrowRight, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -304,6 +306,8 @@ export default function DeliveryPage() {
    * Documentation stage.
    */
   const signedSource = useMemo(() => signedSourceOf(project as HandoverProject | null), [project]);
+  const specSummary = readSpecSummary((project as { requirementsSpec?: unknown } | null)?.requirementsSpec);
+  const specStale = Boolean(specSummary && signedSource && specSummary.derivedFrom !== sha256Hex(signedSource.source));
 
   const downloadBpmn = async () => {
     if (!signedSource || handoverBlocked) return;
@@ -1010,6 +1014,32 @@ jobs:
                   </div>
                 )}
               </DeliveryArtefactCard>
+
+              {/* The requirements specification of the Design tool (ADR-078):
+                  what it holds, never as proven — it is not part of the signed pack. */}
+              <DeliveryArtefactCard
+                icon={<ClipboardList size={18} aria-hidden="true" />}
+                title="Requirements specification"
+                chip={
+                  specSummary ? (
+                    specStale ? <CcProvenanceChip value="stale" /> : <CcProvenanceChip value="reconstructed" note="drafted from the code" />
+                  ) : (
+                    <CcProvenanceChip value="not-determined" />
+                  )
+                }
+                detail={
+                  <span data-delivery-spec="">
+                    {specHandoverLine(specSummary, signedSource ? sha256Hex(signedSource.source) : null) ??
+                      'Not started — written in the requirements workspace of the Design tool.'}{' '}
+                    Not part of the signed audit pack.
+                  </span>
+                }
+                action={
+                  <CcLinkButton href={`/project/${encodeURIComponent(projectId as string)}/design/requirements`} density="compact" data-delivery-spec-open="">
+                    {specSummary ? 'Open' : 'Start in Design'}
+                  </CcLinkButton>
+                }
+              />
 
               <DeliveryArtefactCard
                 icon={<Eye size={18} aria-hidden="true" />}

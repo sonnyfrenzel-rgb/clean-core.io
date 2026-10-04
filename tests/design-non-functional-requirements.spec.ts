@@ -30,9 +30,15 @@ async function adminSetDoc(collection: string, id: string, data: Record<string, 
   }
 }
 
+/** The engine's reading sits in the requirements workspace of Design since ADR-078 (04.10.2026). */
+async function openEngineReading(page: Page) {
+  await page.getByRole('tab', { name: /What the engine read/ }).click();
+}
+
 async function openDemo(page: Page) {
-  await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
+  await page.goto('/demo/design/requirements', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
+  await openEngineReading(page);
   const section = page.locator('[data-non-functional-requirements]');
   await expect(section).toBeVisible({ timeout: 60_000 });
   return section;
@@ -216,7 +222,8 @@ test.describe('a real project', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT}/design/requirements`, { waitUntil: 'domcontentloaded' });
+    await openEngineReading(page);
     await expect(page.locator('[data-non-functional-requirements]')).toBeVisible({ timeout: 120_000 });
     const section = await derive(page);
 
@@ -235,10 +242,15 @@ test.describe('a real project', () => {
     await expect(specific.getByText(PROPOSALS.dataRetention)).toBeVisible();
     await expect(specific.locator('[data-provenance="proposed"]')).toBeVisible();
 
-    // The design document points here instead of carrying the prose: the
-    // group "How it is secured and run" links to this section (03.10.2026).
-    await page.locator('[data-design-group-toggle="secure"]').click();
-    await expect(page.locator('[data-design-group="secure"] [data-nfr-moved] a[href="#non-functional-requirements"]')).toBeVisible();
+    expect(modelCalls).toEqual([]);
+
+    // The design document points to the requirements module instead of
+    // carrying the prose: the group "How it is secured and run" links to its
+    // card on Design (03.10.2026; the module since ADR-078, 04.10.2026).
+    await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-design-group-toggle="secure"]').click({ timeout: 120_000 });
+    await expect(page.locator('[data-design-group="secure"] [data-nfr-moved] a[href="#requirements"]')).toBeVisible();
+    await expect(page.locator('#requirements[data-spec-card]')).toBeVisible();
     expect(modelCalls).toEqual([]);
   });
 });

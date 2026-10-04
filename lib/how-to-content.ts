@@ -89,6 +89,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       'It covers the project structure, service endpoints, data consistency, security requirements and a phased roadmap.',
       'The draft is model output. Review it before you accept it.',
       'Accepting records the target, your account and the time on the server: a self-declaration, not a mandate.',
+      'The requirements module opens its own workspace: the engine drafts the functional and non-functional requirements from the signed code, without a model call, as one specification with the questions the code cannot answer as decisions. You edit, decide and export it to Word, Markdown or Confluence; it is not part of the signed audit pack.',
     ],
     questions: [
       {

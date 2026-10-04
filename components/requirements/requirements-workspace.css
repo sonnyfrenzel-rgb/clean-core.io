@@ -1,0 +1,54 @@
+/*
+ * The requirements workspace in full text (owner 04.10.2026: "a well usable
+ * full-screen area") and on paper.
+ *
+ * Full text is the canvases' mechanism (`useCanvasFullscreen`): the document
+ * with its contents fills the window — the element the Fullscreen API shows,
+ * or, where the browser refuses element full screen, the same element laid
+ * over the page. The button, Escape and Back leave it. It scrolls by itself, so
+ * the contents stay beside the text; `100dvh` keeps the browser's own bars off
+ * the bottom, the padding keeps clear of a notch.
+ */
+.cc-spec-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--cc-z-overlay);
+  overflow-y: auto;
+  height: 100dvh;
+  padding: 0 max(1rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: var(--cc-page);
+}
+
+.cc-spec-fullscreen:fullscreen {
+  background: var(--cc-page);
+}
+
+/*
+ * Print / PDF (DESIGN.md §7.1): the document alone, ink on white, no bars, no
+ * shadow, a 1-px border; no break inside a requirement or a table row; link
+ * targets printed after the link where they are not an anchor.
+ */
+@media print {
+  [data-spec-workspace] [data-spec-overview],
+  [data-spec-workspace] [data-spec-next-decision],
+  [data-spec-workspace] [data-spec-toc],
+  [data-spec-workspace] [role='tablist'] {
+    display: none !important;
+  }
+  [data-spec-workspace] .cc-spec-sheet {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+  [data-spec-workspace] [data-spec-req],
+  [data-spec-workspace] [data-spec-decision],
+  [data-spec-workspace] tr {
+    break-inside: avoid;
+  }
+  [data-spec-workspace] [data-spec-titlepage] {
+    break-after: page;
+  }
+  [data-spec-workspace] .cc-spec-sheet a[href^='http']::after {
+    content: ' (' attr(href) ')';
+  }
+}

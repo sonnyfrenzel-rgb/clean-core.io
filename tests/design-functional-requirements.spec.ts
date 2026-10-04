@@ -29,9 +29,15 @@ async function adminSetDoc(collection: string, id: string, data: Record<string, 
   }
 }
 
+/** The engine's reading sits in the requirements workspace of Design since ADR-078 (04.10.2026). */
+async function openEngineReading(page: Page) {
+  await page.getByRole('tab', { name: /What the engine read/ }).click();
+}
+
 async function openDemo(page: Page) {
-  await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
+  await page.goto('/demo/design/requirements', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
+  await openEngineReading(page);
   const section = page.locator('[data-functional-requirements]');
   await expect(section).toBeVisible({ timeout: 60_000 });
   return section;
@@ -179,14 +185,16 @@ test.describe('a real project', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
 
-    await page.goto(`/project/${UNSIGNED}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${UNSIGNED}/design/requirements`, { waitUntil: 'domcontentloaded' });
+    await openEngineReading(page);
     const blocked = page.locator('[data-functional-requirements]');
     await expect(blocked).toBeVisible({ timeout: 120_000 });
     await expect(blocked).toHaveAttribute('data-fr-state', 'blocked');
     await expect(blocked.locator('[data-fr-derive]')).toBeDisabled();
     await expect(blocked).toContainText('Re-run the analysis');
 
-    await page.goto(`/project/${SIGNED}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${SIGNED}/design/requirements`, { waitUntil: 'domcontentloaded' });
+    await openEngineReading(page);
     await expect(page.locator('[data-functional-requirements]')).toBeVisible({ timeout: 120_000 });
     const section = await derive(page);
     await expect(section.locator('[data-fr-row]').filter({ hasText: 'Roll back changes' })).toHaveCount(1);

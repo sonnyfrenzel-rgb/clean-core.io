@@ -275,11 +275,11 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
           )}
         </div>
         <p data-design-section="nfr" data-nfr-moved="" className="m-0 rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2 text-[14px] text-cc-ink">
-          The non-functional requirements are read from the code, with their lines, in their own section:{' '}
-          <a href="#non-functional-requirements" className="font-semibold text-cc-information underline-offset-2 hover:underline">
-            Non-functional requirements
+          The non-functional requirements are read from the code, with their lines, in the requirements module of this tool:{' '}
+          <a href="#requirements" className="font-semibold text-cc-information underline-offset-2 hover:underline">
+            Requirements specification
           </a>
-          .{nfrTopics ? ` The model’s proposals for ${plural(nfrTopics, 'topic', 'topics')} stand there under each category, marked as proposals.` : ''}
+          .{nfrTopics ? ` The model’s proposals for ${plural(nfrTopics, 'topic', 'topics')} stand there beside the decisions they answer, marked as proposals.` : ''}
         </p>
       </div>
     ),

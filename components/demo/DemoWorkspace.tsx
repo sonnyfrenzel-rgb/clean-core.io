@@ -23,6 +23,7 @@ import DemoDocumentation from './DemoDocumentation';
 import { FoldedListSection } from '@/components/documentation/FoldedList';
 import { couplingSummary, inventorySummary } from '@/lib/documentation-lists';
 import DemoDesign from './DemoDesign';
+import DemoRequirements from './DemoRequirements';
 import type { DemoDesignData } from '@/lib/demo-design';
 import {
   DEMO_INVITATION,
@@ -102,6 +103,7 @@ export default function DemoWorkspace({
   stage,
   design = null,
   source = null,
+  sub = null,
 }: {
   demo: DemoProject;
   stage: PhaseKey;
@@ -109,6 +111,8 @@ export default function DemoWorkspace({
   design?: DemoDesignData | null;
   /** The example's source, for the Documentation stage's map on a phone; read for that stage only. */
   source?: string | null;
+  /** A page under the stage — the Design tool's requirements workspace (ADR-078). */
+  sub?: 'requirements' | null;
 }) {
   const [state, setState] = useState<DemoState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
@@ -159,22 +163,30 @@ export default function DemoWorkspace({
       <StageHeader
         stage={stage}
         tools={{ steps: demo.rail, base: '/demo' }}
-        title={`${demo.title} — ${current.label}`}
+        title={sub === 'requirements' ? `${demo.title} — Requirements specification` : `${demo.title} — ${current.label}`}
         eyebrow={
           <>
             <CcTag>{DEMO_TAG}</CcTag>
             <CcTag>{current.badge}</CcTag>
+            {sub === 'requirements' ? (
+              <Link href="/demo/design" data-spec-back-design="" className="text-[13px] font-semibold text-cc-information underline-offset-2 hover:underline">
+                ‹ Design
+              </Link>
+            ) : null}
           </>
         }
       >
-        {current.detail}
+        {sub === 'requirements'
+          ? 'The functional and non-functional requirements of the new solution, as one document an external implementer can build from — the engine’s draft of the example, read-only.'
+          : current.detail}
       </StageHeader>
 
       <div data-testid={`demo-stage-${stage}`} className="space-y-6">
         {stage === 'analyze' && (
           <DemoAnalyze demo={demo} />
         )}
-        {stage === 'design' && <Design demo={demo} data={design} state={state} patch={patch} />}
+        {stage === 'design' && sub === 'requirements' && <DemoRequirements demo={demo} data={design} />}
+        {stage === 'design' && sub !== 'requirements' && <Design demo={demo} data={design} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} source={source} />}
         {stage === 'testing' && <DemoTesting demo={demo} />}
