@@ -101,11 +101,14 @@ export default function DemoWorkspace({
   demo,
   stage,
   design = null,
+  source = null,
 }: {
   demo: DemoProject;
   stage: PhaseKey;
   /** The Design stage's contract and findings (`lib/demo-design.ts`); built for that stage only. */
   design?: DemoDesignData | null;
+  /** The example's source, for the Documentation stage's map on a phone; read for that stage only. */
+  source?: string | null;
 }) {
   const [state, setState] = useState<DemoState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
@@ -173,7 +176,7 @@ export default function DemoWorkspace({
         )}
         {stage === 'design' && <Design demo={demo} data={design} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
-        {stage === 'documentation' && <Documentation demo={demo} />}
+        {stage === 'documentation' && <Documentation demo={demo} source={source} />}
         {stage === 'testing' && <DemoTesting demo={demo} />}
         {stage === 'tco' && (
           <DemoEconomics
@@ -285,7 +288,7 @@ function Transformation({ demo }: { demo: DemoProject }) {
   );
 }
 
-function Documentation({ demo }: { demo: DemoProject }) {
+function Documentation({ demo, source }: { demo: DemoProject; source: string | null }) {
   return (
     <>
       {/* The stage a real project shows, in its order: the process
@@ -293,6 +296,7 @@ function Documentation({ demo }: { demo: DemoProject }) {
           map with its chapters, the technical trace. The inventory and the
           coupled tables follow. */}
       <DemoDocumentation
+        source={source}
         process={demo.documentation.process}
         gaps={demo.analyze.coverage.unassessed.map((u) => ({ label: u.label, why: u.why, line: u.line }))}
         levels={demo.analyze.levels}

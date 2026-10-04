@@ -38,6 +38,7 @@ export default function DemoDocumentation({
   gaps,
   levels,
   businessLayer,
+  source = null,
 }: {
   process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   /** The coverage sweep's constructs — the demo's own, read on the server. */
@@ -46,6 +47,11 @@ export default function DemoDocumentation({
   levels: Record<string, CloudReadinessGrade>;
   /** What stands where a real project shows its business layer — the demo makes no model call. */
   businessLayer?: React.ReactNode;
+  /**
+   * The example the demo was built from, read on the server for this stage
+   * only — what the phone's narrow map layout is laid out from.
+   */
+  source?: string | null;
 }) {
   const handbook = useMemo(() => (process ? handbookFromData(process.handbook) : null), [process]);
   /** The same glance a real project opens with (owner 03.10.2026). */
@@ -60,22 +66,13 @@ export default function DemoDocumentation({
   const [plane, setPlane] = useState<string | null>(null);
   const [focusToken, setFocusToken] = useState(0);
   // On a phone, the same process laid out narrower (ADR-072, amended
-  // 04.10.2026). The demo's payload carries no source, so it is fetched from
-  // the published example the demo was built from — only on a phone, and only
-  // drawn when its process is byte for byte the one the demo shows.
+  // 04.10.2026), from the example the server read for this stage; drawn only
+  // when its process is byte for byte the one the demo shows.
   const phoneXml = useMemo(
-    () => (model
-      ? phoneLayout({
-        source: () => fetch(`/starter-examples/${encodeURIComponent(model.fileName)}`)
-          .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
-          .then((text) => text.replace(/\r\n/g, '\n')),
-        processName: model.processName,
-        fileName: model.fileName,
-        readingXml: model.xml,
-        technical: false,
-      })
+    () => (model && source
+      ? phoneLayout({ source, processName: model.processName, fileName: model.fileName, readingXml: model.xml, technical: false })
       : undefined),
-    [model],
+    [model, source],
   );
 
   const nodes = useMemo(

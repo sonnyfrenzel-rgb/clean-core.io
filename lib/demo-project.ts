@@ -476,6 +476,11 @@ function analyzeViewOf(
   };
 }
 
+/** The example the demo is built from, with line feeds only — as `buildDemoProject` reads it. */
+export function demoSource(): string {
+  return fs.readFileSync(DEMO_PATH, 'utf8').replace(/\r\n/g, '\n');
+}
+
 export function buildDemoProject(): DemoProject {
   // Line feeds only, as `lib/demo-workspace.ts` reads it: the process description
   // hashes the source it is given (`sourceSha256`), so a CRLF checkout on Windows

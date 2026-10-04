@@ -20,8 +20,8 @@ const KEEP = 4;
 const held = new Map<string, Promise<string | null>>();
 
 export function phoneLayout(input: {
-  /** The source the reading map was built from, or how to fetch it. */
-  source: string | (() => Promise<string>);
+  /** The source the reading map was built from. */
+  source: string;
   processName: string;
   fileName: string;
   /** The file the canvas would otherwise draw — `model.xml`. */
@@ -34,12 +34,9 @@ export function phoneLayout(input: {
     const kept = held.get(key);
     if (kept) return kept;
     const made = (async () => {
-      const [{ buildPhoneReadingXml }, source] = await Promise.all([
-        import('@/lib/bpmn/export'),
-        typeof input.source === 'string' ? input.source : input.source(),
-      ]);
+      const { buildPhoneReadingXml } = await import('@/lib/bpmn/export');
       return buildPhoneReadingXml(
-        source,
+        input.source,
         { processName: input.processName, sourceFileName: input.fileName },
         { readingXml: input.readingXml, technical: input.technical, fitWidth: width },
       );
