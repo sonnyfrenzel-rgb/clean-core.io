@@ -214,6 +214,7 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
           {wt('doc.raciTitle')} <CcProvenanceChip value="proposed" />
+          <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.raciProposalNote')}</span>
         </h3>
         <Legend />
       </div>
@@ -239,8 +240,13 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
             <CcTable
               caption={wt('doc.raciCaption')}
               columns={[
-                { key: 'step', label: wt('doc.sopStepColumn'), width: '240px' },
-                ...matrix.roles.map((role) => ({ key: `role-${role.name}`, label: role.name })),
+                { key: 'step', label: wt('doc.sopStepColumn'), width: '220px' },
+                ...matrix.roles.map((role) => ({
+                  key: `role-${role.name}`,
+                  // A long role name is shortened in the head; the key under the
+                  // matrix names it in full — read, not hovered (owner 04.10.2026).
+                  label: role.short === role.name ? role.name : `${role.short}`,
+                })),
                 { key: 'check', label: wt('doc.raciGapCheck') },
               ]}
               rows={matrix.steps.map((step) => ({
@@ -265,11 +271,47 @@ function RaciSection({ steps }: { steps: SopStep[] }) {
                       ];
                     }),
                   ),
-                  check: <GapWords gaps={step.gaps} />,
+                  check: (
+                    <span className="inline-flex flex-col gap-1">
+                      <GapWords gaps={step.gaps} />
+                      {step.more.length ? (
+                        <span data-raci-more-on-step="" className="cc-text-meta font-medium text-cc-ink-muted">
+                          +{step.more.length} more {step.more.length === 1 ? 'role' : 'roles'}
+                        </span>
+                      ) : null}
+                    </span>
+                  ),
                 },
               }))}
             />
+            {matrix.roles.some((r) => r.short !== r.name) ? (
+              <p data-raci-key="" className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">
+                <span className="text-cc-ink">{wt('doc.raciKey')}:</span>{' '}
+                {matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ')}
+              </p>
+            ) : null}
           </div>
+          {matrix.moreRoles.length ? (
+            <div data-raci-more-roles={matrix.moreRoles.length}>
+              <CcDisclosure title={wt('doc.raciMoreRoles')} count={matrix.moreRoles.length} density="compact"
+                summary={matrix.moreRoles.slice(0, 3).map((r) => r.name).join(' · ')}>
+                <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                  {matrix.moreRoles.map((role) => (
+                    <li key={role.name} className="min-w-0 cc-text-cell text-cc-ink">
+                      <span className="font-semibold">{role.name}</span>{' '}
+                      <span className="text-cc-ink-muted">
+                        {matrix.steps
+                          .map((s) => ({ s, letters: lettersOf(s, role.name) }))
+                          .filter((x) => x.letters.length)
+                          .map((x) => `${x.letters.join('')} on ${x.s.number}`)
+                          .join(', ')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CcDisclosure>
+            </div>
+          ) : null}
 
           {/* On a phone: one entry per step, the roles under it — no sideways scroll. */}
           <ol data-raci-list="" className="m-0 flex list-none flex-col gap-2 p-0 sm:hidden">
@@ -376,10 +418,13 @@ function FullSop({ steps, layer }: { steps: SopStep[]; layer: StoredBusinessLaye
 export default function BusinessLayer({
   layer,
   process,
+  action,
 }: {
   layer: StoredBusinessLayer;
   /** The steps of the process read from the code, in flow order. */
   process: ProcessStepRef[];
+  /** The owner's "Regenerate SOP and RACI", with its cost line — absent for a reader. */
+  action?: React.ReactNode;
 }) {
   const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
   return (
@@ -395,6 +440,7 @@ export default function BusinessLayer({
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
       <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">{wt('doc.sopLead')}</p>
+      {action ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
       <SopStrip steps={steps} />
       <RaciSection steps={steps} />
       <FullSop steps={steps} layer={layer} />

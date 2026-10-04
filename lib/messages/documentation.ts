@@ -46,11 +46,15 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.raciC': 'Consulted',
   'doc.raciI': 'Informed',
   'doc.raciGapCheck': 'Check',
-  'doc.raciGapNoAccountable': 'No Accountable',
+  'doc.raciGapNoAccountable': 'No Accountable named — to clarify',
   'doc.raciGapSeveralAccountable': 'Several Accountable',
   'doc.raciGapNoResponsible': 'No Responsible',
   'doc.raciOk': 'Complete',
   'doc.raciCaption': 'RACI matrix: process steps by role',
+  'doc.raciMoreRoles': 'More roles the proposal names',
+  'doc.raciKey': 'Role names',
+  'doc.raciProposalNote': 'The roles are a proposal for the business to confirm.',
+  'doc.businessRegenerate': 'Regenerate SOP and RACI',
 
   'doc.businessOfferTitle': 'Business SOP and RACI',
   'doc.businessOfferLead':
@@ -134,7 +138,7 @@ export function raciLetterWord(letter: RaciLetter): string {
 
 export function raciGapWord(gap: RaciStepGap): string {
   return {
-    'no-accountable': 'No Accountable',
+    'no-accountable': 'No Accountable named — to clarify',
     'several-accountable': 'Several Accountable',
     'no-responsible': 'No Responsible',
   }[gap];

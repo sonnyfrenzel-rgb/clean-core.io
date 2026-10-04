@@ -27,6 +27,7 @@ import {
   processDocumentOf,
   FIXTURE_FILE,
 } from './helpers/business-layer-fixture';
+import { overloadedLayerFor } from './helpers/raci-overload-fixture';
 
 /**
  * Owner, 03.10.2026 (translated): "Clean up Documentation: make the Business
@@ -41,10 +42,12 @@ import {
  *     missing is filled in;
  *   - the Confluence export still carries every SOP step and every RACI row,
  *     and gains the glance as tables;
- *   - in a browser: the callouts carry anchors, the RACI matrix is roles ×
- *     steps, the full SOP is one click away, a phone has no sideways scroll,
- *     and without a business layer the card that offers it follows the process
- *     description (owner 04.10.2026: the description leads, ADR-077 amended);
+ *   - in a browser: the description's summary carries its points with
+ *     anchors (owner 04.10.2026, ADR-077 amended twice: it replaces the glance
+ *     above a description), the RACI matrix is roles × steps — at most six
+ *     columns, a layer of fourteen roles fits 1440 px without scrolling — the
+ *     full SOP is one click away, a phone has no sideways scroll, and without a
+ *     business layer the card that offers it follows the process description;
  *   - an invited reader reads the same order and is offered no generation.
  */
 
@@ -129,6 +132,7 @@ test.describe('the SOP and the RACI, as data', () => {
     expect(matrix.steps).toHaveLength(LAYER.raci_matrix.length);
     expect(matrix.roles.map((r) => r.name)).toEqual(expect.arrayContaining(['Purchasing Clerk', 'Process Owner', 'Finance Lead', 'Internal Audit']));
     expect(matrix.steps[2].gaps).toContain('no-accountable');
+    expect(matrix.moreRoles).toEqual([]);
     expect(matrix.steps[5].gaps).toContain('several-accountable');
     expect(matrix.roles.find((r) => r.name === 'Purchasing Clerk')!.overloaded).toBe(true);
     expect(matrix.roles.find((r) => r.name === 'Process Owner')!.overloaded).toBe(false);
@@ -181,6 +185,7 @@ test.describe('the Documentation stage in a browser', () => {
   const PASSWORD = 'DocBiz123!';
   const WITH = `doc-biz-${STAMP}`;
   const WITHOUT = `doc-biz-none-${STAMP}`;
+  const MANY = `doc-biz-many-${STAMP}`;
   const RUN_ID = `doc-biz-run-${STAMP}`;
   const READER_EMAIL = `doc-biz-reader-${STAMP}@cleancore-test.io`;
 
@@ -211,7 +216,7 @@ test.describe('the Documentation stage in a browser', () => {
       tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0, transformationsLimit: 50, createdAt: new Date(),
     });
-    for (const [id, business] of [[WITH, JSON.stringify(LAYER)], [WITHOUT, '']] as const) {
+    for (const [id, business] of [[WITH, JSON.stringify(LAYER)], [WITHOUT, ''], [MANY, JSON.stringify(overloadedLayerFor(DOC))]] as const) {
       await adminSetDoc('projects', id, {
         name: 'Business view fixture', userId: uid, createdAt: new Date(), status: 'documented',
         legacyCode: SOURCE,
@@ -236,26 +241,27 @@ test.describe('the Documentation stage in a browser', () => {
     }
   });
 
-  test('desktop: evidence on every callout, the RACI matrix roles × steps, the full SOP one click away', async ({ page }) => {
+  test('desktop: evidence on every point of the summary, the RACI matrix roles × steps, the full SOP one click away', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
 
-    const callouts = page.locator('[data-business-glance] [data-business-callout]');
-    await expect.poll(() => callouts.count(), { timeout: 120000 }).toBeGreaterThan(1);
-    for (let i = 0; i < await callouts.count(); i += 1) {
-      const callout = callouts.nth(i);
-      await expect(callout.locator('[data-cc-anchor]').first(), `callout ${i} has no anchor`).toBeVisible();
+    // Owner 04.10.2026 (ADR-077 amended twice): the description opens with its
+    // own summary — key figures, the rules and risks to know, each with its lines.
+    const points = page.locator('[data-doc-glance] [data-doc-point]');
+    await expect.poll(() => points.count(), { timeout: 120000 }).toBeGreaterThan(1);
+    for (let i = 0; i < await points.count(); i += 1) {
+      await expect(points.nth(i).locator('[data-cc-anchor]').first(), `point ${i} has no anchor`).toBeVisible();
     }
+    await expect(page.locator('[data-doc-glance] [data-doc-figure]')).toHaveCount(6);
 
-    // Owner 04.10.2026 (ADR-077 amended): the page reads like the document —
-    // the process description (the glance its opening), then the SOP, then the
-    // map to explore, then the technical trace.
+    // The page reads like the document — the process description, then the
+    // SOP, then the map to explore, then the technical trace.
     const sop = page.locator('[data-business-sop]');
     await expect(sop).toBeVisible();
     await expect(sop.locator('[data-provenance="proposed"]').first()).toBeVisible();
-    await expect(page.locator('[data-process-document] [data-business-glance="embedded"]')).toBeVisible();
+    await expect(page.locator('[data-business-glance]')).toHaveCount(0);
     await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
     await expectReadingOrder(page);
 
@@ -289,12 +295,41 @@ test.describe('the Documentation stage in a browser', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 120000 });
-    await expect.poll(() => page.locator('[data-business-glance] [data-business-callout]').count(), { timeout: 120000 }).toBeGreaterThan(1);
+    await expect.poll(() => page.locator('[data-doc-glance] [data-doc-point]').count(), { timeout: 120000 }).toBeGreaterThan(1);
     await expect(page.locator('[data-raci-matrix]')).toBeHidden();
     await expect(page.locator('[data-raci-list]')).toBeVisible();
     await expect(page.locator('[data-raci-list-step]').first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(0);
+  });
+
+  test('fourteen proposed roles: six columns, the rest listed, a step without an Accountable named — and no sideways scroll at 1440', async ({ page }) => {
+    // Owner 04.10.2026: "unrealistically many roles in the RACI" — the matrix
+    // scrolled sideways and a step without an Accountable went unremarked.
+    test.setTimeout(300 * 1000);
+    await page.route('**/api/model-stages', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ stages: { documentation: true }, keyAvailable: true, keySource: 'community' }),
+    }));
+    let calls = 0;
+    await page.route('**/api/gemini', (route) => { calls += 1; return route.abort(); });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.goto(`/project/${MANY}/documentation`, { waitUntil: 'domcontentloaded' });
+    const matrix = page.locator('[data-raci-matrix]');
+    await expect(matrix).toBeVisible({ timeout: 120000 });
+    await expect(matrix.locator('thead th')).toHaveCount(6 + 2);
+    await expect(page.locator('[data-raci-more-roles="8"]')).toBeVisible();
+    await expect(page.locator('[data-raci-key]')).toBeVisible();
+    await expect(matrix.locator('[data-raci-gap="no-accountable"]')).toHaveCount(1);
+    await expect(page.locator('[data-raci-gaps="0"]')).toHaveCount(0);
+    const sideways = await matrix.evaluate((el) => Math.max(0, ...[el, ...el.querySelectorAll('*')].map((n) => (n as HTMLElement).scrollWidth - (n as HTMLElement).clientWidth)));
+    expect(sideways, 'the RACI matrix scrolls sideways at 1440').toBeLessThanOrEqual(0);
+    // The owner can ask for a new proposal; nothing is called by itself.
+    await expect(page.locator('[data-regenerate-business-layer]')).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect(calls).toBe(0);
   });
 
   test('without a business layer and without a model the card says why, right after the process description', async ({ page }) => {
@@ -343,6 +378,7 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
     await expectReadingOrder(page);
     await expect(page.locator('[data-regenerate-documentation]')).toHaveCount(0);
+    await expect(page.locator('[data-regenerate-business-layer]')).toHaveCount(0);
     await expect(page.locator('[data-export-process-md]')).toBeVisible();
 
     await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });
