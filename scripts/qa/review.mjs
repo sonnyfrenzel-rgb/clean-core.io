@@ -47,6 +47,8 @@ async function main() {
     checkpoint: previous?.range?.checkpoint ?? previous?.range?.head,
     isAncestorOf: isAncestor,
     mainBase: mergeBaseWithMain,
+    // A checkpoint hundreds of commits back is a stray report, not this branch's last review (git-delta.mjs).
+    commitsBetween: (from, to) => Number(git(['rev-list', '--count', `${from}..${to}`])),
   });
   const range = resolveRange({ base: chosen.base, head });
   if (range.base === chosen.base) range.baseReason = chosen.reason;

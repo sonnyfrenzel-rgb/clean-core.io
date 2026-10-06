@@ -73,7 +73,9 @@ jobs:
         run: |
           mkdir -p .qa-review/prev
           # Fifty runs back; when none of them has a report, review.mjs falls back to everything not yet on main.
-          for id in $(gh run list --workflow qa-review.yml --branch dev --limit 50 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+          # Push runs only: a manual run reviews a range it was given, and its checkpoint is not this branch's
+          # (06.10.2026: a slice review of 04.10. became the base of two pushes, 1,385 commits back).
+          for id in $(gh run list --workflow qa-review.yml --branch dev --event push --limit 50 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
             [ "$id" = "$RUN_ID" ] && continue
             if gh run download "$id" --pattern 'qa-review-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
           done

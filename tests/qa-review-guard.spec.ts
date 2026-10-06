@@ -507,6 +507,16 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(base({}).base).toBe('main-base'); // no checkpoint: first run, or every earlier run failed
     expect(base({ checkpoint: 'rewritten' }).base).toBe('main-base'); // force push made it unusable
     expect(base({ checkpoint: 'cp', overrideBase: 'manual' }).base).toBe('manual');
+    // A checkpoint hundreds of commits back is a stray report, not the last review: everything not on main instead
+    // (06.10.2026, two pushes reviewed nothing against a checkpoint 1,385 commits back).
+    const { MAX_CHECKPOINT_COMMITS } = await lib('git-delta.mjs');
+    expect(base({ checkpoint: 'cp', commitsBetween: () => MAX_CHECKPOINT_COMMITS }).base).toBe('cp');
+    const far = base({ checkpoint: 'cp', commitsBetween: () => MAX_CHECKPOINT_COMMITS + 1 });
+    expect(far.base).toBe('main-base');
+    expect(far.reason).toMatch(/commits back — everything not yet on main/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/commitsBetween: \(from, to\) => Number\(git\(\['rev-list', '--count', `\$\{from\}\.\.\$\{to\}`\]\)\),/);
+    // Only push runs can be the previous review.
+    expect(read('.github/workflows/qa-review.yml')).toMatch(/gh run list --workflow qa-review\.yml --branch dev --event push --limit 50/);
     expect(base({ mainBase: () => 'head' }).base).toBeNull(); // head is on main
     // No shared history with main is not "on main": the run stops instead of reviewing one commit.
     expect(() => base({ checkpoint: 'rewritten', mainBase: () => null })).toThrow(/No usable review base/);

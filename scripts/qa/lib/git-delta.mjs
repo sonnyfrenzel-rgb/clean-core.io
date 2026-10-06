@@ -80,12 +80,21 @@ export function containsOrUnknown(commit, head, { exists = isCommit, ancestor = 
  * instead would pass as a complete review of a delta it never read (QA review
  * of c1f86075617b, finding 1b9c06bebe30).
  */
-export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainBase }) {
+/**
+ * A checkpoint further back than this is not the last review of this branch but a stray report (06.10.2026: two
+ * pushes loaded a manual slice review of 04.10. whose checkpoint was 1,385 commits back, and reviewed nothing).
+ * Everything not yet on main is then the delta — after a release, a small one.
+ */
+export const MAX_CHECKPOINT_COMMITS = 300;
+
+export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainBase, commitsBetween = () => 0, maxCommits = MAX_CHECKPOINT_COMMITS }) {
   if (overrideBase) return { base: overrideBase, reason: 'base given for this run' };
-  if (checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head)) return { base: checkpoint, reason: 'last reviewed checkpoint' };
+  const usable = checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head);
+  const tooFar = usable && commitsBetween(checkpoint, head) > maxCommits;
+  if (usable && !tooFar) return { base: checkpoint, reason: 'last reviewed checkpoint' };
   const mb = mainBase(head);
   if (!mb) throw new Error('No usable review base: the checkpoint is not an ancestor of head and head shares no history with main. Re-run with a base given.');
-  if (mb !== head) return { base: mb, reason: checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
+  if (mb !== head) return { base: mb, reason: tooFar ? `checkpoint more than ${maxCommits} commits back — everything not yet on main` : checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
   return { base: null, reason: 'head is on main — reviewing the head commit only' };
 }
 
