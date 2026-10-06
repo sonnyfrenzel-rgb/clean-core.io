@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
-import { getAuth } from '@/lib/firebase';
+import { getAuth } from '@/lib/firebase-app';
 import { publicButton, type PublicButtonVariant } from './public-button';
 
 /**

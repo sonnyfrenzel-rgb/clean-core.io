@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { getAuth } from '@/lib/firebase';
+import { getAuth } from '@/lib/firebase-app';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 
