@@ -1565,6 +1565,35 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(changedSince(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim())).toEqual([]);
   });
 
+  test('a file moved out of the inventory is a deletion, not a rename git hides (830bb7eae9e9, 47d684ca722f)', () => {
+    // A throwaway repository: an API route renamed to a Markdown file, which the inventory excludes.
+    const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'audit-rename-'));
+    const run = (...args: string[]) => execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
+    try {
+      run('init', '-q');
+      run('config', 'user.email', 't@example.invalid');
+      run('config', 'user.name', 't');
+      fs.mkdirSync(path.join(dir, 'app/api/x'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'app/api/x/route.ts'), 'export async function GET() { return verifyRequestAuth(); }\n'.repeat(20));
+      run('add', '.');
+      run('commit', '-qm', 'base');
+      const base = run('rev-parse', 'HEAD');
+      fs.mkdirSync(path.join(dir, 'docs'));
+      run('mv', 'app/api/x/route.ts', 'docs/route-notes.md');
+      run('commit', '-qm', 'move');
+      const src = read('scripts/security/lib/surface.mjs');
+      // The same git calls the module makes, in that repository.
+      const changed = run('diff', '--no-renames', '--name-only', '--diff-filter=ACM', `${base}..HEAD`).split('\n').filter(Boolean);
+      const deleted = run('diff', '--no-renames', '--name-only', '--diff-filter=D', `${base}..HEAD`).split('\n').filter(Boolean);
+      expect(changed).toEqual(['docs/route-notes.md']);
+      expect(deleted).toEqual(['app/api/x/route.ts']);
+      expect(src).toMatch(/git\(\['diff', '--no-renames', '--name-only', '--diff-filter=ACM', `\$\{base\}\.\.HEAD`\]\)/);
+      expect(src).toMatch(/git\(\['diff', '--no-renames', '--name-only', '--diff-filter=D', `\$\{base\}\.\.HEAD`\]\)/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('a skipped audit job on a successful run is a release with nothing to audit, not a missing report', async () => {
     const { unchangedRun } = await lib('envelope.mjs');
     expect(unchangedRun({ conclusion: 'success' }, [{ name: 'Scope', conclusion: 'success' }, { name: 'Audit (sealed)', conclusion: 'skipped' }])).toBe(true);
@@ -1578,11 +1607,13 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     const wait = scopeJob.indexOf('Wait for the QA review of this release');
     expect(wait).toBeGreaterThan(-1);
     expect(wait).toBeLessThan(scopeJob.indexOf('- name: Decide'));
-    expect(scopeJob).toMatch(/gh run list --workflow qa-review\.yml --commit "\$SHA"/);
     expect(scopeJob).toMatch(/for i in \$\(seq 1 60\); do[\s\S]*?sleep 30/);
     // Done only after a QA run was seen and completed — not while GitHub does not list it yet (7180ec588f09).
     expect(scopeJob).toMatch(/if \[ "\$total" -gt 0 \] && \[ "\$open" = "0" \]; then exit 0; fi/);
-    expect(scopeJob).toMatch(/if \[ "\$total" = "0" \] && \[ "\$i" -ge 10 \]; then/);
+    // Ten 30-second waits before the eleventh poll: five minutes (830bb7eae9e9, 2296ad58ba59).
+    expect(scopeJob).toMatch(/if \[ "\$total" = "0" \] && \[ "\$i" -ge 11 \]; then/);
+    // Only this release's run: the same commit already had a completed QA run on dev (67f85bb9e4c3).
+    expect(scopeJob).toMatch(/gh run list --workflow qa-review\.yml --branch main --event push --commit "\$SHA"/);
     expect(scopeJob).toMatch(/timeout-minutes: 40/);
   });
 

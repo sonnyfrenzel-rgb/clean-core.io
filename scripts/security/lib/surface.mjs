@@ -267,14 +267,18 @@ const usableBase = (base) => {
   }
 };
 
-/** Paths added, copied, modified or renamed (new name) between `base` and HEAD — or null when `base` is not usable. */
+/**
+ * Paths added, copied or modified between `base` and HEAD — or null when `base` is not usable. Without rename
+ * detection: a rename is its new path here and its old path in deletedSince, so moving a route out of the inventory
+ * is still a deletion (QA review of 830bb7eae9e9, finding 47d684ca722f).
+ */
 export function changedSince(base) {
   if (!usableBase(base)) return null;
-  return git(['diff', '--name-only', '--diff-filter=ACMR', `${base}..HEAD`]).split('\n').filter(Boolean);
+  return git(['diff', '--no-renames', '--name-only', '--diff-filter=ACM', `${base}..HEAD`]).split('\n').filter(Boolean);
 }
 
-/** Paths deleted (or renamed away) between `base` and HEAD — or null when `base` is not usable. */
+/** Paths deleted or renamed away between `base` and HEAD — or null when `base` is not usable. */
 export function deletedSince(base) {
   if (!usableBase(base)) return null;
-  return git(['diff', '--name-only', '--diff-filter=D', `${base}..HEAD`]).split('\n').filter(Boolean);
+  return git(['diff', '--no-renames', '--name-only', '--diff-filter=D', `${base}..HEAD`]).split('\n').filter(Boolean);
 }

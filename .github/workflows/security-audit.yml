@@ -58,15 +58,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.sha }}
         run: |
-          # Done only once a QA run of this commit has been seen and every one of them completed: right after the
-          # push GitHub may not list it yet (QA review of 6e61722f9e7d, finding 7180ec588f09). None after five
-          # minutes means QA is not running for this release (revoked, or skipped), and the audit starts.
+          # Done only once the QA run of this release (main, push — the same commit ran on dev before) has been seen
+          # and completed: right after the push GitHub may not list it yet (QA reviews of 6e61722f9e7d and
+          # 830bb7eae9e9). None after ten polls, five minutes, means QA is not running for this release, and the
+          # audit starts.
           for i in $(seq 1 60); do
-            counts=$(gh run list --workflow qa-review.yml --commit "$SHA" --json status --jq '"\(length) \([.[] | select(.status != "completed")] | length)"')
+            counts=$(gh run list --workflow qa-review.yml --branch main --event push --commit "$SHA" --json status --jq '"\(length) \([.[] | select(.status != "completed")] | length)"')
             total=${counts% *}
             open=${counts#* }
             if [ "$total" -gt 0 ] && [ "$open" = "0" ]; then exit 0; fi
-            if [ "$total" = "0" ] && [ "$i" -ge 10 ]; then
+            if [ "$total" = "0" ] && [ "$i" -ge 11 ]; then
               echo "No QA run for this release after five minutes; the audit starts."
               exit 0
             fi
