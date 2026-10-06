@@ -3,6 +3,31 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 06.10.2026 — 3.0.4 live, agents rebuilt, www fixed
+
+**Live:** v3.0.4 on clean-core.io since 06.10.2026 ~13:40 (main `223fd701`); CHANGELOG has the details.
+Firestore rules deployed by Sonny the same day (all six databases verified). `www.clean-core.io` now
+works (Cloud Run domain mapping + Strato CNAME to ghs.googlehosted.com) and 308-redirects to
+clean-core.io; in the 30 days before, not one request had reached it.
+
+**Agents (owner decision):** pinned models instead of the Auto Router; security audit reads the release
+delta; QA full review only for a larger change (`scripts/qa/full-scope.mjs`); UX review by hand. First
+verified delta audit of 3.0.4: 50/50 candidates, $0.26, intake in §12 (SEC-2026-726 to -736). No spend
+limit on the OpenRouter key (Sonny declined).
+
+**Launch 07.10.2026:** LinkedIn post scheduled for 07:45 (v6 text, video v3h, thumbnail from second 5).
+SAP Community post part 3 submitted for review. Video branch `video/launch-30` pushed as a backup, not
+merged (1,400+ commits behind; merge after the launch). Landing page content frozen until the launch.
+
+**Open, after the launch:**
+- 3.0.5 security hardening: SEC-2026-728 (P2) and -729 to -736 (P3).
+- Two carried high QA findings (BPMN draft identity across projects; profile re-creation after
+  deletion) and a large carried QA backlog; one medium test gap on the deferred Auth fallback.
+- Perf leftovers needing owner decisions (`docs/perf/REPORT.md`): 1.34 MB landing HTML, public pages
+  in `app/(app)/`, project read waits for the profile.
+- CI takes ~90 minutes per push; source-text guards that break on harmless refactors.
+- Mail deliverability (3.0.9).
+
 ## Session 03.–04.10.2026 — 3.0.1, 3.0.2, 3.0.3 live
 
 **Live:** v3.0.3 on clean-core.io since 04.10.2026 (main `b6716f07`); v3.0.1 and v3.0.2 went out the
