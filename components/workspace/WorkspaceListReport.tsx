@@ -455,7 +455,14 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         // The copy keeps the original's target system; the create rule takes
         // no `s4Deployment`, the owner's update does.
         if (project.s4Deployment === 'public' || project.s4Deployment === 'private') {
-          await updateDoc(copy, { s4Deployment: project.s4Deployment });
+          try {
+            await updateDoc(copy, { s4Deployment: project.s4Deployment });
+          } catch (error) {
+            // The copy exists (a browser may not delete a project): say exactly
+            // that, not "could not be duplicated" (QA review of 1c402c400e05).
+            setActionError(wt('myWorkspace.duplicateTargetFailed'));
+            console.error('[WorkspaceListReport] target of the copy not saved', error);
+          }
         }
       } catch (error) {
         setActionError(wt('myWorkspace.duplicateFailed'));

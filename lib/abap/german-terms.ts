@@ -475,8 +475,11 @@ function classify(raw: string, sources: WordSources): Token | null {
   if (known) return { kind: 'abbr', entry: noun(known, word.toUpperCase()), upper: true };
   const parts = compound(word);
   if (parts) return { kind: 'de', entry: parts };
-  // A short token is an abbreviation (`FI`, `IC`, `VE`), written as it stands.
-  if (word.length <= 3 && /^[a-z0-9]+$/.test(word)) return { kind: 'abbr', entry: noun(word.toUpperCase(), word.toUpperCase()), upper: true };
+  // A short token is an abbreviation (`FI`, `IC`, `VE`), written as it stands —
+  // two letters, or a token with a digit. An unknown three-letter word may be
+  // German (`GUT`); it stays unknown, so the whole name is shown as written
+  // (QA review of 1c402c400e05). Known three-letter acronyms come in above.
+  if ((word.length <= 2 || (word.length <= 3 && /\d/.test(word))) && /^[a-z0-9]+$/.test(word)) return { kind: 'abbr', entry: noun(word.toUpperCase(), word.toUpperCase()), upper: true };
   return null;
 }
 

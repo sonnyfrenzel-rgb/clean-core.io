@@ -3,6 +3,7 @@ import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
 import { databaseWriteIn } from './open-sql-discrimination';
+import { namesThisProgram } from './callback-registrations';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
@@ -2137,10 +2138,7 @@ class SkeletonBuilder {
     if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
     const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
     if (!program) return;
-    if (program[1].startsWith("'")) {
-      const own = this.programName()?.name;
-      if (!own || program[1].slice(1, -1).toUpperCase() !== own) return;
-    }
+    if (!namesThisProgram(program[1], this.statements, this.programName()?.name ?? null)) return;
     for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
       const key = m[2].toUpperCase();
       if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);

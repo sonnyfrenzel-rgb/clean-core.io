@@ -146,7 +146,14 @@ export default function DecisionOptions({
   hrefFor,
   choice,
   mode,
+  pending = null,
 }: {
+  /**
+   * Why `choice` is null although the project has a signed run: the decision
+   * is still being read, or the read failed. Not "no signed run" (QA review of
+   * 1c402c400e05).
+   */
+  pending?: 'reading' | 'unreadable' | null;
   view: DecisionOptionsView;
   hrefFor: (place: OptionPlace) => string;
   /** `null` on the demo and without a signed run: nothing can be chosen. */
@@ -175,9 +182,11 @@ export default function DecisionOptions({
     setAsking(null);
     setMissing(false);
     setRefusal(null);
-    if (choice.beforeWrite && !(await choice.beforeWrite())) return;
     setBusy(true);
     try {
+      // Inside the try: a Stand check that rejects is a refusal the reader sees,
+      // not an unhandled rejection (QA review of 1c402c400e05).
+      if (choice.beforeWrite && !(await choice.beforeWrite())) return;
       await runProjectCommand(choice.projectId, {
         command: 'approve-architecture',
         targetArchitecture: DIRECT_CHOICE_CODE[option],
@@ -200,7 +209,17 @@ export default function DecisionOptions({
   }, [asking, choice, reason]);
 
   const blockedWhy =
-    mode === 'demo' ? wt('decide.demo') : !choice ? wt('decide.noRun') : !choice.canDecide ? wt('decide.notOwner') : null;
+    mode === 'demo'
+      ? wt('decide.demo')
+      : !choice
+        ? pending === 'reading'
+          ? wt('decide.reading')
+          : pending === 'unreadable'
+            ? wt('decide.unreadable')
+            : wt('decide.noRun')
+        : !choice.canDecide
+          ? wt('decide.notOwner')
+          : null;
 
   const actionFor = (card: OptionCard): React.ReactNode => {
     if (card.chosen) return null;

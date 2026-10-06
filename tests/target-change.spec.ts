@@ -71,6 +71,14 @@ test.describe('what a target change does, said before the click', () => {
     expect(impact.decision).toEqual({ status: 'confirmed', id: 'DEC-1' });
   });
 
+  test('a decision already bound to an earlier run is not named as made outdated', () => {
+    // QA review of 1c402c400e05: it was already outdated before the change.
+    const impact = targetChangeImpact(
+      signedProject({ decision: { status: 'confirmed', decisionId: 'DEC-1', boundRunId: 'run-0' } }),
+    );
+    expect(impact.decision).toBeNull();
+  });
+
   test('the cost: free for an example, free as re-analysis for own code', () => {
     const profile = { tier: 'pilot', transformationsUsed: 2, transformationsLimit: 5, starterExamplesUsed: { Z_X: true } };
     expect(describeRunCost({ profile, metered: true, callsModel: false, starterExample: 'Z_X', targetChange: true }).quota).toBe(

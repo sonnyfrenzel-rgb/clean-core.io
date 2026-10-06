@@ -46,9 +46,13 @@ export function generationProgressAt(phase: GenerationPhase | null, now: number)
   if (!phase) return 0;
   const band = GENERATION_PHASES[phase.key];
   if (phase.key === 'done') return 100;
-  const from = Math.min(band.to, Math.max(band.from, phase.startedFrom));
+  const from = Math.max(band.from, phase.startedFrom);
+  // A step begun beyond its own band — the second model call after checking,
+  // with the bar already past 90 — climbs on towards 99 instead of standing at
+  // the band's end (QA review of 1c402c400e05).
+  const to = from >= band.to ? Math.max(from, 99) : band.to;
   const t = Math.max(0, now - phase.startedAt);
-  return from + (band.to - from) * (t / (t + band.halfAfterMs));
+  return from + (to - from) * (t / (t + band.halfAfterMs));
 }
 
 /**

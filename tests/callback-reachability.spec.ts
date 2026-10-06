@@ -84,6 +84,40 @@ test.describe('ALV callbacks in the call graph', () => {
     expect(readCallGraph(source).callbacks).toEqual([]);
   });
 
+  test('a variable not filled from sy-repid may name another program: it registers nothing', () => {
+    // QA review of 1c402c400e05: any variable used to count as "this program".
+    const source = report().replace('  gv_repid = sy-repid.\n', "  gv_repid = 'ZOTHER'.\n");
+    expect(readCallGraph(source).callbacks).toEqual([]);
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.some((n) => n.kind === 'start' && n.detail?.origin === 'callback')).toBe(false);
+    // sy-repid written directly still names this program.
+    const direct = report().replace('i_callback_program       = gv_repid', 'i_callback_program       = sy-repid');
+    expect(readCallGraph(direct).callbacks).toHaveLength(2);
+  });
+
+  test('the same FORM registered from unreached code and from the program level is reached', () => {
+    // QA review of 1c402c400e05: callbacks were de-duplicated by target alone,
+    // so the first (unreached) registration hid the reachable one.
+    const alv = `  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program      = sy-repid
+      i_callback_user_command = 'HANDLE_COMMAND'
+    TABLES
+      t_outtab                = gt_rows.
+`;
+    const source = `REPORT zdemo_twice.
+DATA gt_rows TYPE STANDARD TABLE OF zdemo_row.
+FORM old_list.
+${alv}ENDFORM.
+START-OF-SELECTION.
+${alv}FORM handle_command USING r_ucomm LIKE sy-ucomm rs_selfield TYPE slis_selfield.
+ENDFORM.
+`;
+    const calls = readCallGraph(source);
+    expect(calls.callbacks.map((c) => c.from)).toHaveLength(2);
+    expect(calls.unreachable).toEqual(['OLD_LIST']);
+  });
+
   test('PERFORMING … ON END OF TASK is a callback too', () => {
     const source = `REPORT zdemo_task.
 START-OF-SELECTION.

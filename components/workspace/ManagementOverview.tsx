@@ -482,6 +482,7 @@ export default function ManagementOverview({
       view={options}
       hrefFor={optionHref}
       mode="project"
+      pending={decision.state === 'loading' ? 'reading' : decision.state === 'absent' ? 'unreadable' : null}
       choice={
         readDecision
           ? {

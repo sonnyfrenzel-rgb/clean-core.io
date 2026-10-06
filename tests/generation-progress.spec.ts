@@ -36,6 +36,18 @@ test.describe('generation progress', () => {
     expect(generationProgressAt(enterGenerationPhase(storing, 'done', 73_000), 73_000)).toBe(100);
   });
 
+  test('a second model call after checking keeps moving past 90 and stays below 100', () => {
+    // QA review of 1c402c400e05: the start was clamped to the model band's end,
+    // so the bar stood at 90 for the whole second call.
+    const model = enterGenerationPhase(enterGenerationPhase(null, 'contract', 0), 'model', 500);
+    const checking = enterGenerationPhase(model, 'checking', 60_000);
+    const again = enterGenerationPhase(checking, 'model', 61_000);
+    const at = generationProgressAt(again, 61_000);
+    expect(at).toBeGreaterThanOrEqual(GENERATION_PHASES.model.to);
+    expect(generationProgressAt(again, 91_000)).toBeGreaterThan(at + 0.5);
+    expect(generationProgressAt(again, 600_000)).toBeLessThan(100);
+  });
+
   test('elapsed time reads as m:ss', () => {
     expect(formatElapsed(0)).toBe('0:00');
     expect(formatElapsed(42_900)).toBe('0:42');

@@ -175,6 +175,8 @@ test.describe('German names — the translation itself', () => {
     expect(isUntranslatable(translateGermanWords(['xyzzy', 'lesen']))).toBe(true);
     expect(humaniseRoutine('XYZZY_LESEN')).toBe('XYZZY_LESEN');
     expect(humaniseField('gv_xyzzy_daten')).toBe('XYZZY_DATEN');
+    // An unknown three-letter word is not an abbreviation (QA review of 1c402c400e05).
+    expect(humaniseRoutine('GUT_DATEN_LESEN')).toBe('GUT_DATEN_LESEN');
   });
 
   test('English names are not touched', () => {

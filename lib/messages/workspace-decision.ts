@@ -18,6 +18,8 @@ export const WORKSPACE_DECISION_MESSAGES = {
   'decide.chooseInDesign': 'Sign off the route in Design',
   'decide.notOwner': 'Only the owner of the project chooses.',
   'decide.noRun': 'Choosing needs a signed run.',
+  'decide.reading': 'Reading the decision on record…',
+  'decide.unreadable': 'The decision on record could not be read, so nothing can be chosen right now. Reload the page to try again.',
   'decide.demo': 'A demo is never signed, so nothing is chosen here.',
   'decide.chooseConfirm': 'Choose this option',
   'decide.selfDeclaration':

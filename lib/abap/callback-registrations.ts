@@ -98,6 +98,31 @@ export function alvEventRows(statements: readonly AbapStatement[], table: string
 }
 
 /**
+ * Whether the value passed as `I_CALLBACK_PROGRAM` names this program: a
+ * literal equal to its own name, `sy-repid`/`sy-cprog`, or a variable this
+ * source fills from one of them (`gv_repid = sy-repid`, `DATA gv_repid ...
+ * VALUE sy-repid`). Any other variable could hold another program's name, so
+ * it registers nothing this source can follow (QA review of 1c402c400e05).
+ */
+export function namesThisProgram(
+  value: string,
+  statements: readonly AbapStatement[],
+  programName: string | null,
+): boolean {
+  if (value.startsWith("'")) return !!programName && value.slice(1, -1).toUpperCase() === programName;
+  const v = value.toUpperCase();
+  if (v === 'SY-REPID' || v === 'SY-CPROG') return true;
+  const name = v.replace(/[^\w/]/g, '');
+  if (!name || name !== v) return false;
+  const self = String.raw`SY-(?:REPID|CPROG)\b`;
+  const assigned = new RegExp(String.raw`^${name}\s*=\s*${self}`, 'i');
+  const declared = new RegExp(String.raw`\b${name}\b[^,.]*\bVALUE\s+${self}`, 'i');
+  return statements.some(
+    (s) => assigned.test(s.text.trim()) || (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(s.text.trim()) && declared.test(s.text)),
+  );
+}
+
+/**
  * The FORMs an ALV call registers (see the module comment), in the order the
  * call names them. `programName` is the source's own `REPORT`/`PROGRAM`; a
  * literal `I_CALLBACK_PROGRAM` naming any other program registers nothing here.
@@ -114,9 +139,7 @@ export function alvCallbackForms(
   if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return [];
   const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
   if (!program) return [];
-  if (program[1].startsWith("'")) {
-    if (!programName || program[1].slice(1, -1).toUpperCase() !== programName) return [];
-  }
+  if (!namesThisProgram(program[1], statements, programName)) return [];
   const out: FormCallback[] = [];
   for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
     const form = m[2].toUpperCase();

@@ -201,6 +201,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'myWorkspace.deleteTitle': 'Delete project',
   'myWorkspace.deleteFailed': 'The project could not be deleted.',
   'myWorkspace.duplicateFailed': 'The project could not be duplicated.',
+  'myWorkspace.duplicateTargetFailed':
+    'The copy was created, but its target system could not be copied. Set it with Change target in the copy’s IT view.',
   'myWorkspace.yourTurnIntro': 'The next step of each, taken from the project itself — no model call.',
   'myWorkspace.yourTurnNothing':
     'Nothing is waiting for you: every project of yours is either finished as far as this product goes, or has nothing staged yet.',

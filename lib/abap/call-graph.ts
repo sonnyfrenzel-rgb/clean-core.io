@@ -540,7 +540,9 @@ export function readCallGraphFrom(
       }
       case 'CALL': {
         for (const c of formCallbacksOf(statements, statement, programName, (form) => defined.has(form))) {
-          if (callbacks.some((x) => x.to === c.form)) continue;
+          // One edge per registering caller: the same FORM registered from an
+          // unreached routine and from the program level must keep the second.
+          if (callbacks.some((x) => x.to === c.form && x.from === site.caller)) continue;
           callbacks.push({
             from: site.caller,
             fromKind: site.callerKind,
