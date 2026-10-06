@@ -1,0 +1,158 @@
+{
+  "url": "http://localhost:3000/",
+  "date": "2026-10-06T07:40:13.903Z",
+  "summary": {
+    "mobile": {
+      "median": {
+        "performance": 89,
+        "fcp": 2119.218,
+        "lcp": 3429.421000000001,
+        "tbt": 34.5,
+        "cls": 0.001439124965901543,
+        "si": 2119.218,
+        "totalBytes": 519452,
+        "jsBytes": 286578,
+        "jsBeforeDcl": 170965,
+        "requests": 33
+      },
+      "runs": [
+        {
+          "performance": 78,
+          "fcp": 2132.9025,
+          "lcp": 4987.464,
+          "tbt": 114,
+          "cls": 0.001439124965901543,
+          "si": 2976.8417030424944,
+          "totalBytes": 519453,
+          "jsBytes": 286579,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 79,
+          "fcp": 2125.0485,
+          "lcp": 5182.5445,
+          "tbt": 56,
+          "cls": 0.001439124965901543,
+          "si": 2867.3726158092113,
+          "totalBytes": 519452,
+          "jsBytes": 286578,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2119.218,
+          "lcp": 3251.812,
+          "tbt": 21,
+          "cls": 0.001439124965901543,
+          "si": 2119.218,
+          "totalBytes": 519444,
+          "jsBytes": 286570,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 89,
+          "fcp": 2117.1315000000004,
+          "lcp": 3429.421000000001,
+          "tbt": 34.5,
+          "cls": 0.001439124965901543,
+          "si": 2117.1315000000004,
+          "totalBytes": 519452,
+          "jsBytes": 286578,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 89,
+          "fcp": 2114.4089999999997,
+          "lcp": 3404.6059999999998,
+          "tbt": 22.5,
+          "cls": 0.001439124965901543,
+          "si": 2114.4089999999997,
+          "totalBytes": 519456,
+          "jsBytes": 286582,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        }
+      ]
+    },
+    "desktop": {
+      "median": {
+        "performance": 100,
+        "fcp": 502.746,
+        "lcp": 720.164,
+        "tbt": 0,
+        "cls": 0.0015430176815497488,
+        "si": 502.746,
+        "totalBytes": 1002646,
+        "jsBytes": 676448,
+        "jsBeforeDcl": 170965,
+        "requests": 59
+      },
+      "runs": [
+        {
+          "performance": 100,
+          "fcp": 503.568,
+          "lcp": 721.712,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 503.568,
+          "totalBytes": 1002646,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 503.214,
+          "lcp": 720.4760000000002,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 503.214,
+          "totalBytes": 1002646,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 502.746,
+          "lcp": 720.164,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 502.746,
+          "totalBytes": 1002646,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 499.9140000000001,
+          "lcp": 716.2760000000003,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 499.9140000000001,
+          "totalBytes": 1002646,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 499.155,
+          "lcp": 715.77,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 499.155,
+          "totalBytes": 1002646,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        }
+      ]
+    }
+  }
+}

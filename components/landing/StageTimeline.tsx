@@ -3,9 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
-import { motion, useInView, useReducedMotion } from 'motion/react';
+import { LazyMotion, useInView, useReducedMotion } from 'motion/react';
+// `m` from its own entry: `motion/react` builds its `m` and `motion` exports
+// from one namespace object, so taking `m` from there brings the whole
+// `motion` component (projection, drag, gestures) along with it.
+import * as m from 'motion/react-m';
+
+// `m` + `LazyMotion`: the components render at once, and the animation code
+// arrives in its own chunk after hydration — the line is drawn when the
+// section scrolls into view, long after that.
+const loadMotionFeatures = () => import('./motion-features').then((mod) => mod.default);
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { STAGE_WORKER_LABEL, type LandingStage } from '@/lib/landing-stages';
+import type { LandingStage } from '@/lib/landing-stages';
 
 export interface TimelineStage extends LandingStage {
   src: string;
@@ -14,6 +23,13 @@ export interface TimelineStage extends LandingStage {
   alt: string;
   /** Where the picture was taken — `STAGE_SHOT_CAPTION` in `lib/landing-shots.ts`. */
   caption: string;
+  /**
+   * Who did the work, in words — `STAGE_WORKER_LABEL[worker]`, looked up by the
+   * page on the server. Only the type comes from `lib/landing-stages.ts` here:
+   * importing its values would bundle `lib/workflow-steps.ts` and everything it
+   * imports into the start page's JavaScript (docs/perf/REPORT.md).
+   */
+  workerLabel: string;
 }
 
 /**
@@ -97,138 +113,140 @@ export default function StageTimeline({ stages }: { stages: TimelineStage[] }) {
     });
 
   return (
-    <div className="mx-auto mt-12 w-full max-w-6xl px-4 sm:px-6" data-stage-timeline="">
-      {stages.map((s) => (
-        <span key={s.key} id={`stage-${s.key}`} aria-hidden="true" className="block h-0 scroll-mt-24" />
-      ))}
-      {/* Desktop: the timeline and its panel. */}
-      <div className="hidden md:block">
-        <div className="relative" ref={track}>
-          <div
-            aria-hidden="true"
-            className="absolute top-5 h-0.5 bg-cc-line"
-            style={{ left: `${50 / stages.length}%`, right: `${50 / stages.length}%` }}
-          />
-          <motion.div
-            aria-hidden="true"
-            data-timeline-line=""
-            data-drawn={drawn ? 'true' : 'false'}
-            className="absolute top-5 h-0.5 origin-left bg-cc-brand-strong"
-            style={{ left: `${50 / stages.length}%`, right: `${50 / stages.length}%` }}
-            initial={false}
-            animate={{ scaleX: drawn ? 1 : 0 }}
-            // Taking it back to zero is instant; only the drawing is seen.
-            transition={drawn && armed && !reduce ? { duration: 1.2, ease: 'easeInOut' } : { duration: 0 }}
-          />
-          <div
-            role="tablist"
-            aria-label="The seven stages"
-            className="relative grid"
-            style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}
-          >
-            {stages.map((s, i) => {
-              const selected = i === current;
-              return (
-                <button
-                  key={s.key}
-                  ref={(el) => {
-                    tabs.current[i] = el;
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`stage-tab-${s.key}`}
-                  aria-selected={selected}
-                  aria-controls={`stage-panel-${s.key}`}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => choose(i)}
-                  onKeyDown={(e) => onKey(e, i)}
-                  data-landing-stage-tab={s.key}
-                  className="group flex flex-col items-center gap-2 rounded-xl px-1 pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
-                      selected
-                        ? 'border-cc-ink bg-cc-ink text-white'
-                        : 'border-cc-field-border bg-cc-surface text-cc-ink-muted group-hover:border-cc-ink group-hover:text-cc-ink'
-                    }`}
+    <LazyMotion features={loadMotionFeatures} strict>
+      <div className="mx-auto mt-12 w-full max-w-6xl px-4 sm:px-6" data-stage-timeline="">
+        {stages.map((s) => (
+          <span key={s.key} id={`stage-${s.key}`} aria-hidden="true" className="block h-0 scroll-mt-24" />
+        ))}
+        {/* Desktop: the timeline and its panel. */}
+        <div className="hidden md:block">
+          <div className="relative" ref={track}>
+            <div
+              aria-hidden="true"
+              className="absolute top-5 h-0.5 bg-cc-line"
+              style={{ left: `${50 / stages.length}%`, right: `${50 / stages.length}%` }}
+            />
+            <m.div
+              aria-hidden="true"
+              data-timeline-line=""
+              data-drawn={drawn ? 'true' : 'false'}
+              className="absolute top-5 h-0.5 origin-left bg-cc-brand-strong"
+              style={{ left: `${50 / stages.length}%`, right: `${50 / stages.length}%` }}
+              initial={false}
+              animate={{ scaleX: drawn ? 1 : 0 }}
+              // Taking it back to zero is instant; only the drawing is seen.
+              transition={drawn && armed && !reduce ? { duration: 1.2, ease: 'easeInOut' } : { duration: 0 }}
+            />
+            <div
+              role="tablist"
+              aria-label="The seven stages"
+              className="relative grid"
+              style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}
+            >
+              {stages.map((s, i) => {
+                const selected = i === current;
+                return (
+                  <button
+                    key={s.key}
+                    ref={(el) => {
+                      tabs.current[i] = el;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`stage-tab-${s.key}`}
+                    aria-selected={selected}
+                    aria-controls={`stage-panel-${s.key}`}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => choose(i)}
+                    onKeyDown={(e) => onKey(e, i)}
+                    data-landing-stage-tab={s.key}
+                    className="group flex flex-col items-center gap-2 rounded-xl px-1 pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
                   >
-                    {s.n}
-                  </span>
-                  <span
-                    data-landing-phase-title=""
-                    className={`text-sm ${selected ? 'font-bold text-cc-ink' : 'font-semibold text-cc-ink-muted group-hover:text-cc-ink'}`}
-                  >
-                    {s.title}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
+                        selected
+                          ? 'border-cc-ink bg-cc-ink text-white'
+                          : 'border-cc-field-border bg-cc-surface text-cc-ink-muted group-hover:border-cc-ink group-hover:text-cc-ink'
+                      }`}
+                    >
+                      {s.n}
+                    </span>
+                    <span
+                      data-landing-phase-title=""
+                      className={`text-sm ${selected ? 'font-bold text-cc-ink' : 'font-semibold text-cc-ink-muted group-hover:text-cc-ink'}`}
+                    >
+                      {s.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {stages.map((s, i) => (
+            <div
+              key={s.key}
+              id={`stage-panel-${s.key}`}
+              role="tabpanel"
+              aria-labelledby={`stage-tab-${s.key}`}
+              hidden={i !== current}
+              data-landing-phase={s.key}
+              className="mt-6"
+            >
+              {i === current && (
+                <m.div
+                  key={s.key}
+                  initial={chosen && !reduce ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <StageDetail stage={s} />
+                </m.div>
+              )}
+              {/* The inactive panels keep their words in the HTML — crawlers and no-JS readers. */}
+              {i !== current && <StageDetail stage={s} />}
+            </div>
+          ))}
         </div>
 
-        {stages.map((s, i) => (
-          <div
-            key={s.key}
-            id={`stage-panel-${s.key}`}
-            role="tabpanel"
-            aria-labelledby={`stage-tab-${s.key}`}
-            hidden={i !== current}
-            data-landing-phase={s.key}
-            className="mt-6"
-          >
-            {i === current && (
-              <motion.div
-                key={s.key}
-                initial={chosen && !reduce ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <StageDetail stage={s} />
-              </motion.div>
-            )}
-            {/* The inactive panels keep their words in the HTML — crawlers and no-JS readers. */}
-            {i !== current && <StageDetail stage={s} />}
-          </div>
-        ))}
-      </div>
-
-      {/* Phone: the same seven, as disclosures. */}
-      <ol className="m-0 list-none space-y-3 p-0 md:hidden" data-landing-stage-list="">
-        {stages.map((s, i) => {
-          const expanded = open.has(i);
-          return (
-            <li key={s.key} data-landing-stage-item={s.key} className="rounded-2xl border border-cc-line bg-cc-surface">
-              <h3 className="m-0">
-                <button
-                  type="button"
-                  aria-expanded={expanded}
-                  aria-controls={`stage-region-${s.key}`}
-                  onClick={() => toggle(i)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-cc-ink text-xs font-bold text-cc-ink"
+        {/* Phone: the same seven, as disclosures. */}
+        <ol className="m-0 list-none space-y-3 p-0 md:hidden" data-landing-stage-list="">
+          {stages.map((s, i) => {
+            const expanded = open.has(i);
+            return (
+              <li key={s.key} data-landing-stage-item={s.key} className="rounded-2xl border border-cc-line bg-cc-surface">
+                <h3 className="m-0">
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-controls={`stage-region-${s.key}`}
+                    onClick={() => toggle(i)}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
                   >
-                    {s.n}
-                  </span>
-                  <span className="flex-1 text-base font-bold text-cc-ink">{s.title}</span>
-                  <ChevronDown
-                    size={18}
-                    aria-hidden="true"
-                    className={`shrink-0 text-cc-ink-muted ${reduce ? '' : 'transition-transform'} ${expanded ? 'rotate-180' : ''}`}
-                  />
-                </button>
-              </h3>
-              <div id={`stage-region-${s.key}`} hidden={!expanded} className="px-4 pb-4">
-                <StageDetail stage={s} compact />
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+                    <span
+                      aria-hidden="true"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-cc-ink text-xs font-bold text-cc-ink"
+                    >
+                      {s.n}
+                    </span>
+                    <span className="flex-1 text-base font-bold text-cc-ink">{s.title}</span>
+                    <ChevronDown
+                      size={18}
+                      aria-hidden="true"
+                      className={`shrink-0 text-cc-ink-muted ${reduce ? '' : 'transition-transform'} ${expanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                </h3>
+                <div id={`stage-region-${s.key}`} hidden={!expanded} className="px-4 pb-4">
+                  <StageDetail stage={s} compact />
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </LazyMotion>
   );
 }
 
@@ -265,7 +283,7 @@ function StageDetail({ stage, compact = false }: { stage: TimelineStage; compact
           ))}
         </div>
         <p className="text-xs font-semibold text-cc-ink-muted" data-stage-worker={stage.worker}>
-          {STAGE_WORKER_LABEL[stage.worker]}
+          {stage.workerLabel}
         </p>
       </div>
     </div>

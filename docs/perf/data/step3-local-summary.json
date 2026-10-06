@@ -1,0 +1,158 @@
+{
+  "url": "http://localhost:3000/",
+  "date": "2026-10-06T07:18:31.880Z",
+  "summary": {
+    "mobile": {
+      "median": {
+        "performance": 90,
+        "fcp": 2115.9419999999996,
+        "lcp": 3267.377,
+        "tbt": 19,
+        "cls": 0.001439124965901543,
+        "si": 2115.9419999999996,
+        "totalBytes": 519447,
+        "jsBytes": 286571,
+        "jsBeforeDcl": 170957,
+        "requests": 33
+      },
+      "runs": [
+        {
+          "performance": 90,
+          "fcp": 2130.5655,
+          "lcp": 3267.377,
+          "tbt": 23.5,
+          "cls": 0.001439124965901543,
+          "si": 2130.5655,
+          "totalBytes": 519448,
+          "jsBytes": 286572,
+          "jsBeforeDcl": 170957,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2118.021,
+          "lcp": 3250.014,
+          "tbt": 19,
+          "cls": 0.001439124965901543,
+          "si": 2118.021,
+          "totalBytes": 519447,
+          "jsBytes": 286571,
+          "jsBeforeDcl": 170957,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2115.9419999999996,
+          "lcp": 3245.6279999999997,
+          "tbt": 17.5,
+          "cls": 0.001439124965901543,
+          "si": 2115.9419999999996,
+          "totalBytes": 519447,
+          "jsBytes": 286571,
+          "jsBeforeDcl": 170957,
+          "requests": 33
+        },
+        {
+          "performance": 89,
+          "fcp": 2111.715,
+          "lcp": 3301.8099999999995,
+          "tbt": 122.99999999999955,
+          "cls": 0.001439124965901543,
+          "si": 2111.715,
+          "totalBytes": 519447,
+          "jsBytes": 286571,
+          "jsBeforeDcl": 170957,
+          "requests": 33
+        },
+        {
+          "performance": 90,
+          "fcp": 2111.0679,
+          "lcp": 3395.3786,
+          "tbt": 19,
+          "cls": 0.001439124965901543,
+          "si": 2111.0679,
+          "totalBytes": 519446,
+          "jsBytes": 286570,
+          "jsBeforeDcl": 170957,
+          "requests": 33
+        }
+      ]
+    },
+    "desktop": {
+      "median": {
+        "performance": 100,
+        "fcp": 493.3380000000001,
+        "lcp": 714.452,
+        "tbt": 0,
+        "cls": 0.0015430176815497488,
+        "si": 494.178,
+        "totalBytes": 1002644,
+        "jsBytes": 676440,
+        "jsBeforeDcl": 170957,
+        "requests": 59
+      },
+      "runs": [
+        {
+          "performance": 100,
+          "fcp": 493.3380000000001,
+          "lcp": 714.8920000000002,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 502.558865223448,
+          "totalBytes": 1002644,
+          "jsBytes": 676440,
+          "jsBeforeDcl": 170957,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 494.346,
+          "lcp": 714.5640000000001,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 494.346,
+          "totalBytes": 1002644,
+          "jsBytes": 676440,
+          "jsBeforeDcl": 170957,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 494.178,
+          "lcp": 714.452,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 494.178,
+          "totalBytes": 1002644,
+          "jsBytes": 676440,
+          "jsBeforeDcl": 170957,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 491.81399999999996,
+          "lcp": 713.876,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 491.81399999999996,
+          "totalBytes": 1002644,
+          "jsBytes": 676440,
+          "jsBeforeDcl": 170957,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 491.832,
+          "lcp": 712.8879999999999,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 491.832,
+          "totalBytes": 1002644,
+          "jsBytes": 676440,
+          "jsBeforeDcl": 170957,
+          "requests": 59
+        }
+      ]
+    }
+  }
+}

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import PublicHeader from '@/components/PublicHeader';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
-import LandingModals from '@/components/LandingModals';
+import LandingModalsLazy from '@/components/landing/LandingModalsLazy';
 import SectionHeader from '@/components/SectionHeader';
 import { SITE_FOOTER_COLUMNS } from '@/components/SiteFooter';
 import AuthLink from '@/components/landing/AuthLink';
@@ -59,7 +59,7 @@ import { TOUR_STATIONS, TOUR_INVITATION_TITLE, TOUR_INVITATION_ACTION, tourPosit
 import { landingHero, landingProcess } from '@/lib/landing-process';
 import { heroSnippets } from '@/lib/landing-hero';
 import { STAGE_SHOT_CAPTION, STAGE_SHOT_SOURCE, landingShotSrc, stageShot } from '@/lib/landing-shots';
-import { landingStages } from '@/lib/landing-stages';
+import { landingStages, STAGE_WORKER_LABEL } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
 import { LANDING_FAQ } from '@/lib/landing-faq';
 import '@/components/landing/landing.css';
@@ -324,6 +324,7 @@ export default function Home() {
     src: landingShotSrc(stageShot(stage.key)),
     alt: `${stage.title} stage of ${STAGE_SHOT_SOURCE[stage.key] === 'run' ? 'a real run of the example program' : 'the demo project'} ${DEMO_OBJECT_NAME}: ${stage.shows}.`,
     caption: STAGE_SHOT_CAPTION[STAGE_SHOT_SOURCE[stage.key]],
+    workerLabel: STAGE_WORKER_LABEL[stage.worker],
     ...landingShotSize(stageShot(stage.key)),
   }));
 
@@ -1432,7 +1433,7 @@ export default function Home() {
       </footer>
 
       <Suspense fallback={null}>
-        <LandingModals />
+        <LandingModalsLazy />
       </Suspense>
     </div>
   );

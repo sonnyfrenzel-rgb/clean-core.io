@@ -16,8 +16,10 @@ import {
   TotpMultiFactorGenerator,
   type MultiFactorResolver,
 } from 'firebase/auth';
-import { getAuth, getDb } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+// Auth only at the top: Firestore and the profile module are loaded by the one
+// handler that writes to Firestore — registration — so the start page does not
+// download the Firestore SDK for every visitor (docs/perf/REPORT.md).
+import { getAuth } from '@/lib/firebase-app';
 import {
   ArrowRight,
   ShieldCheck,
@@ -32,7 +34,6 @@ import {
 } from 'lucide-react';
 import LegalOverlay from '@/app/components/LegalOverlay';
 import { COMMUNITY_QUOTA } from '@/lib/constants';
-import { finishRegistration } from '@/hooks/useUserProfile';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import MaintenanceNotice from '@/components/MaintenanceNotice';
 import { safeReturnPath } from '@/lib/return-path';
@@ -432,6 +433,16 @@ export default function LandingModals() {
     
     setIsSubmitting(true);
     try {
+      // Loaded before the account is created, so a chunk that fails to load
+      // ends here with nothing created rather than with an account that has
+      // no profile. `webpackExports` names what is used: a namespace import
+      // would otherwise keep every export of the Firestore SDK alive in every
+      // other chunk that shares it.
+      const [{ doc, setDoc, serverTimestamp }, { getDb }, { finishRegistration }] = await Promise.all([
+        import(/* webpackExports: ["doc", "setDoc", "serverTimestamp"] */ 'firebase/firestore'),
+        import(/* webpackExports: ["getDb"] */ '@/lib/firebase'),
+        import(/* webpackExports: ["finishRegistration"] */ '@/hooks/useUserProfile'),
+      ]);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const signedInUser = userCredential.user;
       

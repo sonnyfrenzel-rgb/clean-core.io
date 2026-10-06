@@ -1,7 +1,10 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator, terminate } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
+import { getAuth, getFirebaseApps } from './firebase-app';
+
+// The app and Auth live in `lib/firebase-app.ts` so a page that needs only Auth
+// does not load Firestore; every importer of this module gets the same two.
+export { getAuth, getFirebaseApps };
 
 // F-09: Firestore SDK noise is silenced via the SDK's own logger below.
 // Transient stream errors ("CANCELLED", "Disconnecting idle stream", ...) are
@@ -10,16 +13,7 @@ import firebaseConfig from '../firebase-config.json';
 // unrelated warnings/errors app-wide and hurt observability.
 setLogLevel('silent');
 
-let app: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
-let authInstance: Auth | null = null;
-
-export function getFirebaseApps() {
-    if (!app) {
-        app = initializeApp(firebaseConfig);
-    }
-    return app;
-}
 
 export function getDb(): Firestore {
     if (typeof window === 'undefined') {
@@ -60,25 +54,6 @@ export function getDb(): Firestore {
         }
     }
     return dbInstance;
-}
-
-export function getAuth(): Auth {
-    if (typeof window === 'undefined') {
-        return null as any;
-    }
-    if (!authInstance) {
-        authInstance = firebaseGetAuth(getFirebaseApps());
-        if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-            const host = '127.0.0.1';
-            console.log(`[FIREBASE] Connecting Auth to emulator on ${host}:9099...`);
-            try {
-                connectAuthEmulator(authInstance, `http://${host}:9099`, { disableWarnings: true });
-            } catch (err) {
-                console.warn('[FIREBASE] Auth emulator connection warning/already connected:', err);
-            }
-        }
-    }
-    return authInstance;
 }
 
 // Validate Connection to Firestore

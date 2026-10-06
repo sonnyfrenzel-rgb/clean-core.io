@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { onAuthStateChanged } from 'firebase/auth';
-import { getAuth } from '@/lib/firebase';
+import { subscribeToAuth } from '@/lib/auth-subscribe';
 import { publicButton, type PublicButtonVariant } from './public-button';
 
 /**
@@ -32,11 +31,7 @@ export default function AuthLink({
 }) {
   const [signedIn, setSignedIn] = useState(false);
 
-  useEffect(() => {
-    const auth = getAuth();
-    if (!auth) return;
-    return onAuthStateChanged(auth, (user) => setSignedIn(Boolean(user)));
-  }, []);
+  useEffect(() => subscribeToAuth((user) => setSignedIn(Boolean(user))), []);
 
   const href = signedIn ? to : to === '/dashboard' ? '?auth=signin' : `?auth=signin&next=${to}`;
   return (
