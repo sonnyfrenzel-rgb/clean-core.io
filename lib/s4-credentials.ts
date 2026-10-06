@@ -184,14 +184,21 @@ export async function loadS4ConfigForUser(uid: string): Promise<S4ConfigResolved
  * Both writes swallowed their errors, so a delete the database refused left
  * the credentials in the vault while the route answered `ok`. They propagate
  * now, and the route reports success only when both happened.
+ *
+ * One batch, so both happen or neither does: two sequential writes could fail
+ * between them and leave a profile that still claims a connection whose vault
+ * document is gone (or, the other way round, a vault nobody can see).
  */
 export async function deleteS4Credentials(uid: string): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('s4_credentials').doc(uid).delete();
-  await db.collection('users').doc(uid).set(
+  const batch = db.batch();
+  batch.delete(db.collection('s4_credentials').doc(uid));
+  batch.set(
+    db.collection('users').doc(uid),
     { s4Meta: FieldValue.delete(), s4Config: FieldValue.delete() },
     { merge: true },
   );
+  await batch.commit();
 }
 
 /**

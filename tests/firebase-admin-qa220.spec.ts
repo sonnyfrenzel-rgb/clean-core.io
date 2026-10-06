@@ -121,6 +121,20 @@ test('the S/4 vault and the profile metadata are written in one batch', () => {
   expect(body).not.toMatch(/await db\.collection\(/);
 });
 
+test('the S/4 vault and the profile metadata are deleted in one batch', () => {
+  // Same reason as above, for the erasure path: a profile write refused after
+  // the vault delete committed left a profile claiming a connection that no
+  // longer existed (SEC-2026-708).
+  const src = fs.readFileSync(path.join(process.cwd(), 'lib/s4-credentials.ts'), 'utf8').replace(/\r\n/g, '\n');
+  const start = src.indexOf('export async function deleteS4Credentials');
+  const body = src.slice(start, src.indexOf('\n}\n', start));
+  expect(body).toContain('db.batch()');
+  expect(body).toMatch(/batch\.delete\(db\.collection\('s4_credentials'\)\.doc\(uid\)\)/);
+  expect(body).toMatch(/batch\.set\(\s*db\.collection\('users'\)\.doc\(uid\)/);
+  expect(body.match(/await batch\.commit\(\)/g) ?? []).toHaveLength(1);
+  expect(body).not.toMatch(/await db\.collection\(/);
+});
+
 test('a refund that fails is reported, not swallowed', async () => {
   const logged: unknown[][] = [];
   const original = console.error;
