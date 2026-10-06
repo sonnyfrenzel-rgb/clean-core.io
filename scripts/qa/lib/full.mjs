@@ -1,3 +1,4 @@
+import { FULL_TRIGGER } from './config.mjs';
 import { git, isReviewable } from './git-delta.mjs';
 import { carriedSections } from './prompt.mjs';
 import { riskTags } from './triage.mjs';
@@ -93,4 +94,45 @@ export function buildFullUserMessage({ head, batch, batchIndex, batchCount, map,
     section('Refuted earlier in the files of this batch — do not raise again unless the code invalidates the reason', carried.refuted),
     section('Files in this batch', files),
   ].join('\n');
+}
+
+/**
+ * Does a release need a full review (owner decision, 06.10.2026)? Pure: the decision from what changed since the
+ * last full review, against FULL_TRIGGER in config.mjs. The first matching reason wins and is printed.
+ */
+export function fullReviewDecision({ base, files = 0, lines = 0, baseVersion = null, headVersion = null, days = 0 }, trigger = FULL_TRIGGER) {
+  if (!base) return { mode: 'full', reason: 'no earlier full review to compare with' };
+  const minor = (v) => String(v || '').split('.').slice(0, 2).join('.');
+  if (trigger.onMinorVersion && minor(baseVersion) !== minor(headVersion)) return { mode: 'full', reason: `new version ${headVersion} (last full review at ${baseVersion})` };
+  if (days >= trigger.maxDays) return { mode: 'full', reason: `${days} days since the last full review` };
+  if (files >= trigger.minChangedFiles) return { mode: 'full', reason: `${files} reviewable files changed since the last full review` };
+  if (lines >= trigger.minChangedLines) return { mode: 'full', reason: `${lines} reviewable lines changed since the last full review` };
+  return { mode: 'skip', reason: `${files} files and ${lines} lines changed since the last full review (thresholds ${trigger.minChangedFiles} and ${trigger.minChangedLines}); each push had its delta review on dev` };
+}
+
+/** What changed since `base`, in the units fullReviewDecision reads. `base: null` when it is not a usable ancestor. */
+export function measureSinceFullReview(base) {
+  if (!/^[0-9a-f]{7,40}$/.test(String(base || ''))) return { base: null };
+  try {
+    git(['merge-base', '--is-ancestor', base, 'HEAD']);
+  } catch {
+    return { base: null };
+  }
+  let files = 0;
+  let lines = 0;
+  for (const row of git(['diff', '--numstat', `${base}..HEAD`]).split('\n').filter(Boolean)) {
+    const [added, removed, path] = row.split('\t');
+    if (added === '-' || !isReviewable(path)) continue;
+    files++;
+    lines += Number(added) + Number(removed);
+  }
+  const version = (ref) => {
+    try {
+      return JSON.parse(git(['show', `${ref}:package.json`])).version;
+    } catch {
+      return null;
+    }
+  };
+  const days = Math.floor((Number(git(['log', '-1', '--format=%ct', 'HEAD'])) - Number(git(['log', '-1', '--format=%ct', base]))) / 86_400);
+  return { base, files, lines, baseVersion: version(base), headVersion: version('HEAD'), days };
 }

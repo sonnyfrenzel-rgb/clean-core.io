@@ -20,7 +20,8 @@ test.describe('the workflow', () => {
 
   test('runs on pushes to dev and main and can be revoked by one variable', () => {
     expect(wf()).toMatch(/on:\s*\n\s*push:\s*\n\s*branches:\s*\[dev, main\]/);
-    expect(wf().match(/if: vars\.QA_REVIEW_ENABLED != 'false'/g)?.length).toBe(3);
+    // Four jobs since 06.10.2026: delta review, smoke check, the full-review decision and the full review.
+    expect(wf().match(/if: vars\.QA_REVIEW_ENABLED != 'false'/g)?.length).toBe(4);
     expect(wf()).not.toMatch(/pull_request_target/);
   });
 
@@ -30,7 +31,7 @@ test.describe('the workflow', () => {
     expect(perms).toMatch(/actions:\s*read/);
     expect(perms).not.toMatch(/write/);
     expect(wf()).not.toMatch(/gh (issue|pr) (create|comment)|gh api .*-X (POST|PATCH|PUT)|git push/);
-    expect(wf().match(/persist-credentials: false/g)?.length).toBe(3);
+    expect(wf().match(/persist-credentials: false/g)?.length).toBe(4);
   });
 
   test('passes secrets and inputs as environment, never as shell text', () => {
@@ -1304,7 +1305,7 @@ test.describe('the full review of a release on main', () => {
   test('the local wait reads the full review of main, never a dev run of the same commit', () => {
     const src = read('scripts/qa/await.mjs');
     expect(src).toMatch(/branch: FULL \? 'main' : 'dev'/);
-    expect(src).toMatch(/succeeded\('Full review'\) \? sealedReports\(dir, secret, 'qa-full\.enc\.json'\)\.find\(\(r\) => r\.range\?\.head === sha && current\(r\.meta\?\.run\)\)/);
+    expect(src).toMatch(/succeeded\('Full review of'\) \? sealedReports\(dir, secret, 'qa-full\.enc\.json'\)\.find\(\(r\) => r\.range\?\.head === sha && current\(r\.meta\?\.run\)\)/);
     expect(read('scripts/qa/lib/gh.mjs')).toMatch(/if \(branch\) args\.push\('--branch', branch\)/);
   });
 });
@@ -1455,5 +1456,45 @@ test.describe('the smoke check of a deployed revision, dev and production', () =
     } finally {
       await new Promise((r) => server.close(r));
     }
+  });
+});
+
+test.describe('a release gets a full review only for a larger change (owner decision, 06.10.2026)', () => {
+  test('the decision: no base, a new minor version, thirty days or a threshold mean full; anything else is skipped', async () => {
+    const { fullReviewDecision } = await lib('full.mjs');
+    const { FULL_TRIGGER } = await lib('config.mjs');
+    const at = (over: Record<string, unknown>) => fullReviewDecision({ base: 'abc1234', files: 10, lines: 500, baseVersion: '3.0.3', headVersion: '3.0.4', days: 1, ...over }).mode;
+    expect(at({})).toBe('skip');
+    expect(at({ base: null })).toBe('full');
+    expect(at({ headVersion: '3.1.0' })).toBe('full');
+    expect(at({ baseVersion: '2.20.0', headVersion: '3.0.0' })).toBe('full');
+    expect(at({ days: FULL_TRIGGER.maxDays })).toBe('full');
+    expect(at({ files: FULL_TRIGGER.minChangedFiles })).toBe('full');
+    expect(at({ lines: FULL_TRIGGER.minChangedLines })).toBe('full');
+    expect(at({ files: FULL_TRIGGER.minChangedFiles - 1, lines: FULL_TRIGGER.minChangedLines - 1 })).toBe('skip');
+    // The release sizes the thresholds were set from: 3.0.1 would have been reviewed whole, 3.0.2 and 3.0.3 not.
+    expect(at({ files: 366, lines: 50_294 })).toBe('full');
+    expect(at({ files: 38, lines: 1_912 })).toBe('skip');
+    expect(at({ files: 110, lines: 11_774 })).toBe('skip');
+  });
+
+  test('git is asked only for a commit id that is an ancestor of the release', async () => {
+    const { measureSinceFullReview } = await lib('full.mjs');
+    expect(measureSinceFullReview(null)).toEqual({ base: null });
+    expect(measureSinceFullReview('HEAD; echo')).toEqual({ base: null });
+    expect(measureSinceFullReview('0000000000000000000000000000000000000000')).toEqual({ base: null });
+  });
+
+  test('the workflow decides before any key is in reach, and the full review runs only when it says so', () => {
+    const wf = read('.github/workflows/qa-review.yml');
+    const scope = wf.slice(wf.indexOf('  full-scope:'), wf.indexOf('  full:\n'));
+    expect(scope).not.toMatch(/secrets\./);
+    expect(scope).toMatch(/grep -q '\^qa-full-'/);
+    expect(scope).toMatch(/QA_FULL_BASE="\$base" node scripts\/qa\/full-scope\.mjs/);
+    const full = wf.slice(wf.indexOf('  full:\n'));
+    expect(full).toMatch(/needs: full-scope/);
+    expect(full).toMatch(/needs\.full-scope\.outputs\.mode == 'full'/);
+    // The local wait reads a skipped full review as nothing to do.
+    expect(read('scripts/qa/await.mjs')).toMatch(/j\.name\.startsWith\('Full review of'\) && j\.conclusion === 'skipped'/);
   });
 });

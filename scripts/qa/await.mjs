@@ -117,7 +117,13 @@ async function main() {
   let { jobs, dir, succeeded, current } = collect(run, short);
   if (FULL) {
     // A release on main has no smoke check here and gates nothing: the full review is read, verified and scheduled.
-    const full = succeeded('Full review') ? sealedReports(dir, secret, 'qa-full.enc.json').find((r) => r.range?.head === sha && current(r.meta?.run)) || null : null;
+    // Since 06.10.2026 only a larger change gets one (scripts/qa/full-scope.mjs): a skipped full review on a run
+    // whose decision job succeeded is nothing to do, not a missing report.
+    if (jobs.some((j) => j.name.startsWith('Full review needed') && j.conclusion === 'success') && jobs.some((j) => j.name.startsWith('Full review of') && j.conclusion === 'skipped')) {
+      console.log(`No full review for ${short}: the change since the last fully reviewed release is under the thresholds (see the run summary). Every push in it had its delta review on dev.`);
+      return 0;
+    }
+    const full = succeeded('Full review of') ? sealedReports(dir, secret, 'qa-full.enc.json').find((r) => r.range?.head === sha && current(r.meta?.run)) || null : null;
     if (!full) {
       console.log(`QA run ${run.databaseId} produced no readable full review. Jobs: ${jobs.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);
       console.log(`Log (failed steps only): gh run view ${run.databaseId} --log-failed`);

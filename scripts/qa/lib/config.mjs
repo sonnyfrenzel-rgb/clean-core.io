@@ -158,6 +158,25 @@ export const BUDGET = {
  * pricing change nobody noticed, not a coverage decision: `withinBudget` refuses the first call that would
  * cross it, whatever this file says about batches.
  */
+/**
+ * When a release on main gets a full review (owner decision, 06.10.2026): only on a larger change, and the agent
+ * decides that itself (scripts/qa/full-scope.mjs). Every push to dev is reviewed as its delta anyway; the full
+ * review is the cross-cutting read of the whole code base, and five of them in two days (3.0.0 to 3.0.3) read the
+ * same unchanged code five times.
+ *
+ * Measured over the releases of September and October 2026 (reviewable files and lines added + removed): 3.0.0 to
+ * 3.0.1 was 366 files and 50,294 lines, 3.0.1 to 3.0.2 38 and 1,912, 3.0.2 to 3.0.3 110 and 11,774. The thresholds
+ * count from the last full review, so patch releases add up until one of them crosses a line.
+ */
+export const FULL_TRIGGER = {
+  minChangedFiles: 150,
+  minChangedLines: 15_000,
+  /** A new minor or major version is always reviewed whole. */
+  onMinorVersion: true,
+  /** However small the changes, never longer than this without a full review. */
+  maxDays: 30,
+};
+
 export const FULL_BUDGET = {
   /**
    * $10 while the Auto Router chose the model (01.–06.10.2026); $3 since, back on the pinned Luna Pro: 28
