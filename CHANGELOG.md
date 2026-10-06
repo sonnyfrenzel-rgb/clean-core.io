@@ -10,6 +10,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.4] — 2026-10-06
+
+Faster pages, the security audit of 3.0.3 closed, and review agents that cost cents again.
+
+### What everyone notices
+
+- **The start page loads faster:** on a phone the main text is on screen after 3.3 s instead
+  of 4.8 s (local production build, Lighthouse median), and the page asks for 167 KiB of
+  JavaScript before it is interactive instead of 408 KiB. The sign-in dialog, the database
+  client and the animation code load after the first paint; the page looks the same, pixel
+  for pixel. A finished Google sign-in is picked up up to about two seconds later than
+  before. Analyze is ready about half a second sooner; Delivery loads its ZIP library when
+  you build the bundle. Method and numbers: `docs/perf/REPORT.md`.
+- **The name form in Settings** asks for a first and a last name of at most 100 characters,
+  the same rule sign-up has always had.
+
+### Security
+
+- The Firestore rules hold the values of a profile change to the bounds sign-up holds, no
+  browser can delete a profile (erasure runs on the server only), an upload's creation time
+  is the server's, and an administrator's rights end with a suspension on the rules side
+  too. Deployed on 06.10.2026.
+- Deleting stored S/4 credentials removes the credentials and the profile entry in one
+  step.
+- The weekly catalog sync no longer leaves a write token where package install scripts can
+  read it.
+- Dependencies: proxy-addr 2.0.8, compression 1.8.2, source-map-js 1.2.2, fast-copy 4.1.2,
+  firebase-tools 15.32.1.
+
+### Review agents
+
+- Every agent pins its model again (owner's decision, 06.10.2026): no Auto Router. One
+  delta review of a push now costs about a cent.
+- The security audit of a release reads what changed since the last audited release,
+  including deleted files, and waits for the QA review of the same release.
+- A release gets a full QA review only for a larger change, which the agent decides itself.
+- The UX review is started by hand.
+
 ## [v3.0.3] — 2026-10-04
 
 What the owner found reading 3.0.2 as a manager, an IT reader and a business reader, and a
