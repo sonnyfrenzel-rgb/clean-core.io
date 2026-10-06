@@ -77,13 +77,14 @@ export interface AnalysisRun {
   assessmentSubject?: string;
   /**
    * What the quota decided for this run when it was created (`reserveRunQuota`):
-   * `charged` spent one unit; `reanalysis` and `starter-example` were free;
+   * `charged` spent one unit; `reanalysis`, `starter-example` and
+   * `target-change` (a starter example moved to another target) were free;
    * `byok` and `enterprise` are unmetered. Inside the signed payload — it is
    * the server's decision, not the client's. Absent on runs created before
    * 2026-10-02; the weekly report counts those as undetermined rather than
    * guessing from the account's current state.
    */
-  metering?: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example';
+  metering?: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example' | 'target-change';
   // Results
   extensibilityRoute: string;
   cleanCoreScore: number;

@@ -38,6 +38,7 @@ import {
 import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 import { countSourceLines } from '@/lib/source-lines';
+import { isTargetChange, projectTarget } from '@/lib/target-change';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -357,8 +358,19 @@ export async function POST(req: NextRequest) {
     // free the first time an account runs it — and every later run of it is
     // charged. Either reservation is released again by the catch below if this run
     // does not complete.
+    // Owner decision 06.10.2026: a run that only changes the project's target
+    // (same signed source, another edition or release) is free for a shipped
+    // starter example, also repeatedly. `isTargetChange` is true only for that
+    // shape; whether the source is an example is decided by its fingerprint in
+    // `reserveRunQuota`, never by anything the caller says. The rate limit
+    // above still bounds how often it can be asked for.
+    const targetChange = isTargetChange({
+      project: projectData,
+      sourceSha256: hashHex,
+      next: { edition: targetDeployment, release: assessmentTarget.release },
+    });
     try {
-      const quota = await reserveRunQuota(decodedToken.uid, hashHex);
+      const quota = await reserveRunQuota(decodedToken.uid, hashHex, { targetChange });
       metering = quota.reason;
       if (quota.charged || quota.reason === 'starter-example') {
         chargedUid = decodedToken.uid;
@@ -825,7 +837,14 @@ export async function POST(req: NextRequest) {
             ? {
                 ...buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString()),
                 ...(profileDiffers
-                  ? { reason: 'profile' as const, previousSubject: typeof previousSubject === 'string' ? previousSubject : null }
+                  ? {
+                      reason: 'profile' as const,
+                      previousSubject: typeof previousSubject === 'string' ? previousSubject : null,
+                      // The target the outdated work was built for, in the two
+                      // facts the profile box names - so the notice after a
+                      // target change can say "from ... to ...".
+                      previousTarget: projectTarget(freshData),
+                    }
                   : {}),
               }
             : null;

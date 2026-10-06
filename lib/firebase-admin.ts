@@ -271,7 +271,7 @@ export class QuotaError extends Error {
 export interface RunQuotaResult {
   /** true only when a unit was actually deducted (and must be refunded on failure). */
   charged: boolean;
-  reason: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example';
+  reason: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example' | 'target-change';
   used: number;
   limit: number;
   /**
@@ -309,12 +309,27 @@ export interface RunQuotaResult {
  * `chargedInputs` it is written only here, and `userClientUpdateKeys` keeps the
  * client out of it.
  *
+ * Owner decision 06.10.2026 — changing the target of a starter example is free,
+ * also repeatedly. A run of an unchanged example whose first free run is spent
+ * passes as `'target-change'` instead of being charged, but only when the
+ * caller established `targetChange`: the project already has a signed run over
+ * exactly this source and the requested edition or release differs from the
+ * project's (`isTargetChange` in `lib/target-change.ts`). Own code is free by
+ * the fingerprint rule above; where that run was never charged (own key),
+ * the target change passes as `'target-change'` too, so the dialog's "free"
+ * holds on every path.
+ * Nothing is reserved for it, so there is nothing to refund.
+ *
  * - `tier === 'enterprise'` and BYOK accounts are unmetered (Terms §6).
  * - Otherwise: status must be 'approved', and used < limit for anything charged.
  *
  * @param inputHash SHA-256 of the analysed source (hex, so a safe Firestore map key).
  */
-export async function reserveRunQuota(uid: string, inputHash: string): Promise<RunQuotaResult> {
+export async function reserveRunQuota(
+  uid: string,
+  inputHash: string,
+  opts: { targetChange?: boolean } = {},
+): Promise<RunQuotaResult> {
   const { db, FieldValue } = await getAdminDb();
   const ref = db.collection('users').doc(uid);
   // Resolved before the transaction opens: it reads files, and a transaction body
@@ -358,9 +373,22 @@ export async function reserveRunQuota(uid: string, inputHash: string): Promise<R
         );
         return { charged: false, reason: 'starter-example' as const, used, limit, starterExample };
       }
+      if (opts.targetChange === true) {
+        // The free run is spent, and this run only moves the example to another
+        // target: not charged, and not recorded in `chargedInputs`, so it opens
+        // no re-analysis exemption for a later start of the example.
+        return { charged: false, reason: 'target-change' as const, used, limit };
+      }
     } else if (data.chargedInputs && data.chargedInputs[inputHash] === true) {
       // Already paid for this exact source — a re-analysis, not a new transformation.
       return { charged: false, reason: 'reanalysis' as const, used, limit };
+    } else if (opts.targetChange === true) {
+      // Own code whose signed run was never charged (made under the account's
+      // own key, or before chargedInputs existed): the target change still
+      // re-reads exactly the source that run signed, so it is the same
+      // re-analysis — and the dialog already said "free". Not recorded in
+      // `chargedInputs`, so it opens no exemption for anything else.
+      return { charged: false, reason: 'target-change' as const, used, limit };
     }
 
     if (used >= limit) {

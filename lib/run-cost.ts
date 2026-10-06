@@ -36,6 +36,12 @@ export interface RunCostInput {
   sameSourceAgain?: boolean;
   /** Object name of a shipped starter example, where this is one (roadmap 0.9). */
   starterExample?: string;
+  /**
+   * The run only changes the target of the source the project already signed
+   * (`lib/target-change.ts`). For a starter example that is free, also
+   * repeatedly (owner decision 06.10.2026); own code is free by `sameSourceAgain`.
+   */
+  targetChange?: boolean;
   /** Whether this action calls the language model at all. */
   callsModel: boolean;
 }
@@ -50,7 +56,7 @@ export interface RunCost {
 }
 
 export function describeRunCost(input: RunCostInput): RunCost {
-  const { profile, metered, sameSourceAgain, starterExample, callsModel } = input;
+  const { profile, metered, sameSourceAgain, starterExample, targetChange, callsModel } = input;
 
   const modelCall = callsModel ? 'Calls the model' : 'No model call';
 
@@ -58,6 +64,10 @@ export function describeRunCost(input: RunCostInput): RunCost {
 
   if (runsAreSelfFunded(profile)) {
     return { quota: 'Uses your own Gemini key', modelCall, blocked: false };
+  }
+
+  if (targetChange && starterExample) {
+    return { quota: 'Free — changing the target of an example', modelCall, blocked: false };
   }
 
   if (sameSourceAgain) {

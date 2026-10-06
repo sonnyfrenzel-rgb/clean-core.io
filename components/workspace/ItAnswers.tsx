@@ -12,7 +12,8 @@ import CcSelect from '@/components/cc/Select';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcDisclosure from '@/components/cc/Disclosure';
 import { CcNoMatches } from '@/components/cc/EmptyState';
-import { CcCleanCoreLevel, CcSeverity } from '@/components/cc/Identifier';
+import { CcSeverity } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { getAuth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
@@ -352,7 +353,7 @@ export default function ItAnswers({
                           STATE_CLASSES[gradeState(slice.grade)].text,
                         )}
                       >
-                        {slice.grade} {slice.count}
+                        <CcCleanCoreLevelExplained value={slice.grade} trigger={`${slice.grade} ${slice.count}`} />
                       </span>
                     ))}
                   </span>
@@ -615,7 +616,14 @@ export default function ItAnswers({
             </div>
           </div>
 
-          <ItRail projectId={projectId} project={project} source={read} profile={profile} demo={findings !== undefined} />
+          <ItRail
+            projectId={projectId}
+            project={project}
+            source={read}
+            profile={profile}
+            demo={findings !== undefined}
+            fit={fit}
+          />
         </div>
       ) : null}
     </section>
@@ -718,7 +726,7 @@ function UsesCard({
                       <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.levelNotAsked')}</span>
                     ) : (
                       <span className="block" data-it-use-level={u.object}>
-                        <CcCleanCoreLevel value={u.level} />
+                        <CcCleanCoreLevelExplained value={u.level} />
                         {u.levelBasis && BASIS_WORDS[u.levelBasis] ? (
                           <span className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
                             {wt(BASIS_WORDS[u.levelBasis])}
@@ -773,7 +781,7 @@ function Fact({
   href?: string;
   /** The value is a line of text (the level counts), not one number. */
   small?: boolean;
-  /** The value drawn rather than written — the level counts as marks; `value` is then its accessible text. */
+  /** The value drawn rather than written — the level counts as marks, each printing its letter and count. */
   picture?: React.ReactNode;
   coachTarget?: CoachMarkId;
 }) {
@@ -790,7 +798,10 @@ function Fact({
           {wt('itv.factNotRecorded')}
         </span>
       ) : picture ? (
-        <span data-figure-value="" role="img" aria-label={value}>
+        // Not `role="img"` any more: each mark is a button that explains its
+        // level (owner 06.10.2026), and an image hides the buttons inside it.
+        // Every mark prints its letter and count, so the text is still there.
+        <span data-figure-value="" className="block">
           {picture}
         </span>
       ) : (
@@ -869,7 +880,7 @@ function findingCells(
         </span>
       ) : (
         <span data-it-level={row.id}>
-          <CcCleanCoreLevel value={row.level} />
+          <CcCleanCoreLevelExplained value={row.level} />
           {row.objectLevel && row.objectLevel !== row.level ? (
             <span data-it-object-level={row.id} className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
               {row.objectLevel} {wt('it.levelOwn')}

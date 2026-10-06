@@ -171,6 +171,12 @@ export interface SourceChangeRecord {
   reason?: 'profile';
   /** The subject hash everything above was built for, where the previous run recorded one. */
   previousSubject?: string | null;
+  /**
+   * With `reason: 'profile'` (since 06.10.2026): the edition and declared
+   * release the outdated work was built for, so the profile box can say what
+   * the target changed from. Absent on older records.
+   */
+  previousTarget?: { edition: string; release: string };
 }
 
 /** Build the record from the project as it stands just before the new run is written. */

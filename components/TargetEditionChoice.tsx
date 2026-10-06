@@ -52,7 +52,7 @@ export default function TargetEditionChoice({
         <p id={titleId} className="m-0 cc-text-label text-cc-ink">
           Target system
         </p>
-        <p className="m-0 mt-0.5 cc-text-meta text-cc-ink-muted">
+        <p className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
           The first run is assessed against it — routing, score, design and the management overview follow it.
           Changing it later takes a new run.
         </p>

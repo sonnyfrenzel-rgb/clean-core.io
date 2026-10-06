@@ -17,6 +17,8 @@ import type { GenerationDecision } from '@/lib/generation-direction';
 import type { Project } from '@/lib/types';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join';
+import type { FitByPlatform, Loaded } from '@/lib/management-overview';
+import { TargetChangeButton, TargetChangeNotice } from './TargetChange';
 
 /**
  * The IT view's side column — mockup v2.8 `s4`'s `aside`: what the findings are
@@ -35,8 +37,12 @@ import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join
  *      "unused" — no empty-state box. The routes the router named are drawn
  *      only where there are findings to name them on.
  *
- * Read-only. The contract route is a GET that writes nothing; the imports are
- * read off the project the page already holds.
+ * Read-only, with one action: the owner's **Change target** in the profile
+ * card (owner, 06.10.2026), in `./TargetChange.tsx`. It writes no field - it
+ * starts a new signed run under the new target through `signEngineRun`, the
+ * one path that may change edition and release. The contract route is a GET
+ * that writes nothing; the imports are read off the project the page already
+ * holds.
  */
 export default function ItRail({
   projectId,
@@ -44,6 +50,7 @@ export default function ItRail({
   source,
   profile,
   demo,
+  fit = null,
 }: {
   projectId: string;
   project: Project | null;
@@ -51,6 +58,8 @@ export default function ItRail({
   profile: CatalogProfile;
   /** The demo workspace: no project behind it a route could read, and no stage to send a reader to. */
   demo: boolean;
+  /** Both editions' buckets, as the IT view resolved them - the target change's preview reads the moves. */
+  fit?: Loaded<FitByPlatform> | null;
 }) {
   const routes = useMemo(() => routesNamed(source?.rows ?? []), [source]);
   /**
@@ -69,7 +78,11 @@ export default function ItRail({
   return (
     <aside data-it-rail="" aria-label={wt('it.railLabel')} className="flex min-w-0 flex-col gap-4">
       {/* 1. Target profile */}
-      <CcCard title={wt('it.profileTitle')}>
+      <CcCard
+        title={wt('it.profileTitle')}
+        actions={demo ? null : <TargetChangeButton projectId={projectId} project={project} fit={fit} />}
+      >
+        {demo ? null : <TargetChangeNotice projectId={projectId} project={project} />}
         <dl data-it-profile="" className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
           <dt className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('it.profileEdition')}</dt>
           <dd className="m-0 text-[13px] font-semibold text-cc-ink">
