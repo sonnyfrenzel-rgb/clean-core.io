@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -89,11 +89,20 @@ export default function WorkspaceLayerSection({
     (row) => row.key !== 'process' && !((withRules || needAbove) && row.key.startsWith('rule-')),
   );
   // A long section ends with the way back to its top, where the sticky bar
-  // says which section this is (owner, 03.10.2026).
-  const long = withRules || withFit || layer.total > 3;
+  // says which section this is (owner, 03.10.2026). "Long" is measured, not
+  // counted: the count used to be `layer.total`, which in Business includes the
+  // process and the rules this section does not render there (they stand above
+  // it), so *Need & process* — one sentence tall — carried the link right under
+  // its own heading, and a click had nowhere to scroll (owner, 06.10.2026:
+  // "'Back to top of section' doesn't work"). The link now stands only where
+  // the section is taller than the room under the sticky bars, i.e. where its
+  // top can actually be out of view while the reader is at its end.
+  const sectionRef = useRef<HTMLElement>(null);
+  const long = useTallerThanView(sectionRef, layer.key);
 
   return (
     <section
+      ref={sectionRef}
       id={layer.key}
       data-workspace-layer-section={layer.key}
       data-layer-empty={empty ? 'yes' : 'no'}
@@ -229,4 +238,33 @@ export default function WorkspaceLayerSection({
       ) : null}
     </section>
   );
+}
+
+/**
+ * Whether the section is taller than the room the viewport leaves under the
+ * sticky shell bar and section bar — the room its own `scroll-margin-top`
+ * (`scroll-mt-32`) reserves for them. Re-measured when the section's content
+ * changes height (a table that loads, a fold that opens) and when the window
+ * is resized; `false` until measured, so the server and the first paint never
+ * offer a link that may lead nowhere.
+ */
+function useTallerThanView(ref: React.RefObject<HTMLElement | null>, key: string): boolean {
+  const [tall, setTall] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => {
+      const offset = parseFloat(window.getComputedStyle(el).scrollMarginTop) || 0;
+      setTall(el.getBoundingClientRect().height > window.innerHeight - offset);
+    };
+    check();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check);
+    observer?.observe(el);
+    window.addEventListener('resize', check);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', check);
+    };
+  }, [ref, key]);
+  return tall;
 }
