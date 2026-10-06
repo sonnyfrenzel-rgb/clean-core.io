@@ -1,4 +1,4 @@
-# Clean-Core.io — Roadmap to 3.0
+| SEC-2026-684 | high | P1 | 3.0.x CI hardening - needs Sonny's go (workflow change) | fixed || SEC-2026-707 | low | P3 | with the next rules deploy (Sonny's go) | fixed || SEC-2026-706 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | fixed || SEC-2026-705 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | fixed || SEC-2026-704 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | fixed || SEC-2026-647 | low | P3 | with the next rules deploy (Sonny's go) | fixed || SEC-2026-676 | medium | P3 | with the next rules deploy (Sonny's go) | fixed || SEC-2026-681 | high | P1 | 3.0.x security hardening - next rules deploy (Sonny's go) | fixed |# Clean-Core.io — Roadmap to 3.0
 
 **Version 2.8 · as of 15.09.2026 · valid from v2.9.11 · replaces version 2.7 of 12.09.2026**
 

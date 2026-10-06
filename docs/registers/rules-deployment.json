@@ -7,9 +7,9 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "On 16.09.2026 it was checked for the first time what cleancore-491216 really serves: the ruleset of 20.08.2026 — three tightenings behind the repository, without anyone knowing. In production `termsVersionAccepted`/`termsAcceptedAt` were still client-writable (finding V14, long closed in the repo), `email_events` not yet locked, and the admin read access to projects still open. Sonny then deployed and the result was checked against the Rules API: identical. This record is meant to make exactly this drift visible from now on.",
   "deployed": {
-    "sha256OfLfNormalisedText": "def53aa157e536bf386ab00b1a552b40f05c28235be5a8e05140e1522c2fc290",
-    "deployedAt": "2026-09-30",
-    "deployedBy": "Sonny, 30.09.2026 — npm run deploy:rules from his signed-in CLI; rules:verify: production, record and working copy agree on all six databases",
+    "sha256OfLfNormalisedText": "e99f16bdbe4c439e7e391f31239ac87e12670ff215dabb93e353c3679b5481b6",
+    "deployedAt": "2026-10-06",
+    "deployedBy": "Sonny, 06.10.2026 — npm run deploy:rules from his signed-in CLI (Desktop script); rules:verify: production, record and working copy agree on all six databases",
     "project": "cleancore-491216",
     "rulesetName": "projects/cleancore-491216/rulesets/6866185e-a6fa-4cd8-962d-10b68abf7874",
     "databases": [
@@ -39,14 +39,5 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "e99f16bdbe4c439e7e391f31239ac87e12670ff215dabb93e353c3679b5481b6",
-    "recordedAt": "2026-10-06",
-    "recordedFor": "Security audit v3.0.3 (SEC-2026-681, -676, -704 to -707; second line of -682): approved by Sonny 06.10.2026; app on dev first, then Sonny deploys",
-    "addsToClient": [],
-    "removesFromClient": [],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
-    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }
