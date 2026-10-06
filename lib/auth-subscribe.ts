@@ -25,12 +25,19 @@ export function subscribeToAuth(callback: (user: User | null) => void): () => vo
   void Promise.all([
     import(/* webpackExports: ["getAuth"] */ './firebase-app'),
     import(/* webpackExports: ["onAuthStateChanged"] */ 'firebase/auth'),
-  ]).then(([{ getAuth }, { onAuthStateChanged }]) => {
-    if (cancelled) return;
-    const auth = getAuth();
-    if (!auth) return;
-    unsubscribe = onAuthStateChanged(auth, callback);
-  });
+  ])
+    .then(([{ getAuth }, { onAuthStateChanged }]) => {
+      if (cancelled) return;
+      const auth = getAuth();
+      if (!auth) return;
+      unsubscribe = onAuthStateChanged(auth, callback);
+    })
+    .catch(() => {
+      // A chunk that does not load (a deploy replaced it, the network dropped) must not leave the header in its
+      // placeholder for good: the controls fall back to signed out, whose link opens the sign-in dialog — which
+      // loads the SDK again (QA review of 1503ad188710, finding afd6e6a0f91f).
+      if (!cancelled) callback(null);
+    });
   return () => {
     cancelled = true;
     unsubscribe?.();
