@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { execFileSync } from 'child_process';
 
 /**
  * The security agent (docs/SECURITY-AUDIT-AGENT.md): every release on main gets a
@@ -93,10 +94,11 @@ test.describe('the agent has no tools and a small budget', () => {
 
   test('the model key is the only secret the audit reads, and every outgoing text is redacted', () => {
     const src = read('scripts/security/audit.mjs');
-    expect(src.match(/process\.env\.[A-Z_]+/g)?.sort()).toEqual(['process.env.GITHUB_STEP_SUMMARY', 'process.env.GITHUB_STEP_SUMMARY', 'process.env.OPENROUTER_API_KEY', 'process.env.SECURITY_AUDIT_MODE']);
+    // SECURITY_AUDIT_BASE (06.10.2026) is a commit id the scope job found, not a secret.
+    expect(src.match(/process\.env\.[A-Z_]+/g)?.sort()).toEqual(['process.env.GITHUB_STEP_SUMMARY', 'process.env.GITHUB_STEP_SUMMARY', 'process.env.OPENROUTER_API_KEY', 'process.env.SECURITY_AUDIT_BASE', 'process.env.SECURITY_AUDIT_MODE']);
     expect(src).not.toMatch(/RESEND|PRIVATE_KEY|GITHUB_TOKEN|GH_TOKEN|ANTHROPIC/);
     // Files are numbered and redacted before they are batched; each message is redacted again on the way out.
-    expect(src).toMatch(/planBatches\(surface\.files\.list, \(path\) => clean\(path, numbered\(raw\(path\) \?\? ''\)\)/);
+    expect(src).toMatch(/planBatches\(reading\.files, \(path\) => clean\(path, numbered\(raw\(path\) \?\? ''\)\)/);
     expect(src).toMatch(/user: clean\('outgoing message', consultantMessage\(/);
     expect(src).toMatch(/const build = \(maxChars\) => clean\('outgoing message', VERIFY_PREFIX \+ verificationMessage\(/);
     // A location the model names is read only if it is a file of the map.
@@ -113,7 +115,8 @@ test.describe('three jobs, three trust levels', () => {
     expect(wf()).toMatch(/push:\s*\n\s*branches: \[main\]/);
     expect(wf()).not.toMatch(/branches: \[main, dev\]/);
     expect(job('scope')).not.toMatch(/self-test/);
-    expect(job('scope')).toMatch(/if \[ "\$REF_NAME" = "main" \]; then\s*\n\s*echo "mode=full"/);
+    // Anything but main is skipped; on main the mode comes from scripts/security/scope.mjs (full, delta, unchanged).
+    expect(job('scope')).toMatch(/if \[ "\$REF_NAME" != "main" \]; then\s*\n\s*echo "mode=skip" >> "\$GITHUB_OUTPUT"\s*\n\s*exit 0/);
     const perms = wf().slice(wf().indexOf('\npermissions:'), wf().indexOf('\njobs:'));
     expect(perms).not.toMatch(/write/);
     expect(job('scope')).toContain("if: vars.SECURITY_AUDIT_ENABLED != 'false'");
@@ -222,7 +225,7 @@ test.describe('nothing the audit finds leaks', () => {
     const src = read('scripts/security/audit.mjs');
     // Counts only: calls, failures, and how many candidates were verified — never a candidate. Since 01.10.2026 also
     // which models the Auto Router chose: ids, as metadata (scripts/qa/lib/openrouter.mjs modelIdOf).
-    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{payload\.failedCalls\} candidates=\$\{candidateCount\} verified=\$\{verifiedCount\} notVerified=\$\{notVerified\.length\} cost=\$\$\{costUsd \?\? 'unknown'\} models=\$\{payload\.models\.join\(','\) \|\| 'none'\}`;/);
+    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · scope=\$\{payload\.scope\.mode\}\$\{reading\.base \? ` since \$\{reading\.base\.slice\(0, 12\)\}` : ''\} files=\$\{filesInScope\} · calls=\$\{payload\.calls\} failed=\$\{payload\.failedCalls\} candidates=\$\{candidateCount\} verified=\$\{verifiedCount\} notVerified=\$\{notVerified\.length\} cost=\$\$\{costUsd \?\? 'unknown'\} models=\$\{payload\.models\.join\(','\) \|\| 'none'\}`;/);
     expect(src).toMatch(/console\.error\(`Security audit failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
     expect(src.match(/console\.(log|error)\(/g)).toHaveLength(2);
     expect(read('scripts/security/deliver.mjs')).toMatch(/Resend rejected the audit mail: HTTP \$\{res\.status\}`/);
@@ -1449,6 +1452,28 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       expect(mail.text).toContain('Modellaufrufe: 5. Der Agent');
     });
 
+    test('a release delta: the consultants read only the changed files, and the payload, the line and the mail say so', async () => {
+      const { runAudit } = await import(path.resolve(ROOT, 'scripts/security/audit.mjs'));
+      const { openWith, privateKeyFrom } = await lib('envelope.mjs');
+      const { renderAuditMail } = await lib('mail.mjs');
+      const { publicKey, privateKey } = keys();
+      const fake = reviewer();
+      const sent: string[] = [];
+      const call = (args: Call) => (args.name === 'security_consultant' && sent.push(args.user), fake.call(args));
+      const base = '0123456789abcdef0123456789abcdef01234567';
+      const scope = { mode: 'delta', base, files: [{ path: 'middleware.ts', domain: 'appsec-api' }] };
+      const out = await runAudit({ apiKey: 'fake', callReviewer: call, surface, scope, selfTest: false, publicKeyPem: publicKey });
+      const payload = openWith(out.sealed, privateKeyFrom(privateKey));
+      // Only the changed file reached a consultant; the unchanged one did not.
+      expect(sent.join('\n')).toContain('middleware.ts');
+      expect(sent.join('\n')).not.toContain('app/api/health/route.ts');
+      expect(payload.scope).toEqual({ mode: 'delta', base, files: 1, inventory: FILES.length });
+      expect(payload.report.coverage.files_in_scope).toBe(1);
+      expect(out.line).toContain(`scope=delta since ${base.slice(0, 12)} files=1`);
+      const mail = renderAuditMail(payload, { version: 'v9.9.9', runUrl: 'u', sealedSha256: 's' });
+      expect(mail.text).toContain(`Delta-Prüfung: nur die 1 seit ${base.slice(0, 12)} geänderten Dateien des Prüfumfangs.`);
+    });
+
     test('one failed verification batch: its twenty candidates are named, and the mail blames a verification call, not unread files', async () => {
       const fake = reviewer({ failWhen: (user) => /^### K-021 /m.test(user) });
       const { payload, line, mail } = await run(fake);
@@ -1505,5 +1530,53 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       expect(mail.text).toContain('außerhalb des Budgets');
       expect(mail.text).toContain('Modellaufrufe: 3. Der Agent');
     });
+  });
+});
+
+test.describe('a release is audited as its delta (owner decision, 06.10.2026)', () => {
+  const list = ['app/api/a/route.ts', 'lib/b.ts', 'middleware.ts'].map((path) => ({ path, domain: 'appsec-api' }));
+
+  test('full without a base, the changed files with one, nothing at all when nothing in scope changed', async () => {
+    const { auditScope } = await lib('surface.mjs');
+    expect(auditScope({ list })).toMatchObject({ mode: 'full', base: null, files: list });
+    // A base that git could not use (not an ancestor) arrives as changed = null: everything is read.
+    expect(auditScope({ list, base: 'abc1234', changed: null }).mode).toBe('full');
+    const delta = auditScope({ list, base: 'abc1234', changed: ['lib/b.ts', 'README.md'] });
+    expect(delta).toMatchObject({ mode: 'delta', base: 'abc1234', dependencies: false });
+    expect(delta.files.map((f: { path: string }) => f.path)).toEqual(['lib/b.ts']);
+    // Prose only: no model call.
+    expect(auditScope({ list, base: 'abc1234', changed: ['README.md', 'docs/x.md'] }).mode).toBe('unchanged');
+    // A dependency change is a delta even without code: the dependency audit belongs to the report.
+    expect(auditScope({ list, base: 'abc1234', changed: ['package-lock.json'] })).toMatchObject({ mode: 'delta', dependencies: true });
+  });
+
+  test('git is asked only for a commit id that is an ancestor of the release', async () => {
+    const { changedSince } = await lib('surface.mjs');
+    expect(changedSince('')).toBeNull();
+    expect(changedSince('HEAD~1; rm -rf /')).toBeNull();
+    expect(changedSince('0000000000000000000000000000000000000000')).toBeNull();
+    expect(changedSince(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim())).toEqual([]);
+  });
+
+  test('a skipped audit job on a successful run is a release with nothing to audit, not a missing report', async () => {
+    const { unchangedRun } = await lib('envelope.mjs');
+    expect(unchangedRun({ conclusion: 'success' }, [{ name: 'Scope', conclusion: 'success' }, { name: 'Audit (sealed)', conclusion: 'skipped' }])).toBe(true);
+    expect(unchangedRun({ conclusion: 'success' }, [{ name: 'Audit (sealed)', conclusion: 'success' }])).toBe(false);
+    expect(unchangedRun({ conclusion: 'failure' }, [{ name: 'Audit (sealed)', conclusion: 'skipped' }])).toBe(false);
+  });
+
+  test('the workflow finds the base before any key is in reach and hands it to the audit', () => {
+    const wf = read('.github/workflows/security-audit.yml');
+    const scopeJob = wf.slice(wf.indexOf('  scope:'), wf.indexOf('  audit:'));
+    expect(scopeJob).not.toMatch(/secrets\./);
+    expect(scopeJob).toMatch(/gh run list --workflow security-audit\.yml --branch main --status success/);
+    expect(scopeJob).toMatch(/SECURITY_AUDIT_BASE="\$base" node scripts\/security\/scope\.mjs/);
+    expect(scopeJob).toMatch(/base: \$\{\{ steps\.decide\.outputs\.base \}\}/);
+    const auditJob = wf.slice(wf.indexOf('  audit:'), wf.indexOf('  deliver:'));
+    expect(auditJob).toMatch(/needs\.scope\.outputs\.mode == 'delta'/);
+    expect(auditJob).not.toMatch(/'unchanged'/);
+    expect(auditJob).toMatch(/SECURITY_AUDIT_BASE: \$\{\{ needs\.scope\.outputs\.base \}\}/);
+    expect(auditJob).toMatch(/fetch-depth: 0/);
+    expect(read('scripts/security/audit.mjs')).toMatch(/const scope = auditScope\(\{ list: surface\.files\.list, base, changed: base \? changedSince\(base\) : null \}\);/);
   });
 });

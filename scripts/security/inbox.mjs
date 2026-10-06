@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { artifactNames, gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
-import { auditArtifact, fetchSealed, openWith, privateKeyFrom } from './lib/envelope.mjs';
+import { auditArtifact, fetchSealed, openWith, privateKeyFrom, unchangedRun } from './lib/envelope.mjs';
 import { renderAuditMail } from './lib/mail.mjs';
 import { loadRegister, untriaged } from './lib/register.mjs';
 
@@ -34,7 +34,9 @@ function revoked() {
 }
 
 async function fetchReport(run, privateKey) {
-  const audited = jobsOf(run.databaseId).some((j) => j.name.startsWith('Audit') && j.conclusion === 'success');
+  const jobs = jobsOf(run.databaseId);
+  if (unchangedRun(run, jobs)) return { unchanged: true };
+  const audited = jobs.some((j) => j.name.startsWith('Audit') && j.conclusion === 'success');
   if (!audited) return null;
   // Exactly one artifact, chosen by name — never by which of several downloads landed last (finding 4fb3804a2d49).
   const artifact = auditArtifact(artifactNames(run.databaseId), run.headSha);
@@ -53,9 +55,16 @@ async function main() {
   const privateKey = privateKeyFrom(process.env.SECURITY_AUDIT_PRIVATE_KEY || loadDotEnv().SECURITY_AUDIT_PRIVATE_KEY);
 
   let run;
+  let fetched;
   if (BRIEF) {
-    run = (ghJson(['run', 'list', '--workflow', 'security-audit.yml', '--branch', 'main', '--status', 'success', '--limit', '1', '--json', 'databaseId,headSha,createdAt']) || [])[0];
-    if (!run) return 0;
+    // The newest release that has a report: a release with nothing new in scope has none, and must not hide the
+    // untriaged findings of the one before it.
+    for (const candidate of ghJson(['run', 'list', '--workflow', 'security-audit.yml', '--branch', 'main', '--status', 'success', '--limit', '10', '--json', 'databaseId,headSha,createdAt,conclusion']) || []) {
+      fetched = await fetchReport(candidate, privateKey);
+      run = candidate;
+      if (!fetched?.unchanged) break;
+    }
+    if (!run || fetched?.unchanged) return 0;
   } else {
     const sha = git(['rev-parse', arg || 'origin/main']);
     console.log(`Waiting for the security audit of ${sha.slice(0, 12)} (up to ${timeoutMin} min)…`);
@@ -66,7 +75,11 @@ async function main() {
     }
   }
 
-  const fetched = await fetchReport(run, privateKey);
+  if (!BRIEF) fetched = await fetchReport(run, privateKey);
+  if (fetched?.unchanged) {
+    console.log(`Nothing in the audit scope changed since the last audited release — no audit for ${run.headSha.slice(0, 12)}, nothing to triage.`);
+    return 0;
+  }
   if (!fetched) {
     if (BRIEF) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `Security agent: the audit run ${run.databaseId} produced no readable report — see gh run view ${run.databaseId} --log-failed.` } }));
     else console.log(`Audit run ${run.databaseId} produced no readable report: gh run view ${run.databaseId} --log-failed`);

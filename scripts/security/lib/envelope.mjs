@@ -83,3 +83,9 @@ export function openWith(envelope, privateKey) {
   decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'));
   return JSON.parse(Buffer.concat([decipher.update(Buffer.from(envelope.data, 'base64')), decipher.final()]).toString('utf8'));
 }
+
+/**
+ * A release with nothing new in the audit scope: the run succeeded, its scope job decided `unchanged`, and the audit
+ * job was skipped (scripts/security/scope.mjs). There is no report, and nothing to triage.
+ */
+export const unchangedRun = (run, jobs) => run?.conclusion === 'success' && jobs.some((j) => j.name.startsWith('Audit') && j.conclusion === 'skipped');

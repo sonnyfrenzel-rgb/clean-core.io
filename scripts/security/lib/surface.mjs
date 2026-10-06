@@ -231,3 +231,35 @@ export function surfaceMap() {
     dependencies: dependencyAudit(),
   };
 }
+
+/**
+ * What a release audit reads in depth (owner decision, 06.10.2026): only what changed since the last release that
+ * was audited, as the QA agent reviews only its delta. Until then every push to `main` read the whole repository —
+ * five times in two days at 3.0.0 to 3.0.3, the same unchanged code each time.
+ *
+ * - `full`      no usable base (first run, or the base is not an ancestor of this release): the whole inventory
+ * - `delta`     the inventory files that were added, changed or renamed since the base
+ * - `unchanged` nothing in the inventory and no dependency manifest changed: no model call at all
+ *
+ * Pure, so the guard can feed it lists; `changedSince` asks git.
+ */
+export const DEPENDENCY_MANIFESTS = ['package.json', 'package-lock.json'];
+
+export function auditScope({ list, base = null, changed = null }) {
+  if (!base || !Array.isArray(changed)) return { mode: 'full', base: null, files: list };
+  const touched = new Set(changed);
+  const files = list.filter((f) => touched.has(f.path));
+  const dependencies = DEPENDENCY_MANIFESTS.some((p) => touched.has(p));
+  return { mode: files.length || dependencies ? 'delta' : 'unchanged', base, files, dependencies };
+}
+
+/** Paths added, copied, modified or renamed (new name) between `base` and HEAD — or null when `base` is not usable. */
+export function changedSince(base) {
+  if (!/^[0-9a-f]{7,40}$/.test(String(base || ''))) return null;
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', base, 'HEAD'], { stdio: 'ignore' });
+  } catch {
+    return null;
+  }
+  return git(['diff', '--name-only', '--diff-filter=ACMR', `${base}..HEAD`]).split('\n').filter(Boolean);
+}

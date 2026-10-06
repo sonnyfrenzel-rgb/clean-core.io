@@ -20,7 +20,7 @@ import { callReviewer as openRouterReviewer, modelsOf } from '../qa/lib/openrout
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
 import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, cutAtReserve, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
-import { surfaceMap } from './lib/surface.mjs';
+import { auditScope, changedSince, surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
 const SELF_TEST_MODE = process.env.SECURITY_AUDIT_MODE === 'self-test';
@@ -67,7 +67,10 @@ const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * A
  * @param publicKeyPem  the key the payload is sealed for
  * @returns {{ payload, sealed, line }}
  */
-export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surface = surfaceMap(), selfTest = SELF_TEST_MODE, publicKeyPem = readFileSync(AUDIT_PUBLIC_PEM, 'utf8') }) {
+export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surface = surfaceMap(), scope = null, selfTest = SELF_TEST_MODE, publicKeyPem = readFileSync(AUDIT_PUBLIC_PEM, 'utf8') }) {
+  // What is read in depth: the files changed since the last audited release (lib/surface.mjs auditScope), or the
+  // whole inventory when there is no usable base. The map itself — routes, sinks, rules, dependencies — stays whole.
+  const reading = scope ?? { mode: 'full', base: null, files: surface.files.list };
   const SELF_TEST = selfTest;
   const started = Date.now();
 
@@ -93,7 +96,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   const cisoTokens = SELF_TEST ? 20_000 : AUDIT.cisoOutputTokens;
   const brief = readFileSync(AUDIT.briefPath, 'utf8');
 
-  const plan = planBatches(surface.files.list, (path) => clean(path, numbered(raw(path) ?? '')), { only: SELF_TEST ? AUDIT.selfTestFiles : null, maxCalls: SELF_TEST ? 1 : AUDIT.maxConsultantCalls });
+  const plan = planBatches(reading.files, (path) => clean(path, numbered(raw(path) ?? '')), { only: SELF_TEST ? AUDIT.selfTestFiles : null, maxCalls: SELF_TEST ? 1 : AUDIT.maxConsultantCalls });
   // Every CISO call is reserved out of the cap before any consultant spends —
   // each verification call at the size verificationMessage enforces, plus the
   // brief and the task around it, and the narrative — so the consultants can
@@ -130,12 +133,14 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   );
   for (const p of pinnedRead) if (!deepRead.includes(p)) deepRead.push(p);
 
-  const filesInScope = SELF_TEST ? AUDIT.selfTestFiles.length : surface.files.total;
+  const filesInScope = SELF_TEST ? AUDIT.selfTestFiles.length : reading.files.length;
   const coverage = {
     files_in_scope: filesInScope,
     deep_read: deepRead.length,
     pattern_scanned_only: filesInScope - deepRead.length,
-    notes: SELF_TEST ? 'Selbsttest: nur zwei Dateien, ein Berater.' : `Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
+    notes: SELF_TEST
+      ? 'Selbsttest: nur zwei Dateien, ein Berater.'
+      : `${reading.mode === 'delta' ? `Delta-Prüfung: nur die ${reading.files.length} seit ${reading.base.slice(0, 12)} geänderten Dateien des Prüfumfangs. ` : 'Vollprüfung des ganzen Prüfumfangs. '}Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
   };
 
   // An audit that read a sixth of what it set out to read is not an audit.
@@ -304,6 +309,8 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     model: AUDIT.model.model,
     models: modelsOf([...results, ...check.results, narrative]),
     selfTest: SELF_TEST,
+    // What this audit read in depth: the delta since the last audited release, or everything.
+    scope: { mode: SELF_TEST ? 'self-test' : reading.mode, base: reading.base, files: filesInScope, inventory: surface.files.total },
     durationMs: Date.now() - started,
     costUsd,
     calls: results.length + check.results.length + (narrative ? 1 : 0),
@@ -328,7 +335,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   const sealed = sealFor(payload, publicKeyPem);
 
   // Only metadata reaches the public log: counts and cost, never a finding.
-  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'} models=${payload.models.join(',') || 'none'}`;
+  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · scope=${payload.scope.mode}${reading.base ? ` since ${reading.base.slice(0, 12)}` : ''} files=${filesInScope} · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'} models=${payload.models.join(',') || 'none'}`;
   return { payload, sealed, line };
 }
 
@@ -339,7 +346,14 @@ async function main() {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the audit cannot run.');
   const surface = surfaceMap();
   writeFileSync(join(WORK, 'surface.json'), JSON.stringify(surface, null, 2));
-  const { sealed, line } = await runAudit({ apiKey, surface });
+  // The base is the last release whose audit succeeded (the workflow's scope job finds it); without one, everything.
+  const base = process.env.SECURITY_AUDIT_BASE || null;
+  const scope = auditScope({ list: surface.files.list, base, changed: base ? changedSince(base) : null });
+  if (scope.mode === 'unchanged') {
+    // The scope job skips the audit in this case; reaching it here means the two disagree — fail loudly.
+    throw new Error(`nothing in the audit scope changed since ${base.slice(0, 12)}, but the audit was started`);
+  }
+  const { sealed, line } = await runAudit({ apiKey, surface, scope });
   writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealed));
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Security audit\n\n${line}\n\nThe report is sealed and goes to the owner by mail.\n`);
