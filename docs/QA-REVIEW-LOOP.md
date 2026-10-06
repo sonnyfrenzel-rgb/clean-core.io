@@ -2,6 +2,18 @@
 
 **as of 15.09.2026, reviewed for 3.0 on 02.10.2026 · introduced with v2.9.12 · runs from now on with every push to `dev`, until Sonny revokes it**
 
+> **Changed on 06.10.2026 (owner decision) — this block wins over anything below that contradicts it.**
+> - Pinned models again, no Auto Router: delta review `openai/gpt-6-luna`, full review `openai/gpt-6-luna-pro`,
+>   both $0.10/$0.50 per M tokens (`MODELS` in `scripts/qa/lib/config.mjs`). Caps: $1 per push, $3 per full review.
+> - The request carries only parameters the model's endpoints support; with `require_parameters` one
+>   unsupported parameter (`temperature`) left no endpoint (HTTP 404).
+> - A release on `main` gets a full review only for a larger change (job `full-scope`, `scripts/qa/full-scope.mjs`,
+>   `FULL_TRIGGER`): no earlier full review, a new minor/major version, 30 days, or ≥150 files / ≥15,000 lines
+>   since the last full review. `await.mjs --full` reports a skipped one and exits 0.
+> - A delta batch the model cannot finish is read again as two halves (`pack.mjs splitBatch`).
+> Passages below that describe the Auto Router, its cost tiers and price ceilings record the week of
+> 01.–06.10.2026 and no longer apply.
+
 Every new state on `dev` gets two checks, without anyone triggering them:
 a **delta review** through OpenRouter's Auto Router (since 01.10.2026; before, a pinned
 model — GPT-6 Luna via OpenRouter) and a **smoke check** of the revision that the same push deployed.

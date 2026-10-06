@@ -90,7 +90,7 @@ its own step, not necessarily in this round.
 
 ## 5a. The full review of a release on `main`
 
-Every push to `main` also runs a review of the whole code base (OpenRouter Auto Router at cost tier `xhigh`, job `full`; the report names the models that answered). After the
+A push to `main` runs a review of the whole code base (pinned `openai/gpt-6-luna-pro`, job `full`) only when the agent judges the change large enough (job `full-scope`, `scripts/qa/full-scope.mjs`, since 06.10.2026); otherwise `await.mjs --full` reports that no full review was needed and exits 0. After the
 push, alongside the security and UX intake: `node scripts/qa/await.mjs <sha> --full` (run_in_background, up to
 two hours). It gates nothing — `main` is already out. Verify each finding exactly as in §3; refute wrong ones
 with `refute.mjs` (the refuted list is shared); schedule confirmed ones into `docs/ROADMAP.md` like any other

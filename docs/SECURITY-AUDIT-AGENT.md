@@ -1,6 +1,16 @@
-# Security agent — full audit of every `main` version
+# Security agent — delta audit of every `main` version
 
 **As of 24.09.2026 (verification in batches), reviewed for 3.0 on 02.10.2026 · introduced with v2.9.15 · since 01.10.2026 with the OpenRouter Auto Router (previously DeepSeek V4.1 Flash) · runs on every push to `main` until Sonny revokes it**
+
+> **Changed on 06.10.2026 (owner decision) — this block wins over anything below that contradicts it.**
+> - Pinned model again, no Auto Router: `openai/gpt-6-luna-pro`, $0.10/$0.50 per M tokens (`AUDIT.model` in
+>   `scripts/security/lib/team.mjs`). Budget 6 USD.
+> - The consultants read only the inventory files changed since the last release whose audit succeeded
+>   (`scripts/security/scope.mjs`, `auditScope` in `lib/surface.mjs`); the map and the dependency audit stay
+>   whole. No usable base: everything. Nothing in scope changed: no model call, no report — `inbox.mjs` exits 0.
+> - The scope job waits up to 30 minutes for the QA run of the same release (one agent at a time on the key).
+> Passages below that describe the Auto Router, its cost tiers and price ceilings record the week of
+> 01.–06.10.2026 and no longer apply.
 
 Every new version on `main` gets a complete security audit: a CISO and
 five security consultants, **OpenRouter Auto Router (cost tier high)**, as a chain of

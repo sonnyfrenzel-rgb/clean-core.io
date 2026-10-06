@@ -1,7 +1,7 @@
 ---
 name: ux-review-intake
 description: |
-  Intake of the Clean-Core.io UX agent's reviews (OpenRouter Auto Router, image-capable models only). Use it after every push to `main`, after the
+  Intake of the Clean-Core.io UX agent's reviews (pinned openai/gpt-6-luna, reads images; started by hand since 06.10.2026). Use it after a UX run Sonny started, after the
   first full UX review of the product, when the SessionStart context reports undecided UX findings, or when Sonny
   asks about UX findings. It tells you how to fetch and open the sealed report and its screenshots, verify each
   finding against code and picture, record the decision in docs/ux/register.json, and schedule accepted findings

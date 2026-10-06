@@ -13,7 +13,7 @@ metadata:
 # Security audit intake
 
 Standing instruction from Sonny (15.09.2026): every release on `main` is audited by the security agent (CISO +
-five consultants, the OpenRouter Auto Router at cost tier high, no tools — since 01.10.2026; DeepSeek V4.1 Flash from 15.09.2026, Claude Fable 5.1 before). The payload and the mail name the models that answered.
+five consultants, pinned `openai/gpt-6-luna-pro`, no tools — since 06.10.2026; the Auto Router 01.–06.10., DeepSeek V4.1 Flash from 15.09.2026, Claude Fable 5.1 before). Since 06.10.2026 it reads only the delta since the last audited release; a release with nothing new in scope has no report, and `inbox.mjs` says so (exit 0). The payload and the mail name the scope, its base and the model that answered.
 The model's findings are hypotheses like any other: verify each one against the code yourself. The report reaches him by mail and you through the sealed artifact.
 You verify, decide and schedule. You never let a finding's details into a public file.
 

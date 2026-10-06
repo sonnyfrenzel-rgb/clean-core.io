@@ -1,6 +1,13 @@
-# UX agent — UX review of every `main` version
+# UX agent — UX review, started by hand
 
-**As of 15.09.2026 · introduced with v2.9.17 · runs on every push to `main` until Sonny revokes it**
+**As of 15.09.2026 · introduced with v2.9.17 · started by hand since 06.10.2026**
+
+> **Changed on 06.10.2026 (owner decision) — this block wins over anything below that contradicts it.**
+> - No push starts it: `gh workflow run ux-review.yml --ref main -f mode=delta` (or `mode=full`).
+> - Pinned model again, no Auto Router: `openai/gpt-6-luna` (reads images), $0.10/$0.50 per M tokens
+>   (`UX_MODEL` in `scripts/ux/lib/config.mjs`).
+> Passages below that describe the Auto Router, its cost tiers and price ceilings record the week of
+> 01.–06.10.2026 and no longer apply.
 
 > **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. Every
 > call goes to OpenRouter's Auto Router (`openrouter/auto`) at cost tier **`high`**, under a

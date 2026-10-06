@@ -101,11 +101,17 @@ There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulato
 
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 
-Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review by
-the OpenRouter Auto Router (cost tier high, cap $6.50) plus a sealed smoke check of the deployed revision.
-Every release on `main` also gets a sealed review of the whole code base by the OpenRouter Auto Router (cost tier xhigh, cap $10)
-(`node scripts/qa/await.mjs <sha> --full`); it gates nothing — verify its findings and fix
-confirmed ones on `dev` as a roadmap step. A `medium` finding in the agents' own machinery
+**Since 2026-10-06 every agent pins its model again — no Auto Router** (`openai/gpt-6-luna` for the QA delta
+and UX, `openai/gpt-6-luna-pro` for the QA full review and security, all $0.10/$0.50 per M tokens). Five days
+of the router cost $82.81, failed on rate limits and output limits, and hid the security cost. Requests must
+carry only parameters the model's endpoints support (`require_parameters`): `temperature` gave HTTP 404.
+
+Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review (cap $1) plus a sealed
+smoke check of the deployed revision. A release on `main` gets a sealed review of the whole code base (cap $3)
+**only for a larger change**, which the agent decides itself (`scripts/qa/full-scope.mjs`: no earlier full review,
+a new minor/major version, 30 days, or ≥150 files / ≥15,000 lines since the last full review); otherwise
+`node scripts/qa/await.mjs <sha> --full` says no full review was needed. It gates nothing — verify its findings
+and fix confirmed ones on `dev` as a roadmap step. A `medium` finding in the agents' own machinery
 (`AGENT_INFRASTRUCTURE` in `scripts/qa/lib/config.mjs`) is reported but does not keep the loop open.
 After **every** push to `dev`, use the `qa-review-loop` skill (the post-push hook in
 `.claude/settings.json` reminds you): `node scripts/qa/await.mjs <sha>` in the background,
@@ -116,25 +122,27 @@ branch (`qa-weekly-health.yml`; at session start `scripts/qa/health.mjs --brief`
 handle what it reports per the skill, section 7. Runbook: `docs/QA-REVIEW-LOOP.md`.
 Revoke: `gh variable set QA_REVIEW_ENABLED --body false`.
 
-## Security agent — full audit of every release on `main` (since 2026-09-15)
+## Security agent — delta audit of every release on `main` (since 2026-09-15; delta since 2026-10-06)
 
-`.github/workflows/security-audit.yml`: a CISO and five consultants (OpenRouter Auto Router, cost tier high,
-a pipeline of model calls without tools, budget 46 USD) audit the whole codebase; the
-German report is mailed to Sonny, sealed with `docs/security/audit-public-key.pem`. After a
+`.github/workflows/security-audit.yml`: a CISO and five consultants (`openai/gpt-6-luna-pro`, a pipeline of
+model calls without tools, budget 6 USD) audit **what changed since the last release whose audit succeeded**
+(`scripts/security/scope.mjs`; the whole inventory only without a usable base; no model call when nothing in
+scope changed). It waits up to 30 minutes for the QA run of the same release, so the agents do not hit the
+key at once. The German report is mailed to Sonny, sealed with `docs/security/audit-public-key.pem`. After a
 push to `main`, or when the session start reports untriaged findings, use the
 `security-audit-intake` skill: `node scripts/security/inbox.mjs <sha>`, verify each finding,
 decide with `scripts/security/register.mjs` (sealed register), schedule confirmed ones into
 `docs/ROADMAP.md` §12 — **IDs only, never details of an unfixed finding in a public file**.
 Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT_ENABLED --body false`.
 
-## UX agent — UX review of every release on `main` (since 2026-09-15)
+## UX agent — started by hand only (since 2026-10-06; on every release from 2026-09-15)
 
-`.github/workflows/ux-review.yml`: the OpenRouter Auto Router (cost tier high, image-capable models only) reviews
+`gh workflow run ux-review.yml --ref main -f mode=delta`. `.github/workflows/ux-review.yml`: `openai/gpt-6-luna` (reads images) reviews
 what a release changed for users — source, a deterministic design scan of the whole
 product, and screenshots from `tests/capture-screens.spec.ts` (seeded demo project,
 desktop/phone/dark, plus the 3.0 mockups). Until a complete full review exists, every automatic run reviews the whole product,
 area by area, with an end-to-end synthesis. UX only; read-only; the job with the model key
-runs no `npm ci`; the report is sealed with `UX_REVIEW_KEY`. After a push to `main`, or when
+runs no `npm ci`; the report is sealed with `UX_REVIEW_KEY`. After a run Sonny asked for, or when
 the session start reports undecided UX findings, use the `ux-review-intake` skill:
 `node scripts/ux/inbox.mjs <sha>`, verify each finding against the cited line and
 screenshot, decide with `scripts/ux/register.mjs`, schedule accepted ones into
