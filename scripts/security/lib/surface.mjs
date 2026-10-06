@@ -238,28 +238,43 @@ export function surfaceMap() {
  * five times in two days at 3.0.0 to 3.0.3, the same unchanged code each time.
  *
  * - `full`      no usable base (first run, or the base is not an ancestor of this release): the whole inventory
- * - `delta`     the inventory files that were added, changed or renamed since the base
- * - `unchanged` nothing in the inventory and no dependency manifest changed: no model call at all
+ * - `delta`     the inventory files that were added, changed or renamed since the base, and the inventory paths
+ *               that were deleted (named in the report; a deletion can remove a check)
+ * - `unchanged` nothing in the inventory changed or went, and no dependency manifest changed: no model call at all
  *
- * Pure, so the guard can feed it lists; `changedSince` asks git.
+ * Pure, so the guard can feed it lists; `changedSince` and `deletedSince` ask git.
  */
 export const DEPENDENCY_MANIFESTS = ['package.json', 'package-lock.json'];
 
-export function auditScope({ list, base = null, changed = null }) {
-  if (!base || !Array.isArray(changed)) return { mode: 'full', base: null, files: list };
+export function auditScope({ list, base = null, changed = null, deleted = [] }) {
+  if (!base || !Array.isArray(changed)) return { mode: 'full', base: null, files: list, deleted: [] };
   const touched = new Set(changed);
   const files = list.filter((f) => touched.has(f.path));
   const dependencies = DEPENDENCY_MANIFESTS.some((p) => touched.has(p));
-  return { mode: files.length || dependencies ? 'delta' : 'unchanged', base, files, dependencies };
+  // A deleted path counts when it would have been in the inventory: a removed route or guard is a change to audit
+  // (QA review of 6e61722f9e7d, finding ff65a95a72e4).
+  const gone = inventory(deleted || []).map((f) => f.path);
+  return { mode: files.length || dependencies || gone.length ? 'delta' : 'unchanged', base, files, dependencies, deleted: gone };
 }
+
+const usableBase = (base) => {
+  if (!/^[0-9a-f]{7,40}$/.test(String(base || ''))) return false;
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', base, 'HEAD'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 /** Paths added, copied, modified or renamed (new name) between `base` and HEAD — or null when `base` is not usable. */
 export function changedSince(base) {
-  if (!/^[0-9a-f]{7,40}$/.test(String(base || ''))) return null;
-  try {
-    execFileSync('git', ['merge-base', '--is-ancestor', base, 'HEAD'], { stdio: 'ignore' });
-  } catch {
-    return null;
-  }
+  if (!usableBase(base)) return null;
   return git(['diff', '--name-only', '--diff-filter=ACMR', `${base}..HEAD`]).split('\n').filter(Boolean);
+}
+
+/** Paths deleted (or renamed away) between `base` and HEAD — or null when `base` is not usable. */
+export function deletedSince(base) {
+  if (!usableBase(base)) return null;
+  return git(['diff', '--name-only', '--diff-filter=D', `${base}..HEAD`]).split('\n').filter(Boolean);
 }

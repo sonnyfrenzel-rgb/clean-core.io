@@ -20,7 +20,7 @@ import { callReviewer as openRouterReviewer, modelsOf } from '../qa/lib/openrout
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
 import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, cutAtReserve, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
-import { auditScope, changedSince, surfaceMap } from './lib/surface.mjs';
+import { auditScope, changedSince, deletedSince, surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
 const SELF_TEST_MODE = process.env.SECURITY_AUDIT_MODE === 'self-test';
@@ -70,7 +70,7 @@ const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * A
 export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surface = surfaceMap(), scope = null, selfTest = SELF_TEST_MODE, publicKeyPem = readFileSync(AUDIT_PUBLIC_PEM, 'utf8') }) {
   // What is read in depth: the files changed since the last audited release (lib/surface.mjs auditScope), or the
   // whole inventory when there is no usable base. The map itself — routes, sinks, rules, dependencies — stays whole.
-  const reading = scope ?? { mode: 'full', base: null, files: surface.files.list };
+  const reading = scope ?? { mode: 'full', base: null, files: surface.files.list, deleted: [] };
   const SELF_TEST = selfTest;
   const started = Date.now();
 
@@ -140,7 +140,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     pattern_scanned_only: filesInScope - deepRead.length,
     notes: SELF_TEST
       ? 'Selbsttest: nur zwei Dateien, ein Berater.'
-      : `${reading.mode === 'delta' ? `Delta-Prüfung: nur die ${reading.files.length} seit ${reading.base.slice(0, 12)} geänderten Dateien des Prüfumfangs. ` : 'Vollprüfung des ganzen Prüfumfangs. '}Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
+      : `${reading.mode === 'delta' ? `Delta-Prüfung: nur die ${reading.files.length} seit ${reading.base.slice(0, 12)} geänderten Dateien des Prüfumfangs. ${reading.deleted?.length ? `Gelöscht seit dann (nicht mehr lesbar, im Umfang): ${reading.deleted.join(', ')}. ` : ''}` : 'Vollprüfung des ganzen Prüfumfangs. '}Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
   };
 
   // An audit that read a sixth of what it set out to read is not an audit.
@@ -310,7 +310,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     models: modelsOf([...results, ...check.results, narrative]),
     selfTest: SELF_TEST,
     // What this audit read in depth: the delta since the last audited release, or everything.
-    scope: { mode: SELF_TEST ? 'self-test' : reading.mode, base: reading.base, files: filesInScope, inventory: surface.files.total },
+    scope: { mode: SELF_TEST ? 'self-test' : reading.mode, base: reading.base, files: filesInScope, deleted: reading.deleted?.length || 0, inventory: surface.files.total },
     durationMs: Date.now() - started,
     costUsd,
     calls: results.length + check.results.length + (narrative ? 1 : 0),
@@ -348,7 +348,7 @@ async function main() {
   writeFileSync(join(WORK, 'surface.json'), JSON.stringify(surface, null, 2));
   // The base is the last release whose audit succeeded (the workflow's scope job finds it); without one, everything.
   const base = process.env.SECURITY_AUDIT_BASE || null;
-  const scope = auditScope({ list: surface.files.list, base, changed: base ? changedSince(base) : null });
+  const scope = auditScope({ list: surface.files.list, base, changed: base ? changedSince(base) : null, deleted: base ? deletedSince(base) : [] });
   if (scope.mode === 'unchanged') {
     // The scope job skips the audit in this case; reaching it here means the two disagree — fail loudly.
     throw new Error(`nothing in the audit scope changed since ${base.slice(0, 12)}, but the audit was started`);

@@ -1467,7 +1467,7 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       // Only the changed file reached a consultant; the unchanged one did not.
       expect(sent.join('\n')).toContain('middleware.ts');
       expect(sent.join('\n')).not.toContain('app/api/health/route.ts');
-      expect(payload.scope).toEqual({ mode: 'delta', base, files: 1, inventory: FILES.length });
+      expect(payload.scope).toEqual({ mode: 'delta', base, files: 1, deleted: 0, inventory: FILES.length });
       expect(payload.report.coverage.files_in_scope).toBe(1);
       expect(out.line).toContain(`scope=delta since ${base.slice(0, 12)} files=1`);
       const mail = renderAuditMail(payload, { version: 'v9.9.9', runUrl: 'u', sealedSha256: 's' });
@@ -1548,6 +1548,13 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(auditScope({ list, base: 'abc1234', changed: ['README.md', 'docs/x.md'] }).mode).toBe('unchanged');
     // A dependency change is a delta even without code: the dependency audit belongs to the report.
     expect(auditScope({ list, base: 'abc1234', changed: ['package-lock.json'] })).toMatchObject({ mode: 'delta', dependencies: true });
+    // A release that only deletes code is not unchanged: a removed route or check is named in the report
+    // (QA review of 6e61722f9e7d, ff65a95a72e4). Deleted prose is still nothing.
+    expect(auditScope({ list, base: 'abc1234', changed: [], deleted: ['app/api/old/route.ts'] })).toMatchObject({ mode: 'delta', files: [], deleted: ['app/api/old/route.ts'] });
+    expect(auditScope({ list, base: 'abc1234', changed: [], deleted: ['docs/old.md'] })).toMatchObject({ mode: 'unchanged', deleted: [] });
+    // Both entry points pass the deletions on.
+    expect(read('scripts/security/scope.mjs')).toMatch(/deleted: changed \? deletedSince\(base\) : \[\]/);
+    expect(read('scripts/security/audit.mjs')).toMatch(/deleted: base \? deletedSince\(base\) : \[\]/);
   });
 
   test('git is asked only for a commit id that is an ancestor of the release', async () => {
@@ -1573,6 +1580,9 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(wait).toBeLessThan(scopeJob.indexOf('- name: Decide'));
     expect(scopeJob).toMatch(/gh run list --workflow qa-review\.yml --commit "\$SHA"/);
     expect(scopeJob).toMatch(/for i in \$\(seq 1 60\); do[\s\S]*?sleep 30/);
+    // Done only after a QA run was seen and completed — not while GitHub does not list it yet (7180ec588f09).
+    expect(scopeJob).toMatch(/if \[ "\$total" -gt 0 \] && \[ "\$open" = "0" \]; then exit 0; fi/);
+    expect(scopeJob).toMatch(/if \[ "\$total" = "0" \] && \[ "\$i" -ge 10 \]; then/);
     expect(scopeJob).toMatch(/timeout-minutes: 40/);
   });
 
@@ -1588,6 +1598,6 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(auditJob).not.toMatch(/'unchanged'/);
     expect(auditJob).toMatch(/SECURITY_AUDIT_BASE: \$\{\{ needs\.scope\.outputs\.base \}\}/);
     expect(auditJob).toMatch(/fetch-depth: 0/);
-    expect(read('scripts/security/audit.mjs')).toMatch(/const scope = auditScope\(\{ list: surface\.files\.list, base, changed: base \? changedSince\(base\) : null \}\);/);
+    expect(read('scripts/security/audit.mjs')).toMatch(/const scope = auditScope\(\{ list: surface\.files\.list, base, changed: base \? changedSince\(base\) : null, deleted: base \? deletedSince\(base\) : \[\] \}\);/);
   });
 });
