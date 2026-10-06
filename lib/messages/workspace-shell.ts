@@ -9,7 +9,6 @@
 export const WORKSPACE_SHELL_MESSAGES = {
   // The shell bar (app/(app)/layout.tsx) — the path and the search slot, §2.1.
   'shell.path': 'Path',
-  'shell.myWorkspace': 'My workspace',
   'shell.searchProject': 'Search this project (Ctrl K)',
 
   // The header of the object page — components/workspace/WorkspaceShell.tsx.
@@ -28,7 +27,19 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // The central work area under the map — WorkspaceShell, Business (ADR-072).
   'hub.title': 'Work from this process',
   'hub.lead':
-    'Your process, reconstructed from the old ABAP, is where everything starts. Read the same process as IT or Management, or open a tool for the next step.',
+    'Your process, reconstructed from the old ABAP, is where everything starts. Take the next step, read the same process as IT or Management, or open a tool.',
+  'hub.eyebrow': 'Central work area',
+  'hub.nextLabel': 'Continue with',
+  'hub.nothingOpen': 'Nothing is open — every phase this product can finish has its own evidence on record.',
+  'hub.viewsTitle': 'Read this process as',
+  'hub.viewHere': 'You are here',
+  'hub.viewBusinessGets': 'The process in plain words: its steps, the business rules hard-coded in it, and what could not be determined.',
+  'hub.viewItGets': 'What the code does, line by line: findings, clean core Level A–D and the target profile.',
+  'hub.viewManagementGets': 'The decision — keep, rebuild, move to standard or retire — with its cost and risk.',
+  'hub.toolsTitle': 'The seven tools',
+  'hub.pathLabel': 'Where the seven tools stand',
+  'hub.stageNone': 'nothing on record',
+  'hub.stageNext': 'next',
 
   // Search ⌘K — components/workspace/CommandSearch.tsx, roadmap 6.6.
   'search.title': 'Search this project',
@@ -103,6 +114,16 @@ export function toolsNextHint(tool: string, purpose: string): string {
 /** "Open Analyze" — a link to a stage, in the status popover and in "Next step". */
 export function openStageLabel(stage: string): string {
   return `${WORKSPACE_SHELL_MESSAGES['status.open']} ${stage}`;
+}
+
+/** "1 of 7 done" — the path of the seven tools in the work area, counted from the phase contract. */
+export function hubPathDone(done: number, total: number): string {
+  return `${done} of ${total} done`;
+}
+
+/** "Step 2 of 7 · Design" — where the next step stands on the path. */
+export function hubNextPosition(n: number, total: number, stage: string): string {
+  return `Step ${n} of ${total} · ${stage}`;
 }
 
 /** "Open as IT" — a view button of the work area. */

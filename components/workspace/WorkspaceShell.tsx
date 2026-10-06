@@ -21,6 +21,7 @@ import NotDeterminedCard from './NotDeterminedCard';
 import NotDeterminedFold from './NotDeterminedFold';
 import NextStepCard from './NextStepCard';
 import BusinessNextStep from './BusinessNextStep';
+import WorkspaceHub from './WorkspaceHub';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
@@ -71,7 +72,7 @@ import {
 import { recordGaps } from '@/lib/legacy-project';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
-import { hubViewLabel, pageStatusOnRecord, wt } from '@/lib/workspace-messages';
+import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { pricedOptions } from '@/lib/economics-record';
 import type { Project } from '@/lib/types';
@@ -529,7 +530,7 @@ export default function WorkspaceShell({
    * The status line and the toolbar with Export and "Invite to view" — in
    * the header in IT and Management, under "Next step" in Business.
    */
-  const statusAndTools = (
+  const statusFold = (
     <>
       {/* The project status — one folded row in every view (ADR-026, note
           of 04.10.2026). The fold is a fold: the seven statuses are one click
@@ -573,7 +574,10 @@ export default function WorkspaceShell({
           ) : null}
         </div>
       </div>
-
+    </>
+  );
+  const toolsRow = (
+    <>
       <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-3 flex flex-wrap items-start justify-between gap-3">
         {/* The tools take the row's width and wrap inside it, so Export and
             "Invite to view" stay beside them instead of under the hint line. */}
@@ -589,6 +593,12 @@ export default function WorkspaceShell({
           onInvited={() => setAccessKey((n) => n + 1)}
         />
       </div>
+    </>
+  );
+  const statusAndTools = (
+    <>
+      {statusFold}
+      {toolsRow}
     </>
   );
 
@@ -620,6 +630,8 @@ export default function WorkspaceShell({
             project={project}
             projectId={projectId}
             decisionRevision={decisionRevision}
+            onDecisionChanged={onDecisionChanged}
+            beforeWrite={stand.checkBeforeWrite}
             nextStep={nextStep}
             decision={
               // "Open decision" (roadmap 8.4), the first thing in Management and
@@ -627,7 +639,7 @@ export default function WorkspaceShell({
               // the conditions and the timeline. It writes only through the
               // commands route, so the Stand check of 6.9 hangs off it.
               <div id="decision-card">
-                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} costScenario={costScenario} />
+                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} costScenario={costScenario} revision={decisionRevision} />
               </div>
             }
             coach={
@@ -733,35 +745,19 @@ export default function WorkspaceShell({
     // start all views and tools"): the process above is the entry, and from
     // here the same process opens in the other two views and every tool
     // opens its step. The view buttons switch the view exactly as the
-    // segmented control does — one job, two places to reach it.
+    // segmented control does — one job, two places to reach it. Since
+    // 06.10.2026 a band of its own (owner: "easy to overlook"): the next step,
+    // the three views with what each gets, the seven tools — `WorkspaceHub`.
     statusTools:
       view === 'business' ? (
-        <section
-          data-workspace-status-tools=""
-          data-workspace-hub=""
-          aria-labelledby="workspace-hub-title"
-          className="mt-5 rounded-cc-card border border-cc-line bg-cc-surface p-4"
-        >
-          <h2 id="workspace-hub-title" className="m-0 text-[15px] leading-tight font-bold tracking-[-0.01em] text-cc-ink">
-            {wt('hub.title')}
-          </h2>
-          <p className="m-0 mt-1 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('hub.lead')}</p>
-          <div className="cc-no-print mt-3 flex flex-wrap items-stretch gap-2">
-            {WORKSPACE_VIEWS.filter((v) => v !== view).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => onViewChange(v)}
-                data-workspace-hub-view={v}
-                className="flex min-h-11 min-w-0 flex-1 basis-56 flex-col items-start rounded-cc-row border border-cc-line px-3 py-2 text-left hover:border-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-              >
-                <span className="text-[13px] font-semibold text-cc-ink">{hubViewLabel(VIEW_LABELS[v])}</span>
-                <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{VIEW_QUESTIONS[v]}</span>
-              </button>
-            ))}
-          </div>
-          {statusAndTools}
-        </section>
+        <WorkspaceHub
+          projectId={projectId}
+          step={businessStep}
+          tools={tools}
+          onViewChange={onViewChange}
+          toolsRow={toolsRow}
+          statusFold={statusFold}
+        />
       ) : null,
     // Business only: the process map and its linked source column (roadmap
     // 2.5, mockup s1). It stays under every layer — the map is the anchor of
@@ -898,15 +894,20 @@ export default function WorkspaceShell({
 
       <section data-workspace-header="">
         {/* The way back to the list — on every width, the phone included,
-            where the shell bar has no room for its path. The same link as a
-            stage's "Back to workspace", one level up (owner, 03.10.2026:
-            "there is no way back to the workspace"). */}
+            where the shell bar has no room for its path. One level above a
+            stage's "Back to project workspace" (owner, 03.10.2026: "there is
+            no way back to the workspace"), and named differently from it
+            (owner, 06.10.2026: "My workspace" is the list of all projects). */}
         <Link
           href="/dashboard"
           data-workspace-back=""
           className={`${BACK_LINK_CLASS} cc-no-print mb-3 max-sm:min-h-11`}
         >
-          <ArrowLeft size={16} aria-hidden={true} /> {wt('shell.myWorkspace')}
+          <ArrowLeft size={16} aria-hidden={true} /> {wt('nav.backToMyWorkspace')}
+          <span className="font-medium">
+            {' · '}
+            {wt('nav.allProjects')}
+          </span>
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           {/* A basis, not only `flex-1`: with a zero basis the title never
