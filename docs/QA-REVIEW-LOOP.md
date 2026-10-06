@@ -286,7 +286,7 @@ gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run t
 | Report names "NOT REVIEWED" | delta over the budget | cut smaller or re-check the range specifically via `workflow_dispatch` |
 | Verdict `no_review`, `await.mjs` exit 2 "Nothing of this delta was read" | no batch fit into the budget, or every call failed | measure the range with `--dry` (§7), then check it in slices via `workflow_dispatch`, oldest first and one after the other — a new run on `dev` aborts the running one. `node scripts/qa/review.mjs --dry` with `QA_BASE_OVERRIDE`/`QA_HEAD` shows beforehand whether a slice becomes complete (`notReviewed` empty) |
 | A finding comes back after refutation | title changed → new fingerprint | refute again; the reason refers to the earlier one |
-| "no review content (finish_reason=length …)" | reasoning used up the output budget | happened on 15.09. on the first run (12,000 tokens at `high`); since then 32,000 — if it happens again, raise `maxOutputTokens` in `config.mjs` as a step of its own |
+| "no review content (finish_reason=length …)" | reasoning used up the output budget | since 06.10.2026 the delta review splits that batch in two and reads both halves; an entry that fails alone is listed as NOT REVIEWED and the report is incomplete. Only the full review still fails the run — raise `maxOutputTokens` in `config.mjs` there as a step of its own |
 
 ---
 

@@ -696,6 +696,32 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(read('scripts/qa/review.mjs')).toMatch(/notReviewed\.push\(\{ path: f\.path, \.\.\.\(f\.part \? \{ part: partLabel\(f\) \} : \{\}\), reason: `outside the \$\$\{BUDGET\.maxCostUsd\} cost cap` \}\)/);
   });
 
+  test('a batch the model could not finish is read again as two halves, and a single entry it could not finish is named', async () => {
+    const { isCutOff, splitBatch, fileChars } = await lib('pack.mjs');
+    // Both ways openrouter.mjs reports a cut-off, and nothing else.
+    expect(isCutOff(new Error('OpenRouter returned no review content (finish_reason=length, completion_tokens=96000, reasoning_tokens=96000, max_tokens=96000).'))).toBe(true);
+    expect(isCutOff(new Error('The review was not valid JSON cut off at max_tokens (finish_reason=length, completion_tokens=96000, reasoning_tokens=1, max_tokens=96000).'))).toBe(true);
+    expect(isCutOff(new Error('OpenRouter returned no review content (finish_reason=content_filter, completion_tokens=1, reasoning_tokens=?, max_tokens=96000).'))).toBe(false);
+    expect(isCutOff(new Error('OpenRouter answered HTTP 502'))).toBe(false);
+    expect(isCutOff(undefined)).toBe(false);
+
+    const entry = (p: string) => ({ path: p, status: 'M', tags: [], diff: `+${p}`, callers: [] });
+    const files = ['a.ts', 'b.ts', 'c.ts'].map(entry);
+    const halves = splitBatch({ files, chars: 0 }, 9_000);
+    expect(halves.map((h: { files: { path: string }[] }) => h.files.map((f) => f.path))).toEqual([['a.ts', 'b.ts'], ['c.ts']]);
+    // Each half carries the shared part again and its own entries, nothing else.
+    expect(halves[1].chars).toBe(9_000 + fileChars(files[2]));
+    expect(splitBatch({ files: [files[0]], chars: 0 }, 9_000)).toBeNull();
+
+    // The review catches only a cut-off, puts the halves right behind the batch, and names a single entry as unread.
+    const src = read('scripts/qa/review.mjs');
+    const handler = src.slice(src.indexOf('} catch (err) {', src.indexOf('r = await callReviewer(')));
+    expect(handler).toMatch(/^\} catch \(err\) \{\s+if \(!isCutOff\(err\)\) throw err;/);
+    expect(handler).toMatch(/spentForCap \+= estimateCostUsd\(outgoingSystem\.length \+ user\.length, 1\);/);
+    expect(handler).toMatch(/if \(halves\) batches\.splice\(i \+ 1, 0, \.\.\.halves\);/);
+    expect(handler).toMatch(/reason: 'the model ran out of output tokens on this entry alone'/);
+  });
+
   test('packing fills earlier calls first and gives the same batches for the same entries, in whatever order they arrive', async () => {
     const { packBatches, partsOf } = await lib('pack.mjs');
     const { BUDGET } = await lib('config.mjs');

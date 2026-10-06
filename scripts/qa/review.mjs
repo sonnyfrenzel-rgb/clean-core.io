@@ -16,7 +16,7 @@ import { AUTO_MODEL, BUDGET, EFFORT, estimateCostUsd, publicByDesignValues, ROUT
 import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer, modelsOf } from './lib/openrouter.mjs';
-import { packBatches, partLabel, partsOf } from './lib/pack.mjs';
+import { isCutOff, packBatches, partLabel, partsOf, splitBatch } from './lib/pack.mjs';
 import { buildUserMessage, carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
 import { actualCost, buildReport, isSuppressed, publicSummary, renderText } from './lib/report.mjs';
@@ -126,6 +126,7 @@ async function main() {
   // What counts against the cap: reported cost where there is one, the
   // worst-case estimate where there is not — an unreported cost is never a zero.
   let spentForCap = 0;
+  let cutOffCalls = 0;
   for (let i = 0; i < batches.length; i++) {
     // Last line of defence before anything leaves the runner: whatever part of
     // the message the per-source redaction missed is caught here and reported.
@@ -135,7 +136,20 @@ async function main() {
       for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, ...(f.part ? { part: partLabel(f) } : {}), reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
       break;
     }
-    const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort, costTier: ROUTER.delta.costTier, maxPrice: ROUTER.delta.maxPrice });
+    let r;
+    try {
+      r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort, costTier: ROUTER.delta.costTier, maxPrice: ROUTER.delta.maxPrice });
+    } catch (err) {
+      if (!isCutOff(err)) throw err;
+      // Out of output tokens: the batch is read again as two halves, right after this one, instead of failing the
+      // whole review (pack.mjs splitBatch). The call was paid for, and its full output allowance counts against the cap.
+      cutOffCalls++;
+      spentForCap += estimateCostUsd(outgoingSystem.length + user.length, 1);
+      const halves = splitBatch(batches[i], baseChars);
+      if (halves) batches.splice(i + 1, 0, ...halves);
+      else for (const f of batches[i].files) notReviewed.push({ path: f.path, ...(f.part ? { part: partLabel(f) } : {}), reason: 'the model ran out of output tokens on this entry alone' });
+      continue;
+    }
     spentForCap += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd(outgoingSystem.length + user.length, 1);
     // `shown`: the carried findings this batch was given — the only ones it may mark resolved (report.mjs).
     results.push({ ...r, files: [...new Set(batches[i].files.map((f) => f.path))], shown: carriedFor(batches[i].files, shared).open.map((f) => f.fingerprint) });
@@ -177,6 +191,8 @@ async function main() {
       models,
       effort,
       modelCalls,
+      // Calls that ran out of output tokens and were split (not counted in modelCalls: they returned no review).
+      cutOffCalls,
       estimatedCostUsd,
       costUsd, // null when OpenRouter did not report the cost of every call
       budget: { maxCostUsd: BUDGET.maxCostUsd, maxBatches: BUDGET.maxBatches },

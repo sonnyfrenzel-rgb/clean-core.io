@@ -183,3 +183,23 @@ export function packBatches(files, baseChars, { budget = BUDGET, price = PRICE_P
   const totalChars = batches.reduce((n, b) => n + b.chars, 0);
   return { batches, notReviewed, estimatedCostUsd: Number(estimateCostUsd(totalChars, batches.length, { price, maxOutputTokens: budget.maxOutputTokens }).toFixed(2)) };
 }
+
+/**
+ * Did the model run out of output tokens? Both ways openrouter.mjs reports it — no content at all, or JSON that
+ * stops mid-structure — carry `finish_reason=length`, and nothing else does.
+ */
+export const isCutOff = (err) => /\bfinish_reason=length\b/.test(String(err?.message || ''));
+
+/**
+ * A batch the model could not finish, as two halves that each carry the shared part again. `packBatches` sizes a
+ * batch by its input, and the failure is in the output: on 06.10.2026 one batch of 61,000 characters ended twice
+ * at 96,000 reasoning tokens with no review at all (config.mjs BUDGET.maxOutputTokens names this repair). Halving
+ * keeps the order, so the riskiest entries are still read first. `null` for a single entry: there is nothing left
+ * to split, and the caller names it as not reviewed.
+ */
+export function splitBatch(batch, baseChars) {
+  if (batch.files.length < 2) return null;
+  const mid = Math.ceil(batch.files.length / 2);
+  const half = (files) => ({ files, chars: baseChars + files.reduce((n, f) => n + fileChars(f), 0) });
+  return [half(batch.files.slice(0, mid)), half(batch.files.slice(mid))];
+}

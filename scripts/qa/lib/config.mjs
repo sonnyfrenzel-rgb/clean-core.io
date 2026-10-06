@@ -122,10 +122,11 @@ export const BUDGET = {
    * whose output does not. 48,000 is not a guess: `FULL_BUDGET` has run at that
    * figure since 15.09.2026, including over the whole code base.
    *
-   * What this does not fix: a batch large enough to exceed 48,000 fails the same
-   * way, because a cut-off batch fails the review rather than splitting and
-   * retrying. That is the real repair and it is a bigger change than a release
-   * should carry.
+   * What this did not fix: a batch whose output exceeded the allowance failed the
+   * whole review. Since 06.10.2026 (Sonny's go) the delta review splits such a
+   * batch in two and reads both halves (pack.mjs splitBatch); a single entry the
+   * model cannot finish is named as not reviewed, so the report is incomplete
+   * rather than missing.
    *
    * Raised to 96,000 on 01.10.2026 (owner decision): the delta review of c25437ab3e13 stopped at
    * completion_tokens=48000 (17,608 of them reasoning) on a large merge push.
