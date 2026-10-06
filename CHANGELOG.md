@@ -10,6 +10,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.5] — 2026-10-07
+
+The target system is asked again, the Management view answers keep, rebuild, move to SAP
+standard or retire, and German ABAP reads in English.
+
+### What everyone notices
+
+- **Public or Private is asked before the first run.** Since 3 October a new example or upload
+  was signed as Private without asking, and routing, score, design and the Management view
+  followed a choice nobody made. Both start screens ask again, Private preselected.
+- **The target can be changed later**, in the IT view's Target profile card: the dialog shows
+  which objects change bucket, which tools become outdated and what it costs, then signs a
+  new run. Changing the target of an example is free, also repeatedly; a confirmed decision
+  shows as outdated.
+- **The Management view leads with the decision.** The question as the heading, the four
+  options Keep · Rebuild · Move to SAP standard · Retire side by side, each with what the
+  evidence says, effort in days from your own Economics figures and cost as a simulation.
+  Keep, Move to SAP standard and Retire are chosen right there, with a reason; Rebuild still
+  goes through Design. "Distance to SAP standard" shows how far the program is from the
+  standard on its target edition, the other edition in one line. "Do nothing" is Keep now,
+  in Economics too. The steering one-pager carries the same picture. (ADR-079)
+- **German ABAP reads in English**, the original in parentheses: "Lieferdatum aendern"
+  becomes "Change delivery date (Lieferdatum ändern)". A name with an unknown German word is
+  shown as written, never half translated. No model call.
+- **"Work from this process"** is a band of its own under the map: the next step, the three
+  views with what each audience gets, and the seven tools with their state.
+- **Two names for two ways back:** "Back to project workspace · ‹project› · ‹view›" from a
+  tool, "Back to My workspace" to the list of all projects.
+- **Level A–D explains itself** on hover, focus or tap in the IT and the Management view.
+- **The Transformation progress** follows the real steps with the elapsed time instead of
+  standing at 95 % for the whole model call.
+- **"Back to top of section"** appears only where there is something to scroll back to.
+
+### Engine
+
+- ALV callbacks (`I_CALLBACK_*`, `IT_EVENTS`, `ON END OF TASK`) are reached: the routines a
+  list's user command runs no longer read as "never called".
+- A change to an internal table is no database write in the call graph, so the requirements
+  no longer say a program "only reads" the table it writes.
+- A quoted literal passed to a function module stays whole; the batch-input recommendation
+  no longer names the sales order API for every transaction.
+- Process benchmark (200 cases): node hits and class results unchanged.
+
+### Planning
+
+- The security hardening planned for 3.0.5 moves to 3.0.6, together with "not determined"
+  as open questions you can close; the rest of the engine review is 3.0.7.
+
 ## [v3.0.4] — 2026-10-06
 
 Faster pages, the security audit of 3.0.3 closed, and review agents that cost cents again.

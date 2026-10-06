@@ -3,6 +3,26 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 06.10.2026 (evening) — 3.0.5 owner fix bundle on dev
+
+**Built (owner requests of the day, bundled as v3.0.5; main on Sonny's go):** target edition asked at
+start and changeable in the IT view (free for examples, also repeatedly); Management view rebuilt around
+Keep · Rebuild · Move to SAP standard · Retire with distance to SAP standard, effort and cost (ADR-079);
+German ABAP names in English; "Work from this process" band; two names for the two ways back; level
+explanations in IT and Management; Transformation progress by real steps; "Back to top" fixed; safe engine
+fixes from the ZMM_BESTELLUEBERSICHT review. CHANGELOG has the details.
+
+**Planned:** 3.0.6 = security hardening (moved from 3.0.5) + "not determined" as closable open questions
+(concept from 06.10., in the scratchpad until 3.0.6 starts) + level explanations on one-pager, print and
+Analyze; 3.0.7 = the rest of the engine review (BDC fields, decision tables, CASE arms, run ends, ignored
+input, authorization check, internal tables in the skeleton, GUI navigation). All in ROADMAP §7.
+
+**Decided:** Need & process leaves the Business view in 3.0.6 (Sonny, 06.10.; needs an ADR).
+
+**Learned:** seven agents on one working tree share one dev server on :3000 — their rendered specs failed
+on each other's restarts, and the permission classifier refused some of their writes to shared files. The
+final rendered run has to happen once, on a quiet server, after all of them are done.
+
 ## Session 06.10.2026 — 3.0.4 live, agents rebuilt, www fixed
 
 **Live:** v3.0.4 on clean-core.io since 06.10.2026 ~13:40 (main `223fd701`); CHANGELOG has the details.
@@ -20,7 +40,7 @@ SAP Community post part 3 submitted for review. Video branch `video/launch-30` p
 merged (1,400+ commits behind; merge after the launch). Landing page content frozen until the launch.
 
 **Open, after the launch:**
-- 3.0.5 security hardening: SEC-2026-728 (P2) and -729 to -736 (P3).
+- 3.0.6 security hardening (moved from 3.0.5, which is now the owner fix bundle of 06.10.2026): SEC-2026-728 (P2) and -729 to -736 (P3).
 - Two carried high QA findings (BPMN draft identity across projects; profile re-creation after
   deletion) and a large carried QA backlog; one medium test gap on the deferred Auth fallback.
 - Perf leftovers needing owner decisions (`docs/perf/REPORT.md`): 1.34 MB landing HTML, public pages
