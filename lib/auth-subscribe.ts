@@ -1,4 +1,4 @@
-import type { User } from 'firebase/auth';
+import type { Auth, User } from 'firebase/auth';
 
 /**
  * `onAuthStateChanged` for components that only need to know who is signed in
@@ -18,15 +18,25 @@ import type { User } from 'firebase/auth';
  *
  * Returns the unsubscribe function; calling it before the SDK has arrived
  * cancels the subscription that would otherwise follow.
+ *
+ * `load` is the seam tests/auth-subscribe-guard.spec.ts uses to make the load fail; callers never pass it.
  */
-export function subscribeToAuth(callback: (user: User | null) => void): () => void {
-  let cancelled = false;
-  let unsubscribe: (() => void) | undefined;
-  void Promise.all([
+export interface AuthSdk {
+  getAuth: () => Auth | null;
+  onAuthStateChanged: (auth: Auth, next: (user: User | null) => void) => () => void;
+}
+
+const loadAuthSdk = (): Promise<AuthSdk> =>
+  Promise.all([
     import(/* webpackExports: ["getAuth"] */ './firebase-app'),
     import(/* webpackExports: ["onAuthStateChanged"] */ 'firebase/auth'),
-  ])
-    .then(([{ getAuth }, { onAuthStateChanged }]) => {
+  ]).then(([app, sdk]) => ({ getAuth: app.getAuth, onAuthStateChanged: sdk.onAuthStateChanged }));
+
+export function subscribeToAuth(callback: (user: User | null) => void, load: () => Promise<AuthSdk> = loadAuthSdk): () => void {
+  let cancelled = false;
+  let unsubscribe: (() => void) | undefined;
+  void load()
+    .then(({ getAuth, onAuthStateChanged }) => {
       if (cancelled) return;
       const auth = getAuth();
       if (!auth) return;
