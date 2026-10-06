@@ -1435,6 +1435,17 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-708 | low | P3 | 3.0.x security hardening | fixed |
 | SEC-2026-709 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
 | SEC-2026-710 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
+| SEC-2026-728 | medium | P2 | 3.0.5 security hardening | scheduled |
+| SEC-2026-729 | medium | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-730 | medium | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-731 | low | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-732 | low | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-733 | low | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-734 | low | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-735 | low | P3 | 3.0.5 security hardening | scheduled |
+| SEC-2026-736 | low | P3 | 3.0.5 security hardening | scheduled |
+
+**Audit of v3.0.4 (`d373289`, manual run against 3.0.3 after the agent fix), 06.10.2026: 0 critical, 0 high, 4 medium, 7 low — all 50 candidates verified, delta of 61 files, $0.26.** 1 scheduled P2 and 8 P3 for 3.0.5 security hardening, 2 refuted (SEC-2026-726 as -680; -727). The push-triggered audits of bf058648 and 9974a157 verified nothing (schema refused in strict mode, fixed in d3732899) and are not counted.
 
 **Audit of the v3.0.0 re-release (`69b4f52`), 03.10.2026: 2 high, 5 medium, 15 low — all
 111 candidates verified; 1 fixed, 3 scheduled, 1 accepted risk, 17 refuted, the inbox is
