@@ -10,7 +10,7 @@ export const APP_RELEASE_DATE = 'October 6, 2026';
  * midnight and then converts to UTC, which shifts the date one day back in
  * every positive UTC offset (CET included). Update both constants together.
  */
-export const APP_RELEASE_DATE_ISO = '2026-10-04';
+export const APP_RELEASE_DATE_ISO = '2026-10-06';
 
 /**
  * The same date again, written the way a German reader expects it, for the
@@ -21,4 +21,4 @@ export const APP_RELEASE_DATE_ISO = '2026-10-04';
  * already documents above, and a date that is one day wrong in a legal document
  * is worse than one more line to keep in step. Update all four together.
  */
-export const APP_RELEASE_DATE_DE = '4. Oktober 2026';
+export const APP_RELEASE_DATE_DE = '6. Oktober 2026';
