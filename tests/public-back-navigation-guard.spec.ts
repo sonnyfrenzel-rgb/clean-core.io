@@ -113,7 +113,7 @@ test.describe('a reader who is signed in', () => {
         { timeout: 60_000 },
       );
       expect(new URL(await back.evaluate((el) => (el as HTMLAnchorElement).href)).pathname).toBe('/dashboard');
-      await expect(back).toHaveText(/Back to Workspace/i);
+      await expect(back).toHaveText(/Back to My workspace/);
     }
   });
 });

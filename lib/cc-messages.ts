@@ -44,6 +44,9 @@ export const CC_MESSAGES = {
   'why.evidence': 'Evidence',
   'why.recorded': 'Recorded',
 
+  // The explanation behind a clean core level chip — components/cc/LevelExplained.tsx.
+  'level.whatItMeans': 'what this level means',
+
   // The Message Popover of the edit footer — DESIGN.md §2.6, §2.3 item 6.
   'checks.title': 'Checks',
   'checks.open': 'open',

@@ -1803,7 +1803,7 @@ export default function AnalyzePage() {
                 icon={<ArrowLeft size={16} aria-hidden="true" />}
                 onClick={() => router.push('/dashboard')}
               >
-                Cancel & Return
+                Cancel, back to My workspace
               </CcButton>
 
               <CcButton

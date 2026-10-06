@@ -3,9 +3,10 @@
 import React, { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
-import { stageBackLink, stageBackPlace } from '@/lib/workspace-back-href';
+import { stageBackLink } from '@/lib/workspace-back-href';
+import { useShellProjectName } from '@/lib/shell-context';
+import StageBackText from '@/components/StageBackText';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar } from '@/components/workspace/ToolBar';
@@ -32,8 +33,10 @@ import { StageToolBar } from '@/components/workspace/ToolBar';
  * page heading (§1.1) — the icon now stands neutral before the title, 20 px in
  * `--cc-ink-muted`, whatever colour the page handed in.
  *
- * Above the title sits **"Back to workspace"** — a link, not a button, 13 px /
- * 600 in `--cc-ink-muted`. It returns to the view and the layer the stage was
+ * Above the title sits **"Back to project workspace · <project> · <view>"** —
+ * a link, not a button, 13 px / 600 in `--cc-ink-muted` (two names for two
+ * places, owner 06.10.2026: this is the project's workspace, "My workspace"
+ * is the list of all projects). It returns to the view and the layer the stage was
  * opened from when the address carries them (`?view=`, `?from=`), and to the
  * workspace's default view when it does not. Every account has the workspace
  * since roadmap 3.0.1 (ADR-061), so the link leads there for every reader.
@@ -115,9 +118,12 @@ export default function StageHeader({
   // the demo workspace (owner 02.10.2026), by the same rule as a project's.
   const demo = tools?.base === DEMO_ROUTE;
   const back = stageBackLink({ projectId, search, demo });
-  // Where the link leads, in words — the view and the layer the stage was
-  // opened from (mockup s8).
-  const place = back.kind === 'link' ? stageBackPlace(search) : null;
+  // Where the link leads, in words — the project, then the view and the layer
+  // the stage was opened from (mockup s8; owner 06.10.2026: the project's
+  // workspace and "My workspace" carry two different names). The name is the
+  // page's own read, or the one the loader announced to the shell bar.
+  const announcedName = useShellProjectName(projectId || null);
+  const backName = projectName || announcedName;
   const toolEyebrow = projectName || null;
   const toolCurrent = tools?.current ?? stage;
   const toolBase = tools?.base ?? (projectId ? `/project/${projectId}` : null);
@@ -131,15 +137,9 @@ export default function StageHeader({
         <Link
           href={back.href}
           data-stage-back="workspace"
-          className={`${BACK_LINK_CLASS} cc-no-print mb-3`}
+          className={`${BACK_LINK_CLASS} cc-no-print mb-3 flex-wrap`}
         >
-          <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
-          {place ? (
-            <span data-stage-back-place="" className="font-medium">
-              {' · '}
-              {place}
-            </span>
-          ) : null}
+          <StageBackText projectName={backName} search={search} />
         </Link>
       )}
 

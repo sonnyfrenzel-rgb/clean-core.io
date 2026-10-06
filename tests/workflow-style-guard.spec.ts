@@ -69,7 +69,8 @@ test.describe('one stage header, defined once', () => {
       /\bfont-black\b|\btext-(?:[2-9]xl|gray-\d+|slate-\d+)\b|\bbg-green-/,
     );
     // The way back, above the title (§2.3).
-    expect(header).toContain('Back to workspace');
+    expect(header).toContain('StageBackText');
+    expect(read('lib/messages/navigation.ts')).toContain("'nav.backToProjectWorkspace': 'Back to project workspace'");
     expect(code.indexOf('data-stage-back')).toBeGreaterThan(-1);
     expect(code.indexOf('data-stage-back')).toBeLessThan(code.indexOf('data-stage-title'));
   });
@@ -150,7 +151,7 @@ test.describe('every stage renders its title identically', () => {
       // "Back to workspace" above the title — a link, not a button.
       const back = page.locator('[data-stage-back]');
       await expect(back, `${stage} has no way back to the workspace`).toHaveCount(1);
-      await expect(back).toHaveText(/Back to workspace/);
+      await expect(back).toHaveText(/Back to project workspace/);
       expect(await back.evaluate((el) => el.tagName), `${stage}: the way back is not a link`).toBe('A');
       // …and it leads where its kind says (QA 472315d93455, e5483b2e4ca7).
       const kind = await back.getAttribute('data-stage-back');

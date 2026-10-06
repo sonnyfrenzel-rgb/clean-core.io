@@ -1,10 +1,11 @@
 import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey } from '@/lib/workspace-model';
 import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
+import { nav, navViewLabel } from '@/lib/messages/navigation';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
 /**
- * Where "Back to workspace" leads. Pure, so the rule can be read and tested in
+ * Where "Back to project workspace" leads. Pure, so the rule can be read and tested in
  * one place: the view and the layer come from the stage's own address and are
  * checked against what the workspace understands — a view in the URL is a
  * perspective, never a grant (ADR-018), and an unknown one is simply dropped.
@@ -138,16 +139,37 @@ export function layerParam(value: string | null | undefined): LayerKey | null {
 }
 
 /**
- * Where "Back to workspace" leads, in words: `Business, Need & process`. Only
- * what the address carries and the workspace understands; `null` when it
- * carries neither, so the link then says nothing it does not know.
+ * Where "Back to project workspace" leads, in words: `Business view, Need &
+ * process`. Only what the address carries and the workspace understands;
+ * `null` when it carries neither, so the link then says nothing it does not
+ * know. "view" is said (owner 06.10.2026), so "IT" is not read as a team.
  */
 export function stageBackPlace(search: string): string | null {
   const params = new URLSearchParams(search);
   const view = params.get('view');
   const layer = layerParam(params.get('layer'));
-  const parts = [isWorkspaceView(view) ? VIEW_LABELS[view] : null, layer ? LAYER_LABELS[layer] : null].filter(
-    (p): p is string => Boolean(p),
-  );
+  const parts = [
+    isWorkspaceView(view) ? navViewLabel(VIEW_LABELS[view]) : null,
+    layer ? LAYER_LABELS[layer] : null,
+  ].filter((p): p is string => Boolean(p));
   return parts.length > 0 ? parts.join(', ') : null;
+}
+
+/**
+ * The words of a stage's way back to its project (owner 06.10.2026: two
+ * terms, so the project's workspace is never mistaken for "My workspace", the
+ * list of all projects): `Back to project workspace` and, after it, the
+ * project's name and the place — `Order limit check · IT view, Need & process`.
+ * A name not read yet, or a place the address does not carry, is left out
+ * rather than guessed.
+ */
+export function stageBackLabel({
+  projectName,
+  search,
+}: {
+  projectName?: string | null;
+  search: string;
+}): { lead: string; project: string | null; place: string | null } {
+  const name = typeof projectName === 'string' ? projectName.trim() : '';
+  return { lead: nav('nav.backToProjectWorkspace'), project: name || null, place: stageBackPlace(search) };
 }

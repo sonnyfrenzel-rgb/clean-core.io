@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { nav } from '@/lib/messages/navigation';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
@@ -220,7 +221,7 @@ function TenantApprovalContent() {
   const backToDashboard = (
     <div>
       <CcButton variant="ghost" density="cozy" onClick={() => router.push('/dashboard')}>
-        Go to Dashboard
+        {nav('nav.goToMyWorkspace')}
       </CcButton>
     </div>
   );

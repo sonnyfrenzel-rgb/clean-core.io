@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { nav } from '@/lib/messages/navigation';
 
 /**
  * The way back from a public page, and there is one.
@@ -62,7 +63,7 @@ export default function BackLink() {
       href={signedIn ? '/dashboard' : '/'}
       className={BACK_LINK_CLASS}
     >
-      <ArrowLeft size={16} aria-hidden="true" /> {signedIn ? 'Back to workspace' : 'Back to homepage'}
+      <ArrowLeft size={16} aria-hidden="true" /> {signedIn ? nav('nav.backToMyWorkspace') : 'Back to homepage'}
     </Link>
   );
 }

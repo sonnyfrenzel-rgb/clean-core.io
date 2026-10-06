@@ -18,8 +18,8 @@ import type { PhaseKey, PhaseState } from '../lib/workflow-steps';
 /**
  * The seven stages are tools of the workspace (ADR-008, ADR-050, mockup s8).
  *
- * In the workspace a stage opens under a tool header — "Back to workspace ·
- * Business, Need & process", the eyebrow "Tool · <project>", the title — and
+ * In the workspace a stage opens under a tool header — "Back to project
+ * workspace · <project> · Business view, Need & process", the eyebrow "Tool · <project>", the title — and
  * without the old seven-circle stepper: how far each phase has got is said once,
  * in the workspace, and the tools bar carries its marks. Until roadmap 3.0.1 an
  * account without the workspace kept the stepper and its rail; since then
@@ -46,8 +46,8 @@ test.describe('the way back names the view and the layer', () => {
     const search = href.slice(href.indexOf('?'));
     // The layer wins over the control: the workspace holds the layer in its fragment.
     expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=business#need');
-    expect(stageBackPlace(search)).toBe('Business, Need & process');
-    expect(stageBackPlace('?view=it')).toBe('IT');
+    expect(stageBackPlace(search)).toBe('Business view, Need & process');
+    expect(stageBackPlace('?view=it')).toBe('IT view');
     expect(stageBackPlace('')).toBeNull();
     // Nothing the workspace does not know is carried or said.
     expect(layerParam('L231')).toBeNull();
@@ -99,7 +99,7 @@ test.describe('a stage as a tool, rendered', () => {
       });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
       const back = page.locator('[data-stage-back]');
-      await expect(back, `${st}: the way back`).toHaveText(/Back to workspace · Business, Need & process/, { timeout: 30000 });
+      await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Need & process/, { timeout: 30000 });
       await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#need`);
       await expect(page.locator('[data-stage-tool]'), `${st}: the tool eyebrow`).toContainText('Tool ·');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
@@ -154,7 +154,7 @@ test.describe('a stage as a tool, rendered', () => {
     await page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]').click();
     await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=need`, { timeout: 60000 });
     await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to workspace · Business, Need & process/, { timeout: 30000 });
+    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to project workspace\s·\s.*Business view, Need & process/, { timeout: 30000 });
     await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
@@ -207,7 +207,7 @@ test.describe('a stage as a tool, rendered', () => {
       const back = page.locator('[data-stage-back]');
       await expect(back, `demo ${st}: the way back`).toHaveCount(1);
       await expect(back).toHaveAttribute('href', '/demo/workspace');
-      await expect(back).toHaveText(/Back to workspace/);
+      await expect(back).toHaveText(/Back to project workspace/);
       const [backTop, barTop] = await Promise.all([
         back.evaluate((el) => el.getBoundingClientRect().top),
         bar.evaluate((el) => el.getBoundingClientRect().top),
@@ -241,7 +241,7 @@ test.describe('a stage as a tool, rendered', () => {
     await page.waitForURL(/\/demo\/tco\?view=it&from=workspace-tools/, { timeout: 60000 });
     const back = page.locator('[data-stage-back]');
     await expect(back).toHaveCount(1, { timeout: 60000 });
-    await expect(back).toHaveText(/Back to workspace · IT/);
+    await expect(back).toHaveText(/Back to project workspace\s·\s.*IT view/);
     await back.click();
     await page.waitForURL(/\/demo\/workspace\?view=it/, { timeout: 60000 });
     await expect(page.locator('[data-demo-workspace="it"]')).toBeAttached({ timeout: 90000 });

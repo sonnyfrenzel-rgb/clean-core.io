@@ -3,9 +3,10 @@
 import React, { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
-import { stageBackLink, stageBackPlace } from '@/lib/workspace-back-href';
+import { stageBackLink } from '@/lib/workspace-back-href';
+import { useShellProjectName } from '@/lib/shell-context';
+import StageBackText from '@/components/StageBackText';
 
 const noSubscription = () => () => {};
 const readSearch = () => window.location.search;
@@ -29,14 +30,15 @@ export default function StageFooter() {
   const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
   const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
 
+  // The name the stage's own read announced to the shell bar (`lib/shell-context.ts`).
+  const projectName = useShellProjectName(projectId || null);
+
   const back = stageBackLink({ projectId, search });
   if (back.kind !== 'link') return null;
-  const place = stageBackPlace(search);
   return (
     <div data-stage-footer="" className="cc-no-print mt-10 border-t border-cc-line pt-4">
-      <Link href={back.href} className={BACK_LINK_CLASS}>
-        <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
-        {place ? <span className="font-medium">{` · ${place}`}</span> : null}
+      <Link href={back.href} className={`${BACK_LINK_CLASS} flex-wrap`}>
+        <StageBackText projectName={projectName} search={search} />
       </Link>
     </div>
   );

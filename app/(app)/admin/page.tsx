@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { nav } from '@/lib/messages/navigation';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -512,7 +513,7 @@ export default function AdminConsole() {
           it goes somewhere (owner, 03.10.2026: no button back to the workspace). */}
       <div>
         <CcLinkButton href="/dashboard" variant="ghost" icon={<ArrowLeft size={16} aria-hidden={true} />}>
-          Back to workspace
+          {nav('nav.backToMyWorkspace')}
         </CcLinkButton>
       </div>
       {/* Header */}

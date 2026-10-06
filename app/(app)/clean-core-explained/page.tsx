@@ -423,7 +423,7 @@ export default function CleanCoreExplainedPage() {
             <PlayCircle size={18} aria-hidden="true" /> Your first run, step by step
           </Link>
           <Link href="/dashboard" className={publicButton('secondary')}>
-            Open the workspace <ArrowRight size={16} aria-hidden="true" />
+            Open My workspace <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
         <p className="mt-8 text-sm text-cc-ink-muted">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { nav } from '@/lib/messages/navigation';
 import { SearchX } from 'lucide-react';
 import CcLinkButton from '@/components/cc/LinkButton';
 
@@ -48,7 +49,7 @@ export default function NotFound() {
           </p>
           <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
             <CcLinkButton href="/dashboard" variant="primary" density="cozy">
-              Go to My workspace
+              {nav('nav.goToMyWorkspace')}
             </CcLinkButton>
             <CcLinkButton href="/" variant="ghost" density="cozy">
               Go to the homepage

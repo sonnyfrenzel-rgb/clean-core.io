@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { nav } from '@/lib/messages/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
 import {
@@ -1082,7 +1083,7 @@ export default function SettingsPage() {
           calls the router. */}
       <div>
         <CcLinkButton href="/dashboard" variant="ghost" icon={<ArrowLeft size={16} aria-hidden={true} />}>
-          Back to workspace
+          {nav('nav.backToMyWorkspace')}
         </CcLinkButton>
       </div>
 

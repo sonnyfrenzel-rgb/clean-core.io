@@ -30,6 +30,7 @@ import { Lightbulb } from 'lucide-react';
 import { showTipsAgain } from '@/lib/show-tips-again';
 import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
 import { workspaceBackHref } from '@/lib/workspace-back-href';
+import { nav } from '@/lib/messages/navigation';
 import { wt } from '@/lib/workspace-messages';
 
 const noSubscription = () => () => {};
@@ -248,10 +249,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           {profile && (
             <nav aria-label="Path" data-shell-path="" className="hidden min-w-0 items-center gap-1 text-[13px] font-medium text-cc-ink-muted sm:flex">
               {atWorkspace ? (
-                <span aria-current="page" className="font-semibold text-cc-ink">My workspace</span>
+                <span aria-current="page" className="font-semibold text-cc-ink">{nav('nav.myWorkspace')}</span>
               ) : (
                 <Link href="/dashboard" className="whitespace-nowrap text-cc-ink-muted no-underline hover:text-cc-ink hover:underline">
-                  My workspace
+                  {nav('nav.myWorkspace')}
                 </Link>
               )}
               {projectName && (
