@@ -58,6 +58,7 @@ import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP } from '@/lib/sap-naming';
+import { GENERATION_PHASES, enterGenerationPhase, formatElapsed, generationProgressAt, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
 
 /**
  * A file the workspace can show and the next stage can read. The model's answer
@@ -143,7 +144,20 @@ export default function TransformationPage() {
   const [contractRefusal, setContractRefusal] = useState<GenerationRefusal | null>(null);
   /** The track the contract chose, once the server has answered. */
   const [contractTrack, setContractTrack] = useState<{ isAbapCloud: boolean; sentence: string } | null>(null);
-  const [progress, setProgress] = useState(0);
+  /**
+   * The step the generation is in, and when it began (`lib/generation-progress.ts`).
+   * The bar used to be a timer that reached 95 % in about fourteen seconds and
+   * stood there for the whole model call (owner report 06.10.2026).
+   */
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase | null>(null);
+  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
+  /** The clock the bar and the elapsed time are drawn against while a generation runs. */
+  const [now, setNow] = useState(() => Date.now());
+  const enterPhase = useCallback((key: GenerationPhaseKey) => {
+    const at = Date.now();
+    setGenerationPhase(prev => enterGenerationPhase(prev, key, at));
+    setNow(at);
+  }, []);
   const [isProceeding, setIsProceeding] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -564,7 +578,10 @@ CMD ["node", "srv/service.js"]`
     if (generationInFlight.current) return;
     generationInFlight.current = true;
     setLoading(true);
-    setProgress(0);
+    const startedAt = Date.now();
+    setGenerationStartedAt(startedAt);
+    setGenerationPhase(enterGenerationPhase(null, 'contract', startedAt));
+    setNow(startedAt);
     setError('');
     setUnsavedDraft(null);
     
@@ -765,6 +782,8 @@ CMD ["node", "srv/service.js"]`
           setTransformationLog(prev => [...prev, notice]);
         }
         attempts++;
+        // A second call continues from where the bar stands; it does not restart it.
+        enterPhase('model');
         let responseText: string;
         try {
           responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
@@ -782,6 +801,7 @@ CMD ["node", "srv/service.js"]`
         throw new Error(unusableAnswerMessage(failure, attempts));
       }
 
+      enterPhase('checking');
       const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };
       filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
 
@@ -838,6 +858,7 @@ CMD ["node", "srv/service.js"]`
       // writes only if the project is still at the token read before the model
       // call. A refusal means nothing was saved.
       const packaged = JSON.stringify(filesArray);
+      enterPhase('storing');
       let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
       try {
         const answer = await storeGeneration(projectId as string, {
@@ -889,7 +910,7 @@ CMD ["node", "srv/service.js"]`
     } finally {
       generationInFlight.current = false;
       setLoading(false);
-      setProgress(100);
+      enterPhase('done');
     }
     // `profile?.byokConfigured` used to be a dependency here although nothing
     // in this callback reads it. Hydration flipped it from undefined to true,
@@ -898,7 +919,7 @@ CMD ["node", "srv/service.js"]`
     // charged runs, and whichever answer wrote last became the artefact
     // (QA review of 33471220d6e9, e078d502e983). The ref is the second half:
     // a dependency is not the only way to be called twice.
-  }, [projectId]);
+  }, [projectId, enterPhase]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -975,15 +996,17 @@ CMD ["node", "srv/service.js"]`
   /** `loading`, except while waiting on a generation this stage may not start. */
   const busy = loading && !autoGenerationBlocked;
 
+  // The clock ticks only while a generation is under way; the bar and the
+  // elapsed time are derived from it and from the step, never accumulated.
+  const generating = loading && generationPhase !== null && generationPhase.key !== 'done';
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (loading && progress < 95) {
-      interval = setInterval(() => {
-        setProgress((prev) => prev + (prev < 80 ? 2 : 0.5));
-      }, 200);
-    }
+    if (!generating) return;
+    const interval = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(interval);
-  }, [loading, progress]);
+  }, [generating]);
+  const progress = generationProgressAt(generationPhase, now);
+  const elapsed = generationStartedAt === null ? null : formatElapsed(now - generationStartedAt);
+  const phaseLabel = generationPhase ? GENERATION_PHASES[generationPhase.key].label : 'Preparing';
 
   const phases = workflowSteps(project);
   const blockers = generationBlockers(project, 'transformation');
@@ -1071,14 +1094,21 @@ CMD ["node", "srv/service.js"]`
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(progress)}
+                aria-valuetext={elapsed ? `${Math.round(progress)} percent, ${phaseLabel}, ${elapsed} elapsed` : `${Math.round(progress)} percent, ${phaseLabel}`}
+                data-generation-phase={generationPhase?.key ?? 'none'}
                 className="w-full h-2 bg-cc-line rounded-full overflow-hidden"
               >
-                <div className="h-full bg-cc-ink transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                <div className="h-full bg-cc-ink transition-[width] duration-300 ease-linear" style={{ width: `${progress}%` }}></div>
               </div>
-              <div className="flex justify-between cc-text-meta font-cc-mono text-cc-ink-muted">
-                <span>{progress.toFixed(0)}% processed</span>
-                <span>Executing …</span>
+              <div className="flex justify-between gap-4 cc-text-meta font-cc-mono text-cc-ink-muted">
+                <span data-generation-phase-label>{phaseLabel} …</span>
+                <span data-generation-elapsed>{elapsed ?? ''}</span>
               </div>
+              {generationPhase?.key === 'model' && (
+                <p className="cc-text-meta text-cc-ink-muted">
+                  The model returns the whole package in one answer, so the bar estimates this step rather than measuring it.
+                </p>
+              )}
             </div>
           </div>
 
