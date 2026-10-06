@@ -8,6 +8,7 @@ import { missingFrom, writeStartNarrative, type StartNarrative, type StartNarrat
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { ownCodeFileName } from '@/lib/own-code-handoff';
 import { sourceFileName } from '@/lib/source-file-name';
+import { targetEditionOf } from '@/lib/target-edition';
 import type { Project } from '@/lib/types';
 
 /**
@@ -113,7 +114,9 @@ export function useStartRun({
   const hasRun = typeof project?.activeRunId === 'string' && project.activeRunId.trim().length > 0;
   const uid = typeof window === 'undefined' ? null : (getAuth().currentUser?.uid ?? null);
   const owner = !!project && !!uid && project.userId === uid;
-  const deployment: 'public' | 'private' = project?.s4Deployment === 'public' ? 'public' : 'private';
+  // The project's own target, asked on the screen that started it; without
+  // one, the server's default (lib/target-edition.ts) — never a silent Private.
+  const deployment = targetEditionOf(project?.s4Deployment);
   const startable = !!project && owner && source.trim().length > 0 && !hasRun;
 
   const start = useCallback(() => {

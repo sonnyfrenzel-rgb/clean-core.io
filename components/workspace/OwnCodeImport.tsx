@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Code2, Download, FileCode, FileText, Info, PenLine, ShieldAlert, X } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -38,6 +38,7 @@ import {
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
+import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
 import CcCard from '@/components/cc/Card';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcField, { CcFieldMessage, CcRequiredMark, CcRequiredNote } from '@/components/cc/Field';
@@ -151,6 +152,10 @@ export default function OwnCodeImport() {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The edition the first run is assessed against — asked before the start. */
+  const [edition, setEdition] = useState<TargetEdition>('private');
+  /** The project exists but its target was not saved — not "nothing created". */
+  const [targetError, setTargetError] = useState<string | null>(null);
   const [personalDataAckFor, setPersonalDataAckFor] = useState('');
   const [namingSaving, setNamingSaving] = useState(false);
   const [namingError, setNamingError] = useState('');
@@ -216,6 +221,16 @@ export default function OwnCodeImport() {
         userId: user.uid,
         createdAt: serverTimestamp(),
       });
+      // The target the start's run is signed against. The create rule takes no
+      // `s4Deployment`; the owner's update does (firestore.rules).
+      try {
+        await updateDoc(docRef, { s4Deployment: edition });
+      } catch (err) {
+        console.error('[OwnCodeImport] target system not saved', err);
+        setTargetError('The project was created, but its target system could not be saved. Open it from My workspace and choose the target in Analyze.');
+        setBusy(false);
+        return;
+      }
       leaveOwnCodeHandoff({
         projectId: docRef.id,
         personalDataKey: hintKey,
@@ -231,7 +246,7 @@ export default function OwnCodeImport() {
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));
       setBusy(false);
     }
-  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router]);
+  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition]);
 
   const toggleNaming = useCallback(
     async (next: boolean) => {
@@ -565,6 +580,16 @@ export default function OwnCodeImport() {
             {error}
           </CcMessageStrip>
         ) : null}
+
+        {targetError ? (
+          <CcMessageStrip state="error" announce>
+            {targetError}
+          </CcMessageStrip>
+        ) : null}
+
+        <div className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
+          <TargetEditionChoice value={edition} onChange={setEdition} disabled={busy} />
+        </div>
 
         <TrustBeforeUpload part="pledge" />
 

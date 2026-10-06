@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { landViewedCode, loadStarterExample, type StarterExample, type ViewedCode } from '@/lib/starter-examples';
 import { personalDataHintKey, scanForPersonalDataHints, type PersonalDataHint } from '@/lib/personal-data-hints';
@@ -27,6 +27,7 @@ import CcFilterBar from '@/components/cc/FilterBar';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSelect from '@/components/cc/Select';
 import CcTag from '@/components/cc/Tag';
+import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 
 /**
@@ -76,6 +77,8 @@ export default function StarterExamples({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  /** The edition the first run is assessed against — asked before the start. */
+  const [edition, setEdition] = useState<TargetEdition>('private');
   const [viewing, setViewing] = useState<ViewedCode | null>(null);
   /**
    * What the last look at an example's source found, and which card it was
@@ -136,6 +139,18 @@ export default function StarterExamples({
         createdAt: serverTimestamp(),
         fromExample: true,
       });
+      // The target the start's run is signed against. The create rule takes no
+      // `s4Deployment`; the owner's update does (firestore.rules), so it is the
+      // second write, before the workspace opens and signs.
+      try {
+        await updateDoc(docRef, { s4Deployment: edition });
+      } catch (error) {
+        // Not handleFirestoreError: it throws, and the sentence below would never land.
+        console.error('[StarterExamples] target system not saved', error);
+        setFailed('The project was created, but its target system could not be saved. Open it from My workspace and choose the target in Analyze.');
+        setBusy(null);
+        return;
+      }
       // The same door "New project" uses: the workspace with its first look —
       // every project opens there (roadmap 3.0.1) — which signs the engine's
       // reading at once, so the full map stands after the build-up (ADR-072).
@@ -360,6 +375,8 @@ export default function StarterExamples({
       ) : null}
 
       <div className="flex flex-col gap-4">
+        <TargetEditionChoice value={edition} onChange={setEdition} disabled={!!busy} />
+
         <div data-examples-tier="start-here" className="flex flex-col gap-2">
           <h3 className="m-0 cc-text-label text-cc-ink-muted">Start here</h3>
           <ul className="m-0 list-none p-0">

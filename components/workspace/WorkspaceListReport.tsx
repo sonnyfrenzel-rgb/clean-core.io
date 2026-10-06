@@ -14,8 +14,10 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   where,
 } from 'firebase/firestore';
+import { targetEditionOf } from '@/lib/target-edition';
 import { ArrowDownUp, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -398,7 +400,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           projectId: row.id,
           legacyCode: project.legacyCode,
           fileName: sourceFileName(project) || 'main.abap',
-          deployment: project.s4Deployment === 'public' ? 'public' : 'private',
+          deployment: targetEditionOf(project.s4Deployment),
           // Roadmap 7.10 - the declaration the project's last run was made under.
           targetProfile: declaredTargetOf(project),
           callModel,
@@ -443,13 +445,18 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       if (!project || !user) return;
       setActionError(null);
       try {
-        await addDoc(collection(getDb(), 'projects'), {
+        const copy = await addDoc(collection(getDb(), 'projects'), {
           name: `${project.name} - Copy`,
           status: 'uploaded',
           legacyCode: project.legacyCode || '',
           userId: user.uid,
           createdAt: serverTimestamp(),
         });
+        // The copy keeps the original's target system; the create rule takes
+        // no `s4Deployment`, the owner's update does.
+        if (project.s4Deployment === 'public' || project.s4Deployment === 'private') {
+          await updateDoc(copy, { s4Deployment: project.s4Deployment });
+        }
       } catch (error) {
         setActionError(wt('myWorkspace.duplicateFailed'));
         handleFirestoreError(error, OperationType.WRITE, 'projects');

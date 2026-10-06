@@ -71,6 +71,7 @@ import TestScopeLegend from '@/components/testing/TestScopeLegend';
 import SapResultCard from '@/components/testing/SapResultCard';
 import { outsideChipNote, outsideCountsLine, outsideReading, summaryOf, type OutsideTestRecord } from '@/lib/sap-test-results';
 import { isProjectOwner } from '@/lib/project-readers';
+import { targetEditionOf } from '@/lib/target-edition';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -1062,7 +1063,7 @@ export default function TestingSandboxPage() {
    */
   const [tickState, setTickState] = useState<{ code: string; ticks: StripTick[] } | null>(null);
   const evidenceFile = project?.auditMetadata?.inputFingerprint?.fileName || 'main.abap';
-  const evidenceDeployment = project?.s4Deployment === 'public' ? 'public' : 'private';
+  const evidenceDeployment = targetEditionOf(project?.s4Deployment);
   useEffect(() => {
     const code = project?.legacyCode;
     if (typeof code !== 'string' || !code.trim()) return undefined;
