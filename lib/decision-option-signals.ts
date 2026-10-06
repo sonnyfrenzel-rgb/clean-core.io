@@ -256,8 +256,16 @@ function retireSignal(subject: string, usage: UsageReport | null): Pick<OptionCa
       place: 'it',
     };
   }
-  const record = usage.records.find((r) => r.objectName.toUpperCase() === subject.toUpperCase()) ?? null;
-  if (!record || record.callCount === null) {
+  // A stored usage report can be older or hand-edited: entries without a name,
+  // `null` rows, a count that is not a number (legacy form "malformed-lists").
+  const records: unknown[] = Array.isArray(usage.records) ? usage.records : [];
+  const record =
+    (records.find(
+      (r): r is UsageReport['records'][number] =>
+        !!r && typeof (r as { objectName?: unknown }).objectName === 'string' &&
+        (r as { objectName: string }).objectName.toUpperCase() === subject.toUpperCase(),
+    ) as UsageReport['records'][number] | undefined) ?? null;
+  if (!record || typeof record.callCount !== 'number') {
     return {
       signal: 'not-determined',
       reason: `The usage import does not count executions of ${subject}, so it says nothing about retiring it.`,

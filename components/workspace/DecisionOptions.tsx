@@ -105,7 +105,7 @@ function Card({
       )}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="m-0 text-[15px] leading-tight font-bold text-cc-ink">{card.label}</h4>
+        <h3 className="m-0 text-[15px] leading-tight font-bold text-cc-ink">{card.label}</h3>
         {card.chosen ? <CcTag>{wt('decide.chosen')}</CcTag> : null}
         {card.proposed ? <CcTag>{wt('decide.proposed')}</CcTag> : null}
       </div>
