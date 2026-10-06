@@ -241,6 +241,31 @@ export function collectLocalDataObjects(source: string): Set<string> {
   return names;
 }
 
+/**
+ * The names a write statement's target is checked against before it counts as
+ * a database write — the same set this file's own reading uses: the local
+ * data objects, without the work areas `TABLES`/`NODES` declare (`MODIFY
+ * zmm_stat.` with `TABLES zmm_stat` writes the table of that name).
+ *
+ * For the readers that hold statements, not the source: the call graph and
+ * the process skeleton read `MODIFY gt_fieldcat FROM gs_fieldcat` with
+ * `databaseWriteIn` alone, which cannot tell it from `MODIFY ztab FROM wa`,
+ * and so reported an ALV field catalogue as the program's main effect.
+ */
+export function localDataObjectsOf(statements: ReadonlyArray<{ text: string }>): Set<string> {
+  const source = statements.map((s) => s.text.replace(/\.\s*$/, '')).join('.\n') + '.';
+  const local = collectLocalDataObjects(source);
+  for (const s of statements) {
+    const declared = /^\s*(?:TABLES|NODES)\b\s*:?\s*([^.]*)/i.exec(s.text);
+    if (!declared) continue;
+    for (const part of declared[1].split(',')) {
+      const name = /^\*?([\w/]+)/.exec(part.trim())?.[1]?.toUpperCase();
+      if (name) local.delete(name);
+    }
+  }
+  return local;
+}
+
 /* ----------------------------------------------------------- literals */
 
 /** The text with every character that is not code — literal content and delimiters — blanked, offsets kept. */

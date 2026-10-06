@@ -442,7 +442,9 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `CALL TRANSACTION statement to drive SAP screens programmatically.`,
         cleanCoreImpact: 'BDC relies on traditional SAP GUI screen flows. These are highly unstable, prone to breaking during upgrades, and do not work in SAP Fiori or Cloud environments.',
-        recommendation: `Replace BDC with official SAP APIs (e.g. Sales Order API instead of VA01/VA02 BDC) or wrap in OData API via RAP.`,
+        // Domain-neutral: the example named the sales order API for every
+        // transaction, purchase orders included (ZMM_BESTELLUEBERSICHT review).
+        recommendation: `Replace this screen automation with the released SAP API for the same business object, or wrap it in an OData service via RAP.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite']
       });
     }

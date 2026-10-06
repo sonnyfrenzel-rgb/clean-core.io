@@ -2362,8 +2362,10 @@ function sentenceFor(
       }
       // What goes in and what comes out — that is the business statement
       // of a function module call, not its name alone.
-      const exporting = [...text.matchAll(/\bEXPORTING\s+\w+\s*=\s*(\S+)/gi)].map((m) => plain(m[1]));
-      const importing = [...text.matchAll(/\bIMPORTING\s+\w+\s*=\s*(\S+)/gi)].map((m) => plain(m[1]));
+      // A quoted literal is one value, spaces included: `(\S+)` alone cut
+      // 'Neues Lieferdatum' to "'Neues" (ZMM_BESTELLUEBERSICHT review, 06.10.2026).
+      const exporting = [...text.matchAll(/\bEXPORTING\s+\w+\s*=\s*('(?:[^']|'')*'|\S+)/gi)].map((m) => plain(m[1]));
+      const importing = [...text.matchAll(/\bIMPORTING\s+\w+\s*=\s*('(?:[^']|'')*'|\S+)/gi)].map((m) => plain(m[1]));
       if (
         resolved.from !== 'constant' &&
         exporting.length > 0 &&

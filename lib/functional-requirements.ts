@@ -928,10 +928,23 @@ function openItems(ctx: Ctx, rules: BusinessRule[], unreachable: string[], formR
     }
   }
   if (unreachable.length) {
+    // Two different facts, kept apart (review of ZMM_BESTELLUEBERSICHT,
+    // 06.10.2026): a routine nothing performs or registers is dead where it
+    // stands; one performed only from such a routine is dead because its
+    // caller is. Saying "the program never calls" of both counted BDC helpers
+    // that the program plainly performs.
+    const neverPerformed = new Set(facts.calls.neverPerformed.map((n) => n.toUpperCase()));
+    const never = unreachable.filter((n) => neverPerformed.has(n));
+    const onlyFrom = unreachable.filter((n) => !neverPerformed.has(n));
+    const listed = (names: string[]) => `${names.slice(0, 4).join(', ')}${names.length > 4 ? ', …' : ''}`;
+    const parts = [
+      never.length ? `${listed(never)} — never performed` : '',
+      onlyFrom.length ? `${listed(onlyFrom)} — performed only from ${never.length ? 'those' : 'routines no entry point reaches'}` : '',
+    ].filter(Boolean);
     out.push({
       topic: 'unreached-code',
-      question: `Are any of the ${unreachable.length} routine${unreachable.length === 1 ? '' : 's'} the program never calls still needed (${unreachable.slice(0, 4).join(', ')}${unreachable.length > 4 ? ', …' : ''})?`,
-      why: 'No entry point reaches them, so they describe no current behaviour.',
+      question: `Are any of the ${unreachable.length} routine${unreachable.length === 1 ? '' : 's'} no entry point reaches still needed (${parts.join('; ')})?`,
+      why: 'No entry point reaches them — no PERFORM, event or callback registration leads there — so they describe no current behaviour.',
       anchors: distinctAnchors(unreachable.slice(0, 6).map((name) => {
         const r = formRanges.get(name);
         return r ? anchorOf(ctx, { lineStart: r.lineStart, lineEnd: r.lineStart }) : null;

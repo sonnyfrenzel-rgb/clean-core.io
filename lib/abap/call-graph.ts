@@ -1,6 +1,8 @@
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
 import { readBlocks, containerAt, type BlockStructure, type Container } from './block-structure';
 import { databaseWriteIn } from './open-sql-discrimination';
+import { localDataObjectsOf } from './table-dependencies';
+import { formCallbacksOf, programNameOf } from './callback-registrations';
 
 /**
  * What the program calls, and what it writes — roadmap 2.2.
@@ -131,6 +133,17 @@ export interface CallEdge extends SourceRange {
   to: string;
 }
 
+/**
+ * A FORM another caller runs because a statement here registers it by name —
+ * the ALV's `I_CALLBACK_USER_COMMAND = 'USER_COMMAND'`, `PERFORMING f ON END
+ * OF TASK` (`callback-registrations.ts`). Not a `PERFORM`: it stays out of
+ * `edges` and `neverPerformed`, and counts for reachability only.
+ */
+export interface CallbackEdge extends CallEdge {
+  /** `ALV I_CALLBACK_USER_COMMAND`, `ALV IT_EVENTS`, `ON END OF TASK`. */
+  trigger: string;
+}
+
 export interface CallGraphReport {
   forms: FormDefinition[];
   performs: PerformCall[];
@@ -143,12 +156,16 @@ export interface CallGraphReport {
   edges: CallEdge[];
   /** Subroutine names performed here that this source does not define. */
   unresolvedTargets: string[];
+  /** FORMs registered as callbacks by a statement of this source. */
+  callbacks: CallbackEdge[];
   /** Subroutines defined here that no `PERFORM` in this source names. */
   neverPerformed: string[];
   /**
-   * Subroutines no path from an event block or program level reaches. A superset
-   * of `neverPerformed`: a routine performed only by an unreachable routine is
-   * itself unreachable.
+   * Subroutines no path from an event block or program level reaches, over
+   * `PERFORM` edges and callback registrations. A routine performed only by an
+   * unreachable routine is itself unreachable; a callback FORM no `PERFORM`
+   * names is reachable when the statement registering it is (so it can be in
+   * `neverPerformed` and still not here).
    */
   unreachable: string[];
   /** Lines held by the unreachable subroutines — the size of the dead region. */
@@ -467,6 +484,10 @@ export function readCallGraphFrom(
 ): CallGraphReport {
   const constants = collectConstants(statements);
   const containers = structure.containers;
+  // `MODIFY gt_fieldcat FROM gs_fieldcat` reads like a database write to
+  // `databaseWriteIn`; a declared local data object is an internal table, never
+  // one (ZMM_BESTELLUEBERSICHT review: an ALV field catalogue was the main effect).
+  const localData = localDataObjectsOf(statements);
 
   const forms: FormDefinition[] = structure.blocks
     .filter((b) => b.kind === 'form')
@@ -484,6 +505,8 @@ export function readCallGraphFrom(
     .filter((f) => f.name !== '');
 
   const defined = new Set(forms.map((f) => f.name));
+  const programName = programNameOf(statements);
+  const callbacks: CallbackEdge[] = [];
 
   const performs: PerformCall[] = [];
   const functionModules: FunctionModuleCall[] = [];
@@ -516,6 +539,17 @@ export function readCallGraphFrom(
         continue;
       }
       case 'CALL': {
+        for (const c of formCallbacksOf(statements, statement, programName, (form) => defined.has(form))) {
+          if (callbacks.some((x) => x.to === c.form)) continue;
+          callbacks.push({
+            from: site.caller,
+            fromKind: site.callerKind,
+            to: c.form,
+            lineStart: site.lineStart,
+            lineEnd: site.lineEnd,
+            trigger: c.trigger,
+          });
+        }
         const fm = readFunctionModule(statement, site, constants);
         if (fm) { functionModules.push(fm); continue; }
         const tx = readTransaction(statement, site, constants);
@@ -537,7 +571,7 @@ export function readCallGraphFrom(
       case 'MODIFY':
       case 'DELETE': {
         const write = databaseWriteIn(statement.text);
-        if (write) {
+        if (write && !localData.has(write.table.toUpperCase())) {
           databaseWrites.push({ ...site, table: write.table.toUpperCase(), keyword: write.keyword });
         }
         continue;
@@ -569,10 +603,13 @@ export function readCallGraphFrom(
   const neverPerformed = forms.map((f) => f.name).filter((name) => !performedNames.has(name));
 
   // Reachability starts wherever a call is written outside a subroutine: an
-  // event block, a dialog module, a method, the program level.
+  // event block, a dialog module, a method, the program level. A callback
+  // registration is followed like a call: the registered FORM runs once the
+  // statement naming it has run (the process skeleton draws it as an entry of
+  // its own from the same reading), and only then.
   const reachable = new Set<string>();
-  const queue = edges.filter((e) => e.fromKind !== 'form').map((e) => e.to);
-  const formEdges = edges.filter((e) => e.fromKind === 'form' && e.from);
+  const queue = [...edges, ...callbacks].filter((e) => e.fromKind !== 'form').map((e) => e.to);
+  const formEdges = [...edges, ...callbacks].filter((e) => e.fromKind === 'form' && e.from);
   while (queue.length) {
     const name = queue.shift() as string;
     if (reachable.has(name)) continue;
@@ -591,6 +628,7 @@ export function readCallGraphFrom(
     databaseWrites,
     edges,
     unresolvedTargets: [...new Set(performs.filter((p) => p.unresolved).map((p) => p.target as string))],
+    callbacks,
     neverPerformed,
     unreachable: unreachable.map((f) => f.name),
     unreachableLines: unreachable.reduce((sum, f) => sum + (f.lineEnd - f.lineStart + 1), 0),
