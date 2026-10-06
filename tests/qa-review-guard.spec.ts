@@ -990,7 +990,16 @@ test.describe('weekly pipeline health', () => {
     const wf = read('.github/workflows/sync-catalog.yml');
     expect(wf).not.toMatch(/uses:\s*peter-evans\/create-pull-request/);
     expect(wf.slice(wf.indexOf('\npermissions:'), wf.indexOf('\njobs:'))).not.toMatch(/pull-requests/);
-    expect(wf).toMatch(/git push --force origin chore\/sync-cloudification-repo/);
+    expect(wf).toMatch(/git push --force "https:\/\/x-access-token:\$\{GH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" HEAD:chore\/sync-cloudification-repo/);
+  });
+
+  test('the catalog sync keeps its write token away from npm install scripts (SEC-2026-684)', () => {
+    const wf = read('.github/workflows/sync-catalog.yml');
+    const checkout = wf.slice(wf.indexOf('actions/checkout@'), wf.indexOf('- name: Setup Node.js'));
+    expect(checkout).toContain('persist-credentials: false');
+    // The token is named once, in the push step's env, and nowhere before it.
+    expect(wf.match(/github\.token|secrets\.GITHUB_TOKEN/g) ?? []).toHaveLength(1);
+    expect(wf.indexOf('GH_TOKEN: ${{ github.token }}')).toBeGreaterThan(wf.indexOf('- name: Push the update to its branch'));
   });
 
   test('the health check watches that branch', async () => {

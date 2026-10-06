@@ -23,6 +23,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # The write token must not sit in .git/config while npm install
+          # scripts, tsx and demo:regenerate run. It is handed to the push
+          # step alone, below.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -59,13 +64,15 @@ jobs:
 
       - name: Push the update to its branch
         if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B chore/sync-cloudification-repo
           git add lib/abap/generated/ lib/demo-release.json
           git commit -m "chore(catalog): sync SAP Cloudification Repository"
-          git push --force origin chore/sync-cloudification-repo
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-cloudification-repo
           {
             echo "### Catalog update ready"
             echo
