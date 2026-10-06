@@ -10,6 +10,12 @@ import {
   TRANSACTION_TERMS_EN,
   type PlainTerm,
 } from './plain-glossary';
+import {
+  isUntranslatable,
+  translateGermanText,
+  translateGermanWords,
+  type WordSources,
+} from './german-terms';
 
 /**
  * Plain-language wording for the process map — deterministic, no model.
@@ -36,8 +42,13 @@ import {
 
 export const PLAIN_LABEL_PROVENANCE = 'reconstructed' as const;
 
-/** No label this module produces is longer than this. */
+/**
+ * No label this module produces is longer than this — apart from the original
+ * of a translated German name in parentheses, which may add up to
+ * `ORIGINAL_NOTE_ROOM` characters.
+ */
 export const MAX_LABEL = 48;
+export const ORIGINAL_NOTE_ROOM = 28;
 
 /* ------------------------------------------------------------------ *
  * Context: what the source declares
@@ -227,7 +238,7 @@ function statementAt(ctx: PlainContext, line: number | undefined): PlainStatemen
  * ------------------------------------------------------------------ */
 
 const IDENTIFIER_PREFIX =
-  /^(?:lv|gv|ls|lt|gt|gs|iv|ev|cv|rv|it|et|ct|rt|is|es|cs|rs|lo|go|io|ro|mv|ms|mt|mo|lc|gc|fs|wa|p|s|c)_/;
+  /^(?:lv|gv|ls|lt|gt|gs|iv|ev|cv|rv|it|et|ct|rt|is|es|cs|rs|lo|go|io|ro|mv|ms|mt|mo|lc|gc|fs|wa|p|s|c|r|i|e)_/;
 
 const SY_TERMS: Readonly<Record<string, string>> = Object.freeze({
   'sy-datum': 'Today',
@@ -282,6 +293,11 @@ function humaniseStem(stem: string): string {
   const key = stem.toLowerCase();
   const hit = FIELD_TERMS_EN[key];
   if (hit) return hit.singular;
+  // A German name (`ausgabe`, `lieferdatum`) in English — or, when it cannot be
+  // read in full, the name as the source writes it, never a half translation.
+  const german = translateGermanWords(key.split(/[_\s]+/), 'field', FIELD_SOURCES);
+  if (isUntranslatable(german)) return stem.toUpperCase();
+  if (german) return german.english;
   const words = key.split(/[_\s]+/).filter(Boolean).map((w) => {
     const abbreviation = STEM_ABBREVIATIONS[w];
     if (abbreviation) return abbreviation;
@@ -294,6 +310,16 @@ function humaniseStem(stem: string): string {
   });
   return sentenceCase(words.join(' ')) || stem;
 }
+
+/** A word of a name the glossary knows (`kunnr` → "customer number"). */
+function knownWord(word: string): string | null {
+  const term = FIELD_TERMS_EN[word];
+  return term && word.length >= 4 && !PLAIN_WORD_KEYS.has(word) ? lcFirst(term.singular) : null;
+}
+
+/** What the German translation may lean on, for variable names and for routine names. */
+const FIELD_SOURCES: WordSources = { abbreviations: STEM_ABBREVIATIONS, acronyms: ACRONYMS, known: knownWord };
+const ROUTINE_SOURCES: WordSources = { abbreviations: ROUTINE_ABBREVIATIONS, acronyms: ACRONYMS, known: knownWord };
 
 /** Glossary keys that are ordinary English words — not expanded inside a compound stem. */
 const PLAIN_WORD_KEYS = new Set(['where', 'form', 'case', 'func', 'rows', 'keys', 'text', 'type', 'name', 'land']);
@@ -324,6 +350,7 @@ function singularOf(word: string): string {
 }
 
 function pluralOf(word: string): string {
+  if (/(?:ss|sh|ch|x)$/.test(word) && !/status$/.test(word)) return `${word}es`;
   if (/s$/.test(word) || / data$|stock$|status$/.test(word)) return word;
   if (/[^aeiou]y$/.test(word)) return word.slice(0, -1) + 'ies';
   return `${word}s`;
@@ -334,7 +361,22 @@ function itemOf(identifier: string): string {
   const stem = stemOf(identifier);
   const term = FIELD_TERMS_EN[stem];
   if (term) return lcFirst(term.singular);
+  const german = germanItem(stem);
+  if (german === null) return `entry of ${technicalName(identifier)}`;
+  if (german) return lcFirst(singularOf(german));
   return lcFirst(singularOf(humaniseStem(stem)));
+}
+
+/** One row of a German-named table in English ("output line"); `null` when it cannot be read; '' when not German. */
+function germanItem(stem: string): string | null {
+  const german = translateGermanWords(stem.split(/[_\s]+/), 'item', FIELD_SOURCES);
+  if (isUntranslatable(german)) return null;
+  return german ? german.english : '';
+}
+
+/** An identifier as the source writes it, for a label that cannot word it. */
+function technicalName(identifier: string): string {
+  return cleanIdentifier(identifier).toUpperCase();
 }
 
 /** What several entries are called: `gt_orders` → "orders", `lt_kunnr` → "customer numbers". */
@@ -342,6 +384,9 @@ function itemsOf(identifier: string): string {
   const stem = stemOf(identifier);
   const term = FIELD_TERMS_EN[stem];
   if (term) return lcFirst(term.plural);
+  const german = germanItem(stem);
+  if (german === null) return `entries in ${technicalName(identifier)}`;
+  if (german) return lcFirst(pluralOf(german));
   return lcFirst(pluralOf(humaniseStem(stem)));
 }
 
@@ -406,6 +451,14 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
  * "Read requisition", `CHANGE_SALES_ORDER_BDC` → "Change sales order batch input".
  */
 export function humaniseRoutine(name: string): string {
+  return routineWords(name, true);
+}
+
+/**
+ * `withOriginal`: a translated German name carries its original in
+ * parentheses — for a step. Inside a condition ("Check not set?") it does not.
+ */
+function routineWords(name: string, withOriginal: boolean): string {
   try {
     let words = String(name ?? '').trim().toLowerCase()
       .replace(/^\/\w+\//, '')
@@ -414,7 +467,15 @@ export function humaniseRoutine(name: string): string {
     else if (words.length && /^[zy][a-z]{0,2}$/.test(words[0]) && words.length > 1 && words[0].length === 1) {
       words = words.slice(1);
     }
-    const out = words.map((w) => ROUTINE_ABBREVIATIONS[w] ?? wordCase(w));
+    // A German name in English, the original in parentheses: `DATEN_LESEN` →
+    // "Read data (Daten lesen)". One that cannot be read in full is shown as
+    // the source writes it.
+    const german = translateGermanWords(words, 'routine', ROUTINE_SOURCES);
+    if (isUntranslatable(german)) return String(name).trim().toUpperCase();
+    if (german) {
+      return withOriginal ? `${german.english} (${german.original ?? String(name).trim().toUpperCase()})` : german.english;
+    }
+    const out = words.map((w) => (Object.prototype.hasOwnProperty.call(ROUTINE_ABBREVIATIONS, w) ? ROUTINE_ABBREVIATIONS[w] : wordCase(w)));
     return sentenceCase(out.join(' '));
   } catch {
     return String(name ?? '');
@@ -438,6 +499,13 @@ function shortText(text: string, words = 6): string {
 function fit(label: string, max = MAX_LABEL): string {
   const s = label.replace(/\s+/g, ' ').trim();
   if (s.length <= max) return s;
+  // The original of a translated name ("Read data (Daten lesen)") does not count
+  // against the limit while it is short; a long one is dropped, never cut.
+  const note = /^(.+) \([^()]+\)$/.exec(s);
+  if (note) {
+    if (note[1].length <= max && s.length <= max + ORIGINAL_NOTE_ROOM) return s;
+    return fit(note[1], max);
+  }
   const question = s.endsWith('?');
   const room = max - 1 - (question ? 1 : 0);
   let cut = s.slice(0, room);
@@ -811,7 +879,7 @@ function humaniseOperand(operand: string, ctx: PlainContext, short = false): str
       return inner ? `Number of ${itemsOf(inner)}` : 'Number of entries';
     }
     const name = fn.split(/->|=>/).pop() ?? fn;
-    return humaniseRoutine(name) || 'Result';
+    return routineWords(name, false) || 'Result';
   }
   const tokens = text.split(/\s+/);
   if (tokens.length === 1) return fieldWord(text, ctx, short);
@@ -1342,6 +1410,11 @@ interface MessageInfo {
   leaveProgram?: boolean;
 }
 
+/** A German message text in English, when every word of it is known; else as written. */
+function englishText(text: string): string {
+  return translateGermanText(text, FIELD_SOURCES)?.english ?? text;
+}
+
 function messageAt(ctx: PlainContext, line: number | undefined): MessageInfo {
   const text = statementAt(ctx, line)?.text ?? '';
   if (/^LEAVE\s+PROGRAM\b/i.test(text)) return { leaveProgram: true };
@@ -1389,7 +1462,7 @@ export function outcomeName(
     };
     if (end.kind === 'end-error') {
       const message = messageAt(c, end.anchor?.lineStart);
-      if (message.text) return fit(`Stop: ${lcFirst(shortText(message.text))}`);
+      if (message.text) return fit(`Stop: ${lcFirst(shortText(englishText(message.text)))}`);
       if (message.leaveProgram) return 'Program ends';
       const id = message.id ?? (/^[AEIWSX]\d{3}$/i.test(end.label) ? end.label.toUpperCase() : '');
       for (const short of [false, true]) {
@@ -1400,7 +1473,7 @@ export function outcomeName(
         const without = `Stop: ${lcFirst(phrase)}`;
         if (without.length <= MAX_LABEL) return without;
       }
-      if (message.withText) return fit(`Stop: ${lcFirst(shortText(message.withText, 5))}${id ? ` (${id})` : ''}`);
+      if (message.withText) return fit(`Stop: ${lcFirst(shortText(englishText(message.withText), 5))}${id ? ` (${id})` : ''}`);
       if (message.raised) return fit(`Stop: ${lcFirst(humaniseRoutine(message.raised.replace(/^[ZY]?CX_/i, '')))}`);
       if (id) return `Error ${id}`;
       return 'Stop: error';
@@ -1540,12 +1613,20 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
       };
     }
     if (node.detail?.branchKind === 'case') {
+      const subject = humaniseOperand(node.label, ctx);
+      const command = subject === 'User command';
       return {
-        question: fit(`${humaniseOperand(node.label, ctx)}?`),
+        question: fit(`${subject}?`),
         arm: (edge) => {
           if (!edge.condition) return 'Other';
-          const values = splitCaseValues(edge.condition).map((v) =>
-            (/^['`]/.test(v) || /^-?\d+$/.test(v) ? humaniseLiteralValue(v) : humaniseField(v, ctx)));
+          const values = splitCaseValues(edge.condition).map((v) => {
+            if (!/^['`]/.test(v) && !/^-?\d+$/.test(v)) return humaniseField(v, ctx);
+            // A function code stays the identifier it is; a standard one also says what it does.
+            const code = unquote(v);
+            const standard = command ? STANDARD_FUNCTION_CODES[code.toUpperCase()] : undefined;
+            if (standard) return `${standard} (${code})`;
+            return command ? code : humaniseLiteralValue(v);
+          });
           return fit(joinList(values, 'or'));
         },
       };
@@ -1685,6 +1766,15 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
     },
   };
 }
+
+/** Function codes of the SAP GUI and ALV standard that a user-command branch tests. */
+const STANDARD_FUNCTION_CODES: Readonly<Record<string, string>> = Object.freeze({
+  '&IC1': 'Double-click',
+  '&F03': 'Back',
+  '&F15': 'Exit',
+  '&F12': 'Cancel',
+  '&DATA_SAVE': 'Save',
+});
 
 function splitCaseValues(condition: string): string[] {
   return splitOutside(stripCondition(condition).replace(/\s+OR\s+/gi, ','), ',');

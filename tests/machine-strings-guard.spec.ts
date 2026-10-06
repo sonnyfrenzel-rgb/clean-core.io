@@ -41,6 +41,7 @@ const CATALOGUES = [
   'lib/new-project-content.ts',
   'lib/abap/plain-language.ts',
   'lib/abap/plain-glossary.ts',
+  'lib/abap/german-terms.ts',
 ];
 
 /** Every string literal and template text of a module — comments are not read. */

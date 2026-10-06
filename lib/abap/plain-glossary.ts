@@ -188,6 +188,11 @@ export const FIELD_TERMS_EN: Readonly<Record<string, PlainTerm>> = Object.freeze
   ort01: t('City', 'Cities'),
   pstlz: t('Postal code'),
   telf1: t('Telephone number'),
+  // --- the user command of a screen or an ALV list -------------------------
+  ucomm: t('User command'),
+  okcode: t('User command'),
+  ok_code: t('User command'),
+  fcode: t('Function code'),
 });
 
 /** Database tables and read models → the business object behind them. */
@@ -347,6 +352,8 @@ export const STEM_ABBREVIATIONS: Readonly<Record<string, string>> = Object.freez
   log: 'log entry',
   return: 'return message',
   dept: 'department',
+  fieldcat: 'field catalog',
+  fcat: 'field catalog',
 });
 
 /**
@@ -368,6 +375,8 @@ export const ROUTINE_ABBREVIATIONS: Readonly<Record<string, string>> = Object.fr
   desc: 'description',
   ref: 'reference',
   dept: 'department',
+  fieldcat: 'field catalog',
+  fcat: 'field catalog',
 });
 
 /** Words written in capitals wherever they appear. */
@@ -402,6 +411,11 @@ export const FUNCTION_TERMS_EN: Readonly<Record<string, string>> = Object.freeze
   CONVERT_TO_LOCAL_CURRENCY: 'Convert currency',
   CONVERT_TO_FOREIGN_CURRENCY: 'Convert currency',
   POPUP_TO_CONFIRM: 'Ask for confirmation',
+  POPUP_TO_CONFIRM_STEP: 'Ask for confirmation',
+  POPUP_TO_DECIDE: 'Ask for a decision',
+  POPUP_TO_INFORM: 'Show information',
+  POPUP_GET_VALUES: 'Ask for values',
+  REUSE_ALV_FIELDCATALOG_MERGE: 'Build field catalog',
   ENQUEUE_EMEBANE: 'Lock purchase requisition',
   DEQUEUE_EMEBANE: 'Unlock purchase requisition',
   NUMBER_GET_NEXT: 'Draw next number',

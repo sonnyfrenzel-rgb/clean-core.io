@@ -24,7 +24,13 @@ const BOX_H = 46;
 const ROW = 70;
 const MAX_LABEL = 40;
 
-const clip = (text: string, max = MAX_LABEL) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+const clip = (text: string, max = MAX_LABEL): string => {
+  if (text.length <= max) return text;
+  // The German original of a translated name ("Read data (Daten lesen)") goes before the words are cut.
+  const note = /^(.+) \([^()]+\)$/.exec(text);
+  if (note) return clip(note[1], max);
+  return `${text.slice(0, max - 1)}…`;
+};
 const n = (value: number) => String(Math.round(value));
 
 export function processOverviewSvg(path: readonly PdPathEntry[], title: string): string {
