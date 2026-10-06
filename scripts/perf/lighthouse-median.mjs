@@ -14,7 +14,10 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const [url, outDir, runsArg = '3', label = 'run'] = process.argv.slice(2);
+// `--from-reports` re-reads the JSON reports a previous run left in <outDir>
+// instead of running Lighthouse again (same label and number of runs).
+const fromReports = process.argv.includes('--from-reports');
+const [url, outDir, runsArg = '3', label = 'run'] = process.argv.slice(2).filter((a) => a !== '--from-reports');
 if (!url || !outDir) {
   console.error('usage: lighthouse-median.mjs <url> <outDir> [runs] [label]');
   process.exit(2);
@@ -31,7 +34,13 @@ const median = (xs) => {
 function pick(lhr) {
   const a = lhr.audits;
   const items = a['network-requests']?.details?.items ?? [];
-  const jsBytes = items.filter((i) => i.resourceType === 'Script').reduce((n, i) => n + (i.transferSize || 0), 0);
+  const scripts = items.filter((i) => i.resourceType === 'Script');
+  const jsBytes = scripts.reduce((n, i) => n + (i.transferSize || 0), 0);
+  // The scripts requested before DOMContentLoaded: what the page asks for to
+  // become interactive, without the chunks it loads afterwards on purpose
+  // (lazy dialogs, the Auth SDK) and without Next's link prefetches.
+  const dcl = a.metrics.details.items[0].observedDomContentLoaded;
+  const jsBeforeDcl = scripts.filter((i) => i.networkRequestTime <= dcl).reduce((n, i) => n + (i.transferSize || 0), 0);
   return {
     performance: Math.round((lhr.categories.performance.score ?? 0) * 100),
     fcp: a['first-contentful-paint'].numericValue,
@@ -41,6 +50,7 @@ function pick(lhr) {
     si: a['speed-index'].numericValue,
     totalBytes: a['total-byte-weight'].numericValue,
     jsBytes,
+    jsBeforeDcl,
     requests: items.length,
   };
 }
@@ -58,7 +68,7 @@ for (const preset of ['mobile', 'desktop']) {
       '--quiet',
     ];
     if (preset === 'desktop') args.push('--preset=desktop');
-    execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', args, { stdio: 'inherit', shell: process.platform === 'win32' });
+    if (!fromReports) execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', args, { stdio: 'inherit', shell: process.platform === 'win32' });
     const lhr = JSON.parse(readFileSync(`${base}.report.json`, 'utf8'));
     const s = pick(lhr);
     samples.push(s);

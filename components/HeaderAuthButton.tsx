@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { getAuth } from '@/lib/firebase-app';
+import type { User } from 'firebase/auth';
+import { subscribeToAuth } from '@/lib/auth-subscribe';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 
@@ -13,19 +13,21 @@ import CcLinkButton from '@/components/cc/LinkButton';
  * page, which does not (block D, D.24 — `components/PublicHeader.tsx`).
  */
 export default function HeaderAuthButton({ signInHref = '?auth=signin' }: { signInHref?: string } = {}) {
-  const auth = getAuth();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
+  // The Auth SDK arrives after hydration (lib/auth-subscribe.ts); until it
+  // has answered, the placeholder below stands, as it always did.
+  useEffect(
+    () =>
+      subscribeToAuth((currentUser) => {
+        setUser(currentUser);
+        setLoading(false);
+      }),
+    [],
+  );
 
   const handleGoToWorkspace = () => {
     setIsNavigating(true);
