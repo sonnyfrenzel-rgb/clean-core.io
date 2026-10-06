@@ -3304,6 +3304,60 @@
       "measured": {
         "lines": 57
       }
+    },
+    {
+      "path": "docs/perf/REPORT.md",
+      "kind": "record",
+      "purpose": "Load-time work: method, causes, changes, before/after numbers",
+      "audience": "Engineers, the owner",
+      "saysToday": "Landing and stage load times measured before and after the perf/load-times branch, and what was left for the owner.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "A measurement record of 06.10.2026; it describes what was measured then and does not age with the product.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 119
+      }
+    },
+    {
+      "path": "docs/perf/build-baseline.txt",
+      "kind": "record",
+      "purpose": "next build route table before the load-time work",
+      "audience": "Engineers, the owner",
+      "saysToday": "First Load JS per route at b6716f07.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "A measurement record of 06.10.2026; it describes what was measured then and does not age with the product.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 168
+      }
+    },
+    {
+      "path": "docs/perf/build-after.txt",
+      "kind": "record",
+      "purpose": "next build route table after the load-time work",
+      "audience": "Engineers, the owner",
+      "saysToday": "First Load JS per route after perf/load-times.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "A measurement record of 06.10.2026; it describes what was measured then and does not age with the product.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 168
+      }
     }
   ],
   "served": [
