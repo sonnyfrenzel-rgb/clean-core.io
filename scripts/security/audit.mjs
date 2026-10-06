@@ -257,10 +257,12 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     console.warn(`CISO narrative call failed (${failureReason(String(err?.message || err).split('\n')[0])}) — the findings are reported without a synthesis.`);
     synthesis.narrative = 'none';
   }
-  if (candidateCount && !check.results.length && !narrative) {
-    // Nothing verified and no synthesis: there is nothing a model contributed,
-    // and a report of raw candidates under a CISO's name would be a claim nobody made.
-    throw new Error(`the audit did not produce a report (every CISO call failed; consultant calls ${results.length}, failed ${run.failedCalls}; verification calls failed ${check.failedCalls})`);
+  if (candidateCount && !check.results.length) {
+    // Nothing verified: no report. With a synthesis the mail would still have gone out, and the run would have
+    // counted as audited — the base the next release's delta starts from — although not one candidate of this
+    // delta was checked (v3.0.4, bf058648: 0 of 43, every verification call HTTP 400). A failed run is never a
+    // base, so the next release reads these files again.
+    throw new Error(`the audit verified none of its ${candidateCount} candidates (verification calls failed ${check.failedCalls}; consultant calls ${results.length}, failed ${run.failedCalls}) — no report, and this release does not count as audited`);
   }
 
   // A credential in the code is reported without a model and without its value; a public-by-design value is not.

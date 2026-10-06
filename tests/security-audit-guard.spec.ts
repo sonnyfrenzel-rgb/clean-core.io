@@ -60,7 +60,9 @@ test.describe('the agent has no tools and a small budget', () => {
     // Neither loss throws away the other half; losing both does.
     expect(cisoBlock).toMatch(/their candidates are listed as not verified/);
     expect(cisoBlock).toMatch(/the findings are reported without a synthesis/);
-    expect(cisoBlock).toMatch(/every CISO call failed/);
+    // Nothing verified is no report at all — and so never the base of the next release's delta (v3.0.4).
+    expect(cisoBlock).toMatch(/if \(candidateCount && !check\.results\.length\) \{/);
+    expect(cisoBlock).toMatch(/the audit verified none of its/);
     // The request the calls build: the pinned model at its price as the ceiling, no tools, no fallback model,
     // no provider that keeps prompts, only endpoints that honour every parameter.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
@@ -731,8 +733,10 @@ test.describe('the audit pipeline', () => {
     // Each half of the split answer is coerced and validated on its own.
     const { coerceFindings, coerceNarrative, reportWithoutNarrative } = await lib('pipeline.mjs');
     const { FINDINGS_SCHEMA, NARRATIVE_SCHEMA } = await lib('team.mjs');
-    const half = { findings: coerceFindings({ findings: [{ title: 'F', severity: 'Medium' }] }) };
+    // As audit.mjs coerces the verification answer: the findings, and `notes` always present (required since v3.0.4).
+    const half = { findings: coerceFindings({ findings: [{ title: 'F', severity: 'Medium' }] }), notes: '' };
     expect(firstViolation(FINDINGS_SCHEMA, half)).toBeNull();
+    expect(read('scripts/security/audit.mjs')).toMatch(/coerce: \(answer\) => \(\{ findings: coerceFindings\(answer\), notes: String\(answer\?\.notes \|\| ''\) \}\)/);
     expect(half.findings[0]).toMatchObject({ severity: 'mittel', description: '' });
     const prose = coerceNarrative({ executive_summary: 'S', risk_rating: 'info', hardening: [{ title: 'h', priority: 'p1' }], coverage: { files_in_scope: 9 } });
     expect(firstViolation(NARRATIVE_SCHEMA, prose)).toBeNull();
@@ -1630,5 +1634,41 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(auditJob).toMatch(/SECURITY_AUDIT_BASE: \$\{\{ needs\.scope\.outputs\.base \}\}/);
     expect(auditJob).toMatch(/fetch-depth: 0/);
     expect(read('scripts/security/audit.mjs')).toMatch(/const scope = auditScope\(\{ list: surface\.files\.list, base, changed: base \? changedSince\(base\) : null, deleted: base \? deletedSince\(base\) : \[\] \}\);/);
+  });
+});
+
+test.describe('every response schema an agent sends passes the pinned model strict mode (v3.0.4)', () => {
+  // OpenAI's strict structured outputs refuse a schema in which an object does not list every property as
+  // required, or allows additional properties: HTTP 400 before any generation. The audit of v3.0.4 lost all
+  // three verification calls to FINDINGS_SCHEMA's optional `notes`; DeepSeek had accepted it.
+  const strictErrors = (s: Record<string, any>, at = '$'): string[] => {
+    if (!s || typeof s !== 'object') return [];
+    const out: string[] = [];
+    if (s.type === 'object' || s.properties) {
+      const keys = Object.keys(s.properties || {});
+      for (const k of keys) if (!(s.required || []).includes(k)) out.push(`${at}.${k} is not required`);
+      if (s.additionalProperties !== false) out.push(`${at} allows additional properties`);
+      for (const k of keys) out.push(...strictErrors(s.properties[k], `${at}.${k}`));
+    }
+    if (s.items) out.push(...strictErrors(s.items, `${at}[]`));
+    for (const c of [...(s.anyOf || []), ...(s.oneOf || [])]) out.push(...strictErrors(c, `${at}|`));
+    return out;
+  };
+
+  test('QA, security and UX', async () => {
+    const qa = await import(path.resolve(ROOT, 'scripts/qa/lib/prompt.mjs'));
+    const sec = await lib('team.mjs');
+    const ux = await import(path.resolve(ROOT, 'scripts/ux/lib/prompt.mjs'));
+    const schemas = { REVIEW_SCHEMA: qa.REVIEW_SCHEMA, CONSULTANT_SCHEMA: sec.CONSULTANT_SCHEMA, FINDINGS_SCHEMA: sec.FINDINGS_SCHEMA, NARRATIVE_SCHEMA: sec.NARRATIVE_SCHEMA, REPORT_SCHEMA: sec.REPORT_SCHEMA, UX_SCHEMA: ux.UX_SCHEMA };
+    for (const [name, schema] of Object.entries(schemas)) expect(strictErrors(schema), name).toEqual([]);
+    // The rule finds what broke v3.0.4.
+    expect(strictErrors({ type: 'object', additionalProperties: false, required: ['findings'], properties: { findings: { type: 'array', items: { type: 'string' } }, notes: { type: 'string' } } })).toEqual(['$.notes is not required']);
+  });
+
+  test('a release audit can be repeated by hand against a chosen base', () => {
+    const wf = read('.github/workflows/security-audit.yml');
+    expect(wf).toMatch(/workflow_dispatch:\s*\n\s*inputs:\s*\n\s*base:/);
+    expect(wf).toMatch(/INPUT_BASE: \$\{\{ inputs\.base \}\}/);
+    expect(wf).toMatch(/if \[ -n "\$INPUT_BASE" \]; then base="\$INPUT_BASE"; fi/);
   });
 });

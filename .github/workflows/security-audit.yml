@@ -22,6 +22,14 @@ name: Security Audit
 on:
   push:
     branches: [main]
+  # By hand, for a release whose audit has to be repeated against an earlier base — e.g. after the agent itself
+  # failed (v3.0.4). Only on main; the base must be an ancestor, or the audit reads everything.
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Base commit id (optional - default: the release whose audit last succeeded)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -81,6 +89,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
+          INPUT_BASE: ${{ inputs.base }}
         run: |
           # Only a release on main is audited; any other ref is a misconfiguration, not a sample.
           if [ "$REF_NAME" != "main" ]; then
@@ -90,6 +99,8 @@ jobs:
           # The base: the release whose audit last succeeded. scope.mjs falls back to a full audit when there is
           # none or when it is not an ancestor of this release (a rewritten history).
           base=$(gh run list --workflow security-audit.yml --branch main --status success --limit 20 --json databaseId,headSha --jq "[.[] | select(.databaseId != $RUN_ID)][0].headSha // \"\"")
+          # A base given by hand wins; scope.mjs accepts only a commit id that is an ancestor of this release.
+          if [ -n "$INPUT_BASE" ]; then base="$INPUT_BASE"; fi
           SECURITY_AUDIT_BASE="$base" node scripts/security/scope.mjs | tee -a "$GITHUB_OUTPUT"
           if grep -q '^mode=unchanged$' "$GITHUB_OUTPUT"; then
             echo "### Security audit" >> "$GITHUB_STEP_SUMMARY"

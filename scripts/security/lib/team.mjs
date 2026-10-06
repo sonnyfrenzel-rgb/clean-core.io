@@ -313,7 +313,7 @@ const FINDING_ITEM = {
 export const FINDINGS_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['findings'],
+  required: ['findings', 'notes'],
   properties: {
     findings: { type: 'array', items: FINDING_ITEM },
     notes: { type: 'string', description: 'German, at most three sentences: what was dropped and why, for the limitations of the report.' },
