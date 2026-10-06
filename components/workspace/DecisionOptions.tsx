@@ -169,6 +169,9 @@ export default function DecisionOptions({
   const cancel = useCallback(() => {
     setAsking(null);
     setMissing(false);
+    // A reason belongs to the option it was written for; a cancelled one is
+    // never sent with another choice (QA review of 2f5a8b9fc249).
+    setReason('');
   }, []);
 
   const choose = useCallback(async () => {

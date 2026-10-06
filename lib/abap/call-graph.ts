@@ -635,8 +635,10 @@ export function readCallGraphFrom(
     unreachable: unreachable.map((f) => f.name),
     unreachableLines: unreachable.reduce((sum, f) => sum + (f.lineEnd - f.lineStart + 1), 0),
     reachabilityCertain: performs.every((p) => !p.dynamic),
+    // A callback registration is no synchronous call: recursion is read from
+    // PERFORM edges alone (QA review of 2f5a8b9fc249).
     recursion: findCycles(
-      formEdges.map((e) => ({ from: e.from as string, to: e.to })),
+      edges.filter((e) => e.fromKind === 'form' && e.from).map((e) => ({ from: e.from as string, to: e.to })),
     ),
   };
 }

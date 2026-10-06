@@ -90,6 +90,9 @@ test.describe('ALV callbacks in the call graph', () => {
     expect(readCallGraph(source).callbacks).toEqual([]);
     const skeleton = buildProcessSkeleton(source);
     expect(skeleton.nodes.some((n) => n.kind === 'start' && n.detail?.origin === 'callback')).toBe(false);
+    // Filled from sy-repid first, then overwritten: the value at the call is not known.
+    const overwritten = report().replace('  gv_repid = sy-repid.\n', "  gv_repid = sy-repid.\n  gv_repid = 'ZOTHER'.\n");
+    expect(readCallGraph(overwritten).callbacks).toEqual([]);
     // sy-repid written directly still names this program.
     const direct = report().replace('i_callback_program       = gv_repid', 'i_callback_program       = sy-repid');
     expect(readCallGraph(direct).callbacks).toHaveLength(2);
@@ -116,6 +119,27 @@ ENDFORM.
     const calls = readCallGraph(source);
     expect(calls.callbacks.map((c) => c.from)).toHaveLength(2);
     expect(calls.unreachable).toEqual(['OLD_LIST']);
+  });
+
+  test('a callback and a PERFORM back are no recursion', () => {
+    // QA review of 2f5a8b9fc249: the registration was counted as a call.
+    const source = `REPORT zdemo_cycle.
+DATA gt_rows TYPE STANDARD TABLE OF zdemo_row.
+START-OF-SELECTION.
+  PERFORM show_list.
+FORM show_list.
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program      = sy-repid
+      i_callback_user_command = 'HANDLE_COMMAND'
+    TABLES
+      t_outtab                = gt_rows.
+ENDFORM.
+FORM handle_command USING r_ucomm LIKE sy-ucomm rs_selfield TYPE slis_selfield.
+  PERFORM show_list.
+ENDFORM.
+`;
+    expect(readCallGraph(source).recursion).toEqual([]);
   });
 
   test('PERFORMING … ON END OF TASK is a callback too', () => {

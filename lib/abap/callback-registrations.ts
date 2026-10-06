@@ -117,6 +117,11 @@ export function namesThisProgram(
   const self = String.raw`SY-(?:REPID|CPROG)\b`;
   const assigned = new RegExp(String.raw`^${name}\s*=\s*${self}`, 'i');
   const declared = new RegExp(String.raw`\b${name}\b[^,.]*\bVALUE\s+${self}`, 'i');
+  // Every value the variable is given must be this program: one assignment of
+  // anything else, anywhere, and the value at the call is not known (QA review
+  // of 2f5a8b9fc249).
+  const anyAssignment = new RegExp(String.raw`^${name}\s*=(?!=)`, 'i');
+  if (statements.some((s) => anyAssignment.test(s.text.trim()) && !assigned.test(s.text.trim()))) return false;
   return statements.some(
     (s) => assigned.test(s.text.trim()) || (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(s.text.trim()) && declared.test(s.text)),
   );
