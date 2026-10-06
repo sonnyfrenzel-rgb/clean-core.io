@@ -1432,7 +1432,7 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-705 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | scheduled |
 | SEC-2026-706 | low | P3 | with the next rules deploy (Sonny's go) - as SEC-2026-676 | scheduled |
 | SEC-2026-707 | low | P3 | with the next rules deploy (Sonny's go) | scheduled |
-| SEC-2026-708 | low | P3 | 3.0.x security hardening | scheduled |
+| SEC-2026-708 | low | P3 | 3.0.x security hardening | fixed |
 | SEC-2026-709 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
 | SEC-2026-710 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
 
