@@ -20,7 +20,6 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
 import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText, Workflow, FlaskConical, Package, ArrowRight, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
-import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { bundleSource, type RejectedBundlePath } from '@/lib/generated-package';
@@ -328,6 +327,9 @@ export default function DeliveryPage() {
     setBundleError(null);
     setBundleBusy(true);
     try {
+      // Loaded on the click that builds the bundle, not with the stage
+      // (~28 kB gzip of the stage's first JavaScript, docs/perf/REPORT.md).
+      const { default: JSZip } = await import('jszip');
       const zip = new JSZip();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 

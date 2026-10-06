@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
+import dynamic from 'next/dynamic';
 import { Grid3x3 } from 'lucide-react';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import CcTable from '@/components/cc/Table';
@@ -10,6 +10,11 @@ import { severityChartColor } from '@/lib/chart-colors';
 import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { CodeInventoryItem } from '@/lib/types';
+
+// The treemap is drawn by recharts, loaded on its own after the stage has
+// rendered (`ModuleTreemap.tsx`). It stands in a box of fixed height, so the
+// page does not move when it arrives.
+const ModuleTreemap = dynamic(() => import('./ModuleTreemap'), { ssr: false });
 
 /**
  * Module / severity heatmap — a LOC-weighted treemap of the detected ABAP objects
@@ -161,18 +166,7 @@ export default function ModuleHeatmap({ codeInventory }: { codeInventory: CodeIn
         role="img"
         aria-label={`Treemap of ${data.length} modules, weighted by ${weightedBy}. The table below lists every figure.`}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <Treemap
-            data={data as any}
-            dataKey="size"
-            aspectRatio={4 / 3}
-            stroke="var(--cc-surface)"
-            isAnimationActive={false}
-            content={<TileContent />}
-          >
-            <Tooltip content={<TileTooltip />} />
-          </Treemap>
-        </ResponsiveContainer>
+        <ModuleTreemap data={data} content={<TileContent />} tooltip={<TileTooltip />} />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-4 px-1">
         {SEVERITIES.map((lvl) => (
