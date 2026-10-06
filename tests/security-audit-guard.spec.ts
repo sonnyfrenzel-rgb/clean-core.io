@@ -24,22 +24,18 @@ const job = (name: string) => {
 };
 
 test.describe('the agent has no tools and a small budget', () => {
-  test('the OpenRouter Auto Router at cost tier high, a capped budget, and no agent runtime at all', async () => {
+  test('one pinned model at its list price, a capped budget, and no agent runtime at all', async () => {
     const { AUDIT } = await lib('team.mjs');
-    // Owner decision, 01.10.2026: no pinned model — OpenRouter's Auto Router picks per call within the band
-    // `high`, under a price ceiling every estimate is made at. Until then deepseek/deepseek-v4.1-flash (since
-    // 15.09.2026), and Claude Fable 5.1 in Claude Code before that.
-    expect(AUDIT.model).toBeUndefined();
-    expect(AUDIT.price).toBeUndefined();
-    expect(AUDIT.router.costTier).toBe('high');
-    expect(AUDIT.router.maxPrice.input).toBeGreaterThan(0);
-    expect(AUDIT.router.maxPrice.output).toBeGreaterThan(0);
+    // Owner decision, 06.10.2026: pinned again after five days of the Auto Router (01.–06.10.2026). Before that
+    // deepseek/deepseek-v4.1-flash (from 15.09.2026), and Claude Fable 5.1 in Claude Code before that.
+    expect(AUDIT.model).toEqual({ model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } });
+    expect(AUDIT.router).toBeUndefined();
     // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches. Owner decision, 01.10.2026:
     // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling; 28 USD since
     // 04.10.2026 (owner's go) with the consultants' output at 48k; 46 USD the same day ("fair share + 46 USD"),
-    // with 128 calls of half the size. An upper bound;
-    // what counts against it is the cost OpenRouter reports.
-    expect(AUDIT.maxCostUsd).toBe(46);
+    // with 128 calls of half the size; 6 USD since 06.10.2026 on the pinned model and the release delta. An upper
+    // bound; what counts against it is the cost OpenRouter reports.
+    expect(AUDIT.maxCostUsd).toBe(6);
     // $0.20 until 01.10.2026; at the Auto Router's price ceiling the self-test's CISO reserve alone is $0.20.
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.35);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
@@ -64,18 +60,18 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(cisoBlock).toMatch(/their candidates are listed as not verified/);
     expect(cisoBlock).toMatch(/the findings are reported without a synthesis/);
     expect(cisoBlock).toMatch(/every CISO call failed/);
-    // The request the calls build: the Auto Router at the audit's tier and ceiling, no tools, no fallback model,
+    // The request the calls build: the pinned model at its price as the ceiling, no tools, no fallback model,
     // no provider that keeps prompts, only endpoints that honour every parameter.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
-    const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice });
+    const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model.model, price: AUDIT.model.price });
     expect(req.tools).toBeUndefined();
-    expect(req.model).toBe('openrouter/auto');
-    expect(req.plugins).toEqual([{ id: 'auto-router', cost_tier: 'high' }]);
-    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: AUDIT.router.maxPrice.input, completion: AUDIT.router.maxPrice.output } });
-    // Every one of the three calls passes the audit's tier and ceiling, and the payload records who answered.
-    expect(src.match(/costTier: AUDIT\.router\.costTier, maxPrice: AUDIT\.router\.maxPrice, maxTokens/g)).toHaveLength(3);
-    expect(src).toMatch(/model: AUTO_MODEL,\s*costTier: AUDIT\.router\.costTier,\s*models: modelsOf\(\[\.\.\.results, \.\.\.check\.results, narrative\]\),/);
-    expect(src).toMatch(/\(chars \/ CHARS_PER_TOKEN \/ 1e6\) \* AUDIT\.router\.maxPrice\.input \+ \(maxOutputTokens \/ 1e6\) \* AUDIT\.router\.maxPrice\.output/);
+    expect(req.model).toBe('openai/gpt-6-luna-pro');
+    expect(req.plugins).toBeUndefined();
+    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: AUDIT.model.price.input, completion: AUDIT.model.price.output } });
+    // Every one of the three calls passes the audit's model and price, and the payload records who answered.
+    expect(src.match(/model: AUDIT\.model\.model, price: AUDIT\.model\.price, maxTokens/g)).toHaveLength(3);
+    expect(src).toMatch(/model: AUDIT\.model\.model,\s*models: modelsOf\(\[\.\.\.results, \.\.\.check\.results, narrative\]\),/);
+    expect(src).toMatch(/\(chars \/ CHARS_PER_TOKEN \/ 1e6\) \* AUDIT\.model\.price\.input \+ \(maxOutputTokens \/ 1e6\) \* AUDIT\.model\.price\.output/);
     expect(fs.existsSync(path.resolve(ROOT, 'scripts/security/lib/cli.mjs'))).toBe(false);
   });
 
@@ -806,7 +802,7 @@ test.describe('the audit pipeline', () => {
     expect(src).not.toMatch(/providers:/);
     expect(src.match(/callReviewer\(\{/g)).toHaveLength(3);
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
-    const body = buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: 10 });
+    const body = buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', model: AUDIT.model.model, price: AUDIT.model.price, maxTokens: 10 });
     expect(body.provider.only).toBeUndefined();
     expect(body.provider).toMatchObject({ data_collection: 'deny', require_parameters: true, allow_fallbacks: false });
     const { failureReason } = await lib('pipeline.mjs');
@@ -814,7 +810,7 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/if \(planned\.ratio < AUDIT\.minDeepReadRatio\)/);
 
     // The reserve and every estimate are made at the ceiling the request carries, so no endpoint can cost more.
-    const price = AUDIT.router.maxPrice;
+    const price = AUDIT.model.price;
     // The budget still fits after the price rise, or the run ends in the floor instead of a report.
     const perCall = (AUDIT.batchChars / 3.5 / 1e6) * price.input + (AUDIT.consultantOutputTokens / 1e6) * price.output;
     const ciso = AUDIT.maxVerificationCalls * ((AUDIT.verificationInputChars / 3.5 / 1e6) * price.input + (AUDIT.cisoOutputTokens / 1e6) * price.output)
@@ -1301,19 +1297,19 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 
-  test('the budget: 46 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
+  test('the budget: 6 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
     const { AUDIT } = await lib('team.mjs');
     // 5 USD from 24.09.2026; 20 USD since the owner's decision of 01.10.2026, with the Auto Router at `high` and
     // every estimate at its price ceiling; 28 USD on 04.10.2026 with the consultants' output at 48k; 46 USD the
     // same day ("fair share + 46 USD"), with calls of 50,000 characters and 128 of them — the worst case below is
     // about $36.6 against a limit of $36.8.
-    expect(AUDIT.maxCostUsd).toBe(46);
+    expect(AUDIT.maxCostUsd).toBe(6);
     expect(AUDIT.batchChars).toBe(50_000);
     expect(AUDIT.maxConsultantCalls).toBe(128);
     expect(AUDIT.consultantOutputTokens).toBeGreaterThanOrEqual(48_000);
     expect(AUDIT.verificationBatchSize).toBe(20);
     expect(AUDIT.maxVerificationCalls * AUDIT.verificationBatchSize, 'room for v2.18.0 unmerged').toBeGreaterThanOrEqual(194);
-    const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.router.maxPrice.input + (out / 1e6) * AUDIT.router.maxPrice.output;
+    const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.model.price.input + (out / 1e6) * AUDIT.model.price.output;
     const brief = read(AUDIT.briefPath).length;
     const consultants = AUDIT.maxConsultantCalls * est(AUDIT.batchChars + 4_000, AUDIT.consultantOutputTokens);
     const verification = AUDIT.maxVerificationCalls * est(brief + 400 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);
@@ -1487,7 +1483,7 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     test('the budget runs out after one verification batch: the other twenty-five are named as outside the budget', async () => {
       const { AUDIT } = await lib('team.mjs');
       const { CISO_FINDINGS_TASK, CISO_NARRATIVE_TASK } = await import(path.resolve(ROOT, 'scripts/security/audit.mjs'));
-      const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.router.maxPrice.input + (out / 1e6) * AUDIT.router.maxPrice.output;
+      const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.model.price.input + (out / 1e6) * AUDIT.model.price.output;
       const brief = read(AUDIT.briefPath).length;
       const narrativeReserve = est(brief + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars, AUDIT.narrativeOutputTokens);
       const verificationWorst = est(brief + CISO_FINDINGS_TASK.length + 2 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);

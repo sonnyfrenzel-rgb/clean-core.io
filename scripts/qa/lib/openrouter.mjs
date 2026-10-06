@@ -1,4 +1,4 @@
-import { AUTO_MODEL, BUDGET, OPENROUTER_ENDPOINT, OPENROUTER_MODELS_ENDPOINT, ROUTER } from './config.mjs';
+import { BUDGET, MODELS, OPENROUTER_ENDPOINT, OPENROUTER_MODELS_ENDPOINT } from './config.mjs';
 import { firstViolation } from './validate.mjs';
 
 /**
@@ -40,19 +40,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * @param user      the user message: a string, or an array of content parts (text and
  *                  image_url) for a reviewer that also looks at screenshots
- * @param costTier  the Auto Router's cost band (`low` … `max`) — the agent's quality floor
- * @param maxPrice  { input, output } USD per million tokens — the ceiling no endpoint may exceed,
- *                  and the price every pre-call estimate of that agent is made at
+ * @param model     the pinned OpenRouter model id (MODELS in config.mjs, AUDIT.model, UX_MODEL)
+ * @param price     { input, output } USD per million tokens — the model's price, the ceiling no endpoint may
+ *                  exceed, and the price every pre-call estimate of that agent is made at
  */
-export function buildRequest({ system, user, schema, effort, costTier = ROUTER.delta.costTier, maxPrice = ROUTER.delta.maxPrice, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review' }) {
-  if (!COST_TIERS.has(costTier)) throw new Error('buildRequest: unknown cost tier — no request without a quality floor.');
-  if (!(maxPrice?.input > 0) || !(maxPrice?.output > 0)) throw new Error('buildRequest: no price ceiling — no request whose cost the caps cannot bound.');
+export function buildRequest({ system, user, schema, effort, model = MODELS.delta.model, price = MODELS.delta.price, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review' }) {
+  if (!modelIdOf(model)) throw new Error('buildRequest: no pinned model — every agent names the model it calls.');
+  if (!(price?.input > 0) || !(price?.output > 0)) throw new Error('buildRequest: no price ceiling — no request whose cost the caps cannot bound.');
   return {
-    // Owner decision, 01.10.2026: no agent pins a model any more. OpenRouter's Auto Router picks one per call;
-    // the agent sets only the band it picks from (cost_tier) and the ceiling it may cost (max_price). Which
-    // model answered is read back from the response and recorded in every report (callReviewer).
-    model: AUTO_MODEL,
-    plugins: [{ id: 'auto-router', cost_tier: costTier }],
+    // Pinned per agent (owner decision, 06.10.2026, after five days of the Auto Router): one price, one behaviour.
+    model,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
@@ -68,24 +65,20 @@ export function buildRequest({ system, user, schema, effort, costTier = ROUTER.d
       // Only an endpoint that honours every parameter sent: the strict schema, the reasoning effort, the output
       // allowance. Without it the router may land on an endpoint that silently drops `response_format`.
       require_parameters: true,
-      // The router's choice is final for the call: no second model behind the one the response names.
+      // No second model behind the pinned one.
       allow_fallbacks: false,
-      // The hard bound under every cap. OpenRouter does not publish where a cost tier ends, so the pre-call
-      // estimate is made at this ceiling, and OpenRouter serves no endpoint above it: whatever the router picks,
-      // a call cannot cost more than its estimate (the characters-per-token assumption aside).
-      max_price: { prompt: maxPrice.input, completion: maxPrice.output },
+      // The hard bound under every cap: no endpoint that charges more than the price the estimate was made at.
+      max_price: { prompt: price.input, completion: price.output },
     },
   };
 }
-
-const COST_TIERS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
 
 /**
  * The id of the model that answered, or `null`. It comes from a response body, so it is accepted only in the
  * shape an OpenRouter model id has: it is written into reports and into the public step summary.
  */
 export function modelIdOf(value) {
-  return typeof value === 'string' && value !== AUTO_MODEL && /^[a-z0-9][a-z0-9._~:/-]{0,119}$/i.test(value) ? value : null;
+  return typeof value === 'string' && value !== 'openrouter/auto' && /^[a-z0-9][a-z0-9._~:/-]{0,119}$/i.test(value) ? value : null;
 }
 
 /**
@@ -139,7 +132,7 @@ export async function confirmInputs({ model, inputs, fetchImpl = fetch }) {
   if (!entry) throw new Error(`The model that answered (${id}) is not in the OpenRouter model list, so its input capabilities cannot be confirmed.`);
   const can = new Set(entry.architecture?.input_modalities || []);
   const missing = inputs.filter((i) => !can.has(i));
-  if (missing.length) throw new Error(`The router chose ${id}, which cannot read ${missing.join(', ')}: its review is not accepted.`);
+  if (missing.length) throw new Error(`The model that answered (${id}) cannot read ${missing.join(', ')}: its review is not accepted.`);
 }
 
 /**
@@ -168,9 +161,9 @@ const STATUS_HINTS = {
  *                 severity written in English or a number sent as text. The result is still validated; coercion
  *                 fixes types and empties an absent field, it never writes a statement.
  */
-export async function callReviewer({ apiKey, system, user, schema, effort, costTier, maxPrice, maxTokens, name, inputs = null, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
+export async function callReviewer({ apiKey, system, user, schema, effort, model, price, maxTokens, name, inputs = null, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
-  const body = JSON.stringify(buildRequest({ system, user, schema, effort, costTier, maxPrice, maxTokens, name }));
+  const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, price, maxTokens, name }));
 
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();

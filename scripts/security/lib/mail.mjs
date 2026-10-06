@@ -36,7 +36,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
  * every model that answered (`models`); an older payload names its one pinned model in `model`.
  */
 export function modelLine(payload) {
-  if (Array.isArray(payload?.models)) return payload.models.length ? `${payload.models.join(', ')} (OpenRouter Auto Router${payload.costTier ? `, Kostenstufe ${payload.costTier}` : ''})` : 'kein Modellaufruf';
+  if (Array.isArray(payload?.models)) return payload.models.length ? `${payload.models.join(', ')}${payload.costTier ? ` (OpenRouter Auto Router, Kostenstufe ${payload.costTier})` : ''}` : 'kein Modellaufruf';
   return payload?.model || 'unbekannt';
 }
 const where = (f) =>(f.locations || []).map((l) => `${l.file}:${l.line}`).join(', ') || '—';

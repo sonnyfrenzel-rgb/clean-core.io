@@ -6,13 +6,13 @@
  *   node scripts/qa/review.mjs --local    maintainer: reads .env.local, also writes and prints the plaintext locally
  *   node scripts/qa/review.mjs --dry      maintainer: delta, triage, batches and estimated cost — no model call
  *
- * Guardrails (docs/QA-REVIEW-LOOP.md §2): reads the repository, calls OpenRouter's
- * Auto Router (cost tier ROUTER.delta) without tools, writes one sealed file. It never writes to the
+ * Guardrails (docs/QA-REVIEW-LOOP.md §2): reads the repository, calls the pinned
+ * model (MODELS.delta) on OpenRouter without tools, writes one sealed file. It never writes to the
  * repository, to GitHub or to any other system.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { AUTO_MODEL, BUDGET, EFFORT, estimateCostUsd, publicByDesignValues, ROUTER, withinBudget } from './lib/config.mjs';
+import { BUDGET, EFFORT, estimateCostUsd, MODELS, publicByDesignValues, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer, modelsOf } from './lib/openrouter.mjs';
@@ -111,7 +111,7 @@ async function main() {
           batches: batches.map((b) => ({ entries: b.files.map((f) => (f.part ? `${f.path} part ${partLabel(f)}` : f.path)), chars: b.chars, carriedOpen: carriedFor(b.files, shared).open.length })),
           notReviewed,
           effort,
-          router: ROUTER.delta,
+          model: MODELS.delta,
           estimatedCostUsd,
           redactedSecrets: secretHits.length,
         },
@@ -138,7 +138,7 @@ async function main() {
     }
     let r;
     try {
-      r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort, costTier: ROUTER.delta.costTier, maxPrice: ROUTER.delta.maxPrice });
+      r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort, model: MODELS.delta.model, price: MODELS.delta.price });
     } catch (err) {
       if (!isCutOff(err)) throw err;
       // Out of output tokens: the batch is read again as two halves, right after this one, instead of failing the
@@ -184,10 +184,9 @@ async function main() {
     meta: {
       // A re-run keeps the run id; the attempt tells its results apart from an earlier attempt's.
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
-      // The Auto Router chooses per call (owner decision, 01.10.2026): `model` is what was asked for, `models` who answered.
-      model: AUTO_MODEL,
-      costTier: ROUTER.delta.costTier,
-      maxPrice: ROUTER.delta.maxPrice,
+      // `model` is the pinned model, `models` who answered.
+      model: MODELS.delta.model,
+      price: MODELS.delta.price,
       models,
       effort,
       modelCalls,

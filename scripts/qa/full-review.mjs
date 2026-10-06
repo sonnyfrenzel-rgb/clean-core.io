@@ -6,13 +6,13 @@
  *   node scripts/qa/full-review.mjs          CI: one sealed report, a public line that says only that it ran
  *   node scripts/qa/full-review.mjs --dry    maintainer: files, batches and estimated cost of HEAD — no model call
  *
- * Guardrails as the delta review (docs/QA-REVIEW-LOOP.md §2 and §10): reads the repository, calls OpenRouter's Auto
- * Router (cost tier ROUTER.full) without tools, writes one sealed file. It never writes to the repository, to GitHub or to any other system,
+ * Guardrails as the delta review (docs/QA-REVIEW-LOOP.md §2 and §10): reads the repository, calls the pinned
+ * model (MODELS.full) on OpenRouter without tools, writes one sealed file. It never writes to the repository, to GitHub or to any other system,
  * and it never gates a release — its findings are fixed on `dev`.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { AUTO_MODEL, estimateCostUsd, FULL_BUDGET, isPublicByDesign, publicByDesignValues, ROUTER, withinBudget } from './lib/config.mjs';
+import { estimateCostUsd, FULL_BUDGET, isPublicByDesign, MODELS, publicByDesignValues, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { buildFullUserMessage, filesAt, fullBrief, numbered, projectMap, reviewBatches } from './lib/full.mjs';
 import { commitIdOrNull, git } from './lib/git-delta.mjs';
@@ -28,7 +28,7 @@ const OUT_DIR = process.env.QA_OUT_DIR || join(LOCAL_DIR, 'out');
 const PREV_DIR = process.env.QA_PREV_DIR || join(LOCAL_DIR, 'prev');
 const SCHEMA_CHARS = JSON.stringify(REVIEW_SCHEMA).length;
 /** Every estimate at the price ceiling the request carries (provider.max_price), so no endpoint can cost more. */
-const PRICE = ROUTER.full.maxPrice;
+const PRICE = MODELS.full.price;
 
 async function main() {
   const env = DRY ? { ...loadDotEnv(), ...process.env } : process.env;
@@ -64,8 +64,8 @@ async function main() {
       JSON.stringify(
         {
           head,
-          model: AUTO_MODEL,
-          router: ROUTER.full,
+          model: MODELS.full.model,
+          price: MODELS.full.price,
           files: files.length,
           chars: files.reduce((n, f) => n + f.diff.length, 0),
           register: { open: previousOpen.length, refuted: refuted.length },
@@ -101,8 +101,8 @@ async function main() {
         user,
         schema: REVIEW_SCHEMA,
         effort: FULL_BUDGET.effort,
-        costTier: ROUTER.full.costTier,
-        maxPrice: ROUTER.full.maxPrice,
+        model: MODELS.full.model,
+        price: MODELS.full.price,
         maxTokens: FULL_BUDGET.maxOutputTokens,
         name: 'qa_full_review',
         title: 'Clean-Core.io QA Full Review',
@@ -140,10 +140,9 @@ async function main() {
     meta: {
       mode: 'full',
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
-      // The Auto Router chooses per call (owner decision, 01.10.2026): `model` is what was asked for, `models` who answered.
-      model: AUTO_MODEL,
-      costTier: ROUTER.full.costTier,
-      maxPrice: ROUTER.full.maxPrice,
+      // `model` is the pinned model, `models` who answered.
+      model: MODELS.full.model,
+      price: MODELS.full.price,
       models,
       effort: FULL_BUDGET.effort,
       modelCalls,

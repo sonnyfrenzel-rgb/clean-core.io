@@ -5,6 +5,10 @@
  */
 
 /**
+ * Pinned again (owner decision, 06.10.2026): openai/gpt-6-luna, which reads images (OpenRouter model list,
+ * 06.10.2026), at $0.10/$0.50. From 01.10. to 06.10.2026 the Auto Router chose per call; what follows is the record
+ * of that week.
+ *
  * Owner decision, 01.10.2026: no pinned model. Every call goes to `openrouter/auto` (scripts/qa/lib/openrouter.mjs
  * buildRequest) within the cost band `high`; until then the reviewer was pinned to meta/muse-spark-1.3.
  *
@@ -15,10 +19,10 @@
  * `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so no endpoint above it serves a call, and
  * every estimate below is made at exactly that price. The reports name every model that answered (meta.models).
  */
-export const UX_ROUTER = { costTier: 'high', maxPrice: { input: 1.25, output: 5 } };
+export const UX_MODEL = { model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } };
 
-/** Every estimate at the ceiling the request carries. */
-export const PRICE_PER_MTOK = UX_ROUTER.maxPrice;
+/** Every estimate at the price the request carries as its ceiling. */
+export const PRICE_PER_MTOK = UX_MODEL.price;
 
 /**
  * Characters per input token, deliberately low. Source with line-number prefixes

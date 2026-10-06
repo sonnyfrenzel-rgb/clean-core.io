@@ -152,14 +152,14 @@ export function publicSummary(report) {
     status: 'completed, sealed',
     modelCalls: report.meta?.modelCalls ?? 0,
     costUsd: report.meta?.costUsd ?? 'unknown',
-    // Which model(s) the Auto Router chose: metadata, like the cost, and never a finding.
+    // Which model(s) answered: metadata, like the cost, and never a finding.
     models: reviewedBy(report),
   };
 }
 
 /**
- * The model(s) that answered, as one line. Since 01.10.2026 the Auto Router picks per call (meta.models); a report
- * written before then names its one pinned model in meta.model.
+ * The model(s) that answered, as one line. meta.models lists who answered (the Auto Router
+ * picked per call from 01.10. to 06.10.2026); an older report names only meta.model.
  */
 export function reviewedBy(report) {
   const models = report?.meta?.models;

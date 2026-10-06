@@ -1,5 +1,5 @@
 /**
- * The security agent: one CISO, five consultants, every one of them a call to OpenRouter's Auto Router. Everything
+ * The security agent: one CISO, five consultants, every one of them a call to one pinned model on OpenRouter. Everything
  * the audit is allowed to be and spend is decided here and nowhere else (tests/security-audit-guard.spec.ts).
  *
  * The model has no tools at all. The consultants receive the complete code of their domain, the CISO receives their
@@ -11,6 +11,11 @@
 
 export const AUDIT = {
   /**
+   * Pinned again (owner decision, 06.10.2026): openai/gpt-6-luna-pro, one provider, one price. From 01.10. to
+   * 06.10.2026 the Auto Router chose per call; the audits of that week reported no cost (any failed call makes the
+   * total unknown, and every one of them lost calls to rate limits or cut-off answers). What follows is the record
+   * of that week.
+   *
    * Owner decision, 01.10.2026: no pinned model. Every call goes to `openrouter/auto` (scripts/qa/lib/openrouter.mjs
    * buildRequest), which picks the model per call within the cost band `high`; the payload and the mail name every
    * model that answered. From 15.09.2026 until then the audit was pinned to deepseek/deepseek-v4.1-flash.
@@ -26,7 +31,7 @@ export const AUDIT = {
    * honour the strict schema), `allow_fallbacks: false`, the empty-content and not-JSON checks in callReviewer, and
    * the floor under coverage (`minDeepReadRatio`), which fails the audit loudly instead of reporting on a fraction.
    */
-  router: { costTier: 'high', maxPrice: { input: 1.5, output: 4.5 } },
+  model: { model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } },
   /**
    * Estimated budget per main release, checked before every call against what was actually spent (as in the QA
    * agent). The whole repository is about 1.2 million input tokens in some fifty calls — under $1 at worst — so the cap catches outliers,
@@ -56,7 +61,12 @@ export const AUDIT = {
    * four rate limits. The worst case is now 128 × $0.239 + $5.95 ≈ $36.6, under 80 % of $46 ($36.8); a 129th
    * call would leave six cents.
    */
-  maxCostUsd: 46,
+  /**
+   * 46 → 6 USD on 06.10.2026, with the pinned model at $0.10/$0.50 and the audit reading only what changed since
+   * the last audited release (surface.mjs auditScope). Even a whole-repository run at its worst case — 128
+   * consultant calls plus the CISO reserve — comes to about $3.9, under 80 % of $6.
+   */
+  maxCostUsd: 6,
   /**
    * The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail.
    * $0.20 until 01.10.2026; at the Auto Router's ceiling the CISO reserve of a self-test alone is $0.20 and the

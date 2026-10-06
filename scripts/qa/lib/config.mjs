@@ -8,32 +8,23 @@
  */
 
 /**
- * Which model reviews is no longer decided here (owner decision, 01.10.2026). Every agent that runs over
- * OpenRouter sends `openrouter/auto`, and OpenRouter's Auto Router picks the model per call. What this file
- * still decides is the band it picks from and what a call may cost:
+ * Which model reviews is decided here, pinned (owner decision, 06.10.2026). From 01.10. to 06.10.2026 every
+ * agent sent `openrouter/auto` and let the Auto Router pick per call. Measured over those six days: $82.81 on
+ * the key, the full review three times the price of the pinned one while reading less of the code (936
+ * files unread against 270), the security audit's cost no longer known, and the delta review cut off at its
+ * output allowance on a 61,000-character batch twice in a row. A pinned model has one price, one behaviour,
+ * and a report that can be compared with the one before it.
  *
- * - `costTier` is the quality floor: the Auto Router's cost band (`low` … `max`). The delta review of every push
- *   to `dev` runs at `high`, the full review of a release on `main` at `xhigh`.
- * - `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so OpenRouter serves no endpoint above
- *   it, and every pre-call estimate is made at exactly that price. OpenRouter does not publish where a tier
- *   ends; without a ceiling the "worst case" of a cap would be a guess. Probed 01.10.2026: `high` chose
- *   z-ai/glm-5.3 ($0.22/$4.40) and glm-5.2 ($1.40/$4.40), `xhigh` anthropic/claude-sonnet-5.5 ($2/$10).
- *
- * What this costs, written down: a report can no longer be compared with the one before it as the same
- * reviewer's judgement, because the reviewer may differ per call. Every report therefore names the model(s)
- * that answered (meta.models), and a change in findings has to be read with that in mind.
- *
- * Until 01.10.2026 the delta reviewer was pinned to openai/gpt-6-luna and the full reviewer to
- * openai/gpt-6-luna-pro, both at $0.10/$0.50.
+ * `price` (USD per million tokens) is the model's list price on OpenRouter. It is sent as `provider.max_price`,
+ * so no endpoint that charges more serves the call, and every pre-call estimate is made at it.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const AUTO_MODEL = 'openrouter/auto';
-
-export const ROUTER = {
-  delta: { costTier: 'high', maxPrice: { input: 1.5, output: 4.5 } },
-  full: { costTier: 'xhigh', maxPrice: { input: 3, output: 15 } },
+/** Checked 06.10.2026 against OpenRouter's model list: structured outputs, reasoning, 128k output, images. */
+export const MODELS = {
+  delta: { model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } },
+  full: { model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } },
 };
 
 export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
@@ -48,10 +39,10 @@ export const PROD_URL = 'https://clean-core.io';
 
 /**
  * Spend is capped per review, not hoped for. The cap is checked before any call against what OpenRouter
- * actually reported as spent (`usage.cost`) plus an estimate for the call at the price ceiling of its tier —
- * the most any endpoint may charge for it — and the actual cost is written into every report.
+ * actually reported as spent (`usage.cost`) plus an estimate for the call at the model's price — the most any
+ * endpoint may charge for it — and the actual cost is written into every report.
  */
-export const PRICE_PER_MTOK = ROUTER.delta.maxPrice;
+export const PRICE_PER_MTOK = MODELS.delta.price;
 
 export const BUDGET = {
   /**
@@ -83,10 +74,10 @@ export const BUDGET = {
    * $0.09 a full batch at the prices the router chose in the probes.
    */
   /**
-   * $6.50 since 01.10.2026 (owner decision), raised with maxOutputTokens to 96,000: ten worst-case batches
-   * then come to about $5.18, still under 80 % of the cap.
+   * $6.50 from 01.10.2026 with the Auto Router; $1 since 06.10.2026, back on the pinned Luna. Ten worst-case
+   * batches at $0.10/$0.50 with the 96,000-token output allowance come to about $0.54, under 80 % of the cap.
    */
-  maxCostUsd: 6.5,
+  maxCostUsd: 1,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /**
@@ -144,7 +135,7 @@ export const BUDGET = {
 };
 
 /**
- * The full review of a release on `main`: the whole code base, area by area, by the Auto Router at ROUTER.full. It never gates
+ * The full review of a release on `main`: the whole code base, area by area, by MODELS.full. It never gates
  * a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
  *
  * `maxCostUsd` is the ceiling; `maxBatches` exists so a runaway plan cannot sit in a queue for hours. Until
@@ -169,11 +160,10 @@ export const BUDGET = {
  */
 export const FULL_BUDGET = {
   /**
-   * Unchanged at $10 with the move to the Auto Router at `xhigh` (01.10.2026), and binding again: at the ceiling
-   * of $3/$15 a full batch estimates at about $1.06, and at the prices `xhigh` chose in the probes (Sonnet-class,
-   * $2/$10) it costs about $0.40, so roughly 22 of the 28 batches fit. What does not is named as NOT REVIEWED.
+   * $10 while the Auto Router chose the model (01.–06.10.2026); $3 since, back on the pinned Luna Pro: 28
+   * worst-case batches at $0.10/$0.50 come to about $0.99. What does not fit is named as NOT REVIEWED.
    */
-  maxCostUsd: 10,
+  maxCostUsd: 3,
   maxBatchChars: 400_000,
   maxBatches: 28,
   maxOutputTokens: 48_000,

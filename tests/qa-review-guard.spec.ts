@@ -120,41 +120,44 @@ test.describe('nothing security-relevant is exposed', () => {
 });
 
 test.describe('the reviewer', () => {
-  test('is the OpenRouter Auto Router at a fixed cost tier and price ceiling, with no tools, no fallbacks and no data collection', async () => {
-    const { AUTO_MODEL, ROUTER, PRICE_PER_MTOK } = await lib('config.mjs');
+  test('is one pinned model per reviewer at its list price, with no tools, no fallbacks and no data collection', async () => {
+    const { MODELS, PRICE_PER_MTOK } = await lib('config.mjs');
     const { buildRequest } = await lib('openrouter.mjs');
-    // Owner decision, 01.10.2026: no agent pins a model. Every request goes to OpenRouter's Auto Router, which
-    // picks the model per call; the agent decides only the band (cost_tier, the quality floor) and the ceiling
-    // (max_price). Until then: openai/gpt-6-luna on dev, openai/gpt-6-luna-pro on main.
-    expect(AUTO_MODEL).toBe('openrouter/auto');
-    expect(ROUTER.delta.costTier).toBe('high');
-    expect(ROUTER.full.costTier).toBe('xhigh');
-    // Every estimate is made at the ceiling the request carries, so no endpoint can cost more than it says.
-    expect(PRICE_PER_MTOK).toBe(ROUTER.delta.maxPrice);
-    for (const { costTier, maxPrice } of [ROUTER.delta, ROUTER.full]) {
-      const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', costTier, maxPrice });
-      expect(req.model).toBe('openrouter/auto');
-      expect(req.plugins).toEqual([{ id: 'auto-router', cost_tier: costTier }]);
-      // No allowed_models: the point is the router's free choice.
-      expect(JSON.stringify(req.plugins)).not.toContain('allowed_models');
-      expect(req.provider).toEqual({ data_collection: 'deny', require_parameters: true, allow_fallbacks: false, max_price: { prompt: maxPrice.input, completion: maxPrice.output } });
+    // Owner decision, 06.10.2026: pinned again after five days of the Auto Router (01.–06.10.2026).
+    expect(MODELS.delta).toEqual({ model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } });
+    expect(MODELS.full).toEqual({ model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } });
+    // Every estimate is made at the price the request carries as its ceiling.
+    expect(PRICE_PER_MTOK).toBe(MODELS.delta.price);
+    for (const { model, price } of [MODELS.delta, MODELS.full]) {
+      const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model, price });
+      expect(req.model).toBe(model);
+      // No router plugin, no list of models to choose from.
+      expect(req.plugins).toBeUndefined();
+      expect(req.models).toBeUndefined();
+      expect(req.provider).toEqual({ data_collection: 'deny', require_parameters: true, allow_fallbacks: false, max_price: { prompt: price.input, completion: price.output } });
       expect(req.tools).toBeUndefined();
       expect(req.response_format.json_schema.strict).toBe(true);
       expect(req.usage).toEqual({ include: true });
     }
-    // The defaults are the delta reviewer's, so a caller that names nothing still gets a floor and a ceiling.
+    // The defaults are the delta reviewer's, so a caller that names nothing still gets a model and a ceiling.
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
-    expect(req.plugins[0].cost_tier).toBe(ROUTER.delta.costTier);
-    expect(req.provider.max_price).toEqual({ prompt: ROUTER.delta.maxPrice.input, completion: ROUTER.delta.maxPrice.output });
-    // Without a known tier or a ceiling there is no request at all.
-    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', costTier: 'cheap' })).toThrow(/unknown cost tier/);
-    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', maxPrice: { input: 1 } })).toThrow(/no price ceiling/);
-    // Both reviewers pass their own tier and ceiling to the call.
-    expect(read('scripts/qa/review.mjs')).toMatch(/costTier: ROUTER\.delta\.costTier, maxPrice: ROUTER\.delta\.maxPrice \}\);/);
-    expect(read('scripts/qa/full-review.mjs')).toMatch(/costTier: ROUTER\.full\.costTier,\s*maxPrice: ROUTER\.full\.maxPrice,/);
-    // No model id is pinned anywhere in the QA agent any more.
-    const hits = fs.readdirSync(path.resolve(ROOT, 'scripts/qa'), { recursive: true }).filter((f) => String(f).endsWith('.mjs') && /['"`](openai|anthropic|google|meta|deepseek|z-ai|moonshotai)\/[a-z0-9.-]+['"`]/.test(read(`scripts/qa/${String(f).replace(/\\/g, '/')}`)));
-    expect(hits.map(String)).toEqual([]);
+    expect(req.model).toBe(MODELS.delta.model);
+    expect(req.provider.max_price).toEqual({ prompt: MODELS.delta.price.input, completion: MODELS.delta.price.output });
+    // The router is refused, and so is a request without a ceiling.
+    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', model: 'openrouter/auto' })).toThrow(/no pinned model/);
+    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', price: { input: 1 } })).toThrow(/no price ceiling/);
+    // Both reviewers pass their own model and price to the call.
+    expect(read('scripts/qa/review.mjs')).toMatch(/model: MODELS\.delta\.model, price: MODELS\.delta\.price \}\);/);
+    expect(read('scripts/qa/full-review.mjs')).toMatch(/model: MODELS\.full\.model,\s*price: MODELS\.full\.price,/);
+    // No agent sends the Auto Router any more (modelIdOf names it only to refuse it).
+    for (const dir of ['scripts/qa', 'scripts/security', 'scripts/ux']) {
+      const hits = fs
+        .readdirSync(path.resolve(ROOT, dir), { recursive: true })
+        .map((p) => `${dir}/${String(p).replace(/\\/g, '/')}`)
+        // String literals only: the comments keep the record of the router week in backticks.
+        .filter((p) => p.endsWith('.mjs') && /['"]openrouter\/auto['"]|['"]auto-router['"]/.test(read(p).replace("value !== 'openrouter/auto'", '')));
+      expect(hits, dir).toEqual([]);
+    }
   });
 
   test('the model that answered is recorded in every report, and only in the shape of a model id', async () => {
@@ -172,7 +175,7 @@ test.describe('the reviewer', () => {
       const src = read(file);
       expect(src).toMatch(/const models = modelsOf\(results\);/);
       expect(src.indexOf('const models = modelsOf(results);')).toBeLessThan(src.indexOf('if (secretFindings.length) results.push('));
-      expect(src).toMatch(/model: AUTO_MODEL,\s*costTier: ROUTER\.(delta|full)\.costTier,\s*maxPrice: ROUTER\.(delta|full)\.maxPrice,\s*models,/);
+      expect(src).toMatch(/model: MODELS\.(delta|full)\.model,\s*price: MODELS\.(delta|full)\.price,\s*models,/);
       expect(src).toMatch(/reviewed by \$\{summary\.models\}/);
     }
     const { renderHeader, reviewedBy } = await lib('report.mjs');
@@ -251,11 +254,11 @@ test.describe('the reviewer', () => {
     expect(unused).toEqual([]);
   });
 
-  test('another agent can set its own tier and ceiling and send screenshots through the same transport', async () => {
+  test('another agent can set its own model and price and send screenshots through the same transport', async () => {
     const { buildRequest, callReviewer, resetModelCatalog } = await lib('openrouter.mjs');
     const parts = [{ type: 'text', text: 'Screenshot 03-analyze-desktop-s1' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } }];
-    const req = buildRequest({ system: 's', user: parts, schema: { type: 'object' }, effort: 'low', costTier: 'high', maxPrice: { input: 1.25, output: 5 }, maxTokens: 8000, name: 'ux_review' });
-    expect(req).toMatchObject({ model: 'openrouter/auto', max_tokens: 8000, plugins: [{ id: 'auto-router', cost_tier: 'high' }], provider: { allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: 1.25, completion: 5 } } });
+    const req = buildRequest({ system: 's', user: parts, schema: { type: 'object' }, effort: 'low', model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 }, maxTokens: 8000, name: 'ux_review' });
+    expect(req).toMatchObject({ model: 'openai/gpt-6-luna', max_tokens: 8000, provider: { allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: 0.1, completion: 0.5 } } });
     expect(req.messages[1].content).toEqual(parts);
     expect(req.response_format.json_schema.name).toBe('ux_review');
 
@@ -431,7 +434,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   });
 
   test('the cost cap is checked before every call against what was actually spent', async () => {
-    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, ROUTER } = await lib('config.mjs');
+    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, MODELS } = await lib('config.mjs');
     // A first call of normal size fits; the same call after most of the budget is spent does not.
     expect(withinBudget(0, 120_000)).toBe(true);
     expect(withinBudget(BUDGET.maxCostUsd - 0.01, 120_000)).toBe(false);
@@ -440,15 +443,15 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // pinned as 1.2 and this line went red on the move to GPT-6 Luna (22.09.2026),
     // which is the right kind of red — but it was testing the number twice, not the
     // arithmetic once.
-    // Since the Auto Router (01.10.2026) the price is the ceiling the request carries as provider.max_price.
-    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * ROUTER.delta.maxPrice.output, 5);
-    const full = { budget: FULL_BUDGET, price: ROUTER.full.maxPrice };
+    // The price is the pinned model's, which the request also carries as provider.max_price.
+    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * MODELS.delta.price.output, 5);
+    const full = { budget: FULL_BUDGET, price: MODELS.full.price };
     const fullCall = estimateCostUsd(400_000, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
     // Same lesson as the line above, and it went red for the same reason on the
     // move to GPT-6 Luna Pro (23.09.2026): the output rate was written here as
     // `10`, so the test checked the price twice instead of the arithmetic once.
     expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo(
-      (FULL_BUDGET.maxOutputTokens / 1e6) * ROUTER.full.maxPrice.output,
+      (FULL_BUDGET.maxOutputTokens / 1e6) * MODELS.full.price.output,
       5,
     );
     expect(withinBudget(0, 400_000, full)).toBe(true);
@@ -462,10 +465,10 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // $3.80 on 01.10.2026 (owner decision) with the move to the Auto Router at `high`: at the ceiling one full batch
     // estimates at about $0.30, so $0.50 would have read one or two batches a push. The caps are upper bounds; what
     // counts against them is the cost OpenRouter reports (usage.cost).
-    // $6.50 since 01.10.2026 (owner decision), raised with the delta output allowance to 96,000 tokens.
-    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(6.5);
+    // $6.50 and $10 while the Auto Router chose (01.–06.10.2026); $1 and $3 since, on the pinned Luna models.
+    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(1);
     expect(BUDGET.maxOutputTokens).toBe(96_000);
-    expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(10);
+    expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(3);
     // And the first call of a full batch always fits, or the cap would stop every review before it started.
     expect(withinBudget(0, BUDGET.maxBatchChars)).toBe(true);
     expect(withinBudget(0, FULL_BUDGET.maxBatchChars, full)).toBe(true);
@@ -477,9 +480,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // calls fit at the price ceiling with room. An incomplete review keeps the checkpoint at its base, and the
     // unread delta comes back with every later push (config.mjs, maxBatches) — a cap that stopped reviews would
     // turn into that deadlock. Checked from the budget itself, so a price or batch change cannot slip past it.
-    const { BUDGET, ROUTER, estimateCostUsd } = await lib('config.mjs');
+    const { BUDGET, MODELS, estimateCostUsd } = await lib('config.mjs');
     expect(BUDGET.maxBatches).toBe(10);
-    const worstCase = estimateCostUsd(BUDGET.maxBatches * BUDGET.maxBatchChars, BUDGET.maxBatches, { price: ROUTER.delta.maxPrice, maxOutputTokens: BUDGET.maxOutputTokens });
+    const worstCase = estimateCostUsd(BUDGET.maxBatches * BUDGET.maxBatchChars, BUDGET.maxBatches, { price: MODELS.delta.price, maxOutputTokens: BUDGET.maxOutputTokens });
     expect(worstCase, 'ten worst-case delta batches no longer fit under 80 % of the cap').toBeLessThan(BUDGET.maxCostUsd * 0.8);
   });
 
@@ -1195,8 +1198,8 @@ test.describe('the full review of a release on main', () => {
     // as it should: at the prices the router actually chose (about $0.40 a full
     // batch) roughly 22 of 28 batches fit. What holds instead is checked here:
     // many calls fit, and the run stops at the cap with the rest named.
-    const { FULL_BUDGET, ROUTER, estimateCostUsd } = await lib('config.mjs');
-    const worstCall = estimateCostUsd(FULL_BUDGET.maxBatchChars, 1, { price: ROUTER.full.maxPrice, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
+    const { FULL_BUDGET, MODELS, estimateCostUsd } = await lib('config.mjs');
+    const worstCall = estimateCostUsd(FULL_BUDGET.maxBatchChars, 1, { price: MODELS.full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
     expect(Math.floor(FULL_BUDGET.maxCostUsd / worstCall), 'even at the ceiling price a release review reads several batches').toBeGreaterThanOrEqual(8);
     const { reviewBatches } = await lib('full.mjs');
     const batches = Array.from({ length: 5 }, (_, i) => ({ files: [{ path: `f${i}.ts` }] }));
