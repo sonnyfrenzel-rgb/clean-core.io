@@ -1565,6 +1565,17 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(unchangedRun({ conclusion: 'failure' }, [{ name: 'Audit (sealed)', conclusion: 'skipped' }])).toBe(false);
   });
 
+  test('one agent at a time: the audit waits for the QA run of the same release, and never longer than half an hour', () => {
+    const wf = read('.github/workflows/security-audit.yml');
+    const scopeJob = wf.slice(wf.indexOf('  scope:'), wf.indexOf('  audit:'));
+    const wait = scopeJob.indexOf('Wait for the QA review of this release');
+    expect(wait).toBeGreaterThan(-1);
+    expect(wait).toBeLessThan(scopeJob.indexOf('- name: Decide'));
+    expect(scopeJob).toMatch(/gh run list --workflow qa-review\.yml --commit "\$SHA"/);
+    expect(scopeJob).toMatch(/for i in \$\(seq 1 60\); do[\s\S]*?sleep 30/);
+    expect(scopeJob).toMatch(/timeout-minutes: 40/);
+  });
+
   test('the workflow finds the base before any key is in reach and hands it to the audit', () => {
     const wf = read('.github/workflows/security-audit.yml');
     const scopeJob = wf.slice(wf.indexOf('  scope:'), wf.indexOf('  audit:'));

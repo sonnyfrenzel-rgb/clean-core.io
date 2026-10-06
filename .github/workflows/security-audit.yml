@@ -37,7 +37,7 @@ jobs:
     name: Scope
     if: vars.SECURITY_AUDIT_ENABLED != 'false'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 40 # up to 30 of them waiting for the QA review of the same release
     outputs:
       mode: ${{ steps.decide.outputs.mode }}
       base: ${{ steps.decide.outputs.base }}
@@ -47,6 +47,23 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      # One key, one agent at a time (owner decision, 06.10.2026): 16 of the 27 QA runs that failed between
+      # 27.09. and 06.10.2026 failed on rate limits, with every agent of a release calling at once. The audit
+      # waits for the QA run of the same commit; after 30 minutes it starts anyway, so a stuck review never
+      # leaves a release unaudited.
+      - name: Wait for the QA review of this release
+        if: github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          for i in $(seq 1 60); do
+            open=$(gh run list --workflow qa-review.yml --commit "$SHA" --json status --jq '[.[] | select(.status != "completed")] | length')
+            if [ "$open" = "0" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "The QA review of this release is still running after 30 minutes; the audit starts anyway."
 
       - name: Decide
         id: decide

@@ -79,9 +79,10 @@ test.describe('one pinned image-capable model, and it can only read', () => {
 });
 
 test.describe('three jobs, three trust levels', () => {
-  test('main releases, dev only when the agent changed, manual full or delta — revocable, read-only token, no concurrency group', () => {
-    expect(wf()).toMatch(/push:\s*\n\s*branches: \[main, dev\]/);
-    expect(wf()).toMatch(/workflow_dispatch:/);
+  test('started by hand only, full or delta — revocable, read-only token, no concurrency group', () => {
+    // Owner decision, 06.10.2026: no push starts it. The scope job still knows the push cases, for the day it does again.
+    expect(wf()).not.toMatch(/^\s*push:/m);
+    expect(wf()).toMatch(/on:\s*\n\s*workflow_dispatch:/);
     const perms = wf().slice(wf().indexOf('\npermissions:'), wf().indexOf('\njobs:'));
     expect(perms).not.toMatch(/write/);
     expect(wf()).not.toMatch(/^\s*concurrency:/m);

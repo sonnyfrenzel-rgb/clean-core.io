@@ -1,11 +1,13 @@
 name: UX Review
 
-# The UX agent (docs/UX-REVIEW-AGENT.md): every release on `main` gets a UX delta
-# review by OpenRouter's Auto Router (cost tier high, image-capable models only) from the
-# source it changed, a design scan of the whole product and screenshots of the
-# screens it touches. Until a complete full review of the whole product exists,
-# every automatic run is that full review. After it, a change to the agent on `dev`
-# runs the chain once as a small self-test.
+# The UX agent (docs/UX-REVIEW-AGENT.md): a UX review by one pinned image-capable model
+# (openai/gpt-6-luna) from the source a release changed, a design scan of the whole
+# product and screenshots of the screens it touches.
+#
+# Started by hand only (owner decision, 06.10.2026). Until then every push to main
+# and dev started it; the reviews of the 3.0.x releases failed at the model's output
+# limit one after another and were paid for each time, while the owner had parked the
+# agent. `gh workflow run ux-review.yml --ref main -f mode=delta` runs it.
 #
 # Three jobs, three trust levels:
 #   scope    no secrets          decides whether a run happens and why — the mode itself needs the sealed reports
@@ -15,8 +17,6 @@ name: UX Review
 #
 # Revocation: `gh variable set UX_REVIEW_ENABLED --body false`.
 on:
-  push:
-    branches: [main, dev]
   workflow_dispatch:
     inputs:
       mode:
