@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, connectFirestoreEmulator, doc, updateDoc } from 'firebase/firestore';
+import { initializeFirestore, connectFirestoreEmulator, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
@@ -468,7 +468,7 @@ test.describe('the account cannot write its own bookkeeping', () => {
 
     // The account can still change what it is allowed to change, so the refusal
     // above is the rule and not a broken document.
-    await updateDoc(doc(clientDb, 'users', uid), { firstName: 'Starter', updatedAt: new Date() });
+    await updateDoc(doc(clientDb, 'users', uid), { firstName: 'Starter', updatedAt: serverTimestamp() });
   });
 });
 

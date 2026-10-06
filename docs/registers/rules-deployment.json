@@ -39,5 +39,14 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "e99f16bdbe4c439e7e391f31239ac87e12670ff215dabb93e353c3679b5481b6",
+    "recordedAt": "2026-10-06",
+    "recordedFor": "Security audit v3.0.3 (SEC-2026-681, -676, -704 to -707; second line of -682): approved by Sonny 06.10.2026; app on dev first, then Sonny deploys",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

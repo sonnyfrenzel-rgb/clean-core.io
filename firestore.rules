@@ -40,7 +40,8 @@ service cloud.firestore {
       return isAuthenticated() &&
              request.auth.token.get('admin', false) == true &&
              exists(callerProfilePath()) &&
-             get(callerProfilePath()).data.get('isAdmin', true) != false;
+             get(callerProfilePath()).data.get('isAdmin', true) != false &&
+             accountActive();
     }
 
     // NOTE: getUserData() and getUserOrgId() were removed because they used
@@ -145,6 +146,18 @@ service cloud.firestore {
       ];
     }
 
+    // The values a browser may put on its own profile after sign-up — the same
+    // bounds the create rule holds, for the fields the update allowlist names.
+    function isValidUserUpdate(data, changed) {
+      return (!('firstName' in changed) || isBoundedString(data.firstName, 1, 100)) &&
+             (!('lastName' in changed) || isBoundedString(data.lastName, 1, 100)) &&
+             (!('theme' in changed) || isBoundedString(data.theme, 0, 32)) &&
+             (!('landingPageDefault' in changed) || isBoundedString(data.landingPageDefault, 0, 64)) &&
+             (!('backupEnabled' in changed) || data.backupEnabled is bool) &&
+             (!('desktopChatbotEnabled' in changed) || data.desktopChatbotEnabled is bool) &&
+             (!('updatedAt' in changed) || data.updatedAt == request.time);
+    }
+
     function userClientUpdateKeys() {
       return [
         'firstName', 'lastName', 'theme', 'landingPageDefault',
@@ -209,10 +222,14 @@ service cloud.firestore {
                         accountActive() &&
                         request.resource.data.diff(resource.data).changedKeys().hasOnly(userClientUpdateKeys()) &&
                         request.resource.data.diff(resource.data).addedKeys().hasOnly(userClientUpdateKeys()) &&
-                        request.resource.data.diff(resource.data).removedKeys().hasOnly([])
+                        request.resource.data.diff(resource.data).removedKeys().hasOnly([]) &&
+                        isValidUserUpdate(request.resource.data, request.resource.data.diff(resource.data).affectedKeys())
                       )
                     );
-      allow delete: if isAdmin();
+      // Erasure is server-side only (deleteUserDataAndAccount): a client delete
+      // of the profile left projects, runs, uploads and tickets under a uid
+      // that no longer has one (SEC-b6716f0-04). No screen calls it.
+      allow delete: if false;
     }
 
     match /user_secrets/{userId}/{allPaths=**} {
@@ -440,6 +457,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                     accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
+                    isCreationTime(request.resource.data.createdAt) &&
                     isValidFileEntry(request.resource.data);
       allow update: if isAuthenticated() && isOwnUpload() &&
                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'content']) &&
@@ -461,6 +479,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                     accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
+                    isCreationTime(request.resource.data.createdAt) &&
                     isValidABAPExample(request.resource.data);
       allow update: if isAuthenticated() && isOwnUpload() &&
                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'code']) &&
