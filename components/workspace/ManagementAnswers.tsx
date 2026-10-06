@@ -47,6 +47,8 @@ export default function ManagementAnswers({
   coach,
   evidenceExtra,
   decision,
+  onDecisionChanged,
+  beforeWrite,
 }: {
   project: Project | null;
   projectId: string;
@@ -58,6 +60,9 @@ export default function ManagementAnswers({
   evidenceExtra?: React.ReactNode;
   /** The decision record's card — the hero of the Management view. */
   decision?: React.ReactNode;
+  /** Passed through: the four-option block chose an option (ADR-079), and the Stand check before it writes. */
+  onDecisionChanged?: () => void;
+  beforeWrite?: () => Promise<boolean>;
 }) {
   /**
    * `undefined` while the read is in flight, `null` when it failed or was
@@ -144,6 +149,8 @@ export default function ManagementAnswers({
         coach={coach}
         evidenceExtra={evidenceExtra}
         decision={decision}
+        onDecisionChanged={onDecisionChanged}
+        beforeWrite={beforeWrite}
       >
       <div className="space-y-4">
         {view.answers.map((answer) => (

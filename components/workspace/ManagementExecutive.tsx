@@ -7,7 +7,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { CcTag } from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import {
@@ -28,6 +28,16 @@ import { PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 import InfoPopover from './InfoPopover';
 import { STEERING_TITLE } from '@/lib/steering-one-pager';
 import GlossaryTerm from '@/components/GlossaryTerm';
+import type { DecisionOptionsView, DecisionStage } from '@/lib/decision-option-signals';
+import type { ObjectStatusValue } from '@/lib/object-status';
+
+/** Where the decision stands, as the object status beside the answer (ADR-079). */
+const STAGE_STATUS: Record<DecisionStage, ObjectStatusValue> = {
+  'not-decided': 'open',
+  chosen: 'draft',
+  confirmed: 'confirmed',
+  outdated: 'open',
+};
 
 /**
  * The decision panel on top of the Management view — what a manager reads in
@@ -175,7 +185,8 @@ function FitRow({ item }: { item: StandardFitItem }) {
           {item.objectName}
         </span>
         <span data-standard-fit-level={item.level}>
-          <CcCleanCoreLevel value={item.level} />
+          {/* Explains itself on hover, focus and tap (owner 06.10.2026), as in IT. */}
+          <CcCleanCoreLevelExplained value={item.level} />
         </span>
         <span data-standard-fit-anchor={item.line ?? ''}>
           {item.line !== null ? (
@@ -242,8 +253,11 @@ export function StandardFitCard({
   fit,
   detailsHref,
   setTargetHref,
+  otherEdition = null,
 }: {
   fit: StandardFit;
+  /** The same reading on the other edition, in one line (ADR-079) — or `null`. */
+  otherEdition?: string | null;
   /** Where every object with its evidence stands — the bucket detail in the "Evidence" fold. */
   detailsHref: string;
   /** The way to choose a target platform, when that is what is missing. */
@@ -337,6 +351,11 @@ export function StandardFitCard({
         <CcProvenanceChip value="reconstructed" />
         <CcTag>{wt('stdFit.ownMeasure')}</CcTag>
       </div>
+      {otherEdition ? (
+        <p data-standard-fit-other-edition="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">
+          {otherEdition}
+        </p>
+      ) : null}
       {fit.basis === 'demo' ? (
         <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('stdFit.demoBasis')}</p>
       ) : null}
@@ -436,6 +455,9 @@ export default function ManagementExecutive({
   setTargetHref,
   coach,
   decision,
+  options,
+  optionsView = null,
+  otherEdition = null,
   onOpenOnePager,
 }: {
   summary: ExecutiveSummary;
@@ -462,6 +484,15 @@ export default function ManagementExecutive({
    * "the decision must be shown, placed prominently").
    */
   decision?: React.ReactNode;
+  /**
+   * The four options side by side (`DecisionOptions`, ADR-079) — shown above
+   * the decision record whenever the record is, and with it the question in
+   * the page's heading size and the answer that names the option.
+   */
+  options?: React.ReactNode;
+  optionsView?: DecisionOptionsView | null;
+  /** The distance to standard on the other edition, in one line. */
+  otherEdition?: string | null;
   /**
    * Opens the steering one-pager — a secondary button at the top of the
    * decision card, where a manager looks (owner, 04.10.2026: "much better but
@@ -569,24 +600,37 @@ export default function ManagementExecutive({
       <div
         data-executive-decision=""
         data-executive-decision-record={decision ? '' : undefined}
-        className={cn(CARD, decision ? 'lg:col-span-7' : 'lg:col-span-5')}
+        className={cn(CARD, decision ? 'lg:col-span-12' : 'lg:col-span-5')}
       >
         {coach}
         {decision ? (
           <>
             <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-              <h2 id={headingId} data-executive-question="" className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-                <span className={cn(LABEL, 'mr-2')}>
-                  <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
-                </span>
-                {s.question}
-              </h2>
+              <p className={cn(LABEL, 'min-w-0 flex-1 basis-48')}>
+                <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+              </p>
               {onePager}
             </div>
+            {/* ADR-079: the question is the heading of the page, the answer names the option. */}
+            <h2 id={headingId} data-executive-question="" className="m-0 mt-1 cc-text-h2 leading-snug text-cc-ink">
+              {s.question}
+            </h2>
+            {optionsView ? (
+              <div data-decision-answer="" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[15px] leading-snug font-semibold text-cc-ink">{optionsView.answer}</span>
+                <CcObjectStatus facet={wt('exec.statusFacet')} value={STAGE_STATUS[optionsView.stage]} />
+                {optionsView.who ? (
+                  <span data-decision-who="" className="basis-full text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {optionsView.who}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             {/* The page's one next step, as one row above the decision, so its
                 tip stands at the top of the page rather than over the folds. */}
             {nextRow}
-            <div className="mt-3">{decision}</div>
+            {options ? <div className="mt-4">{options}</div> : null}
+            <div className="mt-4 border-t border-cc-line pt-4">{decision}</div>
           </>
         ) : (
           <>
@@ -655,8 +699,8 @@ export default function ManagementExecutive({
         )}
       </div>
 
-      <div className={cn('min-w-0', decision ? 'lg:col-span-5' : 'lg:col-span-7')}>
-        <StandardFitCard fit={fit} detailsHref={fitDetailsHref} setTargetHref={setTargetHref} />
+      <div className={cn('min-w-0', decision ? 'lg:col-span-12' : 'lg:col-span-7')}>
+        <StandardFitCard fit={fit} detailsHref={fitDetailsHref} setTargetHref={setTargetHref} otherEdition={otherEdition} />
       </div>
     </div>
   );

@@ -10,8 +10,12 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
+import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 
-export type TargetArchitecture = 'rap' | 'cap' | 'integration' | 'event' | 'retire';
+// `keep` and `standard` are chosen in the Management view (ADR-079); the panel
+// shows them when they are on record and does not offer them — Design signs off
+// the route of a rebuild, and Retire as before.
+export type TargetArchitecture = 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard';
 
 interface ArchitectureOption {
   value: TargetArchitecture;
@@ -72,7 +76,10 @@ const architectureOptions: ArchitectureOption[] = [
 
 /** The words a reader sees for an architecture code — the same as the sign-off's own choices. */
 export function architectureOptionLabel(value: string | null | undefined): string | null {
-  return architectureOptions.find((o) => o.value === value)?.label ?? null;
+  return (
+    architectureOptions.find((o) => o.value === value)?.label ??
+    (value === 'keep' || value === 'standard' ? DECISION_OPTION_LABELS[value] : null)
+  );
 }
 
 interface ArchitectSignOffProps {
@@ -241,7 +248,7 @@ export default function ArchitectSignOff({
             <div className="min-w-0">
               <span className="block cc-text-label text-cc-ink-muted">Target Architecture Set</span>
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <h3 className="m-0 cc-text-h2 text-cc-ink">{lockedOption?.label || currentArchitecture}</h3>
+                <h3 className="m-0 cc-text-h2 text-cc-ink">{lockedOption?.label || architectureOptionLabel(currentArchitecture) || currentArchitecture}</h3>
                 <CcProvenanceChip value="confirmed" />
               </div>
             </div>

@@ -105,6 +105,9 @@ const ARCH_LABELS: Record<string, string> = {
   integration: 'SAP Integration Suite',
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',
+  // ADR-079: added, never renamed — a pack signed before keeps its bytes.
+  keep: 'Keep',
+  standard: 'Move to SAP standard',
 };
 
 /**

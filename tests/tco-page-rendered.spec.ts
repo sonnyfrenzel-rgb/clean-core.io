@@ -186,7 +186,8 @@ test('the option comparison names nothing until every option is complete', async
 
   // Nothing entered: each option says "Not determined", and the panel says why
   // rather than showing a zero.
-  for (const id of ['do-nothing', 'keep', 'standard']) {
+  // ADR-079: the four options of the decision, Keep stored under `do-nothing`.
+  for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
     await expect(page.locator(`[data-cost-option-not-determined="${id}"]`)).toHaveText('Not determined');
   }
   await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
@@ -231,15 +232,20 @@ test('once an option leads, the panel says how far each assumption may move', as
   await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]'); // its row is open: the cadence was just filled in it
 
   // The same effort for every option, taken over from the proposal as the
-  // reader's own figure, so what separates them is the maintenance baseline
-  // that "Do nothing" and "Keep" carry and "Move to standard" does not.
-  for (const id of ['do-nothing', 'keep', 'standard']) {
+  // reader's own figure, so what separates Keep from Move to SAP standard is
+  // the maintenance baseline Keep carries; Rebuild and Retire are given a far
+  // larger one-off effort, so the lead is not a tie (ADR-079: four options).
+  for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
     await revealEconomicsField(page, `[data-cost-apply-proposal="${id}"]`);
     await page.click(`[data-cost-apply-proposal="${id}"]`);
   }
-  for (const id of ['do-nothing', 'keep']) {
+  for (const id of ['do-nothing']) {
     await fillEconomics(page, `[data-cost-field="${id}-baseline-dev"]`, '1');
     await fillEconomics(page, `[data-cost-field="${id}-baseline-test"]`, '0');
+  }
+  for (const id of ['rebuild', 'retire']) {
+    await fillEconomics(page, `[data-cost-field="${id}-oneoff-high-dev"]`, '500');
+    await fillEconomics(page, `[data-cost-field="${id}-oneoff-low-dev"]`, '400');
   }
   await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
 

@@ -766,6 +766,9 @@
   [data-steering-print] {
     page: steering;
     font-size: 12px;
+    /* With the four decision options (ADR-079) the page holds more than it
+       did; on paper it is set smaller rather than spilling onto a second sheet. */
+    zoom: 0.7;
   }
 
   [data-steering-print] a[href]::after {
@@ -787,6 +790,21 @@
 
   [data-steering-lists] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* The four options of the decision (ADR-079) stand in one row on paper,
+     and the blocks close up, so the page stays one page. */
+  [data-steering-options] {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+
+  [data-steering-print] .mt-4 {
+    margin-top: 8px !important;
+  }
+
+  [data-steering-print] .p-3 {
+    padding: 8px !important;
   }
 
   /* The workspace prints its own short sheet (WorkspacePrintSheet, §7.1 and

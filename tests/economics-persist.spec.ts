@@ -90,8 +90,8 @@ async function expectFigures(page: Page) {
   await expect(page.locator('[data-cost-field="dev-day-rate"] input, input[data-cost-field="dev-day-rate"]').first()).toHaveValue('820');
   await expect(page.locator('[data-cost-field="test-day-rate"] input, input[data-cost-field="test-day-rate"]').first()).toHaveValue('640');
   await expect(page.locator('[data-tco-cost="investment"] input, input[data-tco-cost="investment"]').first()).toHaveValue('40000');
-  await expect(page.locator('[data-cost-option="keep"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
-  await expect(page.locator('[data-cost-option="keep"] [data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
+  await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
+  await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
   await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', 'none');
 }
 
@@ -126,7 +126,7 @@ test('the four steps survive another tool and a reload, and Economics earns its 
   await expect(page.locator('[data-economics-save="saved"]')).toBeVisible();
 
   const stored = await adminGetDoc(`projects/${PROJECT}/cost_assumptions`, 'current');
-  expect(stored?.assumptions?.options?.find((o: { id: string }) => o.id === 'keep')?.effortSource).toBe('proposal-confirmed');
+  expect(stored?.assumptions?.options?.find((o: { id: string }) => o.id === 'rebuild')?.effortSource).toBe('proposal-confirmed');
 });
 
 test('an invited reader sees the stored figures, read-only', async ({ page }) => {

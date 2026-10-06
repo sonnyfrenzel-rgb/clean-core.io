@@ -264,7 +264,7 @@ export function ProposalFactors({ loc, baseline }: { loc: number; baseline?: Bas
       </p>
       {baseline ? (
         <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted" data-economics-baseline-formula="">
-          The maintenance baseline of Keep and Do nothing is the lines in thousands times the maintenance factors
+          The maintenance baseline of Keep is the lines in thousands times the maintenance factors
           {baseline.score === null
             ? ' — there is no Clean Core Score from the signed run, so no uplift is applied'
             : ` times 1 + (100 − score) / 100, which is ${formatUplift(baseline.uplift)} for the score of ${baseline.score} from the signed run: code further from clean core costs more to keep running`}

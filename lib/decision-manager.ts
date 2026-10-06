@@ -28,11 +28,12 @@ import {
 import type { ProvenanceValue } from './provenance';
 import { contractParts } from './decision-card';
 import { sapNamesForDisplay } from './sap-naming';
+import { DECISION_OPTION_LABELS, optionOfArchitecture } from './decision-options';
 
 /** Where a point is resolved: a stage of the project, or another view of the workspace. */
 export type DecisionPlace =
   | { kind: 'stage'; path: 'analyze' | 'design' | 'tco' }
-  | { kind: 'view'; view: 'business' | 'it' };
+  | { kind: 'view'; view: 'business' | 'it' | 'management' };
 
 export type PillarKey = 'need' | 'option' | 'cost' | 'contract';
 
@@ -104,6 +105,13 @@ const OPTION_VERB: Readonly<Record<string, string>> = Object.freeze({
   event: 'Rebuild on',
 });
 
+/** The architecture code of an option binding (`rap · In-App ABAP Cloud (RAP)` → `rap`), or `null`. */
+export function optionCodeOf(optionRevision: string | null): string | null {
+  if (optionRevision === null) return null;
+  const at = optionRevision.indexOf(' · ');
+  return at > 0 ? optionRevision.slice(0, at) : optionRevision;
+}
+
 /** The option binding (`rap · In-App ABAP Cloud (RAP)`) as the decision's headline. */
 export function decisionHeadline(optionRevision: string | null): string {
   if (optionRevision === null) return 'No option chosen yet';
@@ -111,6 +119,9 @@ export function decisionHeadline(optionRevision: string | null): string {
   const id = at > 0 ? optionRevision.slice(0, at) : optionRevision;
   const label = sapNamesForDisplay(at > 0 ? optionRevision.slice(at + 3) : optionRevision);
   if (id === 'retire') return 'Retire this object';
+  // ADR-079: the two options chosen in Management say their name and nothing else.
+  if (id === 'keep') return DECISION_OPTION_LABELS.keep;
+  if (id === 'standard') return DECISION_OPTION_LABELS.standard;
   const verb = OPTION_VERB[id];
   return verb ? `${verb} ${label}` : label;
 }
@@ -161,8 +172,16 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
     return {
       ...base,
       title: 'Option',
-      line: revision !== null ? `${decisionHeadline(revision)}, as signed off in Design.` : 'No target architecture is signed off yet.',
-      place: { kind: 'stage', path: 'design' },
+      line:
+        revision === null
+          ? 'No option is chosen yet — choose one of the four above.'
+          : optionOfArchitecture(optionCodeOf(revision)) === 'rebuild'
+            ? `${decisionHeadline(revision)}, as signed off in Design.`
+            : `${decisionHeadline(revision)}, as chosen by your account.`,
+      place:
+        revision !== null && optionOfArchitecture(optionCodeOf(revision)) !== 'rebuild'
+          ? { kind: 'view', view: 'management' }
+          : { kind: 'stage', path: 'design' },
     };
   }
 
@@ -272,7 +291,7 @@ const BLOCKING_WORDS: Partial<Record<DecisionGapCode, string>> = {
   'contract-not-bound': 'there is no architecture contract',
   'sign-off-not-current': 'the sign-off is not current',
   'contract-blocked': 'a limit of the architecture contract blocks it',
-  'option-not-chosen': 'no target architecture is signed off',
+  'option-not-chosen': 'no option is chosen yet',
 };
 
 export function decisionManagerView(decision: ProjectDecision, stored: StoredCostScenario | null = null): DecisionManagerView {
@@ -283,10 +302,13 @@ export function decisionManagerView(decision: ProjectDecision, stored: StoredCos
   const points = decision.conditions.map(decisionPoint);
   const openPoints = points.filter((p) => !p.done).length;
 
+  const chosen = optionOfArchitecture(optionCodeOf(option));
   const why =
     option === null
-      ? 'Sign off a target architecture in Design to give this decision an option.'
-      : `It follows the target architecture signed off in Design; ${inPlace} of the 4 foundations below are in place.`;
+      ? 'Choose one of the four options above. Rebuild is signed off in Design; Keep, Move to SAP standard and Retire are chosen here.'
+      : chosen === 'rebuild'
+        ? `It follows the target architecture signed off in Design; ${inPlace} of the 4 foundations below are in place.`
+        : `Chosen by your account in this view; ${inPlace} of the 4 foundations below are in place.`;
 
   const blocking = [
     ...new Set(

@@ -57,6 +57,10 @@ export const ARCHITECTURE_OPTION: Readonly<Record<string, { label: string; kind:
   integration: { label: 'SAP Integration Suite', kind: 'rebuild' },
   event: { label: 'SAP Event Mesh', kind: 'rebuild' },
   retire: { label: 'Retire / Decommission', kind: 'retire' },
+  // ADR-079: chosen in the Management view directly; both build nothing. Added,
+  // never renamed — the labels above are fingerprinted bytes of stored decisions.
+  keep: { label: 'Keep', kind: 'keep' },
+  standard: { label: 'Move to SAP standard', kind: 'standard' },
 });
 
 export interface DecisionDraftFacts {
@@ -124,6 +128,8 @@ export function decisionSummary(signedOffArchitecture: string | null): string {
   if (!option) {
     return 'No target architecture is signed off yet, so this decision picks nothing.';
   }
+  if (option.kind === 'keep') return 'Keep this object as it is, as the account chose.';
+  if (option.kind === 'standard') return 'Move this object to SAP standard, as the account chose.';
   return option.kind === 'retire'
     ? 'Retire this object, as the signed-off target architecture says.'
     : `Build this object as ${option.label}, as the signed-off target architecture says.`;

@@ -360,22 +360,24 @@ export function standardFit(src: StandardFitSource): StandardFit {
       key: 'fits',
       count: fits,
       segments: [
-        seg('keep', 'Keep', released, 'chart-4'),
-        seg('rebuild-path', 'Rebuild · path named', fits - released, 'chart-3'),
+        // ADR-079: the decision's own words (Keep, Rebuild, Retire) stay with the
+        // program decision; per object the meter says what happens to the object.
+        seg('keep', 'Used as SAP released it', released, 'chart-4'),
+        seg('rebuild-path', 'Successor named by SAP', fits - released, 'chart-3'),
       ],
     },
     {
       key: 'blocks',
       count: blockers.length,
       segments: [
-        seg('no-catalogued-path', 'No catalogued path', sorted.filter((a) => a.bucket === 'no-catalogued-path').length, 'chart-2'),
-        seg('rebuild-own', 'Rebuild · own work', sorted.filter((a) => a.bucket === 'rebuild' && a.rule !== 'rebuild-path').length, 'chart-5'),
+        seg('no-catalogued-path', 'No path named by SAP', sorted.filter((a) => a.bucket === 'no-catalogued-path').length, 'chart-2'),
+        seg('rebuild-own', 'Own code on SAP objects', sorted.filter((a) => a.bucket === 'rebuild' && a.rule !== 'rebuild-path').length, 'chart-5'),
       ],
     },
     {
       key: 'uncounted',
       count: retire + notSorted,
-      segments: [seg('retire', 'Retire', retire, 'chart-1'), seg('not-assigned', 'Not assigned', notSorted, 'not-determined', true)],
+      segments: [seg('retire', 'Goes away', retire, 'chart-1'), seg('not-assigned', 'Not sorted', notSorted, 'not-determined', true)],
     },
   ];
 
@@ -398,4 +400,22 @@ export function standardFit(src: StandardFitSource): StandardFit {
     blockers,
     clear,
   };
+}
+
+/**
+ * The same fit read for the other edition — the one-line comparison under the
+ * distance-to-standard card (ADR-079). Exact, not a projection: both editions
+ * are resolved from the same findings (`FitByPlatform`), so only the target
+ * changes.
+ */
+export function standardFitOnOtherEdition(src: StandardFitSource): StandardFit | null {
+  if (src.fit.state !== 'ready' || !src.fit.value.target) return null;
+  const other: TargetPlatform = src.fit.value.target === 'private' ? 'public' : 'private';
+  return standardFit({ ...src, fit: { state: 'ready', value: { ...src.fit.value, target: other } } });
+}
+
+/** "On Public Edition: 6 of 21 SAP objects can stay standard, 15 stand in the way." — or `null`. */
+export function otherEditionLine(other: StandardFit | null): string | null {
+  if (!other || other.state !== 'ready') return null;
+  return `On ${other.platformLabel}: ${other.fits} of ${other.counted} SAP object${other.counted === 1 ? '' : 's'} can stay standard, ${other.blocking} stand${other.blocking === 1 ? 's' : ''} in the way.`;
 }

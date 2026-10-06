@@ -104,11 +104,11 @@ test.describe('the maintenance-baseline proposal', () => {
     }
   });
 
-  test('is offered for Keep and Do nothing only, and is not in the model before it is taken over', () => {
+  test('is offered for Keep only (Do nothing is Keep, ADR-079), and is not in the model before it is taken over', () => {
     const proposals: OptionProposals = { effort: proposeEffort(668), baseline: proposeMaintenanceBaseline(668, 62) };
     const seed = initialCostAssumptions();
     const states = Object.fromEntries(seed.options.map((o) => [o.id, baselineProvenance(o, proposals.baseline)]));
-    expect(states).toEqual({ 'do-nothing': 'proposal', keep: 'proposal', standard: null });
+    expect(states).toEqual({ 'do-nothing': 'proposal', rebuild: null, standard: null, retire: null });
     expect(baselineProvenance(seed.options[0], null), 'no line count, nothing to propose').toBe('not-entered');
 
     // A complete set of figures — except the baselines, which only the proposal offers.
@@ -127,20 +127,20 @@ test.describe('the maintenance-baseline proposal', () => {
     };
     for (const o of base.options) expect(o.maintenanceBaselinePerYear, o.id).toBeNull();
     const before = costComparison(base);
-    for (const id of ['do-nothing', 'keep']) {
+    for (const id of ['do-nothing']) {
       const cost = before.costs.find((c) => c.optionId === id)!;
       expect(cost.total, `${id} is not priced on a proposal nobody took over`).toBeNull();
       expect(cost.coverage.gaps.map((g) => g.code)).toContain('option-baseline-missing');
     }
     expect(before.winner).toBeNull();
-    expect(pendingProposals(base.options, proposals).map((o) => o.id)).toEqual(['do-nothing', 'keep']);
+    expect(pendingProposals(base.options, proposals).map((o) => o.id)).toEqual(['do-nothing']);
 
     // Taken over: the figure lands in the option, its provenance says so, and only now is it priced.
     const after: CostAssumptions = {
       ...base,
       options: base.options.map((o) => ({ ...o, ...takeOverPatch(o, proposals) })),
     };
-    for (const id of ['do-nothing', 'keep']) {
+    for (const id of ['do-nothing']) {
       const o = after.options.find((x) => x.id === id)!;
       expect(o.maintenanceBaselinePerYear).toEqual({ devDays: 1.4, testDays: 0.74 });
       expect(o.baselineSource).toBe('proposal-confirmed');
@@ -235,13 +235,13 @@ test.describe('the guided stage', () => {
     // The take-over stands in the guide while the rates are still the next step.
     const takeOver = page.locator('[data-economics-steps] [data-economics-take-over-all]');
     await expect(takeOver).toBeInViewport();
-    await expect(takeOver).toHaveText(/Take over all 3 proposals/);
+    await expect(takeOver).toHaveText(/Take over all 4 proposals/);
 
     // Once the rates are in, the take-over is the next step itself.
     await fillRates(page);
     await expect(next).toHaveAttribute('data-economics-next', '3');
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(next.locator('[data-economics-next-action]')).toHaveText(/Take over all 3 proposals/);
+    await expect(next.locator('[data-economics-next-action]')).toHaveText(/Take over all 4 proposals/);
     await expect(next.locator('[data-economics-next-action]')).toBeInViewport();
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
@@ -250,15 +250,15 @@ test.describe('the guided stage', () => {
     test.setTimeout(180 * 1000);
     await open(page, 1440, 900);
     const options = page.locator('[data-cost-option]');
-    await expect(options).toHaveCount(3);
-    for (const id of ['do-nothing', 'keep', 'standard']) {
+    await expect(options).toHaveCount(4);
+    for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
       await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'proposal');
       await expect(page.locator(`[data-cost-option="${id}"] [data-effort-chip="proposal"]`)).toContainText('Simulation');
     }
 
-    // The maintenance baseline is proposed for Keep and Do nothing, and for nothing else.
+    // The maintenance baseline is proposed for Keep (stored as `do-nothing`), and for nothing else.
     const baseline = proposeMaintenanceBaseline(LOC, 62)!;
-    for (const id of ['do-nothing', 'keep']) {
+    for (const id of ['do-nothing']) {
       const card = page.locator(`[data-cost-option="${id}"]`);
       await expect(card).toHaveAttribute('data-baseline-provenance', 'proposal');
       await expect(card.locator('[data-baseline-chip="proposal"]')).toContainText('Simulation');
@@ -267,15 +267,15 @@ test.describe('the guided stage', () => {
       );
     }
     await expect(page.locator('[data-cost-option="standard"]')).not.toHaveAttribute('data-baseline-provenance', /.*/);
-    await expect(page.locator('[data-cost-baseline-proposal]')).toHaveCount(2);
+    await expect(page.locator('[data-cost-baseline-proposal]')).toHaveCount(1);
     // Not in the model before it is taken over: the field is empty, the option unpriced.
-    await page.click('[data-cost-option-edit="keep"]');
-    await expect(page.locator('[data-cost-field="keep-baseline-dev"]')).toHaveValue('');
-    await page.click('[data-cost-option-edit="keep"]');
+    await page.click('[data-cost-option-edit="do-nothing"]');
+    await expect(page.locator('[data-cost-field="do-nothing-baseline-dev"]')).toHaveValue('');
+    await page.click('[data-cost-option-edit="do-nothing"]');
 
     // One option, by its own button — its effort and its baseline in one action.
-    await page.click('[data-cost-apply-proposal="keep"]');
-    const keep = page.locator('[data-cost-option="keep"]');
+    await page.click('[data-cost-apply-proposal="do-nothing"]');
+    const keep = page.locator('[data-cost-option="do-nothing"]');
     await expect(keep).toHaveAttribute('data-effort-provenance', 'from-proposal');
     await expect(keep).toHaveAttribute('data-baseline-provenance', 'from-proposal');
     await expect(keep.locator('[data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
@@ -284,7 +284,7 @@ test.describe('the guided stage', () => {
 
     // The rest in one action.
     await page.locator('[data-economics-steps] [data-economics-take-over-all]').click();
-    for (const id of ['do-nothing', 'standard']) {
+    for (const id of ['rebuild', 'standard', 'retire']) {
       await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'from-proposal');
     }
     await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-baseline-provenance', 'from-proposal');
@@ -313,7 +313,7 @@ test.describe('the guided stage', () => {
     await open(page, 1440, 900);
     await fillRates(page);
     await page.locator('[data-economics-next] [data-economics-take-over-all]').click();
-    for (const id of ['do-nothing', 'keep']) {
+    for (const id of ['do-nothing']) {
       await fillEconomics(page, `[data-cost-field="${id}-baseline-dev"]`, '3');
       await fillEconomics(page, `[data-cost-field="${id}-baseline-test"]`, '1');
     }
@@ -335,7 +335,7 @@ test.describe('the guided stage', () => {
     await expect(page.locator('[data-economics-next] [data-economics-next-action]')).toBeVisible();
     await fillRates(page);
     await page.locator('[data-economics-next] [data-economics-take-over-all]').click();
-    await page.click('[data-cost-option-edit="keep"]');
+    await page.click('[data-cost-option-edit="do-nothing"]');
     await fillEconomics(page, '[data-tco-cost="investment"]', '40000');
     expect(await overflow(), 'filled stage').toBeLessThanOrEqual(0);
     expect(await rawNumbers(page)).toEqual([]);

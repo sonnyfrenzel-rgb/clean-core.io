@@ -9,6 +9,16 @@ import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
 import { pricedOptions } from './economics-record';
 import { workflowSteps } from './workflow-steps';
+import {
+  decisionOptionsView,
+  OPTION_SIGNAL_WORDS,
+  type DecisionStage,
+  type OptionFigure,
+  type OptionSignal,
+} from './decision-option-signals';
+import type { DecisionOption } from './decision-options';
+import type { ChartSegment } from './management-overview';
+import { recommendedArchitecture } from './project-commands';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
@@ -23,11 +33,15 @@ import { workflowSteps } from './workflow-steps';
  *
  *   1. **Header** — the program, the date, what the code was reconstructed to
  *      do, and where the project stands.
- *   2. **The decision** — the decision card's own headline, status and why,
- *      and its four pillars as small state chips (`lib/decision-manager.ts`,
- *      the same derivation, so the page and the card cannot disagree).
- *   3. **At most four key figures** — fit to standard, the clean core levels,
- *      the Clean Core Score, and whether the options are priced.
+ *   2. **The decision** — the question, where it stands and who chose or
+ *      confirmed it, what the evidence proposes, and the four options in one
+ *      row with their signal, effort and cost (ADR-079, the same derivation
+ *      as the Management view's option cards, `lib/decision-option-signals.ts`);
+ *      then the decision card's pillars as small state chips.
+ *   2b. **Distance to SAP standard** — one bar on the target edition and the
+ *      other edition in one line (ADR-079, `lib/standard-fit.ts`).
+ *   3. **Key figures** — the clean core levels, the Clean Core Score, and
+ *      whether the options are priced.
  *   4. **Risks** — the top three objects that block the standard path.
  *   5. **Next steps** — at most four, each with who acts: Business, IT or the
  *      decision maker.
@@ -43,9 +57,10 @@ import { workflowSteps } from './workflow-steps';
  * **Not determined is said in place, with its reason** — never a zero, never a
  * parallel column.
  *
- * **No amount of money.** Costs appear only as whether the decision binds a
- * cost revision; amounts live in Economics next to their assumptions
- * (`lib/money-honesty.ts`).
+ * **Money only as a simulation with its revision.** A cost per option is the
+ * Economics amount under the stored assumptions revision, marked *Simulation*
+ * (ADR-022, ADR-079); nothing is priced here, and an option without figures is
+ * *Not determined*.
  *
  * A **view**: derived when opened, never stored, not part of the signed audit
  * pack. **Pure**: no React, no Firestore, no `fetch`.
@@ -69,7 +84,35 @@ export interface SteeringLink {
 
 export type SteeringOwner = 'Business' | 'IT' | 'Decision maker';
 
-export type SteeringFigureKey = 'fit' | 'levels' | 'score' | 'costs';
+export type SteeringFigureKey = 'levels' | 'score' | 'costs';
+
+/** One option of the four, as the one-pager prints it (ADR-079). */
+export interface SteeringOption {
+  option: DecisionOption;
+  label: string;
+  signal: OptionSignal;
+  signalWord: string;
+  reason: string;
+  effort: OptionFigure;
+  cost: OptionFigure;
+  proposed: boolean;
+  chosen: boolean;
+}
+
+/** How far the program is from SAP standard on the target edition (ADR-079). */
+export type SteeringDistance =
+  | {
+      state: 'ready';
+      title: string;
+      /** "11 of 21 SAP objects this program uses can stay standard; 10 stand in the way." */
+      sentence: string;
+      percent: number;
+      segments: ChartSegment[];
+      /** The other edition in one line, or `null`. */
+      other: string | null;
+    }
+  | { state: 'none-used'; title: string; sentence: string }
+  | { state: 'not-determined'; title: string; reason: string };
 
 export interface SteeringFigure {
   key: SteeringFigureKey;
@@ -103,6 +146,12 @@ export interface SteeringStep {
 export type SteeringDecision =
   | {
       state: 'ready';
+      /** ADR-079: where the decision stands, naming the option, and who chose or confirmed it. */
+      answer: string;
+      stage: DecisionStage;
+      who: string | null;
+      proposal: string;
+      options: SteeringOption[];
       identity: string;
       status: DecisionStatus;
       headline: string;
@@ -115,6 +164,9 @@ export type SteeringDecision =
 
 export interface SteeringOnePager {
   title: string;
+  /** "Keep, rebuild, move to SAP standard or retire Z_…?" — the page's question. */
+  question: string;
+  distance: SteeringDistance;
   header: {
     program: string;
     date: string;
@@ -162,6 +214,32 @@ export interface SteeringSource {
   decisionUnreadable?: string | null;
   /** `null` when the signed source could not be reconstructed (or is not read yet). */
   process: SteeringProcess | null;
+  /** The program the question is about — `Z_MM_PO_APPROVAL`; the program name when absent. */
+  subject?: string;
+  /** The same fit read for the other edition (`standardFitOnOtherEdition`), in one line. */
+  otherEdition?: string | null;
+  /** What the decision route answers beyond the record (ADR-079). */
+  decisionStatus?: DecisionStatus | null;
+  decisionOutdated?: boolean;
+  confirmation?: { account: string; at: string } | null;
+  signOff?: { code: string | null; by: string | null; at: string | null } | null;
+}
+
+function distanceOf(fit: StandardFit, other: string | null): SteeringDistance {
+  if (fit.state === 'ready') {
+    return {
+      state: 'ready',
+      title: `Distance to SAP standard on ${fit.platformLabel}`,
+      sentence:
+        `${fit.fits} of ${fit.counted} SAP object${fit.counted === 1 ? '' : 's'} this program uses can stay standard; ` +
+        `${fit.blocking} stand${fit.blocking === 1 ? 's' : ''} in the way.`,
+      percent: fit.percent,
+      segments: fit.groups.flatMap((g) => g.segments),
+      other,
+    };
+  }
+  if (fit.state === 'none-used') return { state: 'none-used', title: 'Distance to SAP standard', sentence: fit.sentence };
+  return { state: 'not-determined', title: 'Distance to SAP standard', reason: fit.reason };
 }
 
 export const STEERING_FIGURES_MAX = 4;
@@ -173,7 +251,7 @@ function linksOf(src: SteeringSource) {
     src.mode === 'demo' ? `/demo/workspace?view=${v}${hash}` : `${src.base}?view=${v}${hash}`;
   const stage = (path: string) => (src.mode === 'demo' ? `/demo/${path}` : `${src.base}/${path}`);
   return {
-    decision: { href: view('management', '#decision-card'), place: 'The decision' },
+    decision: { href: view('management', '#decision-options'), place: 'The decision' },
     fit: { href: view('management', '#standard-fit'), place: 'Fit to standard' },
     it: { href: view('it'), place: 'IT view' },
     business: { href: view('business'), place: 'Business view' },
@@ -188,6 +266,7 @@ const notDeterminedWords = (reason: string) => `Not determined — ${reason.repl
 
 function ownerOf(place: DecisionPlace | null): SteeringOwner {
   if (!place) return 'Decision maker';
+  if (place.kind === 'view' && place.view === 'management') return 'Decision maker';
   if (place.kind === 'view') return place.view === 'business' ? 'Business' : 'IT';
   return place.path === 'analyze' ? 'IT' : 'Decision maker';
 }
@@ -198,9 +277,11 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     !place
       ? null
       : place.kind === 'view'
-        ? place.view === 'business'
-          ? to.business
-          : to.it
+        ? place.view === 'management'
+          ? to.decision
+          : place.view === 'business'
+            ? to.business
+            : to.it
         : place.path === 'tco'
           ? to.economics
           : place.path === 'design'
@@ -229,9 +310,38 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
   const storedEcon = src.project?._economics ?? null;
   const storedScenario = storedEcon ? pricedOptions(storedEcon) : null;
   const manager = src.decision ? decisionManagerView(src.decision, storedScenario) : null;
+  const optionsView = decisionOptionsView({
+    subject: src.subject ?? src.program,
+    mode: src.mode,
+    hasRun: src.hasRun,
+    fit: src.fit,
+    decision: src.decision,
+    status: src.decisionStatus ?? src.decision?.status ?? null,
+    outdated: src.decisionOutdated ?? false,
+    confirmation: src.confirmation ?? null,
+    signOff: src.signOff ?? null,
+    engineRoute: recommendedArchitecture(src.project ?? {}),
+    usage: src.project?.usageReport ?? null,
+    economics: src.project?._economics ?? null,
+  });
   if (src.decision && manager) {
     decision = {
       state: 'ready',
+      answer: optionsView.answer,
+      stage: optionsView.stage,
+      who: optionsView.who,
+      proposal: optionsView.proposal,
+      options: optionsView.cards.map((c) => ({
+        option: c.option,
+        label: c.label,
+        signal: c.signal,
+        signalWord: OPTION_SIGNAL_WORDS[c.signal],
+        reason: c.reason,
+        effort: c.effort,
+        cost: c.cost,
+        proposed: c.proposed,
+        chosen: c.chosen,
+      })),
       identity: `${src.decision.decisionId} · revision ${src.decision.revision}`,
       status: src.decision.status,
       headline: manager.headline,
@@ -252,38 +362,8 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
 
   /* ----------------------------------------------------------- figures */
   const figures: SteeringFigure[] = [];
+  // Fit to standard is no longer a figure: it is the distance block (ADR-079).
   const fit = src.fit;
-  figures.push(
-    fit.state === 'ready'
-      ? {
-          key: 'fit',
-          label: `Fit to standard on ${fit.platformLabel}`,
-          value: `${fit.percent} %`,
-          absentReason: null,
-          meaning: `${fit.fits} of ${fit.counted} SAP objects have a released path. A Clean-Core.io measure, not an SAP figure.`,
-          provenance: 'reconstructed',
-          evidence: to.fit,
-        }
-      : fit.state === 'none-used'
-        ? {
-            key: 'fit',
-            label: 'Fit to standard',
-            value: 'No SAP dependency',
-            absentReason: null,
-            meaning: fit.sentence,
-            provenance: 'reconstructed',
-            evidence: to.fit,
-          }
-        : {
-            key: 'fit',
-            label: 'Fit to standard',
-            value: null,
-            absentReason: fit.reason,
-            meaning: 'A Clean-Core.io measure, not an SAP figure.',
-            provenance: 'not-determined',
-            evidence: to.fit,
-          },
-  );
 
   const it = itFindingsView(src.findings);
   if (!it.unreadable && it.distribution.graded > 0) {
@@ -425,7 +505,15 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     }
     const option = manager.pillars.find((p) => p.key === 'option');
     if (option && !option.inPlace) {
-      steps.push({ key: 'option', owner: 'Decision maker', text: 'Sign off a target architecture in Design.', link: to.design });
+      const proposed = optionsView.cards.find((c) => c.proposed);
+      steps.push({
+        key: 'option',
+        owner: 'Decision maker',
+        text: proposed
+          ? `Choose one of the four options — the evidence points to ${proposed.label}.`
+          : 'Choose one of the four options — Rebuild is signed off in Design, the others in the Management view.',
+        link: to.decision,
+      });
     }
     for (const p of manager.points.filter((x) => !x.done)) {
       steps.push({ key: `point:${p.id}`, owner: ownerOf(p.place), text: p.line, link: linkOf(p.place) });
@@ -450,6 +538,8 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
 
   return {
     title: STEERING_TITLE,
+    question: optionsView.question,
+    distance: distanceOf(fit, src.otherEdition ?? null),
     header: {
       program: src.program,
       date: src.date,

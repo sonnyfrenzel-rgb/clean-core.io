@@ -433,14 +433,14 @@ const SENTENCES: Record<CostGapCode, (subject: string | null) => string> = {
     `The release cadence of ${s} per year is a proposal nobody confirmed. It counts only once confirmed, so no amount is shown.`,
   'amount-invalid': (s) => `${s} is not a figure this can price. No amount is shown.`,
   'comparison-option-missing': () =>
-    'The comparison has no "Do nothing" option. Without it the other options are priced against nothing.',
+    'The comparison has no "Keep" option. Without it the other options are priced against nothing.',
   'option-one-off-missing': (s) => `${s} has no one-off effort range, which is a mandatory field.`,
   'option-range-inverted': (s) =>
     `${s} has a one-off range whose lower bound is above its upper bound.`,
   'option-per-release-missing': (s) =>
     `${s} has no running effort per release, which is a mandatory field.`,
   'option-baseline-missing': (s) =>
-    `${s} has no maintenance baseline. "Do nothing" and "Keep" carry one, and without it the option looks cheaper than it is.`,
+    `${s} has no maintenance baseline. "Keep" carries one, and without it the option looks cheaper than it is.`,
   'option-baseline-unexpected': (s) =>
     `${s} carries a maintenance baseline, and its kind has none. Its running effort per release already covers it, so counting both would double it.`,
   'option-effort-unconfirmed': (s) =>

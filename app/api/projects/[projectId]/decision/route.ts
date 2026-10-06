@@ -6,6 +6,8 @@ import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { deriveProjectDecision, DECISION_MAX_SOURCE_BYTES } from '@/lib/decision-facts';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { recommendedArchitecture } from '@/lib/project-commands';
+import { toDate } from '@/lib/format';
 
 /**
  * The decision of one project, derived — roadmap 8.4, the half the workspace
@@ -99,6 +101,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       // Reading is a share; deciding is the owner's (`commands` refuses anyone
       // else). Said here so the card does not offer a button that can only fail.
       canDecide: data.userId === decodedToken.uid,
+      // ADR-079: who chose the option, and when — the Management view says it
+      // beside the option. Read from the sign-off the commands route wrote; a
+      // view, never part of the decision's fingerprint.
+      signOff:
+        data.approvedByArchitect === true
+          ? {
+              code: typeof data.targetArchitecture === 'string' ? data.targetArchitecture : null,
+              by: typeof data.approvedBy === 'string' && data.approvedBy ? data.approvedBy : null,
+              at: toDate(data.architectSignOffAt)?.toISOString() ?? null,
+            }
+          : null,
+      engineRoute: recommendedArchitecture(data),
     });
   } catch (err: unknown) {
     logger.error('project decision read failed', {

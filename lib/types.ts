@@ -141,7 +141,7 @@ export interface Project {
   criticalityScore?: number;
   codeInventory?: CodeInventoryItem[];
   dataCoupling?: DataCouplingEntry[];
-  targetArchitecture?: 'rap' | 'cap' | 'integration' | 'event' | 'retire';
+  targetArchitecture?: 'rap' | 'cap' | 'integration' | 'event' | 'retire' | 'keep' | 'standard';
   approvedByArchitect?: boolean;
   architectJustifiedOverride?: string;
   architectSignOffAt?: unknown;

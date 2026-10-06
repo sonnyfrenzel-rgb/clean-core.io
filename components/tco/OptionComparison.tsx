@@ -49,17 +49,24 @@ import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 
 /**
- * The options the panel offers, by name only. A label is not a figure: every
- * effort below starts empty, and *Do nothing* is here because 7.4 requires the
- * comparison to carry it.
+ * The options the panel offers, by name only — the four answers of the program
+ * decision (ADR-079, `lib/decision-options.ts`). A label is not a figure: every
+ * effort below starts empty.
+ *
+ * *Keep* is the comparison option 7.4 requires — "Do nothing" is Keep (owner,
+ * 06.10.2026). It keeps the stored id and kind `do-nothing`, which every stored
+ * cost revision and its fingerprint carry, and carries the maintenance baseline
+ * and the upgrade deferral. A stored record from before ADR-079 still holds its
+ * own options and is shown as it was stored.
  */
 const SEED_OPTIONS: CostOption[] = [
   {
     id: 'do-nothing',
     kind: COMPARISON_KIND,
-    label: 'Do nothing',
+    label: DECISION_OPTION_LABELS.keep,
     oneOff: null,
     perRelease: null,
     maintenanceBaselinePerYear: null,
@@ -67,9 +74,9 @@ const SEED_OPTIONS: CostOption[] = [
     effortSource: 'stated',
   },
   {
-    id: 'keep',
-    kind: 'keep',
-    label: 'Keep and maintain',
+    id: 'rebuild',
+    kind: 'rebuild',
+    label: DECISION_OPTION_LABELS.rebuild,
     oneOff: null,
     perRelease: null,
     maintenanceBaselinePerYear: null,
@@ -79,7 +86,17 @@ const SEED_OPTIONS: CostOption[] = [
   {
     id: 'standard',
     kind: 'standard',
-    label: 'Move to standard',
+    label: DECISION_OPTION_LABELS.standard,
+    oneOff: null,
+    perRelease: null,
+    maintenanceBaselinePerYear: null,
+    upgradeDelay: null,
+    effortSource: 'stated',
+  },
+  {
+    id: 'retire',
+    kind: 'retire',
+    label: DECISION_OPTION_LABELS.retire,
     oneOff: null,
     perRelease: null,
     maintenanceBaselinePerYear: null,
@@ -89,7 +106,7 @@ const SEED_OPTIONS: CostOption[] = [
 ];
 
 /**
- * The assumptions the stage starts from: every figure absent, the three options
+ * The assumptions the stage starts from: every figure absent, the four options
  * by name only. The page holds them; this module only says what they are.
  */
 export function initialCostAssumptions(): CostAssumptions {

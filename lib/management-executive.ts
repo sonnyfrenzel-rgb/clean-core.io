@@ -13,6 +13,7 @@ import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import type { Project } from './types';
 import { pricedOptions } from './economics-record';
+import { decisionQuestion } from './decision-options';
 
 /**
  * The decision panel on top of the Management view — what a manager reads in
@@ -159,8 +160,9 @@ export function executiveSubject(source: string | null | undefined, fallback: st
   return m ? m[1].toUpperCase() : fallback;
 }
 
+/** The one question — the four options' own wording (`lib/decision-options.ts`, ADR-079). */
 export function executiveQuestion(subject: string): string {
-  return `Keep, rebuild, move to SAP standard or retire ${subject}?`;
+  return decisionQuestion(subject);
 }
 
 const PHASE_WORD: Record<PhaseTone, string> = {

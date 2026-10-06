@@ -44,10 +44,11 @@ function complete(): EconomicsPayload {
       ...o,
       oneOff: { low: { devDays: 1, testDays: 0.5 }, high: { devDays: 3, testDays: 1 } },
       perRelease: { devDays: 1.7, testDays: 1.2 },
-      maintenanceBaselinePerYear: o.kind === 'standard' ? null : { devDays: 3, testDays: 1 },
+      // ADR-079: only Keep (stored as `do-nothing`) carries a maintenance baseline among the seeded options.
+      maintenanceBaselinePerYear: o.kind === 'do-nothing' ? { devDays: 3, testDays: 1 } : null,
       upgradeDelay: o.kind === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
       effortSource: 'proposal-confirmed' as const,
-      ...(o.kind === 'standard' ? {} : { baselineSource: 'proposal-confirmed' as const }),
+      ...(o.kind === 'do-nothing' ? { baselineSource: 'proposal-confirmed' as const } : {}),
     })),
   };
   return { assumptions, inputs: { ...ECONOMICS_START_INPUTS, oneTimeBudget: 40000 } };
@@ -83,7 +84,7 @@ test.describe('the check every stored figure passes', () => {
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
     expect(checked.value.assumptions.currency).toBe('EUR');
-    expect(checked.value.assumptions.options).toHaveLength(3);
+    expect(checked.value.assumptions.options).toHaveLength(4);
     expect(checked.value.inputs.oneTimeBudget).toBe(40000);
   });
 
@@ -233,7 +234,7 @@ test.describe('what Delivery and Management read', () => {
     const p = project(record(complete())) as Project & Record<string, unknown>;
     const link = buildHandoverChain(p, workflowSteps(p)).find((l) => l.key === 'economics')!;
     expect(link).toMatchObject({ state: 'on-record', provenance: 'simulation' });
-    expect(link.value).toBe('Scenario: 3 of 3 options priced from your figures');
+    expect(link.value).toBe('Scenario: 4 of 4 options priced from your figures');
     expect(link.missing).toMatch(/not a quote.*not part of the signed audit pack/);
     expect(JSON.stringify(link)).not.toMatch(/EUR\s?\d/);
 
@@ -245,13 +246,13 @@ test.describe('what Delivery and Management read', () => {
   test('the costs layer and the executive figure say how far the scenario is, without money', () => {
     const p = project(record(complete()));
     const layer = workspaceLayers(p).find((l) => l.key === 'costs')!;
-    expect(layer.count).toBe('3 of 3 options priced · scenario');
+    expect(layer.count).toBe('4 of 4 options priced · scenario');
     expect(layer.rows.map((r) => r.key)).toEqual(['scenario', 'priced', 'horizon', 'revision', 'basis', 'score']);
     expect(JSON.stringify(layer)).not.toMatch(/EUR\s?\d/);
     expect(workspaceLayers(project(null)).find((l) => l.key === 'costs')!.count).toBe('not priced yet');
 
     const costs = costsFromDecision({ state: 'loading' } as never, storedCostsOf(p, workflowSteps(p)));
-    expect(costs).toMatchObject({ state: 'stored', priced: 3, total: 3, complete: true, stale: false });
+    expect(costs).toMatchObject({ state: 'stored', priced: 4, total: 4, complete: true, stale: false });
     expect(costsFromDecision({ state: 'loading' } as never, null)).toMatchObject({ state: 'unknown' });
   });
 });

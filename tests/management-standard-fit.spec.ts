@@ -369,7 +369,7 @@ test.describe('Management, rendered', () => {
 
     const fit = page.locator('#standard-fit');
     await expect(fit).toHaveAttribute('data-standard-fit', 'ready', { timeout: 90000 });
-    await expect(fit.locator('h3')).toHaveText('Fit to standard on Public Edition');
+    await expect(fit.locator('h3')).toHaveText('Distance to SAP standard on Public Edition');
     await expect(fit).toContainText('Clean-Core.io measure, not an SAP figure');
     const percent = Number(await fit.locator('[data-standard-fit-value]').getAttribute('data-standard-fit-percent'));
     const [fits, counted] = (await fit.locator('[data-standard-fit-count]').getAttribute('data-standard-fit-count'))!
@@ -395,13 +395,15 @@ test.describe('Management, rendered', () => {
     // The whole frame on a desktop, not a 768 px column.
     const width = await page.locator('[data-management-executive]').evaluate((el) => el.getBoundingClientRect().width);
     expect(width, 'Management uses less than the frame').toBeGreaterThan(1000);
-    // Decision and fit stand side by side.
+    // ADR-079: the decision with its four options takes the whole width, and
+    // the distance to SAP standard stands under it, as wide.
     const [d, f] = await Promise.all([
       page.locator('[data-executive-decision]').boundingBox(),
       fit.boundingBox(),
     ]);
-    expect(Math.abs(d!.y - f!.y), 'the two answers do not stand side by side').toBeLessThan(4);
-    expect(f!.x).toBeGreaterThan(d!.x + d!.width - 1);
+    expect(f!.y, 'the distance to standard is not under the decision').toBeGreaterThan(d!.y + d!.height - 1);
+    expect(d!.width, 'the decision does not take the whole width').toBeGreaterThan(1000);
+    expect(Math.abs(d!.width - f!.width)).toBeLessThan(4);
 
     // One primary action; the rest folded, named, with a summary.
     await expect.poll(() => visiblePrimaries(page)).toHaveLength(1);

@@ -19,6 +19,8 @@ const ARCH: Record<string, string> = {
   integration: 'SAP Integration Suite',
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',
+  keep: 'Keep',
+  standard: 'Move to SAP standard',
 };
 
 export default function WhyScorePanel({ project }: { project: Project }) {

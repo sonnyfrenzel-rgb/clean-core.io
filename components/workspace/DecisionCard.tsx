@@ -77,8 +77,15 @@ export default function DecisionCard({
   beforeWrite,
   onChanged,
   costScenario = null,
+  revision = 0,
 }: {
   projectId: string;
+  /**
+   * Bumped by the shell whenever any reader wrote the decision — the option
+   * cards of ADR-079 choose Keep, standard or Retire outside this card, and the
+   * card must read that choice back rather than keep "No option chosen yet".
+   */
+  revision?: number;
   /** The figures stored on the Economics stage, while the decision binds none of them. */
   costScenario?: StoredCostScenario | null;
   /** The Stand check of roadmap 6.9: a write against an overtaken screen stops first. */
@@ -125,7 +132,7 @@ export default function DecisionCard({
     return () => {
       cancelled = true;
     };
-  }, [projectId, reload]);
+  }, [projectId, reload, revision]);
 
   const answer = load.state === 'ready' ? load.answer : null;
   // A confirmed record is the decision until it is withdrawn; otherwise the
@@ -524,12 +531,15 @@ const THIS_VIEW = 'management';
 
 /** Where a pillar or a condition is resolved, as a link on this page. */
 function placeHref(projectId: string, place: DecisionPlace): string {
+  // ADR-079: an option chosen in Management is changed in the four options above.
+  if (place.kind === 'view' && place.view === 'management') return '#decision-options';
   if (place.kind === 'view') return `/project/${encodeURIComponent(projectId)}?view=${place.view}`;
   // Back to this view from the stage: a link parameter, never a stored role.
   return stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });
 }
 
 function placeLabel(place: DecisionPlace): string {
+  if (place.kind === 'view' && place.view === 'management') return wt('decide.optionsLabel');
   if (place.kind === 'view') return wt(place.view === 'business' ? 'decision.placeBusiness' : 'decision.placeIt');
   return wt(
     place.path === 'tco' ? 'decision.placeEconomics' : place.path === 'design' ? 'decision.placeDesign' : 'decision.placeAnalyze',

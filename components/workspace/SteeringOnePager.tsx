@@ -13,7 +13,11 @@ import { runHistoryEntry, type RunHistoryEntry } from '@/lib/management-answers'
 import type { ItFindingsSource } from '@/lib/it-findings';
 import type { Loaded } from '@/lib/management-overview';
 import type { ProjectDecision } from '@/lib/project-decision';
-import { standardFit } from '@/lib/standard-fit';
+import { otherEditionLine, standardFit, standardFitOnOtherEdition } from '@/lib/standard-fit';
+import { executiveSubject } from '@/lib/management-executive';
+import CcStateText from '@/components/cc/StateText';
+import { CcTag } from '@/components/cc/Tag';
+import type { OptionSignal } from '@/lib/decision-option-signals';
 import { signedSourceOf } from '@/lib/signed-source';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
@@ -66,7 +70,15 @@ export default function SteeringOnePager({
   const [history, setHistory] = useState<RunHistoryEntry[] | null | undefined>(undefined);
   const [findings, setFindings] = useState<ItFindingsSource | null | undefined>(undefined);
   const [decision, setDecision] = useState<
-    { record: ProjectDecision | null; unreadable: string | null } | undefined
+    | {
+        record: ProjectDecision | null;
+        unreadable: string | null;
+        status?: DecisionStatus | null;
+        outdated?: boolean;
+        confirmation?: { account: string; at: string } | null;
+        signOff?: { code: string | null; by: string | null; at: string | null } | null;
+      }
+    | undefined
   >(undefined);
   const [process, setProcess] = useState<SteeringProcess | null | undefined>(undefined);
 
@@ -124,7 +136,9 @@ export default function SteeringOnePager({
         read<ItFindingsSource>('findings'),
         read<{
           draft?: ProjectDecision;
-          stored?: ProjectDecision | null;
+          stored?: (ProjectDecision & { confirmation?: { account: string; at: string } | null }) | null;
+          unchanged?: boolean;
+          signOff?: { code: string | null; by: string | null; at: string | null } | null;
           error?: string;
         }>('decision'),
         reconstructed,
@@ -136,8 +150,16 @@ export default function SteeringOnePager({
       setProcess(p);
       if (d.ok && d.json?.draft) {
         // The card's rule: a confirmed record is the decision until withdrawn.
-        const record = d.json.stored && d.json.stored.status === 'confirmed' ? d.json.stored : d.json.draft;
-        setDecision({ record, unreadable: null });
+        const confirmed = d.json.stored && d.json.stored.status === 'confirmed' ? d.json.stored : null;
+        const record = confirmed ?? d.json.draft;
+        setDecision({
+          record,
+          unreadable: null,
+          status: confirmed ? 'confirmed' : (d.json.stored?.status ?? 'draft'),
+          outdated: Boolean(confirmed && d.json.unchanged === false),
+          confirmation: confirmed?.confirmation ?? null,
+          signOff: d.json.signOff ?? null,
+        });
       } else {
         setDecision({
           record: null,
@@ -199,6 +221,18 @@ export default function SteeringOnePager({
   const hasRun = Boolean(project?.activeRunId);
   const steps = useMemo(() => workflowSteps(project), [project]);
 
+  const fitSource = useMemo(
+    () => ({
+      mode: 'project' as const,
+      hasRun,
+      analyzeState: steps.find((x) => x.key === 'analyze')?.state ?? 'empty',
+      signedSourceSha256: project?.auditMetadata?.inputFingerprint?.sha256 ?? null,
+      findings: findingsLoaded,
+      fit,
+    }),
+    [hasRun, steps, project, findingsLoaded, fit],
+  );
+
   const ready = history !== undefined && findings !== undefined && decision !== undefined && process !== undefined && fit.state !== 'loading';
   const pager = useMemo(
     () =>
@@ -213,20 +247,19 @@ export default function SteeringOnePager({
             history,
             open: notDetermined(project),
             findings,
-            fit: standardFit({
-              mode: 'project',
-              hasRun,
-              analyzeState: steps.find((x) => x.key === 'analyze')?.state ?? 'empty',
-              signedSourceSha256: project?.auditMetadata?.inputFingerprint?.sha256 ?? null,
-              findings: findingsLoaded,
-              fit,
-            }),
+            fit: standardFit(fitSource),
+            otherEdition: otherEditionLine(standardFitOnOtherEdition(fitSource)),
+            subject: executiveSubject(project?.legacyCode, project?.name?.trim() || projectId),
             decision: decision.record,
             decisionUnreadable: decision.unreadable,
+            decisionStatus: decision.status ?? null,
+            decisionOutdated: decision.outdated ?? false,
+            confirmation: decision.confirmation ?? null,
+            signOff: decision.signOff ?? null,
             process,
           })
         : null,
-    [ready, projectId, project, hasRun, history, findings, decision, process, steps, findingsLoaded, fit],
+    [ready, projectId, project, hasRun, history, findings, decision, process, fitSource],
   );
 
   if (!open) {
@@ -265,6 +298,12 @@ const STATUS_OF: Record<DecisionStatus, ObjectStatusValue> = {
 };
 
 const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
+
+const SIGNAL_STATE: Record<OptionSignal, 'information' | 'warning' | 'neutral'> = {
+  for: 'information',
+  against: 'warning',
+  'not-determined': 'neutral',
+};
 
 /** The page itself — one A4 page on paper, stacked on a phone. */
 function SteeringSheet({ pager, onClose }: { pager: SteeringPage | null; onClose: () => void }) {
@@ -322,19 +361,61 @@ function SteeringSheet({ pager, onClose }: { pager: SteeringPage | null; onClose
             className="mt-4 rounded-cc-row border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface-muted p-3"
           >
             <p className={LABEL}>{wt('steering.decision')}</p>
+            <h3 data-steering-question="" className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">
+              {pager.question}
+            </h3>
             {pager.decision.state === 'ready' ? (
               <>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h3 data-steering-decision-headline="" className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
-                    {pager.decision.headline}
-                  </h3>
+                  <p data-steering-decision-headline="" className="m-0 text-[14px] leading-snug font-semibold text-cc-ink">
+                    {pager.decision.answer}
+                  </p>
                   <span data-steering-decision-status={pager.decision.status}>
                     <CcObjectStatus value={STATUS_OF[pager.decision.status]} />
                   </span>
                   <code className="text-[11px] text-cc-ink-muted">{pager.decision.identity}</code>
                 </div>
-                <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">
-                  {pager.decision.why} {pager.decision.readiness}
+                {pager.decision.who ? (
+                  <p data-steering-decision-who="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">
+                    {pager.decision.who}
+                  </p>
+                ) : null}
+                <p data-steering-proposal="" className="m-0 mt-1 text-[12px] leading-snug font-semibold text-cc-ink">
+                  {pager.decision.proposal}
+                </p>
+                <ul data-steering-options="" className="m-0 mt-2 grid list-none grid-cols-1 gap-2 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
+                  {pager.decision.options.map((o) => (
+                    <li
+                      key={o.option}
+                      data-steering-option={o.option}
+                      data-option-signal={o.signal}
+                      className={cn(
+                        'flex min-w-0 flex-col rounded-cc-row border bg-cc-surface p-2',
+                        o.chosen ? 'border-l-4 border-cc-line border-l-cc-ink' : 'border-cc-line',
+                      )}
+                    >
+                      <span className="flex flex-wrap items-center gap-1">
+                        <span className="text-[13px] font-bold text-cc-ink">{o.label}</span>
+                        {o.chosen ? <CcTag>{wt('decide.chosen')}</CcTag> : null}
+                        {o.proposed ? <CcTag>{wt('decide.proposed')}</CcTag> : null}
+                      </span>
+                      <span className="mt-1">
+                        <CcStateText state={SIGNAL_STATE[o.signal]}>{o.signalWord}</CcStateText>
+                      </span>
+                      <span className="mt-1 text-[11px] leading-snug font-medium text-cc-ink">{o.reason}</span>
+                      <span data-option-figure="effort" className="mt-2 text-[11px] leading-snug font-medium text-cc-ink">
+                        <span className="font-semibold">{wt('decide.effort')}:</span>{' '}
+                        {o.effort.value ?? wt('steering.notDetermined')} <CcProvenanceChip value={o.effort.provenance} />
+                      </span>
+                      <span data-option-figure="cost" className="mt-1 text-[11px] leading-snug font-medium text-cc-ink">
+                        <span className="font-semibold">{wt('decide.cost')}:</span>{' '}
+                        {o.cost.value ?? wt('steering.notDetermined')} <CcProvenanceChip value={o.cost.provenance} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">
+                  {pager.decision.readiness}
                 </p>
                 <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
                   {pager.decision.pillars.map((p) => (
@@ -354,7 +435,53 @@ function SteeringSheet({ pager, onClose }: { pager: SteeringPage | null; onClose
             )}
           </div>
 
-          {/* 3. At most four key figures. */}
+          {/* 2b. How far from SAP standard — one bar, the other edition in one line. */}
+          <section data-steering-distance={pager.distance.state} className="mt-4 rounded-cc-row border border-cc-line p-3">
+            <h3 className="m-0 text-[14px] leading-snug font-bold text-cc-ink">{pager.distance.title}</h3>
+            {pager.distance.state === 'ready' ? (
+              <>
+                <p className="m-0 mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="cc-text-figure leading-none text-cc-ink">{pager.distance.percent} %</span>
+                  <span className="text-[12px] leading-snug font-semibold text-cc-ink">{pager.distance.sentence}</span>
+                  <CcProvenanceChip value="reconstructed" />
+                </p>
+                <span
+                  role="img"
+                  aria-label={`${pager.distance.title}: ${pager.distance.segments.map((g) => `${g.label} ${g.count}`).join(', ')}.`}
+                  className="mt-2 flex h-4 w-full gap-[2px] overflow-hidden rounded-cc-row"
+                >
+                  {pager.distance.segments
+                    .filter((g) => g.count > 0)
+                    .map((g) => (
+                      <span
+                        key={g.key}
+                        style={{ flexGrow: g.count, flexBasis: 0 }}
+                        className={cn('block h-full min-w-[4px]', TONE_CLASS[g.tone])}
+                      />
+                    ))}
+                </span>
+                <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
+                  {pager.distance.segments.map((g) => (
+                    <li key={g.key} className="flex items-center gap-1 text-[11px] font-medium text-cc-ink">
+                      <span aria-hidden="true" className={cn('inline-block h-3 w-3 rounded-[2px]', TONE_CLASS[g.tone])} />
+                      {g.label} <span className="font-semibold tabular-nums">{g.count}</span>
+                    </li>
+                  ))}
+                </ul>
+                {pager.distance.other ? (
+                  <p data-steering-other-edition="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">
+                    {pager.distance.other}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">
+                {pager.distance.state === 'none-used' ? pager.distance.sentence : `${wt('steering.notDetermined')} — ${pager.distance.reason}`}
+              </p>
+            )}
+          </section>
+
+          {/* 3. Key figures. */}
           <h3 className={cn(LABEL, 'mt-4')}>{wt('steering.figures')}</h3>
           <ul data-steering-figures="" className="m-0 mt-2 grid list-none grid-cols-1 gap-2 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
             {pager.figures.map((f) => (

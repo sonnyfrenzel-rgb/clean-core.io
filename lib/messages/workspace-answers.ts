@@ -195,17 +195,18 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.forTheDecision': 'For the decision:',
 
   // The fit-to-standard card (ADR-069) — ManagementExecutive.
-  'stdFit.title': 'Fit to standard',
+  // ADR-079: renamed from "Fit to standard" — how far the program is from the standard.
+  'stdFit.title': 'Distance to SAP standard',
   'stdFit.ownMeasure': 'Clean-Core.io measure, not an SAP figure',
   'stdFit.notDetermined': 'Not determined',
   'stdFit.reading': 'Reading…',
   'stdFit.howMeasured': 'How this is measured',
   'stdFit.meterLabel': 'SAP objects by bucket',
-  'stdFit.groupFits': 'Has a released path',
-  'stdFit.groupBlocks': 'Blocks the standard path',
+  'stdFit.groupFits': 'Can stay standard',
+  'stdFit.groupBlocks': 'Stands in the way',
   'stdFit.groupUncounted': 'Not counted',
-  'stdFit.blocksTitle': 'What blocks the standard path',
-  'stdFit.clearTitle': 'What does not block',
+  'stdFit.blocksTitle': 'What stands in the way',
+  'stdFit.clearTitle': 'What can stay standard',
   'stdFit.nothingBlocks': 'Nothing found blocks the standard path for the objects that could be sorted.',
   'stdFit.nothingClear': 'No SAP object here has a released path yet.',
   'stdFit.sourceLine': 'Source line',

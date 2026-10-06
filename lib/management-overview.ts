@@ -97,7 +97,19 @@ export interface FitByPlatform {
 /** What `GET /api/projects/{id}/decision` answers, as far as this overview reads it. */
 export interface DecisionRead {
   draft: ProjectDecision;
-  stored: (ProjectDecision & { status: DecisionStatus }) | null;
+  stored: (ProjectDecision & { status: DecisionStatus; confirmation?: { account: string; at: string } | null }) | null;
+  /**
+   * ADR-079 — what the four-option block needs beyond the record, as the route
+   * answers it: whether the stored record is the draft, the run and evidence a
+   * choice binds to, whether this account may decide, who chose the option and
+   * when, and the engine's route. All optional: an older answer lacks them.
+   */
+  unchanged?: boolean;
+  runId?: string | null;
+  evidenceDigest?: string | null;
+  canDecide?: boolean;
+  signOff?: { code: string | null; by: string | null; at: string | null } | null;
+  engineRoute?: string | null;
 }
 
 export interface OverviewSource {

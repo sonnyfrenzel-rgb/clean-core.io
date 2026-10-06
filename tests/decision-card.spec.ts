@@ -725,7 +725,7 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(decisionHeadline(null)).toBe('No option chosen yet');
     expect(decisionHeadline('retire · Retire / Decommission')).toBe('Retire this object');
     expect(decisionManagerView(deriveDecisionDraft(facts({ signedOffArchitecture: null })).draft).readiness).toMatch(
-      /^Cannot be confirmed yet: .*no target architecture is signed off/,
+      /^Cannot be confirmed yet: .*no option is chosen yet/,
     );
   });
 

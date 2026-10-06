@@ -28,7 +28,8 @@ function complete(): CostAssumptions {
       oneOff: p.oneOff,
       perRelease: p.perRelease,
       effortSource: 'proposal-confirmed' as const,
-      maintenanceBaselinePerYear: o.id === 'standard' ? null : { devDays: 1, testDays: 0 },
+      // ADR-079: Keep (stored as `do-nothing`) is the one seeded option that carries a baseline.
+      maintenanceBaselinePerYear: o.id === 'do-nothing' ? { devDays: 1, testDays: 0 } : null,
       upgradeDelay: o.id === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
     })),
   };
@@ -51,12 +52,12 @@ test('a cadence nobody confirmed is a draft, not done', () => {
 test('one option filled in is partial, and names the ones still missing', () => {
   const p = proposeEffort(1000)!;
   const base = initialCostAssumptions();
-  const a = { ...base, options: base.options.map((o) => (o.id === 'keep' ? { ...o, oneOff: p.oneOff } : o)) };
+  const a = { ...base, options: base.options.map((o) => (o.id === 'rebuild' ? { ...o, oneOff: p.oneOff } : o)) };
   expect(rowsOf(a)['one-off']).toEqual({
     key: 'one-off',
     label: 'One-time effort per option, as a range',
     status: 'partial',
-    detail: 'missing for Do nothing, Move to standard',
+    detail: 'missing for Keep, Move to SAP standard, Retire',
   });
 });
 
@@ -74,7 +75,7 @@ test('any open row means the comparison refuses, and the other way round', () =>
     { ...full, devDayRate: null },
     { ...full, horizonYears: null },
     { ...full, releaseCadence: { perYear: 2, confirmed: false } },
-    { ...full, options: full.options.map((o) => (o.id === 'keep' ? { ...o, perRelease: null } : o)) },
+    { ...full, options: full.options.map((o) => (o.id === 'rebuild' ? { ...o, perRelease: null } : o)) },
     { ...full, options: full.options.map((o) => (o.id === 'do-nothing' ? { ...o, maintenanceBaselinePerYear: null } : o)) },
     { ...full, options: full.options.map((o) => (o.id === 'do-nothing' ? { ...o, upgradeDelay: null } : o)) },
   ];

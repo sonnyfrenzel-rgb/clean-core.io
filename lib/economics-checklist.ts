@@ -134,7 +134,7 @@ export function comparisonChecklist(a: CostAssumptions): ChecklistRow[] {
     cadence,
     optionRow(gaps, options, 'one-off', 'One-time effort per option, as a range'),
     optionRow(gaps, options, 'per-release', 'Recurring effort per release'),
-    optionRow(gaps, options, 'baseline', 'Maintenance baseline for Keep and Do nothing'),
+    optionRow(gaps, options, 'baseline', 'Maintenance baseline for Keep'),
   ];
 
   if (doNothing) {

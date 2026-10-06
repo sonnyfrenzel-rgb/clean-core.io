@@ -217,10 +217,22 @@ function textOf(page: ReturnType<typeof steeringOnePager>): string[] {
   const d = page.decision;
   return [
     page.title,
+    page.question,
+    page.distance.title,
+    page.distance.state === 'ready' ? `${page.distance.sentence} ${page.distance.other ?? ''}` : page.distance.state === 'none-used' ? page.distance.sentence : page.distance.reason,
     page.header.program,
     page.header.purpose,
     page.header.status,
-    ...(d.state === 'ready' ? [d.headline, d.why, d.readiness, ...d.pillars.map((p) => p.title)] : [d.reason]),
+    ...(d.state === 'ready'
+      ? [
+          d.answer,
+          d.who ?? '',
+          d.proposal,
+          d.readiness,
+          ...d.pillars.map((p) => p.title),
+          ...d.options.flatMap((o) => [o.label, o.signalWord, o.reason, o.effort.value ?? o.effort.reason ?? '', o.cost.reason ?? '']),
+        ]
+      : [d.reason]),
     ...page.figures.flatMap((f) => [f.label, f.value ?? '', f.absentReason ?? '', f.meaning, f.evidence.place]),
     ...page.risks.flatMap((r) => [r.object, r.why]),
     page.risksNote ?? '',
@@ -237,7 +249,8 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
   test('at most four key figures, in a fixed order, and no phase count', () => {
     const page = steeringOnePager(full());
     expect(page.figures.length).toBeLessThanOrEqual(STEERING_FIGURES_MAX);
-    expect(page.figures.map((f) => f.key)).toEqual(['fit', 'levels', 'score', 'costs']);
+    // ADR-079: fit to standard is the distance block now, not a figure.
+    expect(page.figures.map((f) => f.key)).toEqual(['levels', 'score', 'costs']);
     for (const line of textOf(page)) expect(line, 'a phase count on the steering page').not.toMatch(/of 7\b|phases?\b/i);
   });
 
@@ -281,10 +294,10 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
         ...o,
         oneOff: { low: { devDays: 1, testDays: 0.5 }, high: { devDays: 3, testDays: 1 } },
         perRelease: { devDays: 1.7, testDays: 1.2 },
-        maintenanceBaselinePerYear: o.kind === 'standard' ? null : { devDays: 3, testDays: 1 },
+        maintenanceBaselinePerYear: o.kind === 'do-nothing' ? { devDays: 3, testDays: 1 } : null,
         upgradeDelay: o.kind === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
         effortSource: 'proposal-confirmed' as const,
-        ...(o.kind === 'standard' ? {} : { baselineSource: 'proposal-confirmed' as const }),
+        ...(o.kind === 'do-nothing' ? { baselineSource: 'proposal-confirmed' as const } : {}),
       })),
     };
     const checked = validateEconomicsPayload(JSON.parse(serializeEconomics({ assumptions, inputs: { ...ECONOMICS_START_INPUTS } })));
@@ -308,10 +321,15 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
     if (d.state === 'ready') expect(d.pillars.find((p) => p.key === 'cost')?.provenance).not.toBe('proven');
   });
 
-  test('fit to standard is the card’s figure, and its blockers are the risks', () => {
-    const page = steeringOnePager(full());
-    expect(page.figures.find((f) => f.key === 'fit')?.value).toBe('33 %');
-    expect(page.figures.find((f) => f.key === 'fit')?.meaning).toContain('not an SAP figure');
+  test('the distance to SAP standard is the card’s reading, and its blockers are the risks (ADR-079)', () => {
+    const page = steeringOnePager(full({ otherEdition: 'On Private Edition: 2 of 3 SAP objects can stay standard, 1 stands in the way.' }));
+    expect(page.distance).toMatchObject({
+      state: 'ready',
+      title: 'Distance to SAP standard on Public Edition',
+      percent: 33,
+      sentence: '1 of 3 SAP objects this program uses can stay standard; 2 stand in the way.',
+      other: 'On Private Edition: 2 of 3 SAP objects can stay standard, 1 stands in the way.',
+    });
     expect(page.risks.length).toBeLessThanOrEqual(STEERING_RISKS_MAX);
     expect(page.risks.map((r) => r.object)).toEqual(['VBAK', 'EKPO']);
     expect(page.risks[0]).toMatchObject({ level: 'C', line: 228 });
@@ -405,7 +423,7 @@ test.describe('8.6 one-pager — not determined is said in place', () => {
         },
       }),
     );
-    expect(page.figures.find((f) => f.key === 'fit')).toMatchObject({ value: 'No SAP dependency', provenance: 'reconstructed' });
+    expect(page.distance).toMatchObject({ state: 'none-used' });
     expect(page.risksNote).toContain('calls no SAP object');
   });
 });
@@ -438,6 +456,89 @@ test.describe('8.6 one-pager — costs', () => {
     for (const page of [steeringOnePager(full()), steeringOnePager(full({ decision: null }))]) {
       for (const line of textOf(page)) expect(containsAmount(line), line).toBe(false);
     }
+  });
+});
+
+/* ------------------------------------------------- 4b. the four options (ADR-079) */
+
+test.describe('ADR-079 one-pager — the question and the four options', () => {
+  test('the question names the program, and the four options stand in their fixed order', () => {
+    const page = steeringOnePager(full({ subject: 'Z_MM_PO_APPROVAL' }));
+    expect(page.question).toBe('Keep, rebuild, move to SAP standard or retire Z_MM_PO_APPROVAL?');
+    expect(page.decision.state).toBe('ready');
+    if (page.decision.state !== 'ready') return;
+    expect(page.decision.options.map((o) => o.label)).toEqual(['Keep', 'Rebuild', 'Move to SAP standard', 'Retire']);
+    // The fixture's sign-off is rap: Rebuild is the chosen option, by the account.
+    expect(page.decision.options.find((o) => o.chosen)?.option).toBe('rebuild');
+    expect(page.decision.stage).toBe('chosen');
+    // Two objects stand in the way on Public Edition: Keep speaks against it.
+    expect(page.decision.options.find((o) => o.option === 'keep')?.signal).toBe('against');
+    // Standard is never read from code, and Retire not without a usage import.
+    expect(page.decision.options.find((o) => o.option === 'standard')?.signal).toBe('not-determined');
+    expect(page.decision.options.find((o) => o.option === 'retire')?.signal).toBe('not-determined');
+  });
+
+  test('who chose it is the signed-in account, said as such', () => {
+    const page = steeringOnePager(full({ signOff: { code: 'rap', by: 'owner@example.invalid', at: '2026-09-21T08:00:00.000Z' } }));
+    if (page.decision.state !== 'ready') throw new Error('not ready');
+    expect(page.decision.who).toBe('Chosen by owner@example.invalid on 2026-09-21.');
+  });
+
+  test('with no option chosen, the next step is to choose one of the four', () => {
+    const facts = decisionFixture();
+    const none: ProjectDecision = {
+      ...facts,
+      bindings: facts.bindings.map((b) => (b.key === 'option' ? { ...b, revision: null, notDeterminedReason: 'none', provenance: 'not-determined' } : b)),
+    };
+    const page = steeringOnePager(full({ decision: none }));
+    const step = page.nextSteps.find((x) => x.key === 'option');
+    expect(step?.owner).toBe('Decision maker');
+    expect(step?.text).toMatch(/^Choose one of the four options/);
+    expect(step?.link?.href).toBe('/project/p-1?view=management#decision-options');
+  });
+
+  test('effort and cost per option come only from Economics, the cost as a simulation with its revision', () => {
+    const seed = initialCostAssumptions();
+    expect(seed.options.map((o) => o.label)).toEqual(['Keep', 'Rebuild', 'Move to SAP standard', 'Retire']);
+    const assumptions: CostAssumptions = {
+      ...seed,
+      currency: 'EUR',
+      devDayRate: 800,
+      testDayRate: 600,
+      horizonYears: 5,
+      releaseCadence: { perYear: 2, confirmed: true },
+      options: seed.options.map((o) => ({
+        ...o,
+        oneOff: { low: { devDays: 10, testDays: 5 }, high: { devDays: 20, testDays: 10 } },
+        perRelease: { devDays: 1, testDays: 1 },
+        maintenanceBaselinePerYear: o.kind === 'do-nothing' ? { devDays: 3, testDays: 1 } : null,
+        upgradeDelay: o.kind === 'do-nothing' ? { state: 'stated' as const, value: { releasesDeferred: 2 } } : null,
+        effortSource: o.kind === 'retire' ? ('proposal-unconfirmed' as const) : ('stated' as const),
+      })),
+    };
+    const checked = validateEconomicsPayload(JSON.parse(serializeEconomics({ assumptions, inputs: { ...ECONOMICS_START_INPUTS } })));
+    if (!checked.ok) throw new Error(checked.error);
+    const econ: EconomicsRecord = {
+      formatVersion: ECONOMICS_RECORD_FORMAT,
+      ...checked.value,
+      revision: costAssumptionsRevision(checked.value.assumptions),
+      basis: { runId: 'run-1', score: null },
+      savedAt: '2026-10-06T12:00:00.000Z',
+    };
+    const page = steeringOnePager(full({ project: { ...signed, _economics: econ } as Project }));
+    if (page.decision.state !== 'ready') throw new Error('not ready');
+    const rebuild = page.decision.options.find((o) => o.option === 'rebuild')!;
+    expect(rebuild.effort).toMatchObject({ value: '15–30 days once · 2 per release', provenance: 'confirmed' });
+    // An unconfirmed size proposal is no figure of the account.
+    const retire = page.decision.options.find((o) => o.option === 'retire')!;
+    expect(retire.effort).toMatchObject({ value: null, provenance: 'not-determined' });
+    expect(retire.cost).toMatchObject({ value: null, provenance: 'not-determined' });
+    // A priced option carries its amount only as a simulation, with the revision it comes from.
+    expect(rebuild.cost.provenance).toBe('simulation');
+    expect(rebuild.cost.value).toMatch(/over 5 years$/);
+    expect(rebuild.cost.note).toContain(econ.revision);
+    // Every other line of the page stays without an amount.
+    for (const line of textOf(page)) expect(containsAmount(line), line).toBe(false);
   });
 });
 

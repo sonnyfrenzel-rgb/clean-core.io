@@ -7,6 +7,7 @@ import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { getAuth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
@@ -29,7 +30,9 @@ import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import ManagementExecutive, { ExecutiveEvidence, StackedBar, Swatch, type ExecutivePrimary } from './ManagementExecutive';
 import { openSteeringOnePager } from '@/lib/steering-open';
 import ManagementFold from './ManagementFold';
-import { standardFit } from '@/lib/standard-fit';
+import { otherEditionLine, standardFit, standardFitOnOtherEdition } from '@/lib/standard-fit';
+import DecisionOptions from './DecisionOptions';
+import { decisionOptionsView, type OptionPlace } from '@/lib/decision-option-signals';
 import {
   costsFromDecision,
   storedCostsOf,
@@ -122,7 +125,17 @@ function SegmentTable({
                 className="inline-flex items-center gap-2 font-semibold"
               >
                 {r.tone ? <Swatch tone={r.tone} /> : null}
-                {r.label}
+                {/* A level row explains its letter on hover, focus and tap
+                    (owner 06.10.2026), as the IT view's level chips do. The
+                    bar above stays a picture (`role="img"`); the explanation
+                    sits here, in the table that carries its numbers. */}
+                {r.key === 'A' || r.key === 'B' || r.key === 'C' || r.key === 'D' ? (
+                  <span data-overview-level-explained={r.key}>
+                    <CcCleanCoreLevelExplained value={r.key} trigger={r.label} />
+                  </span>
+                ) : (
+                  r.label
+                )}
               </span>
             ),
             ...Object.fromEntries(columns.map((c, i) => [`n:${c}`, r.counts[i]])),
@@ -290,6 +303,8 @@ export default function ManagementOverview({
   coach,
   evidenceExtra,
   decision: decisionCard,
+  onDecisionChanged,
+  beforeWrite,
   children,
 }: {
   project: Project | null;
@@ -315,6 +330,10 @@ export default function ManagementOverview({
   evidenceExtra?: React.ReactNode;
   /** The decision record's card, shown as the hero of the panel once there is a signed run to decide on. */
   decision?: React.ReactNode;
+  /** Called after the four-option block chose an option, so every reader of the decision rereads (ADR-079). */
+  onDecisionChanged?: () => void;
+  /** The Stand check of roadmap 6.9, before a choice is written. */
+  beforeWrite?: () => Promise<boolean>;
   /** The detailed answers of 6.4, folded under the overview (§2.11: nothing lost, nothing first). */
   children?: React.ReactNode;
 }) {
@@ -362,7 +381,18 @@ export default function ManagementOverview({
       (value) => setDecisionHeld({ rev: decisionRevision, value }),
       (j) => {
         const d = j as Partial<DecisionRead> | null;
-        return d && d.draft ? { draft: d.draft, stored: d.stored ?? null } : null;
+        return d && d.draft
+          ? {
+              draft: d.draft,
+              stored: d.stored ?? null,
+              unchanged: d.unchanged,
+              runId: d.runId ?? null,
+              evidenceDigest: d.evidenceDigest ?? null,
+              canDecide: d.canDecide === true,
+              signOff: d.signOff ?? null,
+              engineRoute: d.engineRoute ?? null,
+            }
+          : null;
       },
       wt('mgmt.whatDecision'),
       () => cancelled,
@@ -408,6 +438,65 @@ export default function ManagementOverview({
       }),
     [hasRun, steps, project, findings, fit],
   );
+  // ADR-079: the four options, read from what the page already holds.
+  const fitSource = useMemo(
+    () => ({
+      mode: 'project' as const,
+      hasRun,
+      analyzeState: steps.find((x) => x.key === 'analyze')?.state ?? 'empty',
+      signedSourceSha256: project?.auditMetadata?.inputFingerprint?.sha256 ?? null,
+      findings,
+      fit,
+    }),
+    [hasRun, steps, project, findings, fit],
+  );
+  const otherEdition = useMemo(() => otherEditionLine(standardFitOnOtherEdition(fitSource)), [fitSource]);
+  const subject = executiveSubject(project?.legacyCode, project?.name?.trim() || wt('exec.thisProgram'));
+  const options = useMemo(() => {
+    const read = decision.state === 'ready' ? decision.value : null;
+    const confirmed = read?.stored && read.stored.status === 'confirmed' ? read.stored : null;
+    return decisionOptionsView({
+      subject,
+      mode: 'project',
+      hasRun,
+      fit: fitFigure,
+      decision: confirmed ?? read?.draft ?? null,
+      status: confirmed ? 'confirmed' : read ? (read.stored?.status ?? 'draft') : null,
+      outdated: Boolean(confirmed && read && read.unchanged === false),
+      confirmation: confirmed?.confirmation ?? null,
+      signOff: read?.signOff ?? null,
+      engineRoute: read?.engineRoute ?? null,
+      usage: project?.usageReport ?? null,
+      economics: project?._economics ?? null,
+    });
+  }, [decision, subject, hasRun, fitFigure, project]);
+  const optionHref = (place: OptionPlace): string => {
+    const base = `/project/${projectId}`;
+    if (place === 'business' || place === 'it') return `${base}?view=${place}`;
+    if (place === 'fit') return '#standard-fit';
+    return stageHref({ base, path: place, view: 'management' });
+  };
+  const readDecision = decision.state === 'ready' ? decision.value : null;
+  const optionsBlock = hasRun ? (
+    <DecisionOptions
+      view={options}
+      hrefFor={optionHref}
+      mode="project"
+      choice={
+        readDecision
+          ? {
+              projectId,
+              runId: readDecision.runId ?? null,
+              evidenceDigest: readDecision.evidenceDigest ?? null,
+              canDecide: readDecision.canDecide === true,
+              beforeWrite,
+              onChanged: onDecisionChanged,
+            }
+          : null
+      }
+    />
+  ) : null;
+
   const primary: ExecutivePrimary | null = nextStep
     ? {
         label: nextStep.action,
@@ -441,6 +530,9 @@ export default function ManagementOverview({
         setTargetHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
         coach={coach}
         decision={hasRun ? decisionCard : undefined}
+        options={optionsBlock}
+        optionsView={hasRun ? options : null}
+        otherEdition={otherEdition}
         onOpenOnePager={openSteeringOnePager}
       />
 

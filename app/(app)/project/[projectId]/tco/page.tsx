@@ -527,7 +527,7 @@ export default function TcoCalculatorPage() {
             action: <CcButton variant="primary" data-economics-next-action="" data-economics-take-over-all="" onClick={() => { takeOverAll(); goTo('economics-step-effort', false); }}>{takeOverLabel}</CcButton>,
           }
         : {
-            sentence: 'Fill in what each option still needs — each card names it, such as the upgrade deferral of Do nothing.',
+            sentence: 'Fill in what each option still needs — each card names it, such as the upgrade deferral of Keep.',
             action: <CcButton variant="primary" data-economics-next-action="" onClick={openFirstIncomplete}>Fill in the effort</CcButton>,
           };
     }
@@ -714,8 +714,8 @@ export default function TcoCalculatorPage() {
           next={isNext(3)}
           guidance={
             proposal
-              ? 'Each option needs its effort in days. Take over the proposal from the size of your code as your own figure, or enter your own. Keep and Do nothing also need a yearly maintenance effort, proposed the same way.'
-              : 'Each option needs its effort in days — your own figures, there is no line count to propose from. Keep and Do nothing also need a yearly maintenance effort.'
+              ? 'Each option needs its effort in days. Take over the proposal from the size of your code as your own figure, or enter your own. Keep also needs a yearly maintenance effort, proposed the same way.'
+              : 'Each option needs its effort in days — your own figures, there is no line count to propose from. Keep also needs a yearly maintenance effort.'
           }
           right={
             pending.length > 1 ? (
@@ -960,7 +960,7 @@ export default function TcoCalculatorPage() {
                     <h4 className="mb-1 cc-text-h3 text-cc-ink">The cost of an option</h4>
                     <p className="m-0 cc-text-cell text-cc-ink-muted">
                       One-off effort (low and high) plus the effort per release times the releases in the time horizon,
-                      plus the yearly maintenance for Keep and Do nothing — every day priced at your developer or
+                      plus the yearly maintenance for Keep — every day priced at your developer or
                       key-user day rate. Ranges stay ranges: an option is only cheapest when its upper bound is below
                       every other option&rsquo;s lower bound.
                     </p>
