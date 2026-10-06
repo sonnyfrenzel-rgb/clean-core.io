@@ -1116,8 +1116,9 @@ export default function SettingsPage() {
         {isEditing ? (
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <SettingsInput label="First name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
-              <SettingsInput label="Last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
+              {/* The same bounds sign-up holds (firestore.rules, isValidUserCreate). */}
+              <SettingsInput label="First name" value={firstName} onChange={setFirstName} autoComplete="given-name" required maxLength={100} />
+              <SettingsInput label="Last name" value={lastName} onChange={setLastName} autoComplete="family-name" required maxLength={100} />
             </div>
             <CcButton type="submit" variant="primary" busy={isUpdating}>
               {isUpdating ? 'Saving...' : 'Save name'}
