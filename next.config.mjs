@@ -142,6 +142,15 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        // One address (06.10.2026): www.clean-core.io answers since the Cloud Run domain mapping of that day,
+        // and every request to it moves to clean-core.io — sign-in is authorised there, and every page names it
+        // as canonical. First, so it wins over the path redirects below.
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.clean-core.io' }],
+        destination: 'https://clean-core.io/:path*',
+        permanent: true,
+      },
+      {
         // F-17: the old Tier-2 knowledge URL was replaced by the A–D classification
         // page. Permanent-redirect so external links and search results keep working.
         source: '/sap-tier-2-extensions',
