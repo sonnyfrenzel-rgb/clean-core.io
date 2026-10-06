@@ -414,8 +414,8 @@ export function standardFitOnOtherEdition(src: StandardFitSource): StandardFit |
   return standardFit({ ...src, fit: { state: 'ready', value: { ...src.fit.value, target: other } } });
 }
 
-/** "On Public Edition: 6 of 21 SAP objects can stay standard, 15 stand in the way." — or `null`. */
+/** "On Public Edition: 6 of 21 SAP objects have a path to SAP standard, 15 stand in the way." — or `null`. */
 export function otherEditionLine(other: StandardFit | null): string | null {
   if (!other || other.state !== 'ready') return null;
-  return `On ${other.platformLabel}: ${other.fits} of ${other.counted} SAP object${other.counted === 1 ? '' : 's'} can stay standard, ${other.blocking} stand${other.blocking === 1 ? 's' : ''} in the way.`;
+  return `On ${other.platformLabel}: ${other.fits} of ${other.counted} SAP object${other.counted === 1 ? '' : 's'} ${other.fits === 1 ? 'has' : 'have'} a path to SAP standard, ${other.blocking} stand${other.blocking === 1 ? 's' : ''} in the way.`;
 }

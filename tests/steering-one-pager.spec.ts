@@ -322,13 +322,13 @@ test.describe('8.6 one-pager — every value comes from a workspace model', () =
   });
 
   test('the distance to SAP standard is the card’s reading, and its blockers are the risks (ADR-079)', () => {
-    const page = steeringOnePager(full({ otherEdition: 'On Private Edition: 2 of 3 SAP objects can stay standard, 1 stands in the way.' }));
+    const page = steeringOnePager(full({ otherEdition: 'On Private Edition: 2 of 3 SAP objects have a path to SAP standard, 1 stands in the way.' }));
     expect(page.distance).toMatchObject({
       state: 'ready',
       title: 'Distance to SAP standard on Public Edition',
       percent: 33,
-      sentence: '1 of 3 SAP objects this program uses can stay standard; 2 stand in the way.',
-      other: 'On Private Edition: 2 of 3 SAP objects can stay standard, 1 stands in the way.',
+      sentence: '1 of 3 SAP objects this program uses has a path to SAP standard; 2 stand in the way.',
+      other: 'On Private Edition: 2 of 3 SAP objects have a path to SAP standard, 1 stands in the way.',
     });
     expect(page.risks.length).toBeLessThanOrEqual(STEERING_RISKS_MAX);
     expect(page.risks.map((r) => r.object)).toEqual(['VBAK', 'EKPO']);

@@ -182,6 +182,10 @@ export default function DecisionOptions({
       return;
     }
     const option = asking;
+    // The reason travels with this one attempt only: refused, lost or stopped by
+    // the Stand check, it is never offered again for another option (QA review
+    // of 643b3af83e3a).
+    setReason('');
     setAsking(null);
     setMissing(false);
     setRefusal(null);

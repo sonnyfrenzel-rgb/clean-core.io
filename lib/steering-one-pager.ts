@@ -104,7 +104,7 @@ export type SteeringDistance =
   | {
       state: 'ready';
       title: string;
-      /** "11 of 21 SAP objects this program uses can stay standard; 10 stand in the way." */
+      /** "11 of 21 SAP objects this program uses have a path to SAP standard; 10 stand in the way." */
       sentence: string;
       percent: number;
       segments: ChartSegment[];
@@ -231,7 +231,7 @@ function distanceOf(fit: StandardFit, other: string | null): SteeringDistance {
       state: 'ready',
       title: `Distance to SAP standard on ${fit.platformLabel}`,
       sentence:
-        `${fit.fits} of ${fit.counted} SAP object${fit.counted === 1 ? '' : 's'} this program uses can stay standard; ` +
+        `${fit.fits} of ${fit.counted} SAP object${fit.counted === 1 ? '' : 's'} this program uses ${fit.fits === 1 ? 'has' : 'have'} a path to SAP standard; ` +
         `${fit.blocking} stand${fit.blocking === 1 ? 's' : ''} in the way.`,
       percent: fit.percent,
       segments: fit.groups.flatMap((g) => g.segments),

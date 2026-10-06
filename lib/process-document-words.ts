@@ -194,7 +194,12 @@ function word(raw: RawQuestion): Worded {
     return fixed(`What is ${lcFirst(m[1])} ${m[3]} in rule ${m[2]}?`);
   }
   if ((m = /^Are any of the (\d+) routines? no entry point reaches still needed \((.+)\)\?$/.exec(q))) {
-    return fixed(`Are any of the ${m[1]} routine${m[1] === '1' ? '' : 's'} no entry point reaches still needed?`, [m[2]]);
+    return fixed(
+      m[1] === '1'
+        ? 'Is the one routine no entry point reaches still needed?'
+        : `Are any of the ${m[1]} routines no entry point reaches still needed?`,
+      [m[2]],
+    );
   }
   if ((m = /^Which function module does (.+) call at L\d+\?$/.exec(q))) {
     return fixed(`Which function does ${m[1]} call? Its name is set at run time.`);

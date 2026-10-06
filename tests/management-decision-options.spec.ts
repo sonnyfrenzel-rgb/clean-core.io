@@ -212,7 +212,7 @@ test.describe('ADR-079 — where it stands, and who said so', () => {
 
   test('the other edition is said in one line', () => {
     expect(otherEditionLine({ ...FIT, platform: 'public', platformLabel: 'Public Edition', fits: 6, counted: 21, blocking: 15 })).toBe(
-      'On Public Edition: 6 of 21 SAP objects can stay standard, 15 stand in the way.',
+      'On Public Edition: 6 of 21 SAP objects have a path to SAP standard, 15 stand in the way.',
     );
     expect(otherEditionLine(null)).toBeNull();
   });

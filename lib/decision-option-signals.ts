@@ -188,7 +188,7 @@ function keepSignal(fit: StandardFit): Pick<OptionCard, 'signal' | 'reason' | 'p
   }
   return {
     signal: 'for',
-    reason: `Nothing found stands in the way of the standard on ${fit.platformLabel}: all ${fit.counted} SAP objects can stay standard.`,
+    reason: `Nothing found stands in the way of the standard on ${fit.platformLabel}: all ${fit.counted} SAP objects have a path to SAP standard.`,
     provenance: 'reconstructed',
     place: 'fit',
   };
