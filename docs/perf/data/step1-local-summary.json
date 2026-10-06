@@ -1,0 +1,158 @@
+{
+  "url": "http://localhost:3000/",
+  "date": "2026-10-06T07:18:31.740Z",
+  "summary": {
+    "mobile": {
+      "median": {
+        "performance": 86,
+        "fcp": 2111.79015,
+        "lcp": 3977.264,
+        "tbt": 51.5,
+        "cls": 0.001439124965901543,
+        "si": 2111.79015,
+        "totalBytes": 547818,
+        "jsBytes": 314533,
+        "jsBeforeDcl": 272858,
+        "requests": 31
+      },
+      "runs": [
+        {
+          "performance": 85,
+          "fcp": 2118.3675,
+          "lcp": 3981.49,
+          "tbt": 51.5,
+          "cls": 0.001439124965901543,
+          "si": 2118.3675,
+          "totalBytes": 547818,
+          "jsBytes": 314533,
+          "jsBeforeDcl": 272858,
+          "requests": 31
+        },
+        {
+          "performance": 85,
+          "fcp": 2111.4411000000005,
+          "lcp": 3981.2548,
+          "tbt": 65,
+          "cls": 0.001439124965901543,
+          "si": 2111.4411000000005,
+          "totalBytes": 547818,
+          "jsBytes": 314533,
+          "jsBeforeDcl": 272858,
+          "requests": 31
+        },
+        {
+          "performance": 86,
+          "fcp": 2111.79015,
+          "lcp": 3973.7201999999997,
+          "tbt": 39,
+          "cls": 0.001439124965901543,
+          "si": 2111.79015,
+          "totalBytes": 547817,
+          "jsBytes": 314532,
+          "jsBeforeDcl": 272858,
+          "requests": 31
+        },
+        {
+          "performance": 86,
+          "fcp": 2112.3693,
+          "lcp": 3976.4924,
+          "tbt": 43.99999999999977,
+          "cls": 0.001439124965901543,
+          "si": 2112.3693,
+          "totalBytes": 547818,
+          "jsBytes": 314533,
+          "jsBeforeDcl": 272858,
+          "requests": 31
+        },
+        {
+          "performance": 86,
+          "fcp": 2109.948,
+          "lcp": 3977.264,
+          "tbt": 57.99999999999977,
+          "cls": 0.001439124965901543,
+          "si": 2109.948,
+          "totalBytes": 547815,
+          "jsBytes": 314530,
+          "jsBeforeDcl": 272858,
+          "requests": 31
+        }
+      ]
+    },
+    "desktop": {
+      "median": {
+        "performance": 99,
+        "fcp": 493.41599999999994,
+        "lcp": 835.4399999999997,
+        "tbt": 0,
+        "cls": 0.0015430176815497488,
+        "si": 496.21749735987123,
+        "totalBytes": 990045,
+        "jsBytes": 663480,
+        "jsBeforeDcl": 272858,
+        "requests": 53
+      },
+      "runs": [
+        {
+          "performance": 99,
+          "fcp": 493.218,
+          "lcp": 838.0299999999997,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 530.866826953637,
+          "totalBytes": 990045,
+          "jsBytes": 663480,
+          "jsBeforeDcl": 272858,
+          "requests": 53
+        },
+        {
+          "performance": 99,
+          "fcp": 494.466,
+          "lcp": 840.11,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 494.466,
+          "totalBytes": 990045,
+          "jsBytes": 663480,
+          "jsBeforeDcl": 272858,
+          "requests": 53
+        },
+        {
+          "performance": 100,
+          "fcp": 493.41599999999994,
+          "lcp": 793.8879999999996,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 510.35999656133754,
+          "totalBytes": 990045,
+          "jsBytes": 663480,
+          "jsBeforeDcl": 272858,
+          "requests": 53
+        },
+        {
+          "performance": 100,
+          "fcp": 494.68499999999995,
+          "lcp": 779.5799999999999,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 496.21749735987123,
+          "totalBytes": 990045,
+          "jsBytes": 663480,
+          "jsBeforeDcl": 272858,
+          "requests": 53
+        },
+        {
+          "performance": 99,
+          "fcp": 492.26399999999995,
+          "lcp": 835.4399999999997,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 492.26399999999995,
+          "totalBytes": 990045,
+          "jsBytes": 663480,
+          "jsBeforeDcl": 272858,
+          "requests": 53
+        }
+      ]
+    }
+  }
+}

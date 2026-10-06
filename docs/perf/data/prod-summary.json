@@ -1,0 +1,110 @@
+{
+  "url": "https://clean-core.io/",
+  "date": "2026-10-06T07:18:31.992Z",
+  "summary": {
+    "mobile": {
+      "median": {
+        "performance": 63,
+        "fcp": 5204.36,
+        "lcp": 7326.7545,
+        "tbt": 0,
+        "cls": 0,
+        "si": 5204.36,
+        "totalBytes": 773804,
+        "jsBytes": 542291,
+        "jsBeforeDcl": 405328,
+        "requests": 34
+      },
+      "runs": [
+        {
+          "performance": 69,
+          "fcp": 3423.9312499999996,
+          "lcp": 6405.9259999999995,
+          "tbt": 41,
+          "cls": 0,
+          "si": 3857.1466120114083,
+          "totalBytes": 773841,
+          "jsBytes": 542416,
+          "jsBeforeDcl": 405427,
+          "requests": 34
+        },
+        {
+          "performance": 63,
+          "fcp": 5204.36,
+          "lcp": 7326.7545,
+          "tbt": 0,
+          "cls": 0,
+          "si": 5204.36,
+          "totalBytes": 773804,
+          "jsBytes": 542291,
+          "jsBeforeDcl": 405328,
+          "requests": 34
+        },
+        {
+          "performance": 63,
+          "fcp": 5249.325,
+          "lcp": 7371.930059999999,
+          "tbt": 0,
+          "cls": 0,
+          "si": 5345.961800067425,
+          "totalBytes": 773685,
+          "jsBytes": 542237,
+          "jsBeforeDcl": 405273,
+          "requests": 34
+        }
+      ]
+    },
+    "desktop": {
+      "median": {
+        "performance": 99,
+        "fcp": 503.121,
+        "lcp": 866.121,
+        "tbt": 0,
+        "cls": 0.0000300129857997847,
+        "si": 522.5468007598788,
+        "totalBytes": 960488,
+        "jsBytes": 639489,
+        "jsBeforeDcl": 405211,
+        "requests": 52
+      },
+      "runs": [
+        {
+          "performance": 99,
+          "fcp": 503.121,
+          "lcp": 866.121,
+          "tbt": 0,
+          "cls": 0.0000300129857997847,
+          "si": 522.5468007598788,
+          "totalBytes": 960284,
+          "jsBytes": 639274,
+          "jsBeforeDcl": 404995,
+          "requests": 52
+        },
+        {
+          "performance": 99,
+          "fcp": 489.46799999999996,
+          "lcp": 829.468,
+          "tbt": 0,
+          "cls": 0.0000300129857997847,
+          "si": 504.93221235462624,
+          "totalBytes": 960596,
+          "jsBytes": 639589,
+          "jsBeforeDcl": 405211,
+          "requests": 52
+        },
+        {
+          "performance": 99,
+          "fcp": 548.7955,
+          "lcp": 894.7955,
+          "tbt": 0,
+          "cls": 0.0000300129857997847,
+          "si": 608.3017573930608,
+          "totalBytes": 960488,
+          "jsBytes": 639489,
+          "jsBeforeDcl": 405211,
+          "requests": 52
+        }
+      ]
+    }
+  }
+}

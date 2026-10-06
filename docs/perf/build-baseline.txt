@@ -1,0 +1,167 @@
+Route (app)                                                         Size  First Load JS  Revalidate  Expire
+┌ ○ /                                                            28.3 kB         396 kB          5m      1y
+├ ○ /_not-found                                                    321 B         104 kB          5m      1y
+├ ƒ /.well-known/clean-core-io-signing.json                        321 B         104 kB
+├ ○ /abap-custom-code-analysis                                   2.06 kB         288 kB          5m      1y
+├ ○ /about                                                       1.21 kB         287 kB          5m      1y
+├ ○ /admin                                                       26.9 kB         325 kB          5m      1y
+├ ○ /admin/approve-tenant                                        7.04 kB         298 kB          5m      1y
+├ ○ /admin/design-system                                         53.4 kB         452 kB          5m      1y
+├ ƒ /admin/design-system/first-render                            5.72 kB         118 kB
+├ ○ /admin/new-project                                           9.91 kB         452 kB          5m      1y
+├ ○ /admin/new-project/upload                                    18.2 kB         396 kB          5m      1y
+├ ○ /admin/workspace                                               321 B         104 kB          5m      1y
+├ ƒ /api/abcd-classify                                             321 B         104 kB
+├ ƒ /api/account/delete                                            321 B         104 kB
+├ ƒ /api/account/register                                          321 B         104 kB
+├ ƒ /api/admin/approve-tenant                                      321 B         104 kB
+├ ƒ /api/admin/console-action                                      321 B         104 kB
+├ ƒ /api/admin/runner-selftest                                     321 B         104 kB
+├ ƒ /api/admin/set-admin-claim                                     321 B         104 kB
+├ ƒ /api/audit-pack/create                                         321 B         104 kB
+├ ƒ /api/auth/jira/callback                                        321 B         104 kB
+├ ƒ /api/auth/jira/url                                             321 B         104 kB
+├ ƒ /api/community-mail                                            321 B         104 kB
+├ ƒ /api/consent                                                   321 B         104 kB
+├ ƒ /api/csp-report                                                321 B         104 kB
+├ ƒ /api/export/sign                                               321 B         104 kB
+├ ƒ /api/export/verify                                             321 B         104 kB
+├ ƒ /api/fetch-odata-metadata                                      321 B         104 kB
+├ ƒ /api/fetch-s4-metadata                                         321 B         104 kB
+├ ƒ /api/gemini                                                    321 B         104 kB
+├ ƒ /api/health                                                    321 B         104 kB
+├ ƒ /api/invitations                                               321 B         104 kB
+├ ƒ /api/mfa/disable                                               321 B         104 kB
+├ ƒ /api/mfa/enrolled                                              321 B         104 kB
+├ ƒ /api/model-stages                                              321 B         104 kB
+├ ƒ /api/projects/[projectId]                                      321 B         104 kB
+├ ƒ /api/projects/[projectId]/commands                             321 B         104 kB
+├ ƒ /api/projects/[projectId]/contract                             321 B         104 kB
+├ ƒ /api/projects/[projectId]/cost-assumptions                     321 B         104 kB
+├ ƒ /api/projects/[projectId]/decision                             321 B         104 kB
+├ ƒ /api/projects/[projectId]/evidence                             321 B         104 kB
+├ ƒ /api/projects/[projectId]/findings                             321 B         104 kB
+├ ƒ /api/projects/[projectId]/invitations                          321 B         104 kB
+├ ƒ /api/projects/[projectId]/invitations/[invitationId]           321 B         104 kB
+├ ƒ /api/projects/[projectId]/invitations/[invitationId]/accept    321 B         104 kB
+├ ƒ /api/projects/[projectId]/process-map                          321 B         104 kB
+├ ƒ /api/projects/[projectId]/process-naming                       321 B         104 kB
+├ ƒ /api/projects/[projectId]/process-revisions                    321 B         104 kB
+├ ƒ /api/projects/[projectId]/process-states                       321 B         104 kB
+├ ƒ /api/projects/[projectId]/readers                              321 B         104 kB
+├ ƒ /api/projects/[projectId]/repair-drafts                        321 B         104 kB
+├ ƒ /api/projects/[projectId]/requirement-wording                  321 B         104 kB
+├ ƒ /api/projects/[projectId]/requirements-spec                    321 B         104 kB
+├ ƒ /api/projects/[projectId]/standard-fit                         321 B         104 kB
+├ ƒ /api/projects/[projectId]/statement-proposal                   321 B         104 kB
+├ ƒ /api/projects/[projectId]/test-results                         321 B         104 kB
+├ ƒ /api/request-tenant-access                                     321 B         104 kB
+├ ƒ /api/run-tests                                                 321 B         104 kB
+├ ƒ /api/runs/create                                               321 B         104 kB
+├ ƒ /api/s4-credentials                                            321 B         104 kB
+├ ƒ /api/s4-proxy/[capability]/[...path]                           321 B         104 kB
+├ ƒ /api/secrets/gemini                                            321 B         104 kB
+├ ƒ /api/secrets/gemini/status                                     321 B         104 kB
+├ ƒ /api/secrets/gemini/test                                       321 B         104 kB
+├ ƒ /api/send-approval-email                                       321 B         104 kB
+├ ƒ /api/send-tenant-approval-email                                321 B         104 kB
+├ ƒ /api/send-tenant-revoke-email                                  321 B         104 kB
+├ ƒ /api/shared-projects                                           321 B         104 kB
+├ ƒ /api/survey/vote                                               321 B         104 kB
+├ ƒ /api/test-s4-connection                                        321 B         104 kB
+├ ƒ /api/test-s4-odata-read                                        321 B         104 kB
+├ ƒ /api/test/seed                                                 321 B         104 kB
+├ ƒ /api/unsubscribe                                               321 B         104 kB
+├ ƒ /api/v1/purchase-orders/mass-create                            321 B         104 kB
+├ ƒ /api/webhooks/resend                                           321 B         104 kB
+├ ƒ /auth/action                                                 3.22 kB         287 kB
+├ ○ /catalog                                                     1.71 kB         109 kB          5m      1y
+├ ○ /catalog-sitemap.xml                                           321 B         104 kB          1d      1y
+├ ● /catalog/[object]                                            1.04 kB         119 kB          5m      1y
+├   ├ /catalog/acdoca                                                                            5m      1y
+├   ├ /catalog/adr6                                                                              5m      1y
+├   ├ /catalog/adrc                                                                              5m      1y
+├   └ [+947 more paths]
+├ ● /catalog/browse/[letter]                                       167 B         108 kB          5m      1y
+├   ├ /catalog/browse/0                                                                          5m      1y
+├   ├ /catalog/browse/a                                                                          5m      1y
+├   ├ /catalog/browse/b                                                                          5m      1y
+├   └ [+24 more paths]
+├ ● /catalog/module/[area]                                       4.33 kB         122 kB          5m      1y
+├   ├ /catalog/module/sd                                                                         5m      1y
+├   ├ /catalog/module/bc                                                                         5m      1y
+├   ├ /catalog/module/fi                                                                         5m      1y
+├   └ [+7 more paths]
+├ ○ /clean-core-explained                                        5.03 kB         332 kB          5m      1y
+├ ○ /clean-core-explained-print                                    321 B         104 kB          5m      1y
+├ ○ /clean-core-score                                            4.94 kB         300 kB          5m      1y
+├ ○ /dashboard                                                   11.6 kB         487 kB          5m      1y
+├ ○ /datenschutz                                                   183 B         108 kB          5m      1y
+├ ○ /datenschutz/de                                                183 B         108 kB          5m      1y
+├ ○ /demo                                                          321 B         104 kB          5m      1y
+├ ● /demo/[stage]                                                  228 B         798 kB          5m      1y
+├   ├ /demo/analyze                                                                              5m      1y
+├   ├ /demo/design                                                                               5m      1y
+├   ├ /demo/transformation                                                                       5m      1y
+├   └ [+4 more paths]
+├ ● /demo/[stage]/requirements                                     227 B         798 kB          5m      1y
+├   └ /demo/design/requirements                                                                  5m      1y
+├ ○ /demo/workspace                                              10.6 kB         599 kB          5m      1y
+├ ○ /facts                                                         496 B         118 kB          5m      1y
+├ ○ /facts.json                                                    321 B         104 kB          5m      1y
+├ ● /features/[slug]                                               183 B         108 kB          5m      1y
+├   ├ /features/extensibility-routing                                                            5m      1y
+├   ├ /features/cloudification-catalog                                                           5m      1y
+├   ├ /features/rap-cap-engine                                                                   5m      1y
+├   └ [+3 more paths]
+├ ○ /first-run                                                   2.09 kB         297 kB          5m      1y
+├ ○ /how-it-works                                                6.69 kB         301 kB          5m      1y
+├ ○ /how-to                                                      10.1 kB         329 kB          5m      1y
+├ ○ /icon.svg                                                        0 B            0 B
+├ ○ /impressum                                                     321 B         104 kB          5m      1y
+├ ƒ /invitation/[projectId]/[invitationId]                       7.02 kB         303 kB
+├ ○ /knowledge                                                   9.47 kB         304 kB          5m      1y
+├ ○ /licenses                                                    4.13 kB         117 kB          5m      1y
+├ ○ /llms-full.txt                                                 321 B         104 kB          1d      1y
+├ ○ /llms.txt                                                      321 B         104 kB          1d      1y
+├ ○ /method/levels                                               4.88 kB         123 kB          5m      1y
+├ ƒ /project/[projectId]                                         45.1 kB         638 kB
+├ ƒ /project/[projectId]/analyze                                 66.9 kB         713 kB
+├ ƒ /project/[projectId]/delivery                                35.5 kB         563 kB
+├ ƒ /project/[projectId]/design                                  38.9 kB         590 kB
+├ ƒ /project/[projectId]/design/requirements                     10.2 kB         567 kB
+├ ƒ /project/[projectId]/documentation                           50.4 kB         548 kB
+├ ƒ /project/[projectId]/tco                                     26.5 kB         452 kB
+├ ƒ /project/[projectId]/testing                                 46.6 kB         550 kB
+├ ƒ /project/[projectId]/transformation                          31.7 kB         515 kB
+├ ○ /reference-analysis                                            495 B         118 kB          5m      1y
+├ ○ /reference-analysis/source                                     321 B         104 kB          1d      1y
+├ ○ /robots.txt                                                    321 B         104 kB
+├ ○ /sap-clean-core-object-classification                        5.53 kB         302 kB          5m      1y
+├ ○ /sap-cloudification                                          2.06 kB         288 kB          5m      1y
+├ ○ /settings                                                    17.2 kB         324 kB          5m      1y
+├ ○ /sitemap.xml                                                   321 B         104 kB
+├ ƒ /survey/[token]                                              5.76 kB         122 kB
+├ ○ /tenant-security                                             2.09 kB         297 kB          5m      1y
+├ ○ /terms                                                         183 B         108 kB          5m      1y
+├ ● /terms/versions/[version]                                      183 B         108 kB          5m      1y
+├   ├ /terms/versions/2026-10-03                                                                 5m      1y
+├   ├ /terms/versions/2026-09-18                                                                 5m      1y
+├   └ /terms/versions/2026-07-07                                                                 5m      1y
+├ ○ /trust                                                       1.21 kB         287 kB          5m      1y
+├ ƒ /unsubscribe                                                 2.18 kB         110 kB
+├ ○ /verify-pack                                                 12.2 kB         338 kB          5m      1y
+├ ○ /whitepaper                                                    157 B         303 kB          5m      1y
+└ ○ /whitepaper-print                                              157 B         303 kB          5m      1y
++ First Load JS shared by all                                     104 kB
+  ├ chunks/1255-0aa470368f74fb91.js                              45.9 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js                          54.2 kB
+  └ other shared chunks (total)                                  3.97 kB
+
+
+ƒ Middleware                                                     33.4 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

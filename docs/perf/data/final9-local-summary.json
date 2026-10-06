@@ -1,0 +1,254 @@
+{
+  "url": "http://localhost:3000/",
+  "date": "2026-10-06T07:45:04.717Z",
+  "summary": {
+    "mobile": {
+      "median": {
+        "performance": 91,
+        "fcp": 2116.7039999999997,
+        "lcp": 3253.183,
+        "tbt": 21,
+        "cls": 0.001439124965901543,
+        "si": 2116.7039999999997,
+        "totalBytes": 519400,
+        "jsBytes": 286578,
+        "jsBeforeDcl": 170965,
+        "requests": 33
+      },
+      "runs": [
+        {
+          "performance": 91,
+          "fcp": 2116.7039999999997,
+          "lcp": 3252.1360000000004,
+          "tbt": 20.5,
+          "cls": 0.001439124965901543,
+          "si": 2116.7039999999997,
+          "totalBytes": 519454,
+          "jsBytes": 286580,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 90,
+          "fcp": 2112.957,
+          "lcp": 3400.6379999999995,
+          "tbt": 21,
+          "cls": 0.001439124965901543,
+          "si": 2112.957,
+          "totalBytes": 519446,
+          "jsBytes": 286572,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 87,
+          "fcp": 2117.5515,
+          "lcp": 3262.701,
+          "tbt": 36,
+          "cls": 0.001439124965901543,
+          "si": 5114.999911544363,
+          "totalBytes": 519454,
+          "jsBytes": 286578,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2117.7915,
+          "lcp": 3251.861,
+          "tbt": 20,
+          "cls": 0.001439124965901543,
+          "si": 2117.7915,
+          "totalBytes": 519398,
+          "jsBytes": 286576,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2116.7745,
+          "lcp": 3253.183,
+          "tbt": 21,
+          "cls": 0.001439124965901543,
+          "si": 2116.7745,
+          "totalBytes": 519400,
+          "jsBytes": 286578,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2115.663,
+          "lcp": 3256.442,
+          "tbt": 23,
+          "cls": 0.001439124965901543,
+          "si": 2115.663,
+          "totalBytes": 519397,
+          "jsBytes": 286575,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 91,
+          "fcp": 2115.5580000000004,
+          "lcp": 3252.3720000000003,
+          "tbt": 21,
+          "cls": 0.001439124965901543,
+          "si": 2115.5580000000004,
+          "totalBytes": 519400,
+          "jsBytes": 286578,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 90,
+          "fcp": 2117.1255,
+          "lcp": 3251.417,
+          "tbt": 81.00000000000023,
+          "cls": 0.001439124965901543,
+          "si": 2117.1255,
+          "totalBytes": 519394,
+          "jsBytes": 286572,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        },
+        {
+          "performance": 90,
+          "fcp": 2113.848,
+          "lcp": 3417.232,
+          "tbt": 29,
+          "cls": 0.001439124965901543,
+          "si": 2113.848,
+          "totalBytes": 519402,
+          "jsBytes": 286580,
+          "jsBeforeDcl": 170965,
+          "requests": 33
+        }
+      ]
+    },
+    "desktop": {
+      "median": {
+        "performance": 100,
+        "fcp": 498.5880000000001,
+        "lcp": 717.3979999999999,
+        "tbt": 0,
+        "cls": 0.0015430176815497488,
+        "si": 498.5880000000001,
+        "totalBytes": 1002585,
+        "jsBytes": 676448,
+        "jsBeforeDcl": 170965,
+        "requests": 59
+      },
+      "runs": [
+        {
+          "performance": 100,
+          "fcp": 499.23900000000003,
+          "lcp": 719.826,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 499.23900000000003,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 501.59700000000004,
+          "lcp": 717.3979999999999,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 501.59700000000004,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 496.47,
+          "lcp": 716.98,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 496.47,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 498.231,
+          "lcp": 717.154,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 498.231,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 498.82800000000003,
+          "lcp": 720.5519999999999,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 498.82800000000003,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 498.5880000000001,
+          "lcp": 714.3920000000003,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 498.5880000000001,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 498.462,
+          "lcp": 716.308,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 498.462,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 495.396,
+          "lcp": 719.2640000000002,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 495.396,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        },
+        {
+          "performance": 100,
+          "fcp": 506.50800000000004,
+          "lcp": 721.672,
+          "tbt": 0,
+          "cls": 0.0015430176815497488,
+          "si": 506.50800000000004,
+          "totalBytes": 1002585,
+          "jsBytes": 676448,
+          "jsBeforeDcl": 170965,
+          "requests": 59
+        }
+      ]
+    }
+  }
+}
