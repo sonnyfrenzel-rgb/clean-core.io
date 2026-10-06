@@ -57,7 +57,9 @@ export function buildRequest({ system, user, schema, effort, model = MODELS.delt
     response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } },
     reasoning: { effort },
     max_tokens: maxTokens,
-    temperature: 0,
+    // No `temperature`: no endpoint of the pinned reasoning models accepts it, and with `require_parameters` below
+    // one unsupported parameter leaves no endpoint at all (HTTP 404, run 37435659296, 06.10.2026). Until 01.10.2026
+    // it was sent without `require_parameters` and silently ignored.
     usage: { include: true },
     provider: {
       // No provider that stores or trains on prompts: the code is public, the reasoning about its weaknesses is not.

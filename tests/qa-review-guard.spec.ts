@@ -138,6 +138,9 @@ test.describe('the reviewer', () => {
       expect(req.tools).toBeUndefined();
       expect(req.response_format.json_schema.strict).toBe(true);
       expect(req.usage).toEqual({ include: true });
+      // Every parameter must be one the model's endpoints support, or require_parameters leaves none (HTTP 404).
+      // Checked against OpenRouter's endpoint list on 06.10.2026: no Luna endpoint supports temperature.
+      expect(Object.keys(req).sort()).toEqual(['max_tokens', 'messages', 'model', 'provider', 'reasoning', 'response_format', 'usage']);
     }
     // The defaults are the delta reviewer's, so a caller that names nothing still gets a model and a ceiling.
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
