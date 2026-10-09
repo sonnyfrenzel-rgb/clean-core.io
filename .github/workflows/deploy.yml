@@ -54,7 +54,9 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci --foreground-scripts
+        # One retry after `npm cache verify` (a restored cache entry npm cannot rename
+        # over, EEXIST - Security CI run 37986060490); seven installs per run now.
+        run: npm ci --foreground-scripts || { npm cache verify && npm ci --foreground-scripts; }
 
       - name: Run Linting Checks
         run: npm run lint
@@ -147,7 +149,9 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci --foreground-scripts
+        # One retry after `npm cache verify` (a restored cache entry npm cannot rename
+        # over, EEXIST - Security CI run 37986060490); seven installs per run now.
+        run: npm ci --foreground-scripts || { npm cache verify && npm ci --foreground-scripts; }
 
       # Only Chromium is installed: playwright.config.ts defines a single
       # `chromium` project, so pulling Firefox and WebKit was download time spent

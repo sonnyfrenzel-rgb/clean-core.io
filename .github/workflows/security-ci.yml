@@ -47,7 +47,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci --ignore-scripts
+      # One retry after `npm cache verify`: the restored npm cache can hold an entry
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
+      # cache fault, not a finding, and it mailed a red run for nothing.
+      - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       # Fail on High/Critical advisories. Accepted exceptions are documented with
       # a rationale + review date in audit-ci.jsonc (no blanket lowering of the gate).
       - name: Dependency audit (high+, reviewed allowlist)
@@ -62,7 +65,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci --ignore-scripts
+      # One retry after `npm cache verify`: the restored npm cache can hold an entry
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
+      # cache fault, not a finding, and it mailed a red run for nothing.
+      - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       - name: Generate CycloneDX SBOM
         run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-file sbom.json
       - name: Upload SBOM artifact
@@ -96,7 +102,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci --ignore-scripts
+      # One retry after `npm cache verify`: the restored npm cache can hold an entry
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
+      # cache fault, not a finding, and it mailed a red run for nothing.
+      - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       - name: Send the alert
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
