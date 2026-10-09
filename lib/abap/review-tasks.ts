@@ -197,9 +197,12 @@ function includeTasks(statements: readonly AbapStatement[]): Draft[] {
             'source this reading holds. Whatever it declares, calls or writes stands outside every figure here.',
         },
         anchors,
+        // Not "add the source to this project": a project cannot take further
+        // includes (ADR-081). Answer the open question, or analyze the
+        // program uploaded together with its includes.
         task: name
-          ? `Add the source of ${name} to this project and read it with the rest.`
-          : 'Add the source of the include named on this line to this project and read it with the rest.',
+          ? `Add what ${name} does as the answer to the open question "Add the includes", or analyze the program uploaded together with its includes so that ${name} is read with the rest.`
+          : 'Add what the include named on this line does as the answer to the open question "Add the includes", or analyze the program uploaded together with its includes so that it is read with the rest.',
         withheld: 'That what this reading found is everything the program does.',
       },
     });

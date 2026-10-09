@@ -68,7 +68,9 @@ export const SUPPORT_MATRIX: Record<ConstructType, SupportMatrixEntry> = {
   'static-call': {
     construct: 'static-call', level: 'partial', anchor: 'static-call',
     title: 'Static CALL FUNCTION',
-    notes: 'The called name is read. With DESTINATION the call is assessed as an RFC; a local call, BAPIs included, is recorded as not assessed — no released API is proposed for it.',
+    // Roadmap 3.0.6: the catalog answers a local call of a function module
+    // SAP's files list (`functionModuleCatalogAnswer`); the rest stay a gap.
+    notes: 'The called name is read. With DESTINATION the call is assessed as an RFC; a local call of a function module SAP\'s published files list is answered with SAP\'s state for it, and any other local call is recorded as not assessed — no released API is proposed for either.',
     requiresSignOff: false,
   },
   'complex-sql-join': {

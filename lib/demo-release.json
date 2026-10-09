@@ -7,7 +7,7 @@
   },
   "ruleVersion": "levels 3c38976c5841 · latest@407843e4 · classifications-sap@70a9e6f4",
   "catalogVersion": "2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-10-01)",
-  "engineOutput": "f2030223af81819ea9c43a2ca6401e9783debe7e6c55b70c3ecbde79769add49",
+  "engineOutput": "8ce176c83b0fe2db7dd7b816332b33f9ffbe56686b227305c4572431bcc57bc7",
   "figures": {
     "findings": 31,
     "distinctFindings": 25,
@@ -18,7 +18,7 @@
     "info": 1,
     "cleanCoreScore": 23,
     "recommendedRoute": "Side-by-Side (SAP BTP)",
-    "notDeterminedConstructs": 11,
+    "notDeterminedConstructs": 8,
     "rulesRevealed": 11,
     "processSteps": 84,
     "processLevels": 10,

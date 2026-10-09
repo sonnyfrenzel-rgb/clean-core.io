@@ -1,6 +1,6 @@
 import { tokenize } from './declaration-parser';
 import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
-import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates } from './catalog-service';
+import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates, functionModuleCatalogAnswer } from './catalog-service';
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
@@ -682,6 +682,37 @@ export function buildAbapEvidence(
       });
     }
 
+    // A local call of a function module SAP's files say is no API for customer
+    // code (`noAPI`, or `notToBeReleased`) — roadmap 3.0.6. The call used to
+    // be "not assessed" while the catalog already said what it was. A
+    // `classicAPI` module is answered in the coverage report and raises no
+    // finding: classic ABAP may call it. The finding cites SAP's state, never
+    // the A–D letter, because findings go into the signed run.
+    {
+      const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
+      if (local && !/\bDESTINATION\b/i.test(codeText)) {
+        const fm = local[1].toUpperCase();
+        const answer = functionModuleCatalogAnswer(fm, catalogSnapshot);
+        if (answer?.notAnApi && !findings.some((f) => f.lineStart === stmt.line && f.objectName === fm)) {
+          addFinding({
+            kind: 'unreleased-api',
+            title: `Call of function module ${fm}, which SAP lists as ${answer.state}`,
+            severity: 'High',
+            confidence: 'High',
+            objectName: fm,
+            objectType: 'Function Module',
+            lineStart: stmt.line,
+            snippet: text,
+            technicalDetail: answer.answer,
+            cleanCoreImpact: 'SAP does not offer this function module as an API for customer code, so the call depends on SAP internals that carry no stability contract and is not available in ABAP Cloud.',
+            recommendation: 'Replace the call with a released API for the same business object, or wrap the need behind a released interface; check the SAP catalog page of the module for a named successor.',
+            targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
+            source: 'catalog-match',
+          });
+        }
+      }
+    }
+
     // Credit Management custom logic — the module name is a literal, so `text`.
     if (/Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i.test(text) && /CALL\s+FUNCTION/i.test(text)) {
       addFinding({
@@ -828,5 +859,8 @@ export function buildAbapEvidence(
     infoCount: findings.filter(f => f.severity === 'Info').length,
   };
 
-  return { findings, coverage: assessCoverage(code), summary };
+  // The catalog answers the local function-module calls it lists (roadmap
+  // 3.0.6); the rest stay not assessed.
+  const coverage = assessCoverage(code, { answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot) });
+  return { findings, coverage, summary };
 }

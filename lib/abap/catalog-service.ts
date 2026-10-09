@@ -382,6 +382,77 @@ export function gradeSapObjectUse(objectName: string, use: ObjectUse | null, sna
   return gradeFromSapStatesForUse(getSapObjectStates(objectName, snapshot), use);
 }
 
+/**
+ * What SAP's own files say about a function module a program calls locally —
+ * roadmap 3.0.6, "the engine answers what its catalog already knows".
+ *
+ * A local `CALL FUNCTION 'X'` used to be "not assessed" (`coverage.ts`,
+ * `local-function-call`) even where one of the two synced files lists X with a
+ * state the level rule maps — 415 of the 947 such calls across the shipped
+ * examples, benchmark and corpus were `classicAPI` function modules. The
+ * answer was in the catalog; the engine said "not determined" anyway.
+ *
+ * What counts as an answer is narrow on purpose:
+ *   - the object is listed as a function module (`FUNC`) in the file that
+ *     states it — a table of the same name is not an answer about a call;
+ *   - the state is one the level rule maps (`provenance === 'catalog'`). The
+ *     residual C for an SAP-looking name listed nowhere is a reading of a
+ *     missing entry, not something the catalog knows, and stays not
+ *     determined, as does every customer function module.
+ *
+ * It returns SAP's verbatim state and the file, never the A–D letter: the
+ * engine's coverage feeds the score and the run, and the level stays out of
+ * anything signed (`CLAUDE.md`). And it says what it is — SAP's published
+ * classification of the object, not a check of what this call does at runtime.
+ */
+export interface FunctionModuleCatalogAnswer {
+  name: string;
+  /** Verbatim SAP state that decided, e.g. `classicAPI`, `noAPI`, `released`. */
+  state: string;
+  /** Which synced file states it. */
+  file: 'release' | 'classification';
+  /** True where the state says SAP offers no API for customer code to call. */
+  notAnApi: boolean;
+  /** The sentence a surface may print. */
+  answer: string;
+}
+
+export function functionModuleCatalogAnswer(name: string, snapshot?: string): FunctionModuleCatalogAnswer | null {
+  const key = (name || '').toUpperCase().trim();
+  if (!key) return null;
+  const release = releaseArtifact(snapshot).entries?.[key];
+  const classification = CR_CLASS.entries?.[key];
+  const graded = gradeSapObject(key, snapshot);
+  if (graded.provenance !== 'catalog' || !graded.state) return null;
+  // The file whose state decided (the release file decides first,
+  // `gradeFromSapStates`) must list the object as a function module.
+  const file: 'release' | 'classification' =
+    release?.state && release.state.toLowerCase() === graded.state.toLowerCase() ? 'release' : 'classification';
+  const entry = file === 'release' ? release : classification;
+  if (!entry || entry.tadir !== 'FUNC') return null;
+
+  const state = graded.state;
+  const lower = state.toLowerCase();
+  const notReleasedNote = release?.state ? '' : ' The release file does not list it as released for ABAP Cloud.';
+  const meaning =
+    lower === 'classicapi'
+      ? `SAP's classification file lists function module ${key} as a classic API (classicAPI): classic ABAP may call it.${notReleasedNote}`
+      : lower === 'noapi'
+        ? `SAP's classification file lists function module ${key} as noAPI: SAP does not offer it as an API for customer code.${notReleasedNote}`
+        : lower === 'released'
+          ? `SAP's release file lists function module ${key} as released for ABAP Cloud.`
+          : lower === 'nottobereleased'
+            ? `SAP's release file lists function module ${key} as not to be released: ABAP Cloud code cannot call it.`
+            : `SAP's release file lists function module ${key} as ${state}.`;
+  return {
+    name: key,
+    state,
+    file,
+    notAnApi: lower === 'noapi' || lower === 'nottobereleased',
+    answer: `${meaning} This is SAP's published classification of the function module, not a check of what this call does at runtime.`,
+  };
+}
+
 /* ---------- the two dimensions of a catalog object (roadmap 7.9, CR-01) ---------- */
 
 /**

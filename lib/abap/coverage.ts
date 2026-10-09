@@ -59,6 +59,35 @@ export interface CoverageReport {
   complete: boolean;
   /** One line per distinct gap, for a surface that has no room for every hit. */
   gaps: Array<{ gap: CoverageGap; label: string; count: number; firstLine: number }>;
+  /**
+   * Local function-module calls the catalog answered instead (roadmap 3.0.6) —
+   * present when the caller passed `answerCall`. Not a gap: SAP's own files
+   * state what the module is. Not a level either: the answer carries SAP's
+   * verbatim state, never the A–D letter.
+   */
+  answered?: CatalogAnsweredCall[];
+}
+
+/** A local `CALL FUNCTION` the catalog answered — see `CoverageOptions.answerCall`. */
+export interface CatalogAnsweredCall {
+  name: string;
+  /** Verbatim SAP state, e.g. `classicAPI`. */
+  state: string;
+  file: 'release' | 'classification';
+  /** What SAP's file says, and that it is a classification, not a runtime check. */
+  answer: string;
+  line: number;
+  snippet: string;
+}
+
+export interface CoverageOptions {
+  /**
+   * The catalog's answer for a function module, or null. Injected rather than
+   * imported: this module carries no catalog, so the screens that call it in a
+   * browser do not ship 4 MB of SAP data. The evidence engine passes
+   * `functionModuleCatalogAnswer` (`catalog-service.ts`).
+   */
+  answerCall?: (name: string) => { name: string; state: string; file: 'release' | 'classification'; answer: string } | null;
 }
 
 interface Rule {
@@ -98,7 +127,10 @@ const RULES: Rule[] = [
       `${at.includesNotRead.map((name) => `Include ${name}`).join(', ')} ${
         at.includesNotRead.length === 1 ? 'was' : 'were'
       } not uploaded — what ${at.includesNotRead.length === 1 ? 'it does' : 'they do'} is not determined. ` +
-      'No detector read the statements in it, so nothing found or not found here speaks for them; upload the include with the program to have it read.',
+      // No "upload the include": a project cannot take further includes (open
+      // question "Add the includes", ADR-081). What does read them is an
+      // analysis of the program uploaded together with its includes.
+      'No detector read the statements in it, so nothing found or not found here speaks for them. This project cannot take further includes; an analysis of the program uploaded together with its includes reads them.',
     test: (_s, at) => at.includesNotRead.length > 0,
   },
   {
@@ -207,8 +239,9 @@ function includesCarried(code: string): Set<string> {
   return carried;
 }
 
-export function assessCoverage(code: string): CoverageReport {
+export function assessCoverage(code: string, options: CoverageOptions = {}): CoverageReport {
   const unassessed: UnassessedConstruct[] = [];
+  const answered: CatalogAnsweredCall[] = [];
   const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
   const carried = includesCarried(code);
 
@@ -220,6 +253,16 @@ export function assessCoverage(code: string): CoverageReport {
     };
     for (const rule of RULES) {
       if (!rule.test(upper, at)) continue;
+      // What the catalog already knows is not a gap: a local call of a
+      // function module SAP's files list is answered by them.
+      if (rule.gap === 'local-function-call' && options.answerCall) {
+        const name = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(stmt.text)?.[1];
+        const answer = name ? options.answerCall(name) : null;
+        if (answer) {
+          answered.push({ ...answer, line: stmt.line, snippet: trim(stmt.text) });
+          break;
+        }
+      }
       unassessed.push({
         gap: rule.gap,
         label: rule.label,
@@ -243,6 +286,7 @@ export function assessCoverage(code: string): CoverageReport {
     unassessed,
     complete: unassessed.length === 0,
     gaps: [...byGap.values()].sort((a, b) => a.firstLine - b.firstLine),
+    ...(options.answerCall ? { answered } : {}),
   };
 }
 

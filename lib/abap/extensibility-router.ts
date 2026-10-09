@@ -251,13 +251,41 @@ export function routeExtensibility(
   // Compatible" with "standard reads" as its reason (QA full review
   // b0bad443beaa). Reads and writes to the customer's own tables are not
   // among them: ABAP Cloud reads and writes its own tables.
-  const ON_STACK_REWORK: ReadonlySet<string> = new Set(['dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input']);
+  //
+  // An explicit COMMIT WORK is among them (QA high 00b028c43e63): a program
+  // whose only construct was a COMMIT WORK came out "High compatibility" with
+  // "standard reads" as the reason, and the rationale called it addressed
+  // on-stack without saying how. In ABAP Cloud the RAP runtime owns the
+  // transaction: a COMMIT WORK inside a RAP handler is forbidden, so the
+  // statement has to go and the boundary be left to the RAP save sequence. It
+  // forces no side-by-side split. ROLLBACK WORK produces no finding kind, so
+  // there is no evidence here to classify for it.
+  const ON_STACK_REWORK: ReadonlySet<string> = new Set(['dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input', 'commit-work']);
   const reworkKinds = [...new Set([
     ...enhancements.map((f) => f.kind),
     ...findings.filter((f) => ON_STACK_REWORK.has(f.kind)).map((f) => f.kind),
   ])];
   const onStackRework = reworkKinds.length > 0;
   const reworkList = reworkKinds.map(labelFor).join(', ');
+  // The remedy for a commit is not a released API or BAdI: it is removal. So
+  // the "replaced by released APIs" sentence names only the other kinds, and
+  // the commit gets its own sentence.
+  const explicitCommits = findings.filter((f) => f.kind === 'commit-work');
+  const replacedList = reworkKinds.filter((k) => k !== 'commit-work').map(labelFor).join(', ');
+  const commitCore = `the explicit COMMIT WORK (${explicitCommits.length}×) conflicts with the RAP transaction lifecycle: it has to be removed and the transaction boundary left to the RAP save sequence before the code runs on ABAP Cloud.`;
+  const commitSentence = explicitCommits.length > 0 ? ` T${commitCore.slice(1)}` : '';
+  const REPLACED_BY = 'released APIs, a released BAdI or a Fiori/RAP equivalent';
+  // Without a commit both sentences read exactly as they did before.
+  const reworkCheckpoint = explicitCommits.length === 0
+    ? `; it stays on-stack once replaced by ${REPLACED_BY}.`
+    : replacedList
+    ? `; ${replacedList} stays on-stack once replaced by ${REPLACED_BY}.${commitSentence}`
+    : `.${commitSentence}`;
+  const reworkFit = explicitCommits.length === 0
+    ? `Requires refactoring: ${reworkList} must be replaced by ${REPLACED_BY} before the code runs on ABAP Cloud.`
+    : replacedList
+    ? `Requires refactoring: ${replacedList} must be replaced by ${REPLACED_BY} before the code runs on ABAP Cloud.${commitSentence}`
+    : `Requires refactoring: ${commitCore}`;
 
   // What this router can say about persistence: a count, not a fit.
   const writeSummary =
@@ -329,13 +357,13 @@ export function routeExtensibility(
     // dbbc1bf8f01d / 7d9778a8a847 / 32ca5741aeb1 / fbc8bdcaa983).
     rationale = `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
   } else if (findings.length > 0) {
-    rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
+    rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.${commitSentence}`;
   } else if (includesNotRead.length > 0) {
     namedNotRead = true;
     // G4-F2: "no legacy pattern was detected" over a program whose deciding
     // logic sits in an include nobody uploaded reads as a clean result. It is
     // not one: say what was not read, and what the route rests on instead.
-    rationale = `Part of the program was not read. ${includesNotReadSentence} No construct that forces a side-by-side split was found in the part that was read, so On-Stack Developer Extensibility (RAP) is recommended for that part only. Upload the include to have the whole program decided.`;
+    rationale = `Part of the program was not read. ${includesNotReadSentence} No construct that forces a side-by-side split was found in the part that was read, so On-Stack Developer Extensibility (RAP) is recommended for that part only. The whole program is decided only by an analysis of it uploaded together with its includes.`;
   } else {
     rationale = `No legacy pattern was detected in the part of the code the engine assessed. On-Stack Developer Extensibility (RAP) is the recommended path.`;
   }
@@ -392,7 +420,7 @@ export function routeExtensibility(
         : privateStandardWrites
         ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.`
         : onStackRework
-        ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud; it stays on-stack once replaced by released APIs, a released BAdI or a Fiori/RAP equivalent.`
+        ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud${reworkCheckpoint}`
         : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
@@ -437,7 +465,7 @@ export function routeExtensibility(
       : privateStandardWrites
       ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by a released write API, a BAPI or a RAP action.`
       : onStackRework
-      ? `Requires refactoring: ${reworkList} must be replaced by released APIs, a released BAdI or a Fiori/RAP equivalent before the code runs on ABAP Cloud.`
+      ? reworkFit
       : 'Excellent fit. On-stack RAP execution provides high performance and direct access to standard released views.',
     pros: [
       'High-performance database access (local reads)',

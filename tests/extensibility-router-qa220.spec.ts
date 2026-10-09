@@ -77,3 +77,21 @@ test('b0bad443beaa — a classic enhancement or a dynpro is not rated "Highly Co
     expect(checkpoint(report, 'Side-by-Side').evaluation, code).not.toMatch(/Simple reads/);
   }
 });
+
+test('00b028c43e63 — a program whose only construct is COMMIT WORK is not rated "High compatibility" with ABAP Cloud', () => {
+  const COMMIT_ONLY = 'REPORT zcc_commit.\nCOMMIT WORK.';
+  for (const deployment of ['private', 'public'] as const) {
+    const report = route(COMMIT_ONLY, deployment);
+    expect(buildAbapEvidence(COMMIT_ONLY, 'zcc_qa220.abap', deployment).findings.map((f) => f.kind), 'the premise: the commit is the only finding').toEqual(['commit-work']);
+    expect(report.recommendedRoute, `${deployment}: a commit forces no side-by-side split`).toBe('In-App (ABAP Cloud)');
+    const inApp = checkpoint(report, 'In-App Developer');
+    expect(inApp.evaluation, deployment).not.toMatch(/^High compatibility|Standard reads/);
+    expect(inApp.evaluation, 'it names the remedy').toMatch(/RAP save sequence/);
+    expect(report.comparativeAnalysis.inAppABAPCloud.technicalFeasibility, deployment).toBe('Partially Compatible');
+    expect(report.comparativeAnalysis.inAppABAPCloud.fitDetails, deployment).not.toMatch(/excellent fit/i);
+    expect(checkpoint(report, 'Side-by-Side').evaluation, deployment).not.toMatch(/Simple reads/);
+    expect(report.rationale, 'the rationale says how it is addressed on-stack').toMatch(/RAP save sequence/);
+  }
+  // A program without a commit keeps the sentence out of its report.
+  expect(route(READ_ONLY).rationale).not.toMatch(/COMMIT WORK/);
+});
