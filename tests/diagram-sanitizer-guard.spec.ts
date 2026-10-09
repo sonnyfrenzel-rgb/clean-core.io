@@ -229,6 +229,9 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
       // Carried QA finding 176ee12c2d66: presentation attributes take url() too.
       { name: 'a marker from outside', dirty: svg(`<path d="M0 0" marker-end="url(https://${OUTSIDE}/o.svg#m)"/><text>Order</text>`), mustKeep: 'Order' },
       { name: 'a fill and a stroke from outside', dirty: svg(`<rect fill="url(//${OUTSIDE}/p)" stroke="url('https://${OUTSIDE}/q')" width="4" height="4"/>`) },
+      // Presentation attributes are CSS values: escapes and comments apply to them too.
+      { name: 'a fill spelled with an escape', dirty: svg(`<rect fill="u\\72l(https://${OUTSIDE}/r)" width="4" height="4"/><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'a filter split by a comment', dirty: svg(`<rect filter="url/**/(https://${OUTSIDE}/s)" width="4" height="4"/><text>Order</text>`), mustKeep: 'Order' },
     ];
 
     const outcome = await page.evaluate((inputs: Array<{ name: string; dirty: string }>) => {

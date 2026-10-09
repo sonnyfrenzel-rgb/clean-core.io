@@ -15,6 +15,8 @@ const UID = 'uid-under-test';
 
 function deps(failDelete: string | null, deleted: string[]): MfaRetireDeps {
   const db = {
+    runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>): Promise<T> =>
+      fn({ get: async () => ({ exists: true, data: () => ({}) }), set: () => {} }),
     collection: (name: string) => ({
       doc: (id: string) => ({
         set: async () => {
@@ -32,7 +34,10 @@ function deps(failDelete: string | null, deleted: string[]): MfaRetireDeps {
   };
   const FieldValue = { delete: () => '<delete>', serverTimestamp: () => '<now>' };
   return {
-    adminAuth: (async () => ({ updateUser: async () => ({}) })) as unknown as MfaRetireDeps['adminAuth'],
+    adminAuth: (async () => ({
+      updateUser: async () => ({}),
+      getUser: async () => ({ multiFactor: { enrolledFactors: [] } }),
+    })) as unknown as MfaRetireDeps['adminAuth'],
     adminDb: (async () => ({ db, FieldValue })) as unknown as MfaRetireDeps['adminDb'],
   };
 }

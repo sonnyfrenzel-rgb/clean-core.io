@@ -2,14 +2,12 @@ import { marked } from 'marked';
 import type { DOMPurify } from 'dompurify';
 
 /**
- * Sanitizer for untrusted / AI-generated markdown and HTML (audit P1 XSS).
+ * DOMPurify-based sanitizing of markdown and HTML from users and models.
  *
- * Use `renderMarkdownSafe()` everywhere `marked(...)` output is currently passed
- * to dangerouslySetInnerHTML or written into exported HTML, and `sanitizeHtml()`
- * for already-assembled HTML (e.g. export files, mermaid SVG).
- *
- * Requires `dompurify` (pin a current version > 3.4.10 per the audit) and, for
- * server-side rendering, `jsdom`. Add both to dependencies.
+ * `renderMarkdownSafe()` renders markdown with `marked` and passes the result
+ * through DOMPurify with HTML_CONFIG; `sanitizeHtml()` applies HTML_CONFIG to
+ * HTML that is already assembled; `sanitizeMermaidSvg()` applies the SVG
+ * configuration further down. On the server DOMPurify runs on a `jsdom` window.
  */
 
 let _purify: any = null;
@@ -62,10 +60,12 @@ function addStyleHooks(purify: DOMPurify): void {
   purify.addHook('uponSanitizeAttribute', (_node, data) => {
     if (data.attrName === 'style' && OUTBOUND_CSS.test(data.attrValue || '')) data.keepAttr = false;
     // SVG presentation attributes take `url(…)` as well — `fill`, `stroke`,
-    // `marker-*`, `filter`, `clip-path`, `mask`. Only a same-document fragment
-    // (`url(#arrowhead)`, which mermaid draws with) is kept (carried QA finding
-    // 176ee12c2d66).
-    if (URL_PRESENTATION_ATTRS.has(data.attrName) && /url\s*\((?!\s*['"]?#)/i.test(data.attrValue || '')) {
+    // `marker-*`, `filter`, `clip-path`, `mask`. Their values are CSS values, so
+    // the same check as for `style` applies: a backslash (a CSS escape) or a
+    // resource function other than a same-document fragment (`url(#arrowhead)`,
+    // which mermaid draws with) removes the attribute, also when a CSS comment
+    // sits between the function name and its parenthesis.
+    if (URL_PRESENTATION_ATTRS.has(data.attrName) && OUTBOUND_CSS.test(data.attrValue || '')) {
       data.keepAttr = false;
     }
   });
@@ -90,7 +90,7 @@ const HTML_CONFIG = {
   ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\/(?![/\\]))/i,
 } as const;
 
-/** Render untrusted markdown to SANITIZED HTML — safe for dangerouslySetInnerHTML. */
+/** Renders markdown to HTML and sanitizes the result with HTML_CONFIG. */
 export function renderMarkdownSafe(md: string): string {
   const rawHtml = marked.parse(md ?? '', { async: false }) as string;
   return getPurify().sanitize(rawHtml, HTML_CONFIG);

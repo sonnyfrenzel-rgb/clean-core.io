@@ -1508,3 +1508,30 @@ test.describe('a release gets a full review only for a larger change (owner deci
     expect(read('scripts/qa/await.mjs')).toMatch(/j\.name\.startsWith\('Full review of'\) && j\.conclusion === 'skipped'/);
   });
 });
+
+test.describe('the kill switches of the agents', () => {
+  test('a switch that cannot be read stops the local scripts, like a revoked one', async () => {
+    const { killSwitch } = await lib('gh.mjs');
+    const failing = (stderr: string) => () => {
+      const err = new Error('Command failed') as Error & { stderr: string };
+      err.stderr = stderr;
+      throw err;
+    };
+    expect(killSwitch('QA_REVIEW_ENABLED', () => 'false')).toBe('revoked');
+    expect(killSwitch('QA_REVIEW_ENABLED', () => 'true')).toBe('on');
+    expect(killSwitch('QA_REVIEW_ENABLED', failing('variable QA_REVIEW_ENABLED was not found\n'))).toBe('on');
+    expect(killSwitch('QA_REVIEW_ENABLED', failing('error connecting to api.github.com\n'))).toBe('unknown');
+    expect(killSwitch('QA_REVIEW_ENABLED', failing('HTTP 401: Bad credentials\n'))).toBe('unknown');
+
+    for (const [file, name] of [
+      ['scripts/qa/await.mjs', 'QA_REVIEW_ENABLED'],
+      ['scripts/qa/health.mjs', 'QA_REVIEW_ENABLED'],
+      ['scripts/security/inbox.mjs', 'SECURITY_AUDIT_ENABLED'],
+      ['scripts/ux/inbox.mjs', 'UX_REVIEW_ENABLED'],
+    ]) {
+      const src = read(file);
+      expect(src, `${file} reads its switch some other way`).toContain(`killSwitch('${name}')`);
+      expect(src, `${file} treats a failed read as "on"`).not.toMatch(/catch \{\s*return false;/);
+    }
+  });
+});

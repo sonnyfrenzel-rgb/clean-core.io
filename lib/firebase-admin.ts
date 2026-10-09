@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
@@ -14,7 +14,7 @@ import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
-import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
+import type { DocumentReference, Firestore, Transaction, WriteBatch } from 'firebase-admin/firestore';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -454,9 +454,26 @@ export async function refundRunQuota(
     // Best-effort for the request — a run that already failed is not also
     // failed by its refund — but not silent: an unrefunded reservation keeps a
     // unit and a fingerprint charged, and this line is how an operator finds
-    // the account to put right (QA full review of v2.20.0).
-    console.error('refundRunQuota: refund failed, the reservation stays charged for user:', uid, err);
+    // the account to put right (QA full review of v2.20.0). The account is
+    // named by accountLogRef(uid), not by its uid, and the error by its code
+    // or class, because a Firestore error message can carry the document path.
+    const code = (err as { code?: unknown } | null)?.code;
+    console.error(
+      'refundRunQuota: refund failed, the reservation stays charged for account:',
+      accountLogRef(uid),
+      code !== undefined ? String(code) : err instanceof Error ? err.name : 'unknown error',
+    );
   }
+}
+
+/**
+ * A pseudonymous reference to an account for server logs: the first 16 hex
+ * characters of the SHA-256 of its uid. An operator who holds the uid list can
+ * match it (`accountLogRef(uid)` for each); the log line alone does not carry
+ * the uid.
+ */
+export function accountLogRef(uid: string): string {
+  return 'acct_' + createHash('sha256').update(String(uid)).digest('hex').slice(0, 16);
 }
 
 /**
@@ -801,6 +818,23 @@ interface ErasableDoc {
   data: () => Record<string, unknown> | undefined;
 }
 
+/** Writes per batch; Firestore refuses a batch of more than 500. */
+const BATCH_WRITE_LIMIT = 400;
+
+/**
+ * Applies `writes` in batches of at most BATCH_WRITE_LIMIT, one batch after the
+ * other. A failed commit throws; the batches before it stay committed, which
+ * for the idempotent deletes and updates of the erasure below is what a retry
+ * continues from.
+ */
+async function commitInChunks(db: Firestore, writes: Array<(batch: WriteBatch) => void>): Promise<void> {
+  for (let i = 0; i < writes.length; i += BATCH_WRITE_LIMIT) {
+    const batch = db.batch();
+    for (const write of writes.slice(i, i + BATCH_WRITE_LIMIT)) write(batch);
+    await batch.commit();
+  }
+}
+
 /**
  * Permanently erases all user data from Firestore collections and deletes the Firebase Auth account.
  * Implements GDPR Right to Erasure (Art. 17 GDPR) server-side to prevent orphaned data.
@@ -1036,17 +1070,13 @@ export async function deleteUserDataAndAccount(
   //     touched; another account registered under the identical name loses its
   //     notification record too, which names nobody but that name.
   if (signupName) {
-    const q = db.collection('email_events').where('subject', '==', buildAdminSignupSubject(signupName)).limit(400);
+    const q = db.collection('email_events').where('subject', '==', buildAdminSignupSubject(signupName));
     await tryDelete('email_events', async () => {
       const snapshot = await q.get();
-      const batch = db.batch();
-      let writes = 0;
-      snapshot.docs.forEach((eventDoc: ErasableDoc) => {
-        if ((eventDoc.data() || {}).kind !== ADMIN_SIGNUP_MAIL_KIND) return;
-        batch.delete(eventDoc.ref);
-        writes += 1;
-      });
-      if (writes > 0) await batch.commit();
+      const refs = snapshot.docs
+        .filter((eventDoc: ErasableDoc) => (eventDoc.data() || {}).kind === ADMIN_SIGNUP_MAIL_KIND)
+        .map((eventDoc: ErasableDoc) => eventDoc.ref);
+      await commitInChunks(db, refs.map((ref: unknown) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
     });
   }
 
@@ -1068,10 +1098,8 @@ export async function deleteUserDataAndAccount(
     }
     const byUid = await db.collection('email_suppressions').where('uid', '==', uid).get();
     byUid.docs.forEach((d: ErasableDoc & { ref: { path: string } }) => suppressionRefs.set(d.ref.path, d.ref));
-    const batch = db.batch();
     // Deleting an id that does not exist is not an error in Firestore.
-    suppressionRefs.forEach((ref) => batch.delete(ref as DocumentReference));
-    await batch.commit();
+    await commitInChunks(db, [...suppressionRefs.values()].map((ref) => (batch: WriteBatch) => batch.delete(ref as DocumentReference)));
   });
 
   //     Weekly-report snapshots (`usage_reports`) written before 30.09.2026
@@ -1083,18 +1111,16 @@ export async function deleteUserDataAndAccount(
   if (addresses.length > 0) {
     await tryDelete('usage_reports', async () => {
       const reports = await db.collection('usage_reports').get();
-      const batch = db.batch();
-      let writes = 0;
+      const writes: Array<(batch: WriteBatch) => void> = [];
       reports.docs.forEach((reportDoc: ErasableDoc) => {
         const change = withoutAccount(reportDoc.data() || {}, addresses);
         if (!change) return;
-        batch.update(reportDoc.ref, {
+        writes.push((batch) => batch.update(reportDoc.ref as DocumentReference, {
           ...change.update,
           ...(change.deleteRecipient ? { recipient: FieldValue.delete() } : {}),
-        });
-        writes += 1;
+        }));
       });
-      if (writes > 0) await batch.commit();
+      await commitInChunks(db, writes);
     });
   }
 

@@ -131,3 +131,13 @@ test('an upstream error body reaches the log only as a shape word', () => {
     }
   }
 });
+
+test('a failed S/4 request answers a fixed sentence, not the fetch error text', () => {
+  for (const file of ['app/api/test-s4-connection/route.ts', 'app/api/test-s4-odata-read/route.ts']) {
+    const src = code(file);
+    for (const answer of answers(src)) {
+      expect(answer, `${file} answers with a caught fetch error`).not.toMatch(/(fetchErr|getError|headError)\??\.message/);
+    }
+    expect(src, `${file} builds an answer from a caught fetch error`).not.toMatch(/Connection failed: \$\{/);
+  }
+});

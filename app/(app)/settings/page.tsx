@@ -500,8 +500,8 @@ export default function SettingsPage() {
 
   // The over-strict state: the profile requires a factor Firebase Auth does not
   // have (a removal whose second write failed, or the retired application-level
-  // TOTP). The server clears it without a code, because there is no factor a
-  // stolen first-factor token could remove.
+  // TOTP). The server clears it without a code, because there is no factor to
+  // remove, but only for a recent sign-in.
   const [strandedError, setStrandedError] = useState('');
   const [isClearingStranded, setIsClearingStranded] = useState(false);
   const handleTurnOffStranded = async () => {
@@ -517,7 +517,11 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Could not turn off two-factor authentication.');
+        throw new Error(
+          res.status === 403
+            ? 'For your security, sign out and sign in again, then turn it off.'
+            : errData.error || 'Could not turn off two-factor authentication.',
+        );
       }
     } catch (error: unknown) {
       setStrandedError(error instanceof Error ? error.message : 'Could not turn off two-factor authentication.');

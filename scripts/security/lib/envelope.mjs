@@ -6,10 +6,9 @@ import { latestArtifact } from '../../qa/lib/gh.mjs';
 /**
  * Asymmetric sealing for the security audit.
  *
- * The job that runs the model seals with the public key and cannot open
- * anything — not its own report, not an earlier one. Only the mail job and the
- * maintainer hold the private key. A compromised or prompt-injected audit job
- * therefore has nothing to read and nothing to leak but the run it is doing.
+ * The job that runs the model holds only the public key: it seals its report
+ * and cannot decrypt any report, its own or an earlier one. The private key is
+ * held by the mail job and the maintainer.
  *
  * Construction: a fresh AES-256-GCM key per report, wrapped with RSA-OAEP-SHA256.
  */

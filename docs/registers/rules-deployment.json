@@ -39,5 +39,16 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "3f213a5de70838663b18d583f5f9017c935733d0c4a44fa3588d240d15796df9",
+    "recordedAt": "2026-10-09",
+    "recordedFor": "Roadmap 3.0.6 security hardening (SEC-2026-737, SEC-2026-740, SEC-2026-741): narrower validation of client writes to projects/{projectId}; worklist leaves the client allowlist. No app write depends on the new text.",
+    "addsToClient": [],
+    "removesFromClient": [
+      "worklist"
+    ],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

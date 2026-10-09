@@ -10,6 +10,22 @@ export function gh(args, opts = {}) {
   return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], ...opts }).trim();
 }
 
+/**
+ * The state of an agent's kill switch, a repository variable such as
+ * QA_REVIEW_ENABLED: 'revoked' when it reads `false`, 'on' when it holds
+ * anything else or does not exist, and 'unknown' when it could not be read
+ * (no network, no gh login, an API error). Callers treat 'unknown' like
+ * 'revoked' and stop.
+ */
+export function killSwitch(name, run = gh) {
+  try {
+    return run(['variable', 'get', name]) === 'false' ? 'revoked' : 'on';
+  } catch (err) {
+    const said = `${err?.stderr ?? ''}\n${err?.message ?? ''}`;
+    return /variable .* was not found|HTTP 404/i.test(said) ? 'on' : 'unknown';
+  }
+}
+
 export function ghJson(args) {
   return JSON.parse(gh(args) || 'null');
 }

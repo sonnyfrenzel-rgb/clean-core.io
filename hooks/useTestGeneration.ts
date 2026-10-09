@@ -5,6 +5,7 @@ import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { storedCoverageEstimate, storedTestSuite } from '@/lib/test-suite-storage';
 import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import {
   checkTestSuiteShape,
@@ -236,8 +237,11 @@ ${legacyForPrompt}
       const generatedTestCases: TestCase[] = answer.testCases.map(
         (tc) => withOriginCheck(tc, originEngine, noEngineReason) as unknown as TestCase,
       );
-      const generatedTestSuite: TestSuite = answer.testSuite || { code: '' };
-      const coverageEstimate: CoverageEstimate = answer.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
+      // Stored in exactly the keys of TestSuite and CoverageEstimate, typed:
+      // firestore.rules accepts these two fields from the browser only in that
+      // shape, and the model may answer with more.
+      const generatedTestSuite: TestSuite = storedTestSuite(answer.testSuite);
+      const coverageEstimate: CoverageEstimate = storedCoverageEstimate(answer.coverageEstimate);
       const manualTestingRequirements: ManualTestRequirement[] = answer.manualTestingRequirements || [];
       
       setGenerated(generatedTestCases);

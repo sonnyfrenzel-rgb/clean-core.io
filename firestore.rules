@@ -73,12 +73,8 @@ service cloud.firestore {
     // browser can put itself, or anyone else, on that list by any write path,
     // including as one key inside a larger write that would otherwise be
     // allowed. Only the Admin SDK writes it, on accepting and on revoking an
-    // invitation.
-    //
-    // (Neither allowlist is quoted here on purpose: `lib/firestore-rules-contract.ts`
-    // finds the update allowlist by searching this file for the first
-    // occurrence of that call, and a comment that spelled it out would be the
-    // one it found.)
+    // invitation. The two allowlists are in the create and update rules of
+    // /projects/{projectId} below.
     function invitedReader(data) {
       return isAuthenticated() &&
              data.get('readers', []) is list &&
@@ -252,18 +248,11 @@ service cloud.firestore {
              (!('testSuite' in data) || (data.testSuite is map)) &&
              (!('exports' in data) || (data.exports is map)) &&
              (!('usageReport' in data) || (data.usageReport is map)) &&
-             // Roadmap 7.1, same reasoning as usageReport directly above: an
-             // imported ATC worklist is server-written only (POST
-             // /api/projects/{projectId}/commands, `record-atc-report`).
-             //
-             // What actually keeps a browser out is in the rules, not in
-             // TypeScript: `allow create` above lists the six keys a client may
-             // create with, and `allow update` lists the client-writable fields.
-             // `atcReport` is in neither, so this line only fixes the *type* of a
-             // field the Admin SDK writes — it is not the thing that makes it
-             // server-only. Saying that imprecisely once already produced a false
-             // "client can write atcReport" finding in the QA review of
-             // a81b30dc12a9, so the enforcing rule is named here.
+             // Roadmap 7.1: the imported ATC worklist is written by POST
+             // /api/projects/{projectId}/commands (`record-atc-report`) through
+             // the Admin SDK. `atcReport` is on neither client allowlist of
+             // /projects/{projectId}; this line fixes the type of the stored
+             // field.
              (!('atcReport' in data) || (data.atcReport is map)) &&
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
@@ -272,18 +261,57 @@ service cloud.firestore {
     // Checked only when the write touches them, so a field an older server
     // version stored in another shape does not block unrelated edits; a field
     // that is touched must be present afterwards (the app deletes none of them).
-    function isValidProjectFieldChange(data, changed) {
+    //
+    // `status`: a client sets only the three labels its stage tools write —
+    // 'designed' (Design), 'testing' (Testing), 'documented' (Documentation) —
+    // and only on a project whose stored status shows that an analysis ran.
+    // 'analyzed' and 'transformed' are written by the server (POST
+    // /api/runs/create, POST /api/projects/{projectId}/contract); 'uploaded' and
+    // 'created' exist only on create.
+    //
+    // `exports`: a client only removes entries; adding or changing one is the
+    // server's.
+    //
+    // `updatedAt`: only the time of the write itself (serverTimestamp()).
+    function isValidProjectFieldChange(data, before, changed) {
       return (!('status' in changed) ||
-                data.status in ['uploaded', 'created', 'analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed']) &&
+                (data.status in ['designed', 'testing', 'documented'] &&
+                 before.get('status', '') in ['analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed'])) &&
              (!('s4Deployment' in changed) || data.s4Deployment in ['public', 'private']) &&
              (!('s4Environment' in changed) || data.s4Environment in ['mock', 'live']) &&
              (!('extensibilityRoute' in changed) || isBoundedString(data.extensibilityRoute, 0, 200)) &&
              (!('businessDocumentation' in changed) || isBoundedString(data.businessDocumentation, 0, 999999)) &&
-             (!('coverageEstimate' in changed) || data.coverageEstimate is map) &&
+             (!('coverageEstimate' in changed) || isValidCoverageEstimate(data.coverageEstimate)) &&
+             (!('testSuite' in changed) || isValidTestSuite(data.testSuite)) &&
+             (!('exports' in changed) || isExportsRemovalOnly(data, before)) &&
              (!('manualTestingRequirements' in changed) ||
                 (data.manualTestingRequirements is list && data.manualTestingRequirements.size() <= 500)) &&
-             (!('worklist' in changed) || (data.worklist is list && data.worklist.size() <= 2000)) &&
-             (!('updatedAt' in changed) || data.updatedAt is timestamp);
+             (!('updatedAt' in changed) || data.updatedAt == request.time);
+    }
+
+    // The three keys of CoverageEstimate (lib/types.ts), each optional and typed.
+    function isValidCoverageEstimate(value) {
+      return value is map &&
+             value.keys().hasOnly(['percentage', 'explanation', 'missingCoverage']) &&
+             (!('percentage' in value) || (value.percentage is number && value.percentage >= 0 && value.percentage <= 100)) &&
+             (!('explanation' in value) || isBoundedString(value.explanation, 0, 20000)) &&
+             (!('missingCoverage' in value) || isBoundedString(value.missingCoverage, 0, 20000));
+    }
+
+    // The three keys of TestSuite (lib/types.ts), each optional text.
+    function isValidTestSuite(value) {
+      return value is map &&
+             value.keys().hasOnly(['code', 'config', 'spec']) &&
+             (!('code' in value) || isBoundedString(value.code, 0, 999999)) &&
+             (!('config' in value) || isBoundedString(value.config, 0, 200000)) &&
+             (!('spec' in value) || isBoundedString(value.spec, 0, 999999));
+    }
+
+    function isExportsRemovalOnly(data, before) {
+      return data.exports is map &&
+             before.get('exports', null) is map &&
+             data.exports.diff(before.exports).addedKeys().size() == 0 &&
+             data.exports.diff(before.exports).changedKeys().size() == 0;
     }
 
     match /projects/{projectId} {
@@ -361,15 +389,18 @@ service cloud.firestore {
                       // anyone, the right to read the project. hasOnly() covers
                       // the case that is easy to forget — `readers` smuggled in
                       // as one key of a write whose other keys are allowed.
+                      //
+                      // `worklist` left this list in 3.0.6: POST /api/runs/create
+                      // writes it, and no stage writes it from the browser.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                         'status', 'legacyCode', 's4Deployment', 'extensibilityRoute', 'solutionDesign',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
                         'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
-                        'worklist', 'exports', 'updatedAt', 's4Environment',
+                        'exports', 'updatedAt', 's4Environment',
                         'nonFunctionalRequirements'
                       ])
                     )) && isValidProject(request.resource.data, true) &&
-                    isValidProjectFieldChange(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
+                    isValidProjectFieldChange(request.resource.data, resource.data, request.resource.data.diff(resource.data).affectedKeys());
       // F-03: project deletion is server-only via the Admin SDK (recursiveDelete
       // through DELETE /api/projects/{projectId}). A client deleteDoc() would orphan
       // the immutable runs/{runId} subcollection, so client delete is disabled here.

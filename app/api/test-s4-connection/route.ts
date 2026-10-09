@@ -169,6 +169,18 @@ function parseBtpDestination(jsonString: string): BtpDestinationConfig {
   );
 }
 
+/**
+ * The sentence the caller gets for a failed request: a network error code such
+ * as ECONNREFUSED or ENOTFOUND when the error carries one, the application's own
+ * SsrfError wording, and otherwise nothing of the error's text.
+ */
+function connectionFailure(err: any): string {
+  if (err instanceof SsrfError) return err.message;
+  const code = err?.cause?.code ?? err?.code;
+  const shown = typeof code === 'string' && /^[A-Z0-9_]{1,40}$/.test(code) ? ` (${code})` : '';
+  return `Connection failed${shown}. Verify the URL, network configuration, and firewall rules.`;
+}
+
 // --- Helper: Perform the actual HTTP connectivity test ---
 async function testEndpoint(
   url: string,
@@ -202,8 +214,7 @@ async function testEndpoint(
       if (getError.name === 'AbortError') {
         throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
       }
-      const errorMessage = getError.cause?.code || getError.message || 'Unknown error';
-      throw new Error(`Connection failed: ${errorMessage}. Verify the URL, network configuration, and firewall rules.`);
+      throw new Error(connectionFailure(getError));
     }
   }
 
@@ -224,8 +235,7 @@ async function testEndpoint(
       if (getError.name === 'AbortError') {
         throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
       }
-      const errorMessage = getError.cause?.code || getError.message || 'Unknown error';
-      throw new Error(`Connection failed: ${errorMessage}. Verify the URL, network configuration, and firewall rules.`);
+      throw new Error(connectionFailure(getError));
     }
   }
 

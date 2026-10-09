@@ -342,6 +342,9 @@ export async function POST(
   }
 }
 
+/** Upper bound on the invitation documents one GET reads. */
+const OPEN_INVITATIONS_READ_LIMIT = 500;
+
 /**
  * GET → the invitations of this project that are still waiting: address, sent,
  * expires. The owner's only (owner decision 01.10.2026: an unanswered
@@ -376,11 +379,18 @@ export async function GET(
     const gate = await openInvitationsAsOwner(decodedToken.uid, projectId, 'invitations-list');
     if (!gate.ok) return gate.response;
 
+    // Only invitations that have not expired yet are read, as in POST: the
+    // accepted, withdrawn and expired ones accumulate for the life of the
+    // project. `expiresAt` is an ISO string, so the range is in time order.
+    // The limit bounds the read; at most INVITATION_MAX_OPEN of them are open.
+    const now = new Date();
     const snap = await gate.db
       .collection('projects').doc(gate.projectId)
       .collection(INVITATION_COLLECTION)
+      .where('expiresAt', '>', now.toISOString())
+      .limit(OPEN_INVITATIONS_READ_LIMIT)
       .get();
-    return NextResponse.json({ open: openInvitationsOf(snap.docs, gate.projectId) });
+    return NextResponse.json({ open: openInvitationsOf(snap.docs, gate.projectId, now) });
   } catch (err: unknown) {
     logger.error('open invitations could not be read', {
       route: 'api/projects/invitations',

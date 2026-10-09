@@ -1,3 +1,4 @@
+import type { Transaction } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 /**
@@ -29,7 +30,9 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
  * a flag and no factor: every gated route refuses its first-factor token, which
  * no second factor could improve — but the same call recovers it, because a
  * flag without a factor in Firebase Auth arrives here with `hasFactor` false
- * and is cleared without a step-up. No compensating write, because a
+ * and is cleared after a fresh sign-in, without a code (the route checks the
+ * sign-in time on both paths). The flag is only cleared while Firebase Auth
+ * shows no factor at the moment of the write. No compensating write, because a
  * compensation that can itself fail is where a factor with the gate off would
  * come from.
  */
@@ -52,6 +55,9 @@ export type MfaRetireOutcome =
 
 export const FACTOR_REMOVAL_FAILED =
   'The authenticator could not be removed from your account. Nothing changed — try again in a moment.';
+
+export const FACTOR_PRESENT =
+  'An authenticator is set up on this account. Removing it needs a code from the authenticator app.';
 
 /**
  * Removes the factor (when there is one) and then clears the profile flag.
@@ -79,18 +85,34 @@ export async function retireSecondFactor(
   }
 
   // From here on a failure leaves flag-without-factor, which this call clears
-  // on the next attempt without a step-up (see above).
+  // on the next attempt after a fresh sign-in (see above).
+  //
+  // The flag is cleared in a transaction that reads the profile first and
+  // Firebase Auth second. `/api/mfa/enrolled` reads Firebase Auth and then
+  // writes the profile, so the two cannot interleave into "factor enrolled,
+  // flag cleared": either its profile write lands before this read (and the
+  // factor is seen here), or it conflicts with this transaction and lands
+  // after the clear.
   const { db, FieldValue } = await deps.adminDb();
-  await db.collection('users').doc(uid).set(
-    {
-      mfaEnabled: false,
-      mfaFactor: FieldValue.delete(),
-      mfaSecret: FieldValue.delete(),
-      mfaBackupCodes: FieldValue.delete(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const userRef = db.collection('users').doc(uid);
+  const cleared = await db.runTransaction(async (tx: Transaction) => {
+    await tx.get(userRef);
+    const record = await (await deps.adminAuth()).getUser(uid);
+    if ((record.multiFactor?.enrolledFactors ?? []).length > 0) return false;
+    tx.set(
+      userRef,
+      {
+        mfaEnabled: false,
+        mfaFactor: FieldValue.delete(),
+        mfaSecret: FieldValue.delete(),
+        mfaBackupCodes: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return true;
+  });
+  if (!cleared) return { ok: false, status: 409, error: FACTOR_PRESENT };
   // Not absorbed either (QA full review of v2.20.0): a swallowed failure here
   // answered "disabled" with the stored MFA material still in place. It now
   // reaches the route's handler like the flag write above, and the same call

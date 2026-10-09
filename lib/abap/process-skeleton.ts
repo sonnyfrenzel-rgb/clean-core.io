@@ -17,8 +17,9 @@ import {
  * The process skeleton — roadmap 2.3.
  *
  * Steps, decisions, starts and ends, read out of the branches of 2.1 and the
- * calls of 2.2. No model is asked anything: without an API key this is the whole
- * process map, in the technical names the code itself uses. The palette is the
+ * calls of 2.2. The module is a pure function of the parsed statements and
+ * makes no model call; its output is the process map in the technical names the
+ * code itself uses. The palette is the
  * one in `DESIGN.md` §5.8 and nothing beyond it — a kind that no row of that
  * table names is a kind this file does not emit.
  *
@@ -55,9 +56,9 @@ import {
  *    nodes — the service task and its error boundary — inside one statement.
  *    Kind and line cannot tell either pair apart; `<statementIndex>-<slot>` can.
  *
- * What this file does **not** do: draw anything. 2.3 is the reconstruction; the
- * BPMN view is 2.5 and the export 2.6. Neither is imported here, and nothing
- * here reaches the signed run.
+ * This file draws nothing. 2.3 is the reconstruction; the BPMN view is 2.5 and
+ * the export 2.6. It imports neither of them, nor any code that creates or signs
+ * a run.
  */
 
 /**

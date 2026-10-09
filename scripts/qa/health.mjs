@@ -9,7 +9,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { seal } from './lib/crypto.mjs';
-import { gh } from './lib/gh.mjs';
+import { gh, killSwitch } from './lib/gh.mjs';
 import { collect, renderHealth } from './lib/health.mjs';
 import { LOCAL_DIR } from './lib/store.mjs';
 
@@ -20,16 +20,11 @@ function repo() {
   return process.env.GITHUB_REPOSITORY || gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner']);
 }
 
-function revoked() {
-  try {
-    return gh(['variable', 'get', 'QA_REVIEW_ENABLED']) === 'false';
-  } catch {
-    return false;
-  }
-}
+/** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
+const switchState = () => killSwitch('QA_REVIEW_ENABLED');
 
 async function main() {
-  if (BRIEF && revoked()) return 0;
+  if (BRIEF && switchState() !== 'on') return 0;
   const health = collect({ repo: repo() });
 
   if (SEAL) {

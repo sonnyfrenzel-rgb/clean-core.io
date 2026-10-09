@@ -11,6 +11,7 @@ import {
   updateDoc,
   deleteField,
   serverTimestamp,
+  Timestamp,
   type Firestore,
 } from 'firebase/firestore';
 import fs from 'fs';
@@ -104,6 +105,7 @@ test.beforeAll(async () => {
 
   await adminSetDoc('projects', PROJECT, {
     name: 'Field validation fixture', status: 'analyzed', userId: uids.owner, createdAt: new Date(),
+    exports: { analysis_confluence_1: 'stored', design_confluence_2: 'stored' },
   });
   await adminSetDoc('files', SEEDED_FILE, {
     name: 'z_report.abap', content: 'REPORT z_report.', userId: uids.owner, createdAt: new Date(),
@@ -258,10 +260,22 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, { manualTestingRequirements: 'none' })), 'manualTestingRequirements').toBe(true);
   expect(await denied(() => updateDoc(ref, { updatedAt: 'now' })), 'updatedAt').toBe(true);
 
-  // The writes the stages perform, in their shapes.
+  // 3.0.6: the worklist is written by POST /api/runs/create only.
   expect(await denied(() => updateDoc(ref, {
     worklist: [{ id: 'w1', title: 'Finding', status: 'open' }],
-  })), 'analyze: worklist').toBe(false);
+  })), 'worklist from the browser').toBe(true);
+  // The labels the server writes, and the ones that exist only on create.
+  for (const status of ['analyzed', 'transformed', 'completed', 'uploaded', 'created']) {
+    expect(await denied(() => updateDoc(ref, { status })), `status ${status}`).toBe(true);
+  }
+  // updatedAt is the time of the write, not a chosen one.
+  expect(await denied(() => updateDoc(ref, { updatedAt: Timestamp.fromDate(new Date('2000-01-01')) })), 'back-dated updatedAt').toBe(true);
+  expect(await denied(() => updateDoc(ref, { updatedAt: serverTimestamp() })), 'updatedAt of the write').toBe(false);
+  // The structured test fields hold their model's keys and types.
+  expect(await denied(() => updateDoc(ref, { testSuite: { code: 'x', extra: { any: 'thing' } } })), 'testSuite extra key').toBe(true);
+  expect(await denied(() => updateDoc(ref, { testSuite: { code: 42 } })), 'testSuite code not text').toBe(true);
+  expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 150, explanation: 'x', missingCoverage: 'y' } })), 'coverage above 100').toBe(true);
+  expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 10, note: 'x' } })), 'coverage extra key').toBe(true);
   expect(await denied(() => updateDoc(ref, { extensibilityRoute: 'In-App (ABAP Cloud)' })), 'analyze: route').toBe(false);
   expect(await denied(() => updateDoc(ref, {
     solutionDesign: '{"summary":"x"}', status: 'designed', nonFunctionalRequirements: { availability: '99.5%' },
@@ -283,4 +297,20 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, {
     documentation: '# Process', generatedCode: '[]', status: 'documented',
   })), 'documentation').toBe(false);
+
+  // Exports: the browser only removes stale entries (Analyze and Design do).
+  expect(await denied(() => updateDoc(ref, { 'exports.added_by_browser': 'x' })), 'exports: an added entry').toBe(true);
+  expect(await denied(() => updateDoc(ref, { 'exports.design_confluence_2': 'changed' })), 'exports: a changed entry').toBe(true);
+  expect(await denied(() => updateDoc(ref, { 'exports.analysis_confluence_1': deleteField() })), 'exports: a removed entry').toBe(false);
+});
+
+test('a stage label is set only on a project an analysis has run on', async () => {
+  // Created the way the dashboard creates one: before any analysis.
+  const ref = doc(owner.db, 'projects', `fields-fresh-${Date.now()}`);
+  await setDoc(ref, { name: 'Fresh project', status: 'uploaded', userId: uids.owner, createdAt: serverTimestamp() });
+  for (const status of ['designed', 'testing', 'documented']) {
+    expect(await denied(() => updateDoc(ref, { status })), `${status} before an analysis`).toBe(true);
+  }
+  // Other client fields on the same project still update.
+  expect(await denied(() => updateDoc(ref, { s4Deployment: 'public' })), 'an edition').toBe(false);
 });

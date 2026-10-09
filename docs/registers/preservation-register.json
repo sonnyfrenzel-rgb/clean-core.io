@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "e99f16bdbe4c439e7e391f31239ac87e12670ff215dabb93e353c3679b5481b6",
+      "sha256OfLfNormalisedText": "3f213a5de70838663b18d583f5f9017c935733d0c4a44fa3588d240d15796df9",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -59,7 +59,6 @@
           "testSuite",
           "coverageEstimate",
           "manualTestingRequirements",
-          "worklist",
           "exports",
           "updatedAt",
           "s4Environment",
@@ -174,7 +173,7 @@
       "contract": "lib/project-commands.ts",
       "guard": "tests/project-command-boundary.spec.ts",
       "journal": "audit_events — written by the Admin SDK (logAuditEvent), readable or writable by no client",
-      "roadmapStep": "0.7 (8.4 fuer `decision`)",
+      "roadmapStep": "0.7 (8.4 fuer `decision`, 3.0.6 / ADR-081 fuer `openQuestions`)",
       "fields": [
         "approvedBy",
         "approvedByArchitect",
@@ -183,9 +182,10 @@
         "targetArchitecture",
         "usageReport",
         "atcReport",
-        "decision"
+        "decision",
+        "openQuestions"
       ],
-      "reason": "The five approval fields and the usage import. An approval is created on the server or not at all: until roadmap 0.7 the browser also wrote `approvedBy`, i.e. the address that stands on the approval. It now comes from the verified ID token, the timestamp from the server clock. `usageReport` was only checked as `is map` in the rules (security audit v2.11.0); the route holds it to the key set of lib/abap/usage-model.ts and a row limit. `atcReport` (roadmap 7.1, ATC import) never entered the rules as client-writable: same construction, same key-set-and-limit protection in lib/project-commands.ts from the start, so that an imported ATC finding is held server-side to its own model instead of to `is map`. `decision` (roadmap 8.4) likewise: the draft is normalised by lib/project-decision.ts and its fingerprint recomputed instead of believed, status and confirmation are set exclusively by the route, and the confirmation is bound to the run that was read (8.8, CR-11).",
+      "reason": "The five approval fields and the usage import. An approval is created on the server or not at all: until roadmap 0.7 the browser also wrote `approvedBy`, i.e. the address that stands on the approval. It now comes from the verified ID token, the timestamp from the server clock. `usageReport` was only checked as `is map` in the rules (security audit v2.11.0); the route holds it to the key set of lib/abap/usage-model.ts and a row limit. `atcReport` (roadmap 7.1, ATC import) never entered the rules as client-writable: same construction, same key-set-and-limit protection in lib/project-commands.ts from the start, so that an imported ATC finding is held server-side to its own model instead of to `is map`. `decision` (roadmap 8.4) likewise: the draft is normalised by lib/project-decision.ts and its fingerprint recomputed instead of believed, status and confirmation are set exclusively by the route, and the confirmation is bound to the run that was read (8.8, CR-11). `openQuestions` (3.0.6, ADR-081): the owner's answers to the open questions, checked by lib/open-questions.ts (closed action list, answered / accepted / reopen, text limit, basis), account and time from the server; a self-declaration that enters no run and changes no figure.",
       "stillAttestedNotSigned": "The audit pack still lists these fields in 07-user-attested.md: they remain a self-declaration of the signed-in account. Server-validated means truthfully recorded, not official."
     },
     "clientWritableFieldsNoStageWrites": {
@@ -193,8 +193,7 @@
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
-      "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09).",
-      "worklist": "Written by POST /api/runs/create (the initial worklist of a run). Analyze edited item statuses from the browser until 02.10.2026, when the Gaps Prioritization Matrix left the stage (owner decision); the rules still allow the write, and no stage makes it now."
+      "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [
       "transformation",

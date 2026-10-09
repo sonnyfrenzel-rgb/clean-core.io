@@ -22,7 +22,7 @@
  * in), never under-strict (the gate lets someone in it should have refused).
  */
 import { test, expect } from '@playwright/test';
-import { retireSecondFactor, FACTOR_REMOVAL_FAILED, type MfaRetireDeps } from '../lib/mfa-disable';
+import { retireSecondFactor, FACTOR_REMOVAL_FAILED, FACTOR_PRESENT, type MfaRetireDeps } from '../lib/mfa-disable';
 
 const UID = 'uid-under-test';
 
@@ -38,7 +38,7 @@ interface Recorder {
  *
  * `failOn` is what the real systems cannot be made to do from a spec: refuse.
  */
-function recorder(failOn?: 'removeFactor' | 'clearFlag'): Recorder {
+function recorder(failOn?: 'removeFactor' | 'clearFlag', factorsAtClear = 0): Recorder {
   const calls: string[] = [];
   const userWrites: Record<string, unknown>[] = [];
   const deleted: string[] = [];
@@ -51,6 +51,12 @@ function recorder(failOn?: 'removeFactor' | 'clearFlag'): Recorder {
       if (failOn === 'removeFactor') throw new Error('auth/internal-error');
       return {};
     },
+    // What Firebase Auth reports inside the transaction that clears the flag.
+    getUser: async (uid: string) => {
+      expect(uid).toBe(UID);
+      calls.push('readFactors');
+      return { multiFactor: { enrolledFactors: Array.from({ length: factorsAtClear }, () => ({ factorId: 'totp' })) } };
+    },
   };
 
   const FieldValue = {
@@ -59,15 +65,31 @@ function recorder(failOn?: 'removeFactor' | 'clearFlag'): Recorder {
   };
 
   const db = {
+    // A transaction double: reads are recorded, writes are buffered and only
+    // applied when the callback returns, as on a real commit.
+    runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>): Promise<T> => {
+      const buffered: { name: string; data: Record<string, unknown> }[] = [];
+      const tx = {
+        get: async (ref: { name: string; id: string }) => {
+          expect(ref.id).toBe(UID);
+          calls.push(`get:${ref.name}`);
+          return { exists: true, data: () => ({}) };
+        },
+        set: (ref: { name: string; id: string }, data: Record<string, unknown>) => {
+          expect(ref.id).toBe(UID);
+          calls.push(`set:${ref.name}`);
+          buffered.push({ name: ref.name, data });
+        },
+      };
+      const result = await fn(tx);
+      if (buffered.length > 0 && failOn === 'clearFlag') throw new Error('firestore/unavailable');
+      for (const w of buffered) userWrites.push(w.data);
+      return result;
+    },
     collection: (name: string) => ({
       doc: (id: string) => ({
-        set: async (data: Record<string, unknown>) => {
-          expect(id).toBe(UID);
-          calls.push(`set:${name}`);
-          if (failOn === 'clearFlag') throw new Error('firestore/unavailable');
-          userWrites.push(data);
-          return {};
-        },
+        name,
+        id,
         delete: async () => {
           expect(id).toBe(UID);
           calls.push(`delete:${name}`);
@@ -97,7 +119,7 @@ test.describe('retiring the second factor', () => {
     expect(outcome).toEqual({ ok: true, removedFactor: true });
     // The order itself, at runtime: not "the strings appear in this order in a
     // file" but "these calls happened in this order".
-    expect(r.calls.slice(0, 2)).toEqual(['removeFactor', 'set:users']);
+    expect(r.calls.slice(0, 4)).toEqual(['removeFactor', 'get:users', 'readFactors', 'set:users']);
     expect(r.calls.filter((c) => c === 'removeFactor')).toHaveLength(1);
     expect(r.userWrites).toHaveLength(1);
     expect(r.userWrites[0]).toMatchObject({ mfaEnabled: false });
@@ -128,21 +150,35 @@ test.describe('retiring the second factor', () => {
     // state left behind — flag set, no factor — refuses its own owner, which is
     // the direction the order chooses on purpose.
     await expect(retireSecondFactor(UID, true, r.deps)).rejects.toThrow('firestore/unavailable');
-    expect(r.calls).toEqual(['removeFactor', 'set:users']);
+    expect(r.calls).toEqual(['removeFactor', 'get:users', 'readFactors', 'set:users']);
     expect(r.userWrites).toHaveLength(0);
   });
 
   test('and that state recovers itself: no factor left, so no step-up and the flag goes', async () => {
     // The second call after the failure above. Firebase Auth has no factor any
     // more, so the route arrives here with hasFactor false — the branch that
-    // needs no step-up, which is what makes the over-strict state recoverable
-    // rather than permanent.
+    // needs no code (the route still asks for a recent sign-in), which is what
+    // makes the over-strict state recoverable rather than permanent.
     const r = recorder();
     const outcome = await retireSecondFactor(UID, false, r.deps);
 
     expect(outcome).toEqual({ ok: true, removedFactor: false });
     expect(r.calls, 'a factor that is not there was removed again').not.toContain('removeFactor');
-    expect(r.calls[0]).toBe('set:users');
+    expect(r.calls.slice(0, 3)).toEqual(['get:users', 'readFactors', 'set:users']);
     expect(r.userWrites[0]).toMatchObject({ mfaEnabled: false });
+  });
+
+  test('a factor enrolled while the call runs keeps the flag: nothing is cleared', async () => {
+    // The call arrived without a factor, but Firebase Auth holds one by the
+    // time the flag would be cleared — an enrolment that `/api/mfa/enrolled`
+    // is recording at the same moment. Clearing the flag now would leave a
+    // factor that the server gates no longer require.
+    const r = recorder(undefined, 1);
+    const outcome = await retireSecondFactor(UID, false, r.deps);
+
+    expect(outcome).toEqual({ ok: false, status: 409, error: FACTOR_PRESENT });
+    expect(r.calls).toEqual(['get:users', 'readFactors']);
+    expect(r.userWrites).toHaveLength(0);
+    expect(r.deleted).toHaveLength(0);
   });
 });

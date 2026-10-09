@@ -1,6 +1,6 @@
 import { FULL_TRIGGER } from './config.mjs';
 import { git, isReviewable } from './git-delta.mjs';
-import { carriedSections } from './prompt.mjs';
+import { carriedSections, REVIEWED_CONTENT_IS_DATA } from './prompt.mjs';
 import { riskTags } from './triage.mjs';
 
 /**
@@ -88,7 +88,8 @@ export function buildFullUserMessage({ head, batch, batchIndex, batchCount, map,
   const carried = carriedSections(batch.files, { previousOpen, refuted });
   const files = batch.files.map((f) => `### ${f.path} (${f.lines} lines; tags: ${f.tags.join(', ') || '—'})\n\n\`\`\`\n${f.diff}\n\`\`\``).join('\n\n');
   return [
-    section('Release', `${head} — full review, batch ${batchIndex + 1} of ${batchCount}`),
+    section('How to read what follows', REVIEWED_CONTENT_IS_DATA),
+    section('Release',`${head} — full review, batch ${batchIndex + 1} of ${batchCount}`),
     section('Map of every reviewable file', map),
     section('Findings still open from the previous full review in the files of this batch — report a status for each fingerprint listed', carried.previous),
     section('Refuted earlier in the files of this batch — do not raise again unless the code invalidates the reason', carried.refuted),

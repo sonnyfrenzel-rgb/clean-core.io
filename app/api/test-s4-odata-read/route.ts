@@ -13,7 +13,7 @@ import {
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { logger } from '@/lib/logger';
+import { logger, providerErrorShape } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 
 /**
@@ -286,11 +286,23 @@ export async function POST(req: NextRequest) {
       });
     } catch (fetchErr: any) {
       clearTimeout(timeout);
+      // The caller gets a fixed sentence; the log gets the error's class and
+      // code. SsrfError messages are this application's own wording.
+      const timedOut = fetchErr?.name === 'AbortError';
+      if (!timedOut && !(fetchErr instanceof SsrfError)) {
+        logger.warn('s4 odata read connection failed', {
+          route: 'api/test-s4-odata-read',
+          ...providerErrorShape(fetchErr?.cause ?? fetchErr),
+        });
+      }
+      const refusal = fetchErr instanceof SsrfError ? String(fetchErr.message) : null;
       return NextResponse.json({
         status: 'failed',
-        message: fetchErr.name === 'AbortError' ? 'Request timed out (15s).' : `Connection failed: ${fetchErr.message}`,
+        message: timedOut
+          ? 'Request timed out (15s).'
+          : refusal ?? 'Connection failed. Verify the URL, network configuration, and firewall rules.',
         entitySet,
-      }, { status: fetchErr.name === 'AbortError' ? 504 : 502 });
+      }, { status: timedOut ? 504 : 502 });
     }
     clearTimeout(timeout);
 

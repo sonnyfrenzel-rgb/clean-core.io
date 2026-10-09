@@ -26,7 +26,7 @@
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gh, ghJson, jobsOf, waitForJob, waitForRun } from './lib/gh.mjs';
+import { gh, ghJson, jobsOf, killSwitch, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
 import { isBlocking, needsAnotherRound, readNothing, renderHeader, renderText } from './lib/report.mjs';
 import { renderSmoke } from './lib/smoke.mjs';
@@ -36,13 +36,8 @@ const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const FULL = process.argv.includes('--full');
 const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || (FULL ? '--timeout=120' : '--timeout=60')).split('=')[1]);
 
-function revoked() {
-  try {
-    return gh(['variable', 'get', 'QA_REVIEW_ENABLED']) === 'false';
-  } catch {
-    return false; // variable not set: the loop is on
-  }
-}
+/** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
+const switchState = () => killSwitch('QA_REVIEW_ENABLED');
 
 /**
  * A review that read nothing is not a list of work: its findings are the carried register, not a judgement of
@@ -85,9 +80,14 @@ function collect(run, short) {
 }
 
 async function main() {
-  if (revoked()) {
+  const state = switchState();
+  if (state === 'revoked') {
     console.log('QA loop revoked (repository variable QA_REVIEW_ENABLED=false). Nothing to wait for.');
     return 2;
+  }
+  if (state !== 'on') {
+    console.log('The repository variable QA_REVIEW_ENABLED could not be read (gh login or network). Stopping; run again once gh works.');
+    return 3;
   }
   const secret = process.env.QA_REVIEW_KEY || loadDotEnv().QA_REVIEW_KEY;
   if (!secret) throw new Error('QA_REVIEW_KEY is not in the environment or .env.local.');

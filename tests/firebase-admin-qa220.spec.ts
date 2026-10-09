@@ -6,6 +6,7 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import type { Auth } from 'firebase-admin/auth';
 import type { Firestore, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import {
+  accountLogRef,
   adminGrantS4,
   deleteUserDataAndAccount,
   getAdminDb,
@@ -147,7 +148,9 @@ test('a refund that fails is reported, not swallowed', async () => {
     console.error = original;
   }
   expect(logged.some((args) => String(args[0]).startsWith('refundRunQuota: refund failed')), 'the failed refund left no trace').toBe(true);
-  expect(logged.some((args) => args.includes('qa220/not-a-document')), 'the log does not name the account to put right').toBe(true);
+  expect(logged.some((args) => args.includes(accountLogRef('qa220/not-a-document'))), 'the log does not name the account to put right').toBe(true);
+  // Named by a pseudonymous reference, not by the uid itself.
+  expect(logged.some((args) => args.some((a) => String(a).includes('qa220/not-a-document'))), 'the log carries the uid').toBe(false);
 });
 
 test.describe('governance actions (f02bdb200067, a4c7686b9c1f)', () => {

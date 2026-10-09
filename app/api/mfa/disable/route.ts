@@ -6,7 +6,9 @@ import { retireSecondFactor } from '@/lib/mfa-disable';
  * POST /api/mfa/disable — removes the second factor from the caller's account.
  *
  * Only a session that was just established with the factor may remove it:
- * recent sign-in and the factor on the token (assertMfaStepUp). The factor
+ * recent sign-in and the factor on the token (assertMfaStepUp). An account
+ * whose profile flag is set while Firebase Auth holds no factor needs the
+ * recent sign-in only. The factor
  * itself lives in Firebase Auth and is unenrolled there through the Admin SDK;
  * the profile flag follows, and whatever the application-level TOTP of earlier
  * versions left behind is cleared with it (roadmap 0.13).
@@ -31,16 +33,19 @@ export async function POST(request: NextRequest) {
     const record = await auth.getUser(uid);
     const hasFactor = (record.multiFactor?.enrolledFactors ?? []).length > 0;
 
-    if (hasFactor) {
-      try {
-        assertRecentAuth(decodedToken, 300);
+    try {
+      // A recent sign-in on both paths. Without a factor in Firebase Auth the
+      // call only clears the profile flag, and that still needs a session that
+      // was just established, not any token the account ever issued.
+      assertRecentAuth(decodedToken, 300);
+      if (hasFactor) {
         // The factor Firebase Auth holds decides, not the profile flag.
         await assertMfaStepUp(request, decodedToken, { factorEnrolled: true });
-      } catch (err: unknown) {
-        const status = err instanceof QuotaError ? err.status : 403;
-        const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
-        return NextResponse.json({ error: message }, { status });
       }
+    } catch (err: unknown) {
+      const status = err instanceof QuotaError ? err.status : 403;
+      const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
+      return NextResponse.json({ error: message }, { status });
     }
 
     // The factor first, the flag second — and what a failure of either leaves

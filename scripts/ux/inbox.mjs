@@ -13,7 +13,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { open } from '../qa/lib/crypto.mjs';
-import { artifactNames, gh, ghJson, jobsOf, latestArtifact, waitForRun } from '../qa/lib/gh.mjs';
+import { artifactNames, gh, ghJson, jobsOf, killSwitch, latestArtifact, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
 import { collectArtifacts, newestRealReview, reviewRuns } from './lib/history.mjs';
@@ -25,13 +25,8 @@ const DIR = '.ux-review/inbox';
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || '--timeout=90').split('=')[1]);
 
-function revoked() {
-  try {
-    return gh(['variable', 'get', 'UX_REVIEW_ENABLED']) === 'false';
-  } catch {
-    return false;
-  }
-}
+/** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
+const switchState = () => killSwitch('UX_REVIEW_ENABLED');
 
 function download(runId, name, dir) {
   rmSync(dir, { recursive: true, force: true });
@@ -69,9 +64,14 @@ function fetchReport(run, secret) {
 }
 
 async function main() {
-  if (revoked()) {
-    if (!BRIEF) console.log('UX review revoked (UX_REVIEW_ENABLED=false).');
-    return 2;
+  const state = switchState();
+  if (state !== 'on') {
+    if (!BRIEF) {
+      console.log(state === 'revoked'
+        ? 'UX review revoked (UX_REVIEW_ENABLED=false).'
+        : 'The repository variable UX_REVIEW_ENABLED could not be read (gh login or network). Stopping.');
+    }
+    return state === 'revoked' ? 2 : 3;
   }
   const secret = process.env.UX_REVIEW_KEY || loadDotEnv().UX_REVIEW_KEY;
   if (!secret) throw new Error('UX_REVIEW_KEY is not in the environment or .env.local.');

@@ -13,7 +13,7 @@
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { artifactNames, gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
+import { artifactNames, gh, ghJson, jobsOf, killSwitch, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
 import { auditArtifact, fetchSealed, openWith, privateKeyFrom, unchangedRun } from './lib/envelope.mjs';
@@ -25,13 +25,8 @@ const DIR = '.security-audit/inbox';
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || '--timeout=150').split('=')[1]);
 
-function revoked() {
-  try {
-    return gh(['variable', 'get', 'SECURITY_AUDIT_ENABLED']) === 'false';
-  } catch {
-    return false;
-  }
-}
+/** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
+const switchState = () => killSwitch('SECURITY_AUDIT_ENABLED');
 
 async function fetchReport(run, privateKey) {
   const jobs = jobsOf(run.databaseId);
@@ -48,9 +43,14 @@ async function fetchReport(run, privateKey) {
 }
 
 async function main() {
-  if (revoked()) {
-    if (!BRIEF) console.log('Security audit revoked (SECURITY_AUDIT_ENABLED=false).');
-    return 2;
+  const state = switchState();
+  if (state !== 'on') {
+    if (!BRIEF) {
+      console.log(state === 'revoked'
+        ? 'Security audit revoked (SECURITY_AUDIT_ENABLED=false).'
+        : 'The repository variable SECURITY_AUDIT_ENABLED could not be read (gh login or network). Stopping.');
+    }
+    return state === 'revoked' ? 2 : 3;
   }
   const privateKey = privateKeyFrom(process.env.SECURITY_AUDIT_PRIVATE_KEY || loadDotEnv().SECURITY_AUDIT_PRIVATE_KEY);
 
