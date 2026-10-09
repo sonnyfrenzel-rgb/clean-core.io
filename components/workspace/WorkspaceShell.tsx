@@ -423,14 +423,19 @@ export default function WorkspaceShell({
     const end = () => {
       stop = true;
     };
+    const onMap = () => window.location.hash === `#${BUSINESS_MAP_ID}`;
     const follow = () => {
-      if (typeof window === 'undefined' || window.location.hash !== `#${BUSINESS_MAP_ID}`) return;
+      // A new hash ends the loop that is running, whatever it points at; only
+      // the map's own hash starts another (QA 6eaa3be7e7ad).
+      window.cancelAnimationFrame(frame);
+      stop = true;
+      if (!onMap()) return;
       stop = false;
       const started = performance.now();
       let lastTop: number | null = null;
       let stillSince = started;
       const tick = (now: number) => {
-        if (stop || now - started > 5000) return;
+        if (stop || !onMap() || now - started > 5000) return;
         const map = document.getElementById(BUSINESS_MAP_ID);
         if (map) {
           const top = Math.round(map.getBoundingClientRect().top);

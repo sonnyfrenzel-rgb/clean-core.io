@@ -529,3 +529,14 @@ test.describe('the Business view on screen', () => {
     await context.close();
   });
 });
+
+test('the map follow stops as soon as the hash leaves the map (QA 6eaa3be7e7ad)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'components/workspace/WorkspaceShell.tsx'), 'utf8');
+  const start = src.indexOf('const onMap = () =>');
+  expect(start, 'the follow loop reads the hash through onMap').toBeGreaterThan(0);
+  const body = src.slice(start, src.indexOf("window.addEventListener('hashchange', follow)", start));
+  // A hash change cancels the running loop before it decides anything …
+  expect(body).toMatch(/const follow = \(\) => \{[\s\S]*?window\.cancelAnimationFrame\(frame\);[\s\S]*?stop = true;[\s\S]*?if \(!onMap\(\)\) return;/);
+  // … and every frame re-reads the hash before it scrolls.
+  expect(body).toMatch(/if \(stop \|\| !onMap\(\) \|\| now - started > 5000\) return;/);
+});
