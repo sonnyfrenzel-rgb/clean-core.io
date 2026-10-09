@@ -48,8 +48,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
       # One retry after `npm cache verify`: the restored npm cache can hold an entry
-      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
-      # cache fault, not a finding, and it mailed a red run for nothing.
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026). A
+      # second failure still fails the job.
       - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       # Fail on High/Critical advisories. Accepted exceptions are documented with
       # a rationale + review date in audit-ci.jsonc (no blanket lowering of the gate).
@@ -66,8 +66,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
       # One retry after `npm cache verify`: the restored npm cache can hold an entry
-      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
-      # cache fault, not a finding, and it mailed a red run for nothing.
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026). A
+      # second failure still fails the job.
       - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       - name: Generate CycloneDX SBOM
         run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-file sbom.json
@@ -103,8 +103,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
       # One retry after `npm cache verify`: the restored npm cache can hold an entry
-      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026) - a
-      # cache fault, not a finding, and it mailed a red run for nothing.
+      # npm then fails to rename over (EEXIST, run 37986060490 on 09.10.2026). A
+      # second failure still fails the job.
       - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       - name: Send the alert
         env:
