@@ -33,7 +33,6 @@ import type { SemanticState } from '@/lib/provenance';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { NotDetermined } from '@/lib/workspace-model';
-import type { RecordGap } from '@/lib/legacy-project';
 import type { CoachMarkId } from '@/lib/coach-marks';
 import {
   CHAIN_LABELS,
@@ -62,7 +61,7 @@ import {
 } from '@/lib/it-view';
 import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
 import ItRail from './ItRail';
-import NotDeterminedCard from './NotDeterminedCard';
+import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
 /**
  * The IT view — roadmap step 8.1, mockup v2.8 `s4`, reworked on 03.10.2026 after
@@ -106,7 +105,8 @@ export default function ItAnswers({
   project = null,
   nextStep = null,
   notDetermined,
-  recorded = [],
+  questions = null,
+  openQuestions = null,
   signed = false,
   coach,
 }: {
@@ -128,8 +128,13 @@ export default function ItAnswers({
    * cannot disagree.
    */
   notDetermined: NotDetermined;
-  /** What a project stored by an earlier version does not carry (roadmap 3.0.2). */
-  recorded?: readonly RecordGap[];
+  /**
+   * The project's open questions (ADR-081): the figure at the top says their
+   * one line, and `openQuestions` is the list itself, rendered beside the
+   * findings where the *Not determined* card stood. `null` in the demo.
+   */
+  questions?: OpenQuestionsModel | null;
+  openQuestions?: React.ReactNode;
   /** A signed run is on record and readable; the demo, which carries none by design, passes `'demo'`. */
   signed?: boolean | 'demo';
   /** The coach mark for a place in this view — Not determined, in the answer at the top. */
@@ -201,7 +206,16 @@ export default function ItAnswers({
 
   const state = project === null && findings === undefined ? undefined : itState({ source, hasSource, signed });
   const opening = useMemo(
-    () => (state ? itOpening(state, source ?? null, notDetermined.noSource ? 0 : notDetermined.count) : null),
+    () =>
+      state
+        ? itOpening(
+            state,
+            source ?? null,
+            // The browser reads the source without SAP's catalog; the server's
+            // reading says how many local calls the catalog answered (3.0.6).
+            notDetermined.noSource ? 0 : Math.max(0, notDetermined.count - (source?.coverage?.answered ?? 0)),
+          )
+        : null,
     [state, source, notDetermined],
   );
 
@@ -288,7 +302,8 @@ export default function ItAnswers({
       (c.key !== 'classification' || catalogView !== 'release'),
   );
   const barActive = filtersActive(filters) || filterLink !== null;
-  const ndCount = notDetermined.noSource ? null : notDetermined.count;
+  // No figure while SAP's catalog is still answering: the count may still fall.
+  const oqCount = questions ? (questions.catalogPending ? null : questions.open) : notDetermined.noSource ? null : notDetermined.count;
 
   return (
     <section data-it-view="" data-it-state={state} aria-labelledby="it-answers-heading" className="cc">
@@ -365,11 +380,11 @@ export default function ItAnswers({
             />
             <Fact
               id="not-determined"
-              label={wt('itv.factNotDetermined')}
-              value={ndCount === null ? null : String(ndCount)}
-              coverage={ndCount && ndCount > 0 ? wt('itv.ndCoverage') : wt('itv.ndNone')}
+              label={wt('itv.factOpenQuestions')}
+              value={oqCount === null ? null : String(oqCount)}
+              coverage={questions ? openQuestionsLine(questions) : oqCount && oqCount > 0 ? wt('itv.ndCoverage') : wt('itv.ndNone')}
               provenance="not-determined"
-              href="#not-determined"
+              href={openQuestions ? '#not-determined' : undefined}
               coachTarget="not-determined"
             />
           </ul>
@@ -609,11 +624,13 @@ export default function ItAnswers({
               </div>
             ) : null}
 
-            {/* Not determined — in this view, not at the foot of the page: the
-                same object the figure above and the first look count. */}
-            <div id="not-determined" className="scroll-mt-4">
-              <NotDeterminedCard data={notDetermined} recorded={recorded} lead={wt('itv.ndLead')} />
-            </div>
+            {/* The open questions — in this view, not at the foot of the page
+                (ADR-081): the same list as in Business and Management. */}
+            {openQuestions ? (
+              <div id="not-determined" className="scroll-mt-4">
+                {openQuestions}
+              </div>
+            ) : null}
           </div>
 
           <ItRail

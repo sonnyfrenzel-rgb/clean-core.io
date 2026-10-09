@@ -44,6 +44,9 @@ import { TargetChangeButton, TargetChangeNotice } from './TargetChange';
  * that writes nothing; the imports are read off the project the page already
  * holds.
  */
+/** The anchor of the target profile card in the IT rail. */
+export const IT_TARGET_PROFILE_ID = 'it-target-profile';
+
 export default function ItRail({
   projectId,
   project,
@@ -77,7 +80,9 @@ export default function ItRail({
 
   return (
     <aside data-it-rail="" aria-label={wt('it.railLabel')} className="flex min-w-0 flex-col gap-4">
-      {/* 1. Target profile */}
+      {/* 1. Target profile — `#it-target-profile` is where Management's
+          "choose the target" leads once a run exists (3.0.6). */}
+      <div id={IT_TARGET_PROFILE_ID} className="min-w-0">
       <CcCard
         title={wt('it.profileTitle')}
         actions={demo ? null : <TargetChangeButton projectId={projectId} project={project} fit={fit} />}
@@ -182,6 +187,7 @@ export default function ItRail({
           )}
         </div>
       </CcCard>
+      </div>
 
       {/* 2. The route — architecture contract and the router's routes */}
       <CcCard

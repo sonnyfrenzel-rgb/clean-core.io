@@ -33,7 +33,7 @@ test.describe('the stage, read', () => {
       expect(src, rel).not.toContain('data-stage-output="worklist"');
       expect(src, rel).not.toMatch(/title="Why this route — decision path/);
       // One side card for not determined, one fold each for the summary and the detail.
-      expect(src, rel).toContain('<NotDeterminedSide items={openItems} />');
+      expect(src, rel).toMatch(/<NotDeterminedSide items=\{openItems\}( questions=\{questionsLine\})? \/>/);
       expect(src, rel).toMatch(/title="Technical detail"/);
       expect(src, rel).toMatch(/title="Model summary"/);
       // The big upload panels are gone.

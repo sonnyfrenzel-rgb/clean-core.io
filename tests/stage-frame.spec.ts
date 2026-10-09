@@ -19,7 +19,7 @@ import type { PhaseKey, PhaseState } from '../lib/workflow-steps';
  * The seven stages are tools of the workspace (ADR-008, ADR-050, mockup s8).
  *
  * In the workspace a stage opens under a tool header — "Back to project
- * workspace · <project> · Business view, Need & process", the eyebrow "Tool · <project>", the title — and
+ * workspace · <project> · Business view, Standard fit", the eyebrow "Tool · <project>", the title — and
  * without the old seven-circle stepper: how far each phase has got is said once,
  * in the workspace, and the tools bar carries its marks. Until roadmap 3.0.1 an
  * account without the workspace kept the stepper and its rail; since then
@@ -41,12 +41,18 @@ test.describe('the way back names the view and the layer', () => {
   });
 
   test('a layer travels into the stage and back, and is said in words', () => {
-    const href = stageHref({ base: '/project/p-1', path: 'testing', view: 'business', from: WORKSPACE_RETURN.tools, layer: '#need' });
-    expect(href).toBe('/project/p-1/testing?view=business&from=workspace-tools&layer=need');
+    const href = stageHref({ base: '/project/p-1', path: 'testing', view: 'it', from: WORKSPACE_RETURN.tools, layer: '#need' });
+    expect(href).toBe('/project/p-1/testing?view=it&from=workspace-tools&layer=need');
     const search = href.slice(href.indexOf('?'));
     // The layer wins over the control: the workspace holds the layer in its fragment.
-    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=business#need');
-    expect(stageBackPlace(search)).toBe('Business view, Need & process');
+    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=it#need');
+    expect(stageBackPlace(search)).toBe('IT view, Need & process');
+    // Business has no Need & process since ADR-080: a link from before it
+    // returns to the map, and says so.
+    const old = '?view=business&from=workspace-tools&layer=need';
+    expect(workspaceBackHref({ projectId: 'p-1', search: old })).toBe('/project/p-1?view=business#process-map');
+    expect(stageBackPlace(old)).toBe('Business view, Process map');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=standard' })).toBe('/project/p-1?view=business#standard');
     expect(stageBackPlace('?view=it')).toBe('IT view');
     expect(stageBackPlace('')).toBeNull();
     // Nothing the workspace does not know is carried or said.
@@ -94,13 +100,13 @@ test.describe('a stage as a tool, rendered', () => {
     await signInThroughForm(page, acct);
     let marks: string[] | undefined;
     for (const st of STAGES) {
-      await page.goto(`/project/${acct.projectId}/${st}?view=business&from=workspace-tools&layer=need`, {
+      await page.goto(`/project/${acct.projectId}/${st}?view=business&from=workspace-tools&layer=standard`, {
         waitUntil: 'domcontentloaded',
       });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
       const back = page.locator('[data-stage-back]');
-      await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Need & process/, { timeout: 30000 });
-      await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#need`);
+      await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Standard fit/, { timeout: 30000 });
+      await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#standard`);
       await expect(page.locator('[data-stage-tool]'), `${st}: the tool eyebrow`).toContainText('Tool ·');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
       await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]'), `${st}: the rail`).toHaveCount(0);
@@ -120,7 +126,7 @@ test.describe('a stage as a tool, rendered', () => {
       const other = STAGES.find((s) => s !== st)!;
       await expect(bar.locator(`a[data-workspace-tool="${other}"]`)).toHaveAttribute(
         'href',
-        `/project/${acct.projectId}/${other}?view=business&from=workspace-tools&layer=need`,
+        `/project/${acct.projectId}/${other}?view=business&from=workspace-tools&layer=standard`,
       );
       // One project, one reading: every stage shows the same marks.
       const reading = await tools.evaluateAll((els) =>
@@ -152,9 +158,9 @@ test.describe('a stage as a tool, rendered', () => {
 
     // And a link to another tool goes there, with the way back intact.
     await page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]').click();
-    await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=need`, { timeout: 60000 });
+    await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=standard`, { timeout: 60000 });
     await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to project workspace\s·\s.*Business view, Need & process/, { timeout: 30000 });
+    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to project workspace\s·\s.*Business view, Standard fit/, { timeout: 30000 });
     await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 

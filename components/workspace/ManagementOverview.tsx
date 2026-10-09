@@ -56,6 +56,7 @@ import {
 import type { DecisionStatus } from '@/lib/project-decision';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import type { Project } from '@/lib/types';
+import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
 
 /**
  * The Management overview — roadmap 3.0.10.
@@ -501,9 +502,10 @@ export default function ManagementOverview({
   const primary: ExecutivePrimary | null = nextStep
     ? {
         label: nextStep.action,
-        reason: nextStep.reason,
+        reason: nextStep.running ? wt('nextStep.running') : nextStep.reason,
         href: stageHref({ base: `/project/${projectId}`, path: nextStep.path, view: 'management', from: WORKSPACE_RETURN.nextStep }),
         key: nextStep.key,
+        running: nextStep.running === true,
       }
     : null;
   const hrefFor = (target: ExecutiveTarget): string =>
@@ -528,7 +530,13 @@ export default function ManagementOverview({
         fit={fitFigure}
         primary={primary}
         fitDetailsHref="#public-cloud-fit"
-        setTargetHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
+        setTargetHref={
+          // With a run the target is changed in the IT view's profile card
+          // (TargetChangeButton); before one, the start screen in Analyze asks.
+          hasRun
+            ? `/project/${projectId}?view=it#${IT_TARGET_PROFILE_ID}`
+            : stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })
+        }
         coach={coach}
         decision={hasRun ? decisionCard : undefined}
         options={optionsBlock}

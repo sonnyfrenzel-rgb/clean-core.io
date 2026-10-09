@@ -21,6 +21,7 @@
  * and says when the project's route is not among the finding's options.
  */
 
+import { groupConstructs } from './open-questions';
 import type { CoverageReport } from './abap/coverage';
 import type { EvidenceFinding } from './abap/evidence-model';
 import { calmTitle, findingRows, kindLabel } from './findings-view';
@@ -358,12 +359,12 @@ export function notGeneratedReasons(findings: readonly EvidenceFinding[], covera
   }
   const unassessed = coverage?.unassessed ?? [];
   if (unassessed.length > 0) {
-    const kinds = new Map<string, number>();
-    for (const u of unassessed) if (!kinds.has(u.label)) kinds.set(u.label, u.line);
+    // The one grouper (ADR-081), keyed by the engine's kind.
+    const kinds = groupConstructs(unassessed.map((u) => ({ label: u.label, why: u.why, anchor: `L${u.line}`, gap: u.gap })));
     out.push({
       key: 'unassessed',
-      text: `${kinds.size} construct ${kinds.size === 1 ? 'kind' : 'kinds'} the engine did not assess: ${Array.from(kinds.keys()).join(', ').toLowerCase()}.`,
-      lines: Array.from(kinds.values()),
+      text: `${kinds.length} construct ${kinds.length === 1 ? 'kind' : 'kinds'} the engine did not assess: ${kinds.map((k) => k.label).join(', ').toLowerCase()}.`,
+      lines: kinds.map((k) => Number(k.anchors[0].slice(1))),
     });
   }
   return out;

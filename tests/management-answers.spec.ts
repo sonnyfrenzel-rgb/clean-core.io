@@ -158,22 +158,13 @@ test.describe('what is confirmed', () => {
 /* ------------------------------------------------------- 2. what is missing */
 
 test.describe('what is missing', () => {
-  test('not determined is its own figure and is null, not zero, without a source', () => {
-    const view = managementAnswers(empty, [], { items: [], count: 0, noSource: true });
-    const figure = figureOf(view, 'missing', 'not-determined');
-    expect(figure.value, 'a zero would report an assessment that never ran').toBeNull();
-    expect(figure.absentReason).toContain('no source has been staged');
-    expect(figure.provenance).toBe('not-determined');
-  });
-
-  test('a counted zero and an unassessed source are different answers', () => {
-    const assessed = figureOf(
-      managementAnswers(bare, [], { items: [], count: 0, noSource: false }),
-      'missing',
-      'not-determined',
-    );
-    expect(assessed.value).toBe('0');
-    expect(assessed.absentReason).toBeUndefined();
+  test('the constructs the engine stepped over are no figure of their own any more (ADR-081)', () => {
+    // The project's open questions are one list; Management reads their one
+    // line in its Evidence fold, not a second count of a different thing here.
+    for (const open of [null, { items: [], count: 0, noSource: true }, { items: [], count: 3, noSource: false }]) {
+      const card = managementAnswers(bare, [], open).answers.find((a) => a.id === 'missing')!;
+      expect(card.figures.map((f) => f.key)).toEqual(['open-phases']);
+    }
   });
 
   test('every open phase is named with the contract’s own words', () => {

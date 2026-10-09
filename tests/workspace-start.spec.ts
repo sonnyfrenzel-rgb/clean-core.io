@@ -150,19 +150,23 @@ test.describe('a project starts on its full map (ADR-072)', () => {
       expect(overlaps, 'the tip covers the first look').toBe(false);
     }
 
-    // (5) Need & process says what the map holds — not "empty", not "nothing on record".
+    // (5) Business has no Need & process (ADR-080): the map is the process
+    // there, and its counts are not repeated in a section under it.
+    await expect(page.locator('[data-workspace-layers] [data-workspace-layer="need"]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
+    // In IT the section says what the map holds — not "empty", not "nothing on
+    // record" — and counts what the map counts, with the way to the map.
+    const here = new URL(page.url());
+    await page.goto(`${here.pathname}?view=it#need`, { waitUntil: 'domcontentloaded' });
     const tab = page.locator('[data-workspace-layers] [data-workspace-layer="need"]');
-    await expect(tab).toBeVisible({ timeout: 30000 });
+    await expect(tab).toBeVisible({ timeout: 60000 });
     await expect(tab).not.toContainText('empty');
     const section = page.locator('[data-workspace-layer-section="need"]');
     await expect(section).not.toContainText('Nothing on record');
-    // The tab counts what the map counts. The section itself no longer repeats
-    // the summary in Business, where the map and the rules stand above it
-    // (owner, 03.10.2026: the same numbers once); it says where they are.
     await expect(tab).toContainText(`${steps} step`);
     await expect(tab).toContainText(`${decisions} decision point`);
-    await expect(section.locator('[data-workspace-layer-process]')).toHaveCount(0);
-    await expect(section.locator('[data-workspace-layer-above]')).toBeVisible({ timeout: 30000 });
+    await expect(section.locator('[data-workspace-layer-process]')).toBeVisible({ timeout: 30000 });
+    await expect(section.locator('[data-workspace-layer-open-map]')).toHaveAttribute('href', /\?view=business#process-map$/);
   });
 
   test('on a phone: the build-up, the full map, the way back — no horizontal scroll', async ({ page }) => {

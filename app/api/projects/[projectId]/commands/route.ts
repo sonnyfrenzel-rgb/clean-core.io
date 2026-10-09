@@ -223,6 +223,9 @@ export async function POST(
           derivedDecisionFingerprint,
           profileDrift: profileDriftNow,
           contractRecommendation,
+          // ADR-081 — the stored answers, read in this transaction, so one
+          // answer is merged into them rather than replacing the others.
+          openQuestions: project.openQuestions,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {

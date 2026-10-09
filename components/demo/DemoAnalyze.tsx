@@ -144,12 +144,6 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
     body: <DemoStops what="The modernisation strategy" />,
   });
 
-  const showNotDetermined = () => {
-    window.requestAnimationFrame(() =>
-      document.getElementById('analysis-not-determined')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
-  };
-
   const catalog = catalogForReader(demo.catalogVersion);
   const band = scoreBand(a.cleanCoreScore);
 
@@ -166,16 +160,9 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         counts={findingCounts}
         score={a.cleanCoreScore}
         routeChosenByReader={false}
-        notDetermined={openItems.length}
         onExplainScore={() => setScoreOpen(true)}
-        onShowNotDetermined={showNotDetermined}
         severities={SEVERITY_ORDER.map((key) => ({ key, count: rows.filter((r) => r.finding.severity === key).length }))}
         levels={levelFacet}
-        notAssessed={{
-          kinds: notAssessedItems.length,
-          constructs: notAssessedItems.reduce((n, g) => n + g.count, 0),
-          items: notAssessedItems,
-        }}
         meta={{
           fileName,
           lines: sourceLines || null,

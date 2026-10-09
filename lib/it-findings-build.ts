@@ -147,6 +147,9 @@ export function findingsOf(
     coverage: {
       lines: countSourceLines(source),
       gaps: evidence.coverage.gaps.map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
+      // Local calls SAP's catalog answered (3.0.6): the browser's own reading of
+      // the source cannot see them, so it subtracts this many from its count.
+      answered: evidence.coverage.answered?.length ?? 0,
     },
   };
 }

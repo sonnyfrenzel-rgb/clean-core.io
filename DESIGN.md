@@ -271,7 +271,8 @@ From top to bottom:
    (ADR-060, 03.10.2026, 04.10.2026).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
-   missing (§2.11).
+   missing (§2.11). Business shows Standard fit and Evidence & controls only: its process is the map and the rules card
+   on the page itself, and a `#need` link there lands on the map (ADR-080).
 5. **Content:** sections of the selected layer. **"Next step"** is a card (rule-based, roadmap step 6.5),
    not a bar — in Business in the header below the disclosure and *Not determined*, in Management and IT at the top of the content.
 6. **Footer only in edit mode** (process model, rules): `Save` (primary), `Discard` (ghost), the note
@@ -653,14 +654,19 @@ and the end state never waits for a model — the map's place says what is still
 ### 5.5 What is there afterwards
 
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
-- **Head of the content:** process name, plain-language sentence, reveal line, *Not determined* (§5.1).
+- **Head of the content:** process name, plain-language sentence, reveal line, the open questions in one line (§5.1, ADR-081).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
 - **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (IT, Management, a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map.
 - **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
 - **The way back** (ADR-072): "← My workspace" above the title of the object page, at every width.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
-- **Side column, "Not determined":** every open spot with a reason and the next way — dynamic call, missing include,
-  usage unknown (never "unused"). This column is intentional: it is the reason to trust a result.
+- **"Open questions" instead of a side column "Not determined"** (ADR-081): one list per project, grouped by the
+  action that resolves each — add the includes, name a call target, add ATC results, choose the target, add usage
+  data, confirm the rules with the business — each group with its owner and one button, the engine's reason and line
+  for every point one click deeper; usage unknown is never "unused". Three end states: resolved by evidence, answered
+  (self-declaration, *Confirmed*, never *Proven*), accepted as known open with a reason — the value stays *Not
+  determined*. Everywhere else one line ("7 open questions · 2 block the decision · top: …"). It is the reason to trust
+  a result.
 
 ### 5.6 Three views of the same case
 
@@ -908,7 +914,7 @@ Never automatic: opening the stage costs no model call. For every account since 
 |---|---|---|
 | **Why?** on every number and every status | "?" target, opens provenance, rule and evidence | Popover component; data from the run and `lib/provenance.ts` |
 | **Empty states that teach** | Illustration, one sentence of prerequisite, one primary action | `EmptyState` (step 1.5) |
-| **Not determined** as its own area | §5.1, §5.5 | Engine limits (`support-matrix`), check tasks (roadmap step 7.5) |
+| **Not determined** as open questions you can close (ADR-081) | §5.1, §5.5 — one list per project, one line elsewhere | `lib/open-questions.ts`, engine limits (`support-matrix`), answers via `record-open-question` |
 | **Errors with a next step** | Message Strip with an action, never raw error text | Error mapping in the component |
 | **Glossary in the text** (ADR-034) | underlined technical term (§2.10), explanation reachable by keyboard: at most two sentences, "What it means for your decision", for SAP terms the source | `lib/glossary.ts` with a source per entry, accessible popover |
 | **Glossary in "Ask this case"** | Technical terms in answers carry the same underline and the same popover; a question "What is …?" about a glossary term is answered by the entry itself, with source and "No model call" | the same source as in the text; the answer states when it comes from the glossary |
@@ -1139,6 +1145,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.8 | 09.10.2026 | Need & process leaves the Business view, which opens on its map with the usage records beside it (ADR-080); *Not determined* becomes one list of open questions per project, grouped by the action that resolves each, and one line everywhere else (ADR-081, §5.5, §6.1) |
 | 1.8.7 | 04.10.2026 | The requirements of the Design tool are one module with a workspace of its own (ADR-078, owner 04.10.2026): a card on Design, the specification as one document with decisions, full text and exports; the requirement status as a fixed list of its own (§4.1) |
 | 1.8.6 | 04.10.2026 | The tour starts at the next step (owner 04.10.2026, "next step first"): the three coach marks in the order the page shows them, no scrolling until the reader presses "Next"; the demo tour reaches the process map before Not determined, as an own project does (§6.1.2, §6.2) |
 | 1.8.5 | 03.10.2026 | Management on the whole frame with one fit-to-standard figure (ADR-069, owner 03.10.2026): the decision and its one next action beside fit to standard, the SAP objects across the four buckets and what blocks the standard path by name; the rest in four folds (Evidence, Options and the decision, Costs, Process), collapsed and remembered in the browser only. The tools bar's check means the tool's own output is on record — Analyze a signed run — and every tool says what it is for without hover (ADR-060 amended 03.10.2026) |

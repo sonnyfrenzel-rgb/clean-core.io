@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   buildBusinessCard,
-  groupOpen,
+  openGroupsOf,
   headlineLead,
   joinList,
   NO_WORDING,
@@ -124,7 +124,7 @@ test.describe('the Business card (lib/business-card.ts)', () => {
   });
 
   test('open points are grouped by kind, first occurrence first', () => {
-    const groups = groupOpen([
+    const groups = openGroupsOf([
       { label: 'A', why: '', anchor: 'L1' },
       { label: 'B', why: '', anchor: 'L2' },
       { label: 'A', why: '', anchor: 'L3' },

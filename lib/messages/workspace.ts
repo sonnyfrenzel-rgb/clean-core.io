@@ -39,8 +39,11 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'layerSection.showMap': 'Show the map',
   'layerSection.showMapBusiness': 'Show the map in Business',
   'layerSection.backToTop': 'Back to top of section',
-  'layerSection.needAbove':
-    'The process map, its counts and the business rules of this section stand above, in the order you read them.',
+  // UsageRecords — beside the map in Business, inside Need & process elsewhere (ADR-080)
+  'usage.title': 'Usage records',
+  'usage.lead':
+    'Imported from your usage export — how often each object ran in the measured window. An object without a call count was not measured, which is not the same as unused.',
+  'usage.showFirst': 'Show the first five',
   // NotDeterminedCard
   'notDetermined.title': 'Not determined',
   'notDetermined.noSource':
@@ -49,8 +52,37 @@ export const WORKSPACE_PAGE_MESSAGES = {
     'Every construct in this source falls inside the detectors that ran. That is the boundary of the question the engine answered — not a clean bill of health.',
   'notDetermined.sourceLine': 'Source line',
   'notDetermined.recordTitle': "Not in this project's record",
-  // NotDeterminedFold — Management (owner, 04.10.2026)
-  'notDetermined.itDetail': "The engine's reason for each line is in the IT view",
+  // OpenQuestions — one list per project, grouped by the action that resolves it (ADR-081)
+  'oq.title': 'Open questions',
+  'oq.lead':
+    'What the engine could not settle, grouped by what would settle it. Each value stays Not determined until the evidence arrives; an answer is your self-declaration, never proof.',
+  'oq.blocks': 'blocks the decision',
+  'oq.end.resolved': 'Resolved by evidence',
+  'oq.end.answered': 'Answered',
+  'oq.end.accepted': 'Accepted as known open',
+  'oq.answer': 'Answer',
+  'oq.answerOrAccept': 'Answer it, or accept it as known open',
+  'oq.answerLabel': 'Your answer',
+  'oq.answerHelp': 'Recorded as your self-declaration, with your account and the time. It changes no figure: the value stays Not determined.',
+  'oq.acceptLabel': 'Why it stays open',
+  'oq.acceptHelp': 'Accepted as known open with this reason. The value stays Not determined.',
+  'oq.saveAnswer': 'Save the answer',
+  'oq.saveAccept': 'Accept as known open',
+  'oq.saving': 'Saving…',
+  'oq.cancel': 'Cancel',
+  'oq.reopen': 'Open it again',
+  'oq.outdated': 'An earlier answer was given for a different set of questions, so this group is open again.',
+  'oq.noLine': 'not a line',
+  'oq.addAtc': 'Add ATC results',
+  'oq.addUsage': 'Add usage data',
+  'oq.chooseTarget': 'Choose the target',
+  'oq.confirmRules': 'Decide on the rules',
+  'oq.showList': 'Show the open questions',
+  'oq.none':
+    'Every construct in this source falls inside the detectors that ran, and nothing else is open. That is the boundary of the question the engine answered — not a clean bill of health.',
+  'oq.saveFailed': 'The answer was not saved.',
+  'oq.catalogAnswered': 'Answered by SAP’s catalog —',
+  'oq.catalogPending': 'Reading SAP’s catalog for these function-module calls. Until it answers they count as open.',
   // RevisionStand
   'revision.movedHeadline': 'This process has moved on.',
   'revision.keep': 'Keep this Stand',
@@ -126,8 +158,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'firstLook.derivedTitle': 'How this was derived',
   'firstLook.showCode': 'Show the code behind each line',
   'firstLook.keyFacts': 'Key facts',
-  'firstLook.nothingOpen': 'Every construct fell inside what the detectors judge. That is the boundary of the question, not a clean bill.',
-  'firstLook.openReasons': 'Each point with its reason under Not determined.',
   'firstLook.noRulesInList': 'No hard-coded rule to list.',
   // PublicCloudFitPanel
   'cloudFit.title': 'Every object by bucket',
@@ -275,9 +305,10 @@ export function printObjectsTitle(n: number): string {
   return `SAP objects · ${n}`;
 }
 
-/** WorkspacePrintSheet — "3 not determined". */
-export function printNotDeterminedTitle(n: number): string {
-  return n === 0 ? 'Not determined — nothing was stepped over' : `${n} not determined`;
+/** WorkspacePrintSheet — one open-question group on paper (ADR-081). */
+export function printOpenQuestion(title: string, owner: string, n: number, end: 'open' | 'resolved' | 'answered' | 'accepted'): string {
+  const state = end === 'open' ? 'open' : end === 'resolved' ? 'resolved by evidence' : end === 'answered' ? 'answered (self-declaration)' : 'accepted as known open';
+  return `${title} — ${n} ${n === 1 ? 'question' : 'questions'}, owner ${owner}, ${state}`;
 }
 
 /** CoachMarks — "1 of 3". */
@@ -347,6 +378,36 @@ export function layerBarEmptyCount(n: number): string {
 /** LayerSection — the first rows of a layer, and how many stand behind them. */
 export function layerSectionShowing(shown: number, total: number): string {
   return `Showing ${shown} of ${total}.`;
+}
+
+/** UsageRecords — the button that opens every usage record. */
+export function usageShowAll(total: number): string {
+  return `Show all ${total}`;
+}
+
+/** OpenQuestions — how many questions a group holds. */
+export function oqCount(n: number): string {
+  return `${n} ${n === 1 ? 'question' : 'questions'}`;
+}
+
+/** OpenQuestions — who acts on a group: a role, never an account. */
+export function oqOwner(role: string): string {
+  return `Owner · ${role}`;
+}
+
+/** OpenQuestions — a stored answer, quoted as it was written. */
+export function oqAnswerQuote(text: string): string {
+  return `“${text}”`;
+}
+
+/** OpenQuestions — who gave the answer, and when. */
+export function oqAnswerBy(account: string, date: string): string {
+  return `— by ${account}, ${date}`;
+}
+
+/** OpenQuestions — the lines of a group behind their disclosure. */
+export function oqLinesTitle(n: number): string {
+  return `Where in the code (${n})`;
 }
 
 /** RevisionStand — the notice when somebody else has moved the Stand. */
@@ -485,8 +546,3 @@ export function newProjectExampleSize(lines: string, size: string): string {
   return `${lines} lines · ${size}`;
 }
 
-/** "11 places the code alone cannot settle, of 5 kinds" — the folded row of *Not determined* in Management. */
-export function notDeterminedFoldSummary(count: number, kinds: number): string {
-  const places = count === 1 ? '1 place the code alone cannot settle' : `${count} places the code alone cannot settle`;
-  return kinds > 1 ? `${places}, of ${kinds} kinds` : places;
-}

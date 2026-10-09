@@ -24,7 +24,18 @@ export interface OpenItem {
  *
  * Its id, `analysis-not-determined`, is where "Show the list" on the facet lands.
  */
-export default function NotDeterminedSide({ items }: { items: readonly OpenItem[] }) {
+export default function NotDeterminedSide({
+  items,
+  questions,
+}: {
+  items: readonly OpenItem[];
+  /**
+   * The project's open questions in their one line (ADR-081), with the way to
+   * the list in the workspace — this card lists what this analysis could not
+   * settle; the questions anyone can close stand there, once.
+   */
+  questions?: React.ReactNode;
+}) {
   return (
     <ObjectSection
       side
@@ -33,6 +44,7 @@ export default function NotDeterminedSide({ items }: { items: readonly OpenItem[
       title="Not determined"
       right={<span className="cc-text-meta text-cc-ink-muted">{items.length}</span>}
     >
+      {questions ? <div className="mb-3">{questions}</div> : null}
       {items.length ? (
         <ul className="m-0 p-0 list-none divide-y divide-cc-line">
           {items.map((item) => (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowUpDown, CircleHelp, FileText, ListChecks, Users } from 'lucide-react';
+import { ArrowUpDown, FileText, ListChecks, Users } from 'lucide-react';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -12,8 +12,8 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import { CcEvidenceLevel } from '@/components/cc/Identifier';
 import { EVIDENCE_LEVEL_VALUES, evidenceLevel, evidenceLevelRank } from '@/lib/evidence-level';
 import { CONCERN_COPY, type ComplianceConcern } from '@/lib/compliance-review-hints';
-import { groupOpen } from '@/lib/business-card';
-import { notDetermined } from '@/lib/workspace-model';
+import OpenQuestionsLine from './OpenQuestionsLine';
+import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { fetchStandardFit, type StandardFitOutcome } from '@/lib/standard-fit-client';
 import type { FitRow } from '@/lib/standard-fit-view';
 import { ruleEntries } from '@/lib/rules-editor';
@@ -29,7 +29,6 @@ import {
   fitReadRefusal,
   fitScenariosSummary,
   fitUsersSummary,
-  fitTasksCount,
 } from '@/lib/workspace-messages';
 
 /**
@@ -46,9 +45,9 @@ import {
  * supplied and none is invented; the table says so in a sentence instead of
  * leaving a column that looks filled.
  *
- * The rail on the right turns what is open into tasks (`notDetermined`, the
- * same list the Business card counts) and names the compliance hints the tables
- * read suggest — each an instruction to check, never a classification.
+ * The rail on the right says the project's open questions in their one line
+ * (ADR-081) and names the compliance hints the tables read suggest — each an
+ * instruction to check, never a classification.
  */
 
 function shortName(row: FitRow): string {
@@ -84,8 +83,7 @@ export default function StandardFitTable({
     };
   }, [projectId, source]);
 
-  const open = useMemo(() => notDetermined(project), [project]);
-  const tasks = useMemo(() => groupOpen(open.items), [open]);
+  const questions = useOpenQuestions(project, projectId);
 
   if (!source.trim()) return null;
   if (outcome === null) {
@@ -335,31 +333,10 @@ export default function StandardFitTable({
       </div>
 
       <aside className="flex min-w-0 flex-col gap-4">
-        <CcCard title={wt('fit.tasksTitle')} count={tasks.length}>
-          <p className="m-0 mb-2 text-[12px] font-medium text-cc-ink-muted">{wt('fit.tasksLead')}</p>
-          {tasks.length === 0 ? (
-            <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('fit.tasksNone')}</p>
-          ) : (
-            <ul data-fit-tasks="" className="m-0 flex list-none flex-col gap-2 p-0">
-              {tasks.slice(0, 6).map((task) => (
-                <li key={task.label} className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-2">
-                  <span className="mt-0.5 shrink-0 text-cc-ink-muted">
-                    <CircleHelp size={16} aria-hidden={true} />
-                  </span>
-                  <span className="flex min-w-0 flex-col gap-1">
-                    <span className="text-[13px] font-semibold text-cc-ink">{fitTasksCount(task.label, task.count)}</span>
-                    <span className="flex flex-wrap gap-1">
-                      {task.anchors.map((a) => (
-                        <CcAnchor key={a} tone="unlinked">
-                          {a}
-                        </CcAnchor>
-                      ))}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+        {/* What is open, as the one line (ADR-081): the list itself stands
+            once on the page, grouped by the action that resolves it. */}
+        <CcCard title={wt('oq.title')} count={questions.open}>
+          <OpenQuestionsLine questions={questions} />
         </CcCard>
         <CcCard
           title={wt('fit.complianceTitle')}

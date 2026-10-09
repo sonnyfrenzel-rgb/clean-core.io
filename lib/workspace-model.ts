@@ -562,8 +562,6 @@ export function workspaceLayers(
    */
   process: ProcessSummary | null = null,
 ): WorkspaceLayer[] {
-  const usage = project?.usageReport ?? null;
-  const usageRecords = Array.isArray(usage?.records) ? usage.records : [];
   const inventory = Array.isArray(project?.codeInventory) ? project.codeInventory : [];
   const coupling = Array.isArray(project?.dataCoupling) ? project.dataCoupling : [];
   const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
@@ -589,18 +587,7 @@ export function workspaceLayers(
       anchor: first ? (first.lineEnd > first.lineStart ? `L${first.lineStart}–L${first.lineEnd}` : `L${first.lineStart}`) : null,
     };
   });
-  const usageRows: LayerRow[] = usageRecords.filter(isRecord).map((record, i) => ({
-    key: `usage-${i}`,
-    label: nameOr(record.objectName, 'object name not recorded'),
-    // `null` is not zero (`lib/workspace-rows.ts`): an export with no call
-    // column did not measure zero calls, it measured nothing at all — and the
-    // difference decides whether an object is a retirement candidate.
-    value:
-      typeof record.callCount === 'number'
-        ? `${plural(record.callCount, 'call')} in the measured window`
-        : 'no call count in the export',
-    anchor: null,
-  }));
+  const usageRows = usageRecordRows(project);
 
   // The process the signed run reconstructed — one row that summarises the
   // map, never a second drawing of it.
@@ -755,7 +742,7 @@ export function workspaceLayers(
               process ? plural(process.steps, 'step') : null,
               process ? plural(process.decisions, 'decision point') : null,
               ruleRows.length > 0 ? plural(ruleRows.length, 'rule') : null,
-              usageRows.length > 0 ? plural(usageRows.length, 'object with usage') : null,
+              usageRows.length > 0 ? `${usageRows.length} ${usageRows.length === 1 ? 'object' : 'objects'} with usage` : null,
             ]
               .filter(Boolean)
               .join(' · ')
@@ -841,6 +828,36 @@ export function workspaceLayers(
       provenance: 'not-determined',
     },
   ];
+}
+
+/**
+ * The imported usage records, every one of them, as rows (ADR-080).
+ *
+ * Its own function because the layer's rows are cut at five (§2.11) and the
+ * usage records came after the process row and every rule: on a program with
+ * four rules and more, the cut hid them all, and in Business — where the
+ * section did not show the rules at all — it hid them without saying how many
+ * there were. The Business view shows these beside the map and the *Need &
+ * process* section of IT and Management shows them from here, each with its
+ * own "Show all".
+ */
+export function usageRecordRows(project: Project | null): LayerRow[] {
+  const usage = project?.usageReport ?? null;
+  const records = Array.isArray(usage?.records) ? usage.records : [];
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  return records.filter(isRecord).map((record, i) => ({
+    key: `usage-${i}`,
+    label: nameOr(record.objectName, 'object name not recorded'),
+    // `null` is not zero (`lib/workspace-rows.ts`): an export with no call
+    // column did not measure zero calls, it measured nothing at all — and the
+    // difference decides whether an object is a retirement candidate. A count
+    // that is not a finite, non-negative number is no count either.
+    value:
+      typeof record.callCount === 'number' && Number.isFinite(record.callCount) && record.callCount >= 0
+        ? `${plural(record.callCount, 'call')} in the measured window`
+        : 'no call count in the export',
+    anchor: null,
+  }));
 }
 
 /* ------------------------------------------------------- not determined */

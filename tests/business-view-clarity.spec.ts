@@ -7,7 +7,7 @@ import { rulesStatus, draftProblems, draftFrom, editorRules } from '../lib/rules
 import { processStory, processChanges } from '../lib/process-story';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
 import { summaryWithoutTables, programInputsOf, plainWordingFor } from '../lib/business-card';
-import { BUSINESS_LAYERS } from '../lib/business-layers';
+import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '../lib/business-layers';
 import { walkOrder, walkProgress } from '../lib/process-walk';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -173,8 +173,10 @@ test.describe('deciding on the rules, as pure functions', () => {
 });
 
 test.describe('the sections Business shows, and the walk-through order', () => {
-  test('Business keeps Need & process, Standard fit and Evidence & controls', () => {
-    expect([...BUSINESS_LAYERS]).toEqual(['need', 'standard', 'evidence']);
+  test('Business keeps Standard fit and Evidence & controls; Need & process leads to its map (ADR-080)', () => {
+    expect([...BUSINESS_LAYERS]).toEqual(['standard', 'evidence']);
+    expect(BUSINESS_LAYER_ELSEWHERE.need).toBe('map');
+    expect(BUSINESS_MAP_ID).toBe('process-map');
   });
 
   test('the walk follows the main path depth first and resumes at the first unanswered step', () => {
@@ -308,8 +310,9 @@ test.describe('the Business view on screen', () => {
     await expect(fact).toBeHidden();
     await expect(fact).toHaveAttribute('data-total', '1');
     await expect(page.locator('[data-workspace-rules-block] [data-rule]')).toHaveCount(1);
-    await expect(page.locator('[data-workspace-layer="need"] [data-workspace-layer-count]')).toContainText('1 rule');
-    // Need & process does not summarise the process a second time.
+    // Need & process is not a section of Business (ADR-080): the map and the
+    // rules card above are the process, and nothing summarises it a second time.
+    await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-process]')).toHaveCount(0);
 
     // The action opens the rules in their answering mode.
@@ -387,13 +390,16 @@ test.describe('the Business view on screen', () => {
     await expect(tabs).toBeVisible();
     await expect(tabs.locator('[data-workspace-layer="costs"]')).toHaveCount(0);
     await expect(tabs.locator('[data-workspace-layer="architecture"]')).toHaveCount(0);
-    await expect(tabs.locator('[data-workspace-layer="need"] [data-workspace-layer-count]')).toContainText('11 rules');
-    const need = tabs.getByRole('tab', { name: /Need & process/ });
-    await expect(need).toHaveAttribute('aria-selected', 'true');
-    await need.focus();
+    await expect(tabs.locator('[data-workspace-layer="need"]')).toHaveCount(0);
+    // It opens on Standard fit, the first of its sections with content (ADR-080).
+    const standard = tabs.getByRole('tab', { name: /Standard fit/ });
+    await expect(standard).toHaveAttribute('aria-selected', 'true');
+    await standard.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(tabs.getByRole('tab', { name: /Standard fit/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(tabs.getByRole('tab', { name: /Standard fit/ })).toBeFocused();
+    await expect(tabs.getByRole('tab', { name: /Evidence & controls/ })).toHaveAttribute('aria-selected', 'true');
+    await expect(tabs.getByRole('tab', { name: /Evidence & controls/ })).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(standard).toHaveAttribute('aria-selected', 'true');
 
     // Sticky: scrolled into the section, the bar stays under the shell bar.
     // Only once the section is taller than the screen: Standard fit reads its table
@@ -414,6 +420,13 @@ test.describe('the Business view on screen', () => {
     // A link into a section Business no longer shows lands where it lives now.
     await page.goto(`/project/${ids.po}?view=business#costs`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(new RegExp(`/project/${ids.po}/tco`), { timeout: 60_000 });
+    // An old back link into Need & process stays in Business and lands on the
+    // map (ADR-080): the address becomes the map's, and no section is chosen.
+    await page.goto(`/project/${ids.po}?view=business#need`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL((url) => url.pathname === `/project/${ids.po}` && url.search === '?view=business' && url.hash === '#process-map', { timeout: 60_000 });
+    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible();
+    await expect(page.locator('#process-map[data-workspace-process-block]')).toBeInViewport({ timeout: 30_000 });
+    await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
   });
 
   test('business names: no "Not generated" notice, the action only with a model, a stored name is a model proposal', async ({ page }) => {

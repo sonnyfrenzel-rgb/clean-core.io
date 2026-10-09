@@ -154,7 +154,10 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     expect(tops.every((t) => t >= 0), `a block is missing: ${tops.join(', ')}`).toBe(true);
     for (let i = 1; i < tops.length; i++) expect(tops[i], `block ${i} stands above block ${i - 1}`).toBeGreaterThan(tops[i - 1]);
     await expect(page.locator('[data-next-step-variant="bar"]')).toBeVisible();
-    await expect(page.locator('#not-determined [data-cc-disclosure]')).toHaveAttribute('data-cc-disclosure', 'closed');
+    // The open questions (ADR-081): the list stands open, the engine's lines of
+    // each group one click deeper.
+    await expect(page.locator('#not-determined [data-open-questions]')).toBeVisible();
+    await expect(page.locator('#not-determined [data-cc-disclosure]').first()).toHaveAttribute('data-cc-disclosure', 'closed');
 
     // Code → step: a line range under "Steps by line" selects its step on the map.
     const column = page.locator('[data-workspace-source-column]');
@@ -219,7 +222,10 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await open(page, empty);
     await expect(page.locator('[data-workspace-process="absent"][data-absence="no-source"]')).toHaveCount(1, { timeout: 60_000 });
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-layer-absent="need"]')).toBeVisible();
+    // Need & process is not a section of Business (ADR-080): the bar opens on
+    // Standard fit, which says it is empty, and the map's absence stands above.
+    await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-layer-absent="standard"]')).toBeVisible();
     await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible();
     await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'analyze');
   });

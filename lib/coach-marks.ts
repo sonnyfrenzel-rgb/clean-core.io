@@ -64,7 +64,7 @@ export const COACH_MARKS: readonly CoachMark[] = Object.freeze([
   Object.freeze({
     id: 'not-determined' as const,
     title: 'This is what we could not determine',
-    body: 'Each open point names the construct, the reason the engine could not judge it, and its line.',
+    body: 'Open questions, grouped by what would settle each — who acts, and one button. The engine’s reason and line for each stay one click deeper.',
   }),
   Object.freeze({
     id: 'next-step' as const,

@@ -28,6 +28,7 @@
  * the first look's figures do.
  */
 
+import { groupConstructs } from './open-questions';
 import type { BusinessRule, BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSkeleton } from './abap/process-skeleton';
 import type { ProcessFacts } from './abap/process-facts';
@@ -219,18 +220,12 @@ export interface BusinessCard {
 export const FEATURED_RULES = 3;
 export const OPEN_GROUP_ANCHORS = 2;
 
-/** Open points grouped by label, first occurrence first. */
-export function groupOpen(items: readonly NotDeterminedItem[]): OpenGroup[] {
-  const groups = new Map<string, OpenGroup>();
-  for (const item of items) {
-    const group = groups.get(item.label) ?? { label: item.label, count: 0, anchors: [] };
-    group.count += 1;
-    if (group.anchors.length < OPEN_GROUP_ANCHORS && !group.anchors.includes(item.anchor)) {
-      group.anchors.push(item.anchor);
-    }
-    groups.set(item.label, group);
-  }
-  return [...groups.values()];
+/**
+ * Open points grouped by kind, first occurrence first, with the first few
+ * anchors — through the one grouper (`groupConstructs`, ADR-081).
+ */
+export function openGroupsOf(items: readonly NotDeterminedItem[]): OpenGroup[] {
+  return groupConstructs(items).map((k) => ({ label: k.label, count: k.count, anchors: k.anchors.slice(0, OPEN_GROUP_ANCHORS) }));
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -470,7 +465,7 @@ export function buildBusinessCard(input: {
     featured: featuredRules(rules, input.ruleSet),
     rules,
     decisions,
-    open: { count: open.count, noSource: open.noSource, groups: groupOpen(open.items) },
+    open: { count: open.count, noSource: open.noSource, groups: openGroupsOf(open.items) },
   };
 }
 

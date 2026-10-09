@@ -183,6 +183,11 @@ export interface Project {
   // Server-only, like usageReport — see lib/project-commands.ts.
   atcReport?: import('./abap/atc-model').AtcReport;
 
+  // ADR-081: the owner's answers to the open questions — answered (a
+  // self-declaration) or accepted as known open, per action. Server-only like
+  // usageReport (`record-open-question`); never part of a signed run.
+  openQuestions?: import('./open-questions').StoredOpenAnswers;
+
   // In-memory only (never persisted): set by loadProjectAndHydrate when an
   // activeRunId is present but the run document could not be read (e.g. a
   // Firestore rules gap or network error). Lets pages surface a real error

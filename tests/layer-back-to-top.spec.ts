@@ -81,11 +81,10 @@ test.describe('"Back to top of section" (owner 06.10.2026)', () => {
       await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120_000 });
 
-      // Need & process: one sentence under the map in Business — no link that cannot move.
-      const need = page.locator('[data-workspace-layer-section="need"]');
-      await expect(need.locator('[data-workspace-layer-above]')).toBeVisible({ timeout: 60_000 });
-      await page.waitForTimeout(1000);
-      await expect(need.locator('[data-workspace-layer-top]')).toHaveCount(0);
+      // Need & process is not a section of Business (ADR-080) — the map is the
+      // process there — so nothing of it can carry a link that cannot move.
+      await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
+      await expect(page.locator('[data-workspace-layers] [data-workspace-layer="need"]')).toHaveCount(0);
 
       // Standard fit: the table of the signed source is taller than the screen — the link stands.
       await page.locator('[data-workspace-layers] [data-workspace-layer="standard"]').click();

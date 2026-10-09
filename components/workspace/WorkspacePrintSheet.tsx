@@ -1,5 +1,6 @@
 'use client';
 
+import { openQuestions, openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React, { useEffect, useMemo, useState } from 'react';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { fetchProcessStates } from '@/lib/process-states-client';
@@ -12,7 +13,7 @@ import type { Project } from '@/lib/types';
 import { formatIsoDate } from '@/lib/format';
 import {
   printHeaderLine,
-  printNotDeterminedTitle,
+  printOpenQuestion,
   printObjectsTitle,
   printRulesTitle,
   wt,
@@ -23,6 +24,7 @@ import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { gradeKey, type ObjectUse } from '@/lib/abap/abcd-classification';
 import { CLEAN_CORE_LEVEL, CLEAN_CORE_LEVEL_VALUES } from '@/lib/clean-core-level';
+import { cleanCoreLevelExplanation } from '@/lib/clean-core-level-explain';
 import type { TableDependency } from '@/lib/abap/table-dependencies';
 
 /**
@@ -97,12 +99,19 @@ export default function WorkspacePrintSheet({
   projectId,
   reading,
   open,
+  questions: given,
 }: {
   project: Project | null;
   projectId: string;
   /** The reading `FirstLook` computed for this screen, or null before it lands. */
   reading: SourceReading | null;
   open: NotDetermined;
+  /**
+   * The project's open questions (ADR-081), the same object the page shows.
+   * Without it the sheet derives them from `open` and the project, with the
+   * rule answers left out as not read.
+   */
+  questions?: OpenQuestionsModel;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const [states, setStates] = useState<ProcessStateView | null>(null);
@@ -166,6 +175,7 @@ export default function WorkspacePrintSheet({
     return card.featured.map((r) => ({ id: r.id, phrase: r.phrase ?? r.code, anchor: r.anchors[0] ?? null }));
   }, [reading, wording, open]);
 
+  const questions = given ?? openQuestions({ open, project, rules: null });
   return (
     <div data-workspace-print="" aria-hidden={true} className="hidden print:block">
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-cc-line pb-2">
@@ -299,31 +309,45 @@ export default function WorkspacePrintSheet({
             })}
           </div>
         )}
+        {/* Roadmap 3.0.6, "level chips explain themselves everywhere": paper has
+            no hover and no tap, so the sheet prints the explanation the chip
+            gives on screen (`cleanCoreLevelExplanation`, the words of
+            components/cc/LevelExplained.tsx) once per level, and its caveat once. */}
         <dl data-print-legend="" className="mt-2 mb-0 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-[12px]">
           {[...CLEAN_CORE_LEVEL_VALUES, 'Unknown' as const].map((value) => (
             <React.Fragment key={value}>
               <dt className="font-cc-mono font-semibold">{CLEAN_CORE_LEVEL[value].code}</dt>
-              <dd className="m-0">{CLEAN_CORE_LEVEL[value].label}</dd>
+              <dd className="m-0" data-print-level-explained={value}>
+                <span className="font-semibold">{CLEAN_CORE_LEVEL[value].label}</span> — {cleanCoreLevelExplanation(value).meaning}
+              </dd>
             </React.Fragment>
           ))}
         </dl>
+        <p data-print-level-caveat="" className="mt-1 mb-0 text-[11px]">
+          {cleanCoreLevelExplanation('A').caveat} {cleanCoreLevelExplanation('A').source}
+        </p>
       </section>
 
+      {/* The open questions (ADR-081): their one line, and on paper one row
+          per group — what settles it, who, and where it stands. */}
       <section className="mt-4">
         <p className="m-0 flex items-center gap-2 text-[15px] font-bold">
-          {open.noSource ? wt('print.notDeterminedNoSource') : printNotDeterminedTitle(open.count)}
+          {wt('oq.title')}
           <CcProvenanceChip value="not-determined" />
         </p>
-        {open.items.length > 0 ? (
+        <p data-print-open-line="" className="m-0 mt-1 text-[13px] leading-snug">
+          {open.noSource ? wt('print.notDeterminedNoSource') : openQuestionsLine(questions)}
+        </p>
+        {questions.groups.length > 0 ? (
           <ul className="mt-2 mb-0 list-disc space-y-1 pl-6 text-[13px] leading-snug">
-            {open.items.map((item, i) => (
-              <li key={`${item.anchor}-${i}`} data-print-open="">
-                <span className="font-semibold">{item.label}</span>{' '}
-                <span className="font-cc-mono text-[11px]">[{item.anchor}]</span> — {item.why}
+            {questions.groups.map((group) => (
+              <li key={group.action} data-print-open={group.end}>
+                {printOpenQuestion(group.title, group.owner, group.count, group.end)}
               </li>
             ))}
           </ul>
         ) : null}
+        {questions.limits ? <p className="m-0 mt-1 text-[11px]">{questions.limits}</p> : null}
       </section>
 
       <p className="mt-6 mb-0 border-t border-cc-line pt-2 text-[11px]">{wt('print.footer')}</p>

@@ -23,7 +23,6 @@ export const DEMO_WORKSPACE_MESSAGES = {
 
   // DemoWorkspaceShell — Business
   'demo.processMap': 'Process map',
-  'demo.notDeterminedPoints': 'What the engine could not determine',
   'demo.needLayerMap': 'process map',
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',

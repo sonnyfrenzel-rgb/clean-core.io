@@ -71,7 +71,10 @@ export default function MissingDependencyPrompt({ missing, onUploadFile }: Missi
     <div className="space-y-3">
       <CcMessageStrip state="warning" headline="Missing Dependencies Detected">
         The code references {missing.length} class{missing.length > 1 ? 'es' : ''} or interface{missing.length > 1 ? 's' : ''} that
-        {missing.length > 1 ? ' were' : ' was'} not provided. Upload them to improve analysis accuracy.
+        {missing.length > 1 ? ' were' : ' was'} not provided.
+        {/* Only where this page can take them (ADR-081): a sentence that names
+            an input the product does not have here is a promise it cannot keep. */}
+        {onUploadFile ? ' Upload them to improve analysis accuracy.' : ' What they do is not determined.'}
       </CcMessageStrip>
 
       <ul className="space-y-2">

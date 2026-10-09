@@ -59,7 +59,6 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.manageAccess': 'Manage',
 
   // The Business order — components/workspace/WorkspaceShell.tsx.
-  'biz.notDeterminedRow': 'Not determined',
   'biz.moreAboutProcess': 'More about this process',
 
   // The business-first opening — components/workspace/BusinessOpening.tsx (owner, 03.10.2026).
@@ -176,14 +175,6 @@ export function bizMoreItems(n: number): string {
   return `and ${n} more`;
 }
 
-/** The one calm line about what the code alone cannot settle. */
-export function bizOpenLine(count: number, example: string | null): string {
-  if (count === 0) return 'Every place in this code fell inside what the engine can judge — a boundary of the question, not a clean bill.';
-  const places = `${count} ${count === 1 ? 'place' : 'places'} the code alone cannot settle`;
-  return example
-    ? `${places}, for example ${example}. Each is listed with its reason under Not determined.`
-    : `${places}. Each is listed with its reason under Not determined.`;
-}
 
 /** "3 of 14 steps answered". */
 export function bizWalkAnswered(answered: number, total: number): string {

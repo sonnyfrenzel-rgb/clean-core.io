@@ -526,7 +526,7 @@ function confirmedAnswer(steps: readonly RailStep[]): ManagementAnswer {
   };
 }
 
-function missingAnswer(steps: readonly RailStep[], open: NotDetermined | null): ManagementAnswer {
+function missingAnswer(steps: readonly RailStep[]): ManagementAnswer {
   const openPhases = steps.filter((s) => !s.done);
   const items: AnswerItem[] = openPhases.map((s) => ({
     key: `open-${s.key}`,
@@ -535,6 +535,9 @@ function missingAnswer(steps: readonly RailStep[], open: NotDetermined | null): 
     provenance: s.state === 'stale' ? ('stale' as ProvenanceValue) : ('not-determined' as ProvenanceValue),
   }));
 
+  // One figure. "Constructs the engine stepped over" went with ADR-081: the
+  // project's open questions are one list, and Management reads their one line
+  // in its Evidence fold rather than a second count of a different thing here.
   const figures: ManagementFigure[] = [
     {
       key: 'open-phases',
@@ -542,23 +545,6 @@ function missingAnswer(steps: readonly RailStep[], open: NotDetermined | null): 
       value: `${openPhases.length} of ${steps.length}`,
       provenance: 'reconstructed',
       coverage: coverage(openPhases.length, steps.length, PHASE_BASIS),
-    },
-    {
-      key: 'not-determined',
-      label: 'constructs the engine stepped over',
-      value: open === null || open.noSource ? null : String(open.count),
-      ...(open === null
-        ? { absentReason: 'the source was not assessed here' }
-        : open.noSource
-          ? { absentReason: 'no source has been staged, so nothing was assessed' }
-          : {}),
-      // Its own visible area in every diagram (roadmap 3.0.10), and never
-      // folded into a remainder: this figure is the reason to trust the rest.
-      provenance: 'not-determined',
-      coverage:
-        open === null || open.noSource
-          ? coverage(null, null, 'constructs in the staged source')
-          : coverage(open.count, null, 'constructs the detectors stepped over'),
     },
   ];
 
@@ -790,20 +776,21 @@ export interface ManagementView {
  *
  * `history` is the runs of **this** project, already read: `null` means they
  * could not be read, which is a different statement from an empty list and is
- * reported as one. `open` is `notDetermined(project)` from
- * `lib/workspace-model.ts`, passed in rather than imported so that this module
- * stays free of the evidence engine and a spec can drive it without one.
+ * reported as one. `open` (`notDetermined(project)`) is still accepted from
+ * its callers and no longer read: the "constructs stepped over" figure it fed
+ * went with ADR-081, and the open questions are one list of their own.
  */
 export function managementAnswers(
   project: Project | null,
   history: readonly RunHistoryEntry[] | null,
   open: NotDetermined | null = null,
 ): ManagementView {
+  void open;
   const steps = workflowSteps(project);
   const trend = scoreTrend(project, history);
   const answers = [
     confirmedAnswer(steps),
-    missingAnswer(steps, open),
+    missingAnswer(steps),
     decisionAnswer(project, steps),
     scoreAnswer(project, trend),
   ];

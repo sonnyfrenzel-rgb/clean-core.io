@@ -768,9 +768,12 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(tools.first()).toHaveAttribute('href', `/project/${FULL_ID}/analyze?view=it&from=workspace-tools`);
     await expect(page.locator('#workspace-tools [data-workspace-tools="open"]')).toHaveCount(1);
 
-    // The open point the engine stepped over, with its reason and its line.
-    await expect(page.locator('[data-not-determined-state="some"]')).toBeVisible();
-    await expect(page.locator('[data-not-determined-item]').first()).toContainText('L2');
+    // The open point the engine stepped over, with its reason and its line —
+    // in its open-question group, one click deeper (ADR-081).
+    const group = page.locator('[data-open-question-group]:has([data-cc-disclosure-trigger])').first();
+    await expect(group).toBeVisible();
+    await group.locator('[data-cc-disclosure-trigger]').first().click();
+    await expect(group.locator('[data-not-determined-item]').first()).toContainText('L2');
   });
 
   test('the view switcher and "About this view" — roadmap 6.1; no IT focus (ADR-058)', async ({ page }) => {

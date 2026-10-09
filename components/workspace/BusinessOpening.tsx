@@ -1,5 +1,7 @@
 'use client';
 
+import OpenQuestionsLine from './OpenQuestionsLine';
+import type { OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React from 'react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
@@ -8,7 +10,6 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import type { ProcessStory, StoryChange } from '@/lib/process-story';
 import {
   bizMoreItems,
-  bizOpenLine,
   bizStoryChecks,
   bizStoryStops,
   bizStoryWithin,
@@ -32,7 +33,7 @@ export interface OpeningRule {
  * Top to bottom: the program's name, the process as five to eight numbered
  * steps in plain words (`lib/process-story.ts`), what it decides (the rules
  * the code hard-codes, in the plain wording of `lib/business-card.ts`), what
- * it changes, and one calm line about what the code alone cannot settle. No
+ * it changes, and one calm line about the open questions (ADR-081). No
  * ABAP on this level: every step and every rule carries its line as a small
  * chip, and the code, the table list, the figures and the receipt of how this
  * was read are one fold down ("How this was read") — for the IT reader, never
@@ -52,7 +53,7 @@ export default function BusinessOpening({
   changes,
   changesMore,
   changesNone,
-  open,
+  questions,
   onDecideRules,
   details,
 }: {
@@ -69,7 +70,8 @@ export default function BusinessOpening({
   changesMore: number;
   /** Said under "What it changes" when the code shows no change — what the program does work on. */
   changesNone: string;
-  open: { count: number; noSource: boolean; example: string | null };
+  /** The project's open questions (ADR-081) — said here in their one line; `null` while not known. */
+  questions: OpenQuestionsModel | null;
   /** Where "Decide on rules" leads; absent where the page offers no rule action (a reader, the demo). */
   onDecideRules?: () => void;
   /** "How this was read": the code, the tables, the figures and the stages. */
@@ -207,12 +209,12 @@ export default function BusinessOpening({
         </section>
       </div>
 
-      {open.noSource ? null : (
-        <p data-story-open={open.count} className="m-0 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
+      {questions && !questions.noSource ? (
+        <div data-story-open={questions.open} className="flex flex-wrap items-center gap-2">
           <CcProvenanceChip value="not-determined" />
-          <span className="min-w-0">{bizOpenLine(open.count, open.example)}</span>
-        </p>
-      )}
+          <OpenQuestionsLine questions={questions} className="min-w-0 text-cc-ink-muted" />
+        </div>
+      ) : null}
 
       <div className="border-t border-cc-line pt-2">
         <CcDisclosure title={wt('biz.howRead')} level={3}>

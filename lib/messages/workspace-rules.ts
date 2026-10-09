@@ -105,9 +105,6 @@ export const WORKSPACE_RULES_MESSAGES = {
   'fit.usersTitle': 'What changes for users',
   'fit.futureNotDetermined': 'Where it moves to: not determined.',
   'fit.scenariosTitle': 'Counter-check scenarios',
-  'fit.tasksTitle': 'Check tasks',
-  'fit.tasksLead': 'Open points become tasks, not verdicts.',
-  'fit.tasksNone': 'Nothing is open — every construct fell inside what the detectors judge.',
   'fit.complianceTitle': 'Compliance hints',
   'fit.complianceNote': 'from tables read',
   'fit.complianceNone':
@@ -344,10 +341,6 @@ export function fitScenariosSummary(total: number, runnable: number, blocked: nu
   return `${runnable} of ${total} can be prepared as written · ${blocked} need a field named first · none has been run.`;
 }
 
-/** "Local function-module call (6)". */
-export function fitTasksCount(label: string, n: number): string {
-  return n > 1 ? `${label} (${n})` : label;
-}
 
 /* --------------------------------------------------------------- first look */
 

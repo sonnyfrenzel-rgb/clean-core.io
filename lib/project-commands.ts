@@ -35,6 +35,7 @@
  * server makes the record true — it does not make it an authority.
  */
 
+import { checkOpenAnswerBody, readStoredAnswers, type OpenQuestionAction, type StoredOpenAnswer } from '@/lib/open-questions';
 import {
   EVIDENCE_DIGEST_MAX_CHARS,
   describeEvidenceDiff,
@@ -70,7 +71,7 @@ export const RELEASE_FIELDS = [
  * write it. None of these may appear in the `affectedKeys().hasOnly([…])`
  * allowlist of `firestore.rules`.
  */
-export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport', 'decision'] as const;
+export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport', 'decision', 'openQuestions'] as const;
 
 export type ServerOnlyProjectField = (typeof SERVER_ONLY_PROJECT_FIELDS)[number];
 
@@ -336,6 +337,7 @@ export const PROJECT_COMMANDS = [
   'record-decision-draft',
   'confirm-decision',
   'withdraw-decision',
+  'record-open-question',
 ] as const;
 export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
@@ -363,7 +365,19 @@ export type ProjectCommandBody =
       expectedRunId: string;
       expectedEvidenceDigest: string;
     }
-  | { command: 'withdraw-decision' };
+  | { command: 'withdraw-decision' }
+  /**
+   * ADR-081 — the owner's answer to one group of open questions: answered (a
+   * self-declaration), accepted as known open with a reason, or reopened.
+   * `basis` names the questions it answers (`basisOf`).
+   */
+  | {
+      command: 'record-open-question';
+      action: OpenQuestionAction;
+      end: 'answered' | 'accepted' | 'reopen';
+      text?: string;
+      basis?: string;
+    };
 
 /** The part of the project document a command is allowed to look at. */
 export interface ProjectCommandState {
@@ -426,6 +440,11 @@ export interface ProjectCommandState {
    * then, and only then, the stored value decides, and the answer says so.
    */
   contractRecommendation?: TargetArchitectureCode | null;
+  /**
+   * ADR-081 — the stored answers to the open questions, as they sit on the
+   * project, so one answer is written without dropping the others.
+   */
+  openQuestions?: unknown;
 }
 
 /**
@@ -870,6 +889,29 @@ export function validateProjectCommand(
     };
   }
 
+  /* ------------------------------------------------------------ ADR-081 */
+
+  if (command === 'record-open-question') {
+    // An answer is the owner's self-declaration about the project, never
+    // evidence: it enters no run and no signed file, and it changes no bucket,
+    // level, score or route. Account and time are the server's.
+    const checked = checkOpenAnswerBody(body);
+    if (!checked.ok) return refuse(400, 'malformed-open-question', checked.error);
+    const stored: Record<string, StoredOpenAnswer> = { ...readStoredAnswers(state.openQuestions) };
+    if (checked.end === 'reopen') {
+      delete stored[checked.action];
+    } else {
+      stored[checked.action] = {
+        state: checked.end,
+        text: checked.text,
+        account: actor.email,
+        at: actor.now,
+        basis: checked.basis,
+      };
+    }
+    return { ok: true, action: 'PROJECT_OPEN_QUESTION_RECORDED', fields: { openQuestions: stored } };
+  }
+
   // The only command left: `withdraw-decision`. An `if` rather than a bare
   // fallthrough — a command added here later must say which one it is rather
   // than silently inheriting whatever sits last in the function.
@@ -930,6 +972,8 @@ export function fieldsWrittenByCommands(): string[] {
     // the day the model gains a binding, and this function would then report a
     // field set for a command that no longer validates.
     { command: 'record-decision-draft', decision: emptyProjectDecision() },
+    // ADR-081.
+    { command: 'record-open-question', action: 'add-usage', end: 'accepted', text: 'x', basis: 'add-usage-1-x' },
   ];
   const written = new Set<string>();
   for (const body of bodies) {

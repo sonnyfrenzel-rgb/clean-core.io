@@ -594,4 +594,27 @@ test.describe('7.10 — the routes', () => {
     expect(onPremBody.code).toBe('profile-rejected');
     expect(onPremBody.grades).toBeUndefined();
   });
+
+  test('function modules: SAP’s state and sentence or null — never a level (roadmap 3.0.6, ADR-081)', async ({ request }) => {
+    const post = (data: Record<string, unknown>) => request.post('/api/abcd-classify', { headers: auth(), data });
+    const res = await post({ functionModules: ['Z_OWN_MODULE', 'z_own_module', 'BAPI_PO_GETDETAIL'] });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.snapshot).toEqual(getCatalogSnapshotRef());
+    // Upper-cased, once per name; a customer module is never answered.
+    expect(Object.keys(body.functionModules).sort()).toEqual(['BAPI_PO_GETDETAIL', 'Z_OWN_MODULE']);
+    expect(body.functionModules.Z_OWN_MODULE).toBeNull();
+    for (const answer of Object.values(body.functionModules) as Array<Record<string, unknown> | null>) {
+      if (!answer) continue;
+      expect(typeof answer.state).toBe('string');
+      expect(answer.answer).toContain('not a check of what this call does at runtime');
+      expect(answer).not.toHaveProperty('grade');
+    }
+    // Without the field the answer is what it always was.
+    expect((await (await post({ objects: ['KNA1'] })).json()).functionModules).toBeUndefined();
+    // Bounded, and typed.
+    expect((await post({ functionModules: Array.from({ length: 501 }, (_, i) => `Z_${i}`) })).status()).toBe(400);
+    expect((await post({ functionModules: 'BAPI_PO_GETDETAIL' })).status()).toBe(400);
+    expect((await request.post('/api/abcd-classify', { data: { functionModules: ['X'] } })).status()).toBe(401);
+  });
 });

@@ -213,7 +213,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'stdFit.noLine': 'no line',
   'stdFit.allObjects': 'Every object, with its evidence',
   'stdFit.demoBasis': 'Demo — from the engine reading of the demo source; a demo is never signed.',
-  'stdFit.setTarget': 'Choose the target platform in Analyze',
+  'stdFit.setTarget': 'Choose the target platform',
 
   // The folds under the Management answer — collapsed until opened, and
   // remembered in this browser only (owner 03.10.2026: progressive disclosure).

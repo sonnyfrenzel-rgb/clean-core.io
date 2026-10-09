@@ -9,7 +9,9 @@ import { initializeFirestore, connectFirestoreEmulator } from 'firebase/firestor
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { isProvenanceValue } from '../lib/provenance';
-import { LAYERS, layerFromHash, workspaceLayers } from '../lib/workspace-model';
+import fs from 'node:fs';
+import path from 'node:path';
+import { LAYERS, layerFromHash, usageRecordRows, workspaceLayers } from '../lib/workspace-model';
 import type { Project } from '../lib/types';
 import type { UsageRecord, UsageReport } from '../lib/abap/usage-model';
 import { signInViaLanding } from './helpers/sign-in';
@@ -197,6 +199,49 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     expect(many.total).toBe(7);
     expect(many.count).toBe('7 objects');
   });
+
+  test('the five-row cut no longer hides the usage records behind the rules (ADR-080)', () => {
+    const rules = Array.from({ length: 6 }, (_, i) => ({
+      id: `BR-00${i + 1}`,
+      label: `Rule ${i + 1}`,
+      sentences: [{ anchors: [{ lineStart: 10 + i, lineEnd: 10 + i }] }],
+      parameters: [],
+      sources: [],
+    }));
+    const project: Project = {
+      name: 'x',
+      usageReport: usageOf([
+        { objectName: 'Z_A', callCount: 12, source: 'scmon' },
+        { objectName: 'Z_B', callCount: 0, source: 'scmon' },
+        { objectName: 'Z_C', callCount: null, source: 'scmon' },
+      ]),
+    };
+    const need = workspaceLayers(project, { ruleSet: { rules } } as unknown as Parameters<typeof workspaceLayers>[1]).find(
+      (l) => l.key === 'need',
+    )!;
+    // The layer's own rows are still the first five — all rules here …
+    expect(need.rows.every((r) => r.key.startsWith('rule-'))).toBe(true);
+    expect(need.count).toContain('3 objects with usage');
+    // … and the usage records are read in full, for the card beside the map
+    // in Business and inside the section in IT and Management.
+    const usage = usageRecordRows(project);
+    expect(usage.map((r) => r.label)).toEqual(['Z_A', 'Z_B', 'Z_C']);
+    expect(usage[0].value).toBe('12 calls in the measured window');
+    expect(usage[2].value).toBe('no call count in the export');
+    expect(usageRecordRows({ name: 'none' })).toEqual([]);
+  });
+
+  test('the usage records stand beside the map in Business and in the section elsewhere (ADR-080)', () => {
+    const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+    const shell = read('components/workspace/WorkspaceShell.tsx');
+    const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('    layerSection: null'));
+    expect(block).toContain('<UsageRecords project={project}');
+    const section = read('components/workspace/LayerSection.tsx');
+    expect(section).toContain('<UsageRecords project={project}');
+    // The section never prints the usage rows of the cut list itself.
+    expect(section).toContain("!row.key.startsWith('usage-')");
+    expect(section).not.toContain('aboveInView');
+  });
 });
 
 test.describe('the layer in the URL fragment (ADR-018)', () => {
@@ -295,7 +340,8 @@ test.describe('the layers on the screen', () => {
   test('an empty layer is a place: it names itself and says why it is empty', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${BARE_ID}`, { waitUntil: 'domcontentloaded' });
+    // IT: Need & process is not a section of Business since ADR-080.
+    await page.goto(`/project/${BARE_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
 
     // Nothing has been analysed, so every layer is empty — and the first of

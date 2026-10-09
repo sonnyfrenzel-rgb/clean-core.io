@@ -92,11 +92,14 @@ test.describe('what the code uses, derived on the server', () => {
     const built = findingsOf(SALES_ORDER, 'Z_SALES_ORDER_CREATOR.abap', 'private', 'pce-latest');
     const gaps = (built.coverage?.gaps ?? []).reduce((sum, g) => sum + g.count, 0);
     const open = notDetermined({ legacyCode: SALES_ORDER } as Project);
-    expect(open.count).toBe(gaps);
-    expect(open.count).toBeGreaterThan(0);
+    // The browser reads without SAP's catalog; the server says how many local
+    // calls the catalog answered (3.0.6), and the page subtracts them.
+    const shown = open.count - (built.coverage?.answered ?? 0);
+    expect(shown).toBe(gaps);
+    expect(shown).toBeGreaterThan(0);
     // The reason under a clean headline names that count rather than hiding it.
-    const opening = itOpening('clean', built, open.count);
-    expect(opening.reason).toContain(`${open.count} constructs`);
+    const opening = itOpening('clean', built, shown);
+    expect(opening.reason).toContain(`${shown} constructs`);
   });
 
   test('one state per situation, and "no findings" never stands alone beside SAP calls', () => {
@@ -193,12 +196,15 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     ).toHaveAttribute('data-cc-value', 'B');
     await expect(page.locator('[data-it-figure="uses"] [data-figure-value]')).toHaveText('3');
 
-    // (2) Not determined is one number: the figure, the list, and the first look.
-    const expected = notDetermined({ legacyCode: SALES_ORDER } as Project).count;
-    await expect(page.locator('[data-it-figure="not-determined"] [data-figure-value]')).toHaveText(String(expected));
-    await expect(page.locator('#not-determined [data-not-determined-item]')).toHaveCount(expected);
-    const firstLook = page.locator('[data-first-look-figure="not-determined"]');
-    if ((await firstLook.count()) > 0) await expect(firstLook.first()).toContainText(String(expected));
+    // (2) The open questions are one number (ADR-081): the figure says what the
+    // list counts, and the list keeps every line the engine stepped over that
+    // anyone can answer, one click deeper in its group.
+    const engine = notDetermined({ legacyCode: SALES_ORDER } as Project).count;
+    const list = page.locator('#not-determined [data-open-questions]');
+    await expect(list).toBeVisible({ timeout: 30000 });
+    const open = await list.getAttribute('data-open-questions');
+    await expect(page.locator('[data-it-figure="not-determined"] [data-figure-value]')).toHaveText(String(open));
+    expect(await page.locator('#not-determined [data-not-determined-item]').count()).toBeLessThanOrEqual(engine);
 
     // (3) Evidence with content draws no dashed empty box in the IT view.
     await expect(view.locator('[data-cc-empty-state]')).toHaveCount(0);
@@ -220,7 +226,7 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     expect(markBox!.y).toBeGreaterThanOrEqual(answerBox!.y);
     // Every section says what it is in its first sentence, visible without a click.
     await expect(page.locator('[data-it-lead="uses"]')).toBeVisible();
-    await expect(page.locator('#not-determined [data-not-determined-lead]')).toBeVisible();
+    await expect(page.locator('#not-determined [data-open-questions-line]')).toBeVisible();
   });
 
   test('(5) on a phone nothing scrolls sideways', async ({ page }) => {

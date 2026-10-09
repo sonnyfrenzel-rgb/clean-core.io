@@ -102,6 +102,8 @@ import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import ObjectSection from '@/components/analyze/ObjectSection';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
+import OpenQuestionsLine from '@/components/workspace/OpenQuestionsLine';
+import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
@@ -886,14 +888,22 @@ export default function AnalyzePage() {
   // a88149856dcc).
   const [routeSwitch, setRouteSwitch] = useState<{ busy: boolean; error: string }>({ busy: false, error: '' });
   // Which optional import is open in its dialog — usage data or ATC results.
-  const [importDialog, setImportDialog] = useState<'usage' | 'atc' | null>(null);
-  // The one list of what is not determined is the side card; "Show the list"
-  // on the facet brings it into view.
-  const showNotDetermined = () => {
-    window.requestAnimationFrame(() =>
-      document.getElementById('analysis-not-determined')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
-  };
+  // `?add=usage` / `?add=atc` opens it at once: the workspace's open questions
+  // link here as their one button for "add usage data" / "add ATC results"
+  // (ADR-081).
+  // The project's open questions (ADR-081), in their one line beside what
+  // this analysis could not settle; the list stands in the workspace.
+  const openQuestionsOfProject = useOpenQuestions(project, typeof projectId === 'string' ? projectId : '');
+  const questionsLine = (
+    <OpenQuestionsLine
+      questions={openQuestionsOfProject}
+      href={typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}?view=it#not-determined` : null}
+    />
+  );
+  const [importDialog, setImportDialog] = useState<'usage' | 'atc' | null>(() => {
+    const asked = searchParams.get('add');
+    return asked === 'usage' || asked === 'atc' ? asked : null;
+  });
   const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(evidenceFindings)), [evidenceFindings]);
   const sourceLines = countSourceLines(legacyCode ?? '');
 
@@ -904,11 +914,6 @@ export default function AnalyzePage() {
     return {
       severities: SEVERITY_ORDER.map((key) => ({ key, count: evidenceRows.filter((r) => r.finding.severity === key).length })),
       levels: levelFacet,
-      notAssessed: {
-        kinds: notAssessedItems.length,
-        constructs: notAssessedItems.reduce((n, g) => n + g.count, 0),
-        items: notAssessedItems,
-      },
       meta: {
         fileName: sourceFileName(project),
         lines: sourceLines || null,
@@ -1119,9 +1124,7 @@ export default function AnalyzePage() {
             counts={findingCounts}
             score={signedCleanCoreScore}
             routeChosenByReader={false}
-            notDetermined={openItems.length}
             onExplainScore={() => setShowScoreModal(true)}
-            onShowNotDetermined={showNotDetermined}
             {...answerFacts(evidenceRoute)}
           />
 
@@ -1152,7 +1155,7 @@ export default function AnalyzePage() {
                 </div>
               </ObjectSection>
             }
-            sideBottom={<NotDeterminedSide items={openItems} />}
+            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
           />
 
           {/* Where the model's summary would stand: folded, saying it is not there. */}
@@ -1236,9 +1239,7 @@ export default function AnalyzePage() {
             counts={findingCounts}
             score={signedCleanCoreScore}
             routeChosenByReader={routeIsOverridden}
-            notDetermined={openItems.length}
             onExplainScore={() => setShowScoreModal(true)}
-            onShowNotDetermined={showNotDetermined}
             {...answerFacts(shownRoute)}
           />
 
@@ -1251,7 +1252,7 @@ export default function AnalyzePage() {
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideBottom={<NotDeterminedSide items={openItems} />}
+            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
             sideTop={
               /* The route, as the rules recommended it or as the reader chose it. */
               <ObjectSection

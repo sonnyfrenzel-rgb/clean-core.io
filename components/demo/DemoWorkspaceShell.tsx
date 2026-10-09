@@ -13,7 +13,8 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import FirstLook from '@/components/workspace/FirstLook';
-import NotDeterminedCard from '@/components/workspace/NotDeterminedCard';
+import OpenQuestions from '@/components/workspace/OpenQuestions';
+import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
 import { BUSINESS_LAYERS } from '@/lib/business-layers';
 import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
@@ -251,6 +252,8 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   // rail says what it does have on each stage (`lib/demo-project.ts`).
   const statuses = useMemo(() => workspaceStatusLine(project, demo.rail), [project, demo.rail]);
   const open = useMemo(() => notDetermined(project), [project]);
+  // The demo's open questions (ADR-081): read-only, nothing to write to.
+  const questions = useOpenQuestions(project, '', { open, rulesEnabled: false });
   const management = useMemo(() => managementAnswers(project, [], open), [project, open]);
 
   /* ------------------------------------------- the decision panel (Management) */
@@ -457,8 +460,15 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   );
   // Business shows the sections that answer its question, as the workspace
   // does (owner, 03.10.2026, `lib/business-layers.ts`).
+  // Need & process is not one of them since ADR-080: in Business the map below
+  // is the process, and the bar opens on the first of its sections with
+  // content, or on the first.
   const viewLayers = view === 'business' ? layers.filter((l) => BUSINESS_LAYERS.includes(l.key)) : layers;
-  const shownLayer: LayerKey = viewLayers.some((l) => l.key === currentLayer) ? currentLayer : 'need';
+  const shownLayer: LayerKey = viewLayers.some((l) => l.key === currentLayer)
+    ? currentLayer
+    : view === 'business'
+      ? (viewLayers.find((l) => l.count !== null)?.key ?? viewLayers[0]?.key ?? 'standard')
+      : 'need';
   const layerBar = (
     <div className="mt-5">
       <WorkspaceLayerBar layers={viewLayers} current={shownLayer} onSelect={selectLayer} />
@@ -624,6 +634,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               namingFrom="none"
               rulesBelow
               rulesOverride={demoRulesStatus}
+              questions={questions}
               onReviewRules={openDemoRules}
             />
           </Place>
@@ -631,8 +642,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           {layerBar}
           {layerSection}
 
-          {/* Under Need & process the map is the layer's content, and says so. */}
-          <div data-workspace-layer-section={currentLayer === 'need' ? 'need' : undefined}>
+          {/* The map is the process of the Business view itself, not a
+              section of its bar (ADR-080). */}
+          <div data-demo-business-map="">
             <Place place="process-map" className="mt-5">
               <div className="max-w-3xl">{stop('process-map')}</div>
               {mapCard}
@@ -664,8 +676,8 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               complete one click deeper. */}
           <Place place="not-determined">
             {stop('not-determined')}
-            <CcDisclosure title={wt('demo.notDeterminedPoints')} count={open.count} level={3}>
-              <NotDeterminedCard data={open} />
+            <CcDisclosure title={wt('oq.title')} count={questions.open} level={3}>
+              <OpenQuestions questions={questions} projectId="demo" view={view} owner={false} hasRun={false} demo />
             </CcDisclosure>
           </Place>
 

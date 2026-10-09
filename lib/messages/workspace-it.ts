@@ -12,7 +12,7 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.factUses': 'Uses in the code',
   'itv.factFindings': 'Places with a finding',
   'itv.factLevels': 'Levels of what it uses',
-  'itv.factNotDetermined': 'Not determined',
+  'itv.factOpenQuestions': 'Open questions',
   'itv.factNotRecorded': 'Not recorded',
   'itv.factShow': 'Show',
   'itv.levelsNone': 'No object to grade',
@@ -51,9 +51,6 @@ export const WORKSPACE_IT_MESSAGES = {
     'Each place where a detector raised a finding, with its line, both SAP catalog views, its level and its target. Choose a row to follow its chain from requirement to target.',
   'itv.chainHeading': 'Chain',
 
-  'itv.ndTitle': 'Not determined',
-  'itv.ndLead':
-    'What the engine saw but does not judge, with the reason and the line. A limit of the engine, not a defect in the code.',
 
   'itv.importsTitle': 'Imports',
   'itv.importsNoneSummary': 'No ATC results and no usage data imported — both are optional and come from Analyze.',

@@ -162,7 +162,7 @@ export function itOpening(
   const uses = usesSummary(source?.uses);
   const open =
     notDetermined > 0
-      ? ` ${notDetermined} ${notDetermined === 1 ? 'construct is' : 'constructs are'} outside what the detectors judge — listed under Not determined, each with its line.`
+      ? ` ${notDetermined} ${notDetermined === 1 ? 'construct is' : 'constructs are'} outside what the detectors judge — each an open question under Open questions, with its line.`
       : '';
   const lines = source?.coverage?.lines;
   const read = typeof lines === 'number' ? `in the ${lines} ${lines === 1 ? 'line' : 'lines'} the engine read` : 'in the staged source';

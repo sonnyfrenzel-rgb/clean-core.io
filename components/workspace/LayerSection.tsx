@@ -13,6 +13,8 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import type { Project } from '@/lib/types';
 import BusinessRulesEditor from './BusinessRulesEditor';
 import StandardFitTable from './StandardFitTable';
+import UsageRecords from './UsageRecords';
+import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { wt, layerSectionShowing } from '@/lib/workspace-messages';
 
 /**
@@ -45,7 +47,6 @@ export default function WorkspaceLayerSection({
   reading = null,
   process = null,
   onOpenMap,
-  aboveInView = false,
 }: {
   layer: WorkspaceLayer;
   /**
@@ -54,15 +55,13 @@ export default function WorkspaceLayerSection({
    * on the page (owner, 03.10.2026).
    */
   process?: ProcessSummary | null;
-  /** Scrolls to the map where this view has one (Business); elsewhere the link opens Business. */
-  onOpenMap?: () => void;
   /**
-   * Business (owner, 03.10.2026): the map, its counts and the business rules
-   * already stand above this section, each once. *Need & process* then does
-   * not summarise the process or list the rules a second time — it says where
-   * they are and keeps only what is its own (the usage records).
+   * Scrolls to the map where this view has one; elsewhere the link opens
+   * Business. Since ADR-080 *Need & process* is not a section of the Business
+   * view — the map and the rules card stand there themselves — so in the
+   * workspace this is the link to Business.
    */
-  aboveInView?: boolean;
+  onOpenMap?: () => void;
   /**
    * The project, its id and the first look's reading of its source. With them,
    * *Need & process* shows the business rules and their one editing mode
@@ -74,20 +73,17 @@ export default function WorkspaceLayerSection({
   reading?: SourceReading | null;
 }) {
   const empty = layer.rows.length === 0;
-  const needAbove = aboveInView && layer.key === 'need';
-  const withRules =
-    !needAbove && layer.key === 'need' && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
+  const need = layer.key === 'need';
+  const withRules = need && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
   const withFit = layer.key === 'standard' && !empty && projectId !== '';
-  // The rules are shown by the editor; the rows that are left are the usage
-  // records, which keep the plain row list below it.
   // The process row is the map's summary, rendered on its own below; the
-  // rules are shown by the editor; the rows that are left are the usage
-  // records, which keep the plain row list.
-  const processRow =
-    layer.key === 'need' && !needAbove ? (layer.rows.find((row) => row.key === 'process') ?? null) : null;
-  const rows = layer.rows.filter(
-    (row) => row.key !== 'process' && !((withRules || needAbove) && row.key.startsWith('rule-')),
-  );
+  // rules are shown by the editor; the usage records by their own card, in
+  // full (ADR-080) — the layer's rows are cut at five, and the usage records
+  // came after every rule, so the cut hid them.
+  const processRow = need ? (layer.rows.find((row) => row.key === 'process') ?? null) : null;
+  const rows = need
+    ? layer.rows.filter((row) => row.key !== 'process' && !row.key.startsWith('usage-') && !(withRules && row.key.startsWith('rule-')))
+    : layer.rows;
   // A long section ends with the way back to its top, where the sticky bar
   // says which section this is (owner, 03.10.2026). "Long" is measured, not
   // counted: the count used to be `layer.total`, which in Business includes the
@@ -120,23 +116,6 @@ export default function WorkspaceLayerSection({
         <CcProvenanceChip value={layer.provenance} />
       </div>
 
-      {needAbove && !empty ? (
-        <div
-          data-workspace-layer-above=""
-          className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
-        >
-          <p className="m-0 min-w-0 flex-1 basis-64 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            {wt('layerSection.needAbove')}
-          </p>
-          {onOpenMap ? (
-            <span className="cc-no-print">
-              <CcButton onClick={onOpenMap} data-workspace-layer-open-map="">
-                {wt('layerSection.showMap')}
-              </CcButton>
-            </span>
-          ) : null}
-        </div>
-      ) : null}
       {processRow ? (
         <div
           className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
@@ -157,7 +136,7 @@ export default function WorkspaceLayerSection({
                 {wt('layerSection.showMap')}
               </CcButton>
             ) : projectId ? (
-              <CcLinkButton href={`/project/${encodeURIComponent(projectId)}?view=business`} data-workspace-layer-open-map="">
+              <CcLinkButton href={`/project/${encodeURIComponent(projectId)}?view=business#${BUSINESS_MAP_ID}`} data-workspace-layer-open-map="">
                 {wt('layerSection.showMapBusiness')}
               </CcLinkButton>
             ) : null}
@@ -169,6 +148,7 @@ export default function WorkspaceLayerSection({
           <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />
         </div>
       ) : null}
+      {need && !empty ? <UsageRecords project={project} className="mt-2" /> : null}
       {withFit ? (
         <div className="mt-2" data-workspace-layer-fit="">
           <StandardFitTable project={project} projectId={projectId} />
@@ -207,7 +187,7 @@ export default function WorkspaceLayerSection({
               </li>
             ))}
           </ul>
-          {!withRules && !needAbove && layer.total > layer.rows.length && (
+          {!need && layer.total > layer.rows.length && (
             // §2.11: the first five, and the count of what is behind them. A
             // statement of fact, not a button, until there is a place to open.
             <p

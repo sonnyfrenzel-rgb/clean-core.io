@@ -4,8 +4,10 @@ import {
   assertSnapshot,
   CatalogSnapshotNotShipped,
   getCatalogSnapshotRef,
+  functionModuleCatalogAnswer,
   getLevelRuleVersion,
   gradeSapObjectUse,
+  type FunctionModuleCatalogAnswer,
   hasNoReleasedApiPath,
 } from '@/lib/abap/catalog-service';
 import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
@@ -58,6 +60,15 @@ import { catalogSnapshotKeyFor } from '@/lib/abap/catalog-snapshots';
  *     list, a named release with only a moving snapshot), or — for an edition
  *     nothing can be looked up for — a 422 with the sentence and no grades at
  *     all. A refused profile never comes back as grades with a footnote.
+ *
+ * **Function modules (roadmap 3.0.6, ADR-081).** `functionModules: string[]`
+ * asks a third question: what SAP's files say about each name as a function
+ * module (`functionModuleCatalogAnswer`) — SAP's verbatim state, the file, and
+ * the sentence a surface may print, or `null` where the catalog does not answer.
+ * Never the A–D letter, and never a statement about what a call does at
+ * runtime. The workspace's open questions use it so a local call the catalog
+ * already answers is not asked again — without the catalog in the browser.
+ * Read from the same snapshot as the grades; bounded like `objects`.
  */
 export const runtime = 'nodejs';
 
@@ -75,7 +86,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const entries = (body as { objects?: unknown })?.objects;
+  const rawEntries = (body as { objects?: unknown })?.objects;
+  const rawModules = (body as { functionModules?: unknown })?.functionModules;
+  if (rawModules !== undefined && !Array.isArray(rawModules)) {
+    return NextResponse.json({ error: 'Expected functionModules to be an array of names.' }, { status: 400 });
+  }
+  const modules = Array.isArray(rawModules) ? rawModules : [];
+  if (modules.length > MAX_OBJECTS) {
+    return NextResponse.json(
+      { error: `Too many function modules (${modules.length}); the limit is ${MAX_OBJECTS}.` },
+      { status: 400 },
+    );
+  }
+  // A request for function modules alone needs no objects.
+  const entries = rawEntries === undefined && Array.isArray(rawModules) ? [] : rawEntries;
   if (!Array.isArray(entries)) {
     return NextResponse.json(
       { error: 'Expected { objects: Array<string | { name: string; use: "read" | "write" }> }' },
@@ -163,5 +187,19 @@ export async function POST(req: Request) {
     if (!(name in noPath)) noPath[name] = hasNoReleasedApiPath(name, readKey);
   }
 
-  return NextResponse.json({ grades, noPath, snapshot, ...(coverage ? { coverage } : {}) });
+  const functionModules: Record<string, FunctionModuleCatalogAnswer | null> = {};
+  for (const raw of modules) {
+    if (typeof raw !== 'string') continue;
+    const name = raw.trim().toUpperCase().slice(0, 120);
+    if (!name || name in functionModules) continue;
+    functionModules[name] = functionModuleCatalogAnswer(name, readKey);
+  }
+
+  return NextResponse.json({
+    grades,
+    noPath,
+    snapshot,
+    ...(Array.isArray(rawModules) ? { functionModules } : {}),
+    ...(coverage ? { coverage } : {}),
+  });
 }

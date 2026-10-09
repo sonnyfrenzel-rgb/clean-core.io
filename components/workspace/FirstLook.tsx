@@ -1,5 +1,7 @@
 'use client';
 
+import OpenQuestionsLine from './OpenQuestionsLine';
+import type { OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Check, CircleDashed, FileCode } from 'lucide-react';
 import CcCard from '@/components/cc/Card';
@@ -67,7 +69,6 @@ import {
   wt,
   firstLookMoreRules,
   firstLookOutcomes,
-  firstLookOpenGroup,
   firstLookOpenTitle,
   firstLookReading,
   firstLookConfirmRules,
@@ -253,6 +254,7 @@ export default function FirstLook({
   rulesOverride,
   onReviewRules,
   onSettled,
+  questions = null,
 }: {
   project: Project | null;
   projectId: string;
@@ -321,6 +323,11 @@ export default function FirstLook({
   onReviewRules?: () => void;
   /** Told when the build-up is over (end state on screen) — the tips wait for it. */
   onSettled?: (settled: boolean) => void;
+  /**
+   * The project's open questions (ADR-081). The card says them in their one
+   * line; the list stands once on the page. `null` while not known.
+   */
+  questions?: OpenQuestionsModel | null;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
@@ -721,11 +728,7 @@ export default function FirstLook({
                   changes={result.changes.changes}
                   changesMore={result.changes.more}
                   changesNone={result.card.summary.kind === 'none' ? result.card.summary.sentence : wt('biz.changesNoData')}
-                  open={{
-                    count: result.card.open.count,
-                    noSource: result.card.open.noSource,
-                    example: result.card.open.groups[0]?.label.toLowerCase() ?? null,
-                  }}
+                  questions={questions}
                   onDecideRules={owner && !onReviewRules ? decideRules : onReviewRules}
                   details={
                     <EndState
@@ -738,6 +741,7 @@ export default function FirstLook({
                       rulesBelow
                       stages={shown}
                       endStateOnly={endStateOnly}
+                      questions={questions}
                     />
                   }
                 />
@@ -752,6 +756,7 @@ export default function FirstLook({
                   onReviewRules={onReviewRules}
                   stages={shown}
                   endStateOnly={endStateOnly}
+                  questions={questions}
                 />
               )}
               <div className="flex min-w-0 flex-col gap-4">
@@ -909,8 +914,10 @@ function EndState({
   onReviewRules,
   stages,
   endStateOnly,
+  questions,
 }: {
   result: Result;
+  questions: OpenQuestionsModel | null;
   /** The full map stands right under the card, so the one-row strip of its first steps is not repeated. */
   mapBelow?: boolean;
   proposedName: string | null;
@@ -1021,30 +1028,15 @@ function EndState({
           className="rounded-cc-card border border-cc-line bg-cc-surface-muted px-4 py-3"
         >
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <p className="m-0 text-[15px] leading-tight font-bold text-cc-ink">{firstLookOpenTitle(card.open.count)}</p>
+            <p className="m-0 text-[15px] leading-tight font-bold text-cc-ink">{wt('oq.title')}</p>
             <CcProvenanceChip value="not-determined" />
           </div>
-          {card.open.count === 0 ? (
-            <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{wt('firstLook.nothingOpen')}</p>
+          {/* The open questions in their one line (ADR-081); the list, grouped
+              by what would settle each, stands once on the page. */}
+          {questions ? (
+            <OpenQuestionsLine questions={questions} />
           ) : (
-            <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink">
-              {card.open.groups.map((group, i) => (
-                <React.Fragment key={group.label}>
-                  {i > 0 ? ' · ' : null}
-                  <span data-first-look-open-group={group.count}>
-                    {group.count > 1 ? firstLookOpenGroup(group.label, group.count) : group.label}{' '}
-                    {group.anchors.map((anchor) => (
-                      <React.Fragment key={anchor}>
-                        <Anchor anchor={anchor} />{' '}
-                      </React.Fragment>
-                    ))}
-                    {group.count > group.anchors.length ? '…' : null}
-                  </span>
-                </React.Fragment>
-              ))}
-              {' · '}
-              {wt('firstLook.openReasons')}
-            </p>
+            <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{firstLookOpenTitle(card.open.count)}</p>
           )}
         </div>
       </div>

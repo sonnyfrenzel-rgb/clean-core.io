@@ -8,7 +8,6 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
-import CcDisclosure from '@/components/cc/Disclosure';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
@@ -17,9 +16,10 @@ import WorkspaceStatusLine from './StatusLine';
 import WorkspaceLayerBar from './LayerBar';
 import WorkspaceLayerSection from './LayerSection';
 import WorkspaceToolBar from './ToolBar';
-import NotDeterminedCard from './NotDeterminedCard';
-import NotDeterminedFold from './NotDeterminedFold';
+import OpenQuestions, { type OpenAnswerOverlay } from './OpenQuestions';
+import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import NextStepCard from './NextStepCard';
+import UsageRecords from './UsageRecords';
 import BusinessNextStep from './BusinessNextStep';
 import WorkspaceHub from './WorkspaceHub';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
@@ -50,7 +50,7 @@ import type { StartRun } from '@/hooks/useStartRun';
 import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
 import { businessNextStep } from '@/lib/business-next-step';
-import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE } from '@/lib/business-layers';
+import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import type { ModelStageSubject } from '@/lib/model-stages';
@@ -314,6 +314,17 @@ export default function WorkspaceShell({
   // What a project stored by an earlier version does not carry (roadmap 3.0.2).
   // Read, never repaired: opening a project writes nothing to it.
   const recorded = useMemo(() => recordGaps(project), [project]);
+  /**
+   * The open questions (ADR-081): one list per project, grouped by the action
+   * that resolves each. `answers` holds what this page wrote since the project
+   * was read, so a saved answer shows at once.
+   */
+  const [answers, setAnswers] = useState<OpenAnswerOverlay>({});
+  const questions = useOpenQuestions(project, projectId, { open, answers });
+  const onAnswered = useCallback<NonNullable<React.ComponentProps<typeof OpenQuestions>['onAnswered']>>(
+    (action, answer) => setAnswers((prev) => ({ ...prev, [action]: answer })),
+    [],
+  );
 
   /**
    * The reading of the source, done once by the first look and handed up here.
@@ -374,11 +385,22 @@ export default function WorkspaceShell({
    * lives now, instead of opening an empty place: the costs to Economics, the
    * architecture and the changes to the same section in IT. `replace`, so Back
    * does not bounce the reader into the redirect again.
+   *
+   * *Need & process* stays in Business (ADR-080): its process and rules stand
+   * there as the map and the rules card, so `#need` — every stage's "Back to
+   * project workspace" opened from Business before 3.0.6 carries it — becomes
+   * the map's own address and the page scrolls to the map.
    */
   const router = useRouter();
   useEffect(() => {
     if (view !== 'business' || hashLayer === null || BUSINESS_LAYERS.includes(hashLayer)) return;
     const elsewhere = BUSINESS_LAYER_ELSEWHERE[hashLayer];
+    if (elsewhere === 'map') {
+      // A fragment-only `replace`: no request, no new history entry; the
+      // browser scrolls to the map and `hashchange` clears the layer above.
+      window.location.replace(`#${BUSINESS_MAP_ID}`);
+      return;
+    }
     router.replace(
       elsewhere === 'economics'
         ? stageHref({ base: `/project/${projectId}`, path: 'tco', view: 'business', from: WORKSPACE_RETURN.tools })
@@ -430,7 +452,14 @@ export default function WorkspaceShell({
 
   // Rule-based, no model call (roadmap 6.5) — `null` once every phase this
   // product can finish already is, never a step invented to fill the card.
-  const nextStep = useMemo(() => nextOpenPoint(project, account), [project, account]);
+  // While the start run is with the server the open point is still Analyze —
+  // the project has no run until it is signed — so it is marked as running
+  // rather than offered as "Run the analysis" (owner, 09.10.2026).
+  const startRunning = startRun?.phase === 'running';
+  const nextStep = useMemo(() => {
+    const point = nextOpenPoint(project, account);
+    return point && point.key === 'analyze' && startRunning ? { ...point, running: true as const } : point;
+  }, [project, account, startRunning]);
 
   /**
    * Business: the rules first while any has no answer, then the phase step —
@@ -499,12 +528,14 @@ export default function WorkspaceShell({
   // "More" is a place, and saying so is the whole of roadmap 6.2. Without a
   // choice the bar opens on the first layer that has anything in it, and on a
   // project where nothing does, on the first layer, which then says it is empty.
-  // Business opens on "Need & process", the layer its map belongs to (mockup
-  // s1) — an empty need layer then says so under the map, rather than the bar
-  // pointing at Costs while the page shows the process.
+  // Business opens on the map (ADR-080): the map and the rules card stand on
+  // the page itself, and its bar holds only Standard fit and Evidence &
+  // controls, so it opens on the first of them with content, as the other
+  // views do — never on a section Business does not show.
   const currentLayer =
     (hashLayer && layers.some((l) => l.key === hashLayer) ? hashLayer : null) ??
-    (view === 'business' ? 'need' : layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
+    layers.find((l) => l.count !== null)?.key ??
+    (view === 'business' ? BUSINESS_LAYERS[0] : LAYERS[0]);
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
   // Management's "Costs" fold reads the costs layer straight, whatever layer the bar is on.
   const costsLayer = layers.find((l) => l.key === 'costs') ?? layers[0];
@@ -614,6 +645,17 @@ export default function WorkspaceShell({
    * never slides under the content. In IT and Management "Next step" stands at
    * the top of the content (§2.3 item 5).
    */
+  const openQuestionsList = (
+    <OpenQuestions
+      questions={questions}
+      projectId={projectId}
+      view={view}
+      owner={owner}
+      hasRun={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
+      recorded={recorded}
+      onAnswered={onAnswered}
+    />
+  );
   const contentBlocks: Record<ContentBlock, React.ReactNode> = {
     // Management begins with its answer, above every card (ADR-029,
     // `DESIGN.md` §5.6: *"Management begins with a sentence above all
@@ -650,16 +692,10 @@ export default function WorkspaceShell({
             evidenceExtra={
               <>
                 <PublicCloudFitPanel project={project} />
-                {/* Folded and grouped by kind in Management (owner, 04.10.2026:
-                    "keep that folded"); the line-by-line list with the engine's
-                    reasons stays in IT. */}
-                <div id="not-determined">
-                  <NotDeterminedFold
-                    data={open}
-                    recorded={recorded}
-                    itHref={`/project/${encodeURIComponent(projectId)}?view=it#not-determined`}
-                  />
-                </div>
+                {/* The open questions, in the Evidence fold (ADR-081): the
+                    same one list as in Business and IT, grouped by the action
+                    that resolves each, the engine's lines one click deeper. */}
+                <div id="not-determined">{openQuestionsList}</div>
               </>
             }
           />
@@ -679,7 +715,6 @@ export default function WorkspaceShell({
             reading={reading}
             process={mapSummary}
             onOpenMap={view === 'business' ? openMap : undefined}
-            aboveInView={view === 'business'}
           />
         </div>
       </div>
@@ -765,7 +800,7 @@ export default function WorkspaceShell({
     // 01.10.2026; QA 55bcde6ea5e1).
     process:
       view === 'business' ? (
-        <div className="mt-4" data-workspace-process-block="">
+        <div id={BUSINESS_MAP_ID} className="mt-4 scroll-mt-20" data-workspace-process-block="">
           <WorkspaceProcess
             project={project}
             projectId={projectId}
@@ -789,6 +824,9 @@ export default function WorkspaceShell({
               ) : undefined
             }
           />
+          {/* The imported usage records beside the map (ADR-080) — every one,
+              the first five and "Show all"; nothing when none is imported. */}
+          <UsageRecords project={project} className="mt-4" />
         </div>
       ) : null,
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
@@ -813,6 +851,7 @@ export default function WorkspaceShell({
           fullMapBelow={view === 'business' && signed !== null}
           rulesBelow={view === 'business'}
           onSettled={onFirstLookSettled}
+          questions={questions}
         />
       </div>
     ),
@@ -837,8 +876,10 @@ export default function WorkspaceShell({
         </div>
       </div>
     ) : null,
-    // Everything the engine could not work out, with its reason — the reason
-    // to trust the rest of the screen (roadmap 1.4).
+    // Everything the engine could not work out, as open questions grouped by
+    // the action that resolves them (ADR-081) — the reason to trust the rest of
+    // the screen (roadmap 1.4). The block keeps its name and its `#not-determined`
+    // address, so links and the tour that point here still land.
     notDetermined: (
       <div
         id="not-determined"
@@ -853,26 +894,7 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
-        {/* Business folds the detail: its count and groups already stand
-            beside the answer, and each line opens in the source column. One
-            click deeper, never removed (§2.11). */}
-        {view === 'business' ? (
-          <div
-            data-workspace-not-determined-row=""
-            className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-2"
-          >
-            <CcDisclosure
-              title={wt('biz.notDeterminedRow')}
-              count={open.noSource ? undefined : open.count}
-              level={2}
-              defaultOpen={open.noSource}
-            >
-              <NotDeterminedCard data={open} recorded={recorded} />
-            </CcDisclosure>
-          </div>
-        ) : (
-          <NotDeterminedCard data={open} recorded={recorded} />
-        )}
+        {openQuestionsList}
       </div>
     ),
   };
@@ -890,7 +912,7 @@ export default function WorkspaceShell({
           source lines, glossary) and the dialog stay out of this file. */}
       <CommandSearch projectId={projectId} project={project} reading={reading} />
       {/* Paper gets its own sheet, not this screen (§7.1, mockup s10). */}
-      <WorkspacePrintSheet project={project} projectId={projectId} reading={reading} open={open} />
+      <WorkspacePrintSheet project={project} projectId={projectId} reading={reading} open={open} questions={questions} />
 
       <section data-workspace-header="">
         {/* The way back to the list — on every width, the phone included,
@@ -1022,7 +1044,8 @@ export default function WorkspaceShell({
             projectId={projectId}
             project={project}
             notDetermined={open}
-            recorded={recorded}
+            questions={questions}
+            openQuestions={openQuestionsList}
             signed={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
             coach={(slot) => (
               <div className="cc-no-print">

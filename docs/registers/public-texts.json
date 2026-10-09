@@ -423,7 +423,6 @@
         "components/workspace/MetaLine.tsx",
         "components/workspace/NewProject.tsx",
         "components/workspace/NextStepCard.tsx",
-        "components/workspace/NotDeterminedCard.tsx",
         "components/workspace/PublicCloudFitPanel.tsx",
         "components/workspace/StatusLine.tsx",
         "components/workspace/SteeringOnePager.tsx",

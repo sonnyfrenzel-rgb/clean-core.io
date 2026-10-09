@@ -4,8 +4,6 @@ import React from 'react';
 import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
-import CcButton from '@/components/cc/Button';
-import CcAnchor from '@/components/cc/Anchor';
 import StageMetaDetails from '@/components/StageMetaDetails';
 import { severityChartMark, levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { scoreBand } from '@/lib/clean-core-score';
@@ -38,12 +36,6 @@ export interface LevelFacet {
   noObject: number;
 }
 
-export interface NotAssessedFacet {
-  kinds: number;
-  constructs: number;
-  items: ReadonlyArray<{ label: string; count: number; firstLine: number }>;
-}
-
 export interface MetaFacts {
   fileName?: string | null;
   lines?: number | null;
@@ -64,12 +56,9 @@ export default function AnalysisAnswer({
   counts,
   score,
   routeChosenByReader,
-  notDetermined,
   onExplainScore,
-  onShowNotDetermined,
   severities,
   levels,
-  notAssessed,
   meta,
   status,
 }: {
@@ -78,12 +67,9 @@ export default function AnalysisAnswer({
   /** The signed score, or null when the run computed none. */
   score: number | null;
   routeChosenByReader: boolean;
-  notDetermined: number;
   onExplainScore: () => void;
-  onShowNotDetermined: () => void;
   severities: readonly SeverityPart[];
   levels: LevelFacet;
-  notAssessed: NotAssessedFacet;
   meta: MetaFacts;
   status: readonly StatusEntry[];
 }) {
@@ -118,7 +104,11 @@ export default function AnalysisAnswer({
       </h2>
       <p className="m-0 mt-1 max-w-4xl cc-text-cell text-cc-ink-muted">{answer.detail}</p>
 
-      <dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+      {/* Three facets. The fourth, "Not assessed", said again what the side
+          card "Not determined" lists, with a second count of a different thing
+          (ADR-081): the side card is the one list on this stage, and the
+          project's open questions are one line under it. */}
+      <dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
         <Facet label="Findings">
           <dd className="m-0 mt-2 flex flex-wrap items-baseline gap-x-2">
             <span className="cc-text-figure text-cc-ink">{counts.total}</span>
@@ -182,39 +172,6 @@ export default function AnalysisAnswer({
           </dd>
         </Facet>
 
-        <Facet label="Not assessed">
-          <dd className="m-0 mt-2 flex flex-wrap items-baseline gap-x-2">
-            <span className="cc-text-figure text-cc-ink">{notAssessed.kinds}</span>
-            <span className="cc-text-cell text-cc-ink-muted">
-              {notAssessed.kinds === 1 ? 'kind' : 'kinds'} · {notAssessed.constructs}{' '}
-              {notAssessed.constructs === 1 ? 'construct' : 'constructs'}
-            </span>
-          </dd>
-          <dd className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
-            {notAssessed.items.length === 0
-              ? 'Every construct read was within the engine’s checks.'
-              : notAssessed.items.map((it, i) => (
-                  <React.Fragment key={it.label}>
-                    {i > 0 ? ' · ' : null}
-                    {it.label.toLowerCase()} <CcAnchor label={`From source line ${it.firstLine}`}>{`L${it.firstLine}`}</CcAnchor>
-                  </React.Fragment>
-                ))}
-          </dd>
-          <dd className="m-0 mt-2">
-            {notDetermined > 0 ? (
-              <CcButton variant="ghost" density="compact" onClick={onShowNotDetermined}>
-                Show the list
-              </CcButton>
-            ) : (
-              <span className="cc-text-meta text-cc-ink-muted">Nothing else listed as not determined</span>
-            )}
-            {notDetermined > 0 ? (
-              <span className="ml-1 cc-text-meta text-cc-ink-muted">
-                {notDetermined} {notDetermined === 1 ? 'thing' : 'things'} not determined
-              </span>
-            ) : null}
-          </dd>
-        </Facet>
       </dl>
 
       <ul className="m-0 mt-3 flex list-none flex-wrap gap-x-5 gap-y-1 p-0 cc-text-meta" data-analysis-status="">

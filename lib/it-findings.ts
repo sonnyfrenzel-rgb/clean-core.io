@@ -138,7 +138,7 @@ export interface ItFindingsSource {
    * What the engine read: the lines of the source, and the constructs it saw
    * but no detector assesses (`CoverageReport.gaps`). Optional, as above.
    */
-  coverage?: { lines: number; gaps: Array<{ label: string; count: number; firstLine: number }> };
+  coverage?: { lines: number; gaps: Array<{ label: string; count: number; firstLine: number }>; answered?: number };
   /**
    * What the code uses — every SAP or customer object it calls, reads or
    * writes, whether or not a detector raised a finding on it. A

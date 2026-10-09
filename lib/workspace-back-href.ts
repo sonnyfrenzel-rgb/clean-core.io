@@ -1,6 +1,7 @@
 import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey } from '@/lib/workspace-model';
 import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { nav, navViewLabel } from '@/lib/messages/navigation';
+import { BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -41,7 +42,14 @@ function backTo(workspace: string, search: string): string {
   // A layer the stage was opened from wins over the control it was opened by:
   // the workspace holds the layer in its fragment (ADR-018), and returning to
   // the toolbar of another layer would lose the place the reader was reading.
-  const hash = layer ? `#${layer}` : from && LAYER_ID.test(from) ? `#${from}` : '';
+  // *Need & process* is not a section of Business since ADR-080: a stage
+  // opened from it there (a link from before 3.0.6) returns to the map, which
+  // is where the process stands in that view.
+  const hash = layer
+    ? `#${mapInBusiness(view, layer) ? BUSINESS_MAP_ID : layer}`
+    : from && LAYER_ID.test(from)
+      ? `#${from}`
+      : '';
   return `${workspace}${query}${hash}`;
 }
 
@@ -131,6 +139,14 @@ export const LAYER_LABELS: Readonly<Record<LayerKey, string>> = {
   changes: 'Changes & commitments',
 };
 
+/** The process map's place in the way back, where Business has no section of that name (ADR-080). */
+export const BUSINESS_MAP_LABEL = 'Process map';
+
+/** Business reached by a layer it no longer shows, whose content is its map (ADR-080). */
+function mapInBusiness(view: string | null, layer: LayerKey): boolean {
+  return view === 'business' && BUSINESS_LAYER_ELSEWHERE[layer] === 'map';
+}
+
 /** A layer key from an address, or `null` — `#need` and `need` both read as `need`. */
 export function layerParam(value: string | null | undefined): LayerKey | null {
   if (typeof value !== 'string') return null;
@@ -150,7 +166,7 @@ export function stageBackPlace(search: string): string | null {
   const layer = layerParam(params.get('layer'));
   const parts = [
     isWorkspaceView(view) ? navViewLabel(VIEW_LABELS[view]) : null,
-    layer ? LAYER_LABELS[layer] : null,
+    layer ? (mapInBusiness(view, layer) ? BUSINESS_MAP_LABEL : LAYER_LABELS[layer]) : null,
   ].filter((p): p is string => Boolean(p));
   return parts.length > 0 ? parts.join(', ') : null;
 }
