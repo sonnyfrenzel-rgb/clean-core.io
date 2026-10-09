@@ -7,17 +7,17 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "On 16.09.2026 it was checked for the first time what cleancore-491216 really serves: the ruleset of 20.08.2026 — three tightenings behind the repository, without anyone knowing. In production `termsVersionAccepted`/`termsAcceptedAt` were still client-writable (finding V14, long closed in the repo), `email_events` not yet locked, and the admin read access to projects still open. Sonny then deployed and the result was checked against the Rules API: identical. This record is meant to make exactly this drift visible from now on.",
   "deployed": {
-    "sha256OfLfNormalisedText": "e99f16bdbe4c439e7e391f31239ac87e12670ff215dabb93e353c3679b5481b6",
-    "deployedAt": "2026-10-06",
-    "deployedBy": "Sonny, 06.10.2026 — npm run deploy:rules from his signed-in CLI (Desktop script); rules:verify: production, record and working copy agree on all six databases",
+    "sha256OfLfNormalisedText": "3f213a5de70838663b18d583f5f9017c935733d0c4a44fa3588d240d15796df9",
+    "deployedAt": "2026-10-09",
+    "deployedBy": "Sonny, 09.10.2026, right after v3.0.6 went live — npm run deploy:rules from his signed-in CLI; rules:verify: production, record and working copy agree on all six databases",
     "project": "cleancore-491216",
     "rulesetName": "projects/cleancore-491216/rulesets/6866185e-a6fa-4cd8-962d-10b68abf7874",
     "databases": [
       "(default)",
       "clean-core-eu"
     ],
-    "verifiedAgainstProduction": "2026-09-22 — npm run rules:verify directly after the deploy: all six databases of the deploy configuration serve 77160e1e6d0d…, identical with record and working copy. Before that checked against the Rules API on 2026-09-16.",
-    "note": "Hashed after normalising CRLF to LF, the same way docs/registers/preservation-register.json does it, so the value is the same on Windows and on CI. This state adds a delete rule to /abap_examples/{exampleId} (owner or admin) — security audit b88c77b, SEC-b88c77b-61. Nothing changes at /projects/{projectId}.",
+    "verifiedAgainstProduction": "2026-10-09 — npm run rules:verify after the deploy: all six databases serve 3f213a5de708…, released 2026-10-09T21:07Z, identical with record and working copy.",
+    "note": "Hashed after normalising CRLF to LF, the same way docs/registers/preservation-register.json does it, so the value is the same on Windows and on CI. This state (3.0.6, SEC-2026-737/-740/-741) narrows client writes to /projects/{projectId}: status only designed/testing/documented after an analysis, updatedAt only the write time, typed testSuite and coverageEstimate, exports only removed, worklist server-only. Deployed after the app, because the app before 3.0.6 wrote the model test suite unfiltered.",
     "clientWritableProjectFields": [
       "businessDocumentation",
       "coverageEstimate",
@@ -35,20 +35,8 @@
       "status",
       "testCases",
       "testSuite",
-      "updatedAt",
-      "worklist"
+      "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "3f213a5de70838663b18d583f5f9017c935733d0c4a44fa3588d240d15796df9",
-    "recordedAt": "2026-10-09",
-    "recordedFor": "Roadmap 3.0.6 security hardening (SEC-2026-737, SEC-2026-740, SEC-2026-741): narrower validation of client writes to projects/{projectId}; worklist leaves the client allowlist. No app write depends on the new text.",
-    "addsToClient": [],
-    "removesFromClient": [
-      "worklist"
-    ],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
-    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }
