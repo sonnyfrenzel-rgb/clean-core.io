@@ -100,6 +100,25 @@ export const BUILD_UP_MAP_WAIT = 8000;
 export const BUILD_UP_MAP_WAIT_WITH_MODEL =
   Math.max(0, START_NARRATIVE_CEILING_MS - BUILD_UP_BUDGET.endAt) + BUILD_UP_MAP_WAIT;
 
+/**
+ * How long the end state waits for the stored naming when no build-up plays
+ * (reduced motion, or a page that asked for none). The build-up's clock does
+ * not run then, so its budget can never end the wait; without a wait of its
+ * own, a naming read that never settles kept the first look on "reading" for
+ * good (QA review of dd8e99691c8d).
+ */
+export const NAMING_WAIT_MS = 2500;
+
+/**
+ * Whether the first look stops waiting for the stored naming and stands with
+ * the technical names: the reader skipped, the build-up's budget is spent, or —
+ * with nothing animating — the naming wait of its own is over. A naming that
+ * arrives later still changes the names once.
+ */
+export function namingWaitOver(input: { skipped: boolean; animate: boolean; elapsed: number; waited: boolean }): boolean {
+  return input.skipped || input.elapsed >= BUILD_UP_BUDGET.endAt || (!input.animate && input.waited);
+}
+
 export type BuildUpStage =
   | 'code-read'
   | 'process-recognised'

@@ -30,9 +30,9 @@
  *
  * **What it never does.** The value itself stays *Not determined*: no bucket,
  * level, score or route reads this module, and nothing in it enters a signed
- * run or the signed half of an audit pack. List output and macros are not
- * questions anyone can answer — they are the limits of this reading, said in
- * one sentence.
+ * run or the signed half of an audit pack. List output, macros and code
+ * generated at runtime are not questions anyone can answer — they are the
+ * limits of this reading, said in one sentence.
  */
 
 import type { CoverageGap } from './abap/coverage';
@@ -62,13 +62,15 @@ const ACTION_OF_GAP: Record<CoverageGap, OpenQuestionAction | 'limit'> = {
   'include-not-read': 'add-includes',
   'dynamic-invocation': 'name-call-target',
   'dynamic-target': 'name-call-target',
-  'generated-code': 'name-call-target',
   // ATC's cloud-readiness checks judge both against the target.
   'local-function-call': 'add-atc',
   'file-io': 'add-atc',
-  // Not questions: nobody can answer them, they bound what this reading covers.
+  // Not questions: no input settles them, they bound what this reading covers.
+  // Code generated at runtime has no call target to name — the program it
+  // writes does not exist until it runs (QA review of dd8e99691c8d).
   'classic-list-output': 'limit',
   macro: 'limit',
+  'generated-code': 'limit',
 };
 
 interface ActionSpec {
@@ -415,6 +417,8 @@ export function openQuestions({ open, project, rules, catalog = null }: OpenQues
       rules.open.map((id) => ({ label: id, why: 'No answer from the business yet.', anchor: null })),
       [...rules.open],
       rules.open.length === 0 ? `Every one of the ${plural(rules.total, 'rule', 'rules')} has an answer.` : null,
+      // Resolved: the rules it covers, not the one placeholder of an empty list.
+      { count: rules.open.length === 0 ? rules.total : rules.open.length },
     );
   }
 
@@ -437,13 +441,42 @@ export function openQuestions({ open, project, rules, catalog = null }: OpenQues
   };
 }
 
+/**
+ * The basis of every group the project has now, by action — what the server
+ * compares a submitted answer with (`record-open-question`), so an answer is
+ * stored only for the questions that are actually open. Built by
+ * `openQuestions` itself, so the server and the list cannot compute two
+ * different bases: the basis reads only the engine's set, the rules' open ids
+ * and the two fixed project questions, never an import, a stored answer or the
+ * catalog lookup.
+ */
+export function openQuestionBases(
+  open: NotDetermined,
+  rules: OpenQuestionsInput['rules'],
+): Partial<Record<OpenQuestionAction, string>> {
+  const out: Partial<Record<OpenQuestionAction, string>> = {};
+  for (const g of openQuestions({ open, project: null, rules }).groups) out[g.action] = g.basis;
+  return out;
+}
+
 /** "7 open questions · 2 block the decision · top: Choose the target" — the one line everywhere else. */
 export function openQuestionsLine(q: OpenQuestions): string {
-  if (q.catalogPending) return 'Reading SAP’s catalog for the function-module calls…';
-  if (q.open === 0) return q.noSource ? 'No source staged, so nothing about the code can be asked yet' : 'No open questions';
-  const parts = [plural(q.open, 'open question', 'open questions')];
-  if (q.blocking > 0) parts.push(`${q.blocking} ${q.blocking === 1 ? 'blocks' : 'block'} the decision`);
-  if (q.top) parts.push(`top: ${q.top}`);
+  const reading = 'Reading SAP’s catalog for the function-module calls…';
+  // While SAP's catalog is being asked, only the group it may still close is
+  // held back: its count is about to fall. Every other open question — the
+  // target, the rules — is said as it stands (QA review of dd8e99691c8d).
+  const counted = q.catalogPending ? q.groups.filter((g) => g.end === 'open' && !g.catalogPending) : null;
+  const open = counted ? counted.reduce((n, g) => n + g.count, 0) : q.open;
+  const blocking = counted ? counted.filter((g) => g.blocksDecision).reduce((n, g) => n + g.count, 0) : q.blocking;
+  const top = counted ? (counted[0]?.title ?? null) : q.top;
+  if (open === 0) {
+    if (q.catalogPending) return reading;
+    return q.noSource ? 'No source staged, so nothing about the code can be asked yet' : 'No open questions';
+  }
+  const parts = [plural(open, 'open question', 'open questions')];
+  if (blocking > 0) parts.push(`${blocking} ${blocking === 1 ? 'blocks' : 'block'} the decision`);
+  if (top) parts.push(`top: ${top}`);
+  if (q.catalogPending) parts.push(reading);
   return parts.join(' · ');
 }
 

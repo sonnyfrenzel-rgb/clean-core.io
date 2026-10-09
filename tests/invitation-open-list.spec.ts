@@ -6,7 +6,9 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminGetDoc, adminSetDoc, adminSetEmailVerified } from './helpers/admin-seed';
 import { invitationCollectionPath, PROJECT_READERS_FIELD } from '../lib/invitations';
 import { openInvitationsOf } from '../lib/open-invitations';
-import { openInvitationsAsOwner, INVITATION_RATE_LIMITS, INVITATION_SEND_RATE_LIMIT } from '../lib/invitation-owner-gate';
+import { openInvitationsAsOwner, readOpenInvitations, INVITATION_RATE_LIMITS, INVITATION_SEND_RATE_LIMIT } from '../lib/invitation-owner-gate';
+import fs from 'fs';
+import path_ from 'path';
 import { getAdminDb } from '../lib/firebase-admin';
 
 /**
@@ -251,4 +253,36 @@ test('withdrawing is rate-limited like inviting: the 21st call in an hour is ref
   }
   // And the budget is the inviting one by name, not a copy of its number.
   expect(INVITATION_RATE_LIMITS['invitations-withdraw']).toBe(INVITATION_SEND_RATE_LIMIT);
+});
+
+/**
+ * QA review of dd8e996 (9703f5e20b75): the list read one page of 500 unexpired
+ * invitations and filtered afterwards, so accepted and withdrawn ones expiring
+ * sooner could fill the page and cut a pending one off. The helper the route
+ * calls walks the pages in expiry order; a page size of 2 makes five
+ * non-open invitations three pages deep without seeding five hundred.
+ * Needs the Firestore emulator (Admin SDK).
+ */
+test('a pending invitation behind a full page of accepted and withdrawn ones is still listed', async () => {
+  expect(process.env.FIRESTORE_EMULATOR_HOST, 'no emulator host: this test would reach a real database').toBeTruthy();
+  const project = `open-inv-paged-${STAMP}`;
+  await adminSetDoc('projects', project, {
+    name: 'Paged invitations', userId: accounts[OWNER].uid, createdAt: new Date(), legacyCode: 'REPORT z_paged.',
+  });
+  const path = invitationCollectionPath(project);
+  const seed = async (id: string, status: string, expiresInDays: number) =>
+    adminSetDoc(path, id, { ...invitation(id, `${id}@example.com`, status, expiresInDays), projectId: project });
+  // Five that hold no slot, all expiring before the pending one.
+  for (let i = 0; i < 5; i += 1) await seed(`closed${i}${STAMP}`, i % 2 ? 'revoked' : 'accepted', 1 + i * 0.1);
+  await seed(`late${STAMP}`, 'pending', 9);
+
+  const { db } = await getAdminDb();
+  const list = await readOpenInvitations(db, project, new Date(), 2);
+  expect(list.map((e) => e.id)).toEqual([`late${STAMP}`]);
+  // The ceiling still holds: one page of two reads nothing past the first page.
+  expect(await readOpenInvitations(db, project, new Date(), 2, 1)).toEqual([]);
+
+  // And the route reads through the helper, not a single bounded query.
+  const route = fs.readFileSync(path_.join(process.cwd(), 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+  expect(route).toContain('readOpenInvitations(gate.db, gate.projectId)');
 });

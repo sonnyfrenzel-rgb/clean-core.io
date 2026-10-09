@@ -18,6 +18,84 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { profileDrift, recordedProfileOf } from '@/lib/assessment-target';
 import { logger, errMessage } from '@/lib/logger';
+import { openQuestionBases } from '@/lib/open-questions';
+import { notDetermined } from '@/lib/workspace-model';
+import { rulesStatus } from '@/lib/rules-editor';
+import { sha256Hex } from '@/lib/artefact-digest';
+import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
+import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
+import {
+  PROCESS_STATE_COLLECTION,
+  PROCESS_STATE_FORMAT_VERSION,
+  isStateEntry,
+  type ProcessStateView,
+  type StateEntry,
+} from '@/lib/process-states';
+import type { Project } from '@/lib/types';
+
+/** The rules' size limit of `process-states/route.ts`: `deriveBusinessRules` is quadratic in the source. */
+const MAX_RULES_SOURCE_BYTES = 256 * 1024;
+
+/** A Firestore Timestamp, a Date or an ISO string, as ISO — as `process-states/route.ts` reads it. */
+function isoOf(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value instanceof Date) return value.toISOString();
+  const maybe = value as { toDate?: () => Date } | null;
+  if (maybe && typeof maybe.toDate === 'function') return maybe.toDate().toISOString();
+  return '';
+}
+
+/**
+ * ADR-081 — the rules and their answers as the list reads them
+ * (`useOpenQuestions` → `rulesStatus` of `GET .../process-states`), derived here
+ * from the same documents: revision 1 of the process, the source it was built
+ * from, and the newest confirmations. `null` wherever the list has no rules
+ * group either — no signed run, no revision 1, another source, a source too
+ * large to derive rules from.
+ */
+async function rulesNow(
+  tx: Transaction,
+  ref: DocumentReference,
+  project: Record<string, unknown>,
+): Promise<{ total: number; open: string[] } | null> {
+  const source = project.legacyCode;
+  if (typeof project.activeRunId !== 'string' || project.activeRunId.length === 0) return null;
+  if (typeof source !== 'string' || source.trim() === '') return null;
+  if (Buffer.byteLength(source, 'utf8') > MAX_RULES_SOURCE_BYTES) return null;
+  const baseline = await tx.get(ref.collection(PROCESS_REVISION_COLLECTION).doc('1'));
+  if (!baseline.exists) return null;
+  const data = baseline.data() as Record<string, unknown>;
+  const record = { ...data, savedAt: isoOf(data.savedAt) };
+  if (!isProcessRevisionRecord(record) || sha256Hex(source) !== record.sourceSha256) return null;
+  const statesSnap = await tx.get(ref.collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1));
+  let entries: StateEntry[] = [];
+  let revision = 0;
+  if (!statesSnap.empty) {
+    const latest = (statesSnap.docs[0].data() || {}) as Record<string, unknown>;
+    if (latest.formatVersion === PROCESS_STATE_FORMAT_VERSION) {
+      revision = typeof latest.revision === 'number' ? latest.revision : 0;
+      entries = (Array.isArray(latest.entries) ? latest.entries : [])
+        .map((e) => ({ ...(e as Record<string, unknown>), confirmedAt: isoOf((e as Record<string, unknown>).confirmedAt) }))
+        .filter(isStateEntry);
+    }
+  }
+  const view: ProcessStateView = {
+    formatVersion: PROCESS_STATE_FORMAT_VERSION,
+    revision,
+    baselineRevision: 1,
+    subjects: deriveBusinessRules(source).rules.map((rule) => ({
+      subject: rule.id,
+      kind: 'rule' as const,
+      label: rule.label,
+      detail: rule.text,
+      anchor: null,
+    })),
+    entries,
+    links: [],
+  };
+  const status = rulesStatus({ ok: true, view }, null);
+  return status ? { total: status.total, open: status.open } : null;
+}
 
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
@@ -209,6 +287,17 @@ export async function POST(
         const contractRecommendation =
           commandName === 'approve-architecture' ? recommendationOfProject(project) : null;
 
+        // ADR-081 — the questions the project has now, from the source and the
+        // rule answers this transaction reads, so an answer is stored only for
+        // a group the list shows with the basis the list shows (QA review of
+        // dd8e99691c8d). The rules are derived only for an answer about them.
+        let questionBases: ProjectCommandState['openQuestionBases'] = null;
+        if (commandName === 'record-open-question') {
+          const action = (body as { action?: unknown }).action;
+          const rules = action === 'confirm-rules' ? await rulesNow(tx, ref, project) : null;
+          questionBases = openQuestionBases(notDetermined(project as Project), rules);
+        }
+
         const state: ProjectCommandState = {
           activeRunId: project.activeRunId,
           approvedByArchitect: project.approvedByArchitect,
@@ -226,6 +315,7 @@ export async function POST(
           // ADR-081 — the stored answers, read in this transaction, so one
           // answer is merged into them rather than replacing the others.
           openQuestions: project.openQuestions,
+          openQuestionBases: questionBases,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {

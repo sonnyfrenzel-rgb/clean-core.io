@@ -100,31 +100,68 @@ export function alvEventRows(statements: readonly AbapStatement[], table: string
 /**
  * Whether the value passed as `I_CALLBACK_PROGRAM` names this program: a
  * literal equal to its own name, `sy-repid`/`sy-cprog`, or a variable this
- * source fills from one of them (`gv_repid = sy-repid`, `DATA gv_repid ...
- * VALUE sy-repid`). Any other variable could hold another program's name, so
- * it registers nothing this source can follow (QA review of 1c402c400e05).
+ * source fills from one of them (`gv_repid = sy-repid`, `MOVE sy-repid TO
+ * gv_repid`, `DATA gv_repid ... VALUE sy-repid`). Any other variable could hold
+ * another program's name, so it registers nothing this source can follow (QA
+ * review of 1c402c400e05).
+ *
+ * `site` is the registering statement. The value at the call is the last one
+ * the variable was given **before** it: a later `gv_repid = 'ZOTHER'` does not
+ * change what the ALV was handed (QA review of dd8e996, 5780f532cebf). Only
+ * when no write stands before the site — the variable is filled in a FORM
+ * written further down, say — does every write in the source count, and then
+ * one write of anything else is enough to make the value unknown (QA review of
+ * 2f5a8b9fc249). Every form of write counts, not only `x = …`: `MOVE … TO x`,
+ * `CLEAR x`, `CONCATENATE … INTO x`, `SELECT … INTO x`, a parameter passed
+ * as `IMPORTING`/`CHANGING` (ef56d6b03a58). A write this module cannot read as
+ * "this program" is taken as "another program".
  */
 export function namesThisProgram(
   value: string,
   statements: readonly AbapStatement[],
   programName: string | null,
+  site?: AbapStatement,
 ): boolean {
   if (value.startsWith("'")) return !!programName && value.slice(1, -1).toUpperCase() === programName;
   const v = value.toUpperCase();
   if (v === 'SY-REPID' || v === 'SY-CPROG') return true;
   const name = v.replace(/[^\w/]/g, '');
   if (!name || name !== v) return false;
+  // `name` is `[\w/]+`: nothing to escape.
+  const n = String.raw`${name}(?![\w/-])`;
   const self = String.raw`SY-(?:REPID|CPROG)\b`;
-  const assigned = new RegExp(String.raw`^${name}\s*=\s*${self}`, 'i');
-  const declared = new RegExp(String.raw`\b${name}\b[^,.]*\bVALUE\s+${self}`, 'i');
-  // Every value the variable is given must be this program: one assignment of
-  // anything else, anywhere, and the value at the call is not known (QA review
-  // of 2f5a8b9fc249).
-  const anyAssignment = new RegExp(String.raw`^${name}\s*=(?!=)`, 'i');
-  if (statements.some((s) => anyAssignment.test(s.text.trim()) && !assigned.test(s.text.trim()))) return false;
-  return statements.some(
-    (s) => assigned.test(s.text.trim()) || (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(s.text.trim()) && declared.test(s.text)),
-  );
+  const selfWrites = [
+    new RegExp(String.raw`^${n}\s*=\s*${self}\s*$`, 'i'),
+    new RegExp(String.raw`^MOVE\s+${self}\s+TO\s+${n}\s*$`, 'i'),
+  ];
+  const declaredSelf = new RegExp(String.raw`\b${n}[^,.]*\bVALUE\s+${self}`, 'i');
+  const anyWrite = [
+    new RegExp(String.raw`\b(?:INTO|TO)\s+(?:TABLE\s+)?(?:DATA\(\s*)?${n}`, 'i'),
+    new RegExp(String.raw`^(?:CALL|PERFORM)\b[\s\S]*\b(?:IMPORTING|CHANGING|TABLES)\b[\s\S]*(?:=\s*|\s)${n}`, 'i'),
+  ];
+  type Write = { line: number; self: boolean };
+  const writes: Write[] = [];
+  for (const s of statements) {
+    if (s === site) continue;
+    const text = s.text.trim();
+    if (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(text)) {
+      if (declaredSelf.test(text)) writes.push({ line: s.lineStart, self: true });
+      continue;
+    }
+    if (selfWrites.some((re) => re.test(text))) {
+      writes.push({ line: s.lineStart, self: true });
+      continue;
+    }
+    const masked = maskLiterals(text);
+    if (assignmentTarget(text) === name || anyWrite.some((re) => re.test(masked))) {
+      writes.push({ line: s.lineStart, self: false });
+    }
+  }
+  if (site) {
+    const before = writes.filter((w) => w.line < site.lineStart);
+    if (before.length > 0) return before.reduce((a, b) => (b.line >= a.line ? b : a)).self;
+  }
+  return writes.length > 0 && writes.every((w) => w.self);
 }
 
 /**
@@ -144,7 +181,7 @@ export function alvCallbackForms(
   if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return [];
   const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
   if (!program) return [];
-  if (!namesThisProgram(program[1], statements, programName)) return [];
+  if (!namesThisProgram(program[1], statements, programName, statement)) return [];
   const out: FormCallback[] = [];
   for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
     const form = m[2].toUpperCase();

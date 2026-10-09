@@ -95,3 +95,29 @@ test('00b028c43e63 — a program whose only construct is COMMIT WORK is not rate
   // A program without a commit keeps the sentence out of its report.
   expect(route(READ_ONLY).rationale).not.toMatch(/COMMIT WORK/);
 });
+
+test('a0ae65b2b30d — COMMIT WORK next to a higher-priority finding still names its remedy (QA review of dd8e996)', () => {
+  // The commit sentence used to be appended in the generic findings branch
+  // only; BDC, RFC, native SQL, modifications and writes all chose an earlier
+  // branch and dropped it.
+  const CASES = [
+    "REPORT zcc_bdc.\nCALL TRANSACTION 'VA02' USING lt_bdcdata MODE 'N'.\nCOMMIT WORK.",
+    "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'NONE'.\nCOMMIT WORK.",
+    'REPORT zcc_write.\nUPDATE vbak SET netwr = 0 WHERE vbeln = lv_vbeln.\nCOMMIT WORK.',
+  ];
+  for (const deployment of ['private', 'public'] as const) {
+    for (const code of CASES) {
+      const kinds = buildAbapEvidence(code, 'zcc_qa220.abap', deployment).findings.map((f) => f.kind);
+      expect(kinds, `the premise: ${code}`).toContain('commit-work');
+      const report = route(code, deployment);
+      expect(report.rationale, `${deployment}: ${code}`).toMatch(/COMMIT WORK \(1×\).*RAP save sequence/);
+      expect(report.rationale.match(/RAP save sequence/g), 'said once, not twice').toHaveLength(1);
+      expect(checkpoint(report, 'In-App Developer').evaluation, `${deployment}: ${code}`).toMatch(/RAP save sequence/);
+    }
+  }
+  // The BDC case from the finding, spelled out: the route is the BDC's, the
+  // commit remedy rides along.
+  const bdc = route(CASES[0], 'private');
+  expect(bdc.rationale).toMatch(/BDC screen automation/);
+  expect(bdc.rationale).toMatch(/RAP save sequence/);
+});

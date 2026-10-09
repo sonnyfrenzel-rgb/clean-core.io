@@ -445,6 +445,18 @@ export interface ProjectCommandState {
    * project, so one answer is written without dropping the others.
    */
   openQuestions?: unknown;
+  /**
+   * ADR-081 — the basis of every group of open questions the project has now
+   * (`openQuestionBases()` in `lib/open-questions.ts`), derived by the caller
+   * on the server from the source and the rule answers it read in the same
+   * transaction. An answer is stored only against the basis the server derives
+   * for its action: a basis the browser made up, or one of a group the project
+   * does not have now, would otherwise wait in the document and start to apply
+   * the day a source with exactly those questions arrives (QA review of
+   * dd8e99691c8d). `undefined`/`null` refuses an answer, as `activeRunEvidence`
+   * refuses a sign-off; a reopen needs no basis.
+   */
+  openQuestionBases?: Partial<Record<OpenQuestionAction, string>> | null;
 }
 
 /**
@@ -901,6 +913,16 @@ export function validateProjectCommand(
     if (checked.end === 'reopen') {
       delete stored[checked.action];
     } else {
+      const current = state.openQuestionBases?.[checked.action];
+      if (!state.openQuestionBases) {
+        return refuse(409, 'open-questions-unknown', 'The open questions of this project could not be read just now, so nothing was written. Try again.');
+      }
+      if (!current) {
+        return refuse(409, 'open-question-not-open', 'This project has no such open question now. Nothing was written. Reload the page and answer the questions it shows.');
+      }
+      if (current !== checked.basis) {
+        return refuse(409, 'open-question-moved', 'The questions of this group changed since the page was read. Nothing was written. Reload the page and answer the questions it shows.');
+      }
       stored[checked.action] = {
         state: checked.end,
         text: checked.text,
@@ -956,6 +978,8 @@ export function fieldsWrittenByCommands(): string[] {
     activeRunId: 'run',
     approvedByArchitect: true,
     activeRunEvidence: runEvidence,
+    // ADR-081: the answer below is bound to a group the project has.
+    openQuestionBases: { 'add-usage': 'add-usage-1-x' },
   };
   const bodies: unknown[] = [
     {

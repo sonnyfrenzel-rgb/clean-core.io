@@ -3,6 +3,8 @@ import { getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admi
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isProjectOwner } from '@/lib/project-readers';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { INVITATION_COLLECTION } from '@/lib/invitations';
+import { openInvitationsOf } from '@/lib/open-invitations';
 export { openInvitationsOf, type OpenInvitation } from '@/lib/open-invitations';
 
 /**
@@ -84,4 +86,47 @@ export async function openInvitationsAsOwner(
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
   return { ok: true, uid, projectId, db };
+}
+
+/** Documents one page of {@link readOpenInvitations} reads. */
+export const OPEN_INVITATIONS_PAGE_SIZE = 500;
+/** Pages it reads at most: a bound on the reads of one GET, far above any real project. */
+export const OPEN_INVITATIONS_MAX_PAGES = 20;
+
+/**
+ * The open invitations of a project, read page by page.
+ *
+ * Only invitations that have not expired are read — the accepted, withdrawn
+ * and expired ones accumulate for the life of the project, and `expiresAt` is
+ * an ISO string, so the range is in time order (one field, no composite
+ * index). The read used to stop after one page of 500 and filter afterwards:
+ * accepted and withdrawn invitations that expire sooner than a pending one
+ * could fill that page and cut the pending one off the owner's list (QA review
+ * of dd8e996, 9703f5e20b75). Filtering by `status` in the query would need a
+ * composite index (equality plus a range on another field), so the pages are
+ * walked in `expiresAt` order instead, until one comes back short, with
+ * {@link OPEN_INVITATIONS_MAX_PAGES} as the ceiling on reads.
+ */
+export async function readOpenInvitations(
+  db: AdminDb,
+  projectId: string,
+  now: Date = new Date(),
+  pageSize: number = OPEN_INVITATIONS_PAGE_SIZE,
+  maxPages: number = OPEN_INVITATIONS_MAX_PAGES,
+) {
+  const base = db
+    .collection('projects').doc(projectId)
+    .collection(INVITATION_COLLECTION)
+    .where('expiresAt', '>', now.toISOString())
+    .orderBy('expiresAt');
+  type Snap = Awaited<ReturnType<typeof base.get>>;
+  const docs: Snap['docs'] = [];
+  let last: Snap['docs'][number] | undefined;
+  for (let page = 0; page < maxPages; page += 1) {
+    const snap: Snap = await (last ? base.startAfter(last) : base).limit(pageSize).get();
+    docs.push(...snap.docs);
+    if (snap.docs.length < pageSize) break;
+    last = snap.docs[snap.docs.length - 1];
+  }
+  return openInvitationsOf(docs, projectId, now);
 }

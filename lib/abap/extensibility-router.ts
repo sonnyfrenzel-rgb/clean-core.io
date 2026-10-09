@@ -357,7 +357,7 @@ export function routeExtensibility(
     // dbbc1bf8f01d / 7d9778a8a847 / 32ca5741aeb1 / fbc8bdcaa983).
     rationale = `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
   } else if (findings.length > 0) {
-    rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.${commitSentence}`;
+    rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
   } else if (includesNotRead.length > 0) {
     namedNotRead = true;
     // G4-F2: "no legacy pattern was detected" over a program whose deciding
@@ -367,6 +367,12 @@ export function routeExtensibility(
   } else {
     rationale = `No legacy pattern was detected in the part of the code the engine assessed. On-Stack Developer Extensibility (RAP) is the recommended path.`;
   }
+  // An explicit COMMIT WORK has the same remedy whichever finding chose the
+  // branch above. It used to be appended in the generic findings branch only,
+  // so a program with a BDC call, an RFC or a modification next to its COMMIT
+  // WORK never learned that the commit has to go (QA review of dd8e996,
+  // a0ae65b2b30d).
+  rationale = `${rationale}${commitSentence}`;
   // Every other branch named what it found; with an include not uploaded it
   // also says what it could not have found.
   if (includesNotRead.length > 0 && !namedNotRead) {
@@ -416,9 +422,9 @@ export function routeExtensibility(
       checkpointName: 'In-App Developer Extensibility (Tier 1)',
       question: 'Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?',
       evaluation: needsBtp
-        ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.`
+        ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.${commitSentence}`
         : privateStandardWrites
-        ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.`
+        ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.${commitSentence}`
         : onStackRework
         ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud${reworkCheckpoint}`
         : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',

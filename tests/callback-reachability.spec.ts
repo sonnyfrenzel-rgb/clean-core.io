@@ -98,6 +98,41 @@ test.describe('ALV callbacks in the call graph', () => {
     expect(readCallGraph(direct).callbacks).toHaveLength(2);
   });
 
+  const skeletonCallbacks = (source: string) =>
+    buildProcessSkeleton(source).nodes.filter((n) => n.kind === 'start' && n.detail?.origin === 'callback').length;
+
+  test('5780f532cebf — a write after the registration does not change what the ALV was handed', () => {
+    // QA review of dd8e996: the overwrite check read every statement, so a
+    // later `gv_repid = 'ZOTHER'` suppressed a callback registered with sy-repid.
+    const laterInSameForm = report().replace('ENDFORM.\nFORM set_status', "  gv_repid = 'ZOTHER'.\nENDFORM.\nFORM set_status");
+    expect(laterInSameForm).toContain("gv_repid = 'ZOTHER'");
+    const laterForm = `${report()}FORM later.\n  gv_repid = 'ZOTHER'.\nENDFORM.\n`;
+    for (const source of [laterInSameForm, laterForm]) {
+      expect(readCallGraph(source).callbacks, source).toHaveLength(2);
+      expect(skeletonCallbacks(source), source).toBe(2);
+    }
+    // The last write before the call decides, in both directions.
+    const selfLast = report().replace('  gv_repid = sy-repid.\n', "  gv_repid = 'ZOTHER'.\n  gv_repid = sy-repid.\n");
+    expect(readCallGraph(selfLast).callbacks).toHaveLength(2);
+    // With no write before the call, every write counts, as before.
+    const filledBelow = `${report().replace('  gv_repid = sy-repid.\n', '')}FORM init.\n  gv_repid = sy-repid.\n  gv_repid = 'ZOTHER'.\nENDFORM.\n`;
+    expect(readCallGraph(filledBelow).callbacks).toEqual([]);
+    expect(skeletonCallbacks(filledBelow)).toBe(0);
+  });
+
+  test('ef56d6b03a58 — MOVE, CLEAR and other writes overwrite the program name too', () => {
+    // QA review of dd8e996: only `x = …` counted as an overwrite.
+    for (const write of ["MOVE 'ZOTHER' TO gv_repid.", 'CLEAR gv_repid.', "CONCATENATE 'Z' 'OTHER' INTO gv_repid."]) {
+      const source = report().replace('  gv_repid = sy-repid.\n', `  gv_repid = sy-repid.\n  ${write}\n`);
+      expect(readCallGraph(source).callbacks, write).toEqual([]);
+      expect(skeletonCallbacks(source), write).toBe(0);
+    }
+    // MOVE sy-repid TO … is a fill from this program, not an overwrite.
+    const moved = report().replace('  gv_repid = sy-repid.\n', '  MOVE sy-repid TO gv_repid.\n');
+    expect(readCallGraph(moved).callbacks).toHaveLength(2);
+    expect(skeletonCallbacks(moved)).toBe(2);
+  });
+
   test('the same FORM registered from unreached code and from the program level is reached', () => {
     // QA review of 1c402c400e05: callbacks were de-duplicated by target alone,
     // so the first (unreached) registration hid the reachable one.

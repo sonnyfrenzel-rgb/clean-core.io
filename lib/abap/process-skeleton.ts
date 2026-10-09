@@ -2139,7 +2139,7 @@ class SkeletonBuilder {
     if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
     const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
     if (!program) return;
-    if (!namesThisProgram(program[1], this.statements, this.programName()?.name ?? null)) return;
+    if (!namesThisProgram(program[1], this.statements, this.programName()?.name ?? null, statement)) return;
     for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
       const key = m[2].toUpperCase();
       if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);

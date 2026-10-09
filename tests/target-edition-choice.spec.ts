@@ -33,6 +33,9 @@ test.describe('the target edition of a new project', () => {
     expect(read('app/api/runs/create/route.ts')).toMatch(/body\.s4Deployment \|\| projectData\?\.s4Deployment \|\| 'public'/);
   });
 
+  // The source half. The own-code import is rendered end to end, down to the
+  // edition the active run signed, in tests/level-and-target-rendered.spec.ts
+  // (QA a1f9ee03577a / 0b5e3a8b9d49).
   test('both start screens ask for it and write it before the workspace opens', () => {
     for (const file of ['components/StarterExamples.tsx', 'components/workspace/OwnCodeImport.tsx']) {
       const src = read(file);

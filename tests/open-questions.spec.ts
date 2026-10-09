@@ -6,6 +6,7 @@ import {
   checkOpenAnswerBody,
   groupConstructs,
   openQuestions,
+  openQuestionBases,
   openQuestionsLine,
   readStoredAnswers,
   OPEN_QUESTION_ACTIONS,
@@ -212,7 +213,7 @@ test.describe('the command that stores an answer', () => {
     const kept = { 'add-usage': { state: 'accepted', text: 'No SCMON on this system', account: 'x@y.z', at: 't', basis: 'add-usage-1-abc' } };
     const result = validateProjectCommand(
       { command: 'record-open-question', action: 'add-includes', end: 'answered', text: 'ZINC_A only declares data', basis: 'add-includes-1-xyz', account: 'smuggled@example.com' },
-      { openQuestions: kept },
+      { openQuestions: kept, openQuestionBases: { 'add-includes': 'add-includes-1-xyz' } },
       actor,
     );
     expect(result.ok).toBe(true);
@@ -282,5 +283,115 @@ test.describe('what went in exchange (source guards)', () => {
       expect(read(rel), rel).toContain('<OpenQuestionsLine');
     }
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');
+  });
+});
+
+test.describe('QA review of dd8e99691c8d', () => {
+  const calls = nd([
+    item('local-function-call', 10, 'Local function-module call'),
+    item('local-function-call', 60, 'Local function-module call'),
+    item('file-io', 70, 'Application-server file access'),
+  ]);
+  const answer = (line: number, name: string) => ({ name, state: 'classicAPI', answer: `SAP lists ${name}.`, line });
+  const READING = 'Reading SAP’s catalog for the function-module calls…';
+
+  test('while the catalog loads, the line still counts the other open questions and names the blocking top', () => {
+    const q = openQuestions({ open: calls, project: {}, rules: null, catalog: { status: 'loading', answered: [] } });
+    expect(openQuestionsLine(q)).toBe(`2 open questions · 1 blocks the decision · top: Choose the target · ${READING}`);
+    // Nothing else open: only the reading is said.
+    const onlyCalls = openQuestions({
+      open: calls,
+      project: { s4Deployment: 'public', usageReport: { records: [{}] } },
+      rules: null,
+      catalog: { status: 'loading', answered: [] },
+    });
+    expect(openQuestionsLine(onlyCalls)).toBe(READING);
+  });
+
+  test('the catalog-adjusted split: answered calls leave the count, the lines stay, the totals follow', () => {
+    const one = openQuestions({ open: calls, project: {}, rules: null, catalog: { status: 'ready', answered: [answer(10, 'A')] } });
+    const atc = one.groups.find((g) => g.action === 'add-atc')!;
+    expect(atc.lines).toHaveLength(3);
+    expect(atc.lines.filter((l) => l.catalog)).toHaveLength(1);
+    expect(atc.count).toBe(2);
+    // atc 2 + target 1 + usage 1; only the target blocks.
+    expect([one.open, one.blocking, one.catalogPending]).toEqual([4, 1, false]);
+    expect(openQuestionsLine(one)).toBe('4 open questions · 1 blocks the decision · top: Choose the target');
+    // Both calls answered, the file access still open: one question left.
+    const both = openQuestions({ open: calls, project: {}, rules: null, catalog: { status: 'ready', answered: [answer(10, 'A'), answer(60, 'B')] } });
+    expect(both.groups.find((g) => g.action === 'add-atc')!.count).toBe(1);
+    expect(both.open).toBe(3);
+    // Only calls, all answered: resolved, and out of the open count altogether.
+    const resolved = openQuestions({
+      open: nd(calls.items.slice(0, 2)),
+      project: {},
+      rules: null,
+      catalog: { status: 'ready', answered: [answer(10, 'A'), answer(60, 'B')] },
+    });
+    expect(resolved.groups.find((g) => g.action === 'add-atc')!.end).toBe('resolved');
+    expect(resolved.open).toBe(2);
+  });
+
+  test('code generated at runtime is a limit of the reading, never a "name the call target" question', () => {
+    const q = openQuestions({ open: nd([item('generated-code', 12, 'Code generated at runtime')]), project: {}, rules: null });
+    expect(q.groups.find((g) => g.action === 'name-call-target')).toBeUndefined();
+    expect(q.groups.flatMap((g) => g.lines.map((l) => l.anchor))).not.toContain('L12');
+    expect(q.limits).toMatch(/code generated at runtime \(1 place\)/);
+    expect(read('docs/design/decisions.md')).toContain('*Name the call target* (dynamic call, runtime table)');
+  });
+
+  test('a fully answered rules group counts its rules, not one', () => {
+    const g = openQuestions({ open: nd([]), project: {}, rules: { total: 5, open: [] } }).groups.find((x) => x.action === 'confirm-rules')!;
+    expect(g.end).toBe('resolved');
+    expect(g.count).toBe(5);
+    const open = openQuestions({ open: nd([]), project: {}, rules: { total: 5, open: ['BR-001', 'BR-002'] } }).groups.find((x) => x.action === 'confirm-rules')!;
+    expect(open.count).toBe(2);
+  });
+
+  test('the server derives the same basis the list shows, whatever is imported, answered or looked up', () => {
+    const rules = { total: 3, open: ['BR-002'] };
+    const bases = openQuestionBases(calls, rules);
+    const list = openQuestions({
+      open: calls,
+      project: { s4Deployment: 'public', usageReport: { records: [{}] }, atcReport: { findings: [] } },
+      rules,
+      catalog: { status: 'ready', answered: [answer(10, 'A')] },
+    });
+    expect(bases).toEqual(Object.fromEntries(list.groups.map((g) => [g.action, g.basis])));
+    // A group the project does not have has no basis.
+    expect(openQuestionBases(nd([item('include-not-read', 20)]), null)).not.toHaveProperty('confirm-rules');
+    expect(openQuestionBases(nd([item('include-not-read', 20)]), null)).not.toHaveProperty('add-atc');
+  });
+
+  test('an answer is stored only against the basis the server derives for its group', () => {
+    const actor = { email: 'owner@example.com', now: '2026-10-09T10:00:00.000Z' };
+    const open = nd([item('include-not-read', 20)]);
+    const bases = openQuestionBases(open, null);
+    const body = (action: string, basis: string) => ({ command: 'record-open-question', action, end: 'answered', text: 'ZINC_A only declares data', basis });
+    expect(validateProjectCommand(body('add-includes', bases['add-includes']!), { openQuestionBases: bases }, actor).ok).toBe(true);
+    // A basis made up in the browser, for a set this project does not have now.
+    const future = basisOf('add-includes', ['L99:include-not-read']);
+    expect(validateProjectCommand(body('add-includes', future), { openQuestionBases: bases }, actor)).toMatchObject({ ok: false, status: 409, code: 'open-question-moved' });
+    // A group the project does not have now.
+    expect(validateProjectCommand(body('name-call-target', basisOf('name-call-target', ['L1:dynamic-invocation'])), { openQuestionBases: bases }, actor)).toMatchObject({ ok: false, status: 409, code: 'open-question-not-open' });
+    // A caller that could not derive the questions writes nothing.
+    expect(validateProjectCommand(body('add-includes', bases['add-includes']!), {}, actor)).toMatchObject({ ok: false, status: 409, code: 'open-questions-unknown' });
+    // The route derives them in its transaction, from the source and the rule answers.
+    const route = read('app/api/projects/[projectId]/commands/route.ts');
+    expect(route).toContain('openQuestionBases(notDetermined(project as Project), rules)');
+    expect(route).toContain('openQuestionBases: questionBases');
+    expect(route).toMatch(/rulesStatus\(\{ ok: true, view \}, null\)/);
+  });
+
+  test('the function-module lookup fails cleanly on a token error and asks in batches the route accepts', () => {
+    const hook = read('hooks/useFunctionModuleAnswers.ts');
+    const attempt = hook.slice(hook.indexOf('const attempt = async'));
+    expect(attempt.indexOf('try {')).toBeGreaterThan(-1);
+    expect(attempt.indexOf('getIdToken()')).toBeGreaterThan(attempt.indexOf('try {'));
+    expect(hook).toContain('names.slice(i, i + FUNCTION_MODULE_BATCH)');
+    const batch = Number(/FUNCTION_MODULE_BATCH = (\d+)/.exec(hook)?.[1]);
+    const max = Number(/const MAX_OBJECTS = (\d+)/.exec(read('app/api/abcd-classify/route.ts'))?.[1]);
+    expect(batch).toBeGreaterThan(0);
+    expect(batch).toBeLessThanOrEqual(max);
   });
 });

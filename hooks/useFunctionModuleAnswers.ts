@@ -7,6 +7,9 @@ import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { CatalogAnswerAt, CatalogAnswers } from '@/lib/open-questions';
 import type { Project } from '@/lib/types';
 
+/** `MAX_OBJECTS` of `app/api/abcd-classify/route.ts`: the most names one request may carry. */
+export const FUNCTION_MODULE_BATCH = 500;
+
 interface ModuleAnswer {
   name: string;
   state: string;
@@ -51,29 +54,41 @@ export function useFunctionModuleAnswers(project: Project | null): CatalogAnswer
   useEffect(() => {
     if (!requestKey) return;
     let cancelled = false;
+    const fail = () => {
+      if (!cancelled) setSettled({ key: requestKey, status: 'failed', modules: {} });
+    };
     const attempt = async (retriesLeft: number) => {
       if (cancelled) return;
-      const token = await getAuth().currentUser?.getIdToken();
-      if (!token) {
-        if (retriesLeft > 0) setTimeout(() => void attempt(retriesLeft - 1), 500);
-        else if (!cancelled) setSettled({ key: requestKey, status: 'failed', modules: {} });
-        return;
-      }
+      // Inside the `try`: a token refresh that rejects ends in `failed` like
+      // any other miss, rather than an unhandled rejection that leaves the
+      // list loading for good (QA review of dd8e99691c8d).
       try {
-        const res = await fetch('/api/abcd-classify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ objects: [], functionModules: names, profile: { edition, release } }),
-        });
-        if (cancelled) return;
-        if (!res.ok) {
-          setSettled({ key: requestKey, status: 'failed', modules: {} });
+        const token = await getAuth().currentUser?.getIdToken();
+        if (!token) {
+          if (retriesLeft > 0) setTimeout(() => void attempt(retriesLeft - 1), 500);
+          else fail();
           return;
         }
-        const json = (await res.json()) as { functionModules?: Record<string, ModuleAnswer | null> };
-        setSettled({ key: requestKey, status: 'ready', modules: json.functionModules ?? {} });
+        // The route answers at most FUNCTION_MODULE_BATCH names per request;
+        // a program that calls more is asked in batches and the answers merged.
+        const modules: Record<string, ModuleAnswer | null> = {};
+        for (let i = 0; i < names.length; i += FUNCTION_MODULE_BATCH) {
+          const res = await fetch('/api/abcd-classify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ objects: [], functionModules: names.slice(i, i + FUNCTION_MODULE_BATCH), profile: { edition, release } }),
+          });
+          if (cancelled) return;
+          if (!res.ok) {
+            fail();
+            return;
+          }
+          const json = (await res.json()) as { functionModules?: Record<string, ModuleAnswer | null> };
+          Object.assign(modules, json.functionModules ?? {});
+        }
+        if (!cancelled) setSettled({ key: requestKey, status: 'ready', modules });
       } catch {
-        if (!cancelled) setSettled({ key: requestKey, status: 'failed', modules: {} });
+        fail();
       }
     };
     void attempt(10);

@@ -195,5 +195,18 @@ test.describe('the own-code import asks for the target, and the signed run follo
       .toBe('public');
     const stored = await adminGetDoc('projects', projectId);
     expect(stored?.fromExample).toBeUndefined();
+    // The project field is what the route copied over; the claim is about the
+    // signed run (QA review of dd8e996, 0b5e3a8b9d49). The active run records
+    // the target twice inside its signature: the manifest's deployment input
+    // and the assessment profile's edition.
+    expect(stored?.activeRunId, 'no active run').toBeTruthy();
+    const run = await adminGetDoc(`projects/${projectId}/runs`, String(stored!.activeRunId));
+    expect(run, 'the active run is not stored under the project').toBeTruthy();
+    const deploymentInput = (run!.inputManifest?.inputs ?? []).find(
+      (i: { id?: unknown }) => i?.id === 'target:s4-deployment',
+    );
+    expect(deploymentInput?.revision, 'the signed manifest names another target').toBe('public');
+    expect(run!.assessmentProfile?.edition, 'the signed profile names another edition').toBe('public');
+    expect(run!.runHash, 'the run is not signed').toBeTruthy();
   });
 });

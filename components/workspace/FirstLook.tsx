@@ -23,7 +23,9 @@ import {
   BUILD_UP_BUDGET,
   BUILD_UP_MAP_WAIT,
   BUILD_UP_MAP_WAIT_WITH_MODEL,
+  NAMING_WAIT_MS,
   buildUpStageAt,
+  namingWaitOver,
 } from '@/lib/first-look-buildup';
 import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesStatus, stepStrip, type RulesStatus, type StepChip } from '@/lib/rules-editor';
@@ -339,6 +341,8 @@ export default function FirstLook({
   const [access, setAccess] = useState<TableDependency[] | null>(null);
   const [process, setProcess] = useState<ProcessReading | null>(null);
   const [naming, setNaming] = useState<{ record: ProcessNamingRecord | null } | null>(null);
+  /** The naming wait of its own (`NAMING_WAIT_MS`) is over — counts only when nothing animates. */
+  const [namingWaited, setNamingWaited] = useState(false);
   const [rules, setRules] = useState<BusinessRuleSet | null>(null);
 
   /**
@@ -352,10 +356,8 @@ export default function FirstLook({
    *
    * So the reading is tied to what it was read from, and a change throws it away
    * during the render that brings it, before anything is painted (React's
-   * "adjusting state when a prop changes"). Today the page fetches once per
-   * `projectId` and a full navigation remounts, so this is a guard rather than a
-   * fix for a reachable bug — which is the point: the next caller that keeps the
-   * instance alive should not have to discover this.
+   * "adjusting state when a prop changes"): a new project or source starts
+   * every stage, the naming wait and Skip over from nothing.
    */
   const readingKey = `${projectId} ${source}`;
   const [readFor, setReadFor] = useState(readingKey);
@@ -364,6 +366,7 @@ export default function FirstLook({
     setAccess(null);
     setProcess(null);
     setNaming(null);
+    setNamingWaited(false);
     setRules(null);
     setSkipped(false);
   }
@@ -411,7 +414,16 @@ export default function FirstLook({
    * names it has; a naming that arrives later changes them once.
    */
   const [elapsed, setElapsed] = useState(0);
-  const namingNow = naming ?? (skipped || elapsed >= BUILD_UP_BUDGET.endAt ? NO_NAMING : null);
+  // Runs only when a build-up was asked for and nobody asked for less movement
+  // or pressed Skip (the clock below). Without it the clock stands still, so
+  // the wait for the naming has a timer of its own.
+  const animate = buildUp && !reduced && !skipped && hasSource;
+  useEffect(() => {
+    if (!hasSource || naming || animate || namingWaited) return;
+    const timer = setTimeout(() => setNamingWaited(true), NAMING_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [readingKey, hasSource, naming, animate, namingWaited]);
+  const namingNow = naming ?? (namingWaitOver({ skipped, animate, elapsed, waited: namingWaited }) ? NO_NAMING : null);
   const named = useMemo(
     () => (process && namingNow ? applyNaming(process.context, namingNow.record) : null),
     [process, namingNow],
@@ -502,7 +514,6 @@ export default function FirstLook({
    * soon as the engine is done if that is later, or once the start run is
    * signed if the map is still being signed then — at most MAP_WAIT later.
    */
-  const animate = buildUp && !reduced && !skipped && hasSource;
   // Pause stops the clock where it stands; Continue runs it on from there
   // (owner, 03.10.2026: a first-time reader may want to look longer).
   const [paused, setPaused] = useState(false);
