@@ -10,6 +10,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.6] — 2026-10-09
+
+"Not determined" becomes a short list of open questions you can close, the Business view opens
+on the process map, and the engine answers what SAP's catalog already knows.
+
+### What everyone notices
+
+- **Open questions instead of scattered "Not determined".** One list per project, grouped by
+  what resolves each question: add the includes, name a call target, add ATC results, choose
+  the target, add usage data, confirm the rules with the business. Each group names who can
+  answer it and offers one action. A group ends resolved by evidence, answered (shown as
+  confirmed, never as proven) or accepted as known open with a reason. An answer changes no
+  score, level, bucket or route and never enters a signed run; it is stored by the server and
+  opens again when the questions change. Everywhere else one line says how many are open and
+  which comes first. List output, macros and code generated at runtime are named once as the
+  limits of the reading.
+- **SAP's catalog answers function-module calls.** A local call of a function module SAP's
+  classification file lists is answered with SAP's state instead of "Not determined"; a module
+  SAP marks as not an API is reported as a finding. SAP's published classification, never a
+  check of what the call does at runtime. The demo goes from 11 to 8 open constructs; no
+  example score changes.
+- **The Business view opens on the process map.** Need & process is no longer repeated there
+  (it stays in IT and Management); old links land on the map, and every imported usage record
+  is shown beside it instead of the first five.
+- **No "Run the analysis" while the first analysis runs.** The first look of a new project
+  said the analysis was still to start while it was already signing — and the button could
+  start a second one. Next step now says it is running. The first look also no longer waits
+  forever for a process name when animation is off.
+- **A tab from the previous build says so.** After a deploy, an open tab shows "A new version
+  of Clean-Core.io is available" with a reload button instead of an error message.
+- **Level chips explain themselves everywhere**, now also on the steering one-pager, the print
+  sheet and the Analyze tables. The one-pager prints compactly instead of at 70 %.
+
+### Engine
+
+- `COMMIT WORK` is on-stack rework: a program whose only finding is an explicit commit is no
+  longer rated highly compatible with ABAP Cloud, and every rationale says the commit gives way
+  to the RAP save sequence.
+- A callback's program is read from the writes before its registration; `MOVE … TO`, `CLEAR`
+  and `INTO` count as writes.
+- No sentence asks for an include upload the project does not offer.
+
+### Fixed
+
+- The target-change notice names only the tools this change made outdated; generation-log rows
+  keep their own time; a usage count counts only when finite and not negative; the owner's
+  invitation list reads every open invitation; Management's "choose the target" leads to the IT
+  view's target profile once a run exists.
+
+### Security
+
+- Turning off two-factor authentication always needs a recent sign-in and cannot race a new
+  enrolment. Seventeen findings of the security audits of 3.0.4 and 3.0.5 are fixed (sanitizer,
+  account deletion, logs, error messages, review inputs). The Firestore rules narrow what a
+  browser may write to a project; they are deployed by hand after this release.
+
 ## [v3.0.5] — 2026-10-07
 
 The target system is asked again, the Management view answers keep, rebuild, move to SAP

@@ -3,6 +3,28 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 09.10.2026 — 3.0.6 built, three QA rounds, release
+
+**Built (main on Sonny's go, 09.10.2026):** open questions instead of "Not determined" (ADR-081); Need &
+process leaves the Business view (ADR-080); the catalog answers graded function-module calls (Sonny's go
+for the grading step); COMMIT WORK as on-stack rework; MFA disable hardened; SEC-2026-728 to -744 fixed;
+no "Run the analysis" while the start run signs; stale-tab notice; level chips everywhere; the open 3.0.5
+QA items. CHANGELOG has the details.
+
+**QA:** three rounds on dev (dd8e996, 1b75c99, ce3b4a5): 14 confirmed and fixed, 9 refuted with evidence,
+round 3 clean.
+
+**Open for Sonny:** deploy `firestore.rules` right after the release (not before: the 3.0.5 app writes the
+model's test suite unfiltered, which the new rules deny); whether a function module SAP marks noAPI should
+cost points (today a finding without a deduction).
+
+**Planned:** 3.0.7 engine (ROADMAP §7); 3.0.8 deep links to every choice in every tool and back; 3.0.9 SAP
+Architecture Center reference patterns (timing: open decision 20).
+
+**Learned:** a stale `.next` cache makes `next build` die with "Cannot read properties of undefined
+(reading 'length')" and no stack; delete `.next` before suspecting the change. The whitepaper PDF prints
+APP_VERSION from the build, so rebuild after the version bump before rendering it.
+
 ## Session 06.10.2026 (evening) — 3.0.5 owner fix bundle on dev
 
 **Built (owner requests of the day, bundled as v3.0.5; main on Sonny's go):** target edition asked at
