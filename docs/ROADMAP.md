@@ -1442,22 +1442,22 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-708 | low | P3 | 3.0.x security hardening | fixed |
 | SEC-2026-709 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
 | SEC-2026-710 | low | P3 | 3.0.x security hardening - fixed at intake | fixed |
-| SEC-2026-728 | medium | P2 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-729 | medium | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-730 | medium | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-731 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-732 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-733 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-734 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-735 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-736 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | scheduled |
-| SEC-2026-737 | medium | P2 | 3.0.6 security hardening - next rules deploy (Sonny's go) | scheduled |
-| SEC-2026-739 | low | P3 | 3.0.6 security hardening | scheduled |
-| SEC-2026-740 | low | P3 | 3.0.6 security hardening - next rules deploy (Sonny's go) | scheduled |
-| SEC-2026-741 | low | P3 | 3.0.6 security hardening - next rules deploy (Sonny's go) | scheduled |
-| SEC-2026-742 | info | P3 | 3.0.6 security hardening - comment wording | scheduled |
-| SEC-2026-743 | info | P3 | 3.0.6 security hardening - comment wording | scheduled |
-| SEC-2026-744 | info | P3 | 3.0.6 security hardening - comment wording | scheduled |
+| SEC-2026-728 | medium | P2 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-729 | medium | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-730 | medium | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-731 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-732 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-733 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-734 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-735 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-736 | low | P3 | 3.0.6 security hardening (moved from 3.0.5 on 06.10.2026: 3.0.5 is the owner-requested fix bundle) | fixed (920b78e) |
+| SEC-2026-737 | medium | P2 | 3.0.6 security hardening - next rules deploy (Sonny's go) | fixed (920b78e) |
+| SEC-2026-739 | low | P3 | 3.0.6 security hardening | fixed (920b78e) |
+| SEC-2026-740 | low | P3 | 3.0.6 security hardening - next rules deploy (Sonny's go) | fixed (920b78e) |
+| SEC-2026-741 | low | P3 | 3.0.6 security hardening - next rules deploy (Sonny's go) | fixed (920b78e) |
+| SEC-2026-742 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
+| SEC-2026-743 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
+| SEC-2026-744 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 
 **Audit of v3.0.5 (`4810125`), 07.10.2026: 0 critical, 0 high, 1 medium, 4 low, 3 info — all 81 candidates verified, delta of 108 files, $0.54.** SEC-2026-737 (P2) and -739 to -744 (P3) scheduled for 3.0.6 security hardening, the rules items with the next rules deploy; SEC-2026-738 refuted as a duplicate of -737. All concern code older than 3.0.5.
 
