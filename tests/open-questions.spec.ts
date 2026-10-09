@@ -363,6 +363,20 @@ test.describe('QA review of dd8e99691c8d', () => {
     expect(openQuestionBases(nd([item('include-not-read', 20)]), null)).not.toHaveProperty('add-atc');
   });
 
+  test('a group the evidence resolved takes no answer; an answered one can be answered again (d83c3d91312b)', () => {
+    const open = nd([item('include-not-read', 20)]);
+    const bare = openQuestionBases(open, null);
+    expect(bare).toHaveProperty('choose-target');
+    expect(bare).toHaveProperty('add-usage');
+    const declared = openQuestionBases(open, null, { s4Deployment: 'public', usageReport: { records: [{}] } });
+    expect(declared, 'a declared target resolves its question').not.toHaveProperty('choose-target');
+    expect(declared, 'imported usage resolves its question').not.toHaveProperty('add-usage');
+    expect(declared['add-includes']).toBe(bare['add-includes']);
+    // A stored answer is not evidence: the group keeps its basis.
+    const stored = { 'add-includes': { end: 'answered', text: 'Reads the plant.', basis: bare['add-includes'], by: 'o@example.com', at: '2026-10-09T10:00:00.000Z' } };
+    expect(openQuestionBases(open, null, { openQuestions: stored } as never)['add-includes']).toBe(bare['add-includes']);
+  });
+
   test('an answer is stored only against the basis the server derives for its group', () => {
     const actor = { email: 'owner@example.com', now: '2026-10-09T10:00:00.000Z' };
     const open = nd([item('include-not-read', 20)]);
@@ -378,7 +392,7 @@ test.describe('QA review of dd8e99691c8d', () => {
     expect(validateProjectCommand(body('add-includes', bases['add-includes']!), {}, actor)).toMatchObject({ ok: false, status: 409, code: 'open-questions-unknown' });
     // The route derives them in its transaction, from the source and the rule answers.
     const route = read('app/api/projects/[projectId]/commands/route.ts');
-    expect(route).toContain('openQuestionBases(notDetermined(project as Project), rules)');
+    expect(route).toContain('openQuestionBases(notDetermined(project as Project), rules, project as Project)');
     expect(route).toContain('openQuestionBases: questionBases');
     expect(route).toMatch(/rulesStatus\(\{ ok: true, view \}, null\)/);
   });

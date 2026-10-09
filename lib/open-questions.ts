@@ -453,9 +453,18 @@ export function openQuestions({ open, project, rules, catalog = null }: OpenQues
 export function openQuestionBases(
   open: NotDetermined,
   rules: OpenQuestionsInput['rules'],
+  project: OpenQuestionsInput['project'] = null,
 ): Partial<Record<OpenQuestionAction, string>> {
   const out: Partial<Record<OpenQuestionAction, string>> = {};
-  for (const g of openQuestions({ open, project: null, rules }).groups) out[g.action] = g.basis;
+  // The project's evidence (a declared target, imported usage) decides which
+  // groups are still open; its stored answers do not, so an answered group can
+  // be answered again. A group its evidence resolved takes no answer (QA review
+  // of 1b75c99cacb3, d83c3d91312b).
+  const facts = project ? { ...project, openQuestions: undefined } : null;
+  for (const g of openQuestions({ open, project: facts, rules }).groups) {
+    if (g.end === 'resolved') continue;
+    out[g.action] = g.basis;
+  }
   return out;
 }
 

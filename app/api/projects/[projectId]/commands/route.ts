@@ -295,7 +295,7 @@ export async function POST(
         if (commandName === 'record-open-question') {
           const action = (body as { action?: unknown }).action;
           const rules = action === 'confirm-rules' ? await rulesNow(tx, ref, project) : null;
-          questionBases = openQuestionBases(notDetermined(project as Project), rules);
+          questionBases = openQuestionBases(notDetermined(project as Project), rules, project as Project);
         }
 
         const state: ProjectCommandState = {
