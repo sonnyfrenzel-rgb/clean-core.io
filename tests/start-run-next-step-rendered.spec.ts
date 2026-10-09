@@ -38,6 +38,14 @@ const SOURCE = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_
 /** "Next step" is running in this view, and nothing on the page offers to start the run. */
 async function expectRunning(page: Page, view: 'business' | 'it' | 'management'): Promise<void> {
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', view, { timeout: 60000 });
+  if (view === 'management') {
+    // Management carries its next step in the executive panel, not in the
+    // Next step card: the running sentence in place of the reason, no button.
+    const exec = page.locator('[data-executive-next]').first();
+    await expect(exec, 'management: the executive panel does not say the analysis is running').toContainText('The analysis is running', { timeout: 60000 });
+    await expect(page.locator('[data-executive-next-action]'), 'management: the executive panel still offers the step').toHaveCount(0);
+    return;
+  }
   const next = page.locator('[data-next-step]');
   const running = next.locator('[data-next-step-state="running"]');
   await expect(running, `${view}: "Next step" does not say the analysis is running`).toBeVisible({ timeout: 60000 });

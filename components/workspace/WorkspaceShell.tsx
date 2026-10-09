@@ -408,6 +408,59 @@ export default function WorkspaceShell({
     );
   }, [view, hashLayer, projectId, router]);
 
+  /**
+   * `#process-map` arrives before the map exists — the redirect above runs as
+   * soon as the view is known, a link from a stage lands on a page still
+   * loading — so the browser's own jump finds nothing and the reader stays at
+   * the top. Wait for the map, bring it into view, and hold it there until the
+   * blocks above it have stopped growing (about half a second without a move),
+   * at most five seconds; a scroll by the reader ends it at once.
+   */
+  useEffect(() => {
+    if (view !== 'business') return;
+    let frame = 0;
+    let stop = false;
+    const end = () => {
+      stop = true;
+    };
+    const follow = () => {
+      if (typeof window === 'undefined' || window.location.hash !== `#${BUSINESS_MAP_ID}`) return;
+      stop = false;
+      const started = performance.now();
+      let lastTop: number | null = null;
+      let stillSince = started;
+      const tick = (now: number) => {
+        if (stop || now - started > 5000) return;
+        const map = document.getElementById(BUSINESS_MAP_ID);
+        if (map) {
+          const top = Math.round(map.getBoundingClientRect().top);
+          if (lastTop === null || Math.abs(top - lastTop) > 1) {
+            map.scrollIntoView({ block: 'start' });
+            lastTop = Math.round(map.getBoundingClientRect().top);
+            stillSince = now;
+          } else if (now - stillSince > 500) {
+            return;
+          }
+        }
+        frame = window.requestAnimationFrame(tick);
+      };
+      frame = window.requestAnimationFrame(tick);
+    };
+    follow();
+    window.addEventListener('hashchange', follow);
+    window.addEventListener('wheel', end, { passive: true });
+    window.addEventListener('touchmove', end, { passive: true });
+    window.addEventListener('keydown', end);
+    return () => {
+      stop = true;
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', follow);
+      window.removeEventListener('wheel', end);
+      window.removeEventListener('touchmove', end);
+      window.removeEventListener('keydown', end);
+    };
+  }, [view]);
+
   /** Where the full map stands, for the first look's last moment (ADR-072). */
   const mapState: BuildUpMapState = signed
     ? 'drawn'

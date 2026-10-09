@@ -151,7 +151,9 @@ test.describe('the page, rendered in the workspace', () => {
     const n = Number(await open.getAttribute('data-analysis-not-determined'));
     expect(n).toBeGreaterThan(0);
     await expect(open.locator('h2')).toHaveText('Not determined');
-    await expect(answer).toContainText(`${n} ${n === 1 ? 'thing' : 'things'} not determined`);
+    // The answer no longer repeats the count as a facet of its own (ADR-081:
+    // the duplicate Analyze facet went) — the side card is the one place.
+    await expect(answer).not.toContainText(/\d+ things? not determined/);
     const items = open.locator('[data-not-determined-item]');
     await expect(items).toHaveCount(n);
 
@@ -170,10 +172,8 @@ test.describe('the page, rendered in the workspace', () => {
       await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     }
 
-    // "Show the list" on the figure brings the card into view.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await answer.getByRole('button', { name: 'Show the list' }).click();
-    await expect(open).toBeInViewport({ timeout: 10000 });
+    // No "Show the list" on the answer any more: the facet it belonged to is gone.
+    await expect(answer.getByRole('button', { name: 'Show the list' })).toHaveCount(0);
   });
 
   test('a phone reads it without sideways scrolling', async ({ page }) => {

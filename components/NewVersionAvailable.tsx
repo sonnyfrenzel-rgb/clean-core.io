@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 
 /**
@@ -16,7 +16,7 @@ export default function NewVersionAvailable() {
       role="status"
       className="bg-cc-surface p-8 rounded-cc-card shadow-cc border border-cc-line max-w-lg w-full text-center"
     >
-      <Sparkles size={20} className="mx-auto mb-3 text-cc-brand-strong" aria-hidden="true" />
+      <RefreshCw size={20} className="mx-auto mb-3 text-cc-brand-strong" aria-hidden="true" />
       <h2 className="m-0 mb-3 cc-text-h2 text-cc-ink">A new version of Clean-Core.io is available</h2>
       <p className="m-0 mb-6 cc-text-body text-cc-ink-muted">
         This tab was opened before the latest update and still runs the previous version. Reload to continue with the

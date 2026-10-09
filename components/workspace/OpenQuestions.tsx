@@ -67,10 +67,16 @@ export default function OpenQuestions({
   return (
     <section id={OPEN_QUESTIONS_ID} data-open-questions={questions.open} className="scroll-mt-20" aria-label={wt('oq.title')}>
       <CcCard title={wt('oq.title')} count={questions.open} meta={<CcProvenanceChip value="not-determined" />}>
-        <p data-open-questions-line="" className="m-0 text-[13px] font-semibold text-cc-ink">
-          {openQuestionsLine(questions)}
-        </p>
-        <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('oq.lead')}</p>
+        {/* The tour's "This is what we could not determine" points here, at the
+            line and its lead, not at the whole list: on a phone the list is
+            taller than the screen, and a sheet under it would always cover it
+            (`coachTargetFor` takes the smallest target on screen). */}
+        <div data-coach-target="not-determined">
+          <p data-open-questions-line="" className="m-0 text-[13px] font-semibold text-cc-ink">
+            {openQuestionsLine(questions)}
+          </p>
+          <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('oq.lead')}</p>
+        </div>
         {questions.noSource ? (
           <p data-not-determined-state="no-source" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
             {wt('notDetermined.noSource')}

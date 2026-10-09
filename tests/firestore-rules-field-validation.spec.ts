@@ -264,10 +264,6 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, {
     worklist: [{ id: 'w1', title: 'Finding', status: 'open' }],
   })), 'worklist from the browser').toBe(true);
-  // The labels the server writes, and the ones that exist only on create.
-  for (const status of ['analyzed', 'transformed', 'completed', 'uploaded', 'created']) {
-    expect(await denied(() => updateDoc(ref, { status })), `status ${status}`).toBe(true);
-  }
   // updatedAt is the time of the write, not a chosen one.
   expect(await denied(() => updateDoc(ref, { updatedAt: Timestamp.fromDate(new Date('2000-01-01')) })), 'back-dated updatedAt').toBe(true);
   expect(await denied(() => updateDoc(ref, { updatedAt: serverTimestamp() })), 'updatedAt of the write').toBe(false);
@@ -283,6 +279,12 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, {
     solutionDesign: '{"summary":"y"}', status: 'designed', nonFunctionalRequirements: deleteField(),
   })), 'design without NFR').toBe(false);
+  // The labels the server writes, and the ones that exist only on create — tried
+  // now that the stored status is 'designed', so each one is a change (the
+  // fixture starts at 'analyzed', and writing the stored value changes nothing).
+  for (const status of ['analyzed', 'transformed', 'completed', 'uploaded', 'created']) {
+    expect(await denied(() => updateDoc(ref, { status })), `status ${status}`).toBe(true);
+  }
   expect(await denied(() => updateDoc(ref, {
     testCases: [{ id: 't1', title: 'Case', status: 'pending' }],
     testSuite: { code: 'CLASS ltc DEFINITION FOR TESTING.' },
