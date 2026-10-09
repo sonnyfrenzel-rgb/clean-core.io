@@ -28,7 +28,7 @@ function job(src: string, name: string): string {
   const start = src.indexOf(`\n  ${name}:\n`);
   expect(start, `no job ${name}`).toBeGreaterThan(-1);
   const rest = src.slice(start + 1);
-  const next = rest.slice(1).search(/^ {2}[a-z][a-z-]*:$/m);
+  const next = rest.slice(1).search(/^ {2}[a-z][a-z0-9-]*:$/m);
   return next === -1 ? rest : rest.slice(0, next + 1);
 }
 

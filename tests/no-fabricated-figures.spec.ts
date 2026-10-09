@@ -316,8 +316,8 @@ test.describe('a failed verification is not a forgery verdict', () => {
 });
 
 test.describe('the gate that runs untrusted code holds no production secret', () => {
-  test('the validate job takes nothing but the test model key', () => {
-    // `validate` installs dependencies, builds, and runs the whole Playwright
+  test('the quality gate takes nothing but the test model key', () => {
+    // The gate installs dependencies, builds, and runs the whole Playwright
     // suite — a job that executes a lot of code nobody on this team wrote, and
     // that any change to a spec can steer. It used to be handed
     // MFA_BACKUP_CODE_PEPPER, PILOT_APPROVAL_SECRET and S4_ENCRYPTION_KEY from
@@ -330,18 +330,35 @@ test.describe('the gate that runs untrusted code holds no production secret', ()
     // `playwright.config.ts` sets all three to visibly-test ones. So the rule
     // is simply that this job gets no secret at all — except the model key,
     // which is a separate, test-only credential by name and by design.
-    const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8');
-    const start = wf.indexOf('\n  validate:');
-    expect(start, 'the validate job is gone').toBeGreaterThan(-1);
-    const rest = wf.slice(start + 1);
-    const nextJob = rest.slice(1).search(/^ {2}[a-z][a-z-]*:$/m);
-    const job = nextJob === -1 ? rest : rest.slice(0, nextJob + 1);
+    //
+    // Since 09.10.2026 the gate is three jobs: `build` (install, lint, build,
+    // type check), `e2e` (the suite in parallel shards) and `validate` (the
+    // gate itself). The rule holds for each of them, and the build gets not
+    // even the model key: its output is uploaded as an artifact.
+    const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
+    const jobOf = (name: string) => {
+      const start = wf.indexOf(`\n  ${name}:\n`);
+      expect(start, `the ${name} job is gone`).toBeGreaterThan(-1);
+      const rest = wf.slice(start + 1);
+      const nextJob = rest.slice(1).search(/^ {2}[a-z][a-z0-9-]*:$/m);
+      return nextJob === -1 ? rest : rest.slice(0, nextJob + 1);
+    };
+    const secretsIn = (job: string) => [...job.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
 
-    const used = [...job.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
+    const e2e = jobOf('e2e');
+    expect(e2e, 'the e2e job no longer runs the suite').toContain('npx playwright test');
     expect(
-      used.filter((name) => name !== 'TEST_GEMINI_API_KEY'),
+      secretsIn(e2e).filter((name) => name !== 'TEST_GEMINI_API_KEY'),
       'the job that runs the test suite was given a production secret',
     ).toEqual([]);
+    const build = jobOf('build');
+    expect(build, 'the build job no longer builds').toContain('run: npm run build');
+    expect(secretsIn(build), 'the job whose output is uploaded was given a secret').toEqual([]);
+    expect(secretsIn(jobOf('validate')), 'the gate job was given a secret').toEqual([]);
+    // Nothing else in the workflow reaches the gate's jobs: every secret before
+    // the security job is one of the above.
+    const gate = wf.slice(wf.indexOf('\njobs:\n'), wf.indexOf('\n  security:\n'));
+    expect(secretsIn(gate).filter((name) => name !== 'TEST_GEMINI_API_KEY')).toEqual([]);
 
     // And the ones in question are still deployed to the service, so removing
     // them from the gate did not quietly remove them from production. The

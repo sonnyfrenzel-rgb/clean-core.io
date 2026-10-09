@@ -116,9 +116,10 @@ test.describe('every archived version has a text, a date and a digest', () => {
    * entry's own comment says so — this runs that command. One honest limit: it
    * needs the commit to be present. A shallow checkout has no history, so there
    * this test says "not checkable here" and skips with that reason rather than
-   * passing on nothing or failing on the clone. The `validate` job in
-   * `.github/workflows/deploy.yml` checks out with `fetch-depth: 0` for exactly
-   * this test, so in CI it runs; the skip is for any other shallow clone.
+   * passing on nothing or failing on the clone. The `e2e` job in
+   * `.github/workflows/deploy.yml` (every shard) checks out with `fetch-depth: 0`
+   * for exactly this test, so in CI it runs; the skip is for any other shallow
+   * clone. tests/quality-gate-guard.spec.ts holds that checkout in place.
    */
   test('the recorded blob is what git holds at the recorded commit', () => {
     const git = (...args: string[]) =>
