@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { isStaleBuildError } from '../lib/stale-build';
 
 /**
  * QA full review of fc787674705f (v2.20.0), stage 5 — the testing page.
@@ -129,11 +130,12 @@ test.describe('testing page — QA full review of fc787674705f', () => {
 });
 
 test.describe('testing error boundary — stale chunk recovery (1ef3f93640d4)', () => {
+  // Since 3.0.6 every boundary shares lib/stale-build.ts; this one must use it,
+  // and the shared matcher must still know every message below.
   const matcher = () => {
     const src = fs.readFileSync(path.join(SEGMENT, 'error.tsx'), 'utf8');
-    const m = src.match(/\/(Loading chunk [^\n]*?)\/i\.test\(msg\)/);
-    expect(m, 'the chunk-error matcher was not found').not.toBeNull();
-    return new RegExp(m![1], 'i');
+    expect(src, 'the testing boundary no longer uses the shared matcher').toContain("from '@/lib/stale-build'");
+    return { test: (msg: string) => isStaleBuildError({ message: msg }) };
   };
 
   test("Chrome's native dynamic-import failure is recognised", () => {

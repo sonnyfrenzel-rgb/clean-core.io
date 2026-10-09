@@ -636,7 +636,14 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     atcReport: { findings: [], source: 'atc', importedAt: '2026-09-18', warnings: [] },
     // Roadmap 8.4 — a decision that claims to be confirmed, written past the command route.
     decision: { status: 'confirmed', revision: 1, confirmation: { account: 'cto@example.com', at: '2026-09-24T08:00:00.000Z' } },
+    // ADR-081 — an open question answered past the command route.
+    openQuestions: { 'add-includes': { end: 'answered', text: 'Reads the plant.', basis: 'add-includes-1-x', by: 'cto@example.com', at: '2026-10-09T08:00:00.000Z' } },
   };
+  // Every server-only field needs a forgery here: a missing one is `undefined`,
+  // which the SDK refuses before the rules are ever asked.
+  test('every server-only field has a forgery to try', () => {
+    for (const field of SERVER_ONLY_PROJECT_FIELDS) expect(forgery[field], field).not.toBeUndefined();
+  });
 
   for (const field of SERVER_ONLY_PROJECT_FIELDS) {
     test(`the owner's own browser cannot write ${field}`, async () => {

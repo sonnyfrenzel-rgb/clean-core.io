@@ -256,7 +256,9 @@ test.describe('server side', () => {
     expect(refused.status()).toBe(409);
     expect((await refused.json()).blockers).toEqual(['sign-off-stale']);
 
-    await clientWrite('status', 'completed');
+    // 'documented' — the furthest label a browser may still set since 3.0.6
+    // (SEC-2026-737); 'completed' is refused by the rules outright.
+    await clientWrite('status', 'documented');
     const still = await pack(request);
     expect(still.status()).toBe(409);
     expect((await still.json()).blockers).toEqual(['sign-off-stale']);

@@ -108,12 +108,15 @@ test.describe('the audit pack refuses what it cannot verify', () => {
     expect(s).toContain('runData.worklist');
   });
 
-  test('both fields really are client-writable, which is why this matters', () => {
+  test('the route is client-writable, which is why this matters; the worklist left the list in 3.0.6', () => {
     const rules = read('firestore.rules');
     const start = rules.indexOf('affectedKeys().hasOnly([');
     const block = rules.slice(start, rules.indexOf(']', start));
-    expect(block).toContain("'worklist'");
     expect(block).toContain("'extensibilityRoute'");
+    // SEC-2026-740 (3.0.6): only POST /api/runs/create writes the worklist now.
+    // The pack still reads it from the run — the rules are deployed by hand,
+    // and an older project may carry one a browser wrote before.
+    expect(block).not.toContain("'worklist'");
   });
 });
 
