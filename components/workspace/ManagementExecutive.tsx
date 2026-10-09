@@ -441,6 +441,8 @@ export interface ExecutivePrimary {
   href: string;
   /** The phase it opens, for specs and the coach mark. */
   key: string;
+  /** The step is already happening — the start run is with the server. Said, never offered as a button. */
+  running?: boolean;
 }
 
 /* --------------------------------------------------------- component */
@@ -534,16 +536,18 @@ export default function ManagementExecutive({
               <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
                 {primary ? primary.reason : s.next!.reason}
               </p>
-              <div className="mt-3">
-                <CcLinkButton
-                  href={primary ? primary.href : hrefFor(s.next!.target)}
-                  variant="primary"
-                  data-executive-next-action=""
-                  data-next-step-key={primary?.key}
-                >
-                  {primary ? primary.label : s.next!.label}
-                </CcLinkButton>
-              </div>
+              {primary?.running ? null : (
+                <div className="mt-3">
+                  <CcLinkButton
+                    href={primary ? primary.href : hrefFor(s.next!.target)}
+                    variant="primary"
+                    data-executive-next-action=""
+                    data-next-step-key={primary?.key}
+                  >
+                    {primary ? primary.label : s.next!.label}
+                  </CcLinkButton>
+                </div>
+              )}
             </>
           ) : (
             <p className="m-0 mt-2 text-[13px] font-medium text-cc-ink-muted">{wt('exec.noNextStep')}</p>
@@ -570,14 +574,16 @@ export default function ManagementExecutive({
           <span className="min-w-0 flex-1 basis-48 text-[12px] leading-snug font-medium text-cc-ink-muted">
             {primary ? primary.reason : s.next!.reason}
           </span>
-          <CcLinkButton
-            href={primary ? primary.href : hrefFor(s.next!.target)}
-            variant="primary"
-            data-executive-next-action=""
-            data-next-step-key={primary?.key}
-          >
-            {primary ? primary.label : s.next!.label}
-          </CcLinkButton>
+          {primary?.running ? null : (
+            <CcLinkButton
+              href={primary ? primary.href : hrefFor(s.next!.target)}
+              variant="primary"
+              data-executive-next-action=""
+              data-next-step-key={primary?.key}
+            >
+              {primary ? primary.label : s.next!.label}
+            </CcLinkButton>
+          )}
         </>
       ) : (
         <span className="text-[12px] font-medium text-cc-ink-muted">{wt('exec.noNextStep')}</span>

@@ -102,6 +102,21 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
 const WARNING_SIGN = String.fromCodePoint(0x26a0, 0xfe0f);
 const CROSS_MARK = String.fromCodePoint(0x274c);
 
+/**
+ * A row of the generation log keeps the time it was written (roadmap 3.0.6,
+ * left open by the 3.0.5 QA loop): it is stamped when it is added, not when the
+ * log is drawn — drawing stamped every row with the second of the last render.
+ */
+interface GenerationLogRow {
+  at: number;
+  text: string;
+}
+const logRows = (...texts: string[]): GenerationLogRow[] => {
+  const at = Date.now();
+  return texts.map((text) => ({ at, text }));
+};
+const logTime = (at: number) => new Date(at).toLocaleTimeString('en', { hour12: false });
+
 export default function TransformationPage() {
   const { projectId } = useParams();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
@@ -126,7 +141,7 @@ export default function TransformationPage() {
   }, [project]);
 
   const [transformedCode, setTransformedCode] = useState('');
-  const [transformationLog, setTransformationLog] = useState<string[]>([]);
+  const [transformationLog, setTransformationLog] = useState<GenerationLogRow[]>([]);
   const [error, setError] = useState('');
   /**
    * Codex architecture-02 — a generated package the server refused because the
@@ -620,12 +635,12 @@ CMD ["node", "srv/service.js"]`
       setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
       const isAbapCloud = decision.isAbapCloud;
 
-      setTransformationLog([
+      setTransformationLog(logRows(
         'Initializing transformation engine...',
         decision.sentence,
         'Parsing legacy ABAP structures...',
         isAbapCloud ? 'Mapping to RAP Developer Extensibility patterns...' : 'Mapping to CAP modular structures...'
-      ]);
+      ));
 
       const prompt = isAbapCloud
         ? `You are an elite SAP RAP & ABAP Cloud Developer. Transform the following legacy ABAP code into a modern, production-ready modular SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture based on the provided Solution Design and Business Analysis.
@@ -779,7 +794,7 @@ CMD ["node", "srv/service.js"]`
       while (!result && attempts < MAX_ATTEMPTS) {
         if (attempts > 0) {
           const notice = retryNotice(failure);
-          setTransformationLog(prev => [...prev, notice]);
+          setTransformationLog(prev => [...prev, ...logRows(notice)]);
         }
         attempts++;
         // A second call continues from where the bar stands; it does not restart it.
@@ -849,7 +864,7 @@ CMD ["node", "srv/service.js"]`
         throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
 
-      setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
+      setTransformationLog(prev => [...prev, ...logRows('Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...')]);
 
       // The server stores the stand — code, suite, status and the binding to
       // the contract it was computed against — in one transaction (roadmap
@@ -1117,9 +1132,9 @@ CMD ["node", "srv/service.js"]`
             className="w-full md:w-80 h-48 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] text-cc-ink-muted"
           >
             {transformationLog.map((log, i) => (
-              <div key={i} className="mb-1 flex gap-2">
-                <span className="shrink-0">[{new Date().toLocaleTimeString('en', { hour12: false })}]</span>
-                <span className="text-cc-ink">{log}</span>
+              <div key={i} className="mb-1 flex gap-2" data-generation-log-row="">
+                <span className="shrink-0">[{logTime(log.at)}]</span>
+                <span className="text-cc-ink">{log.text}</span>
               </div>
             ))}
           </div>

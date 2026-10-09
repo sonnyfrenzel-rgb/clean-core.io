@@ -10,7 +10,7 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
-import { sha256Hex } from '../lib/artefact-digest';
+import { sha256Hex, artefactDigest, buildSourceChangeRecord } from '../lib/artefact-digest';
 import { projectTarget, targetChangeImpact, targetChangeNotice, targetWords } from '../lib/target-change';
 import { describeRunCost } from '../lib/run-cost';
 import type { Project } from '../lib/types';
@@ -280,5 +280,65 @@ test.describe('changing the target in the IT view', () => {
     const project = (await db().collection('projects').doc(projectId).get()).data()!;
     expect(project.activeRunId, 'cancel started no run').toBe(runBefore);
     expect(project.s4Deployment).toBe('private');
+  });
+});
+
+/*
+ * Roadmap 3.0.6, left open by the 3.0.5 QA loop: the notice after a target
+ * change lists only the tools *that* change made outdated. A design already
+ * outdated by an earlier change is not news of this one.
+ */
+test.describe('the notice names only what this change made outdated', () => {
+  const DESIGN = '# Design\nRebuild as RAP.';
+  const DOCS = '# Documentation\nWhat the report does.';
+  const recordWith = (alreadyOutdated?: string[]) =>
+    signedProject({
+      activeRunId: 'run-2',
+      s4Deployment: 'public',
+      assessmentTarget: { release: '', components: [], languageVersions: [] },
+      solutionDesign: DESIGN,
+      documentation: DOCS,
+      auditMetadata: {
+        inputFingerprint: { sha256: sha256Hex(SOURCE) },
+        sourceChange: {
+          at: '2026-10-06T09:00:00.000Z',
+          runId: 'run-2',
+          previousSha256: sha256Hex(SOURCE),
+          artefacts: {
+            solutionDesign: artefactDigest('solutionDesign', DESIGN),
+            documentation: artefactDigest('documentation', DOCS),
+          },
+          reason: 'profile',
+          previousTarget: { edition: 'private', release: '2023 FPS03' },
+          ...(alreadyOutdated ? { alreadyOutdated } : {}),
+        },
+      } as never,
+    });
+  const NOW = Date.parse('2026-10-06T12:00:00.000Z');
+
+  test('a tool outdated before the change is left out, the one this change outdated is named', () => {
+    const notice = targetChangeNotice(recordWith(['solutionDesign']), NOW);
+    const keys = notice?.outdated.map((t) => t.key) ?? [];
+    expect(keys).toContain('documentation');
+    expect(keys).not.toContain('design');
+  });
+
+  test('an older record without the list names every outdated tool, as before', () => {
+    const keys = targetChangeNotice(recordWith(), NOW)?.outdated.map((t) => t.key) ?? [];
+    expect(keys).toEqual(expect.arrayContaining(['design', 'documentation']));
+  });
+
+  test('the record says which artefacts were already outdated: those still carrying the previous record\'s digest', () => {
+    const project = {
+      solutionDesign: DESIGN,
+      documentation: DOCS,
+      auditMetadata: {
+        sourceChange: { artefacts: { solutionDesign: artefactDigest('solutionDesign', DESIGN), documentation: 'an-older-digest' } },
+      },
+    };
+    const record = buildSourceChangeRecord(project, sha256Hex(SOURCE), 'run-2', '2026-10-06T09:00:00.000Z');
+    expect(record.alreadyOutdated).toEqual(['solutionDesign']);
+    // No previous record: nothing was outdated before, and the field is left out.
+    expect(buildSourceChangeRecord({ solutionDesign: DESIGN }, sha256Hex(SOURCE), 'run-2', '2026-10-06T09:00:00.000Z').alreadyOutdated).toBeUndefined();
   });
 });

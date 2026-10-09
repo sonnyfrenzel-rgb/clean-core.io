@@ -177,6 +177,15 @@ export interface SourceChangeRecord {
    * the target changed from. Absent on older records.
    */
   previousTarget?: { edition: string; release: string };
+  /**
+   * Roadmap 3.0.6 (left open by the 3.0.5 QA loop): the artefacts that were
+   * already outdated before this change — still carrying the digest the
+   * previous change recorded, so built for an even earlier source or target.
+   * The notice after a target change names only what *this* change made
+   * outdated; these were outdated already. Absent on older records, which then
+   * read as before (every outdated tool named).
+   */
+  alreadyOutdated?: TrackedArtefact[];
 }
 
 /** Build the record from the project as it stands just before the new run is written. */
@@ -192,6 +201,13 @@ export function buildSourceChangeRecord(
     if (d) artefacts[key] = d;
   }
   const record: SourceChangeRecord = { at, runId, previousSha256, artefacts };
+  // The same test `staleness` applies (`unchangedSince`): an artefact that
+  // still carries the digest the previous change recorded was outdated then and
+  // has not been made again since.
+  const prior = (project.auditMetadata as { sourceChange?: { artefacts?: Partial<Record<TrackedArtefact, unknown>> } } | undefined)
+    ?.sourceChange?.artefacts;
+  const alreadyOutdated = TRACKED_ARTEFACTS.filter((key) => artefacts[key] !== undefined && prior?.[key] === artefacts[key]);
+  if (alreadyOutdated.length > 0) record.alreadyOutdated = alreadyOutdated;
   const signOff = project.approvedByArchitect === true ? signOffKey(project.architectSignOffAt) : null;
   if (signOff) record.signOff = signOff;
   return record;

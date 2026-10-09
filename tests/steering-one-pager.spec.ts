@@ -585,6 +585,17 @@ test.describe('8.6 one-pager — a view, not a record', () => {
       expect(name, 'a PDF package crept in for 8.6').not.toMatch(/pdf/i);
     }
   });
+
+  test('paper gets a compact layout of its own, not the screen at 70 % (3.0.6)', () => {
+    const css = read('app/globals.css');
+    const print = css.slice(css.indexOf('@media print'));
+    const steering = print.slice(print.indexOf('[data-steering-print] {'), print.indexOf('[data-workspace-print]'));
+    expect(steering, 'the one-pager is zoomed again').not.toMatch(/\bzoom\s*:/);
+    // Every size the print scale sets is at least 9 px — the zoom took the small print under 8.
+    const sizes = [...steering.matchAll(/font-size:\s*([\d.]+)px/g)].map((m) => Number(m[1]));
+    expect(sizes.length).toBeGreaterThan(4);
+    for (const size of sizes) expect(size, `a ${size}px size on the one-pager's paper`).toBeGreaterThanOrEqual(9);
+  });
 });
 
 /* -------------------------------------------------------- 6. on the screen */
@@ -661,7 +672,23 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
     await page.emulateMedia({ media: 'print' });
     await expect(pager).toBeVisible();
     await expect(page.locator('[data-management-view=""]')).toBeHidden();
-    for (const b of await pager.locator('button').all()) await expect(b).toBeHidden();
+    // A level chip is a button on screen (it explains itself, roadmap 3.0.6) and
+    // prints as the chip; its explanation panel never does.
+    for (const b of await pager.locator('button:not([data-cc-level-trigger])').all()) await expect(b).toBeHidden();
+    for (const p of await pager.locator('[data-cc-level-explanation]').all()) await expect(p).toBeHidden();
+    // A compact layout, not a zoom (3.0.6): no text on the paper under 9 px.
+    const smallest = await pager.evaluate((root) => {
+      let min = Infinity;
+      for (const el of [root, ...root.querySelectorAll('*')] as HTMLElement[]) {
+        const style = getComputedStyle(el);
+        if (style.display === 'none' || !el.textContent?.trim()) continue;
+        if ((style as CSSStyleDeclaration & { zoom?: string }).zoom && style.zoom !== '1') return -1;
+        min = Math.min(min, parseFloat(style.fontSize));
+      }
+      return min;
+    });
+    expect(smallest, 'the one-pager is zoomed on paper').not.toBe(-1);
+    expect(smallest).toBeGreaterThanOrEqual(9);
     const pdf = await page.pdf({ preferCSSPageSize: true });
     const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
     expect(pages, 'the one-pager prints on more than one page').toBe(1);

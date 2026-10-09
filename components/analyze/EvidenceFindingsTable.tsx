@@ -16,6 +16,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 import { CcSeverity, CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import {
   calmTitle,
   filterActive,
@@ -98,7 +99,7 @@ function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: Leve
       </span>
     ),
     level: level ? (
-      <CcCleanCoreLevel value={level} />
+      <CcCleanCoreLevelExplained value={level} />
     ) : lookup === 'ready' ? (
       <span className="cc-text-meta text-cc-ink-muted" title="No level: the finding names no object">?</span>
     ) : (
@@ -541,6 +542,9 @@ export default function EvidenceFindingsTable({
                                         {l === '?' ? (
                                           <span className="cc-text-meta text-cc-ink-muted">?</span>
                                         ) : (
+                                          // Bare on purpose: this summary sits inside the group's
+                                          // disclosure button, and a button cannot hold another.
+                                          // The rows below explain each level (roadmap 3.0.6).
                                           <CcCleanCoreLevel value={l as CloudReadinessGrade} />
                                         )}
                                         <span className="cc-text-meta text-cc-ink">{n}</span>

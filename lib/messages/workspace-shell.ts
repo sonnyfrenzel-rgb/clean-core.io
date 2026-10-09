@@ -79,6 +79,9 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'status.label': 'Project status',
   'status.open': 'Open',
   'nextStep.title': 'Next step',
+  // While the start run is with the server: the analysis is the step, and it is
+  // already happening (owner, 09.10.2026).
+  'nextStep.running': 'The analysis is running. This step is done once the run is signed — there is nothing to press.',
 } as const;
 
 /** "3 of 7 have something on record" — the folded status row of the Business view. */

@@ -3,6 +3,7 @@ import type { CallGraphReport } from '@/lib/abap/call-graph';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { TableDependencyReport } from '@/lib/abap/table-dependencies';
 import type { UsageRecord, UsageReport } from '@/lib/abap/usage-model';
+import { measuredCount } from '@/lib/usage-count';
 import type { ProcessMapModel } from '@/lib/process-map';
 import type { OverlayDefinition, ProcessNavigation } from '@/lib/process-navigation';
 
@@ -347,8 +348,10 @@ export function buildFindingsOverlay(
 
 function usageMark(record: UsageRecord): string {
   const last = record.lastUsed ? `last used ${record.lastUsed}` : 'no last-use date';
-  if (record.callCount === null) return `${record.objectName} · no count in the export · ${last}`;
-  return `${record.objectName} · ${record.callCount} ${record.callCount === 1 ? 'call' : 'calls'} · ${last}`;
+  // A count that is not finite or is negative is no count (roadmap 3.0.6).
+  const calls = measuredCount(record.callCount);
+  if (calls === null) return `${record.objectName} · no count in the export · ${last}`;
+  return `${record.objectName} · ${calls} ${calls === 1 ? 'call' : 'calls'} · ${last}`;
 }
 
 /**

@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import NewVersionAvailable from '@/components/NewVersionAvailable';
+import { isStaleBuildError, reloadOnceForStaleBuild } from '@/lib/stale-build';
 
 /**
  * The second half of QA findings 0d8443fae823 / 58201e6aaedb.
@@ -39,21 +41,23 @@ export default function DocumentationStageError({
   const { projectId } = useParams();
   const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
 
+  // Stale-chunk recovery, shared with app/error.tsx (lib/stale-build.ts): one
+  // reload, and a "new version is available" card instead of this stage's crash
+  // card while it lands or once it is spent (roadmap 3.0.6).
+  const staleBuild = isStaleBuildError(error);
+
   useEffect(() => {
     console.error('Documentation stage error:', error);
-    const msg = error?.message || '';
-    const isChunkError =
-      error?.name === 'ChunkLoadError' ||
-      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Importing a module script failed/i.test(msg);
-    if (isChunkError && typeof window !== 'undefined') {
-      const KEY = 'cc_chunk_reload_at';
-      const last = Number(sessionStorage.getItem(KEY) || 0);
-      if (Date.now() - last > 10000) {
-        sessionStorage.setItem(KEY, String(Date.now()));
-        window.location.reload();
-      }
-    }
-  }, [error]);
+    if (staleBuild) reloadOnceForStaleBuild();
+  }, [error, staleBuild]);
+
+  if (staleBuild) {
+    return (
+      <div data-documentation-error-boundary className="p-8 md:p-12 flex justify-center">
+        <NewVersionAvailable />
+      </div>
+    );
+  }
 
   // Block D (D.9): a workspace card (§1.4) — 12 px radius, the error's own
   // icon at 20 px without a bubble, the title on the scale (§1.2) and the two

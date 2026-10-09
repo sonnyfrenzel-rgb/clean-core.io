@@ -68,6 +68,7 @@ import { RETIREMENT_WINDOW_DAYS, type UsageReport } from './abap/usage-model';
 import type { StandardFit } from './standard-fit';
 import type { ProvenanceValue } from './provenance';
 import { formatDays } from './format';
+import { measuredCount } from './usage-count';
 
 export type OptionSignal = 'for' | 'against' | 'not-determined';
 
@@ -265,7 +266,10 @@ function retireSignal(subject: string, usage: UsageReport | null): Pick<OptionCa
         !!r && typeof (r as { objectName?: unknown }).objectName === 'string' &&
         (r as { objectName: string }).objectName.toUpperCase() === subject.toUpperCase(),
     ) as UsageReport['records'][number] | undefined) ?? null;
-  if (!record || typeof record.callCount !== 'number') {
+  // A count counts only when finite and not negative (roadmap 3.0.6): `NaN`
+  // or `-3` from a hand-edited report is no measurement, never "zero executions".
+  const calls = record ? measuredCount(record.callCount) : null;
+  if (!record || calls === null) {
     return {
       signal: 'not-determined',
       reason: `The usage import does not count executions of ${subject}, so it says nothing about retiring it.`,
@@ -273,15 +277,15 @@ function retireSignal(subject: string, usage: UsageReport | null): Pick<OptionCa
       place: 'it',
     };
   }
-  if (record.callCount > 0) {
+  if (calls > 0) {
     return {
       signal: 'against',
-      reason: `The usage import counts ${plural(record.callCount, 'execution', 'executions')} of ${subject} — it still runs.`,
+      reason: `The usage import counts ${plural(calls, 'execution', 'executions')} of ${subject} — it still runs.`,
       provenance: 'imported',
       place: 'it',
     };
   }
-  const days = usage.window?.days ?? null;
+  const days = measuredCount(usage.window?.days);
   if (days === null || days < RETIREMENT_WINDOW_DAYS) {
     return {
       signal: 'not-determined',

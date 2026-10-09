@@ -167,6 +167,18 @@ test.describe('ADR-079 — what the evidence says per option', () => {
     expect(decisionOptionsView(src({ usage: usage(0, 396) })).cards[3]).toMatchObject({ signal: 'for', provenance: 'imported' });
   });
 
+  test('a count counts only when finite and not negative — a hand-edited report never reads as unused (3.0.6)', () => {
+    for (const broken of [Number.NaN, Number.POSITIVE_INFINITY, -3]) {
+      const card = decisionOptionsView(src({ usage: usage(broken, 396) })).cards[3];
+      expect(card.signal, `count ${broken}`).toBe('not-determined');
+      expect(card.reason).toContain('does not count executions');
+    }
+    // A window that is no number is no window: never "unused for long enough".
+    for (const days of [Number.NaN, -400]) {
+      expect(decisionOptionsView(src({ usage: usage(0, days) })).cards[3].signal, `window ${days}`).toBe('not-determined');
+    }
+  });
+
   test('the proposal is the one option with "for" — and when two have it, the evidence does not decide', () => {
     const one = decisionOptionsView(src());
     expect(one.proposed).toBe('rebuild');

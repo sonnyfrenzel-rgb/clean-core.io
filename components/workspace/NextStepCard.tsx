@@ -42,6 +42,10 @@ import { wt } from '@/lib/workspace-messages';
  * to stop, and "nothing is open" without a badge would read as the one
  * statement on the screen that nobody has to justify.
  *
+ * A third, **running**, is the open state of Analyze while the start run of a
+ * new project is with the server (`point.running`, set by the workspace): the
+ * card says so and carries no button, so it never invites a second start.
+ *
  * The open state says two things and they are two elements: what is open, and
  * why it is this one rather than another. Neither is written here.
  */
@@ -98,20 +102,30 @@ export default function NextStepCard({
               {NOTHING_OPEN}
             </p>
           ) : (
-            <div data-next-step-state="open" data-next-step-key={point.key}>
+            <div
+              data-next-step-state={point.running ? 'running' : 'open'}
+              data-next-step-key={point.key}
+              aria-busy={point.running ? true : undefined}
+            >
               <p className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">{point.label}</p>
-              <p data-next-step-reason="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {point.reason}
+              <p
+                data-next-step-reason=""
+                role={point.running ? 'status' : undefined}
+                className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted"
+              >
+                {point.running ? wt('nextStep.running') : point.reason}
               </p>
-              <p data-next-step-selection="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {point.selection}
-              </p>
+              {point.running ? null : (
+                <p data-next-step-selection="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                  {point.selection}
+                </p>
+              )}
             </div>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />
-          {point !== null ? (
+          {point !== null && !point.running ? (
             <CcLinkButton
               href={stageHref({ base: stagesBase, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
               variant="primary"
@@ -135,28 +149,37 @@ export default function NextStepCard({
             {NOTHING_OPEN}
           </p>
         ) : (
-          <div data-next-step-state="open" data-next-step-key={point.key}>
+          <div
+            data-next-step-state={point.running ? 'running' : 'open'}
+            data-next-step-key={point.key}
+            aria-busy={point.running ? true : undefined}
+          >
             <p className="m-0 text-[13px] font-semibold text-cc-ink">{point.label}</p>
             <p
               data-next-step-reason=""
+              role={point.running ? 'status' : undefined}
               className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted"
             >
-              {point.reason}
+              {point.running ? wt('nextStep.running') : point.reason}
             </p>
-            <p
-              data-next-step-selection=""
-              className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted"
-            >
-              {point.selection}
-            </p>
-            <div className="mt-3">
-              <CcLinkButton
-                href={stageHref({ base: stagesBase, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
-                variant="primary"
-              >
-                {point.action}
-              </CcLinkButton>
-            </div>
+            {point.running ? null : (
+              <>
+                <p
+                  data-next-step-selection=""
+                  className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted"
+                >
+                  {point.selection}
+                </p>
+                <div className="mt-3">
+                  <CcLinkButton
+                    href={stageHref({ base: stagesBase, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
+                    variant="primary"
+                  >
+                    {point.action}
+                  </CcLinkButton>
+                </div>
+              </>
+            )}
           </div>
         )}
       </CcCard>

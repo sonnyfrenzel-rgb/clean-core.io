@@ -6,7 +6,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import CcButton from '@/components/cc/Button';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { getAuth, getDb } from '@/lib/firebase';
 import { isProjectOwner } from '@/lib/project-readers';
 import { runHistoryEntry, type RunHistoryEntry } from '@/lib/management-answers';
@@ -548,7 +548,7 @@ function SteeringSheet({ pager, onClose }: { pager: SteeringPage | null; onClose
                       <span className="min-w-0 flex-1 text-[12px] leading-snug font-medium text-cc-ink">
                         <span className="inline-flex flex-wrap items-center gap-2">
                           <span className="font-cc-mono font-semibold break-all">{r.object}</span>
-                          <CcCleanCoreLevel value={r.level} />
+                          <CcCleanCoreLevelExplained value={r.level} />
                           {r.line !== null ? (
                             <span className="text-cc-ink-muted">
                               {wt('steering.line')} {r.line}

@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { publicButton } from '@/components/landing/public-button';
+import NewVersionAvailable from '@/components/NewVersionAvailable';
+import { isStaleBuildError, reloadOnceForStaleBuild } from '@/lib/stale-build';
 
 export default function ErrorBoundary({
   error,
@@ -11,28 +13,25 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Stale-chunk recovery (lib/stale-build.ts): after a deploy, a tab opened on
+  // the previous build requests chunk hashes that no longer exist, or mixes two
+  // builds. It reloads once; until that lands, and when the one reload is spent,
+  // the tab says a new version is available instead of "Something went wrong"
+  // and the raw message (roadmap 3.0.6).
+  const staleBuild = isStaleBuildError(error);
+
   useEffect(() => {
     console.error('App Error:', error);
-    // Stale-chunk recovery: after a deploy, a tab opened on the previous build
-    // requests chunk hashes that no longer exist ("Loading chunk … failed").
-    // Auto-reload once to pull the current build; the flag prevents a reload loop.
-    const msg = error?.message || '';
-    const isChunkError =
-      error?.name === 'ChunkLoadError' ||
-      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg) ||
-      // Two builds mixed in one tab: a chunk of the new build asks the old
-      // runtime for a module it does not have ("reading 'call'"), or calls an
-      // export under a name the other build mangled differently.
-      /reading 'call'\)|^\(0\s*,\s*[\w$]+\.[\w$]+\) is not a function/.test(msg);
-    if (isChunkError && typeof window !== 'undefined') {
-      const KEY = 'cc_chunk_reload_at';
-      const last = Number(sessionStorage.getItem(KEY) || 0);
-      if (Date.now() - last > 10000) {
-        sessionStorage.setItem(KEY, String(Date.now()));
-        window.location.reload();
-      }
-    }
-  }, [error]);
+    if (staleBuild) reloadOnceForStaleBuild();
+  }, [error, staleBuild]);
+
+  if (staleBuild) {
+    return (
+      <div className="min-h-screen bg-cc-page flex flex-col items-center justify-center p-8 text-center">
+        <NewVersionAvailable />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cc-page flex flex-col items-center justify-center p-8 text-center">

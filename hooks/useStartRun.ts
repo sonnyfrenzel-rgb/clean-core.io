@@ -196,8 +196,17 @@ export function useStartRun({
     if (auto && startable && phase === 'idle' && !model.loading) start();
   }, [auto, startable, phase, start, model.loading]);
 
+  // An automatic start that only waits for the model answer is already decided:
+  // it reads as running, so "Run the analysis" never flashes before it begins.
+  const autoPending = auto && startable && phase === 'idle';
   const visible: StartRunPhase =
-    phase === 'running' || phase === 'failed' || phase === 'signed' ? phase : startable ? 'ready' : 'none';
+    phase === 'running' || phase === 'failed' || phase === 'signed'
+      ? phase
+      : autoPending
+        ? 'running'
+        : startable
+          ? 'ready'
+          : 'none';
   return {
     phase: visible,
     message,

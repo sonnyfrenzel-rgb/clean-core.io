@@ -763,12 +763,76 @@
 
   /* One A4 landscape page (redesign 03.10.2026): links stay links on paper,
      without their address printed after them. */
+  /* Roadmap 3.0.6 (left open by the 3.0.5 QA loop): a compact layout for
+     paper instead of printing the screen at 70 %. The zoom shrank every
+     letter, the 11 px small print to under 8 px; this keeps each size on a
+     print scale of its own (nothing under 9 px) and takes the room out of the
+     spacing instead — the screen's breathing space is what paper does not
+     need. The rows stand as before: four options, four figures, two lists. */
   [data-steering-print] {
     page: steering;
-    font-size: 12px;
-    /* With the four decision options (ADR-079) the page holds more than it
-       did; on paper it is set smaller rather than spilling onto a second sheet. */
-    zoom: 0.7;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  [data-steering-print] .cc-text-h2 {
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+  }
+
+  [data-steering-print] .cc-text-figure {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+  }
+
+  [data-steering-print] .text-\[15px\] {
+    font-size: 12px !important;
+  }
+
+  [data-steering-print] .text-\[14px\] {
+    font-size: 11.5px !important;
+  }
+
+  [data-steering-print] .text-\[13px\] {
+    font-size: 10.5px !important;
+  }
+
+  [data-steering-print] .text-\[12px\] {
+    font-size: 10px !important;
+  }
+
+  [data-steering-print] .text-\[11px\] {
+    font-size: 9px !important;
+  }
+
+  [data-steering-print] .leading-snug {
+    line-height: 1.25 !important;
+  }
+
+  [data-steering-print] .mt-2 {
+    margin-top: 3px !important;
+  }
+
+  [data-steering-print] .mt-1 {
+    margin-top: 1px !important;
+  }
+
+  [data-steering-print] .p-2 {
+    padding: 4px !important;
+  }
+
+  [data-steering-print] .gap-2,
+  [data-steering-print] .gap-4 {
+    gap: 4px !important;
+  }
+
+  [data-steering-print] .space-y-2 > :not(:last-child) {
+    margin-block-end: 2px !important;
+  }
+
+  /* The bars keep their height as a mark, not as a band across the page. */
+  [data-steering-print] .h-4 {
+    height: 8px !important;
   }
 
   [data-steering-print] a[href]::after {
@@ -800,11 +864,11 @@
   }
 
   [data-steering-print] .mt-4 {
-    margin-top: 8px !important;
+    margin-top: 6px !important;
   }
 
   [data-steering-print] .p-3 {
-    padding: 8px !important;
+    padding: 6px !important;
   }
 
   /* The workspace prints its own short sheet (WorkspacePrintSheet, §7.1 and

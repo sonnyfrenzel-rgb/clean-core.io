@@ -19,7 +19,7 @@
  * the notice then contradict.
  */
 
-import { buildSourceChangeRecord } from './artefact-digest';
+import { buildSourceChangeRecord, type TrackedArtefact } from './artefact-digest';
 import { declaredTargetOf } from './assessment-target';
 import { targetEditionOf, type TargetEdition } from './target-edition';
 import { PHASES, workflowSteps, type PhaseKey } from './workflow-steps';
@@ -140,6 +140,14 @@ export function targetChangeImpact(project: Project | null, now: string = new Da
 
 /* -------------------------------------------------------- after the change */
 
+/** The stored artefact each tool is built from — the four the change record tracks. */
+const STEP_ARTEFACT: Partial<Record<PhaseKey, TrackedArtefact>> = {
+  design: 'solutionDesign',
+  transformation: 'generatedCode',
+  testing: 'testCases',
+  documentation: 'documentation',
+};
+
 export interface TargetChangeNotice {
   /** ISO day of the change, as the server recorded it. */
   day: string;
@@ -161,7 +169,7 @@ export interface TargetChangeNotice {
 export function targetChangeNotice(project: Project | null, nowMs: number = Date.now()): TargetChangeNotice | null {
   if (!project) return null;
   const record = project.auditMetadata?.sourceChange as
-    | (Record<string, unknown> & { at?: unknown; runId?: unknown; reason?: unknown; previousTarget?: unknown })
+    | (Record<string, unknown> & { at?: unknown; runId?: unknown; reason?: unknown; previousTarget?: unknown; alreadyOutdated?: unknown })
     | undefined;
   const active = str(project.activeRunId);
   if (!record || record.reason !== 'profile' || !active || str(record.runId) !== active) return null;
@@ -170,8 +178,17 @@ export function targetChangeNotice(project: Project | null, nowMs: number = Date
   const from = prev
     ? targetWords({ edition: targetEditionOf(prev.edition), release: str(prev.release) })
     : null;
+  // Only what this change made outdated (roadmap 3.0.6): a tool whose artefact
+  // was already outdated before it (`alreadyOutdated`, written by the route
+  // with the record) is not news of this change. An older record without the
+  // list names every outdated tool, as before.
+  const before = new Set(Array.isArray(record.alreadyOutdated) ? record.alreadyOutdated : []);
   const outdated = workflowSteps(project)
     .filter((s) => s.key !== 'analyze' && s.state === 'stale')
+    .filter((s) => {
+      const artefact = STEP_ARTEFACT[s.key];
+      return !artefact || !before.has(artefact);
+    })
     .map((s) => ({ key: s.key, label: PHASES.find((p) => p.key === s.key)?.label ?? s.label }));
   const decision = storedDecision(project);
   const decisionOutdated = Boolean(decision && decision.boundRunId && decision.boundRunId !== active);

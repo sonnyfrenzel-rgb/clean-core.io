@@ -95,3 +95,41 @@ test.describe('where the Management view shows a level, it explains it (owner 06
     expect(read('components/workspace/ManagementExecutive.tsx')).not.toMatch(/role="img"[^>]*>\s*<CcCleanCoreLevelExplained/);
   });
 });
+
+/*
+ * Roadmap 3.0.6 (decision Sonny, 06.10.2026): level chips explain themselves
+ * everywhere — the steering one-pager, the print sheet and the Analyze tables
+ * use the same explanation as IT and Management, and it never breaks paper.
+ */
+test.describe('level chips explain themselves everywhere (3.0.6)', () => {
+  test('the steering one-pager explains the level of each risk, and no bare chip is left', () => {
+    const src = read('components/workspace/SteeringOnePager.tsx');
+    expect(src).toContain('<CcCleanCoreLevelExplained value={r.level} />');
+    expect(src).not.toMatch(/<CcCleanCoreLevel\s/);
+  });
+
+  test('the Analyze tables explain the level of each row', () => {
+    const findings = read('components/analyze/EvidenceFindingsTable.tsx');
+    expect(findings).toContain('<CcCleanCoreLevelExplained value={level} />');
+    // The one bare chip left sits inside the group's disclosure button, where a second button cannot go.
+    expect(findings.match(/<CcCleanCoreLevel\s/g) ?? []).toHaveLength(1);
+    expect(findings).toMatch(/a button cannot hold another\.[\s\S]{0,400}<CcCleanCoreLevel value=\{l as CloudReadinessGrade\} \/>/);
+    const abcd = read('components/analyze/AbcdClassificationPanel.tsx');
+    expect(abcd).toContain('<CcCleanCoreLevelExplained value={it.grade} />');
+    // The legend writes the explanation out beside its chips.
+    expect(abcd.match(/<CcCleanCoreLevel\s/g) ?? []).toHaveLength(1);
+  });
+
+  test('the print sheet prints the same words as a legend, since paper has no hover', () => {
+    const src = read('components/workspace/WorkspacePrintSheet.tsx');
+    expect(src).toContain("from '@/lib/clean-core-level-explain'");
+    expect(src).toContain('{cleanCoreLevelExplanation(value).meaning}');
+    expect(src).toContain('data-print-level-caveat');
+  });
+
+  test('on paper only the chip prints: the panel is hidden even when open, the target shrinks', () => {
+    const src = read('components/cc/LevelExplained.tsx');
+    expect(src).toMatch(/className="fixed z-cc-popover block print:hidden /);
+    expect(src).toContain('print:min-h-0');
+  });
+});

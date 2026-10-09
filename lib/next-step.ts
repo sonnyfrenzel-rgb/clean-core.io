@@ -165,6 +165,14 @@ export interface NextOpenPoint {
    * "generate this now" when the account cannot.
    */
   blockedByModelSwitch: boolean;
+  /**
+   * Set only by the workspace, never by this module: the open point is Analyze
+   * and the start run of a new project (`hooks/useStartRun.ts`) is already with
+   * the server. The card then says the analysis is running and offers no
+   * button — "Run the analysis" beside a run in flight read as if nothing had
+   * started, and pressing it led to a second start (owner, 09.10.2026).
+   */
+  running?: true;
 }
 
 /**

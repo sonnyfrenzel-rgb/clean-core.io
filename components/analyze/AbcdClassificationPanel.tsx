@@ -8,6 +8,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { getAuth } from '@/lib/firebase';
@@ -262,7 +263,9 @@ export default function AbcdClassificationPanel({
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Legend — its chips stay bare: the explanation is written out beside
+          each one, so a hover would only repeat it. The table below explains
+          each row's level on hover and tap (roadmap 3.0.6). */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
         {GRADES.map((g) => (
           <div key={g} className="flex items-start gap-2">
@@ -294,7 +297,7 @@ export default function AbcdClassificationPanel({
             object: <span className="font-cc-mono font-semibold">{it.name}</span>,
             grade: (
               <span className="inline-flex flex-wrap items-center gap-2">
-                <CcCleanCoreLevel value={it.grade} />
+                <CcCleanCoreLevelExplained value={it.grade} />
                 <span className="cc-text-meta text-cc-ink">{ABCD_META[it.grade].short}</span>
                 <span title={gradeOrigin(it)}>
                   <CcProvenanceChip value={PROVENANCE_CHIP[it.provenance].value} note={PROVENANCE_CHIP[it.provenance].note} />

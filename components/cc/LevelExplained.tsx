@@ -29,6 +29,10 @@ import { CcCleanCoreLevel } from './Identifier';
  *     scrolls sideways (`CcTable`) does not clip it;
  *   - the target is 24 px tall, 44 px on a phone and under a coarse pointer
  *     (`DESIGN.md` §2.9), like `CcWhyPopover`.
+ *   - on paper (roadmap 3.0.6) only the chip prints: the panel is `print:hidden`
+ *     even when it was open, and the button gives up its 44 px target, so a
+ *     printed table or one-pager keeps its rows. The print sheet prints the
+ *     same words as a legend (`WorkspacePrintSheet`).
  *
  * `trigger` replaces the chip with the caller's own mark (the level counts of
  * the IT view's figure, "C 2"), which then is the button's content.
@@ -134,7 +138,7 @@ export function CcCleanCoreLevelExplained({
         className={
           'inline-flex min-h-6 cursor-help items-center rounded-[4px] border-0 bg-transparent p-0 text-left text-inherit ' +
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus ' +
-          'max-[600px]:min-h-11 pointer-coarse:min-h-11 ' +
+          'max-[600px]:min-h-11 pointer-coarse:min-h-11 print:min-h-0 print:cursor-auto ' +
           (trigger ? 'w-full justify-center' : '')
         }
       >
@@ -149,7 +153,7 @@ export function CcCleanCoreLevelExplained({
         hidden={!open}
         data-cc-level-explanation={value}
         style={place ? { top: place.top, left: place.left } : undefined}
-        className="fixed z-cc-popover block w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left whitespace-normal shadow-cc-dialog focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus"
+        className="fixed z-cc-popover block print:hidden w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left whitespace-normal shadow-cc-dialog focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus"
       >
         <span className="block text-[13px] leading-snug font-semibold text-cc-ink">{explanation.title}</span>
         <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink">{explanation.meaning}</span>

@@ -146,7 +146,7 @@ test.describe('the legal pages', () => {
 
 test.describe('the error boundary and the survey page', () => {
   test('a stale chunk in Chrome triggers the one-time reload (2fd1dacead6a)', () => {
-    const src = read('app/error.tsx');
+    const src = read('lib/stale-build.ts');
     const m = src.match(/(\/Loading chunk[^\n]*?\/i)\.test\(msg\)/);
     expect(m, 'the chunk-error matcher moved').not.toBeNull();
     const literal = m![1];
