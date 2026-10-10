@@ -60,6 +60,12 @@ async function regenerate(page: Page, account: SeededProject) {
   const button = page.getByRole('button', { name: /^Regenerate Suite$/ });
   await expect(button).toBeEnabled({ timeout: 90_000 });
   await button.click();
+  await confirmReplace(page);
+}
+
+/** A suite on record is replaced only after "Replace" in the box (ADR-083). */
+async function confirmReplace(page: Page) {
+  await page.locator('[data-cc-message-box]').getByRole('button', { name: 'Replace', exact: true }).click();
 }
 
 async function storedIds(projectId: string): Promise<string[]> {
@@ -136,6 +142,7 @@ test('invalid JSON twice is reported as prose; a content-filter block is not ret
     body: { error: 'The model provider blocked this answer (model-incomplete).', code: 'model-incomplete', reason: 'filtered' },
   }]);
   await page.getByRole('button', { name: /^Regenerate Suite$/ }).click();
+  await confirmReplace(page);
   await expect(strip).toContainText('blocked this answer', { timeout: 60_000 });
   expect(filtered.n).toBe(1);
   expect(await storedIds(account.projectId)).toEqual(['t1']);

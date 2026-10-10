@@ -70,6 +70,9 @@ import TestScopeLegend from '@/components/testing/TestScopeLegend';
 import SapResultCard from '@/components/testing/SapResultCard';
 import { outsideChipNote, outsideCountsLine, outsideReading, summaryOf, type OutsideTestRecord } from '@/lib/sap-test-results';
 import { isProjectOwner } from '@/lib/project-readers';
+import ReplaceStoredBox from '@/components/ReplaceStoredBox';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
+import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
 
 const renderSafeValue = (val: any): string => {
@@ -991,6 +994,15 @@ export default function TestingSandboxPage() {
   const signedInUid = useSignedInUid();
   const canRecordOutside = isProjectOwner(project, signedInUid);
   /**
+   * Writing and running the suite are the owner's too — the server refuses
+   * them for an invited reader, who sees the buttons disabled and the shared
+   * sentence instead (ADR-083, decision-input audit item 4).
+   */
+  const isOwner = canRecordOutside;
+  const reader = project !== null && !isOwner;
+  /** "Replace the test suite?" is open (ADR-083, audit item 3). */
+  const [replaceSuiteAsk, setReplaceSuiteAsk] = useState(false);
+  /**
    * Whether the full record could be read. A transient failure used to be
    * logged and never retried, and the scenario rows stayed without their
    * results for the session (QA 263cde0a6b23). Now the read is retried twice
@@ -1242,6 +1254,24 @@ export default function TestingSandboxPage() {
           whether it is done, next or waiting. The tenant is not a mode of
           the tool any more — it is a folded section at the end and a card in
           the side column, and the run is always against mocks. */}
+      <ReplaceStoredBox
+        open={replaceSuiteAsk}
+        title={wt('input.replaceSuiteTitle')}
+        body={wt('input.replaceSuiteBody')}
+        callsModel
+        onKeep={() => setReplaceSuiteAsk(false)}
+        onReplace={() => {
+          setReplaceSuiteAsk(false);
+          void handleGenerate();
+        }}
+      />
+
+      {reader ? (
+        <div className="mb-6">
+          <OwnerOnlyNote />
+        </div>
+      ) : null}
+
       <div data-testing-flow="" className={clsx(RAIL_GRID, 'mb-8')}>
         <div className="flex min-w-0 flex-col gap-5">
           {/* ── Step 1: write the scenarios ── */}
@@ -1264,8 +1294,9 @@ export default function TestingSandboxPage() {
                     Export Excel
                   </CcButton>
                   <CcButton
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !modelAvailability.enabled('testing') || generateBlocked}
+                    // The suite on record is replaced: asked first (ADR-083).
+                    onClick={() => setReplaceSuiteAsk(true)}
+                    disabled={isGenerating || !modelAvailability.enabled('testing') || generateBlocked || reader}
                     aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
                     data-generate-scenarios=""
                     icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
@@ -1313,7 +1344,7 @@ export default function TestingSandboxPage() {
                   variant="primary"
                   density="cozy"
                   onClick={handleGenerate}
-                  disabled={isGenerating || generateBlocked}
+                  disabled={isGenerating || generateBlocked || reader}
                   aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
                   data-generate-scenarios=""
                   icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ListChecks className="w-4 h-4" aria-hidden="true" />}
@@ -1412,7 +1443,7 @@ export default function TestingSandboxPage() {
                 <CcButton
                   variant="primary"
                   onClick={handleRun}
-                  disabled={isRunning || selectedTestCases.length === 0 || testRunBlocked(project)}
+                  disabled={isRunning || selectedTestCases.length === 0 || reader || testRunBlocked(project)}
                   icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
                 >
                   {isRunning

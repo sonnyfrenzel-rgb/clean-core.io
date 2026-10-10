@@ -70,8 +70,9 @@ interface DemoState {
   upgradeFreq: number;
   fpFreq: number;
   oneTimeCost: number | null;
-  decision: 'undecided' | 'proceed' | 'park';
-  decisionNote: string;
+  // `decision` and `decisionNote` were a Delivery decision the real product
+  // does not have (decision-input audit, De2, 10.10.2026). A state stored by an
+  // earlier version may still carry them; nothing reads them.
 }
 
 const EMPTY_STATE: DemoState = {
@@ -82,8 +83,6 @@ const EMPTY_STATE: DemoState = {
   upgradeFreq: 1,
   fpFreq: 2,
   oneTimeCost: null,
-  decision: 'undecided',
-  decisionNote: '',
 };
 
 function readState(): DemoState {
@@ -199,7 +198,7 @@ export default function DemoWorkspace({
             onChange={patch}
           />
         )}
-        {stage === 'delivery' && <Delivery demo={demo} state={state} patch={patch} />}
+        {stage === 'delivery' && <Delivery demo={demo} state={state} />}
       </div>
     </StageFrame>
   );
@@ -392,12 +391,10 @@ function Documentation({ demo, source }: { demo: DemoProject; source: string | n
 function Delivery({
   demo,
   state,
-  patch,
 }: {
   demo: DemoProject;
   state: DemoState;
-  patch: (n: Partial<DemoState>) => void;
 }) {
   // The object page of the real Delivery stage (owner decision 01.10.2026).
-  return <DemoDelivery demo={demo} state={state} patch={patch} />;
+  return <DemoDelivery demo={demo} state={state} />;
 }

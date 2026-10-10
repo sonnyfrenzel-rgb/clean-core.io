@@ -2,17 +2,13 @@
 
 import React from 'react';
 import { ArrowRight, BookOpen, Briefcase, Eye, Package } from 'lucide-react';
-import CcButton from '@/components/cc/Button';
-import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcTextarea from '@/components/cc/Textarea';
 import { NOT_SIGNED, SIGNED_COVERS } from '@/lib/handover';
 import { PHASES } from '@/lib/workflow-steps';
 import { routeLabel } from '@/lib/sap-naming';
 import { APP_VERSION } from '@/lib/version';
-import { DEMO_RESET_LABEL } from '@/lib/demo-marks';
 import { catalogForReader } from '@/lib/messages/demo';
 import type { DemoProject } from '@/lib/demo-project';
 import { STATE_CLASSES } from '@/components/cc/state';
@@ -37,12 +33,15 @@ import { scoreWithBand } from '@/lib/clean-core-score';
  * `lib/demo-project.ts`; the choices are this browser's. The demo signs
  * nothing, so the page has no download, no export and no pack — the
  * capability is absent rather than disabled (`tests/demo-project.spec.ts`).
+ *
+ * It used to end in a "Record a decision" card (proceed / park plus a note).
+ * The real Delivery has no such card — the program decision is taken in
+ * Management — so the demo taught a place that does not exist. It is gone
+ * (decision-input audit De2, 10.10.2026).
  */
 
 export interface DemoDeliveryState {
   targetConfirmed: boolean;
-  decision: 'undecided' | 'proceed' | 'park';
-  decisionNote: string;
 }
 
 const capitalise = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
@@ -51,11 +50,9 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export default function DemoDelivery({
   demo,
   state,
-  patch,
 }: {
   demo: DemoProject;
   state: DemoDeliveryState;
-  patch: (n: Partial<DemoDeliveryState>) => void;
 }) {
   const route = routeLabel(demo.design.recommendedRoute);
   // Findings as Analyze counts them — one per pattern and object — not the
@@ -120,12 +117,6 @@ export default function DemoDelivery({
         <DeliveryStatusLine
           items={[
             { key: 'run', label: 'Run', value: 'not signed', tone: 'neutral' },
-            {
-              key: 'decision',
-              label: 'Decision',
-              value: state.decision === 'undecided' ? 'not recorded' : 'in this browser only',
-              tone: 'neutral',
-            },
             { key: 'receipts', label: 'Receipts', value: 'none', tone: 'neutral' },
             { key: 'engine', label: 'Engine', value: `${APP_VERSION} · no model`, tone: 'information' },
           ]}
@@ -146,11 +137,11 @@ export default function DemoDelivery({
             <DeliveryNextStep
               kind="open"
               titleId="demo-handover-next-title"
-              headline="Record a decision"
-              reason="The route is confirmed here. A real handover still needs everything listed below."
+              headline="See what a real handover still needs"
+              reason="The route is confirmed here, in this browser only. A real handover still needs everything listed below."
               action={
-                <CcLinkButton href="#record-decision" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
-                  Go to the decision
+                <CcLinkButton href="#still-needed" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
+                  Go to the list
                 </CcLinkButton>
               }
             />
@@ -256,38 +247,6 @@ export default function DemoDelivery({
               />
             </ul>
           </DeliverySection>
-
-          <div id="record-decision" className="scroll-mt-32">
-            <CcCard level={2} title="Record a decision">
-              <p className="m-0 cc-text-body text-cc-ink-muted">
-                Try the shape of it. The choice and the note stay in this browser, they are attributed to nobody, and{' '}
-                {DEMO_RESET_LABEL} removes them.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(['proceed', 'park'] as const).map((d) => (
-                  <CcButton
-                    key={d}
-                    variant={state.decision === d ? 'dark' : 'ghost'}
-                    density="cozy"
-                    data-testid={`demo-decision-${d}`}
-                    aria-pressed={state.decision === d}
-                    onClick={() => patch({ decision: state.decision === d ? 'undecided' : d })}
-                  >
-                    {d === 'proceed' ? 'Proceed with the route' : 'Park it for now'}
-                  </CcButton>
-                ))}
-              </div>
-              <div className="mt-4" data-testid="demo-decision-note">
-                <CcTextarea
-                  label="Why"
-                  rows={3}
-                  value={state.decisionNote}
-                  onChange={(v) => patch({ decisionNote: v })}
-                  placeholder="The reasoning a colleague would need in six months."
-                />
-              </div>
-            </CcCard>
-          </div>
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4" aria-label="Audit pack and signature">

@@ -56,7 +56,10 @@ export interface TransformationObjectPageProps {
   codeKind: string;
   /** The stored package, or null where no model can have run (the demo). */
   files: readonly GeneratedFile[] | null;
-  /** Grounding-audit findings still needing a sign-off; null when there is no audit (demo). */
+  /**
+   * Grounding-audit findings not yet ticked on the personal checklist (kept in
+   * this browser only, not a sign-off); null when there is no audit (demo).
+   */
   openSignOffs: number | null;
   onOpenAudit?: () => void;
   /** Buttons in the package section's header: side by side, copy, download. */
@@ -232,11 +235,11 @@ function GeneratedBox({ finding, files }: { finding: EvidenceFinding; files: rea
       <div className={frame} data-generated-change="not-found">
         <div className="cc-text-label text-cc-warning">Generated change</div>
         <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-          {names ? `No generated file names ${names}.` : 'This finding names no object to look for.'} Confirm how the model
+          {names ? `No generated file names ${names}.` : 'This finding names no object to look for.'} Check how the model
           handled it in the grounding audit.
         </p>
         <div className="mt-2">
-          <CcProvenanceChip value="not-determined" note="sign-off open" />
+          <CcProvenanceChip value="not-determined" note="check by hand" />
         </div>
       </div>
     );
@@ -421,8 +424,8 @@ export default function TransformationObjectPage({
         <Facet
           label="Grounding audit"
           figure={openSignOffs === null ? '—' : openSignOffs}
-          unit={openSignOffs === null ? 'no audit in a demo' : openSignOffs === 1 ? 'open sign-off' : 'open sign-offs'}
-          sub={openSignOffs === null ? 'It checks generated code, and a demo has none.' : 'findings whose change you have to confirm'}
+          unit={openSignOffs === null ? 'no audit in a demo' : 'not ticked yet'}
+          sub={openSignOffs === null ? 'It checks generated code, and a demo has none.' : 'findings to check by hand — your ticks stay in this browser'}
           viz={
             onOpenAudit ? (
               <div className="[&_button]:h-auto [&_button]:whitespace-normal [&_button]:py-1 [&_button]:text-left">
@@ -456,8 +459,8 @@ export default function TransformationObjectPage({
         {openSignOffs !== null ? (
           <span className="inline-flex items-center gap-2">
             <Dot tone="neutral" />
-            <span className="cc-text-label text-cc-ink-muted">Sign-off</span>
-            {openSignOffs} open
+            <span className="cc-text-label text-cc-ink-muted">Checklist</span>
+            {openSignOffs} not ticked · this browser only
           </span>
         ) : null}
       </p>
@@ -635,8 +638,8 @@ export default function TransformationObjectPage({
                 },
                 {
                   done: openSignOffs === 0 && generated,
-                  text: 'Grounding audit signed off',
-                  note: openSignOffs === null ? 'no audit in a demo' : `${openSignOffs} open`,
+                  text: 'Grounding audit checked by hand',
+                  note: openSignOffs === null ? 'no audit in a demo' : `${openSignOffs} not ticked · this browser only, not saved`,
                 },
                 { done: false, text: 'Compiled and run', note: 'not here; mocks only in Testing' },
               ].map((s, i) => (

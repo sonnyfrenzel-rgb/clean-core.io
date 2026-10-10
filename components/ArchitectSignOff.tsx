@@ -11,6 +11,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 
 // `keep` and `standard` are chosen in the Management view (ADR-079); the panel
 // shows them when they are on record and does not offer them — Design signs off
@@ -101,7 +102,12 @@ interface ArchitectSignOffProps {
   lockedByEmail?: string;
   /** Locked-at timestamp */
   lockedAt?: string;
-  /** Whether the current user can unlock (owner/admin) */
+  /**
+   * Whether the signed-in account owns the project. False for an invited
+   * reader, who sees the recommendation and the record but neither the form,
+   * "Confirm & Lock" nor "Change Decision" — the server refuses all three
+   * (ADR-083, decision-input audit item 4).
+   */
   canUnlock: boolean;
   /** Called when the user confirms and locks a decision */
   onLock: (architecture: TargetArchitecture, justification: string) => Promise<void>;
@@ -252,7 +258,7 @@ export default function ArchitectSignOff({
                 <CcProvenanceChip value="confirmed" />
               </div>
             </div>
-            {canUnlock && (
+            {canUnlock ? (
               <CcButton
                 variant="ghost"
                 icon={<Unlock size={16} aria-hidden={true} />}
@@ -261,6 +267,8 @@ export default function ArchitectSignOff({
               >
                 Change Decision
               </CcButton>
+            ) : (
+              <OwnerOnlyNote />
             )}
           </div>
 
@@ -348,7 +356,14 @@ export default function ArchitectSignOff({
         )}
       </div>
 
-      {/* Sign-Off Form */}
+      {/* A reader reads the recommendation; the form is the owner's. */}
+      {!canUnlock ? (
+        <div className="space-y-4 px-4 py-5 sm:px-6">
+          {recommendedOption && <OptionFacts option={recommendedOption} />}
+          <OwnerOnlyNote />
+        </div>
+      ) : (
+      /* Sign-Off Form */
       <div className="space-y-5 px-4 py-5 sm:px-6">
         <CcCheckbox
           label={
@@ -408,6 +423,7 @@ export default function ArchitectSignOff({
           </CcButton>
         </div>
       </div>
+      )}
     </div>
   );
 }

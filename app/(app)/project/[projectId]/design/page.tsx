@@ -29,6 +29,8 @@ import CcSkeleton from '@/components/cc/Skeleton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
+import ReplaceStoredBox from '@/components/ReplaceStoredBox';
+import { wt } from '@/lib/workspace-messages';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
@@ -214,6 +216,8 @@ export default function DesignPage() {
   const generating = generatingSince !== null;
   /** The signed-in account owns the project; an invited reader never starts a generation. */
   const [isOwner, setIsOwner] = useState(false);
+  /** "Replace the solution design?" is open (ADR-083, decision-input audit item 3). */
+  const [replaceDesignAsk, setReplaceDesignAsk] = useState(false);
   const projectRef = useRef(project);
 
   // Re-derive findings from project.legacyCode for construct coupling
@@ -855,6 +859,15 @@ ${DESIGN_ANSWER_REMINDER}`;
       void generateDesign(narrative, 'asked');
     }
   };
+  /**
+   * Regenerate replaces the design on record, so with one on record it asks
+   * first; the box's "Replace" then runs `regenerate` (ADR-083). A reader's
+   * click still lands in `regenerate`, whose sentence says why nothing happens.
+   */
+  const askRegenerate = () => {
+    if (design && isOwner) setReplaceDesignAsk(true);
+    else regenerate();
+  };
 
   // The wait, wherever the design is being written: this page, an earlier
   // mount of it, or another tab. A start still waiting for the model switch
@@ -1128,7 +1141,9 @@ ${DESIGN_ANSWER_REMINDER}`;
       currentJustification={project?.architectJustifiedOverride}
       lockedByEmail={project?.approvedBy}
       lockedAt={project?.architectSignOffAt ? String(project.architectSignOffAt) : undefined}
-      canUnlock={true}
+      // An invited reader sees the sign-off and its record, not its controls:
+      // the server refuses them anyway (decision-input audit item 4).
+      canUnlock={isOwner}
       // Roadmap 0.7: the five release fields are no longer writable
       // from here. The server records them and answers with what it
       // stored — including the address it read off the ID token and
@@ -1165,6 +1180,18 @@ ${DESIGN_ANSWER_REMINDER}`;
     <StageFrame stage="design" className="min-h-screen">
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
+      <ReplaceStoredBox
+        open={replaceDesignAsk}
+        title={wt('input.replaceDesignTitle')}
+        body={wt('input.replaceDesignBody')}
+        callsModel
+        onKeep={() => setReplaceDesignAsk(false)}
+        onReplace={() => {
+          setReplaceDesignAsk(false);
+          regenerate();
+        }}
+      />
+
       <StageHeader tools={{ steps: phases, current: 'design' }} projectName={project?.name}
         stage="design"
         eyebrow={design ? <CcProvenanceChip value="proposed" note="document" /> : null}
@@ -1194,7 +1221,7 @@ ${DESIGN_ANSWER_REMINDER}`;
                   busy={generating}
                   disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
                   data-design-regenerate=""
-                  onClick={regenerate}
+                  onClick={askRegenerate}
                 >
                   Regenerate
                 </CcButton>
@@ -1246,7 +1273,8 @@ ${DESIGN_ANSWER_REMINDER}`;
               : undefined
           }
           locked={project?.approvedByArchitect === true}
-          onRegenerate={regenerate}
+          reader={Boolean(project) && !isOwner}
+          onRegenerate={askRegenerate}
           regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
           regenerating={generating}
           legacyCode={project?.legacyCode || ''}

@@ -75,6 +75,7 @@ import CcEmptyState from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
+import ReplaceStoredBox from '@/components/ReplaceStoredBox';
 import { t } from '@/lib/cc-messages';
 
 /** A section of this stage — the card of DESIGN.md §1.4. */
@@ -193,6 +194,12 @@ export default function DocumentationPage() {
 
   // Stage 2 Business Documentation States
   const [businessDocumentation, setBusinessDocumentation] = useState('');
+  /**
+   * Which replacement is being asked about (ADR-083, decision-input audit
+   * item 3): "Read again from the code" with an SOP and RACI on record, or
+   * "Regenerate SOP and RACI". Nothing is replaced before "Replace".
+   */
+  const [replaceAsk, setReplaceAsk] = useState<'doc' | 'sop' | null>(null);
   const [isGeneratingBusinessDoc, setIsGeneratingBusinessDoc] = useState(false);
   const [businessDocError, setBusinessDocError] = useState('');
 
@@ -1117,6 +1124,17 @@ Structure the JSON exactly like this:
    * click: the same blockers the generation itself checks
    * (`generationBlockers`), and the description it is written from.
    */
+  /**
+   * "Read again from the code" removes the SOP and RACI on record with the
+   * description it replaces (see the transaction above). It used to do that
+   * without a word (decision-input audit, Doc1); with a layer on record it asks
+   * first. Without one there is nothing of the owner's to lose.
+   */
+  const askReadAgain = () => {
+    if (businessDocumentation.trim()) setReplaceAsk('doc');
+    else void generateDocumentation();
+  };
+
   const businessBlockers: string[] = [
     ...generationBlockers(project, 'documentation'),
     ...(hasDocument ? [] : [wt('doc.businessNeedsDocumentation')]),
@@ -1148,10 +1166,7 @@ Structure the JSON exactly like this:
             <CcButton
               variant="secondary"
               density="cozy"
-              onClick={() => {
-                replaceLayer.current = businessDocumentation;
-                void generateBusinessDocumentation();
-              }}
+              onClick={() => setReplaceAsk('sop')}
               disabled={businessBlockers.length > 0 || isGeneratingDoc}
               icon={<RefreshCw size={16} aria-hidden={true} />}
               data-regenerate-business-layer=""
@@ -1314,6 +1329,24 @@ Structure the JSON exactly like this:
         ) : undefined}
       />
 
+      <ReplaceStoredBox
+        open={replaceAsk !== null}
+        title={wt(replaceAsk === 'sop' ? 'input.replaceSopTitle' : 'input.replaceDocTitle')}
+        body={wt(replaceAsk === 'sop' ? 'input.replaceSopBody' : 'input.replaceDocBody')}
+        callsModel={replaceAsk === 'sop'}
+        onKeep={() => setReplaceAsk(null)}
+        onReplace={() => {
+          const which = replaceAsk;
+          setReplaceAsk(null);
+          if (which === 'sop') {
+            replaceLayer.current = businessDocumentation;
+            void generateBusinessDocumentation();
+          } else if (which === 'doc') {
+            void generateDocumentation();
+          }
+        }}
+      />
+
       {/* Two different things used to share one heading. A blocked start is a
           refusal before anything is read; a refused answer is a reading that
           happened and produced something this stage cannot display. */}
@@ -1323,7 +1356,7 @@ Structure the JSON exactly like this:
             state="error"
             headline={docRejected ? 'Generation failed' : 'Generation blocked'}
             actions={docRejected && isOwner ? (
-              <CcButton onClick={generateDocumentation} disabled={!signedSource || !processMap.model || isGeneratingDoc}>
+              <CcButton onClick={askReadAgain} disabled={!signedSource || !processMap.model || isGeneratingDoc}>
                 Try again
               </CcButton>
             ) : undefined}
@@ -1351,7 +1384,7 @@ Structure the JSON exactly like this:
               <CcButton
                 variant="secondary"
                 density="cozy"
-                onClick={generateDocumentation}
+                onClick={askReadAgain}
                 disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
                 busy={isGeneratingDoc}
                 data-regenerate-documentation
@@ -1389,7 +1422,7 @@ Structure the JSON exactly like this:
                     <CcButton
                       variant="primary"
                       density="cozy"
-                      onClick={generateDocumentation}
+                      onClick={askReadAgain}
                       disabled={!signedSource || !processMap.model}
                       busy={isGeneratingDoc}
                       data-legacy-blueprint-replace=""
@@ -1497,6 +1530,7 @@ Structure the JSON exactly like this:
                 save={saveProcessModel}
                 openLatest={openLatestRevision}
                 projectId={typeof projectId === 'string' ? projectId : null}
+                canEdit={isOwner}
               />
             </div>
           ) : (

@@ -732,6 +732,7 @@ export default function WorkspaceProcess({
               openLatest={openLatest}
               projectId={projectId || null}
               draftHolder={draftHolder}
+              canEdit={owner}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">

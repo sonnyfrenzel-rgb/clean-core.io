@@ -38,7 +38,11 @@ test('af9225424d1d · browser-local ticks are not called a sign-off', () => {
   const src = code();
   expect(src).not.toMatch(/manual findings signed off/);
   expect(src).toContain('ticked in this browser');
-  expect(src).toContain('not saved and not a signed sign-off');
+  expect(src).toContain('Not saved, and nobody signs anything here.');
+  // Decision-input audit T2 (10.10.2026): the heading said sign-off too.
+  expect(src).not.toContain('Sign-off Checklist');
+  expect(src).not.toContain('Action Required');
+  expect(src).toContain('Kept in this browser only');
 });
 
 test('6d411bca538c · a path answered twice is found, in every spelling', () => {
@@ -83,7 +87,9 @@ test('6f3dc15e6f7b · generation waits for the model switch and respects it', ()
   // And the button cannot be pressed while the stage is off or keyless.
   // Since v3.0.1 one condition holds every reason, and each is said on the page
   // (tests/transformation-prerequisites.spec.ts).
-  expect(src).toMatch(/const canGenerate = project !== null && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
+  // Since 10.10.2026 (ADR-083) an invited reader is one of those reasons, said by the shared sentence.
+  expect(src).toMatch(/const canGenerate = project !== null && isOwner && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
+  expect(src).toMatch(/if \(!isOwner\) return;\s*if \(!modelAvailability\.enabled\('transformation'\)\) return;/);
   expect(src).toMatch(/disabled=\{!canGenerate\}/);
 });
 

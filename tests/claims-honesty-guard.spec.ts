@@ -28,6 +28,7 @@ import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
+import { sha256Hex } from '../lib/artefact-digest';
 import firebaseConfig from '../firebase-config.json';
 import { getCloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 import { signInViaLanding } from './helpers/sign-in';
@@ -66,6 +67,8 @@ async function signIn(page: Page, email: string) {
   await signInViaLanding(page, email, PASSWORD);
 }
 
+const CLAIMS_SOURCE = 'REPORT z_claims.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n';
+
 /** A populated project on one of the two extensibility tracks. */
 async function seedProject(uid: string, id: string, route: string, generatedCode: string) {
   await adminSetDoc('projects', id, {
@@ -75,7 +78,11 @@ async function seedProject(uid: string, id: string, route: string, generatedCode
     status: 'documented',
     extensibilityRoute: route,
     originalRecommendation: route,
-    legacyCode: 'REPORT z_claims.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
+    legacyCode: CLAIMS_SOURCE,
+    // The run's fingerprint of that source: since roadmap 3.0.7 every way out of
+    // Documentation is in its one Export menu, and with the legacy blueprint
+    // below no longer drawn, the BPMN file of the signed source is what fills it.
+    inputFingerprint: { sha256: sha256Hex(CLAIMS_SOURCE), fileName: 'z_claims.abap' },
     analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
     cleanCoreScore: 62,
     solutionDesign: '# Target architecture\n\nOne paragraph.\n',
@@ -161,7 +168,7 @@ test.describe('a signed-in account reading its own project', () => {
     // The toggle lived in the compliance drawer, so the drawer is opened first:
     // asserting against a closed drawer would pass on an empty DOM.
     await page.click('text=View Grounding Audit');
-    await page.waitForSelector('text=Sign-off Checklist', { timeout: 30000 });
+    await page.waitForSelector('text=Your checklist', { timeout: 30000 });
     const text = await page.locator('body').innerText();
     for (const gone of ['Quirk Remediation Mode', 'Strict Legacy Mode', 'Clean Core Refactored']) {
       expect(text, `${gone} came back`).not.toContain(gone);

@@ -23,6 +23,7 @@ import { CadenceField, ChecklistLine, CurrencyField, FigureField, RangeField } f
 import { EconomicsGuide, EconomicsStep, ProposalFactors, type EconomicsStepInfo } from '@/components/tco/EconomicsSteps';
 import WorkspaceMetaLine from '@/components/workspace/MetaLine';
 import StageMetaDetails from '@/components/StageMetaDetails';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import { metaLine } from '@/lib/workspace-model';
 import {
@@ -583,7 +584,10 @@ export default function TcoCalculatorPage() {
           </div>
         ) : null}
 
-        {/* An invited reader reads the owner's figures; nothing here is theirs to change. */}
+        {/* An invited reader reads the owner's figures; nothing here is theirs to
+            change — every field, the size slider among them, is in the disabled
+            fieldsets, and the shared sentence says why (ADR-083). */}
+        {!isOwner ? <OwnerOnlyNote /> : null}
         <fieldset disabled={!isOwner} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0" data-economics-editable={isOwner ? 'true' : 'false'}>
         <EconomicsGuide
           steps={steps}

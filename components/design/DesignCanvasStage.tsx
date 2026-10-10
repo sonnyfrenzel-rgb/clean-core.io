@@ -22,6 +22,7 @@ import type { ArchitectureCanvasModel } from '@/lib/architecture-canvas';
 import { findingIdsOfKey, titleOfKey } from '@/lib/architecture-canvas';
 import type { DesignEvidence } from '@/hooks/useDesignEvidence';
 import type { ProvenanceValue } from '@/lib/provenance';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { designAnswer, type StoredRoute } from '@/lib/design-recommendation';
 import { useTouchViewport } from '@/components/process-map/useTouchViewport';
@@ -74,6 +75,11 @@ export interface DesignCanvasStageProps {
   /** `ArchitectSignOff`, already wired. Rendered in the Decision tab. */
   signOffPanel: React.ReactNode | null;
   locked: boolean;
+  /**
+   * An invited reader (ADR-083): the footer offers neither generating nor
+   * confirming — the server refuses both — and says so in the shared sentence.
+   */
+  reader?: boolean;
   onRegenerate: () => void;
   regenerateDisabled: boolean;
   regenerating: boolean;
@@ -247,6 +253,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     canSignOff,
     signOffPanel,
     locked,
+    reader = false,
     onRegenerate,
     regenerateDisabled,
     regenerating,
@@ -1178,6 +1185,10 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           {/* The actions stay in reach: beside a canvas taller than the window
               the footer sticks to the window's bottom edge. */}
           <div className="flex flex-wrap items-center gap-2 border-t border-cc-line bg-cc-surface px-4 py-3 min-[720px]:px-5 min-[1100px]:sticky min-[1100px]:bottom-0">
+            {reader ? (
+              <OwnerOnlyNote />
+            ) : (
+            <>
             <CcButton
               variant={canSignOff ? 'secondary' : 'primary'}
               icon={<RefreshCw size={16} aria-hidden={true} />}
@@ -1196,6 +1207,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             >
               {locked ? 'Change target' : 'Confirm target'}
             </CcButton>
+            </>
+            )}
           </div>
         </aside>
       </div>

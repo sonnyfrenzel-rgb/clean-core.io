@@ -41,6 +41,17 @@ export interface CcMessageBoxProps {
   confirmLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
+  /**
+   * The way back, when "Cancel" says less than it should — "Keep mine" when
+   * the confirm would replace stored work (decision-input audit, 10.10.2026).
+   */
+  cancelLabel?: string;
+  /**
+   * `dark` (default) is the binding confirmation of §1.5 — a decision.
+   * `danger` is the ghost in error text §1.5 gives destructive acts: replacing
+   * stored work or revoking is not a decision, so it does not wear its button.
+   */
+  confirmVariant?: 'dark' | 'danger';
 }
 
 export default function CcMessageBox({
@@ -50,6 +61,8 @@ export default function CcMessageBox({
   confirmLabel,
   onConfirm,
   onCancel,
+  cancelLabel,
+  confirmVariant = 'dark',
 }: CcMessageBoxProps) {
   // Inert page, focus held, Escape, focus returned: `./modal.ts`, shared with
   // `CcDialog`. The box itself takes the first focus, not the confirm button,
@@ -86,9 +99,13 @@ export default function CcMessageBox({
         <div className="mt-2 text-[13px] font-medium leading-relaxed text-cc-ink">{children}</div>
         <div className="mt-4 flex justify-end gap-2">
           <CcButton variant="ghost" onClick={onCancel}>
-            {t('action.cancel')}
+            {cancelLabel ?? t('action.cancel')}
           </CcButton>
-          <CcButton variant="dark" onClick={onConfirm}>
+          <CcButton
+            variant={confirmVariant === 'danger' ? 'ghost' : 'dark'}
+            tone={confirmVariant === 'danger' ? 'danger' : 'default'}
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </CcButton>
         </div>

@@ -1,13 +1,14 @@
 ﻿'use client';
 
 import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react';
 import CcIconButton from '@/components/cc/IconButton';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcButton from '@/components/cc/Button';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { useProcessRules } from '@/hooks/useProcessRules';
 import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { CatalogLookupTarget } from '@/lib/assessment-target';
@@ -212,6 +213,13 @@ export interface ProcessMapProps {
    * code-demo-02). Handed to `BpmnEditor` unread.
    */
   exportable?: boolean;
+  /**
+   * Whether the signed-in account may save a revision — the owner. Default
+   * `true` (the demo edits in the browser). An invited reader gets *Edit model*
+   * disabled and the shared sentence beside it, instead of a modeller whose
+   * Save the server refuses (ADR-083, decision-input audit item 4).
+   */
+  canEdit?: boolean;
 }
 
 export default function ProcessMap({
@@ -234,6 +242,7 @@ export default function ProcessMap({
   projectId = null,
   exportable = true,
   draftHolder,
+  canEdit = true,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
@@ -361,6 +370,7 @@ export default function ProcessMap({
    * the as-is revision after editing is the as-is revision before it.
    */
   const [editing, setEditing] = useState(false);
+  const ownerOnlyId = useId();
   const [session, setSession] = useState(0);
 
   /**
@@ -696,6 +706,8 @@ export default function ProcessMap({
             data-process-edit-toggle=""
             aria-pressed={editing}
             icon={<Pencil size={16} aria-hidden={true} />}
+            disabled={!canEdit && !editing}
+            aria-describedby={!canEdit ? ownerOnlyId : undefined}
             onClick={() => {
               setView('map');
               setEditing((was) => !was);
@@ -703,6 +715,9 @@ export default function ProcessMap({
           >
             {wt(editing ? 'map.stopEditing' : 'map.editModel')}
           </CcButton>
+          {!canEdit ? (
+            <OwnerOnlyNote id={ownerOnlyId} className="m-0 self-center text-[12px] font-medium text-cc-ink-muted" />
+          ) : null}
         </div>
       </div>
 

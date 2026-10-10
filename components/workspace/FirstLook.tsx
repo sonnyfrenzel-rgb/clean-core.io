@@ -15,6 +15,7 @@ import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import FirstLookBuildUp, { ExcerptSvg, type BuildUpMapState, type BuildUpNarrative } from './FirstLookBuildUp';
 import { BUSINESS_RULES_ID, requestRuleEditing, useIsOwner, useSignedInUid } from './BusinessRulesEditor';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import RulesDoneLine from './RulesDoneLine';
 import BusinessOpening, { type OpeningRule } from './BusinessOpening';
 import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
@@ -976,6 +977,15 @@ function EndState({
       onReviewRules();
       return;
     }
+    // A reader reads the rules: the editor ignores a non-owner, so asking for
+    // it did nothing (decision-input audit W13). The rules are brought into
+    // view instead, read only (ADR-083).
+    if (!owner) {
+      const rulesCard = document.getElementById(BUSINESS_RULES_ID);
+      if (rulesCard) rulesCard.scrollIntoView({ block: 'start' });
+      else window.location.hash = 'need';
+      return;
+    }
     // Outside Business the rules live in the Need & process layer; the layer
     // is chosen by the address (ADR-018), and the editor opens there for the
     // owner. In Business they have a block of their own.
@@ -1162,7 +1172,11 @@ function EndState({
             {firstLookConfirmRules(status.open.length, owner)}
             <ArrowRight size={16} aria-hidden={true} />
           </CcButton>
-          <span className="text-[12px] font-medium text-cc-ink-muted">{wt('firstLook.confirmNote')}</span>
+          {owner ? (
+            <span className="text-[12px] font-medium text-cc-ink-muted">{wt('firstLook.confirmNote')}</span>
+          ) : (
+            <OwnerOnlyNote className="m-0 text-[12px] font-medium text-cc-ink-muted" />
+          )}
         </div>
       ) : (
         <div className="cc-no-print flex flex-wrap items-center gap-3" data-first-look-rules-done="">

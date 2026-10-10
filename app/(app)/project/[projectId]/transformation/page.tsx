@@ -18,6 +18,11 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcSkeleton from '@/components/cc/Skeleton';
+import ReplaceStoredBox from '@/components/ReplaceStoredBox';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
+import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
+import { isProjectOwner } from '@/lib/project-readers';
+import { wt } from '@/lib/workspace-messages';
 import { CcTag } from '@/components/cc/Tag';
 import { STATE_CLASSES } from '@/components/cc/state';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
@@ -135,6 +140,15 @@ export default function TransformationPage() {
   /** Set by the load when the project has no code yet and could have some. */
   const [awaitingAutoGeneration, setAwaitingAutoGeneration] = useState(false);
   const autoGenerationStarted = useRef(false);
+  /**
+   * An invited reader reads the code; generating it is the owner's, and the
+   * server refuses it for anyone else (ADR-083, decision-input audit item 4).
+   * Nothing is generated on a reader's visit and no button offers it.
+   */
+  const signedInUid = useSignedInUid();
+  const isOwner = isProjectOwner(project, signedInUid);
+  /** "Replace the generated code?" is open (ADR-083, audit item 3). */
+  const [replaceCodeAsk, setReplaceCodeAsk] = useState(false);
 
   useEffect(() => {
     projectRef.current = project;
@@ -996,6 +1010,7 @@ CMD ["node", "srv/service.js"]`
    */
   useEffect(() => {
     if (!awaitingAutoGeneration || modelAvailability.loading || autoGenerationStarted.current) return;
+    if (!isOwner) return;
     if (!modelAvailability.enabled('transformation')) return;
     // Out of the effect body, as the load's call was (it ran after an await):
     // the generation sets state before its first await. Cancelled with the
@@ -1005,9 +1020,10 @@ CMD ["node", "srv/service.js"]`
       generateTransformation();
     }, 0);
     return () => clearTimeout(timer);
-  }, [awaitingAutoGeneration, modelAvailability, generateTransformation]);
+  }, [awaitingAutoGeneration, modelAvailability, generateTransformation, isOwner]);
   const autoGenerationBlocked =
-    awaitingAutoGeneration && !modelAvailability.loading && !modelAvailability.enabled('transformation');
+    awaitingAutoGeneration
+    && ((project !== null && !isOwner) || (!modelAvailability.loading && !modelAvailability.enabled('transformation')));
   /** `loading`, except while waiting on a generation this stage may not start. */
   const busy = loading && !autoGenerationBlocked;
 
@@ -1038,7 +1054,7 @@ CMD ["node", "srv/service.js"]`
    * resolves it, and the button waits until the list is empty.
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
-  const canGenerate = project !== null && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  const canGenerate = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
   /** Once a package exists the button replaces it, and says so. */
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
@@ -1337,10 +1353,13 @@ CMD ["node", "srv/service.js"]`
               // enabled click always starts the generation, which ends in the
               // code, a contract refusal or the error strip.
               onClick={() => {
-                if (canGenerate) generateTransformation();
+                if (!canGenerate) return;
+                // A package on record is replaced: asked first (ADR-083).
+                if (files.length > 0) setReplaceCodeAsk(true);
+                else generateTransformation();
               }}
               disabled={!canGenerate}
-              aria-describedby={!canGenerate && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
+              aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
               data-generate-code=""
             >
               {generateLabel}
@@ -1365,11 +1384,29 @@ CMD ["node", "srv/service.js"]`
         )}
       </StageHeader>
 
+      <ReplaceStoredBox
+        open={replaceCodeAsk}
+        title={wt('input.replaceCodeTitle')}
+        body={wt('input.replaceCodeBody')}
+        callsModel
+        onKeep={() => setReplaceCodeAsk(false)}
+        onReplace={() => {
+          setReplaceCodeAsk(false);
+          if (canGenerate) generateTransformation();
+        }}
+      />
+
+      {project && !isOwner ? (
+        <div className="mb-6">
+          <OwnerOnlyNote />
+        </div>
+      ) : null}
+
       {/* Why the code cannot be generated now, each reason with the one
           action that resolves it (owner report 03.10.2026). On the
           page, not in a title: a phone has no hover. A stale input is said by
           the notice below, which names the stage to regenerate. */}
-      {project && (prerequisites.length > 0 || modelOff) && (
+      {project && isOwner && (prerequisites.length > 0 || modelOff) && (
         <div id="tf-generate-why" data-generation-prerequisites="" className="mb-6">
           <CcMessageStrip
             state="information"
@@ -1508,7 +1545,7 @@ CMD ["node", "srv/service.js"]`
         open={drawerOpen}
         onClose={closeDrawer}
         title="Grounding Audit"
-        lead="The signed score, the findings that need a sign-off, and the released CDS views the legacy selects map to."
+        lead="The signed score, the findings to check by hand, and the released CDS views the legacy selects map to."
         actions={
           <CcButton onClick={closeDrawer}>Close Audit</CcButton>
         }
@@ -1539,26 +1576,29 @@ CMD ["node", "srv/service.js"]`
               </p>
               {/* The boxes below are component state: no reviewer, no time, no
                   reason, gone on reload, and no Run is signed when they change.
-                  "signed off" said more than that (af9225424d1d). */}
+                  "signed off" said more than that (af9225424d1d), and the
+                  heading "Sign-off Checklist" / "Action Required" still did
+                  (decision-input audit T2, 10.10.2026): it is a personal
+                  checklist, and it says so. */}
               <p className="cc-text-meta text-cc-ink-muted mt-1" data-review-progress>
-                {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings ticked in this browser — review progress only, not saved and not a signed sign-off.
+                {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings ticked in this browser — your own checklist, gone when the page reloads. Not saved, and nobody signs anything here.
               </p>
             </div>
           </div>
 
-          {/* Section 3: Sign-off Checklist */}
-          <div className="space-y-3">
+          {/* Section 3: the personal checklist (not a sign-off — see above) */}
+          <div className="space-y-3" data-personal-checklist>
             <h3 className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2 cc-text-h3 text-cc-ink">
                 <CheckCircle2 size={16} aria-hidden="true" className="text-cc-ink-muted" />
-                <span>Sign-off Checklist</span>
+                <span>Your checklist</span>
               </span>
-              <span className="cc-text-label text-cc-ink-muted">Action Required</span>
+              <span className="cc-text-label text-cc-ink-muted">Kept in this browser only</span>
             </h3>
 
             {findings.length === 0 ? (
               <p className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 text-center cc-text-cell text-cc-ink-muted">
-                No support findings require sign-off.
+                No finding needs a check by hand.
               </p>
             ) : (
               <ul className="space-y-2">
