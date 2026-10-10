@@ -436,6 +436,12 @@ test.describe('the first look on screen', () => {
     // sentence, and a Skip that is a real, reachable control while it runs.
     const first = page.locator('[data-first-look]');
     await expect(first).toBeVisible({ timeout: 60000 });
+    // Its own name, the same while it builds and at its end, and a sentence
+    // that it is not the analysis — nothing on it borrows the stage header of
+    // Analyze (roadmap 3.0.7, owner 10.10.2026).
+    await expect(first.getByRole('heading', { level: 2, name: 'First insights into your process' })).toBeVisible();
+    await expect(first.locator('[data-first-look-lead]')).toContainText('not the analysis');
+    await expect(first.locator('[data-stage-title]')).toHaveCount(0);
     await expect(page.locator('[data-first-look-stage]')).toHaveCount(4, { timeout: 60000 });
     expect(
       await page.locator('[data-first-look-stage]').evaluateAll((els) =>

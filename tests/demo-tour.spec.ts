@@ -19,6 +19,7 @@ import {
   type TourProgress,
 } from '../lib/demo-tour';
 import { WORKSPACE_VIEWS } from '../lib/workspace-model';
+import { wt } from '../lib/workspace-messages';
 
 /**
  * The demo tour as a model — roadmap 3.0.7, `DESIGN.md` §6.1.2.
@@ -75,6 +76,13 @@ test.describe('the stations', () => {
     const ranks = TOUR_STATIONS.map((s) => rank[s.view]);
     expect(ranks, 'a station goes back to an earlier view').toEqual([...ranks].sort((a, b) => a - b));
     expect(new Set(TOUR_STATIONS.map((s) => s.view))).toEqual(new Set(['business', 'it', 'management']));
+  });
+
+  test('the station at the first look carries its name, and says it is not the analysis (roadmap 3.0.7)', () => {
+    const reveal = TOUR_STATIONS.find((s) => s.place === 'reveal');
+    expect(reveal?.title).toBe(wt('firstLook.title'));
+    expect(reveal?.title).toBe('First insights into your process');
+    expect(reveal?.body).toMatch(/not the analysis/);
   });
 
   test('no station carries a figure — the place does, from the engine', () => {

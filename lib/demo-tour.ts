@@ -67,8 +67,10 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
   {
     place: 'reveal',
     view: 'business',
-    title: 'What this code decides',
-    body: 'Each rule is a condition the program checks, said in plain words, with the lines it stands on and the code behind it one click away.',
+    // The first look's own name (roadmap 3.0.7, owner 10.10.2026) — the same
+    // words as its card, so the tour does not present it as Analyze.
+    title: 'First insights into your process',
+    body: 'The first reading of this program, taken straight from its code: what it does and the rules it checks, each with the lines it stands on. It is not the analysis; that is the Analyze tool.',
   },
   {
     place: 'process-map',

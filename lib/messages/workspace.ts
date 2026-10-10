@@ -143,14 +143,16 @@ export const WORKSPACE_PAGE_MESSAGES = {
     'The decision is no longer confirmed. Who confirmed it and when stays on the record — that happened. A new confirmation is a new revision.',
   'decision.notDetermined': 'not determined',
   // FirstLook
-  'firstLook.title': 'Reading your code',
+  // The first look's own name (roadmap 3.0.7, owner 10.10.2026): the same while
+  // it builds, at its end and in the demo tour, so it is not read as Analyze.
+  'firstLook.title': 'First insights into your process',
+  'firstLook.lead': 'The first reading of this program, taken straight from its code. It is not the analysis: that is the Analyze tool.',
   'firstLook.skip': 'Skip',
   'firstLook.noProgramName': 'No program name in this source',
   'firstLook.sourceLine': 'Source line',
   'firstLook.noLine': 'no line',
   'firstLook.noDecision': 'No decision point — this source has no branch the engine draws as a gateway.',
   'firstLook.noSource': 'No source has been staged, so there is no process to show. This is not a result.',
-  'firstLook.cardTitle': 'Your process',
   'firstLook.nameNote': 'name',
   'firstLook.foundInCode': 'Found in the code',
   'firstLook.rulesTitle': 'Rules fixed in the program',

@@ -636,6 +636,16 @@ export default function FirstLook({
       {announcement}
     </span>
   );
+  /**
+   * What this screen is, under its name (roadmap 3.0.7, owner 10.10.2026): the
+   * first reading of the program, not the analysis. A card title and one plain
+   * sentence — nothing here borrows the Analyze stage header (`StageHeader`).
+   */
+  const lead = (
+    <p data-first-look-lead="" className="m-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">
+      {wt('firstLook.lead')}
+    </p>
+  );
 
   /**
    * Reduced motion and Skip both mean *the end state*. Until the engine has it
@@ -651,6 +661,7 @@ export default function FirstLook({
       <>
         <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'}>
           <CcCard title={wt('firstLook.title')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
+            {lead}
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
               {firstLookReading(sourceName)}
             </p>
@@ -667,7 +678,11 @@ export default function FirstLook({
     return (
       <>
         <section data-first-look="building" data-reached={reached}>
-          <div className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
+          {/* The same name while it builds as at its end (roadmap 3.0.7). The
+              build-up's own headline stays an `h2` beside it — the step being
+              read, not the name of the screen. */}
+          <CcCard title={wt('firstLook.title')} level={2}>
+            {lead}
             <FirstLookBuildUp
               source={source}
               sourceName={sourceName}
@@ -682,7 +697,7 @@ export default function FirstLook({
               pause={pause}
               story={result?.story ?? null}
             />
-          </div>
+          </CcCard>
         </section>
         {live}
       </>
@@ -698,7 +713,7 @@ export default function FirstLook({
         data-reduced-motion={reduced ? 'true' : 'false'}
       >
         <CcCard
-          title={wt('firstLook.cardTitle')}
+          title={wt('firstLook.title')}
           level={2}
           // No chip on "nothing to show": a provenance says where a statement
           // came from, and an empty project makes none (audit row 17).
@@ -719,6 +734,7 @@ export default function FirstLook({
             ) : null
           }
         >
+          {result ? lead : null}
           {result ? (
             <div
               className={
