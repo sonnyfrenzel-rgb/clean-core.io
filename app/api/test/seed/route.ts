@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Read-back of what a route actually wrote, for stores no client SDK can
-    // read: `projects/{id}/invitations/{id}` has no match in firestore.rules,
+    // read: firestore.rules denies every client access to `projects/{id}/invitations/{id}`,
     // and `projects/{id}.readers` is written by the Admin SDK only. A spec that
     // could only assert on a route's own response would be taking that route's
     // word for what it stored.

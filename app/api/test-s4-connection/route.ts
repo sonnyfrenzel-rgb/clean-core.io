@@ -7,6 +7,7 @@ import {
   SsrfError,
   readBoundedBody,
   readBoundedJson,
+  ResponseLimitError,
   TOKEN_BODY_LIMITS,
 } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -333,7 +334,22 @@ export async function POST(req: NextRequest) {
       throw rateErr;
     }
 
-    const body = await req.json();
+    // Bounded like the OData read route beside it (SEC-b6716f0-19): a connection
+    // form with a destination JSON is a few kilobytes, so the shared 64 KiB
+    // ceiling of a token answer is ample (one pair of limits,
+    // tests/bounded-body.spec.ts).
+    const raw = await readBoundedBody(req, TOKEN_BODY_LIMITS).catch((bodyErr) => (bodyErr instanceof ResponseLimitError ? null : ''));
+    if (raw === null) {
+      return NextResponse.json({ status: 'failed', message: 'The request is too large.' }, { status: 413 });
+    }
+    let body: any;
+    try {
+      const parsed: unknown = JSON.parse(raw || 'null');
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+      body = parsed;
+    } catch {
+      return NextResponse.json({ status: 'failed', message: 'Expected a JSON object.' }, { status: 400 });
+    }
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
     const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;

@@ -176,6 +176,17 @@ export function redactCredentials(snippet: string | undefined): string {
     // A password inside a connection string or URL.
     .replace(/\b(password|passwd|pwd)=([^;&'"\s]+)/gi, '$1=…<redacted>')
     .replace(/(\/\/[^\s/:@'"]+):([^\s/@'"]+)@/g, '$1:…<redacted>@')
+    // A token, key or signature passed as a parameter inside a URL, form body or
+    // connection string (`?access_token=…`, `&sig=…`, `;apikey=…`). ABAP puts
+    // spaces around its own `=`, so `name=value` without them is literal text;
+    // `=>` is a class component, `{` an embedded expression, neither a value.
+    .replace(/(^|[^\w-])([\w-]*?(?:token|secret|apikey|api_key|api-key|key|sig|signature|password|passwd|pwd))=(?![>={])([^&#;'"\s|`]+)/gi,
+      (_m, lead, name) => `${lead}${name}=…<redacted>`)
+    // An Authorization header value written into a literal. The value must hold
+    // a digit or a lower-to-upper case change, as base64 and random tokens do,
+    // so prose such as "Bearer authentication" stays readable.
+    // Case-sensitive on purpose: the case change is the signal.
+    .replace(/\b([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?=[\w\-.~+/]*?(?:\d|[a-z][A-Z]))[\w\-.~+/]{6,}=*/g, '$1$2…<redacted>')
     // A password or token assigned to a literal in ABAP — of any length: a short
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never

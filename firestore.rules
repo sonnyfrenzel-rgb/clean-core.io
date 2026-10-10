@@ -192,10 +192,13 @@ service cloud.firestore {
       // `status` (app/(app)/dashboard/page.tsx) — and it holds nothing the
       // account does not already know about itself. Writing it is closed below.
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
+      // Writes are the account's own. An administrator acts on another
+      // account only through the server routes, which demand a recent sign-in
+      // with MFA and write the audit event (assertAdminStepUp in
+      // lib/firebase-admin.ts). The admin claim opens reads here, never writes;
+      // the admin console only reads. The same holds for every collection below.
+      allow create: if isAuthenticated() && userId == request.auth.uid &&
                     (
-                      isAdmin() || 
-                      (
                         request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
                         isValidUserCreate(request.resource.data) &&
                         request.resource.data.get('orgId', null) == null &&
@@ -209,18 +212,14 @@ service cloud.firestore {
                         request.resource.data.get('s4TenantAccessAllowed', false) == false &&
                         request.resource.data.get('s4TenantAccessRequested', false) == false &&
                         request.resource.data.get('mfaEnabled', false) == false
-                      )
                     );
       allow update: if isAuthenticated() && (
-                      isAdmin() ||
-                      (
                         userId == request.auth.uid &&
                         accountActive() &&
                         request.resource.data.diff(resource.data).changedKeys().hasOnly(userClientUpdateKeys()) &&
                         request.resource.data.diff(resource.data).addedKeys().hasOnly(userClientUpdateKeys()) &&
                         request.resource.data.diff(resource.data).removedKeys().hasOnly([]) &&
                         isValidUserUpdate(request.resource.data, request.resource.data.diff(resource.data).affectedKeys())
-                      )
                     );
       // Erasure is server-side only (deleteUserDataAndAccount): a client delete
       // of the profile left projects, runs, uploads and tickets under a uid
@@ -455,16 +454,15 @@ service cloud.firestore {
     // Uploads (files, abap_examples) and support tickets hold a customer's own
     // ABAP, the same material /projects/{projectId} closed to the operator on
     // 16.09.2026. So they follow that line: read by their owner only, and
-    // uploads edited by their owner only. The admin keeps delete on all three and
-    // the ticket's state (update) — acting on a record, not reading it — and
-    // anything beyond that is a server-side act through the Admin SDK.
+    // uploads edited and deleted by their owner only. A ticket's later state, and
+    // any act of the operator on these records, is a server-side act through the
+    // Admin SDK, behind the same step-up and audit event as every admin route.
     match /support_tickets/{ticketId} {
       allow read: if isAuthenticated() &&
                   resource != null && resource.data.userId == request.auth.uid && accountActive();
       allow create: if isAuthenticated() && accountActive() &&
                     isValidSupportTicket(request.resource.data);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if false;
     }
 
     // One upload document, as a whole — create and update alike. The update
@@ -493,7 +491,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isOwnUpload() &&
                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'content']) &&
                     isValidFileEntry(request.resource.data);
-      allow delete: if isAuthenticated() && (isOwnUpload() || isAdmin());
+      allow delete: if isAuthenticated() && isOwnUpload();
     }
 
     function isValidABAPExample(data) {
@@ -519,8 +517,8 @@ service cloud.firestore {
       // deleteDoc for it, and there was no delete rule — so the call hit
       // default-deny and the row stayed, with the owner unable to remove what
       // they uploaded (security audit of b88c77b, SEC-b88c77b-61, verified at
-      // the line on 21.09.2026). Owner or admin, the same condition /files carries.
-      allow delete: if isAuthenticated() && (isOwnUpload() || isAdmin());
+      // the line on 21.09.2026). Owner only, the same condition /files carries.
+      allow delete: if isAuthenticated() && isOwnUpload();
     }
 
     // The two request documents a browser writes about itself: created once,
@@ -541,17 +539,14 @@ service cloud.firestore {
       allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
       allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive() &&
                     isValidAccessRequest(request.resource.data, 2000);
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if false;
     }
 
     match /tenant_access_requests/{requestId} {
       allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
-      allow create: if (isAuthenticated() && requestId == request.auth.uid && accountActive() &&
-                        isValidAccessRequest(request.resource.data, 5000)) ||
-                       isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive() &&
+                    isValidAccessRequest(request.resource.data, 5000);
+      allow update, delete: if false;
     }
 
     // F-03: S/4HANA-Credentials: ausschließlich serverseitig (Admin SDK). Clients nie.

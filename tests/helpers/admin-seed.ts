@@ -84,8 +84,8 @@ export async function adminDocExists(collectionPath: string, docId: string): Pro
 /**
  * Server-side read-back — what a route actually stored, not what it answered.
  *
- * For the stores no client SDK can reach: `projects/{id}/invitations/{id}` has
- * no match in `firestore.rules`, and `projects/{id}.readers` is Admin-SDK-only.
+ * For the stores no client SDK can reach: `firestore.rules` denies every client
+ * access to `projects/{id}/invitations/{id}`, and `projects/{id}.readers` is Admin-SDK-only.
  */
 export async function adminGetDoc(collectionPath: string, docId: string): Promise<Record<string, any> | null> {
   const response = await fetch(`${BASE_URL}/api/test/seed`, {
