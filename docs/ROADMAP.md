@@ -1471,6 +1471,15 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-753 | medium | P3 | 3.0.x security hardening - as SEC-2026-699 | fixed (78485894c874) |
 | SEC-2026-754 | medium | P3 | 3.0.x security hardening | fixed (78485894c874) |
 | SEC-2026-755 | info | P3 | 3.0.x security hardening - comment wording | fixed (78485894c874) |
+| SEC-2026-757 | medium | — | owner decision 03.10.2026: no admin ceiling for now (as SEC-2026-646) | accepted risk |
+| SEC-2026-758 | medium | P2 | 3.0.9 security hardening - next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-759 | medium | P2 | 3.0.9 security hardening - needs a production count by Sonny | scheduled |
+| SEC-2026-762 | low | P3 | 3.0.x security hardening - with SEC-2026-292 | scheduled |
+| SEC-2026-763 | low | P3 | 3.0.x security hardening | scheduled |
+| SEC-2026-764 | low | P3 | 3.0.9 security hardening - with SEC-2026-758 | scheduled |
+| SEC-2026-771 | info | P3 | 3.0.x security hardening - comment wording | scheduled |
+
+**Audit of v3.0.7 (`32285ae`), 10.10.2026: 0 critical, 1 high, 4 medium, 4 low, 8 info — all 151 candidates verified, delta of 268 files, $0.92.** SEC-2026-758 and -759 (P2) and -764 (P3) scheduled for 3.0.9 security hardening, -762, -763 and -771 (P3) for 3.0.x security hardening; -757 falls under the owner decision of 03.10.2026; ten refuted (SEC-2026-756 as -685/-750, -760 as -725, -761 as -680, -765 to -770 and -772: the comments hold against the code). The reasons are in the sealed register.
 
 **Audit of v3.0.6 (`3b742fc`), 10.10.2026: 0 critical, 0 high, 7 medium, 3 low, 1 info — all 85 candidates verified, delta of 146 files, $0.54.** SEC-2026-751 and -752 (P2, one rules change with the next rules deploy) and -753 to -755 (P3) scheduled for 3.0.x security hardening; six refuted (SEC-2026-745 to -750: -746 to -749 as -670/-701/-702, -750 as -685). The reasons are in the sealed register.
 
