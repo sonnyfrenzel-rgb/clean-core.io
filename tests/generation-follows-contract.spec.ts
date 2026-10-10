@@ -265,10 +265,11 @@ function generationBody(): string {
 
 test('the generation does not take its direction from the project document', () => {
   const body = generationBody();
-  // `extensibilityRoute` is on the client-writable allowlist of
-  // `firestore.rules`, and the Analyze stage flips it from the browser with no
-  // reason. A generator that reads it follows the last person who pressed the
-  // toggle, not the contract.
+  // `extensibilityRoute` was on the client-writable allowlist of
+  // `firestore.rules` until 3.0.7, and the Analyze stage flipped it from the
+  // browser with no reason; a project can still carry such a value. A generator
+  // that reads it follows the last person who pressed the toggle, not the
+  // contract.
   expect(body).not.toContain('extensibilityRoute');
   expect(body).not.toContain('isAbapCloudTrack');
   expect(body).not.toContain("'Side-by-Side (SAP BTP)'");

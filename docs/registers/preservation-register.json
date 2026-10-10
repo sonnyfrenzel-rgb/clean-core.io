@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "643fb2a45cfeff1ebc5b230873fcf61c4f1f29b32ef4a7838f2e080cc7d6e287",
+      "sha256OfLfNormalisedText": "d7c48ac1ab550d998dfe4be71d0fea14581693b0d3e49c95757649e558d6c6ff",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -49,7 +49,6 @@
           "status",
           "legacyCode",
           "s4Deployment",
-          "extensibilityRoute",
           "solutionDesign",
           "generatedCode",
           "documentation",
@@ -193,7 +192,7 @@
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
-      "extensibilityRoute": "Written by POST /api/runs/create (the router's recommendation). No stage writes it from the browser since the Analyze route switch was removed on 10.10.2026. Still in the client allowlist of firestore.rules until the rules are tightened in a manual deploy; until then a browser could write it, and the stages label a stored route that differs from the recommendation as the reader's choice.",
+      "generatedCode": "Written by POST /api/projects/{projectId}/contract (Transformation). The one browser write left is the Documentation stage's packageCleanup spread inside its write transactions, which only removes the two Markdown files an earlier build put into the package and is empty otherwise (3.0.7, Documentation lean); a spread key is not a named write, so the stage does not list it. Stays client-writable for that cleanup.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [
@@ -1088,10 +1087,6 @@
         ],
         "onlyAfterARun": [],
         "notShown": [
-          {
-            "field": "generatedCode",
-            "why": "not read for the documentation since 3.0.5 (L-04 resolved), and since 3.0.7 nothing of this stage is merged into it"
-          },
           {
             "field": "status",
             "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"

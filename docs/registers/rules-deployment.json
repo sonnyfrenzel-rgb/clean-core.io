@@ -40,11 +40,13 @@
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
   },
   "pending": {
-    "sha256OfLfNormalisedText": "643fb2a45cfeff1ebc5b230873fcf61c4f1f29b32ef4a7838f2e080cc7d6e287",
+    "sha256OfLfNormalisedText": "d7c48ac1ab550d998dfe4be71d0fea14581693b0d3e49c95757649e558d6c6ff",
     "recordedAt": "2026-10-10",
-    "recordedFor": "SEC-2026-751, SEC-2026-752 - 3.0.x security hardening; waits for Sonny's next rules deploy",
+    "recordedFor": "SEC-2026-751, SEC-2026-752 - 3.0.x security hardening; extensibilityRoute becomes server-only (3.0.7, written only by POST /api/runs/create); waits for Sonny's next rules deploy",
     "addsToClient": [],
-    "removesFromClient": [],
+    "removesFromClient": [
+      "extensibilityRoute"
+    ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
     "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }

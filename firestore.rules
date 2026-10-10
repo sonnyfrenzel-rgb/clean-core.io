@@ -278,7 +278,6 @@ service cloud.firestore {
                  before.get('status', '') in ['analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed'])) &&
              (!('s4Deployment' in changed) || data.s4Deployment in ['public', 'private']) &&
              (!('s4Environment' in changed) || data.s4Environment in ['mock', 'live']) &&
-             (!('extensibilityRoute' in changed) || isBoundedString(data.extensibilityRoute, 0, 200)) &&
              (!('businessDocumentation' in changed) || isBoundedString(data.businessDocumentation, 0, 999999)) &&
              (!('coverageEstimate' in changed) || isValidCoverageEstimate(data.coverageEstimate)) &&
              (!('testSuite' in changed) || isValidTestSuite(data.testSuite)) &&
@@ -391,8 +390,10 @@ service cloud.firestore {
                       //
                       // `worklist` left this list in 3.0.6: POST /api/runs/create
                       // writes it, and no stage writes it from the browser.
+                      // `extensibilityRoute` followed in 3.0.7: only POST /api/runs/create
+                      // writes it since the Analyze route switch was removed.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                        'status', 'legacyCode', 's4Deployment', 'extensibilityRoute', 'solutionDesign',
+                        'status', 'legacyCode', 's4Deployment', 'solutionDesign',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
                         'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
                         'exports', 'updatedAt', 's4Environment',

@@ -206,12 +206,12 @@ test('4 · no browser writes `readers`, by any path', async () => {
   // The one that is easy to forget: `readers` smuggled in beside a field the
   // allowlist does allow, in a single write.
   expect(
-    await denied(() => setDoc(ref, { extensibilityRoute: 'In-App (ABAP Cloud)', readers: [uids.stranger] }, { merge: true })),
+    await denied(() => setDoc(ref, { businessDocumentation: '# SOP', readers: [uids.stranger] }, { merge: true })),
     'readers beside an allowed field',
   ).toBe(true);
   // And the allowed field on its own still goes through, so the assertions
   // above are about `readers` and not about the write failing anyway.
-  expect(await denied(() => setDoc(ref, { extensibilityRoute: 'In-App (ABAP Cloud)' }, { merge: true })), 'the allowed field alone').toBe(false);
+  expect(await denied(() => setDoc(ref, { businessDocumentation: '# SOP' }, { merge: true })), 'the allowed field alone').toBe(false);
 
   // A stranger cannot create a project with a readers list either.
   await signIn(STRANGER);

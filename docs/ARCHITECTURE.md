@@ -240,8 +240,9 @@ verification that passes.
 Two rules follow, and both are guarded by `tests/run-integrity-guard.spec.ts`:
 
 - **Evidence comes from the run, never from the project.** `worklist` and
-  `extensibilityRoute` are both in the client-writable update allowlist in
-  `firestore.rules`, and the pack read them from the project in preference to the
+  `extensibilityRoute` were both in the client-writable update allowlist in
+  `firestore.rules` (both are server-only since: `worklist` from 3.0.6,
+  `extensibilityRoute` from 3.0.7), and the pack read them from the project in preference to the
   run. The owner could delete an inconvenient finding and have the pack sign the
   edited version as bound to the immutable run. Those two were plugged first; the
   rest of the project document — target architecture, sign-off, approver, override

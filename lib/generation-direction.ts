@@ -14,11 +14,12 @@
  *
  * (`app/(app)/project/[projectId]/transformation/page.tsx`, before this step.)
  *
- * `extensibilityRoute` is on the client-writable allowlist of
+ * `extensibilityRoute` was on the client-writable allowlist of
  * `firestore.rules` — `affectedKeys().hasOnly([… 'extensibilityRoute' …])` — and
  * the Analyze stage flipped it straight from the browser with `updateDoc(docRef,
  * { extensibilityRoute: nextRoute })`, no reason asked, no sign-off touched
- * (that switch was removed on 10.10.2026; the allowlist entry is still there). So
+ * (that switch was removed on 10.10.2026 and the field left the allowlist in
+ * 3.0.7; only POST /api/runs/create writes it now). So
  * the generation followed *the last person who pressed the toggle*, while the
  * architect's actual decision — `targetArchitecture` together with
  * `architectJustifiedOverride`, both server-only (`lib/project-commands.ts`),

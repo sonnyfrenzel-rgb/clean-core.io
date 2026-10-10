@@ -254,7 +254,6 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, { s4Environment: 'production' })), 's4Environment').toBe(true);
   expect(await denied(() => updateDoc(ref, { s4Deployment: 'hybrid' })), 's4Deployment').toBe(true);
   expect(await denied(() => updateDoc(ref, { worklist: 'none' })), 'worklist').toBe(true);
-  expect(await denied(() => updateDoc(ref, { extensibilityRoute: 'x'.repeat(201) })), 'extensibilityRoute').toBe(true);
   expect(await denied(() => updateDoc(ref, { businessDocumentation: 42 })), 'businessDocumentation').toBe(true);
   expect(await denied(() => updateDoc(ref, { coverageEstimate: 'high' })), 'coverageEstimate').toBe(true);
   expect(await denied(() => updateDoc(ref, { manualTestingRequirements: 'none' })), 'manualTestingRequirements').toBe(true);
@@ -264,6 +263,10 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, {
     worklist: [{ id: 'w1', title: 'Finding', status: 'open' }],
   })), 'worklist from the browser').toBe(true);
+  // 3.0.7: so is the route — the Analyze switch that wrote it from the browser
+  // is gone, and a client value of any shape is refused.
+  expect(await denied(() => updateDoc(ref, { extensibilityRoute: 'In-App (ABAP Cloud)' })), 'extensibilityRoute from the browser').toBe(true);
+  expect(await denied(() => setDoc(ref, { extensibilityRoute: 'Side-by-Side (SAP BTP)' }, { merge: true })), 'extensibilityRoute by set merge').toBe(true);
   // updatedAt is the time of the write, not a chosen one.
   expect(await denied(() => updateDoc(ref, { updatedAt: Timestamp.fromDate(new Date('2000-01-01')) })), 'back-dated updatedAt').toBe(true);
   expect(await denied(() => updateDoc(ref, { updatedAt: serverTimestamp() })), 'updatedAt of the write').toBe(false);
@@ -272,7 +275,6 @@ test('client-writable project fields keep their type and size', async () => {
   expect(await denied(() => updateDoc(ref, { testSuite: { code: 42 } })), 'testSuite code not text').toBe(true);
   expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 150, explanation: 'x', missingCoverage: 'y' } })), 'coverage above 100').toBe(true);
   expect(await denied(() => updateDoc(ref, { coverageEstimate: { percentage: 10, note: 'x' } })), 'coverage extra key').toBe(true);
-  expect(await denied(() => updateDoc(ref, { extensibilityRoute: 'In-App (ABAP Cloud)' })), 'analyze: route').toBe(false);
   expect(await denied(() => updateDoc(ref, {
     solutionDesign: '{"summary":"x"}', status: 'designed', nonFunctionalRequirements: { availability: '99.5%' },
   })), 'design').toBe(false);
