@@ -121,6 +121,22 @@ test.describe('the writers check before they write', () => {
     expect(refusal.indexOf('refundRunQuota(')).toBeLessThan(refusal.indexOf('status: 413'));
   });
 
+  test('runs/create measures the run document before the transaction, after signing', () => {
+    // QA finding fe125dab988e: the run document has the same 1 MiB cap and was
+    // written unmeasured, so an oversized run failed the commit with a 500.
+    const route = readFileSync('app/api/runs/create/route.ts', 'utf8');
+    const signed = route.indexOf('const analysisRun: AnalysisRun = {');
+    const measured = route.indexOf('checkProjectWrite(null, analysisRun');
+    const tx = route.indexOf('await db.runTransaction(');
+    expect(signed).toBeGreaterThan(-1);
+    expect(measured, 'the run document is no longer measured').toBeGreaterThan(signed);
+    expect(measured, 'the run is measured only once the transaction has started').toBeLessThan(tx);
+    const refusal = route.slice(measured, tx);
+    expect(refusal.indexOf('refundRunQuota(')).toBeGreaterThan(-1);
+    expect(refusal.indexOf('refundRunQuota(')).toBeLessThan(refusal.indexOf('status: 413'));
+    expect(refusal).toContain('code: PROJECT_TOO_LARGE_CODE');
+  });
+
   test('the Transformation stage keeps a refused package on screen as an unsaved draft', () => {
     const page = readFileSync('app/(app)/project/[projectId]/transformation/page.tsx', 'utf8');
     const branch = page.slice(page.indexOf('answer.code === PROJECT_TOO_LARGE_CODE'));

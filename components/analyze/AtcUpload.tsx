@@ -104,6 +104,10 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
 
   const choose = (f: File) => {
     setFile(f);
+    // The previous file's preview must not stay importable while the new one
+    // is read (QA finding 5e3dfe48fec0).
+    setPreview(null);
+    setSaveError(null);
     setHintScan(null);
     setHintAckFor('');
     void read(f);
@@ -129,13 +133,19 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   };
 
   const confirmImport = async () => {
-    if (!preview || hintPending || saving) return;
+    // Not before the parse and the personal-data look have both finished: an
+    // unfinished scan has no hints yet, so `hintPending` would read false
+    // (QA finding bd707017502e).
+    if (!preview || parsing || hintScan === null || hintPending || saving) return;
     readSeq.current++;
     setSaving(true);
     setSaveError(null);
     try {
       await onImport(preview);
     } catch (err) {
+      // The confirm superseded any read still in flight, so nothing else will
+      // clear the reading state (QA finding e4e8e512167b).
+      setParsing(false);
       setSaveError(err instanceof Error ? err.message : 'The server did not store the ATC results.');
       return;
     } finally {
@@ -327,7 +337,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
               variant="primary"
               onClick={() => void confirmImport()}
               busy={saving}
-              disabled={preview.findings.length === 0 || hintPending}
+              disabled={preview.findings.length === 0 || parsing || hintScan === null || hintPending}
               data-atc-confirm
             >
               Import {preview.findings.length} findings

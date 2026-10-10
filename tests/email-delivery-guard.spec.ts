@@ -205,6 +205,22 @@ test.describe('a bounce reaches the operator', () => {
     expect(s).toContain('recordEmailSent(messageId, msg.to, msg.subject, msg.label, msg.uid)');
   });
 
+  test('the admin mail routes carry the uid too', () => {
+    // The reinstatement welcome mail recorded its send without the uid, so its
+    // bounce never reached registration_requests (QA finding 76b83beec3c3).
+    for (const rel of [
+      'app/api/send-approval-email/route.ts',
+      'app/api/send-tenant-approval-email/route.ts',
+      'app/api/send-tenant-revoke-email/route.ts',
+    ]) {
+      const calls = read(rel).match(/recordEmailSent\([^)]*\)/g) ?? [];
+      expect(calls.length, `${rel} no longer records its send`).toBeGreaterThan(0);
+      for (const call of calls) {
+        expect(call, `${rel} records a send without the uid`).toMatch(/,\s*uid\)$/);
+      }
+    }
+  });
+
   test('the verdict is mirrored where the operator already looks', () => {
     const s = read('lib/email-events.ts');
     // `email_events` is server-only because the documents carry recipient

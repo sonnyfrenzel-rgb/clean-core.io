@@ -730,6 +730,45 @@ export async function POST(req: NextRequest) {
       signature,
     };
 
+    // The run document has a 1 MiB cap of its own, and nothing measured it: a
+    // narrative or a worklist large enough to cross it failed the commit below
+    // and the reader got a generic 500 after the quota unit had been spent (QA
+    // finding fe125dab988e). Measured here, after signing and before anything
+    // is written, against the same budget the project write is held to. Only
+    // the finished document is read — what was hashed and signed is unchanged.
+    const runSize = checkProjectWrite(null, analysisRun as unknown as Record<string, unknown>, newRunDoc.path, 'merge');
+    if (!runSize.ok) {
+      // Nothing was written, so nothing is charged — the rule of the project
+      // refusal below.
+      if (chargedUid && chargedHash) {
+        await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
+        chargedUid = null;
+        chargedHash = null;
+        reservation = null;
+      }
+      logger.warn('runs/create refused: the run would outgrow its document', {
+        route: 'api/runs/create',
+        projectId,
+        bytes: runSize.bytes,
+        budget: runSize.budget,
+      });
+      const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
+      return NextResponse.json(
+        {
+          error:
+            `The record of this analysis would be ${kb(runSize.bytes)}, more than the ${kb(runSize.budget)} one analysis can hold. ` +
+            `Nothing was saved, nothing was charged, and the previous analysis is untouched. ` +
+            `The largest parts are ${runSize.largest.map((f) => `${f.field} (${kb(f.bytes)})`).join(', ')}. ` +
+            `To make room, split the program into smaller projects and analyse each one.`,
+          code: PROJECT_TOO_LARGE_CODE,
+          bytes: runSize.bytes,
+          budget: runSize.budget,
+          largest: runSize.largest,
+        },
+        { status: 413 },
+      );
+    }
+
     // 6a. Did the source change? (roadmap E01-F01-US02)
     //
     // A new run used to leave the design, the code, the tests, the documentation

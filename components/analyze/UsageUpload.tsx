@@ -129,7 +129,12 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   const declare = (patch: Partial<Declared>) => {
     const next = { ...declared, ...patch };
     setDeclared(next);
-    if (file) void read(file, next);
+    if (file) {
+      // The preview read under the old declaration is not what would be
+      // stored any more (QA finding 6d987e6b97cd).
+      setPreview(null);
+      void read(file, next);
+    }
   };
 
   /**
@@ -159,6 +164,10 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
 
   const choose = (f: File) => {
     setFile(f);
+    // The previous file's preview must not stay importable while the new one
+    // is read (QA finding 5e3dfe48fec0).
+    setPreview(null);
+    setSaveError(null);
     setHintScan(null);
     setHintAckFor('');
     void read(f, declared);
@@ -191,13 +200,19 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   const confirmImport = async () => {
     // The import is what sends the file's contents on. Nothing is refused here
     // — the tick is what is asked for, and the button below says so.
-    if (!preview || hintPending || saving) return;
+    // Not before the parse and the personal-data look have both finished: an
+    // unfinished scan has no hints yet, so `hintPending` would read false
+    // (QA finding bd707017502e).
+    if (!preview || parsing || hintScan === null || hintPending || saving) return;
     readSeq.current++; // nothing still in flight may replace what was confirmed
     setSaving(true);
     setSaveError(null);
     try {
       await onImport(preview);
     } catch (err) {
+      // The confirm superseded any read still in flight, so nothing else will
+      // clear the reading state (QA finding e4e8e512167b).
+      setParsing(false);
       setSaveError(err instanceof Error ? err.message : 'The server did not store the usage data.');
       return;
     } finally {
@@ -446,7 +461,7 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
               variant="primary"
               onClick={() => void confirmImport()}
               busy={saving}
-              disabled={preview.records.length === 0 || hintPending}
+              disabled={preview.records.length === 0 || parsing || hintScan === null || hintPending}
               data-usage-confirm
             >
               Import {preview.records.length} objects

@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       const sent = await resendRes.json().catch(() => ({} as any));
       console.log(`[Email] Sent tenant approval. id=${sent?.id ?? 'unknown'}`);
       if (sent?.id) {
-        await recordEmailSent(sent.id, email, emailSubject, 'tenant approval').catch((err) =>
+        await recordEmailSent(sent.id, email, emailSubject, 'tenant approval', uid).catch((err) =>
           console.error('[Email] Could not record sent event:', err),
         );
       }

@@ -128,6 +128,64 @@ test.describe('the hint is wired into every path a source takes into the product
   }
 });
 
+/**
+ * The two import panels that ask before they save (QA findings bd707017502e,
+ * 5e3dfe48fec0, 6d987e6b97cd, e4e8e512167b of the v3.0.6 full review). The
+ * gate above is only as good as its timing: while the look at the file is
+ * still running there are no hints yet, so "nothing pending" read true and
+ * Import was open; and a new file left the old file's preview importable
+ * until the new parse landed.
+ */
+const IMPORT_PANELS = ['components/analyze/AtcUpload.tsx', USAGE_UPLOAD];
+
+/** The body of `const name = (…) => { … };`, by brace count. */
+function arrowBody(src: string, name: string): string {
+  const start = src.indexOf(`const ${name} = `);
+  expect(start, `${name} is gone`).toBeGreaterThan(-1);
+  const open = src.indexOf('{', src.indexOf('=>', start));
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(open, i + 1);
+  }
+  throw new Error(`${name} has no closing brace`);
+}
+
+test.describe('an import waits for the look at the file, and for the file it shows', () => {
+  for (const rel of IMPORT_PANELS) {
+    test(`${rel} cannot import before the scan has finished`, () => {
+      const src = read(rel);
+      const confirm = arrowBody(src, 'confirmImport');
+      expect(confirm, `${rel} confirms while the file is still being read`).toMatch(/\bparsing\b/);
+      expect(confirm, `${rel} confirms before the personal-data look has an answer`).toContain(
+        'hintScan === null',
+      );
+      const button = src.slice(src.indexOf('onClick={() => void confirmImport()}'));
+      const disabled = button.slice(0, 400).match(/disabled=\{([^}]*)\}/)?.[1] ?? '';
+      expect(disabled, `${rel}: Import is not shut while parsing`).toMatch(/\bparsing\b/);
+      expect(disabled, `${rel}: Import is not shut while the scan runs`).toContain('hintScan === null');
+    });
+
+    test(`${rel} drops the previous preview when a new file is chosen`, () => {
+      const choose = arrowBody(read(rel), 'choose');
+      expect(choose, `${rel} keeps the old file's preview importable`).toContain('setPreview(null)');
+    });
+
+    test(`${rel} does not stay "reading" after a refused save`, () => {
+      const confirm = arrowBody(read(rel), 'confirmImport');
+      const caught = confirm.slice(confirm.indexOf('catch'));
+      expect(caught, `${rel} leaves the reading state stuck after a save error`).toContain(
+        'setParsing(false)',
+      );
+    });
+  }
+
+  test('a changed declaration drops the usage preview it no longer describes', () => {
+    const declare = arrowBody(read(USAGE_UPLOAD), 'declare');
+    expect(declare).toContain('setPreview(null)');
+  });
+});
+
 /* ==================================================================== *
  * And what the browser paints.
  * ==================================================================== */
@@ -274,6 +332,39 @@ test('the usage import asks the same question, and it matters more there', async
   await expect(confirm, 'the import was open although nobody had looked').toBeDisabled();
   await panel.locator(ACK).check();
   await expect(confirm, 'the acknowledgement did not open the import').toBeEnabled();
+});
+
+test("a second usage file replaces the first one's preview", async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openUploadScreen(page);
+  await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
+
+  const confirm = page.locator('[data-usage-confirm]');
+  await page.locator('[data-usage-file]').setInputFiles({
+    name: 'first.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('OBJECT_NAME;CALLS;LAST_USED;USER\nZSD_ORDERS;12;2026-04-05;MUELLERH\n'),
+  });
+  const panel = page.locator('[data-personal-data-hints="usage-personal-data"]');
+  await expect(panel).toBeVisible({ timeout: 30000 });
+  await panel.locator(ACK).check();
+  await expect(confirm).toBeEnabled();
+  await expect(confirm).toContainText('Import 1 objects');
+
+  await page.locator('[data-usage-file]').setInputFiles({
+    name: 'second.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      'OBJECT_NAME;CALLS;LAST_USED;USER\nZSD_A;1;2026-04-05;MUELLERH\nZSD_B;2;2026-04-05;MUELLERH\n',
+    ),
+  });
+  // The tick was for the first file; the second one needs its own.
+  await expect(panel.locator(ACK), "the first file's tick stood for the second").not.toBeChecked();
+  await expect(confirm, 'the import was open for a file nobody had looked at').toBeDisabled();
+  await panel.locator(ACK).check();
+  await expect(confirm, "the first file's preview was still the one on offer").toContainText(
+    'Import 2 objects',
+  );
 });
 
 test('editing the source afterwards takes the acknowledgement back', async ({ page }) => {
