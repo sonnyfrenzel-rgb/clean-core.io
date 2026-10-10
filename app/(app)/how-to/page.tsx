@@ -7,18 +7,18 @@ import BackLink from '@/components/BackLink';
 import HowToClient from '@/components/HowToClient';
 import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
-import { HOW_TO_DESCRIPTION, howToSteps } from '@/lib/how-to-content';
+import { HOW_TO_DESCRIPTION, HOW_TO_META_DESCRIPTION, howToSteps } from '@/lib/how-to-content';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
-  description: HOW_TO_DESCRIPTION,
+  description: HOW_TO_META_DESCRIPTION,
   alternates: {
     canonical: 'https://clean-core.io/how-to',
   },
   openGraph: {
     title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
-    description: HOW_TO_DESCRIPTION,
+    description: HOW_TO_META_DESCRIPTION,
     url: 'https://clean-core.io/how-to',
     type: 'website',
     siteName: 'Clean-Core.io',

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { withTwitterCard } from '@/lib/page-metadata';
+import { DESCRIPTION_MAX, TITLE_MAX, firstThatFits, withTwitterCard } from '@/lib/page-metadata';
 import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
@@ -83,21 +83,50 @@ export async function generateMetadata({
   const { entry, noPath, successor, curated } = facts(name);
   if (!entry && !noPath) return { title: 'Object not found | Clean-Core.io' };
 
+  // The fullest wording that fits a search result (roadmap 3.0.8): a short
+  // successor keeps the long title, a long CDS view name drops the tag line, and
+  // a curated mapping always says it is curated, however short it gets.
   const title = successor
-    ? `${name} → ${successor} · Released API successor | Clean-Core.io`
-    : `${name} · No released API path | Clean-Core.io`;
+    ? firstThatFits(
+        TITLE_MAX,
+        `${name} → ${successor} · Released API successor | Clean-Core.io`,
+        `${name} → ${successor} | Clean-Core.io`,
+        `${name} → ${successor}`,
+      )
+    : firstThatFits(TITLE_MAX, `${name} · No released API path | Clean-Core.io`, `${name} · No released API path`);
   const { graded, byUse } = facts(name);
-  const statePhrase = graded.state ? ` (SAP state: ${graded.state})` : '';
-  const levelPhrase = byUse
-    ? ` Clean core level ${byUse.read.grade} to read directly, ${byUse.write.grade} to write directly${statePhrase}.`
-    : graded.grade === 'Unknown'
-      ? ''
-      : ` Clean core level ${graded.grade}${statePhrase}.`;
+  const level = (withState: boolean) => {
+    const statePhrase = withState && graded.state ? ` (SAP state: ${graded.state})` : '';
+    return byUse
+      ? ` Clean core level ${byUse.read.grade} to read directly, ${byUse.write.grade} to write directly${statePhrase}.`
+      : graded.grade === 'Unknown'
+        ? ''
+        : ` Clean core level ${graded.grade}${statePhrase}.`;
+  };
   const description = successor
     ? curated
-      ? `${name} maps to the released S/4HANA successor ${successor} in Clean-Core.io's curated mapping, not from SAP's Cloudification Repository.${levelPhrase}`
-      : `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
-    : `No released successor is named in SAP's data for ${name}; assess alternatives (released APIs, standard, retirement) for your target release.${levelPhrase}`;
+      ? firstThatFits(
+          DESCRIPTION_MAX,
+          `${name} maps to the released S/4HANA successor ${successor} in Clean-Core.io's curated mapping, not from SAP's Cloudification Repository.${level(true)}`,
+          `${name} maps to the released S/4HANA successor ${successor} in Clean-Core.io's curated mapping, not from SAP's Cloudification Repository.${level(false)}`,
+          `${name} → ${successor}: Clean-Core.io's curated mapping, not SAP's data.${level(false)}`,
+          `${name} → ${successor}: Clean-Core.io's curated mapping, not SAP's data.`,
+        )
+      : firstThatFits(
+          DESCRIPTION_MAX,
+          `${name} maps to the released S/4HANA successor ${successor}.${level(true)} Clean Core readiness reference from the SAP Cloudification Repository.`,
+          `${name} maps to the released S/4HANA successor ${successor}.${level(true)} From the SAP Cloudification Repository.`,
+          `${name} maps to the released S/4HANA successor ${successor}.${level(true)}`,
+          `${name} maps to the released S/4HANA successor ${successor}.${level(false)}`,
+          `${name} maps to the released S/4HANA successor ${successor}.`,
+        )
+    : firstThatFits(
+        DESCRIPTION_MAX,
+        `No released successor is named in SAP's data for ${name}; assess alternatives (released APIs, standard, retirement) for your target release.${level(true)}`,
+        `No released successor is named in SAP's data for ${name}; assess alternatives (released APIs, standard, retirement) for your target release.${level(false)}`,
+        `No released successor is named in SAP's data for ${name}.${level(false)}`,
+        `No released successor is named in SAP's data for ${name}.`,
+      );
 
   return withTwitterCard({
     title,

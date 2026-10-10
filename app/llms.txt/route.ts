@@ -1,5 +1,6 @@
 import { getFacts } from '@/lib/facts';
 import { SCORE_BANDS_SOURCE, scoreBandsBullets, scoreDeductionsProse } from '@/lib/clean-core-score';
+import { AS_OF_TITLE, AS_OF_PARAGRAPH, WHAT_CHANGED_QUESTION, WHAT_CHANGED_ANSWER } from '@/lib/release-summary';
 
 /**
  * /llms.txt — a compact, machine-readable orientation file for LLM crawlers and
@@ -63,6 +64,31 @@ through draft and test to a decision. ATC stays the authority.
 
 Version: ${facts.engineVersion} (${facts.engineReleaseDate})
 
+## ${AS_OF_TITLE}
+
+${AS_OF_PARAGRAPH}
+
+## ${WHAT_CHANGED_QUESTION}
+
+${WHAT_CHANGED_ANSWER}
+
+## How the chain works
+
+1. Process: the engine reads the ABAP program and reconstructs its business process as
+   BPMN; every element carries the line it came from, or the reason it has none.
+2. Level A–D: every SAP object the code uses is graded under a versioned rule
+   (${baseUrl}/method/levels); the Clean Core Score (5–100, higher is better) starts at
+   100 and takes points off for the constructs found.
+3. Decision: the Management view asks one question of the program — keep, rebuild, move
+   to SAP standard or retire — and shows what the answer rests on.
+4. Design, code draft, tests: Model proposals built on the signed run, for a person to
+   review; on the CAP track the tests run against mocks in an isolated runner, on the RAP
+   track the ABAP Unit result is recorded from the user's own SAP system.
+5. Signed run: every completed analysis is an immutable run signed with HMAC; the audit
+   pack is signed over it with HMAC and Ed25519 (${baseUrl}/verify-pack).
+
+Details and limits: ${baseUrl}/how-it-works.
+
 ## What the workspace holds
 
 - A workspace per project. The business process is reconstructed from the ABAP code as
@@ -108,11 +134,11 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 - [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated, and how it differs from SAP's own figures (see "Naming" below).
 - [How Level A–D is derived](${baseUrl}/method/levels): the precedence rule that merges SAP's two Cloudification Repository files into one level, with the rule version that produced it.
 - [Knowledge base](${baseUrl}/knowledge): Clean Core strategy, In-App RAP vs. Side-by-Side CAP, security architecture.
-- [How it works](${baseUrl}/how-it-works): the evidence engine, the language model, and the boundary between them.
+- [How it works](${baseUrl}/how-it-works): the chain from the ABAP code to a signed run — process as BPMN, Level A–D, the decision, design, code draft and tests — with the boundary between engine and language model, and the coverage matrix.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.
 - [SAP cloudification explained](${baseUrl}/sap-cloudification): what "cloudify" means for custom ABAP.
 - [Whitepaper](${baseUrl}/whitepaper): the whole story for the people who decide what happens to custom ABAP — the chain of evidence, the process as BPMN, levels A–D, the seven tools and their limits. Also as PDF: ${baseUrl}/Clean-Core_S4HANA_Modernization_Whitepaper.pdf.
-- [Clean core explained](${baseUrl}/clean-core-explained): SAP clean core from first principles, without the jargon.
+- [Clean core explained](${baseUrl}/clean-core-explained): what SAP clean core is, in one definition and short answers, then from first principles, without the jargon.
 - [Your first run](${baseUrl}/first-run): what one analysis shows, step by step.
 - [Reference analysis](${baseUrl}/reference-analysis): one published, reproducible run on real legacy ABAP.
 - [Verify an audit pack](${baseUrl}/verify-pack): check that an exported pack is complete, unchanged and signed.

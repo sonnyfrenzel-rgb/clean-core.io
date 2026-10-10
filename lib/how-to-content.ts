@@ -54,6 +54,14 @@ export interface PhaseHowTo {
 export const HOW_TO_DESCRIPTION =
   `How custom ABAP moves through the phases of Clean-Core.io, from the analysis of the source to the handover of what is on record, on the in-app RAP track or the side-by-side CAP track on ${BTP_FIRST}.`;
 
+/**
+ * The same, short enough for a search result (roadmap 3.0.8: 155 characters):
+ * the meta and Open Graph description. It names no platform, so the first
+ * mention of SAP BTP stays the full one in the lead above.
+ */
+export const HOW_TO_META_DESCRIPTION =
+  'How custom ABAP moves through the seven workspace tools, from the analysis of the source to the handover, on the in-app RAP or side-by-side CAP track.';
+
 export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   analyze: {
     summary:

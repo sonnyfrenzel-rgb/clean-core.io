@@ -6,7 +6,7 @@ import CcTable from '@/components/cc/Table';
 export const metadata: Metadata = withTwitterCard({
   title: 'Third-Party Notices & Licenses | Clean-Core.io',
   description:
-    'Open-source software and data that Clean-Core.io is built on, with the required attributions — including the SAP Cloudification Repository under Apache-2.0.',
+    'Open-source software and data Clean-Core.io is built on, with the required attributions — including the SAP Cloudification Repository under Apache-2.0.',
   alternates: {
     canonical: 'https://clean-core.io/licenses',
   },

@@ -2,7 +2,8 @@ import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { getFacts, formatObjectCount } from '@/lib/facts';
-import { GitBranch, Database, Code2, PenLine, Ruler, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { GitBranch, PenLine, Ruler, ChevronDown, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
@@ -10,15 +11,18 @@ import { supportMatrixRows, LEVEL_LABEL } from '@/lib/abap/support-matrix';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import CcTable from '@/components/cc/Table';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
+import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS } from '@/lib/decision-options';
+import { PROVENANCE, PROVENANCE_VALUES } from '@/lib/provenance';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'How It Works — ABAP Evidence Engine, Model Boundary & Coverage | Clean-Core.io',
-  description: 'How Clean-Core.io reads custom ABAP deterministically, checks SAP objects against SAP’s Cloudification Repository, and where the model starts — with limits.',
+  title: 'How It Works: From ABAP to a Signed Run | Clean-Core.io',
+  description: 'How Clean-Core.io reads custom ABAP before any model does, checks SAP objects against SAP\'s Cloudification Repository, and where the model starts.',
   alternates: {
     canonical: 'https://clean-core.io/how-it-works',
   },
   openGraph: {
-    title: 'How It Works — ABAP Evidence Engine, Model Boundary & Coverage | Clean-Core.io',
+    title: 'How It Works: From ABAP to a Signed Run | Clean-Core.io',
     description: 'How Clean-Core.io reads custom ABAP before any model does, maps SAP objects against SAP’s Cloudification Repository, and where the language model starts — with its coverage and limits.',
     url: 'https://clean-core.io/how-it-works',
     type: 'website',
@@ -27,16 +31,28 @@ export const metadata: Metadata = withTwitterCard({
 
 const faqs = [
   {
-    question: 'Which ABAP constructs are automatically transformed?',
-    answer: 'Direct database reads (SELECT on standard SAP tables like VBAK, BSEG, LIKP), simple wrapper classes, and remote function calls (CALL FUNCTION … DESTINATION) are fully supported. A local function-module call with a static name is not assessed yet; the analysis lists it as not assessed rather than passing it. Complex SQL joins, BAdI implementations, and enhancement spots are partially supported with manual review flags.'
+    question: 'What does Clean-Core.io do with one ABAP program, in order?',
+    answer: 'It reads the program with a deterministic engine and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. It grades every SAP object the code uses Level A–D from SAP’s published Cloudification Repository and object classification. The Management view then asks for one decision — keep, rebuild, move to SAP standard or retire — and Design, Transformation and Testing carry the same evidence to a target design, a code draft and test scenarios. Every completed analysis is stored as an immutable run signed by the server with HMAC.'
   },
   {
-    question: 'What role does the LLM play in the transformation?',
-    answer: 'The LLM (Google Gemini) handles semantic understanding of business logic context, generates human-readable documentation, and produces the final target code. All table-to-API mappings are deterministic lookups against SAP\'s official Cloudification Repository (the same data source behind SAP ATC checks), layered with curated field-level entries — never LLM guesses.'
+    question: 'Which ABAP constructs are automatically transformed?',
+    answer: 'Direct database reads (SELECT on standard SAP tables like VBAK, BSEG, LIKP), simple wrapper classes, and remote function calls (CALL FUNCTION … DESTINATION) are fully supported. A local function-module call with a static name is not assessed yet; the analysis lists it as not assessed rather than passing it. Complex SQL joins, BAdI implementations, and enhancement spots are partially supported with manual review flags. The coverage matrix on this page is the list the engine flags against.'
+  },
+  {
+    question: 'What role does the language model play?',
+    answer: 'The language model (Google Gemini) writes after the engine and on its evidence: plain business names for process steps, the narrative of the analysis, the target design, the transformed code draft and the test scenarios. Everything it writes is marked as a Model proposal until a person confirms it. The process, the business rules, Level A–D, the findings, the Clean Core Score and the table-to-successor lookups come from the engine and SAP’s published Cloudification Repository, never from the model.'
+  },
+  {
+    question: 'Who makes the decision — keep, rebuild, move to SAP standard or retire?',
+    answer: 'The person reading the Management view. Clean-Core.io prepares the decision and shows what it rests on; it does not take it. The decision is recorded by the signed-in account — a self-declaration, not a mandate. Keep, move to SAP standard and retire build nothing; a rebuild is signed off in Design, where the target route is chosen.'
   },
   {
     question: 'Can I verify the generated code yourself?',
-    answer: `Yes. A transformation on the ABAP Cloud (RAP) route produces a package laid out for abapGit — a src/ directory and a .abapgit.xml written from the project itself — together with generated ABAP-Unit test classes, so you can read every line and run the tests in your own system. The CAP route on ${BTP_FIRST} produces Node.js code with a generated test suite in TypeScript instead, not ABAP-Unit. We have not imported one into a real SAP system, so we do not claim the package activates without adjustment: the object metadata is generated, not produced by abapGit’s own serializer. Treat it as a starting point for an import rather than an import that is known to succeed.`
+    answer: `Yes. A transformation on the ABAP Cloud (RAP) route produces a package laid out for abapGit — a src/ directory and a .abapgit.xml written from the project itself — together with generated ABAP-Unit test classes, so you can read every line and run the tests in your own system. The CAP route on ${BTP} produces Node.js code with a generated test suite in TypeScript instead, not ABAP-Unit. We have not imported one into a real SAP system, so we do not claim the package activates without adjustment: the object metadata is generated, not produced by abapGit’s own serializer. Treat it as a starting point for an import rather than an import that is known to succeed.`
+  },
+  {
+    question: 'What does a signed run prove?',
+    answer: 'Where a result came from and that it has not changed since — not that it is correct. A run is signed by the server with HMAC; the audit pack exported from it is signed over the run with HMAC and Ed25519, and the Ed25519 signature can be checked offline against the published public key. Level A–D is deliberately not part of the signed audit pack: it is an orientation, and ABAP Test Cockpit stays the authority.'
   }
 ];
 
@@ -45,19 +61,36 @@ const faqs = [
 // page can never diverge from the engine's actual support behaviour.
 const coverageRows = supportMatrixRows();
 
+/**
+ * The chain of 3.0, in the order a project walks it (roadmap 3.0.8, item 2).
+ * Each step names where the work is done, so a reader of the public repository
+ * can check the sentence against the code.
+ */
+const CHAIN_SOURCES = {
+  process: 'lib/abap/process-skeleton.ts · lib/abap/business-rules.ts',
+  levels: 'lib/abap/abcd-classification.ts · lib/clean-core-score.ts',
+  decision: 'lib/decision-options.ts',
+  build: 'Design · Transformation · Testing',
+  signed: 'app/api/runs/create/route.ts · lib/audit-pack.ts',
+} as const;
+
 const deterministicItems = [
-  'Table-to-API mapping',
-  'AST parsing',
-  'CDS view structure',
-  'abapGit packaging',
-  'Compliance scoring',
+  'The process as BPMN, with a line anchor or the reason there is none',
+  'Business rules hard-coded in the program',
+  'Level A–D per SAP object, under a versioned rule',
+  'Findings and the Clean Core Score',
+  'Successors from SAP’s Cloudification Repository',
+  'The process description in Documentation',
+  'What could not be determined, with the reason',
+  'Signatures over runs and audit packs',
 ];
 
 const llmItems = [
-  'Business logic interpretation',
-  'Documentation generation',
-  'Test scenario description',
-  'Code comments and naming',
+  'Plain business names for process steps',
+  'The narrative of the analysis',
+  'The target design',
+  'The transformed code draft (RAP or CAP)',
+  'Test scenarios',
 ];
 
 /**
@@ -87,6 +120,9 @@ const FOOTER_LINE =
 const STAGE_CARD = 'space-y-4 rounded-3xl border border-cc-line bg-cc-surface p-6';
 const STAGE_NUMBER = 'flex h-10 w-10 items-center justify-center rounded-xl bg-cc-ink text-sm font-bold text-cc-on-dark';
 const STAGE_TEXT = 'text-sm font-medium leading-relaxed text-cc-ink-muted';
+const SOURCE_LINE = 'font-cc-mono text-xs font-semibold text-cc-ink-muted [overflow-wrap:anywhere]';
+const TEXT_LINK =
+  'font-semibold text-cc-brand-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
 
 export default function HowItWorksPage() {
 
@@ -150,77 +186,100 @@ export default function HowItWorksPage() {
             How It <span className="text-cc-brand-strong">Works</span>
           </h1>
           <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
-            Three stages — deterministic parsing and mapping, then model-generated target code for your review. Transparent, verifiable coverage — honest limitations.
+            One chain from a custom ABAP program to a decision and a signed record: the process as BPMN with line anchors, Level A–D for every SAP object, the decision, then design, code draft and tests. The engine reads the code first; what a language model writes comes after it and is marked as a Model proposal.
           </p>
         </div>
       </div>
 
       {/* Quick Answer */}
       <QuickAnswer
-        question="How does Clean-Core.io transform legacy ABAP code?"
-        answer={`The pipeline uses deterministic AST parsing to extract table references and function module calls, maps them to official successors via SAP's Cloudification Repository (auto-synced weekly) layered with curated field-level entries, and generates target code in your chosen architecture (ABAP Cloud RAP or CAP on ${BTP_FIRST}). The LLM writes the target code and the documentation on top of that evidence — never the critical table-to-API mappings.`}
+        question="How does Clean-Core.io work?"
+        answer={`A deterministic engine reads one custom ABAP program and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. Every SAP object the code uses is graded Level A–D from SAP's published Cloudification Repository (${catalogObjects}), and the Management view asks for one decision: keep, rebuild, move to SAP standard or retire. Design, code draft and tests are built on that evidence as Model proposals for a person to review, and every completed analysis is stored as an immutable run signed by the server.`}
       />
 
-      {/* Section A: Pipeline Overview */}
-      <section className="space-y-6">
+      {/* Section A: the chain of 3.0 (roadmap 3.0.8, item 2) */}
+      <section className="space-y-6" aria-labelledby="chain-title">
         <div className="space-y-2">
-          <h2 className={H2}>
-            The Transformation Pipeline
+          <h2 id="chain-title" className={H2}>
+            From the code to a signed run, step by step
           </h2>
           <p className="font-medium text-cc-ink-muted">
-            Two deterministic stages and one model-generated one — from legacy ABAP to a draft in the target architecture.
+            Five steps on the same evidence. Each one says where its statements come from, and each points back to the lines of code it rests on.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Step 1: Parse */}
-          <div className={STAGE_CARD}>
+        <ol className="m-0 list-none space-y-4 p-0">
+          <li className={STAGE_CARD}>
             <div className="flex items-center gap-3">
               <div className={STAGE_NUMBER} aria-hidden="true">1</div>
-              <h3 className={H3}>Parse</h3>
-            </div>
-            <div className={STEP_ICON}>
-              <Code2 size={20} aria-hidden="true" />
+              <h3 className={H3}>The process, read from the code</h3>
             </div>
             <p className={STAGE_TEXT}>
-              Legacy ABAP code is parsed into an Abstract Syntax Tree (AST). Direct database reads, function module calls, and class dependencies are extracted and classified.
+              The engine parses the program without a language model; the same file gives the same result. It reconstructs the business process the program runs as BPMN — start and end events, tasks, decision points and sub-processes — with a line anchor on every element, or the reason it has none. Literals in conditions, such as tolerances, plants or date limits, become business rules with their line, which the Business view answers with keep, change, drop or clarify. Code no entry point reaches is listed, not drawn. Plain business names a language model proposes are marked as a Model proposal.
             </p>
-          </div>
+            <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.process}</p>
+          </li>
 
-          {/* Step 2: Map */}
-          <div className={STAGE_CARD}>
+          <li className={STAGE_CARD}>
             <div className="flex items-center gap-3">
               <div className={STAGE_NUMBER} aria-hidden="true">2</div>
-              <h3 className={H3}>Map</h3>
-            </div>
-            <div className={STEP_ICON}>
-              <Database size={20} aria-hidden="true" />
+              <h3 className={H3}>Level A–D for every SAP object</h3>
             </div>
             <p className={STAGE_TEXT}>
-              Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against a layered catalog: SAP&apos;s official Cloudification Repository ({catalogObjects}, auto-synced weekly) provides authoritative coverage, while hand-curated entries add field-level mapping precision. Every finding carries its source layer and the catalog version for audit traceability.
+              Every SAP object the code uses is looked up in SAP&apos;s published Cloudification Repository and object classification ({catalogObjects}) and graded Level A–D under a versioned rule; an SAP object the code writes directly is Level D, whatever its own level. The findings give the Clean Core Score, 5–100, higher is better — Clean-Core.io&apos;s own grade, not an SAP measure. The level is an orientation: ABAP Test Cockpit stays the authority. How the level is derived:{' '}
+              <Link href="/method/levels" className={TEXT_LINK}>the rule and its version</Link>.
             </p>
-          </div>
+            <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.levels}</p>
+          </li>
 
-          {/* Step 3: Generate */}
-          <div className={STAGE_CARD}>
+          <li className={STAGE_CARD}>
             <div className="flex items-center gap-3">
               <div className={STAGE_NUMBER} aria-hidden="true">3</div>
-              <h3 className={H3}>Generate</h3>
-            </div>
-            <div className={STEP_ICON}>
-              <GitBranch size={20} aria-hidden="true" />
+              <h3 className={H3}>The decision, in the Management view</h3>
             </div>
             <p className={STAGE_TEXT}>
-              Target code is generated by the model for the selected architecture: ABAP Cloud RAP (CDS Views + Behavior Definitions) or Side-by-Side CAP on {BTP} (Node.js services + schema definitions). It is a draft to compile and validate in your own system. Tests are generated alongside — ABAP-Unit classes on the RAP route, a TypeScript suite on the CAP route.
+              The Management view asks one question of the program and shows what the answer rests on — the need, the options, the costs as a simulation on your own assumptions, the architecture — and what still blocks it. Clean-Core.io prepares the decision; the signed-in account records it, a self-declaration, not a mandate.
             </p>
-          </div>
-        </div>
+            <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {DECISION_OPTIONS.map((option) => (
+                <div key={option} className="rounded-2xl border border-cc-line bg-cc-surface-muted p-4">
+                  <dt className="text-sm font-bold text-cc-ink">{DECISION_OPTION_LABELS[option]}</dt>
+                  <dd className="mt-1 text-sm font-medium leading-relaxed text-cc-ink-muted">{DECISION_OPTION_MEANINGS[option]}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.decision}</p>
+          </li>
+
+          <li className={STAGE_CARD}>
+            <div className="flex items-center gap-3">
+              <div className={STAGE_NUMBER} aria-hidden="true">4</div>
+              <h3 className={H3}>Design, code draft and tests</h3>
+            </div>
+            <p className={STAGE_TEXT}>
+              Design reads the functional and non-functional requirements from the code and proposes a target: ABAP Cloud (RAP) inside SAP S/4HANA, or CAP on {BTP_FIRST}. Transformation drafts the target code from the source, the analysis and the design; its plan names every finding at its line. Testing derives test scenarios. On the CAP track they run against mocks in an isolated runner, and the server records what ran on which code. On the RAP track they are an ABAP Unit class that runs only in your own SAP system; you record its result as an imported file or your own confirmation, never as proven. All three are Model proposals built on the signed run — drafts to review, not a finished product.
+            </p>
+            <p className={SOURCE_LINE}>In the workspace: {CHAIN_SOURCES.build}</p>
+          </li>
+
+          <li className={STAGE_CARD}>
+            <div className="flex items-center gap-3">
+              <div className={STAGE_NUMBER} aria-hidden="true">5</div>
+              <h3 className={H3}>A signed run, and an audit pack anyone can check</h3>
+            </div>
+            <p className={STAGE_TEXT}>
+              Every completed analysis is stored as an immutable run, signed by the server with HMAC. The audit pack exported from it is signed over the run with HMAC and Ed25519, and the Ed25519 signature can be checked offline against the published public key, or on{' '}
+              <Link href="/verify-pack" className={TEXT_LINK}>Verify an audit pack</Link>. A signature proves where a result came from and that it has not changed since — not that it is right.
+            </p>
+            <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.signed}</p>
+          </li>
+        </ol>
       </section>
 
       {/* Section B: Deterministic vs LLM */}
       <section className="space-y-6">
         <h2 className={H2}>
-          Deterministic Rules vs. LLM Generation
+          What the engine computes, what the model writes
         </h2>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -230,7 +289,7 @@ export default function HowItWorksPage() {
               <div className={STEP_ICON}>
                 <Ruler size={20} aria-hidden="true" />
               </div>
-              <h3 className={H3}>Deterministic (Rule-Based)</h3>
+              <h3 className={H3}>Deterministic engine</h3>
             </div>
             <ul className="space-y-3 text-sm font-semibold text-cc-ink">
               {deterministicItems.map((item, idx) => (
@@ -249,7 +308,7 @@ export default function HowItWorksPage() {
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cc-line bg-cc-surface text-cc-ink-muted">
                 <PenLine size={20} aria-hidden="true" />
               </div>
-              <h3 className={H3}>LLM-Assisted (Google Gemini)</h3>
+              <h3 className={H3}>Language model (Google Gemini)</h3>
             </div>
             <ul className="space-y-3 text-sm font-semibold text-cc-ink">
               {llmItems.map((item, idx) => (
@@ -261,6 +320,28 @@ export default function HowItWorksPage() {
             </ul>
           </div>
         </div>
+      </section>
+
+      {/* Section B2: provenance — every value and meaning read from lib/provenance.ts */}
+      <section className="space-y-6" aria-labelledby="provenance-title">
+        <div className="space-y-2">
+          <h2 id="provenance-title" className={H2}>
+            Where each statement comes from
+          </h2>
+          <p className="font-medium text-cc-ink-muted">
+            Every statement in a project carries one of {PROVENANCE_VALUES.length} provenance values. The value says who stands behind it — the engine, a file, a person, the model — and what is still open.
+          </p>
+        </div>
+        <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {PROVENANCE_VALUES.map((value) => (
+            <div key={value} className="space-y-2 rounded-2xl border border-cc-line bg-cc-surface p-4">
+              <dt>
+                <CcProvenanceChip value={value} />
+              </dt>
+              <dd className="text-sm font-medium leading-relaxed text-cc-ink-muted">{PROVENANCE[value].meaning}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* Section C: Coverage Matrix (data-driven from SUPPORT_MATRIX) */}

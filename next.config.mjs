@@ -79,6 +79,26 @@ export function nonceRouteCspHeaders(env = process.env) {
   }));
 }
 
+/**
+ * The two PDFs and the HTML page each is the paper edition of (roadmap 3.0.8,
+ * item 3). Both are rendered from that page, so they compete with it for the
+ * same searches; a PDF cannot carry a `<link rel="canonical">`, so the HTTP
+ * `Link` header names the page instead. A canonical rather than `noindex`: the
+ * links people set to the PDFs keep counting, for the page.
+ */
+export const PDF_CANONICALS = {
+  '/clean-core-explained.pdf': 'https://clean-core.io/clean-core-explained',
+  '/Clean-Core_S4HANA_Modernization_Whitepaper.pdf': 'https://clean-core.io/whitepaper',
+};
+
+/** The `Link: <…>; rel="canonical"` header entries for the PDFs. */
+export function pdfCanonicalHeaders() {
+  return Object.entries(PDF_CANONICALS).map(([source, page]) => ({
+    source,
+    headers: [{ key: 'Link', value: `<${page}>; rel="canonical"` }],
+  }));
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -97,6 +117,7 @@ const nextConfig = {
   async headers() {
     return [
       ...nonceRouteCspHeaders(),
+      ...pdfCanonicalHeaders(),
       {
         // API responses are JSON — lock them down with a restrictive CSP so a scanner
         // (and browsers) see an explicit policy on every /api response (ZAP 10038).

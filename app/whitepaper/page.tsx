@@ -20,9 +20,9 @@ import { USP_SHORT } from '@/lib/whitepaper';
  */
 export const revalidate = 300;
 
-const TITLE = 'SAP Clean Core Whitepaper — Free Guide to Custom ABAP (PDF) | Clean-Core.io';
+const TITLE = 'SAP Clean Core Whitepaper — Free Guide (PDF) | Clean-Core.io';
 const DESCRIPTION =
-  'Free SAP clean core whitepaper: read custom ABAP before any model does, see its process as BPMN with line anchors and SAP’s level A–D per object, then design, code draft and tests. Online or PDF.';
+  'Free SAP clean core whitepaper: custom ABAP read before any model, its process as BPMN with line anchors, level A–D, design, draft, tests. PDF too.';
 
 export const metadata: Metadata = withTwitterCard({
   title: TITLE,

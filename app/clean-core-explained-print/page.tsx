@@ -321,7 +321,7 @@ export default function CleanCoreExplainedPrintPage() {
             <span>Part 6</span>
             <span>
               How Clean-Core.io helps, concretely
-              <em>Seven stages, each with its benefit, its effort, and where it stops.</em>
+              <em>From the process to a signed handover, each step with its benefit, its effort, and where it stops.</em>
             </span>
           </div>
           <div className="toc-row">
@@ -427,8 +427,10 @@ export default function CleanCoreExplainedPrintPage() {
             <p className="part-eyebrow">Part 6</p>
             <h2>How Clean-Core.io helps, concretely</h2>
             <p className="part-intro">
-              Seven stages, one ABAP object at a time. Each is listed with what it produces, what it
-              saves you, what it costs — and where it stops. The last column is the one worth
+              Clean-Core.io works on one ABAP program at a time: it reads the process from the code as
+              BPMN, grades every SAP object Level A–D and leads to one decision — keep, rebuild, move
+              to SAP standard or retire. Each step of the work is listed below with what it produces,
+              what it saves you, what it costs — and where it stops. The last column is the one worth
               reading.
             </p>
           </div>

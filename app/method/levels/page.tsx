@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, FileCode2, GitMerge, AlertTriangle, Fingerprint } from 'lucide-react';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import QuickAnswer from '@/components/QuickAnswer';
 import {
   getLevelDerivationCensus,
@@ -43,7 +43,7 @@ const CANONICAL = 'https://clean-core.io/method/levels';
 export const metadata: Metadata = withTwitterCard({
   title: 'How the Clean Core A–D Level Is Derived | Clean-Core.io',
   description:
-    'The exact rule Clean-Core.io uses to turn SAP\'s two Cloudification Repository files into a clean core level A–D — the order of precedence, the counts behind each branch, the objects where the two files disagree, and the rule version that produced them.',
+    'The exact rule that turns SAP\'s two Cloudification Repository files into a clean core level A–D: precedence, counts, disagreements, rule version.',
   alternates: { canonical: CANONICAL },
   openGraph: {
     title: 'How the Clean Core A–D Level Is Derived | Clean-Core.io',
@@ -86,7 +86,8 @@ export default function LevelDerivationPage() {
     description:
       'The precedence rule that merges SAP\'s object release information and classic API classification into a single clean core level.',
     url: CANONICAL,
-    dateModified: APP_RELEASE_DATE,
+    // ISO 8601, as schema.org expects; the page prints the readable date.
+    dateModified: APP_RELEASE_DATE_ISO,
     // The rule version, so a machine that cites a level can cite the rule that
     // produced it. Read from the same source the page prints, never a literal.
     version: ruleVersion.version,

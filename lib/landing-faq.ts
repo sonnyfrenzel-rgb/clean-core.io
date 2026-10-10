@@ -1,5 +1,6 @@
 import { TRUST_CLAIMS } from '@/lib/trust-claims';
 import { SCORE_BANDS } from '@/lib/clean-core-score';
+import { AS_OF_TITLE, AS_OF_PARAGRAPH, WHAT_CHANGED_QUESTION, WHAT_CHANGED_ANSWER } from '@/lib/release-summary';
 
 /**
  * The start page's FAQ, once.
@@ -38,6 +39,17 @@ export const LANDING_FAQ: LandingFaq[] = [
     q: 'What does Clean-Core.io do with my ABAP?',
     a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios — on the CAP track run against mocks in an isolated runner, on the RAP track an ABAP Unit class for your own system, whose result you record from that system — and every completed analysis is sealed as a signed run. The code is a draft you review; a run against mocks checks it against test scenarios, not in your S/4HANA system.',
     more: { href: '/how-it-works', label: 'How it works, and its limits' },
+  },
+  // Roadmap 3.0.8 (4): the dated answer and the 3.0 answer, from lib/release-summary.ts —
+  // the version and date follow lib/version.ts, so neither goes stale on a release.
+  {
+    q: `What is ${AS_OF_TITLE}?`,
+    a: AS_OF_PARAGRAPH,
+    more: { href: '/facts', label: 'Facts, versions and sources' },
+  },
+  {
+    q: WHAT_CHANGED_QUESTION,
+    a: WHAT_CHANGED_ANSWER,
   },
   {
     q: 'How does Clean-Core.io turn ABAP code into a BPMN process?',

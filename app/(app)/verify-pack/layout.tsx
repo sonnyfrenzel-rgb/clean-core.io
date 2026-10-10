@@ -7,7 +7,7 @@ import { withTwitterCard } from '@/lib/page-metadata';
  */
 const title = 'Verify a signed audit pack | Clean-Core.io';
 const description =
-  'Check that an exported Clean-Core.io audit pack is complete, unchanged and signed. The files are checked in your browser; a signature proves origin and integrity, not that the code is correct.';
+  'Check that a Clean-Core.io audit pack is complete, unchanged and signed, in your browser. A signature proves origin and integrity, not correct code.';
 
 export const metadata: Metadata = withTwitterCard({
   title,

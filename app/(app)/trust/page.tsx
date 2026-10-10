@@ -8,7 +8,7 @@ import { APP_VERSION } from '@/lib/version';
 export const metadata: Metadata = withTwitterCard({
   title: 'Trust & Privacy — Clean-Core.io',
   description:
-    'How Clean-Core.io handles your data: EU-hosted primary storage and compute, encrypted credentials, server-authoritative evidence, disclosed subprocessors, and your GDPR rights including self-service erasure. Plain and honest — built for the SAP community.',
+    'How Clean-Core.io handles your data: EU-hosted primary storage and compute, encrypted credentials, disclosed subprocessors, GDPR rights and self-erasure.',
   alternates: { canonical: 'https://clean-core.io/trust' },
   openGraph: {
     title: 'Trust & Privacy — Clean-Core.io',

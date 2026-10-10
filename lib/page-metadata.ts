@@ -20,6 +20,32 @@ export const SOCIAL_CARD = {
 } as const;
 
 /**
+ * What a search result shows whole (roadmap 3.0.8, item 6): Google cuts a title
+ * at about 60 characters and a description at about 155, and what it cuts is
+ * the end — on most pages here the brand or the honest limit. Every indexable
+ * page stays within both; `tests/seo-snippet-length-guard.spec.ts` holds it.
+ */
+export const TITLE_MAX = 60;
+export const DESCRIPTION_MAX = 155;
+
+/**
+ * The first of several wordings, longest first, that fits `max` characters.
+ *
+ * For the pages built from a template — the catalog objects, the module pages —
+ * one wording cannot fit every name: `VBAK → I_SALESDOCUMENT` fits the long
+ * title, a forty-character CDS view does not. Each page keeps the fullest
+ * wording that fits, and only the last resort is cut, at a word, with an
+ * ellipsis.
+ */
+export function firstThatFits(max: number, ...wordings: string[]): string {
+  for (const w of wordings) if (w.length <= max) return w;
+  const last = wordings[wordings.length - 1] ?? '';
+  const cut = last.slice(0, max - 1);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).replace(/[\s,;:.·—–-]+$/, '')}…`;
+}
+
+/**
  * Puts the page's own title and description on its Twitter card, and the site's
  * card picture on both cards when the page names none.
  *

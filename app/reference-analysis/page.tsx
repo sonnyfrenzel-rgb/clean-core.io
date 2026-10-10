@@ -15,9 +15,9 @@ import { routeLabelFirst } from '@/lib/sap-naming';
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Reference Analysis — what one run on real legacy ABAP produces | Clean-Core.io',
+  title: 'Reference Analysis of Real Legacy ABAP | Clean-Core.io',
   description:
-    'A complete, reproducible run: 900+ lines of legacy ABAP, its findings counted by severity, and the split between what the tool settles, what needs an architect, and what stays hand work. Download the file and check the numbers yourself.',
+    'A complete, reproducible run on 900+ lines of legacy ABAP: findings by severity, what the tool settles and what needs an architect. Download and check it.',
   alternates: { canonical: `${BASE}/reference-analysis` },
   openGraph: {
     title: 'Reference Analysis — what one run on real legacy ABAP produces',
@@ -51,7 +51,7 @@ export default function ReferenceAnalysisPage() {
     '@type': 'Dataset',
     name: 'Clean-Core.io reference analysis',
     description: `A published, reproducible analysis of ${r.linesOfCode} lines of legacy SAP ABAP: ${r.totalFindings} findings, split into ${r.resolved.count} resolved against released SAP APIs, ${r.decision.count} requiring an architect decision and ${r.handedBack.count} handed back as structurally untransformable.`,
-    creator: { '@type': 'Organization', name: 'Clean-Core.io', url: BASE },
+    creator: { '@type': 'Organization', '@id': 'https://clean-core.io/#organization', name: 'Clean-Core.io', url: BASE },
     url: `${BASE}/reference-analysis`,
     isAccessibleForFree: true,
   };

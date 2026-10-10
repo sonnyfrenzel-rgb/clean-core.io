@@ -20,7 +20,7 @@ export const revalidate = 300;
  * route without metadata of its own still introduces the product correctly.
  */
 const SITE_DESCRIPTION =
-  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Free for the SAP community; independent of SAP SE.';
+  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Free for the SAP community, independent of SAP.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io'),

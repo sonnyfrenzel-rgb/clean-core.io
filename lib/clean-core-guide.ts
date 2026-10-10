@@ -371,9 +371,9 @@ export const GUIDE_PARTS: Part[] = [
           },
           {
             kind: 'warning',
-            title: 'Our grade is an estimate, not a verdict',
+            title: 'Where our level comes from, and where it stops',
             text:
-              'The A–D grade Clean-Core.io produces is an experimental preview estimate — a fast orientation aid, not an authoritative SAP ATC classification. Always confirm with SAP ADT and ATC for your specific target release before acting on it.',
+              "For an SAP object, Clean-Core.io's level is a lookup in SAP's published Cloudification Repository files; an SAP object neither file lists is level C. For your own Z/Y code, the level is derived from what the code uses, as read from the source — our reading, not an SAP ATC result. Either way it is an orientation aid, not evidence: confirm with SAP ADT and ATC for your target release before acting on it.",
           },
         ],
       },
@@ -431,6 +431,6 @@ export const GUIDE_FAQ: { question: string; answer: string }[] = [
   {
     question: 'Is Clean-Core.io free?',
     answer:
-      'Yes. It is a free community project. Every account gets five transformations, and connecting your own Google Gemini API key removes the limit entirely. There is no paid tier and no locked feature.',
+      'Yes. Clean-Core.io is a free community project with no paid tier, and it accepts no payment. An account has five analysis runs, and each starter example is free the first time it runs; after that you continue with your own Gemini API key, which Google bills under your own agreement with Google.',
   },
 ];

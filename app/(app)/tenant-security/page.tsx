@@ -7,13 +7,13 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import { publicButton } from '@/components/landing/public-button';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Tenant Security — How We Protect Your S/4HANA Connection | Clean-Core.io',
+  title: 'Tenant Security: Your S/4HANA Connection | Clean-Core.io',
   description: 'Understand how Clean-Core.io secures live S/4HANA tenant connections: read-only scopes, stateless processing, and manual admin onboarding gates.',
   alternates: {
     canonical: 'https://clean-core.io/tenant-security',
   },
   openGraph: {
-    title: 'Tenant Security — How We Protect Your S/4HANA Connection | Clean-Core.io',
+    title: 'Tenant Security: Your S/4HANA Connection | Clean-Core.io',
     description: 'Understand how Clean-Core.io secures live S/4HANA tenant connections: read-only scopes, stateless processing, and manual admin onboarding gates.',
     url: 'https://clean-core.io/tenant-security',
     type: 'website',

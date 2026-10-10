@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { withTwitterCard } from '@/lib/page-metadata';
+import { DESCRIPTION_MAX, TITLE_MAX, firstThatFits, withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
@@ -53,8 +53,22 @@ export async function generateMetadata({
   if (!meta) return { title: 'Module not found | Clean-Core.io' };
 
   const count = getObjectsByModule(meta.code).length;
-  const title = `SAP ${meta.name} (${meta.code}) objects: clean core level and released S/4HANA successors | Clean-Core.io`;
-  const description = `${count} SAP ${meta.name} objects with their clean core level and, where one is known, their released S/4HANA API successor: from SAP's official Cloudification Repository, or from Clean-Core.io's curated mapping, marked as such. ${meta.blurb}`;
+  // The fullest wording that fits a search result (roadmap 3.0.8); the long
+  // area names (Sales and Distribution) drop the tag line, the short ones keep it.
+  const title = firstThatFits(
+    TITLE_MAX,
+    `SAP ${meta.name} (${meta.code}): clean core levels | Clean-Core.io`,
+    `SAP ${meta.name} (${meta.code}) objects | Clean-Core.io`,
+    `SAP ${meta.code} objects: clean core levels | Clean-Core.io`,
+  );
+  // Every wording keeps the two qualifiers QA asked for (f55806a3b0ff): a
+  // successor only "where one is known", and the curated source named.
+  const description = firstThatFits(
+    DESCRIPTION_MAX,
+    `${count} SAP ${meta.name} objects: clean core level and, where one is known, the released S/4HANA successor (SAP's or a curated mapping, marked as such).`,
+    `${count} SAP ${meta.name} objects: clean core level and, where one is known, the S/4HANA successor (SAP's or a curated mapping, marked as such).`,
+    `${count} SAP ${meta.code} objects: clean core level and, where one is known, the released S/4HANA successor (SAP's or a curated mapping, marked as such).`,
+  );
 
   return withTwitterCard({
     title,

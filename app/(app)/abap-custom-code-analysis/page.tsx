@@ -9,15 +9,67 @@ import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
+import CcTable from '@/components/cc/Table';
+
+/**
+ * ABAP static-analysis tools side by side (roadmap 3.0.8, item 7). Honest by
+ * construction: each row says what the tool does and where it is stronger, and
+ * states only what the tool's own public documentation says — no version-bound
+ * figures, no rule counts, no prices. Checked against those sources on
+ * 2026-10-10: SAP Help for ATC and Code Inspector; github.com/abaplint/abaplint
+ * (MIT, TypeScript, abapGit file format, CLI, CI, VS Code); owasp.org/abap-code-scanner
+ * (MIT, Python CLI, exported source offline, injection / secrets / cryptography /
+ * dynamic statements, commercial editions by RedRays); docs.sonarsource.com,
+ * "Languages overview" (ABAP in the commercial editions, not in the Community Build).
+ */
+const TOOL_COMPARISON_AS_OF = '2026-10';
+const TOOL_COLUMNS = [
+  { key: 'tool', label: 'Tool' },
+  { key: 'does', label: 'What it does' },
+  { key: 'stronger', label: 'Where it is stronger' },
+  { key: 'together', label: 'Next to Clean-Core.io' },
+] as const;
+const TOOL_ROWS = [
+  {
+    tool: 'ABAP Test Cockpit (ATC) and Code Inspector (SAP)',
+    does: 'SAP’s check framework inside the ABAP system. Code Inspector provides the checks, ATC runs them for developers and centrally, including readiness checks for SAP S/4HANA and for ABAP Cloud, with an exemption process for accepted findings.',
+    stronger: 'It is the authority. It runs in your system and sees what an outside tool cannot: the dictionary, where-used lists and the release state of every object for your release.',
+    together: 'Clean-Core.io reads the same Cloudification Repository outside the system and shows its reading as Level A–D. Confirm with ATC; ATC results can be imported to compare them with the engine.',
+  },
+  {
+    tool: 'abaplint (open source)',
+    does: 'A linter for ABAP under the MIT licence, written in TypeScript. It reads code serialized with abapGit and runs on the command line, in CI pipelines and in VS Code, with its rules configured per repository.',
+    stronger: 'Fast, scriptable checks on every commit, outside any SAP system, across a whole repository — syntax, style and correctness rules a team can make a gate.',
+    together: 'Different questions: abaplint checks how a repository is written; Clean-Core.io explains what one program does and carries that to a decision.',
+  },
+  {
+    tool: 'OWASP ABAP Code Scanner (open source)',
+    does: 'A static application security testing tool for ABAP from an OWASP project, under the MIT licence: a Python command-line scanner for exported ABAP source that runs offline, with checks for injection, hard-coded secrets, weak cryptography and insecure dynamic statements. Commercial editions are offered by RedRays.',
+    stronger: 'Security. It looks for vulnerabilities, which Clean-Core.io does not check for at all.',
+    together: 'Run it for security findings; Clean-Core.io adds the process, Level A–D and the decision for the same program.',
+  },
+  {
+    tool: 'SonarQube (SonarSource)',
+    does: 'A code quality and security platform. ABAP analysis is part of its commercial editions, not of the free Community Build, with rules for bugs, maintainability and vulnerabilities, quality gates and dashboards.',
+    stronger: 'Continuous quality over a whole code base and many languages, with quality gates in the pipeline and a history per project.',
+    together: 'Different scope: SonarQube tracks code quality over time; Clean-Core.io answers what happens to one custom program in a clean core programme.',
+  },
+  {
+    tool: 'Clean-Core.io',
+    does: 'A free web workspace for one custom ABAP program: the process as BPMN with line anchors, Level A–D for every SAP object it uses, one decision — keep, rebuild, move to SAP standard or retire — then a design, a code draft and tests, sealed as a signed run.',
+    stronger: 'Explaining to the business what a program does and carrying the same evidence to a decision, with what it could not determine named.',
+    together: 'It is not a security scanner, not a linter for a whole repository and not the authority on release state; it reads uploaded source, not your system.',
+  },
+];
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
-  description: 'A free tool for static analysis of custom ABAP: detect risky table access, unreleased calls and modifications, and map them to released SAP APIs for a clean S/4HANA core. No install — review-ready evidence.',
+  title: 'Free ABAP Custom Code Analysis for S/4HANA | Clean-Core.io',
+  description: 'Free static analysis of custom ABAP in the browser: table access, unreleased calls and modifications, mapped to released SAP APIs. Complements SAP ATC.',
   alternates: {
     canonical: 'https://clean-core.io/abap-custom-code-analysis',
   },
   openGraph: {
-    title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
+    title: 'Free ABAP Custom Code Analysis for S/4HANA | Clean-Core.io',
     description: 'A free tool for static analysis of custom ABAP: detect risky table access, unreleased calls and modifications, and map them to released SAP APIs for a clean S/4HANA core.',
     url: 'https://clean-core.io/abap-custom-code-analysis',
     type: 'website',
@@ -47,7 +99,7 @@ const faqs = [
   },
   {
     question: "What ABAP code analysis tools are available?",
-    answer: "The authoritative, in-system tools are SAP ABAP Test Cockpit (ATC) and ABAP Development Tools (ADT), which run inside your SAP system. Clean-Core.io is a free, browser-based static code analysis tool that runs a first-pass scan without an install: it parses custom ABAP deterministically, flags risky table access and unreleased calls, and maps each to its released SAP API or CDS successor. Use it as a fast orientation aid, then confirm findings with ATC/ADT for your target release."
+    answer: "The authoritative, in-system tools are SAP ABAP Test Cockpit (ATC) with Code Inspector, and ABAP Development Tools (ADT), which run inside your SAP system. Outside the system there are abaplint, an open-source linter for code serialized with abapGit; the OWASP ABAP Code Scanner, an open-source security scanner for exported source; and SonarQube, whose commercial editions analyse ABAP for code quality and security. Clean-Core.io is a free, browser-based workspace for one program: it parses the ABAP deterministically, reconstructs the process, grades every SAP object Level A–D and leads to a decision. Confirm findings with ATC for your target release."
   },
   {
     question: "Can it identify unused or dead ABAP custom code?",
@@ -238,10 +290,10 @@ export default function AbapAnalysisPage() {
                 <Check className={CHECK} size={16} aria-hidden="true" /> First pass in minutes, not a workshop
               </li>
               <li className="flex items-center gap-2">
-                <Check className={CHECK} size={16} aria-hidden="true" /> Automatic OData API mapping
+                <Check className={CHECK} size={16} aria-hidden="true" /> Released successors where SAP names one
               </li>
               <li className="flex items-center gap-2">
-                <Check className={CHECK} size={16} aria-hidden="true" /> SAP Clean Core guideline compliant
+                <Check className={CHECK} size={16} aria-hidden="true" /> Level A–D for every SAP object used
               </li>
               <li className="flex items-center gap-2">
                 <Check className={CHECK} size={16} aria-hidden="true" /> Reduces technical upgrade debt
@@ -285,6 +337,33 @@ export default function AbapAnalysisPage() {
           </div>
         </div>
       </div>
+
+      {/* ABAP static-analysis tools compared (roadmap 3.0.8, item 7) */}
+      <section className="space-y-6" aria-labelledby="tools-title">
+        <div className="space-y-2">
+          <h2 id="tools-title" className={H2}>
+            ABAP static analysis tools compared
+          </h2>
+          <p className={BODY}>
+            Which tool answers which question — as of {TOOL_COMPARISON_AS_OF}. Each row states what the tool&apos;s own public documentation says; check it there for your version. They are not alternatives to each other so much as answers to different questions, and several of them belong in the same programme.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-cc-line bg-cc-surface px-2 pt-3">
+          <CcTable
+            caption={`ABAP static analysis tools compared, as of ${TOOL_COMPARISON_AS_OF}`}
+            columns={TOOL_COLUMNS}
+            rows={TOOL_ROWS.map((r) => ({
+              key: r.tool,
+              cells: {
+                tool: <strong className="font-bold text-cc-ink">{r.tool}</strong>,
+                does: <span className="text-cc-ink-muted">{r.does}</span>,
+                stronger: <span className="text-cc-ink-muted">{r.stronger}</span>,
+                together: <span className="text-cc-ink-muted">{r.together}</span>,
+              },
+            }))}
+          />
+        </div>
+      </section>
 
       {/* FAQs */}
       <div className={FAQ_BOX}>

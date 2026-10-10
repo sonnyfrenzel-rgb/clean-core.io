@@ -17,7 +17,7 @@ import { BTP_FIRST } from '@/lib/sap-naming';
 export const metadata: Metadata = withTwitterCard({
   title: 'Your First Run — Step by Step | Clean-Core.io',
   description:
-    'Click-by-click walkthrough of your first ABAP analysis on Clean-Core.io: pick a starter example, read the Clean Core Score, and take the package with you. No SAP connection and no code of your own required.',
+    'Click-by-click walkthrough of your first ABAP analysis: pick a starter example, read the Clean Core Score, take the package with you. No SAP connection.',
   alternates: { canonical: 'https://clean-core.io/first-run' },
   openGraph: {
     title: 'Your First Run — Step by Step | Clean-Core.io',

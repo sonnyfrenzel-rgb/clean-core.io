@@ -17,9 +17,9 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 // of introducing the catalog itself, exactly the defect `withTwitterCard`'s own
 // comment describes for the pages it already covers.
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Cloudification Repository Viewer & Clean Core Object Catalog | Clean-Core.io',
+  title: 'SAP Cloudification Repository Viewer | Clean-Core.io',
   description:
-    'Browse the SAP Cloudification Repository: look up the SAP standard objects in our catalog, their Clean Core readiness, and its released S/4HANA API successor. Official plus curated reference data, enriched by Clean-Core.io — free.',
+    'Independent viewer of SAP\'s Cloudification Repository: an object\'s released successor, if any, and its clean core level A–D. SAP has its own viewer too.',
   alternates: { canonical: `${BASE}/catalog` },
   openGraph: {
     title: 'SAP Object Catalog — Cloudification Repository Viewer',
@@ -51,12 +51,24 @@ export default function CatalogIndexPage() {
         </span>
       </p>
       {stats.classifiedObjects > 0 && (
-        <p className="text-sm text-cc-ink-muted mb-8">
+        <p className="text-sm text-cc-ink-muted mb-2">
           {stats.classifiedObjects.toLocaleString('en-US')} classified SAP objects ·{' '}
           {stats.mappedWithSuccessor.toLocaleString('en-US')} with a released successor · reflects the SAP
           Cloudification Repository as of {stats.syncDate || 'the latest sync'}.
         </p>
       )}
+      <p className="text-sm text-cc-ink-muted mb-8">
+        An independent viewer: SAP publishes its own{' '}
+        <a
+          href="https://sap.github.io/abap-atc-cr-cv-s4hc/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-cc-ink underline underline-offset-4 hover:text-cc-brand-strong"
+        >
+          Cloudification Repository viewer
+        </a>
+        . This catalog adds the clean core level A–D, a page for each object, and curated mappings, marked as such.
+      </p>
 
       <div className="mb-12">
         <CatalogSearch names={names} />

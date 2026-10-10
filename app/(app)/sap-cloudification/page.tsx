@@ -11,14 +11,14 @@ import { publicButton } from '@/components/landing/public-button';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
+  title: 'SAP Cloudification: How to Cloudify ABAP | Clean-Core.io',
   description:
-    'Free SAP Cloudification Repository viewer: enter an SAP object to get its released S/4HANA successor or an honest “no released path” — and what cloudify means.',
+    'What it means to cloudify SAP custom ABAP: off unreleased objects, onto released APIs. SAP has its own repository viewer; ours adds level A–D.',
   alternates: {
     canonical: 'https://clean-core.io/sap-cloudification',
   },
   openGraph: {
-    title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
+    title: 'SAP Cloudification: How to Cloudify ABAP | Clean-Core.io',
     description:
       'Free lookup against SAP’s official Cloudification Repository — for an object it lists, the released S/4HANA successor or an honest “no released path” verdict. Plus what cloudification means for Clean Core.',
     url: 'https://clean-core.io/sap-cloudification',
@@ -212,7 +212,12 @@ export default function SapCloudificationPage() {
               and &ldquo;SAP cloudification&rdquo; are informal names for making custom code cloud-ready and
               clean-core-compliant. The concrete asset SAP publishes for it is the{' '}
               <strong>SAP Cloudification Repository</strong> — the released-successor dataset that also backs
-              SAP ATC’s clean-core checks.
+              SAP ATC’s clean-core checks. SAP publishes its own{' '}
+              <a href="https://sap.github.io/abap-atc-cr-cv-s4hc/" target="_blank" rel="noopener noreferrer" className={LINK}>
+                Cloudification Repository viewer
+              </a>
+              ; the <Link href="/catalog" className={LINK}>catalog here</Link> reads the same data and adds the clean
+              core level A–D and a page for each object.
             </p>
           </div>
 

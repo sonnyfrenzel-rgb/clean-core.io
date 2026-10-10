@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
-    answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment.",
+    answer: "A deterministic engine reads the custom ABAP before any language model does. It reconstructs the business process as BPMN, with a line anchor on every element or the reason it has none, lists the business rules hard-coded in the program, and grades every SAP object the code uses Level A–D from SAP's published Cloudification Repository. The Management view then asks for one decision: keep, rebuild, move to SAP standard or retire. Design, Transformation and Testing carry the same evidence to a target design, a code draft in ABAP Cloud (RAP) or CAP, and test scenarios, each marked as a Model proposal for an architect to review, and every completed analysis is stored as a signed run. It complements SAP's own tooling and does not replace human judgment.",
     icon: FileCode2,
     tag: "Automation Engine"
   }

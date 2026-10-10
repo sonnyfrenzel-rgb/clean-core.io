@@ -59,7 +59,7 @@ export const metadata: Metadata = withTwitterCard({
   // 157 characters: long enough to carry the distinction, short enough that
   // Google shows the second half of it.
   description:
-    "Our 5–100 score for how far custom ABAP is decoupled from the SAP standard core. Higher is better — not SAP's Technical Debt Score, which runs the other way.",
+    "A 5–100 score for how far custom ABAP is decoupled from SAP's standard core. Higher is better — not SAP's Technical Debt Score, which runs the other way.",
   alternates: {
     canonical: CANONICAL,
   },
@@ -213,6 +213,7 @@ export default function CleanCoreScorePage() {
         "inLanguage": "en",
         "publisher": {
           "@type": "Organization",
+          "@id": "https://clean-core.io/#organization",
           "name": "Clean-Core.io",
           "url": "https://clean-core.io"
         },

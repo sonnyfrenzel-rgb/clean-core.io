@@ -26,12 +26,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const f = getFeature(slug);
   if (!f) return { title: 'Feature — Clean-Core.io' };
-  const url = `https://clean-core.io/features/${f.slug}`;
+  // A page another page answers better names that page as canonical (roadmap
+  // 3.0.8, item 5): it stays reachable for every old link and stops competing.
+  const url = `https://clean-core.io${f.canonicalPath ?? `/features/${f.slug}`}`;
+  const title = `${f.title} | Clean-Core.io`;
   return withTwitterCard({
-    title: `${f.title} — Clean-Core.io`,
+    title,
     description: f.summary,
     alternates: { canonical: url },
-    openGraph: { title: `${f.title} — Clean-Core.io`, description: f.summary, url, type: 'article' },
+    openGraph: { title, description: f.summary, url, type: 'article' },
   });
 }
 
@@ -63,6 +66,15 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
         <span className="inline-flex items-center rounded-full border border-cc-brand-strong/25 bg-cc-brand-surface px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong">{f.eyebrow}</span>
         <h1 className="text-3xl md:text-4xl font-extrabold text-cc-ink tracking-[-0.03em] mt-4 mb-4 leading-tight text-balance">{f.title}</h1>
         <p className="text-lg text-cc-ink-muted font-medium leading-relaxed">{f.summary}</p>
+        {f.canonicalPath && (
+          <p className="mt-4 text-cc-ink font-medium leading-relaxed">
+            The lookup and the full explanation are on{' '}
+            <Link href={f.canonicalPath} className="font-semibold text-cc-brand-strong underline underline-offset-4 hover:no-underline">
+              {f.canonicalLabel ?? 'that page'}
+            </Link>
+            .
+          </p>
+        )}
         <span className="inline-flex items-center gap-2 mt-5 px-3 py-1 rounded-full bg-cc-surface border border-cc-field-border text-cc-ink text-xs font-semibold">
           {f.stage}
         </span>

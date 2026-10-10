@@ -57,6 +57,10 @@ const ROUTE_SOURCES = {
     'lib/landing-shots.ts',
     'lib/abap/abcd-classification.ts',
     'lib/abap/catalog-index.ts',
+    // The FAQ is rendered on the landing page, and since 3.0.8 its first answer
+    // is the release summary (roadmap 3.0.8, "what changed").
+    'lib/landing-faq.ts',
+    'lib/release-summary.ts',
   ],
   '/clean-core-explained': [
     'app/(app)/clean-core-explained/page.tsx',
@@ -77,7 +81,9 @@ const ROUTE_SOURCES = {
   // numbers on the page without touching either the page or the wrapper, and the
   // sitemap would then claim the content was older than it is. That is the exact
   // defect this table exists to prevent. Caught by the QA review of fdfe4f976742.
-  '/facts': ['app/facts/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
+  // Since 3.0.8 the page also states what the current release changed, from
+  // lib/release-summary.ts — the same words /llms.txt and the landing FAQ use.
+  '/facts': ['app/facts/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts', 'lib/release-summary.ts'],
   '/sap-clean-core-object-classification': [
     'app/(app)/sap-clean-core-object-classification/page.tsx',
     'lib/abap/catalog-service.ts',
@@ -88,7 +94,16 @@ const ROUTE_SOURCES = {
   // rules it reports on — not as fresh as its own JSX.
   '/method/levels': ['app/method/levels/page.tsx', 'lib/abap/catalog-service.ts', 'lib/abap/abcd-classification.ts'],
   '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
-  '/how-it-works': ['app/(app)/how-it-works/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts', 'lib/abap/support-matrix.ts'],
+  // Since 3.0.8 the page prints the provenance values and the decision options
+  // from their modules, so it is as fresh as their wording.
+  '/how-it-works': [
+    'app/(app)/how-it-works/page.tsx',
+    'lib/facts.ts',
+    'lib/abap/catalog-service.ts',
+    'lib/abap/support-matrix.ts',
+    'lib/provenance.ts',
+    'lib/decision-options.ts',
+  ],
   '/about': ['app/(app)/about/page.tsx'],
   // The page renders the whitepaper document; its words are lib/whitepaper.ts and
   // the landing modules it shares (the FAQ module is the landing's own route source), its figures the reference run, the support
@@ -102,6 +117,8 @@ const ROUTE_SOURCES = {
     'lib/reference-analysis.ts',
     'lib/abap/support-matrix.ts',
     'lib/facts.ts',
+    'lib/landing-faq.ts',
+    'lib/release-summary.ts',
   ],
   '/reference-analysis': ['app/reference-analysis/page.tsx', 'lib/reference-analysis.ts'],
   '/tenant-security': ['app/(app)/tenant-security/page.tsx'],

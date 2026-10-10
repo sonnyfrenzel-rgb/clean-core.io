@@ -98,7 +98,7 @@ export const revalidate = 300;
  * the approved USP. The description stays under ~160 characters so Google
  * shows it whole; the social card carries the full short USP.
  */
-const HOME_TITLE = 'SAP Clean Core Accelerator — Free ABAP Analysis to BPMN | Clean-Core.io';
+const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis | Clean-Core.io';
 const HOME_SHARE_TITLE = 'Clean-Core.io — SAP Clean Core Accelerator for custom ABAP';
 const HOME_SHARE_DESCRIPTION =
   'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. The process as BPMN with line anchors, SAP clean core level A–D per object, signed runs. Free for the SAP community.';
@@ -106,7 +106,7 @@ const HOME_SHARE_DESCRIPTION =
 export const metadata: Metadata = withTwitterCard({
   title: HOME_TITLE,
   description:
-    'Free SAP clean core tool: reads custom ABAP before any model does, draws its process as BPMN with line anchors, grades SAP objects A–D, drafts code and tests.',
+    'Free SAP clean core tool: reads custom ABAP before any model, draws its process as BPMN with line anchors, grades SAP objects A–D, drafts code and tests.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
@@ -395,9 +395,26 @@ export default function Home() {
         '@type': 'Organization',
         '@id': 'https://clean-core.io/#organization',
         name: 'Clean-Core.io',
+        // Roadmap 3.0.8, item 8: answer engines mixed the name up with a
+        // cleaning-business CRM and a listed company that use "CleanCore". The
+        // spelling with the domain, the topics and the disambiguating sentence
+        // say which Clean-Core this is; nothing here names the others.
+        alternateName: ['clean-core.io', 'Clean-Core.io SAP clean core accelerator'],
+        disambiguatingDescription:
+          'A free community web app for SAP custom ABAP and SAP clean core. Not the cleaning-business software or the listed company that use the name CleanCore.',
         url: 'https://clean-core.io',
         logo: 'https://clean-core.io/logo.png',
         description: 'An independent community project for the SAP community, not affiliated with or endorsed by SAP SE.',
+        knowsAbout: [
+          'SAP clean core',
+          'SAP Cloudification Repository',
+          'ABAP custom code analysis',
+          { '@type': 'Thing', name: 'ABAP', sameAs: 'https://en.wikipedia.org/wiki/ABAP' },
+          { '@type': 'Thing', name: 'SAP S/4HANA', sameAs: 'https://en.wikipedia.org/wiki/SAP_S/4HANA' },
+          { '@type': 'Thing', name: 'Business Process Model and Notation', sameAs: 'https://en.wikipedia.org/wiki/Business_Process_Model_and_Notation' },
+          'ABAP RESTful Application Programming Model (RAP)',
+          'SAP Cloud Application Programming Model (CAP)',
+        ],
         sameAs: ['https://github.com/sonnyfrenzel-rgb/clean-core.io', 'https://www.linkedin.com/company/clean-core-io'],
         founder: {
           '@type': 'Person',

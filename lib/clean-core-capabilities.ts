@@ -27,82 +27,100 @@ export interface Capability {
   limit: string;
 }
 
+/**
+ * The 3.0 chain, one card per step (roadmap 3.0.8): the process and the levels
+ * in Analyze, the decision in the Management view, then the tools that carry
+ * the same evidence on. `stage` is the place in the workspace where the step
+ * happens — a tool of the tool bar, or the view. No duration is stated: none is
+ * measured. What a step costs follows the metering: the analysis runs are
+ * counted once per signed run (`app/api/gemini/route.ts`); Design's cost is
+ * `DESIGN_ON_OPEN_COST` (`lib/model-stages.ts`).
+ */
 export const CAPABILITIES: Capability[] = [
   {
-    stage: 'Stage 1',
-    title: 'Evidence-based analysis',
+    stage: 'Analyze',
+    title: 'The process, read from the code, and Level A–D',
     output:
-      'A Clean Core score, an A–D readiness estimate, a list of findings with line numbers, the database coupling, a code inventory, and complexity and criticality scores — sealed as a signed, immutable Run.',
+      'The business process the program runs, drawn as BPMN with a line anchor on every element or the reason it has none; the business rules hard-coded in it, each with its line; the Level A–D of every SAP object the code uses; the findings at their lines and the Clean Core Score — sealed as a signed, immutable run.',
     benefit:
-      'Replaces "we think this object is risky" with a per-object finding somebody can check. A deterministic engine parses the source before any AI is involved, so the evidence does not depend on a model\'s mood.',
+      'Replaces "we think this program is risky" with statements somebody can check against the lines they came from. A deterministic engine reads the source before any language model does, so the evidence does not depend on a model.',
     effort:
-      'One click, about two minutes. Costs one of your five transformations — except the starter examples, which are free the first time you run each of them. Re-analysing the same source is free; starting the same example again is an ordinary analysis, and the run is only counted once it completes.',
+      'One of the five analysis runs of an account — except the starter examples, which are free the first time each one runs; starting the same example again is an ordinary analysis, and a run is only counted once it completes. After the five, you continue with your own Gemini API key.',
     limit:
-      'The A–D grade is an experimental preview estimate, not an authoritative ATC classification. Confirm with SAP ADT and ATC for your target release.',
+      'Level A–D is Clean-Core.io’s reading of SAP’s published data — an orientation, not an ATC result, and not part of the signed audit pack. What the engine could not determine is listed as not determined. Confirm with SAP ADT and ATC for your target release.',
   },
   {
-    stage: 'Stage 2',
-    title: 'Extensibility routing',
+    stage: 'Management view',
+    title: 'The decision: keep, rebuild, move to SAP standard or retire',
     output:
-      `A recommended route — in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST} — with a confidence score and the reasoning that produced it.`,
+      'One question about the program, with what the answer rests on — the need, the options, the costs as a simulation, the architecture — and what still blocks it.',
     benefit:
-      'The RAP-or-CAP argument, resolved per object with stated criteria instead of preference. The reasoning is inspectable, so it survives a review rather than only a demo.',
-    effort: 'Included in the analysis. No extra step, no extra unit.',
+      'The decision is taken on the evidence of the run, and what it rests on stays visible to whoever reads the project later.',
+    effort: 'The signed-in account records the decision, in the Management view.',
     limit:
-      'It is a recommendation from static evidence. It does not know your organisation\'s platform strategy, licensing, or team skills — all of which legitimately override it.',
+      'Clean-Core.io prepares the decision; it does not take it. A recorded decision is a self-declaration, not a mandate, and it does not know your organisation’s platform strategy, licensing or team skills.',
   },
   {
-    stage: 'Stage 3',
-    title: 'Solution design',
+    stage: 'Design',
+    title: 'Requirements and a target design',
     output:
-      'A target architecture mapped onto the recommended route, released SAP APIs proposed in place of direct table access, and the non-functional requirements spelled out.',
+      `Functional requirements read from the code, each with its lines and acceptance criteria, questions for the business apart, and a target design for the route — ABAP Cloud (RAP) in SAP S/4HANA, or CAP on ${BTP_FIRST} — with released SAP APIs proposed in place of direct table access.`,
     benefit:
-      'Turns "use released APIs" into named APIs from the SAP Business Accelerator Hub for the tables your code actually touches.',
-    effort: 'Two to three minutes. Included — no further unit is charged.',
+      'Turns "use released APIs" into named successors for the objects your code actually uses, and requirements that can be traced to the line they came from.',
+    effort:
+      'Opening Design writes the solution design with the model — two calls, not counted against your analysis runs. The functional requirements come from the code, without a model.',
     limit:
-      'API mapping is grounded in SAP\'s published catalogue. Where no released successor exists, it says so rather than inventing one.',
+      'The design is a Model proposal until you record the target you accept. Where SAP names no released successor, it says so rather than inventing one.',
   },
   {
-    stage: 'Stage 4',
-    title: 'Code transformation',
+    stage: 'Transformation',
+    title: 'A code draft',
     output:
-      'A RAP or CAP implementation generated from the legacy source, shown side by side with the original, scroll-synchronised.',
+      'A RAP or CAP implementation generated from the source, the analysis and the design, shown beside the original; its plan names every finding at its line.',
     benefit:
-      'The first compliant draft, in minutes rather than days — and reviewable statement by statement instead of as a black box.',
-    effort: 'Three minutes. Included.',
+      'A first draft to review statement by statement instead of a black box.',
+    effort: 'A model call on the community key or your own key; not counted against your analysis runs.',
     limit:
-      'A draft for an architect to review, not a deployment artefact. It is generated by a third-party AI model and provided as-is. Nothing here removes the need for an expert to read it.',
+      'A draft for an architect to review, not a deployment artefact. It is generated by a third-party language model and provided as-is. Nothing here removes the need for an expert to read it.',
   },
   {
-    stage: 'Stage 5',
-    title: 'Test generation and execution',
-    output: 'Test cases against the transformed logic: for CAP, run against mocks in an isolated test runner with per-case results; for ABAP Cloud, ABAP Unit classes that run only in your own system and are never run here; their result is recorded from that system, as an imported file or your own confirmation, never as proven. Tests against a connected tenant are locked.',
+    stage: 'Testing',
+    title: 'Test scenarios, and where they ran',
+    output: 'Test scenarios for the generated code, each with what it was derived from, checked against the source: for CAP, run against mocks in an isolated test runner with per-case results; for ABAP Cloud, ABAP Unit classes that run only in your own system and are never run here; their result is recorded from that system, as an imported file or your own confirmation, never as proven. Tests against a connected tenant are locked.',
     benefit:
-      'Modernised code arrives with tests attached, so the review has something to run rather than only something to read.',
-    effort: 'Two minutes. Included.',
+      'The draft arrives with tests attached, so the review has something to run rather than only something to read.',
+    effort: 'A model call on the community key or your own key; not counted against your analysis runs.',
     limit:
       'Tests are generated from the code, so they encode its behaviour — including any bug it already had. They verify the transformation, not the original business requirement.',
   },
   {
-    stage: 'Stage 6',
-    title: 'Documentation',
+    stage: 'Documentation',
+    title: 'A process description',
     output:
-      'BPMN 2.0 process diagrams as XML (import into SAP Signavio or SAP Build not yet verified), plus business-facing procedures and control points, exportable to Confluence.',
+      'A process description a successor can read — purpose and scope, trigger and inputs, the process, decision points and business rules, exceptions, effects, controls and open questions, with the technical trace as an appendix — exported as Confluence HTML, Markdown or Word. The process leaves as a BPMN 2.0 XML file; import into SAP Signavio has not been verified yet.',
     benefit:
-      'The documentation that normally never gets written, produced as a by-product of the analysis rather than as a separate project.',
-    effort: 'Two minutes. Included.',
-    limit: 'Generated from the code. It describes what the object does, not why the business wanted it.',
+      'The documentation that normally never gets written, built from the engine’s reading of the code rather than as a separate project.',
+    effort: 'Built from the engine when the tool opens.',
+    limit: 'Written from the code. It describes what the program does, not why the business wanted it.',
   },
   {
-    stage: 'Stage 7',
-    title: 'Delivery and audit evidence',
+    stage: 'Economics',
+    title: 'Costs, as a simulation',
+    output: 'A comparison of the options on assumptions you enter, stored with their revision.',
+    benefit: 'The cost side of the decision on your own figures, next to the evidence it belongs to.',
+    effort: 'Four guided steps on your own figures.',
+    limit: 'A simulation on your assumptions, never a quote. No cost figure is derived from the Clean Core Score.',
+  },
+  {
+    stage: 'Delivery',
+    title: 'Handover and audit pack',
     output:
-      'An abapGit-compatible ZIP with sources and tests, plus a signed audit evidence pack recording exactly what was analysed, by which engine and catalogue version, and what it concluded.',
+      'The handover: the evidence chain, an abapGit-compatible package with sources and tests, who confirmed what, and an audit pack signed over the run with HMAC and Ed25519, recording what was analysed, by which engine and catalogue version, and what it concluded.',
     benefit:
-      'The package goes into your own Eclipse ADT environment for compilation and verification — and the signature makes the analysis tamper-evident, which is what lets a recommendation hold up in a governance review.',
-    effort: 'One minute. Included.',
+      'The package goes into your own Eclipse ADT environment for compilation and verification, and anyone can check the audit pack offline — which is what lets a result hold up in a governance review.',
+    effort: 'Included; the pack is signed by the server.',
     limit:
-      'The signature proves the analysis was not altered after the fact. It does not certify that the conclusion is correct — that is what your architect is for.',
+      'A signature proves where a result came from and that it has not changed since. It does not certify that the conclusion is correct — that is what your architect is for.',
   },
 ];
 
@@ -126,11 +144,11 @@ export const HONEST_SCOPE: { claim: string; reality: string }[] = [
   {
     claim: 'What happens to my source code?',
     reality:
-      `It is processed by the Google Gemini API for the AI stages. ${TRAINING_CLAIM} Your profile and your projects are stored in the EU (Firestore, europe-west1, Belgium); sign-in runs on Firebase Authentication, which is not tied to a region. Bring your own Gemini key and it is used exclusively through a server-side proxy, encrypted at rest with AES-256-GCM, never exposed to the browser.`,
+      `It is read by the deterministic engine first; the Google Gemini API processes it for the steps a language model writes. ${TRAINING_CLAIM} Your profile and your projects are stored in the EU (Firestore, europe-west1, Belgium); sign-in runs on Firebase Authentication, which is not tied to a region. Bring your own Gemini key and it is used exclusively through a server-side proxy, encrypted at rest with AES-256-GCM, never exposed to the browser.`,
   },
   {
     claim: 'What does it cost?',
     reality:
-      'Nothing. Five transformations per account, no locked features, no paid tier. Your own Gemini key removes the limit entirely.',
+      'Nothing. Clean-Core.io is a free community project with no paid tier, and it accepts no payment. An account has five analysis runs, and each starter example is free the first time it runs; after that you continue with your own Gemini API key, which Google bills under your own agreement with Google.',
   },
 ];

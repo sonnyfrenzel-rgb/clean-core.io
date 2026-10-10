@@ -1,7 +1,7 @@
 import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { BookOpen, Layers, Check } from 'lucide-react';
+import { BookOpen, Layers, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
 import BackLink from '@/components/BackLink';
@@ -12,13 +12,13 @@ import { BTP, BTP_FIRST, BUSINESS_AI_PLATFORM_PARTS } from '@/lib/sap-naming';
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
-  description: 'What SAP Clean Core is (its five dimensions), how to assess readiness, and the In-App RAP vs Side-by-Side CAP decision — a plain-language guide to clean-core extensibility patterns and upgrade-safe SAP development.',
+  description: 'What SAP clean core is, how to assess readiness, and when to choose in-app RAP or side-by-side CAP — a plain-language guide to clean core extensibility.',
   alternates: {
     canonical: 'https://clean-core.io/knowledge',
   },
   openGraph: {
     title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
-    description: 'What SAP Clean Core is (its five dimensions), how to assess readiness, and the In-App RAP vs Side-by-Side CAP decision — a plain-language guide to clean-core extensibility patterns and upgrade-safe SAP development.',
+    description: 'What SAP clean core is, how to assess readiness, and when to choose in-app RAP or side-by-side CAP — a plain-language guide to clean core extensibility.',
     url: 'https://clean-core.io/knowledge',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
-    answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment."
+    answer: "A deterministic engine reads the custom ABAP before any language model does. It reconstructs the business process as BPMN, with a line anchor on every element or the reason it has none, lists the business rules hard-coded in the program, and grades every SAP object the code uses Level A–D from SAP's published Cloudification Repository. The Management view then asks for one decision: keep, rebuild, move to SAP standard or retire. Design, Transformation and Testing carry the same evidence to a target design, a code draft in ABAP Cloud (RAP) or CAP, and test scenarios, each marked as a Model proposal for an architect to review, and every completed analysis is stored as a signed run. It complements SAP's own tooling and does not replace human judgment."
   },
   {
     question: "What are the five dimensions of SAP Clean Core?",
@@ -152,20 +152,29 @@ export default function KnowledgePage() {
         />
       </div>
 
-      {/* SAP Compliance Badge Section */}
-      <div className="bg-cc-brand-surface rounded-3xl p-8 md:p-12 border border-cc-line space-y-6">
+      {/* How Clean-Core.io applies this — the 3.0 chain (roadmap 3.0.8, item 2).
+          It replaced a "Clean Core Aligned Strategy" badge that claimed SAP Cloud SDK
+          conformance the product does not establish. */}
+      <section className="bg-cc-brand-surface rounded-3xl p-8 md:p-12 border border-cc-line space-y-6" aria-labelledby="chain-title">
         <div className="max-w-3xl space-y-3">
-          <h3 className="text-2xl md:text-3xl font-extrabold text-cc-ink tracking-tight">
-            Clean Core Extensibility Alignment
-          </h3>
+          <h2 id="chain-title" className="text-2xl md:text-3xl font-extrabold text-cc-ink tracking-tight">
+            How Clean-Core.io applies this to one ABAP program
+          </h2>
           <p className="text-sm text-cc-ink-muted leading-relaxed font-medium">
-            Clean-Core.io leverages standard SAP technologies, securing transactions according to the SAP Cloud SDK guidelines. Keep your ERP core system upgradeable while expanding functionality with cloud-native scalability.
+            The extensibility dimension, one program at a time, on one chain of evidence:
           </p>
-          <div className="inline-flex items-center gap-2 text-cc-brand-strong font-bold text-xs uppercase tracking-widest pt-4">
-            Clean Core Aligned Strategy <Check size={14} className="stroke-[3]" aria-hidden="true" />
-          </div>
         </div>
-      </div>
+        <ol className="max-w-3xl list-decimal space-y-2 pl-5 text-sm font-medium leading-relaxed text-cc-ink">
+          <li><strong>Process:</strong> the business process read from the code as BPMN, with a line anchor on every element or the reason it has none, and the business rules hard-coded in the program.</li>
+          <li><strong>Level A–D:</strong> every SAP object the code uses, graded from SAP&apos;s published Cloudification Repository and object classification under a versioned rule — an orientation; ABAP Test Cockpit stays the authority.</li>
+          <li><strong>Decision:</strong> keep, rebuild, move to SAP standard or retire, in the Management view, recorded by the signed-in account.</li>
+          <li><strong>Design, code draft, tests:</strong> on the same evidence, each a Model proposal for a person to review.</li>
+          <li><strong>Signature:</strong> every completed analysis is stored as an immutable run signed by the server.</li>
+        </ol>
+        <Link href="/how-it-works" className="inline-flex items-center gap-2 text-cc-brand-strong font-bold text-sm underline-offset-2 hover:underline">
+          How it works, step by step, and where it stops <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+      </section>
 
       {/* Related tools & guides (internal linking) */}
       <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-4">

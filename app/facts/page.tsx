@@ -6,13 +6,14 @@ import { getFacts } from '@/lib/facts';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { jsonLdHtml } from '@/lib/json-ld';
 import { bandRange, scoreBand } from '@/lib/clean-core-score';
+import { AS_OF_TITLE, AS_OF_PARAGRAPH, WHAT_CHANGED_QUESTION, WHAT_CHANGED_ANSWER } from '@/lib/release-summary';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Facts — the source for the catalog, engine and reference-run numbers | Clean-Core.io',
+  title: 'Facts: Catalog, Engine and Reference Run | Clean-Core.io',
   description:
-    'The catalog, engine and reference-run numbers this site states in public — object count, successor count, the Level A–D distribution, both synced catalog files with their hash and sync date, the engine and rule version, and the reference run — in one place, and as JSON.',
+    'The catalog, engine and reference-run figures this site cites, with their source: object and successor counts, Level A–D split, file hashes, sync dates.',
   alternates: { canonical: `${BASE}/facts` },
   openGraph: {
     title: 'Facts — the source for the catalog, engine and reference-run numbers',
@@ -81,6 +82,31 @@ export default function FactsPage() {
           </Link>
         </p>
       </header>
+
+      {/* The dated paragraph and the 3.0 answer (roadmap 3.0.8, item 4) — from
+          lib/release-summary.ts, the same words /llms.txt and the landing FAQ use;
+          version and date follow lib/version.ts. */}
+      <section className="space-y-6 rounded-2xl border border-cc-line bg-cc-surface p-6" aria-labelledby="as-of-title">
+        <div className="space-y-2">
+          <h2 id="as-of-title" className="text-2xl font-extrabold tracking-[-0.02em] text-cc-ink">
+            {AS_OF_TITLE}
+          </h2>
+          <p className="leading-relaxed text-cc-ink" data-as-of="">
+            {AS_OF_PARAGRAPH}
+          </p>
+        </div>
+        <div className="space-y-2 border-t border-cc-line pt-6">
+          <h2 className="text-lg font-extrabold text-cc-ink">{WHAT_CHANGED_QUESTION}</h2>
+          <p className="text-sm leading-relaxed text-cc-ink-muted">{WHAT_CHANGED_ANSWER}</p>
+          <p className="text-sm leading-relaxed text-cc-ink-muted">
+            How the chain works, step by step, and where it stops:{' '}
+            <Link href="/how-it-works" className={LINK}>
+              /how-it-works
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
 
       {/* Headline facts */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">

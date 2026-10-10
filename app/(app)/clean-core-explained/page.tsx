@@ -14,11 +14,57 @@ import { CcTag } from '@/components/cc/Tag';
 import { GUIDE_PARTS, GUIDE_FAQ, NOTE_LABELS, type NoteKind } from '@/lib/clean-core-guide';
 import { CAPABILITIES, HONEST_SCOPE } from '@/lib/clean-core-capabilities';
 import { CONTACT_EMAIL } from '@/lib/constants';
+import { BTP, BTP_FIRST } from '@/lib/sap-naming';
+
+/**
+ * The definition above the fold (roadmap 3.0.8, item 3): two to three sentences
+ * that answer "what is SAP clean core" on their own, so a hurried reader and an
+ * answer engine can quote them without the rest of the page. The level wording
+ * follows SAP's clean core level concept as `lib/landing-faq.ts` states it.
+ */
+const CLEAN_CORE_DEFINITION = `SAP clean core means running SAP S/4HANA standard software unmodified and adding your own behaviour only through interfaces and extension points SAP has released and promises to keep stable — in-app with ABAP Cloud, or side-by-side on ${BTP_FIRST}. SAP's clean core level concept grades what an extension uses, from Level A (released APIs and extension points) to Level D (not recommended: modifications, implicit enhancements, direct writes to SAP tables). The purpose is that upgrades stay routine and a move to the cloud stays possible.`;
+
+/**
+ * Short answers under question headings, directly after the definition: each
+ * answer stands on its own and points to the part that explains it at length.
+ */
+const IN_SHORT: { q: string; a: string; part: string; partLabel: string }[] = [
+  {
+    q: 'Why does SAP clean core matter?',
+    a: "Upgrades stay routine instead of becoming projects, and a move to the cloud stays possible: SAP's public cloud edition and ABAP Cloud do not run the older techniques, and the private cloud edition keeps them only at the price of harder upgrades.",
+    part: '#basics',
+    partLabel: 'Part 1',
+  },
+  {
+    q: 'What are the clean core levels A to D?',
+    a: 'They grade what custom code depends on, not how well it is written: A released APIs and extension points, B classic APIs SAP still recommends, C internal SAP objects that are only conditionally clean, D what is not recommended — modifications, implicit enhancements, direct writes to SAP tables.',
+    part: '#grades',
+    partLabel: 'Part 5',
+  },
+  {
+    q: 'In-app or side-by-side?',
+    a: `In-app with ABAP Cloud and RAP for logic that is transactionally coupled to SAP data; side-by-side as CAP services on ${BTP} for logic with its own release cycle or a non-SAP audience. It follows from what the object does, not from taste.`,
+    part: '#decision',
+    partLabel: 'Part 4',
+  },
+  {
+    q: 'Do I have to rewrite all my custom code?',
+    a: 'No. Part of it can be retired because the standard now covers it, and much of the rest needs adjustment rather than a rewrite. The expensive mistake is treating every object the same instead of classifying it first.',
+    part: '#grades',
+    partLabel: 'Part 5',
+  },
+  {
+    q: 'How do I find the objects that break clean core?',
+    a: "Check each object against SAP's released-object contract — which interfaces it uses, how it touches data, whether its patterns exist in the cloud at all — and confirm with ABAP Test Cockpit. Clean-Core.io does this for one program at a time and shows the Level A–D of every SAP object it uses, with the line it comes from.",
+    part: '#platform',
+    partLabel: 'Part 6',
+  },
+];
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Clean Core Explained — From First Principles to Practice | Clean-Core.io',
+  title: 'SAP Clean Core Explained: What It Means | Clean-Core.io',
   description:
-    'What SAP Clean Core actually means, explained without the jargon: why modifications break upgrades, in-app versus side-by-side extensibility, RAP versus CAP, and the A–D grading model for classifying custom ABAP. Written for beginners, useful for architects.',
+    'What SAP clean core means, without the jargon: why modifications break upgrades, in-app vs side-by-side, RAP vs CAP, and levels A–D for custom ABAP.',
   keywords: [
     'SAP Clean Core', 'Clean Core explained', 'SAP Clean Core extensibility',
     'RAP vs CAP', 'ABAP Cloud', 'custom code remediation', 'S/4HANA migration',
@@ -120,10 +166,11 @@ export default function CleanCoreExplainedPage() {
           <h1 className="mt-6 mb-5 text-4xl font-extrabold leading-[1.02] tracking-[-0.035em] text-cc-ink sm:text-6xl">
             SAP Clean Core,{' '}<br />explained without the jargon
           </h1>
-          <p className="mb-8 text-lg font-medium leading-relaxed text-cc-ink-muted sm:text-xl">
-            What it means, why it suddenly matters, and what to actually do about your custom ABAP.
-            Starts from nothing — no SAP background needed — and goes as far as grading every object
-            in your estate.
+          <p className="mb-6 text-xl font-bold leading-snug text-cc-ink sm:text-2xl" data-definition="">
+            {CLEAN_CORE_DEFINITION}
+          </p>
+          <p className="mb-8 text-lg font-medium leading-relaxed text-cc-ink-muted">
+            What it means, why it matters, and what to do about your custom ABAP — no SAP background needed.
           </p>
           <div className="flex flex-wrap gap-x-7 gap-y-2 text-[13px] font-semibold text-cc-ink-muted">
             <span>{GUIDE_PARTS.length + 2} parts</span>
@@ -136,22 +183,22 @@ export default function CleanCoreExplainedPage() {
 
       <GuideShareBar />
 
-      {/* Answer-first summary — what a hurried reader and an answer engine both take away */}
-      <section className={`${CARD} p-7 sm:p-10`}>
-        <h2 className="cc-text-label mb-4 text-cc-brand-strong">
-          The short answer
-        </h2>
-        <p className="mb-5 text-xl font-bold leading-snug text-cc-ink sm:text-2xl">
-          Clean Core means running SAP standard software without modifying it, and adding your own
-          behaviour only through interfaces SAP has formally released and promised to keep stable.
-        </p>
-        <p className="max-w-3xl leading-relaxed text-cc-ink-muted">
-          The purpose is not tidiness. It is that upgrades stay routine instead of becoming projects,
-          and that a move to the cloud remains possible at all — because SAP&apos;s public cloud
-          edition and ABAP Cloud do not run the older techniques, and the private cloud edition keeps
-          them only at the price of harder upgrades. Everything below explains how to tell which of your
-          code is affected, and what to do with each kind.
-        </p>
+      {/* In short — question headings, short answers (roadmap 3.0.8, item 3) */}
+      <section className={`${CARD} p-7 sm:p-10`} aria-label="SAP clean core in short">
+        <p className="cc-text-label mb-2 text-cc-brand-strong">In short</p>
+        <div className="divide-y divide-cc-line">
+          {IN_SHORT.map((item) => (
+            <div key={item.q} className="py-5 first:pt-2 last:pb-0">
+              <h2 className="mb-2 text-xl font-extrabold leading-snug tracking-tight text-cc-ink">{item.q}</h2>
+              <p className="max-w-3xl leading-relaxed text-cc-ink-muted">
+                {item.a}{' '}
+                <a href={item.part} className={`font-semibold text-cc-ink underline underline-offset-4 ${FOCUS}`}>
+                  More in {item.partLabel}
+                </a>
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Table of contents */}
@@ -286,7 +333,9 @@ export default function CleanCoreExplainedPage() {
       <section id="platform" className="scroll-mt-8 space-y-5">
         <div className={PART_HEAD}>
           <SectionHeader align="left" eyebrow="Part 6" title="How Clean-Core.io helps, concretely">
-            Seven stages, one ABAP object at a time. Each is listed with what it produces, what it
+            Clean-Core.io works on one ABAP program at a time: it reads the process from the code as
+            BPMN, grades every SAP object Level A–D and leads to one decision — keep, rebuild, move to
+            SAP standard or retire. Each step of the work is listed below with what it produces, what it
             saves you, what it costs — and where it stops. The last column is the one worth reading.
           </SectionHeader>
         </div>
@@ -414,9 +463,9 @@ export default function CleanCoreExplainedPage() {
           Try it on one object
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-cc-ink-muted">
-          Reading about Clean Core only gets you so far. There are ready-made ABAP examples on the
-          dashboard, so you can see a full analysis without extracting anything from your own system
-          — about fifteen minutes, and it costs nothing.
+          Reading about Clean Core only gets you so far. Every free account has a demo project with a
+          guided tour and ready-made ABAP examples in My workspace, so you can see a full analysis
+          without extracting anything from your own system.
         </p>
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Link href="/first-run" className={publicButton('primary')}>

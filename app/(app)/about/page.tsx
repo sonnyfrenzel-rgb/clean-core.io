@@ -8,14 +8,14 @@ import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'About Clean-Core.io — Built by Felix Frenzel | SAP Modernization',
-  description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel — born from first-hand experience with an S/4HANA transformation, for the SAP community.',
+  title: 'About Clean-Core.io — Built by Felix Frenzel',
+  description: 'Clean-Core.io is a free community SAP modernization tool built by Felix Frenzel, born from first-hand experience with an S/4HANA transformation.',
   alternates: {
     canonical: 'https://clean-core.io/about',
   },
   openGraph: {
-    title: 'About Clean-Core.io — Built by Felix Frenzel | SAP Modernization',
-    description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel — born from first-hand experience with an S/4HANA transformation, for the SAP community.',
+    title: 'About Clean-Core.io — Built by Felix Frenzel',
+    description: 'Clean-Core.io is a free community SAP modernization tool built by Felix Frenzel, born from first-hand experience with an S/4HANA transformation.',
     url: 'https://clean-core.io/about',
     type: 'website',
   }

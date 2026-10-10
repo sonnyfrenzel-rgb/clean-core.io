@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { FEATURE_SLUGS } from '../lib/features-content';
+import { FEATURE_SLUGS, FEATURES, INDEXED_FEATURE_SLUGS } from '../lib/features-content';
 import { getAllCatalogObjectNames, getMappedCatalogObjectNames, getModuleAreas, objectToSlug } from '../lib/abap/catalog-index';
 import sitemap from '../app/sitemap';
 import robots from '../app/robots';
@@ -69,7 +69,13 @@ test.describe('pages with search reach stay reachable', () => {
   test('the sitemap lists the home page, every inventory page, every feature and the A–Z pages', () => {
     const urls = new Set(sitemap().map((e) => e.url));
     for (const url of Object.keys(PAGES)) expect(urls.has(url === '/' ? BASE : `${BASE}${url}`), `sitemap lists ${url}`).toBe(true);
-    for (const slug of FEATURE_SLUGS) expect(urls.has(`${BASE}/features/${slug}`), `sitemap lists /features/${slug}`).toBe(true);
+    for (const slug of INDEXED_FEATURE_SLUGS) expect(urls.has(`${BASE}/features/${slug}`), `sitemap lists /features/${slug}`).toBe(true);
+    // A feature page that hands over to another page (roadmap 3.0.8, item 5) stays published but leaves the
+    // sitemap — a sitemap lists canonical URLs only — and the page it hands over to is listed instead.
+    for (const f of FEATURES.filter((x) => x.canonicalPath)) {
+      expect(urls.has(`${BASE}/features/${f.slug}`), `sitemap leaves out /features/${f.slug}`).toBe(false);
+      expect(urls.has(`${BASE}${f.canonicalPath}`), `sitemap lists ${f.canonicalPath}`).toBe(true);
+    }
     for (const slug of FEATURES_WITH_IMPRESSIONS) expect(FEATURE_SLUGS, `/features/${slug} is still published`).toContain(slug);
     expect(urls.has(`${BASE}/catalog/browse/a`)).toBe(true);
     expect([...urls].some((u) => u.startsWith(`${BASE}/catalog/module/`))).toBe(true);
@@ -114,8 +120,11 @@ test.describe('pages with search reach stay reachable', () => {
       expect((await moduleMetadata({ params: Promise.resolve({ area }) })).alternates?.canonical, `/catalog/module/${area}`).toBe(`${BASE}/catalog/module/${area}`);
     }
     for (const slug of FEATURES_WITH_IMPRESSIONS) {
-      expect((await featureMetadata({ params: Promise.resolve({ slug }) })).alternates?.canonical).toBe(`${BASE}/features/${slug}`);
+      const own = FEATURES.find((f) => f.slug === slug)?.canonicalPath ?? `/features/${slug}`;
+      expect((await featureMetadata({ params: Promise.resolve({ slug }) })).alternates?.canonical, `/features/${slug}`).toBe(`${BASE}${own}`);
     }
+    // The three cloudification pages stop competing: the feature page hands over to /sap-cloudification.
+    expect((await featureMetadata({ params: Promise.resolve({ slug: 'cloudification-catalog' }) })).alternates?.canonical).toBe(`${BASE}/sap-cloudification`);
   });
 
   test('the running app serves the pages with their canonical link and the sitemaps', async ({ request }) => {
@@ -131,7 +140,8 @@ test.describe('pages with search reach stay reachable', () => {
       ['/knowledge', `${BASE}/knowledge`],
       ['/abap-custom-code-analysis', `${BASE}/abap-custom-code-analysis`],
       ['/clean-core-score', `${BASE}/clean-core-score`],
-      ['/features/cloudification-catalog', `${BASE}/features/cloudification-catalog`],
+      // Handed over to /sap-cloudification (roadmap 3.0.8, item 5): still served, canonical elsewhere.
+      ['/features/cloudification-catalog', `${BASE}/sap-cloudification`],
     ];
     for (const [url, canonical] of html) {
       const res = await request.get(url);
@@ -140,11 +150,34 @@ test.describe('pages with search reach stay reachable', () => {
       const href = body.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
       expect(href?.replace(/\/$/, ''), `${url} canonical`).toBe(canonical);
     }
+    const { PDF_CANONICALS } = (await import('../next.config.mjs')) as unknown as { PDF_CANONICALS: Record<string, string> };
+    for (const [pdf, page] of Object.entries(PDF_CANONICALS)) {
+      const res = await request.head(pdf);
+      expect(res.status(), pdf).toBe(200);
+      expect(res.headers()['link'], `${pdf} Link header`).toBe(`<${page}>; rel="canonical"`);
+    }
     for (const url of ['/sitemap.xml', '/robots.txt', '/catalog-sitemap.xml']) {
       const res = await request.get(url);
       expect(res.status(), url).toBe(200);
     }
     expect(await (await request.get('/robots.txt')).text()).toContain('catalog-sitemap.xml');
+  });
+
+  test('every PDF names its HTML page as canonical (roadmap 3.0.8, item 3)', async () => {
+    const { PDF_CANONICALS, default: config } = (await import('../next.config.mjs')) as unknown as {
+      PDF_CANONICALS: Record<string, string>;
+      default: { headers: () => Promise<Array<{ source: string; headers: Array<{ key: string; value: string }> }>> };
+    };
+    const pdfs = fs.readdirSync(path.join(ROOT, 'public')).filter((f) => f.toLowerCase().endsWith('.pdf')).map((f) => `/${f}`);
+    expect(pdfs.length).toBeGreaterThan(0);
+    expect(Object.keys(PDF_CANONICALS).sort(), 'every public PDF has a canonical page').toEqual(pdfs.sort());
+    const headers = await config.headers();
+    for (const [pdf, page] of Object.entries(PDF_CANONICALS)) {
+      expect(page.startsWith(`${BASE}/`), `${pdf} → ${page}`).toBe(true);
+      expect(Object.keys(PAGES), `${page} is a page with search reach`).toContain(page.slice(BASE.length));
+      const entry = headers.find((h) => h.source === pdf);
+      expect(entry?.headers, pdf).toContainEqual({ key: 'Link', value: `<${page}>; rel="canonical"` });
+    }
   });
 
   test('the landing page links into the catalog and the knowledge pages', () => {

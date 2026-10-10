@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { APP_RELEASE_DATE } from '@/lib/version';
 import { CATALOG_LETTERS, getModuleAreas } from '@/lib/abap/catalog-index';
-import { FEATURE_SLUGS } from '@/lib/features-content';
+import { INDEXED_FEATURE_SLUGS } from '@/lib/features-content';
 import { contentDate } from '@/lib/content-dates';
 
 /**
@@ -81,8 +81,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  // Feature detail pages (the landing "Learn more" subpages).
-  const featureRoutes: MetadataRoute.Sitemap = FEATURE_SLUGS.map((slug) => ({
+  // Feature detail pages. A page that names another as its canonical
+  // (/features/cloudification-catalog → /sap-cloudification) is left out: a
+  // sitemap lists canonical URLs only, or it contradicts the page.
+  const featureRoutes: MetadataRoute.Sitemap = INDEXED_FEATURE_SLUGS.map((slug) => ({
     url: `${baseUrl}/features/${slug}`,
     lastModified: on('/features'),
     changeFrequency: 'monthly' as const,

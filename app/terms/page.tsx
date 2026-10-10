@@ -8,7 +8,7 @@ import { TERMS_VERSION } from '@/lib/constants';
 export const metadata: Metadata = withTwitterCard({
   title: 'Terms of Service & Community Guidelines | Clean-Core.io',
   description:
-    'The consolidated Terms of Service and Community Guidelines for Clean-Core.io — a free, non-commercial community project for the SAP community. Governed by German law.',
+    'Terms of Service and Community Guidelines for Clean-Core.io, a free, non-commercial project for the SAP community. Governed by German law.',
   alternates: {
     canonical: 'https://clean-core.io/terms',
   },
