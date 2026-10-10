@@ -194,7 +194,7 @@ export default function HowItWorksPage() {
       {/* Quick Answer */}
       <QuickAnswer
         question="How does Clean-Core.io work?"
-        answer={`A deterministic engine reads one custom ABAP program and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. Every SAP object the code uses is graded Level A–D from SAP's published Cloudification Repository (${catalogObjects}), and the Management view asks for one decision: keep, rebuild, move to SAP standard or retire. Design, code draft and tests are built on that evidence as Model proposals for a person to review, and every completed analysis is stored as an immutable run signed by the server.`}
+        answer={`A deterministic engine reads one custom ABAP program and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. Every SAP object the code uses is graded Level A–D from SAP's published Cloudification Repository (${catalogObjects}), or marked Unknown where the repository holds no answer for it, and the Management view asks for one decision: keep, rebuild, move to SAP standard or retire. Design, code draft and tests are built on that evidence as Model proposals for a person to review, and every completed analysis is stored as an immutable run signed by the server.`}
       />
 
       {/* Section A: the chain of 3.0 (roadmap 3.0.8, item 2) */}
@@ -226,7 +226,7 @@ export default function HowItWorksPage() {
               <h3 className={H3}>Level A–D for every SAP object</h3>
             </div>
             <p className={STAGE_TEXT}>
-              Every SAP object the code uses is looked up in SAP&apos;s published Cloudification Repository and object classification ({catalogObjects}) and graded Level A–D under a versioned rule; an SAP object the code writes directly is Level D, whatever its own level. The findings give the Clean Core Score, 5–100, higher is better — Clean-Core.io&apos;s own grade, not an SAP measure. The level is an orientation: ABAP Test Cockpit stays the authority. How the level is derived:{' '}
+              Every SAP object the code uses is looked up in SAP&apos;s published Cloudification Repository and object classification ({catalogObjects}) and graded Level A–D under a versioned rule, or marked Unknown where neither holds an answer for it rather than given a guessed level; an SAP object the code writes directly is Level D, whatever its own level. The findings give the Clean Core Score, 5–100, higher is better — Clean-Core.io&apos;s own grade, not an SAP measure. The level is an orientation: ABAP Test Cockpit stays the authority. How the level is derived:{' '}
               <Link href="/method/levels" className={TEXT_LINK}>the rule and its version</Link>.
             </p>
             <p className={SOURCE_LINE}>In the code: {CHAIN_SOURCES.levels}</p>

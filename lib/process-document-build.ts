@@ -910,7 +910,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     const anchors = distinctAnchors([anchor(call.line), ...writes.flatMap((w) => w.lines.map((l) => anchor(l))), ...(writes.length ? [] : filled.slice(0, 3).map((f) => anchor(f.line, f.lineEnd)))]);
     // A transaction the glossary calls "Create …" creates a document whose
     // fields the batch input fills; any other one changes what it fills.
-    const creates = !!tcode && /^Create/.test(TRANSACTION_TERMS_EN[tcode] ?? '');
+    const creates = !!tcode && /^Create\b/.test(TRANSACTION_TERMS_EN[tcode] ?? '');
     const what = writes.length
       ? creates
         ? `${TRANSACTION_TERMS_EN[tcode as string]} through a transaction (batch input); fills ${joinAnd(fieldWords)}`

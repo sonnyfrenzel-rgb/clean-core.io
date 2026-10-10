@@ -78,3 +78,12 @@ test.describe('Analyze page - QA full review of v2.20.0', () => {
     expect(card).toMatch(/Target: \{\(!overridden && targetArtifact\)/);
   });
 });
+
+test('ae68c0b99961: the route report is drawn only from the evidence of the source the run signed', () => {
+  const text = src();
+  const memo = text.slice(text.indexOf('const routeReport = useMemo('), text.indexOf('const routeDerived = useMemo('));
+  expect(memo).toContain('project.auditMetadata?.inputFingerprint?.sha256');
+  expect(memo).toContain('evidenceSourceSha === signedSourceSha');
+  expect(memo).toMatch(/const addsUp = sameSource && /);
+  expect(text).toContain("const evidenceSourceSha = projectEvidence.state === 'ready' ? projectEvidence.value.sourceSha256 : null;");
+});

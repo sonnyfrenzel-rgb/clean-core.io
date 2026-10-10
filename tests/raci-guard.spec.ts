@@ -236,3 +236,14 @@ test('the RACI is written by the server only — a route behind the owner, no cl
   expect(page).toContain('replaceSopBody(!!raciEdit)');
   expect(page).toContain('replaceDocBody(!!raciEdit)');
 });
+
+test('an export started before the saved RACI is read waits for it (QA 66e772bd346f)', () => {
+  const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
+  // The read is kept as a promise the exports await …
+  expect(page).toContain("raciReadRef.current = import('@/lib/raci-edit-client')");
+  const exporter = page.slice(page.indexOf('const exportRaci = async'), page.indexOf('/** A blueprint stored before 3.0.5'));
+  expect(exporter).toContain('await raciReadRef.current;');
+  // … and every file — Confluence, Markdown, Word — takes the RACI from it, not from the render state.
+  expect(exporter.match(/await exportRaci\(\)/g)?.length).toBe(2);
+  expect(exporter).not.toMatch(/raciFileTable\(businessLayer|buildEngineConfluenceHtml\([^)]*businessLayer|\braciEdit,/);
+});

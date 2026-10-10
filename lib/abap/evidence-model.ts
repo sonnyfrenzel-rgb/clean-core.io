@@ -195,6 +195,11 @@ export function redactCredentials(snippet: string | undefined): string {
     // (QA c65a238c3cd2). The context is the scheme word opening a literal, or
     // following `Authorization:`. Prose about the scheme ("Bearer
     // authentication") is left alone by the words it is written in.
+    // After `Authorization:` the header is named outright, so a value of any
+    // length is the credential — the eight-character floor below exists only
+    // for a bare scheme word opening a literal (`'Basic mode'`) (QA f72a50faa489).
+    .replace(/(\bAuthorization\s*:\s*)([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?!(?:authentication|authorization|auth|token|tokens|scheme|header|credentials?)\b)(?!…<redacted>)[\w\-.~+/]+=*/gi,
+      (_m, lead, scheme, gap) => `${lead}${scheme}${gap}…<redacted>`)
     .replace(/((?:['`|]|\bAuthorization\s*:)\s*)([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?!(?:authentication|authorization|auth|token|tokens|scheme|header|credentials?)\b)(?!…<redacted>)[\w\-.~+/]{8,}=*/gi,
       (_m, lead, scheme, gap) => `${lead}${scheme}${gap}…<redacted>`)
     // A password or token assigned to a literal in ABAP — of any length: a short

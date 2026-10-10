@@ -54,6 +54,18 @@ test('a letters-only token in an authorization context is redacted too (QA c65a2
   expect(redactCredentials("lv_s = 'Basic mode'.")).toBe("lv_s = 'Basic mode'.");
 });
 
+test('a short lowercase value after an explicit Authorization header is redacted (QA f72a50faa489)', () => {
+  for (const value of ['abcdefg', 'abc', 'x']) {
+    const line = `lv_h = |Authorization: Bearer ${value}|.`;
+    expect(redactCredentials(line), line).toBe('lv_h = |Authorization: Bearer …<redacted>|.');
+  }
+  expect(redactCredentials("lv_h = 'Authorization: Basic qwerty'.")).toBe("lv_h = 'Authorization: Basic …<redacted>'.");
+  // The header named in prose keeps its words.
+  expect(redactCredentials('" Authorization: Bearer token from the gateway')).toBe('" Authorization: Bearer token from the gateway');
+  // A bare scheme word opening a literal still needs eight characters.
+  expect(redactCredentials("lv_s = 'Basic mode'.")).toBe("lv_s = 'Basic mode'.");
+});
+
 test('ABAP syntax that looks like name=value is left alone', () => {
   const untouched = [
     'lv_key = ls_row-key.',

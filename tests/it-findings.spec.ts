@@ -331,6 +331,12 @@ test.describe('the level stays out of the signed record', () => {
     expect(read('app/api/projects/[projectId]/findings/route.ts')).not.toContain('export async function POST');
   });
 
+  test('a project without source reads no contract (QA cf4f8da6af44)', () => {
+    const panel = read('components/workspace/ItAnswers.tsx');
+    expect(panel).toContain("useContract(projectId, !demo && state !== 'no-source')");
+    expect(panel).not.toContain('useContract(projectId, !demo)');
+  });
+
   test('an imported level is never green: A information, B neutral (DESIGN.md §1.8)', () => {
     // QA review of 4b4586aff273: the panel drew an A with `success`.
     const panel = read('components/workspace/ItAnswers.tsx');

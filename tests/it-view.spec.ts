@@ -439,7 +439,11 @@ test.describe('the IT view on a real project', () => {
     await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
     const anchors = page.locator('[data-it-anchor]');
     await expect(anchors.first()).toBeVisible({ timeout: 30000 });
-    const order = await anchors.evaluateAll((els) => els.map((e) => e.getAttribute('data-it-anchor')));
+    // The three sections this page always has are in the bar; only the route
+    // and the trust anchor depend on the run (QA c26c5ec50586).
+    const readOrder = () => anchors.evaluateAll((els) => els.map((e) => e.getAttribute('data-it-anchor')));
+    await expect.poll(readOrder, { timeout: 30000 }).toEqual(expect.arrayContaining(['findings', 'objects', 'questions']));
+    const order = await readOrder();
     const expected = ['findings', 'objects', 'questions', 'route', 'trust'].filter((k) => order.includes(k));
     expect(order).toEqual(expected);
     await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);

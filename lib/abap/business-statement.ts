@@ -64,6 +64,7 @@ import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
 import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
+import { containerAt, readBlocks, type Block as NestingBlock } from './block-structure';
 
 /**
  * A caveat **on** a statement — never in its place.
@@ -826,13 +827,46 @@ const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
  * count tested afterwards, a check in a called routine — is not seen, and the
  * caveat then errs on the side of warning.
  */
-export function nonEmptyGuarded(table: string, statements: readonly AbapStatement[]): boolean {
+export function nonEmptyGuarded(table: string, statements: readonly AbapStatement[], select?: AbapStatement): boolean {
   const t = `${escapeForRegExp(table)}(?:\\[\\])?`;
   const guard = new RegExp(
     `(?:\\b${t}\\s+IS\\s+NOT\\s+INITIAL\\b|\\bNOT\\s+${t}\\s+IS\\s+INITIAL\\b|\\blines\\(\\s*${t}\\s*\\)\\s*(?:(?:>|GT|<>|NE)\\s*0|(?:>=|GE)\\s*1)\\b)`,
     'i',
   );
-  return statements.some((s) => /^(?:IF|ELSEIF|CHECK)$/.test(s.keyword) && guard.test(s.text));
+  const candidates = statements
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => /^(?:IF|ELSEIF|CHECK)$/.test(s.keyword) && guard.test(s.text));
+  if (!candidates.length) return false;
+  if (!select) return true;
+  // QA 896f03b65018: the check has to guard *this* SELECT — a check in another
+  // branch or routine does not keep the driver table filled here.
+  const at = statements.indexOf(select);
+  if (at < 0) return false;
+  const list = [...statements];
+  const { enclosing, containers } = readBlocks(list);
+  const inside = (block: NestingBlock, i: number) => block.openIndex < i && i <= block.closeIndex;
+  return candidates.some(({ s, i }) => {
+    if (i >= at) return false;
+    if (s.keyword === 'CHECK') {
+      // Every block around the CHECK still encloses the SELECT (a CHECK inside a
+      // LOOP or an IF branch ends only that pass or branch), and both sit in
+      // the same routine or event block.
+      if (!enclosing[i].every((b) => enclosing[at].includes(b))) return false;
+      return containerAt(containers, s.lineStart) === containerAt(containers, select.lineStart);
+    }
+    // IF/ELSEIF: the condition alone must hold — `OR` lets the branch run with
+    // an empty table — and the SELECT must lie in this branch, not a later one.
+    if (/\bOR\b/i.test(s.text)) return false;
+    const block = s.keyword === 'IF'
+      ? enclosing[i + 1]?.find((b) => b.openIndex === i)
+      : enclosing[i][enclosing[i].length - 1];
+    if (!block || block.kind !== 'if' || !inside(block, at)) return false;
+    for (let k = i + 1; k < at; k++) {
+      const kw = statements[k].keyword;
+      if ((kw === 'ELSEIF' || kw === 'ELSE') && enclosing[k][enclosing[k].length - 1] === block) return false;
+    }
+    return true;
+  });
 }
 
 function selectSentence(statement: AbapStatement, statements: readonly AbapStatement[]): Draft {
@@ -883,7 +917,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   // An empty FOR ALL ENTRIES table drops the whole WHERE: unless the source
   // shows the table is checked for content, the restriction is not certain
   // (carried QA finding 657629d1daa0).
-  if (entries && !nonEmptyGuarded(plain(entries[1]), statements)) {
+  if (entries && !nonEmptyGuarded(plain(entries[1]), statements, statement)) {
     notes.push(`If ${plain(entries[1])} is empty, the restriction is dropped and all rows are read.`);
   }
 

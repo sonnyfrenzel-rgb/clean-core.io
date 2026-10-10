@@ -317,7 +317,7 @@ ${arm2}
       ruleIds: [],
     }]);
     expect(set.decisionTables?.[0].rows.map((r) => r.constant)).toEqual(['c_rot', 'c_gelb', 'c_gruen']);
-    expect(set.rules.map((r) => r.label).filter((l) => /^c_(rot|gelb|gruen)/.test(l))).toEqual([]);
+    expect(set.rules.map((r) => r.label).filter((l) => /^c_(rot|gelb|gruen)\b/.test(l))).toEqual([]);
     expect(set.rules.some((r) => r.withoutProcessElement?.reason === 'declaration-only')).toBe(false);
   });
 
@@ -724,6 +724,32 @@ START-OF-SELECTION.
   test('a driver table checked for content keeps the restriction plain (QA debd926589b5)', () => {
     const guarded = report.replace('  SELECT * FROM ekpo', '  CHECK gt_ekko IS NOT INITIAL.\n  SELECT * FROM ekpo');
     expect(readDataScope(guarded).reads[1].sentence).toBe('EKPO is read only where elikz = space (fixed in the code); for the entries of gt_ekko.');
+  });
+
+  test('a content check that does not guard this SELECT keeps the empty-table caveat (QA 896f03b65018)', () => {
+    const select = '  SELECT * FROM ekpo INTO TABLE gt_ekpo FOR ALL ENTRIES IN gt_ekko WHERE ebeln = gt_ekko-ebeln.';
+    const caveat = 'every row if gt_ekko is empty';
+    const sentenceOf = (src: string) => readDataScope(src).reads.find((r) => r.tables.includes('EKPO'))!.sentence;
+    const head = 'REPORT zfae.\nDATA: gt_ekko TYPE STANDARD TABLE OF ekko, gt_ekpo TYPE STANDARD TABLE OF ekpo.\n';
+    const unguarded = [
+      // The check sits in another routine.
+      `${head}START-OF-SELECTION.\n  PERFORM anzeigen.\n${select}\nFORM anzeigen.\n  CHECK gt_ekko IS NOT INITIAL.\n  WRITE 'x'.\nENDFORM.\n`,
+      // The SELECT is in the ELSE branch of the check.
+      `${head}START-OF-SELECTION.\n  IF gt_ekko IS NOT INITIAL.\n    WRITE 'x'.\n  ELSE.\n${select}\n  ENDIF.\n`,
+      // The check ends only a loop pass; the SELECT comes after the loop.
+      `${head}START-OF-SELECTION.\n  DO 1 TIMES.\n    CHECK gt_ekko IS NOT INITIAL.\n  ENDDO.\n${select}\n`,
+      // The check comes after the SELECT.
+      `${head}START-OF-SELECTION.\n${select}\n  IF gt_ekko IS NOT INITIAL.\n    WRITE 'x'.\n  ENDIF.\n`,
+      // OR lets the branch run with an empty table.
+      `${head}START-OF-SELECTION.\n  IF gt_ekko IS NOT INITIAL OR sy-subrc = 0.\n${select}\n  ENDIF.\n`,
+    ];
+    for (const src of unguarded) expect(sentenceOf(src), src).toContain(caveat);
+    const guarded = [
+      `${head}START-OF-SELECTION.\n  IF gt_ekko IS NOT INITIAL.\n${select}\n  ENDIF.\n`,
+      `${head}START-OF-SELECTION.\n  IF sy-subrc <> 0.\n    WRITE 'x'.\n  ELSEIF gt_ekko IS NOT INITIAL.\n${select}\n  ENDIF.\n`,
+      `${head}START-OF-SELECTION.\n  PERFORM lesen.\nFORM lesen.\n  CHECK gt_ekko IS NOT INITIAL.\n${select}\nENDFORM.\n`,
+    ];
+    for (const src of guarded) expect(sentenceOf(src), src).not.toContain(caveat);
   });
 
   test('derived values, running totals marked', () => {

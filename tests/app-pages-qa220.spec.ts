@@ -165,3 +165,12 @@ test.describe('state defects on dashboard, admin and settings', () => {
     expect(s).toContain('The security audit record');
   });
 });
+
+test('How it works: an SAP object without a catalog answer is said to be Unknown, not promised a level (QA 374aa0a48ca1)', () => {
+  const s = read('app/(app)/how-it-works/page.tsx');
+  // The engine returns `Unknown` rather than a guessed level (lib/abap/abcd-classification.ts, F-05).
+  for (const claim of [/graded Level A–D from SAP's published Cloudification Repository \(\$\{catalogObjects\}\), and/, /graded Level A–D under a versioned rule;/]) {
+    expect(s).not.toMatch(claim);
+  }
+  expect(s.match(/marked Unknown where/g)?.length).toBe(2);
+});

@@ -564,13 +564,19 @@ Structure the JSON exactly like this:
     [businessDocumentation],
   );
   const [raciRecord, setRaciRecord] = useState<RaciEditRecord | null>(null);
+  // An export started before the read has landed waits for it rather than
+  // filing the model's proposal over a saved edit (QA 66e772bd346f).
+  const raciRecordRef = useRef<RaciEditRecord | null>(null);
+  const raciReadRef = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
     if (!projectIdStr || !layerSha) return;
     let cancelled = false;
-    void import('@/lib/raci-edit-client')
+    raciReadRef.current = import('@/lib/raci-edit-client')
       .then((client) => client.fetchRaciEdit(projectIdStr))
       .then((record) => {
-        if (!cancelled) setRaciRecord(record);
+        if (cancelled) return;
+        raciRecordRef.current = record;
+        setRaciRecord(record);
       });
     return () => {
       cancelled = true;
@@ -592,6 +598,7 @@ Structure the JSON exactly like this:
       steps: draft.steps,
     });
     if (!outcome.ok) return outcome.message;
+    raciRecordRef.current = outcome.record;
     setRaciRecord(outcome.record);
     return null;
   }, [projectIdStr, layerSha, raciEdit]);
@@ -1031,15 +1038,24 @@ Structure the JSON exactly like this:
    */
   const documentationStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
 
+  /** The RACI and layer a file carries — after the RACI read under way has landed. */
+  const exportRaci = async () => {
+    await raciReadRef.current;
+    const record = raciRecordRef.current;
+    const edit = raciEditApplies(record, layerSha) ? record : null;
+    return { edit, layer: parsedBusinessDoc && edit ? layerWithRaciEdit(parsedBusinessDoc, edit) : parsedBusinessDoc };
+  };
+
   /** The Confluence page of the process description (`lib/documentation-export.ts`). */
-  const downloadConfluenceHTML = () => {
+  const downloadConfluenceHTML = async () => {
     if (!processDocument.document) return;
-    const blob = buildEngineConfluenceHtml(processDocument.document, businessLayer, {
+    const { edit, layer } = await exportRaci();
+    const blob = buildEngineConfluenceHtml(processDocument.document, layer, {
       stale: documentationStale,
       processSteps,
       projectName: project?.name,
       openQuestions: openQuestionsOfProject,
-      raciEdit,
+      raciEdit: edit,
     });
     saveAs(blob, confluenceFileName(project?.name));
   };
@@ -1048,13 +1064,14 @@ Structure the JSON exactly like this:
   const downloadProcessDocument = async (format: 'md' | 'docx') => {
     const built = processDocument.document;
     if (!built) return;
+    const { edit, layer } = await exportRaci();
     const { blocksMarkdown, blocksDocx } = await import('@/lib/requirements-export');
     const blocks = processDocumentBlocks(built, {
       projectName: project?.name || built.program,
       date: new Date().toISOString().slice(0, 10),
       openQuestions: openQuestionsOfProject,
       // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
-      raci: businessLayer ? raciFileTable(businessLayer, processSteps, raciEdit) : null,
+      raci: layer ? raciFileTable(layer, processSteps, edit) : null,
     });
     const blob = format === 'md'
       ? new Blob([blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
@@ -1102,7 +1119,7 @@ Structure the JSON exactly like this:
   ];
   const onExport = (kind: DocExport) => {
     if (kind === 'print') window.print();
-    else if (kind === 'html') downloadConfluenceHTML();
+    else if (kind === 'html') void downloadConfluenceHTML();
     else if (kind === 'md' || kind === 'docx') void downloadProcessDocument(kind);
     else void downloadBPMN();
   };

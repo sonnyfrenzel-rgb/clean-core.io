@@ -524,6 +524,13 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     expect(change.objects).toEqual(['ME22', 'EKET-EEIND(01)']);
     expect(change.anchors.length).toBeGreaterThan(0);
   });
+
+  test('a batch input to a "Create …" transaction creates a document (the word boundary was a backspace character)', () => {
+    const doc = documentOfSource(DIALOGUE.replace("CALL TRANSACTION 'ME22'", "CALL TRANSACTION 'ME21N'"));
+    const create = doc.outputs.find((o) => o.objects.includes('ME21N'))!;
+    expect(create.kind).toBe('Creates a document (batch input)');
+    expect(create.what).toMatch(/^Create purchase order through a transaction \(batch input\); fills /);
+  });
 });
 
 /**

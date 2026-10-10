@@ -106,8 +106,9 @@ and Documentation keep only what their reader needs.
 ### Security
 
 - SEC-2026-751 to SEC-2026-755 are fixed. Two of them, together with a tenant access request and
-  the extensibility route becoming server-written only, take effect with the Firestore rules, which
-  are deployed by hand right after this release.
+  the extensibility route becoming server-written only, took effect with the Firestore rules, which
+  were deployed by hand right after this release (10.10.2026) and verified against the source on
+  all six databases with `npm run rules:verify`.
 
 ### Tests
 
