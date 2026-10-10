@@ -133,4 +133,14 @@ test('a tenant request is recorded on the profile before its nonce and its mail 
   expect(record, 'the nonce is written before the request is recorded').toBeLessThan(nonce);
   expect(record, 'the mail goes out before the request is recorded').toBeLessThan(mail);
   expect(post.slice(record, nonce)).toContain('s4TenantAccessRequested: true');
+
+  // The request document the mailed links act on is the route's to write too,
+  // guarded by the profile and before the nonce (QA 04ad2108af07). The client
+  // used to create it after the route answered; a failure there left the links
+  // pointing at nothing.
+  const requestDoc = post.indexOf("await mergeWhileProfileExists(uid, db.collection('tenant_access_requests').doc(uid)");
+  expect(requestDoc, 'the route no longer writes the request document').toBeGreaterThan(-1);
+  expect(requestDoc).toBeGreaterThan(record);
+  expect(requestDoc, 'the nonce is written before the request document').toBeLessThan(nonce);
+  expect(post.slice(requestDoc, nonce)).toContain("status: 'pending'");
 });

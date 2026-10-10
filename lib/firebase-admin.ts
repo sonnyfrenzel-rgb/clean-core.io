@@ -1696,27 +1696,40 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
 }
 
 /**
- * Deletes the user's custom Gemini API key: the encrypted secret first, then
- * the profile fields that say one is configured.
+ * Deletes the user's custom Gemini API key: the encrypted secret and the
+ * profile fields that say one is configured.
  *
  * Both writes used to end in `.catch(() => {})`. A delete the database refused
  * left the key in place while the route answered `ok`, and when only the first
  * write failed the profile stopped claiming a key that was still stored. The
- * errors propagate now — the route reports success only when both writes went
- * through — and the order keeps `byokConfigured` from saying "no key" while
- * one is there.
+ * errors propagate now — the route reports success only when the delete went
+ * through.
+ *
+ * One transaction that reads the profile, the way `saveGeminiApiKey` writes
+ * (QA 0ce264ac607d). It was two writes — the secret deleted, then the profile
+ * merge-set — and the merge-set onto a profile erased in between created it
+ * again, holding nothing but these fields; a save committing between the two
+ * writes was also left with a profile that denied the key it had just stored.
+ * Now the secret and the profile change together or not at all, and a missing
+ * profile is updated never: the secret still goes, the profile stays gone.
  */
 export async function deleteGeminiApiKey(uid: string): Promise<void> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').delete();
-  await db.collection('users').doc(uid).set({
-    byokConfigured: FieldValue.delete(),
-    byokLast4: FieldValue.delete(),
-    byokRotatedAt: FieldValue.delete(),
-    geminiApiKey: FieldValue.delete(),
-    updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const secretRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
+  await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    tx.delete(secretRef);
+    if (!profile.exists) return;
+    tx.update(profileRef, {
+      byokConfigured: FieldValue.delete(),
+      byokLast4: FieldValue.delete(),
+      byokRotatedAt: FieldValue.delete(),
+      geminiApiKey: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
 }
 
 

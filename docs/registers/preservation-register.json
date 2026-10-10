@@ -1202,8 +1202,8 @@
           "status"
         ],
         "serverWrites": {
-          "via": "POST /api/s4-credentials, POST /api/run-tests, POST /api/projects/{id}/repair-drafts",
-          "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection)",
+          "via": "POST /api/s4-credentials, POST /api/run-tests, POST /api/projects/{id}/repair-drafts, POST /api/request-tenant-access",
+          "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection); tenant_access_requests/{uid} (Admin SDK, written by the route before it mails the administrator - QA 04ad2108af07; the page no longer writes it)",
           "project": [
             "testCases",
             "testRunReceipt",
@@ -1211,9 +1211,6 @@
             "testSuite"
           ]
         },
-        "otherCollections": [
-          "tenant_access_requests/{uid}"
-        ],
         "consumedByNextStage": [
           "testCases",
           "coverageEstimate",

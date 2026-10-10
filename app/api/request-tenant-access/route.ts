@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce, updateExistingProfile } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce, updateExistingProfile, mergeWhileProfileExists } from '@/lib/firebase-admin';
 import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
 import { escapeHtml } from '@/lib/utils';
@@ -88,8 +88,10 @@ export async function POST(request: NextRequest) {
     }
     // Values inserted into the HTML email must be HTML-escaped.
     const email = escapeHtml(rawEmail);
-    const name = escapeHtml(String(body?.name || (decodedToken as any).name || rawEmail).slice(0, MAX_NAME_CHARS));
-    const motivation = escapeHtml(String(body?.motivation || '').slice(0, MAX_MOTIVATION_CHARS));
+    const rawName = String(body?.name || (decodedToken as any).name || rawEmail).slice(0, MAX_NAME_CHARS);
+    const rawMotivation = String(body?.motivation || '').slice(0, MAX_MOTIVATION_CHARS);
+    const name = escapeHtml(rawName);
+    const motivation = escapeHtml(rawMotivation);
 
     // Action-bound, expiring tokens; fail-closed (no fallback secret). Both carry
     // this request's one-time nonce (UX-152): whichever link is used first
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
     // mailed the applicant's details (QA review of a7e0ae36c896).
     // `updateExistingProfile` fails on a missing profile with the gate's own
     // 404, so an erased account now stops here, with nothing written or sent.
-    const { FieldValue } = await getAdminDb();
+    const { db, FieldValue } = await getAdminDb();
     await updateExistingProfile(uid, {
       s4TenantAccessRequested: true,
       // False until the administrator's mail is accepted below, so a request
@@ -111,6 +113,23 @@ export async function POST(request: NextRequest) {
       s4TenantAccessNotified: false,
       s4TenantAccessRequestedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // The request document the administrator's links act on
+    // (`tenant_access_requests/{uid}`, read by the approve/reject transaction
+    // in lib/firebase-admin.ts). The browser used to create it after this
+    // route had answered: a failed client write left the mailed links pointing
+    // at nothing, and the rules allow only a create, so a second request after
+    // a revoke was refused on the existing document (QA 04ad2108af07). Written
+    // here, with the Admin SDK, before the nonce and the mail, and only while
+    // the profile still exists — the same transaction-guarded write the
+    // registration record uses, so an erasure in between is not undone.
+    await mergeWhileProfileExists(uid, db.collection('tenant_access_requests').doc(uid), {
+      email: rawEmail,
+      name: rawName,
+      motivation: rawMotivation,
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     const nonce = await issueTenantApprovalNonce(uid);

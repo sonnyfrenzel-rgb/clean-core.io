@@ -218,14 +218,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 
     const actorEmail = await auditActorEmail(gate.db, gate.uid);
     const projectRef = gate.db.collection('projects').doc(gate.projectId);
-    const invitesSnap = await projectRef.collection('invitations').get();
-    const affected = invitesSnap.docs.filter((d: InviteDoc) => {
-      const data = d.data() as Record<string, unknown>;
-      const acceptedBy = data.acceptedBy as { uid?: string } | null | undefined;
-      return acceptedBy?.uid === uid && data.status === 'accepted';
-    });
 
     const revokedAt = new Date().toISOString();
+    let affectedCount = 0;
     await gate.db.runTransaction(async (tx: Tx) => {
       const fresh = await tx.get(projectRef);
       // A revocation against a project that is gone must not bring it back.
@@ -240,6 +235,21 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       // 3e32d011b3c6).
       if (!fresh.exists) throw new Error('project-gone');
       const project = (fresh.data() || {}) as Record<string, unknown>;
+      // The accepted invitations are read inside the transaction as well (QA
+      // cb7ed86b0d3b). Read before it, an invitation accepted in between was
+      // missed — the reader came off `readers` while their invitation stayed
+      // `accepted` — and one revoked in between was written over. As a
+      // transactional read, a concurrent change to any of them retries this.
+      // A query handed to `tx.get` answers with a query snapshot.
+      const invitesSnap = (await tx.get(
+        projectRef.collection('invitations').where('acceptedBy.uid', '==', uid),
+      )) as unknown as { docs: InviteDoc[] };
+      const affected = invitesSnap.docs.filter((d: InviteDoc) => {
+        const data = d.data() as Record<string, unknown>;
+        const acceptedBy = data.acceptedBy as { uid?: string } | null | undefined;
+        return acceptedBy?.uid === uid && data.status === 'accepted';
+      });
+      affectedCount = affected.length;
       // The list is recomputed inside the transaction, so two revocations at
       // once cannot put back what the other took away.
       tx.set(projectRef, { readers: readersAfterRevoke(project, uid) }, { merge: true });
@@ -255,7 +265,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
       });
     });
 
-    return NextResponse.json({ ok: true, uid, revokedAt, invitationsRevoked: affected.length });
+    return NextResponse.json({ ok: true, uid, revokedAt, invitationsRevoked: affectedCount });
   } catch (err: unknown) {
     // The project disappeared under the revocation. Not a fault of this server,
     // and not a 5xx: a client that retries transient errors would send the same

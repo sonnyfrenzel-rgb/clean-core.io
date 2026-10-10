@@ -60,9 +60,10 @@ import { openInvitationsAsOwner, readOpenInvitations, INVITATION_SEND_RATE_LIMIT
  *      overlapping requests cannot both find room for the same slot.
  *
  * Stored at `projects/{projectId}/invitations/{id}` through the Admin SDK.
- * `firestore.rules` has no match for that subcollection, so no client reads or
- * writes it, and **no rules change and no rules deploy** are needed for this
- * step. Project and account deletion take the invitations with them:
+ * `firestore.rules` denies every client read and write of that subcollection
+ * with an explicit `allow read, write: if false`, so no client reads or writes
+ * it, and only the Admin SDK touches it. Project and account deletion take
+ * the invitations with them:
  * `recursiveDelete` on the project document descends into every subcollection.
  *
  * The owner's overview and the withdrawal are roadmap 5.5 and belong in this
@@ -310,11 +311,19 @@ export async function POST(
       // Property 3: an invitation nobody was told about is a grant with no
       // reader. It is withdrawn in the same request rather than left behind, and
       // the owner is told that nothing went out instead of that it did.
+      //
+      // An update, not a merge-set: a merge onto a missing document creates it,
+      // so a project deleted (or an account erased) while the mail was out got
+      // back an invitation under a project that no longer exists (QA
+      // 2632d2f80642). A missing invitation (gRPC
+      // NOT_FOUND, code 5) is already as withdrawn as it can be.
       const withdrawn = await ref
-        .set({ status: 'revoked', revokedAt: new Date().toISOString() }, { merge: true })
+        .update({ status: 'revoked', revokedAt: new Date().toISOString() })
         .then(
           () => true,
           (err: unknown) => {
+            const code = (err as { code?: unknown } | null)?.code;
+            if (code === 5 || code === 'not-found') return true;
             logger.error('invitation could not be withdrawn after a failed send', {
               route: 'api/projects/invitations',
               projectId: gate.projectId,

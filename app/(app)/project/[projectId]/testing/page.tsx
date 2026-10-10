@@ -4,8 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getDb, getAuth } from '@/lib/firebase';
+import { getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
@@ -673,12 +672,10 @@ export default function TestingSandboxPage() {
     setIsRequestingAccess(true);
     setAccessRequestError('');
     try {
-      // 1. The route first, and its answer read (QA full review of fc787674705f,
+      // The route's answer is read (QA full review of fc787674705f,
       // b1458e593475). It used to be awaited and ignored: a refused or failed
       // request left the reader with a button that had done nothing and no word
-      // why. It also runs before the request log now, as it does in Settings —
-      // the log is create-only for the requester (firestore.rules), so a log
-      // written ahead of a failed request made every retry fail on the log.
+      // why.
       const token = await getAuth().currentUser?.getIdToken();
       const res = await fetch('/api/request-tenant-access', {
         method: 'POST',
@@ -698,15 +695,11 @@ export default function TestingSandboxPage() {
         throw new Error(data.error || 'The access request could not be sent. Please try again.');
       }
 
-      // 2. The request log in Firestore, once the request is in.
-      const db = getDb();
-      await setDoc(doc(db, 'tenant_access_requests', uid), {
-        name: `${profile.firstName} ${profile.lastName}`,
-        email: profile.email,
-        motivation: (accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection').slice(0, 2000),
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
+      // The request document is written by the route itself, before it mails
+      // the administrator (QA 04ad2108af07). It used to be a client write after
+      // the route had answered: a failure there left the mailed approve/reject
+      // links with no request to act on, and the create-only rule refused it
+      // on every request after a revoke.
 
       // No local write here. The route sets `s4TenantAccessRequested` on the user
       // document and `useUserProfile` is subscribed to it, so the button flips to

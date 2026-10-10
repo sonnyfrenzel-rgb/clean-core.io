@@ -54,6 +54,8 @@ test.describe('a request body is read under a bound', () => {
   for (const [rel, marker] of [
     ['app/api/request-tenant-access/route.ts', 'body = await readBoundedJson(new Response(request.body'],
     ['app/api/run-tests/route.ts', 'runRequest = await readBoundedJson(new Response(req.body'],
+    // SEC-2026-753: the connection test, as its OData-read sister (SEC-b6716f0-19).
+    ['app/api/test-s4-connection/route.ts', 'const raw = await readBoundedBody(req, TOKEN_BODY_LIMITS)'],
     ['app/api/unsubscribe/route.ts', 'await readBoundedBody(req, BODY_LIMITS)'],
     ['app/api/webhooks/resend/route.ts', 'body = await readBoundedBody(new Response(req.body'],
   ] as const) {
@@ -83,8 +85,12 @@ test.describe('request-tenant-access', () => {
 
   test('the fields are cut before they are escaped into the mail', () => {
     const src = code(REL);
-    expect(src).toMatch(/escapeHtml\(String\(body\?\.name[^\n]*\.slice\(0, MAX_NAME_CHARS\)\)/);
-    expect(src).toMatch(/escapeHtml\(String\(body\?\.motivation[^\n]*\.slice\(0, MAX_MOTIVATION_CHARS\)\)/);
+    // Cut once, then escaped for the mail; the cut, unescaped value is what the
+    // request document stores (QA 04ad2108af07).
+    expect(src).toMatch(/const rawName = String\(body\?\.name[^\n]*\.slice\(0, MAX_NAME_CHARS\);/);
+    expect(src).toMatch(/const rawMotivation = String\(body\?\.motivation[^\n]*\.slice\(0, MAX_MOTIVATION_CHARS\);/);
+    expect(src).toContain('const name = escapeHtml(rawName);');
+    expect(src).toContain('const motivation = escapeHtml(rawMotivation);');
   });
 
   test('the applicant is told "under review" only when an administrator holds the request', () => {
@@ -121,7 +127,9 @@ test.describe('the tenant connection check', () => {
     expect(call).not.toBeNull();
     expect(call![1]).toContain('${decodedToken.uid}');
     expect(Number(call![2])).toBeLessThanOrEqual(60);
-    expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('await req.json()'));
+    const bodyRead = src.indexOf('await readBoundedBody(req,');
+    expect(bodyRead, 'the request body is read through the bounded reader').toBeGreaterThan(-1);
+    expect(src.indexOf('assertRateLimit(')).toBeLessThan(bodyRead);
   });
 
   test('cancels every response body it does not read', () => {

@@ -13,7 +13,7 @@ import {
   ArrowLeft, Copy, Smartphone, X, ArrowRight, Globe,
   BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
-import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDb, getAuth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import {
   EmailAuthProvider,
@@ -819,7 +819,7 @@ export default function SettingsPage() {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('No authenticated user found.');
 
-      // 1. Submit request to the backend API route which handles administration notifications
+      // The backend route records the request and notifies the administrator.
       const token = await getAuth().currentUser?.getIdToken();
       const res = await fetch('/api/request-tenant-access', {
         method: 'POST',
@@ -840,15 +840,9 @@ export default function SettingsPage() {
         throw new Error(errorData.error || 'Failed to submit tenant integration request.');
       }
 
-      // 2. Create the tenant access request document in Firestore
-      const db = getDb();
-      await setDoc(doc(db, 'tenant_access_requests', currentUser.uid), {
-        email: profile.email,
-        name: `${profile.firstName} ${profile.lastName}`,
-        motivation: byotMotivation.trim(),
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
+      // The route records the request document itself (QA 04ad2108af07) —
+      // before it mails the administrator, so the mailed links always have a
+      // request to act on, and a repeat request is not refused by the rules.
 
       setByotStatus('success');
       setByotMotivation('');

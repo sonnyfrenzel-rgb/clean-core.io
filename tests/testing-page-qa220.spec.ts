@@ -64,15 +64,16 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(save).not.toContain('s4Environment');
   });
 
-  test('a failed tenant-access request is reported, and the log follows the request (b1458e593475)', () => {
+  test('a failed tenant-access request is reported, and the route writes the request (b1458e593475, 04ad2108af07)', () => {
     const req = handler('handleRequestAccess');
     expect(req).toMatch(/const res = await fetch\('\/api\/request-tenant-access'/);
     expect(req).toContain('if (!res.ok)');
     expect(req).toContain('setAccessRequestError(');
-    expect(
-      req.indexOf("fetch('/api/request-tenant-access'"),
-      'the create-only request log is written before the request it logs',
-    ).toBeLessThan(req.indexOf("doc(db, 'tenant_access_requests'"));
+    // The request document is the route's to write, before it mails the
+    // administrator (QA 04ad2108af07): a client write after the route had
+    // answered could fail and leave the mailed links with nothing to act on.
+    expect(req, 'the page writes the request document again').not.toContain('tenant_access_requests');
+    expect(req).not.toMatch(/setDoc\(/);
     expect(rendered()).toMatch(/\{accessRequestError && \(/);
     expect(rendered()).toContain('data-access-request-error');
   });

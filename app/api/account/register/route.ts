@@ -183,9 +183,10 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('\n======================================================');
       console.log('📬   [ACCOUNT ACTIVATED — MAILS SUPPRESSED, NO RESEND KEY]   📬');
-      console.log(`User: ${rawName} <${rawEmail}> (${uid})`);
+      // No name, no address: this branch also runs on a deployment that lacks
+      // the key, and its log is not a place for personal data (QA 73f480886489).
+      console.log(`Account: ${uid}`);
       console.log(`Welcome subject: ${WELCOME_EMAIL_SUBJECT}`);
-      console.log(`Admin subject:   ${buildAdminSignupSubject(rawName)}`);
       console.log('======================================================\n');
     }
 
@@ -242,7 +243,9 @@ async function sendMail(
     }
     const body = await res.json().catch(() => ({} as any));
     const messageId: string | undefined = body?.id;
-    console.log(`[Email] Sent ${msg.label} to ${msg.to}. id=${messageId ?? 'unknown'}`);
+    // Label and message id only: the recipient is personal data and the id is
+    // the join key to the delivery record (QA 73f480886489).
+    console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
     if (messageId) {
       // Best-effort: the mail is already away, and a failure to record it must
       // not surface as a registration error.

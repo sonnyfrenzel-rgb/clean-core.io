@@ -212,7 +212,9 @@ test.describe('a mail that could not be sent', () => {
   test('the route passes whether the withdrawal was written, not a constant', () => {
     const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
     expect(route).toContain('invitationNotSentMessage(outcome.detail, withdrawn)');
-    expect(route).toMatch(/const withdrawn = await ref\s*\.set\(/);
+    // An update since QA 2632d2f80642: a merge-set recreated the invitation
+    // under a project deleted while the mail was out.
+    expect(route).toMatch(/const withdrawn = await ref\s*\.update\(/);
     expect(route).not.toContain('Nothing was sent, and the invitation was withdrawn.');
   });
 });

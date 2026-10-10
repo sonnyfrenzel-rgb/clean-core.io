@@ -96,7 +96,9 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
 
   const body = (await res.json().catch(() => ({}))) as { id?: string };
   const messageId = typeof body.id === 'string' ? body.id : null;
-  console.log(`[Email] Sent ${msg.label} to ${msg.to}. id=${messageId ?? 'unknown'}`);
+  // Label and message id only: the recipient is personal data and the id is
+  // the join key to the delivery record (QA 73f480886489).
+  console.log(`[Email] Sent ${msg.label}. id=${messageId ?? 'unknown'}`);
   if (messageId) {
     // Best effort: the message is already away, and failing to write the join
     // key must not turn a delivered mail into an error for the caller.

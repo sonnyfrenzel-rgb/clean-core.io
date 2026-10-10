@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { deleteGeminiApiKey, getAdminDb } from '../lib/firebase-admin';
 import { deleteS4Credentials } from '../lib/s4-credentials';
@@ -56,4 +58,36 @@ test('a delete that worked leaves neither the key nor the claim that one is conf
     await db.collection('s4_credentials').doc(uid).delete().catch(() => {});
     await db.collection('users').doc(uid).delete().catch(() => {});
   }
+});
+
+test('a key delete after an erasure does not bring the profile back (0ce264ac607d)', async () => {
+  // The delete was two writes, the second a merge-set onto `users/{uid}`. A
+  // merge-set creates the document it merges into, so a delete arriving after
+  // the account's erasure recreated the profile with nothing on it but the BYOK
+  // fields. Now one transaction reads the profile: the secret goes either way,
+  // the profile is updated only while it exists.
+  const { db } = await getAdminDb();
+  const uid = `secret-erasure-gone-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  try {
+    await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({ encryptedApiKey: 'ciphertext', last4: 'AbCd' });
+
+    await expect(deleteGeminiApiKey(uid)).resolves.toBeUndefined();
+
+    expect((await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get()).exists).toBe(false);
+    expect((await db.collection('users').doc(uid).get()).exists, 'the erased profile was recreated').toBe(false);
+  } finally {
+    await db.recursiveDelete(db.collection('user_secrets').doc(uid)).catch(() => {});
+    await db.collection('users').doc(uid).delete().catch(() => {});
+  }
+});
+
+test('the key delete is one transaction with the profile read, never a merge-set (0ce264ac607d)', () => {
+  const admin = fs.readFileSync(path.join(__dirname, '..', 'lib', 'firebase-admin.ts'), 'utf8');
+  const start = admin.indexOf('export async function deleteGeminiApiKey');
+  const fn = admin.slice(start, admin.indexOf('\n}\n', start));
+  expect(fn).toContain('db.runTransaction(');
+  expect(fn).toContain('await tx.get(profileRef)');
+  expect(fn).toContain('tx.delete(secretRef)');
+  expect(fn).toMatch(/if \(!profile\.exists\) return;\s*tx\.update\(profileRef,/);
+  expect(fn, 'the profile is merge-set again').not.toMatch(/\{\s*merge:\s*true\s*\}/);
 });
