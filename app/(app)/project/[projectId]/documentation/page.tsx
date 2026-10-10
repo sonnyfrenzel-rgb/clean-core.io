@@ -30,11 +30,14 @@ import { StatementProposalPanel } from '@/components/documentation/StatementProp
 import ExportMenu, { type ExportMenuItem } from '@/components/requirements/ExportMenu';
 import { useBusinessGlance } from '@/hooks/useBusinessGlance';
 import { businessCallouts, type ProcessStepRef } from '@/lib/business-summary';
-import { docLegacyFileName, docProposalsCostLine, wt } from '@/lib/workspace-messages';
+import { docLegacyFileName, docProposalsCostLine, raciEditedLine, replaceDocBody, replaceSopBody, wt } from '@/lib/workspace-messages';
+import { layerWithRaciEdit, raciEditApplies, raciFileTable, type RaciEditRecord } from '@/lib/raci-edit';
+import { formatTextDate } from '@/lib/format';
+import type { RaciDraft } from '@/components/documentation/RaciEditor';
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
-import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
+import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentFileName } from '@/lib/process-document';
 import { processDocumentBlocks } from '@/lib/process-document-outline';
 import {
@@ -549,6 +552,51 @@ Structure the JSON exactly like this:
   const questionsHref = projectIdStr ? `/project/${encodeURIComponent(projectIdStr)}?view=it#not-determined` : null;
 
   /**
+   * The owner's RACI (owner request 10.10.2026, ADR-084 amended). Read from
+   * the server for everyone with access, written only through
+   * `POST /api/projects/{id}/raci` (ADR-083: never from the browser). It is
+   * bound to the proposal on record by its digest: a regenerated proposal, or
+   * one removed with the description, leaves the edit behind — the box that
+   * asks before replacing says so.
+   */
+  const layerSha = useMemo(
+    () => (businessDocumentation.trim() ? sha256Hex(businessDocumentation) : null),
+    [businessDocumentation],
+  );
+  const [raciRecord, setRaciRecord] = useState<RaciEditRecord | null>(null);
+  useEffect(() => {
+    if (!projectIdStr || !layerSha) return;
+    let cancelled = false;
+    void import('@/lib/raci-edit-client')
+      .then((client) => client.fetchRaciEdit(projectIdStr))
+      .then((record) => {
+        if (!cancelled) setRaciRecord(record);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectIdStr, layerSha]);
+  const raciEdit = raciEditApplies(raciRecord, layerSha) ? raciRecord : null;
+  /** The layer every rendering and export draws: the model's SOP, and the owner's RACI where one is saved. */
+  const businessLayer = useMemo(
+    () => (parsedBusinessDoc && raciEdit ? layerWithRaciEdit(parsedBusinessDoc, raciEdit) : parsedBusinessDoc),
+    [parsedBusinessDoc, raciEdit],
+  );
+  const saveRaci = useCallback(async (draft: RaciDraft): Promise<string | null> => {
+    if (!projectIdStr || !layerSha) return 'There is no SOP and RACI proposal on record to edit.';
+    const { saveRaciEdit } = await import('@/lib/raci-edit-client');
+    const outcome = await saveRaciEdit(projectIdStr, {
+      baseRevision: raciEdit?.revision ?? 0,
+      layerSha256: layerSha,
+      roles: draft.roles,
+      steps: draft.steps,
+    });
+    if (!outcome.ok) return outcome.message;
+    setRaciRecord(outcome.record);
+    return null;
+  }, [projectIdStr, layerSha, raciEdit]);
+
+  /**
    * Owner 03.10.2026 — the process description, built as soon as the stage
    * opens: engine only, no model call, nothing written. The run's narrative
    * and the stored statement proposals are read where they exist and shown as
@@ -986,11 +1034,12 @@ Structure the JSON exactly like this:
   /** The Confluence page of the process description (`lib/documentation-export.ts`). */
   const downloadConfluenceHTML = () => {
     if (!processDocument.document) return;
-    const blob = buildEngineConfluenceHtml(processDocument.document, parsedBusinessDoc, {
+    const blob = buildEngineConfluenceHtml(processDocument.document, businessLayer, {
       stale: documentationStale,
       processSteps,
       projectName: project?.name,
       openQuestions: openQuestionsOfProject,
+      raciEdit,
     });
     saveAs(blob, confluenceFileName(project?.name));
   };
@@ -1004,6 +1053,8 @@ Structure the JSON exactly like this:
       projectName: project?.name || built.program,
       date: new Date().toISOString().slice(0, 10),
       openQuestions: openQuestionsOfProject,
+      // The owner's RACI when one is saved, else the model's proposal (owner request 10.10.2026).
+      raci: businessLayer ? raciFileTable(businessLayer, processSteps, raciEdit) : null,
     });
     const blob = format === 'md'
       ? new Blob([blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
@@ -1095,7 +1146,7 @@ Structure the JSON exactly like this:
     onRequest: statementProposal.request,
   };
   const tracePanel = engineDoc ? (
-    <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} />
+    <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} groups={processDocument.document?.appendix.groups} />
   ) : null;
   /** The technical trace, last on the page — after the model proposals and the map. */
   const appendixPanel = engineDoc ? (
@@ -1159,8 +1210,13 @@ Structure the JSON exactly like this:
   ) : parsedBusinessDoc ? (
     <BusinessLayer
       embedded
-      layer={parsedBusinessDoc}
+      layer={businessLayer ?? parsedBusinessDoc}
       process={processSteps}
+      raciEditing={{
+        canEdit: isOwner,
+        editedLine: raciEdit ? raciEditedLine(raciEdit.editedBy, formatTextDate(raciEdit.editedAt) ?? raciEdit.editedAt.slice(0, 10)) : null,
+        onSave: saveRaci,
+      }}
       action={isOwner && modelAvailability.enabled('documentation') ? (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
@@ -1333,7 +1389,7 @@ Structure the JSON exactly like this:
       <ReplaceStoredBox
         open={replaceAsk !== null}
         title={wt(replaceAsk === 'sop' ? 'input.replaceSopTitle' : 'input.replaceDocTitle')}
-        body={wt(replaceAsk === 'sop' ? 'input.replaceSopBody' : 'input.replaceDocBody')}
+        body={replaceAsk === 'sop' ? replaceSopBody(!!raciEdit) : replaceDocBody(!!raciEdit)}
         callsModel={replaceAsk === 'sop'}
         onKeep={() => setReplaceAsk(null)}
         onReplace={() => {
@@ -1372,31 +1428,38 @@ Structure the JSON exactly like this:
           the model proposals right after it; the map with its chapters to
           explore below; the technical trace last. Printed, the description
           and its appendix are the page — everything else is `cc-no-print`. */}
-      <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 max-w-3xl">
-            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
-            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-              Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
-            </p>
-          </div>
-          {hasDocument && isOwner ? (
-            <div className="cc-no-print">
-              <CcButton
-                variant="secondary"
-                density="cozy"
-                onClick={askReadAgain}
-                disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
-                busy={isGeneratingDoc}
-                data-regenerate-documentation
-                icon={<RefreshCw size={16} aria-hidden={true} />}
-              >
-                Read again from the code
-              </CcButton>
-            </div>
-          ) : null}
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 max-w-3xl">
+          <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
+          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+            Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
+          </p>
         </div>
+        {hasDocument && isOwner ? (
+          <div className="cc-no-print">
+            <CcButton
+              variant="secondary"
+              density="cozy"
+              onClick={askReadAgain}
+              disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+              busy={isGeneratingDoc}
+              data-regenerate-documentation
+              icon={<RefreshCw size={16} aria-hidden={true} />}
+            >
+              Read again from the code
+            </CcButton>
+          </div>
+        ) : null}
+      </div>
 
+      {/* Owner review 10.10.2026: the chapter bar — the IT view's anchor bar —
+          a direct child of the stage, so it stays in view from the
+          description down to the appendix at the foot. */}
+      {hasDocument && !isGeneratingDoc && processDocument.document ? (
+        <DocumentChapterBar document={processDocument.document} openQuestions={openQuestionsOfProject} />
+      ) : null}
+
+      <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">
         {isGeneratingDoc ? (
           <div className={SECTION} aria-busy="true">
             <h3 className={H2}>Reading the process</h3>

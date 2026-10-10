@@ -11,9 +11,15 @@ import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
 import { handbookFromData, type ProcessHandbookData } from '@/lib/process-handbook';
 import BusinessGlance, { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
-import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
+import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
+import { RaciBlock } from '@/components/documentation/BusinessLayer';
+import type { RaciDraft } from '@/components/documentation/RaciEditor';
+import { layerWithRaciEdit, RACI_EDIT_FORMAT } from '@/lib/raci-edit';
+import { stepName } from '@/lib/process-document-outline';
+import type { PdStep } from '@/lib/process-document';
+import type { ProcessStepRef, StoredBusinessLayer } from '@/lib/business-summary';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { wt } from '@/lib/workspace-messages';
+import { raciEditedLine, wt } from '@/lib/workspace-messages';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import type { ProcessDocumentation } from '@/lib/process-documentation';
 import type { ProcessDocument } from '@/lib/process-document';
@@ -34,6 +40,49 @@ import { DEMO_SUBJECT, DEMO_TITLE_PREFIX } from '@/lib/demo-marks';
  * not a second renderer.
  */
 const BpmnCanvas = dynamic(() => import('@/components/process-map/BpmnCanvas'), { ssr: false });
+
+/**
+ * The demo's RACI (owner request 10.10.2026, the twin of the owner's editor):
+ * the demo calls no model, so there is no proposal to start from — the visitor
+ * starts from the steps of the process with no roles, and what they save is
+ * kept in this page only, like the demo's other state. Nothing is stored.
+ */
+function DemoRaci({ document: doc }: { document: ProcessDocument }) {
+  const process = useMemo<ProcessStepRef[]>(
+    () => doc.overview.path
+      .filter((e): e is PdStep => e.kind === 'step')
+      .map((s) => ({ id: s.id, name: stepName(s), technicalName: s.technicalName, anchor: s.anchors[0] ?? null, provenance: 'reconstructed' as const })),
+    [doc],
+  );
+  const empty = useMemo<StoredBusinessLayer>(
+    () => ({ raci_matrix: process.map((s) => ({ stepId: s.id, r: '', a: '', c: '', i: '' })), sop_details: [] }),
+    [process],
+  );
+  const [saved, setSaved] = useState<{ layer: StoredBusinessLayer; at: string } | null>(null);
+  const onSave = useCallback(async (draft: RaciDraft): Promise<string | null> => {
+    const at = new Date().toISOString();
+    setSaved({
+      layer: layerWithRaciEdit(empty, { formatVersion: RACI_EDIT_FORMAT, revision: 1, layerSha256: '0'.repeat(64), roles: draft.roles, steps: draft.steps, editedBy: 'you', editedAt: at }),
+      at,
+    });
+    return null;
+  }, [empty]);
+  return (
+    <div data-demo-raci="" className="mt-4 border-t border-cc-line pt-4">
+      <RaciBlock
+        layer={saved?.layer ?? empty}
+        process={process}
+        emptyLead={wt('doc.raciDemoLead')}
+        editing={{
+          canEdit: true,
+          editedLine: saved ? raciEditedLine('you', 'in this browser') : null,
+          onSave,
+          note: wt('doc.raciDemoKept'),
+        }}
+      />
+    </div>
+  );
+}
 
 export default function DemoDocumentation({
   process,
@@ -139,20 +188,24 @@ export default function DemoDocumentation({
   return (
     <div data-demo-documentation="">
       {process?.document ? (
-        <section aria-labelledby="demo-process-description" data-demo-process-document="" className="mb-8">
+        <>
           <h2 id="demo-process-description" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
           <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
             Written from the code when the stage opens, no model call. A project exports the same document; its appendix stands at the foot of this page. The demo exports nothing.
           </p>
-          <ProcessDocumentView
-            document={process.document}
-            // ADR-084: the title leads with the process — the demo's subject, then the program.
-            projectName={`${DEMO_TITLE_PREFIX}${DEMO_SUBJECT}`}
-            summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null}
-            openQuestions={openQuestions}
-            rulesOutside={handbook.rulesOutside}
-          />
-        </section>
+          {/* The chapter bar, a direct child of the stage as on a project — in view down to the appendix. */}
+          <DocumentChapterBar document={process.document} openQuestions={openQuestions} />
+          <section aria-labelledby="demo-process-description" data-demo-process-document="" className="mb-8">
+            <ProcessDocumentView
+              document={process.document}
+              // ADR-084: the title leads with the process — the demo's subject, then the program.
+              projectName={`${DEMO_TITLE_PREFIX}${DEMO_SUBJECT}`}
+              summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null}
+              openQuestions={openQuestions}
+              rulesOutside={handbook.rulesOutside}
+            />
+          </section>
+        </>
       ) : glanceBlock}
 
       {businessLayer ? (
@@ -167,6 +220,7 @@ export default function DemoDocumentation({
           </div>
           <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-body text-cc-ink">{wt('doc.businessOfferLead')}</p>
           {businessLayer}
+          {process?.document ? <DemoRaci document={process.document} /> : null}
         </section>
       ) : null}
 
@@ -204,7 +258,7 @@ export default function DemoDocumentation({
       {process?.document ? (
         <div className="mb-8">
           <ProcessDocumentAppendix document={process.document}>
-            <ProcessDocumentationView appendix doc={process.engine} />
+            <ProcessDocumentationView appendix doc={process.engine} groups={process.document.appendix.groups} />
           </ProcessDocumentAppendix>
         </div>
       ) : null}

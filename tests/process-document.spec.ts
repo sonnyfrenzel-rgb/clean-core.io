@@ -439,7 +439,10 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     expect(o.whoActs).toBe(false);
     expect(o.tables.steps.head).toEqual(['No.', 'Step', 'What happens']);
     expect(o.tables.steps.rows.every((r) => r.cells.length === 3 && !r.cells.includes('Not determined'))).toBe(true);
-    expect(o.whoActsLine).toBe('Who acts is not provable from the code: it holds no dialogue, background or update-task statement that says so.');
+    // Owner review 10.10.2026: the start is proven, who carries out the steps is not — the line and the summary say both.
+    expect(o.whoActsLine).toBe('How a run starts is read from the code; who carries out the steps is not provable from it: the steps hold no dialogue, background or update-task statement that says so.');
+    expect(o.glance.trigger.text).toMatch(/selection screen/);
+    expect(o.glance.trigger.text.endsWith('Who carries out the steps is not provable from the code.')).toBe(true);
     const md = markdownOf(doc);
     const process = md.slice(md.indexOf(`## ${sectionTitle('overview')}`), md.indexOf(`## ${sectionTitle('rules')}`));
     expect(process).toContain(o.whoActsLine!);
@@ -520,5 +523,108 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     expect(change.what).toBe('Changes the delivery date of the purchase order schedule line through a transaction (batch input)');
     expect(change.objects).toEqual(['ME22', 'EKET-EEIND(01)']);
     expect(change.anchors.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Owner review of 10.10.2026 ("good direction, better than today"): the chapter
+ * bar, one open question said once for many rows, an appendix that opens with a
+ * compact summary, the pictures' data, and five wording fixes — held over the
+ * shipped example, in the outline and in every file.
+ */
+test.describe('owner review 10.10.2026: chapters, shared questions, appendix summary, plain wording', () => {
+  test('seven chapters in the page order, each with its reader question; the files keep the Go to line', () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const o = documentOutline(doc);
+    expect(o.chapters.map((c) => c.key)).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
+    expect(o.chapters.map((c) => c.label)).toEqual(['How it works', 'Rules', 'Exceptions', 'Changes', 'Systems & data', 'Open questions', 'Appendix']);
+    // The reader questions of the old "Go to" line are the chips' tooltips now.
+    for (const g of o.glance.goTo) expect(o.chapters.some((c) => c.question.includes(g.label))).toBe(true);
+    const steps = doc.overview.path.filter((e) => e.kind === 'step').length;
+    expect(o.chapters[0].count).toBe(String(steps));
+    // Without the project's list the open questions are not counted, never "0".
+    expect(o.chapters.find((c) => c.key === 'questions')!.count).toBeNull();
+    expect(o.chapters.find((c) => c.key === 'appendix')!.count).toBeNull();
+    // A file cannot hold a bar: it keeps the line.
+    expect(markdownOf(doc)).toContain('Go to: What does it do?');
+  });
+
+  test('the stage draws the chapter bar once, from the shared anchor bar, and no Go to line', () => {
+    const view = fs.readFileSync(path.join(ROOT, 'components', 'documentation', 'ProcessDocumentView.tsx'), 'utf8');
+    expect(view).toContain("from '@/components/PageAnchorBar'");
+    expect(view).toContain('export function DocumentChapterBar');
+    expect(view).not.toContain('data-doc-goto');
+    const it = fs.readFileSync(path.join(ROOT, 'components', 'workspace', 'ItAnswers.tsx'), 'utf8');
+    expect(it).toContain('<PageAnchorBar');
+    for (const file of [['app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'], ['components', 'demo', 'DemoDocumentation.tsx']]) {
+      expect(fs.readFileSync(path.join(ROOT, ...file), 'utf8').match(/<DocumentChapterBar\b/g)?.length, file.join('/')).toBe(1);
+    }
+  });
+
+  test('an open question on several rows of a table is said once above it; a row keeps only its own', async () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const lines = (anchors: Array<{ lineStart: number }>) => anchors.map((a) => ({ label: 'x', why: 'y', anchor: `L${a.lineStart}` }));
+    const many = doc.integrations.slice(0, 4);
+    const one = doc.integrations[5];
+    const group = (action: string, title: string, l: Array<{ label: string; why: string; anchor: string }>) => ({
+      action, owner: 'IT', title, resolves: 'Import it.', blocksDecision: false, count: l.length, lines: l,
+      end: 'open', evidence: null, answer: null, outdated: null, basis: '', catalogPending: false,
+    });
+    const list = {
+      noSource: false, open: 2, blocking: 0, top: 'Add ATC results', limits: null, catalogPending: false,
+      groups: [
+        group('add-atc', 'Add ATC results', lines(many.flatMap((i) => i.anchors))),
+        group('name-target', 'Name the call target', lines(one.anchors)),
+      ],
+    } as unknown as OpenQuestions;
+    const o = documentOutline(doc, { openQuestions: list });
+    const t = o.tables.integrations!;
+    expect(t.shared).toEqual([{ action: 'add-atc', title: 'Add ATC results', rows: many.length }]);
+    expect(t.rows.some((r) => r.question?.action === 'add-atc')).toBe(false);
+    expect(t.rows.filter((r) => r.question?.action === 'name-target').length).toBe(1);
+    const md = blocksMarkdown(processDocumentBlocks(doc, { openQuestions: list }));
+    expect(md).toContain(`→ Open question for ${many.length} of the ${t.rows.length} rows: Add ATC results`);
+    expect(md.split('→ Open question: Add ATC results').length - 1).toBe(0);
+    const html = await buildEngineConfluenceHtml(doc, null, { openQuestions: list }).text();
+    expect(html).toContain('data-doc-shared-question="add-atc"');
+    expect(html).toContain('<a href="#oq-name-target">→ Open question: Name the call target</a>');
+  });
+
+  test('the appendix opens with one compact table of the steps, in every file', async () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const md = markdownOf(doc);
+    const appendix = md.slice(md.indexOf('## Appendix'));
+    expect(appendix).toContain('| No. | Step | What it does | Lines | Details |');
+    expect(appendix.indexOf('| No. | Step | What it does')).toBeLessThan(appendix.indexOf('#### 1.'));
+    const html = await htmlOf(doc);
+    const a1 = html.slice(html.indexOf('A.1 Step details'));
+    expect(a1.indexOf('<th>What it does</th>')).toBeGreaterThan(-1);
+    expect(a1.indexOf('<th>What it does</th>')).toBeLessThan(a1.indexOf('data-doc-step=""'));
+  });
+
+  test('plain wording: a negated decision asked the plain way, the condition beside it, exceptions named, values in words', () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const gates = doc.overview.path.filter((e) => e.kind === 'gate');
+    expect(gates.some((g) => /^Not /.test(g.label))).toBe(false);
+    const rejected = gates.find((g) => g.label === 'Rejected?')!;
+    expect(rejected.outcomes.find((x) => x.ends)!.when).toBe('Yes');
+    expect(rejected.condition).toBe('gv_rejected = abap_false');
+    // The exception the map calls only "On error" is named from what the user sees.
+    expect(doc.exceptions.some((e) => e.what === 'On error')).toBe(false);
+    expect(doc.exceptions.map((e) => e.what)).toEqual(expect.arrayContaining(['Attachment could not be read', 'Notification failed']));
+    // Values in words where the glossary knows them; the variable stays the source column's.
+    const amount = doc.derived!.find((d) => d.target === 'gv_amount')!;
+    expect(amount.label).toBe('Amount');
+    expect(amount.plainExpression).toBe('Quantity × Price ÷ Price unit');
+    const row = documentOutline(doc).tables.derived!.rows.find((r) => r.cells[0] === 'Amount')!;
+    expect(row.tech).toContain('gv_amount = gs_eban-menge * gs_eban-preis / gs_eban-peinh');
+  });
+
+  test('what it touches in SAP: the tables it reads and the tables it changes, from the code', () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    expect(doc.writes!.map((w) => w.name)).toEqual(expect.arrayContaining(['EBAN', 'ZMM_PO_APPR', 'ZMM_PO_ATTACH']));
+    for (const w of doc.writes!) expect(w.anchors.length).toBeGreaterThan(0);
+    const upload = doc.overview.path.find((e): e is PdStep => e.kind === 'step' && e.technicalName === 'UPLOAD_ATTACHMENT')!;
+    expect(upload.touches!.writes.map((w) => w.name)).toContain('ZMM_PO_ATTACH');
   });
 });

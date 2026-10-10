@@ -104,7 +104,12 @@ test('the engine documentation export carries the business layer, escaped and ma
   expect(engine).toMatch(/\$\{questionsSection\}\s*\$\{businessSection\}\s*\$\{appendixSection\}\s*<\/body>/);
   expect(engine).toContain('Business layer — Model proposal');
   const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const a = document.appendix'));
-  for (const field of ['raci_matrix', 'sop_details']) expect(section).toContain(field);
+  // Owner review 10.10.2026: the RACI and SOP tables are read through `sopSteps` —
+  // only the steps of the process, never a row the model wrote for a step the
+  // code does not have — and the owner's RACI, when one is saved, is said once.
+  expect(engine).toContain('const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps) : [];');
+  expect(section).toContain('sop.filter((st) => st.hasRaci)');
+  expect(section).toContain('data-raci-edited');
   // Roadmap 3.0.7: the model proposes no controls and no KPI targets; the
   // controls are the code reading's, the systems section (ADR-084).
   for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);

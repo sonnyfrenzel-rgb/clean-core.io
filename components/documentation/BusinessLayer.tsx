@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { TriangleAlert, User } from 'lucide-react';
+import { Pencil, TriangleAlert, User } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcDisclosure from '@/components/cc/Disclosure';
@@ -14,6 +14,7 @@ import {
   lettersOf,
   raciMatrix,
   sopSteps,
+  stepsNotInProcess,
   type GlanceAnchor,
   type ProcessStepRef,
   type RaciLetter,
@@ -25,12 +26,32 @@ import {
   raciGapLines,
   raciGapWord,
   raciLetterWord,
+  sopCardsSummary,
+  sopDroppedLine,
   sopStepsCount,
   stepNumberLabel,
   wt,
 } from '@/lib/workspace-messages';
 import { cn } from '@/lib/utils';
 import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
+import { raciDraftOf } from '@/lib/raci-edit';
+import RaciEditor, { type RaciDraft } from './RaciEditor';
+
+/**
+ * The owner's RACI (owner request 10.10.2026, ADR-084 amended): who may edit,
+ * what happens on Save, and the line that says whose RACI it is once edited.
+ */
+export interface RaciEditing {
+  /** The owner (or the demo's visitor) may edit; a reader sees the owner-only sentence. */
+  canEdit: boolean;
+  /** "Edited by Mara Weber · 10 Oct 2026" when the RACI on screen is the owner's; null while it is the model's. */
+  editedLine: string | null;
+  /** Store the draft; resolves to the reason when it was not stored, null when it was. */
+  onSave: (draft: RaciDraft) => Promise<string | null>;
+  /** A line beside the buttons — the demo says it keeps the result in this browser. */
+  note?: React.ReactNode;
+}
 
 /**
  * The business layer of the Documentation stage, drawn for a business reader —
@@ -126,54 +147,56 @@ function Missing() {
 
 /** On a phone a list shows its first five and "Show all" (`DESIGN.md` §2.11). */
 const PHONE_ROWS = 5;
-/** From S upwards the strip shows its first row of four and "Show all" (owner 04.10.2026: nothing at full length by default). */
-const STRIP_ROWS = 4;
 
+/**
+ * The SOP cards, folded by default (owner review 10.10.2026: "the card is long
+ * for a help"): the fold says how many steps and how many of them carry thin
+ * text; opened, every card stands. A card whose text says no more than the
+ * step's name — no narrative, a few words, "carried out by the responsible
+ * role" — is flagged as thin, never hidden: it is the model's text, marked as
+ * a proposal.
+ */
 function SopStrip({ steps }: { steps: SopStep[] }) {
-  const [all, setAll] = useState(false);
+  const thin = steps.filter((s) => s.thin).length;
   return (
-    <>
-    <ol data-sop-strip="" className="m-0 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2 xl:grid-cols-4">
-      {steps.map((step, i) => (
-        <li
-          key={step.stepId}
-          data-sop-step={step.stepId}
-          data-sop-in-process={step.step ? 'true' : 'false'}
-          aria-label={stepNumberLabel(step.number, stepName(step))}
-          className={cn(
-            'min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
-            step.step ? 'border-cc-line' : 'border-dashed border-cc-field-border',
-            all ? 'flex' : i >= STRIP_ROWS ? 'hidden print:flex' : 'flex',
-          )}
-        >
-          <div className="flex min-w-0 items-start gap-2">
-            <NumberDisc n={step.number} />
-            <p className="m-0 min-w-0 cc-text-identifier text-cc-ink break-words">{stepName(step)}</p>
-          </div>
-          <p data-sop-outcome="" className={cn('m-0 cc-text-cell', step.outcome ? 'text-cc-ink' : 'text-cc-ink-muted')}>
-            {step.outcome ?? wt('doc.sopOutcomeMissing')}
-          </p>
-          {step.step ? null : <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.sopNotInProcess')}</p>}
-          <div className="mt-auto flex flex-wrap items-center gap-2">
-            <span className="inline-flex min-w-0 items-center gap-1 cc-text-meta text-cc-ink">
-              <User size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-              <span className="sr-only">{wt('doc.sopResponsible')}:</span>
-              {step.roles.R.length ? <span className="break-words">{step.roles.R.join(', ')}</span> : <Missing />}
-            </span>
-            <StepAnchor step={step} />
-            <StepChip step={step} />
-          </div>
-        </li>
-      ))}
-    </ol>
-    {steps.length > STRIP_ROWS ? (
-      <div className="mt-2">
-        <CcButton variant="ghost" aria-expanded={all} onClick={() => setAll((v) => !v)} data-sop-strip-all="">
-          {all ? showFirstLabel(STRIP_ROWS) : showAllLabel(steps.length)}
-        </CcButton>
-      </div>
-    ) : null}
-    </>
+    <div data-sop-cards="" data-sop-thin-count={thin} className="mb-2">
+      <CcDisclosure title={wt('doc.sopCards')} count={steps.length} summary={sopCardsSummary(steps.length, thin)} density="compact">
+        <ol data-sop-strip="" className="m-0 mt-1 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step) => (
+            <li
+              key={step.stepId}
+              data-sop-step={step.stepId}
+              data-sop-in-process={step.step ? 'true' : 'false'}
+              data-sop-thin={step.thin ? 'true' : undefined}
+              aria-label={stepNumberLabel(step.number, stepName(step))}
+              className={cn(
+                'flex min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
+                step.step && !step.thin ? 'border-cc-line' : 'border-dashed border-cc-field-border',
+              )}
+            >
+              <div className="flex min-w-0 items-start gap-2">
+                <NumberDisc n={step.number} />
+                <p className="m-0 min-w-0 cc-text-identifier text-cc-ink break-words">{stepName(step)}</p>
+              </div>
+              <p data-sop-outcome="" className={cn('m-0 cc-text-cell', step.outcome && !step.thin ? 'text-cc-ink' : 'text-cc-ink-muted')}>
+                {step.outcome ?? wt('doc.sopOutcomeMissing')}
+              </p>
+              {step.thin ? <p data-sop-thin-note="" className="m-0 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.sopThin')}</p> : null}
+              {step.step ? null : <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.sopNotInProcess')}</p>}
+              <div className="mt-auto flex flex-wrap items-center gap-2">
+                <span className="inline-flex min-w-0 items-center gap-1 cc-text-meta text-cc-ink">
+                  <User size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+                  <span className="sr-only">{wt('doc.sopResponsible')}:</span>
+                  {step.roles.R.length ? <span className="break-words">{step.roles.R.join(', ')}</span> : <Missing />}
+                </span>
+                <StepAnchor step={step} />
+                <StepChip step={step} />
+              </div>
+            </li>
+          ))}
+        </ol>
+      </CcDisclosure>
+    </div>
   );
 }
 
@@ -205,8 +228,25 @@ function GapWords({ gaps }: { gaps: Array<Parameters<typeof raciGapWord>[0]> }) 
   );
 }
 
-function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.ReactNode }) {
+function RaciSection({ steps, action, editing, emptyLead }: { steps: SopStep[]; action?: React.ReactNode; editing?: RaciEditing; emptyLead?: string }) {
   const matrix = useMemo(() => raciMatrix(steps), [steps]);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const draft = useMemo(
+    () => raciDraftOf(steps, [...matrix.roles, ...matrix.moreRoles].map((r) => r.name)),
+    [steps, matrix],
+  );
+  const edited = editing?.editedLine ?? null;
+  const save = async (next: RaciDraft) => {
+    if (!editing) return;
+    setSaving(true);
+    setSaveError(null);
+    const problem = await editing.onSave(next).catch((err: unknown) => (err instanceof Error ? err.message : String(err)));
+    setSaving(false);
+    if (problem) setSaveError(problem);
+    else setEditMode(false);
+  };
   const overloaded = matrix.roles.filter((r) => r.overloaded);
   const gapLines = raciGapLines(
     matrix.gapCount,
@@ -219,11 +259,42 @@ function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.React
     <div data-raci-section="" className="mt-6 flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
-          {wt('doc.raciTitle')} <CcProvenanceChip value="proposed" />
-          <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.raciProposalNote')}</span>
+          {wt('doc.raciTitle')}{' '}
+          {/* Owner request 10.10.2026: an edited RACI is the owner's — a self-declaration, not the model's proposal. */}
+          {edited ? <CcProvenanceChip value="confirmed" note="edited" /> : <CcProvenanceChip value="proposed" />}
+          <span data-raci-provenance={edited ? 'edited' : 'proposed'} className="cc-text-meta font-medium text-cc-ink-muted">{edited ?? wt('doc.raciProposalNote')}</span>
         </h3>
         <Legend />
       </div>
+      {editing && !editMode ? (
+        editing.canEdit ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <CcButton
+              variant="secondary"
+              density="compact"
+              icon={<Pencil size={16} aria-hidden={true} />}
+              onClick={() => { setSaveError(null); setEditMode(true); }}
+              data-raci-edit=""
+            >
+              {wt('doc.raciEdit')}
+            </CcButton>
+            {edited ? <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.raciEditedNote')}</span> : null}
+          </div>
+        ) : (
+          <OwnerOnlyNote />
+        )
+      ) : null}
+      {editing && editMode ? (
+        <RaciEditor
+          steps={steps}
+          initial={draft}
+          saving={saving}
+          error={saveError}
+          note={editing.note}
+          onSave={(next) => void save(next)}
+          onCancel={() => { setSaveError(null); setEditMode(false); }}
+        />
+      ) : null}
       {matrix.totalRoles > MANY_RACI_ROLES ? (
         <div data-raci-too-many={matrix.totalRoles} className="flex flex-col gap-2 rounded-cc-row border border-cc-warning-border bg-cc-warning-bg p-3">
           <p className="m-0 flex items-start gap-2 cc-text-cell text-cc-ink">
@@ -236,7 +307,9 @@ function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.React
           {action}
         </div>
       ) : null}
-      {matrix.steps.length === 0 ? (
+      {editMode ? null : emptyLead && matrix.roles.length === 0 ? (
+        <p data-raci-empty-lead="" className="m-0 cc-text-cell text-cc-ink-muted">{emptyLead}</p>
+      ) : matrix.steps.length === 0 ? (
         <p className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.raciNoRows')}</p>
       ) : (
         <>
@@ -369,6 +442,27 @@ function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.React
   );
 }
 
+/**
+ * The RACI alone — the demo's twin of the owner's editor (the demo makes no
+ * model call, so it has no proposal to start from): one row per step of the
+ * process, no roles until the visitor adds them, kept in the page only.
+ */
+export function RaciBlock({
+  layer,
+  process,
+  editing,
+  emptyLead,
+}: {
+  layer: StoredBusinessLayer;
+  process: ProcessStepRef[];
+  editing?: RaciEditing;
+  /** Said instead of an empty matrix while no role is named. */
+  emptyLead?: string;
+}) {
+  const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
+  return <RaciSection steps={steps} editing={editing} emptyLead={emptyLead} />;
+}
+
 /* ------------------------------------------------------------- the full text */
 
 function FullSop({ steps }: { steps: SopStep[] }) {
@@ -408,8 +502,11 @@ export default function BusinessLayer({
   process,
   action,
   embedded = false,
+  raciEditing,
 }: {
   layer: StoredBusinessLayer;
+  /** The owner's RACI: edit, save, and whose it is (owner request 10.10.2026). Absent: read-only, no edit offered. */
+  raciEditing?: RaciEditing;
   /** The steps of the process read from the code, in flow order. */
   process: ProcessStepRef[];
   /** The owner's "Regenerate SOP and RACI" — absent for a reader. */
@@ -418,6 +515,8 @@ export default function BusinessLayer({
   embedded?: boolean;
 }) {
   const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
+  // Owner review 10.10.2026: a row for a step the process does not have is never drawn — said once, in words.
+  const dropped = useMemo(() => stepsNotInProcess(layer, process), [layer, process]);
   // Too many roles: the regenerate action stands in the notice above the matrix, not twice.
   const tooMany = useMemo(() => raciMatrix(steps).totalRoles > MANY_RACI_ROLES, [steps]);
   return (
@@ -434,10 +533,13 @@ export default function BusinessLayer({
         <CcProvenanceChip value="proposed" />
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
-      <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">{wt('doc.sopLead')}</p>
+      <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">
+        {wt('doc.sopLead')}
+        {dropped > 0 ? <span data-sop-dropped={dropped}> {sopDroppedLine(dropped)}</span> : null}
+      </p>
       {action && !tooMany ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
       <SopStrip steps={steps} />
-      <RaciSection steps={steps} action={tooMany ? action : undefined} />
+      <RaciSection steps={steps} action={tooMany ? action : undefined} editing={raciEditing} />
       <FullSop steps={steps} />
     </section>
   );

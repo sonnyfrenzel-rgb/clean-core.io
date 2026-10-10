@@ -94,7 +94,7 @@ test.describe('a caller-supplied id never forms a nested document path', () => {
 
   test('a path parameter carrying an encoded slash is refused before any read', async ({ request }) => {
     const encoded = encodeURIComponent(`${PROJECT_ID}/runs/${runId}`);
-    for (const path of ['decision', 'findings', 'contract', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'requirements-spec', 'process-revisions', 'process-states', 'readers', 'invitations', 'process-map']) {
+    for (const path of ['decision', 'findings', 'contract', 'process-naming', 'statement-proposal', 'requirement-wording', 'cost-assumptions', 'test-results', 'requirements-spec', 'process-revisions', 'process-states', 'readers', 'invitations', 'process-map', 'raci']) {
       const res = await request.get(`/api/projects/${encoded}/${path}`, { headers: headers() });
       // 400 from the id check; a route that does not answer GET says 405.
       expect([400, 405], `${path}: ${res.status()}`).toContain(res.status());

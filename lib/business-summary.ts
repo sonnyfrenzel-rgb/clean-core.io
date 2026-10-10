@@ -276,6 +276,28 @@ export interface SopStep {
   roles: Record<RaciLetter, string[]>;
   /** True when the layer has a RACI row for this step. */
   hasRaci: boolean;
+  /**
+   * The model's text for this step says nothing the step's name does not —
+   * no narrative, a sentence of a few words, or a filler such as "The check
+   * authority step is carried out by the responsible role." (owner review
+   * 10.10.2026). The card is flagged as thin, never hidden.
+   */
+  thin: boolean;
+}
+
+/** Fillers a model writes when it has nothing to say about a step. */
+const THIN_TEXT: readonly RegExp[] = [
+  /\bcarried out by the responsible role\b/i,
+  /^the [^.]{1,80} step is (?:carried out|performed|handled|executed|done|completed)\b[^.]*\.?$/i,
+  /^(?:this|the) step (?:is|will be) (?:carried out|performed|handled|executed|done|completed)\b/i,
+];
+
+/** Whether a narrative is too thin to stand as the step's description (see `SopStep.thin`). */
+export function isThinNarrative(narrative: string | null): boolean {
+  if (!narrative) return true;
+  const first = firstSentence(narrative) ?? narrative;
+  if (THIN_TEXT.some((re) => re.test(first))) return true;
+  return first.split(/\s+/).filter(Boolean).length < 5;
 }
 
 const text = (value: unknown): string | null => {
@@ -312,7 +334,10 @@ export function firstSentence(value: string | null): string | null {
 
 /**
  * The SOP steps in the order of the process: the engine's order for every id it
- * knows, then the ids it does not know, in the order the layer lists them.
+ * knows. A row the model wrote for an id the process does not have
+ * ("Task_not_in_process") is not shown — owner review 10.10.2026: a step the
+ * code does not have is never a row of the SOP or the RACI. Only when no
+ * process is known (an empty list) is the layer drawn as it was written.
  */
 export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]): SopStep[] {
   const sop = rows(layer.sop_details);
@@ -338,7 +363,7 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]):
   const position = new Map(process.map((s, i) => [s.id, i]));
   const byId = new Map(process.map((s) => [s.id, s]));
   const known = order.filter((id) => position.has(id)).sort((a, b) => position.get(a)! - position.get(b)!);
-  const unknown = order.filter((id) => !position.has(id));
+  const unknown = process.length ? [] : order.filter((id) => !position.has(id));
 
   return [...known, ...unknown].map((stepId, i) => {
     const s = sopById.get(stepId);
@@ -359,8 +384,21 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]):
         I: splitRoles(r?.i),
       },
       hasRaci: r !== undefined,
+      thin: isThinNarrative(narrative),
     };
   });
+}
+
+/** How many rows of the stored layer name a step the process does not have — said once, never drawn. */
+export function stepsNotInProcess(layer: StoredBusinessLayer, process: ProcessStepRef[]): number {
+  if (!process.length) return 0;
+  const known = new Set(process.map((s) => s.id));
+  const ids = new Set<string>();
+  for (const row of [...rows(layer.sop_details), ...rows(layer.raci_matrix)]) {
+    const id = text(row.stepId);
+    if (id && !known.has(id)) ids.add(id);
+  }
+  return ids.size;
 }
 
 export type RaciStepGap = 'no-accountable' | 'several-accountable' | 'no-responsible';

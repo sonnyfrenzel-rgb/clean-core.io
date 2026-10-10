@@ -219,6 +219,19 @@ export interface PdStep {
   moreSubSteps: number;
   /** Who acts (ADR-084). Absent only in a description built before format 3. */
   actor?: PdActor;
+  /**
+   * What the step's code reads and changes in SAP, by table (owner review
+   * 10.10.2026, "What it touches in SAP"): the same objects `facts` counts, by
+   * name, with the glossary's word where it has one. Absent before 3.0.7.
+   */
+  touches?: { reads: PdObject[]; writes: PdObject[] };
+}
+
+/** A table a step reads or changes — its name as the code writes it, the glossary's word, the first line. */
+export interface PdObject {
+  name: string;
+  plain: string | null;
+  line: number;
 }
 
 export interface PdGate {
@@ -241,6 +254,12 @@ export interface PdGate {
   decisionTable?: { id: string; field: string; selector: string | null; rows: number };
   /** Who decides (ADR-084): the user at a user choice, else the program. Absent before format 3. */
   actor?: PdActor;
+  /**
+   * The condition as the code writes it (`gv_rejected = abap_false`), shown in
+   * mono beside the plain question (owner review 10.10.2026). Absent when the
+   * line holds no condition the reader could quote.
+   */
+  condition?: string;
 }
 
 /** The step's reference as a reader sees it: `5`, or `5a` for an alternative of a user choice. */
@@ -275,7 +294,15 @@ export interface PdData {
 /** A value the program computes rather than reads (`offen = menge - wemng`), with its line. */
 export interface PdDerived {
   target: string;
+  /**
+   * The value in words where the glossary knows it (`gv_amount` → "Amount");
+   * the variable stays the source column's (owner review 10.10.2026). Absent:
+   * the glossary has no word, the variable name is the label.
+   */
+  label?: string | null;
   expression: string;
+  /** The expression with each operand in words where the glossary knows it ("Quantity × Price ÷ Price unit"). */
+  plainExpression?: string | null;
   /** `x = x + y`: a running total. */
   accumulates: boolean;
   /** The routine or event block it stands in. */
@@ -432,6 +459,12 @@ export interface ProcessDocument {
   };
   /** Values the program computes (`lib/abap/data-scope.ts`), reached code only. Absent before format 3. */
   derived?: PdDerived[];
+  /**
+   * The tables the code changes, reached code only, one row per table with its
+   * first lines — the right half of "What it touches in SAP" (owner review
+   * 10.10.2026). Absent before 3.0.7.
+   */
+  writes?: PdData[];
   overview: { sentence: string; traceability: string; path: PdPathEntry[]; decisions: number };
   rules: PdRule[];
   /**

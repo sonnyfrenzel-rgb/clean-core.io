@@ -115,13 +115,13 @@ test.describe('the glance, as data', () => {
 });
 
 test.describe('the SOP and the RACI, as data', () => {
-  test('the steps follow the process; a step the code does not have comes last and says so', () => {
+  test('the steps follow the process; a step the code does not have is not drawn (owner review 10.10.2026)', () => {
     const steps = sopSteps(LAYER, STEPS);
     const described = describedSteps(DOC).map((s) => s.id);
-    expect(steps.map((s) => s.stepId)).toEqual([...described, UNKNOWN_STEP_ID]);
+    expect(steps.map((s) => s.stepId)).toEqual(described);
+    expect(steps.some((s) => s.stepId === UNKNOWN_STEP_ID)).toBe(false);
     expect(steps.map((s) => s.number)).toEqual(steps.map((_, i) => i + 1));
-    expect(steps.at(-1)!.step).toBeNull();
-    for (const s of steps.slice(0, -1)) expect(s.step?.anchor, s.stepId).not.toBeNull();
+    for (const s of steps) expect(s.step?.anchor, s.stepId).not.toBeNull();
     // Empty fields stay empty — no default narrative, no invented role.
     expect(steps[3].narrative).toBeNull();
     expect(steps[3].outcome).toBeNull();
@@ -133,7 +133,7 @@ test.describe('the SOP and the RACI, as data', () => {
 
   test('the matrix is roles × steps and says where it has gaps', () => {
     const matrix = raciMatrix(sopSteps(LAYER, STEPS));
-    expect(matrix.steps).toHaveLength(LAYER.raci_matrix.length);
+    expect(matrix.steps).toHaveLength(LAYER.raci_matrix.length - 1);
     // Six columns at most (owner 04.10.2026); the roles that only consult or are informed are listed under the matrix.
     expect(matrix.roles.map((r) => r.name)).toEqual(expect.arrayContaining(['Purchasing Clerk', 'Process Owner', 'Finance Lead']));
     expect(matrix.roles.length).toBeLessThanOrEqual(6);
@@ -158,15 +158,15 @@ test.describe('the Confluence export', () => {
     for (const ctrl of LAYER.audit_controls) expect(html).not.toContain(ctrl.controlObjective);
     expect(html).toContain('Controls are read from the code: “Systems and data” in the process description.');
     expect(html).not.toMatch(/section \d/i);
-    for (const row of LAYER.raci_matrix) expect(html).toContain(`<code>${row.stepId}</code></td><td>${row.r || 'Not determined'}</td>`);
-    for (const sop of LAYER.sop_details) {
-      expect(html).toContain(`<code>${sop.stepId}</code>`);
-      if (sop.narrative) expect(html).toContain(sop.narrative);
-    }
+    // Owner review 10.10.2026: every row of a step of the process, by its name — and none for a step the code does not have.
+    const steps = sopSteps(LAYER, STEPS);
+    for (const st of steps.filter((x) => x.hasRaci)) expect(html).toContain(`<tr><td>${st.number}. ${st.step!.name}</td><td>${st.roles.R.join(', ') || 'Not determined'}</td>`);
+    for (const st of steps) if (st.narrative) expect(html).toContain(st.narrative);
+    expect(html).not.toContain(UNKNOWN_STEP_ID);
     // The SOP strip and the matrix as tables, each row.
-    for (const row of LAYER.raci_matrix) {
-      expect(html).toContain(`data-glance-sop-step="${row.stepId}"`);
-      expect(html).toContain(`data-glance-raci-step="${row.stepId}"`);
+    for (const st of steps) {
+      expect(html).toContain(`data-glance-sop-step="${st.stepId}"`);
+      expect(html).toContain(`data-glance-raci-step="${st.stepId}"`);
     }
     expect(html).toContain('SOP steps — Model proposal');
     expect(html).toContain('RACI matrix — Model proposal');
@@ -278,19 +278,27 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
     await expectReadingOrder(page);
 
-    // The strip: every step, in order, with its anchor and a provenance chip.
+    // The strip: every step of the process, in order, with its anchor and a provenance chip.
+    // Owner review 10.10.2026: a row for a step the process does not have is
+    // never drawn — said once in words — and the cards are folded by default,
+    // thin model text flagged.
     const strip = page.locator('[data-sop-step]');
-    await expect(strip).toHaveCount(LAYER.sop_details.length);
-    // The strip shows its first row; "Show all" opens the rest (nothing at full length by default).
-    await expect(page.locator(`[data-sop-step="${UNKNOWN_STEP_ID}"]`)).toBeHidden();
-    await page.locator('[data-sop-strip-all]').click();
-    await expect(page.locator(`[data-sop-step="${UNKNOWN_STEP_ID}"] [data-provenance="proposed"]`)).toBeVisible();
+    await expect(strip).toHaveCount(LAYER.sop_details.length - 1);
+    await expect(page.locator(`[data-sop-step="${UNKNOWN_STEP_ID}"]`)).toHaveCount(0);
+    await expect(page.locator('[data-sop-dropped="1"]')).toBeVisible();
+    await expect(strip.first()).toBeHidden();
+    await page.locator('[data-sop-cards] [data-cc-disclosure-trigger]').click();
+    await expect(strip.first()).toBeVisible();
+    await expect(page.locator('[data-sop-thin="true"]').first()).toBeVisible();
     await expect(strip.first().locator('[data-cc-anchor="linked"]')).toBeVisible();
 
     // The matrix: one row per RACI row, one column per role plus step and check.
     const matrix = page.locator('[data-raci-matrix]');
     await expect(matrix).toBeVisible();
-    await expect(matrix.locator('tbody tr')).toHaveCount(LAYER.raci_matrix.length);
+    await expect(matrix.locator('tbody tr')).toHaveCount(LAYER.raci_matrix.length - 1);
+    // Owner request 10.10.2026: the owner can edit the RACI; the proposal says it is one until then.
+    await expect(page.locator('[data-raci-provenance="proposed"]')).toBeVisible();
+    await expect(page.locator('[data-raci-edit]')).toBeVisible();
     const roles = raciMatrix(sopSteps(LAYER, STEPS)).roles.length;
     await expect(matrix.locator('thead th')).toHaveCount(roles + 2);
     await expect(matrix.locator('[data-raci-gap="no-accountable"]')).toHaveCount(1);
@@ -301,7 +309,7 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(fold).toHaveAttribute('aria-expanded', 'false');
     await fold.click();
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('[data-sop-full-step]')).toHaveCount(LAYER.sop_details.length);
+    await expect(page.locator('[data-sop-full-step]')).toHaveCount(LAYER.sop_details.length - 1);
     await expect(page.locator('[data-sop-full]')).toContainText(LAYER.sop_details[0].narrative);
     // Roadmap 3.0.7: no KPI target and no model-written control checkpoint —
     // the controls are the code reading's, in the systems section, and the fold says so.

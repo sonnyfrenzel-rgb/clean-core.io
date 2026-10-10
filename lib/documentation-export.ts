@@ -35,6 +35,9 @@ import {
   REQUIREMENT_QUESTIONS,
   REQUIREMENT_QUESTION_HEAD,
   SOURCE_COLUMN,
+  STEP_SUMMARY_HEAD,
+  sharedQuestionLead,
+  stepSummaryRows,
   appendixLead,
   figureText,
   longTables,
@@ -55,6 +58,7 @@ import { processOverviewSvg } from '@/lib/process-overview-svg';
 import { provenance } from '@/lib/provenance';
 import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
+import { RACI_EDITED_IN_FILE, type RaciEditRecord } from '@/lib/raci-edit';
 import { wt } from '@/lib/workspace-messages';
 import {
   RACI_LETTERS,
@@ -92,6 +96,12 @@ export interface ConfluenceExportOptions {
   processSteps?: ProcessStepRef[];
   /** The project's name, for the title of the engine page. */
   projectName?: string;
+  /**
+   * The owner's RACI, when one is saved for the proposal on record (owner
+   * request 10.10.2026). The layer passed in already carries it; this only
+   * says whose it is — "Edited by the owner of the project", never an account.
+   */
+  raciEdit?: RaciEditRecord | null;
 }
 
 /**
@@ -168,8 +178,9 @@ export function buildEngineConfluenceHtml(
     `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
       .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
       .join('')}</tbody></table>`;
+  // Owner review 10.10.2026: a question on several rows of a table is said once, above it.
   const tableOf = (t: PdTable | null, whole = false) => (t
-    ? `<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
+    ? `${(t.shared ?? []).map((q) => `<p class="meta" data-doc-shared-question="${esc(q.action)}">${esc(sharedQuestionLead(q, t.rows.length) + ':')} <a href="#oq-${esc(q.action)}">${esc(q.title)}</a></p>`).join('')}<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
       .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c) => `<td>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
       .join('')}</tbody></table>${t.note ? `<p class="meta">${esc(t.note)}</p>` : ''}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
     : '');
@@ -248,17 +259,24 @@ export function buildEngineConfluenceHtml(
   // normalised one (`lib/business-summary.ts`, `raciMatrix`): a small set of
   // roles, the rest listed beside it, a step without an Accountable named.
   const nd = NOT_DETERMINED_LABEL;
+  // Owner review 10.10.2026: only the steps of the process — a row the model
+  // wrote for a step the code does not have is not printed (`sopSteps`).
+  const steps = options?.processSteps ?? processStepsFromDocument(document);
+  const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps) : [];
+  const edited = options?.raciEdit ?? null;
+  const editedNote = edited ? RACI_EDITED_IN_FILE + ' · ' + edited.editedAt.slice(0, 10) + '.' : '';
   const businessSection = parsedBusinessDoc
     ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
     <p><em>${esc('Written by a language model from the process description above. Not derived from the code, and not verified; the roles are a proposal for the business to confirm.')}</em></p>
-    ${glanceHtml(parsedBusinessDoc, options?.processSteps ?? processStepsFromDocument(document))}
+    ${edited ? `<p data-raci-edited=""><span class="tag tone-information">${esc('Confirmed')}</span> ${esc("The RACI below is the owner's, not the model's. " + editedNote)}</p>` : ''}
+    ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null)}
     <h3>${esc('RACI assignment')}</h3>
-    <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${(parsedBusinessDoc.raci_matrix || [])
-      .map((raci: Record<string, unknown>) => `<tr><td><code>${esc(raci.stepId)}</code></td><td>${esc(raci.r || nd)}</td><td>${esc(raci.a || nd)}</td><td>${esc(raci.c || nd)}</td><td>${esc(raci.i || nd)}</td></tr>`)
+    <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${sop.filter((st) => st.hasRaci)
+      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${esc(st.roles.R.join(', ') || nd)}</td><td>${esc(st.roles.A.join(', ') || nd)}</td><td>${esc(st.roles.C.join(', ') || nd)}</td><td>${esc(st.roles.I.join(', ') || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <h3>${esc('Standard operating procedure')}</h3>
-    <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th></tr></thead><tbody>${(parsedBusinessDoc.sop_details || [])
-      .map((sop: Record<string, unknown>) => `<tr><td><code>${esc(sop.stepId)}</code></td><td>${esc(sop.narrative || nd)}</td><td>${esc(sop.businessException || nd)}</td></tr>`)
+    <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th></tr></thead><tbody>${sop
+      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${esc(st.narrative || nd)}</td><td>${esc(st.exception || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <p class="meta">${esc(CONTROLS_FROM_THE_CODE)}</p>`
     : '';
@@ -274,6 +292,7 @@ export function buildEngineConfluenceHtml(
   const appendixSection = `<div class="appendix">${h2('appendix')}
     <p><em>${esc(appendixLead(a))}</em></p>
     <h3>${esc('A.1 Step details')}</h3>
+    ${table(STEP_SUMMARY_HEAD, stepSummaryRows(document, o.whoActs), [3])}
     ${stepDetailsSection}
     ${completeSection}
     <h3>${esc('A.3 Wording as read from the code')}</h3>
@@ -331,6 +350,7 @@ const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.line
 function glanceHtml(
   parsedBusinessDoc: ModelJson | null,
   processSteps: ProcessStepRef[],
+  editedNote: string | null = null,
 ): string {
   const esc = escapeHtml;
   const parts: string[] = [];
@@ -348,7 +368,7 @@ function glanceHtml(
       const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc([...s.gaps.map(raciGapWord), ...(s.hiddenAccountable.length ? [`A: ${s.hiddenAccountable.join(', ')}`] : [])].join(', '))}</td></tr>`).join('');
       const key = matrix.roles.filter((r) => r.short !== r.name).map((r) => `${r.short} = ${r.name}`).join(' · ');
       const more = matrix.moreRoles.map((r) => `<li>${esc(r.name)}: ${esc(matrix.steps.map((st) => ({ st, l: lettersOf(st, r.name) })).filter((x) => x.l.length).map((x) => `${x.l.join('')} on ${x.st.number}`).join(', '))}</li>`).join('');
-      parts.push(`<h3>RACI matrix — Model proposal</h3><p><small>${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
+      parts.push(`<h3>RACI matrix — ${editedNote ? 'Edited by the owner' : 'Model proposal'}</h3><p><small>${editedNote ? `${esc(editedNote)} ` : ''}${esc(RACI_LETTERS.map((l) => `${l} ${raciLetterWord(l)}`).join(' · '))}${key ? esc(` · ${key}`) : ''}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>${more ? `<p><small>${esc(`${matrix.moreRoles.length} more roles the proposal names:`)}</small></p><ul>${more}</ul>` : ''}`);
     }
   }
   return parts.join('\n');

@@ -97,6 +97,21 @@ export interface PdTable {
   first: number;
   /** One line printed under the table — a decision table's hit policy (ADR-084). */
   note?: string;
+  /**
+   * Owner review 10.10.2026: an open question that stands on several rows of
+   * this table ("Add ATC results" on six integrations) is said once, above the
+   * rows, with how many rows it concerns — and taken off those rows. A row keeps
+   * its own link only for a question that is its alone ("Name the call target").
+   */
+  shared?: PdSharedQuestion[];
+}
+
+/** An open question said once for several rows of one table. */
+export interface PdSharedQuestion {
+  action: string;
+  title: string;
+  /** How many rows of the table stand on it. */
+  rows: number;
 }
 
 /** One reader question of the glance and the section that answers it (ADR-084, roadmap 3.0.7 A1). */
@@ -107,9 +122,26 @@ export interface PdGoTo {
   anchor?: string;
 }
 
+/**
+ * One chapter of the description in the stage's chapter bar (owner review
+ * 10.10.2026, the look of the IT view's anchor bar, ADR-086): a short name, what
+ * it counts, and the reader question it answers — the question the "Go to"
+ * line used to ask, now the chip's tooltip on the stage.
+ */
+export interface PdChapter {
+  key: ProcessDocumentSection;
+  label: string;
+  /** What the chapter holds, counted; "none" for nothing; null where a count says nothing (the appendix). */
+  count: string | null;
+  /** The reader question it answers, with what the count counts. */
+  question: string;
+}
+
 export interface PdOutline {
   /** "<project> — <PROGRAM>", or the program alone when the project carries its name (ADR-084). */
   title: string;
+  /** The seven chapters, in the page's order — the stage's chapter bar. */
+  chapters: PdChapter[];
   /** "Process description" — the line under the title. */
   subtitle: string;
   /** Cover rows: what this document is about and how far to trust it. */
@@ -181,6 +213,20 @@ export interface PdOutlineMeta {
   date?: string;
   /** The project's open questions (`useOpenQuestions`), for the open questions section and the rows that stand on them. */
   openQuestions?: OpenQuestions | null;
+  /**
+   * The RACI as a file prints it — the owner's edit when one applies, else the
+   * model's proposal (`raciFileTable`, `lib/raci-edit.ts`). Absent: no SOP and
+   * RACI on record, and the file has no RACI section.
+   */
+  raci?: PdRaciTable | null;
+}
+
+/** The RACI as a table of a file: a heading, its provenance in one line, steps × roles. */
+export interface PdRaciTable {
+  title: string;
+  note: string;
+  head: string[];
+  rows: string[][];
 }
 
 /** A key figure as text — a figure this rendering does not know reads *Not determined*, never 0. */
@@ -210,6 +256,39 @@ export function sourceText(row: Pick<PdRow, 'tech' | 'anchors' | 'question'>): s
 
 /** "Open question: Who owns this process?" — what a row says of the open question it stands on. */
 export const questionLinkText = (q: NonNullable<PdRow['question']>): string => `${wt('doc.openQuestionLink')}: ${q.title}`;
+
+/** "Open question for 6 of the 7 rows" — the lead of a question said once above a table (owner review 10.10.2026). */
+export const sharedQuestionLead = (q: PdSharedQuestion, total: number): string =>
+  q.rows >= total ? `${wt('doc.openQuestionLink')} for every row` : `${wt('doc.openQuestionLink')} for ${q.rows} of the ${total} rows`;
+
+/** The shared question as one line of a file: "→ Open question for 6 of the 7 rows: Add ATC results". */
+export const sharedQuestionLine = (q: PdSharedQuestion, total: number): string => `→ ${sharedQuestionLead(q, total)}: ${q.title}`;
+
+/**
+ * Lifts every open question that stands on two or more rows of a table to the
+ * table (`PdTable.shared`) and takes it off those rows; a question on one row
+ * only stays that row's link. Nothing else of the rows changes.
+ */
+export function shareRepeatedQuestions(table: PdTable | null): PdTable | null {
+  if (!table) return table;
+  const counts = new Map<string, { title: string; rows: number }>();
+  for (const r of table.rows) {
+    if (!r.question) continue;
+    const c = counts.get(r.question.action) ?? { title: r.question.title, rows: 0 };
+    c.rows += 1;
+    counts.set(r.question.action, c);
+  }
+  const shared: PdSharedQuestion[] = [...counts].filter(([, c]) => c.rows > 1).map(([action, c]) => ({ action, title: c.title, rows: c.rows }));
+  if (!shared.length) return table;
+  const lifted = new Set(shared.map((s) => s.action));
+  const rows = table.rows.map((r) => {
+    if (!r.question || !lifted.has(r.question.action)) return r;
+    const { question: _drop, ...rest } = r;
+    void _drop;
+    return rest;
+  });
+  return { ...table, rows, shared };
+}
 
 /** An exception's result in two or three words; the full sentence stands in the appendix. */
 export function resultWord(outcome: string): string {
@@ -324,9 +403,10 @@ export const USER_CHOICE_LEAD = 'The user chooses one, as often and in any order
 /** "Alternative 'DONE'" — what the step list says of a step that is one choice of the user. */
 export const choiceLine = (step: PdStep): string | null => (step.choice ? `User choice ${step.choice.when}` : null);
 
-/** A decision point as one sentence of the appendix, with its line. */
+/** A decision point as one sentence of the appendix, with its line and the condition as the code writes it. */
 export function gateSentence(gate: PdGate): string {
-  return `Decision point “${gate.label}”${gate.anchor ? ` (${linesLabel([gate.anchor])})` : ''} — ${gateLine(gate)}.`;
+  const where = [gate.condition ? `the code: ${gate.condition}` : null, gate.anchor ? linesLabel([gate.anchor]) : null].filter(Boolean).join(', ');
+  return `Decision point “${gate.label}”${where ? ` (${where})` : ''} — ${gateLine(gate)}.`;
 }
 
 /** The step's own name — the model's business name where one is stored, marked by the renderer. */
@@ -498,14 +578,15 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     const question = questionOf(anchors, list);
     return question ? { cells, tech, anchors, question } : { cells, tech, anchors };
   };
+  // A question on several rows of one table is said once, above it (owner review 10.10.2026).
   const table = (id: string, caption: string, head: string[], rows: PdRow[], first = 5): PdTable | null =>
-    rows.length ? { id, caption, head, rows, first } : null;
+    shareRepeatedQuestions(rows.length ? { id, caption, head, rows, first } : null);
 
   const whoActs = actorsProven(doc.overview.path);
   const who = (actor: PdActor | undefined): string[] => (whoActs ? [actorWord(actor)] : []);
   const stepRows: PdRow[] = doc.overview.path.map((entry) =>
     entry.kind === 'gate'
-      ? { cells: ['◇', `Decision: ${entry.label}`, ...who(entry.actor), gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
+      ? { cells: ['◇', `Decision: ${entry.label}`, ...who(entry.actor), gateLine(entry)], tech: entry.condition ?? null, anchors: entry.anchor ? [entry.anchor] : [] }
       : {
           cells: [
             stepRef(entry),
@@ -519,8 +600,19 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
   );
 
   const p = doc.purpose;
+  const n = (v: number) => (v > 0 ? String(v) : wt('doc.chapterNone'));
+  const chapters: PdChapter[] = [
+    { key: 'overview', label: wt('doc.chapterOverview'), count: n(steps.length), question: `${wt('doc.goToWhat')} ${wt('doc.goToWho')} — ${plural(steps.length, 'step')}` },
+    { key: 'rules', label: wt('doc.chapterRules'), count: n(doc.rules.length + tables.length), question: `${wt('doc.goToRules')} — ${plural(doc.rules.length, 'rule')}${tables.length ? `, ${plural(tables.length, 'decision table')}` : ''}` },
+    { key: 'exceptions', label: wt('doc.chapterExceptions'), count: n(doc.exceptions.length), question: `${wt('doc.goToFails')} — ${plural(doc.exceptions.length, 'case')}` },
+    { key: 'outputs', label: wt('doc.chapterOutputs'), count: n(doc.outputs.length), question: `${wt('doc.goToChanges')} — ${plural(doc.outputs.length, 'effect')}` },
+    { key: 'systems', label: wt('doc.chapterSystems'), count: n(t.data.length + doc.integrations.length), question: `${wt('doc.goToSystems')} — ${plural(t.data.length, 'table')} read, ${plural(doc.integrations.length, 'call')}` },
+    { key: 'questions', label: wt('doc.chapterQuestions'), count: list ? n(list.open) : null, question: list ? `${wt('doc.goToOpen')} — ${plural(list.open, 'open question')}` : wt('doc.goToOpen') },
+    { key: 'appendix', label: wt('doc.chapterAppendix'), count: null, question: wt('doc.chapterAppendixQuestion') },
+  ];
   return {
     title: documentTitle(doc.program, meta.projectName),
+    chapters,
     subtitle: PROCESS_DOCUMENT_SUBTITLE,
     cover: [
       ['Program', doc.program],
@@ -533,7 +625,9 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     glance: {
       summary: doc.glance.summary,
       proposal: p.proposal,
-      trigger: doc.glance.trigger,
+      // Owner review 10.10.2026: the start is proven, who carries out the steps
+      // is not — the summary says both, as the process section does.
+      trigger: whoActs ? doc.glance.trigger : { ...doc.glance.trigger, text: `${doc.glance.trigger.text} ${wt('doc.whoCarriesOutNot')}` },
       figures,
       goTo: goToQuestions(),
       points: doc.glance.points,
@@ -559,8 +653,14 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
         doc.integrations.map((i) => row([i.purpose, i.kind], i.name, i.anchors)), 8),
       controls: table('controls', wt('doc.controlsTitle'), ['Control', 'What the code does'],
         doc.controls.map((c) => row([c.kind, c.text], [c.detail, c.ref].filter(Boolean).join(' · ') || null, c.anchors)), 8),
+      // Owner review 10.10.2026: the value in words where the glossary knows it,
+      // the variable and the expression as the code writes them in the source column.
       derived: table('derived', wt('doc.derivedValues'), ['Value', 'Computed as', 'Kind'],
-        (doc.derived ?? []).map((d) => row([d.target, d.expression, d.accumulates ? 'Running total' : 'Computed'], d.where, d.anchors))),
+        (doc.derived ?? []).map((d) => row(
+          [d.label ?? d.target, d.plainExpression ?? d.expression, d.accumulates ? 'Running total' : 'Computed'],
+          [`${d.target} = ${d.expression}`, d.where].filter(Boolean).join(' · '),
+          d.anchors,
+        ))),
     },
     inputUse: t.inputUse ?? [],
     whoActs,
@@ -619,6 +719,21 @@ export function stepDetailLines(step: PdStep, whoActs = true): string[] {
   for (const s of step.subSteps) out.push(`${s.depth > 1 ? '– ' : ''}${s.kind}: ${s.label}${s.anchor ? ` (${linesLabel([s.anchor])})` : ''}`);
   if (step.moreSubSteps > 0) out.push(`and ${step.moreSubSteps} more sub-steps — see the process elements below`);
   return out;
+}
+
+/** The head of the appendix's step summary. */
+export const STEP_SUMMARY_HEAD = ['No.', 'Step', 'What it does', 'Lines', 'Details'];
+
+/**
+ * The appendix opens with one compact table (owner review 10.10.2026: "an
+ * endless list, badly formatted"): one row per step — what it does, its lines,
+ * how many details its fold holds. The details follow per step, folded on the
+ * stage, under a heading of their own in a file.
+ */
+export function stepSummaryRows(doc: ProcessDocument, whoActs: boolean): string[][] {
+  return doc.overview.path
+    .filter((e): e is PdStep => e.kind === 'step')
+    .map((s) => [stepRef(s), stepName(s), s.line || '—', linesLabel(s.anchors) || '—', String(Math.max(0, stepDetailLines(s, whoActs).length - 1))]);
 }
 
 /** What the body says shorter, beside what the code's reading said — so nothing is lost by the shortening. */
@@ -682,8 +797,12 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   const b: PdBlock[] = [];
   const lead = (key: PdSectionKey) => b.push({ k: 'p', em: true, text: o.leads[key] });
   const h2 = (key: ProcessDocumentSection) => b.push({ k: 'h', level: 2, text: sectionTitle(key) });
+  const shared = (t: PdTable) => {
+    for (const q of t.shared ?? []) b.push({ k: 'p', em: true, text: sharedQuestionLine(q, t.rows.length) });
+  };
   const add = (t: PdTable | null) => {
     if (!t) return;
+    shared(t);
     b.push(tableBlock(t, false));
     if (t.rows.length > t.first) b.push({ k: 'p', em: true, text: moreRowsLine(t) });
   };
@@ -762,10 +881,19 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   if (o.questions.list?.limits) b.push({ k: 'p', em: true, text: o.questions.list.limits });
   if (o.questions.requirementsLine) b.push({ k: 'p', text: o.questions.requirementsLine });
 
+  // The owner's RACI when one is saved, else the model's proposal — said which in one line.
+  if (meta.raci) {
+    b.push({ k: 'h', level: 2, text: meta.raci.title });
+    b.push({ k: 'p', em: true, text: meta.raci.note });
+    b.push({ k: 'table', head: meta.raci.head, rows: meta.raci.rows, muted: [] });
+  }
+
   b.push({ k: 'pagebreak' });
   h2('appendix');
   b.push({ k: 'p', em: true, text: appendixLead(doc.appendix) });
   b.push({ k: 'h', level: 3, text: 'A.1 Step details' });
+  // Owner review 10.10.2026: the compact summary first, then each step's details.
+  b.push({ k: 'table', head: STEP_SUMMARY_HEAD, rows: stepSummaryRows(doc, o.whoActs), muted: [3] });
   for (const entry of doc.overview.path) {
     if (entry.kind === 'gate') {
       b.push({ k: 'p', em: true, text: gateSentence(entry) });
@@ -779,6 +907,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     b.push({ k: 'h', level: 3, text: COMPLETE_TABLES });
     for (const t of long) {
       b.push({ k: 'h', level: 4, text: `${t.caption} (${t.rows.length})` });
+      shared(t);
       b.push(tableBlock(t));
     }
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -69,6 +69,7 @@ import {
 } from '@/lib/it-view';
 import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
+import PageAnchorBar from '@/components/PageAnchorBar';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
 /**
@@ -936,143 +937,22 @@ function anchorsOf(content: {
  * switch between panels. Plain fragment links: the place is the address, Back
  * returns to it, and nothing is stored.
  *
- * It looks like the layer bar (`LayerBar.tsx`) so the three views share one
- * navigation strip: a delimited surface with its eyebrow ("On this page"), a
- * muted track, and the section the reader is in raised with an ink ring and
- * `aria-current="location"`. Links, not tabs: each is a jump, so the WAI-ARIA
- * tabs pattern of the layer bar does not apply. Where the reader is follows
- * the scroll — the last section whose top has passed under the bar — and a
- * click marks its target at once. On a phone the row scrolls sideways inside
- * its track and the page does not.
+ * Drawn by `PageAnchorBar`, the one in-page anchor bar the Documentation
+ * stage's chapter bar shares (owner review 10.10.2026), so the two cannot
+ * drift apart: the layer bar's look, the eyebrow "On this page", the section
+ * the reader is in marked as they scroll, and on a phone a row that scrolls
+ * sideways inside its track.
  */
 function ItAnchorBar({ anchors }: { anchors: ItAnchor[] }) {
-  const [current, setCurrent] = useState<ItSectionKey | null>(null);
-  /** A section the reader jumped to stays marked until they scroll away from where the jump landed. */
-  const pinned = useRef<{ key: ItSectionKey; at: number; y: number | null } | null>(null);
-  const keys = anchors.map((a) => a.key).join(' ');
-
-  useEffect(() => {
-    const list = keys ? (keys.split(' ') as ItSectionKey[]) : [];
-    if (list.length === 0 || typeof window === 'undefined') return;
-    // The line a section has to reach to count as the one being read: under
-    // the shell bar and this bar, with a little room.
-    const LINE = 160;
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const pin = pinned.current;
-      if (pin) {
-        // The jump scrolls smoothly; while it runs, and until the reader moves
-        // on from where it landed, the section they chose is the one marked.
-        if (Date.now() - pin.at < 1000) {
-          pin.y = window.scrollY;
-          setCurrent(pin.key);
-          return;
-        }
-        if (pin.y === null || Math.abs(window.scrollY - pin.y) < 80) {
-          setCurrent(pin.key);
-          return;
-        }
-        pinned.current = null;
-      }
-      // The section the line runs through; where two do (the side column
-      // beside the main one on a wide screen), the main column's — the one
-      // further left. Before the first section, none.
-      let at: { key: ItSectionKey; left: number } | null = null;
-      let passed: ItSectionKey | null = null;
-      for (const key of list) {
-        const el = document.getElementById(IT_SECTION_IDS[key]);
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
-        if (r.top > LINE) continue;
-        passed = key;
-        if (r.bottom > LINE && (!at || r.left < at.left)) at = { key, left: r.left };
-      }
-      setCurrent(at ? at.key : passed);
-    };
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(measure);
-    };
-    // An observer per section says when one crosses the line; the scroll
-    // listener covers sections taller than the screen, which cross nothing
-    // while the reader is inside them.
-    const observer =
-      typeof IntersectionObserver === 'undefined'
-        ? null
-        : new IntersectionObserver(schedule, { rootMargin: `-${LINE}px 0px 0px 0px`, threshold: [0, 1] });
-    for (const key of list) {
-      const el = document.getElementById(IT_SECTION_IDS[key]);
-      if (el) observer?.observe(el);
-    }
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('hashchange', schedule);
-    schedule();
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('hashchange', schedule);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [keys]);
-
-  if (anchors.length === 0) return null;
   return (
-    <nav aria-label={wt('itv.anchorsLabel')} data-it-anchors="" className="cc-no-print sticky top-14 z-cc-sticky mt-4 bg-cc-page py-2">
-      <div className="flex min-w-0 items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-1 shadow-cc">
-        <span
-          aria-hidden={true}
-          className="shrink-0 pl-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase max-sm:hidden"
-        >
-          {wt('itv.anchorsLead')}
-        </span>
-        <ul className="m-0 flex min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
-          {anchors.map((a) => {
-            const on = a.key === current;
-            return (
-              <li key={a.key} className="shrink-0">
-                <a
-                  href={`#${IT_SECTION_IDS[a.key]}`}
-                  data-it-anchor={a.key}
-                  data-it-anchor-state={on ? 'on' : 'off'}
-                  aria-current={on ? 'location' : undefined}
-                  onClick={() => {
-                    pinned.current = { key: a.key, at: Date.now(), y: null };
-                    setCurrent(a.key);
-                  }}
-                  className={cn(
-                    'group inline-flex items-stretch rounded-cc-row text-[13px] whitespace-nowrap text-cc-ink no-underline pointer-coarse:min-h-11',
-                    'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus',
-                    on ? 'font-bold' : 'font-semibold',
-                  )}
-                >
-                  {/* The raised surface sits on an inner span, as in the layer
-                      bar: the link keeps no surface of its own (§1.5). */}
-                  <span
-                    className={cn(
-                      'inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1',
-                      on ? 'bg-cc-surface shadow-cc ring-1 ring-cc-ink' : 'group-hover:bg-cc-surface',
-                    )}
-                  >
-                    <span>{a.label}</span>
-                    {a.count ? (
-                      <span
-                        data-it-anchor-count=""
-                        className={cn(
-                          'rounded-full border px-2 text-[11px] leading-[18px] font-semibold tabular-nums',
-                          on ? 'border-cc-ink text-cc-ink' : 'border-cc-line bg-cc-surface text-cc-ink-muted',
-                        )}
-                      >
-                        {a.count}
-                      </span>
-                    ) : null}
-                  </span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </nav>
+    <PageAnchorBar
+      anchors={anchors.map((a) => ({ key: a.key, target: IT_SECTION_IDS[a.key], label: a.label, count: a.count }))}
+      label={wt('itv.anchorsLabel')}
+      lead={wt('itv.anchorsLead')}
+      name="it-anchor"
+      plural="it-anchors"
+      className="mt-4"
+    />
   );
 }
 

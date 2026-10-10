@@ -97,6 +97,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   // the second factor reaches neither.
   { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/cost-assumptions` },
   { file: 'app/api/projects/[projectId]/cost-assumptions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/cost-assumptions`, body: {} },
+  // Owner request 10.10.2026 — the owner's RACI on the Documentation stage, built
+  // on the cost-assumptions route: GET hands out the owner's RACI, POST stores it.
+  { file: 'app/api/projects/[projectId]/raci/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/raci` },
+  { file: 'app/api/projects/[projectId]/raci/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/raci`, body: {} },
   // ADR-078 (04.10.2026) — the requirements specification, built on the
   // cost-assumptions route: GET hands out the owner's document, POST stores it.
   // A token from before the second factor reaches neither.

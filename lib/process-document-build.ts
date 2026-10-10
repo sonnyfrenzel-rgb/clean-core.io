@@ -10,6 +10,7 @@ import { tableTerm, termFor } from '@/lib/abap/business-glossary';
 import { decisionTableViews } from '@/lib/decision-tables';
 import { anchorNarrative } from '@/lib/abap/narrative-anchors';
 import { TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/abap/plain-glossary';
+import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import { callWord, plainOf, plainStepLine, readerQuestions, tablesPhrase, tableWord, thirdPerson, type RawQuestion } from '@/lib/process-document-words';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
@@ -39,6 +40,7 @@ import {
   type PdException,
   type PdGate,
   type PdInput,
+  type PdObject,
   type PdIntegration,
   type PdPathEntry,
   type PdPoint,
@@ -241,6 +243,90 @@ const armLetter = (arm: number): string =>
   arm < 26 ? String.fromCharCode(97 + arm) : `${armLetter(Math.floor(arm / 26) - 1)}${String.fromCharCode(97 + (arm % 26))}`;
 const isEvent = (e: ProcessMapElement) => isEventTag(e.tag) || e.tag === 'boundaryEvent';
 
+/** A table a step reads or changes, as the description carries it. */
+const touchOf = (o: HandbookObject): PdObject => ({ name: o.name, plain: o.plain, line: o.line });
+
+/**
+ * A negated yes/no question asked the plain way round (owner review
+ * 10.10.2026): "Not rejected?" with No → the run ends becomes "Rejected?" with
+ * Yes → the run ends. Only for a question of the form "Not …?" whose two
+ * answers are Yes and No; anything else is left as the map words it.
+ */
+function plainQuestion(
+  label: string,
+  outcomes: PdGate['outcomes'],
+): { label: string; outcomes: PdGate['outcomes'] } | null {
+  const m = /^Not\s+(.+\?)$/.exec(label.trim());
+  if (!m || outcomes.length !== 2) return null;
+  const whens = outcomes.map((o) => o.when).sort();
+  if (whens[0] !== 'No' || whens[1] !== 'Yes') return null;
+  const flipped = outcomes.map((o) => ({ ...o, when: o.when === 'Yes' ? 'No' : 'Yes' }));
+  // Yes first, as a reader asks it.
+  flipped.sort((a, b) => (a.when === 'Yes' ? 0 : 1) - (b.when === 'Yes' ? 0 : 1));
+  return { label: `${m[1].charAt(0).toUpperCase()}${m[1].slice(1)}`, outcomes: flipped };
+}
+
+/** The condition a decision's line writes — `CHECK x = y.` → `x = y` — or null when it holds none. */
+function conditionAt(line: string | undefined): string | null {
+  if (!line) return null;
+  const text = line.replace(/".*$/, '').trim();
+  const m = /^(?:CHECK|IF|ELSEIF|WHILE)\s+(.+?)\s*(\.)?$/i.exec(text);
+  if (m) {
+    const condition = m[1].trim();
+    if (!condition) return null;
+    const whole = m[2] ? condition : `${condition} …`;
+    return whole.length > 120 ? `${whole.slice(0, 119)}…` : whole;
+  }
+  const c = /^CASE\s+(.+?)\s*\.?$/i.exec(text);
+  return c ? `CASE ${c[1].trim()}`.slice(0, 120) : null;
+}
+
+/** The labels a boundary event gets when the map has no better word for it. */
+const GENERIC_CASE = /^(?:on error|error caught)$/i;
+
+/**
+ * What an exception's case is called (owner review 10.10.2026): a boundary the
+ * map calls only "On error" is named from what the code shows there — the
+ * message the user sees ("Attachment could not be read"), else the step whose
+ * call fails ("Upload attachment: the call fails").
+ */
+function caseOf(label: string, shown: string | null, where: string | null): string {
+  if (!GENERIC_CASE.test(label.trim())) return label;
+  if (shown) {
+    const words = shown
+      .replace(/\s*(?:…|\.\.\.)\s*$/, '')
+      .replace(/[:\s]+$/, '')
+      .replace(/\s+(?:for|of|to|with|in|on|at|from|by)$/i, '')
+      .trim();
+    if (words) return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+  }
+  return where ? `${where}: the call fails` : label;
+}
+
+type PlainCtx = ReturnType<typeof plainContext> | undefined;
+
+/** A variable in words where the glossary knows it; null when it can only be read as the code writes it. */
+function plainWordOf(identifier: string, ctx: PlainCtx): string | null {
+  const word = humaniseField(identifier, ctx).trim();
+  const bare = identifier.replace(/^.*-/, '');
+  if (!word || word.toUpperCase() === identifier.toUpperCase() || word.toUpperCase() === bare.toUpperCase()) return null;
+  return word;
+}
+
+/** An expression with its operands in words — "Quantity × Price ÷ Price unit"; null when no operand has a word. */
+function plainExpressionOf(expression: string, ctx: PlainCtx): string | null {
+  let changed = false;
+  const words = expression.replace(/[A-Za-z_]\w*(?:-\w+)*/g, (token) => {
+    if (/^(?:abap_true|abap_false|space)$/i.test(token)) return token;
+    const word = plainWordOf(token, ctx);
+    if (!word) return token;
+    changed = true;
+    return word;
+  });
+  if (!changed) return null;
+  return words.replace(/\s\*\s/g, ' × ').replace(/\s\/\s/g, ' ÷ ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+}
+
 export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocument {
   const { source, map } = input;
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
@@ -442,20 +528,28 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     if (isGateway(element)) {
       const choice = choiceGates.has(element.id);
       const table = element.nodeId ? tableAtNode.get(element.nodeId) : undefined;
+      const outcomes = element.branches.map((branch) => {
+        const target = byId.get(branch.to);
+        const ends = !!target && isEventTag(target.tag) && /end/i.test(target.tag);
+        return {
+          when: whenOf(branch),
+          then: ends ? (choice ? 'nothing else happens' : 'the run ends') : `continue with ${q(target ? nameOf(target) : branch.toLabel)}`,
+          ends: ends && !choice,
+        };
+      });
+      // Owner review 10.10.2026: "Decision: Not rejected?" is hard to read. A
+      // negated yes/no question is asked the plain way round ("Rejected?") and
+      // its two answers swap with it; the condition as the code writes it
+      // stands beside the question (`condition`).
+      const plain = choice || table ? null : plainQuestion(nameOf(element), outcomes);
+      const condition = choice ? null : conditionAt(element.anchor ? lines[element.anchor.lineStart - 1] : undefined);
       const gate: PdGate = {
         kind: 'gate',
         id: element.id,
-        label: nameOf(element),
+        label: plain ? plain.label : nameOf(element),
         anchor: element.anchor ? copy(element.anchor) : null,
-        outcomes: element.branches.map((branch) => {
-          const target = byId.get(branch.to);
-          const ends = !!target && isEventTag(target.tag) && /end/i.test(target.tag);
-          return {
-            when: whenOf(branch),
-            then: ends ? (choice ? 'nothing else happens' : 'the run ends') : `continue with ${q(target ? nameOf(target) : branch.toLabel)}`,
-            ends: ends && !choice,
-          };
-        }),
+        outcomes: plain ? plain.outcomes : outcomes,
+        ...(condition ? { condition } : {}),
         ...(choice ? { choice: true as const } : {}),
         ...(table ? { decisionTable: { id: table.id, field: table.field, selector: table.selector, rows: table.rows.length } } : {}),
         actor: choice
@@ -556,6 +650,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       subSteps: shown,
       moreSubSteps: Math.max(0, ids.length - 1 - shown.length - ids.slice(1).filter((x) => { const e = byId.get(x); return !e || isEvent(e); }).length),
       // The first step of an alternative is what the user chose; a later step of the arm is read from its own code.
+      touches: { reads: reads.map(touchOf), writes: writes.map(touchOf) },
       actor: actorOf(ids, alternative && firstOfArm
         ? { when: alternative.when, at: (() => { const g = byId.get(alternative.gateId); return g?.anchor ? copy(g.anchor) : null; })() }
         : null),
@@ -663,11 +758,46 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   }
   const data = [...dataMap.values()];
 
+  // Owner review 10.10.2026 ("What it touches in SAP"): the tables it changes,
+  // read like the tables it reads — every reached write site, one row per table.
+  const writeMap = new Map<string, PdData>();
+  for (const s of allSites.filter((x) => x.kind === 'table' && x.use === 'write' && reachedLine(x.line))) {
+    const d = writeMap.get(s.name);
+    if (d) {
+      if (d.anchors.length < 4 && !d.anchors.some((a) => a.lineStart === s.line)) d.anchors.push(anchor(s.line));
+      continue;
+    }
+    writeMap.set(s.name, {
+      name: s.name,
+      meaning: TABLE_TERMS_EN[s.name.toLowerCase()]?.singular ?? null,
+      owner: isCustomerObject(s.name) ? 'Customer' : 'SAP',
+      anchors: [anchor(s.line)],
+    });
+  }
+  const writes = [...writeMap.values()];
+
   // Values the program computes rather than reads — `offen = menge - wemng`,
   // and running totals (`x = x + y`) — reached code only.
+  // Owner review 10.10.2026: plain labels where the glossary knows the value,
+  // the variable names as the source column.
+  const plainCtx = (() => {
+    try {
+      return plainContext(source);
+    } catch {
+      return undefined;
+    }
+  })();
   const derived: PdDerived[] = scope.derived
     .filter((d) => reachedLine(d.line))
-    .map((d) => ({ target: d.target, expression: d.expression, accumulates: d.accumulates, where: d.container, anchors: [anchor(d.line)] }));
+    .map((d) => ({
+      target: d.target,
+      label: plainWordOf(d.target, plainCtx),
+      expression: d.expression,
+      plainExpression: plainExpressionOf(d.expression, plainCtx),
+      accumulates: d.accumulates,
+      where: d.container,
+      anchors: [anchor(d.line)],
+    }));
 
   // Input that is asked for and then not used (`lib/abap/input-use.ts`), in
   // plain words; the data object and the dialogue stand in the detail.
@@ -934,7 +1064,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
           ? `${q(where)} ends here.`
           : 'The run ends here.';
     exceptions.push({
-      what: e.label,
+      what: caseOf(e.label, near?.text ?? null, where),
       where,
       message: near?.words ?? null,
       shown: near?.text ?? null,
@@ -1285,6 +1415,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     glance: { summary: glanceSummary, trigger: glanceTrigger, points },
     purpose: { users, inScope, outOfScope, proposal: purposeProposal },
     trigger: { start, selection: inputs, data, inputUse },
+    writes,
     derived,
     overview: { sentence: overviewSentence, traceability: engine.traceability.sentence, path, decisions },
     rules,

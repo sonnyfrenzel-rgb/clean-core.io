@@ -11,7 +11,10 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { pairWithEvidence, proposalAt } from '@/lib/statement-proposal';
-import { sentenceKey } from '@/lib/process-document';
+import { sentenceKey, type PdTraceGroup } from '@/lib/process-document';
+import { groupTitle } from '@/lib/process-document-outline';
+import CcAnchor from '@/components/cc/Anchor';
+import CcDisclosure from '@/components/cc/Disclosure';
 import {
   effectsSummary,
   gapsSummary,
@@ -54,8 +57,16 @@ export default function ProcessDocumentationView({
   proposal,
   appendix = false,
   proposalPanel = true,
+  groups,
 }: {
   doc: ProcessDocumentation;
+  /**
+   * The statements grouped by routine (`ProcessDocument.appendix.groups`) —
+   * in the appendix the whole-program list reads routine by routine, one fold
+   * each, instead of one list of every sentence (owner review 10.10.2026).
+   * Without it, or with the model's sentences paired in, the list is flat.
+   */
+  groups?: readonly PdTraceGroup[];
   proposal?: StatementProposalPanelProps;
   /**
    * Whether the button that asks for the proposal stands here. The stage puts
@@ -168,7 +179,7 @@ export default function ProcessDocumentationView({
         name="statements"
         data-doc-statements=""
         level={4}
-        title={appendix ? 'Statements, across the whole program' : 'Business statements, across the whole program'}
+        title={appendix ? (groups?.length ? 'Statements by routine' : 'Statements, across the whole program') : 'Business statements, across the whole program'}
         rows={statements.length}
         summary={statementsSummary(statements)}
       >
@@ -180,6 +191,31 @@ export default function ProcessDocumentationView({
               : `${statements.length} statements, in the order of the program.`}
         </p>
         {proposal && proposalPanel && <StatementProposalPanel {...proposal} />}
+        {appendix && groups && groups.length && !rows ? (
+          <ol data-doc-statement-groups={groups.length} className="m-0 flex list-none flex-col p-0">
+            {groups.map((g) => (
+              <li key={g.routine} data-doc-statement-group={g.routine} className="min-w-0 border-t border-cc-line py-1 first:border-t-0">
+                <CcDisclosure title={groupTitle(g)} count={g.statements.length} density="compact">
+                  <ul className="m-0 mt-1 mb-2 flex list-none flex-col gap-1 p-0">
+                    {g.statements.map((st, i) => (
+                      <li key={i} className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 rounded-cc-row px-2 py-1 cc-text-cell text-cc-ink odd:bg-cc-surface-muted sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{st.text}</span>
+                        <span className="inline-flex flex-wrap items-center gap-1 sm:justify-end">
+                          {st.anchors.slice(0, 3).map((a) => (
+                            <CcAnchor key={`${a.lineStart}-${a.lineEnd}`} label={a.lineEnd > a.lineStart ? `Source lines ${a.lineStart} to ${a.lineEnd}` : `Source line ${a.lineStart}`}>
+                              {a.lineEnd > a.lineStart ? `L${a.lineStart}–${a.lineEnd}` : `L${a.lineStart}`}
+                            </CcAnchor>
+                          ))}
+                          {st.anchors.length > 3 ? <span className="cc-text-meta text-cc-ink-muted">+{st.anchors.length - 3}</span> : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CcDisclosure>
+              </li>
+            ))}
+          </ol>
+        ) : (
         <ul className="space-y-2 text-sm text-cc-ink">
           {rows
             ? rows.map((row, i) =>
@@ -205,6 +241,7 @@ export default function ProcessDocumentationView({
                 <StatementRow key={statement.id} text={statement.text} anchors={statement.anchors} />
               ))}
         </ul>
+        )}
       </FoldedListSection>
 
       <FoldedListSection

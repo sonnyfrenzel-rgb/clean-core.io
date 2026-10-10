@@ -110,7 +110,64 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.stepsCaption': 'Steps',
   'doc.whoActs': 'Who acts',
   // Owner decision 10.10.2026 (ADR-084): proven only — without one proven actor there is no column, only this line.
-  'doc.whoActsNotProvable': 'Who acts is not provable from the code: it holds no dialogue, background or update-task statement that says so.',
+  // Owner review 10.10.2026: the start is proven, who carries out the steps is not — the summary and this line say the same.
+  'doc.whoActsNotProvable':
+    'How a run starts is read from the code; who carries out the steps is not provable from it: the steps hold no dialogue, background or update-task statement that says so.',
+  'doc.whoCarriesOutNot': 'Who carries out the steps is not provable from the code.',
+
+  // Owner review 10.10.2026 — the chapter bar (the IT view's anchor bar, ADR-086): seven chapters, the reader question as each chip's tooltip.
+  'doc.chaptersLabel': 'Chapters of the process description',
+  'doc.chaptersLead': 'On this page',
+  'doc.chapterOverview': 'How it works',
+  'doc.chapterRules': 'Rules',
+  'doc.chapterExceptions': 'Exceptions',
+  'doc.chapterOutputs': 'Changes',
+  'doc.chapterSystems': 'Systems & data',
+  'doc.chapterQuestions': 'Open questions',
+  'doc.chapterAppendix': 'Appendix',
+  'doc.chapterNone': 'none',
+  'doc.chapterAppendixQuestion': 'Where is the evidence? Step details and every statement with its lines',
+
+  // Owner review 10.10.2026 — two pictures in the summary, both drawn from the code reading.
+  'doc.flowTitle': 'Main path',
+  'doc.flowLabel': 'The main path of the process, step by step',
+  'doc.flowStart': 'Start',
+  'doc.flowEnd': 'End',
+  'doc.flowEnds': 'ends the run',
+  'doc.touchesTitle': 'What it touches in SAP',
+  'doc.touchesReads': 'Reads',
+  'doc.touchesChanges': 'Changes',
+  'doc.touchesNone': 'None by name',
+  'doc.touchesOpen': 'Systems and data',
+  'doc.touchesCustom': 'custom table',
+
+  // Owner review 10.10.2026 — the appendix: a compact summary first, each step's details folded.
+  'doc.appendixSummaryTitle': 'Steps at a glance',
+  'doc.appendixDetailsTitle': 'Step details',
+  'doc.appendixEvidenceTitle': 'The evidence, complete',
+  'doc.appendixEvidenceLead': 'Every process element and every statement the engine read, with its lines.',
+  'doc.appendixStatementsByRoutine': 'Statements by routine',
+
+  // Owner review 10.10.2026 — the SOP folded by default; thin model text flagged, never hidden.
+  'doc.sopCards': 'SOP per step',
+  'doc.sopThin': 'Thin — says no more than the step name',
+
+  // Owner request 10.10.2026 — the owner edits the RACI (an exception to "no input in Documentation", ADR-084 amended).
+  'doc.raciEdit': 'Edit RACI',
+  'doc.raciEditTitle': 'Edit who is responsible',
+  'doc.raciEditLead': 'One letter per step and role: Responsible, Accountable, Consulted, Informed, or none. Rename, add or remove roles. Saved for this project; everyone with access sees it.',
+  'doc.raciSave': 'Save RACI',
+  'doc.raciCancel': 'Cancel',
+  'doc.raciAddRole': 'Add role',
+  'doc.raciRemoveRole': 'Remove role',
+  'doc.raciRoleName': 'Role name',
+  'doc.raciNewRole': 'New role',
+  'doc.raciCellNone': '—',
+  'doc.raciSaved': 'Saved.',
+  'doc.raciNotSaved': 'The RACI was not saved.',
+  'doc.raciDemoKept': 'Kept in this browser only — the demo stores nothing.',
+  'doc.raciDemoLead': 'A project starts from the model’s proposal; the demo calls no model. Name the roles yourself and say who does what at each step.',
+  'doc.raciEditedNote': 'Your RACI replaces the model proposal in the matrix and in every export.',
   'doc.dataReads': 'Data it reads',
   'doc.derivedValues': 'Values it computes',
   'doc.integrationsTitle': 'Integrations',
@@ -258,6 +315,47 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
  */
 export function docProposalsCostLine(model: string, byok: boolean): string {
   return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation writes the SOP and RACI once when none is on record; the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+}
+
+/** "The model wrote 1 step the process does not have; it is not shown." (owner review 10.10.2026) */
+export function sopDroppedLine(n: number): string {
+  return n === 1
+    ? 'The model wrote 1 step the process does not have; it is not shown.'
+    : `The model wrote ${n} steps the process does not have; they are not shown.`;
+}
+
+/** "Edited by Mara Weber · 10 Oct 2026" — the stage's line for the owner's RACI (ADR-083 b: the name, else the e-mail). */
+export function raciEditedLine(by: string, date: string): string {
+  return `Edited by ${by} · ${date}`;
+}
+
+/** "Role 2 at step 3: Check requisition" — the accessible name of one cell of the RACI editor. */
+export function raciCellLabel(role: string, step: number, name: string): string {
+  return `${role || 'New role'} at step ${step}: ${name}`;
+}
+
+/** "2 of 11 SOP cards are thin" — the summary of the folded SOP cards. */
+export function sopCardsSummary(total: number, thin: number): string {
+  return thin > 0 ? `${plural(total, 'step', 'steps')}; ${thin} with thin text` : plural(total, 'step', 'steps');
+}
+
+/** "Replace the SOP and RACI?" — and, when the owner edited the RACI, that the edits go with it. */
+export function replaceSopBody(edited: boolean): string {
+  return edited
+    ? 'The model writes a new SOP and RACI proposal for this process description. Your edits to the RACI belong to the proposal on record and are lost with it.'
+    : 'The model writes a new SOP and RACI proposal for this process description.';
+}
+
+/** The same for "Read again from the code", which removes the SOP and RACI with the description. */
+export function replaceDocBody(edited: boolean): string {
+  return edited
+    ? 'The process description is read again from the code. The SOP and RACI on record were written for the description it replaces, so they are removed with it — and with them your edits to the RACI.'
+    : 'The process description is read again from the code. The SOP and RACI on record were written for the description it replaces, so they are removed with it.';
+}
+
+/** "Reads 3 tables · changes 1" — what the picture of a step's SAP tables says in words. */
+export function touchesStepLine(reads: number, writes: number): string {
+  return [reads ? `reads ${plural(reads, 'table', 'tables')}` : '', writes ? `changes ${plural(writes, 'table', 'tables')}` : ''].filter(Boolean).join(' · ');
 }
 
 /** The file name of a legacy blueprint, downloaded as it was stored. */
