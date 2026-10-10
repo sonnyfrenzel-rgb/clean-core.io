@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { TCO_TARGET_SCORE, type TcoForecastRow } from '@/lib/tco-model';
 import { useParams } from 'next/navigation';
+import { useFollowHash } from '@/hooks/useFollowHash';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import type { Project } from '@/lib/types';
@@ -138,6 +139,8 @@ const RechartsChart = dynamic(() => import('recharts').then(mod => {
  */
 export default function TcoCalculatorPage() {
   const { projectId } = useParams();
+  // The decision card's Costs pillar links to `#economics-compare`, which renders only after the project loads.
+  useFollowHash();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   // A read that failed is not a project without a score (QA ffddf6b4fee6).
@@ -763,7 +766,7 @@ export default function TcoCalculatorPage() {
           }
         >
           <div className="space-y-6">
-            <section aria-labelledby="economics-compare-title">
+            <section aria-labelledby="economics-compare-title" id="economics-compare" className="scroll-mt-20">
               <h3 id="economics-compare-title" className="mb-3 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
                 Options compared <CcProvenanceChip value="simulation" />
               </h3>

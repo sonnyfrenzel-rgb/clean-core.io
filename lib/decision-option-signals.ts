@@ -52,7 +52,7 @@ import {
   type CostAssumptions,
   type CostOption,
 } from './cost-assumptions';
-import { restoreAssumptions, type EconomicsRecord } from './economics-record';
+import { economicsInWords, restoreAssumptions, type EconomicsRecord } from './economics-record';
 import {
   DECISION_OPTIONS,
   DECISION_OPTION_LABELS,
@@ -373,7 +373,8 @@ function costOf(o: CostOption | null, a: CostAssumptions | null, economics: Econ
     value: `${formatAmountRange(cost.total, a.currency)}${years ? ` over ${plural(years, 'year', 'years')}` : ''}`,
     reason: null,
     provenance: 'simulation',
-    note: `a simulation on your own assumptions (revision ${economics.revision}), not a quote`,
+    // In words, never the revision key (owner, 10.10.2026) — the key stays in Economics' technical details.
+    note: `Simulation on your own assumptions from Economics (${economicsInWords(economics)}) — not a quote.`,
   };
 }
 

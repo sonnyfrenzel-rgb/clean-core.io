@@ -47,6 +47,7 @@ import {
 } from './cost-assumptions';
 import { comparisonChecklist, forecastChecklist, type ChecklistRow } from './economics-checklist';
 import { tcoForecast, TCO_TARGET_SCORE, type TcoForecast } from './tco-model';
+import { formatTextDate } from './format';
 
 /** Format of the stored record. Bumped only when its shape changes. */
 export const ECONOMICS_RECORD_FORMAT = 1;
@@ -521,4 +522,26 @@ export function recordProgress(
 export function pricedOptions(record: EconomicsRecord): { priced: number; total: number } {
   const a = restoreAssumptions(record.assumptions);
   return { priced: a.options.filter((o) => optionCost(a, o).total !== null).length, total: a.options.length };
+}
+
+/**
+ * The stored assumptions as a reader reads them back — "5 years, 4 options,
+ * saved 10 Oct 2026" — read from the record's own fields, never from the
+ * revision key. The key (`EUR@5y/2/y#4opt+c0a79c40fa90`) is a technical name:
+ * it stays in Economics' *Technical details* and on the signed record, and is
+ * never printed in a sentence for a reader (owner, 10.10.2026: "looks very
+ * cryptic"). A part that is not stated is left out, never guessed.
+ */
+export function economicsInWords(record: EconomicsRecord): string {
+  const a = record.assumptions;
+  const years = a?.horizonYears;
+  const options = Array.isArray(a?.options) ? a.options.length : 0;
+  const saved = formatTextDate(record.savedAt);
+  return [
+    typeof years === 'number' && Number.isFinite(years) && years > 0 ? `${years} ${years === 1 ? 'year' : 'years'}` : null,
+    `${options} ${options === 1 ? 'option' : 'options'}`,
+    saved ? `saved ${saved}` : null,
+  ]
+    .filter((p): p is string => p !== null)
+    .join(', ');
 }

@@ -12,7 +12,7 @@ import {
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import type { Project } from './types';
-import { pricedOptions } from './economics-record';
+import { economicsInWords, pricedOptions } from './economics-record';
 import { decisionQuestion } from './decision-options';
 
 /**
@@ -53,13 +53,16 @@ export type ExecutiveCosts =
    * No cost revision in the decision record, and figures stored on the
    * Economics stage (03.10.2026): a scenario on record, not bound to anything.
    */
-  | { state: 'stored'; revision: string; priced: number; total: number; complete: boolean; stale: boolean }
+  | { state: 'stored'; revision: string; words: string; priced: number; total: number; complete: boolean; stale: boolean }
   | { state: 'not-entered'; reason: string }
   | { state: 'unknown'; reason: string };
 
 /** The Economics figures stored for the project, as far as the executive answer may say them — no amount. */
 export interface StoredCosts {
+  /** The revision key — for the record and technical details, never printed in a sentence. */
   revision: string;
+  /** The same assumptions in words: "5 years, 4 options, saved 10 Oct 2026" (`economicsInWords`). */
+  words: string;
   priced: number;
   total: number;
   complete: boolean;
@@ -194,7 +197,7 @@ export function storedCostsOf(project: Project | null, steps: readonly RailStep[
   if (!econ) return null;
   const tco = steps.find((s) => s.key === 'tco');
   const { priced, total } = pricedOptions(econ);
-  return { revision: econ.revision, priced, total, complete: tco?.state === 'done', stale: tco?.state === 'stale' };
+  return { revision: econ.revision, words: economicsInWords(econ), priced, total, complete: tco?.state === 'done', stale: tco?.state === 'stale' };
 }
 
 const ECONOMICS: ExecutiveAction = {
@@ -394,7 +397,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
               ? 'costs on your own assumptions — not a quote; amounts stand in Economics'
               : costs.note ?? 'the comparison names no cheapest option yet',
           provenance: costs.provenance === 'simulation' ? 'simulation' : 'not-determined',
-          coverage: `cost revision ${costs.revision}`,
+          coverage: 'the cost assumptions this decision records',
           action: { ...ECONOMICS, label: 'Open in Economics' },
         }
       : costs.state === 'stored'
@@ -408,7 +411,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
               ? 'costs on your own figures, every option priced — a scenario, not a quote; amounts stand in Economics'
               : `costs on your own figures, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
           provenance: 'simulation',
-          coverage: `cost assumptions revision ${costs.revision}, stored in Economics and not bound to a decision`,
+          coverage: `your assumptions in Economics (${costs.words}) — the decision does not record costs`,
           action: { ...ECONOMICS, label: 'Open in Economics' },
         }
       : {

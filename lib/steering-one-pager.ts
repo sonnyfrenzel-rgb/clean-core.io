@@ -7,7 +7,7 @@ import type { CloudReadinessGrade } from './abap/abcd-classification';
 import type { ProvenanceValue } from './provenance';
 import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
-import { pricedOptions } from './economics-record';
+import { economicsInWords, pricedOptions } from './economics-record';
 import { workflowSteps } from './workflow-steps';
 import {
   decisionOptionsView,
@@ -450,7 +450,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
             value: `${econPriced.priced} of ${econPriced.total} priced`,
             absentReason: null,
             meaning:
-              `A scenario on your own figures (cost assumptions revision ${econ.revision})` +
+              `A scenario on your own figures from Economics (${economicsInWords(econ)})` +
               (econStale ? ', stored against an earlier score, to be checked' : '') +
               '; amounts stand in Economics, never here.',
             provenance: 'simulation',

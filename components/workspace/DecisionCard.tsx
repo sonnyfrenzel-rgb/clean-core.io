@@ -337,7 +337,7 @@ export default function DecisionCard({
                 href={placeHref(projectId, p.place)}
                 className="mt-auto pt-2 text-[12px] font-semibold text-cc-ink underline underline-offset-2"
               >
-                {placeLabel(p.place)}
+                {p.place.action ?? placeLabel(p.place)}
               </a>
             </li>
           );
@@ -589,7 +589,8 @@ function placeHref(projectId: string, place: DecisionPlace): string {
     return `/project/${encodeURIComponent(projectId)}?view=${place.view}${place.hash ? `#${encodeURIComponent(place.hash)}` : ''}`;
   }
   // Back to this view from the stage: a link parameter, never a stored role.
-  return stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });
+  const href = stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });
+  return place.hash ? `${href}#${encodeURIComponent(place.hash)}` : href;
 }
 
 function placeLabel(place: DecisionPlace): string {

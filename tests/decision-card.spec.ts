@@ -723,13 +723,23 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     // Never invented: the cost revision is not bound, and the pillar says so.
     expect(by.cost.provenance).toBe('not-determined');
     expect(by.cost.line).toMatch(/No cost assumptions entered yet/);
-    // Figures stored on Economics but bound to no decision: the pillar says how
-    // far they price, and that they are not bound — never "none entered", never
-    // in place, never an amount (merge of economics-persist, 03.10.2026).
+    // Figures stored on Economics, which no decision records (the draft never
+    // binds them — ADR-085, amendment of 10.10.2026): the chip says what they
+    // are, a simulation, and the line agrees with it — never "Not determined"
+    // beside "priced", never in place, never an amount (owner, 10.10.2026).
     const stored = Object.fromEntries(decisionManagerView(draft, { priced: 2, total: 3 }).pillars.map((p) => [p.key, p]));
-    expect(stored.cost.line).toBe('2 of 3 options priced in Economics — not bound to this decision.');
-    expect(stored.cost.provenance).toBe('not-determined');
+    expect(stored.cost.line).toBe('Economics prices 2 of 3 options on your own assumptions; the decision does not record costs.');
+    expect(stored.cost.provenance).toBe('simulation');
     expect(stored.cost.inPlace).toBe(false);
+    expect(stored.cost.place).toEqual({
+      kind: 'stage',
+      path: 'tco',
+      hash: DECISION_PLACE_IDS.economicsCompare,
+      action: 'Compare the options in Economics',
+    });
+    expect(decisionManagerView(draft, { priced: 4, total: 4 }).pillars.find((p) => p.key === 'cost')?.line).toBe(
+      'Economics prices all 4 options on your own assumptions; the decision does not record costs.',
+    );
     expect(decisionManagerView(draft, { priced: 0, total: 3 }).pillars.find((p) => p.key === 'cost')?.line).toMatch(/No cost assumptions entered yet/);
     // Green is reserved for proven: no pillar of a decision is proven.
     for (const p of m.pillars) expect(p.provenance).not.toBe('proven');
@@ -835,6 +845,9 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(DECISION_PLACE_IDS.itFindings).toBe(IT_SECTION_IDS.findings);
     expect(DECISION_PLACE_IDS.itOpenQuestions).toBe(IT_SECTION_IDS.questions);
     expect(DECISION_PLACE_IDS.businessMap).toBe(BUSINESS_MAP_ID);
+    const economics = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+    expect(economics).toContain(`id="${DECISION_PLACE_IDS.economicsCompare}"`);
+    expect(economics).toContain('useFollowHash()');
     const rulesEditor = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/BusinessRulesEditor.tsx'), 'utf8');
     expect(rulesEditor).toContain(`export const BUSINESS_RULES_ID = '${DECISION_PLACE_IDS.businessRules}'`);
     expect(decisionTodoCount(2, 3)).toBe('2 to do · 3 stay open');

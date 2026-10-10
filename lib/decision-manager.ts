@@ -40,7 +40,7 @@ export type DecisionPlace = (
   | { kind: 'stage'; path: 'analyze' | 'design' | 'tco' }
   | { kind: 'view'; view: 'business' | 'it' | 'management' }
 ) & {
-  /** An element id on the target view (`not-determined`, `business-rules`), without `#`. */
+  /** An element id on the target view or stage (`not-determined`, `economics-compare`), without `#`. */
   hash?: string;
   /** What the link says: the action at that place ("Decide on 12 rules"). */
   action?: string;
@@ -60,6 +60,8 @@ export const DECISION_PLACE_IDS = Object.freeze({
   businessRules: 'business-rules',
   businessMap: 'process-map',
   businessStandard: 'standard',
+  /** The options compared in Economics (`app/(app)/project/[projectId]/tco/page.tsx`). */
+  economicsCompare: 'economics-compare',
 });
 
 export type PillarKey = 'need' | 'option' | 'cost' | 'contract';
@@ -235,7 +237,14 @@ export function unassessedParts(subject: string | null): { places: number; detai
 
 /**
  * What the Economics stage has stored, when the decision binds no cost
- * revision of it yet: how many options its figures price (never an amount).
+ * revision of it: how many options its figures price (never an amount).
+ *
+ * The decision never binds them: `lib/decision-draft.ts` derives every draft
+ * with `assumptions: null` — binding a revision of the stored comparison is not
+ * built (ADR-085, amendment of 10.10.2026). So figures on record are not an
+ * older decision's blind spot, and recording the decision again would not take
+ * them in; the pillar says what they are (a simulation in Economics) and that
+ * the decision does not record them.
  */
 export type StoredCostScenario = { priced: number; total: number };
 
@@ -280,11 +289,29 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
   }
 
   if (key === 'cost') {
+    // Figures in Economics the decision does not record (ADR-085, amendment of
+    // 10.10.2026): the chip says what they are — a simulation — and the line
+    // says where they stand. "Not determined" beside "4 of 4 priced" read as a
+    // contradiction (owner, 10.10.2026). Never in place: nothing is bound.
+    if ((!b || revision === null) && stored && stored.priced > 0) {
+      const which =
+        stored.priced !== stored.total
+          ? `${stored.priced} of ${stored.total} options`
+          : stored.total === 1
+            ? 'the one option'
+            : `all ${stored.total} options`;
+      return {
+        ...base,
+        provenance: 'simulation',
+        inPlace: false,
+        title: 'Costs',
+        line: `Economics prices ${which} on your own assumptions; the decision does not record costs.`,
+        place: { kind: 'stage', path: 'tco', hash: DECISION_PLACE_IDS.economicsCompare, action: 'Compare the options in Economics' },
+      };
+    }
     const line =
       !b || revision === null
-        ? stored && stored.priced > 0
-          ? `${stored.priced} of ${stored.total} options priced in Economics — not bound to this decision.`
-          : !b || /no cost assumptions were stated/i.test(b.notDeterminedReason ?? '')
+        ? !b || /no cost assumptions were stated/i.test(b.notDeterminedReason ?? '')
           ? 'No cost assumptions entered yet, so no option is priced.'
           : 'The cost assumptions are incomplete, so no amount is shown.'
         : provenance === 'simulation'

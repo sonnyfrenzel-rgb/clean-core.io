@@ -46,6 +46,7 @@ import type { BusinessRuleSet } from './abap/business-rule-set';
 import type { ProcessSummary } from './process-summary';
 import { capabilityKeyOf } from './abap/standard-coverage';
 import { pricedOptions } from './economics-record';
+import { formatTextDate } from './format';
 
 /* ------------------------------------------------------------------ views */
 
@@ -674,7 +675,9 @@ export function workspaceLayers(
           }`,
           anchor: null,
         },
-        { key: 'revision', label: 'Cost assumptions revision', value: econ.revision, anchor: null },
+        // The day they were saved, never the revision key (owner, 10.10.2026: "looks very
+        // cryptic") — the key stays in Economics' technical details.
+        { key: 'saved', label: 'Your figures saved', value: formatTextDate(econ.savedAt) ?? 'not determined', anchor: null },
       ]
     : [];
   const costsRows: LayerRow[] = hasRun

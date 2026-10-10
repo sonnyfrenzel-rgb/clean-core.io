@@ -3,6 +3,7 @@ import {
   ECONOMICS_LIMITS,
   ECONOMICS_RECORD_FORMAT,
   ECONOMICS_START_INPUTS,
+  economicsInWords,
   economicsProgress,
   readEconomicsRecord,
   recordProgress,
@@ -247,12 +248,29 @@ test.describe('what Delivery and Management read', () => {
     const p = project(record(complete()));
     const layer = workspaceLayers(p).find((l) => l.key === 'costs')!;
     expect(layer.count).toBe('4 of 4 options priced · scenario');
-    expect(layer.rows.map((r) => r.key)).toEqual(['scenario', 'priced', 'horizon', 'revision', 'basis', 'score']);
+    expect(layer.rows.map((r) => r.key)).toEqual(['scenario', 'priced', 'horizon', 'saved', 'basis', 'score']);
     expect(JSON.stringify(layer)).not.toMatch(/EUR\s?\d/);
     expect(workspaceLayers(project(null)).find((l) => l.key === 'costs')!.count).toBe('not priced yet');
 
     const costs = costsFromDecision({ state: 'loading' } as never, storedCostsOf(p, workflowSteps(p)));
     expect(costs).toMatchObject({ state: 'stored', priced: 4, total: 4, complete: true, stale: false });
     expect(costsFromDecision({ state: 'loading' } as never, null)).toMatchObject({ state: 'unknown' });
+  });
+
+  test('a reader is told the assumptions in words, never the revision key (owner, 10.10.2026)', () => {
+    const r = record(complete());
+    const n = r.assumptions.options.length;
+    expect(economicsInWords(r)).toBe(`5 years, ${n} options, saved 3 Oct 2026`);
+    expect(economicsInWords({ ...r, savedAt: '' })).toBe(`5 years, ${n} options`);
+    const p = project(r);
+    const steps = workflowSteps(p);
+    const stored = storedCostsOf(p, steps)!;
+    expect(stored.words).toBe(economicsInWords(r));
+    const sayings = JSON.stringify([
+      workspaceLayers(p).find((l) => l.key === 'costs'),
+      costsFromDecision({ state: 'loading' } as never, stored),
+    ].map((x) => (x && 'state' in x ? { ...x, revision: undefined } : x)));
+    expect(sayings).not.toContain(r.revision);
+    expect(sayings).not.toMatch(/#\d+opt\+/);
   });
 });

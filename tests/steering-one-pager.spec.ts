@@ -497,7 +497,7 @@ test.describe('ADR-079 one-pager — the question and the four options', () => {
     expect(step?.link?.href).toBe('/project/p-1?view=management#decision-options');
   });
 
-  test('effort and cost per option come only from Economics, the cost as a simulation with its revision', () => {
+  test('effort and cost per option come only from Economics, the cost as a simulation with its assumptions in words', () => {
     const seed = initialCostAssumptions();
     expect(seed.options.map((o) => o.label)).toEqual(['Keep', 'Rebuild', 'Move to SAP standard', 'Retire']);
     const assumptions: CostAssumptions = {
@@ -533,10 +533,15 @@ test.describe('ADR-079 one-pager — the question and the four options', () => {
     const retire = page.decision.options.find((o) => o.option === 'retire')!;
     expect(retire.effort).toMatchObject({ value: null, provenance: 'not-determined' });
     expect(retire.cost).toMatchObject({ value: null, provenance: 'not-determined' });
-    // A priced option carries its amount only as a simulation, with the revision it comes from.
+    // A priced option carries its amount only as a simulation, with the assumptions it
+    // comes from in words — never the revision key (owner, 10.10.2026: "looks very cryptic").
     expect(rebuild.cost.provenance).toBe('simulation');
     expect(rebuild.cost.value).toMatch(/over 5 years$/);
-    expect(rebuild.cost.note).toContain(econ.revision);
+    expect(rebuild.cost.note).toBe('Simulation on your own assumptions from Economics (5 years, 4 options, saved 6 Oct 2026) — not a quote.');
+    expect(rebuild.cost.note).not.toContain(econ.revision);
+    const costs = page.figures.find((f) => f.key === 'costs')!;
+    expect(costs.meaning).toContain('(5 years, 4 options, saved 6 Oct 2026)');
+    expect(costs.meaning).not.toContain(econ.revision);
     // Every other line of the page stays without an amount.
     for (const line of textOf(page)) expect(containsAmount(line), line).toBe(false);
   });
