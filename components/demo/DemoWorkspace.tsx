@@ -14,6 +14,7 @@ import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
 import DemoEconomics from '@/components/tco/DemoEconomics';
 import type { PhaseKey } from '@/lib/workflow-steps';
+import { DEMO_ANALYSIS_KEY, markAnalysisRead } from '@/lib/analysis-read';
 import type { DemoProject } from '@/lib/demo-project';
 import type { WorklistItem } from '@/lib/types';
 import DemoDelivery from '@/components/delivery/DemoDelivery';
@@ -121,6 +122,12 @@ export default function DemoWorkspace({
     setState(readState());
     setHydrated(true);
   }, []);
+
+  // The demo's Analyze shows the engine's reading of the example as it opens,
+  // so the demo workspace stops saying "ready to read" (ADR-090). Browser only.
+  useEffect(() => {
+    if (stage === 'analyze') markAnalysisRead(DEMO_ANALYSIS_KEY);
+  }, [stage]);
 
   useEffect(() => {
     if (!hydrated) return;

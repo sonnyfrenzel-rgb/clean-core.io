@@ -40,6 +40,10 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'hub.pathLabel': 'Where the seven tools stand',
   'hub.stageNone': 'nothing on record',
   'hub.stageNext': 'next',
+  // Until this browser has opened Analyze once (ADR-090): the result is
+  // pointed at, never the next step — "Continue with" stays the phase contract's.
+  'hub.analysisReadyTitle': 'Your analysis is ready',
+  'hub.analysisReadyAction': 'Read the analysis',
 
   // Search ⌘K — components/workspace/CommandSearch.tsx, roadmap 6.6.
   'search.title': 'Search this project',
@@ -75,6 +79,9 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'toolGuide.recommended': 'Recommended next step.',
   'toolGuide.othersNeedRun': 'The other tools need a signed run first.',
   'toolGuide.whatTheyDo': 'What the tools do',
+  // On the Analyze tool until this browser has opened it once (ADR-090).
+  'toolGuide.resultReady': 'Result ready',
+  'toolGuide.resultReadyHint': 'Its result is ready and has not been opened in this browser yet.',
   'toolGuide.nothingOpen': 'Nothing is open — every tool this release can finish has its record.',
   'status.label': 'Project status',
   'status.open': 'Open',
@@ -132,4 +139,26 @@ export function hubNextPosition(n: number, total: number, stage: string): string
 /** "Open as IT" — a view button of the work area. */
 export function hubViewLabel(view: string): string {
   return `Open as ${view}`;
+}
+
+function findingsPhrase(findings: number, high: number | null, where: string): string {
+  const head = `${findings} ${findings === 1 ? 'finding' : 'findings'} ${where}`;
+  return high && high > 0 ? `${head}, ${high} of ${findings === 1 ? 'it' : 'them'} high severity.` : `${head}.`;
+}
+
+/**
+ * The line under "Continue with" until Analyze has been opened (ADR-090):
+ * "25 findings in the signed run, 4 of them high severity. Analyze shows each
+ * one with its line in the code." Without a worklist it names no figure.
+ */
+export function hubAnalysisReady(findings: number | null, high: number | null): string {
+  if (findings === null) return 'The signed run is on record. Analyze shows what the engine found, with its line in the code.';
+  if (findings === 0) return 'The signed run reports no finding. Analyze shows what the engine read and what it could not assess.';
+  return `${findingsPhrase(findings, high, 'in the signed run')} Analyze shows each one with its line in the code.`;
+}
+
+/** The demo's twin of that line — the demo has an engine reading and never a signed run. */
+export function demoAnalysisReady(findings: number, high: number): string {
+  const figures = findingsPhrase(findings, high, 'in the example').slice(0, -1);
+  return `${figures} — a demo run, unsigned. Analyze shows each one with its line in the code.`;
 }

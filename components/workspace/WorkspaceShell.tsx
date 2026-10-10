@@ -20,6 +20,7 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import NextStepCard from './NextStepCard';
 import UsageRecords from './UsageRecords';
 import BusinessNextStep from './BusinessNextStep';
+import TargetReferenceLine from './TargetReferenceLine';
 import WorkspaceHub from './WorkspaceHub';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
@@ -75,6 +76,7 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import { pricedOptions } from '@/lib/economics-record';
+import { analysisReadyResult } from '@/lib/analysis-read';
 import type { Project } from '@/lib/types';
 
 type ContentBlock =
@@ -320,6 +322,17 @@ export default function WorkspaceShell({
   const eyebrow = useMemo(() => workspaceEyebrow(project), [project]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
+  // "Your analysis is ready" in the work area (ADR-090): read from the phase
+  // contract and the signed run's worklist, never a phase state of its own.
+  const analysisResult = useMemo(
+    () =>
+      analysisReadyResult({
+        analyzeState: tools.find((t) => t.key === 'analyze')?.state,
+        hasSignedRun: Boolean(project?.activeRunId?.trim()),
+        worklist: project?.worklist,
+      }),
+    [tools, project?.activeRunId, project?.worklist],
+  );
   const open = useMemo(() => notDetermined(project), [project]);
   // What a project stored by an earlier version does not carry (roadmap 3.0.2).
   // Read, never repaired: opening a project writes nothing to it.
@@ -876,6 +889,9 @@ export default function WorkspaceShell({
             <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" />
           )}
         </div>
+        {/* Business: the target and its SAP reference pattern, one line
+            (roadmap 3.0.9, ADR-089). Management says it beside the decision. */}
+        {view === 'business' ? <TargetReferenceLine project={project} /> : null}
       </div>
     ),
     // Business only: the business rules, once, in their own card under the map
@@ -907,6 +923,7 @@ export default function WorkspaceShell({
           onViewChange={onViewChange}
           toolsRow={toolsRow}
           statusFold={statusFold}
+          analysis={analysisResult}
         />
       ) : null,
     // Business only: the process map and its linked source column (roadmap

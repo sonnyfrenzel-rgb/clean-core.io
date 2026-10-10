@@ -11,6 +11,8 @@ import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN, type WorkspaceReturnPoint } from '@/lib/workspace-back-href';
 import { toolsNextHint, wt } from '@/lib/workspace-messages';
 import InfoPopover from './InfoPopover';
+import { useAnalysisRead } from '@/hooks/useAnalysisRead';
+import { analysisKeyOfBase, resultReadyTag } from '@/lib/analysis-read';
 
 export interface WorkspaceTool {
   key: PhaseKey;
@@ -101,11 +103,17 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
  * the tools do" on the open bar, and the visible line under each tool in the
  * phone menu.
  */
-function toolGuide(tool: WorkspaceTool, tools: readonly WorkspaceTool[], next: PhaseKey | null): string[] {
+function toolGuide(
+  tool: WorkspaceTool,
+  tools: readonly WorkspaceTool[],
+  next: PhaseKey | null,
+  resultReady = false,
+): string[] {
   const mark = toolMark(tool);
   return [
     PHASE_PURPOSE[tool.key],
     tool.key === next ? wt('toolGuide.recommended') : null,
+    resultReady ? wt('toolGuide.resultReadyHint') : null,
     phaseNeeds(tool, tools),
     mark.meaning === 'done'
       ? `${wt('tools.mark.doneHint')}.`
@@ -126,6 +134,24 @@ function NextTag() {
       className="rounded-[4px] border border-cc-ink px-1 text-[11px] leading-4 font-semibold text-cc-ink"
     >
       {wt('toolGuide.next')}
+    </span>
+  );
+}
+
+/**
+ * "Result ready" on the Analyze tool until this browser has opened it once
+ * (ADR-090). Beside the check, not instead of it: the check says the phase is
+ * done, the tag that its result has not been read. The information colour —
+ * a pointer, not evidence, and not the ink of the "Next" tag.
+ */
+export function ResultReadyTag() {
+  return (
+    <span
+      aria-hidden={true}
+      data-workspace-tool-result-ready=""
+      className="rounded-[4px] border border-cc-information px-1 text-[11px] leading-4 font-semibold text-cc-information"
+    >
+      {wt('toolGuide.resultReady')}
     </span>
   );
 }
@@ -190,8 +216,11 @@ function ToolsNav({
   current,
   open,
   surface,
+  readKey,
 }: {
   tools: WorkspaceTool[];
+  /** Whose analysis "Result ready" is about — the project id or `demo` (`lib/analysis-read.ts`). */
+  readKey: string | null;
   /** Everything of a tool's address but its path — every link goes through `stageHref`. */
   link: Omit<Parameters<typeof stageHref>[0], 'path'>;
   /** The stage the reader is on; none in the workspace. */
@@ -220,6 +249,9 @@ function ToolsNav({
   }, [menuOpen]);
 
   const next = nextPhaseKey(tools);
+  // Not on Analyze itself: the stage marks it read as it opens.
+  const analysisRead = useAnalysisRead(readKey);
+  const ready = (tool: WorkspaceTool) => tool.key !== current && resultReadyTag(tool, analysisRead);
   const nextTool = next ? tools.find((t) => t.key === next) ?? null : null;
   const anyNeedsRun = tools.some((t) => phaseNeeds(t, tools) !== null);
   // One line under the tools: which one next and what it does, and — while
@@ -233,7 +265,7 @@ function ToolsNav({
 
   const link = (tool: WorkspaceTool, place: 'bar' | 'menu') => {
     const mark = toolMark(tool);
-    const guide = toolGuide(tool, tools, next);
+    const guide = toolGuide(tool, tools, next, ready(tool));
     const describedBy = `${panelId}-${place}-${tool.key}-guide`;
     return (
       <React.Fragment key={tool.key}>
@@ -243,6 +275,7 @@ function ToolsNav({
         data-workspace-tool-mark-meaning={mark.meaning}
         data-workspace-tool-mark-kind={mark.kind}
         data-workspace-tool-next={tool.key === next ? '' : undefined}
+        data-workspace-tool-unread={ready(tool) ? '' : undefined}
         describedBy={describedBy}
         current={tool.key === current}
         href={stageHref({ ...link_, path: tool.path })}
@@ -250,6 +283,7 @@ function ToolsNav({
         {tool.label}
         <ToolMark tool={tool} />
         {tool.key === next ? <NextTag /> : null}
+        {ready(tool) ? <ResultReadyTag /> : null}
       </CcLinkButton>
       {/* Outside the link, so it is the link's description and not part of its name. */}
       <span id={describedBy} data-workspace-tool-guide="" className="sr-only">
@@ -275,7 +309,7 @@ function ToolsNav({
         <li key={tool.key} data-tools-guide-entry={tool.key}>
           <span className="font-semibold">{tool.label}</span>
           {' — '}
-          {toolGuide(tool, tools, next).join(' ')}
+          {toolGuide(tool, tools, next, ready(tool)).join(' ')}
         </li>
       ))}
     </ul>
@@ -287,7 +321,7 @@ function ToolsNav({
     <div key={tool.key} data-workspace-tool-item={tool.key} className="flex flex-col items-stretch gap-1">
       {link(tool, 'menu')}
       <span aria-hidden={true} data-workspace-tool-purpose="" className="px-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {toolGuide(tool, tools, next).slice(0, 3).join(' ')}
+        {toolGuide(tool, tools, next, ready(tool)).slice(0, 3).join(' ')}
       </span>
     </div>
   ));
@@ -377,6 +411,7 @@ export default function WorkspaceToolBar({
       tools={tools}
       open={open}
       surface="workspace"
+      readKey={projectId}
       link={{ base: `/project/${projectId}`, view, from: WORKSPACE_RETURN.tools, layer }}
     />
   );
@@ -418,6 +453,7 @@ export function StageToolBar({
       current={current}
       open={false}
       surface="stage"
+      readKey={analysisKeyOfBase(base)}
       link={{ base, view: params.get('view'), from, layer: params.get('layer') }}
     />
   );

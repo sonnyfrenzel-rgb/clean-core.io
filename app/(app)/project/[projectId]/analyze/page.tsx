@@ -88,6 +88,7 @@ import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
 import StageHeader from '@/components/StageHeader';
+import { markAnalysisRead } from '@/lib/analysis-read';
 import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
@@ -179,6 +180,10 @@ export default function AnalyzePage() {
         const hydratedProject = await loadProjectAndHydrate(projectId as string);
         if (hydratedProject) {
           setProject(hydratedProject);
+          // The workspace says "Your analysis is ready" until this browser has
+          // opened Analyze with a result on it (ADR-090): a signed run, not a
+          // staged source. Browser only — nothing is written to the project.
+          if (hydratedProject.activeRunId?.trim()) markAnalysisRead(projectId as string);
           setLegacyCode(hydratedProject.legacyCode || '');
           // The file the source came from: the name the last run signed, or
           // the example's own file. Without it a re-run, and every run of an
@@ -601,6 +606,10 @@ export default function AnalyzePage() {
         // with its error.
         if (openWorkspaceAfterRunRef.current || firstRunOfProject) {
           router.push(`/project/${projectId}?first=1`);
+        } else {
+          // The result stands on this page now, so it has been read here (ADR-090).
+          // A first run goes on to the workspace unread — that is where the hint is.
+          markAnalysisRead(projectId as string);
         }
       } catch (error) {
         console.error('Error during analysis persistence:', error);
@@ -708,6 +717,7 @@ export default function AnalyzePage() {
   );
   const evidenceFailed = projectEvidence.state === 'failed' ? projectEvidence.reason : null;
   const evidenceReport = projectEvidence.state === 'ready' ? projectEvidence.value.evidence : null;
+  const evidenceSourceSha = projectEvidence.state === 'ready' ? projectEvidence.value.sourceSha256 : null;
 
   const evidenceFindings = useMemo(() => evidenceReport?.findings ?? [], [evidenceReport]);
 
@@ -848,9 +858,14 @@ export default function AnalyzePage() {
     const deployment = project.s4Deployment === 'public' ? 'public' : 'private';
     const derived = routeExtensibility(evidenceReport, deployment);
     const recommended = signedRecommendationOf(project.originalRecommendation) ?? project.extensibilityRoute ?? null;
-    const addsUp = derived.recommendedRoute === recommended && derived.cleanCoreScore === signedCleanCoreScore;
+    // The evidence has to be of the source the run signed: a source changed
+    // since can arrive at the same route and score with other drivers
+    // (QA ae68c0b99961).
+    const signedSourceSha = project.auditMetadata?.inputFingerprint?.sha256;
+    const sameSource = !signedSourceSha || evidenceSourceSha === signedSourceSha;
+    const addsUp = sameSource && derived.recommendedRoute === recommended && derived.cleanCoreScore === signedCleanCoreScore;
     return addsUp ? derived : null;
-  }, [evidenceReport, project, signedCleanCoreScore]);
+  }, [evidenceReport, evidenceSourceSha, project, signedCleanCoreScore]);
   /** What the route card draws from it: drivers and assumptions, said as not shown, or nothing to say. */
   const routeDerived = useMemo(() => {
     if (!evidenceReport) return null;

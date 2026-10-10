@@ -132,4 +132,51 @@ test.describe('the work area under the map, after a signed run', () => {
       await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 30_000 });
     });
   }
+
+  /**
+   * "Your analysis is ready" (ADR-090, owner 10.10.2026): with Design proposed
+   * next, a first-time reader walked from Business past Analyze. Until this
+   * browser has opened Analyze for the project, the hub says the analysis is
+   * ready with the signed run's figures and the Analyze tool carries "Result
+   * ready"; once Analyze has been opened, both are gone — and the next step
+   * is the same before and after, because the phase contract never moved.
+   */
+  test('the analysis is pointed at until Analyze has been opened once, and the next step does not move', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await open(page);
+
+    const hub = page.locator('[data-workspace-hub]');
+    const ready = hub.locator('[data-analysis-ready]');
+    await expect(ready).toBeVisible({ timeout: 30_000 });
+    await expect(ready).toContainText('Your analysis is ready');
+    // The figures are the run's: as many findings as the worklist holds.
+    await expect(ready).toContainText(/\d+ findings? in the signed run/);
+    const analyzeTool = page.locator('[data-workspace-tools="open"] [data-workspace-tool="analyze"]');
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done');
+    await expect(analyzeTool).toHaveAttribute('data-workspace-tool-unread', '');
+    await expect(analyzeTool.locator('[data-workspace-tool-result-ready]')).toHaveText('Result ready');
+    const nextBefore = await hub.locator('[data-workspace-hub-next]').getAttribute('data-workspace-hub-next');
+    expect(nextBefore).not.toBe('analyze');
+    // Still exactly one primary button: the hint's action is secondary.
+    await expect(page.locator('[data-workspace-shell] [data-cc-button="primary"]:visible')).toHaveCount(1);
+
+    // Read the analysis — Analyze opens with the signed run and marks it read.
+    await ready.locator('[data-analysis-ready-action] a').click();
+    await expect(page).toHaveURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60_000 });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem('cc.workspace.analysis.read') ?? ''), { timeout: 60_000 })
+      .toContain(projectId);
+
+    // Back in the workspace the pointer is gone; the phase and the next step are as they were.
+    await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90_000 });
+    await expect(hub.locator('[data-workspace-hub-next-action]')).toBeVisible({ timeout: 60_000 });
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done');
+    await expect(hub.locator('[data-analysis-ready]')).toHaveCount(0);
+    await expect(analyzeTool).not.toHaveAttribute('data-workspace-tool-unread', '');
+    await expect(page.locator('[data-workspace-tool-result-ready]')).toHaveCount(0);
+    await expect(hub.locator('[data-workspace-hub-next]')).toHaveAttribute('data-workspace-hub-next', nextBefore ?? 'none');
+  });
 });

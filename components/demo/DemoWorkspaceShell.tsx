@@ -84,7 +84,12 @@ import {
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { routeLabel } from '@/lib/sap-naming';
+import AnalysisReady from '@/components/workspace/AnalysisReady';
+import { ResultReadyTag } from '@/components/workspace/ToolBar';
+import { useAnalysisRead } from '@/hooks/useAnalysisRead';
+import { DEMO_ANALYSIS_KEY, resultOfWorklist } from '@/lib/analysis-read';
 import {
+  demoAnalysisReady,
   demoConfirmRoute,
   demoEvidence,
   demoFirstFiveOf,
@@ -404,6 +409,17 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
    * reading stands in for it, and the step is the first phase after it — said so
    * in the step's own selection line rather than claimed as on record.
    */
+  /**
+   * The twin of the workspace's "Your analysis is ready" (ADR-090): the demo
+   * reads Analyze as done for its next step (above), so until this browser
+   * has opened `/demo/analyze` the Business view points back at it, with the
+   * figures of the worklist a run of the example would store.
+   */
+  const demoAnalysisRead = useAnalysisRead(DEMO_ANALYSIS_KEY);
+  const demoAnalysisLine = useMemo(() => {
+    const result = resultOfWorklist(demo.analyze.worklist);
+    return demoAnalysisReady(result.findings ?? 0, result.high ?? 0);
+  }, [demo.analyze.worklist]);
   const demoNextPoint = useMemo(() => {
     const rail = demo.rail.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s));
     const point = nextOpenPointOf(rail, true);
@@ -663,6 +679,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               href={stageHref({ base: '/demo', path: p.key, view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
             >
               {p.label}
+              {p.key === 'analyze' && !demoAnalysisRead ? <ResultReadyTag /> : null}
             </CcLinkButton>
           ))}
         </nav>
@@ -690,6 +707,11 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                   projectId="demo"
                   base="/demo"
                   onDecideRules={openDemoRules}
+                />
+                <AnalysisReady
+                  readKey={DEMO_ANALYSIS_KEY}
+                  line={demoAnalysisLine}
+                  href={stageHref({ base: '/demo', path: 'analyze', view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
                 />
               </div>
             ) : null}

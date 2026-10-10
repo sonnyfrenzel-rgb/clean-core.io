@@ -6,6 +6,8 @@ import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { cn } from '@/lib/utils';
 import { BUSINESS_RULES_ID, requestRuleEditing } from './BusinessRulesEditor';
+import AnalysisReady from './AnalysisReady';
+import type { AnalysisResult } from '@/lib/analysis-read';
 import type { WorkspaceTool } from './ToolBar';
 import type { BusinessNextStep } from '@/lib/business-next-step';
 import { nextPhaseKey, PHASE_PURPOSE } from '@/lib/workflow-steps';
@@ -15,6 +17,7 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import {
   bizNextRulesAction,
   bizNextRulesReason,
+  hubAnalysisReady,
   hubNextPosition,
   hubPathDone,
   hubViewLabel,
@@ -70,6 +73,12 @@ const MARK_CLASS: Record<ReturnType<typeof toolMark>['meaning'], string> = {
  * takes the mark the tool bar gives it (`toolMark`), so the two cannot disagree.
  *
  * Every figure is counted from the phase contract; nothing is estimated here.
+ *
+ * Under the step, until this browser has opened Analyze once, one line says
+ * the analysis is ready to read, with the signed run's figures (ADR-090,
+ * owner 10.10.2026: a first-time reader went from Business straight to the
+ * proposed Design and missed Analyze). It adds a pointer and changes nothing
+ * the phase contract says.
  */
 export default function WorkspaceHub({
   projectId,
@@ -78,6 +87,7 @@ export default function WorkspaceHub({
   onViewChange,
   toolsRow,
   statusFold,
+  analysis = null,
 }: {
   projectId: string;
   /** What "Next step" at the top decided — `null` while it is not known yet. */
@@ -88,6 +98,8 @@ export default function WorkspaceHub({
   toolsRow: React.ReactNode;
   /** The folded project status — the shell's own fold. */
   statusFold: React.ReactNode;
+  /** The signed run's result while Analyze is done (`analysisReadyResult`), or `null`. */
+  analysis?: AnalysisResult | null;
 }) {
   const layer = useWorkspaceLayer();
   const next = nextPhaseKey(tools);
@@ -170,6 +182,13 @@ export default function WorkspaceHub({
           </span>
         ) : null}
       </div>
+      {analysis ? (
+        <AnalysisReady
+          readKey={projectId}
+          line={hubAnalysisReady(analysis.findings, analysis.high)}
+          href={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'business', from: WORKSPACE_RETURN.tools, layer })}
+        />
+      ) : null}
 
       {/* The three views — one process, three readers. */}
       <h3 className="m-0 mt-5 text-[13px] font-bold text-cc-ink">{wt('hub.viewsTitle')}</h3>
