@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { UserCheck, Link2, ExternalLink, SearchX } from 'lucide-react';
+import { Link2, ExternalLink, SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { safeHttpHref } from '@/lib/export-safety';
-import CcButton, { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
+import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import SupportLevelMark from './SupportLevelMark';
 
@@ -13,8 +12,13 @@ interface ConstructFindingsProps {
   findings: SupportFinding[];
 }
 
+/**
+ * The constructs the class-model support matrix identified. Read-only: it
+ * used to carry a "Confirm" per construct that lived in `useState` and was gone
+ * on reload — a sign-off that recorded nothing (owner 10.10.2026). Nothing on
+ * this list is anybody's word.
+ */
 export default function ConstructFindings({ findings }: ConstructFindingsProps) {
-  const [signedOffKeys, setSignedOffKeys] = useState<Set<string>>(new Set());
 
   if (!findings || findings.length === 0) {
     return (
@@ -47,18 +51,6 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
     return `${f.construct}-${f.location?.file || 'main'}-${f.location?.line || 0}`;
   };
 
-  const toggleSignOff = (key: string) => {
-    setSignedOffKeys(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
   return (
     <div className="space-y-4">
       <div>
@@ -66,23 +58,18 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
           Statically Identified Constructs{' '}
           <span className="font-medium text-cc-ink-muted">({findings.length} findings)</span>
         </h3>
-        <p className="cc-text-cell text-cc-ink-muted mt-1">Review the architectural footprint and evidence list before confirming solution design.</p>
+        <p className="cc-text-cell text-cc-ink-muted mt-1">Each construct with the line it stands on and the path the support matrix names for it.</p>
       </div>
 
       <div className="space-y-3">
         {findings.map((finding) => {
           const key = getFindingKey(finding);
-          const isSignedOff = signedOffKeys.has(key);
           const level = finding.level || 'fully';
 
           return (
             <div
               key={key}
-              className={cn(
-                'rounded-cc-card border bg-cc-surface p-4 shadow-cc flex flex-col md:flex-row gap-4 items-start justify-between',
-                // A sign-off is the reader's own word: information, never green (§1.1).
-                isSignedOff ? 'border-cc-information' : 'border-cc-line',
-              )}
+              className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc flex flex-col md:flex-row gap-4 items-start justify-between"
             >
               {/* Left Column: Level + Title + Location + Explanations */}
               <div className="space-y-3 flex-1 min-w-0">
@@ -116,7 +103,8 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
                 </div>
               </div>
 
-              {/* Right Column: Actions & Sign-off check */}
+              {/* Right column: the link the matrix names, when it is http(s). */}
+              {safeHttpHref(finding.howItWorks) ? (
               <div className="flex md:flex-col items-center gap-2 w-full md:w-auto shrink-0 border-t md:border-t-0 border-cc-line pt-3 md:pt-0 md:pl-4 self-stretch md:justify-center">
                 {/* How it works Deep Link */}
                 {/* The value comes from the analysis model, so it reaches an
@@ -137,17 +125,8 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
                     <ExternalLink size={14} aria-hidden="true" />
                   </a>
                 )}
-
-                {/* Sign-off toggle */}
-                <CcButton
-                  variant="ghost"
-                  aria-pressed={isSignedOff}
-                  icon={<UserCheck size={16} aria-hidden="true" />}
-                  onClick={() => toggleSignOff(key)}
-                >
-                  {isSignedOff ? 'Confirmed' : 'Confirm'}
-                </CcButton>
               </div>
+              ) : null}
             </div>
           );
         })}

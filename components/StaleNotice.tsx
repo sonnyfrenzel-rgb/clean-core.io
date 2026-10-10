@@ -1,3 +1,4 @@
+import type React from 'react';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 
 /**
@@ -14,7 +15,16 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
  * and a notice that is on the page from the first paint is a status, not an
  * alert that interrupts a screen reader.
  */
-export default function StaleNotice({ title, reasons }: { title: string; reasons: string[] }) {
+export default function StaleNotice({
+  title,
+  reasons,
+  action,
+}: {
+  title: string;
+  reasons: string[];
+  /** The one way on, where the page itself cannot rebuild (Analyze: a new run starts in the workspace). */
+  action?: React.ReactNode;
+}) {
   if (reasons.length === 0) return null;
   return (
     <div data-stale-notice className="mb-8">
@@ -24,6 +34,7 @@ export default function StaleNotice({ title, reasons }: { title: string; reasons
             <li key={r}>{r}</li>
           ))}
         </ul>
+        {action ? <p className="m-0 mt-2">{action}</p> : null}
       </CcMessageStrip>
     </div>
   );

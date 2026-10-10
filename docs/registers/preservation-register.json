@@ -193,6 +193,7 @@
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
+      "extensibilityRoute": "Written by POST /api/runs/create (the router's recommendation). No stage writes it from the browser since the Analyze route switch was removed on 10.10.2026. Still in the client allowlist of firestore.rules until the rules are tightened in a manual deploy; until then a browser could write it, and the stages label a stored route that differs from the recommendation as the reader's choice.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [
@@ -322,23 +323,19 @@
     },
     {
       "id": "L-05",
-      "subject": "analyze",
-      "statement": "Analyze and Economics are the only stages that render no StaleNotice, although both can be PhaseState 'stale'.",
-      "consequence": "On those two stages a stale state is visible in the stepper circle and nowhere in prose.",
-      "evidence": "StaleNotice is imported by design, transformation, documentation, testing and delivery only.",
+      "subject": "economics",
+      "statement": "Economics is the only stage that renders no StaleNotice, although it can be PhaseState 'stale'. Analyze renders one since 10.10.2026 (the source or an input changed after the signed run, with the way to a new run in the IT view).",
+      "consequence": "On Economics a stale state is visible in the stepper circle and nowhere in prose.",
+      "evidence": "StaleNotice is imported by analyze, design, transformation, documentation, testing and delivery.",
       "workspace": {
         "kind": "shown",
         "where": [
           {
             "module": "lib/workspace-model.ts",
-            "evidence": "provenance: staleChip(by.analyze)"
-          },
-          {
-            "module": "lib/workspace-model.ts",
             "evidence": "provenance: staleChip(by.tco)"
           }
         ],
-        "note": "The limit stands on the two stage pages; the workspace states it anyway — Provenance and Costs wear the Stale chip when their phase is stale."
+        "note": "The limit stands on the Economics page; the workspace states it anyway — Costs wears the Stale chip when its phase is stale (Provenance does for Analyze, which now also says it on the page)."
       }
     },
     {
@@ -466,7 +463,7 @@
           {
             "field": "extensibilityRoute",
             "from": "project",
-            "why": "route badge and the override switch"
+            "why": "the route card's badge. The override switch that wrote it from the browser was removed on 10.10.2026 (the program decision is made in the Management view); a route an earlier build's switch stored is still labelled as the reader's choice"
           },
           {
             "field": "worklist",
@@ -503,7 +500,6 @@
       },
       "outputs": {
         "clientWrites": [
-          "extensibilityRoute",
           "exports"
         ],
         "commandWrites": {
@@ -571,6 +567,9 @@
         }
       ],
       "referenceCase": "RC-analyze-signed-run",
+      "alsoDisplays": [
+        "extensibilityRoute"
+      ],
       "rendered": {
         "shows": [
           {
@@ -579,19 +578,20 @@
             "why": "the badge in the Extensibility Router card; it prints the route as a label (\"BTP Side-by-Side\"), never the stored string, so only its presence is asserted"
           }
         ],
-        "onlyAfterARun": [
-          {
-            "field": "usageReport",
-            "why": "the Usage Risk Matrix additionally needs the route report, which only an analysis run in this session produces; a reload of a seeded project never shows it"
-          }
-        ],
+        "onlyAfterARun": [],
         "notShown": [
           {
             "field": "exports",
             "why": "write-only: the page writes exports.analysis_confluence_<timestamp> and nothing ever reads it back"
           }
         ],
-        "notYetAnchored": []
+        "notYetAnchored": [
+          {
+            "field": "usageReport",
+            "where": "Technical detail › Imported usage and ATC results › Usage Risk Matrix (components/analyze/UsageRiskMatrix.tsx)",
+            "why": "since 10.10.2026 the route report it needs is recomputed from the signed run's evidence and used when it arrives at the signed route and score, so a reload shows the matrix; the reference case seeds no usage data, so the element is not named here yet"
+          }
+        ]
       },
       "workspace": {
         "kind": "shown",
@@ -984,7 +984,7 @@
       "route": "/project/{projectId}/documentation",
       "page": "app/(app)/project/[projectId]/documentation/page.tsx",
       "alsoWrites": [],
-      "purpose": "Read the process documentation out of the whole signed source (engine, no model; roadmap 3.0.5) and, on top of it, the business SOP and RACI layer. A legacy L1-L4 blueprint stored before 3.0.5 is still shown, marked as the earlier form.",
+      "purpose": "Read the process documentation out of the whole signed source (engine, no model; roadmap 3.0.5) and, on top of it, the business SOP and RACI layer. A legacy L1-L4 blueprint stored before 3.0.5 is kept but no longer drawn (3.0.7, ADR-082): one strip offers it for download as it was and offers to replace it with the code reading.",
       "inputs": {
         "required": [
           {
@@ -1003,7 +1003,7 @@
           {
             "field": "generatedCode",
             "from": "project",
-            "why": "the documentation is merged back into it as docs/process-documentation.md"
+            "why": "read only inside the write transaction: a package an earlier build wrote with docs/process-documentation.md or docs/business-documentation.md in it has those files taken back out (3.0.7, packageCleanup)"
           },
           {
             "field": "documentation",
@@ -1026,7 +1026,6 @@
         "clientWrites": [
           "documentation",
           "businessDocumentation",
-          "generatedCode",
           "status"
         ],
         "serverWrites": null,
@@ -1034,7 +1033,7 @@
           "documentation",
           "businessDocumentation"
         ],
-        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-documentation.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
+        "note": "Since 3.0.7 (Documentation lean, item 4) the stage writes no package: Delivery adds both Markdown files from documentation and businessDocumentation. The one remaining touch of generatedCode is the spread of packageCleanup inside each write transaction, which removes those two files from a package an earlier build put them in and is empty otherwise. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -1078,8 +1077,8 @@
           {
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
-            "text": "{json:project.documentation.l1_domain.name}",
-            "why": "the reference case seeds a legacy blueprint, which is still shown under the earlier-form notice with its domain name at the top; an engine document renders the process description (purpose to open questions, the technical trace as its appendix) in the same container"
+            "text": "It is kept as it was and no longer shown here.",
+            "why": "the reference case seeds a legacy blueprint; since 3.0.7 (ADR-082) it is kept behind one strip in this container and never drawn, so its domain name is deliberately absent; an engine document renders the process description (purpose to open questions, the technical trace as its appendix) in the same container"
           },
           {
             "field": "businessDocumentation",
@@ -1091,7 +1090,7 @@
         "notShown": [
           {
             "field": "generatedCode",
-            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-documentation.md into it, and that workspace copy leaves as a download"
+            "why": "not read for the documentation since 3.0.5 (L-04 resolved), and since 3.0.7 nothing of this stage is merged into it"
           },
           {
             "field": "status",

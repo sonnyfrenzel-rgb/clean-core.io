@@ -118,8 +118,11 @@ test.describe('a route the architect changed is labelled as theirs', () => {
     const page = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
     expect(page).toContain("from '@/lib/route-override'");
     expect(page).toContain('routeWasOverridden(recommendedRoute, project?.extensibilityRoute)');
-    // The two halves the decision selects between.
-    expect(page).toContain("'Chosen by you'");
-    expect(page).toContain('You changed this route. The recommendation was');
+    // The two halves the decision selects between — in the route card the
+    // page shares with the demo since 10.10.2026, handed the decision.
+    expect(page).toContain('overridden={routeIsOverridden}');
+    const card = readFileSync(join(process.cwd(), 'components/analyze/RouteCard.tsx'), 'utf8');
+    expect(card).toContain('Chosen by you');
+    expect(card).toContain('You changed this route. The recommendation was');
   });
 });

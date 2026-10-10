@@ -938,10 +938,11 @@ test.describe('the register matches the code', () => {
     expect(docsPage).toContain("import('@/lib/process-documentation-build')");
     expect(src('lib/process-documentation-build.ts')).toContain('buildBusinessStatements(source)');
 
-    // L-05: Analyze and Economics are still the two stages without a StaleNotice.
+    // L-05: Economics is still the one stage without a StaleNotice; Analyze has
+    // one since 10.10.2026 (audit M-8).
     const withoutNotice = register.stages.filter((s) => !src(s.page).includes('<StaleNotice')).map((s) => s.key);
-    expect(limit('L-05').subject).toBe('analyze');
-    expect(sorted(withoutNotice)).toEqual(['analyze', 'tco']);
+    expect(limit('L-05').subject).toBe('economics');
+    expect(sorted(withoutNotice)).toEqual(['tco']);
 
     // L-06: design still has no blocker target and still generates by itself.
     expect(limit('L-06').subject).toBe('design');

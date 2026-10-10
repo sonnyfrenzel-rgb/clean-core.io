@@ -5,9 +5,9 @@
  * reader gets one sentence that says what the analysis found, before any table.
  * Every word below is derived from the run's own evidence — the engine's
  * findings and their severities, the line count, the route the rules
- * recommended or the reader chose, and the number of things the page lists as
- * not determined. Nothing is asked of a model and nothing is guessed: where a
- * figure is missing, the sentence says so instead of filling it in.
+ * recommended (or an earlier build's switch stored), and the tables the code
+ * writes. Nothing is asked of a model and nothing is guessed: where a figure is
+ * missing, the sentence says so instead of filling it in.
  *
  * Pure and import-free (types only), so a spec can hold the wording without a
  * browser.
@@ -99,28 +99,29 @@ export interface AnswerInput {
   lines: number;
   /** The route shown on the page (the stored one), or null. */
   route: string | null | undefined;
-  /** The reader pressed "Switch track": the shown route is theirs, not the rules'. */
-  routeChosenByReader: boolean;
-  /** How many items the "could not determine" section lists. */
-  notDetermined: number;
   /**
-   * A model wrote a narrative for this run. The answer then says where it is
-   * and what it is, so "without a model" above and the narrative below do not
-   * read as a contradiction.
+   * The stored route differs from the recommendation: an earlier build had a
+   * switch that wrote it from the browser (removed 10.10.2026), so a project
+   * may still carry the reader's choice.
    */
-  narrative?: boolean;
+  routeChosenByReader: boolean;
 }
 
 export interface AnalysisAnswerText {
   /** The answer, one line: the title of the section. */
   headline: string;
-  /** Two or three sentences under it, each a fact of this run. */
+  /**
+   * One sentence under it (owner decision 10.10.2026, DESIGN.md §2.11 "nothing
+   * twice"): who read what, and the route. The severity spread is the Findings
+   * facet's bar, what is not determined is the side card, and the model's
+   * summary says what it is on its own fold — none of them is repeated here.
+   */
   detail: string;
 }
 
 export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
-  const { counts, lines, route, routeChosenByReader, notDetermined, narrative = false } = input;
-  const { Critical: critical, High: high, Medium: medium, Low: low } = counts.bySeverity;
+  const { counts, lines, route, routeChosenByReader } = input;
+  const { Critical: critical, High: high } = counts.bySeverity;
   const routeWords = plainRoute(route, true);
 
   let headline: string;
@@ -136,45 +137,81 @@ export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
       (serious.length ? ` — ${serious.join(' and ')}` : '');
   }
 
-  const parts: string[] = [];
   const read = lines > 0 ? `read all ${lines.toLocaleString('en-US')} lines` : 'read the source';
-  if (counts.total === 0) {
-    parts.push(`The engine ${read} without a model. Its checks are not the whole program, so this is not a clean bill.`);
-  } else {
-    const spread = [
-      critical ? `${critical} critical` : null,
-      high ? `${high} high` : null,
-      medium ? `${medium} medium` : null,
-      low ? `${low} low` : null,
-      // Info and any other rating are counted in the total, so the spread names
-      // them too and adds up to it (carried QA finding 13f1b0920c43).
-      counts.total - critical - high - medium - low > 0
-        ? `${counts.total - critical - high - medium - low} informational`
-        : null,
-    ].filter(Boolean);
-    parts.push(
-      `The engine ${read} without a model and rated each finding by severity` +
-        (spread.length ? `: ${spread.join(', ')}.` : '.'),
-    );
-  }
+  const clean = counts.total === 0 ? '; its checks are not the whole program, so this is not a clean bill' : '';
+  const routeClause = !routeWords
+    ? 'no extensibility route has been determined for it'
+    : routeChosenByReader
+      ? `you chose ${routeWords} as its target; the rules had recommended the other route`
+      : `by fixed rules, the recommended target is ${routeWords}`;
 
-  if (narrative) {
-    parts.push('The Model summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
-  }
+  return { headline, detail: `The engine ${read} without a model${clean}; ${routeClause}.` };
+}
 
-  if (!routeWords) {
-    parts.push('No extensibility route has been determined for it.');
-  } else if (routeChosenByReader) {
-    parts.push(`You chose ${routeWords} as its target; the rules had recommended the other route.`);
-  } else {
-    parts.push(`By fixed rules, the recommended target for it is ${routeWords}.`);
-  }
+/* ------------------------------------------------------------ data effect */
 
-  if (notDetermined > 0) {
-    parts.push(
-      `${plural(notDetermined, 'thing', 'things')} this analysis could not determine ${notDetermined === 1 ? 'is' : 'are'} listed under Not determined, each with its reason.`,
-    );
-  }
+/** The tables the code writes, by kind — the one finding a manager must not miss (audit §3.7). */
+export interface DataEffect {
+  /** SAP standard tables written directly, distinct, in the order first found. */
+  standard: string[];
+  /** Custom (customer-namespace) tables written, distinct, in the order first found. */
+  custom: string[];
+}
 
-  return { headline, detail: parts.join(' ') };
+/** The two finding kinds a data effect is read from — also the findings groups the chips open. */
+export const DATA_EFFECT_KINDS = { standard: 'standard-table-write', custom: 'custom-table-write' } as const;
+
+/** Read off the engine's findings only: the kind and the object it names. Nothing else is inferred. */
+export function dataEffect(findings: readonly EvidenceFinding[]): DataEffect {
+  const of = (kind: string) => {
+    const names: string[] = [];
+    for (const f of findings) {
+      if (f.kind !== kind || !f.objectName) continue;
+      const name = f.objectName.trim().toUpperCase();
+      if (name && !names.includes(name)) names.push(name);
+    }
+    return names;
+  };
+  return { standard: of(DATA_EFFECT_KINDS.standard), custom: of(DATA_EFFECT_KINDS.custom) };
+}
+
+/** A piece of the data-effect sentence: words, or a table that becomes a chip opening its findings group. */
+export type EffectPart = { text: string } | { table: string; kind: string };
+
+/** At most this many table names per kind; the rest is counted ("and 3 more"). */
+export const EFFECT_NAMES_SHOWN = 4;
+
+/**
+ * The data-effect sentence as parts, deterministic: "It writes to 1 SAP
+ * standard table (EBAN) and 2 custom tables (ZMM_PO_APPR, ZMM_PO_ATTACH)."
+ * With no write found it says so — within what the engine checks, never as a
+ * claim about the whole program.
+ */
+export function dataEffectParts(effect: DataEffect): EffectPart[] {
+  const groups = [
+    { names: effect.standard, kind: DATA_EFFECT_KINDS.standard, one: 'SAP standard table', many: 'SAP standard tables' },
+    { names: effect.custom, kind: DATA_EFFECT_KINDS.custom, one: 'custom table', many: 'custom tables' },
+  ].filter((g) => g.names.length > 0);
+  if (groups.length === 0) return [{ text: 'In what it checks, the engine found no write to a database table.' }];
+  const parts: EffectPart[] = [{ text: 'It writes to ' }];
+  groups.forEach((g, gi) => {
+    if (gi > 0) parts.push({ text: ' and ' });
+    parts.push({ text: `${plural(g.names.length, g.one, g.many)} (` });
+    const shown = g.names.slice(0, EFFECT_NAMES_SHOWN);
+    shown.forEach((name, i) => {
+      if (i > 0) parts.push({ text: ', ' });
+      parts.push({ table: name, kind: g.kind });
+    });
+    const more = g.names.length - shown.length;
+    parts.push({ text: more > 0 ? ` and ${more} more)` : ')' });
+  });
+  parts.push({ text: '.' });
+  return parts;
+}
+
+/** The same sentence as plain text — for a spec and for a screen reader's summary. */
+export function dataEffectSentence(effect: DataEffect): string {
+  return dataEffectParts(effect)
+    .map((p) => ('text' in p ? p.text : p.table))
+    .join('');
 }

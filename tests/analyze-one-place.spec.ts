@@ -13,7 +13,9 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  * Matrix" with mostly empty quadrants.
  *
  * Now: facets, score and findings on top; the route and what is not determined
- * in the side column, once each; below, two folded sections — the model's
+ * in the side column, once each — two cards (10.10.2026: the severity donut
+ * went, the route switch went, and the route card's one action is the
+ * decision in Management); below, two folded sections — the model's
  * summary and the technical detail. The business value assessment and action
  * plan moved to Economics. The two optional imports are small actions that open
  * their upload in a dialog. The real page and the demo share the structure.
@@ -44,11 +46,36 @@ test.describe('the stage, read', () => {
     expect(read('components/tco/BusinessValuePlan.tsx')).toMatch(/readStoredAnalysis<AnalysisData>\(analysis\)/);
   });
 
-  test('the status line is Evidence · Run · Route, in the real page and in the demo', () => {
+  test('the status line is Evidence · Run · Target · Successors, in the real page and in the demo', () => {
+    // Owner 10.10.2026 (audit M-6): the route is said by the answer and the
+    // route card; the status line says what the result is valid for and how
+    // much of it has a named successor.
     for (const rel of [PAGE, DEMO]) {
       const keys = [...read(rel).matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1]);
-      expect(keys, rel).toEqual(['evidence', 'run', 'route']);
+      expect(keys, rel).toEqual(['evidence', 'run', 'target', 'successors']);
     }
+  });
+
+  test('one route card, shared; no route switch; the next action is the decision in Management', () => {
+    for (const rel of [PAGE, DEMO]) {
+      const src = read(rel);
+      expect(src, rel).toMatch(/<RouteCard\b/);
+      expect(src, rel).not.toMatch(/data-route-switch|Switch to ABAP Cloud|Not the route you want/);
+      expect(src, rel).not.toMatch(/>\s*Open Design\s*</);
+    }
+    // The page writes `extensibilityRoute` only through the run, never from the browser.
+    expect(read(PAGE)).not.toMatch(/updateDoc\([^)]*\{\s*extensibilityRoute/);
+    const card = read('components/analyze/RouteCard.tsx');
+    expect(card).toContain('Decide in Management');
+    expect(card).not.toMatch(/updateDoc|setDoc|data-route-switch/);
+    expect(read(PAGE)).toContain('?view=management#decision-card');
+    expect(read(DEMO)).toContain('decideHref="/demo/workspace?view=management"');
+  });
+
+  test('the side column has two cards: the route and what is not determined — no severity donut', () => {
+    const table = read('components/analyze/EvidenceFindingsTable.tsx');
+    expect(table).not.toMatch(/SeverityDonut|title="Severity"/);
+    expect(table).toContain('aria-label="Route and what is open"');
   });
 });
 
@@ -106,13 +133,17 @@ test.describe('the stage, rendered', () => {
     // The model's summary says whose it is while it is closed.
     await expect(page.locator('#analyze-summary')).toContainText('Model proposal');
 
-    // The route explains itself one action deeper, the override with it.
+    // The route explains its decision path one action deeper; there is no
+    // switch, and the one next action is the decision in Management.
     const why = page.locator('[data-route-why]');
     await expect(why).toHaveCount(1);
-    await expect(page.locator('[data-route-switch]')).toBeHidden();
     await why.locator('[data-cc-disclosure-trigger]').first().click();
-    await expect(page.locator('[data-route-override]')).toContainText('Not the route you want?');
-    await expect(page.locator('[data-route-switch]')).toBeVisible();
+    await expect(page.locator('[data-route-switch], [data-route-override]')).toHaveCount(0);
+    const next = page.locator('[data-route-next] a');
+    await expect(next).toHaveText(/Decide in Management/);
+    await expect(next).toHaveAttribute('href', new RegExp(`/project/${acct.projectId}\\?view=management#decision-card$`));
+    // Two cards in the side column, not three.
+    await expect(page.locator('aside[aria-label="Route and what is open"] > section')).toHaveCount(2);
 
     // The two optional imports: small header actions, each opening its upload in a dialog.
     await page.locator('[data-analyze-add-usage]').click();

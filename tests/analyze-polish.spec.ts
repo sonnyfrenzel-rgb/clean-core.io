@@ -110,14 +110,12 @@ test.describe('3. the program map columns read 1..n left to right', () => {
 test.describe('4. the head does not contradict itself about the model', () => {
   const counts = { total: 3, bySeverity: { Critical: 1, High: 1, Medium: 1, Low: 0 } };
 
-  test('with a narrative, the answer says the Summary is a model proposal and not evidence', () => {
-    const a = analysisAnswer({ counts, lines: 669, route: null, routeChosenByReader: false, notDetermined: 0, narrative: true });
+  test("the answer says the evidence is the engine's, with or without a narrative — the fold says what the model wrote", () => {
+    // Since 10.10.2026 the answer is one sentence (DESIGN.md §2.11): the
+    // pointer to the model's summary left the prose, because the fold marks
+    // the summary "Model proposal" where it stands.
+    const a = analysisAnswer({ counts, lines: 669, route: null, routeChosenByReader: false });
     expect(a.detail).toContain('read all 669 lines without a model');
-    expect(a.detail).toContain('The Model summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
-  });
-
-  test('without one, nothing about a model narrative is said', () => {
-    const a = analysisAnswer({ counts, lines: 669, route: null, routeChosenByReader: false, notDetermined: 0 });
     expect(a.detail).not.toContain('Summary');
   });
 
@@ -125,13 +123,13 @@ test.describe('4. the head does not contradict itself about the model', () => {
     const page = read('app/(app)/project/[projectId]/analyze/page.tsx');
     expect(page).not.toContain('engine, with a model narrative');
     expect(page).toContain("{ key: 'evidence', label: 'Evidence', value: 'engine only, no model'");
-    // Evidence · Run · Route (owner decision 02.10.2026): the narrative is not
-    // a status of its own — it says what it is where it stands, folded as
-    // "Model summary" and marked "Model proposal".
+    // Evidence · Run · Target · Successors (owner decision 10.10.2026): the
+    // narrative is not a status of its own — it says what it is where it
+    // stands, folded as "Model summary" and marked "Model proposal" — and the
+    // route is said by the answer and the route card, not a third time here.
     expect(page).not.toContain("key: 'narrative'");
-    expect(page).not.toContain("key: 'successors'");
-    expect([...page.matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1])).toEqual(['evidence', 'run', 'route']);
+    expect(page).not.toContain("key: 'route'");
+    expect([...page.matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1])).toEqual(['evidence', 'run', 'target', 'successors']);
     expect(page).toMatch(/title="Model summary"\s*aside=\{<CcProvenanceChip value="proposed" \/>\}/);
-    expect(page).toMatch(/notDetermined: openItems\.length,\s*\/\/[^\n]*\n\s*narrative: true,/);
   });
 });

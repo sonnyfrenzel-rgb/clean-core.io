@@ -71,7 +71,7 @@ Order and per-phase state come only from `lib/workflow-steps.ts`
 
 | # | Stage | Requires | Writes to the project | Blocked by | On a model failure |
 |---|---|---|---|---|---|
-| 1 | **Analyze** | `legacyCode` | *client:* `worklist`, `extensibilityRoute`, `exports` · *command (`/api/projects/{id}/commands`):* `usageReport` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | the run is still created from the deterministic findings alone; a thrown error shows a banner |
+| 1 | **Analyze** | `legacyCode` | *client:* `exports` (the route switch that wrote `extensibilityRoute` went on 10.10.2026) · *command (`/api/projects/{id}/commands`):* `usageReport` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | the run is still created from the deterministic findings alone; a thrown error shows a banner |
 | 2 | **Design** | `activeRunId`, `analysis` | *client:* `solutionDesign`, `status`, `nonFunctionalRequirements`, `exports` · *command (`/api/projects/{id}/commands`):* `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy` | `enforceActiveRun` only — there is no `design` target in `generationBlockers`; the sign-off itself additionally needs a signed run, a known architecture and a reason for an override, all decided on the server | an empty response throws; nothing is written; the NFR call may fail silently |
 | 3 | **Transformation** | `activeRunId`, `legacyCode`, `solutionDesign`, `analysis` | `generatedCode`, `testSuite`, `status` | `enforceActiveRun`, `generationBlockers(…, 'transformation')`: source changed, design stale, sign-off stale | no usable file → throws, **nothing is saved**, the previous artefact stays |
 | 4 | **Documentation** | `activeRunId` | `documentation`, `businessDocumentation`, **`generatedCode`**, `status` | `enforceActiveRun`, `generationBlockers(…, 'documentation')`: the three above **plus** code stale | an empty response throws; `docError` is shown; nothing is written |
@@ -198,10 +198,11 @@ has an assertion in the guard so that fixing it forces the register to be update
   KPIs and the duration are listed as not determined. Blueprints stored before stay readable
   and are marked as the earlier form. The entry stays in the JSON with
   `"status": "resolved"`, and the guard asserts the fix instead of the limit.
-- **L-05 — two stages show staleness only as a coloured circle.** Analyze and
-  Economics are the only stages that render no `StaleNotice`, although
-  `workflowSteps()` can put both in `stale` ("Source changed", "Modelled on the
-  score of a different source").
+- **L-05 — Economics shows staleness only as a coloured circle.** It is the
+  only stage that renders no `StaleNotice`, although `workflowSteps()` can put
+  it in `stale` ("Modelled on the score of a different source"). Analyze says
+  "Source changed" / "Inputs changed" on the page since 10.10.2026, with the
+  way to a new run in the IT view.
 - **L-06 — Design generates by itself.** Opening stage 2 with an analysis and no
   design starts a model call with no user action, and `generationBlockers` has no
   `design` target, so nothing about staleness stops it. (Regenerating is also how

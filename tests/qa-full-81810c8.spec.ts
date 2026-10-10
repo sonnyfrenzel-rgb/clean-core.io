@@ -91,7 +91,12 @@ test.describe('the route confidence on the card is the signed one (d5a87a5db395)
     expect(page).toMatch(/pinRunOwnedFields\(obj, computedRouteReport\)/);
     expect(read('lib/analysis-run.ts')).toMatch(/pinRunOwnedFields\(obj, routeReport\)/);
     expect(page).not.toMatch(/analysisData\.extensibilityRouting\??\.confidenceScore/);
-    expect(page).toMatch(/\$\{signedRouteConfidence\}% Conf\./);
-    expect(page).toMatch(/ at \$\{signedRouteConfidence\}% confidence/);
+    // The route card is shared with the demo since 10.10.2026 (components/analyze/RouteCard.tsx):
+    // the page hands it the signed figure, the card prints only what it is handed.
+    expect(page.match(/confidence=\{signedRouteConfidence\}/g) ?? []).toHaveLength(2);
+    expect(page).toMatch(/signedRouteConfidence: number \| null =\s*typeof project\?\.recommendationConfidence === 'number'/);
+    const card = read('components/analyze/RouteCard.tsx');
+    expect(card).toContain('{confidence}%');
+    expect(card).toMatch(/ at \$\{confidence\}% confidence/);
   });
 });

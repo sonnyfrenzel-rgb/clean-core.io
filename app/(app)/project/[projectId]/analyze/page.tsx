@@ -32,7 +32,6 @@ import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from
 import { readModelGaps } from '@/lib/model-gaps';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
-import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
@@ -50,7 +49,7 @@ import { findingsWorklist } from '@/lib/findings-worklist';
 import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
-import { routeExtensibility } from '@/lib/abap/extensibility-router';
+import { routeDrivers, routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
@@ -69,7 +68,6 @@ import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
 import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
-import ModernizationStrategy from '@/components/analyze/ModernizationStrategy';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
 import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
@@ -95,11 +93,15 @@ import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
-import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
-import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_LABEL, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
+import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
+import RouteCard from '@/components/analyze/RouteCard';
+import StaleNotice from '@/components/StaleNotice';
+import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
+import { profileCoverage } from '@/lib/assessment-profile';
+import { recordedProfileOf } from '@/lib/assessment-target';
+import { formatTextDate } from '@/lib/format';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
-import ObjectSection from '@/components/analyze/ObjectSection';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import OpenQuestionsLine from '@/components/workspace/OpenQuestionsLine';
@@ -110,7 +112,7 @@ import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
 import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
-import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
+import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER, withSuccessor } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
 import { readProcess } from '@/lib/first-look';
 import { catalogForReader } from '@/lib/messages/demo';
@@ -142,7 +144,6 @@ export default function AnalyzePage() {
   const isFromExample = !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(PASTED_SOURCE_NAME);
-  const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
   // Roadmap 7.5: the check tasks this source leaves open - a window too
   // short, an include not read, a call target computed at run time. Derived
@@ -393,7 +394,6 @@ export default function AnalyzePage() {
         targetProfile: assessmentTarget,
       });
       const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private');
-      setRouteReport(computedRouteReport);
 
       // 2. Start Evidence Sweep animation
       setSweepCode(codeToAnalyze);
@@ -820,23 +820,44 @@ export default function AnalyzePage() {
   const personalDataAckStale = personalDataHints.length > 0 && personalDataAckFor !== '' && personalDataAckFor !== personalDataKey;
 
   /**
-   * The route's confidence as the run signed it (`recommendationConfidence`),
-   * or as the router just computed it — never the number in the model's JSON
-   * (QA full review of 81810c8, d5a87a5db395).
+   * The route's confidence as the run signed it (`recommendationConfidence`) —
+   * never the number in the model's JSON (QA full review of 81810c8,
+   * d5a87a5db395). A run just made here puts its figures on `project` itself.
    */
   const signedRouteConfidence: number | null =
-    typeof routeReport?.confidenceScore === 'number'
-      ? routeReport.confidenceScore
-      : typeof project?.recommendationConfidence === 'number'
-        ? project.recommendationConfidence
-        : null;
+    typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null;
 
   const signedCleanCoreScore: number | null =
-    typeof routeReport?.cleanCoreScore === 'number'
-      ? routeReport.cleanCoreScore
-      : typeof project?.cleanCoreScore === 'number'
-        ? project.cleanCoreScore
-        : null;
+    typeof project?.cleanCoreScore === 'number'
+      ? project.cleanCoreScore
+      : null;
+
+  /**
+   * The router's report for the signed run's evidence (audit M-1, 10.10.2026).
+   *
+   * It used to be state set only by a run made in this page session, so the
+   * route's drivers and assumptions and the usage × risk matrix were gone on
+   * every reload. It is recomputed from the evidence the server read for the
+   * signed run, with the run's deployment — and used only when it arrives at
+   * the route and the score that run signed, the same "adds up" rule as the
+   * score's deductions. Otherwise it is `'differs'`, said in the route card,
+   * and nothing is drawn from it.
+   */
+  const routeReport = useMemo(() => {
+    if (!evidenceReport || !project) return null;
+    const deployment = project.s4Deployment === 'public' ? 'public' : 'private';
+    const derived = routeExtensibility(evidenceReport, deployment);
+    const recommended = signedRecommendationOf(project.originalRecommendation) ?? project.extensibilityRoute ?? null;
+    const addsUp = derived.recommendedRoute === recommended && derived.cleanCoreScore === signedCleanCoreScore;
+    return addsUp ? derived : null;
+  }, [evidenceReport, project, signedCleanCoreScore]);
+  /** What the route card draws from it: drivers and assumptions, said as not shown, or nothing to say. */
+  const routeDerived = useMemo(() => {
+    if (!evidenceReport) return null;
+    if (!routeReport) return 'differs' as const;
+    const deployment = project?.s4Deployment === 'public' ? 'public' : 'private';
+    return { drivers: routeDrivers(evidenceReport, deployment), assumptions: routeReport.assumptions };
+  }, [evidenceReport, routeReport, project?.s4Deployment]);
 
   /**
    * Why this run has no narrative — roadmap 1.2.
@@ -883,10 +904,9 @@ export default function AnalyzePage() {
   // the worklist — and everything else one action deeper, folded with a count,
   // never removed. All that "could not be determined" is gathered in one place
   // with its reason, instead of a paragraph wherever it happened to arise.
-  // The route switch writes the project; a refused or lost write is said next to
-  // the button instead of leaving the route silently unchanged (QA review of
-  // a88149856dcc).
-  const [routeSwitch, setRouteSwitch] = useState<{ busy: boolean; error: string }>({ busy: false, error: '' });
+  // There is no route switch on this page any more (10.10.2026): it wrote
+  // `extensibilityRoute` from the browser with no reason, generation no longer
+  // followed it, and the program decision is made in the Management view.
   // Which optional import is open in its dialog — usage data or ATC results.
   // `?add=usage` / `?add=atc` opens it at once: the workspace's open questions
   // link here as their one button for "add usage data" / "add ATC results"
@@ -908,7 +928,7 @@ export default function AnalyzePage() {
   const sourceLines = countSourceLines(legacyCode ?? '');
 
   /** The head's facets and status line, the same in both kinds of report. */
-  const answerFacts = (route: string | null | undefined) => {
+  const answerFacts = () => {
     const catalogRaw = project?.auditMetadata?.modelCard?.catalogVersion;
     const catalog = catalogRaw ? catalogForReader(catalogRaw) : null;
     return {
@@ -922,17 +942,27 @@ export default function AnalyzePage() {
         engine: project?.auditMetadata?.modelCard?.engineVersion ?? null,
       },
       status: [
-        // Two entries, not one: one entry naming the engine and a model narrative under a head
-        // that says "without a model" read as a contradiction. The evidence is
-        // the engine's alone; the narrative, when there is one, is a proposal.
-        // Evidence · Run · Route (owner decision 02.10.2026). The model's
-        // summary says what it is where it stands, folded below, and the
-        // successors are counted in the findings list itself.
+        // Evidence · Run · Target · Successors (owner 10.10.2026, audit M-6).
+        // The evidence is the engine's alone; the model's summary, when there
+        // is one, says what it is where it stands, folded below. The route is
+        // not here: the answer sentence and the route card say it.
         { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
-        { key: 'run', label: 'Run', value: project?.activeRunId ? 'signed' : 'no signed run', dot: 'bg-cc-neutral' },
-        { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
+        // Signed when and as which run, leading to the run in the workspace's Evidence layer.
+        { key: 'run', label: 'Run', value: runStatusValue(), dot: 'bg-cc-neutral', href: project?.activeRunId && typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}#evidence` : undefined },
+        // What the result is valid for: the target profile the run signed, covered or not.
+        { key: 'target', label: 'Target', value: targetStatusValue(project), dot: 'bg-cc-chart-2' },
+        // How much of the way has a named successor.
+        { key: 'successors', label: 'Successors', value: evidenceRows.length ? `${withSuccessor(evidenceRows)} of ${evidenceRows.length} named` : 'no finding', dot: 'bg-cc-chart-3' },
       ],
     };
+  };
+
+  /** "signed 9 Oct 2026 · 3f2a1b7c" — the run as the audit pack names it. */
+  const runStatusValue = () => {
+    const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
+    if (!runId) return 'no signed run';
+    const when = formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp);
+    return when ? `signed ${when} · ${runId.slice(0, 8)}` : `signed · ${runId.slice(0, 8)}`;
   };
 
   /** The Clean Core Score section, first in the main column. */
@@ -1089,6 +1119,9 @@ export default function AnalyzePage() {
     );
   };
 
+  /** The workspace's Management view — where the program decision is made (owner decision 10.10.2026). */
+  const decideHref = typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}?view=management#decision-card` : '/dashboard';
+
   const renderAnalysisContent = () => {
     if (!project?.analysis) {
       // Roadmap 1.2, acceptance V25-A12: *"'not generated' instead of empty"*.
@@ -1111,6 +1144,9 @@ export default function AnalyzePage() {
         },
       ];
       const evidenceRoute = project.extensibilityRoute ?? null;
+      const evidenceRecommended = signedRecommendationOf(project.originalRecommendation);
+      const evidenceOverridden = routeWasOverridden(evidenceRecommended, evidenceRoute);
+      const evidenceRationale = project.recommendationJustification ? sapNamesForDisplay(project.recommendationJustification) : null;
       return (
         <div className="space-y-6 font-sans" data-evidence-only-report>
           <AnalysisAnswer
@@ -1118,14 +1154,13 @@ export default function AnalyzePage() {
               counts: findingCounts,
               lines: sourceLines,
               route: evidenceRoute,
-              routeChosenByReader: false,
-              notDetermined: openItems.length,
+              routeChosenByReader: evidenceOverridden,
             })}
+            effect={dataEffect(evidenceFindings)}
             counts={findingCounts}
             score={signedCleanCoreScore}
-            routeChosenByReader={false}
             onExplainScore={() => setShowScoreModal(true)}
-            {...answerFacts(evidenceRoute)}
+            {...answerFacts()}
           />
 
           <EvidenceFindingsTable
@@ -1137,24 +1172,22 @@ export default function AnalyzePage() {
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideTop={
-              <ObjectSection side title="Extensibility route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
-                <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
-                  <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
-                    <Cloud size={20} aria-hidden="true" />
-                  </span>
-                  <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : 'Not determined'}</p>
-                </div>
-                {project.recommendationJustification && (
-                  <p className="m-0 mt-3 cc-text-cell text-cc-ink">{sapNamesForDisplay(project.recommendationJustification)}</p>
-                )}
-                <div className="mt-3">
-                  <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
-                    Open Design
-                  </CcButton>
-                </div>
-              </ObjectSection>
-            }
+            sideTop={({ openLine }) => (
+              <RouteCard
+                route={evidenceRoute}
+                overridden={evidenceOverridden}
+                recommended={evidenceRecommended}
+                targetArtifact={routeReport?.targetArtifact ?? null}
+                confidence={signedRouteConfidence}
+                rationale={evidenceRationale}
+                deployment={project.s4Deployment ?? null}
+                derived={routeDerived}
+                notRecorded={routeNotRecorded(evidenceOverridden, signedRouteConfidence, evidenceRationale)}
+                decideHref={decideHref}
+                openLine={openLine}
+                stageOutput
+              />
+            )}
             sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
           />
 
@@ -1179,11 +1212,12 @@ export default function AnalyzePage() {
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
 
     /**
-     * The stored route differs from the one that was recommended — an architect
-     * pressed "Switch Track". The recommendation's confidence and rationale
-     * describe the other route and are labelled as such below. Read from the
-     * analysis already parsed above: this page has one reader of a stored
-     * analysis and a guard that counts its call sites (money-honesty-guard).
+     * The stored route differs from the one that was recommended — an earlier
+     * build had a switch that wrote it from the browser (removed 10.10.2026).
+     * The recommendation's confidence and rationale describe the other route
+     * and are labelled as such. Read from the analysis already parsed above:
+     * this page has one reader of a stored analysis and a guard that counts
+     * its call sites (money-honesty-guard).
      */
     const recommendedRoute = analysisData?.extensibilityRouting?.recommendedRoute;
     const routeIsOverridden = routeWasOverridden(recommendedRoute, project?.extensibilityRoute);
@@ -1194,26 +1228,12 @@ export default function AnalyzePage() {
       const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints;
       const comparative = analysisData.extensibilityRouting?.comparativeAnalysis;
       const shownRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || null;
-      const routeForCards = shownRoute || SIDE_BY_SIDE_ROUTE;
-      const isBtp = isSideBySideRoute(routeForCards);
       const storedRationale = analysisData.extensibilityRouting?.rationale;
-      const rationale = storedRationale ? sapNamesForDisplay(storedRationale) : storedRationale;
+      const rationale = storedRationale ? sapNamesForDisplay(storedRationale) : null;
 
+      // What the run did not record about its route is said in the route card,
+      // as one muted line: it is about the run, not the code (audit §3.9).
       const openItems: OpenItem[] = [...sourceOpenItems()];
-      if (!routeIsOverridden && signedRouteConfidence === null) {
-        openItems.push({
-          key: 'route-confidence',
-          title: 'How certain the route recommendation is',
-          reason: 'This run recorded no confidence for its route, so none is shown — a missing figure is not filled in.',
-        });
-      }
-      if (!routeIsOverridden && !rationale) {
-        openItems.push({
-          key: 'route-rationale',
-          title: 'Why this route was recommended',
-          reason: 'No rationale was recorded for this route. The route itself comes from fixed rules over the findings.',
-        });
-      }
       if (!analysisData.standardFit?.potential) {
         openItems.push({
           key: 'standard-fit',
@@ -1227,20 +1247,17 @@ export default function AnalyzePage() {
         lines: sourceLines,
         route: shownRoute,
         routeChosenByReader: routeIsOverridden,
-        notDetermined: openItems.length,
-        // This branch draws the model's Summary below, marked "Model proposal".
-        narrative: true,
       });
 
       return (
         <div className="space-y-6 font-sans">
           <AnalysisAnswer
             answer={answer}
+            effect={dataEffect(evidenceFindings)}
             counts={findingCounts}
             score={signedCleanCoreScore}
-            routeChosenByReader={routeIsOverridden}
             onExplainScore={() => setShowScoreModal(true)}
-            {...answerFacts(shownRoute)}
+            {...answerFacts()}
           />
 
           <EvidenceFindingsTable
@@ -1253,197 +1270,47 @@ export default function AnalyzePage() {
             scoreSection={scoreSection}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
-            sideTop={
-              /* The route, as the rules recommended it or as the reader chose it. */
-              <ObjectSection
-                side
-                title="Extensibility route"
-                right={routeIsOverridden ? <CcProvenanceChip value="confirmed" note="your choice" /> : <CcProvenanceChip value="reconstructed" note="fixed rules" />}
+            sideTop={({ openLine }) => (
+              /* The route, as the rules recommended it — or as an earlier build's switch stored it. */
+              <RouteCard
+                route={shownRoute}
+                overridden={routeIsOverridden}
+                recommended={recommendedRoute ?? null}
+                targetArtifact={analysisData.extensibilityRouting?.targetArtifact ?? null}
+                confidence={signedRouteConfidence}
+                rationale={rationale}
+                deployment={project.s4Deployment ?? null}
+                derived={routeDerived}
+                notRecorded={routeNotRecorded(routeIsOverridden, signedRouteConfidence, rationale)}
+                decideHref={decideHref}
+                openLine={openLine}
+                stageOutput
               >
-                <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
-                  <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
-                    <Cloud size={20} aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* The preservation register names this element as where
-                      `extensibilityRoute` becomes visible; see
-                      docs/registers/preservation-register.json. */}
-                  <span data-stage-output="extensibilityRoute" className={ROUTE_TAG_CLASS}>
-                    {isBtp
-                      ? <GlossaryTerm termKey="SAP BTP" className="border-b-0 text-cc-ink">{SIDE_BY_SIDE_LABEL}</GlossaryTerm>
-                      : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">ABAP Cloud (RAP)</GlossaryTerm>}
-                  </span>
-                  <span className="cc-text-meta text-cc-ink-muted">
-                    {routeIsOverridden
-                      ? 'Chosen by you'
-                      : signedRouteConfidence !== null
-                        ? `${signedRouteConfidence}% Conf.`
-                        : 'Confidence not computed'}
-                  </span>
-                </div>
-                <p data-route-target="" className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
-                  {/* After a switch, the recommended route's artefact is not the target
-                      (QA full review of fc787674705f, 08fd882e60b3). */}
-                  Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || (isBtp
-                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">{`${BTP} Node.js App (CAP)`}</GlossaryTerm>
-                    : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
-                </p>
-                  </div>
-                </div>
-                {routeIsOverridden ? (
-                  // The confidence and the reasoning belong to the route
-                  // that was recommended. Printed beside a route the user
-                  // switched to, they read as support for the opposite
-                  // decision (QA review of 33471220d6e9, 210bafeb4c8b).
-                  <p className="mt-1 cc-text-cell text-cc-ink-muted">
-                    You changed this route. The recommendation was{' '}
-                    <span className="font-semibold text-cc-ink">{routeLabel(analysisData.extensibilityRouting?.recommendedRoute ?? '')}</span>
-                    {signedRouteConfidence !== null
-                      ? ` at ${signedRouteConfidence}% confidence`
-                      : ''}
-                    {rationale ? `: ${rationale}` : '.'}
-                  </p>
-                ) : rationale ? (
-                  <p className="mt-1 cc-text-cell text-cc-ink-muted">{rationale}</p>
-                ) : (
-                  // Said in one short line here; the reason is in the list of
-                  // things not determined.
-                  <p className="mt-1 cc-text-cell text-cc-ink-muted">No rationale recorded.</p>
-                )}
-                <p className="mt-3 cc-text-meta text-cc-ink-muted">
-                  Target system: {(project.s4Deployment || 'public') === 'public' ? 'S/4HANA Public Cloud' : 'Private Cloud / RISE'}
-                </p>
-
-                <div className="mt-3">
-                  <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
-                    Open Design
-                  </CcButton>
-                </div>
-
-                {/* "Why this route" — the decision path, the standard fit, the
-                    evidence and assumptions behind the route, and the way to
-                    choose the other one. It was a section of its own further
-                    down the page; since 02.10.2026 it is here, with the route
-                    it explains, one action deeper (owner decision). */}
+                {/* "Why this route" — the decision path and the standard fit,
+                    one action deeper (owner decision 02.10.2026). What drives
+                    the route and what it assumes stand open above it. */}
                 <div className="mt-3 border-t border-cc-line pt-1" data-route-why="">
                   <CcDisclosure title="Why this route">
-                    <div className="space-y-5">
-                      {/* ── The evidence behind the route, while the run that computed it is on screen ── */}
-                      {routeReport && (
-                        <div className="mt-3 rounded-cc-row bg-cc-surface-muted px-3 py-2 border border-cc-line flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="cc-text-meta text-cc-ink-muted">
-                            Confidence{' '}
-                            <span className={STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text}>{routeReport.confidenceScore}%</span>
-                          </span>
-                          <span className="cc-text-meta text-cc-ink">
-                            {/* The router counts the engine's entries — places in the code, not findings. */}
-                            Based on {routeReport.evidenceCounts.totalFindings} {routeReport.evidenceCounts.totalFindings === 1 ? 'place' : 'places'} in the code
-                            {routeReport.evidenceCounts.criticalFindings > 0 && (
-                              <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
-                            )}
-                          </span>
-                          <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} {routeReport.evidenceCounts.supportingFindings === 1 ? 'place in the code drives' : 'places in the code drive'} the route</span>
-                          {routeReport.assumptions.length > 0 && (
-                            <CcDisclosure title="Assumptions" count={routeReport.assumptions.length}>
-                              <ul className="mt-1 space-y-1 pl-2">
-                                {routeReport.assumptions.map((a, i) => (
-                                  <li key={i} className="cc-text-cell text-cc-ink-muted">• {a}</li>
-                                ))}
-                              </ul>
-                            </CcDisclosure>
-                          )}
-                        </div>
-                      )}
+                    <SectionBoundary name="Route decision path">
+                      <div className="space-y-8">
+                        {/* Decision matrix pathway */}
+                        <ExtensibilityDecisionMatrix
+                          extensibilityRoute={shownRoute || SIDE_BY_SIDE_ROUTE}
+                          decisionTreeCheckpoints={checkpoints}
+                          comparativeAnalysis={comparative}
+                        />
 
-                  <SectionBoundary name="Modernization Strategy">
-                    <div className="space-y-8">
-                      {/* Decision matrix pathway */}
-                      <ExtensibilityDecisionMatrix
-                        extensibilityRoute={routeForCards}
-                        decisionTreeCheckpoints={checkpoints}
-                        comparativeAnalysis={comparative}
-                      />
-
-                      {/* S/4HANA Standard Fit */}
-                      <TargetScopeMapping
-                        showHelpMode={false}
-                        standardFit={analysisData.standardFit}
-                      />
-
-                      {/* Core Clean recommendations — reconciled to avoid contradictions */}
-                      {(() => {
-                        const recs = analysisData.recommendations;
-                        if (!recs) return null;
-                        const reconciledRecs = { ...recs };
-
-                        // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
-                        const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
-                        const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
-
-                        if (isRetire && isRewrite) {
-                          // Extract the standard replacement from keepCoreClean if available
-                          const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
-                          const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
-                          reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
-                        }
-
-                        return (
-                          <ModernizationStrategy
-                            showHelpMode={false}
-                            recommendations={reconciledRecs}
-                          />
-                        );
-                      })()}
-                    </div>
-                  </SectionBoundary>
-
-                      {/* Interactive override: the reader's choice, marked as theirs above. */}
-                      <div data-route-override="" className="border-t border-cc-line pt-3">
-                        <p className="m-0 cc-text-cell font-semibold text-cc-ink">Not the route you want?</p>
-                        <p className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
-                          Choose the other one; it is then marked as your choice, and the recommendation stays on record beside it.
-                        </p>
-                        <div className="mt-2">
-                          <CcButton
-                            variant="ghost"
-                            density="compact"
-                            title="Not the route you want? Choose the other one; it is then marked as your choice."
-                            icon={<RefreshCw size={16} aria-hidden="true" />}
-                            busy={routeSwitch.busy}
-                            data-route-switch
-                            onClick={async () => {
-                              if (routeSwitch.busy) return;
-                              const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || SIDE_BY_SIDE_ROUTE;
-                              const nextRoute = isSideBySideRoute(currentRoute) ? IN_APP_ROUTE : SIDE_BY_SIDE_ROUTE;
-
-                              setRouteSwitch({ busy: true, error: '' });
-                              try {
-                                const docRef = doc(getDb(), 'projects', projectId as string);
-                                await updateDoc(docRef, { extensibilityRoute: nextRoute });
-                                setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
-                                setRouteSwitch({ busy: false, error: '' });
-                              } catch {
-                                setRouteSwitch({ busy: false, error: 'The route could not be changed. Nothing was saved; check your connection and try again.' });
-                              }
-                            }}
-                          >
-                            {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BTP}`}
-                          </CcButton>
-                        </div>
-                        {routeSwitch.error && (
-                          <div className="mt-2" data-route-switch-error>
-                            <CcMessageStrip state="error" announce>
-                              {routeSwitch.error}
-                            </CcMessageStrip>
-                          </div>
-                        )}
+                        {/* S/4HANA Standard Fit */}
+                        <TargetScopeMapping
+                          showHelpMode={false}
+                          standardFit={analysisData.standardFit}
+                        />
                       </div>
-                    </div>
+                    </SectionBoundary>
                   </CcDisclosure>
                 </div>
-              </ObjectSection>
-            }
+              </RouteCard>
+            )}
           />
 
           {/* What the model wrote about this code — outside the signature by
@@ -1492,6 +1359,7 @@ export default function AnalyzePage() {
   };
 
   const phases = workflowSteps(project);
+  const analyzePhase = phases.find((p) => p.key === 'analyze');
   /** The run's report is on screen rather than the upload form. */
   const hasResults = hasStoredResults;
 
@@ -1566,6 +1434,25 @@ export default function AnalyzePage() {
           </CcMessageStrip>
         </div>
       )}
+
+      {/* The source or an input changed after the signed run (register L-05,
+          audit M-8): every figure below is about what that run read, so the
+          page says so above them — with the stepper's own sentence
+          (`lib/workflow-steps.ts`) and the one way on. This page has no re-run;
+          a new run starts in the workspace's IT view. */}
+      {hasResults && analyzePhase?.state === 'stale' ? (
+        <StaleNotice
+          title={analyzePhase.badge === 'Inputs changed' ? 'The inputs changed since the signed run' : 'The source changed since the signed run'}
+          reasons={[analyzePhase.detail]}
+          action={
+            typeof projectId === 'string' ? (
+              <a href={`/project/${encodeURIComponent(projectId)}?view=it`} className="font-semibold text-cc-ink underline underline-offset-2">
+                Run it again in the IT view
+              </a>
+            ) : null
+          }
+        />
+      ) : null}
 
       {searchParams.get('reason') === 'no-run' && !project?.activeRunId && (
         <div className="mb-8">
@@ -2035,9 +1922,55 @@ export default function AnalyzePage() {
 // Shared pieces of this page (block D, step D.10a). Tokens only; no palette.
 // ---------------------------------------------------------------------------
 
-/** The route as a plain property label: neither state colour nor proof mark. */
-const ROUTE_TAG_CLASS =
-  'inline-flex items-center rounded-[4px] border border-cc-line bg-cc-surface-muted px-2 cc-text-meta text-cc-ink whitespace-nowrap';
+/**
+ * The route the run recommended, as `/api/runs/create` signed it
+ * (`originalRecommendation`). Runs record the route itself; a project an
+ * older client wrote may hold `cap` / `rap`. Anything else is not read as a
+ * route.
+ */
+function signedRecommendationOf(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  if (v === 'cap' || v === SIDE_BY_SIDE_ROUTE) return SIDE_BY_SIDE_ROUTE;
+  if (v === 'rap' || v === IN_APP_ROUTE) return IN_APP_ROUTE;
+  return null;
+}
+
+/**
+ * What the run did not record about its route — one muted line in the route
+ * card, not entries under "Not determined": they are about the run, not the
+ * code, and they inflated the count there (audit §3.9). Beside a route an
+ * earlier build's switch stored, nothing is claimed about the recommendation.
+ */
+function routeNotRecorded(overridden: boolean, confidence: number | null, rationale: string | null | undefined): string[] {
+  if (overridden) return [];
+  return [confidence === null ? 'how certain the route is' : null, rationale ? null : 'why this route'].filter(
+    (x): x is string => x !== null,
+  );
+}
+
+const EDITION_SHORT: Record<string, string> = {
+  public: 'Public Edition',
+  private: 'Private Edition',
+  btp: 'SAP BTP ABAP environment',
+  'on-premise': 'on-premise',
+};
+
+/**
+ * The status line's Target (audit M-6, §3.5): the target profile the run
+ * signed and whether the catalog answers for it — "Private Edition ·
+ * S4HANA-2023-FPS02 · covered", or "· unconfirmed (2)". The full card is in
+ * the technical detail; a run signed before profiles existed says so.
+ */
+function targetStatusValue(project: Project | null): string {
+  if (!project?.activeRunId) return 'no signed run';
+  const profile = recordedProfileOf(project);
+  if (!profile) return 'not recorded';
+  const coverage = profileCoverage(profile);
+  const open = coverage.gaps.filter((g) => g.severity !== 'notes').length;
+  const verdict = coverage.state === 'covered' ? 'covered' : `${coverage.state}${open ? ` (${open})` : ''}`;
+  return [EDITION_SHORT[profile.edition] ?? profile.edition, profile.release || 'release not named', verdict].join(' · ');
+}
 
 /** A deployment choice card. Chosen = ink outline, never green (§1.1: choosing proves nothing). */
 const DEPLOYMENT_CARD_CLASS =

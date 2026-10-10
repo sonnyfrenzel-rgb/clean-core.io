@@ -38,8 +38,11 @@ test('focus first, groups by kind, progressive disclosure, calm titles', async (
   const kinds = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-focus-kind')));
   expect(new Set(kinds).size, 'one card per kind').toBe(kinds.length);
 
-  // The pictures carry their figures as text.
-  await expect(list.locator('[data-severity-bar]')).toHaveAttribute('aria-label', /Findings by severity: \d+ critical/);
+  // The pictures carry their figures as text. The severity mix is drawn once,
+  // as the Findings facet's bar — the side column's donut said it again and
+  // went on 10.10.2026 (DESIGN.md §2.11).
+  await expect(page.locator('[data-analysis-answer] [data-severity-bar]')).toHaveAttribute('aria-label', /By severity: \d+ critical/);
+  await expect(list.locator('[data-severity-bar]')).toHaveCount(0);
 
   // Groups: critical/high open, the others closed.
   const groups = list.locator('[data-findings-group]');

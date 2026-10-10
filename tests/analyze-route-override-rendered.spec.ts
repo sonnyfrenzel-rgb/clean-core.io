@@ -17,6 +17,12 @@ import { signInViaLanding } from './helpers/sign-in';
  * only by a source grep — a conditional can be rewritten around both string
  * literals and leave them in the file (6f7a14516006, 8a965e15a584).
  * Roadmap 0.17: this opens the page and reads what is on it.
+ *
+ * Since 10.10.2026 the page has no switch (audit M-3): it wrote the route
+ * from the browser with no reason, and the program decision is made in the
+ * Management view. A project an earlier build's switch left with another
+ * route is still labelled as the reader's — that is what the first three
+ * tests hold; the fourth holds that the switch is gone.
  */
 
 const EMAIL = `override-${Date.now()}@cleancore-test.io`;
@@ -80,7 +86,8 @@ test('a route that still matches the recommendation shows the recommendation', a
   await openAnalyze(page);
 
   const body = await page.locator('body').innerText();
-  expect(body, 'the confidence belongs to the route that is shown').toContain('88% Conf.');
+  // The signed confidence, as a neutral meter beside the route it belongs to.
+  await expect(page.locator('[data-route-confidence="88"]')).toContainText('88%');
   expect(body, "the narrative's own confidence is not printed").not.toContain('95%');
   expect(body).toContain('The report joins three tables that have released APIs.');
   expect(body, 'nothing was changed, so nothing is labelled as changed').not.toContain('Chosen by you');
@@ -100,7 +107,7 @@ test('a route the architect switched is labelled as theirs, with the recommendat
   expect(body, 'the stored route value is not shown as it is (roadmap 3.0.15)').not.toContain('Side-by-Side (SAP BTP)');
   expect(body).toContain('88% confidence');
   // The confidence badge no longer stands beside the chosen route as if it were about it.
-  expect(body, 'the badge is not confidence for a route nothing assessed').not.toContain('88% Conf.');
+  await expect(page.locator('[data-route-confidence]'), 'no meter of confidence for a route nothing assessed').toHaveCount(0);
   // The recommended route's artefact is not the target of the route chosen
   // instead (QA full review of fc787674705f, 08fd882e60b3).
   const target = page.locator('[data-route-target]', { hasText: 'Target:' });
@@ -121,30 +128,26 @@ test('an analysis without a recommendation claims no override', async ({ page })
   const body = await page.locator('body').innerText();
   expect(body, 'nothing was changed — there was never a recommendation').not.toContain('Chosen by you');
   expect(body).not.toContain('You changed this route');
-  expect(body, 'and the missing confidence says so').toContain('Confidence not computed');
+  // What the run did not record about its route is one muted line in the card, not an invented figure.
+  await expect(page.locator('[data-route-not-recorded]')).toContainText('Not recorded for this run: how certain the route is');
+  await expect(page.locator('[data-route-confidence]')).toHaveCount(0);
 });
 
-test('a route switch the database refuses says so next to the button and changes nothing', async ({ page }) => {
+test('there is no route switch: the one next action is the decision in Management', async ({ page }) => {
   test.setTimeout(180 * 1000);
-  // A document the rules refuse every browser update of: `exports` must be a
-  // map (firestore.rules, isValidProject), and the update rule validates the
-  // whole document the write would leave behind. The switch used to await the
-  // write with no handler, so the refusal vanished and the button said nothing
-  // (QA review of a88149856dcc).
   await adminMergeDoc('projects', PROJECT_ID, {
     analysis: ANALYSIS,
     extensibilityRoute: 'Side-by-Side (SAP BTP)',
-    exports: 'not a map',
   });
   await adminMergeDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, { recommendationConfidence: 88 });
   await openAnalyze(page);
 
-  // The override sits in the route card's "Why this route" (owner decision 02.10.2026).
-  await expect(page.locator('[data-route-switch]')).toBeHidden();
+  // "Why this route" still opens the decision path; nothing in it writes the route.
   await page.locator('[data-route-why] [data-cc-disclosure-trigger]').first().click();
-  await expect(page.locator('[data-route-override]')).toContainText('Not the route you want?');
-  await page.locator('[data-route-switch]').click();
-  await expect(page.locator('[data-route-switch-error]')).toContainText('The route could not be changed. Nothing was saved');
-  await expect(page.locator('[data-route-switch]')).toHaveText(/Switch to ABAP Cloud/);
-  await expect(page.locator('body')).not.toContainText('Chosen by you');
+  await expect(page.locator('[data-route-switch], [data-route-override]')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('Not the route you want?');
+  await expect(page.locator('body')).not.toContainText(/Switch to (ABAP Cloud|SAP BTP)/);
+  const next = page.locator('[data-route-next] a');
+  await expect(next).toHaveText(/Decide in Management/);
+  await expect(next).toHaveAttribute('href', `/project/${PROJECT_ID}?view=management#decision-card`);
 });

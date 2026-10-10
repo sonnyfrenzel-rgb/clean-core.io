@@ -1,15 +1,12 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Cloud } from 'lucide-react';
-import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable, { type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
-import ObjectSection from '@/components/analyze/ObjectSection';
+import RouteCard from '@/components/analyze/RouteCard';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
@@ -20,15 +17,16 @@ import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
 import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
-import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
-import { accessUseOfKind, findingRows, SEVERITY_ORDER } from '@/lib/findings-view';
+import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
+import { accessUseOfKind, findingRows, SEVERITY_ORDER, withSuccessor } from '@/lib/findings-view';
+import { routeDrivers } from '@/lib/abap/extensibility-router';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
-import { routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
+import { sapNamesForDisplay } from '@/lib/sap-naming';
 import { scoreBand } from '@/lib/clean-core-score';
 import { catalogForReader } from '@/lib/messages/demo';
 import { APP_VERSION } from '@/lib/version';
@@ -155,11 +153,10 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
           lines: sourceLines,
           route,
           routeChosenByReader: false,
-          notDetermined: openItems.length,
         })}
+        effect={dataEffect(a.findings)}
         counts={findingCounts}
         score={a.cleanCoreScore}
-        routeChosenByReader={false}
         onExplainScore={() => setScoreOpen(true)}
         severities={SEVERITY_ORDER.map((key) => ({ key, count: rows.filter((r) => r.finding.severity === key).length }))}
         levels={levelFacet}
@@ -172,7 +169,8 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         status={[
           { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
           { key: 'run', label: 'Run', value: 'demo, never signed', dot: 'bg-cc-neutral' },
-          { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
+          { key: 'target', label: 'Target', value: `${demo.deployment === 'public' ? 'Public Edition' : 'Private Edition'} · assumed for the demo`, dot: 'bg-cc-chart-2' },
+          { key: 'successors', label: 'Successors', value: rows.length ? `${withSuccessor(rows)} of ${rows.length} named` : 'no finding', dot: 'bg-cc-chart-3' },
         ]}
       />
 
@@ -187,24 +185,22 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
           <CleanCoreScoreSection score={a.cleanCoreScore} breakdown={a.scoreBreakdown} onExplain={() => setScoreOpen(true)} />
         }
         fileName={fileName}
-        sideTop={
-          <ObjectSection side title="Extensibility route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
-            <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
-              <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
-                <Cloud size={20} aria-hidden="true" />
-              </span>
-              <p className="m-0 cc-text-h3 text-cc-ink">{routeLabel(route)}</p>
-            </div>
-            {demo.design.rationale ? (
-              <p className="m-0 mt-3 cc-text-cell text-cc-ink">{sapNamesForDisplay(demo.design.rationale)}</p>
-            ) : null}
-            <div className="mt-3">
-              <CcLinkButton href="/demo/design" variant="secondary">
-                Open Design
-              </CcLinkButton>
-            </div>
-          </ObjectSection>
-        }
+        sideTop={({ openLine }) => (
+          // The same card as a signed project's, from the router's report the
+          // demo computed on the server — drivers, assumptions, confidence.
+          <RouteCard
+            route={route}
+            overridden={false}
+            targetArtifact={demo.design.targetArtifact}
+            confidence={demo.design.confidenceScore}
+            rationale={demo.design.rationale ? sapNamesForDisplay(demo.design.rationale) : null}
+            deployment={demo.deployment}
+            derived={{ drivers: routeDrivers({ findings: a.findings }, demo.deployment), assumptions: demo.design.assumptions }}
+            notRecorded={[]}
+            decideHref="/demo/workspace?view=management"
+            openLine={openLine}
+          />
+        )}
         sideBottom={<NotDeterminedSide items={openItems} />}
       />
 

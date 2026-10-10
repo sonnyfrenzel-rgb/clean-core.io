@@ -4,18 +4,21 @@ import React from 'react';
 import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
+import CcAnchor from '@/components/cc/Anchor';
 import StageMetaDetails from '@/components/StageMetaDetails';
 import { severityChartMark, levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { scoreBand } from '@/lib/clean-core-score';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
-import type { AnalysisAnswerText, FindingCounts } from './analysis-answer';
+import { dataEffectParts, dataEffectSentence, type AnalysisAnswerText, type DataEffect, type FindingCounts } from './analysis-answer';
 import { ScoreScale } from './CleanCoreScoreSection';
+import { showFindingsKind } from './EvidenceFindingsTable';
 
 /**
  * The head of the Analyze object page (proposal A, owner decision 01.10.2026):
- * the answer in one sentence (ADR-029, §2.11), then four facet tiles —
- * findings, the Clean Core Score, the clean core levels, what was not assessed
- * — each with its figure, its words and a micro chart, then the status line.
+ * the answer in one sentence (ADR-029, §2.11) and one sentence on what the
+ * code writes, then three facet tiles — findings, the Clean Core Score, the
+ * clean core levels — each with its figure, its words and a micro chart, then
+ * the status line (Evidence · Run · Target · Successors, owner 10.10.2026).
  *
  * The Clean Core Score is shown as what it is — a grade from 5 to 100, "a
  * grade, not a compliance percentage" (DESIGN.md §6.1, glossary B) — never as
@@ -49,13 +52,15 @@ export interface StatusEntry {
   value: string;
   /** The dot's colour class. */
   dot: string;
+  /** Where the value leads — the run to the workspace's Evidence layer. */
+  href?: string;
 }
 
 export default function AnalysisAnswer({
   answer,
+  effect,
   counts,
   score,
-  routeChosenByReader,
   onExplainScore,
   severities,
   levels,
@@ -63,10 +68,11 @@ export default function AnalysisAnswer({
   status,
 }: {
   answer: AnalysisAnswerText;
+  /** The tables the code writes, from the engine's findings — the second sentence. */
+  effect: DataEffect;
   counts: FindingCounts;
   /** The signed score, or null when the run computed none. */
   score: number | null;
-  routeChosenByReader: boolean;
   onExplainScore: () => void;
   severities: readonly SeverityPart[];
   levels: LevelFacet;
@@ -103,6 +109,19 @@ export default function AnalysisAnswer({
         {answer.headline}
       </h2>
       <p className="m-0 mt-1 max-w-4xl cc-text-cell text-cc-ink-muted">{answer.detail}</p>
+      {/* The data effect, deterministic (audit §3.7): each table is a chip that
+          opens its group under Findings by kind. */}
+      <p className="m-0 mt-1 max-w-4xl cc-text-cell text-cc-ink-muted" data-analysis-effect={dataEffectSentence(effect)}>
+        {dataEffectParts(effect).map((part, i) =>
+          'text' in part ? (
+            <React.Fragment key={i}>{part.text}</React.Fragment>
+          ) : (
+            <CcAnchor key={i} label={`${part.table}, show its findings`} onOpen={() => showFindingsKind(part.kind)}>
+              {part.table}
+            </CcAnchor>
+          ),
+        )}
+      </p>
 
       {/* Three facets. The fourth, "Not assessed", said again what the side
           card "Not determined" lists, with a second count of a different thing
@@ -179,12 +198,15 @@ export default function AnalysisAnswer({
           <li key={s.key} className="inline-flex items-center gap-2">
             <span aria-hidden={true} className={cn('h-2 w-2 rounded-full', s.dot)} />
             <span className="cc-text-label text-cc-ink-muted">{s.label}</span>
-            <span className="text-cc-ink">{s.value}</span>
+            {s.href ? (
+              <a href={s.href} className="text-cc-ink underline underline-offset-2">
+                {s.value}
+              </a>
+            ) : (
+              <span className="text-cc-ink">{s.value}</span>
+            )}
           </li>
         ))}
-        {routeChosenByReader ? (
-          <li className="cc-text-meta text-cc-ink-muted">The route is your choice, not the rules’ recommendation.</li>
-        ) : null}
       </ul>
     </section>
   );
@@ -224,6 +246,7 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
   return (
     <div
       role="img"
+      data-severity-bar=""
       aria-label={`By severity: ${parts.map((p) => `${p.count} ${p.key.toLowerCase()}`).join(', ')}.`}
       className="flex h-2 w-full gap-0.5 overflow-hidden rounded-cc-row bg-cc-surface-muted"
     >

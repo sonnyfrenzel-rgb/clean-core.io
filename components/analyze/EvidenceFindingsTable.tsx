@@ -48,8 +48,10 @@ import SourcePanel from './SourcePanel';
  *   an anchor bar (sticky under the shell bar), then two columns —
  *   main:  the Clean Core Score (passed in), Look here first, Where in the
  *          program, Findings by kind;
- *   side:  the route (passed in), severity as a donut, what was not determined
- *          (passed in).
+ *   side:  the route (passed in) and what was not determined (passed in) —
+ *          two cards at most (DESIGN.md §2.11). The severity donut that stood
+ *          between them said the Findings facet's bar a third time and went
+ *          (owner 10.10.2026).
  *
  * The findings list: one group per kind with its count, its severity mix, its
  * clean core levels and how many name a successor; critical and high groups
@@ -76,6 +78,25 @@ export interface LevelLookup {
 }
 
 const NO_LEVELS: LevelLookup = { status: 'error', of: () => null };
+
+/**
+ * Open a kind's group under "Findings by kind" from outside the list — the
+ * table chips of the answer's data-effect sentence. A DOM event rather than
+ * shared state: the answer stands above this component, and the page keeps no
+ * state library and no context (CLAUDE.md).
+ */
+const SHOW_KIND_EVENT = 'cc-analyze-show-kind';
+export function showFindingsKind(kind: string): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<string>(SHOW_KIND_EVENT, { detail: kind }));
+}
+
+/** What the side column's first card may do inside the list: open the source at a line, or a kind's group. */
+export interface FindingsSideApi {
+  /** Undefined when there is no source to show. */
+  openLine?: (line: number) => void;
+  showKind: (kind: string) => void;
+}
 
 function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: LevelLookup['status'], openSource?: (line: number) => void) {
   const ef = r.finding;
@@ -138,75 +159,6 @@ function SeverityMix({ rows }: { rows: readonly FindingRow[] }) {
         );
       })}
     </span>
-  );
-}
-
-/** The severity donut of the side column — the counts are its name and its legend. */
-function SeverityDonut({ rows }: { rows: readonly FindingRow[] }) {
-  const parts = SEVERITY_ORDER.map((s) => ({ s, n: rows.filter((r) => r.finding.severity === s).length }));
-  const total = rows.length;
-  const size = 96;
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  let off = 0;
-  return (
-    <div className="flex items-center gap-4">
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        role="img"
-        aria-label={`Findings by severity: ${parts.map((p) => `${p.n} ${p.s.toLowerCase()}`).join(', ')}.`}
-        data-severity-bar=""
-        className="shrink-0"
-      >
-        <circle r={r} cx={size / 2} cy={size / 2} fill="none" strokeWidth={stroke} className="stroke-cc-surface-muted" />
-        {total > 0
-          ? parts
-              .filter((p) => p.n > 0)
-              .map((p) => {
-                const len = (p.n / total) * c;
-                const sev = normaliseSeverity(p.s);
-                const seg = (
-                  <circle
-                    key={p.s}
-                    data-chart-segment=""
-                    r={r}
-                    cx={size / 2}
-                    cy={size / 2}
-                    fill="none"
-                    strokeWidth={stroke}
-                    strokeDasharray={`${Math.max(0, len - 1.5)} ${c}`}
-                    strokeDashoffset={-off}
-                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                    className={severityChartMark(sev, 'stroke')}
-                  />
-                );
-                off += len;
-                return seg;
-              })
-          : null}
-        <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" className="fill-cc-ink text-[22px] font-extrabold">
-          {total}
-        </text>
-        <text x="50%" y="68%" textAnchor="middle" className="fill-cc-ink-muted text-[11px] font-semibold">
-          findings
-        </text>
-      </svg>
-      <ul className="m-0 grid list-none gap-1 p-0">
-        {parts.map((p) => {
-          const sev = normaliseSeverity(p.s);
-          return (
-            <li key={p.s} className="grid grid-cols-[0.5rem_4.5rem_auto] items-center gap-2 cc-text-cell">
-              <span aria-hidden={true} className={clsx('h-2 w-2 rounded-full', severityChartMark(sev, 'bg'))} />
-              <span className="text-cc-ink">{p.s}</span>
-              <span className="font-semibold tabular-nums text-cc-ink">{p.n}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
   );
 }
 
@@ -286,8 +238,8 @@ export default function EvidenceFindingsTable({
   notAssessed?: ReadonlyArray<{ label: string; firstLine: number }>;
   /** The Clean Core Score section, the first of the main column. */
   scoreSection?: React.ReactNode;
-  /** The route card, the first of the side column. */
-  sideTop?: React.ReactNode;
+  /** The route card, the first of the side column — a function when its line anchors open the source here. */
+  sideTop?: React.ReactNode | ((api: FindingsSideApi) => React.ReactNode);
   /** What was not determined, the last of the side column. */
   sideBottom?: React.ReactNode;
   /** The source's file name, for the source panel's label. */
@@ -357,6 +309,20 @@ export default function EvidenceFindingsTable({
     scrollToList('analyze-kinds');
   };
   const rowsAtSource = sourceAt === null ? [] : rows.filter((r) => r.lines.includes(sourceAt));
+
+  // A table chip in the answer above asks for its group.
+  const showKindRef = React.useRef(showKind);
+  useEffect(() => {
+    showKindRef.current = showKind;
+  });
+  useEffect(() => {
+    const onShow = (e: Event) => {
+      const kind = (e as CustomEvent<string>).detail;
+      if (typeof kind === 'string' && kind) showKindRef.current(kind);
+    };
+    window.addEventListener(SHOW_KIND_EVENT, onShow);
+    return () => window.removeEventListener(SHOW_KIND_EVENT, onShow);
+  }, []);
 
   return (
     <div data-analysis-findings="" className="min-w-0">
@@ -589,11 +555,8 @@ export default function EvidenceFindingsTable({
           </ObjectSection>
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-4" aria-label="Route, severity and what is open">
-          {sideTop}
-          <ObjectSection side title="Severity">
-            <SeverityDonut rows={rows} />
-          </ObjectSection>
+        <aside className="flex min-w-0 flex-col gap-4" aria-label="Route and what is open">
+          {typeof sideTop === 'function' ? sideTop({ openLine: canShowSource ? openSource : undefined, showKind }) : sideTop}
           {sideBottom}
         </aside>
       </div>

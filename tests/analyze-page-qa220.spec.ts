@@ -71,6 +71,10 @@ test.describe('Analyze page - QA full review of v2.20.0', () => {
   });
 
   test('08fd882e60b3: after a route switch the recommended artefact is not shown as the target', () => {
-    expect(src()).toMatch(/Target: \{\(!routeIsOverridden && analysisData\.extensibilityRouting\?\.targetArtifact\)/);
+    // The card is shared with the demo since 10.10.2026: the page hands it the
+    // recommended artefact and the override decision, the card picks.
+    expect(src()).toMatch(/overridden=\{routeIsOverridden\}[\s\S]{0,200}?targetArtifact=\{analysisData\.extensibilityRouting\?\.targetArtifact \?\? null\}/);
+    const card = fs.readFileSync(path.resolve(ROOT, 'components/analyze/RouteCard.tsx'), 'utf8');
+    expect(card).toMatch(/Target: \{\(!overridden && targetArtifact\)/);
   });
 });
