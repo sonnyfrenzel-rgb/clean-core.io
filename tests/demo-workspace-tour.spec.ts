@@ -106,16 +106,28 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
     await expect(page.locator(`[data-demo-workspace="${view}"]`)).toBeVisible();
     await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
     await expect(page.locator('[data-demo-unsigned]')).toContainText('never signed');
-    // Every layer of the anchor bar is reachable, filled or saying why not.
-    await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
     if (view === 'business') {
+      // Every layer of the anchor bar is reachable, filled or saying why not.
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
       // Business has no Need & process (ADR-080): the map is its process, and
       // the bar opens on one of its own sections.
       await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
-    } else {
-      // IT and Management open on Need & process, and in the demo that layer is the process map (mockup s15).
+    } else if (view === 'management') {
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
+      // Management opens on Need & process, and in the demo that layer is the process map (mockup s15).
       await expect(page.locator('[data-workspace-layer-section="need"]').first()).toBeVisible();
+    } else {
+      // IT shows only its own content (ADR-086): no layer bar, no section of
+      // it, no map — its own anchor bar, without an "empty" anchor, and the
+      // links out to the views that answer the rest.
+      await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
+      await expect(page.locator('[data-it-anchors]')).toBeVisible();
+      await expect(page.locator('[data-it-anchor="objects"]')).toBeVisible();
+      await expect(page.locator('[data-it-anchors]')).not.toContainText(/empty/);
+      await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(4);
+      await expect(page.locator('[data-it-trust="demo"]')).toBeVisible();
     }
   }
   // IT shows the engine's findings without asking a route for them.

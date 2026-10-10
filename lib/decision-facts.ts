@@ -4,7 +4,7 @@ import { sha256Hex, signOffKey } from '@/lib/artefact-digest';
 import { contractOfProject, inputsDifferingFromRun } from '@/lib/contract-build';
 import type { SignOffBasis } from '@/lib/project-decision-build';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
-import { parseBpmn } from '@/lib/process-map';
+import { isDecisionTag, parseBpmn } from '@/lib/process-map';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
@@ -64,6 +64,14 @@ function manifestOfRun(run: Record<string, unknown> | null): InputManifest | nul
  * `undecided: null` whenever the subjects cannot be read: no revision 1, a
  * source that moved since it was reconstructed, or one too large to derive
  * rules from in one request. "Not counted" is not "none undecided".
+ *
+ * What is counted as undecided (ADR-085): the rules and the decision points
+ * of the reconstructed process without a business answer — what the decision
+ * asks the business, and what the rules card and the walk-through put in front
+ * of it. Every other element (steps, starts, ends, error boundaries) may still
+ * be answered and is stored in the same need revision; it is not counted here.
+ * Before ADR-085 every element of the map was, and a 40-line program read as
+ * "84 process elements have no confirmed state".
  */
 async function needFactsOf(
   db: AdminDb,
@@ -91,6 +99,7 @@ async function needFactsOf(
   }
 
   let undecided: number | null = null;
+  let open: DecisionDraftFacts['need']['open'] = null;
   let drops = entries.filter((e) => e.state === 'drop').length;
   const baselineRef: DocumentReference = projectRef.collection(PROCESS_REVISION_COLLECTION).doc('1');
   const baselineSnap = await (tx ? tx.get(baselineRef) : baselineRef.get());
@@ -102,16 +111,22 @@ async function needFactsOf(
       Buffer.byteLength(source, 'utf8') <= MAX_RULE_SOURCE_BYTES &&
       sha256Hex(source) === record.sourceSha256
     ) {
-      const elements = parseBpmn(record.xml).elements.map((e) => e.id);
+      const parsed = parseBpmn(record.xml).elements;
+      const elements = parsed.map((e) => e.id);
+      const decisions = parsed.filter((e) => isDecisionTag(e.tag)).map((e) => e.id);
       const rules = deriveBusinessRules(source).rules.map((r) => r.id);
       const states = readProcessStates(entries, { elements, rules });
-      undecided = states.counts.undecided;
       // Counted over the subjects that still exist, like the rest of the need.
       drops = states.counts.drop;
+      open = {
+        rules: readProcessStates(entries, { elements: [], rules }).counts.undecided,
+        decisions: readProcessStates(entries, { elements: decisions, rules: [] }).counts.undecided,
+      };
+      undecided = open.rules + open.decisions;
     }
   }
 
-  return { revision: revision > 0 ? revision : null, confirmedDrops: drops, undecided };
+  return { revision: revision > 0 ? revision : null, confirmedDrops: drops, undecided, open };
 }
 
 /**

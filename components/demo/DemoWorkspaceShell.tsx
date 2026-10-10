@@ -16,7 +16,8 @@ import FirstLook from '@/components/workspace/FirstLook';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
-import { BUSINESS_LAYERS } from '@/lib/business-layers';
+import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { IT_LAYER_ELSEWHERE, scrollToWhenThere } from '@/lib/it-sections';
 import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
 import { plainWordingFor } from '@/lib/business-card';
 import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
@@ -191,13 +192,16 @@ function Place({
   place,
   children,
   className,
+  id,
 }: {
   place: TourPlace;
   children: React.ReactNode;
   className?: string;
+  /** An address in the page, where a link lands on this place (`#decision-card`). */
+  id?: string;
 }) {
   return (
-    <div data-demo-tour-place={place} className={className ?? 'mt-5 max-w-3xl'}>
+    <div id={id} data-demo-tour-place={place} className={className ?? 'mt-5 max-w-3xl'}>
       {children}
     </div>
   );
@@ -241,6 +245,44 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     window.location.hash = next;
     setHashLayer(next);
   }, []);
+  /** Another view at a place in it — IT's links out and its redirects (ADR-086), as in the workspace. */
+  const goTo = useCallback(
+    (target: WorkspaceView, hash: string, replace: boolean) => {
+      const query = new URLSearchParams(searchParams?.toString() ?? '');
+      query.set('view', target);
+      const url = `?${query.toString()}#${hash}`;
+      if (replace) router.replace(url, { scroll: false });
+      else router.push(url, { scroll: false });
+      // After the navigation, not inside the effect that may have asked for it.
+      window.requestAnimationFrame(() => setHashLayer(layerFromHash(hash)));
+      scrollToWhenThere(hash);
+    },
+    [router, searchParams],
+  );
+  const demoEconomics = stageHref({ base: '/demo', path: 'tco', view: 'it', from: WORKSPACE_RETURN.tools });
+  // IT has no layers since ADR-086: a layer address in IT goes where that
+  // content lives now, as in the workspace (`IT_LAYER_ELSEWHERE`).
+  useEffect(() => {
+    if (view !== 'it' || hashLayer === null) return;
+    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    if (home.kind === 'economics') {
+      router.replace(demoEconomics);
+      return;
+    }
+    if (home.view === 'it') {
+      window.location.replace(`#${home.hash}`);
+      return;
+    }
+    goTo(home.view, home.hash, true);
+  }, [view, hashLayer, router, goTo, demoEconomics]);
+  const itElsewhere = useMemo(
+    () => ({
+      open: (target: WorkspaceView, hash: string) => goTo(target, hash, false),
+      economicsHref: demoEconomics,
+      deliveryHref: null,
+    }),
+    [goTo, demoEconomics],
+  );
   const layersOfModel = useMemo(() => workspaceLayers(project), [project]);
   // The demo opens on Need & process, with the map (mockup 2.8 s15). The first
   // layer with a count would be Architecture & dependencies — a list of FORM
@@ -644,7 +686,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           {/* The map is the process of the Business view itself, not a
               section of its bar (ADR-080). */}
-          <div data-demo-business-map="">
+          <div data-demo-business-map="" id={BUSINESS_MAP_ID} className="scroll-mt-20">
             <Place place="process-map" className="mt-5">
               <div className="max-w-3xl">{stop('process-map')}</div>
               {mapCard}
@@ -732,16 +774,18 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="it-chain" className="mt-5">
             <div className="max-w-3xl">{stop('it-chain')}</div>
-            <ItAnswers projectId="demo" findings={itFindings} project={project} notDetermined={open} signed="demo" />
+            {/* IT shows only its own content (ADR-086): its answer, its own
+                anchor bar and sections, the links out — no layer bar, no map. */}
+            <ItAnswers
+              projectId="demo"
+              findings={itFindings}
+              project={project}
+              notDetermined={open}
+              signed="demo"
+              trust="demo"
+              elsewhere={itElsewhere}
+            />
           </Place>
-          {/* The IT answer first, then the layers, as in Management. */}
-          {layerBar}
-          {layerSection ?? (
-            <div className="mt-5" data-workspace-layer-section="need">
-              {mapCard}
-            </div>
-          )}
-          {/* Not determined stands in the IT answer itself, not here again. */}
         </>
       ) : null}
 
@@ -802,7 +846,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
 
-          <Place place="decision" className="min-w-0">
+          <Place place="decision" className="min-w-0 scroll-mt-20" id="decision-card">
             {stop('decision')}
             <CcCard title={wt('demo.openDecision')} meta={<CcProvenanceChip value="proposed" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">

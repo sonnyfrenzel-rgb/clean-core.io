@@ -22,6 +22,11 @@ import {
   whereTo,
 } from '../lib/it-view';
 import type { PublicCloudFitAssignment } from '../lib/abap/public-cloud-fit';
+import { itObjects } from '../lib/it-objects';
+import { IT_ANCHORS, IT_LAYER_ELSEWHERE, IT_SECTION_IDS, runTrust } from '../lib/it-sections';
+import { LAYERS } from '../lib/workspace-model';
+import type { ItUseRow } from '../lib/it-findings';
+import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -174,14 +179,146 @@ test.describe('the target profile names the snapshot that answered', () => {
   });
 });
 
+test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', () => {
+  const use = (over: Partial<ItUseRow>): ItUseRow => ({
+    object: 'BAPI_PO_CREATE1', kind: 'bapi', use: 'call', lines: [230], remote: false, custom: false,
+    level: 'B', levelBasis: 'catalog', releaseView: null, classificationView: null, findingIds: [], ...over,
+  });
+  const inventory = [
+    { objectName: 'Z_MM_PO_APPROVAL', type: 'Report' as const, criticality: 'Low' as const, lineStart: 1, lineEnd: 640 },
+    { objectName: 'CHECK_VENDOR', type: 'Form Routine' as const, criticality: 'Medium' as const, lineStart: 225, lineEnd: 234 },
+  ];
+
+  test('one table: what the code uses first, then the own objects; "used by" is the innermost object holding the line', () => {
+    const out = itObjects({
+      inventory,
+      coupling: [
+        { tableName: 'EKKO', accessType: 'Read', isCustom: false, isStandard: true, riskLevel: 'Low', recommendation: '', lineNumbers: [228] },
+        // Already a use of the route: not listed twice.
+        { tableName: 'EBAN', accessType: 'Read', isCustom: false, isStandard: true, riskLevel: 'Low', recommendation: '', lineNumbers: [700] },
+        { tableName: '/ACME/T_ORDER', accessType: 'Write', isCustom: false, isStandard: false, riskLevel: 'Low', recommendation: '', lineNumbers: [10] },
+        // A reference is not a use.
+        { tableName: 'KNA1', accessType: 'Reference', isCustom: false, isStandard: true, riskLevel: 'Low', recommendation: '' },
+      ],
+      uses: [use({}), use({ object: 'EBAN', kind: 'table', use: 'read', lines: [700] }), use({ object: 'Z_OWN_FM', kind: 'function-module', custom: true, lines: [5], level: 'A', levelBasis: 'own-object' })],
+      findings: [row({ objectName: 'EKKO', successor: 'API_PURCHASEORDER_PROCESS_SRV' })],
+    });
+    expect(out.rows.map((r) => `${r.side}:${r.object}@${r.use}`)).toEqual([
+      'dependency:BAPI_PO_CREATE1@call',
+      'dependency:EBAN@read',
+      'dependency:Z_OWN_FM@call',
+      'dependency:EKKO@read',
+      'dependency:/ACME/T_ORDER@write',
+      'own-object:Z_MM_PO_APPROVAL@defined',
+      'own-object:CHECK_VENDOR@defined',
+    ]);
+    const by = Object.fromEntries(out.rows.map((r) => [`${r.object}@${r.use}`, r]));
+    // Line 230 is in CHECK_VENDOR (225–234) and in the report (1–640): the innermost wins.
+    expect(by['BAPI_PO_CREATE1@call'].usedBy).toEqual(['CHECK_VENDOR']);
+    expect(by['BAPI_PO_CREATE1@call'].owner).toBe('sap');
+    // Line 700 stands outside every listed object, and says so.
+    expect(by['EBAN@read'].usedBy).toEqual([]);
+    expect(by['EBAN@read'].usedOutside).toBe(true);
+    expect(by['Z_OWN_FM@call'].owner).toBe('own');
+    // A reserved namespace is neither yours nor SAP's by its name.
+    expect(by['/ACME/T_ORDER@write'].owner).toBe('undetermined');
+    // The successor is the one a finding on that object names — none is invented.
+    expect(by['EKKO@read'].successor).toBe('API_PURCHASEORDER_PROCESS_SRV');
+    expect(by['BAPI_PO_CREATE1@call'].successor).toBeNull();
+    expect(by['CHECK_VENDOR@defined'].range).toEqual({ start: 225, end: 234 });
+    // The count line counts what it says: own objects, distinct tables, distinct calls.
+    expect(out.own).toBe(2);
+    expect(out.tables).toBe(3);
+    expect(out.calls).toBe(2);
+    expect(out.recorded).toBe(true);
+  });
+
+  test('a table changed through batch input is a write, graded as one, and said so (3.0.7)', () => {
+    const src = read('public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const built = findingsOf(src, 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
+    const change = built.rows.find((r) => r.kind === 'batch-input' && r.objectName === 'VBAK');
+    expect(change, 'the batch input to VA02 names no table it changes').toBeTruthy();
+    // The kind reads as what the finding says; the session keeps its own words.
+    expect(change!.kindLabel).toBe('changes through batch input');
+    expect(built.rows.find((r) => r.kind === 'bdc')!.kindLabel).not.toBe('changes through batch input');
+    // Graded as a write: D for VBAK, where a read is C.
+    expect(change!.level).toBe('D');
+    const write = (built.uses ?? []).find((u) => u.object === 'VBAK' && u.use === 'write');
+    expect(write?.kind).toBe('table');
+    expect(write?.findingIds).toContain(change!.id);
+    const objects = itObjects({ inventory: [], coupling: [], uses: built.uses, findings: built.rows });
+    expect(objects.rows.find((r) => r.object === 'VBAK' && r.use === 'write')?.batchInput).toBe('all');
+    expect(objects.rows.find((r) => r.object === 'VBAK' && r.use === 'read')?.batchInput).toBeNull();
+  });
+
+  test('nothing recorded is said, never a table of nothing', () => {
+    const none = itObjects({ inventory: undefined, coupling: undefined, uses: undefined, findings: undefined });
+    expect(none.recorded).toBe(false);
+    expect(none.rows).toEqual([]);
+  });
+
+  test('Run & trust reads the run, the fingerprint and the pack of this run — nothing for an unreadable run', () => {
+    const signed = runTrust({
+      name: 'x', activeRunId: 'run-4b8c1f2e9a77',
+      auditMetadata: {
+        inputFingerprint: { sha256: 'abcdef0123456789', fileName: 'Z.abap', lineCount: 1, byteSize: 1, uploadedAt: '2026-10-01T00:00:00Z', objectType: 'Report' },
+        modelCard: { provider: null, model: null, engineVersion: 'e', byokUsed: false, analysisTimestamp: '2026-10-09T10:00:00Z' },
+        auditPackExportedAt: '2026-10-09T12:00:00Z', auditPackExportedRunId: 'run-4b8c1f2e9a77',
+      },
+    } as Project);
+    expect(signed).toEqual({
+      signed: true, unreadable: false, runId: 'run-4b8c', runDay: '2026-10-09',
+      fingerprint: { sha: 'abcdef01', fileName: 'Z.abap' }, packDay: '2026-10-09',
+    });
+    // A pack exported for an earlier run is not this run's pack.
+    expect(runTrust({ name: 'x', activeRunId: 'run-new-000000', auditMetadata: { auditPackExportedAt: '2026-10-09', auditPackExportedRunId: 'run-old' } } as Project).packDay).toBeNull();
+    const unreadable = runTrust({ name: 'x', activeRunId: 'run-1234567890', _runLoadFailed: true } as Project);
+    expect(unreadable.signed).toBe(false);
+    expect(unreadable.unreadable).toBe(true);
+    expect(unreadable.runId).toBeNull();
+    expect(runTrust(null).signed).toBe(false);
+  });
+
+  test('every layer address has a home in IT, and IT\'s anchors follow the page', () => {
+    expect(Object.keys(IT_LAYER_ELSEWHERE).sort()).toEqual([...LAYERS].sort());
+    expect(IT_LAYER_ELSEWHERE.need).toEqual({ kind: 'view', view: 'business', hash: 'process-map' });
+    expect(IT_LAYER_ELSEWHERE.standard).toEqual({ kind: 'view', view: 'business', hash: 'standard' });
+    expect(IT_LAYER_ELSEWHERE.costs).toEqual({ kind: 'economics' });
+    expect(IT_LAYER_ELSEWHERE.architecture).toEqual({ kind: 'view', view: 'it', hash: 'it-objects' });
+    expect(IT_LAYER_ELSEWHERE.evidence).toEqual({ kind: 'view', view: 'it', hash: 'it-trust' });
+    expect(IT_LAYER_ELSEWHERE.changes).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
+    // Main column, then the side column — the order Sonny confirmed.
+    expect([...IT_ANCHORS]).toEqual(['findings', 'objects', 'questions', 'route', 'trust']);
+    const answers = read('components/workspace/ItAnswers.tsx');
+    const at = (needle: string) => answers.indexOf(needle);
+    expect(at('id={IT_SECTION_IDS.findings}')).toBeGreaterThan(0);
+    expect(at('<ObjectsCard')).toBeGreaterThan(at('id={IT_SECTION_IDS.findings}'));
+    expect(at('id={IT_SECTION_IDS.questions}')).toBeGreaterThan(at('<ObjectsCard'));
+    expect(at('<ItRail')).toBeGreaterThan(at('id={IT_SECTION_IDS.questions}'));
+    const rail = read('components/workspace/ItRail.tsx');
+    expect(rail.indexOf('id={IT_TARGET_PROFILE_ID}')).toBeLessThan(rail.indexOf('id={IT_SECTION_IDS.route}'));
+    expect(rail.indexOf('id={IT_SECTION_IDS.route}')).toBeLessThan(rail.indexOf('id={IT_SECTION_IDS.trust}'));
+    expect(IT_SECTION_IDS.questions).toBe('not-determined');
+    // No anchor is ever an "empty" chip: the bar has no word for it.
+    expect(answers).not.toMatch(/layerBar\.empty|itv\.anchorEmpty/);
+  });
+});
+
 test.describe('the IT order in the shell, as the source writes it (the page is measured below)', () => {
-  test('IT opens with its own answer; the layers and the Business blocks follow it', () => {
+  test('IT shows only its own answer: no layers, no first look, no "Ask this case" (ADR-086)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell).toMatch(/const IT_HEAD: readonly ContentBlock\[\] = \[\];/);
-    const answers = shell.indexOf('<ItAnswers');
-    const tail = shell.indexOf('IT_TAIL.map(');
-    expect(answers).toBeGreaterThan(0);
-    expect(tail).toBeGreaterThan(answers);
+    expect(shell).not.toContain('IT_TAIL');
+    expect(shell.indexOf('<ItAnswers')).toBeGreaterThan(0);
+    // The reading the search, the print sheet and the counts use is still
+    // computed in IT, without rendering the first look there.
+    expect(shell).toMatch(/useSourceReading\([\s\S]*?view === 'it' && firstLookReading === null/);
+    // The demo twin follows: no layer bar and no map in its IT view.
+    const demo = read('components/demo/DemoWorkspaceShell.tsx');
+    const itBlock = demo.slice(demo.indexOf("{view === 'it' ? ("), demo.indexOf("{view === 'management' ? ("));
+    expect(itBlock).toContain('<ItAnswers');
+    expect(itBlock).not.toContain('layerBar');
+    expect(itBlock).not.toContain('mapCard');
     // No catalog in the browser: the panel and its side column fetch, never import the engine.
     for (const file of ['components/workspace/ItAnswers.tsx', 'components/workspace/ItRail.tsx', 'lib/it-view.ts']) {
       // A type-only import is erased at build and reaches nothing.
@@ -250,10 +387,25 @@ test.describe('the IT view on a real project', () => {
     const answerTop = await page.locator('[data-it-headline]').boundingBox();
     const notDetermined = await page.locator('#not-determined').boundingBox();
     expect(answerTop && notDetermined && answerTop.y < notDetermined.y).toBe(true);
-    // And above the first block of IT_TAIL, the layer bar — the order the source
-    // guard above reads, measured on the page (QA review of 247b20c16e38).
-    const layerBar = await page.locator('[data-workspace-layers]').first().boundingBox();
-    expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the IT answer does not stand above the layer bar').toBe(true);
+    // IT shows only its own content (ADR-086): no layer bar, no first look, no
+    // "Ask this case" — its own anchor bar under the answer, in the page's order.
+    await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
+    const anchors = page.locator('[data-it-anchor]');
+    await expect(anchors.first()).toBeVisible({ timeout: 30000 });
+    const order = await anchors.evaluateAll((els) => els.map((e) => e.getAttribute('data-it-anchor')));
+    const expected = ['findings', 'objects', 'questions', 'route', 'trust'].filter((k) => order.includes(k));
+    expect(order).toEqual(expected);
+    await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
+    const bar = await page.locator('[data-it-anchors]').boundingBox();
+    expect(answerTop && bar && answerTop.y < bar.y, 'the IT answer does not stand above its anchor bar').toBe(true);
+    // Findings → Objects & dependencies → Open questions, top to bottom.
+    const findingsBox = await page.locator('#it-findings').boundingBox();
+    const objectsBox = await page.locator('#it-objects').boundingBox();
+    expect(findingsBox && objectsBox && notDetermined && findingsBox.y < objectsBox.y && objectsBox.y < notDetermined.y).toBe(true);
+    // One quiet row of links out.
+    await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(4);
     await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings at \d+ places in the code · /);
 
     // Four figures under the answer, each with its coverage (v3.0.1: what the

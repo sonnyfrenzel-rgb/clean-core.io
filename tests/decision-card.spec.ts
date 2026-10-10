@@ -12,7 +12,18 @@ import { contractOfProject } from '../lib/contract-build';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
 import { bindingShown, conditionsSummary, decisionCardView } from '../lib/decision-card';
-import { decisionHeadline, decisionManagerView, decisionPoint, withoutSourcePaths } from '../lib/decision-manager';
+import {
+  DECISION_PLACE_IDS,
+  decisionHeadline,
+  decisionManagerView,
+  decisionPoint,
+  needOpenOf,
+  unassessedParts,
+  withoutSourcePaths,
+} from '../lib/decision-manager';
+import { IT_SECTION_IDS } from '../lib/it-sections';
+import { BUSINESS_MAP_ID } from '../lib/business-layers';
+import { decisionTodoCount } from '../lib/messages/workspace';
 import { deriveProjectDecision } from '../lib/decision-facts';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
@@ -741,12 +752,94 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
       provenance: 'reconstructed',
     });
     expect(point.line).toBe('The SAP catalog check is not specific to S/4HANA Cloud, Private Edition.');
-    expect(point.place).toEqual({ kind: 'view', view: 'it' });
-    const need = decisionPoint({
+    // A limit of this build, not a task: no setting closes it (ADR-085).
+    expect(point.kind).toBe('limit');
+    expect(point.place).toEqual({ kind: 'view', view: 'it', hash: 'it-target-profile', action: 'See the target profile' });
+    // A record from before ADR-085 counted every element of the map: its count is not repeated.
+    const legacy = decisionPoint({
       id: 'need:undecided', text: 'x', source: 'need-open', status: 'open', statusBasis: 'derived',
       evidence: 'undecided:15', attestation: null, provenance: 'reconstructed',
     });
-    expect(need).toMatchObject({ line: '15 process elements have no confirmed state yet.', place: { kind: 'view', view: 'business' } });
+    expect(legacy).toMatchObject({ line: 'The process is not confirmed by the business yet.', kind: 'act', place: { kind: 'view', view: 'business', hash: 'process-map' } });
+    expect(legacy.line).not.toMatch(/\d/);
+  });
+
+  test('the need condition names rules and decision points, and links to where they are answered (ADR-085)', () => {
+    const need = (evidence: string) =>
+      decisionPoint({
+        id: 'need:undecided', text: 'x', source: 'need-open', status: 'open', statusBasis: 'derived',
+        evidence, attestation: null, provenance: 'reconstructed',
+      });
+    expect(needOpenOf('undecided:25;rules:12;decisions:13')).toEqual({ rules: 12, decisions: 13 });
+    expect(needOpenOf('undecided:84')).toBe('legacy');
+    expect(needOpenOf('something')).toBeNull();
+    const both = need('undecided:25;rules:12;decisions:13');
+    expect(both.line).toBe('12 rules and 13 decision points still need a business answer.');
+    // The rules first: one batch, minutes — then the walk through the map.
+    expect(both.place).toEqual({ kind: 'view', view: 'business', hash: 'business-rules', action: 'Decide on 12 rules' });
+    const onlyDecisions = need('undecided:1;rules:0;decisions:1');
+    expect(onlyDecisions.line).toBe('1 decision point still needs a business answer.');
+    expect(onlyDecisions.place).toMatchObject({ hash: 'process-map', action: 'Walk through the process' });
+    // The derivation writes that shape, and the record's sentence says the same.
+    const { draft } = deriveDecisionDraft(facts({ need: { revision: null, confirmedDrops: 0, undecided: 25, open: { rules: 12, decisions: 13 } } }));
+    const c = draft.conditions.find((x) => x.id === 'need:undecided')!;
+    expect(c.evidence).toBe('undecided:25;rules:12;decisions:13');
+    expect(c.text).toMatch(/^12 business rules and 13 decision points of the process have no business answer\./);
+    expect(decisionManagerView(draft).pillars.find((p) => p.key === 'need')?.line).toBe(
+      'Not confirmed yet: 12 rules and 13 decision points have no business answer.',
+    );
+  });
+
+  test('unassessed code is one count in the line, the constructs with their first line behind it', () => {
+    const subject =
+      '3 × local function-module call (from line 165), 2 × include whose source was not uploaded (from line 470), 1 × dynamic call or field access (from line 502), 2 × classic list output (from line 658)';
+    expect(unassessedParts(subject)).toEqual({
+      places: 8,
+      details: [
+        '3 × local function-module call — first at line 165',
+        '2 × include whose source was not uploaded — first at line 470',
+        '1 × dynamic call or field access — first at line 502',
+        '2 × classic list output — first at line 658',
+      ],
+    });
+    const point = decisionPoint({
+      id: `contract:coverage-incomplete:${subject}`, text: 'x', source: 'contract-limit', status: 'open', statusBasis: 'derived',
+      evidence: `coverage-incomplete:${subject}`, attestation: null, provenance: 'reconstructed',
+    });
+    expect(point.line).toBe('8 places in the code could not be assessed.');
+    expect(point.details).toHaveLength(4);
+    expect(point.place).toEqual({ kind: 'view', view: 'it', hash: 'not-determined', action: 'Review 8 places in the code' });
+  });
+
+  test('every condition links to an exact place, none to Design, and the limits are told apart (ADR-085)', () => {
+    const point = (code: string, subject: string | null) =>
+      decisionPoint({
+        id: `contract:${code}`, text: 'x', source: 'contract-limit', status: 'open', statusBasis: 'derived',
+        evidence: subject ? `${code}:${subject}` : code, attestation: null, provenance: 'reconstructed',
+      });
+    const successor = point('no-successor-published', 'ME21N');
+    expect(successor).toMatchObject({ kind: 'limit', line: 'SAP publishes no successor for ME21N yet.', place: { view: 'it', hash: 'it-findings' } });
+    expect(point('successor-unverified', 'BAPI_X').place).toMatchObject({ view: 'it', hash: 'it-findings' });
+    expect(point('standard-fit-not-assessed', null)).toMatchObject({
+      kind: 'limit',
+      place: { kind: 'view', view: 'business', hash: 'standard', action: 'Check standard fit' },
+    });
+    for (const code of ['catalog-not-edition-specific', 'modification-unreset', 'coverage-incomplete', 'no-successor-published', 'successor-unverified', 'standard-fit-not-assessed']) {
+      const p = point(code, 'X');
+      expect(p.place, code).not.toBeNull();
+      expect(p.place?.kind === 'stage' && p.place.path === 'design', `${code} sends the decision to Design`).toBe(false);
+      expect(p.place?.action, `${code} says what is done there`).toBeTruthy();
+    }
+    // The ids are the ones the views render.
+    expect(DECISION_PLACE_IDS.itTargetProfile).toBe(IT_SECTION_IDS.profile);
+    expect(DECISION_PLACE_IDS.itFindings).toBe(IT_SECTION_IDS.findings);
+    expect(DECISION_PLACE_IDS.itOpenQuestions).toBe(IT_SECTION_IDS.questions);
+    expect(DECISION_PLACE_IDS.businessMap).toBe(BUSINESS_MAP_ID);
+    const rulesEditor = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/BusinessRulesEditor.tsx'), 'utf8');
+    expect(rulesEditor).toContain(`export const BUSINESS_RULES_ID = '${DECISION_PLACE_IDS.businessRules}'`);
+    expect(decisionTodoCount(2, 3)).toBe('2 to do · 3 stay open');
+    expect(decisionTodoCount(0, 1)).toBe('Nothing to do · 1 stays open');
+    expect(decisionTodoCount(4, 0)).toBe('4 to do');
   });
 
   test('no source file path reaches the reader, not even in the technical fold', () => {

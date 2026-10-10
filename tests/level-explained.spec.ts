@@ -65,9 +65,10 @@ test.describe('the explanation works without a mouse', () => {
 test.describe('where the IT view shows a level, it explains it', () => {
   const it = read('components/workspace/ItAnswers.tsx');
 
-  test('findings, "What the code uses" and the level figure all use the explained chip', () => {
+  test('findings, "Objects & dependencies" and the level figure all use the explained chip', () => {
     expect(it).toContain('<CcCleanCoreLevelExplained value={row.level} />');
-    expect(it).toContain('<CcCleanCoreLevelExplained value={u.level} />');
+    // "What the code uses" merged into Objects & dependencies (ADR-086).
+    expect(it).toContain('<CcCleanCoreLevelExplained value={r.level} />');
     expect(it).toMatch(/<CcCleanCoreLevelExplained value=\{slice\.grade\} trigger=/);
     expect(it, 'a bare level chip is left in the IT view').not.toMatch(/<CcCleanCoreLevel\s/);
   });

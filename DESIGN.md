@@ -270,9 +270,17 @@ From top to bottom:
    next carries a "Next" tag, and the line under the bar says which tool is next and what it does, beside the legend
    (ADR-060, 03.10.2026, 04.10.2026).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
-   dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
-   missing (§2.11). Business shows Standard fit and Evidence & controls only: its process is the map and the rules card
-   on the page itself, and a `#need` link there lands on the map (ADR-080).
+   dependencies · Evidence & controls · Changes & commitments. Every layer is a tab, the filled ones first; an empty
+   one stays a tab, muted and marked "empty", and says in its section what is missing — there is no "More" menu
+   (owner, 03.10.2026: "no recognisable menu"; §2.11). Business shows Standard fit and Evidence & controls only: its
+   process is the map and the rules card on the page itself, and a `#need` link there lands on the map (ADR-080).
+   Management shows all six, in its "Process" fold. **IT has no layers** (ADR-086): its own anchor bar jumps within
+   the page to IT's own sections, in the page's order — **Findings · Objects & dependencies · Open questions · Route ·
+   Run & trust** — each with what is in it (a count, the contract id and status, "signed"); a section with nothing in
+   it has no anchor, never an "empty" chip, except Open questions, whose "none" is an answer. A layer address in IT
+   (`?view=it#need`, a stage's way back from before 3.0.7) goes where that content lives now: Need & process and
+   Standard fit to Business (`#process-map`, `#standard`), Costs to the Economics tool, Changes to Management's
+   decision (`#decision-card`), Architecture and Evidence to IT's own Objects & dependencies and Run & trust.
 5. **Content:** sections of the selected layer. **"Next step"** is a card (rule-based, roadmap step 6.5),
    not a bar — in Business in the header below the disclosure and *Not determined*, in Management and IT at the top of the content.
 6. **Footer only in edit mode** (process model, rules): `Save` (primary), `Discard` (ghost), the note
@@ -299,7 +307,7 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 | Element | Does | Does not | Start | Held in |
 |---|---|---|---|---|
 | **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
-| **Layer** (anchor bar) | jumps to a section of the page and marks where you are | does not switch the view | Need & process | URL fragment (`#need`) |
+| **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086) | does not switch the view | Business: first of its layers with content; IT: the answer at the top | URL fragment (`#need`, `#it-objects`) |
 | **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks whether the tool has been used in this project, or is out of date (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
 
 **The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
@@ -431,11 +439,17 @@ For first-time users less is more — the depth stays, it just does not come fir
   stands behind "Details" in every view, IT included (04.10.2026); one click selects a value whole for copying.
 - **Tools by view.** From breakpoint L the toolbar is open in every view (ADR-060); below L it is open in IT and
   a "Tools" menu in Business and Management.
-- **Layers with content first.** The anchor bar shows layers with content; empty ones are under "More" and say there what is
-  missing.
+- **Layers with content first.** The anchor bar shows the layers with content first; an empty layer stays a tab, muted
+  and marked "empty", and says in its section what is missing — no "More" menu (owner, 03.10.2026). In IT there are no
+  layers and no "empty" chip at all: its own anchor bar names only sections that hold something (ADR-086).
+- **One home per view.** A view shows the content that answers its question and links to the rest in one quiet row,
+  never a second copy: IT ends in "Process & rules → Business · Standard fit → Business · Costs → Economics · Decision
+  → Management", and shows neither the first look nor "Ask this case", which are Business's (ADR-086).
 - **Tables** show the first five rows and "Show all 42"; filters appear from ten rows.
 - **Legends only on demand.** A "Legend" button instead of a permanent row of chips; open once on the first visit.
-- **Side column:** at most two cards; further ones under "More about this process".
+- **Side column:** at most two cards; further ones under "More about this process". IT's side column has three —
+  target profile (with the imports), route & contract, and a compact **Run & trust** card (signed run, fingerprint,
+  audit pack, the way to Delivery) — because Run & trust replaced a layer tab, not a fold (ADR-086).
 - **Overlays** of the map are off on first opening; the minimap appears only from 40 visible elements.
 - **The check:** Can someone without training say in ten seconds what this is about and what they do next? If
   not, there is too much — not too little.
@@ -1145,6 +1159,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.9 | 10.10.2026 | The IT view shows only its own content (ADR-086, owner 10.10.2026, amending ADR-018): no layer bar but its own anchor bar over Findings · Objects & dependencies · Open questions · Route · Run & trust, never an "empty" chip; "What the code uses" and the Architecture layer are one table, Objects & dependencies; the Evidence layer is a compact Run & trust card in the side column; the first look, "Ask this case" and Changes & commitments leave IT; one quiet row of links out to Business, Economics and Management; layer addresses in IT go where the content lives now (§2.3 item 4, §2.11). Written back: since 03.10.2026 every layer is a tab, an empty one marked "empty" — there is no "More" menu (§2.3 item 4, §2.11) |
 | 1.8.8 | 09.10.2026 | Need & process leaves the Business view, which opens on its map with the usage records beside it (ADR-080); *Not determined* becomes one list of open questions per project, grouped by the action that resolves each, and one line everywhere else (ADR-081, §5.5, §6.1) |
 | 1.8.7 | 04.10.2026 | The requirements of the Design tool are one module with a workspace of its own (ADR-078, owner 04.10.2026): a card on Design, the specification as one document with decisions, full text and exports; the requirement status as a fixed list of its own (§4.1) |
 | 1.8.6 | 04.10.2026 | The tour starts at the next step (owner 04.10.2026, "next step first"): the three coach marks in the order the page shows them, no scrolling until the reader presses "Next"; the demo tour reaches the process map before Not determined, as an own project does (§6.1.2, §6.2) |

@@ -9,6 +9,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { useStartRun } from '@/hooks/useStartRun';
+import { useFollowHash } from '@/hooks/useFollowHash';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -57,6 +58,8 @@ export default function ProjectWorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
+  // A link to a place on the workspace (`?view=it#not-determined`) waits for that place (ADR-085).
+  useFollowHash();
 
   const { profile, loading: profileLoading } = useUserProfile();
   const enabled = profile != null;

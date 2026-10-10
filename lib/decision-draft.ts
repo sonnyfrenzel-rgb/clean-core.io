@@ -39,7 +39,7 @@
 
 import type { ArchitectureContract } from './architecture-contract';
 import type { OptionKind } from './cost-assumptions';
-import { buildProjectDecision, type SignOffBasis } from './project-decision-build';
+import { buildProjectDecision, type NeedOpenParts, type SignOffBasis } from './project-decision-build';
 import { FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT } from './sap-naming';
 import {
   normaliseProjectDecision,
@@ -77,7 +77,7 @@ export interface DecisionDraftFacts {
    * contract and rests on this instead (G4-F1). `null` when nothing is signed off.
    */
   signOff: SignOffBasis | null;
-  need: { revision: number | null; confirmedDrops: number; undecided: number | null };
+  need: { revision: number | null; confirmedDrops: number; undecided: number | null; open?: NeedOpenParts | null };
   /** An audit pack has been exported for this project (roadmap 8.5). */
   handedOver: boolean;
   /** The decision record on the project, raw — normalised here, never trusted. */

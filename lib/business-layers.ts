@@ -13,15 +13,16 @@ import type { LayerKey } from './workspace-model';
  * process row and the rules editor live. *Costs & assumptions* belongs to
  * Economics and to Management's Costs fold, *Architecture & dependencies* to IT
  * and Design, and *Changes & commitments* holds nothing this release can
- * record — it was the "More 1 empty" the owner found dead. All of them stay in
- * the IT and Management views, where they answer those views' questions.
+ * record — it was the "More 1 empty" the owner found dead. All six stay in
+ * Management; IT has its own sections instead since ADR-086 (`lib/it-sections.ts`).
  */
 export const BUSINESS_LAYERS: readonly LayerKey[] = ['standard', 'evidence'];
 
 /**
  * Where a link into a section Business does not show is sent instead — never
  * to an empty place: the costs to the Economics stage, the architecture and
- * the changes to the same section in the IT view, and *Need & process* to the
+ * the changes where IT sends them since ADR-086 (`IT_LAYER_ELSEWHERE`: IT's
+ * objects section, Management's decision), and *Need & process* to the
  * process map of the Business view itself (ADR-080). A `?view=business#need`
  * link was written by a reader who was in Business — a stage's "Back to
  * project workspace", a bookmark — and what that section held there, the

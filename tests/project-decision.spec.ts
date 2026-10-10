@@ -172,7 +172,8 @@ test.describe('8.4 — the decision binds what it stands on', () => {
     const d = decisionFixture({ need: { revision: null, confirmedDrops: 0, undecided: 3 } });
     const need = binding(d, 'need');
     expect(need.revision).toBeNull();
-    expect(need.notDeterminedReason).toContain('3 element(s)');
+    // ADR-085: the need counts rules and decision points, not every element of the map.
+    expect(need.notDeterminedReason).toContain('3 rule(s) and decision point(s)');
     expect(need.provenance).toBe('not-determined');
     // Qualified, not blocked: a decision without a confirmed need is badly
     // supported, not impossible. The record says so instead of locking.

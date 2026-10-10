@@ -174,8 +174,13 @@ export interface BuildDecisionArgs {
    * `undecided` is `null` when the subjects could not be read at all — no
    * reconstructed process, or a source that moved since — which is not the
    * same statement as "none undecided" and must not be counted as one.
+   *
+   * Since ADR-085 `undecided` counts what the decision asks the business:
+   * the rules and the decision points without an answer, split in `open`.
+   * Steps, starts, ends and error boundaries are still answered and stored in
+   * the need revision; they are not counted against the decision.
    */
-  need: { revision: number | null; confirmedDrops: number; undecided: number | null };
+  need: { revision: number | null; confirmedDrops: number; undecided: number | null; open?: NeedOpenParts | null };
   /** Has a handover package for this project left the product (roadmap 8.5)? */
   handedOver: boolean;
   /**
@@ -188,6 +193,24 @@ export interface BuildDecisionArgs {
   signOff?: SignOffBasis | null;
   attestations?: readonly ConditionAttestation[];
   timeline: DecisionTimelineFacts;
+}
+
+/** What the need condition counts (ADR-085): rules and decision points without a business answer. */
+export interface NeedOpenParts {
+  rules: number;
+  decisions: number;
+}
+
+const counted = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "12 business rules and 13 decision points" — or the total, where the split is not known. */
+function needOpenSubject(undecided: number, open: NeedOpenParts | null | undefined): string {
+  if (!open) return `${undecided} rule(s) and decision point(s)`;
+  const parts = [
+    open.rules > 0 ? counted(open.rules, 'business rule', 'business rules') : null,
+    open.decisions > 0 ? counted(open.decisions, 'decision point', 'decision points') : null,
+  ].filter((p): p is string => p !== null);
+  return parts.join(' and ') || `${undecided} rule(s) and decision point(s)`;
 }
 
 const notDetermined = (key: DecisionBindingKey, reason: string): DecisionBinding => ({
@@ -248,7 +271,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
           'need',
           args.need.undecided === null
             ? 'No confirmed need revision: the process of this project has not been reconstructed against its current source, so no need could be stated. The decision is made without one and says so.'
-            : `No confirmed need revision: ${args.need.undecided} element(s) of the process carry no state yet. The decision is made without one and says so.`,
+            : `No confirmed need revision: ${needOpenSubject(args.need.undecided, args.need.open)} of the process have no business answer yet. The decision is made without one and says so.`,
         )
       : bound('need', `need/r${args.need.revision}`, 'confirmed'),
   );
@@ -338,11 +361,14 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
   if (args.need.undecided !== null && args.need.undecided > 0) {
     conditions.push({
       id: 'need:undecided',
-      text: `${args.need.undecided} element(s) of the process carry no confirmed state. The decision is taken while the need is incomplete, and that stays visible with it.`,
+      text: `${needOpenSubject(args.need.undecided, args.need.open)} of the process have no business answer. The decision is taken while the need is incomplete, and that stays visible with it.`,
       source: 'need-open',
       status: 'open',
       statusBasis: 'derived',
-      evidence: `undecided:${args.need.undecided}`,
+      // `lib/decision-manager.ts` (`needOpenOf`) reads this back for the card.
+      evidence: args.need.open
+        ? `undecided:${args.need.undecided};rules:${args.need.open.rules};decisions:${args.need.open.decisions}`
+        : `undecided:${args.need.undecided}`,
       provenance: 'reconstructed',
       attestation: null,
     });

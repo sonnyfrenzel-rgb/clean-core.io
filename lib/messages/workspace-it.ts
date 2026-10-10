@@ -55,6 +55,53 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.importsTitle': 'Imports',
   'itv.importsNoneSummary': 'No ATC results and no usage data imported — both are optional and come from Analyze.',
 
+  // The IT view's own sections (owner decision 10.10.2026, ADR-086): its
+  // anchor bar, the merged objects table, Run & trust and the links out.
+  'itv.anchorsLabel': 'Sections of the IT view',
+  'itv.anchorFindings': 'Findings',
+  'itv.anchorObjects': 'Objects & dependencies',
+  'itv.anchorQuestions': 'Open questions',
+  'itv.anchorRoute': 'Route',
+  'itv.anchorTrust': 'Run & trust',
+  'itv.anchorNone': 'none',
+  'itv.anchorSigned': 'signed',
+
+  'itv.objectsTitle': 'Objects & dependencies',
+  'itv.objectsLead':
+    'The program’s own objects and everything the code calls, reads or writes — one row per object and use, with its lines, the clean core level SAP’s catalog gives it under the target profile, and the successor a finding names. The level describes the object; a finding is a separate statement and has its own list.',
+  'itv.objectsNotRecorded': 'Neither the program’s own objects nor what the code uses are recorded for this project.',
+  'itv.objectsCaption': 'Own objects and the objects the code uses, with owner, use, lines, clean core level and successor',
+  'itv.colOwner': 'Own or SAP',
+  'itv.colUsedBy': 'Used by',
+  'itv.colSuccessor': 'Successor',
+  'itv.ownerOwn': 'Own',
+  'itv.ownerSap': 'SAP',
+  'itv.ownerUndetermined': 'Not determined',
+  'itv.ownerUndeterminedWhy': 'reserved namespace — the name does not say whose',
+  'itv.useDefined': 'defined here',
+  'itv.useWriteBatchInput': 'written (batch input)',
+  'itv.useWriteBatchInputSome': 'written, partly through batch input',
+  'itv.usedByOutside': 'outside the listed own objects',
+  'itv.usedByOwn': 'own object',
+  'itv.successorNone': 'no finding names one',
+
+  'itv.trustTitle': 'Run & trust',
+  'itv.trustRun': 'Signed run',
+  'itv.trustFingerprint': 'Source fingerprint',
+  'itv.trustPack': 'Audit pack',
+  'itv.trustPackNone': 'not exported for this run',
+  'itv.trustVersions': 'Engine, rules and catalog versions stand under Details in the header.',
+  'itv.trustVerify': 'Verify or download in Delivery',
+  'itv.trustNone': 'No signed run — every figure on this page derives from one. Analyze signs it.',
+  'itv.trustUnreadable': 'A signed run is on record and could not be read, so what it proves is not determined.',
+  'itv.trustDemo': 'A demo is never signed: there is no run, fingerprint or audit pack to check.',
+
+  'itv.elsewhereLabel': 'Answered in the other views',
+  'itv.elsewhereProcess': 'Process & rules → Business',
+  'itv.elsewhereStandard': 'Standard fit → Business',
+  'itv.elsewhereCosts': 'Costs → Economics',
+  'itv.elsewhereDecision': 'Decision → Management',
+
   // The owner's target change in the profile box (owner, 06.10.2026) —
   // `components/workspace/TargetChange.tsx`.
   'tgt.change': 'Change target',
@@ -104,6 +151,34 @@ export const WORKSPACE_IT_MESSAGES = {
 export function itvUsesCoverage(calls: number, reads: number, writes: number, others = 0): string {
   const base = `${calls} ${calls === 1 ? 'call' : 'calls'} · ${reads} read · ${writes} written`;
   return others > 0 ? `${base} · ${others} other ${others === 1 ? 'use' : 'uses'}` : base;
+}
+
+/**
+ * "38 own objects · 26 tables accessed · 3 calls" — the count line of Objects
+ * & dependencies. Distinct tables and distinct called objects, said as such:
+ * the 3.0 layer called every table a "dependency" and left the calls out.
+ */
+export function itvObjectsCount(own: number, tables: number, calls: number): string {
+  return [
+    `${own} own ${own === 1 ? 'object' : 'objects'}`,
+    `${tables} ${tables === 1 ? 'table' : 'tables'} accessed`,
+    `${calls} ${calls === 1 ? 'call' : 'calls'}`,
+  ].join(' · ');
+}
+
+/** "L120–L184" — an own object's line range, or its first line. */
+export function itvRange(start: number, end: number | null): string {
+  return end !== null && end > start ? `L${start}–L${end}` : `L${start}`;
+}
+
+/** "0a1b2c3d · 2026-10-09" — the signed run, with its day where recorded. */
+export function itvRunLine(id: string, day: string | null): string {
+  return day ? `${id} · ${day}` : id;
+}
+
+/** "Exported 2026-10-09". */
+export function itvPackExported(day: string): string {
+  return `Exported ${day}`;
 }
 
 /** "B 1 · C 2" — the level figure, as text so no meaning rests on colour. */

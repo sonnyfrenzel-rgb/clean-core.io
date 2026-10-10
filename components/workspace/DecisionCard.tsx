@@ -13,7 +13,14 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { getAuth } from '@/lib/firebase';
 import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command-client';
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
-import { decisionManagerView, withoutSourcePaths, type DecisionPlace, type PillarKey, type StoredCostScenario } from '@/lib/decision-manager';
+import {
+  decisionManagerView,
+  withoutSourcePaths,
+  type DecisionPlace,
+  type DecisionPoint,
+  type PillarKey,
+  type StoredCostScenario,
+} from '@/lib/decision-manager';
 import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import { stageHref } from '@/lib/workspace-back-href';
 import { cn } from '@/lib/utils';
@@ -29,6 +36,7 @@ import {
   decisionMovedSentence,
   decisionOpenCount,
   decisionResolveIn,
+  decisionTodoCount,
   decisionWithdrawTitle,
 } from '@/lib/workspace-messages';
 
@@ -336,45 +344,39 @@ export default function DecisionCard({
         })}
       </ul>
 
-      {/* The open conditions: one plain line each, and where each is resolved. */}
+      {/* The open conditions (ADR-085): what a reader can do, one plain line
+          each with a link to the exact place it is done; then what stays open
+          whatever is done here, said once and never hidden. */}
       <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
         <h4 className={LABEL}>{wt('decision.openPoints')}</h4>
         <span data-decision-conditions-summary="" className="text-[12px] font-semibold text-cc-ink">
-          {m.points.length === 0 ? wt('decision.noOpenPoints') : decisionOpenCount(m.openPoints, m.points.length)}
+          {m.points.length === 0
+            ? wt('decision.noOpenPoints')
+            : m.openPoints === 0
+              ? decisionOpenCount(0, m.points.length)
+              : decisionTodoCount(m.todo, m.limits)}
         </span>
       </div>
-      {m.points.length > 0 ? (
+      {m.points.some((pt) => pt.done || pt.kind === 'act') ? (
         <ul data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
-          {m.points.map((pt) => (
-            <li
-              key={pt.id}
-              data-decision-condition={pt.id}
-              data-decision-condition-status={pt.status}
-              className="flex items-start gap-2"
-            >
-              {pt.done ? (
-                <CircleCheck size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink" />
-              ) : (
-                <Circle size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
-              )}
-              <span className="min-w-0 flex-1 text-[13px] leading-snug font-medium text-cc-ink">
-                <span className="sr-only">{pt.done ? wt('decision.stateDone') : wt('decision.stateOpen')}: </span>
-                {pt.line}
-                {pt.place ? (
-                  <>
-                    {' '}
-                    <a
-                      href={placeHref(projectId, pt.place)}
-                      className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
-                    >
-                      {decisionResolveIn(placeLabel(pt.place))}
-                    </a>
-                  </>
-                ) : null}
-              </span>
-            </li>
-          ))}
+          {m.points
+            .filter((pt) => pt.done || pt.kind === 'act')
+            .map((pt) => (
+              <ConditionLine key={pt.id} point={pt} projectId={projectId} />
+            ))}
         </ul>
+      ) : null}
+      {m.limits > 0 ? (
+        <div data-decision-limits="" className="mt-3">
+          <p className="m-0 text-[12px] leading-snug font-semibold text-cc-ink-muted">{wt('decision.limitsLead')}</p>
+          <ul className="m-0 mt-1 list-none space-y-2 p-0">
+            {m.points
+              .filter((pt) => !pt.done && pt.kind === 'limit')
+              .map((pt) => (
+                <ConditionLine key={pt.id} point={pt} projectId={projectId} />
+              ))}
+          </ul>
+        </div>
       ) : null}
 
       {/* The run it stands on, and whether it can be taken back. */}
@@ -529,11 +531,63 @@ const PILLAR_ICON: Record<PillarKey, typeof Users> = {
 
 const THIS_VIEW = 'management';
 
-/** Where a pillar or a condition is resolved, as a link on this page. */
+/**
+ * One condition: its line, the link to the exact place it is acted on — named
+ * by what is done there — and, folded, the technical detail behind the line.
+ */
+function ConditionLine({ point: pt, projectId }: { point: DecisionPoint; projectId: string }) {
+  return (
+    <li
+      data-decision-condition={pt.id}
+      data-decision-condition-status={pt.status}
+      data-decision-condition-kind={pt.kind}
+      className="flex items-start gap-2"
+    >
+      {pt.done ? (
+        <CircleCheck size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink" />
+      ) : (
+        <Circle size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+      )}
+      <span className="min-w-0 flex-1 text-[13px] leading-snug font-medium text-cc-ink">
+        <span className="sr-only">
+          {pt.done ? wt('decision.stateDone') : pt.kind === 'limit' ? wt('decision.stateLimit') : wt('decision.stateOpen')}:{' '}
+        </span>
+        {pt.line}
+        {pt.place ? (
+          <>
+            {' '}
+            <a
+              href={placeHref(projectId, pt.place)}
+              data-decision-condition-link={pt.place.hash ?? ''}
+              className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
+            >
+              {pt.place.action ?? decisionResolveIn(placeLabel(pt.place))}
+            </a>
+          </>
+        ) : null}
+        {pt.details.length > 0 ? (
+          <span className="block" data-decision-condition-details="">
+            <CcDisclosure title={wt('decision.whichPlaces')} count={pt.details.length} density="compact">
+              <ul className="m-0 list-disc space-y-1 pl-5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {pt.details.map((d) => (
+                  <li key={d}>{d}</li>
+                ))}
+              </ul>
+            </CcDisclosure>
+          </span>
+        ) : null}
+      </span>
+    </li>
+  );
+}
+
+/** Where a pillar or a condition is resolved, as a link on this page — to the exact place, where one is named. */
 function placeHref(projectId: string, place: DecisionPlace): string {
   // ADR-079: an option chosen in Management is changed in the four options above.
   if (place.kind === 'view' && place.view === 'management') return '#decision-options';
-  if (place.kind === 'view') return `/project/${encodeURIComponent(projectId)}?view=${place.view}`;
+  if (place.kind === 'view') {
+    return `/project/${encodeURIComponent(projectId)}?view=${place.view}${place.hash ? `#${encodeURIComponent(place.hash)}` : ''}`;
+  }
   // Back to this view from the stage: a link parameter, never a stored role.
   return stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });
 }

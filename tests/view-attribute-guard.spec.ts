@@ -131,7 +131,7 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
 
     await expect(
-      updateDoc(doc(clientDb, 'projects', PROJECT_ID), { extensibilityRoute: 'In-App (ABAP Cloud)', workspaceView: 'it' }),
+      updateDoc(doc(clientDb, 'projects', PROJECT_ID), { businessDocumentation: '# SOP', workspaceView: 'it' }),
       'a view attribute was smuggled in beside a legitimately allowed field',
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
 
@@ -148,7 +148,7 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
   });
 
   test('an allowed field on the same project still updates cleanly — the rejections above are not a blanket deny', async () => {
-    await expect(updateDoc(doc(clientDb, 'projects', PROJECT_ID), { extensibilityRoute: 'In-App (ABAP Cloud)' })).resolves.toBeUndefined();
+    await expect(updateDoc(doc(clientDb, 'projects', PROJECT_ID), { businessDocumentation: '# SOP' })).resolves.toBeUndefined();
   });
 });
 
@@ -455,6 +455,13 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it', {
       timeout: 30000,
     });
+    // IT's own anchor bar (ADR-086) jumps within the page and holds the place
+    // in the address only — it writes nothing either.
+    await expect(page.locator('[data-it-view=""]')).toBeVisible({ timeout: 90000 });
+    const itAnchor = page.locator('[data-it-anchor]').first();
+    await expect(itAnchor).toBeVisible({ timeout: 30000 });
+    await itAnchor.click();
+    await expect(page).toHaveURL(/[?&]view=it#(it-[a-z-]+|not-determined)$/, { timeout: 15000 });
 
     await view('Management').click();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(

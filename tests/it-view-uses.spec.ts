@@ -119,16 +119,24 @@ test.describe('what the code uses, derived on the server', () => {
   });
 
   test('in IT the tour starts at "Next step", then the figure in the answer; Business reads its own page', () => {
-    const it = availableCoachMarks({ hasDecision: true, hasNextStep: true, order: ['next-step', 'not-determined', 'decision'] });
-    expect(it.map((m) => m.id)).toEqual(['next-step', 'not-determined', 'decision']);
+    // IT draws no process since ADR-086, so "Select the decision point" is
+    // not offered there — it stands in Business, at the map.
+    const it = availableCoachMarks({
+      hasDecision: true,
+      hasNextStep: true,
+      order: ['next-step', 'not-determined'],
+      only: ['next-step', 'not-determined'],
+    });
+    expect(it.map((m) => m.id)).toEqual(['next-step', 'not-determined']);
     expect(availableCoachMarks({ hasDecision: true, hasNextStep: true }).map((m) => m.id)).toEqual([
       'next-step',
       'decision',
       'not-determined',
     ]);
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/const IT_COACH_ORDER: readonly CoachMarkId\[\] = \['next-step', 'not-determined', 'decision'\];/);
+    expect(shell).toMatch(/const IT_COACH_ORDER: readonly CoachMarkId\[\] = \['next-step', 'not-determined'\];/);
     expect(shell).toMatch(/order: view === 'it' \? IT_COACH_ORDER : undefined/);
+    expect(shell).toMatch(/view === 'it' \? IT_COACH_ORDER : undefined,\s*\}\);/);
   });
 });
 
@@ -219,13 +227,13 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
     const markBox = await mark.boundingBox();
     const answerBox = await page.locator('[data-it-answer]').boundingBox();
-    const usesBox = await page.locator('#it-uses').boundingBox();
+    const usesBox = await page.locator('#it-objects').boundingBox();
     expect(markBox && answerBox && usesBox).toBeTruthy();
     // Above the first section under the answer — where the reader is.
     expect(markBox!.y).toBeLessThan(usesBox!.y + usesBox!.height);
     expect(markBox!.y).toBeGreaterThanOrEqual(answerBox!.y);
     // Every section says what it is in its first sentence, visible without a click.
-    await expect(page.locator('[data-it-lead="uses"]')).toBeVisible();
+    await expect(page.locator('[data-it-lead="objects"]')).toBeVisible();
     await expect(page.locator('#not-determined [data-open-questions-line]')).toBeVisible();
   });
 

@@ -154,10 +154,15 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     // there, and its counts are not repeated in a section under it.
     await expect(page.locator('[data-workspace-layers] [data-workspace-layer="need"]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
-    // In IT the section says what the map holds — not "empty", not "nothing on
-    // record" — and counts what the map counts, with the way to the map.
+    // IT has no layers since ADR-086: an old `?view=it#need` lands on the map
+    // in Business, where the process stands, instead of an IT section.
     const here = new URL(page.url());
     await page.goto(`${here.pathname}?view=it#need`, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
+    await expect(page.locator('#process-map')).toBeVisible({ timeout: 60000 });
+    // In Management the section says what the map holds — not "empty", not
+    // "nothing on record" — and counts what the map counts, with the way to the map.
+    await page.goto(`${here.pathname}?view=management#need`, { waitUntil: 'domcontentloaded' });
     const tab = page.locator('[data-workspace-layers] [data-workspace-layer="need"]');
     await expect(tab).toBeVisible({ timeout: 60000 });
     await expect(tab).not.toContainText('empty');

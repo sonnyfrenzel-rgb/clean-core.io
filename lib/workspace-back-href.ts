@@ -1,7 +1,8 @@
-import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey } from '@/lib/workspace-model';
+import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey, type WorkspaceView } from '@/lib/workspace-model';
 import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { nav, navViewLabel } from '@/lib/messages/navigation';
 import { BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { IT_LAYER_ELSEWHERE, IT_SECTION_IDS } from '@/lib/it-sections';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -35,23 +36,51 @@ export function demoWorkspaceBackHref(search: string): string {
 
 function backTo(workspace: string, search: string): string {
   const params = new URLSearchParams(search);
-  const view = params.get('view');
+  const asked = params.get('view');
   const from = params.get('from');
   const layer = layerParam(params.get('layer'));
-  const query = isWorkspaceView(view) ? `?view=${view}` : '';
   // A layer the stage was opened from wins over the control it was opened by:
   // the workspace holds the layer in its fragment (ADR-018), and returning to
   // the toolbar of another layer would lose the place the reader was reading.
   // *Need & process* is not a section of Business since ADR-080: a stage
   // opened from it there (a link from before 3.0.6) returns to the map, which
-  // is where the process stands in that view.
-  const hash = layer
-    ? `#${mapInBusiness(view, layer) ? BUSINESS_MAP_ID : layer}`
-    : from && LAYER_ID.test(from)
-      ? `#${from}`
-      : '';
+  // is where the process stands in that view. IT has no layers since ADR-086:
+  // a layer it was opened from returns to where that content lives now.
+  const home = layer ? layerHome(asked, layer) : null;
+  const view = home ? home.view : asked;
+  const query = isWorkspaceView(view) ? `?view=${view}` : '';
+  const hash = home
+    ? `#${home.hash}`
+    : layer && !(asked === 'it')
+      ? `#${mapInBusiness(asked, layer) ? BUSINESS_MAP_ID : layer}`
+      : from && LAYER_ID.test(from)
+        ? `#${from}`
+        : '';
   return `${workspace}${query}${hash}`;
 }
+
+/**
+ * Where a layer address leads in a view that no longer has that layer: in IT
+ * (ADR-086) every layer has a new home — Business, Management or IT's own
+ * section — except the costs, whose home is the Economics tool itself; a way
+ * back from a tool does not lead into a tool, so it returns to the IT view at
+ * the control it left by. `null` where the view keeps its layers.
+ */
+function layerHome(view: string | null, layer: LayerKey): { view: WorkspaceView; hash: string; label: string } | null {
+  if (view !== 'it') return null;
+  const home = IT_LAYER_ELSEWHERE[layer];
+  if (home.kind !== 'view') return null;
+  return { view: home.view, hash: home.hash, label: IT_HOME_LABELS[home.hash] ?? LAYER_LABELS[layer] };
+}
+
+/** The place names of the IT layer homes, as the way back says them. */
+const IT_HOME_LABELS: Readonly<Record<string, string>> = {
+  [BUSINESS_MAP_ID]: 'Process map',
+  standard: 'Standard fit',
+  [IT_SECTION_IDS.objects]: 'Objects & dependencies',
+  [IT_SECTION_IDS.trust]: 'Run & trust',
+  'decision-card': 'Decision',
+};
 
 /**
  * What the stage header shows where "Back to workspace" stands: the link to the
@@ -162,11 +191,19 @@ export function layerParam(value: string | null | undefined): LayerKey | null {
  */
 export function stageBackPlace(search: string): string | null {
   const params = new URLSearchParams(search);
-  const view = params.get('view');
+  const asked = params.get('view');
   const layer = layerParam(params.get('layer'));
+  const home = layer ? layerHome(asked, layer) : null;
+  const view = home ? home.view : asked;
   const parts = [
     isWorkspaceView(view) ? navViewLabel(VIEW_LABELS[view]) : null,
-    layer ? (mapInBusiness(view, layer) ? BUSINESS_MAP_LABEL : LAYER_LABELS[layer]) : null,
+    home
+      ? home.label
+      : layer && asked !== 'it'
+        ? mapInBusiness(asked, layer)
+          ? BUSINESS_MAP_LABEL
+          : LAYER_LABELS[layer]
+        : null,
   ].filter((p): p is string => Boolean(p));
   return parts.length > 0 ? parts.join(', ') : null;
 }

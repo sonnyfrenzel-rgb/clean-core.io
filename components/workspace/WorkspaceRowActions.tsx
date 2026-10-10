@@ -35,7 +35,7 @@ export interface RowActionHandlers {
 }
 
 const TRIGGER =
-  'inline-flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-cc-row border px-2 text-[13px] font-medium whitespace-nowrap pointer-coarse:h-11 pointer-coarse:min-w-11 md:px-2.5';
+  'inline-flex h-8 min-w-8 items-center justify-center gap-2 rounded-cc-row border px-2 text-[13px] font-medium whitespace-nowrap pointer-coarse:h-11 pointer-coarse:min-w-11 md:px-3';
 
 const ITEM =
   'flex min-h-8 w-full items-center rounded-cc-row px-2 text-left text-[13px] font-medium text-cc-ink hover:bg-cc-surface-muted pointer-coarse:min-h-11';

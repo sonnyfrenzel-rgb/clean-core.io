@@ -44,9 +44,25 @@ test.describe('the way back names the view and the layer', () => {
     const href = stageHref({ base: '/project/p-1', path: 'testing', view: 'it', from: WORKSPACE_RETURN.tools, layer: '#need' });
     expect(href).toBe('/project/p-1/testing?view=it&from=workspace-tools&layer=need');
     const search = href.slice(href.indexOf('?'));
-    // The layer wins over the control: the workspace holds the layer in its fragment.
-    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=it#need');
-    expect(stageBackPlace(search)).toBe('IT view, Need & process');
+    // The layer wins over the control: the workspace holds the layer in its
+    // fragment. IT has no layers since ADR-086, so a stage opened from one
+    // (a link from before 3.0.7) returns to where that content lives now —
+    // Need & process to the Business map — and says so.
+    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=business#process-map');
+    expect(stageBackPlace(search)).toBe('Business view, Process map');
+    const itBack = (layer: string) => workspaceBackHref({ projectId: 'p-1', search: `?view=it&from=workspace-tools&layer=${layer}` });
+    expect(itBack('standard')).toBe('/project/p-1?view=business#standard');
+    expect(itBack('architecture')).toBe('/project/p-1?view=it#it-objects');
+    expect(itBack('evidence')).toBe('/project/p-1?view=it#it-trust');
+    expect(itBack('changes')).toBe('/project/p-1?view=management#decision-card');
+    // Costs live in a tool; a way back never leads into a tool, so it returns
+    // to the IT view at the control it left by.
+    expect(itBack('costs')).toBe('/project/p-1?view=it#workspace-tools');
+    expect(stageBackPlace('?view=it&layer=architecture')).toBe('IT view, Objects & dependencies');
+    expect(stageBackPlace('?view=it&layer=changes')).toBe('Management view, Decision');
+    expect(stageBackPlace('?view=it&layer=costs')).toBe('IT view');
+    // Management keeps its six layers.
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=management&layer=costs' })).toBe('/project/p-1?view=management#costs');
     // Business has no Need & process since ADR-080: a link from before it
     // returns to the map, and says so.
     const old = '?view=business&from=workspace-tools&layer=need';
@@ -64,7 +80,9 @@ test.describe('the way back names the view and the layer', () => {
   test('a demo stage leads back to the demo workspace by the same rule (owner 02.10.2026)', () => {
     const href = stageHref({ base: '/demo', path: 'tco', view: 'it', from: WORKSPACE_RETURN.tools, layer: 'costs' });
     expect(href).toBe('/demo/tco?view=it&from=workspace-tools&layer=costs');
-    expect(demoWorkspaceBackHref(href.slice(href.indexOf('?')))).toBe('/demo/workspace?view=it#costs');
+    // IT has no Costs section since ADR-086: back to the control it left by.
+    expect(demoWorkspaceBackHref(href.slice(href.indexOf('?')))).toBe('/demo/workspace?view=it#workspace-tools');
+    expect(demoWorkspaceBackHref('?view=management&layer=costs')).toBe('/demo/workspace?view=management#costs');
     expect(demoWorkspaceBackHref('?view=it&from=workspace-tools')).toBe('/demo/workspace?view=it#workspace-tools');
     expect(demoWorkspaceBackHref('')).toBe('/demo/workspace');
     expect(demoWorkspaceBackHref('?view=admin&layer=%3Cscript%3E')).toBe('/demo/workspace');

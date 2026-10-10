@@ -125,6 +125,9 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'decision.placeEconomics': 'Economics',
   'decision.stateDone': 'met',
   'decision.stateOpen': 'open',
+  'decision.stateLimit': 'stays open',
+  'decision.limitsLead': 'Stays open with the decision — nothing to do here:',
+  'decision.whichPlaces': 'Which places',
   'decision.confirmEllipsis': 'Confirm decision…',
   'decision.withdraw': 'Withdraw decision',
   'decision.confirm': 'Confirm decision',
@@ -473,6 +476,16 @@ export function decisionWithdrawTitle(decisionId: string): string {
 /** DecisionCard — how many conditions are still open, beside their heading. */
 export function decisionOpenCount(open: number, total: number): string {
   return open === total ? `${open} open` : `${open} of ${total} open`;
+}
+
+/**
+ * DecisionCard — the open conditions counted as a reader acts on them
+ * (ADR-085): what there is to do, and what stays open whatever is done here.
+ */
+export function decisionTodoCount(todo: number, limits: number): string {
+  const stay = `${limits} stay${limits === 1 ? 's' : ''} open`;
+  if (todo === 0) return `Nothing to do · ${stay}`;
+  return limits > 0 ? `${todo} to do · ${stay}` : `${todo} to do`;
 }
 
 /** DecisionCard — the link to the place a pillar or a condition is resolved. */

@@ -9,7 +9,8 @@ import CcSkeleton from '@/components/cc/Skeleton';
 import CcStateText from '@/components/cc/StateText';
 import { getAuth } from '@/lib/firebase';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { itAtcComparison, wt } from '@/lib/workspace-messages';
+import { itAtcComparison, itvPackExported, itvRunLine, wt } from '@/lib/workspace-messages';
+import { IT_SECTION_IDS, type RunTrust } from '@/lib/it-sections';
 import { routesNamed, type CatalogProfile } from '@/lib/it-view';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import { contractForDisplay, type ArchitectureContract } from '@/lib/architecture-contract';
@@ -32,10 +33,14 @@ import { TargetChangeButton, TargetChangeNotice } from './TargetChange';
  *      deeper; and beside it the routes the deterministic router named on the
  *      findings. Nothing is decided here — the decision card binds the contract.
  *   3. **Imports** — the usage and ATC imports on record, inside the profile's
- *      card since 03.10.2026 (§2.11: at most two side cards); without either, one
- *      sentence that says usage is *not determined* until one exists, never
- *      "unused" — no empty-state box. The routes the router named are drawn
- *      only where there are findings to name them on.
+ *      card since 03.10.2026; without either, one sentence that says usage is
+ *      *not determined* until one exists, never "unused" — no empty-state box.
+ *      The routes the router named are drawn only where there are findings to
+ *      name them on.
+ *   4. **Run & trust** (ADR-086) — one compact card: the signed run, the source
+ *      fingerprint and the audit pack, with the way to verify or download it
+ *      in Delivery. It replaces the *Evidence & controls* layer of IT, whose
+ *      four loose rows and constant "1 signed run" repeated the header.
  *
  * Read-only, with one action: the owner's **Change target** in the profile
  * card (owner, 06.10.2026), in `./TargetChange.tsx`. It writes no field - it
@@ -54,6 +59,9 @@ export default function ItRail({
   profile,
   demo,
   fit = null,
+  contract,
+  trust,
+  deliveryHref = null,
 }: {
   projectId: string;
   project: Project | null;
@@ -63,6 +71,12 @@ export default function ItRail({
   demo: boolean;
   /** Both editions' buckets, as the IT view resolved them - the target change's preview reads the moves. */
   fit?: Loaded<FitByPlatform> | null;
+  /** The contract read (`useContract`), lifted so the anchor bar can name it. */
+  contract: ContractRead;
+  /** The run the page rests on (`runTrust`); `'demo'` in the demo, which is never signed. */
+  trust: RunTrust | 'demo';
+  /** Where the audit pack is verified and downloaded — the Delivery tool; `null` in the demo. */
+  deliveryHref?: string | null;
 }) {
   const routes = useMemo(() => routesNamed(source?.rows ?? []), [source]);
   /**
@@ -75,7 +89,6 @@ export default function ItRail({
     const engine = source.rows.map((r) => ({ id: r.id, objectName: r.objectName ?? undefined })) as unknown as EvidenceFinding[];
     return summarizeAtcComparison(joinAtcWithEvidence(project.atcReport, { findings: engine }));
   }, [project, source]);
-  const contract = useContract(projectId, !demo);
   const toAnalyze = stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'it', from: WORKSPACE_RETURN.tools });
 
   return (
@@ -205,6 +218,7 @@ export default function ItRail({
       </div>
 
       {/* 2. The route — architecture contract and the router's routes */}
+      <div id={IT_SECTION_IDS.route} className="min-w-0 scroll-mt-28">
       <CcCard
         title={
           contract.state === 'ready' && contract.value.contract
@@ -264,12 +278,74 @@ export default function ItRail({
           ) : null}
         </div>
       </CcCard>
+      </div>
 
+      {/* 3. Run & trust — what the rest of the page rests on, once. */}
+      <div id={IT_SECTION_IDS.trust} className="min-w-0 scroll-mt-28">
+        <RunTrustCard trust={trust} deliveryHref={deliveryHref} />
+      </div>
     </aside>
   );
 }
 
-type ContractRead =
+/**
+ * Run & trust — one compact card (ADR-086). Signed run with its day, the
+ * fingerprint of the source it read, whether its audit pack was exported, and
+ * the one action: verify or download in Delivery. Engine, rules and catalog
+ * versions are said once, in the header's Details line, and this card says
+ * where; the ATC import stands with the other imports in the profile card.
+ */
+function RunTrustCard({ trust, deliveryHref }: { trust: RunTrust | 'demo'; deliveryHref: string | null }) {
+  const term = 'text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
+  return (
+    <CcCard
+      title={wt('itv.trustTitle')}
+      meta={trust !== 'demo' && trust.signed ? <CcProvenanceChip value="proven" /> : <CcProvenanceChip value="not-determined" />}
+    >
+      <div data-it-trust={trust === 'demo' ? 'demo' : trust.signed ? 'signed' : trust.unreadable ? 'unreadable' : 'none'}>
+        {trust === 'demo' ? (
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('itv.trustDemo')}</p>
+        ) : !trust.signed ? (
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {trust.unreadable ? wt('itv.trustUnreadable') : wt('itv.trustNone')}
+          </p>
+        ) : (
+          <>
+            <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
+              <dt className={term}>{wt('itv.trustRun')}</dt>
+              <dd data-it-trust-run="" className="m-0 font-mono text-[12px] font-semibold break-all text-cc-ink">
+                {itvRunLine(trust.runId ?? '', trust.runDay)}
+              </dd>
+              {trust.fingerprint ? (
+                <>
+                  <dt className={term}>{wt('itv.trustFingerprint')}</dt>
+                  <dd data-it-trust-fingerprint="" className="m-0 text-[12px] font-medium break-all text-cc-ink">
+                    <span className="font-mono">{trust.fingerprint.sha}</span>
+                    {trust.fingerprint.fileName ? ` · ${trust.fingerprint.fileName}` : ''}
+                  </dd>
+                </>
+              ) : null}
+              <dt className={term}>{wt('itv.trustPack')}</dt>
+              <dd data-it-trust-pack={trust.packDay ? 'exported' : 'none'} className="m-0 text-[12px] font-medium text-cc-ink">
+                {trust.packDay ? itvPackExported(trust.packDay) : <span className="text-cc-ink-muted">{wt('itv.trustPackNone')}</span>}
+              </dd>
+            </dl>
+            <p className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">{wt('itv.trustVersions')}</p>
+            {deliveryHref ? (
+              <div className="mt-3">
+                <CcLinkButton href={deliveryHref} data-it-trust-delivery="">
+                  {wt('itv.trustVerify')}
+                </CcLinkButton>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </CcCard>
+  );
+}
+
+export type ContractRead =
   | { state: 'loading' }
   | { state: 'absent'; reason: string }
   | { state: 'ready'; value: { contract: ArchitectureContract | null; decision: GenerationDecision } };
@@ -279,7 +355,7 @@ type ContractRead =
  * read is *not determined* with the route's own sentence — never a contract
  * guessed from the router's recommendation.
  */
-function useContract(projectId: string, enabled: boolean): ContractRead {
+export function useContract(projectId: string, enabled: boolean): ContractRead {
   const [read, setRead] = useState<{ projectId: string; value: ContractRead } | null>(null);
   useEffect(() => {
     if (!enabled || !projectId) return undefined;

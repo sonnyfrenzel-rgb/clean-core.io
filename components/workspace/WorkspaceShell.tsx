@@ -51,6 +51,8 @@ import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
 import { businessNextStep } from '@/lib/business-next-step';
 import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { IT_LAYER_ELSEWHERE, runTrust, scrollToWhenThere } from '@/lib/it-sections';
+import { useSourceReading } from '@/hooks/useSourceReading';
 import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import type { ModelStageSubject } from '@/lib/model-stages';
@@ -141,22 +143,21 @@ const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: fals
 
 
 /**
- * IT opens with its own answer (mockup v2.8 `s4`, gap audit row 6): the answer
- * line, the facet tiles and — inside the IT panel, under the answer — "Next
- * step" (§2.3 item 5). The layers and the reading of the code, which answer
- * the other two views' questions, follow after it; before this order the IT
- * answer started some 2,700 px down, under Costs and the Business blocks.
+ * IT shows only its own content (owner decision 10.10.2026, ADR-086): the
+ * answer, the four figures and "Next step" (§2.3 item 5), then its own anchor
+ * bar over Findings → Objects & dependencies → Open questions, with target
+ * profile, route and Run & trust beside them — all inside `ItAnswers`. No
+ * block of the shell stands before or after it: the six layers, the first
+ * look and "Ask this case" answer the other views' questions and stand there.
  */
 const IT_HEAD: readonly ContentBlock[] = [];
-// *Not determined* is part of IT's own answer since 03.10.2026 — a figure at the
-// top and the list beside the findings — so it is not repeated at the foot.
-const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask'];
 /**
  * In IT the tour starts at "Next step", the page's one primary action right
- * under the answer, then the Not determined figure in that answer, then the
- * decision far below — the same start as every view (`COACH_MARK_TOUR_ORDER`).
+ * under the answer, then the Not determined figure in that answer. "Select
+ * the decision point" points at the process, which IT does not draw since
+ * ADR-086 — that tip stands in Business, at the map.
  */
-const IT_COACH_ORDER: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
+const IT_COACH_ORDER: readonly CoachMarkId[] = ['next-step', 'not-determined'];
 /**
  * Management has a place for one tip only, "Your next step" on its answer. The
  * other two have no slot there, and a tour that starts with a mark this view
@@ -334,8 +335,18 @@ export default function WorkspaceShell({
    * for the same `IF` — the thing `lib/abap/process-facts.ts` exists to prevent
    * — as well as the parse paid for twice.
    */
-  const [reading, setReading] = useState<SourceReading | null>(null);
+  const [firstLookReading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
+  /**
+   * IT renders no first look (ADR-086), yet the search, the print sheet and
+   * the counts read the same reading — so where the first look has not handed
+   * one up, the page reads the source itself, once, the same way.
+   */
+  const itReading = useSourceReading(
+    typeof project?.legacyCode === 'string' ? project.legacyCode : '',
+    view === 'it' && firstLookReading === null,
+  );
+  const reading = firstLookReading ?? itReading;
   /** From the first look's picture of the main line to the whole map, right under it. */
   const openMap = useCallback(() => {
     document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -392,6 +403,30 @@ export default function WorkspaceShell({
    * the map's own address and the page scrolls to the map.
    */
   const router = useRouter();
+  /**
+   * Another view, at a place in it: the view in `?view=`, the place in the
+   * fragment, the rest of the query kept. Used by the redirects below and by
+   * IT's links out (ADR-086). The layer is set here because a client
+   * navigation fires no `hashchange`; the place is brought into view once it
+   * has rendered — the map has its own follow below.
+   */
+  const goTo = useCallback(
+    (target: WorkspaceView, hash: string, replace: boolean) => {
+      const query = new URLSearchParams(window.location.search);
+      query.set('view', target);
+      const url = `/project/${encodeURIComponent(projectId)}?${query.toString()}#${hash}`;
+      if (replace) router.replace(url, { scroll: false });
+      else router.push(url, { scroll: false });
+      // After the navigation, not inside the effect that may have asked for it.
+      window.requestAnimationFrame(() => setHashLayer(layerFromHash(hash)));
+      if (hash !== BUSINESS_MAP_ID) scrollToWhenThere(hash);
+    },
+    [projectId, router],
+  );
+  const toEconomics = useCallback(
+    (from: WorkspaceView) => stageHref({ base: `/project/${projectId}`, path: 'tco', view: from, from: WORKSPACE_RETURN.tools }),
+    [projectId],
+  );
   useEffect(() => {
     if (view !== 'business' || hashLayer === null || BUSINESS_LAYERS.includes(hashLayer)) return;
     const elsewhere = BUSINESS_LAYER_ELSEWHERE[hashLayer];
@@ -401,12 +436,36 @@ export default function WorkspaceShell({
       window.location.replace(`#${BUSINESS_MAP_ID}`);
       return;
     }
-    router.replace(
-      elsewhere === 'economics'
-        ? stageHref({ base: `/project/${projectId}`, path: 'tco', view: 'business', from: WORKSPACE_RETURN.tools })
-        : `/project/${encodeURIComponent(projectId)}?view=it#${hashLayer}`,
-    );
-  }, [view, hashLayer, projectId, router]);
+    if (elsewhere === 'economics') {
+      router.replace(toEconomics('business'));
+      return;
+    }
+    // Architecture and changes: where they live since ADR-086 — IT's own
+    // objects section, and Management's decision.
+    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    if (home.kind === 'view') goTo(home.view, home.hash, true);
+  }, [view, hashLayer, router, goTo, toEconomics]);
+
+  /**
+   * IT has no layers since ADR-086. A layer address in IT — an old link, a
+   * bookmark, a stage's way back from before 3.0.7 — goes where that content
+   * lives now (`IT_LAYER_ELSEWHERE`): the process and the standard fit to
+   * Business, the costs to Economics, the decision to Management, architecture
+   * and evidence to IT's own sections. `replace`, so Back does not bounce.
+   */
+  useEffect(() => {
+    if (view !== 'it' || hashLayer === null) return;
+    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    if (home.kind === 'economics') {
+      router.replace(toEconomics('it'));
+      return;
+    }
+    if (home.view === 'it') {
+      window.location.replace(`#${home.hash}`);
+      return;
+    }
+    goTo(home.view, home.hash, true);
+  }, [view, hashLayer, router, goTo, toEconomics]);
 
   /**
    * `#process-map` arrives before the map exists — the redirect above runs as
@@ -548,7 +607,7 @@ export default function WorkspaceShell({
     hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
     order: view === 'it' ? IT_COACH_ORDER : undefined,
-    only: view === 'management' ? MANAGEMENT_COACH_MARKS : undefined,
+    only: view === 'management' ? MANAGEMENT_COACH_MARKS : view === 'it' ? IT_COACH_ORDER : undefined,
   });
 
   /**
@@ -956,6 +1015,16 @@ export default function WorkspaceShell({
       </div>
     ),
   };
+  /** Run & trust and the links out of the IT view (ADR-086). */
+  const trust = useMemo(() => runTrust(project), [project]);
+  const itElsewhere = useMemo(
+    () => ({
+      open: (target: WorkspaceView, hash: string) => goTo(target, hash, false),
+      economicsHref: toEconomics('it'),
+      deliveryHref: stageHref({ base: `/project/${projectId}`, path: 'delivery', view: 'it', from: WORKSPACE_RETURN.tools }),
+    }),
+    [goTo, toEconomics, projectId],
+  );
   const contentOrder: readonly ContentBlock[] =
     view === 'business' ? BUSINESS_ORDER : view === 'management' ? MANAGEMENT_HEAD : IT_HEAD;
 
@@ -1105,6 +1174,8 @@ export default function WorkspaceShell({
             questions={questions}
             openQuestions={openQuestionsList}
             signed={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
+            trust={trust}
+            elsewhere={itElsewhere}
             coach={(slot) => (
               <div className="cc-no-print">
                 <CoachMarkNote mark={currentMark} slot={slot} onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
@@ -1131,7 +1202,6 @@ export default function WorkspaceShell({
           />
         </div>
       )}
-      {view === 'it' ? IT_TAIL.map((key) => <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>) : null}
 
       {/* Management, under its answer: the steering one-pager, then the four
           folds (owner 03.10.2026: progressive disclosure). Each summary says

@@ -126,5 +126,7 @@ test.describe('the object page helpers', () => {
     expect(accessUseOfKind('standard-table-read')).toBe('read');
     expect(accessUseOfKind('custom-table-write')).toBe('write');
     expect(accessUseOfKind('bdc')).toBeNull();
+    // A table changed through batch input is written (3.0.7) — the same in the IT view's route.
+    expect(accessUseOfKind('batch-input')).toBe('write');
   });
 });

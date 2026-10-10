@@ -378,6 +378,11 @@ export function isEventTag(tag: string): boolean {
 }
 
 const DECISION_TAGS = new Set(['exclusiveGateway', 'parallelGateway']);
+
+/** True for a decision point — the elements `processCounts` counts as decisions. */
+export function isDecisionTag(tag: string): boolean {
+  return DECISION_TAGS.has(tag);
+}
 const ACTIVITY_TAGS = new Set([
   'task',
   'serviceTask',

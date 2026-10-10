@@ -48,8 +48,23 @@ import { countSourceLines } from '@/lib/source-lines';
 function accessUseOfKind(kind: string): ObjectUse | null {
   if (kind.endsWith('-read')) return 'read';
   if (kind.endsWith('-write')) return 'write';
+  // Roadmap 3.0.7: a table changed through batch input is written — by the
+  // transaction, not by this program, but written all the same. Without this
+  // the table was graded by its name only (`public-cloud-fit-resolver.ts`
+  // already reads the kind as a write).
+  if (kind === 'batch-input') return 'write';
   return null;
 }
+
+/**
+ * The IT view's words for a kind, where the router's do not read as what the
+ * finding says: a `batch-input` finding is a change to a table made through
+ * a transaction's screens, not a "batch input" of its own — the `bdc` finding
+ * on the call keeps the router's words for the session itself.
+ */
+const IT_KIND_LABELS: Readonly<Record<string, string>> = {
+  'batch-input': 'changes through batch input',
+};
 
 function rowOf(
   finding: EvidenceFinding,
@@ -66,7 +81,7 @@ function rowOf(
   return {
     id: finding.id,
     kind: finding.kind,
-    kindLabel: routeKindLabel(finding.kind),
+    kindLabel: IT_KIND_LABELS[finding.kind] ?? routeKindLabel(finding.kind),
     title: finding.title,
     severity: finding.severity,
     objectName,
@@ -218,7 +233,13 @@ function usesOf(
   for (const row of rows) {
     if (!row.objectName || reached.has(`${row.objectName}#${row.lineStart}`)) continue;
     const use = accessUseOfKind(row.kind);
-    add(row.objectName, 'object', use === 'read' ? 'read' : use === 'write' ? 'write' : 'use', row.lineStart);
+    // A table a finding names (a write through batch input) is a table.
+    add(
+      row.objectName,
+      row.objectType === 'Database Table' ? 'table' : 'object',
+      use === 'read' ? 'read' : use === 'write' ? 'write' : 'use',
+      row.lineStart,
+    );
   }
 
   const out: ItUseRow[] = [...drafts.values()].map((d) => {

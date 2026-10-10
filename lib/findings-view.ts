@@ -125,7 +125,9 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   'unreleased-api': { one: 'Call of an unreleased SAP API', many: 'Calls of unreleased SAP APIs' },
   'legacy-mail': { one: 'Classic mail sending', many: 'Classic mail sending' },
   'credit-management': { one: 'Custom credit management logic', many: 'Custom credit management logic' },
-  'batch-input': { one: 'Batch input session', many: 'Batch input sessions' },
+  // A change to a table made through a transaction's screens — the session
+  // itself is the `bdc` finding on the call (roadmap 3.0.7).
+  'batch-input': { one: 'Change through batch input', many: 'Changes through batch input' },
   'business-rule': { one: 'Business rule', many: 'Business rules' },
   enhancement: { one: 'Enhancement', many: 'Enhancements' },
   modification: { one: 'Modification of SAP code', many: 'Modifications of SAP code' },
@@ -486,6 +488,8 @@ export function sourceBins(positions: readonly SourcePosition[], totalLines: num
 export function accessUseOfKind(kind: string): 'read' | 'write' | null {
   if (kind.endsWith('-read')) return 'read';
   if (kind.endsWith('-write')) return 'write';
+  // A table changed through batch input is written (roadmap 3.0.7).
+  if (kind === 'batch-input') return 'write';
   return null;
 }
 

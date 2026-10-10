@@ -444,6 +444,9 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       '[data-workspace-tools="open"]',
       '[data-workspace-tools="menu"]',
       '[data-workspace-layers]',
+      // IT's own anchor bar and its links out (ADR-086) are screen navigation too.
+      '[data-it-anchors]',
+      '[data-it-elsewhere]',
       '[data-command-search-trigger]',
       '[data-help-menu]',
     ]) {

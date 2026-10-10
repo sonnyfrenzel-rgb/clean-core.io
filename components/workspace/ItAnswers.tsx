@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -23,10 +24,16 @@ import {
   itvLevelCounts,
   itvLineLabel,
   itvNoLevelLabel,
+  itvObjectsCount,
+  itvRange,
   itvUsesCoverage,
   wt,
   type WorkspaceMessageKey,
 } from '@/lib/workspace-messages';
+import { itObjects, type ItObjectRow, type ItObjects } from '@/lib/it-objects';
+import { IT_ANCHORS, IT_SECTION_IDS, type ItSectionKey, type RunTrust } from '@/lib/it-sections';
+import type { WorkspaceView } from '@/lib/workspace-model';
+import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import type { Loaded } from '@/lib/management-overview';
 import type { SemanticState } from '@/lib/provenance';
@@ -60,7 +67,7 @@ import {
   type WhereTo,
 } from '@/lib/it-view';
 import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
-import ItRail from './ItRail';
+import ItRail, { useContract } from './ItRail';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
 /**
@@ -109,6 +116,8 @@ export default function ItAnswers({
   openQuestions = null,
   signed = false,
   coach,
+  trust,
+  elsewhere = null,
 }: {
   projectId: string;
   /**
@@ -139,6 +148,18 @@ export default function ItAnswers({
   signed?: boolean | 'demo';
   /** The coach mark for a place in this view — Not determined, in the answer at the top. */
   coach?: (slot: CoachMarkId) => React.ReactNode;
+  /** The run the page rests on, for *Run & trust* (`runTrust`); `'demo'` in the demo. */
+  trust: RunTrust | 'demo';
+  /**
+   * The one quiet row of links out (ADR-086): the questions IT does not answer
+   * are answered in Business, Economics and Management. `open` switches the
+   * view and lands on the place; `null` draws no row.
+   */
+  elsewhere?: {
+    open: (view: WorkspaceView, hash: string) => void;
+    economicsHref: string;
+    deliveryHref: string | null;
+  } | null;
 }) {
   /**
    * The answer together with the project it answers for. A client navigation
@@ -203,6 +224,19 @@ export default function ItAnswers({
   const view = useMemo(() => itFindingsView(ordered, selectedId), [ordered, selectedId]);
   const kinds = useMemo(() => kindBreakdown(view.rows), [view.rows]);
   const uses = useMemo(() => usesSummary(source?.uses), [source]);
+  /** Own objects and what they use, one table (ADR-086). */
+  const objects = useMemo(
+    () =>
+      itObjects({
+        inventory: project?.codeInventory,
+        coupling: project?.dataCoupling,
+        uses: source?.uses,
+        findings: source?.rows,
+      }),
+    [project?.codeInventory, project?.dataCoupling, source],
+  );
+  const demo = findings !== undefined;
+  const contract = useContract(projectId, !demo);
 
   const state = project === null && findings === undefined ? undefined : itState({ source, hasSource, signed });
   const opening = useMemo(
@@ -338,7 +372,7 @@ export default function ItAnswers({
               value={uses && read ? String(read.uses?.length ?? 0) : null}
               coverage={uses ? itvUsesCoverage(uses.calls, uses.reads, uses.writes, uses.others) : wt('itv.usesNotRecorded')}
               provenance={uses ? 'reconstructed' : 'not-determined'}
-              href="#it-uses"
+              href={`#${IT_SECTION_IDS.objects}`}
             />
             <Fact
               id="findings"
@@ -376,7 +410,7 @@ export default function ItAnswers({
               }
               coverage={wt('itv.levelsCoverage')}
               provenance={uses && uses.levels.length > 0 ? 'imported' : 'not-determined'}
-              href={uses && uses.objects > 0 ? '#it-uses' : undefined}
+              href={uses && uses.objects > 0 ? `#${IT_SECTION_IDS.objects}` : undefined}
             />
             <Fact
               id="not-determined"
@@ -394,11 +428,30 @@ export default function ItAnswers({
       {/* The one next action — the shell's rule-based "Next step" (§2.3 item 5). */}
       {nextStep}
 
+      {/* IT's own anchor bar (ADR-086): the page's sections in the page's
+          order, an anchor only where its section has something to read. */}
+      {showContent ? (
+        <ItAnchorBar
+          anchors={anchorsOf({
+            findings: view.rows.length,
+            objects: objects.rows.length,
+            questions: openQuestions ? oqCount : undefined,
+            route:
+              contract.state === 'ready' && contract.value.contract
+                ? `${contract.value.contract.contractId} ${contract.value.contract.status === 'confirmed' ? wt('it.contractConfirmed') : contract.value.contract.status === 'superseded' ? wt('it.contractSuperseded') : wt('it.contractDraft')}`
+                : view.rows.length > 0
+                  ? ''
+                  : null,
+            trust: trust !== 'demo' && trust.signed,
+          })}
+        />
+      ) : null}
+
       {showContent ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-4">
             {view.rows.length > 0 ? (
-              <div id="it-findings" className="scroll-mt-4">
+              <div id={IT_SECTION_IDS.findings} className="scroll-mt-28">
                 <CcCard
                   title={wt('itv.findingsTitle')}
                   count={view.rows.length}
@@ -624,12 +677,12 @@ export default function ItAnswers({
 
             {/* Findings first, then the objects they sit on (Sonny, 10.10.2026):
                 what is wrong matters more to the IT reader than the inventory. */}
-            <UsesCard uses={read.uses} summary={uses} catalogNote={profile.note} />
+            <ObjectsCard objects={objects} catalogNote={profile.note} />
 
             {/* The open questions — in this view, not at the foot of the page
                 (ADR-081): the same list as in Business and Management. */}
             {openQuestions ? (
-              <div id="not-determined" className="scroll-mt-4">
+              <div id={IT_SECTION_IDS.questions} className="scroll-mt-28">
                 {openQuestions}
               </div>
             ) : null}
@@ -640,11 +693,18 @@ export default function ItAnswers({
             project={project}
             source={read}
             profile={profile}
-            demo={findings !== undefined}
+            demo={demo}
             fit={fit}
+            contract={contract}
+            trust={trust}
+            deliveryHref={elsewhere?.deliveryHref ?? null}
           />
         </div>
       ) : null}
+
+      {/* One quiet row of links out (ADR-086): what IT does not answer, and
+          where it is answered. */}
+      {elsewhere ? <ElsewhereRow elsewhere={elsewhere} /> : null}
     </section>
   );
 }
@@ -670,101 +730,54 @@ const BASIS_WORDS: Record<string, WorkspaceMessageKey> = {
   heuristic: 'itv.basisHeuristic',
 };
 
-const USE_COLUMNS = [
+const OBJECT_COLUMNS = [
   { key: 'object', label: wt('itv.colObject') },
+  { key: 'owner', label: wt('itv.colOwner') },
+  { key: 'usedBy', label: wt('itv.colUsedBy') },
   { key: 'use', label: wt('itv.colUse') },
   { key: 'lines', label: wt('itv.colLines') },
   { key: 'level', label: wt('itv.colLevel') },
-  { key: 'catalog', label: wt('itv.colCatalog') },
-  { key: 'finding', label: wt('itv.colFinding') },
+  { key: 'successor', label: wt('itv.colSuccessor') },
 ] as const;
 
+const OWNER_WORDS: Record<ItObjectRow['owner'], WorkspaceMessageKey> = {
+  own: 'itv.ownerOwn',
+  sap: 'itv.ownerSap',
+  undetermined: 'itv.ownerUndetermined',
+};
+
+const USE_KINDS = new Set(['bapi', 'function-module', 'table', 'transaction', 'program', 'object']);
+
 /**
- * What the code uses — one row per object and use, with its lines and the
- * level the target profile's catalog gives it. The first sentence says what the
- * list is and what a level is not, and is never folded away.
+ * Objects & dependencies (ADR-086) — what used to be two answers with two
+ * counts, "What the code uses" and the *Architecture & dependencies* layer,
+ * as one table: every object the code calls, reads or writes, then the
+ * program's own objects, each with its owner, the own object that uses it,
+ * the use, its lines, the clean core level and the successor a finding names.
+ * The count line says what it counts. The first sentence says what the list is
+ * and what a level is not, and is never folded away.
  */
-function UsesCard({
-  uses,
-  summary,
-  catalogNote,
-}: {
-  uses: ItUseRow[] | undefined;
-  summary: ReturnType<typeof usesSummary>;
-  /** Which snapshot of SAP's catalog the levels come from (`catalogProfile`). */
-  catalogNote: string;
-}) {
+function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote: string }) {
   return (
-    <div id="it-uses" className="scroll-mt-4">
-      <CcCard title={wt('itv.usesTitle')} count={uses ? uses.length : undefined}>
-        <p data-it-lead="uses" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-          {wt('itv.usesLead')}
+    <div id={IT_SECTION_IDS.objects} className="scroll-mt-28">
+      <CcCard title={wt('itv.objectsTitle')} count={objects.recorded ? objects.rows.length : undefined}>
+        <p data-it-lead="objects" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+          {wt('itv.objectsLead')}
         </p>
-        {!uses || !summary ? (
-          <p data-it-uses-state="not-recorded" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
-            {wt('itv.usesNotRecorded')}
-          </p>
-        ) : uses.length === 0 ? (
-          <p data-it-uses-state="none" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
-            {summary.sentence}
+        {!objects.recorded || objects.rows.length === 0 ? (
+          <p data-it-objects-state="not-recorded" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
+            {wt('itv.objectsNotRecorded')}
           </p>
         ) : (
           <div data-it-uses="" className="mt-3">
+            <p data-it-objects-count="" className="m-0 mb-2 text-[12px] leading-snug font-semibold text-cc-ink">
+              {itvObjectsCount(objects.own, objects.tables, objects.calls)}
+            </p>
             <CcTable
-              caption={wt('itv.usesCaption')}
-              columns={USE_COLUMNS}
+              caption={wt('itv.objectsCaption')}
+              columns={OBJECT_COLUMNS}
               limit={5}
-              rows={uses.map((u) => ({
-                key: `${u.object}@${u.use}`,
-                cells: {
-                  object: (
-                    <span className="block" data-it-use={u.object} data-it-use-kind={u.kind}>
-                      <span className="block font-mono text-[13px] font-semibold break-all text-cc-ink">{u.object}</span>
-                      <span className="block text-[11px] font-medium text-cc-ink-muted">
-                        {kindWord(u.kind)}
-                        {u.custom ? ` · ${wt('itv.custom')}` : ''}
-                        {u.remote ? ` · ${wt('itv.remote')}` : ''}
-                      </span>
-                    </span>
-                  ),
-                  use: <span className="text-[12px] font-semibold text-cc-ink">{wt(USE_WORDS[u.use])}</span>,
-                  lines: (
-                    <span className="flex flex-wrap gap-1" data-it-use-lines={u.object}>
-                      {u.lines.slice(0, 4).map((line) => (
-                        <CcAnchor key={line} tone="unlinked" label={itvLineLabel(u.object, line)}>
-                          L{line}
-                        </CcAnchor>
-                      ))}
-                      {u.lines.length > 4 ? (
-                        <span className="text-[11px] font-medium text-cc-ink-muted">+{u.lines.length - 4}</span>
-                      ) : null}
-                    </span>
-                  ),
-                  level:
-                    u.level === null ? (
-                      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.levelNotAsked')}</span>
-                    ) : (
-                      <span className="block" data-it-use-level={u.object}>
-                        <CcCleanCoreLevelExplained value={u.level} />
-                        {u.levelBasis && BASIS_WORDS[u.levelBasis] ? (
-                          <span className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
-                            {wt(BASIS_WORDS[u.levelBasis])}
-                          </span>
-                        ) : null}
-                      </span>
-                    ),
-                  catalog: (
-                    <span className="block text-[12px] font-medium text-cc-ink-muted">
-                      {[u.releaseView, u.classificationView].filter(Boolean).join(' · ') || wt('itv.levelNotAsked')}
-                    </span>
-                  ),
-                  finding: (
-                    <span className="text-[12px] font-medium text-cc-ink-muted">
-                      {u.findingIds.length > 0 ? u.findingIds.join(', ') : wt('itv.noFinding')}
-                    </span>
-                  ),
-                },
-              }))}
+              rows={objects.rows.map((r) => ({ key: r.key, cells: objectCells(r) }))}
             />
             <p data-it-catalog-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
               {catalogNote}
@@ -773,6 +786,210 @@ function UsesCard({
         )}
       </CcCard>
     </div>
+  );
+}
+
+function objectCells(r: ItObjectRow): Record<string, React.ReactNode> {
+  const dep = r.side === 'dependency';
+  return {
+    object: (
+      <span
+        className="block"
+        data-it-object={r.object}
+        data-it-object-side={r.side}
+        data-it-use={dep ? r.object : undefined}
+        data-it-use-kind={dep ? r.kind : undefined}
+      >
+        <span className="block font-mono text-[13px] font-semibold break-all text-cc-ink">{r.object}</span>
+        <span className="block text-[11px] font-medium text-cc-ink-muted">
+          {dep && USE_KINDS.has(r.kind) ? kindWord(r.kind as ItUseRow['kind']) : r.kind}
+          {r.remote ? ` · ${wt('itv.remote')}` : ''}
+        </span>
+      </span>
+    ),
+    owner: (
+      <span className="block text-[12px] font-semibold text-cc-ink" data-it-object-owner={r.owner}>
+        {wt(OWNER_WORDS[r.owner])}
+        {r.owner === 'undetermined' ? (
+          <span className="block text-[11px] font-medium text-cc-ink-muted">{wt('itv.ownerUndeterminedWhy')}</span>
+        ) : null}
+      </span>
+    ),
+    usedBy: dep ? (
+      <span className="block text-[12px] font-medium text-cc-ink" data-it-used-by={r.object}>
+        {r.usedBy.length > 0 ? <span className="block font-mono break-all">{r.usedBy.join(', ')}</span> : null}
+        {r.usedOutside ? <span className="block text-[11px] text-cc-ink-muted">{wt('itv.usedByOutside')}</span> : null}
+      </span>
+    ) : (
+      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.usedByOwn')}</span>
+    ),
+    use: (
+      <span className="text-[12px] font-semibold text-cc-ink" data-it-object-use={r.batchInput ? 'write-batch-input' : r.use}>
+        {r.use === 'defined'
+          ? wt('itv.useDefined')
+          : r.batchInput === 'all'
+            ? wt('itv.useWriteBatchInput')
+            : r.batchInput === 'some'
+              ? wt('itv.useWriteBatchInputSome')
+              : wt(USE_WORDS[r.use])}
+      </span>
+    ),
+    lines: (
+      <span className="flex flex-wrap gap-1" data-it-use-lines={dep ? r.object : undefined}>
+        {r.range ? (
+          <CcAnchor tone="unlinked" label={itvLineLabel(r.object, r.range.start)}>
+            {itvRange(r.range.start, r.range.end)}
+          </CcAnchor>
+        ) : (
+          r.lines.slice(0, 4).map((line) => (
+            <CcAnchor key={line} tone="unlinked" label={itvLineLabel(r.object, line)}>
+              L{line}
+            </CcAnchor>
+          ))
+        )}
+        {!r.range && r.lines.length > 4 ? (
+          <span className="text-[11px] font-medium text-cc-ink-muted">+{r.lines.length - 4}</span>
+        ) : null}
+        {!r.range && r.lines.length === 0 ? (
+          <span className="text-[11px] font-medium text-cc-ink-muted">{wt('it.notRecorded')}</span>
+        ) : null}
+      </span>
+    ),
+    level:
+      r.level === null ? (
+        <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.levelNotAsked')}</span>
+      ) : (
+        <span className="block" data-it-use-level={dep ? r.object : undefined} data-it-object-level={dep ? undefined : r.object}>
+          <CcCleanCoreLevelExplained value={r.level} />
+          {r.levelBasis && BASIS_WORDS[r.levelBasis] ? (
+            <span className="mt-1 block text-[11px] font-medium text-cc-ink-muted">{wt(BASIS_WORDS[r.levelBasis])}</span>
+          ) : null}
+        </span>
+      ),
+    successor: r.successor ? (
+      <span className="text-[12px] font-semibold break-all text-cc-ink">{r.successor}</span>
+    ) : (
+      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.successorNone')}</span>
+    ),
+  };
+}
+
+interface ItAnchor {
+  key: ItSectionKey;
+  label: string;
+  /** What is in it, or `''` when the label says enough. Never "empty": an empty section has no anchor. */
+  count: string;
+}
+
+const ANCHOR_LABELS: Readonly<Record<(typeof IT_ANCHORS)[number], WorkspaceMessageKey>> = {
+  findings: 'itv.anchorFindings',
+  objects: 'itv.anchorObjects',
+  questions: 'itv.anchorQuestions',
+  route: 'itv.anchorRoute',
+  trust: 'itv.anchorTrust',
+};
+
+/**
+ * The anchors with something behind them, in the page's order. A count of 0
+ * hides the anchor — except the open questions, whose "none" is an answer.
+ * For the route, `null` hides and `''` shows the label alone.
+ */
+function anchorsOf(content: {
+  findings: number;
+  objects: number;
+  /** `undefined`: the list is not on this page; `null`: the count is still being read. */
+  questions: number | null | undefined;
+  route: string | null;
+  trust: boolean;
+}): ItAnchor[] {
+  const out: ItAnchor[] = [];
+  for (const key of IT_ANCHORS) {
+    const label = wt(ANCHOR_LABELS[key]);
+    if (key === 'findings' && content.findings > 0) out.push({ key, label, count: String(content.findings) });
+    if (key === 'objects' && content.objects > 0) out.push({ key, label, count: String(content.objects) });
+    if (key === 'questions' && content.questions !== undefined) {
+      const n = content.questions;
+      out.push({ key, label, count: n === null ? '' : n > 0 ? String(n) : wt('itv.anchorNone') });
+    }
+    if (key === 'route' && content.route !== null) out.push({ key, label, count: content.route });
+    if (key === 'trust' && content.trust) out.push({ key, label, count: wt('itv.anchorSigned') });
+  }
+  return out;
+}
+
+/**
+ * IT's anchor bar (ADR-086) — sticky under the shell bar like the layer bar of
+ * the other two views, but in-page jumps to IT's own sections rather than a
+ * switch between panels. Plain fragment links: the place is the address, Back
+ * returns to it, and nothing is stored.
+ */
+function ItAnchorBar({ anchors }: { anchors: ItAnchor[] }) {
+  if (anchors.length === 0) return null;
+  return (
+    <nav aria-label={wt('itv.anchorsLabel')} data-it-anchors="" className="cc-no-print sticky top-14 z-cc-sticky mt-4 bg-cc-page py-2">
+      {/* The look of the layer bar of the other two views (same tray, same
+          count pill), one row on a phone scrolled within itself, so the sticky
+          bar never grows over the content it points into. */}
+      <ul className="m-0 flex min-w-0 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
+        {anchors.map((a) => (
+          <li key={a.key} className="shrink-0">
+            <a
+              href={`#${IT_SECTION_IDS[a.key]}`}
+              data-it-anchor={a.key}
+              className="group inline-flex items-stretch rounded-cc-row text-[13px] font-semibold whitespace-nowrap text-cc-ink no-underline pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+            >
+              {/* The hover surface sits on an inner span, as in the layer bar:
+                  the link keeps no surface of its own (§1.5). */}
+              <span className="inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1 group-hover:bg-cc-surface">
+                <span>{a.label}</span>
+                {a.count ? (
+                  <span
+                    data-it-anchor-count=""
+                    className="rounded-full border border-cc-line bg-cc-surface px-2 text-[11px] leading-[18px] font-semibold text-cc-ink-muted tabular-nums"
+                  >
+                    {a.count}
+                  </span>
+                ) : null}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** The quiet row of links out (ADR-086) — what IT does not answer, and where it is answered. */
+function ElsewhereRow({
+  elsewhere,
+}: {
+  elsewhere: { open: (view: WorkspaceView, hash: string) => void; economicsHref: string };
+}) {
+  const link =
+    'inline-flex min-h-6 items-center text-[12px] font-semibold text-cc-ink underline underline-offset-2 pointer-coarse:min-h-11';
+  return (
+    <nav aria-label={wt('itv.elsewhereLabel')} data-it-elsewhere="" className="cc-no-print mt-5 border-t border-cc-line pt-3">
+      <p className="m-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-medium text-cc-ink-muted">
+        <span>{wt('itv.elsewhereLabel')}</span>
+        <button type="button" className={link} data-it-elsewhere-link="process" onClick={() => elsewhere.open('business', BUSINESS_MAP_ID)}>
+          {wt('itv.elsewhereProcess')}
+        </button>
+        <button type="button" className={link} data-it-elsewhere-link="standard" onClick={() => elsewhere.open('business', 'standard')}>
+          {wt('itv.elsewhereStandard')}
+        </button>
+        <Link href={elsewhere.economicsHref} className={link} data-it-elsewhere-link="costs">
+          {wt('itv.elsewhereCosts')}
+        </Link>
+        <button
+          type="button"
+          className={link}
+          data-it-elsewhere-link="decision"
+          onClick={() => elsewhere.open('management', 'decision-card')}
+        >
+          {wt('itv.elsewhereDecision')}
+        </button>
+      </p>
+    </nav>
   );
 }
 

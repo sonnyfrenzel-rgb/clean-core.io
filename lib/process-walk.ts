@@ -21,7 +21,7 @@
  * Pure: no React, no network.
  */
 import { buildNavigation, mainPath } from './process-navigation';
-import type { ProcessMapModel } from './process-map';
+import { isDecisionTag, type ProcessMapModel } from './process-map';
 import { isConfirmedState } from './rules-editor';
 import type { ProcessStateView, StateEntry } from './process-states';
 
@@ -59,6 +59,15 @@ export function walkOrder(model: ProcessMapModel, subjects: ReadonlySet<string> 
     }
   };
   visit(null);
+  // Every decision point is asked, also one that stands off the main path
+  // (inside a branch, or in a level only a branch opens): the decision counts
+  // the decision points without an answer (ADR-085), so the walk that answers
+  // them must reach each one. They follow the main path in the map's order.
+  for (const element of model.elements) {
+    if (isDecisionTag(element.tag) && !element.event && (!subjects || subjects.has(element.id)) && !out.includes(element.id)) {
+      out.push(element.id);
+    }
+  }
   return out;
 }
 
