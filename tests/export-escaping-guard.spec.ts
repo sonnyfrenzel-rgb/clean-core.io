@@ -106,7 +106,7 @@ test('the engine documentation export carries the business layer, escaped and ma
   const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const a = document.appendix'));
   for (const field of ['raci_matrix', 'sop_details']) expect(section).toContain(field);
   // Roadmap 3.0.7: the model proposes no controls and no KPI targets; the
-  // controls are the code reading's, section 8.
+  // controls are the code reading's, the systems section (ADR-084).
   for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);

@@ -313,7 +313,7 @@ function Documentation({ demo, source }: { demo: DemoProject; source: string | n
         gaps={demo.analyze.coverage.unassessed.map((u) => ({ label: u.label, why: u.why, line: u.line }))}
         levels={demo.analyze.levels}
         businessLayer={<ModelHalfNotice what="The business SOP and RACI layer on top of this description" />}
-        /* Section 9 is the one list of open questions (ADR-081, roadmap 3.0.7),
+        /* The open questions section is the one list (ADR-081, roadmap 3.0.7),
            over the demo's own coverage sweep; nothing is answered in a demo. */
         openQuestions={openQuestions({
           open: {

@@ -7,6 +7,7 @@
  * only; a sentence with a number or a name in it is a function beside the object.
  */
 import type { BusinessCallout, GlanceHeadline, GlanceObject, RaciLetter, RaciStepGap } from '@/lib/business-summary';
+import { sectionName } from '@/lib/process-document';
 
 export const DOCUMENTATION_MESSAGES = {
   'doc.glanceLabel': 'For the business',
@@ -66,7 +67,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.proposalsLead':
     'Written by a language model on top of the process description: who does what at each step, and business wording for the code reading. The steps, their lines and the controls stay the code reading.',
   'doc.proposalsSentencesTitle': 'Business sentences',
-  'doc.sopControlsFromCode': 'Controls are read from the code — section 8 of the process description. The model proposes no controls and no KPI targets.',
+  // A section is named by its key, never by its number (ADR-084).
+  'doc.sopControlsFromCode': `Controls are read from the code — “${sectionName('systems')}” in the process description. The model proposes no controls and no KPI targets.`,
 
   // The rules table's filter (it replaced the drawer's "Rules outside the process").
   'doc.rulesFilterLabel': 'Show the rules',
@@ -85,8 +87,32 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.decisionTableLines': 'Lines',
   'doc.userChoice': 'User choice',
 
-  // Section 9 — the project's one list of open questions (ADR-081).
+  // The open questions section — the project's one list (ADR-081).
   'doc.questionsAnswerInWorkspace': 'Answer them, or accept them as known open, in the workspace',
+  // ADR-084: a row that stands on the line of an open question points at it.
+  'doc.openQuestionLink': 'Open question',
+
+  // ADR-084 (roadmap 3.0.7 A1) — the reader questions under the key figures, each leading to its section.
+  'doc.goTo': 'Go to',
+  'doc.goToWhat': 'What does it do?',
+  'doc.goToWho': 'Who acts?',
+  'doc.goToRules': 'Which rules decide?',
+  'doc.goToFails': 'What if it fails?',
+  'doc.goToChanges': 'What changes in SAP?',
+  'doc.goToSystems': 'Which systems and data?',
+  'doc.goToOpen': 'What is still open?',
+
+  // ADR-084 — purpose and scope folded into the glance; how a run starts in the process section.
+  'doc.covers': 'What this covers',
+  'doc.leaves': 'What it leaves out',
+  'doc.runStarts': 'How a run starts',
+  'doc.inputUnused': 'Input the code does not use',
+  'doc.stepsCaption': 'Steps',
+  'doc.whoActs': 'Who acts',
+  'doc.dataReads': 'Data it reads',
+  'doc.derivedValues': 'Values it computes',
+  'doc.integrationsTitle': 'Integrations',
+  'doc.controlsTitle': 'Controls',
 
   // The Export menu in the stage header (ADR-078's menu, roadmap 3.0.7).
   'doc.exportBpmnCaveat': 'BPMN 2.0: import into SAP Signavio or SAP Build has not been verified yet.',

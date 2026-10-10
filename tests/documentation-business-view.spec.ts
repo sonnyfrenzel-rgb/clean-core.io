@@ -152,10 +152,12 @@ test.describe('the Confluence export', () => {
     const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), LAYER, { processSteps: STEPS }).text();
     expect(html).toContain('Business layer — Model proposal');
     // Roadmap 3.0.7: a stored layer's KPI targets and control checkpoints are
-    // data, not part of the page; the controls are section 8's.
+    // data, not part of the page; the controls are the systems section's,
+    // named by its key, never by a number a renumbering would leave wrong (ADR-084).
     for (const sop of LAYER.sop_details) if (sop.kpiTarget) expect(html).not.toContain(sop.kpiTarget);
     for (const ctrl of LAYER.audit_controls) expect(html).not.toContain(ctrl.controlObjective);
-    expect(html).toContain('Controls are read from the code: section 8 of the process description.');
+    expect(html).toContain('Controls are read from the code: “Systems and data” in the process description.');
+    expect(html).not.toMatch(/section \d/i);
     for (const row of LAYER.raci_matrix) expect(html).toContain(`<code>${row.stepId}</code></td><td>${row.r || 'Not determined'}</td>`);
     for (const sop of LAYER.sop_details) {
       expect(html).toContain(`<code>${sop.stepId}</code>`);
@@ -302,7 +304,7 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(page.locator('[data-sop-full-step]')).toHaveCount(LAYER.sop_details.length);
     await expect(page.locator('[data-sop-full]')).toContainText(LAYER.sop_details[0].narrative);
     // Roadmap 3.0.7: no KPI target and no model-written control checkpoint —
-    // the controls are the code reading's, section 8, and the fold says so.
+    // the controls are the code reading's, in the systems section, and the fold says so.
     await expect(page.locator('[data-sop-full]')).not.toContainText('Completed within one business day');
     await expect(page.locator('[data-sop-full]')).not.toContainText('Approvals follow the four-eyes principle.');
     await expect(page.locator('[data-sop-controls-from-code]')).toBeVisible();

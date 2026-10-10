@@ -9,6 +9,7 @@ import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import {
   PROCESS_DOCUMENT_SECTIONS,
   QUESTION_THEMES,
+  sectionTitle,
   businessSentences,
   documentTexts,
   isBusinessStatement,
@@ -16,8 +17,11 @@ import {
   sentenceKey,
   sentencesOf,
   wordCount,
+  type PdStep,
   type ProcessDocument,
 } from '../lib/process-document';
+import { decisionTableHitPolicy } from '../lib/decision-tables';
+import type { OpenQuestions } from '../lib/open-questions';
 import { documentOutline, longTables, processDocumentBlocks } from '../lib/process-document-outline';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
@@ -85,7 +89,7 @@ for (const [file] of EXAMPLES) {
       expect(headings).toEqual(['At a glance', ...PROCESS_DOCUMENT_SECTIONS.map((s) => s.title)]);
       // The cover and the summary stand before section 1; the diagram after the overview's heading.
       expect(html.indexOf('data-doc-cover')).toBeLessThan(html.indexOf('data-glance-export'));
-      expect(html.indexOf('data-glance-export')).toBeLessThan(html.indexOf('data-doc-section="purpose"'));
+      expect(html.indexOf('data-glance-export')).toBeLessThan(html.indexOf('data-doc-section="overview"'));
       expect(html).toContain('<svg');
       expect(html.indexOf('<svg')).toBeGreaterThan(html.indexOf('data-doc-section="overview"'));
     });
@@ -199,7 +203,7 @@ for (const [file] of EXAMPLES) {
       expect((xml.match(/<w:tbl>/g) ?? []).length).toBeGreaterThan(5);
       const pageBreaks = [...xml.matchAll(/<w:br w:type="page"\/>/g)].map((m) => m.index!);
       expect(pageBreaks.length).toBe(2);
-      expect(pageBreaks[1]).toBeLessThan(xml.indexOf('Appendix: technical trace'));
+      expect(pageBreaks[1]).toBeLessThan(xml.indexOf('Appendix: details and evidence'));
     });
 
     test('deterministic: the same source gives the same document', () => {
@@ -311,5 +315,189 @@ test.describe('model wording, only as a proposal', () => {
     const steps = doc.overview.path.filter((e) => e.kind === 'step');
     expect(steps[0].proposal?.text).toContain('authorization for the purchasing group');
     expect(steps.every((s) => s.proposal?.text !== 'Contradicting sentence.')).toBe(true);
+  });
+});
+
+/* ---------------------------------------------------------------- ADR-084 */
+
+/** A dialogue report: a selection screen with a preset, a filtered read, a popup whose answer is dropped, a batch input. */
+const DIALOGUE = `REPORT zdemo_dates.
+TABLES: ekko, eket.
+CONSTANTS c_x TYPE c VALUE 'X'.
+DATA: gt_po  TYPE STANDARD TABLE OF ekpo,
+      gs_po  TYPE ekpo,
+      gv_sum TYPE p,
+      it_bdc LIKE bdcdata OCCURS 0 WITH HEADER LINE,
+      g_answer(1) TYPE c,
+      l_datum(10) TYPE c.
+SELECT-OPTIONS s_bedat FOR ekko-bedat.
+PARAMETERS p_unused AS CHECKBOX.
+INITIALIZATION.
+  s_bedat-low = sy-datum - 365.
+  APPEND s_bedat.
+START-OF-SELECTION.
+  SELECT * FROM ekpo INTO TABLE gt_po WHERE loekz = space AND aedat IN s_bedat.
+  PERFORM change_dates.
+FORM change_dates.
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING text_question = 'Change the dates?'
+    IMPORTING answer = g_answer.
+  LOOP AT gt_po INTO gs_po.
+    gv_sum = gv_sum + gs_po-menge.
+    REFRESH it_bdc.
+    PERFORM bdc_dynpro USING 'SAPMM06E' '0105'.
+    PERFORM bdc_field  USING 'RM06E-BSTNR' gs_po-ebeln.
+    PERFORM bdc_dynpro USING 'SAPMM06E' '1117'.
+    PERFORM bdc_field  USING 'EKET-EEIND(01)' l_datum.
+    PERFORM bdc_field  USING 'BDC_OKCODE'  '=BU'.
+    CALL TRANSACTION 'ME22' USING it_bdc MODE 'N' UPDATE 'S'.
+  ENDLOOP.
+ENDFORM.
+FORM bdc_dynpro USING program dynpro.
+  CLEAR it_bdc.
+  it_bdc-program  = program.
+  it_bdc-dynpro   = dynpro.
+  it_bdc-dynbegin = c_x.
+  APPEND it_bdc.
+ENDFORM.
+FORM bdc_field USING fnam fval.
+  CLEAR it_bdc.
+  it_bdc-fnam = fnam.
+  it_bdc-fval = fval.
+  APPEND it_bdc.
+ENDFORM.
+`;
+
+function documentOfSource(source: string, file = 'zdemo_dates.abap') {
+  return buildProcessDocument({ source, map: mapOf(source, file) });
+}
+
+test.describe('ADR-084: seven sections, a title that leads with the process, reader questions, who acts', () => {
+  test('the title is "<project> — <PROGRAM>", "Process description" under it, in every rendering', async () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const o = documentOutline(doc, { projectName: 'Emergency purchase approval' });
+    expect(o.title).toBe('Emergency purchase approval — Z_MM_PO_APPROVAL');
+    expect(o.subtitle).toBe('Process description');
+    // A project named after its program does not say it twice.
+    expect(documentOutline(doc, { projectName: 'Z_MM_PO_APPROVAL' }).title).toBe('Z_MM_PO_APPROVAL');
+    const md = blocksMarkdown(processDocumentBlocks(doc, { projectName: 'Emergency purchase approval' }));
+    expect(md.startsWith('# Emergency purchase approval — Z_MM_PO_APPROVAL\n\n*Process description*')).toBe(true);
+    const html = await buildEngineConfluenceHtml(doc, null, { projectName: 'Emergency purchase approval' }).text();
+    expect(html).toContain('<h1>Emergency purchase approval — Z_MM_PO_APPROVAL</h1>');
+    expect(html).toContain('data-doc-subtitle="">Process description<');
+  });
+
+  test('"Go to": the reader questions lead to their sections — links in Confluence, a plain line in a file', async () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const o = documentOutline(doc);
+    expect(o.glance.goTo.map((g) => g.label)).toEqual([
+      'What does it do?', 'Who acts?', 'Which rules decide?', 'What if it fails?', 'What changes in SAP?', 'Which systems and data?', 'What is still open?',
+    ]);
+    const keys = new Set<string>(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
+    for (const g of o.glance.goTo) expect(keys.has(g.section)).toBe(true);
+    const html = await htmlOf(doc);
+    // Every link has its target in the page.
+    for (const g of o.glance.goTo) {
+      expect(html).toContain(`href="#pd-${g.anchor ?? g.section}"`);
+      expect(html).toContain(`id="pd-${g.anchor ?? g.section}"`);
+    }
+    const md = markdownOf(doc);
+    expect(md).toContain(`Go to: What does it do? → ${sectionTitle('overview')} · Who acts? → ${sectionTitle('overview')}`);
+    // Under the key figures, before the rules and risks.
+    expect(md.indexOf('Go to:')).toBeLessThan(md.indexOf('**Rules and risks to know**'));
+  });
+
+  test('purpose and scope stand in the glance; data, integrations and controls are one section', () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const md = markdownOf(doc);
+    const glance = md.slice(md.indexOf('## At a glance'), md.indexOf(`## ${sectionTitle('overview')}`));
+    for (const s of doc.purpose.outOfScope) expect(glance).toContain(s.text);
+    expect(glance).toContain(doc.purpose.users.text);
+    const systems = md.slice(md.indexOf(`## ${sectionTitle('systems')}`), md.indexOf(`## ${sectionTitle('questions')}`));
+    for (const h of ['### Data it reads', '### Integrations', '### Controls']) expect(systems).toContain(h);
+    // How a run starts opens the process section.
+    const process = md.slice(md.indexOf(`## ${sectionTitle('overview')}`), md.indexOf(`## ${sectionTitle('rules')}`));
+    expect(process.indexOf('### How a run starts')).toBeGreaterThan(-1);
+    expect(process.indexOf('### How a run starts')).toBeLessThan(process.indexOf('### Steps'));
+    expect(process).toContain('| Input | Required | Default | Source |');
+    // No section is named by its number anywhere in the body.
+    expect(md.slice(0, md.indexOf('## Appendix'))).not.toMatch(/\bsection \d/i);
+  });
+
+  test('who acts: a run the code does not prove reads "Not determined"; a dialogue names the user where the dialogue stands', () => {
+    // Z_MM_PO_APPROVAL (the demo) holds no dialogue, background or update-task
+    // statement: its run lane is the program, so no step's actor is proven.
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const steps = doc.overview.path.filter((e): e is PdStep => e.kind === 'step');
+    for (const s of steps) {
+      expect(s.actor?.who ?? null, s.name).toBeNull();
+      expect(s.actor?.basis).toMatch(/proves no dialogue/);
+    }
+    expect(documentOutline(doc).tables.steps.rows.every((r) => r.cells[2] === 'Not determined')).toBe(true);
+
+    const dialogue = documentOfSource(DIALOGUE);
+    const actors = dialogue.overview.path.filter((e): e is PdStep => e.kind === 'step').map((s) => s.actor);
+    // The popup stands in the step's own code: the user acts there, and the basis names the statement and its line.
+    const user = actors.find((a) => a?.who === 'User');
+    expect(user?.basis).toContain('POPUP_TO_CONFIRM');
+    expect(user?.anchors.length).toBeGreaterThan(0);
+    for (const a of actors) expect(a?.who).not.toBeNull();
+  });
+
+  test('a decision table without an Otherwise row says what happens when no row matches', () => {
+    const line = { lineStart: 1, lineEnd: 1 };
+    expect(decisionTableHitPolicy({ field: 'gs_row-ampel', rows: [
+      { condition: 'a > 1', value: 'c_rot', constant: null, anchor: line },
+      { condition: 'a > 0', value: 'c_gelb', constant: null, anchor: line },
+      { condition: 'a = 0', value: 'c_gruen', constant: null, anchor: line },
+    ] })).toBe('The first matching row wins; the rows below it are not checked. There is no Otherwise row: when no row matches, the table does not set gs_row-ampel.');
+  });
+
+  test('a row on the line of an open question points at it — in the outline, in Confluence, in a file', async () => {
+    const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
+    const rule = doc.rules.find((r) => r.ref === 'BR-010')!;
+    const line = rule.anchors[0].lineStart;
+    const list = {
+      noSource: false, open: 1, blocking: 0, top: 'Confirm the rules', limits: null, catalogPending: false,
+      groups: [{
+        action: 'confirm-rules', owner: 'Business', title: 'Confirm the rules', resolves: 'The owner confirms each rule.',
+        blocksDecision: false, count: 1, lines: [{ label: 'BR-010', why: 'A threshold in the code', anchor: `L${line}` }],
+        end: 'open', evidence: null, answer: null, outdated: null, basis: '', catalogPending: false,
+      }],
+    } as unknown as OpenQuestions;
+    const o = documentOutline(doc, { openQuestions: list });
+    const row = o.tables.rules!.rows.find((r) => r.cells[0] === 'BR-010')!;
+    expect(row.question).toEqual({ action: 'confirm-rules', title: 'Confirm the rules' });
+    expect(o.questions.table!.rows[0].id).toBe('oq-confirm-rules');
+    const html = await buildEngineConfluenceHtml(doc, null, { openQuestions: list }).text();
+    expect(html).toContain('<a href="#oq-confirm-rules">→ Open question: Confirm the rules</a>');
+    expect(html).toContain('<tr id="oq-confirm-rules">');
+    const md = blocksMarkdown(processDocumentBlocks(doc, { openQuestions: list }));
+    expect(md).toContain('→ Open question: Confirm the rules');
+    // A closed group is no open question: nothing points at it.
+    const closed = { ...list, groups: [{ ...list.groups[0], end: 'answered' }] } as OpenQuestions;
+    expect(documentOutline(doc, { openQuestions: closed }).tables.rules!.rows.some((r) => r.question)).toBe(false);
+  });
+
+  test('how a run starts, which rows a read takes, what a batch input changes', () => {
+    const doc = documentOfSource(DIALOGUE);
+    // The preset written in INITIALIZATION is the input's default.
+    const bedat = doc.trigger.selection.find((i) => i.name.toUpperCase() === 'S_BEDAT')!;
+    expect(bedat.defaultValue).toBe('LOW sy-datum - 365 (set when the program starts)');
+    // The input nothing reads, and the dialogue answer nothing reads, in plain words with their lines.
+    const unused = doc.trigger.inputUse ?? [];
+    expect(unused.map((u) => u.detail)).toEqual(expect.arrayContaining(['P_UNUSED']));
+    expect(unused.some((u) => /answer to a dialogue/.test(u.text))).toBe(true);
+    for (const u of unused) expect(u.anchors.length).toBeGreaterThan(0);
+    // Which rows: the WHERE as written, the fixed filter first.
+    const ekpo = doc.trigger.data.find((d) => d.name === 'EKPO')!;
+    expect(ekpo.scope).toBe('Only where loekz = space (fixed in the code); restricted by the selection screen: aedat IN s_bedat');
+    // A running total is a computed value.
+    expect(doc.derived?.some((d) => d.target === 'gv_sum' && d.accumulates)).toBe(true);
+    // The batch input changes the delivery date; the order number on the first screen is no change.
+    const change = doc.outputs.find((o) => o.kind === 'Changes data (batch input)')!;
+    expect(change.what).toBe('Changes the delivery date of the purchase order schedule line through a transaction (batch input)');
+    expect(change.objects).toEqual(['ME22', 'EKET-EEIND(01)']);
+    expect(change.anchors.length).toBeGreaterThan(0);
   });
 });

@@ -35,6 +35,8 @@ import {
 import {
   REQUIREMENT_QUESTIONS,
   REQUIREMENT_QUESTION_HEAD,
+  actorWord,
+  questionLinkText,
   SOURCE_COLUMN,
   shortTech,
   appendixLead,
@@ -67,9 +69,11 @@ import DecisionTables from './DecisionTables';
  * `.docx` print the same outline, so the screen and the files say the same
  * thing in the same order.
  *
- * On screen it reads like the other tools: a summary card with six key figures
- * (each a link to its section), the rules and risks to know, and the main path
- * as a strip of numbered steps; then the nine sections as cards, each with its
+ * On screen it reads like the other tools: a summary card titled
+ * "<project> — <PROGRAM>" with six key figures (each a link to its section),
+ * the reader questions that lead to the sections, the rules and risks to know,
+ * what it covers and leaves out, and the main path as a strip of numbered
+ * steps; then the sections (ADR-084) as cards, each with its
  * one-line lead and its first few rows — "Show all" for the rest, a step's
  * details one tap deeper. What a file moves to its appendix the screen folds
  * in place (DESIGN.md §2.11: show less, lose nothing); printed, every row
@@ -78,9 +82,11 @@ import DecisionTables from './DecisionTables';
  * line anchors are small chips.
  *
  * Roadmap 3.0.7 ("Documentation lean"): the rules table carries the filter
- * that was the drawer's "Rules outside the process", and section 9 is the
- * project's one list of open questions (ADR-081) with its end states — read
- * here, answered in the workspace.
+ * that was the drawer's "Rules outside the process", and the open questions
+ * section is the project's one list (ADR-081) with its end states — read
+ * here, answered in the workspace. A row that stands on the line of an open
+ * question links to it (ADR-084); every step says who acts, from the evidence
+ * the code proves.
  *
  * The technical trace is `ProcessDocumentAppendix`, rendered by the stage at
  * its foot — after the business layer and the map (ADR-077 amended).
@@ -116,11 +122,22 @@ function Tech({ children }: { children: string | null | undefined }) {
   );
 }
 
-function Source({ row }: { row: Pick<PdRow, 'tech' | 'anchors'> }) {
+function Source({ row }: { row: Pick<PdRow, 'tech' | 'anchors' | 'question'> }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       <Tech>{row.tech}</Tech>
       <Anchors anchors={row.anchors} />
+      {row.question ? (
+        // ADR-084 (roadmap 3.0.7 A5): the row stands on the line of an open question — it leads there.
+        <a
+          href={`#pd-oq-${row.question.action}`}
+          onClick={(event) => scrollTo(event, `pd-oq-${row.question!.action}`)}
+          data-doc-row-question={row.question.action}
+          className="cc-text-meta font-medium text-cc-ink underline underline-offset-2"
+        >
+          {questionLinkText(row.question)}
+        </a>
+      ) : null}
     </span>
   );
 }
@@ -232,10 +249,11 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
   return (
     <section data-doc-glance="" aria-labelledby="pd-glance" className={cn(CARD, 'md:p-6')}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="m-0 cc-text-label text-cc-ink-muted">At a glance</p>
+        {/* ADR-084: the title leads with the process; the document type stands over it. */}
+        <p data-doc-subtitle="" className="m-0 cc-text-label text-cc-ink-muted">{outline.subtitle} · At a glance</p>
         <CcProvenanceChip value="reconstructed" note="from the code" />
       </div>
-      <h3 id="pd-glance" className="m-0 mt-1 cc-text-h2 text-cc-ink">{doc.program}</h3>
+      <h3 id="pd-glance" data-doc-title="" className="m-0 mt-1 cc-text-h2 text-cc-ink">{outline.title}</h3>
       <p className="m-0 mt-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted">
         {doc.fileName} · {doc.lineCount} lines
       </p>
@@ -243,6 +261,11 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
         {g.summary.map((s, i) => (
           <p key={i} className="m-0 cc-text-body text-cc-ink">{s.text}</p>
         ))}
+        {g.proposal ? (
+          <p data-doc-proposal="" className="m-0 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-cell text-cc-ink">
+            <CcProvenanceChip value="proposed" /> {g.proposal.text} <Anchors anchors={g.proposal.anchors} max={2} />
+          </p>
+        ) : null}
         <p className="m-0 cc-text-cell text-cc-ink-muted">
           <span className="font-semibold text-cc-ink">Started by:</span> {g.trigger.text}
         </p>
@@ -252,8 +275,8 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
         {g.figures.map((f) => (
           <div key={f.label} data-doc-figure={f.label} className="min-w-0 rounded-cc-card border border-cc-line bg-cc-surface px-3 py-2">
             <dt className="cc-text-label">
-              {/* Each figure leads to the section it counts. */}
-              <a href={`#pd-${f.section}`} onClick={(event) => scrollTo(event, `pd-${f.section}`)} className="text-cc-ink-muted underline-offset-2 hover:underline">
+              {/* Each figure leads to the section (or the part of it) it counts. */}
+              <a href={`#pd-${f.anchor ?? f.section}`} onClick={(event) => scrollTo(event, `pd-${f.anchor ?? f.section}`)} className="text-cc-ink-muted underline-offset-2 hover:underline">
                 {f.label}
               </a>
             </dt>
@@ -261,6 +284,26 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
           </div>
         ))}
       </dl>
+
+      {/* ADR-084 (roadmap 3.0.7 A1): the questions a reader comes with, each leading to its answer. */}
+      <nav data-doc-goto="" aria-label={wt('doc.goTo')} className="mt-3">
+        <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-1 cc-text-cell">
+          <span className="font-semibold text-cc-ink">{wt('doc.goTo')}:</span>
+          {g.goTo.map((q, i) => (
+            <React.Fragment key={q.label}>
+              {i > 0 ? <span aria-hidden={true} className="text-cc-ink-muted">·</span> : null}
+              <a
+                href={`#pd-${q.anchor ?? q.section}`}
+                onClick={(event) => scrollTo(event, `pd-${q.anchor ?? q.section}`)}
+                data-doc-goto-item={q.section}
+                className="text-cc-ink underline underline-offset-2"
+              >
+                {q.label}
+              </a>
+            </React.Fragment>
+          ))}
+        </p>
+      </nav>
 
       {g.points.length ? (
         <div className="mt-4">
@@ -270,6 +313,12 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
           </ul>
         </div>
       ) : null}
+
+      {/* ADR-084: purpose and scope fold into the glance, under the risks. */}
+      <div data-doc-scope="" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ScopeList title={wt('doc.covers')} items={g.covers} />
+        <ScopeList title={wt('doc.leaves')} items={g.leaves} />
+      </div>
 
       <div className="mt-4">
         <h4 className="m-0 mb-2 cc-text-h3 text-cc-ink">Main path</h4>
@@ -321,6 +370,11 @@ function StepItem({ step }: { step: PdStep }) {
             ) : null}
             <span className="cc-text-identifier text-cc-ink">{stepName(step)}</span>
             {step.businessName ? <> <CcProvenanceChip value="proposed" note="name" /></> : null}
+            {' '}
+            {/* ADR-084 (roadmap 3.0.7 B2): who acts, from the evidence the code proves; never a guess. */}
+            <span data-doc-actor={step.actor?.who ?? 'not-determined'} title={step.actor?.basis} className="inline-flex align-middle">
+              {step.actor?.who ? <CcTag>{step.actor.who}</CcTag> : <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.whoActs')}: {actorWord(step.actor)}</span>}
+            </span>
             {step.line ? <> — {step.line}</> : null}
             {details.length > 1 ? (
               <>
@@ -371,7 +425,7 @@ const integrationIcon = (kind: string) => INTEGRATION_ICONS.find(([re]) => re.te
 function OpenQuestionRow({ group }: { group: OpenQuestionGroup }) {
   const anchors = openQuestionAnchors(group);
   return (
-    <li data-doc-open-question={group.action} data-doc-open-question-end={group.end} className="min-w-0 border-t border-cc-line py-2 first:border-t-0">
+    <li id={`pd-oq-${group.action}`} data-doc-open-question={group.action} data-doc-open-question-end={group.end} className="min-w-0 scroll-mt-24 border-t border-cc-line py-2 first:border-t-0">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="cc-text-identifier text-cc-ink">{group.title}</span>
         <span className="cc-text-meta font-medium text-cc-ink-muted">{group.count}</span>
@@ -389,7 +443,7 @@ function OpenQuestionRow({ group }: { group: OpenQuestionGroup }) {
   );
 }
 
-/** Section 9: the project's one list, its end states, and where to answer it. */
+/** The open questions section: the project's one list, its end states, and where to answer it. */
 function OpenQuestionsSection({ list, href, requirementsLine }: { list: OpenQuestions | null; href?: string | null; requirementsLine: string | null }) {
   return (
     <>
@@ -418,7 +472,7 @@ function OpenQuestionsSection({ list, href, requirementsLine }: { list: OpenQues
 type RulesFilter = 'all' | 'outside';
 
 /**
- * Section 4's table with the filter that was the drawer's "Rules outside the
+ * The rules section's table with the filter that was the drawer's "Rules outside the
  * process" (roadmap 3.0.7): the rows whose rule decides at no step of the
  * drawn process, and — so nothing the drawer listed is lost — the rules of
  * that kind the table has no row for (a rule no entry point reaches), with the
@@ -462,8 +516,20 @@ function RulesTable({ table, outside }: { table: PdTable; outside: readonly Hand
   );
 }
 
+/** A part of the systems section — its own heading and anchor, so the controls and the integrations can be linked to (ADR-084). */
+function SystemsPart({ id, title, lead, children }: { id: string; title: string; lead: string; children?: React.ReactNode }) {
+  return (
+    <div data-doc-part={id} className="min-w-0 scroll-mt-24 border-t border-cc-line pt-3 first:border-t-0 first:pt-0" id={`pd-${id}`}>
+      <h4 className="m-0 cc-text-h3 text-cc-ink">{title}</h4>
+      <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{lead}</p>
+      {children ? <div className="mt-2 min-w-0">{children}</div> : null}
+    </div>
+  );
+}
+
 export default function ProcessDocumentView({
   document: doc,
+  projectName,
   mapHref,
   summary,
   openQuestions = null,
@@ -471,19 +537,20 @@ export default function ProcessDocumentView({
   rulesOutside = null,
 }: {
   document: ProcessDocument;
-  /** Where the live map stands on this page — the diagram of section 3. */
+  /** The project's name — the title reads "<project> — <PROGRAM>" (ADR-084). */
+  projectName?: string;
+  /** Where the live map stands on this page — the diagram of the process section. */
   mapHref?: string;
   /** Anything the stage adds to the summary card, under the main path (for example the clean-core levels of what it changes). */
   summary?: React.ReactNode;
-  /** The project's one list of open questions (ADR-081) — section 9 and its key figure. */
+  /** The project's one list of open questions (ADR-081) — its section, its key figure, and the rows that stand on one. */
   openQuestions?: OpenQuestions | null;
   /** Where the list is answered (the workspace); absent in the demo. */
   questionsHref?: string | null;
   /** The rules that decide at no step of the drawn process (`ProcessHandbook.rulesOutside`) — the rules table's filter. */
   rulesOutside?: readonly HandbookRuleOutside[] | null;
 }) {
-  const outline = useMemo(() => documentOutline(doc, { openQuestions }), [doc, openQuestions]);
-  const p = doc.purpose;
+  const outline = useMemo(() => documentOutline(doc, { openQuestions, projectName }), [doc, openQuestions, projectName]);
   const t = outline.tables;
   const q = outline.questions;
 
@@ -491,69 +558,73 @@ export default function ProcessDocumentView({
     <div data-process-document="" className="space-y-4 min-w-0">
       <Glance doc={doc} outline={outline} extra={summary} />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SectionCard id="purpose" lead={outline.leads.purpose}>
-          {p.proposal ? (
-            <p data-doc-proposal="" className="m-0 mb-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-cell text-cc-ink">
-              <CcProvenanceChip value="proposed" /> {p.proposal.text} <Anchors anchors={p.proposal.anchors} max={2} />
-            </p>
-          ) : null}
-          <p className="m-0 mb-3 cc-text-cell text-cc-ink">
-            {p.users.text} <Tech>{p.users.detail}</Tech> <Anchors anchors={p.users.anchors} max={2} />
-          </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ScopeList title="In scope" items={p.inScope} />
-            <ScopeList title="Outside this code" items={p.outOfScope} />
-          </div>
-        </SectionCard>
-
-        <SectionCard id="trigger" lead={outline.leads.trigger}>
-          {t.inputs || t.data ? (
-            <div className="flex flex-col gap-1">
-              {t.inputs ? (
-                <CcDisclosure title={t.inputs.caption} count={t.inputs.rows.length} summary={t.inputs.rows.slice(0, 3).map((r) => r.cells[0]).join(' · ')} density="compact">
-                  <OutlineTable table={{ ...t.inputs, first: t.inputs.rows.length }} />
-                </CcDisclosure>
-              ) : null}
-              {t.data ? (
-                <CcDisclosure title={t.data.caption} count={t.data.rows.length} summary={t.data.rows.slice(0, 3).map((r) => r.cells[0]).join(' · ')} density="compact">
-                  <OutlineTable table={{ ...t.data, first: t.data.rows.length }} />
-                </CcDisclosure>
-              ) : null}
+      <SectionCard id="overview" lead={outline.leads.overview}>
+        {/* ADR-084: how a run starts opens the process — the start, the selection screen, the input it does not use. */}
+        <div data-doc-run-starts="" id="pd-run-starts" className="mb-4 min-w-0">
+          <h4 className="m-0 cc-text-h3 text-cc-ink">{wt('doc.runStarts')}</h4>
+          <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+            {doc.trigger.start.map((s, i) => (
+              <li key={i} className="min-w-0 cc-text-cell text-cc-ink">
+                {s.text} <Anchors anchors={s.anchors} max={2} />
+              </li>
+            ))}
+          </ul>
+          {t.inputs ? (
+            <div className="mt-2">
+              <CcDisclosure title={t.inputs.caption} count={t.inputs.rows.length} summary={t.inputs.rows.slice(0, 3).map((r) => r.cells[0]).join(' · ')} density="compact">
+                <OutlineTable table={{ ...t.inputs, first: t.inputs.rows.length }} />
+              </CcDisclosure>
             </div>
           ) : null}
-        </SectionCard>
-      </div>
+          {outline.inputUse.length ? (
+            <div data-doc-input-use={outline.inputUse.length} className="mt-2">
+              <p className="m-0 cc-text-label text-cc-ink-muted">{wt('doc.inputUnused')}</p>
+              <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+                {outline.inputUse.map((s, i) => (
+                  <li key={i} className="flex min-w-0 items-start gap-2 cc-text-cell text-cc-ink">
+                    <TriangleAlert size={14} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-warning" />
+                    <span className="min-w-0">
+                      {s.text}{' '}
+                      <span className="inline-flex flex-wrap items-center gap-1 align-middle"><Tech>{s.detail}</Tech><Anchors anchors={s.anchors} max={2} /></span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
 
-      <SectionCard id="overview" lead={outline.leads.overview}>
-        {mapHref ? <p className="m-0 mb-2 cc-text-cell"><a href={mapHref} className="text-cc-ink underline">Open the map</a></p> : null}
-        <ol data-doc-steps="" className="relative m-0 list-none p-0 before:absolute before:bottom-4 before:left-3 before:top-2 before:w-px before:bg-cc-line">
-          {doc.overview.path.map((entry) =>
-            entry.kind === 'gate' && entry.decisionTable ? (
-              <li key={entry.id} data-doc-rule-task={entry.decisionTable.id} className="relative flex min-w-0 items-start gap-3 pb-2">
-                <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border border-cc-ink bg-cc-surface">
-                  <ListChecks size={14} className="text-cc-ink" />
-                </span>
-                <p className="m-0 min-w-0 cc-text-cell text-cc-ink-muted">
-                  <span className="font-semibold text-cc-ink">{gateLine(entry)}</span>
-                  {entry.anchor ? <> <Anchors anchors={[entry.anchor]} /></> : null}
-                </p>
-              </li>
-            ) : entry.kind === 'gate' ? (
-              <li key={entry.id} data-doc-gate={entry.choice ? 'choice' : ''} className="relative flex min-w-0 items-start gap-3 pb-2">
-                <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center">
-                  <span className="block h-3 w-3 rotate-45 border border-cc-ink bg-cc-surface" />
-                </span>
-                <p className="m-0 min-w-0 cc-text-cell text-cc-ink-muted">
-                  <span className="font-semibold text-cc-ink">Decision: {entry.label}</span> — {gateLine(entry)}
-                  {entry.anchor ? <> <Anchors anchors={[entry.anchor]} /></> : null}
-                </p>
-              </li>
-            ) : (
-              <StepItem key={entry.id} step={entry} />
-            ),
-          )}
-        </ol>
+        <div id="pd-steps" className="scroll-mt-24">
+          <h4 className="m-0 mb-2 cc-text-h3 text-cc-ink">{t.steps.caption}</h4>
+          {mapHref ? <p className="m-0 mb-2 cc-text-cell"><a href={mapHref} className="text-cc-ink underline">Open the map</a></p> : null}
+          <ol data-doc-steps="" className="relative m-0 list-none p-0 before:absolute before:bottom-4 before:left-3 before:top-2 before:w-px before:bg-cc-line">
+            {doc.overview.path.map((entry) =>
+              entry.kind === 'gate' && entry.decisionTable ? (
+                <li key={entry.id} data-doc-rule-task={entry.decisionTable.id} className="relative flex min-w-0 items-start gap-3 pb-2">
+                  <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border border-cc-ink bg-cc-surface">
+                    <ListChecks size={14} className="text-cc-ink" />
+                  </span>
+                  <p className="m-0 min-w-0 cc-text-cell text-cc-ink-muted">
+                    <span className="font-semibold text-cc-ink">{gateLine(entry)}</span>
+                    {entry.anchor ? <> <Anchors anchors={[entry.anchor]} /></> : null}
+                  </p>
+                </li>
+              ) : entry.kind === 'gate' ? (
+                <li key={entry.id} data-doc-gate={entry.choice ? 'choice' : ''} className="relative flex min-w-0 items-start gap-3 pb-2">
+                  <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center">
+                    <span className="block h-3 w-3 rotate-45 border border-cc-ink bg-cc-surface" />
+                  </span>
+                  <p className="m-0 min-w-0 cc-text-cell text-cc-ink-muted">
+                    <span className="font-semibold text-cc-ink">Decision: {entry.label}</span> — {gateLine(entry)}
+                    {entry.anchor ? <> <Anchors anchors={[entry.anchor]} /></> : null}
+                  </p>
+                </li>
+              ) : (
+                <StepItem key={entry.id} step={entry} />
+              ),
+            )}
+          </ol>
+        </div>
       </SectionCard>
 
       <SectionCard id="rules" lead={outline.leads.rules}>
@@ -569,45 +640,65 @@ export default function ProcessDocumentView({
         {t.exceptions ? <OutlineTable table={t.exceptions} /> : null}
       </SectionCard>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SectionCard id="outputs" lead={outline.leads.outputs}>
-          {t.outputs ? <OutlineTable table={t.outputs} /> : null}
-        </SectionCard>
+      <SectionCard id="outputs" lead={outline.leads.outputs}>
+        {t.outputs ? <OutlineTable table={t.outputs} /> : null}
+      </SectionCard>
 
-        <SectionCard id="integrations" lead={outline.leads.integrations}>
-          {t.integrations ? (
-            <ul data-doc-integrations="" className="m-0 flex list-none flex-col gap-2 p-0">
-              {t.integrations.rows.map((row, i) => {
-                const Icon = integrationIcon(row.cells[1]);
-                return (
+      {/* ADR-084: the data it reads, the integrations and the controls — one section, three parts. */}
+      <SectionCard id="systems" lead={outline.leads.systems}>
+        <div className="flex min-w-0 flex-col gap-3">
+          <SystemsPart id="data" title={wt('doc.dataReads')} lead={outline.partLeads.data}>
+            {t.data || t.derived ? (
+              <div className="flex flex-col gap-1">
+                {t.data ? (
+                  <CcDisclosure title={t.data.caption} count={t.data.rows.length} summary={t.data.rows.slice(0, 3).map((r) => r.cells[0]).join(' · ')} density="compact">
+                    <OutlineTable table={{ ...t.data, first: t.data.rows.length }} />
+                  </CcDisclosure>
+                ) : null}
+                {t.derived ? (
+                  <CcDisclosure title={t.derived.caption} count={t.derived.rows.length} summary={t.derived.rows.slice(0, 3).map((r) => r.cells[0]).join(' · ')} density="compact">
+                    <OutlineTable table={{ ...t.derived, first: t.derived.rows.length }} />
+                  </CcDisclosure>
+                ) : null}
+              </div>
+            ) : null}
+          </SystemsPart>
+
+          <SystemsPart id="integrations" title={wt('doc.integrationsTitle')} lead={outline.partLeads.integrations}>
+            {t.integrations ? (
+              <ul data-doc-integrations="" className="m-0 flex list-none flex-col gap-2 p-0">
+                {t.integrations.rows.map((row, i) => {
+                  const Icon = integrationIcon(row.cells[1]);
+                  return (
+                    <li key={i} className="flex min-w-0 items-start gap-2">
+                      <Icon size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+                      <p className="m-0 min-w-0 cc-text-cell text-cc-ink">
+                        {row.cells[0]} <span className="cc-text-meta font-medium text-cc-ink-muted">· {row.cells[1]}</span>{' '}
+                        <span className="inline-flex flex-wrap items-center gap-1 align-middle"><Source row={row} /></span>
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </SystemsPart>
+
+          <SystemsPart id="controls" title={wt('doc.controlsTitle')} lead={outline.partLeads.controls}>
+            {t.controls ? (
+              <ul data-doc-controls="" className="m-0 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2">
+                {t.controls.rows.map((row, i) => (
                   <li key={i} className="flex min-w-0 items-start gap-2">
-                    <Icon size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
-                    <p className="m-0 min-w-0 cc-text-cell text-cc-ink">
-                      {row.cells[0]} <span className="cc-text-meta font-medium text-cc-ink-muted">· {row.cells[1]}</span>{' '}
-                      <span className="inline-flex flex-wrap items-center gap-1 align-middle"><Source row={row} /></span>
-                    </p>
+                    <CheckCircle2 size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+                    <div className="min-w-0">
+                      <p className="m-0 cc-text-cell text-cc-ink"><span className="font-semibold">{row.cells[0]}.</span> {row.cells[1]}</p>
+                      <Source row={row} />
+                    </div>
                   </li>
-                );
-              })}
-            </ul>
-          ) : null}
-        </SectionCard>
-      </div>
-
-      <SectionCard id="controls" lead={outline.leads.controls}>
-        {t.controls ? (
-          <ul data-doc-controls="" className="m-0 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2">
-            {t.controls.rows.map((row, i) => (
-              <li key={i} className="flex min-w-0 items-start gap-2">
-                <CheckCircle2 size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
-                <div className="min-w-0">
-                  <p className="m-0 cc-text-cell text-cc-ink"><span className="font-semibold">{row.cells[0]}.</span> {row.cells[1]}</p>
-                  <Source row={row} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+                ))}
+              </ul>
+            ) : null}
+          </SystemsPart>
+        </div>
       </SectionCard>
 
       <SectionCard id="questions" lead={outline.leads.questions}>

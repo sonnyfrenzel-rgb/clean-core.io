@@ -72,7 +72,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   },
   documentation: {
     lines: [
-      'When the stage opens, the analysed source is written up as a process description a successor can read — purpose and scope, trigger and inputs, the process with its map, decision points and business rules, exceptions, outputs and open questions — every step with its line, the technical trace as an appendix.',
+      'When the stage opens, the analysed source is written up as a process description a successor can read — what it covers, how a run starts, the process with its map and who acts at each step, decision points and business rules, exceptions, what it changes, systems and data, and open questions — every step with its line, details and evidence as an appendix.',
       'It exports to Confluence, Markdown and Word; a business layer with SOPs and a RACI matrix is a model draft, written only when you ask for it.',
     ],
     worker: 'engine',

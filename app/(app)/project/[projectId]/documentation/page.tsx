@@ -541,7 +541,7 @@ Structure the JSON exactly like this:
   const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
 
   /**
-   * The project's one list of open questions (ADR-081) — section 9 of the
+   * The project's one list of open questions (ADR-081) — the open questions section of the
    * description and of every export (roadmap 3.0.7, item 6). Read here, the
    * same hook every view reads; answered in the workspace.
    */
@@ -1105,6 +1105,7 @@ Structure the JSON exactly like this:
     processDocument.document ? (
       <ProcessDocumentView
         document={processDocument.document}
+        projectName={project?.name}
         summary={<DirectWriteLevels callouts={callouts} />}
         openQuestions={openQuestionsOfProject}
         questionsHref={questionsHref}
@@ -1145,7 +1146,7 @@ Structure the JSON exactly like this:
    * proposes on top of the description: the SOP and RACI (ADR-068, written
    * once when the stage opens, decision 03.10.2026) and the business sentences
    * over the engine's (roadmap 17.10, on request), with one cost line. RACI
-   * stays a proposal; the controls are the code reading's, section 8.
+   * stays a proposal; the controls are the code reading's, in the systems section.
    */
   const businessPart = isGeneratingBusinessDoc ? (
     <div className="flex flex-col gap-2">

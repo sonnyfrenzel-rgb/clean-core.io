@@ -23,6 +23,7 @@ import {
   EMPTY_SECTION,
   MODEL_PROPOSAL_LABEL,
   linesLabel,
+  sectionName,
   sectionTitle,
   stepRef,
   type PdText,
@@ -38,6 +39,7 @@ import {
   figureText,
   longTables,
   moreRowsLine,
+  questionLinkText,
   documentOutline,
   gateSentence,
   groupTitle,
@@ -53,6 +55,7 @@ import { processOverviewSvg } from '@/lib/process-overview-svg';
 import { provenance } from '@/lib/provenance';
 import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
+import { wt } from '@/lib/workspace-messages';
 import {
   RACI_LETTERS,
   lettersOf,
@@ -80,7 +83,7 @@ export const STALE_EXPORT_NOTE =
 export interface ConfluenceExportOptions {
   /** True when the documentation phase is `stale` in `workflowSteps(project)`. */
   stale?: boolean;
-  /** The project's open questions (ADR-081) for section 9 — the stage passes the list it shows. */
+  /** The project's open questions (ADR-081) for the open questions section — the stage passes the list it shows. */
   openQuestions?: OpenQuestions | null;
   /**
    * The steps the business layer is keyed to, named as the stage names them.
@@ -93,12 +96,13 @@ export interface ConfluenceExportOptions {
 
 /**
  * Where the controls of a process stand (roadmap 3.0.7, "Documentation lean"):
- * section 8, read from the code. The model no longer proposes control
- * objectives, verification methods or KPI targets — inventions 3.0.5 had
- * already taken out of the description.
+ * the systems section, read from the code — named by its key, never by its
+ * number (ADR-084). The model no longer proposes control objectives,
+ * verification methods or KPI targets — inventions 3.0.5 had already taken out
+ * of the description.
  */
 export const CONTROLS_FROM_THE_CODE =
-  'Controls are read from the code: section 8 of the process description. The model proposes no controls and no KPI targets.';
+  `Controls are read from the code: “${sectionName('systems')}” in the process description. The model proposes no controls and no KPI targets.`;
 
 /** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
 function staleNoteHtml(options: ConfluenceExportOptions | undefined): string {
@@ -132,10 +136,12 @@ const PROCESS_DOC_CSS = `<style>
 /**
  * The Confluence page of the process description (owner 03.10.2026, tightened
  * 04.10.2026: "far too long … much smarter-looking, to the point") — the same
- * outline the stage renders (`lib/process-document-outline.ts`): a cover with
+ * outline the stage renders (`lib/process-document-outline.ts`): the title
+ * (project — program) with "Process description" under it, a cover with
  * program, source, version, date and status; *At a glance* with what it does,
- * who starts it, six key figures, the rules and risks to know and the main
- * path; then sections 1 to 9, each a one-line lead and a compact table whose
+ * who starts it, six key figures, the reader questions as links to their
+ * sections, the rules and risks to know, what it covers and leaves out and the
+ * main path; then the sections (ADR-084), each a one-line lead and a compact table whose
  * last column carries the program's names and lines; then the business layer
  * when a model wrote one, marked as a proposal; and the appendix last, on a
  * page of its own in print. Nothing is folded: a pasted page has no disclosure
@@ -163,44 +169,57 @@ export function buildEngineConfluenceHtml(
       .map((row) => `<tr>${row.map((cell, i) => `<td${muted.includes(i) ? ' class="src"' : ''}>${esc(cell)}</td>`).join('')}</tr>`)
       .join('')}</tbody></table>`;
   const tableOf = (t: PdTable | null, whole = false) => (t
-    ? `${table([...t.head, SOURCE_COLUMN], (whole ? t.rows : t.rows.slice(0, t.first)).map((r) => [...r.cells, sourceText(r)]), [t.head.length])}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
+    ? `<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
+      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c) => `<td>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
+      .join('')}</tbody></table>${t.note ? `<p class="meta">${esc(t.note)}</p>` : ''}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
     : '');
   const empty = (key: keyof typeof EMPTY_SECTION) => `<p class="muted">${esc(EMPTY_SECTION[key])}</p>`;
-  const h2 = (key: ProcessDocumentSection) => `<h2 data-doc-section="${esc(key)}">${esc(sectionTitle(key))}</h2>`;
+  // Every section carries its key as the anchor (`#pd-<key>`), so the "Go to" line links to it (ADR-084).
+  const h2 = (key: ProcessDocumentSection) => `<h2 id="pd-${esc(key)}" data-doc-section="${esc(key)}">${esc(sectionTitle(key))}</h2>`;
   const lead = (key: PdSectionKey) => `<p class="lead">${esc(o.leads[key])}</p>`;
-  const p = document.purpose;
+  const g = o.glance;
 
   const docCSS = PROCESS_DOC_CSS;
 
   const coverSection = `<div class="header" data-doc-cover="">
     <h1>${esc(o.title)}</h1>
+    <p class="lead" data-doc-subtitle="">${esc(o.subtitle)}</p>
     <table class="cover"><tbody>${o.cover.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table>
     <p class="muted"><span class="tag tone-information">${esc('Reconstructed')}</span> ${esc(o.note)}</p>
   </div>`;
 
+  // ADR-084: purpose and scope stand in the glance — what it covers and what it leaves out, under the risks.
+  const scopeSection = table(['Scope', 'What', SOURCE_COLUMN], [
+    ...g.covers.map((s) => [wt('doc.covers'), s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+    ...g.leaves.map((s) => [wt('doc.leaves'), s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+  ], [2]);
+  const goToSection = `<p data-doc-goto=""><strong>${esc(wt('doc.goTo'))}:</strong> ${g.goTo
+    .map((q) => `<a href="#pd-${esc(q.anchor ?? q.section)}">${esc(q.label)}</a>`)
+    .join(' · ')}</p>`;
+
   const glanceSection = `<h2 data-glance-export="">${esc('At a glance')}</h2>
     <div class="summary-box">
-      ${o.glance.summary.map(para).join('')}
-      <p><strong>${esc('Started by:')}</strong> ${esc(o.glance.trigger.text)}</p>
+      ${g.summary.map(para).join('')}
+      ${g.proposal ? proposal(g.proposal.text, g.proposal.anchors, 'Worded by the analysis model from the same source; the engine reading is the evidence.') : ''}
+      <p><strong>${esc('Started by:')}</strong> ${esc(g.trigger.text)}</p>
     </div>
-    <div class="figures">${o.glance.figures.map((f) => `<div class="figure"><p class="value">${esc(figureText(f))}</p><p class="label">${esc(f.label)}</p></div>`).join('')}</div>
-    ${o.glance.points.length ? `<h3>${esc('Rules and risks to know')}</h3><ul>${o.glance.points.map((pt) => `<li>${pt.ref ? `<strong>${esc(pt.ref)}</strong> ` : ''}${esc(pt.text)} <small>${esc([pt.detail, linesLabel(pt.anchors)].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>` : ''}
-    <p class="meta">${esc(`Main path: ${o.glance.path}`)}</p>`;
+    <div class="figures">${g.figures.map((f) => `<div class="figure"><p class="value">${esc(figureText(f))}</p><p class="label">${esc(f.label)}</p></div>`).join('')}</div>
+    ${goToSection}
+    ${g.points.length ? `<h3>${esc('Rules and risks to know')}</h3><ul>${g.points.map((pt) => `<li>${pt.ref ? `<strong>${esc(pt.ref)}</strong> ` : ''}${esc(pt.text)} <small>${esc([pt.detail, linesLabel(pt.anchors)].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>` : ''}
+    ${scopeSection}
+    <p class="meta">${esc(`Main path: ${g.path}`)}</p>`;
 
-  const purposeSection = `${h2('purpose')}${lead('purpose')}
-    ${p.proposal ? proposal(p.proposal.text, p.proposal.anchors, 'Worded by the analysis model from the same source; the engine reading below is the evidence.') : ''}
-    <p>${esc(p.users.text)} <small>${esc(sourceText({ tech: p.users.detail ?? null, anchors: p.users.anchors }))}</small></p>
-    ${table(['Scope', 'What', SOURCE_COLUMN], [
-      ...p.inScope.map((s) => ['In scope', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
-      ...p.outOfScope.map((s) => ['Outside this code', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
-    ], [2])}`;
-
-  const triggerSection = `${h2('trigger')}${lead('trigger')}
-    ${o.tables.inputs ? `<h3>${esc(o.tables.inputs.caption)}</h3>${tableOf(o.tables.inputs)}` : ''}
-    ${o.tables.data ? `<h3>${esc(o.tables.data.caption)}</h3>${tableOf(o.tables.data)}` : ''}`;
+  // How a run starts opens the process section (ADR-084): the start, the selection screen, the input it does not use.
+  const startItem = (t: PdText) => `<li>${esc(t.text)} <small>${esc(sourceText({ tech: t.detail ?? null, anchors: t.anchors }))}</small></li>`;
+  const runStartsSection = `<h3 id="pd-run-starts">${esc(wt('doc.runStarts'))}</h3>
+    <ul>${document.trigger.start.map(startItem).join('')}</ul>
+    ${o.tables.inputs ? tableOf(o.tables.inputs) : ''}
+    ${o.inputUse.length ? `<p><strong>${esc(wt('doc.inputUnused'))}</strong></p><ul>${o.inputUse.map(startItem).join('')}</ul>` : ''}`;
 
   const overviewSection = `${h2('overview')}${lead('overview')}
+    ${runStartsSection}
     <div class="card">${processOverviewSvg(document.overview.path, document.program)}</div>
+    <h3 id="pd-steps">${esc(o.tables.steps.caption)}</h3>
     ${tableOf(o.tables.steps)}`;
 
   // Roadmap 3.0.7: each classification that only sets one field, as one business rule task with its table.
@@ -210,15 +229,18 @@ export function buildEngineConfluenceHtml(
   const rulesSection = `${h2('rules')}${lead('rules')}${o.tables.rules ? tableOf(o.tables.rules) : o.decisionTables.length ? '' : empty('rules')}${decisionTablesSection}`;
   const exceptionsSection = `${h2('exceptions')}${lead('exceptions')}${o.tables.exceptions ? tableOf(o.tables.exceptions) : empty('exceptions')}`;
   const outputsSection = `${h2('outputs')}${lead('outputs')}${o.tables.outputs ? tableOf(o.tables.outputs) : empty('outputs')}`;
-  const integrationsSection = `${h2('integrations')}${lead('integrations')}${o.tables.integrations ? tableOf(o.tables.integrations) : empty('integrations')}`;
-  const controlsSection = `${h2('controls')}${lead('controls')}${o.tables.controls ? tableOf(o.tables.controls) : empty('controls')}`;
-  // Section 9 is the project's one list of open questions (ADR-081), with the
-  // end state of every group; the engine's questions about the requirements
-  // stand in appendix A.4.
+  // ADR-084: the data it reads, the integrations and the controls are one section, each part with its own anchor.
+  const systemsSection = `${h2('systems')}${lead('systems')}
+    <h3 id="pd-data">${esc(wt('doc.dataReads'))}</h3><p class="lead">${esc(o.partLeads.data)}</p>${o.tables.data ? tableOf(o.tables.data) : ''}
+    ${o.tables.derived ? `<h4>${esc(o.tables.derived.caption)}</h4>${tableOf(o.tables.derived)}` : ''}
+    <h3 id="pd-integrations">${esc(wt('doc.integrationsTitle'))}</h3><p class="lead">${esc(o.partLeads.integrations)}</p>${o.tables.integrations ? tableOf(o.tables.integrations) : ''}
+    <h3 id="pd-controls">${esc(wt('doc.controlsTitle'))}</h3><p class="lead">${esc(o.partLeads.controls)}</p>${o.tables.controls ? tableOf(o.tables.controls) : ''}`;
+  // The open questions are the project's one list (ADR-081), with the end
+  // state of every group; the engine's questions about the requirements stand
+  // in appendix A.4.
   const questionsSection = `${h2('questions')}${lead('questions')}${tableOf(o.questions.table, true)}${o.questions.list?.limits
     ? `<p class="meta">${esc(o.questions.list.limits)}</p>`
     : ''}${o.questions.requirementsLine ? `<p>${esc(o.questions.requirementsLine)}</p>` : ''}`;
-
   // The business layer the stage shows: written by a model from the process,
   // marked as a proposal, escaped like the rest. A field the model left empty
   // reads "Not determined", never a default (ADR-068). The matrix is the
@@ -272,14 +294,11 @@ export function buildEngineConfluenceHtml(
     ${staleSection}
     ${coverSection}
     ${glanceSection}
-    ${purposeSection}
-    ${triggerSection}
     ${overviewSection}
     ${rulesSection}
     ${exceptionsSection}
     ${outputsSection}
-    ${integrationsSection}
-    ${controlsSection}
+    ${systemsSection}
     ${questionsSection}
     ${businessSection}
     ${appendixSection}

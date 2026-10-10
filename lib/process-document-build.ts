@@ -2,10 +2,14 @@ import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import { assessCoverage } from '@/lib/abap/coverage';
-import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
+import { buildProcessSkeleton, type LaneEvidence, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
+import { readDataScope, type DataScopeReport } from '@/lib/abap/data-scope';
+import { readInputUse, type InputIssue } from '@/lib/abap/input-use';
+import { readBatchInput, writesOf, type BatchInputCall } from '@/lib/abap/batch-input';
+import { tableTerm, termFor } from '@/lib/abap/business-glossary';
 import { decisionTableViews } from '@/lib/decision-tables';
 import { anchorNarrative } from '@/lib/abap/narrative-anchors';
-import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
+import { TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { callWord, plainOf, plainStepLine, readerQuestions, tablesPhrase, tableWord, thirdPerson, type RawQuestion } from '@/lib/process-document-words';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
@@ -26,9 +30,11 @@ import {
   isBusinessStatement,
   linesLabel,
   sentenceKey,
+  type PdActor,
   type PdAppendix,
   type PdControl,
   type PdData,
+  type PdDerived,
   type PdEffect,
   type PdException,
   type PdGate,
@@ -359,6 +365,66 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     });
   }
 
+  /* ------------------------------------------------ who acts (ADR-084) */
+
+  // The run lane (2.16, named for its role since 3.0.7: `User` where a person
+  // is at the keyboard, `System` where nobody is) and every statement that
+  // proved it, plus the background and update-task evidence. A step's actor is
+  // read from the evidence inside its own code — its elements, the routines
+  // they run and the routines those perform — and from the run lane only where
+  // the run is proven; otherwise it is not determined.
+  const runLane = skeleton.lanes[0] ?? null;
+  const runProven = !!runLane && (runLane.kind === 'human' || runLane.kind === 'system');
+  const actorEvidence: LaneEvidence[] = skeleton.laneEvidence
+    .filter((e) => (e.kind === 'human' || e.kind === 'system') && reachedLine(e.anchor.lineStart));
+  const bodyOf = new Map(routines.map((r) => [r.name, r]));
+  const rangesOf = (ids: readonly string[]): DocAnchor[] => {
+    const out: DocAnchor[] = [];
+    const queue: string[] = [];
+    for (const x of ids) {
+      const e = byId.get(x);
+      if (!e) continue;
+      if (e.anchor) out.push(copy(e.anchor));
+      if (bodyOf.has(e.technicalName.toUpperCase())) queue.push(e.technicalName.toUpperCase());
+    }
+    const seen = new Set<string>();
+    while (queue.length) {
+      const name = queue.shift() as string;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      const r = bodyOf.get(name)!;
+      out.push(anchor(r.lineStart, r.lineEnd));
+      for (const edge of calls.edges) if (edge.from === name && bodyOf.has(edge.to)) queue.push(edge.to);
+    }
+    return out;
+  };
+  const evidenceWords = (list: readonly LaneEvidence[]) =>
+    list.slice(0, 2).map((e) => `${e.token} (L${e.anchor.lineStart})`).join(', ') + (list.length > 2 ? ` and ${list.length - 2} more` : '');
+  const evidenceAnchors = (list: readonly LaneEvidence[]) => distinctAnchors(list.map((e) => anchor(e.anchor.lineStart, e.anchor.lineEnd)));
+  const runActor = (): PdActor => (runProven && runLane
+    ? {
+        who: 'System',
+        basis: `No dialogue in its code; the run is a ${runLane.kind === 'human' ? 'dialogue' : 'system'} run (lane ${runLane.name}, L${runLane.anchor.lineStart}).`,
+        anchors: [anchor(runLane.anchor.lineStart, runLane.anchor.lineEnd)],
+      }
+    : {
+        who: null,
+        basis: 'The code proves no dialogue, background task or job for the run, and none in this step.',
+        anchors: [],
+      });
+  const actorOf = (ids: readonly string[], chosen: { when: string; at: DocAnchor | null } | null): PdActor => {
+    if (chosen) return { who: 'User', basis: `The user chooses it: ${chosen.when}.`, anchors: chosen.at ? [chosen.at] : [] };
+    const ranges = rangesOf(ids);
+    const inside = actorEvidence.filter((ev) => ranges.some((r) => r.lineStart <= ev.anchor.lineStart && ev.anchor.lineStart <= r.lineEnd));
+    const human = inside.filter((e) => e.kind === 'human');
+    if (human.length) return { who: 'User', basis: `A dialogue in its code: ${evidenceWords(human)}.`, anchors: evidenceAnchors(human) };
+    const job = inside.filter((e) => e.kind === 'system' && e.token !== 'UPDATE TASK');
+    if (job.length) return { who: 'Background job', basis: `Handed to a background process: ${evidenceWords(job)}.`, anchors: evidenceAnchors(job) };
+    const update = inside.filter((e) => e.kind === 'system');
+    if (update.length) return { who: 'System', basis: `Saved through the update task: ${evidenceWords(update)}.`, anchors: evidenceAnchors(update) };
+    return runActor();
+  };
+
   const path: PdPathEntry[] = [];
   // `number` is the step's own, unique, in path order; `ref` is what a reader
   // sees — the same number while the path is a sequence, `5a`, `5b`, `5c` for
@@ -392,6 +458,9 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
         }),
         ...(choice ? { choice: true as const } : {}),
         ...(table ? { decisionTable: { id: table.id, field: table.field, selector: table.selector, rows: table.rows.length } } : {}),
+        actor: choice
+          ? { who: 'User', basis: 'The user chooses at this point.', anchors: element.anchor ? [copy(element.anchor)] : [] }
+          : runProven ? { ...runActor(), basis: 'The program decides by the condition in the code.' } : runActor(),
       };
       path.push(gate);
       continue;
@@ -399,11 +468,13 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     number += 1;
     const alternative = choiceOf.get(id) ?? null;
     let ref: string;
+    let firstOfArm = false;
     if (alternative) {
       if (!slotOf.has(alternative.gateId)) slotOf.set(alternative.gateId, ++place);
       const key = `${alternative.gateId}|${alternative.arm}`;
       const nth = (armSteps.get(key) ?? 0) + 1;
       armSteps.set(key, nth);
+      firstOfArm = nth === 1;
       ref = `${slotOf.get(alternative.gateId)}${armLetter(alternative.arm)}${nth > 1 ? `.${nth}` : ''}`;
     } else {
       ref = String(++place);
@@ -484,6 +555,10 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       proposal,
       subSteps: shown,
       moreSubSteps: Math.max(0, ids.length - 1 - shown.length - ids.slice(1).filter((x) => { const e = byId.get(x); return !e || isEvent(e); }).length),
+      // The first step of an alternative is what the user chose; a later step of the arm is read from its own code.
+      actor: actorOf(ids, alternative && firstOfArm
+        ? { when: alternative.when, at: (() => { const g = byId.get(alternative.gateId); return g?.anchor ? copy(g.anchor) : null; })() }
+        : null),
     };
     path.push(step);
   }
@@ -492,17 +567,33 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
 
   /* -------------------------------------------------------- 2. trigger */
 
+  // Roadmap 3.0.7 (ZMM review): what the selection screen fills in before
+  // anybody types — `DEFAULT` on the declaration, and the presets written in
+  // INITIALIZATION (`s_bedat-low = sy-datum - 365`).
+  const scope: DataScopeReport = (() => {
+    try {
+      return readDataScope(source);
+    } catch {
+      return { reads: [], derived: [], defaults: [] };
+    }
+  })();
+  const presetOf = (name: string): string | null => {
+    const set = scope.defaults.filter((d) => d.from === 'initialization' && d.name.toUpperCase() === name.toUpperCase() && d.value);
+    return set.length ? set.map((d) => `${d.part === 'value' ? '' : `${d.part} `}${d.value}`).join(', ') : null;
+  };
   const inputs: PdInput[] = selectionInputs(source).map((field) => {
     const text = lines[field.line - 1] ?? '';
     const statementTail = lines.slice(field.line - 1, field.line + 1).join(' ');
     const own = new RegExp(`${field.name.replace(/[^\w/]/g, '')}\\b([^,.]*)`, 'i').exec(statementTail)?.[1] ?? text;
     const dflt = /\bDEFAULT\s+('(?:[^']|'')*'|[\w-]+)/i.exec(own)?.[1] ?? null;
+    const declared = dflt ? dflt.replace(/^'|'$/g, '') : null;
+    const preset = presetOf(field.name);
     return {
       name: field.name,
       meaning: field.plain,
       kind: field.kind === 'range' ? 'Range' : field.kind === 'switch' ? 'Checkbox' : 'Parameter',
       required: /\bOBLIGATORY\b/i.test(own),
-      defaultValue: dflt ? dflt.replace(/^'|'$/g, '') : null,
+      defaultValue: preset ? `${declared ? `${declared}; ` : ''}${preset} (set when the program starts)` : declared,
       anchor: anchor(field.line),
     };
   });
@@ -554,7 +645,65 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       anchors: [anchor(s.line)],
     });
   }
+  // Which rows each read takes (`lib/abap/data-scope.ts`): the `WHERE` of
+  // every reached read of the table, verbatim, the fixed filters first.
+  const scopeOf = new Map<string, string[]>();
+  for (const read of scope.reads) {
+    if (!reachedLine(read.line)) continue;
+    const words = cap(read.sentence.replace(/^.*? is read /, '').replace(/\.$/, ''));
+    for (const t of read.tables) {
+      const list = scopeOf.get(t) ?? [];
+      if (!list.includes(words)) list.push(words);
+      scopeOf.set(t, list);
+    }
+  }
+  for (const d of dataMap.values()) {
+    const list = scopeOf.get(d.name.toUpperCase());
+    if (list?.length) d.scope = list.length > 2 ? `${list.slice(0, 2).join(' / ')} / and ${list.length - 2} more reads` : list.join(' / ');
+  }
   const data = [...dataMap.values()];
+
+  // Values the program computes rather than reads — `offen = menge - wemng`,
+  // and running totals (`x = x + y`) — reached code only.
+  const derived: PdDerived[] = scope.derived
+    .filter((d) => reachedLine(d.line))
+    .map((d) => ({ target: d.target, expression: d.expression, accumulates: d.accumulates, where: d.container, anchors: [anchor(d.line)] }));
+
+  // Input that is asked for and then not used (`lib/abap/input-use.ts`), in
+  // plain words; the data object and the dialogue stand in the detail.
+  const issues: InputIssue[] = (() => {
+    try {
+      return readInputUse(source).filter((i) => reachedLine(i.line));
+    } catch {
+      return [];
+    }
+  })();
+  const inputUse: PdText[] = issues.map((i) => {
+    const input = inputs.find((x) => x.name.toUpperCase() === i.name.toUpperCase());
+    if (i.kind === 'selection-never-read') {
+      return {
+        text: input?.meaning
+          ? `The input “${input.meaning}” is never read: what the user enters there changes nothing.`
+          : 'A selection-screen input is never read: what the user enters there changes nothing.',
+        anchors: [anchor(i.line)],
+        detail: i.name.toUpperCase(),
+      };
+    }
+    if (i.kind === 'dialog-output-ignored') {
+      return {
+        text: i.overwrittenAt
+          ? 'The answer to a dialogue is overwritten before anything reads it: the user’s answer is not used.'
+          : 'The answer to a dialogue is never read: the user’s answer is not used.',
+        anchors: distinctAnchors([anchor(i.line), i.overwrittenAt ? anchor(i.overwrittenAt) : null]),
+        detail: [i.module, i.parameter, i.name].filter(Boolean).join(' · '),
+      };
+    }
+    return {
+      text: 'A dialogue is handed a table of another type than it expects: it does not show or return what the program means.',
+      anchors: [anchor(i.line)],
+      detail: [i.module, i.parameter, i.name].filter(Boolean).join(' · '),
+    };
+  });
 
   /* -------------------------------------------------- 6. outputs, effects */
 
@@ -601,6 +750,58 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       anchors: [copy(reg.anchor)],
       full: `Registers ${reg.module ?? 'a module named at run time'} for the update task; it runs when the changes are saved.`,
     });
+  }
+
+  // Roadmap 3.0.7 (ZMM review): what a batch input changes, field by field
+  // (`lib/abap/batch-input.ts`) — the screen fields whose structure is a
+  // database table the glossary knows (a client-safe stand-in for the SAP
+  // catalogue the server's finding asks; a dialogue structure such as RM06E is
+  // in neither), a key field (`EBELN`) naming the document to open, not a
+  // change. Read as "what it changes": joined to the row the requirements
+  // already wrote for the transaction, or a row of its own.
+  const batchCalls: BatchInputCall[] = (() => {
+    try {
+      return readBatchInput(source).filter((c) => reachedLine(c.line));
+    } catch {
+      return [];
+    }
+  })();
+  for (const call of batchCalls) {
+    const tcode = call.transaction;
+    const writes = writesOf(call, (name) => tableTerm(name) !== null);
+    const filled = call.fields.filter((f) => !f.key);
+    if (!writes.length && !filled.length) continue;
+    const fieldWords = writes.flatMap((w) => w.components.map((c) => {
+      const field = termFor(c).singular;
+      const table = tableTerm(w.table)?.singular ?? w.table;
+      return field.toUpperCase() !== c.toUpperCase() ? `the ${field} of the ${table}` : `${w.table}-${c}`;
+    }));
+    const raw = writes.length ? writes.flatMap((w) => w.raw) : filled.map((f) => f.raw);
+    const anchors = distinctAnchors([anchor(call.line), ...writes.flatMap((w) => w.lines.map((l) => anchor(l))), ...(writes.length ? [] : filled.slice(0, 3).map((f) => anchor(f.line, f.lineEnd)))]);
+    // A transaction the glossary calls "Create …" creates a document whose
+    // fields the batch input fills; any other one changes what it fills.
+    const creates = !!tcode && /^Create/.test(TRANSACTION_TERMS_EN[tcode] ?? '');
+    const what = writes.length
+      ? creates
+        ? `${TRANSACTION_TERMS_EN[tcode as string]} through a transaction (batch input); fills ${joinAnd(fieldWords)}`
+        : `Changes ${joinAnd(fieldWords)} through a transaction (batch input)`
+      : `Fills ${filled.length} screen field${filled.length === 1 ? '' : 's'} of a transaction (batch input); which table changes is not determined from the code`;
+    const full = `The batch input to ${tcode ?? 'a transaction named at run time'} (line ${call.line}) fills ${raw.join(', ')}${writes.length ? `; the transaction writes to ${writes.map((w) => w.table).join(', ')}` : ''}.`;
+    // The row the requirements wrote for the same transaction says only that it runs; this one says what it does.
+    const existing = tcode ? outputs.find((o) => o.objects.includes(tcode)) : undefined;
+    const kind = creates ? 'Creates a document (batch input)' : writes.length ? 'Changes data (batch input)' : existing?.kind ?? 'Changes data (batch input)';
+    if (existing) {
+      // Without a field the glossary names a table for, the requirement's words stand; the fields join its source.
+      existing.full = [existing.full ?? existing.what, full].join(' ');
+      if (writes.length) {
+        existing.kind = kind;
+        existing.what = what;
+      }
+      existing.objects = [...new Set([...existing.objects, ...raw])];
+      existing.anchors = distinctAnchors([...existing.anchors, ...anchors]);
+    } else {
+      outputs.push({ kind, what, objects: [...(tcode ? [tcode] : []), ...raw], anchors, full });
+    }
   }
 
   /* -------------------------------------------------- 7. integrations */
@@ -1083,7 +1284,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     note: PROCESS_DOCUMENT_NOTE,
     glance: { summary: glanceSummary, trigger: glanceTrigger, points },
     purpose: { users, inScope, outOfScope, proposal: purposeProposal },
-    trigger: { start, selection: inputs, data },
+    trigger: { start, selection: inputs, data, inputUse },
+    derived,
     overview: { sentence: overviewSentence, traceability: engine.traceability.sentence, path, decisions },
     rules,
     ...(decisionTables.length ? { decisionTables } : {}),

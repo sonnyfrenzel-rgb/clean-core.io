@@ -54,7 +54,7 @@ function documentOf(source: string) {
 /** Every `[data-doc-list]` on the page: the long ones closed with a summary, the short ones open. */
 async function expectTheRule(page: Page): Promise<{ long: string[]; short: string[] }> {
   // The lists on screen (roadmap 3.0.7: In and Out under the map and the
-  // drawer are gone; the description's sections 2 and 6 carry them once).
+  // drawer are gone; the description's process and outputs sections carry them once).
   const lists = page.locator('[data-doc-list]:visible');
   const n = await lists.count();
   expect(n, 'no list on the page carries the rule').toBeGreaterThan(0);

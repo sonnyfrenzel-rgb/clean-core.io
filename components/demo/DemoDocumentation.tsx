@@ -20,6 +20,7 @@ import type { ProcessDocument } from '@/lib/process-document';
 import { businessCallouts, glanceHeadline, notDeterminedCallout, type GlanceGap } from '@/lib/business-summary';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { OpenQuestions } from '@/lib/open-questions';
+import { DEMO_SUBJECT, DEMO_TITLE_PREFIX } from '@/lib/demo-marks';
 
 /**
  * The demo's Documentation stage — the same stage a real project shows, in the
@@ -54,7 +55,7 @@ export default function DemoDocumentation({
    * only — what the phone's narrow map layout is laid out from.
    */
   source?: string | null;
-  /** The demo's open questions (ADR-081), read-only — section 9 of the description. */
+  /** The demo's open questions (ADR-081), read-only — the description's open questions section. */
   openQuestions?: OpenQuestions | null;
 }) {
   const handbook = useMemo(() => (process ? handbookFromData(process.handbook) : null), [process]);
@@ -145,6 +146,8 @@ export default function DemoDocumentation({
           </p>
           <ProcessDocumentView
             document={process.document}
+            // ADR-084: the title leads with the process — the demo's subject, then the program.
+            projectName={`${DEMO_TITLE_PREFIX}${DEMO_SUBJECT}`}
             summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null}
             openQuestions={openQuestions}
             rulesOutside={handbook.rulesOutside}

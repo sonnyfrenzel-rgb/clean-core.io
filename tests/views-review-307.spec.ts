@@ -8,7 +8,7 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel } from '../lib/process-map';
 import { buildProcessDocument } from '../lib/process-document-build';
 import { documentOutline, gateLine, pathLine, processDocumentBlocks } from '../lib/process-document-outline';
-import { stepRef, type PdGate, type PdStep } from '../lib/process-document';
+import { sectionTitle, stepRef, type PdGate, type PdStep } from '../lib/process-document';
 import { blocksMarkdown } from '../lib/requirements-export';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
 import { decisionTableViews } from '../lib/decision-tables';
@@ -219,8 +219,13 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
     expect(pathLine(doc.overview.path)).toContain(`${slot} one of `);
 
     const outline = documentOutline(doc);
-    expect(outline.tables.steps.rows.filter((r) => /^\d+[a-z]$/.test(r.cells[0])).map((r) => r.cells[2].split(' — ')[0]))
+    // ADR-084: the step table says who acts (column 3) before what happens (column 4).
+    expect(outline.tables.steps.head).toEqual(['No.', 'Step', 'Who acts', 'What happens']);
+    const alternatives = outline.tables.steps.rows.filter((r) => /^\d+[a-z]$/.test(r.cells[0]));
+    expect(alternatives.map((r) => r.cells[3].split(' — ')[0]))
       .toEqual(['User choice Double-click (&IC1)', 'User choice DONE', 'User choice DATE']);
+    // The user chooses each of them; the program's own steps of this dialogue run are the system's.
+    expect(alternatives.map((r) => r.cells[2])).toEqual(['User', 'User', 'User']);
   });
 
   test('a CASE on another selector stays a sequence', () => {
@@ -243,7 +248,7 @@ test.describe('(4) a decision table is one business rule task with its table', (
     ]);
   });
 
-  test('section 4 prints it in every rendering', () => {
+  test('the rules section prints it in every rendering', () => {
     const doc = documentOf(REPORT);
     expect(doc.decisionTables?.map((d) => d.id)).toEqual(['DT-001']);
     const outline = documentOutline(doc);
@@ -255,9 +260,13 @@ test.describe('(4) a decision table is one business rule task with its table', (
       ['Otherwise', 'c_gruen', 35],
     ]);
     const md = blocksMarkdown(processDocumentBlocks(doc, { projectName: doc.program }));
-    const rules = md.slice(md.indexOf('## 4.'), md.indexOf('## 5.'));
+    // Sections by title, never by number (ADR-084).
+    const rules = md.slice(md.indexOf(`## ${sectionTitle('rules')}`), md.indexOf(`## ${sectionTitle('exceptions')}`));
     expect(rules).toContain('DT-001 · Business rule task: determines gs_row-ampel');
     expect(rules).toContain('| Otherwise | c_gruen | c_gruen · L35 |');
+    // ADR-084 (A3): the table says how it is read — first match, and its Otherwise row.
+    expect(outline.decisionTables[0].note).toBe('The first matching row wins; the rows below it are not checked. Otherwise applies when no other row matches.');
+    expect(rules).toContain(outline.decisionTables[0].note);
   });
 
   test('on the main path the decision reads as the task, not as arms', () => {

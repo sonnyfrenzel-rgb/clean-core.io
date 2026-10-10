@@ -4,7 +4,7 @@ import React from 'react';
 import { ListChecks } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcTable, { type CcTableColumn } from '@/components/cc/Table';
-import { decisionRowWhen, decisionTableTaskName, type DecisionTableLine, type DecisionTableView } from '@/lib/decision-tables';
+import { decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableLine, type DecisionTableView } from '@/lib/decision-tables';
 import { decisionTableCaption, decisionTableRulesLine, wt } from '@/lib/workspace-messages';
 
 /**
@@ -14,7 +14,9 @@ import { decisionTableCaption, decisionTableRulesLine, wt } from '@/lib/workspac
  *
  * The task's name says which field it determines, the table one row per
  * branch: the condition as the code writes it, the value it sets, and the line
- * of that assignment. Shared by the Documentation (section 4) and the
+ * of that assignment, and under the table one line on how it is read (first
+ * match; what happens without an Otherwise row). Shared by the
+ * Documentation (its rules section) and the
  * Business view's rules, so the two read the same. Every row keeps its anchor
  * and the task its range; the business rules standing in the table are named
  * by id, where their confirmation is stored.
@@ -63,6 +65,10 @@ export function DecisionTableTask({ table, tone = 'linked' }: { table: DecisionT
           }))}
         />
       </div>
+      {/* ADR-084: how the table is read — first match, and what happens without an Otherwise row. */}
+      <p data-decision-table-policy="" className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
+        {decisionTableHitPolicy(table)}
+      </p>
       {table.ruleIds.length ? (
         <p data-decision-table-rules="" className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
           {decisionTableRulesLine(table.ruleIds)}

@@ -2,14 +2,17 @@ import type { DocAnchor } from '@/lib/process-documentation';
 import type { DocBlock } from '@/lib/requirements-export';
 import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import { wt } from '@/lib/workspace-messages';
-import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
+import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
 import {
   EMPTY_SECTION,
   MODEL_PROPOSAL_LABEL,
   PROCESS_DOCUMENT_STATUS,
+  PROCESS_DOCUMENT_SUBTITLE,
   linesLabel,
   sectionTitle,
   stepRef,
+  type PdActor,
+  type PdProposal,
   type PdAppendix,
   type PdGate,
   type PdPathEntry,
@@ -36,15 +39,23 @@ import {
  *
  * The shape, top to bottom:
  *
+ *   title        "<project> — <PROGRAM>", "Process description" under it (ADR-084)
  *   cover        program, source, source version, date, status
  *   at a glance  what it does (2–3 sentences), who starts it, six key figures,
- *                the 3–5 rules and risks to know, the main path in one line
- *   1–9          each section: a one-line lead, then a compact table whose
- *                last column ("Source") carries the program's names and lines;
- *                section 9 is the project's one list of open questions
- *                (ADR-081, `lib/open-questions.ts`) with its end states
+ *                the reader questions that lead to the sections ("Go to"), the
+ *                3–5 rules and risks to know, what it covers and leaves out,
+ *                the main path in one line
+ *   sections     each a one-line lead, then a compact table whose last column
+ *                ("Source") carries the program's names and lines; how a run
+ *                starts opens the process section, the data it reads, the
+ *                integrations and the controls are one section, and the open
+ *                questions are the project's one list (ADR-081) with its end
+ *                states. A row on the line of an open question points at it.
  *   appendix     step details, the code's own wording of every shortened row,
- *                the questions about the requirements, and the technical trace
+ *                the questions about the requirements, and every element and
+ *                statement the engine read
+ *
+ * Sections are named by key (`sectionTitle`), never by number (ADR-084).
  *
  * Pure: no React, no DOM, no clock.
  */
@@ -54,6 +65,8 @@ export type PdSectionKey = Exclude<ProcessDocumentSection, 'appendix'>;
 /** A key figure of the summary — each one names the section it counts. */
 export interface PdFigure {
   section: PdSectionKey;
+  /** A part of the section to go to instead of its top (`integrations` inside `systems`). */
+  anchor?: string;
   label: string;
   /** `null`: not known to this rendering (the open questions, when the project's list was not passed). */
   value: number | null;
@@ -65,6 +78,14 @@ export interface PdRow {
   /** Program names for the source column (`EBAN`, `E001 · ZMM_PO`); null when the row has none. */
   tech: string | null;
   anchors: DocAnchor[];
+  /**
+   * ADR-084 (roadmap 3.0.7 A5): the open question this row stands on — an open
+   * group of the project's list (ADR-081) one of whose lines lies in the row's
+   * lines (`openQuestionAnchors`). Only when the list was passed.
+   */
+  question?: { action: string; title: string };
+  /** An anchor a row can be linked to — `oq-<action>` for a group of the open questions. */
+  id?: string;
 }
 
 export interface PdTable {
@@ -74,16 +95,45 @@ export interface PdTable {
   rows: PdRow[];
   /** Rows the stage shows before "Show all" (DESIGN.md §2.11); a file prints every row. */
   first: number;
+  /** One line printed under the table — a decision table's hit policy (ADR-084). */
+  note?: string;
+}
+
+/** One reader question of the glance and the section that answers it (ADR-084, roadmap 3.0.7 A1). */
+export interface PdGoTo {
+  label: string;
+  section: PdSectionKey;
+  /** A part of the section, when the answer is not its top: `steps`. */
+  anchor?: string;
 }
 
 export interface PdOutline {
+  /** "<project> — <PROGRAM>", or the program alone when the project carries its name (ADR-084). */
   title: string;
+  /** "Process description" — the line under the title. */
+  subtitle: string;
   /** Cover rows: what this document is about and how far to trust it. */
   cover: Array<[string, string]>;
   note: string;
-  glance: { summary: PdText[]; trigger: PdText; figures: PdFigure[]; points: PdPoint[]; path: string };
+  glance: {
+    summary: PdText[];
+    /** The analysis model's purpose sentences, anchored to lines — a proposal beside the engine's summary. */
+    proposal: PdProposal | null;
+    trigger: PdText;
+    figures: PdFigure[];
+    /** The reader questions, each leading to its section (ADR-084). */
+    goTo: PdGoTo[];
+    points: PdPoint[];
+    /** What this description covers — the in-scope rows and who can complete it (was section 1). */
+    covers: PdText[];
+    /** What it leaves to others — the out-of-scope rows. */
+    leaves: PdText[];
+    path: string;
+  };
   /** One line per section — what it holds, counted. */
   leads: Record<PdSectionKey, string>;
+  /** One line per part of a section that has parts: the systems section's data, integrations and controls. */
+  partLeads: { data: string; integrations: string; controls: string };
   tables: {
     inputs: PdTable | null;
     data: PdTable | null;
@@ -93,15 +143,19 @@ export interface PdOutline {
     outputs: PdTable | null;
     integrations: PdTable | null;
     controls: PdTable | null;
+    /** Values the program computes (`lib/abap/data-scope.ts`). */
+    derived: PdTable | null;
   };
+  /** Input the code asks for and does not use — under "How a run starts". */
+  inputUse: PdText[];
   /**
-   * Roadmap 3.0.7 — section 4's decision tables: each classification that only
+   * Roadmap 3.0.7 — the rules section's decision tables: each classification that only
    * sets one field as one business rule task with its table, one row per
    * branch (condition → value), every row with its line. Empty: none.
    */
   decisionTables: PdTable[];
   /**
-   * Section 9 — the project's one list of open questions (ADR-081), passed in
+   * The open questions section — the project's one list (ADR-081), passed in
    * by the caller because it reads the project (imports, answers, the rules'
    * state), not only the source. `null` when the rendering was made without
    * it: the section then says so instead of counting.
@@ -121,7 +175,7 @@ export interface PdOutline {
 export interface PdOutlineMeta {
   projectName?: string;
   date?: string;
-  /** The project's open questions (`useOpenQuestions`), for section 9. */
+  /** The project's open questions (`useOpenQuestions`), for the open questions section and the rows that stand on them. */
   openQuestions?: OpenQuestions | null;
 }
 
@@ -144,10 +198,14 @@ export function shortTech(tech: string | null | undefined, max = 3): string | nu
   return names.length > max ? `${names.slice(0, max).join(', ')} +${names.length - max}` : tech;
 }
 
-/** The source column as text: `EBAN · L61, L98`. */
-export function sourceText(row: Pick<PdRow, 'tech' | 'anchors'>): string {
-  return [shortTech(row.tech), linesLabel(row.anchors)].filter((x): x is string => !!x).join(' · ') || '—';
+/** The source column as text: `EBAN · L61, L98`, and the open question the row stands on (ADR-084). */
+export function sourceText(row: Pick<PdRow, 'tech' | 'anchors' | 'question'>): string {
+  const base = [shortTech(row.tech), linesLabel(row.anchors)].filter((x): x is string => !!x).join(' · ') || '—';
+  return row.question ? `${base} → ${questionLinkText(row.question)}` : base;
 }
+
+/** "Open question: Who owns this process?" — what a row says of the open question it stands on. */
+export const questionLinkText = (q: NonNullable<PdRow['question']>): string => `${wt('doc.openQuestionLink')}: ${q.title}`;
 
 /** An exception's result in two or three words; the full sentence stands in the appendix. */
 export function resultWord(outcome: string): string {
@@ -165,7 +223,7 @@ export function resultWord(outcome: string): string {
 /** "Q7" — the number a reader sees for a question about the requirements (appendix A.4). */
 export const questionNumber = (q: Pick<PdQuestion, 'number'>) => `Q${q.number}`;
 
-/* ------------------------------------------------------- section 9 (ADR-081) */
+/* --------------------------------------------- the open questions (ADR-081) */
 
 /** The end state of a group, in the list's own words (`lib/messages/workspace.ts`). */
 export function openQuestionState(g: OpenQuestionGroup): string {
@@ -205,11 +263,12 @@ export function openQuestionsTable(list: OpenQuestions): PdTable | null {
     cells: [g.title, g.owner, String(g.count), openQuestionState(g), openQuestionDetail(g)],
     tech: null,
     anchors: openQuestionAnchors(g),
+    id: `oq-${g.action}`,
   }));
   return { id: 'questions', caption: 'Open questions', head: ['Question', 'Owner', 'How many', 'State', 'What settles it'], rows, first: rows.length };
 }
 
-/** Section 9's lead: the list's counts in one line of plain words. */
+/** The open questions section's lead: the list's counts in one line of plain words. */
 function questionsLead(list: OpenQuestions | null): string {
   if (!list) return 'The open questions are kept with the project and were not passed to this copy.';
   const closed = list.groups.filter((g) => g.end !== 'open').length;
@@ -251,6 +310,7 @@ export function decisionTableTable(d: DecisionTableView): PdTable {
     head: [...DECISION_TABLE_HEAD],
     rows: d.rows.map((r) => ({ cells: [decisionRowWhen(d, r.condition), r.value], tech: r.constant, anchors: [r.anchor] })),
     first: d.rows.length,
+    note: decisionTableHitPolicy(d),
   };
 }
 
@@ -314,6 +374,50 @@ function sorted<T>(items: readonly T[], rank: (item: T) => number): T[] {
 
 /* ---------------------------------------------------------------- outline */
 
+/** The reader questions of the glance (ADR-084, roadmap 3.0.7 A1) — labels from the catalogue, sections by key. */
+export function goToQuestions(): PdGoTo[] {
+  return [
+    { label: wt('doc.goToWhat'), section: 'overview' },
+    { label: wt('doc.goToWho'), section: 'overview', anchor: 'steps' },
+    { label: wt('doc.goToRules'), section: 'rules' },
+    { label: wt('doc.goToFails'), section: 'exceptions' },
+    { label: wt('doc.goToChanges'), section: 'outputs' },
+    { label: wt('doc.goToSystems'), section: 'systems' },
+    { label: wt('doc.goToOpen'), section: 'questions' },
+  ];
+}
+
+/** The "Go to" line as plain text, for a file that cannot link: "Go to: What does it do? → 1. How the process works · …". */
+export function goToLine(goTo: readonly PdGoTo[]): string {
+  return `${wt('doc.goTo')}: ${goTo.map((g) => `${g.label} → ${sectionTitle(g.section)}`).join(' · ')}`;
+}
+
+/** The title every rendering leads with (ADR-084): the process first, the document type under it. */
+export function documentTitle(program: string, projectName?: string): string {
+  const name = projectName?.trim();
+  return name && name.toUpperCase() !== program.toUpperCase() ? `${name} — ${program}` : program;
+}
+
+const NOT_DETERMINED = 'Not determined';
+
+/** A step's actor as a reader sees it — never blank (ADR-084). */
+export const actorWord = (actor: PdActor | undefined): string => actor?.who ?? NOT_DETERMINED;
+
+/**
+ * The open group of the project's list (ADR-081) whose line lies in the row's
+ * lines — the question this row stands on (ADR-084, roadmap 3.0.7 A5). The
+ * first one in the list's order (blocking first); undefined when there is none.
+ */
+export function questionOf(anchors: readonly DocAnchor[], list: OpenQuestions | null): PdRow['question'] {
+  if (!list || !anchors.length) return undefined;
+  for (const g of list.groups) {
+    if (g.end !== 'open') continue;
+    const lines = openQuestionAnchors(g);
+    if (lines.some((l) => anchors.some((a) => a.lineStart <= l.lineStart && l.lineStart <= a.lineEnd))) return { action: g.action, title: g.title };
+  }
+  return undefined;
+}
+
 export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}): PdOutline {
   const steps = doc.overview.path.filter((e): e is PdStep => e.kind === 'step');
   const tables = doc.decisionTables ?? [];
@@ -327,7 +431,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     { section: 'overview', label: 'Decision points', value: doc.overview.decisions },
     { section: 'rules', label: 'Business rules', value: doc.rules.length },
     { section: 'exceptions', label: 'Exceptions', value: doc.exceptions.length },
-    { section: 'integrations', label: 'Integrations', value: doc.integrations.length },
+    { section: 'systems', anchor: 'integrations', label: 'Integrations', value: doc.integrations.length },
     { section: 'questions', label: 'Open questions', value: list ? list.open : null },
   ];
 
@@ -340,13 +444,18 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     integrationKinds.set(k, (integrationKinds.get(k) ?? 0) + 1);
   }
   const KIND_PLURAL: Record<string, string> = { BAPI: 'BAPIs', transaction: 'transactions', file: 'files', workflow: 'workflow events', program: 'programs', function: 'functions' };
+  const t = doc.trigger;
+
+  const systemsParts = [
+    t.data.length ? `it reads ${plural(t.data.length, 'table')}` : '',
+    doc.integrations.length ? `calls ${plural(doc.integrations.length, 'function')} by name` : '',
+    doc.controls.length ? `holds ${plural(doc.controls.length, 'control')}` : '',
+  ].filter(Boolean);
 
   const leads: Record<PdSectionKey, string> = {
-    purpose: `What this description covers, and the ${plural(doc.purpose.outOfScope.length, 'topic', 'topics')} it leaves to others.`,
-    trigger: doc.trigger.selection.length || doc.trigger.data.length
-      ? `${plural(doc.trigger.selection.length, 'input')} on the selection screen; it reads ${plural(doc.trigger.data.length, 'table')}.`
-      : EMPTY_SECTION.trigger,
-    overview: doc.overview.sentence,
+    overview: t.selection.length
+      ? `${doc.overview.sentence} A run starts from a selection screen with ${plural(t.selection.length, 'input')}.`
+      : doc.overview.sentence,
     rules: doc.rules.length
       ? `${plural(doc.rules.length, 'rule')}: ${plural(brRules, 'business rule')}, ${plural(decisionRows, 'decision point')}, ${plural(fixedRules, 'fixed value')}${tables.length ? `; ${plural(tables.length, 'decision table')}` : ''}.`
       : tables.length ? `${plural(tables.length, 'decision table')}.` : EMPTY_SECTION.rules,
@@ -356,26 +465,37 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     outputs: doc.outputs.length
       ? `${plural(doc.outputs.length, 'effect')} on data and documents, the weightiest first.`
       : EMPTY_SECTION.outputs,
+    systems: systemsParts.length ? `${systemsParts.join('; ').replace(/^./, (c) => c.toUpperCase())}.` : EMPTY_SECTION.systems,
+    questions: questionsLead(list),
+  };
+
+  const partLeads = {
+    data: t.data.length
+      ? `${plural(t.data.length, 'table')} read; which rows each read takes, as the code filters them.`
+      : EMPTY_SECTION.data,
     integrations: doc.integrations.length
       ? `${plural(doc.integrations.length, 'call')} to other functions: ${[...integrationKinds].map(([k, n]) => (n === 1 ? `1 ${k}` : `${n} ${KIND_PLURAL[k]}`)).join(', ')}.`
       : EMPTY_SECTION.integrations,
     controls: doc.controls.length
       ? `${plural(doc.controls.length, 'control')} in the code: ${doc.controls.map((c) => c.kind.replace(/\b([A-Z])([a-z])/g, (_, a: string, b: string) => `${a.toLowerCase()}${b}`)).join(', ')}.`
       : EMPTY_SECTION.controls,
-    questions: questionsLead(list),
   };
 
-  const t = doc.trigger;
+  const row = (cells: string[], tech: string | null, anchors: DocAnchor[]): PdRow => {
+    const question = questionOf(anchors, list);
+    return question ? { cells, tech, anchors, question } : { cells, tech, anchors };
+  };
   const table = (id: string, caption: string, head: string[], rows: PdRow[], first = 5): PdTable | null =>
     rows.length ? { id, caption, head, rows, first } : null;
 
   const stepRows: PdRow[] = doc.overview.path.map((entry) =>
     entry.kind === 'gate'
-      ? { cells: ['◇', `Decision: ${entry.label}`, gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
+      ? { cells: ['◇', `Decision: ${entry.label}`, actorWord(entry.actor), gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
       : {
           cells: [
             stepRef(entry),
             `${stepName(entry)}${entry.businessName ? ` (${MODEL_PROPOSAL_LABEL})` : ''}`,
+            actorWord(entry.actor),
             [choiceLine(entry), entry.line].filter(Boolean).join(' — ') || '—',
           ],
           tech: entry.technicalName,
@@ -383,8 +503,10 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
         },
   );
 
+  const p = doc.purpose;
   return {
-    title: `Process description — ${meta.projectName || doc.program}`,
+    title: documentTitle(doc.program, meta.projectName),
+    subtitle: PROCESS_DOCUMENT_SUBTITLE,
     cover: [
       ['Program', doc.program],
       ['Source', `${doc.fileName} · ${doc.lineCount} lines`],
@@ -393,25 +515,39 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
       ['Status', PROCESS_DOCUMENT_STATUS],
     ],
     note: doc.note,
-    glance: { summary: doc.glance.summary, trigger: doc.glance.trigger, figures, points: doc.glance.points, path: pathLine(doc.overview.path) },
+    glance: {
+      summary: doc.glance.summary,
+      proposal: p.proposal,
+      trigger: doc.glance.trigger,
+      figures,
+      goTo: goToQuestions(),
+      points: doc.glance.points,
+      covers: [...p.inScope, p.users],
+      leaves: p.outOfScope,
+      path: pathLine(doc.overview.path),
+    },
     leads,
+    partLeads,
     tables: {
       inputs: table('inputs', 'Selection screen', ['Input', 'Required', 'Default'],
-        t.selection.map((i) => ({ cells: [i.meaning, i.required ? 'Yes' : 'No', i.defaultValue ?? '—'], tech: i.name.toUpperCase(), anchors: [i.anchor] }))),
-      data: table('data', 'Data it reads', ['Business object', 'Owner'],
-        t.data.map((d) => ({ cells: [d.meaning ?? (d.owner === 'Customer' ? 'Custom table' : 'SAP table'), d.owner], tech: d.name, anchors: d.anchors }))),
-      steps: { id: 'steps', caption: 'Main path', head: ['No.', 'Step', 'What happens'], rows: stepRows, first: stepRows.length },
+        t.selection.map((i) => row([i.meaning, i.required ? 'Yes' : 'No', i.defaultValue ?? '—'], i.name.toUpperCase(), [i.anchor]))),
+      data: table('data', wt('doc.dataReads'), ['Business object', 'Owner', 'Which rows'],
+        t.data.map((d) => row([d.meaning ?? (d.owner === 'Customer' ? 'Custom table' : 'SAP table'), d.owner, d.scope ?? '—'], d.name, d.anchors))),
+      steps: { id: 'steps', caption: wt('doc.stepsCaption'), head: ['No.', 'Step', wt('doc.whoActs'), 'What happens'], rows: stepRows, first: stepRows.length },
       rules: table('rules', 'Business rules and decision points', ['Rule', 'When', 'Then', 'Step'],
-        sorted(doc.rules, ruleRank).map((r) => ({ cells: [r.ref, r.condition, r.effect, r.where ?? 'Whole program'], tech: null, anchors: r.anchors })), 6),
+        sorted(doc.rules, ruleRank).map((r) => row([r.ref, r.condition, r.effect, r.where ?? 'Whole program'], null, r.anchors)), 6),
       exceptions: table('exceptions', 'Exceptions', ['What happens', 'Step', 'The user sees', 'Result'],
-        sorted(doc.exceptions, exceptionRank).map((e) => ({ cells: [e.what, e.where ?? '—', e.shown ? `“${e.shown}”` : '—', resultWord(e.outcome)], tech: e.messageRef, anchors: e.anchors })), 6),
-      outputs: table('outputs', 'Outputs and effects', ['Effect', 'What'],
-        sorted(doc.outputs, effectRank).map((e) => ({ cells: [e.kind, e.what], tech: e.objects.join(', ') || null, anchors: e.anchors }))),
-      integrations: table('integrations', 'Integrations', ['Purpose', 'Kind'],
-        doc.integrations.map((i) => ({ cells: [i.purpose, i.kind], tech: i.name, anchors: i.anchors })), 8),
-      controls: table('controls', 'Controls', ['Control', 'What the code does'],
-        doc.controls.map((c) => ({ cells: [c.kind, c.text], tech: [c.detail, c.ref].filter(Boolean).join(' · ') || null, anchors: c.anchors })), 8),
+        sorted(doc.exceptions, exceptionRank).map((e) => row([e.what, e.where ?? '—', e.shown ? `“${e.shown}”` : '—', resultWord(e.outcome)], e.messageRef, e.anchors)), 6),
+      outputs: table('outputs', 'What it changes and produces', ['Effect', 'What'],
+        sorted(doc.outputs, effectRank).map((e) => row([e.kind, e.what], e.objects.join(', ') || null, e.anchors))),
+      integrations: table('integrations', wt('doc.integrationsTitle'), ['Purpose', 'Kind'],
+        doc.integrations.map((i) => row([i.purpose, i.kind], i.name, i.anchors)), 8),
+      controls: table('controls', wt('doc.controlsTitle'), ['Control', 'What the code does'],
+        doc.controls.map((c) => row([c.kind, c.text], [c.detail, c.ref].filter(Boolean).join(' · ') || null, c.anchors)), 8),
+      derived: table('derived', wt('doc.derivedValues'), ['Value', 'Computed as', 'Kind'],
+        (doc.derived ?? []).map((d) => row([d.target, d.expression, d.accumulates ? 'Running total' : 'Computed'], d.where, d.anchors))),
     },
+    inputUse: t.inputUse ?? [],
     decisionTables: tables.map(decisionTableTable),
     questions: {
       list,
@@ -430,7 +566,7 @@ export const REQUIREMENT_QUESTIONS = 'A.4 Questions about the requirements';
 /** The tables whose rows go past what the body shows — printed whole in the appendix. */
 export function longTables(o: PdOutline): PdTable[] {
   const t = o.tables;
-  return [t.inputs, t.data, t.rules, t.exceptions, t.outputs, t.integrations, t.controls]
+  return [t.inputs, t.data, t.rules, t.exceptions, t.outputs, t.derived, t.integrations, t.controls]
     .filter((x): x is PdTable => !!x && x.rows.length > x.first);
 }
 
@@ -459,6 +595,7 @@ const withLines = (text: string, anchors: readonly DocAnchor[]) => (anchors.leng
 export function stepDetailLines(step: PdStep): string[] {
   const out: string[] = [];
   out.push(`Technical: ${step.technicalName} · ${step.anchors.length ? linesLabel(step.anchors) : 'lines not determined'}${step.businessName ? ` · engine name: ${step.name}` : ''}`);
+  if (step.actor) out.push(`${wt('doc.whoActs')}: ${actorWord(step.actor)} — ${step.actor.basis}`);
   if (step.facts) out.push(step.facts);
   if (step.proposal) out.push(`${MODEL_PROPOSAL_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}`);
   for (const d of step.does) out.push(withLines(d.text, d.anchors));
@@ -473,12 +610,13 @@ export function wordingRows(doc: ProcessDocument): string[][] {
   for (const r of doc.rules) if (r.full) rows.push([sectionTitle('rules'), r.ref, r.full, linesLabel(r.anchors)]);
   for (const e of doc.exceptions) rows.push([sectionTitle('exceptions'), e.what, [e.message, e.outcome].filter(Boolean).join(' — '), linesLabel(e.anchors)]);
   for (const o of doc.outputs) if (o.full) rows.push([sectionTitle('outputs'), o.kind, o.full, linesLabel(o.anchors)]);
-  for (const c of doc.controls) if (c.full) rows.push([sectionTitle('controls'), c.kind, c.full, linesLabel(c.anchors)]);
-  for (const s of doc.trigger.start) rows.push([sectionTitle('trigger'), 'Start', s.text, linesLabel(s.anchors)]);
+  for (const c of doc.controls) if (c.full) rows.push([sectionTitle('systems'), c.kind, c.full, linesLabel(c.anchors)]);
+  for (const s of doc.trigger.start) rows.push([sectionTitle('overview'), 'Start', s.text, linesLabel(s.anchors)]);
+  for (const s of doc.trigger.inputUse ?? []) if (s.detail) rows.push([sectionTitle('overview'), s.text, s.detail, linesLabel(s.anchors)]);
   // The summary prints its sentences without their names; the names stand here.
   for (const s of [...doc.glance.summary, doc.glance.trigger]) if (s.detail) rows.push(['At a glance', s.text, s.detail, linesLabel(s.anchors)]);
   for (const s of [doc.purpose.users, ...doc.purpose.inScope, ...doc.purpose.outOfScope]) {
-    if (s.detail && shortTech(s.detail) !== s.detail) rows.push([sectionTitle('purpose'), s.text, s.detail, linesLabel(s.anchors)]);
+    if (s.detail && shortTech(s.detail) !== s.detail) rows.push(['At a glance', s.text, s.detail, linesLabel(s.anchors)]);
   }
   for (const q of doc.questions) if (q.detail && shortTech(q.detail) !== q.detail) rows.push([sectionTitle('questions'), questionNumber(q), q.detail, linesLabel(q.anchors)]);
   rows.push([sectionTitle('overview'), 'Traceability', doc.overview.traceability, '']);
@@ -532,46 +670,49 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     b.push(tableBlock(t, false));
     if (t.rows.length > t.first) b.push({ k: 'p', em: true, text: moreRowsLine(t) });
   };
+  const textItems = (items: readonly PdText[]) =>
+    items.map((s) => `${s.text} (${sourceText({ tech: s.detail ?? null, anchors: s.anchors })})`);
 
   b.push({ k: 'h', level: 1, text: o.title });
+  b.push({ k: 'p', em: true, text: o.subtitle });
   b.push({ k: 'table', head: ['', ''], rows: o.cover.map(([k, v]) => [k, v]), muted: [] });
   b.push({ k: 'note', text: o.note });
 
   b.push({ k: 'h', level: 2, text: 'At a glance' });
   for (const s of o.glance.summary) b.push({ k: 'p', text: s.text });
+  if (o.glance.proposal) b.push({ k: 'p', em: true, text: `${MODEL_PROPOSAL_LABEL}: ${withLines(o.glance.proposal.text, o.glance.proposal.anchors)}` });
   b.push({ k: 'p', text: `Started by: ${o.glance.trigger.text}` });
   b.push({ k: 'table', head: o.glance.figures.map((f) => f.label), rows: [o.glance.figures.map(figureText)], muted: [] });
+  b.push({ k: 'p', text: goToLine(o.glance.goTo) });
   if (o.glance.points.length) {
     b.push({ k: 'p', strong: true, text: 'Rules and risks to know' });
     b.push({ k: 'ul', items: o.glance.points.map((p) => `${p.ref ? `${p.ref}: ` : ''}${p.text} (${[p.detail, linesLabel(p.anchors)].filter(Boolean).join(' · ')})`) });
   }
-  b.push({ k: 'p', text: `Main path: ${o.glance.path}` });
-  b.push({ k: 'pagebreak' });
-
-  h2('purpose');
-  lead('purpose');
-  if (doc.purpose.proposal) b.push({ k: 'p', em: true, text: `${MODEL_PROPOSAL_LABEL}: ${withLines(doc.purpose.proposal.text, doc.purpose.proposal.anchors)}` });
-  b.push({ k: 'p', text: `${doc.purpose.users.text} (${sourceText({ tech: doc.purpose.users.detail ?? null, anchors: doc.purpose.users.anchors })})` });
   b.push({
     k: 'table',
     head: ['Scope', 'What', SOURCE_COLUMN],
     rows: [
-      ...doc.purpose.inScope.map((s) => ['In scope', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
-      ...doc.purpose.outOfScope.map((s) => ['Outside this code', s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+      ...o.glance.covers.map((s) => [wt('doc.covers'), s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
+      ...o.glance.leaves.map((s) => [wt('doc.leaves'), s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
     ],
     muted: [2],
   });
-
-  h2('trigger');
-  lead('trigger');
-  add(o.tables.inputs);
-  add(o.tables.data);
+  b.push({ k: 'p', text: `Main path: ${o.glance.path}` });
+  b.push({ k: 'pagebreak' });
 
   h2('overview');
   lead('overview');
+  b.push({ k: 'h', level: 3, text: wt('doc.runStarts') });
+  b.push({ k: 'ul', items: textItems(doc.trigger.start) });
+  add(o.tables.inputs);
+  if (o.inputUse.length) {
+    b.push({ k: 'p', strong: true, text: wt('doc.inputUnused') });
+    b.push({ k: 'ul', items: textItems(o.inputUse) });
+  }
+  b.push({ k: 'h', level: 3, text: o.tables.steps.caption });
   b.push(tableBlock(o.tables.steps));
 
-  for (const key of ['rules', 'exceptions', 'outputs', 'integrations', 'controls'] as const) {
+  for (const key of ['rules', 'exceptions', 'outputs'] as const) {
     h2(key);
     lead(key);
     add(o.tables[key]);
@@ -579,7 +720,21 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
       for (const d of o.decisionTables) {
         b.push({ k: 'p', strong: true, text: d.caption });
         b.push(tableBlock(d));
+        if (d.note) b.push({ k: 'p', em: true, text: d.note });
       }
+    }
+  }
+
+  h2('systems');
+  lead('systems');
+  for (const part of ['data', 'integrations', 'controls'] as const) {
+    const t = o.tables[part];
+    b.push({ k: 'h', level: 3, text: part === 'data' ? wt('doc.dataReads') : part === 'integrations' ? wt('doc.integrationsTitle') : wt('doc.controlsTitle') });
+    b.push({ k: 'p', em: true, text: o.partLeads[part] });
+    add(t);
+    if (part === 'data' && o.tables.derived) {
+      b.push({ k: 'p', strong: true, text: o.tables.derived.caption });
+      add(o.tables.derived);
     }
   }
 

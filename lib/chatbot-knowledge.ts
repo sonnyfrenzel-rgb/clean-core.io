@@ -181,7 +181,7 @@ Test scenarios for the generated code, and the result that is on record for them
 
 ### Documentation Stage (/project/[id]/documentation)
 Process documentation read out of the whole analysed source by the engine, with no model involved.
-- **Process Documentation**: a process description written from the code when the stage opens - a one-page summary first (what it does, key figures, the rules and risks to know, the main path), then purpose and scope, trigger and inputs, the main steps, decision points and rules, exceptions, outputs, integrations, controls, open questions grouped by theme - with the element-by-element trace as an appendix, every statement with its line numbers; owner, KPIs and duration are open questions because the code does not contain them
+- **Process Documentation**: a process description written from the code when the stage opens - a one-page summary first (what it does, key figures, the rules and risks to know, the main path), then how the process works (how a run starts, the steps and who acts at each), decision points and rules, exceptions, what it changes, systems and data (data read, integrations, controls), open questions - with the element-by-element details and evidence as an appendix, every statement with its line numbers; owner, KPIs and duration are open questions because the code does not contain them
 - **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
 - **RACI Matrix** (model-written business layer, on request): responsibility assignment matrix
 - **Standard Operating Procedures (SOPs)** (model-written business layer, on request): step-by-step procedures with exception handling

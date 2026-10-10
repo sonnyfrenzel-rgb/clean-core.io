@@ -14,11 +14,18 @@ import type { DecisionTableView } from '@/lib/decision-tables';
  * owner or a successor reads a process description (an SOP, a Signavio or ARIS
  * process description):
  *
- *   1. purpose and scope            6. outputs and effects
- *   2. trigger and inputs           7. integrations
- *   3. process overview             8. controls and audit
- *   4. decision points and rules    9. open questions for the business
- *   5. exceptions and early ends    appendix: the technical trace
+ *   at a glance (what it does, what it covers and leaves out)
+ *   1. how the process works (how a run starts, the steps, who acts)
+ *   2. business rules and decision points
+ *   3. exceptions
+ *   4. what it changes and produces
+ *   5. systems and data (data it reads, integrations, controls)
+ *   6. open questions
+ *   appendix: details and evidence
+ *
+ * (ADR-084, amending ADR-082's outline: nine sections became seven.) Code,
+ * messages and exports name a section by its key (`sectionTitle`,
+ * `sectionName`), never by its number, so a renumbering cannot drift.
  *
  * Every statement in it was read from the source by the engine and carries
  * the lines it was read from. What the engine cannot say is asked once, in the
@@ -43,26 +50,32 @@ import type { DecisionTableView } from '@/lib/decision-tables';
  */
 
 export const PROCESS_DOCUMENT_FORMAT = 'clean-core-process-description';
-export const PROCESS_DOCUMENT_FORMAT_VERSION = 2;
+export const PROCESS_DOCUMENT_FORMAT_VERSION = 3;
 
-/** The sections, in the order every rendering prints them. */
+/**
+ * The sections, in the order every rendering prints them (ADR-084). The keys
+ * are stable: anchors (`#pd-<key>`), specs and messages use them, and a key
+ * keeps its meaning when the numbering changes. Purpose and scope stand in
+ * *At a glance*; how a run starts opens section `overview`; the data it reads,
+ * the integrations and the controls are one section, `systems`.
+ */
 export const PROCESS_DOCUMENT_SECTIONS = [
-  { key: 'purpose', title: '1. Purpose and scope' },
-  { key: 'trigger', title: '2. Trigger and inputs' },
-  { key: 'overview', title: '3. Process overview' },
-  { key: 'rules', title: '4. Business rules and decision points' },
-  { key: 'exceptions', title: '5. Exceptions' },
-  { key: 'outputs', title: '6. Outputs and effects' },
-  { key: 'integrations', title: '7. Integrations' },
-  { key: 'controls', title: '8. Controls' },
-  { key: 'questions', title: '9. Open questions' },
-  { key: 'appendix', title: 'Appendix: technical trace' },
+  { key: 'overview', title: '1. How the process works' },
+  { key: 'rules', title: '2. Business rules and decision points' },
+  { key: 'exceptions', title: '3. Exceptions' },
+  { key: 'outputs', title: '4. What it changes and produces' },
+  { key: 'systems', title: '5. Systems and data' },
+  { key: 'questions', title: '6. Open questions' },
+  { key: 'appendix', title: 'Appendix: details and evidence' },
 ] as const;
 
 export type ProcessDocumentSection = (typeof PROCESS_DOCUMENT_SECTIONS)[number]['key'];
 
 export const sectionTitle = (key: ProcessDocumentSection): string =>
   PROCESS_DOCUMENT_SECTIONS.find((s) => s.key === key)!.title;
+
+/** A section's name without its number — "Systems and data" — for a sentence that points at it. */
+export const sectionName = (key: ProcessDocumentSection): string => sectionTitle(key).replace(/^\d+\.\s+/, '');
 
 /**
  * What the document is, said once at the top of every rendering — in place of
@@ -75,14 +88,19 @@ export const PROCESS_DOCUMENT_NOTE =
 /** The provenance of the whole document, for the cover. Never "Proven". */
 export const PROCESS_DOCUMENT_STATUS = 'Reconstructed from the code — to be confirmed by the business';
 
-/** What a section says when the code gives it nothing — a finding, not a default. */
-export const EMPTY_SECTION: Readonly<Record<Exclude<ProcessDocumentSection, 'purpose' | 'overview' | 'appendix'>, string>> = {
+/** The line under the title of every rendering (ADR-084: the title leads with the process). */
+export const PROCESS_DOCUMENT_SUBTITLE = 'Process description';
+
+/** What a part of the document says when the code gives it nothing — a finding, not a default. */
+export const EMPTY_SECTION: Readonly<Record<'trigger' | 'rules' | 'exceptions' | 'outputs' | 'data' | 'integrations' | 'controls' | 'systems' | 'questions', string>> = {
   trigger: 'No selection screen and no event block starts the program.',
   rules: 'No business rule and no decision point changes the path.',
   exceptions: 'No early end and no error message in the code an entry point reaches.',
   outputs: 'No change of data and no output in the code an entry point reaches.',
+  data: 'It reads no table by name.',
   integrations: 'No function module, transaction or other program is called by name.',
   controls: 'No authorization check, no record of its own and no explicit save or undo.',
+  systems: 'It reads no table by name, calls nothing by name and holds no control.',
   questions: 'No question is left open.',
 };
 
@@ -126,6 +144,32 @@ export interface PdProposal {
   text: string;
   anchors: DocAnchor[];
   origin: 'narrative' | 'statement-proposal';
+}
+
+/**
+ * Who acts at a step (ADR-084, roadmap 3.0.7 B2) — read from the evidence the
+ * code proves (`ProcessSkeleton.laneEvidence` and the run lane, 2.16 and the
+ * 3.0.7 lane rule), never guessed:
+ *
+ * - `User` — a dialogue statement stands in the step's code (a screen, a
+ *   popup, an ALV list, an information message), or the step is one of the
+ *   alternatives a user chooses from;
+ * - `Background job` — `SUBMIT … VIA JOB` or `IN BACKGROUND TASK`;
+ * - `System` — `IN UPDATE TASK`, or no dialogue statement in the step's code
+ *   while the run itself is proven a dialogue (`User`) or a system run;
+ * - `null` — *Not determined*: the code proves neither for the run, and the
+ *   step holds no evidence of its own.
+ *
+ * Business roles (a buyer, an approver) are never this: they are the RACI's,
+ * a model proposal.
+ */
+export type PdActorWho = 'User' | 'System' | 'Background job';
+
+export interface PdActor {
+  who: PdActorWho | null;
+  /** What it was read from, in one line: `SCREEN 9000 (L670)`, `user choice`, or why it is not determined. */
+  basis: string;
+  anchors: DocAnchor[];
 }
 
 export interface PdSubStep {
@@ -173,6 +217,8 @@ export interface PdStep {
   subSteps: PdSubStep[];
   /** Sub-steps not listed here; every one stands in the appendix. */
   moreSubSteps: number;
+  /** Who acts (ADR-084). Absent only in a description built before format 3. */
+  actor?: PdActor;
 }
 
 export interface PdGate {
@@ -193,6 +239,8 @@ export interface PdGate {
    * as arms that lead somewhere.
    */
   decisionTable?: { id: string; field: string; selector: string | null; rows: number };
+  /** Who decides (ADR-084): the user at a user choice, else the program. Absent before format 3. */
+  actor?: PdActor;
 }
 
 /** The step's reference as a reader sees it: `5`, or `5a` for an alternative of a user choice. */
@@ -214,6 +262,24 @@ export interface PdData {
   /** The business word, when the glossary knows the table. */
   meaning: string | null;
   owner: 'SAP' | 'Customer';
+  anchors: DocAnchor[];
+  /**
+   * Which rows are read (`lib/abap/data-scope.ts`): the `WHERE` of each read of
+   * the table, the fixed filters first — "Only where loekz = space (fixed in the
+   * code); restricted by the selection screen: bukrs IN s_bukrs". Verbatim
+   * conditions; null when no read names a filter the reader could split.
+   */
+  scope?: string | null;
+}
+
+/** A value the program computes rather than reads (`offen = menge - wemng`), with its line. */
+export interface PdDerived {
+  target: string;
+  expression: string;
+  /** `x = x + y`: a running total. */
+  accumulates: boolean;
+  /** The routine or event block it stands in. */
+  where: string | null;
   anchors: DocAnchor[];
 }
 
@@ -353,7 +419,19 @@ export interface ProcessDocument {
     outOfScope: PdText[];
     proposal: PdProposal | null;
   };
-  trigger: { start: PdText[]; selection: PdInput[]; data: PdData[] };
+  trigger: {
+    start: PdText[];
+    selection: PdInput[];
+    data: PdData[];
+    /**
+     * Input that is asked for and then not used, or handed to a dialogue in
+     * the wrong shape (`lib/abap/input-use.ts`) — one plain sentence each, the
+     * data object in `detail`. Absent before format 3.
+     */
+    inputUse?: PdText[];
+  };
+  /** Values the program computes (`lib/abap/data-scope.ts`), reached code only. Absent before format 3. */
+  derived?: PdDerived[];
   overview: { sentence: string; traceability: string; path: PdPathEntry[]; decisions: number };
   rules: PdRule[];
   /**
@@ -457,7 +535,9 @@ export function documentTexts(doc: ProcessDocument): string[] {
   add(doc.purpose.proposal?.text);
   doc.trigger.start.forEach((t) => add(t.text));
   doc.trigger.selection.forEach((i) => { add(i.name.toUpperCase()); add(i.meaning); });
-  doc.trigger.data.forEach((d) => { add(d.name); add(d.meaning); });
+  doc.trigger.data.forEach((d) => { add(d.name); add(d.meaning); add(d.scope); });
+  (doc.trigger.inputUse ?? []).forEach((t) => add(t.text));
+  (doc.derived ?? []).forEach((d) => { add(d.target); add(d.expression); });
   add(doc.overview.traceability);
   for (const entry of doc.overview.path) {
     if (entry.kind === 'gate') {

@@ -50,7 +50,7 @@ import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
  *   3. **the full text, folded** — narrative and exception handling, every
  *      field as stored, a missing one as *Not determined*. Since roadmap 3.0.7
  *      ("Documentation lean") the model proposes no KPI targets and no control
- *      checkpoints — the controls are the code reading's, section 8 of the
+ *      checkpoints — the controls are the code reading's, the systems section of the
  *      description — and a layer stored before keeps them in its data, not on
  *      the screen.
  *

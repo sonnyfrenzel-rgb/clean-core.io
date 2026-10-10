@@ -90,6 +90,21 @@ export function decisionTableTaskName(table: Pick<DecisionTableView, 'field' | '
   return `Determines ${table.field}${table.selector ? ` by ${table.selector}` : ''}`;
 }
 
+/**
+ * How a decision table is read, in one line (ADR-084, roadmap 3.0.7 A3) —
+ * deterministic from the table: an `IF`/`ELSEIF` chain and a `CASE` both take
+ * the first arm whose condition holds, so the first matching row wins; a row
+ * without a condition is the `ELSE`/`WHEN OTHERS` arm (`condition === null`,
+ * `lib/abap/decision-table.ts`). Without one, a case no row matches leaves the
+ * field as this code found it — the table does not set it.
+ */
+export function decisionTableHitPolicy(table: Pick<DecisionTableView, 'field' | 'rows'>): string {
+  const otherwise = table.rows.some((r) => r.condition === null);
+  return otherwise
+    ? `The first matching row wins; the rows below it are not checked. ${DECISION_TABLE_OTHERWISE} applies when no other row matches.`
+    : `The first matching row wins; the rows below it are not checked. There is no ${DECISION_TABLE_OTHERWISE} row: when no row matches, the table does not set ${table.field}.`;
+}
+
 /** "c_rot / c_gelb / c_gruen" — the values a table can set, each once, in row order. */
 export function decisionTableValues(table: Pick<DecisionTableView, 'rows'>): string {
   return [...new Set(table.rows.map((r) => r.value))].join(' / ');
