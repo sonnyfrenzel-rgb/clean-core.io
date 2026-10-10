@@ -208,6 +208,14 @@ export function collectLocalDataObjects(source: string): Set<string> {
     for (const part of m[1].split(',')) add(part.trim().split(/\s+/)[0]);
   }
 
+  // Structured declarations: `DATA: BEGIN OF it_out OCCURS 0, … END OF it_out.`
+  // The chain above reads `BEGIN` as the name, so the table with header line
+  // that a classic report builds its list in was never known as local, and
+  // `MODIFY it_out.` read as a database write (ZMM_BESTELLUEBERSICHT review,
+  // roadmap 3.0.7). The selection-screen forms of BEGIN OF name no data object.
+  const structured = /\bBEGIN\s+OF\s+(?!(?:BLOCK|SCREEN|LINE|TABBED|COMMON\s+PART|VERSION)\b)([\w\/]+)/gi;
+  for (const m of code.matchAll(structured)) add(m[1]);
+
   // Inline declarations: DATA(lv_x), @DATA(lt_x), FINAL(lv_y), FIELD-SYMBOL(<fs>)
   const inline = /\b(?:@?DATA|FINAL|FIELD-SYMBOL)\(\s*([\w<>\/]+)\s*\)/gi;
   for (const m of code.matchAll(inline)) add(m[1]);

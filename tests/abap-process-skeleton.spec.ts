@@ -1258,7 +1258,10 @@ test.describe('roadmap 2.16 — lanes', () => {
     expect(skeleton.lanes).toHaveLength(2);
     const [run, checker] = skeleton.lanes;
     expect(run.kind).toBe('system');
-    expect(run.name).toBe('UPDATE TASK');
+    // Roadmap 3.0.7: the run lane carries the role, not the token that proved
+    // it (was 'UPDATE TASK'); the token stays in the lane's evidence.
+    expect(run.name).toBe('System');
+    expect(run.evidence[0].token).toBe('UPDATE TASK');
     expect(run.anchor.lineStart).toBe(509);
     expect(run.nodeIds).toHaveLength(skeleton.nodes.length);
     expect(checker.kind).toBe('authority');
@@ -1327,10 +1330,19 @@ test.describe('roadmap 2.16 — lanes', () => {
     // in, and `tests/process-naming.spec.ts` ("CFO is rejected") holds for a
     // deterministic lane too — so the test is not "is this word on a blacklist"
     // but "is this word in the file".
+    //
+    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review, decision Sonny): the run
+    // lane is named for its role, `User` or `System` — the two roles BPMN
+    // knows, never a job title — and the token that proved it moves to its
+    // evidence. So for a run lane the evidence tokens are what must be in the
+    // file, and the name is exactly one of the two roles.
     for (const { file, source, lanes } of lanesOfShipped()) {
       const haystack = source.toUpperCase();
       for (const lane of lanes) {
-        for (const token of lane.name.split(/\s+/).filter(Boolean)) {
+        const isRun = lane.kind === 'human' || lane.kind === 'system';
+        if (isRun) expect(lane.name, `${file}: run lane`).toBe(lane.kind === 'human' ? 'User' : 'System');
+        const tokens = isRun ? lane.evidence.flatMap((e) => e.token.split(/\s+/)) : lane.name.split(/\s+/);
+        for (const token of tokens.filter(Boolean)) {
           expect(
             haystack.includes(token.toUpperCase()),
             `${file}: "${token}" of lane "${lane.name}" is in the source`,
@@ -1349,7 +1361,7 @@ test.describe('roadmap 2.16 — lanes', () => {
     const skeleton = skeletonOf(LEGACY);
     expect(skeleton.notDrawn.unreached.map((r) => r.name)).toContain('LEGACY_CALL_SCREEN_EXAMPLE');
     expect(skeleton.laneEvidence.map((e) => e.anchor.lineStart)).not.toContain(670);
-    expect(skeleton.lanes.map((l) => l.name)).not.toContain('SCREEN 9000');
+    expect(skeleton.lanes.flatMap((l) => l.evidence.map((e) => e.token))).not.toContain('SCREEN 9000');
 
     // And the counter-proof, so the assertion above is not green for the wrong
     // reason: the same statement in code an entry point does reach opens a lane.
@@ -1361,7 +1373,9 @@ test.describe('roadmap 2.16 — lanes', () => {
       '  CALL SCREEN 9000.',
       'ENDFORM.',
     ].join('\n'));
-    expect(reached.lanes.map((l) => l.name)).toContain('SCREEN 9000');
+    // 3.0.7: the lane is named for the role; the token is its evidence.
+    expect(reached.lanes.map((l) => l.name)).toContain('User');
+    expect(reached.lanes[0].evidence.map((e) => e.token)).toContain('SCREEN 9000');
     expect(reached.lanes[0].kind).toBe('human');
   });
 

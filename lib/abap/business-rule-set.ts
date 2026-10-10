@@ -871,9 +871,16 @@ class RuleSetBuilder {
     uses: Array<{ table: DecisionTable; row: DecisionTable['rows'][number]; name: string }>,
   ): void {
     for (const { table, row, name } of uses) {
+      // An IF/ELSEIF chain is read first match first: a later row applies only
+      // where no earlier row held, and saying "where x > 10 holds" after a row
+      // for "x > 0" would name a case the code never reaches that way (QA
+      // 975b5ad60247). CASE rows are disjoint, so they keep the plain sentence.
+      const later = table.selector === null && table.rows.indexOf(row) > 0;
       sentences.add('decision-value', [
         code(table.field), text(' is set to '), code(name),
-        ...(row.condition ? [text(' where '), code(row.condition), text(' holds')] : [text(' where no earlier row holds')]),
+        ...(row.condition
+          ? [text(later ? ' where no earlier row holds and ' : ' where '), code(row.condition), text(' holds')]
+          : [text(' where no earlier row holds')]),
         text(` (decision table ${table.id}).`),
       ], [row.anchor]);
     }

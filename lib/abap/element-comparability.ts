@@ -462,6 +462,18 @@ export function classifyElement(
     };
   }
 
+  // Roadmap 3.0.7: a change to an internal table is drawn as a plain step
+  // (`detail.internalTable`), and a plain step is otherwise business-comparable.
+  // This one is not: it keeps the program's own working data, and no scope item
+  // names it — technical, as the `write` it was drawn as before.
+  if (element.kind === 'task' && element.detail?.internalTable === true) {
+    return {
+      comparability: 'technical',
+      mayCarryStandardCandidate: false,
+      reason: 'Change to an internal table of the program — working data, not a step of the business process',
+    };
+  }
+
   if (element.kind === 'gateway') {
     const context: GatewayContext = gateway ?? { conditions: [] };
     const classes = context.conditions.map(classifyCondition).filter((c) => c !== 'none');

@@ -42,6 +42,18 @@ test('an Authorization header value in a literal is redacted, prose is not', () 
   expect(redactCredentials("lv_auth = 'Bearer ' && lv_token.")).toBe("lv_auth = 'Bearer ' && lv_token.");
 });
 
+test('a letters-only token in an authorization context is redacted too (QA c65a238c3cd2)', () => {
+  // No digit and no case change: the old shape test let it through.
+  expect(redactCredentials("value = 'Bearer abcdefghijklmnop'.")).toBe("value = 'Bearer …<redacted>'.");
+  expect(redactCredentials("lv_h = |Authorization: Bearer abcdefghijklmnop|.")).not.toContain('abcdefghijklmnop');
+  expect(redactCredentials("lv_h = `Basic qwertyuiopasdf`.")).toBe("lv_h = `Basic …<redacted>`.");
+  // Prose about the scheme stays, in a comment and in a message literal.
+  expect(redactCredentials('" Bearer authentication against the gateway')).toBe('" Bearer authentication against the gateway');
+  expect(redactCredentials("MESSAGE 'Bearer authentication failed' TYPE 'E'.")).toBe("MESSAGE 'Bearer authentication failed' TYPE 'E'.");
+  // A short word after the scheme is no token.
+  expect(redactCredentials("lv_s = 'Basic mode'.")).toBe("lv_s = 'Basic mode'.");
+});
+
 test('ABAP syntax that looks like name=value is left alone', () => {
   const untouched = [
     'lv_key = ls_row-key.',

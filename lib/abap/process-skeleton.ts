@@ -8,6 +8,8 @@ import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
+import { localDataObjectsOf } from './table-dependencies';
+import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -264,6 +266,13 @@ export interface SkeletonRegion {
 
 export type FormEffect =
   | 'write'
+  /**
+   * Roadmap 3.0.7: the routine changes an internal table of this program
+   * (`MODIFY gt_out FROM ls_out`, `DELETE lt_rows WHERE …`). It keeps the
+   * routine a step exactly as the old `write` did — a calculation routine is a
+   * step of the process — but it is no database effect and no SAP data store.
+   */
+  | 'compute'
   | 'read'
   | 'call'
   | 'human'
@@ -314,8 +323,10 @@ export interface SkeletonLane {
   id: string;
   kind: SkeletonLaneKind;
   /**
-   * The evidence token, and nothing else — `V_VBAK_VKO`, `SCREEN 9000`,
-   * `UPDATE TASK`. Never a job title and never a word from a list: §8 of the
+   * The evidence token for an `authority` lane (`V_VBAK_VKO`), the program
+   * name for a `program` lane, and since 3.0.7 the role for the run lane —
+   * `User` (`human`) or `System` (`system`), the token that proved it staying
+   * in `evidence`. Never a job title and never a word from a list: §8 of the
    * roadmap forbids role mandates, and `tests/process-naming.spec.ts` ("CFO is
    * rejected") holds for a deterministic lane too. Empty exactly when the source
    * offers no token at all, and `unnamedReason` then says so.
@@ -1174,6 +1185,14 @@ class SkeletonBuilder {
    * a form is and nothing downstream needs to know which of the two it holds.
    */
   private routineBlocks = new Map<string, Block>();
+  /**
+   * Roadmap 3.0.7 — the data objects this source declares (`localDataObjectsOf`,
+   * the set the call graph reads since 3.0.5). A write statement whose target is
+   * one of them changes an internal table: a plain step, never a `write`.
+   */
+  private localData: Set<string> = new Set();
+  /** Roadmap 3.0.7 — the batch-input calls, read field by field, by statement index. */
+  private batchInput = new Map<number, BatchInputCall>();
   private regionOfRoutine = new Map<string, SkeletonRegion>();
   /** `METHOD name.` inside `CLASS x IMPLEMENTATION`, one row per implementation. */
   private methodImpls: MethodImpl[] = [];
@@ -1231,6 +1250,8 @@ class SkeletonBuilder {
   ) {}
 
   build(): ProcessSkeleton {
+    this.localData = localDataObjectsOf(this.statements);
+    for (const call of readBatchInputFrom(this.statements)) this.batchInput.set(call.statementIndex, call);
     for (const block of this.structure.blocks) this.blockAt.set(block.openIndex, block);
     for (const branch of this.control.branches) this.branchAt.set(branch.openIndex, branch);
     for (const block of this.structure.blocks) {
@@ -1500,6 +1521,20 @@ class SkeletonBuilder {
     for (const [name, set] of this.effects) if (set.size === 0) this.helpers.add(name);
   }
 
+  private batchInputDetail(index: number): Record<string, string[]> {
+    const call = this.batchInput.get(index);
+    if (!call) return {};
+    return {
+      ...(call.screens.length ? { batchInputScreens: call.screens.map((s) => `${s.program} ${s.screen}`) } : {}),
+      ...(call.fields.length ? { batchInputFields: [...new Set(call.fields.map((f) => f.raw))] } : {}),
+    };
+  }
+
+  /** Roadmap 3.0.7: is this write target a data object of the program rather than a database table? */
+  private isInternalTable(name: string): boolean {
+    return this.localData.has(name.toUpperCase().replace(/\[\]$/, ''));
+  }
+
   private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
     const out = new Set<FormEffect>();
     // ADR-066. An AMDP method (`METHOD m BY DATABASE PROCEDURE|FUNCTION …`)
@@ -1532,7 +1567,11 @@ class SkeletonBuilder {
       }
       const text = statement.text;
       if ((statement.keyword === 'SELECT' || isEmbeddedSelect(text)) && selectTables(text).length) out.add('read');
-      if (databaseWriteIn(text)) out.add('write');
+      // An internal table changed keeps the routine a step, as a database write
+      // does — changing the kind alone folded whole calculation routines of the
+      // shipped examples into their callers (roadmap 3.0.7) — but as `compute`.
+      const written = databaseWriteIn(text);
+      if (written) out.add(this.isInternalTable(written.table) ? 'compute' : 'write');
       if (adbcExecution(text)) out.add('call');
       if (/^CALL\s+FUNCTION\b/i.test(text)) {
         const kind = functionTaskKind(/^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase());
@@ -3690,6 +3729,11 @@ class SkeletonBuilder {
           detail: {
             batchInput: call?.batchInput ?? false,
             dynamic: call?.dynamic ?? true,
+            // Roadmap 3.0.7: what the batch input fills, as the source writes
+            // it — the screens (`SAPMM06E 1117`) and the screen fields
+            // (`EKET-EEIND(01)`). Tokens only: which of them is a database
+            // table is the catalogue's question (`evidence-model.ts`).
+            ...this.batchInputDetail(statement.index),
             // Rule 3: batch input returns, and the caller goes on.
             returns: true,
           },
@@ -3716,6 +3760,15 @@ class SkeletonBuilder {
       return { exits: incoming, outputRun: null };
     }
     const write = databaseWriteIn(text);
+    if (write && this.isInternalTable(write.table)) {
+      // Roadmap 3.0.7: a change to an internal table is a plain step of the
+      // program — no SAP data store, no effect. `MODIFY gt_fieldcat FROM
+      // gs_fieldcat` drawn as a write read as if the field catalogue were a
+      // table of the system.
+      return keep(this.addNode('task', write.table.toUpperCase(),
+        anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
+        ctx.region, ctx.container, { detail: { operation: write.keyword, internalTable: true } }));
+    }
     if (write) {
       return keep(this.addNode('write', write.table.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
@@ -4439,6 +4492,9 @@ class SkeletonBuilder {
       }, ctx.region, ctx.container, { detail: { ...(detail ?? {}), fromMacro: site.keyword } });
 
     const write = databaseWriteIn(body.text);
+    if (write && this.isInternalTable(write.table)) {
+      return at('task', write.table.toUpperCase(), { operation: write.keyword, internalTable: true });
+    }
     if (write) return at('write', write.table.toUpperCase(), { operation: write.keyword });
     if (body.keyword === 'SELECT') {
       const tables = selectTables(body.text);
@@ -4703,10 +4759,16 @@ class SkeletonBuilder {
     const anchor = named?.anchor ?? program?.anchor ?? entry?.anchor ?? this.firstAnchor();
     if (!anchor) return [];
 
+    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): the run lane is named for
+    // the role its evidence proves — "User" where a person is at the keyboard,
+    // "System" where nobody is — and not after the token that proved it. A lane
+    // called REUSE_ALV_GRID_DISPLAY named a function module as the actor. The
+    // token stays in `evidence`, with its line; "User" and "System" are the two
+    // roles BPMN itself knows, never a job title (§8 forbids those).
     lanes.push({
       id: 'lane-1',
       kind: named ? (named.kind === 'human' ? 'human' : 'system') : 'program',
-      name: named?.token ?? program?.name ?? '',
+      name: named ? (named.kind === 'human' ? 'User' : 'System') : program?.name ?? '',
       ...(named || program ? {} : {
         unnamedReason:
           'The source names no dialogue, no background task and no program name, so nothing in it says who runs these steps.',

@@ -48,6 +48,10 @@ const USE_OF_KIND: Partial<Record<EvidenceFinding['kind'], ObjectUse>> = {
   'standard-table-write': 'write',
   'custom-table-write': 'write',
   'table-access': 'read', // fires for a READ of a customer's own table (evidence-model.ts's isCustom && !isWrite branch)
+  // Roadmap 3.0.7: a batch input that fills a table's fields changes that
+  // table — graded as a write. It is no *direct* write, so it does not set
+  // `hasOwnWriteAccess` (that stays `standard-table-write` alone).
+  'batch-input': 'write',
 };
 
 export interface PublicCloudFitResolverInput {

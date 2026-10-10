@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-03",
+  "written": "2026-10-10",
   "entries": [
     {
       "case": "CC-001",
@@ -3450,7 +3450,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:12 commit-work. Ohne Gegenstück: CC-024-F01 R20@1.0.0@source.abap:10 — keine Brücke für R20, CC-024-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:12 commit-work, source.abap:10 authority-check. Ohne Gegenstück: CC-024-F01 R20@1.0.0@source.abap:10 — keine Brücke für R20, CC-024-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19."
     },
     {
       "case": "CC-024",
@@ -4195,7 +4195,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 5 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:16 commit-work. Ohne Gegenstück: CC-029-F01 R19@1.0.0@source.abap:5 — keine Brücke für R19, CC-029-F02 R19@1.0.0@source.abap:20 — keine Brücke für R19, CC-029-F03 R23@1.0.0@source.abap:10 — keine Brücke für R23, CC-029-F04 R06@1.0.0@source.abap:5 — keine Brücke für R06 … (+1)."
+      "reason": "0 von 5 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:16 commit-work, source.abap:14 authority-check. Ohne Gegenstück: CC-029-F01 R19@1.0.0@source.abap:5 — keine Brücke für R19, CC-029-F02 R19@1.0.0@source.abap:20 — keine Brücke für R19, CC-029-F03 R23@1.0.0@source.abap:10 — keine Brücke für R23, CC-029-F04 R06@1.0.0@source.abap:5 — keine Brücke für R06 … (+1)."
     },
     {
       "case": "CC-029",
@@ -4791,7 +4791,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:14 commit-work. Ohne Gegenstück: CC-033-F01 R25@v2-draft@source.abap:12 — R25 ohne Gegenstück an „MESSAGE e001(zcc) WITH p_id\", CC-033-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19, CC-033-F03 R18@1.0.0@source.abap:15 — keine Brücke für R18, CC-033-F04 R20@1.0.0@source.abap:5 — keine Brücke für R20."
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:14 commit-work, source.abap:5 authority-check. Ohne Gegenstück: CC-033-F01 R25@v2-draft@source.abap:12 — R25 ohne Gegenstück an „MESSAGE e001(zcc) WITH p_id\", CC-033-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19, CC-033-F03 R18@1.0.0@source.abap:15 — keine Brücke für R18, CC-033-F04 R20@1.0.0@source.abap:5 — keine Brücke für R20."
     },
     {
       "case": "CC-033",
@@ -8074,8 +8074,8 @@
     {
       "case": "CC-055",
       "class": "level",
-      "state": "agree",
-      "verdict": null,
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
       "scope": {
         "compared": 1,
         "total": 1
@@ -8089,7 +8089,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 2 Objekt(e)) D. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht."
     },
     {
       "case": "CC-055",
@@ -8198,7 +8198,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Not \"no findings, B\"."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-055-B02↔source.abap:B18-chain18 0.62, CC-055-B01↔source.abap:B14-call 0.59. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
+      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-055-B02↔source.abap:B18-chain18 0.62, CC-055-B01↔source.abap:B14-call 0.57. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-056",
@@ -8665,7 +8665,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-059-F01 R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)@source.abap:1 (scope=artefact) — keine Brücke für R03, CC-059-S01 R28@v2-vorl.@source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ) — R28 ohne Gegenstück an „MODIFY ENTITIES OF zi_order IN LOCAL MODE ENTITY\"."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:13 authority-check. Ohne Gegenstück: CC-059-F01 R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)@source.abap:1 (scope=artefact) — keine Brücke für R03, CC-059-S01 R28@v2-vorl.@source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ) — R28 ohne Gegenstück an „MODIFY ENTITIES OF zi_order IN LOCAL MODE ENTITY\"."
     },
     {
       "case": "CC-059",

@@ -1,6 +1,9 @@
 import { tokenize } from './declaration-parser';
 import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
-import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates, functionModuleCatalogAnswer } from './catalog-service';
+import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates, functionModuleCatalogAnswer, isSapDatabaseTable } from './catalog-service';
+import { readBatchInput, writesOf, type BatchInputCall, type BatchInputWrite } from './batch-input';
+import { assessAuthority } from './authority-assessment';
+import { tableTerm, termFor } from './business-glossary';
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
@@ -187,12 +190,60 @@ export function redactCredentials(snippet: string | undefined): string {
     // so prose such as "Bearer authentication" stays readable.
     // Case-sensitive on purpose: the case change is the signal.
     .replace(/\b([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?=[\w\-.~+/]*?(?:\d|[a-z][A-Z]))[\w\-.~+/]{6,}=*/g, '$1$2…<redacted>')
+    // In an explicit authorization context the composition is no signal: a
+    // token of letters only (`'Bearer abcdefghijklmnop'`) is still a token
+    // (QA c65a238c3cd2). The context is the scheme word opening a literal, or
+    // following `Authorization:`. Prose about the scheme ("Bearer
+    // authentication") is left alone by the words it is written in.
+    .replace(/((?:['`|]|\bAuthorization\s*:)\s*)([Bb]earer|[Bb]asic|BEARER|BASIC)(\s+)(?!(?:authentication|authorization|auth|token|tokens|scheme|header|credentials?)\b)(?!…<redacted>)[\w\-.~+/]{8,}=*/gi,
+      (_m, lead, scheme, gap) => `${lead}${scheme}${gap}…<redacted>`)
     // A password or token assigned to a literal in ABAP — of any length: a short
     // secret is still a secret. The name may carry a prefix (`lv_password`,
     // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
     // matched inside one (QA slice review of 953575fcc9bf, 21933f60c24d).
     .replace(/\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
       (_m, word, mid) => `${word}${mid}'…<redacted>'`);
+}
+
+/** `the purchase order schedule line (EKET)`, or `EKET` where the glossary has no word for it. */
+function tablePhrase(table: string): string {
+  const term = tableTerm(table);
+  return term ? `the ${term.singular} (${table})` : table;
+}
+
+/**
+ * What a batch input changes, in words where the glossary has them (roadmap
+ * 3.0.7): "the delivery date (EKET-EEIND) of the purchase order schedule line
+ * (EKET)". A component or table the glossary does not know stands as the
+ * source writes it.
+ */
+export function batchInputEffect(write: BatchInputWrite): string {
+  const fields = write.components.map((component) => {
+    const term = termFor(component);
+    return term.singular.toUpperCase() !== component.toUpperCase()
+      ? `the ${term.singular} (${write.table}-${component})`
+      : `${write.table}-${component}`;
+  });
+  // A posting fills a dozen header fields; the title names three and counts
+  // the rest, the detail lists every one of them.
+  const shown = fields.length > 3 ? [...fields.slice(0, 3), `${fields.length - 3} more field${fields.length - 3 > 1 ? 's' : ''}`] : fields;
+  const list = shown.length <= 1 ? shown.join('') : `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}`;
+  const term = tableTerm(write.table);
+  return term ? `${list} of the ${term.singular} (${write.table})` : `${list} in ${write.table}`;
+}
+
+/** The screens and fields of a batch-input call, appended to the BDC finding's detail. */
+function batchInputDetail(call: BatchInputCall | undefined, writes: BatchInputWrite[], tcode: string): string {
+  if (!call || (!call.screens.length && !call.fields.length)) return '';
+  const programs = [...new Set(call.screens.map((s) => s.program))].join(', ');
+  const screens = call.screens.length
+    ? ` It runs ${call.screens.length} screen${call.screens.length > 1 ? 's' : ''} of ${programs} (${call.screens.map((s) => s.screen).join(', ')})`
+    : ' It';
+  const fields = call.fields.length ? ` and fills ${call.fields.map((f) => f.raw).join(', ')}` : '';
+  const changes = writes.length
+    ? ` Through ${tcode} it changes ${writes.map(batchInputEffect).join('; ')}.`
+    : ' None of the filled fields names a database table SAP lists, so what it changes is not determined from the code.';
+  return `${screens}${fields}.${changes}`;
 }
 
 /**
@@ -224,6 +275,16 @@ export function buildAbapEvidence(
     accessesAt.set(dependency.statement, [...(accessesAt.get(dependency.statement) ?? []), dependency]);
   }
   const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
+
+  // Roadmap 3.0.7 — batch input read field by field (`batch-input.ts`). The
+  // screen fields a call fills name the table it changes where their structure
+  // is a database table SAP lists; the dialog structures of the transaction
+  // (`RM06E`, `RV45A`) are not. Keyed by the line the call starts on.
+  const batchAt = new Map<number, BatchInputCall>(readBatchInput(code).map((call) => [call.line, call]));
+  const batchWrites = (call: BatchInputCall | undefined): BatchInputWrite[] =>
+    call ? writesOf(call, isSapDatabaseTable) : [];
+  // Roadmap 3.0.7 — the authorization checks assessed, by line.
+  const authority = assessAuthority(code);
 
   const FAKE_TABLES = new Set([
     'MODE', 'TASK', 'RISK', 'SCREEN', 'LINE', 'TABLE', 'INTO', 'FROM',
@@ -269,6 +330,46 @@ export function buildAbapEvidence(
       // this file's knowledge, and calling it a catalog match would cite SAP
       // for it.
       source: finding.source || (finding.sapReplacement?.confidence === 'Catalog Match' ? 'catalog-match' : 'static-parser'),
+    });
+  };
+
+  /**
+   * Roadmap 3.0.7 — what a batch input changes, as a finding on the table: a
+   * write to that table through the transaction's screens, graded as a write
+   * (`public-cloud-fit-resolver.ts`, `USE_OF_KIND`) and carrying the successor
+   * SAP lists for the table. Kind `batch-input`: it costs no score points of
+   * its own — the `bdc` finding on the call already does — and it is no direct
+   * write, so it never counts as a `standard-table-write`.
+   */
+  const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string) => {
+    const entry = STANDARD_TABLE_MAP[write.table];
+    // Anchored where the table is named — the statement that fills the first
+    // of its fields — so the anchor carries what the finding claims; the call
+    // is in the detail. The statement's first line, as every finding here: a
+    // range that followed the literal inside a re-wrapped statement would move
+    // with formatting (tests/abap-metamorphic.spec.ts, P2).
+    const fillLine = write.firstFill.lineStart;
+    const fill = statements.find((s) => s.line === write.firstFill.lineStart);
+    addFinding({
+      kind: 'batch-input',
+      title: `Batch input changes ${batchInputEffect(write)} via ${tcode}`,
+      severity: 'High',
+      confidence: 'High',
+      objectName: write.table,
+      objectType: 'Database Table',
+      lineStart: fillLine,
+      snippet: fill ? fill.text.trim() : text,
+      technicalDetail: `The batch input to ${tcode} (line ${line}) fills ${write.raw.join(', ')} (line${write.lines.length > 1 ? 's' : ''} ${write.lines.join(', ')}). The transaction writes the change to ${write.table}; this program writes nothing to it directly.`,
+      cleanCoreImpact: `The change to ${write.table} rests on the SAP GUI screens of ${tcode}. They carry no stability contract and do not run in ABAP Cloud.`,
+      recommendation: entry
+        ? `Make the change through the released API for ${tablePhrase(write.table)}: SAP names ${entry.view} as the successor of ${write.table}.`
+        : `Make the change through a released SAP API for ${tablePhrase(write.table)}; the catalogue names no successor for ${write.table}.`,
+      targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite'],
+      sapReplacement: entry ? {
+        objectName: entry.view,
+        objectType: entry.type,
+        ...replacementProvenance(entry),
+      } : undefined,
     });
   };
 
@@ -472,7 +573,14 @@ export function buildAbapEvidence(
       });
     } else if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
       const tcodeMatch = text.match(/\bCALL\s+TRANSACTION\s+'?([\w\/]+)'?/i);
-      const tcode = tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN';
+      const call = batchAt.get(stmt.line);
+      // A code held in a constant is the constant's value, not its name (3.0.7).
+      const tcode = call?.transaction ?? (tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN');
+      const writes = batchWrites(call);
+      // The successor of the first table the batch input changes is the
+      // domain's own API; the generic sentence named nothing a reader could
+      // look up (roadmap 3.0.7).
+      const successor = writes.map((w) => w.table).find((t) => STANDARD_TABLE_MAP[t] !== undefined);
       addFinding({
         kind: 'bdc',
         title: `Legacy Batch Data Communication (BDC) to TCode ${tcode}`,
@@ -482,13 +590,29 @@ export function buildAbapEvidence(
         objectType: 'Transaction Code',
         lineStart: stmt.line,
         snippet: text,
-        technicalDetail: `CALL TRANSACTION statement to drive SAP screens programmatically.`,
+        technicalDetail: `CALL TRANSACTION statement to drive SAP screens programmatically.${batchInputDetail(call, writes, tcode)}`,
         cleanCoreImpact: 'BDC relies on traditional SAP GUI screen flows. These are highly unstable, prone to breaking during upgrades, and do not work in SAP Fiori or Cloud environments.',
         // Domain-neutral: the example named the sales order API for every
         // transaction, purchase orders included (ZMM_BESTELLUEBERSICHT review).
-        recommendation: `Replace this screen automation with the released SAP API for the same business object, or wrap it in an OData service via RAP.`,
-        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite']
+        // Where the filled fields name the table, the successor SAP lists for
+        // it is the domain-specific one, and the sentence names it (3.0.7).
+        recommendation: successor
+          ? `Replace this screen automation with the released SAP API for ${tablePhrase(successor)}: SAP names ${STANDARD_TABLE_MAP[successor].view} as the successor of ${successor}. Change the data through that API or the RAP business object behind it, not through the screens.`
+          : `Replace this screen automation with the released SAP API for the same business object, or wrap it in an OData service via RAP.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite'],
+        sapReplacement: successor ? {
+          objectName: STANDARD_TABLE_MAP[successor].view,
+          objectType: STANDARD_TABLE_MAP[successor].type,
+          ...replacementProvenance(STANDARD_TABLE_MAP[successor]),
+        } : undefined,
       });
+      for (const write of writes) addBatchInputWrite(write, tcode, stmt.line, text);
+    } else if (/^\s*CALL\s+FUNCTION\s+'BDC_INSERT'/i.test(text)) {
+      // A batch-input session row: the same screens, run later from SM35. The
+      // call itself costs nothing here (it never did); what its rows change is
+      // graded like the direct call's.
+      const call = batchAt.get(stmt.line);
+      for (const write of batchWrites(call)) addBatchInputWrite(write, call?.transaction ?? 'UNKNOWN', stmt.line, text);
     }
 
     // Remote Function Calls (RFC)
@@ -631,14 +755,25 @@ export function buildAbapEvidence(
 
     // Authority Checks
     if (/\bAUTHORITY-CHECK\b/i.test(codeText)) {
+      // Roadmap 3.0.7: the check is assessed (`authority-assessment.ts`). A
+      // check that tests only the LOW value of a range, or only the display
+      // activity in a program that writes, is reported as what it is; a check
+      // that holds stays the Info it was.
+      const issues = authority.issues.filter((issue) => issue.line === stmt.line && issue.kind !== 'write-without-check');
+      const titles: Record<string, string> = {
+        'low-value-only': 'checks only the LOW value of a selection range',
+        'display-activity-while-writing': 'checks display (ACTVT 03) while the program changes data',
+      };
       addFinding({
         kind: 'authority-check',
-        title: 'Authorization Check (AUTHORITY-CHECK)',
-        severity: 'Info',
+        title: issues.length
+          ? `Authorization check${issues[0].object ? ` on ${issues[0].object}` : ''} ${[...new Set(issues.map((issue) => titles[issue.kind]))].join(' and ')}`
+          : 'Authorization Check (AUTHORITY-CHECK)',
+        severity: issues.length ? 'Medium' : 'Info',
         confidence: 'High',
         lineStart: stmt.line,
         snippet: text,
-        technicalDetail: `AUTHORITY-CHECK statement.`,
+        technicalDetail: issues.length ? `AUTHORITY-CHECK statement. ${issues.map((issue) => issue.detail).join(' ')}` : `AUTHORITY-CHECK statement.`,
         cleanCoreImpact: 'Security logic to preserve. Security configuration needs to be mapped to the new authorization concept (IAM business roles in cloud).',
         recommendation: `Retain check, but map the authorization object to a corresponding IAM app descriptor in S/4HANA Cloud.`,
         targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility']
@@ -855,6 +990,25 @@ export function buildAbapEvidence(
       });
     }
   });
+
+  // Roadmap 3.0.7 — a program that changes data and checks no authorization
+  // at all. Anchored at the first change; kind `authority-check`, so it costs
+  // no score points, and Medium, because it is a question for the owners of the
+  // authorization concept and not a clean core violation.
+  for (const issue of authority.issues.filter((i) => i.kind === 'write-without-check')) {
+    addFinding({
+      kind: 'authority-check',
+      title: 'Data is changed without an authorization check',
+      severity: 'Medium',
+      confidence: 'High',
+      lineStart: issue.line,
+      snippet: statements.find((s) => s.line === issue.line)?.text.trim() ?? '',
+      technicalDetail: issue.detail,
+      cleanCoreImpact: 'Who may run the change is decided only by who may start the program. In ABAP Cloud a RAP business object checks authorization in its own handler; the rule has to be written there.',
+      recommendation: 'Decide with the owners of the authorization concept which object and activity guard this change, and check it before the change — in a RAP business object, in its authorization handler.',
+      targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility'],
+    });
+  }
 
   // -- 4. Core modifications --
   // Modification markers are full-line comments, which tokenize() drops by

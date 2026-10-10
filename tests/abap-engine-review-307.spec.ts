@@ -4,10 +4,17 @@ import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { readCallGraph } from '../lib/abap/call-graph';
 import { buildProcessSkeleton, type ProcessSkeleton } from '../lib/abap/process-skeleton';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
+import { readBatchInput, writesOf } from '../lib/abap/batch-input';
+import { buildBusinessStatements } from '../lib/abap/business-statement';
+import { collectObjectFacts } from '../lib/abap/public-cloud-fit-resolver';
+import { scoreFromFindings } from '../lib/clean-core-score';
+import { readInputUse } from '../lib/abap/input-use';
+import { assessAuthority } from '../lib/abap/authority-assessment';
+import { readDataScope } from '../lib/abap/data-scope';
 
 /**
  * Roadmap 3.0.7 — "Engine: what the ZMM_BESTELLUEBERSICHT review showed",
- * the bounded slice (a)–(d). Server-free: every test is a pure function of a
+ * the bounded slice (a)–(e), and the rest of the item (f)–(k). Server-free: every test is a pure function of a
  * source written here, none of that report's code.
  */
 
@@ -331,6 +338,30 @@ ${arm2}
     }
   });
 
+  test('a later IF/ELSEIF row says the earlier rows did not hold (first match, QA 975b5ad60247)', () => {
+    const source = `REPORT zdemo_overlap.
+CONSTANTS: c_low  TYPE c VALUE 'L',
+           c_high TYPE c VALUE 'H',
+           c_none TYPE c VALUE 'N'.
+DATA gs_row TYPE zdemo_row.
+START-OF-SELECTION.
+  IF gs_row-menge > 0.
+    gs_row-klasse = c_low.
+  ELSEIF gs_row-menge > 10.
+    gs_row-klasse = c_high.
+  ELSE.
+    gs_row-klasse = c_none.
+  ENDIF.
+`;
+    const set = deriveBusinessRules(source);
+    const sentence = (name: string) => set.rules.find((r) => r.label.startsWith(name))?.sentences
+      .find((s) => s.key === 'decision-value')?.text;
+    expect(sentence('c_low')).toBe('gs_row-klasse is set to c_low where gs_row-menge > 0 holds (decision table DT-001).');
+    expect(sentence('c_high'))
+      .toBe('gs_row-klasse is set to c_high where no earlier row holds and gs_row-menge > 10 holds (decision table DT-001).');
+    expect(sentence('c_none')).toBe('gs_row-klasse is set to c_none where no earlier row holds (decision table DT-001).');
+  });
+
   test('a plain IF … ELSE is no table', () => {
     const source = `REPORT zdemo_flag.
 DATA lv_flag TYPE c.
@@ -342,5 +373,306 @@ START-OF-SELECTION.
   ENDIF.
 `;
     expect(deriveBusinessRules(source).decisionTables).toBeUndefined();
+  });
+});
+
+/* ------------------------------------------------------------------ (f) */
+
+const BDC_REPORT = `REPORT zdemo_bdc.
+TABLES eket.
+CONSTANTS c_x TYPE c VALUE 'X'.
+DATA: it_bdc LIKE bdcdata OCCURS 0 WITH HEADER LINE,
+      gt_po  TYPE STANDARD TABLE OF ekpo,
+      gs_po  TYPE ekpo,
+      l_datum(10) TYPE c.
+START-OF-SELECTION.
+  SELECT * FROM ekpo INTO TABLE gt_po WHERE loekz = space.
+  PERFORM change_dates.
+FORM change_dates.
+  LOOP AT gt_po INTO gs_po.
+    REFRESH it_bdc.
+    PERFORM bdc_dynpro USING 'SAPMM06E' '0105'.
+    PERFORM bdc_field  USING 'RM06E-BSTNR' gs_po-ebeln.
+    PERFORM bdc_field  USING 'BDC_OKCODE'  '/00'.
+    PERFORM bdc_dynpro USING 'SAPMM06E' '1117'.
+    PERFORM bdc_field  USING 'EKET-EEIND(01)' l_datum.
+    PERFORM bdc_field  USING 'BDC_OKCODE'  '=BU'.
+    CALL TRANSACTION 'ME22' USING it_bdc MODE 'N' UPDATE 'S'.
+  ENDLOOP.
+ENDFORM.
+FORM bdc_dynpro USING program dynpro.
+  CLEAR it_bdc.
+  it_bdc-program  = program.
+  it_bdc-dynpro   = dynpro.
+  it_bdc-dynbegin = c_x.
+  APPEND it_bdc.
+ENDFORM.
+FORM bdc_field USING fnam fval.
+  CLEAR it_bdc.
+  it_bdc-fnam = fnam.
+  it_bdc-fval = fval.
+  APPEND it_bdc.
+ENDFORM.
+`;
+
+test.describe('(f) batch input read field by field', () => {
+  test('screens and fields are read through the helper routines, in order, without the control fields', () => {
+    const [call] = readBatchInput(BDC_REPORT);
+    expect(call.transaction).toBe('ME22');
+    expect(call.table).toBe('IT_BDC');
+    expect(call.screens.map((s) => `${s.program} ${s.screen}`)).toEqual(['SAPMM06E 0105', 'SAPMM06E 1117']);
+    expect(call.fields.map((f) => `${f.raw}@${f.screen?.screen} ${f.key}`))
+      .toEqual(['RM06E-BSTNR@0105 true', 'EKET-EEIND(01)@1117 false']);
+    expect(call.okCodes).toEqual(['/00', '=BU']);
+  });
+
+  test('macros and rows written in place are read the same way', () => {
+    const macro = `REPORT zdemo_macro.
+DATA: gt_bdc TYPE STANDARD TABLE OF bdcdata, gs_bdc TYPE bdcdata.
+DEFINE bdc_d.
+  APPEND VALUE #( program = &1 dynpro = &2 dynbegin = 'X' ) TO gt_bdc.
+END-OF-DEFINITION.
+DEFINE bdc_f.
+  CLEAR gs_bdc.
+  gs_bdc-fnam = &1.
+  gs_bdc-fval = &2.
+  APPEND gs_bdc TO gt_bdc.
+END-OF-DEFINITION.
+START-OF-SELECTION.
+  bdc_d 'SAPMV45A' '0102'.
+  bdc_f 'VBAK-VBELN' lv_vbeln.
+  bdc_d 'SAPMV45A' '4002'.
+  bdc_f 'VBAK-LIFSK' '01'.
+  gs_bdc-fnam = 'VBAP-ABGRU(01)'.
+  gs_bdc-fval = '02'.
+  APPEND gs_bdc TO gt_bdc.
+  CALL TRANSACTION 'VA02' USING gt_bdc MODE 'N'.
+`;
+    const [call] = readBatchInput(macro);
+    expect(call.screens.map((s) => s.screen)).toEqual(['0102', '4002']);
+    expect(call.fields.map((f) => f.field)).toEqual(['VBAK-VBELN', 'VBAK-LIFSK', 'VBAP-ABGRU']);
+    // The document number names the order to open; the two others change it.
+    expect(writesOf(call, () => true).map((w) => `${w.table}:${w.components.join(',')}`)).toEqual(['VBAK:LIFSK', 'VBAP:ABGRU']);
+  });
+
+  test('the effect is a write to the table, with the domain successor; a screen structure is no table', () => {
+    const findings = buildAbapEvidence(BDC_REPORT, 'zbdc.abap', 'private').findings;
+    const write = findings.filter((f) => f.kind === 'batch-input');
+    expect(write.map((f) => f.objectName)).toEqual(['EKET']); // RM06E is the dialog structure of ME22
+    expect(write[0].title)
+      .toBe('Batch input changes the delivery date (EKET-EEIND) of the purchase order schedule line (EKET) via ME22');
+    expect(write[0].sapReplacement?.objectName).toBeTruthy();
+    const bdc = findings.find((f) => f.kind === 'bdc');
+    expect(bdc?.recommendation).toContain(`successor of EKET`);
+    expect(bdc?.sapReplacement?.objectName).toBe(write[0].sapReplacement?.objectName);
+    expect(bdc?.technicalDetail).toContain('SAPMM06E (0105, 1117)');
+    // Graded as a write; no direct write (that would force a rebuild, ADR-033).
+    const facts = collectObjectFacts(findings).get('EKET');
+    expect(facts?.use).toBe('write');
+    expect(facts?.hasOwnWriteAccess).toBe(false);
+    // And it costs no points of its own: the score is the BDC's.
+    const without = findings.filter((f) => f.kind !== 'batch-input');
+    expect(scoreFromFindings(findings)).toBe(scoreFromFindings(without));
+  });
+
+  test('the skeleton carries the screens and fields on the transaction node; the sentence names the change', () => {
+    const node = buildProcessSkeleton(BDC_REPORT).nodes.find((n) => n.kind === 'transaction');
+    expect(node?.detail?.batchInputScreens).toEqual(['SAPMM06E 0105', 'SAPMM06E 1117']);
+    expect(node?.detail?.batchInputFields).toEqual(['RM06E-BSTNR', 'EKET-EEIND(01)']);
+    const sentence = buildBusinessStatements(BDC_REPORT).find((s) => s.text.startsWith('Transaction ME22'));
+    expect(sentence?.text).toContain('it changes the delivery date of the purchase order schedule line (EKET-EEIND) and fills RM06E-BSTNR');
+  });
+
+  test('navigation without USING reads no fields', () => {
+    expect(readBatchInput("REPORT z.\nSTART-OF-SELECTION.\n  CALL TRANSACTION 'ME23N' AND SKIP FIRST SCREEN.\n")).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ (g) */
+
+test.describe('(g) user input read and then ignored; dialog parameters of the wrong type', () => {
+  const popup = `REPORT zdemo_popup.
+DATA: it_bdc LIKE bdcdata OCCURS 0 WITH HEADER LINE,
+      g_answer(1) TYPE c,
+      g_datum TYPE sy-datum.
+PARAMETERS: p_used AS CHECKBOX, p_unused AS CHECKBOX DEFAULT 'X'.
+START-OF-SELECTION.
+  IF p_used = 'X'.
+    CALL FUNCTION 'POPUP_GET_VALUES'
+      EXPORTING popup_title = 'New date'
+      IMPORTING returncode = g_answer
+      TABLES fields = it_bdc.
+    g_datum = sy-datum + 14.
+    REFRESH it_bdc.
+    LOOP AT it_bdc.
+      WRITE / it_bdc-fval.
+    ENDLOOP.
+  ENDIF.
+`;
+
+  test('the three shapes, each at its line', () => {
+    const issues = readInputUse(popup);
+    expect(issues.map((i) => `${i.kind} ${i.name}${i.overwrittenAt ? ` @${i.overwrittenAt}` : ''}`)).toEqual([
+      'selection-never-read p_unused',
+      'dialog-output-ignored g_answer',
+      'dialog-parameter-type it_bdc',
+      'dialog-output-ignored it_bdc @13',
+    ]);
+    expect(issues.find((i) => i.kind === 'dialog-parameter-type')?.detail)
+      .toBe('POPUP_GET_VALUES takes a table of SVAL in FIELDS; it_bdc is declared as a table of BDCDATA. The fields the dialog shows and the values it returns are not the ones the program means.');
+  });
+
+  test('an answer that is read, and a table of the right type, are not flagged', () => {
+    const fine = popup
+      .replace('it_bdc LIKE bdcdata OCCURS 0 WITH HEADER LINE', 'it_bdc TYPE STANDARD TABLE OF sval WITH HEADER LINE')
+      .replace("    g_datum = sy-datum + 14.\n    REFRESH it_bdc.\n", "    CHECK g_answer <> 'A'.\n")
+      .replace(', p_unused AS CHECKBOX DEFAULT \'X\'', '');
+    expect(readInputUse(fine)).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ (h) */
+
+test.describe('(h) the authorization check is assessed', () => {
+  const checked = (actvt: string, field = 's_bukrs-low') => `REPORT zdemo_auth.
+TABLES ekko.
+SELECT-OPTIONS s_bukrs FOR ekko-bukrs.
+AT SELECTION-SCREEN.
+  AUTHORITY-CHECK OBJECT 'M_BEST_BUK' ID 'BUKRS' FIELD ${field} ID 'ACTVT' FIELD '${actvt}'.
+START-OF-SELECTION.
+  UPDATE zdemo_stat SET done = 'X' WHERE bukrs IN s_bukrs.
+`;
+
+  test('only the LOW value, and display while the program writes', () => {
+    const { issues } = assessAuthority(checked('03'));
+    expect(issues.map((i) => `${i.kind} ${i.object}`)).toEqual([
+      'low-value-only M_BEST_BUK',
+      'display-activity-while-writing M_BEST_BUK',
+    ]);
+    const finding = buildAbapEvidence(checked('03'), 'z.abap').findings.find((f) => f.kind === 'authority-check');
+    expect(finding?.severity).toBe('Medium');
+    expect(finding?.title)
+      .toBe('Authorization check on M_BEST_BUK checks only the LOW value of a selection range and checks display (ACTVT 03) while the program changes data');
+  });
+
+  test('a change activity on a single value is a check that holds', () => {
+    expect(assessAuthority(checked('02', 'p_bukrs')).issues).toEqual([]);
+    const finding = buildAbapEvidence(checked('02', 'p_bukrs'), 'z.abap').findings.find((f) => f.kind === 'authority-check');
+    expect(finding?.severity).toBe('Info');
+  });
+
+  test('writes without any check are reported at the first write', () => {
+    const source = 'REPORT z.\nSTART-OF-SELECTION.\n  UPDATE zdemo_stat SET done = \'X\' WHERE id = 1.\n';
+    expect(assessAuthority(source).issues.map((i) => `${i.kind} L${i.line}`)).toEqual(['write-without-check L3']);
+    const finding = buildAbapEvidence(source, 'z.abap').findings.find((f) => f.kind === 'authority-check');
+    expect(finding?.title).toBe('Data is changed without an authorization check');
+    expect(finding?.lineStart).toBe(3);
+    // A change to an internal table is no change of data.
+    expect(assessAuthority('REPORT z.\nDATA gt TYPE STANDARD TABLE OF i.\nSTART-OF-SELECTION.\n  DELETE gt INDEX 1.\n').issues).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ (i) */
+
+test.describe('(i) the run lane is named for its role', () => {
+  test('User from a dialog, System from an update task; the token stays the evidence', () => {
+    const user = buildProcessSkeleton("REPORT z.\nDATA gt TYPE STANDARD TABLE OF i.\nSTART-OF-SELECTION.\n  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' TABLES t_outtab = gt.\n");
+    expect(user.lanes[0]).toMatchObject({ kind: 'human', name: 'User' });
+    expect(user.lanes[0].evidence.map((e) => e.token)).toEqual(['REUSE_ALV_GRID_DISPLAY']);
+    const system = buildProcessSkeleton("REPORT z.\nSTART-OF-SELECTION.\n  CALL FUNCTION 'Z_POST' IN UPDATE TASK.\n  COMMIT WORK.\n");
+    expect(system.lanes[0]).toMatchObject({ kind: 'system', name: 'System' });
+    const bare = buildProcessSkeleton('REPORT zbare.\nSTART-OF-SELECTION.\n  WRITE / 1.\n');
+    expect(bare.lanes[0]).toMatchObject({ kind: 'program', name: 'ZBARE' });
+  });
+});
+
+/* ------------------------------------------------------------------ (j) */
+
+test.describe('(j) a change to an internal table is a plain step', () => {
+  const calc = `REPORT zdemo_calc.
+DATA: BEGIN OF it_out OCCURS 0,
+        menge TYPE i,
+        wert  TYPE i,
+      END OF it_out.
+DATA gt_fieldcat TYPE slis_t_fieldcat_alv.
+DATA gs_fieldcat TYPE slis_fieldcat_alv.
+START-OF-SELECTION.
+  PERFORM calculate.
+  PERFORM catalogue.
+  UPDATE zdemo_stat SET done = 'X' WHERE id = 1.
+FORM calculate.
+  LOOP AT it_out.
+    it_out-wert = it_out-menge * 2.
+    MODIFY it_out.
+  ENDLOOP.
+ENDFORM.
+FORM catalogue.
+  LOOP AT gt_fieldcat INTO gs_fieldcat.
+    MODIFY gt_fieldcat FROM gs_fieldcat.
+  ENDLOOP.
+ENDFORM.
+`;
+
+  test('a task, no data store; the database write stays a write', () => {
+    const skeleton = buildProcessSkeleton(calc);
+    expect(skeleton.nodes.filter((n) => n.detail?.internalTable === true).map((n) => `${n.kind}:${n.label}`))
+      .toEqual(['task:IT_OUT', 'task:GT_FIELDCAT']);
+    expect(skeleton.nodes.filter((n) => n.kind === 'write').map((n) => n.label)).toEqual(['ZDEMO_STAT']);
+  });
+
+  test('the calculation routines stay steps — the effect is compute, not write, and nothing is folded', () => {
+    const skeleton = buildProcessSkeleton(calc);
+    expect(skeleton.notDrawn.technicalHelpers.map((h) => h.name)).toEqual([]);
+    const effects = Object.fromEntries(skeleton.regions.filter((r) => r.kind === 'sub-process' && !r.multiInstance)
+      .map((r) => [r.label.toUpperCase(), r.effects]));
+    expect(effects).toEqual({ CALCULATE: ['compute'], CATALOGUE: ['compute'] });
+  });
+});
+
+/* ------------------------------------------------------------------ (k) */
+
+test.describe('(k) data scope, derived values and selection defaults', () => {
+  const report = `REPORT zdemo_scope.
+TABLES ekko.
+CONSTANTS c_nb TYPE ekko-bsart VALUE 'NB'.
+SELECT-OPTIONS: s_bukrs FOR ekko-bukrs OBLIGATORY DEFAULT '1000',
+                s_bedat FOR ekko-bedat.
+PARAMETERS p_offen AS CHECKBOX DEFAULT 'X'.
+DATA: gt_ekko TYPE STANDARD TABLE OF ekko,
+      gt_ekpo TYPE STANDARD TABLE OF ekpo,
+      gv_offen TYPE p,
+      gv_sum TYPE p.
+INITIALIZATION.
+  s_bedat-low = sy-datum - 365.
+  APPEND s_bedat.
+START-OF-SELECTION.
+  SELECT * FROM ekko INTO TABLE gt_ekko WHERE bukrs IN s_bukrs AND loekz = space AND bsart = c_nb.
+  SELECT * FROM ekpo INTO TABLE gt_ekpo FOR ALL ENTRIES IN gt_ekko WHERE ebeln = gt_ekko-ebeln AND elikz = space.
+  gv_offen = gv_sum - 1.
+  gv_sum = gv_sum + gv_offen.
+  CHECK p_offen = 'X'.
+`;
+
+  test('every read with the source of its filters', () => {
+    const { reads } = readDataScope(report);
+    expect(reads.map((r) => r.sentence)).toEqual([
+      'EKKO is read only where loekz = space and bsart = c_nb (fixed in the code); restricted by the selection screen: bukrs IN s_bukrs.',
+      'EKPO is read only where elikz = space (fixed in the code); for the entries of gt_ekko.',
+    ]);
+    expect(reads[1].filters.map((f) => f.origin)).toEqual(['previous-read', 'fixed']);
+  });
+
+  test('derived values, running totals marked', () => {
+    const { derived } = readDataScope(report);
+    expect(derived.map((d) => `${d.target} ${d.accumulates}`)).toEqual(['s_bedat-low false', 'gv_offen false', 'gv_sum true']);
+  });
+
+  test('defaults from the declaration and from INITIALIZATION', () => {
+    const { defaults } = readDataScope(report);
+    expect(defaults.map((d) => `${d.name} ${d.part} ${d.value} ${d.from} ${d.obligatory}`)).toEqual([
+      "s_bukrs LOW '1000' declaration true",
+      "p_offen value 'X' declaration false",
+      's_bedat LOW sy-datum - 365 initialization false',
+    ]);
   });
 });

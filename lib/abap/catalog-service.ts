@@ -361,6 +361,20 @@ export function getSapObjectStates(objectName: string, snapshot?: string): SapOb
 }
 
 /**
+ * Is this name a database table SAP lists — `TABL` in the release file or the
+ * classification file? Roadmap 3.0.7: the screen fields a batch input fills
+ * (`EKET-EEIND`, `RM06E-BSTNR`) name a table only where the structure is one;
+ * the dialog structures of a transaction (`RM06E`, `RV45A`, `RF05A`) are in
+ * neither file. Customer names are never answered here.
+ */
+export function isSapDatabaseTable(objectName: string): boolean {
+  const key = (objectName || '').toUpperCase().trim();
+  if (!key || isCustomerObject(key)) return false;
+  const tadir = CR.entries?.[key]?.tadir ?? CR_CLASS.entries?.[key]?.tadir;
+  return tadir === 'TABL';
+}
+
+/**
  * Clean core level for a single object, derived from SAP data where it exists.
  *
  * Returns provenance alongside the grade so the UI can separate a looked-up

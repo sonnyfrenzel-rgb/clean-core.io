@@ -56,6 +56,9 @@ export const FIELD_TERMS_EN: Readonly<Record<string, PlainTerm>> = Object.freeze
   auart: t('Order type'),
   netwr: t('Net value'),
   lifsk: t('Delivery block'),
+  // Roadmap 3.0.7: the schedule-line date a batch input to ME22 changes.
+  eindt: t('Delivery date'),
+  eeind: t('Delivery date'),
   amount: t('Amount'),
   amt: t('Amount'),
   betrag: t('Amount'),

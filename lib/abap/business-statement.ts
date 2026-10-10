@@ -63,6 +63,7 @@ import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type Busi
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
 import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
+import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 
 /**
  * A caveat **on** a statement — never in its place.
@@ -2101,6 +2102,43 @@ function normalizeOperator(operator: string): string {
   return ({ GE: '>=', GT: '>', LE: '<=', LT: '<', EQ: '=', NE: '<>' } as Record<string, string>)[operator.toUpperCase()] ?? operator;
 }
 
+const batchInputCache = new WeakMap<readonly AbapStatement[], Map<number, BatchInputCall>>();
+
+/**
+ * Roadmap 3.0.7 — the fields a batch-input call fills, as a clause:
+ * "it changes the delivery date of the purchase order schedule line (EKET-EEIND)
+ * and fills RM06E-BSTNR". Only literal field names, only the call's own rows
+ * (`batch-input.ts`); `null` when it fills none this reader can name.
+ */
+function batchInputAt(statements: readonly AbapStatement[], index: number): string | null {
+  let byIndex = batchInputCache.get(statements);
+  if (!byIndex) {
+    byIndex = new Map(readBatchInputFrom(statements as AbapStatement[]).map((call) => [call.statementIndex, call]));
+    batchInputCache.set(statements, byIndex);
+  }
+  const call = byIndex.get(index);
+  if (!call || !call.fields.length) return null;
+  const changed: string[] = [];
+  const filled: string[] = [];
+  for (const field of call.fields) {
+    const table = field.key ? null : tableTerm(field.structure);
+    if (table) {
+      const named = isKnownField(field.component) ? `the ${termFor(field.component).singular} of the ${table.singular}` : `${field.component} of the ${table.singular}`;
+      const phrase = `${named} (${field.field})`;
+      if (!changed.includes(phrase)) changed.push(phrase);
+    } else if (!filled.includes(field.field)) filled.push(field.field);
+  }
+  const cap = (list: string[], noun: string) =>
+    list.length > 4 ? [...list.slice(0, 3), `${list.length - 3} more ${noun}`] : list;
+  changed.splice(0, changed.length, ...cap(changed, 'fields'));
+  filled.splice(0, filled.length, ...cap(filled, 'screen fields'));
+  const parts = [
+    changed.length ? `it changes ${enumerate(changed)}` : '',
+    filled.length ? `${changed.length ? '' : 'it '}fills ${enumerate(filled)}` : '',
+  ].filter(Boolean);
+  return parts.join(' and ');
+}
+
 /** The sentences that come from a single statement. */
 function sentenceFor(
   statement: AbapStatement,
@@ -2426,6 +2464,13 @@ function sentenceFor(
               : '';
       const after: string[] = [];
       if (/\bAND\s+SKIP\s+FIRST\s+SCREEN\b/i.test(text)) after.push('the initial screen is skipped');
+      // Roadmap 3.0.7: what the batch input fills, read field by field. A
+      // field whose structure the glossary knows as a table is a change to it
+      // in business words; the rest stand as the source writes them.
+      if (using) {
+        const filled = batchInputAt(statements, statement.index);
+        if (filled) after.push(filled);
+      }
       // With screen data the call triggers the processing of the transaction;
       // without it, it is a dialog call. Neither says anything about its purpose.
       return {

@@ -124,6 +124,10 @@ export const FIELD_TERMS: Readonly<Record<string, BusinessTerm>> = Object.freeze
   gjahr: term('fiscal year'),
   budat: term('posting date'),
   bldat: term('document date'),
+  // Roadmap 3.0.7 — the schedule-line date a batch input to ME22 changes
+  // (`EKET-EEIND` on the screen, `EKET-EINDT` in the table).
+  eindt: term('delivery date'),
+  eeind: term('delivery date'),
   hkont: term('G/L account'),
   saknr: term('G/L account'),
   kostl: term('cost center'),

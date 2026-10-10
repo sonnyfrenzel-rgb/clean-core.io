@@ -131,7 +131,8 @@ test.describe('the four rules of roadmap 3.3', () => {
     // A hint is named and readable. A lane is not a flow node, so it is not in
     // `model.elements` — the name it carries is the evidence token 2.16 read
     // out of the source, and the hint has to say it.
-    expect(hints.map((hint) => hint.elementLabel).sort()).toEqual(['UPDATE TASK', 'V_VBAK_VKO']);
+    // Since 3.0.7 the run lane is named for its role ('System', proved by IN UPDATE TASK), not the token.
+    expect(hints.map((hint) => hint.elementLabel).sort()).toEqual(['System', 'V_VBAK_VKO']);
     for (const hint of hints) {
       expect(hint.elementId, 'a hint without an element').toBeTruthy();
       expect(hint.message).toContain(hint.elementLabel);
@@ -285,7 +286,7 @@ test.describe('the four rules of roadmap 3.3', () => {
     // program's own `IN UPDATE TASK` and `AUTHORITY-CHECK OBJECT`. The anchored
     // proposal `Finance` rests on something in the code and is left alone.
     expect(lanes.map((hint) => hint.elementLabel).sort())
-      .toEqual(['Operations', 'Sales', 'UPDATE TASK', 'V_VBAK_VKO']);
+      .toEqual(['Operations', 'Sales', 'System', 'V_VBAK_VKO']); // 3.0.7: run lane named for its role, was 'UPDATE TASK'
     for (const hint of lanes) expect(hint.severity).toBe('info');
     expect(lanes.some((hint) => hint.elementLabel === 'Finance')).toBe(false);
 
