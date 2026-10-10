@@ -137,7 +137,7 @@ const COLUMNS: readonly CcTableColumn[] = [
   { key: 'rules', label: wt('myWorkspace.colRules'), numeric: true, width: '120px' },
   { key: 'status', label: t('workspace.colStatus'), width: '240px' },
   { key: 'lastChange', label: t('workspace.colLastChange'), numeric: true, width: '112px' },
-  { key: 'actions', label: t('workspace.colActions'), action: true, width: '96px' },
+  { key: 'actions', label: t('workspace.colActions'), action: true, width: '232px' },
 ];
 
 const number = (value: number) => new Intl.NumberFormat('en').format(value);

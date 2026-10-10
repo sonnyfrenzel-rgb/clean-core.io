@@ -2,8 +2,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
-import CcIconButton from '@/components/cc/IconButton';
+import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
 import { cn } from '@/lib/utils';
 import { wt } from '@/lib/workspace-messages';
@@ -22,6 +21,11 @@ import { wt } from '@/lib/workspace-messages';
  *
  * The menu is a disclosure of buttons, not an ARIA `menu`: Tab moves through
  * it, Escape closes it and gives the focus back, and a click outside closes it.
+ *
+ * From `md` up both buttons say what they do — "Actions" with a caret, "Open
+ * project" with the arrow — because a first-time reader could not tell what
+ * the bare dots and the bare arrow would do (Sonny, 10.10.2026). On a phone
+ * the row has no room and they stay icons, named for assistive technology.
  */
 export interface RowActionHandlers {
   onInvite: () => void;
@@ -29,6 +33,9 @@ export interface RowActionHandlers {
   onExport: () => void;
   onDelete: () => void;
 }
+
+const TRIGGER =
+  'inline-flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-cc-row border px-2 text-[13px] font-medium whitespace-nowrap pointer-coarse:h-11 pointer-coarse:min-w-11 md:px-2.5';
 
 const ITEM =
   'flex min-h-8 w-full items-center rounded-cc-row px-2 text-left text-[13px] font-medium text-cc-ink hover:bg-cc-surface-muted pointer-coarse:min-h-11';
@@ -93,9 +100,10 @@ export default function WorkspaceRowActions({
     <span ref={wrap} className="relative inline-flex items-center gap-1" data-workspace-row-actions={id}>
       {owner && handlers ? (
         <>
-          <CcIconButton
+          <button
+            type="button"
             ref={toggleRef}
-            label={`${wt('myWorkspace.moreActions')} ${name}`}
+            aria-label={`${wt('myWorkspace.moreActions')} ${name}`}
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
             onClick={() => {
@@ -104,9 +112,12 @@ export default function WorkspaceRowActions({
               setOpen((v) => !v);
             }}
             data-workspace-more={id}
+            className={cn(TRIGGER, CC_BUTTON_VARIANT_CLASSES.ghost)}
           >
-            <MoreHorizontal size={16} aria-hidden={true} />
-          </CcIconButton>
+            <MoreHorizontal size={16} aria-hidden={true} className="md:hidden" />
+            <span className="hidden md:inline">{wt('myWorkspace.actionsLabel')}</span>
+            <ChevronDown size={14} aria-hidden={true} className="hidden md:inline" />
+          </button>
           {open ? (
             <span
               id={panelId}
@@ -142,11 +153,9 @@ export default function WorkspaceRowActions({
         href={href}
         aria-label={`${wt('myWorkspace.openProject')} ${name}`}
         data-workspace-open-button={id}
-        className={cn(
-          'inline-flex h-8 w-8 items-center justify-center rounded-cc-row border pointer-coarse:h-11 pointer-coarse:w-11',
-          CC_BUTTON_VARIANT_CLASSES.ghost,
-        )}
+        className={cn(TRIGGER, 'no-underline', CC_BUTTON_VARIANT_CLASSES.ghost)}
       >
+        <span className="hidden md:inline">{wt('myWorkspace.openLabel')}</span>
         <ChevronRight size={16} aria-hidden={true} />
       </Link>
     </span>
