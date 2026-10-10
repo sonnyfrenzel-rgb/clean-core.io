@@ -8,6 +8,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { viewSwitchHash } from '@/lib/view-switch';
+import { layerRedirect } from '@/lib/layer-redirect';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { useStartRun } from '@/hooks/useStartRun';
 import { useFollowHash } from '@/hooks/useFollowHash';
@@ -82,6 +84,59 @@ export default function ProjectWorkspacePage() {
     setBuildUp(!firstLookSeen(projectId));
   }, [enabled, projectId, asked]);
 
+  /**
+   * The address the page arrived with, when it names a layer that now lives in
+   * another view or in the Economics tool — `?view=it#costs`,
+   * `?view=it#changes`, `?view=management#architecture` (`lib/layer-redirect.ts`).
+   *
+   * Sent on here, once, while the loading gate is still up, and not by the
+   * shell's effects on mount: those re-ran while the shell was still settling
+   * its own layer state, each run dispatching the navigation again and
+   * discarding the one before, and fresh loads were seen to stay where they
+   * arrived (3.0.7 follow-up). One `router.replace`; should the router not have
+   * landed after eight seconds, the browser goes there itself. A place in the
+   * same view (`?view=it#evidence` → `#it-trust`) needs no navigation: the
+   * shell writes it in place, where Next's router hears of it
+   * (`replaceHashInPlace`).
+   *
+   * Read when the project has arrived (below, with it) — by then the address
+   * is this page's, also after a client navigation, and the server never sees
+   * a fragment — and only acted on until the page has landed, so a reader who
+   * later switches back to the view they arrived in is not sent on again.
+   */
+  const [arrival, setArrival] = useState<{ view: WorkspaceView; hash: string } | null>(null);
+  const [landed, setLanded] = useState(false);
+  const hasActiveRun = Boolean(project?.activeRunId?.trim());
+  const target =
+    state === 'ready' && arrival && !landed ? layerRedirect(arrival.view, arrival.hash, { hasActiveRun }) : null;
+  const leaving = target && !(target.kind === 'view' && target.view === arrival?.view) ? target : null;
+  let leavingHref: string | null = null;
+  if (leaving?.kind === 'economics') {
+    leavingHref = stageHref({ base: `/project/${projectId}`, path: 'tco', view: arrival?.view, from: WORKSPACE_RETURN.tools });
+  } else if (leaving?.kind === 'view') {
+    const query = new URLSearchParams(searchParams?.toString() ?? '');
+    query.set('view', leaving.view);
+    leavingHref = `/project/${encodeURIComponent(projectId)}?${query.toString()}#${leaving.hash}`;
+  }
+  const arrived = leaving?.kind === 'view' && view === leaving.view;
+  const redirecting = leavingHref !== null && !arrived;
+  useEffect(() => {
+    if (!leavingHref || arrived) return;
+    router.replace(leavingHref, { scroll: false });
+    const timer = window.setTimeout(() => window.location.replace(leavingHref), 8000);
+    return () => window.clearTimeout(timer);
+  }, [leavingHref, arrived, router]);
+  // Landed. The place follower and the shell hear of the new fragment — a
+  // client navigation sends no `hashchange` of its own.
+  useEffect(() => {
+    if (!arrived) return;
+    const frame = window.requestAnimationFrame(() => {
+      setLanded(true);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [arrived]);
+
   // Marked as seen once the workspace is ready and the build-up is on screen —
   // not when it was merely asked for: a load that fails, or a tab closed before
   // the project arrived, used to cost the reader their first look (carried QA
@@ -116,6 +171,7 @@ export default function ProjectWorkspacePage() {
         const loaded = await loadProjectAndHydrate(projectId);
         if (cancelled) return;
         setProject(loaded);
+        setArrival({ view: viewFromParam(new URLSearchParams(window.location.search).get('view')), hash: window.location.hash });
         setState(loaded ? 'ready' : 'missing');
       } catch (err) {
         // The rules answer `permission-denied` for a project that does not
@@ -192,7 +248,7 @@ export default function ProjectWorkspacePage() {
     );
   }
 
-  if (state === 'loading' || buildUp === null) {
+  if (state === 'loading' || buildUp === null || redirecting) {
     return (
       <div data-workspace-gate="loading" role="status" className="py-16">
         <span className="sr-only">Loading the workspace…</span>

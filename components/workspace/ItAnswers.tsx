@@ -142,7 +142,8 @@ export default function ItAnswers({
   /**
    * The project's open questions (ADR-081): the figure at the top says their
    * one line, and `openQuestions` is the list itself, rendered beside the
-   * findings where the *Not determined* card stood. `null` in the demo.
+   * findings where the *Not determined* card stood. The demo passes its
+   * read-only list too, so the figure never counts a list that is not there.
    */
   questions?: OpenQuestionsModel | null;
   openQuestions?: React.ReactNode;

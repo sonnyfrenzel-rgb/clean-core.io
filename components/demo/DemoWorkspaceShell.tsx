@@ -19,6 +19,7 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
 import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, scrollToWhenThere } from '@/lib/it-sections';
+import { replaceHashInPlace } from '@/lib/layer-redirect';
 import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
 import { plainWordingFor } from '@/lib/business-card';
 import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
@@ -279,7 +280,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       return;
     }
     if (home.view === 'it') {
-      window.location.replace(`#${home.hash}`);
+      replaceHashInPlace(home.hash);
       return;
     }
     goTo(home.view, home.hash, true);
@@ -297,7 +298,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       return;
     }
     if (home.view === 'management') {
-      window.location.replace(`#${home.hash}`);
+      replaceHashInPlace(home.hash);
       return;
     }
     goTo(home.view, home.hash, true);
@@ -809,6 +810,14 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               findings={itFindings}
               project={project}
               notDetermined={open}
+              // The figure says the open questions' count, so the list it
+              // counts stands in this view too, under its own anchor — as in
+              // an own project (ADR-081). Without it the figure said 11 and
+              // led nowhere (3.0.7 follow-up).
+              questions={questions}
+              openQuestions={
+                <OpenQuestions questions={questions} projectId="demo" view={view} owner={false} hasRun={false} demo />
+              }
               signed="demo"
               trust="demo"
               elsewhere={itElsewhere}

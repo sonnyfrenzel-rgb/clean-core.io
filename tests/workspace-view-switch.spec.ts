@@ -131,8 +131,16 @@ test('Management with a layer IT owns opens Business, and a deep link out of IT 
   for (const layer of ['architecture', 'changes', 'costs']) {
     await page.goto(`/project/${projectId}?view=management#${layer}`, { waitUntil: 'domcontentloaded' });
     await waitForView(page);
-    // Management has no layers since ADR-087: an old layer address may have
-    // sent the reader on already. From wherever it landed, Business opens.
+    // Management has no layers since ADR-087: the old layer address sends the
+    // reader on (to IT, or to a place in Management). That redirect has its
+    // own spec (workspace-layers); here it is only let settle, so the switch
+    // below is not clicked while it is still in flight. From wherever it
+    // landed, Business opens.
+    await expect
+      .poll(() => page.evaluate(() => window.location.hash), { timeout: 20_000 })
+      .not.toBe(`#${layer}`)
+      .catch(() => {});
+    await page.waitForTimeout(1000);
     if ((await shell(page).getAttribute('data-workspace-shell')) === 'business') await switchTo(page, 'Management', 'management');
     await switchTo(page, 'Business', 'business');
   }

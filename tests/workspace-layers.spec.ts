@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { LAYERS, RETIRED_LAYERS, layerFromHash, usageRecordRows, workspaceLayers } from '../lib/workspace-model';
 import { MANAGEMENT_LAYER_ELSEWHERE } from '../lib/management-sections';
+import { layerRedirect } from '../lib/layer-redirect';
 import type { Project } from '../lib/types';
 import type { UsageRecord, UsageReport } from '../lib/abap/usage-model';
 import { signInViaLanding } from './helpers/sign-in';
@@ -124,7 +125,38 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell).not.toMatch(/data-management-fold|ManagementFold id="(?:process|costs)"/);
     // Read from the address as it is, not the layer state (QA 6ec03d013196).
-    expect(shell).toContain('MANAGEMENT_LAYER_ELSEWHERE[layer]');
+    expect(shell).toContain('layerRedirect(view, window.location.hash');
+    expect(read('app/(app)/project/[projectId]/page.tsx')).toContain('layerRedirect(arrival.view, arrival.hash');
+    expect(read('lib/layer-redirect.ts')).toContain('MANAGEMENT_LAYER_ELSEWHERE[layer]');
+    // A place in the same view is written where Next's router hears of it;
+    // `location.replace('#…')` let its next commit put the old address back.
+    expect(shell).not.toMatch(/location\.replace\(`#/);
+    expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toMatch(/location\.replace\(`#/);
+  });
+
+  test('one answer for an old layer address in every view (3.0.7 follow-up)', () => {
+    const run = { hasActiveRun: true };
+    // Business keeps two layers; the rest go to the map, Economics, IT and Management.
+    expect(layerRedirect('business', '#standard', run)).toBeNull();
+    expect(layerRedirect('business', '#evidence', run)).toBeNull();
+    expect(layerRedirect('business', '#need', run)).toEqual({ kind: 'view', view: 'business', hash: 'process-map' });
+    expect(layerRedirect('business', '#costs', run)).toEqual({ kind: 'economics' });
+    expect(layerRedirect('business', '#architecture', run)).toEqual({ kind: 'view', view: 'it', hash: 'it-objects' });
+    expect(layerRedirect('business', '#changes', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
+    // IT: its own sections, Economics, Management.
+    expect(layerRedirect('it', '#evidence', run)).toEqual({ kind: 'view', view: 'it', hash: 'it-trust' });
+    expect(layerRedirect('it', '#costs', run)).toEqual({ kind: 'economics' });
+    expect(layerRedirect('it', '#changes', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
+    // Management: the decision, or Economics where no decision can be shown.
+    expect(layerRedirect('management', '#changes', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
+    expect(layerRedirect('management', '#costs', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-rests-on-cost' });
+    expect(layerRedirect('management', '#costs', { hasActiveRun: false })).toEqual({ kind: 'economics' });
+    // Not a layer: nothing to do.
+    for (const view of ['business', 'it', 'management'] as const) {
+      expect(layerRedirect(view, '#L42', run)).toBeNull();
+      expect(layerRedirect(view, '', run)).toBeNull();
+      expect(layerRedirect(view, '#it-trust', run)).toBeNull();
+    }
   });
 
   test('an empty project has five empty layers, each saying what is missing — and inventing no row', () => {

@@ -310,14 +310,38 @@ ${arm2}
       id: 'DT-001',
       field: 'gs_row-ampel',
       rows: ['gs_row-eindt < sy-datum AND gs_row-offen > 0 => c_rot', 'gs_row-eindt < sy-datum + 7 => c_gelb', 'otherwise => c_gruen'],
-      ruleIds: ['BR-001', 'BR-002', 'BR-003'],
+      // A constant that is only a row's value is no rule of its own (3.0.7
+      // follow-up): `c_rot VALUE '1'` was read out as a case "handled
+      // separately". The table holds it, and its row names it — so it counts
+      // as used, never as a declaration nothing reads.
+      ruleIds: [],
     }]);
-    const red = set.rules.find((r) => r.label === "c_rot VALUE '1'");
-    expect(red?.withoutProcessElement).toBeUndefined();
-    expect(red?.processElements.map((e) => `${e.relation} ${e.kind}`)).toEqual(['value gateway']);
-    expect(red?.sentences.map((s) => s.key)).toEqual(['declaration', 'decision-value']);
-    expect(red?.sentences[1].text)
+    expect(set.decisionTables?.[0].rows.map((r) => r.constant)).toEqual(['c_rot', 'c_gelb', 'c_gruen']);
+    expect(set.rules.map((r) => r.label).filter((l) => /^c_(rot|gelb|gruen)/.test(l))).toEqual([]);
+    expect(set.rules.some((r) => r.withoutProcessElement?.reason === 'declaration-only')).toBe(false);
+  });
+
+  test('a constant a condition reads stays in that rule, and its table value is said there', () => {
+    const source = `${lights()}  IF gs_row-ampel = c_rot.
+    WRITE / 'late'.
+  ENDIF.
+`;
+    const set = deriveBusinessRules(source);
+    const red = set.rules.find((r) => r.parameters.some((p) => p.viaConstant === 'c_rot' || p.subject === 'c_rot'));
+    expect(red?.sentences.map((s) => s.key)).toContain('decision-value');
+    expect(red?.sentences.find((s) => s.key === 'decision-value')?.text)
       .toBe('gs_row-ampel is set to c_rot where gs_row-eindt < sy-datum AND gs_row-offen > 0 holds (decision table DT-001).');
+    expect(set.decisionTables?.[0].ruleIds).toEqual([red?.id]);
+  });
+
+  test('the numbers of the other rules do not move when a table value stops being a rule', () => {
+    // A confirmation is stored against `BR-nnn` (`lib/rules-editor.ts`): the
+    // dropped constants leave their numbers unused rather than hand them on.
+    const set = deriveBusinessRules(`${lights()}  IF gs_row-menge > 500.
+    WRITE / 'big'.
+  ENDIF.
+`);
+    expect(set.rules.map((r) => r.id)).toEqual(['BR-004']);
   });
 
   test('the skeleton keeps the gateway and names the field it decides', () => {
@@ -352,10 +376,15 @@ START-OF-SELECTION.
   ELSE.
     gs_row-klasse = c_none.
   ENDIF.
+  IF gs_row-klasse = c_low OR gs_row-klasse = c_high OR gs_row-klasse = c_none.
+    WRITE / gs_row-klasse.
+  ENDIF.
 `;
+    // The constants are read by a condition too, so they stand in its rule and
+    // their table values are said there (a value alone is no rule, above).
     const set = deriveBusinessRules(source);
-    const sentence = (name: string) => set.rules.find((r) => r.label.startsWith(name))?.sentences
-      .find((s) => s.key === 'decision-value')?.text;
+    const sentence = (name: string) => set.rules.flatMap((r) => r.sentences)
+      .find((s) => s.key === 'decision-value' && s.text.includes(` is set to ${name} `))?.text;
     expect(sentence('c_low')).toBe('gs_row-klasse is set to c_low where gs_row-menge > 0 holds (decision table DT-001).');
     expect(sentence('c_high'))
       .toBe('gs_row-klasse is set to c_high where no earlier row holds and gs_row-menge > 10 holds (decision table DT-001).');

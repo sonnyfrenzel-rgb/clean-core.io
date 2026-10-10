@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,9 +49,9 @@ import type { StartRun } from '@/hooks/useStartRun';
 import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
 import { nextOpenPoint } from '@/lib/next-step';
 import { businessNextStep } from '@/lib/business-next-step';
-import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
-import { IT_LAYER_ELSEWHERE, runTrust, scrollToWhenThere } from '@/lib/it-sections';
-import { MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
+import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
+import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
 import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
@@ -399,18 +399,6 @@ export default function WorkspaceShell({
   // as the map counts it (ADR-087) — the Need layer's own count, said once.
   const processLine = useMemo(() => allLayers.find((l) => l.key === 'need')?.count ?? null, [allLayers]);
 
-  /**
-   * A link into a section Business no longer shows — `?view=business#costs`
-   * from an old bookmark, a mail or the search — goes where that content
-   * lives now, instead of opening an empty place: the costs to Economics, the
-   * architecture and the changes to the same section in IT. `replace`, so Back
-   * does not bounce the reader into the redirect again.
-   *
-   * *Need & process* stays in Business (ADR-080): its process and rules stand
-   * there as the map and the rules card, so `#need` — every stage's "Back to
-   * project workspace" opened from Business before 3.0.6 carries it — becomes
-   * the map's own address and the page scrolls to the map.
-   */
   const router = useRouter();
   /**
    * Another view, at a place in it: the view in `?view=`, the place in the
@@ -436,77 +424,53 @@ export default function WorkspaceShell({
     (from: WorkspaceView) => stageHref({ base: `/project/${projectId}`, path: 'tco', view: from, from: WORKSPACE_RETURN.tools }),
     [projectId],
   );
-  useEffect(() => {
-    // The address as it is now, not the layer state: that may still be the
-    // last view's until the effect above has read it again.
-    const layer = layerFromHash(window.location.hash);
-    if (view !== 'business' || layer === null || BUSINESS_LAYERS.includes(layer)) return;
-    const elsewhere = BUSINESS_LAYER_ELSEWHERE[layer];
-    if (elsewhere === 'map') {
-      // A fragment-only `replace`: no request, no new history entry; the
-      // browser scrolls to the map and `hashchange` clears the layer above.
-      window.location.replace(`#${BUSINESS_MAP_ID}`);
-      return;
-    }
-    if (elsewhere === 'economics') {
-      router.replace(toEconomics('business'));
-      return;
-    }
-    // Architecture and changes: where they live since ADR-086 — IT's own
-    // objects section, and Management's decision.
-    const home = IT_LAYER_ELSEWHERE[layer];
-    if (home.kind === 'view') goTo(home.view, home.hash, true);
-  }, [view, hashLayer, router, goTo, toEconomics]);
-
   /**
-   * IT has no layers since ADR-086. A layer address in IT — an old link, a
-   * bookmark, a stage's way back from before 3.0.7 — goes where that content
-   * lives now (`IT_LAYER_ELSEWHERE`): the process and the standard fit to
-   * Business, the costs to Economics, the decision to Management, architecture
-   * and evidence to IT's own sections. `replace`, so Back does not bounce.
-   */
-  useEffect(() => {
-    const layer = layerFromHash(window.location.hash);
-    if (view !== 'it' || layer === null) return;
-    const home = IT_LAYER_ELSEWHERE[layer];
-    if (home.kind === 'economics') {
-      router.replace(toEconomics('it'));
-      return;
-    }
-    if (home.view === 'it') {
-      window.location.replace(`#${home.hash}`);
-      return;
-    }
-    goTo(home.view, home.hash, true);
-  }, [view, hashLayer, router, goTo, toEconomics]);
-
-  /**
-   * Management has no layers since ADR-087. A layer address in Management — an
-   * old link, a bookmark, a stage's way back from before 3.0.7 — goes where
-   * that content lives now (`MANAGEMENT_LAYER_ELSEWHERE`): the process and the
-   * standard fit to Business, architecture and evidence to IT, the changes to
-   * the decision card with its timeline, and the costs to the Costs row of the
-   * decision — or, where no decision can be shown (no signed run), to the
-   * Economics tool. `replace`, so Back does not bounce.
+   * An old layer address in any view — `?view=business#costs`, `?view=it#evidence`,
+   * `?view=management#changes`, from a bookmark, a mail or a stage's way back —
+   * goes where that content lives now (`lib/layer-redirect.ts`): Business keeps
+   * two layers (ADR-080), IT has its own sections (ADR-086), Management none
+   * (ADR-087). `replace`, so Back does not bounce the reader into the redirect
+   * again.
+   *
+   * An address the page *arrives* with that leads to another view or to
+   * Economics is sent on by the route before this component renders
+   * (`app/(app)/project/[projectId]/page.tsx`); this effect handles a place in
+   * the same view, and any old address that arrives while the workspace is
+   * open — a link on the page, a fragment typed into the address bar. A place
+   * in the same view is written through `history.replaceState`
+   * (`replaceHashInPlace`), never `location.replace('#…')`: Next's router
+   * would not hear of it and would put the old address back on its next commit.
+   *
+   * Read from the address as it is now, not the layer state: that may still be
+   * the last view's — a switch from Business `#standard` would otherwise send
+   * the reader straight back (QA 6ec03d013196).
    */
   const hasActiveRun = Boolean(project?.activeRunId?.trim());
+  // The address last sent on, so the effect re-running before the navigation
+  // has landed (the layer state settles a frame later) does not send it again
+  // and discard the navigation already under way.
+  const sentFrom = useRef<string | null>(null);
   useEffect(() => {
-    // The address as it is now, as in Business and IT: the layer state may
-    // still be the last view's — a switch from Business `#standard` would
-    // otherwise send the reader straight back (QA 6ec03d013196).
-    const layer = layerFromHash(window.location.hash);
-    if (view !== 'management' || layer === null) return;
-    const home = MANAGEMENT_LAYER_ELSEWHERE[layer];
-    if (home.kind === 'economics' || (layer === 'costs' && !hasActiveRun)) {
-      router.replace(toEconomics('management'));
+    const target = layerRedirect(view, window.location.hash, { hasActiveRun });
+    if (target === null) {
+      sentFrom.current = null;
       return;
     }
-    if (home.view === 'management') {
-      window.location.replace(`#${home.hash}`);
-      scrollToWhenThere(home.hash);
+    const from = `${view}${window.location.hash}`;
+    if (target.kind === 'economics' || target.view !== view) {
+      if (sentFrom.current === from) return;
+      sentFrom.current = from;
+    }
+    if (target.kind === 'economics') {
+      router.replace(toEconomics(view));
       return;
     }
-    goTo(home.view, home.hash, true);
+    if (target.view === view) {
+      replaceHashInPlace(target.hash);
+      if (target.hash !== BUSINESS_MAP_ID) scrollToWhenThere(target.hash);
+      return;
+    }
+    goTo(target.view, target.hash, true);
   }, [view, hashLayer, hasActiveRun, router, goTo, toEconomics]);
 
   /**

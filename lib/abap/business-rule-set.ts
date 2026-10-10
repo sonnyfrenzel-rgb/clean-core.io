@@ -545,7 +545,23 @@ class RuleSetBuilder {
     const groups = this.numbered(this.join(occurrences, true), this.join(occurrences, false));
 
     this.readDecisionTables();
-    const rules = groups.map((group, i) => this.rule(`BR-${String(i + 1).padStart(3, '0')}`, group));
+    // A constant whose only use is the value of a decision-table row is not a
+    // rule (3.0.7 follow-up): `c_rot TYPE c VALUE '1'` is a code the table
+    // writes, not a decision, and as a rule it was read out as a case of its
+    // own — "c_rot VALUE '1' → handled separately in START-OF-SELECTION". It
+    // stays counted as used: the table's row names it (`rows[].constant`).
+    // A constant a condition reads stays part of that condition's rule, and one
+    // nothing uses at all stays a rule of its own (`declaration-only`).
+    //
+    // The numbers are given before the drop, so every other rule keeps the
+    // number a reader's confirmation is stored against (`numbered` above); the
+    // dropped ones leave a gap rather than move a confirmation onto another rule.
+    const tableValues = new Set(
+      this.tables.flatMap(({ table }) => table.rows.flatMap((r) => (r.constant ? [r.constant.toUpperCase()] : []))),
+    );
+    const rules = groups.flatMap((group, i) =>
+      this.onlyTableValues(group, tableValues) ? [] : [this.rule(`BR-${String(i + 1).padStart(3, '0')}`, group)],
+    );
     const decisionTables = this.finishDecisionTables(rules);
 
     const withoutProcessElement: Record<NoProcessElementReason, number> = {
@@ -849,6 +865,15 @@ class RuleSetBuilder {
       };
       this.tables.push({ table, branch });
     }
+  }
+
+  /** A group of declarations alone, every one of them the value of a decision-table row. */
+  private onlyTableValues(group: Occurrence[], tableValues: ReadonlySet<string>): boolean {
+    if (!tableValues.size || group.some((o) => o.origin !== 'constant')) return false;
+    return group.every((o) => {
+      const name = this.candidates[o.members[0]]?.subject?.toUpperCase();
+      return !!name && tableValues.has(name);
+    });
   }
 
   /** The rows whose value is one of these declared constants. */
