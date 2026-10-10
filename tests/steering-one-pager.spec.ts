@@ -710,4 +710,24 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
     const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
     expect(pages, 'the one-pager prints on more than one page').toBe(1);
   });
+
+  // QA review of 7fecaa0102eb (0b9e215d8467): the two advertised controls,
+  // clicked — the test above opens by fragment and only counts the button, so
+  // a broken dispatch from either control would pass it.
+  test('the decision card button and the Export menu each open it', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await signIn(page, OWNER);
+    await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached({ timeout: 60000 });
+    const pager = page.locator('[data-steering-one-pager="open"]');
+
+    await page.locator('[data-executive-one-pager]').click({ timeout: 60000 });
+    await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });
+    await pager.getByRole('button', { name: 'Close', exact: true }).first().click();
+    await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached();
+
+    await page.locator('[data-workspace-export=""]').click();
+    await page.locator('[data-workspace-export-one-pager]').click();
+    await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });
+  });
 });

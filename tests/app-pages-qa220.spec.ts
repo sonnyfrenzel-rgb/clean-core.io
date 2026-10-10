@@ -174,3 +174,21 @@ test('How it works: an SAP object without a catalog answer is said to be Unknown
   }
   expect(s.match(/marked Unknown where/g)?.length).toBe(2);
 });
+
+test('the FAQ, Knowledge answer and Part 6 of the guide do not promise every SAP object a level (QA d3557ce8b7a3, 1d7b26f6c123, 39b5111413aa)', () => {
+  // `gradeFromSapStates` returns `Unknown` where SAP's files hold no mapped
+  // state (lib/abap/abcd-classification.ts), so "grades every SAP object Level
+  // A–D" promised more than the engine answers.
+  for (const rel of [
+    'app/(app)/how-it-works/page.tsx',
+    'components/KnowledgeClient.tsx',
+    'app/(app)/knowledge/page.tsx',
+    'app/clean-core-explained-print/page.tsx',
+    'app/(app)/clean-core-explained/page.tsx',
+    'app/(app)/abap-custom-code-analysis/page.tsx',
+  ]) {
+    const s = read(rel);
+    expect(s, rel).not.toMatch(/grades every SAP object/);
+    expect(s, rel).toMatch(/grades each SAP object[^"`]{0,140}Unknown/);
+  }
+});

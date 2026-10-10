@@ -32,7 +32,7 @@ export const metadata: Metadata = withTwitterCard({
 const faqs = [
   {
     question: 'What does Clean-Core.io do with one ABAP program, in order?',
-    answer: 'It reads the program with a deterministic engine and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. It grades every SAP object the code uses Level A–D from SAP’s published Cloudification Repository and object classification. The Management view then asks for one decision — keep, rebuild, move to SAP standard or retire — and Design, Transformation and Testing carry the same evidence to a target design, a code draft and test scenarios. Every completed analysis is stored as an immutable run signed by the server with HMAC.'
+    answer: 'It reads the program with a deterministic engine and reconstructs its business process as BPMN, with a line anchor on every element or the reason it has none. It grades each SAP object the code uses Level A–D from SAP’s published Cloudification Repository and object classification, or marks it Unknown where neither holds an answer for it. The Management view then asks for one decision — keep, rebuild, move to SAP standard or retire — and Design, Transformation and Testing carry the same evidence to a target design, a code draft and test scenarios. Every completed analysis is stored as an immutable run signed by the server with HMAC.'
   },
   {
     question: 'Which ABAP constructs are automatically transformed?',

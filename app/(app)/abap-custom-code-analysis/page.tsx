@@ -99,7 +99,7 @@ const faqs = [
   },
   {
     question: "What ABAP code analysis tools are available?",
-    answer: "The authoritative, in-system tools are SAP ABAP Test Cockpit (ATC) with Code Inspector, and ABAP Development Tools (ADT), which run inside your SAP system. Outside the system there are abaplint, an open-source linter for code serialized with abapGit; the OWASP ABAP Code Scanner, an open-source security scanner for exported source; and SonarQube, whose commercial editions analyse ABAP for code quality and security. Clean-Core.io is a free, browser-based workspace for one program: it parses the ABAP deterministically, reconstructs the process, grades every SAP object Level A–D and leads to a decision. Confirm findings with ATC for your target release."
+    answer: "The authoritative, in-system tools are SAP ABAP Test Cockpit (ATC) with Code Inspector, and ABAP Development Tools (ADT), which run inside your SAP system. Outside the system there are abaplint, an open-source linter for code serialized with abapGit; the OWASP ABAP Code Scanner, an open-source security scanner for exported source; and SonarQube, whose commercial editions analyse ABAP for code quality and security. Clean-Core.io is a free, browser-based workspace for one program: it parses the ABAP deterministically, reconstructs the process, grades each SAP object Level A–D (Unknown where SAP’s published data holds no answer) and leads to a decision. Confirm findings with ATC for your target release."
   },
   {
     question: "Can it identify unused or dead ABAP custom code?",

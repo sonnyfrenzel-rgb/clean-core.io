@@ -17,6 +17,7 @@ import { sectionTitle, stepRef, type PdGate, type PdStep } from '../lib/process-
 import { blocksMarkdown } from '../lib/requirements-export';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
 import { decisionTableViews } from '../lib/decision-tables';
+import { processOverviewSvg } from '../lib/process-overview-svg';
 
 /**
  * Roadmap 3.0.7 — "Engine: what the ZMM_BESTELLUEBERSICHT review showed", the
@@ -327,6 +328,16 @@ test.describe('(4) a decision table is one business rule task with its table', (
     expect(gate?.decisionTable).toEqual({ id: 'DT-001', field: 'gs_row-ampel', selector: null, rows: 3 });
     expect(gateLine(gate as PdGate)).toBe('Business rule task: determines gs_row-ampel — decision table DT-001, 3 rows');
     expect(gate?.anchor?.lineStart).toBe(9);
+  });
+
+  test('the exported overview draws the business rule task as a task, not as a gateway diamond (QA ef1db277d2d3)', () => {
+    const doc = documentOf(ON_THE_PATH);
+    expect(doc.overview.path.some((e) => e.kind === 'gate' && !!e.decisionTable)).toBe(true);
+    const svg = processOverviewSvg(doc.overview.path, 'Orders');
+    expect(svg).toContain('Business rule task · decision table DT-001');
+    expect(svg).toContain('data-pd-rule-task=""');
+    // ON_THE_PATH has no other decision point, so no diamond at all.
+    expect(svg).not.toContain('<polygon');
   });
 
   test('a source without one adds nothing', () => {

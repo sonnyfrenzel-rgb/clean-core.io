@@ -428,7 +428,7 @@ export default function CleanCoreExplainedPrintPage() {
             <h2>How Clean-Core.io helps, concretely</h2>
             <p className="part-intro">
               Clean-Core.io works on one ABAP program at a time: it reads the process from the code as
-              BPMN, grades every SAP object Level A–D and leads to one decision — keep, rebuild, move
+              BPMN, grades each SAP object Level A–D (Unknown where SAP’s published data holds no answer) and leads to one decision — keep, rebuild, move
               to SAP standard or retire. Each step of the work is listed below with what it produces,
               what it saves you, what it costs — and where it stops. The last column is the one worth
               reading.
