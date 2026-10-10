@@ -712,3 +712,74 @@ START-OF-SELECTION.
     expect(defaults.map((d) => `${d.name} ${d.part} [${d.value}] ${d.obligatory}`)).toEqual(['p_test value [] false']);
   });
 });
+
+/**
+ * QA review of d939fb5b056b. Three engine claims that said more than the code:
+ * a batch-input *session* reported as a change already made (11d2bd848df5), an
+ * UPDATE whose table name a local data object shared drawn as an internal-table
+ * step (84d858bc959b), and a batch input with a computed field name read as
+ * Enter alone (8c5604755697).
+ */
+test.describe('QA review of d939fb5b056b — what the engine claims about writes', () => {
+  test('a BDC_INSERT session queues the change; it does not say the change is made', () => {
+    const session = BDC_REPORT.replace(
+      "CALL TRANSACTION 'ME22' USING it_bdc MODE 'N' UPDATE 'S'.",
+      "CALL FUNCTION 'BDC_INSERT' EXPORTING tcode = 'ME22' TABLES dynprotab = it_bdc.",
+    );
+    const write = buildAbapEvidence(session, 'zbdc.abap', 'private').findings.filter((f) => f.kind === 'batch-input');
+    expect(write.map((f) => f.objectName)).toEqual(['EKET']);
+    expect(write[0].title).toBe('Batch input session queues a change to the delivery date (EKET-EEIND) of the purchase order schedule line (EKET) via ME22');
+    expect(write[0].technicalDetail).toContain('only queues the session');
+    expect(write[0].technicalDetail).not.toContain('The transaction writes the change');
+    // The direct call keeps its wording.
+    const direct = buildAbapEvidence(BDC_REPORT, 'zbdc.abap', 'private').findings.find((f) => f.kind === 'batch-input');
+    expect(direct?.technicalDetail).toContain('The transaction writes the change to EKET');
+  });
+
+  test('UPDATE names a database table even when a local data object shares its name', () => {
+    const src = `REPORT zx.
+DATA mara TYPE mara.
+START-OF-SELECTION.
+  UPDATE mara SET mtart = 'FERT' WHERE matnr = '1'.
+`;
+    const nodes = buildProcessSkeleton(src).nodes;
+    expect(nodes.filter((n) => n.kind === 'write').map((n) => n.label.toUpperCase())).toContain('MARA');
+    expect(nodes.some((n) => n.detail?.internalTable)).toBe(false);
+    expect(buildAbapEvidence(src, 'zx.abap', 'private').findings.some((f) => f.kind === 'standard-table-write' && f.objectName === 'MARA')).toBe(true);
+    expect(readCallGraph(src).databaseWrites.map((w) => w.table.toUpperCase())).toContain('MARA');
+    // An internal table of the same name changed by MODIFY stays a step of the program.
+    const itab = `REPORT zx.
+DATA gt_fieldcat TYPE slis_t_fieldcat_alv.
+DATA gs_fieldcat TYPE slis_fieldcat_alv.
+START-OF-SELECTION.
+  MODIFY gt_fieldcat FROM gs_fieldcat.
+`;
+    expect(buildProcessSkeleton(itab).nodes.some((n) => n.kind === 'write')).toBe(false);
+  });
+
+  test('a batch input whose field name is computed is a possible write, Enter or not', () => {
+    const src = `REPORT zx.
+DATA: gt_bdc TYPE STANDARD TABLE OF bdcdata, gs_bdc TYPE bdcdata, lv_field TYPE fnam_____4.
+START-OF-SELECTION.
+  lv_field = 'VBAK-LIFSK'.
+  CLEAR gs_bdc.
+  gs_bdc-fnam = lv_field.
+  gs_bdc-fval = '01'.
+  APPEND gs_bdc TO gt_bdc.
+  CLEAR gs_bdc.
+  gs_bdc-fnam = 'BDC_OKCODE'.
+  gs_bdc-fval = '/00'.
+  APPEND gs_bdc TO gt_bdc.
+  CALL TRANSACTION 'VA02' USING gt_bdc MODE 'N'.
+`;
+    const [call] = readBatchInput(src);
+    expect(call.fields).toEqual([]);
+    expect(call.okCodes).toEqual(['/00']);
+    expect(call.unreadRows).toBe(true);
+    expect(assessAuthority(src).writes.map((w) => `${w.via}:${w.target}`)).toEqual(['batch-input:VA02']);
+    // Every row read and only the number and Enter: still a display, not a write.
+    const display = src.replace('gs_bdc-fnam = lv_field.', "gs_bdc-fnam = 'VBAK-VBELN'.");
+    expect(readBatchInput(display)[0].unreadRows).toBeUndefined();
+    expect(assessAuthority(display).writes).toEqual([]);
+  });
+});

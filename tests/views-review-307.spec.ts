@@ -269,6 +269,11 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
     const choiceSteps = (html.match(/data-doc-path-choice=""/g) ?? []).length;
     expect(choiceSteps).toBe(3);
     expect((group?.[1].match(/data-doc-path-choice=""/g) ?? []).length).toBe(3);
+    // QA 867a59061693: each arm says which answer selects it, as text in the arm.
+    const choices = doc.overview.path.filter((e) => e.kind === 'step' && e.choice).map((e) => (e.kind === 'step' ? e.choice?.when : ''));
+    expect(choices.every(Boolean)).toBe(true);
+    const labels = arms.map(([, arm]) => /<span data-doc-path-arm-when=""[^>]*>([^<]*)<\/span>/.exec(arm)?.[1]?.replace(/&amp;/g, '&'));
+    expect(labels).toEqual(choices);
   });
 
   test('a CASE on another selector stays a sequence', () => {

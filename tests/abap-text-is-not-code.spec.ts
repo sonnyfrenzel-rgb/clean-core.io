@@ -126,9 +126,19 @@ test.describe('a declaration that is not executed suppresses nothing (f4383c553e
   });
 
   test('a real declaration still suppresses — the guard removes noise, not coverage', () => {
-    const code = ['REPORT z_local.', 'DATA vbak TYPE ztab.', WRITE_TO_VBAK].join('\n');
+    // MODIFY has an internal-table form, so a declared table of that name is the target.
+    const code = ['REPORT z_local.', 'DATA vbak TYPE STANDARD TABLE OF ztab.', 'DATA ls_vbak TYPE ztab.', 'MODIFY vbak FROM ls_vbak.'].join('\n');
     expect(collectLocalDataObjects(code)).toContain('VBAK');
     expect(tableFindings(code), 'a name declared in the source is a variable').toHaveLength(0);
+  });
+
+  test('UPDATE has no internal-table form, so a declaration of the same name suppresses nothing (84d858bc959b)', () => {
+    // Until the QA review of d939fb5b056b the test above asserted this case was
+    // suppressed — the very defect: `UPDATE vbak SET …` writes VBAK whatever the
+    // program calls a variable.
+    const code = ['REPORT z_local.', 'DATA vbak TYPE ztab.', WRITE_TO_VBAK].join('\n');
+    expect(collectLocalDataObjects(code)).toContain('VBAK');
+    expect(tableFindings(code).map((x) => x.kind)).toEqual(['standard-table-write']);
   });
 });
 

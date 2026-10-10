@@ -46,6 +46,16 @@ export interface SqlWrite {
 }
 
 /**
+ * True when the write can only name a database table, whatever the source
+ * declares under the same name. UPDATE has no internal-table form, so a local
+ * `DATA mara TYPE mara.` beside `UPDATE mara SET …` must not turn the database
+ * write into an internal-table step (QA review of d939fb5b056b, 84d858bc959b).
+ */
+export function writesDatabaseOnly(write: SqlWrite): boolean {
+  return write.keyword === 'UPDATE';
+}
+
+/**
  * The database write in this statement, or `null` when it is an internal-table
  * operation, a screen statement, or nothing of the sort.
  */

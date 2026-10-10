@@ -1,6 +1,6 @@
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
 import { readBlocks, containerAt, type BlockStructure, type Container } from './block-structure';
-import { databaseWriteIn } from './open-sql-discrimination';
+import { databaseWriteIn, writesDatabaseOnly } from './open-sql-discrimination';
 import { localDataObjectsOf } from './table-dependencies';
 import { formCallbacksOf, programNameOf } from './callback-registrations';
 
@@ -573,7 +573,7 @@ export function readCallGraphFrom(
       case 'MODIFY':
       case 'DELETE': {
         const write = databaseWriteIn(statement.text);
-        if (write && !localData.has(write.table.toUpperCase())) {
+        if (write && (writesDatabaseOnly(write) || !localData.has(write.table.toUpperCase()))) {
           databaseWrites.push({ ...site, table: write.table.toUpperCase(), keyword: write.keyword });
         }
         continue;

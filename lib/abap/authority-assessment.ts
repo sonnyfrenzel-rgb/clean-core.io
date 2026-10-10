@@ -76,6 +76,8 @@ const NON_CHANGING_OK_CODE = /^(?:\/0+|ENTE|\/EBACK|\/EEND|\/ECAN|\/BACK|\/N.*)$
  */
 function mayChange(call: BatchInputCall): boolean {
   if (call.fields.length === 0 && call.okCodes.length === 0) return true;
+  // A row whose field or function code is computed may be the change itself.
+  if (call.unreadRows) return true;
   return call.fields.some((f) => !f.key) || call.okCodes.some((code) => !NON_CHANGING_OK_CODE.test(code));
 }
 

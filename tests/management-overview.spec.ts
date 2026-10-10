@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { build } from 'esbuild';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
@@ -428,6 +431,56 @@ test.describe('(a) one sentence, at most six cards', () => {
     // said "the runs could not be read" until the read ended (CI 38051799180).
     expect(component).toMatch(/historyPending\s*\?\s*\{ state: 'loading', title: READINESS_READING \}/);
     expect(component).toMatch(/const READINESS_READING = 'Reading [^']*';/);
+  });
+
+  // QA review of d939fb5b056b (4de9b70ecb56): the same rule, rendered. The
+  // component bundled and rendered while the history read is still pending and
+  // after it: the decision stands in both, the trend says it is reading, then
+  // shows the history.
+  test('rendered: the decision stands while the run history is read, the trend says it is reading', async () => {
+    test.setTimeout(120 * 1000);
+    const root = path.resolve(__dirname, '..');
+    const out = path.resolve(root, 'tmp', 'management-overview-rendered', 'ManagementOverview.cjs');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    await build({
+      entryPoints: [path.resolve(root, 'components', 'workspace', 'ManagementOverview.tsx')],
+      outfile: out,
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      alias: { '@': root },
+      logLevel: 'silent',
+    });
+    const ManagementOverview = require(out).default as React.ComponentType<Record<string, unknown>>;
+    const p = project();
+    const render = (pending: boolean) =>
+      renderToStaticMarkup(
+        React.createElement(ManagementOverview, {
+          project: p,
+          projectId: 'p-history',
+          view: managementAnswers(p, pending ? null : HISTORY, null),
+          historyPending: pending,
+          decision: React.createElement('div', { 'data-rendered-decision': '' }, 'The decision'),
+        }),
+      );
+    const readiness = (html: string) => {
+      const at = html.indexOf('data-overview-card="readiness"');
+      expect(at, 'the readiness card is rendered').toBeGreaterThan(-1);
+      return html.slice(at, at + 2000);
+    };
+
+    const pending = render(true);
+    expect(pending, 'the decision does not wait for the history').toContain('data-rendered-decision');
+    expect(readiness(pending)).toContain('data-overview-state="loading"');
+    expect(readiness(pending)).toContain('Reading the Clean Core Score history');
+    expect(pending, 'no verdict on a history still being read').not.toContain('could not be read');
+
+    const read = render(false);
+    expect(read).toContain('data-rendered-decision');
+    expect(readiness(read)).toContain('data-overview-state="ready"');
+    expect(read).not.toContain('Reading the Clean Core Score history');
   });
 
   test('Management renders none of the duplicates the owner dropped (ADR-087) — their models stay', () => {

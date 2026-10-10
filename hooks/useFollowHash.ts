@@ -64,7 +64,12 @@ export function useFollowHash(): void {
         if (target) {
           const top = Math.round(target.getBoundingClientRect().top);
           const docTop = Math.round(top + window.scrollY);
-          if (lastTop !== null && Math.abs(window.scrollY - lastScrollY) > 1 && Math.abs(docTop - lastDocTop) <= 1) return;
+          // The page moved by more, or less, than the target did: only the reader
+          // does that. Growth above moves both by the same amount (scroll
+          // anchoring) or only the target; a drag while the target is still
+          // moving moves both by different amounts (QA 2c33889165f6).
+          const scrolled = window.scrollY - lastScrollY;
+          if (lastTop !== null && Math.abs(scrolled) > 1 && Math.abs(scrolled - (docTop - lastDocTop)) > 1) return;
           if (lastTop === null || Math.abs(top - lastTop) > 1) {
             target.scrollIntoView({ block: 'start' });
             lastTop = Math.round(target.getBoundingClientRect().top);

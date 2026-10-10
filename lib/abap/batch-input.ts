@@ -84,6 +84,13 @@ export interface BatchInputCall {
   fields: BatchInputField[];
   /** The function codes the run presses, in order: `/00`, `=BU`. */
   okCodes: string[];
+  /**
+   * A row of this call names its field, or its function code, by a value
+   * computed at run time — so `fields`/`okCodes` are not all it fills or
+   * presses, and an Enter among them proves nothing (QA review of d939fb5b056b).
+   * Absent when every row was read.
+   */
+  unreadRows?: true;
 }
 
 /** What a field write amounts to once its structure is known to be a database table. */
@@ -160,7 +167,8 @@ function carrierOf(parameters: string[], body: AbapStatement[], macro: boolean):
 
 type Event =
   | { kind: 'screen'; program: string; screen: string; index: number; line: number }
-  | { kind: 'field'; raw: string; value: string; index: number; line: number };
+  | { kind: 'field'; raw: string; value: string; index: number; line: number }
+  | { kind: 'unread'; index: number; line: number };
 
 export function readBatchInput(source: string): BatchInputCall[] {
   return readBatchInputFrom(readStatements(source));
@@ -220,6 +228,9 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
         events.push({ kind: 'screen', program: program.toUpperCase(), screen, index: i, line: statement.lineStart });
       }
       const field = carrier.field !== undefined ? literalValue(args[carrier.field]) : null;
+      if (carrier.field !== undefined && !field && (args[carrier.field] ?? '').trim()) {
+        events.push({ kind: 'unread', index: i, line: statement.lineStart });
+      }
       if (field) {
         events.push({
           kind: 'field', raw: field, value: carrier.value !== undefined ? args[carrier.value] ?? '' : '',
@@ -242,6 +253,11 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
       if (raw) events.push({ kind: 'field', raw, value, index: i, line: statement.lineStart });
       continue;
     }
+    // A field name computed at run time: not guessed at, but not nothing either.
+    if (/^[\w/<>]+-FNAM\s*=\s*[^'\s]/i.test(text)) {
+      events.push({ kind: 'unread', index: i, line: statement.lineStart });
+      continue;
+    }
     const program = /^[\w/<>]+-PROGRAM\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(text);
     if (program) {
       for (let j = i + 1; j < Math.min(statements.length, i + 4); j++) {
@@ -259,6 +275,7 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     // 3. `VALUE #( … )` rows with literals.
     if (/\bVALUE\s+[\w#]*\s*\(/i.test(text)) {
       const rows = /\bPROGRAM\s*=\s*('(?:[^']|'')*')\s+DYNPRO\s*=\s*('(?:[^']|'')*')|\bFNAM\s*=\s*('(?:[^']|'')*')(?:\s+FVAL\s*=\s*('(?:[^']|'')*'|[^\s)]+))?/gi;
+      if (/\bFNAM\s*=\s*[^'\s]/i.test(text)) events.push({ kind: 'unread', index: i, line: statement.lineStart });
       for (const m of text.matchAll(rows)) {
         if (m[1]) {
           const p = literalValue(m[1]);
@@ -363,8 +380,13 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     const screens: BatchInputScreen[] = [];
     const fields: BatchInputField[] = [];
     const okCodes: string[] = [];
+    let unread = false;
     let current: BatchInputScreen | null = null;
     for (const e of [...mine].sort((a, b) => a.index - b.index)) {
+      if (e.kind === 'unread') {
+        unread = true;
+        continue;
+      }
       if (e.kind === 'screen') {
         current = { program: e.program, screen: e.screen, line: e.line };
         screens.push(current);
@@ -375,6 +397,7 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
         if (upper === 'BDC_OKCODE') {
           const code = literalValue(e.value);
           if (code) okCodes.push(code);
+          else if (e.value.trim()) unread = true;
         }
         continue;
       }
@@ -392,7 +415,7 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
         key: KEY_COMPONENTS.has(m[2]),
       });
     }
-    return { ...call, screens, fields, okCodes };
+    return { ...call, screens, fields, okCodes, ...(unread ? { unreadRows: true as const } : {}) };
   });
 }
 

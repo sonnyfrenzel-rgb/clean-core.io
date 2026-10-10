@@ -448,7 +448,9 @@ test.describe('the layers on the screen', () => {
     // that id stands above the row, not in it (CI 38051799180).
     await expect(
       page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
-    ).toHaveText('L225–L234');
+    // The anchor's text is the visible range and then its screen-reader name
+    // ("CHECK_VENDOR, source line 225"), CI 38057847305.
+    ).toHaveText(/^L225–L234(?!\d)/);
 
     // Evidence → IT's Run & trust; Need → the Business map.
     await page.goto(`/project/${RUN_ID}?view=management#evidence`, { waitUntil: 'domcontentloaded' });
@@ -481,7 +483,9 @@ test.describe('the layers on the screen', () => {
     // that id stands above the row, not in it (CI 38051799180).
     await expect(
       page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
-    ).toHaveText('L225–L234');
+    // The anchor's text is the visible range and then its screen-reader name
+    // ("CHECK_VENDOR, source line 225"), CI 38057847305.
+    ).toHaveText(/^L225–L234(?!\d)/);
     await expect(page.locator('[data-it-objects-count]')).toContainText('1 own object');
 
     // Changes → Management's decision; costs → the Economics tool.

@@ -217,3 +217,56 @@ test.describe('an example started for Private Edition 2023 FPS03', () => {
     await expect(row).toHaveText('2023 FPS03');
   });
 });
+
+// QA review of d939fb5b056b (2e9381bd0cbd, 4b0d3c0f1b32): the own-code start was
+// held by source text only. The same walk as above, from the upload screen.
+test.describe('own code imported for Private Edition 2023 FPS03', () => {
+  test('is signed against the pinned 2023 FPS03 list', async ({ page }) => {
+    test.setTimeout(360 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    const email = `start-release-own-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(auth, email, PASSWORD);
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Own', lastName: 'Release', email,
+      tier: 'pilot', status: 'approved', isAdmin: true, activatedAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
+      transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
+      modelStages: { analyze: false, naming: false, statements: false },
+    });
+    await signInViaLanding(page, email, PASSWORD);
+
+    await page.goto('/admin/new-project/upload', { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await expect(page.locator('[data-cc-own-code]')).toBeVisible({ timeout: 60000 });
+    await page.locator('[data-own-code-input]').setInputFiles([
+      { name: 'Z_MM_PO_APPROVAL.abap', mimeType: 'text/plain', buffer: Buffer.from(read('public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8') },
+    ]);
+    await expect(page.locator('[data-own-code-file]')).toHaveCount(1);
+
+    const choice = page.locator('[data-cc-own-code] [data-target-edition-choice]');
+    await expect(choice).toHaveAttribute('data-target-edition', 'private');
+    const releaseChoice = choice.locator('[data-target-release-choice]');
+    await expect(releaseChoice, 'asked for the Private Edition').toBeVisible();
+    await releaseChoice.locator('select').selectOption('2023 FPS03');
+    await expect(releaseChoice).toHaveAttribute('data-target-release', '2023 FPS03');
+
+    const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
+    if (await ack.count()) await ack.check();
+    await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    await page.click('[data-own-code-start]');
+
+    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    await expect
+      .poll(async () => {
+        const p = await adminGetDoc('projects', projectId);
+        return p?.activeRunId ? (p.assessmentTarget as { release?: string } | undefined)?.release ?? '' : null;
+      }, { timeout: 120000 })
+      .toBe('2023 FPS03');
+    const project = (await adminGetDoc('projects', projectId))!;
+    const run = await adminGetDoc(`projects/${projectId}/runs`, project.activeRunId as string);
+    const profile = run?.assessmentProfile as { release?: string; catalogSnapshot?: { registryKey?: string } } | undefined;
+    expect(profile?.release).toBe('2023 FPS03');
+    expect(profile?.catalogSnapshot?.registryKey).toBe('pce-2023-3');
+    expect(run?.runHash, 'the run is signed').toBeTruthy();
+  });
+});

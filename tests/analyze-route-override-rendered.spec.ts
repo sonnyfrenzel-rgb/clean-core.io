@@ -39,7 +39,8 @@ const ANALYSIS = JSON.stringify({
     // (QA full review of 81810c8, d5a87a5db395).
     confidenceScore: 95,
     rationale: 'The report joins three tables that have released APIs.',
-    targetArtifact: 'SAP BTP Node.js App (CAP)',
+    // A name of its own, so the card's fallback artefact cannot pass for it.
+    targetArtifact: 'CAP service Z_OVERRIDE_SRV',
   },
   standardFit: { potential: 'Medium' },
 });
@@ -92,6 +93,8 @@ test('a route that still matches the recommendation shows the recommendation', a
   expect(body).toContain('The report joins three tables that have released APIs.');
   expect(body, 'nothing was changed, so nothing is labelled as changed').not.toContain('Chosen by you');
   expect(body).not.toContain('You changed this route');
+  // The other half of the target rule (QA a316ea3d53b3): the recommendation's own artefact stands as the target.
+  await expect(page.locator('[data-route-target]', { hasText: 'Target:' })).toContainText('CAP service Z_OVERRIDE_SRV');
 });
 
 test('a route the architect switched is labelled as theirs, with the recommendation named', async ({ page }) => {
@@ -112,7 +115,7 @@ test('a route the architect switched is labelled as theirs, with the recommendat
   // instead (QA full review of fc787674705f, 08fd882e60b3).
   const target = page.locator('[data-route-target]', { hasText: 'Target:' });
   await expect(target).toContainText('RAP Business Object');
-  await expect(target).not.toContainText('SAP BTP Node.js App (CAP)');
+  await expect(target).not.toContainText('Z_OVERRIDE_SRV');
 });
 
 test('an analysis without a recommendation claims no override', async ({ page }) => {

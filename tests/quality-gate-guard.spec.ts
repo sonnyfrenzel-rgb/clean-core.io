@@ -71,7 +71,7 @@ test('the build job lints, builds and type-checks, in that order, and hands its 
   expect(pack!.text).toMatch(/--exclude=\.next\/cache \.next\n/);
 
   const e2e = job(wf, 'e2e');
-  expect(e2e).toMatch(/\n {4}needs: build\n/);
+  expect(e2e).toMatch(/\n {4}needs: \[build, e2e-claim\]\n/);
   const download = steps(e2e).find((s) => s.text.includes('actions/download-artifact@'));
   expect(download, 'the shards do not download the build').toBeTruthy();
   expect(download!.text).toContain(`name: ${name}`);

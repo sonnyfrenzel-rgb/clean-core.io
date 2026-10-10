@@ -1,6 +1,6 @@
 import { tokenize } from './declaration-parser';
 import { createLiteralScanner, maskNonCode } from './statement-reader';
-import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation } from './open-sql-discrimination';
+import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation, writesDatabaseOnly } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
 
 /**
@@ -845,7 +845,9 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   // file: neither touches a table, so neither is a dependency on one called
   // ENTITIES or DATASET (codex code-engine-05).
   const write = isEntityManipulation(text) || isDatasetDeletion(text) ? null : databaseWriteIn(text.trim());
-  if (write) sink.table(at, write.table, 'write', 'open-sql');
+  // UPDATE has no internal-table form: its target is a table even when a local
+  // data object shares the name, so the local-name suppression does not apply.
+  if (write) sink.table(at, write.table, 'write', 'open-sql', {}, writesDatabaseOnly(write));
   readDynamicWrite(text, code, at, sink);
 
   readAdbc(text, code, at, sink, ctx);

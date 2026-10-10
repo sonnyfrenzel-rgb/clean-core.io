@@ -2,7 +2,7 @@ import { afterKeyword, maskLiterals, type AbapStatement, type SourceRange } from
 import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
-import { databaseWriteIn } from './open-sql-discrimination';
+import { databaseWriteIn, writesDatabaseOnly, type SqlWrite } from './open-sql-discrimination';
 import { namesThisProgram } from './callback-registrations';
 import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
@@ -1535,6 +1535,11 @@ class SkeletonBuilder {
     return this.localData.has(name.toUpperCase().replace(/\[\]$/, ''));
   }
 
+  /** A write to a data object of the program — never an UPDATE, which only names a database table. */
+  private isInternalWrite(write: SqlWrite): boolean {
+    return !writesDatabaseOnly(write) && this.isInternalTable(write.table);
+  }
+
   private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
     const out = new Set<FormEffect>();
     // ADR-066. An AMDP method (`METHOD m BY DATABASE PROCEDURE|FUNCTION …`)
@@ -1571,7 +1576,7 @@ class SkeletonBuilder {
       // does — changing the kind alone folded whole calculation routines of the
       // shipped examples into their callers (roadmap 3.0.7) — but as `compute`.
       const written = databaseWriteIn(text);
-      if (written) out.add(this.isInternalTable(written.table) ? 'compute' : 'write');
+      if (written) out.add(this.isInternalWrite(written) ? 'compute' : 'write');
       if (adbcExecution(text)) out.add('call');
       if (/^CALL\s+FUNCTION\b/i.test(text)) {
         const kind = functionTaskKind(/^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase());
@@ -3760,7 +3765,7 @@ class SkeletonBuilder {
       return { exits: incoming, outputRun: null };
     }
     const write = databaseWriteIn(text);
-    if (write && this.isInternalTable(write.table)) {
+    if (write && this.isInternalWrite(write)) {
       // Roadmap 3.0.7: a change to an internal table is a plain step of the
       // program — no SAP data store, no effect. `MODIFY gt_fieldcat FROM
       // gs_fieldcat` drawn as a write read as if the field catalogue were a
@@ -4492,7 +4497,7 @@ class SkeletonBuilder {
       }, ctx.region, ctx.container, { detail: { ...(detail ?? {}), fromMacro: site.keyword } });
 
     const write = databaseWriteIn(body.text);
-    if (write && this.isInternalTable(write.table)) {
+    if (write && this.isInternalWrite(write)) {
       return at('task', write.table.toUpperCase(), { operation: write.keyword, internalTable: true });
     }
     if (write) return at('write', write.table.toUpperCase(), { operation: write.keyword });

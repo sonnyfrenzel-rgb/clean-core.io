@@ -18,7 +18,7 @@ import { initialCostAssumptions } from '../components/tco/OptionComparison';
 import { toolOnRecord, workflowSteps } from '../lib/workflow-steps';
 import { toolMark, workspaceLayers } from '../lib/workspace-model';
 import { buildHandoverChain } from '../lib/handover';
-import { costsFromDecision, storedCostsOf } from '../lib/management-executive';
+import { costsFromDecision, managementExecutive, storedCostsOf } from '../lib/management-executive';
 import type { Project } from '../lib/types';
 
 /**
@@ -266,10 +266,24 @@ test.describe('what Delivery and Management read', () => {
     const steps = workflowSteps(p);
     const stored = storedCostsOf(p, steps)!;
     expect(stored.words).toBe(economicsInWords(r));
-    const sayings = JSON.stringify([
-      workspaceLayers(p).find((l) => l.key === 'costs'),
-      costsFromDecision({ state: 'loading' } as never, stored),
-    ].map((x) => (x && 'state' in x ? { ...x, revision: undefined } : x)));
+    // What a reader is shown: the costs layer and the executive answer built from the
+    // cost view model — read whole, nothing removed first (QA cd1a428f9d91). The view
+    // model itself keeps the key for the record (`StoredCosts.revision`).
+    const costs = costsFromDecision({ state: 'loading' } as never, stored);
+    expect(costs).toMatchObject({ state: 'stored', revision: r.revision });
+    const loading = { state: 'loading', title: 'Reading…' } as const;
+    const summary = managementExecutive({
+      subject: 'Z_TEST',
+      mode: 'project',
+      hasSource: true,
+      hasRun: true,
+      steps,
+      overview: { blockers: loading, decision: loading, buckets: loading },
+      fit: { state: 'loading' },
+      costs,
+    });
+    expect(summary.figures.find((f) => f.key === 'costs')?.coverage).toContain(economicsInWords(r));
+    const sayings = JSON.stringify([workspaceLayers(p).find((l) => l.key === 'costs'), summary]);
     expect(sayings).not.toContain(r.revision);
     expect(sayings).not.toMatch(/#\d+opt\+/);
   });

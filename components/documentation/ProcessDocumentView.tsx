@@ -431,6 +431,12 @@ export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] 
             >
               {item.arms.map((arm) => (
                 <div key={arm[0].id} data-doc-path-arm="" className="flex items-start">
+                  {/* The answer that selects this arm (QA 867a59061693): without it two alternatives are indistinguishable. */}
+                  {arm[0].choice?.when ? (
+                    <span data-doc-path-arm-when="" className="mr-1 mt-2 w-20 shrink-0 text-[11px] font-medium text-cc-ink-muted line-clamp-2">
+                      {arm[0].choice.when}
+                    </span>
+                  ) : null}
                   {arm.map((step, i) => (
                     <React.Fragment key={step.id}>
                       {i ? <Connector /> : null}

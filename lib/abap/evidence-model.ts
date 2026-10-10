@@ -341,7 +341,11 @@ export function buildAbapEvidence(
    * its own — the `bdc` finding on the call already does — and it is no direct
    * write, so it never counts as a `standard-table-write`.
    */
-  const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string) => {
+  // `queued`: the rows go into a batch-input session (`BDC_INSERT`) that SM35
+  // runs later; this program does not run the transaction, so the finding says
+  // the session queues the change rather than that it is made (QA review of
+  // d939fb5b056b, 11d2bd848df5).
+  const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string, queued = false) => {
     const entry = STANDARD_TABLE_MAP[write.table];
     // Anchored where the table is named — the statement that fills the first
     // of its fields — so the anchor carries what the finding claims; the call
@@ -352,14 +356,18 @@ export function buildAbapEvidence(
     const fill = statements.find((s) => s.line === write.firstFill.lineStart);
     addFinding({
       kind: 'batch-input',
-      title: `Batch input changes ${batchInputEffect(write)} via ${tcode}`,
+      title: queued
+        ? `Batch input session queues a change to ${batchInputEffect(write)} via ${tcode}`
+        : `Batch input changes ${batchInputEffect(write)} via ${tcode}`,
       severity: 'High',
       confidence: 'High',
       objectName: write.table,
       objectType: 'Database Table',
       lineStart: fillLine,
       snippet: fill ? fill.text.trim() : text,
-      technicalDetail: `The batch input to ${tcode} (line ${line}) fills ${write.raw.join(', ')} (line${write.lines.length > 1 ? 's' : ''} ${write.lines.join(', ')}). The transaction writes the change to ${write.table}; this program writes nothing to it directly.`,
+      technicalDetail: queued
+        ? `The batch-input session for ${tcode} (BDC_INSERT, line ${line}) fills ${write.raw.join(', ')} (line${write.lines.length > 1 ? 's' : ''} ${write.lines.join(', ')}). This program only queues the session; the change to ${write.table} is made when the session is processed (SM35), and this program writes nothing to it directly.`
+        : `The batch input to ${tcode} (line ${line}) fills ${write.raw.join(', ')} (line${write.lines.length > 1 ? 's' : ''} ${write.lines.join(', ')}). The transaction writes the change to ${write.table}; this program writes nothing to it directly.`,
       cleanCoreImpact: `The change to ${write.table} rests on the SAP GUI screens of ${tcode}. They carry no stability contract and do not run in ABAP Cloud.`,
       recommendation: entry
         ? `Make the change through the released API for ${tablePhrase(write.table)}: SAP names ${entry.view} as the successor of ${write.table}.`
@@ -612,7 +620,7 @@ export function buildAbapEvidence(
       // call itself costs nothing here (it never did); what its rows change is
       // graded like the direct call's.
       const call = batchAt.get(stmt.line);
-      for (const write of batchWrites(call)) addBatchInputWrite(write, call?.transaction ?? 'UNKNOWN', stmt.line, text);
+      for (const write of batchWrites(call)) addBatchInputWrite(write, call?.transaction ?? 'UNKNOWN', stmt.line, text, true);
     }
 
     // Remote Function Calls (RFC)

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { build } from 'esbuild';
@@ -36,6 +36,13 @@ function App() {
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShown(true), 100);
+    // ?frame: the block grows on every frame, so no frame of a drag is free of a move of the place.
+    if (location.search.includes('frame')) {
+      let raf = 0;
+      const step = () => { setGrow((g) => g + 4); raf = requestAnimationFrame(step); };
+      raf = requestAnimationFrame(step);
+      return () => { clearTimeout(t); cancelAnimationFrame(raf); };
+    }
     const i = setInterval(() => setGrow((g) => g + 40), 60);
     return () => { clearTimeout(t); clearInterval(i); };
   }, []);
@@ -64,13 +71,16 @@ createRoot(document.getElementById('root')!).render(<App />);
   bundle = result.outputFiles[0].text;
 });
 
-test('a scroll by the scrollbar ends the follow of a deep-linked place', async ({ page }) => {
-  await page.route('http://follow.test/**', (route) =>
+const servePage = (page: Page, bodyStyle = 'margin:0') =>
+  page.route('http://follow.test/**', (route) =>
     route.fulfill({
       contentType: 'text/html',
-      body: `<!doctype html><html><body style="margin:0"><div id="root"></div><script>${bundle.replace(/<\/script/g, '<\\/script')}</script></body></html>`,
+      body: `<!doctype html><html><body style="${bodyStyle}"><div id="root"></div><script>${bundle.replace(/<\/script/g, '<\\/script')}</script></body></html>`,
     }),
   );
+
+test('a scroll by the scrollbar ends the follow of a deep-linked place', async ({ page }) => {
+  await servePage(page);
   await page.setViewportSize({ width: 1000, height: 700 });
   await page.goto('http://follow.test/#place');
   // The follow has brought the place into view.
@@ -91,4 +101,26 @@ test('a scroll by the scrollbar ends the follow of a deep-linked place', async (
   // The block above keeps growing; the page stays where the reader put it.
   await page.waitForTimeout(1000);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+// QA review of d939fb5b056b (2c33889165f6): the place is still moving in every
+// frame of the drag. Without scroll anchoring the follow is still re-scrolling
+// when the reader starts, so the drag happens while the follow is active.
+test('a scroll by the scrollbar ends the follow while the place is still moving', async ({ page }) => {
+  await servePage(page, 'margin:0;overflow-anchor:none');
+  await page.setViewportSize({ width: 1000, height: 700 });
+  await page.goto('http://follow.test/?frame#place');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+  // Still following: the place keeps moving down and the page keeps up with it.
+  const before = await page.evaluate(() => window.scrollY);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 20);
+
+  await page.evaluate(async () => {
+    for (let i = 0; i < 10; i++) {
+      window.scrollTo(0, 0);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  });
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => window.scrollY), 'the follow pulled the reader back').toBe(0);
 });

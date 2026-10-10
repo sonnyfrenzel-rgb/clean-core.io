@@ -117,6 +117,9 @@ test('both jobs run the same check, and only the test jobs have a concurrency gr
   for (const name of ['validate', 'security', 'deploy-runner', 'deploy']) {
     expect(job(src, name), `${name} must not wait for the shard claim`).not.toMatch(/needs:[^\n]*e2e-claim/);
   }
+  // QA ed2225b59658: the run's own shards wait for its claim, so a claim the
+  // queue started late cannot cancel a shard of the same run.
+  expect(job(src, 'e2e')).toMatch(/\n {4}needs: \[build, e2e-claim\]\n/);
   // A cancelled test job stops the deploy: the gate needs both, and the deploy needs the gate.
   expect(job(src, 'validate')).toMatch(/\n {4}needs: \[build, e2e\]\n/);
   expect(job(src, 'deploy')).toContain("needs.validate.result == 'success'");
