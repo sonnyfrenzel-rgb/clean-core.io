@@ -320,10 +320,17 @@ test('080cd5fce607: the proxy signs the stage it was called under — at the rou
     await request.post('/api/model-stages', { headers: headers(), data: { stages: { statements: true } } });
   }
 
-  // A wrong token is no stub: the request then goes the ordinary way.
+  // A wrong token changes nothing. Until 10.10.2026 it sent this request the
+  // ordinary way — to the real model, in CI. The test server now stubs by
+  // default (roadmap "before 3.0.7 — Tests never spend the production model
+  // budget"), so a wrong token stays on the stub, and the only way off it is a
+  // listed opt-in (tests/gemini-real-model-guard.spec.ts). That the token
+  // alone never switches the stub on where there is no default is held without
+  // a server, in tests/gemini-test-stub-guard.spec.ts.
   const wrong = await request.post('/api/gemini', {
     headers: { ...headers(), [GEMINI_TEST_STUB_HEADER]: 'not-the-secret' },
     data: { prompt: 'Describe these statements.', stage: 'statements', jsonResponse: true },
   });
-  if (wrong.status() === 200) expect((await wrong.json()).text).not.toBe(GEMINI_TEST_STUB_TEXT);
+  expect(wrong.status(), await wrong.text()).toBe(200);
+  expect((await wrong.json()).text).toBe(GEMINI_TEST_STUB_TEXT);
 });

@@ -10,7 +10,8 @@
  *
  * So one thing is replaced and nothing else: the provider call. The three gates
  * are the ones `app/api/test/seed/route.ts` already uses (F-15), all of which
- * must hold, and the first of which alone keeps it out of every deployment:
+ * must hold (the third has a server-side default for the test server, below),
+ * and the first of which alone keeps it out of every deployment:
  *
  *   1. `K_SERVICE` is unset — Cloud Run sets it on every real service;
  *   2. `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` is exactly `'true'` — only the
@@ -31,15 +32,44 @@ export const GEMINI_TEST_STUB_HEADER = 'x-test-gemini-stub';
 /** What the stub answers. Valid JSON, and obviously not a model's words. */
 export const GEMINI_TEST_STUB_TEXT = '{"statements":[],"stub":"gemini-test-stub"}';
 
+/**
+ * Roadmap "before 3.0.7 — Tests never spend the production model budget" (2).
+ *
+ * The test server answers with the stub by default: `playwright.config.ts`
+ * starts it with this variable set to exactly `'true'`, and then every call
+ * that gets past the gates is stubbed unless the request opts in to the real
+ * model. On 06./07.10.2026 about 1,270 of 1,304 Gemini calls came from test
+ * runs, most of them from specs that never needed the model's words.
+ *
+ * The default is a third condition beside the first two gates, never in place
+ * of them: without gates 1 and 2 it changes nothing, so no deployment can be
+ * switched to the stub by an environment variable alone. The deploy job never
+ * sets it (`tests/gemini-test-stub-guard.spec.ts`).
+ */
+export const GEMINI_TEST_STUB_DEFAULT_ENV = 'GEMINI_TEST_STUB_DEFAULT';
+
+/**
+ * The header a spec sends, equal to `PILOT_APPROVAL_SECRET`, to reach the real
+ * model on a server that stubs by default. Only the specs listed in
+ * `tests/gemini-real-model-guard.spec.ts` may send it.
+ */
+export const GEMINI_TEST_REAL_MODEL_HEADER = 'x-test-gemini-real-model';
+
 export function geminiTestStubActive(
   env: Readonly<Record<string, string | undefined>>,
   headerValue: string | null | undefined,
+  realModelHeaderValue?: string | null,
 ): boolean {
   if (env.K_SERVICE) return false;
   if (env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') return false;
   const secret = env.PILOT_APPROVAL_SECRET;
-  if (!secret || !headerValue) return false;
-  return headerValue === secret;
+  if (!secret) return false;
+  // Gate 3, as before: the stub asked for by name, per request.
+  if (headerValue && headerValue === secret) return true;
+  // The default: a server started to stub stays on the stub unless the request
+  // proves it may leave it — the same secret, under the real-model header.
+  if (env[GEMINI_TEST_STUB_DEFAULT_ENV] === 'true') return realModelHeaderValue !== secret;
+  return false;
 }
 
 /**

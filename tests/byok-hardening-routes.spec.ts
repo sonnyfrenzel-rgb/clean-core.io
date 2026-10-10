@@ -143,7 +143,8 @@ test('(g) a stored key the server cannot open is refused — never replaced by t
   await adminSetDoc(PROVIDERS(uid), 'gemini', { encryptedApiKey: Buffer.alloc(64, 7).toString('base64'), keyVersion: BYOK_KEY_VERSION, last4: 'xxxx' });
   try {
     expect(await keySource(request), 'an unreadable key is reported as available').toBeNull();
-    // No stub: the route loads the key, and must stop before any model call.
+    // The test server stubs by default, but the stub replaces only the provider
+    // call: the route still loads the key, and must stop there.
     const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.' } });
     expect(res.status(), await res.text()).toBe(503);
     expect((await res.json()).code).toBe(BYOK_KEY_UNREADABLE_CODE);

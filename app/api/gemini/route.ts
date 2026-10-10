@@ -24,6 +24,7 @@ import { ByokKeyUnreadableError } from '@/lib/byok-key';
 import {
   GEMINI_TEST_STUB_FINISH_HEADER,
   GEMINI_TEST_STUB_HEADER,
+  GEMINI_TEST_REAL_MODEL_HEADER,
   geminiTestStubActive,
   geminiTestStubAnswer,
 } from '@/lib/gemini-test-stub';
@@ -300,17 +301,29 @@ export async function POST(request: NextRequest) {
     // (`lib/gemini-test-stub.ts`: no K_SERVICE, the emulator build, and a
     // per-request secret). Every gate above has run; only the call is replaced,
     // and the receipt below is minted exactly as for a real answer
-    // (QA review of 75b573cd22f0, 080cd5fce607).
-    const stubbed = geminiTestStubActive(process.env, request.headers.get(GEMINI_TEST_STUB_HEADER));
+    // (QA review of 75b573cd22f0, 080cd5fce607). The test server stubs by
+    // default, and a listed spec opts in to the real model with the second
+    // header (roadmap "before 3.0.7 — Tests never spend the production model
+    // budget"; the list is tests/gemini-real-model-guard.spec.ts).
+    const stubbed = geminiTestStubActive(
+      process.env,
+      request.headers.get(GEMINI_TEST_STUB_HEADER),
+      request.headers.get(GEMINI_TEST_REAL_MODEL_HEADER),
+    );
 
     // Resolve the AI client — load BYOK key from secure user_secrets if it exists, else server key.
     //
     // A stored key this server cannot open is refused, not treated as absent
     // (3.0.13 g): absent would hand the call to the community key, unmetered,
     // for an account whose profile says it brings its own.
+    //
+    // Loaded under the stub as well: the stub replaces the provider call and
+    // nothing before it, so a key the server cannot open is refused on the test
+    // server too — which, now that it stubs by default, is what lets the BYOK
+    // refusal specs prove it without leaving the stub.
     let byokKey: string | null = null;
     try {
-      byokKey = stubbed ? null : await loadGeminiApiKey(decodedToken.uid);
+      byokKey = await loadGeminiApiKey(decodedToken.uid);
     } catch (keyErr: unknown) {
       if (keyErr instanceof ByokKeyUnreadableError) {
         return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });

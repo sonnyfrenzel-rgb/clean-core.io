@@ -2,7 +2,12 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
-import { GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '../lib/gemini-test-stub';
+import {
+  GEMINI_TEST_REAL_MODEL_HEADER,
+  GEMINI_TEST_STUB_DEFAULT_ENV,
+  GEMINI_TEST_STUB_HEADER,
+  geminiTestStubActive,
+} from '../lib/gemini-test-stub';
 
 /**
  * The provider stub of `/api/gemini` can never be switched on in a deployment
@@ -37,10 +42,54 @@ test('on only with all three gates: no Cloud Run, the emulator build, and the pe
   expect(geminiTestStubActive({ ...TEST_ENV, PILOT_APPROVAL_SECRET: undefined }, 'undefined')).toBe(false);
 });
 
+test('the test server stubs by default, behind the same two deployment gates, and only the secret leaves the stub', () => {
+  // Roadmap "before 3.0.7 — Tests never spend the production model budget" (2).
+  const DEFAULT_ENV = { ...TEST_ENV, [GEMINI_TEST_STUB_DEFAULT_ENV]: 'true' };
+  expect(GEMINI_TEST_STUB_DEFAULT_ENV).toBe('GEMINI_TEST_STUB_DEFAULT');
+  // On by default: no header at all is the stub…
+  expect(geminiTestStubActive(DEFAULT_ENV, null)).toBe(true);
+  expect(geminiTestStubActive(DEFAULT_ENV, null, null)).toBe(true);
+  // …a wrong secret, under either header, stays on it…
+  expect(geminiTestStubActive(DEFAULT_ENV, 'guess', 'guess')).toBe(true);
+  expect(geminiTestStubActive(DEFAULT_ENV, null, '')).toBe(true);
+  // …only the secret under the real-model header leaves it, and the stub asked by name wins over that.
+  expect(geminiTestStubActive(DEFAULT_ENV, null, 'test-approval-secret')).toBe(false);
+  expect(geminiTestStubActive(DEFAULT_ENV, 'test-approval-secret', 'test-approval-secret')).toBe(true);
+  // Only the exact value switches the default on.
+  for (const value of ['TRUE', '1', 'yes', '', undefined]) {
+    expect(geminiTestStubActive({ ...TEST_ENV, [GEMINI_TEST_STUB_DEFAULT_ENV]: value }, null)).toBe(false);
+  }
+  // The default never replaces a deployment gate: Cloud Run, a non-emulator build,
+  // or no secret at all switch the stub off whatever the variable says.
+  expect(geminiTestStubActive({ ...DEFAULT_ENV, K_SERVICE: 'clean-core' }, null)).toBe(false);
+  expect(geminiTestStubActive({ ...DEFAULT_ENV, K_SERVICE: 'clean-core' }, 'test-approval-secret')).toBe(false);
+  expect(geminiTestStubActive({ ...DEFAULT_ENV, NEXT_PUBLIC_USE_FIREBASE_EMULATOR: undefined }, null)).toBe(false);
+  expect(geminiTestStubActive({ ...DEFAULT_ENV, PILOT_APPROVAL_SECRET: undefined }, null)).toBe(false);
+  expect(geminiTestStubActive({ ...DEFAULT_ENV, PILOT_APPROVAL_SECRET: '' }, null, '')).toBe(false);
+
+  // The test server is the one place that sets it, and to exactly 'true'.
+  const config = fs.readFileSync(path.join(__dirname, '..', 'playwright.config.ts'), 'utf8');
+  expect(config).toMatch(/^\s+GEMINI_TEST_STUB_DEFAULT: 'true',\s*$/m);
+  for (const rel of ['app', 'lib', 'middleware.ts', 'next.config.mjs', 'Dockerfile', '.github/workflows']) {
+    const at = path.join(__dirname, '..', rel);
+    if (!fs.existsSync(at)) continue;
+    const files = fs.statSync(at).isDirectory() ? (fs.readdirSync(at, { recursive: true }) as string[]).map((f) => path.join(at, f)) : [at];
+    for (const file of files) {
+      if (!fs.statSync(file).isFile() || file.endsWith(`gemini-test-stub.ts`)) continue;
+      expect(fs.readFileSync(file, 'utf8'), `${path.relative(path.join(__dirname, '..'), file)} names the stub default`).not.toContain(
+        GEMINI_TEST_STUB_DEFAULT_ENV,
+      );
+    }
+  }
+});
+
 test('the route asks after every gate, and replaces the provider call and nothing else', () => {
   const route = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'gemini', 'route.ts'), 'utf8');
-  const asked = route.indexOf('geminiTestStubActive(process.env, request.headers.get(GEMINI_TEST_STUB_HEADER))');
+  const asked = route.search(
+    /geminiTestStubActive\(\s*process\.env,\s*request\.headers\.get\(GEMINI_TEST_STUB_HEADER\),\s*request\.headers\.get\(GEMINI_TEST_REAL_MODEL_HEADER\),?\s*\)/,
+  );
   expect(asked, 'the route no longer asks the stub the way this guard knows').toBeGreaterThan(-1);
+  expect(route.match(/geminiTestStubActive\(/g)?.length, 'the stub is asked in one place only').toBe(1);
   for (const gate of [
     'verifyRequestAuth(request)',
     'assertRateLimit(',
@@ -58,6 +107,7 @@ test('the route asks after every gate, and replaces the provider call and nothin
   expect(route.indexOf('issueModelReceipt(', asked)).toBeGreaterThan(asked);
   // One header name, from the module — not a second spelling in the route.
   expect(route).not.toContain(`'${GEMINI_TEST_STUB_HEADER}'`);
+  expect(route).not.toContain(`'${GEMINI_TEST_REAL_MODEL_HEADER}'`);
   // And the module stays free of imports, so nothing it reads is hidden elsewhere.
   const stub = fs.readFileSync(path.join(__dirname, '..', 'lib', 'gemini-test-stub.ts'), 'utf8');
   expect(stub).not.toMatch(/^import /m);

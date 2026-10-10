@@ -7,10 +7,17 @@
  * asks the remote for the branch head as the last step before each deploy and
  * deploys only if that is still its own commit.
  *
- * Why not a `concurrency:` group: GitHub keeps one pending run per group and
- * cancels it when a later one queues — by queue time, not by commit — so an older
- * run that reaches the group late would cancel the newer run's waiting deploy.
- * This spec pins that decision too, so nobody adds the group back as the "fix".
+ * Why not a `concurrency:` group for the run or the deploy: GitHub keeps one
+ * pending run per group and cancels it when a later one queues — by queue time,
+ * not by commit — so an older run that reaches the group late would cancel the
+ * newer run's waiting deploy. This spec pins that decision too, so nobody adds
+ * the group back as the "fix".
+ *
+ * The one exception (roadmap "before 3.0.7 — Tests never spend the production
+ * model budget", point 4): `build` and `e2e` carry a group per branch with
+ * `cancel-in-progress`, so a newer push ends the older run's tests and their
+ * model calls. Cancelling a test job can only stop a deploy, never start one,
+ * and no deploy job is in any group.
  *
  * Half source, half behaviour: the check's own shell is run against a real git
  * remote for a current, a superseded and an unreadable head.
@@ -78,11 +85,26 @@ test('every Cloud Run deploy is gated by the newest-commit check, which runs rig
   expect(gated).toBe(uses);
 });
 
-test('both jobs run the same check, and the workflow has no concurrency group', () => {
+test('both jobs run the same check, and only the test jobs have a concurrency group', () => {
   const src = wf();
   expect(checkScript(job(src, 'deploy-runner'), 'runners')).toBe(checkScript(job(src, 'deploy'), 'app'));
-  // A group would cancel a newer run's pending deploy when an older run queues later.
-  expect(src).not.toMatch(/^\s*concurrency:/m);
+  // A group on the run or on a deploy would cancel a newer run's pending deploy
+  // when an older run queues later — so none at workflow level…
+  expect(src).not.toMatch(/^concurrency:/m);
+  // …and exactly two at job level, on the two test jobs and nowhere else.
+  const groups = [...src.matchAll(/^( *)concurrency:/gm)];
+  expect(groups.map((m) => m[1].length)).toEqual([4, 4]);
+  for (const name of ['validate', 'security', 'deploy-runner', 'deploy', 'smoke-production']) {
+    expect(job(src, name), `${name} must never be in a concurrency group`).not.toMatch(/^ {4}concurrency:/m);
+  }
+  // Per branch; per shard as well for the matrix, or the shards of one run would cancel each other.
+  expect(job(src, 'build')).toMatch(/\n {4}concurrency:\n {6}group: build-\$\{\{ github\.ref \}\}\n {6}cancel-in-progress: true\n/);
+  expect(job(src, 'e2e')).toMatch(
+    /\n {4}concurrency:\n {6}group: e2e-\$\{\{ github\.ref \}\}-\$\{\{ matrix\.shard \}\}\n {6}cancel-in-progress: true\n/,
+  );
+  // A cancelled test job stops the deploy: the gate needs both, and the deploy needs the gate.
+  expect(job(src, 'validate')).toMatch(/\n {4}needs: \[build, e2e\]\n/);
+  expect(job(src, 'deploy')).toContain("needs.validate.result == 'success'");
 });
 
 /**

@@ -78,10 +78,20 @@ Two properties of this mix are worth knowing before you add or move anything:
 the provider call, and nothing else, when the server runs the emulator build outside
 Cloud Run **and** the request carries `x-test-gemini-stub` equal to
 `PILOT_APPROVAL_SECRET`. `tests/gemini-test-stub-guard.spec.ts` holds those gates.
-Some browser specs stub model answers in the page instead, with `page.route(...)`. CI additionally hands
-the server a test key (`TEST_GEMINI_API_KEY` → `GEMINI_API_KEY`), so a spec that
-neither stubs nor sends the header reaches the real model there — and not locally,
-where no key is set.
+Some browser specs stub model answers in the page instead, with `page.route(...)`.
+
+**The test server stubs by default** (roadmap "before 3.0.7 — Tests never spend the
+production model budget"). `playwright.config.ts` starts it with
+`GEMINI_TEST_STUB_DEFAULT=true`; behind the same two deployment gates (no `K_SERVICE`,
+the emulator build) every call that passes the route's gates then gets the stub,
+whether or not a key is set. A spec reaches the real model only by sending
+`x-test-gemini-real-model` equal to `PILOT_APPROVAL_SECRET`, and only a spec listed
+in `tests/gemini-real-model-guard.spec.ts`, with its reason, may send it. A spec
+that needs a particular answer serves it as a fixture with `page.route(...)`, which
+is unchanged. CI still hands the server `TEST_GEMINI_API_KEY` as `GEMINI_API_KEY`;
+it is spent only by the listed specs. The stub replaces the provider call and
+nothing before it: the BYOK key is still loaded, so an unreadable stored key is
+refused on the test server too.
 
 ## 3. The environment
 

@@ -35,8 +35,30 @@ jobs:
   # the build and every shard are. Until 09.10.2026 the suite ran as three
   # shards in sequence inside one job: 82.6 of about 89 minutes on run
   # 37610601107.
+  #
+  # A newer push ends the older run's tests (roadmap "before 3.0.7 - Tests never
+  # spend the production model budget", point 4). On 06.10.2026 34 runs, nine
+  # nearly at once, made the cost peak: every superseded run kept testing - and
+  # calling the model - although only the newest commit is ever deployed.
+  #
+  # The group sits on `build` and `e2e` only, per branch, and nowhere else. Never
+  # at workflow level and never on validate, security, deploy-runner, deploy or
+  # smoke-production: a deploy that is running is never cancelled mid-way, and no
+  # deploy is ever a pending job a later run could cancel (the reason
+  # tests/deploy-order-guard.spec.ts gives against a workflow-level group still
+  # holds). A run whose build or shard was cancelled cannot deploy: `deploy` needs
+  # `validate`, and `validate` succeeds only on a successful build and e2e. The
+  # newer run deploys, and its own newest-commit check still decides.
+  #
+  # Worst case, in the rare race where an older run's job queues after the
+  # newer one's: the newer run is cancelled and the older one skips its deploy at
+  # the newest-commit check, so nothing is deployed until the next push or a
+  # re-run - never older code over newer.
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: build-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       # Shallow (the default): this job runs no test, so nothing here needs
       # history. The full-history checkout is in `e2e`, where
@@ -125,6 +147,11 @@ jobs:
   e2e:
     needs: build
     runs-on: ubuntu-latest
+    # Per branch and per shard: one group for all six would let the shards of
+    # one run cancel each other (see the note above `build`).
+    concurrency:
+      group: e2e-${{ github.ref }}-${{ matrix.shard }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:

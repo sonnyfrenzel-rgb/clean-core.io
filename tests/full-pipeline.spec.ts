@@ -5,6 +5,7 @@ import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, get
 import * as fs from 'fs';
 import * as path from 'path';
 import { adminSetDoc, adminApproveUser, adminSetCustomClaim } from './helpers/admin-seed';
+import { GEMINI_TEST_REAL_MODEL_HEADER } from '../lib/gemini-test-stub';
 
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
@@ -134,6 +135,17 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Redirect browser console logs to terminal for CI debugging (unbuffered)
     page.on('console', msg => process.stdout.write(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}\n`));
     page.on('pageerror', err => process.stdout.write(`[BROWSER ERROR] ${err.name}: ${err.message}\n${err.stack}\n`));
+
+    // The one walk that uses the real model (tests/gemini-real-model-guard.spec.ts):
+    // the test server answers `/api/gemini` with the stub by default, and this
+    // spec asserts what only a real design answer produces — the blueprint's
+    // `/project-root` — and the transformation built on it. Every model call of
+    // this page opts out of the stub with the test secret.
+    const realModelSecret = process.env.PILOT_APPROVAL_SECRET ?? '';
+    expect(realModelSecret, 'the real-model opt-in needs PILOT_APPROVAL_SECRET').not.toBe('');
+    await page.route('**/api/gemini', (route) =>
+      route.continue({ headers: { ...route.request().headers(), [GEMINI_TEST_REAL_MODEL_HEADER]: realModelSecret } }),
+    );
 
     // --- STAGE 0: LOGIN ---
     console.log('Navigating to homepage and signing in...');
