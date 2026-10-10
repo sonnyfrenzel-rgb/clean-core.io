@@ -439,16 +439,22 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
  * The bar carries layers and nothing else: the views are a segmented control in
  * the header and the seven stages are a toolbar under it, so that each of the
  * three navigations has exactly one job (ADR-018).
+ *
+ * Five since ADR-087: *Changes & commitments* held nothing this release can
+ * record — a hard-coded "empty" beside a decision with a timeline — and no view
+ * renders it any more (IT and Management have no layers, Business shows two).
  */
-export const LAYERS = [
-  'need',
-  'standard',
-  'costs',
-  'architecture',
-  'evidence',
-  'changes',
-] as const;
-export type LayerKey = (typeof LAYERS)[number];
+export const LAYERS = ['need', 'standard', 'costs', 'architecture', 'evidence'] as const;
+/**
+ * Layer addresses that no longer name a layer but still arrive — a bookmark, a
+ * mail, a stage's way back from before 3.0.7. Each is sent where its content
+ * lives now (`#changes` → the decision's timeline in Management), never to an
+ * empty place.
+ */
+export const RETIRED_LAYERS = ['changes'] as const;
+export type LayerKey = (typeof LAYERS)[number] | (typeof RETIRED_LAYERS)[number];
+/** Every address a layer link may carry: the layers, then the retired ones. */
+export const LAYER_ADDRESSES: readonly LayerKey[] = [...LAYERS, ...RETIRED_LAYERS];
 
 export interface LayerRow {
   /** Stable within the layer — the React key and the test's handle. */
@@ -499,7 +505,7 @@ export interface WorkspaceLayer {
 export function layerFromHash(hash: string | null | undefined): LayerKey | null {
   if (typeof hash !== 'string') return null;
   const bare = hash.replace(/^#/, '');
-  return (LAYERS as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
+  return (LAYER_ADDRESSES as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
 }
 
 /** A hash is quoted at the length a person can compare by eye, never in full. */
@@ -535,10 +541,10 @@ function ownershipOf(entry: { isCustom?: unknown; isStandard?: unknown }): strin
  * Layers with content first; empty ones go under "More" and say what is missing
  * (§2.11). Every row below comes from a field that is actually on the project,
  * which is why four of them are routinely empty on a fresh case — and why the
- * bar says so instead of showing six confident-looking tabs.
+ * bar says so instead of showing five confident-looking tabs.
  *
  * **A layer with nothing in it says that, and why** (roadmap 6.2, W22-A03).
- * Each of the six carries its own temptation — *Standard fit* could read the
+ * Each of the five carries its own temptation — *Standard fit* could read the
  * routing recommendation sitting on the project, *Costs* could print the Clean
  * Core score as if it were money, *Changes* could call the project's
  * `updatedAt` a revision — and every one of those is the "the standard covers
@@ -819,16 +825,6 @@ export function workspaceLayers(
       rows: evidenceRows.slice(0, FIRST),
       total: evidenceRows.length,
       provenance: evidenceRows.length > 0 ? 'proven' : 'not-determined',
-    },
-    {
-      key: 'changes',
-      label: 'Changes & commitments',
-      hash: '#changes',
-      count: null,
-      missing: 'Revisions and decisions are recorded from the process model onward.',
-      rows: [],
-      total: 0,
-      provenance: 'not-determined',
     },
   ];
 }

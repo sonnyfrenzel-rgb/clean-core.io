@@ -133,17 +133,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.whatDecision': 'The decision of this project',
   'mgmt.lookupFailed':
     'The catalog lookup for these objects failed, so no bucket is concluded rather than one guessed.',
-  'mgmt.questionSuffix': '— this one project. No comparison with any other.',
-  'mgmt.waitsFor': 'Waits for',
-  'mgmt.conditionsCaption': 'Conditions of this decision by status',
-  'mgmt.conditionsUnit': 'Condition status',
-  'mgmt.conditionsColumn': 'Conditions',
-  'mgmt.pointQualifies': 'point qualifies',
-  'mgmt.pointsQualify': 'points qualify',
-  'mgmt.qualifiersTail': 'it without blocking it — listed on the decision card below.',
-  'mgmt.openDecision': 'Open decision',
   'mgmt.publicEditionDecision': 'Public Edition decision',
-  'mgmt.notRead': 'Not read:',
   'mgmt.trendLabelLead': 'Clean Core Score by run on rule version',
   'mgmt.on': 'on',
   'mgmt.ruleVersion': 'Rule version:',
@@ -157,20 +147,6 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.run': 'run',
   'mgmt.runs': 'runs',
   'mgmt.break': 'Break:',
-  'mgmt.targetPlatform': '— the target platform',
-  'mgmt.fourBuckets': 'Four buckets,',
-  'mgmt.bucketsCaption': 'Objects per bucket, per edition',
-  'mgmt.bucketsUnit': 'Bucket (objects)',
-  'mgmt.movesCaption': 'Objects whose bucket depends on the edition',
-  'mgmt.colObject': 'Object',
-  'mgmt.colPrivate': 'Private Edition',
-  'mgmt.colPublic': 'Public Edition',
-  'mgmt.levelsChart': 'Clean core levels across the places in the code',
-  'mgmt.levelsCaption': 'Places in the code per clean core level',
-  'mgmt.levelsUnit': 'Level (places in the code)',
-  'mgmt.levelsColumn': 'Places in the code',
-  'mgmt.hideDetail': 'Hide the answers in detail',
-  'mgmt.showDetail': 'Show the answers in detail',
   'mgmt.signedOutLead': 'You are signed out, so',
   'mgmt.couldNotBeRead': 'could not be read',
 
@@ -186,15 +162,6 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.moreTail': 'more, each with its evidence, under Evidence below',
   'exec.nextStep': 'Next step for the decision',
   'exec.noNextStep': 'Nothing to do for the decision right now.',
-  'exec.bucketsTitle': 'Where the objects stand',
-  'exec.bucketsChart': 'Objects per bucket on',
-  'exec.bucketsListLabel': 'Objects per bucket',
-  'exec.objects': 'objects',
-  'exec.target': '(target platform)',
-  'exec.noTarget': '(no target platform set)',
-  'exec.phasesTitle': 'Evidence per phase',
-  'exec.phasesNote': 'Green only where something other than your account checked the record.',
-  'exec.evidenceBehind': 'The evidence behind these figures',
   'exec.forTheDecision': 'For the decision:',
 
   // The fit-to-standard card (ADR-069) — ManagementExecutive.
@@ -218,20 +185,17 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'stdFit.demoBasis': 'Demo — from the engine reading of the demo source; a demo is never signed.',
   'stdFit.setTarget': 'Choose the target platform',
 
-  // The folds under the Management answer — collapsed until opened, and
-  // remembered in this browser only (owner 03.10.2026: progressive disclosure).
+  // The one fold under the Management answer — collapsed whenever the page
+  // opens (ADR-087; owner 03.10.2026: progressive disclosure).
   'mgmtFold.evidence': 'Evidence',
-  'mgmtFold.costs': 'Costs',
-  'mgmtFold.process': 'Process',
-  'mgmtFold.evidenceNoRun': 'Filled by the first signed run — the figures, the buckets per object and what could not be determined.',
-  'mgmtFold.evidenceRun': 'The four figures, evidence per phase, every object per bucket, the score history and what could not be determined.',
-  'mgmtFold.costsEmpty': 'No cost figures yet — enter your own in Economics; costs are only ever a simulation.',
-  'mgmtFold.costsPriced': 'Every option is priced from your own figures — a scenario, not a quote. The amounts stand in Economics.',
-  'mgmtFold.costsStarted': 'Your cost figures are stored, and not every option is priced yet — a scenario, not a quote.',
-  'mgmtFold.costsStale': 'Your cost figures were stored against an earlier score — check them in Economics.',
-  'mgmtFold.processSummary': 'The process map, its business rules and "Ask this case" are in the Business view.',
-  'mgmtFold.openBusiness': 'Open the process in the Business view',
-  'mgmtFold.openEconomics': 'Open Economics',
+  'mgmtFold.evidenceNoRun': 'Filled by the first signed run — every object per bucket and what could not be determined.',
+  'mgmtFold.evidenceRun': 'Every object per bucket, with its evidence, and what could not be determined.',
+  // The quiet row of links out that ends the Management view (ADR-087).
+  'mgmt.elsewhereLabel': 'Answered in the other views and tools',
+  'mgmt.elsewhereProcess': 'Process & rules → Business',
+  'mgmt.elsewhereObjects': 'Objects & dependencies → IT',
+  'mgmt.elsewhereCosts': 'Costs → Economics',
+  'mgmt.elsewhereEvidence': 'Evidence & audit pack → Delivery',
   'cloudFit.meaningsTitle': 'What the four buckets mean',
   'cloudFit.colObject': 'Object',
   'cloudFit.colStatus': 'What is known',
@@ -320,18 +284,6 @@ export function mgmtReadFailedReason(what: string, status?: number): string {
     : `${what} ${M['mgmt.couldNotBeRead']} (${status}).`;
 }
 
-export function mgmtQualifiersLabel(n: number): string {
-  return `${n} ${n === 1 ? M['mgmt.pointQualifies'] : M['mgmt.pointsQualify']} ${M['mgmt.qualifiersTail']}`;
-}
-
-export function mgmtOpenDecisionLabel(identity: string): string {
-  return `${M['mgmt.openDecision']} ${identity}`;
-}
-
-export function mgmtNotReadLabel(what: string): string {
-  return `${M['mgmt.notRead']} ${what}`;
-}
-
 export function mgmtBreakLabel(what: string): string {
   return `${M['mgmt.break']} ${what}`;
 }
@@ -353,22 +305,9 @@ export function mgmtNotDeterminedRunsLabel(n: number): string {
   return `${M['mgmt.notDeterminedLabel']} ${n} ${n === 1 ? M['mgmt.run'] : M['mgmt.runs']}`;
 }
 
-export function mgmtBucketsChartLabel(platform: string): string {
-  return `${M['mgmt.fourBuckets']} ${platform}`;
-}
-
-export function mgmtShowDetailLabel(n: number): string {
-  return `${M['mgmt.showDetail']} (${n})`;
-}
-
 /** "and 5 more, each with its evidence, under Evidence below" */
 export function execMoreBlockersLabel(n: number): string {
   return `${M['exec.moreLead']} ${n} ${M['exec.moreTail']}`;
-}
-
-/** "Objects per bucket on Private Edition: Retire 0, Keep 6, …" — the chart's text. */
-export function execBucketsChartLabel(platform: string): string {
-  return `${M['exec.bucketsChart']} ${platform}`;
 }
 
 export function cloudFitDetailLabel(open: boolean, objectName: string): string {

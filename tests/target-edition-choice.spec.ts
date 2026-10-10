@@ -108,10 +108,11 @@ test.describe('an example started for the Public Edition', () => {
       .toBe('public');
 
     await page.goto(`/project/${projectId}?view=management`, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    // The bucket card may stand in a folded section; its text is what is asserted.
-    const buckets = page.locator('[data-executive-buckets]');
-    await expect(buckets).toBeAttached({ timeout: 90000 });
-    await expect(buckets).toContainText('Public Edition', { timeout: 60000 });
-    await expect(buckets).not.toContainText('Private Edition');
+    // The distance to SAP standard is read on the target edition: its title
+    // names it (the second bucket card that used to say it went, ADR-087).
+    const fitTitle = page.locator('#standard-fit[data-standard-fit="ready"] h3');
+    await expect(fitTitle).toBeAttached({ timeout: 90000 });
+    await expect(fitTitle).toContainText('Public Edition', { timeout: 60000 });
+    await expect(fitTitle).not.toContainText('Private Edition');
   });
 });

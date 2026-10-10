@@ -904,7 +904,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
    * all in Business or IT — not hidden, not a stub, absent — while "Members on
    * this case" is in every view because read access is not a perspective.
    */
-  test('Management reads answers → Public-Cloud-Fit → members, and neither answer exists in the other two views', async ({
+  test('Management reads answers → Public-Cloud-Fit → links out → members, and neither answer exists in the other two views', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
@@ -921,15 +921,20 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     // answers and the access list both arrive from a fetch, and comparing
     // positions while one of them is still `null` would compare two things.
     await expect(page.locator('[data-management-view]')).toBeVisible({ timeout: 60000 });
-    // The bucket panel stands in the "Evidence" fold under the answer (owner
-    // 03.10.2026: at most three things above the fold) — open it to lay it out.
+    // The bucket panel stands in the one "Evidence" fold under the answer
+    // (owner 03.10.2026: at most three things above the fold; ADR-087: it
+    // always starts closed) — open it to lay it out.
     await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
     await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
+    // No layer bar, no first look and no Process or Costs fold in Management (ADR-087).
+    await expect(page.locator('[data-workspace-layers], [data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-management-fold]')).toHaveCount(1);
 
     const SELECTORS = [
       '[data-management-view]',
       '[data-public-cloud-fit-panel]',
+      '[data-management-elsewhere]',
       '[data-workspace-access]',
     ];
 
@@ -951,9 +956,9 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
         }),
       SELECTORS,
     );
-    expect(tops.some(Number.isNaN), 'one of the three sections was not laid out at all').toBe(false);
+    expect(tops.some(Number.isNaN), 'one of the sections was not laid out at all').toBe(false);
     expect(
-      tops[0] < tops[1] && tops[1] < tops[2],
+      tops[0] < tops[1] && tops[1] < tops[2] && tops[2] < tops[3],
       `painted top to bottom the three sit at ${JSON.stringify(tops)} — the answer is not above the cards`,
     ).toBe(true);
 
@@ -975,6 +980,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
         page.locator('[data-public-cloud-fit-panel]'),
         `the Public-Cloud-Fit panel is rendered in the ${other} view`,
       ).toHaveCount(0);
+      await expect(page.locator('[data-management-elsewhere]')).toHaveCount(0);
     }
   });
 

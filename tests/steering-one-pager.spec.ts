@@ -568,10 +568,14 @@ test.describe('8.6 one-pager — a view, not a record', () => {
     // QA review of 4b4586aff273: reopening kept the previous read, so the
     // page (and Print) showed stale figures while the new reads were pending.
     const component = read('components/workspace/SteeringOnePager.tsx');
+    // Every opening goes through one handler since ADR-087 (the decision
+    // card's button and the Export menu send the event; a link carries
+    // `#steering-one-pager`), and it drops the previous reads first.
     expect(component).toMatch(
-      /const openFresh = \(\) => \{\s*setHistory\(undefined\);\s*setFindings\(undefined\);\s*setDecision\(undefined\);\s*setProcess\(undefined\);\s*setOpen\(true\);/,
+      /const onOpen = \(\) => \{\s*setHistory\(undefined\);\s*setFindings\(undefined\);\s*setDecision\(undefined\);\s*setProcess\(undefined\);\s*setOpen\(true\);/,
     );
-    expect(component).toContain('onClick={openFresh}');
+    expect(component).toContain('window.addEventListener(STEERING_OPEN_EVENT, onOpen);');
+    expect(component).not.toContain('openFresh');
   });
 
   test('it is not part of the signed audit pack', () => {
@@ -644,11 +648,19 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
   test('opens as one page: the decision, four figures, reasons in place, links without addresses', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, OWNER);
+    // The closed place under the answer is no second button any more
+    // (ADR-087): the page opens from the button at the top of the decision
+    // card, the Export menu, or a link to `#steering-one-pager`.
     await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
-
-    const button = page.locator('[data-steering-one-pager="closed"] button');
-    await expect(button).toBeVisible({ timeout: 60000 });
-    await button.click();
+    await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached({ timeout: 60000 });
+    await expect(page.locator('[data-steering-one-pager="closed"] button')).toHaveCount(0);
+    await expect(page.locator('[data-executive-one-pager]')).toHaveCount(1, { timeout: 60000 });
+    // A link with the anchor opens it on arrival (a full load: the fragment is
+    // read when the page mounts).
+    await page.evaluate(() => {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#steering-one-pager`);
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     const pager = page.locator('[data-steering-one-pager="open"]');
     await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });

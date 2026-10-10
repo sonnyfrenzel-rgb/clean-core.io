@@ -470,19 +470,14 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       { timeout: 30000 },
     );
 
-    // The layer is the third navigation and is held the same way — in the
-    // address (roadmap 6.2), which is the other half of "nowhere else". In
-    // Management the layer bar stands in the "Process" fold (ADR-069); opening
-    // a fold is remembered in this browser only, so it writes nothing either.
-    await page.locator('[data-management-fold="process"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
-    // Every section is a tab of the bar since 03.10.2026 (no "More"); Evidence
-    // & controls is one Business shows too, so it survives the switch below.
-    const evidence = page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]');
-    await expect(evidence).toBeVisible({ timeout: 15000 });
-    await evidence.click();
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
-      timeout: 15000,
-    });
+    // Management has no layers (ADR-087). Its one fold, Evidence, is
+    // interface state that is not even remembered in this browser any more —
+    // opening it writes nothing anywhere.
+    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
+    await expect(
+      page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first(),
+    ).toHaveAttribute('aria-expanded', 'true', { timeout: 15000 });
+    await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
 
     await view('Business').click();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
@@ -490,6 +485,13 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       'business',
       { timeout: 30000 },
     );
+    // A plain view switch starts the new view at its top and leaves the old
+    // view's place behind (owner 10.10.2026), so the layer is chosen again here.
+    expect(new URL(page.url()).hash).toBe('');
+    await page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]').click();
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
+      timeout: 15000,
+    });
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });

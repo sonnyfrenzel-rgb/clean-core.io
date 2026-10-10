@@ -396,23 +396,35 @@ test.describe('Management, rendered', () => {
     const width = await page.locator('[data-management-executive]').evaluate((el) => el.getBoundingClientRect().width);
     expect(width, 'Management uses less than the frame').toBeGreaterThan(1000);
     // ADR-079: the decision with its four options takes the whole width, and
-    // the distance to SAP standard stands under it, as wide.
-    const [d, f] = await Promise.all([
+    // the distance to SAP standard stands under it — with the readiness trend
+    // beside it, the third block of the first screen (mockup s5, ADR-087).
+    const trend = page.locator('#management-readiness');
+    const [d, f, t] = await Promise.all([
       page.locator('[data-executive-decision]').boundingBox(),
       fit.boundingBox(),
+      trend.boundingBox(),
     ]);
     expect(f!.y, 'the distance to standard is not under the decision').toBeGreaterThan(d!.y + d!.height - 1);
     expect(d!.width, 'the decision does not take the whole width').toBeGreaterThan(1000);
-    expect(Math.abs(d!.width - f!.width)).toBeLessThan(4);
+    expect(f!.width, 'the distance to standard is squeezed').toBeGreaterThan(d!.width / 2);
+    expect(Math.abs(t!.y - f!.y), 'the trend does not stand beside the distance to standard').toBeLessThan(4);
+    expect(t!.x).toBeGreaterThan(f!.x + f!.width - 1);
+    expect(Math.abs(t!.x + t!.width - (d!.x + d!.width)), 'the trend does not end where the decision ends').toBeLessThan(4);
 
-    // One primary action; the rest folded, named, with a summary.
+    // One primary action; the rest in ONE fold, named, with a summary, always
+    // closed when the page opens (ADR-087) — no Costs and no Process fold.
     await expect.poll(() => visiblePrimaries(page)).toHaveLength(1);
-    // The decision itself is never folded (owner 03.10.2026): three folds remain.
     await expect(page.locator('[data-management-fold="options"]')).toHaveCount(0);
-    for (const id of ['evidence', 'costs', 'process']) {
-      await expect(page.locator(`[data-management-fold="${id}"] > [data-cc-disclosure="closed"]`)).toHaveCount(1);
-      await expect(page.locator(`[data-management-fold="${id}"] > [data-cc-disclosure] > [data-cc-disclosure-summary]`)).not.toBeEmpty();
-    }
+    await expect(page.locator('[data-management-fold]')).toHaveCount(1);
+    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="closed"]')).toHaveCount(1);
+    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] > [data-cc-disclosure-summary]')).not.toBeEmpty();
+    // It does not remember an open state across visits: open it, reload, closed again.
+    await page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').first().click();
+    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="open"]')).toHaveCount(1);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="closed"]')).toHaveCount(1, { timeout: 90000 });
+    // One quiet row of links out ends the view.
+    await expect(page.locator('[data-management-elsewhere] [data-management-elsewhere-link]')).toHaveCount(4);
   });
 
   test('(b) on a phone at 390 px: stacked, and nothing scrolls sideways', async ({ browser }) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { viewSwitchHash } from '@/lib/view-switch';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -28,8 +29,9 @@ import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
 import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
-import ManagementExecutive, { ExecutiveEvidence } from '@/components/workspace/ManagementExecutive';
-import ManagementFold from '@/components/workspace/ManagementFold';
+import ManagementExecutive from '@/components/workspace/ManagementExecutive';
+import ManagementElsewhere from '@/components/workspace/ManagementElsewhere';
+import { MANAGEMENT_IDS, MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
 import { standardFit } from '@/lib/standard-fit';
 import { SteeringOnePagerToggle } from '@/components/workspace/SteeringOnePager';
 import { steeringOnePager } from '@/lib/steering-one-pager';
@@ -84,7 +86,6 @@ import { routeLabel } from '@/lib/sap-naming';
 import {
   demoConfirmRoute,
   demoEvidence,
-  demoFigure,
   demoFirstFiveOf,
   demoRuleCount,
   demoSourceLineLabel,
@@ -226,9 +227,12 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     (next: WorkspaceView) => {
       const query = new URLSearchParams(searchParams?.toString() ?? '');
       query.set('view', next);
-      router.push(`?${query.toString()}${typeof window === 'undefined' ? '' : window.location.hash}`, {
+      // As in the workspace: the new view opens at its top and a place of the
+      // old view is not carried over (Sonny 10.10.2026); deep links go through goTo.
+      router.push(`?${query.toString()}${typeof window === 'undefined' ? '' : viewSwitchHash(window.location.hash)}`, {
         scroll: false,
       });
+      window.scrollTo({ top: 0 });
     },
     [router, searchParams],
   );
@@ -241,6 +245,10 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
+  // A client navigation fires no `hashchange`: read the layer again per view.
+  useEffect(() => {
+    setHashLayer(layerFromHash(window.location.hash));
+  }, [view]);
   const selectLayer = useCallback((next: LayerKey) => {
     window.location.hash = next;
     setHashLayer(next);
@@ -263,8 +271,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   // IT has no layers since ADR-086: a layer address in IT goes where that
   // content lives now, as in the workspace (`IT_LAYER_ELSEWHERE`).
   useEffect(() => {
-    if (view !== 'it' || hashLayer === null) return;
-    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    const layer = layerFromHash(window.location.hash);
+    if (view !== 'it' || layer === null) return;
+    const home = IT_LAYER_ELSEWHERE[layer];
     if (home.kind === 'economics') {
       router.replace(demoEconomics);
       return;
@@ -275,6 +284,25 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     }
     goTo(home.view, home.hash, true);
   }, [view, hashLayer, router, goTo, demoEconomics]);
+  // Management has no layers since ADR-087: a layer address there goes where
+  // that content lives now, as in the workspace (`MANAGEMENT_LAYER_ELSEWHERE`);
+  // the demo's costs card carries the Costs row's address.
+  const demoManagementEconomics = stageHref({ base: '/demo', path: 'tco', view: 'management', from: WORKSPACE_RETURN.tools });
+  useEffect(() => {
+    const layer = layerFromHash(window.location.hash);
+    if (view !== 'management' || layer === null) return;
+    const home = MANAGEMENT_LAYER_ELSEWHERE[layer];
+    if (home.kind === 'economics') {
+      router.replace(demoManagementEconomics);
+      return;
+    }
+    if (home.view === 'management') {
+      window.location.replace(`#${home.hash}`);
+      return;
+    }
+    goTo(home.view, home.hash, true);
+  }, [view, hashLayer, router, goTo, demoManagementEconomics]);
+  const managementOpen = useCallback((target: WorkspaceView, hash: string) => goTo(target, hash, false), [goTo]);
   const itElsewhere = useMemo(
     () => ({
       open: (target: WorkspaceView, hash: string) => goTo(target, hash, false),
@@ -797,31 +825,12 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           <Place place="management" className="mt-5">
             {stop('management')}
             <ManagementExecutive summary={executive} hrefFor={executiveHref} fit={demoFit} />
+            {/* The one-pager, the demo's only way to it (the demo's decision
+                panel has no record to put a button on). The four figures, the
+                evidence per phase and the detailed answers are gone, as in the
+                workspace (ADR-087): each said again what this panel says. */}
             <div className="mt-4">
               <SteeringOnePagerToggle build={buildSteering} />
-            </div>
-            <div className="mt-4">
-              <ManagementFold id="evidence" summary={wt('mgmtFold.evidenceRun')}>
-                <ExecutiveEvidence summary={executive} hrefFor={executiveHref} />
-              </ManagementFold>
-            </div>
-            <div className="mt-4">
-              <CcDisclosure title={wt('demo.answersDetail')} count={management.answers.length} level={3}>
-                <CcCard title={management.headline}>
-                  <ul data-demo-management="" className="m-0 flex list-none flex-col gap-2 p-0">
-                    {management.answers.map((a) => (
-                      <li key={a.id} className="text-[13px] text-cc-ink">
-                        <b className="font-semibold">{a.headline}</b>
-                        {a.figures.length ? (
-                          <span className="block text-[12px] font-medium text-cc-ink-muted">
-                            {a.figures.map((f) => demoFigure(f.label, f.value, f.absentReason)).join(' · ')}
-                          </span>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </CcCard>
-              </CcDisclosure>
             </div>
           </Place>
 
@@ -831,7 +840,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           </Place>
 
           <div className="mt-5 grid items-start gap-4 lg:grid-cols-3">
-          <Place place="costs" className="min-w-0">
+          <Place place="costs" className="min-w-0 scroll-mt-20" id={MANAGEMENT_IDS.costs}>
             {stop('costs')}
             <CcCard title={wt('demo.costsTitle')} meta={<CcProvenanceChip value="simulation" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
@@ -883,12 +892,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
           </div>
-          {layerBar}
-          {layerSection ?? (
-            <div className="mt-5" data-workspace-layer-section="need">
-              {mapCard}
-            </div>
-          )}
+          {/* No layer bar and no process map in Management (ADR-087): one
+              quiet row of links out, as in the workspace. */}
+          <ManagementElsewhere open={managementOpen} economicsHref={demoManagementEconomics} deliveryHref="/demo/delivery" />
         </>
       ) : null}
     </div>

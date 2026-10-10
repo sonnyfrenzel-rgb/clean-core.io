@@ -20,6 +20,7 @@ import {
   DECISION_BINDING_LABELS,
   decisionCoverage,
   noContractBasis,
+  type ConditionSource,
   type ConditionStatus,
   type DecisionCondition,
   type DecisionGapCode,
@@ -83,6 +84,8 @@ export interface DecisionPillar {
 
 export interface DecisionPoint {
   id: string;
+  /** Which part of the record raised it — the foundation it is listed under follows from it. */
+  source: ConditionSource;
   /** Met or waived. */
   done: boolean;
   status: ConditionStatus;
@@ -106,12 +109,36 @@ export interface DecisionTechnicalEntry {
   text: string;
 }
 
+/**
+ * One foundation of the decision with the open conditions that belong to it —
+ * the four pillars and the conditions are the same four subjects, so they are
+ * said once, in one list (owner decision 10.10.2026, ADR-087). Presentation
+ * only: the record, its fingerprint and its conditions are unchanged.
+ */
+export interface DecisionFoundation {
+  pillar: DecisionPillar;
+  /**
+   * The conditions under this foundation a reader can act on, or that are met
+   * — never one whose fact the foundation's own line already says (the need's
+   * open rules and decision points are the Need row's line and its action).
+   */
+  points: DecisionPoint[];
+  /** What stays open whatever is done here (ADR-085) — under the contract, said as one folded line. */
+  limits: DecisionPoint[];
+}
+
 export interface DecisionManagerView {
   /** "Rebuild as In-App ABAP Cloud (RAP)". */
   headline: string;
   /** One sentence of why. */
   why: string;
   pillars: DecisionPillar[];
+  /** How many of the four foundations are in place — the heading of the merged list. */
+  inPlace: number;
+  /** The four foundations, each with its conditions nested under it. */
+  foundations: DecisionFoundation[];
+  /** Conditions the account stated that name none of the four — shown after them, never dropped. */
+  other: DecisionPoint[];
   points: DecisionPoint[];
   openPoints: number;
   /** Of those, the ones a reader can act on, and the ones that stay open whatever is done here (ADR-085). */
@@ -272,19 +299,22 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
   }
 
   if (key === 'option') {
+    // ADR-083 (a): all four options are the program decision of the
+    // Management view, chosen by the signed-in account. A Rebuild also has its
+    // target architecture signed off in Design — said as that separate fact,
+    // and only where the record carries it (the option binding of a Rebuild
+    // exists only once that sign-off does).
+    const rebuild = revision !== null && optionOfArchitecture(optionCodeOf(revision)) === 'rebuild';
     return {
       ...base,
       title: 'Option',
       line:
         revision === null
           ? 'No option is chosen yet — choose one of the four above.'
-          : optionOfArchitecture(optionCodeOf(revision)) === 'rebuild'
-            ? `${decisionHeadline(revision)}, as signed off in Design.`
+          : rebuild
+            ? `${decisionHeadline(revision)}, as chosen by your account. Its target architecture is signed off in Design.`
             : `${decisionHeadline(revision)}, as chosen by your account.`,
-      place:
-        revision !== null && optionOfArchitecture(optionCodeOf(revision)) !== 'rebuild'
-          ? { kind: 'view', view: 'management' }
-          : { kind: 'stage', path: 'design' },
+      place: { kind: 'view', view: 'management' },
     };
   }
 
@@ -356,8 +386,9 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
 /** A condition as one plain line, with the place it is resolved. */
 export function decisionPoint(c: DecisionCondition): DecisionPoint {
   const done = c.status === 'met' || c.status === 'waived';
-  const base: Pick<DecisionPoint, 'id' | 'done' | 'status' | 'kind' | 'details'> = {
+  const base: Pick<DecisionPoint, 'id' | 'source' | 'done' | 'status' | 'kind' | 'details'> = {
     id: c.id,
+    source: c.source,
     done,
     status: c.status,
     kind: 'act',
@@ -477,13 +508,11 @@ export function decisionManagerView(decision: ProjectDecision, stored: StoredCos
   const todo = points.filter((p) => !p.done && p.kind === 'act').length;
   const limits = openPoints - todo;
 
-  const chosen = optionOfArchitecture(optionCodeOf(option));
+  // ADR-083 (a): every option is chosen by the account, in this view.
   const why =
     option === null
-      ? 'Choose one of the four options above. Rebuild is signed off in Design; Keep, Move to SAP standard and Retire are chosen here.'
-      : chosen === 'rebuild'
-        ? `It follows the target architecture signed off in Design; ${inPlace} of the 4 foundations below are in place.`
-        : `Chosen by your account in this view; ${inPlace} of the 4 foundations below are in place.`;
+      ? 'Choose one of the four options above.'
+      : `Chosen by your account; ${inPlace} of the 4 foundations below are in place.`;
 
   const blocking = [
     ...new Set(
@@ -514,5 +543,66 @@ export function decisionManagerView(decision: ProjectDecision, stored: StoredCos
   technical.push({ key: 'reversible', label: 'Reversible', text: withoutSourcePaths(decision.reversibility.reason) });
   if (coverage.sentence) technical.push({ key: 'coverage', label: 'Coverage', text: withoutSourcePaths(coverage.sentence) });
 
-  return { headline: decisionHeadline(option), why, pillars, points, openPoints, todo, limits, readiness, technical };
+  const { foundations, other } = groupUnderPillars(pillars, decision, points);
+
+  return {
+    headline: decisionHeadline(option),
+    why,
+    pillars,
+    inPlace,
+    foundations,
+    other,
+    points,
+    openPoints,
+    todo,
+    limits,
+    readiness,
+    technical,
+  };
+}
+
+/** The foundation a condition source belongs to — the account's own conditions belong to none. */
+const PILLAR_OF_SOURCE: Readonly<Record<ConditionSource, PillarKey | null>> = {
+  'need-open': 'need',
+  'cost-gap': 'cost',
+  'contract-limit': 'contract',
+  account: null,
+};
+
+/**
+ * The conditions nested under the foundation they belong to (ADR-087). The
+ * need's open rules and decision points are the Need row's own line, so the
+ * `need-open` condition is not repeated under it: its place — "Decide on 12
+ * rules" — becomes the row's action. An account's statement about a derived
+ * condition stands under that condition's row; one that names none, after the
+ * four rows. Nothing is dropped and nothing is counted differently.
+ */
+function groupUnderPillars(
+  pillars: readonly DecisionPillar[],
+  decision: ProjectDecision,
+  points: readonly DecisionPoint[],
+): { foundations: DecisionFoundation[]; other: DecisionPoint[] } {
+  const sourceOfId = new Map(decision.conditions.map((c) => [c.id, c.source] as const));
+  const pillarOf = (p: DecisionPoint): PillarKey | null => {
+    if (p.source !== 'account') return PILLAR_OF_SOURCE[p.source];
+    const named = p.id.startsWith('account:') ? sourceOfId.get(p.id.slice('account:'.length)) : undefined;
+    return named && named !== 'account' ? PILLAR_OF_SOURCE[named] : null;
+  };
+  const needOpen = points.find((p) => p.source === 'need-open' && !p.done) ?? null;
+  const foundations = pillars.map((pillar): DecisionFoundation => {
+    // The need-open condition is the Need row's own line while the need is not
+    // confirmed, and met once it is; only an open one beside a confirmed need
+    // revision says something the line does not, and stands under it.
+    const mine = points.filter(
+      (p) => pillarOf(p) === pillar.key && (p.source !== 'need-open' || (!p.done && pillar.inPlace)),
+    );
+    return {
+      pillar:
+        pillar.key === 'need' && needOpen?.place && !pillar.inPlace ? { ...pillar, place: needOpen.place } : pillar,
+      points: mine.filter((p) => p.done || p.kind === 'act'),
+      limits: mine.filter((p) => !p.done && p.kind === 'limit'),
+    };
+  });
+  const other = points.filter((p) => pillarOf(p) === null);
+  return { foundations, other };
 }

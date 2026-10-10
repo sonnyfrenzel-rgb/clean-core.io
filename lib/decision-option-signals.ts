@@ -63,6 +63,7 @@ import {
   type DecisionOption,
 } from './decision-options';
 import { contractParts } from './decision-card';
+import { decisionHeadline } from './decision-manager';
 import { noContractBasis, type DecisionStatus, type ProjectDecision } from './project-decision';
 import { RETIREMENT_WINDOW_DAYS, type UsageReport } from './abap/usage-model';
 import type { StandardFit } from './standard-fit';
@@ -436,19 +437,23 @@ export function decisionOptionsView(src: DecisionOptionsSource): DecisionOptions
   let stage: DecisionStage = 'not-decided';
   let answer: string;
   let who: string | null = null;
+  // The answer names the option the record binds — for a Rebuild the route
+  // too ("Rebuild as In-App ABAP Cloud (RAP)"), so the decision card under it
+  // need not say the same answer again at a finer grain (ADR-087).
+  const named = chosen === 'rebuild' ? decisionHeadline(optionRev) : chosen ? DECISION_OPTION_LABELS[chosen] : '';
   if (!chosen) {
     answer = src.hasRun ? 'Not decided yet — no option is chosen.' : 'Not decided yet — the decision needs a signed run first.';
   } else if (src.status === 'confirmed') {
     stage = src.outdated ? 'outdated' : 'confirmed';
     answer = src.outdated
-      ? `Decided: ${DECISION_OPTION_LABELS[chosen]} — but the evidence changed since it was confirmed.`
-      : `Decided: ${DECISION_OPTION_LABELS[chosen]}.`;
+      ? `Decided: ${named} — but the evidence changed since it was confirmed.`
+      : `Decided: ${named}.`;
     who = src.confirmation
       ? `Confirmed by ${src.confirmation.account} on ${date(src.confirmation.at) ?? 'an unreadable date'} — a self-declaration, not a mandate.`
       : null;
   } else {
     stage = 'chosen';
-    answer = `${DECISION_OPTION_LABELS[chosen]} is chosen, not confirmed yet.`;
+    answer = `${named} is chosen, not confirmed yet.`;
     who = signOffBy ? `Chosen by ${signOffBy}${signOffAt ? ` on ${signOffAt}` : ''}.` : null;
   }
 

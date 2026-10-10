@@ -212,6 +212,14 @@ test.describe('ADR-079 — where it stands, and who said so', () => {
     expect(confirmed.who).toBe('Confirmed by mara@example.invalid on 2026-10-07 — a self-declaration, not a mandate.');
     const moved = decisionOptionsView(src({ decision: decisionWith('keep · Keep'), status: 'confirmed', outdated: true, confirmation: null }));
     expect(moved.stage).toBe('outdated');
+    // A Rebuild is named with its route, so the decision card under the answer
+    // need not say the answer a second time at a finer grain (ADR-087).
+    const rebuild = decisionOptionsView(src({ decision: decisionWith('rap · In-App ABAP Cloud (RAP)') }));
+    expect(rebuild.answer).toBe('Rebuild as In-App ABAP Cloud (RAP) is chosen, not confirmed yet.');
+    const rebuildDecided = decisionOptionsView(
+      src({ decision: decisionWith('rap · In-App ABAP Cloud (RAP)'), status: 'confirmed', confirmation: { account: 'mara@example.invalid', at: '2026-10-07T09:00:00.000Z' } }),
+    );
+    expect(rebuildDecided.answer).toBe('Decided: Rebuild as In-App ABAP Cloud (RAP).');
   });
 
   test('without Economics figures, effort and cost are not determined with their reason — never a zero', () => {
@@ -312,7 +320,12 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     await expect(page.locator('[data-decision-option="keep"][data-option-chosen]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-decision-answer]')).toContainText('Keep is chosen');
     await expect(page.locator('[data-decision-who]')).toContainText(OWNER);
-    await expect(page.locator('[data-decision-card] [data-decision-headline]')).toHaveText('Keep');
+    // Said once (ADR-087): the card under the answer has no headline of its
+    // own; its Option row names the choice as the account's.
+    await expect(page.locator('[data-decision-card] [data-decision-headline]')).toHaveCount(0);
+    await expect(page.locator('[data-decision-card] [data-decision-pillar="option"]')).toContainText('Keep, as chosen by your account.');
+    // One way to the amounts, under the four cards.
+    await expect(page.locator('[data-options-compare-economics]')).toHaveCount(1);
   });
 
   test('a level chip in Management explains itself on keyboard focus', async ({ page }) => {

@@ -1,33 +1,22 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
-import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTable from '@/components/cc/Table';
-import { CcTag } from '@/components/cc/Tag';
-import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { getAuth } from '@/lib/firebase';
-import { cn } from '@/lib/utils';
-import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
 import {
   mgmtBreakLabel,
-  mgmtBucketsChartLabel,
   mgmtNotDeterminedRunsLabel,
-  mgmtNotReadLabel,
-  mgmtOpenDecisionLabel,
-  mgmtQualifiersLabel,
   mgmtReadFailedReason,
   mgmtRuleVersionLabel,
-  mgmtShowDetailLabel,
   mgmtSignedOutReason,
   mgmtTrendLabel,
   wt,
 } from '@/lib/workspace-messages';
-import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
-import ManagementExecutive, { ExecutiveEvidence, StackedBar, Swatch, type ExecutivePrimary } from './ManagementExecutive';
+import ManagementExecutive, { Swatch, type ExecutivePrimary, type FitOtherBlocker } from './ManagementExecutive';
+import { MANAGEMENT_IDS } from '@/lib/management-sections';
 import { openSteeringOnePager } from '@/lib/steering-open';
 import ManagementFold from './ManagementFold';
 import { otherEditionLine, standardFit, standardFitOnOtherEdition } from '@/lib/standard-fit';
@@ -50,25 +39,29 @@ import {
   type DecisionRead,
   type Loaded,
   type OverviewCardState,
-  type SegmentTone,
+  type ReadinessCard,
   type TrendChartPoint,
 } from '@/lib/management-overview';
-import type { DecisionStatus } from '@/lib/project-decision';
-import type { ObjectStatusValue } from '@/lib/object-status';
 import type { Project } from '@/lib/types';
 import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
 
 /**
- * The Management overview — roadmap 3.0.10.
+ * The Management overview — roadmap 3.0.10, made lean by ADR-087 (owner
+ * decision 10.10.2026).
  *
- * **First the decision panel** (`ManagementExecutive.tsx`, built by
- * `lib/management-executive.ts` from the cards below): the question, where the
- * decision stands, what is in its way, the next step, four figures, where the
- * objects stand and the evidence per phase. The cards themselves fold under it,
- * with their count, one action deeper (§2.11) — nothing they say is removed.
+ * **The first screen:** the decision panel (`ManagementExecutive.tsx`, built by
+ * `lib/management-executive.ts`): the question, the answer naming the option,
+ * the next step, the four options and the decision record with what it rests
+ * on; under it the distance to SAP standard — whose "What stands in the way"
+ * now also carries the ranked blockers that are not SAP objects — and beside
+ * it the **readiness trend** (mockup s5). Then **one** fold, "Evidence": every
+ * object per bucket and the open questions, nothing else. The detailed answers
+ * of 6.4, the decision and bucket cards, the four figures, the second bucket
+ * bar and the evidence per phase are not rendered any more: each said again
+ * what the panel, the header or the trend already says (§2.11 "nothing
+ * twice"). Their models stay — the steering one-pager and the specs read them.
  *
- * Under it five cards, each opening with its own
- * answer as its title (ADR-029). Every sentence and every number comes out of
+ * Every sentence and every number comes out of
  * `lib/management-overview.ts`, which reads only models that already exist;
  * this component adds layout, and the three reads that feed the model:
  *
@@ -80,72 +73,13 @@ import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
  *     no-path facts for those objects, the lookup `PublicCloudFitPanel` makes.
  *   - `GET /api/projects/{id}/decision` — the draft or confirmed decision (f).
  *
- * **Charts are also text.** Every bar is `role="img"` with an `aria-label`
- * carrying all of its numbers, and a table under it carries them again; the
- * trend line is an SVG with the same label and a table of its runs. *Not
- * determined* is a hatched, dashed segment and a row of every table, even at
- * zero. Colours per `DESIGN.md` §1.8: the level chart counts states and takes
- * the state colours with the letter in its label; the bucket chart and the
- * trend take the categorical and sequential palettes and never a state colour.
+ * **Charts are also text.** The trend line is an SVG with an `aria-label`
+ * carrying all of its numbers and a table of its runs; *not determined* is a
+ * dashed area of the card, even at zero. Colours per `DESIGN.md` §1.8: the
+ * trend takes the sequential palette and never a state colour.
  *
  * **Nothing is written.** The three reads are GETs; the view is a view.
  */
-
-/**
- * The legend and the numbers in one — a real table (`CcTable`, §2.4), so a
- * screen reader reads it as one. The row key and the "not determined" mark sit
- * on the label, which is where the swatch that ties a row to its segment is.
- */
-function SegmentTable({
-  caption,
-  unit,
-  columns,
-  rows,
-}: {
-  caption: string;
-  unit: string;
-  columns: string[];
-  /** `tone` is the swatch that ties a row to its segment; a table with no chart above it has none. */
-  rows: Array<{ key: string; label: string; tone?: SegmentTone; notDetermined: boolean; counts: number[] }>;
-}) {
-  return (
-    <div data-overview-table="" className="mt-2">
-      <CcTable
-        caption={caption}
-        columns={[
-          { key: 'label', label: unit },
-          ...columns.map((c) => ({ key: `n:${c}`, label: c, numeric: true })),
-        ]}
-        rows={rows.map((r) => ({
-          key: r.key,
-          cells: {
-            label: (
-              <span
-                data-overview-row={r.key}
-                data-not-determined={r.notDetermined ? '' : undefined}
-                className="inline-flex items-center gap-2 font-semibold"
-              >
-                {r.tone ? <Swatch tone={r.tone} /> : null}
-                {/* A level row explains its letter on hover, focus and tap
-                    (owner 06.10.2026), as the IT view's level chips do. The
-                    bar above stays a picture (`role="img"`); the explanation
-                    sits here, in the table that carries its numbers. */}
-                {r.key === 'A' || r.key === 'B' || r.key === 'C' || r.key === 'D' ? (
-                  <span data-overview-level-explained={r.key}>
-                    <CcCleanCoreLevelExplained value={r.key} trigger={r.label} />
-                  </span>
-                ) : (
-                  r.label
-                )}
-              </span>
-            ),
-            ...Object.fromEntries(columns.map((c, i) => [`n:${c}`, r.counts[i]])),
-          },
-        }))}
-      />
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------ cards */
 
@@ -185,39 +119,6 @@ function Pending<T>({ id, card }: { id: string; card: OverviewCardState<T> }) {
     </div>
   );
 }
-
-const FIRST_ROWS = 5;
-
-/** The answer cards under the panel — decision, blockers, score, buckets, levels. */
-const OVERVIEW_CARDS = 5;
-
-function useShowAll(): [boolean, () => void] {
-  const [all, setAll] = useState(false);
-  return [all, () => setAll((v) => !v)];
-}
-
-/**
- * Rows past the first five are hidden on screen until asked for, and always
- * printed (§2.11, §7.1). Only the blockers use this: they are an ordered list of
- * cards (rank, label, tag, provenance, evidence line), not rows of columns, so
- * `CcTable` does not carry them. The button speaks the table's words, so the
- * two limits on this page read the same.
- */
-const beyondFirst = (i: number, all: boolean) => (!all && i >= FIRST_ROWS ? 'hidden print:block' : null);
-
-/** The objects whose bucket moves with the edition — a `CcTable`, so its limit is the table's (§2.11). */
-const MOVE_COLUMNS = [
-  { key: 'object', label: wt('mgmt.colObject') },
-  { key: 'private', label: wt('mgmt.colPrivate') },
-  { key: 'public', label: wt('mgmt.colPublic') },
-] as const;
-
-const STATUS_OF: Record<DecisionStatus, ObjectStatusValue> = {
-  draft: 'draft',
-  confirmed: 'confirmed',
-  withdrawn: 'open',
-  superseded: 'open',
-};
 
 /* ------------------------------------------------------------ trend */
 
@@ -299,14 +200,13 @@ export default function ManagementOverview({
   projectId,
   view,
   decisionRevision = 0,
-  detailCount,
+  historyPending = false,
   nextStep,
   coach,
   evidenceExtra,
   decision: decisionCard,
   onDecisionChanged,
   beforeWrite,
-  children,
 }: {
   project: Project | null;
   projectId: string;
@@ -317,8 +217,12 @@ export default function ManagementOverview({
    * on mount until a remount (QA review of 4b4586aff273).
    */
   decisionRevision?: number;
-  /** How many detailed answers `children` holds, for the button that unfolds them. */
-  detailCount: number;
+  /**
+   * The run history is still being read. Only the readiness trend waits for
+   * it — the decision, the options and the distance to standard do not
+   * (ADR-087): a slow read of the history no longer holds the decision back.
+   */
+  historyPending?: boolean;
   /**
    * The next open phase (`lib/next-step.ts`), read once by the shell with the
    * account's model switches — the page's ONE primary action. `undefined` when
@@ -335,8 +239,6 @@ export default function ManagementOverview({
   onDecisionChanged?: () => void;
   /** The Stand check of roadmap 6.9, before a choice is written. */
   beforeWrite?: () => Promise<boolean>;
-  /** The detailed answers of 6.4, folded under the overview (§2.11: nothing lost, nothing first). */
-  children?: React.ReactNode;
 }) {
   const hasSource = Boolean(project?.legacyCode?.trim());
   const hasRun = Boolean(project?.activeRunId);
@@ -515,11 +417,19 @@ export default function ManagementOverview({
         ? `#${target.id}`
         : '/admin/new-project';
 
-  const [allBlockers, toggleBlockers] = useShowAll();
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [cardsOpen, setCardsOpen] = useState(false);
-
-  const { buckets, readiness, levels, blockers, decision: dec } = overview;
+  // Only the trend waits for the run history (ADR-087).
+  const readiness: ReadinessCard = historyPending
+    ? { state: 'loading', title: overview.readiness.title }
+    : overview.readiness;
+  // The ranked blockers that are not SAP objects and not the decision's own
+  // gaps — those stand on the fit card's objects and in the decision's
+  // readiness sentence — join "What stands in the way" (ADR-087).
+  const otherBlockers: FitOtherBlocker[] =
+    overview.blockers.state === 'ready'
+      ? overview.blockers.rows
+          .filter((r) => r.key.startsWith('view-'))
+          .map((r) => ({ key: r.key, label: r.label, evidence: r.evidence, provenance: r.provenance }))
+      : [];
 
   return (
     <div data-management-overview="">
@@ -542,312 +452,96 @@ export default function ManagementOverview({
         options={optionsBlock}
         optionsView={hasRun ? options : null}
         otherEdition={otherEdition}
+        otherBlockers={otherBlockers}
+        trend={<ReadinessTrend card={readiness} />}
         onOpenOnePager={openSteeringOnePager}
       />
 
-      {/* Everything behind the two cards, one action deeper (§2.11, owner
-          03.10.2026: at most three things above the fold). Folded, and on a
-          project without a signed run the summary says what fills it. */}
-      <div className="mt-4">
-      <ManagementFold
-        id="evidence"
-        summary={hasRun ? wt('mgmtFold.evidenceRun') : wt('mgmtFold.evidenceNoRun')}
-      >
-      <ExecutiveEvidence summary={executive} hrefFor={hrefFor} />
-      {evidenceExtra ? <div className="mt-4 flex flex-col gap-4">{evidenceExtra}</div> : null}
-
-      {/* The five answer cards: every figure above comes out of them, and every
-          number they hold stays here. */}
-      <div className="mt-4">
-        <CcDisclosure
-          title={wt('exec.evidenceBehind')}
-          count={OVERVIEW_CARDS}
-          level={3}
-          open={cardsOpen}
-          onOpenChange={setCardsOpen}
-        >
-      <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {overview.question} {wt('mgmt.questionSuffix')}
-      </p>
-
-      <div className="mt-4 space-y-4">
-        {/* (f) The decision: which one is open and what it waits for. */}
-        {dec.state === 'ready' ? (
-          <div data-overview-card="decision" data-overview-state="ready">
-            <CcCard title={dec.title} meta={<CcObjectStatus value={STATUS_OF[dec.status]} />}>
-              <Lead text={dec.lead} />
-              <p className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
-                <span className="font-cc-mono text-[12px] text-cc-ink-muted">{dec.identity}</span> {dec.summary}
-              </p>
-              {dec.waitsFor.length > 0 ? (
-                <div className="mt-2">
-                  <h4 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                    {wt('mgmt.waitsFor')}
-                  </h4>
-                  <ul data-overview-waits="" className="m-0 mt-1 list-disc space-y-1 pl-5">
-                    {dec.waitsFor.map((w) => (
-                      <li key={w} className="text-[12px] font-medium text-cc-ink">
-                        {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              <SegmentTable
-                caption={wt('mgmt.conditionsCaption')}
-                unit={wt('mgmt.conditionsUnit')}
-                columns={[wt('mgmt.conditionsColumn')]}
-                rows={dec.conditions.map((c) => ({
-                  key: c.status,
-                  label: c.label,
-                  notDetermined: c.status === 'not-determined',
-                  counts: [c.count],
-                }))}
-              />
-              {dec.qualifiers.length > 0 ? (
-                <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                  {mgmtQualifiersLabel(dec.qualifiers.length)}
-                </p>
-              ) : null}
-              <Coverage text={dec.coverage} />
-              <p className="m-0 mt-2 text-[12px] font-semibold">
-                <a href="#decision-card" className="text-cc-ink underline">
-                  {mgmtOpenDecisionLabel(dec.identity)}
-                </a>
-              </p>
-            </CcCard>
-          </div>
-        ) : (
-          <Pending id="decision" card={dec} />
-        )}
-
-        {/* (e) What blocks the decision — ordered, with evidence per line. */}
-        {blockers.state === 'ready' ? (
-          <div data-overview-card="blockers" data-overview-state="ready">
-            <CcCard title={blockers.title} count={blockers.rows.length}>
-              <Lead text={blockers.lead} />
-              {blockers.rows.length > 0 ? (
-                <ol data-overview-blockers="" className="m-0 mt-2 list-none space-y-2 p-0">
-                  {blockers.rows.map((row, i) => (
-                    <li
-                      key={row.key}
-                      data-overview-blocker={row.key}
-                      className={cn(
-                        'rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2',
-                        beyondFirst(i, allBlockers),
-                      )}
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink-muted">{row.rank}.</span>
-                        <span className="text-[13px] font-semibold text-cc-ink">{row.label}</span>
-                        {row.scope === 'public-edition' ? <CcTag>{wt('mgmt.publicEditionDecision')}</CcTag> : null}
-                        <CcProvenanceChip value={row.provenance} />
-                      </div>
-                      <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{row.evidence}</p>
-                    </li>
-                  ))}
-                </ol>
-              ) : null}
-              {blockers.rows.length > FIRST_ROWS ? (
-                <div className="cc-no-print mt-2">
-                  <CcButton variant="ghost" density="compact" onClick={toggleBlockers} aria-expanded={allBlockers}>
-                    {allBlockers ? showFirstLabel(FIRST_ROWS) : showAllLabel(blockers.rows.length)}
-                  </CcButton>
-                </div>
-              ) : null}
-              {blockers.unread.length > 0 ? (
-                <ul data-overview-unread="" className="m-0 mt-2 list-none space-y-1 p-0">
-                  {blockers.unread.map((u) => (
-                    <li key={u} className="text-[12px] leading-snug font-medium text-cc-ink-muted">
-                      {mgmtNotReadLabel(u)}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <Coverage text={blockers.coverage} />
-            </CcCard>
-          </div>
-        ) : (
-          <Pending id="blockers" card={blockers} />
-        )}
-
-        {/* (c) The Clean Core Score over runs of one rule version. */}
-        {readiness.state === 'ready' ? (
-          <div data-overview-card="readiness" data-overview-state="ready">
-            <CcCard title={readiness.title} meta={<CcProvenanceChip value={readiness.provenance} />}>
-              <Lead text={readiness.lead} />
-              <TrendLine
-                points={readiness.points}
-                label={mgmtTrendLabel(readiness.ruleVersion, readiness.points)}
-              />
-              <p data-overview-rule-version="" className="m-0 mt-1 font-cc-mono text-[11px] text-cc-ink-muted">
-                {mgmtRuleVersionLabel(readiness.ruleVersion)}
-              </p>
-              <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">{readiness.sentence}</p>
-              {readiness.points.length > 0 ? (
-                <div data-overview-table="" className="mt-2">
-                  <CcTable
-                    caption={wt('mgmt.trendCaption')}
-                    columns={[
-                      { key: 'date', label: wt('mgmt.colDate') },
-                      { key: 'run', label: wt('mgmt.colRun') },
-                      { key: 'score', label: wt('mgmt.colScore'), numeric: true },
-                    ]}
-                    rows={readiness.points.map((p) => ({
-                      key: p.runId,
-                      cells: {
-                        date: (
-                          <span data-overview-row={p.runId} className="font-cc-mono">
-                            {p.date ?? wt('mgmt.notRecorded')}
-                          </span>
-                        ),
-                        run: <span className="font-cc-mono">{p.runId}</span>,
-                        score: p.score,
-                      },
-                    }))}
-                  />
-                </div>
-              ) : null}
-              <div
-                data-overview-not-determined="readiness"
-                data-not-determined=""
-                className="mt-2 flex items-start gap-2 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2"
-              >
-                <Swatch tone="not-determined" />
-                <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
-                  <span className="font-semibold">
-                    {mgmtNotDeterminedRunsLabel(readiness.notDetermined.count)}
-                  </span>{' '}
-                  — {readiness.notDetermined.sentence}
-                </p>
-              </div>
-              {readiness.breaks.length > 0 ? (
-                <ul data-overview-breaks="" className="m-0 mt-2 list-none space-y-1 p-0">
-                  {readiness.breaks.map((b) => (
-                    <li key={b} className="text-[12px] leading-snug font-medium text-cc-ink">
-                      {mgmtBreakLabel(b)}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <Coverage text={readiness.coverage} />
-            </CcCard>
-          </div>
-        ) : (
-          <Pending id="readiness" card={readiness} />
-        )}
-
-        {/* (b) The four buckets, per edition, and what moves between them. */}
-        {buckets.state === 'ready' ? (
-          <div data-overview-card="buckets" data-overview-state="ready">
-            <CcCard title={buckets.title}>
-              <Lead text={buckets.lead} />
-              <div className="mt-2 space-y-2">
-                {buckets.charts.map((c) => (
-                  <div key={c.platform} data-overview-platform={c.platform}>
-                    <p className="m-0 mb-1 text-[12px] font-semibold text-cc-ink">
-                      {c.label}
-                      {c.isTarget ? ` ${wt('mgmt.targetPlatform')}` : ''}
-                    </p>
-                    <StackedBar label={mgmtBucketsChartLabel(c.label)} segments={c.segments} chart={`buckets-${c.platform}`} />
-                  </div>
-                ))}
-              </div>
-              {buckets.charts[0] ? (
-                <SegmentTable
-                  caption={wt('mgmt.bucketsCaption')}
-                  unit={wt('mgmt.bucketsUnit')}
-                  columns={buckets.charts.map((c) => c.label)}
-                  rows={buckets.charts[0].segments.map((s) => ({
-                    key: s.key,
-                    label: s.label,
-                    tone: s.tone,
-                    notDetermined: s.notDetermined,
-                    counts: buckets.charts.map((c) => c.segments.find((x) => x.key === s.key)?.count ?? 0),
-                  }))}
-                />
-              ) : null}
-              <p data-overview-moves-sentence="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">
-                {buckets.moveSentence}
-              </p>
-              {buckets.moves.length > 0 ? (
-                <div data-overview-moves="" className="mt-1">
-                  <CcTable
-                    caption={wt('mgmt.movesCaption')}
-                    columns={MOVE_COLUMNS}
-                    limit={FIRST_ROWS}
-                    rows={buckets.moves.map((m) => ({
-                      key: m.objectName,
-                      cells: {
-                        object: <span className="font-cc-mono">{m.objectName}</span>,
-                        private: m.privateBucket,
-                        public: m.publicBucket,
-                      },
-                    }))}
-                  />
-                </div>
-              ) : null}
-              {buckets.notes.map((n) => (
-                <p key={n} className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                  {n}
-                </p>
-              ))}
-              <Coverage text={buckets.coverage} />
-            </CcCard>
-          </div>
-        ) : (
-          <Pending id="buckets" card={buckets} />
-        )}
-
-        {/* (d) The level distribution A–D, in the state colours of §1.8. */}
-        {levels.state === 'ready' ? (
-          <div data-overview-card="levels" data-overview-state="ready">
-            <CcCard title={levels.title} meta={<CcProvenanceChip value={levels.provenance} />}>
-              <Lead text={levels.lead} />
-              <div className="mt-2">
-                <StackedBar label={wt('mgmt.levelsChart')} segments={levels.segments} chart="levels" />
-              </div>
-              <SegmentTable
-                caption={wt('mgmt.levelsCaption')}
-                unit={wt('mgmt.levelsUnit')}
-                columns={[wt('mgmt.levelsColumn')]}
-                rows={levels.segments.map((s) => ({
-                  key: s.key,
-                  label: s.label,
-                  tone: s.tone,
-                  notDetermined: s.notDetermined,
-                  counts: [s.count],
-                }))}
-              />
-              <Coverage text={levels.coverage} />
-              <p className="m-0 mt-1 text-[11px] leading-snug font-medium text-cc-ink-muted">{levels.note}</p>
-            </CcCard>
-          </div>
-        ) : (
-          <Pending id="levels" card={levels} />
-        )}
-      </div>
-        </CcDisclosure>
-      </div>
-
-      {children ? (
+      {/* One fold, one action deeper (§2.11, ADR-087): every object per bucket
+          and the open questions — nothing the first screen already says. */}
+      {evidenceExtra ? (
         <div className="mt-4">
-          <CcButton
-            variant="ghost"
-            density="compact"
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-            aria-controls="management-answers-detail"
+          <ManagementFold
+            id="evidence"
+            summary={hasRun ? wt('mgmtFold.evidenceRun') : wt('mgmtFold.evidenceNoRun')}
           >
-            {detailsOpen ? wt('mgmt.hideDetail') : mgmtShowDetailLabel(detailCount)}
-          </CcButton>
-          <div id="management-answers-detail" hidden={!detailsOpen} className="mt-4">
-            {children}
-          </div>
+            <div className="flex flex-col gap-4">{evidenceExtra}</div>
+          </ManagementFold>
         </div>
       ) : null}
-      </ManagementFold>
-      </div>
     </div>
+  );
+}
+
+/**
+ * The Clean Core Score over runs of one rule version — the third block of the
+ * first screen (mockup s5, ADR-087). A different rule version is a break,
+ * named and never drawn; runs that cannot be placed are counted as *not
+ * determined*.
+ */
+function ReadinessTrend({ card }: { card: ReadinessCard }) {
+  if (card.state !== 'ready') {
+    return (
+      <section id={MANAGEMENT_IDS.readiness} className="h-full scroll-mt-20">
+        <Pending id="readiness" card={card} />
+      </section>
+    );
+  }
+  return (
+    <section id={MANAGEMENT_IDS.readiness} data-overview-card="readiness" data-overview-state="ready" className="h-full scroll-mt-20">
+      <CcCard title={card.title} meta={<CcProvenanceChip value={card.provenance} />}>
+        <Lead text={card.lead} />
+        <TrendLine points={card.points} label={mgmtTrendLabel(card.ruleVersion, card.points)} />
+        <p data-overview-rule-version="" className="m-0 mt-1 font-cc-mono text-[11px] text-cc-ink-muted">
+          {mgmtRuleVersionLabel(card.ruleVersion)}
+        </p>
+        <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">{card.sentence}</p>
+        {card.points.length > 0 ? (
+          <div data-overview-table="" className="mt-2">
+            <CcTable
+              caption={wt('mgmt.trendCaption')}
+              columns={[
+                { key: 'date', label: wt('mgmt.colDate') },
+                { key: 'run', label: wt('mgmt.colRun') },
+                { key: 'score', label: wt('mgmt.colScore'), numeric: true },
+              ]}
+              rows={card.points.map((p) => ({
+                key: p.runId,
+                cells: {
+                  date: (
+                    <span data-overview-row={p.runId} className="font-cc-mono">
+                      {p.date ?? wt('mgmt.notRecorded')}
+                    </span>
+                  ),
+                  run: <span className="font-cc-mono">{p.runId}</span>,
+                  score: p.score,
+                },
+              }))}
+            />
+          </div>
+        ) : null}
+        <div
+          data-overview-not-determined="readiness"
+          data-not-determined=""
+          className="mt-2 flex items-start gap-2 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2"
+        >
+          <Swatch tone="not-determined" />
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
+            <span className="font-semibold">{mgmtNotDeterminedRunsLabel(card.notDetermined.count)}</span> —{' '}
+            {card.notDetermined.sentence}
+          </p>
+        </div>
+        {card.breaks.length > 0 ? (
+          <ul data-overview-breaks="" className="m-0 mt-2 list-none space-y-1 p-0">
+            {card.breaks.map((b) => (
+              <li key={b} className="text-[12px] leading-snug font-medium text-cc-ink">
+                {mgmtBreakLabel(b)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <Coverage text={card.coverage} />
+      </CcCard>
+    </section>
   );
 }

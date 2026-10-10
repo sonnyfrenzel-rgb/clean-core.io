@@ -16,11 +16,13 @@ import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/li
 import {
   decisionManagerView,
   withoutSourcePaths,
+  type DecisionFoundation,
   type DecisionPlace,
   type DecisionPoint,
   type PillarKey,
   type StoredCostScenario,
 } from '@/lib/decision-manager';
+import { MANAGEMENT_IDS } from '@/lib/management-sections';
 import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import { stageHref } from '@/lib/workspace-back-href';
 import { cn } from '@/lib/utils';
@@ -28,14 +30,15 @@ import InfoPopover from './InfoPopover';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import {
   wt,
-  decisionConfirmedBy,
   decisionConfirmsLine,
   decisionConfirmTitle,
   decisionDeriveFailed,
   decisionLatest,
+  decisionLimitsFolded,
   decisionMovedSentence,
   decisionOpenCount,
   decisionResolveIn,
+  decisionRestsOnCount,
   decisionTodoCount,
   decisionWithdrawTitle,
 } from '@/lib/workspace-messages';
@@ -86,8 +89,15 @@ export default function DecisionCard({
   onChanged,
   costScenario = null,
   revision = 0,
+  process = null,
 }: {
   projectId: string;
+  /**
+   * "Your process" in one line — what the map of the signed source counts
+   * ("36 steps · 13 decision points · 11 rules"), said in the Need row, whose
+   * action leads to Business (ADR-087). `null` while it is not counted.
+   */
+  process?: string | null;
   /**
    * Bumped by the shell whenever any reader wrote the decision — the option
    * cards of ADR-079 choose Keep, standard or Retire outside this card, and the
@@ -259,15 +269,76 @@ export default function DecisionCard({
       data-decision-coverage={view.coverage.state}
       className="min-w-0"
     >
-      {/* Identity and status on the left, the decision's own action on the right. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+      <p data-decision-summary="" className="sr-only">
+        {view.summary}
+      </p>
+
+      {/* What it rests on (ADR-087): one list, one row per foundation with its
+          state, one line and one action; the open conditions nested under the
+          foundation they belong to, and the limits nobody here can close as one
+          muted folded line under the contract. The decided option itself is
+          the answer at the top of the card — never said a second time here. */}
+      <section id={MANAGEMENT_IDS.restsOn} data-decision-rests-on="" className="scroll-mt-20">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 data-decision-rests-on-title="" className={LABEL}>
+            {decisionRestsOnCount(m.inPlace, m.pillars.length)}
+          </h3>
+          <span data-decision-conditions-summary="" className="text-[12px] font-semibold text-cc-ink">
+            {m.points.length === 0
+              ? wt('decision.noOpenPoints')
+              : m.openPoints === 0
+                ? decisionOpenCount(0, m.points.length)
+                : decisionTodoCount(m.todo, m.limits)}
+          </span>
+        </div>
+        <ul data-decision-pillars="" className="m-0 mt-2 list-none space-y-2 p-0">
+          {m.foundations.map((f) => (
+            <Foundation
+              key={f.pillar.key}
+              foundation={f}
+              projectId={projectId}
+              process={f.pillar.key === 'need' ? process : null}
+            />
+          ))}
+          {m.other.length > 0 ? (
+            <li
+              data-decision-other=""
+              className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
+            >
+              <span className="text-[12px] font-bold text-cc-ink">{wt('decision.otherTitle')}</span>
+              <ul data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
+                {m.other.map((pt) => (
+                  <ConditionLine key={pt.id} point={pt} projectId={projectId} />
+                ))}
+              </ul>
+            </li>
+          ) : null}
+        </ul>
+      </section>
+
+      {/* The record: identity, status and whether it can be taken back on the
+          left, the decision's own action on the right, and under it the one
+          sentence that says whether it can be confirmed. */}
+      <div
+        data-decision-record=""
+        className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-cc-line pt-3"
+      >
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
           <code data-decision-identity="" className="text-[12px] font-medium text-cc-ink-muted">
             {view.identity}
           </code>
           <span data-decision-state={moved ? 'outdated' : shown.status} className="inline-flex items-center gap-2">
             <CcObjectStatus value={STATUS_OF[shown.status]} />
             {moved ? <CcStateText state="warning">{wt('decision.outdated')}</CcStateText> : null}
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</span>
+            <span className="flex items-center gap-1" data-decision-reversible={shown.reversibility.answer}>
+              <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
+              <InfoPopover subject={wt('decision.reversible')} hook="decision-reversible">
+                {withoutSourcePaths(view.reversible.detail)}
+              </InfoPopover>
+            </span>
           </span>
         </div>
         {answer.canDecide ? (
@@ -291,123 +362,11 @@ export default function DecisionCard({
         ) : null}
       </div>
 
-      {/* The decided or proposed option, in big type, and one sentence of why. */}
-      <h3
-        data-decision-headline=""
-        data-management-headline=""
-        className="m-0 mt-2 cc-text-h2 leading-snug text-cc-ink"
-      >
-        {m.headline}
-      </h3>
-      <p data-decision-why="" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink">
-        {m.why}
-      </p>
-      <p data-decision-summary="" className="sr-only">
-        {view.summary}
-      </p>
-
-      {/* What it rests on: four pillars, each with its state and one plain line. */}
-      <h4 className={cn(LABEL, 'mt-4')}>{wt('decision.restsOn')}</h4>
-      <ul
-        data-decision-pillars=""
-        className="m-0 mt-2 grid list-none grid-cols-1 gap-2 p-0 min-[420px]:grid-cols-2 xl:grid-cols-4"
-      >
-        {m.pillars.map((p) => {
-          const Icon = PILLAR_ICON[p.key];
-          return (
-            <li
-              key={p.key}
-              data-decision-pillar={p.key}
-              data-decision-pillar-provenance={p.provenance}
-              className={cn(
-                'flex min-w-0 flex-col rounded-cc-row border bg-cc-surface-muted p-3',
-                p.inPlace ? 'border-cc-line' : 'border-dashed border-cc-field-border',
-              )}
-            >
-              <span className="flex items-center gap-2 text-[12px] font-bold text-cc-ink">
-                <Icon size={16} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-                {p.title}
-              </span>
-              <span className="mt-2 flex flex-wrap items-center gap-2">
-                <CcProvenanceChip value={p.provenance} />
-                {p.draft ? <CcObjectStatus value="draft" /> : null}
-              </span>
-              <span className="mt-2 text-[12px] leading-snug font-medium text-cc-ink">{p.line}</span>
-              <a
-                href={placeHref(projectId, p.place)}
-                className="mt-auto pt-2 text-[12px] font-semibold text-cc-ink underline underline-offset-2"
-              >
-                {p.place.action ?? placeLabel(p.place)}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* The open conditions (ADR-085): what a reader can do, one plain line
-          each with a link to the exact place it is done; then what stays open
-          whatever is done here, said once and never hidden. */}
-      <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
-        <h4 className={LABEL}>{wt('decision.openPoints')}</h4>
-        <span data-decision-conditions-summary="" className="text-[12px] font-semibold text-cc-ink">
-          {m.points.length === 0
-            ? wt('decision.noOpenPoints')
-            : m.openPoints === 0
-              ? decisionOpenCount(0, m.points.length)
-              : decisionTodoCount(m.todo, m.limits)}
-        </span>
-      </div>
-      {m.points.some((pt) => pt.done || pt.kind === 'act') ? (
-        <ul data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
-          {m.points
-            .filter((pt) => pt.done || pt.kind === 'act')
-            .map((pt) => (
-              <ConditionLine key={pt.id} point={pt} projectId={projectId} />
-            ))}
-        </ul>
-      ) : null}
-      {m.limits > 0 ? (
-        <div data-decision-limits="" className="mt-3">
-          <p className="m-0 text-[12px] leading-snug font-semibold text-cc-ink-muted">{wt('decision.limitsLead')}</p>
-          <ul className="m-0 mt-1 list-none space-y-2 p-0">
-            {m.points
-              .filter((pt) => !pt.done && pt.kind === 'limit')
-              .map((pt) => (
-                <ConditionLine key={pt.id} point={pt} projectId={projectId} />
-              ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {/* The run it stands on, and whether it can be taken back. */}
-      <dl className="m-0 mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px]">
-        <div className="flex min-w-0 flex-wrap items-center gap-2" data-decision-binding="run" data-decision-binding-determined={view.run.value === null ? 'no' : 'yes'}>
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.analysisRun')}</dt>
-          <dd className="m-0 flex min-w-0 flex-wrap items-center gap-2">
-            <CcProvenanceChip value={view.run.provenance} />
-            {view.run.value !== null ? (
-              <code className="text-[12px] font-medium break-all text-cc-ink-muted">{view.run.value}</code>
-            ) : (
-              <span className="font-medium text-cc-ink-muted">{view.run.reason}</span>
-            )}
-          </dd>
-        </div>
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <dt className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</dt>
-          <dd className="m-0 flex items-center gap-1" data-decision-reversible={shown.reversibility.answer}>
-            <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
-            <InfoPopover subject={wt('decision.reversible')} hook="decision-reversible">
-              {withoutSourcePaths(view.reversible.detail)}
-            </InfoPopover>
-          </dd>
-        </div>
-      </dl>
-
       {m.readiness ? (
         <p
           id="decision-blocked-reason"
           data-decision-coverage-sentence=""
-          className={cn('m-0 mt-3 text-[12px] leading-snug', blocked ? 'font-semibold text-cc-ink' : 'font-medium text-cc-ink-muted')}
+          className={cn('m-0 mt-2 text-[12px] leading-snug', blocked ? 'font-semibold text-cc-ink' : 'font-medium text-cc-ink-muted')}
         >
           {m.readiness}
         </p>
@@ -419,12 +378,7 @@ export default function DecisionCard({
         </p>
       ) : null}
 
-      {isConfirmed && answer.stored?.confirmation ? (
-        <p data-decision-confirmed-by="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
-          {decisionConfirmedBy(answer.stored.confirmation.account, answer.stored.confirmation.at.slice(0, 10))}
-        </p>
-      ) : null}
-
+      {/* Who confirmed is said once, beside the answer at the top of the card. */}
       <p data-decision-self-declaration="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
         {view.selfDeclaration}
       </p>
@@ -441,6 +395,20 @@ export default function DecisionCard({
       <div className="mt-3 border-t border-cc-line pt-1" data-decision-technical="">
         <CcDisclosure title={wt('decision.technicalBasis')} count={m.technical.length} level={4} density="compact">
           <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('decision.technicalLead')}</p>
+          {/* The run it stands on — an auditor's fact, kept here once. */}
+          <div
+            className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-[12px]"
+            data-decision-binding="run"
+            data-decision-binding-determined={view.run.value === null ? 'no' : 'yes'}
+          >
+            <span className="font-semibold text-cc-ink-muted">{wt('decision.analysisRun')}</span>
+            <CcProvenanceChip value={view.run.provenance} />
+            {view.run.value !== null ? (
+              <code className="text-[12px] font-medium break-all text-cc-ink-muted">{view.run.value}</code>
+            ) : (
+              <span className="font-medium text-cc-ink-muted">{view.run.reason}</span>
+            )}
+          </div>
           <ul className="m-0 mt-2 list-none space-y-2 p-0">
             {view.bindings.map((b) => (
               <Binding key={b.key} binding={b} />
@@ -530,6 +498,80 @@ const PILLAR_ICON: Record<PillarKey, typeof Users> = {
 };
 
 const THIS_VIEW = 'management';
+
+/**
+ * One foundation of the decision (ADR-087): its title, state, one line and one
+ * action, and under it the conditions that belong to it — to do or met — and
+ * the limits nobody here can close, folded into one muted line.
+ */
+function Foundation({
+  foundation: f,
+  projectId,
+  process = null,
+}: {
+  foundation: DecisionFoundation;
+  projectId: string;
+  /** The Need row only: the process the map counts, in one line. */
+  process?: string | null;
+}) {
+  const p = f.pillar;
+  const Icon = PILLAR_ICON[p.key];
+  return (
+    <li
+      id={p.key === 'cost' ? MANAGEMENT_IDS.costs : undefined}
+      data-decision-pillar={p.key}
+      data-decision-pillar-provenance={p.provenance}
+      data-decision-pillar-in-place={p.inPlace ? 'yes' : 'no'}
+      className={cn(
+        'min-w-0 scroll-mt-20 rounded-cc-row border bg-cc-surface-muted px-3 py-2',
+        p.inPlace ? 'border-cc-line' : 'border-dashed border-cc-field-border',
+      )}
+    >
+      <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+        <span className="flex w-52 max-w-full shrink-0 flex-wrap items-center gap-2 text-[12px] font-bold text-cc-ink max-sm:w-full">
+          <Icon size={16} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+          {p.title}
+          <CcProvenanceChip value={p.provenance} />
+          {p.draft ? <CcObjectStatus value="draft" /> : null}
+        </span>
+        <span className="min-w-0 flex-1 basis-64 text-[13px] leading-snug font-medium text-cc-ink">
+          {p.line}{' '}
+          <a
+            href={placeHref(projectId, p.place)}
+            data-decision-pillar-action=""
+            className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
+          >
+            {p.place.action ?? placeLabel(p.place)}
+          </a>
+          {process ? (
+            <span data-decision-need-process="" className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">
+              {wt('decision.yourProcess')} {process}
+            </span>
+          ) : null}
+        </span>
+      </div>
+      {f.points.length > 0 ? (
+        <ul data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0 sm:pl-[13.75rem]">
+          {f.points.map((pt) => (
+            <ConditionLine key={pt.id} point={pt} projectId={projectId} />
+          ))}
+        </ul>
+      ) : null}
+      {f.limits.length > 0 ? (
+        <div data-decision-limits="" className="mt-1 sm:pl-[13.75rem]">
+          <CcDisclosure title={decisionLimitsFolded(f.limits.length)} density="compact">
+            <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('decision.limitsLead')}</p>
+            <ul className="m-0 mt-1 list-none space-y-2 p-0">
+              {f.limits.map((pt) => (
+                <ConditionLine key={pt.id} point={pt} projectId={projectId} />
+              ))}
+            </ul>
+          </CcDisclosure>
+        </div>
+      ) : null}
+    </li>
+  );
+}
 
 /**
  * One condition: its line, the link to the exact place it is acted on — named

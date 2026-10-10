@@ -31,7 +31,7 @@ export const WORKSPACE_DECISION_MESSAGES = {
   'decide.reasonMissing': 'Write a reason first.',
   'decide.refused': 'Nothing was chosen.',
   'decide.answerLost': 'No answer came back. The decision was read again.',
-  'decide.openEconomics': 'Open in Economics',
+  'decide.compareEconomics': 'Compare in Economics',
   'decide.place.design': 'Open Design',
   'decide.place.tco': 'Open Economics',
   'decide.place.analyze': 'Open Analyze',

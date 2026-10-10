@@ -160,18 +160,21 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await page.goto(`${here.pathname}?view=it#need`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
     await expect(page.locator('#process-map')).toBeVisible({ timeout: 60000 });
-    // In Management the section says what the map holds — not "empty", not
-    // "nothing on record" — and counts what the map counts, with the way to the map.
+    // Management has no layers since ADR-087: an old `?view=management#need`
+    // lands on the map in Business too. Its process is one line in the
+    // decision's Need row — what the map holds, not "empty", not "nothing on
+    // record", counted as the map counts — and the row's action leads to Business.
     await page.goto(`${here.pathname}?view=management#need`, { waitUntil: 'domcontentloaded' });
-    const tab = page.locator('[data-workspace-layers] [data-workspace-layer="need"]');
-    await expect(tab).toBeVisible({ timeout: 60000 });
-    await expect(tab).not.toContainText('empty');
-    const section = page.locator('[data-workspace-layer-section="need"]');
-    await expect(section).not.toContainText('Nothing on record');
-    await expect(tab).toContainText(`${steps} step`);
-    await expect(tab).toContainText(`${decisions} decision point`);
-    await expect(section.locator('[data-workspace-layer-process]')).toBeVisible({ timeout: 30000 });
-    await expect(section.locator('[data-workspace-layer-open-map]')).toHaveAttribute('href', /\?view=business#process-map$/);
+    await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
+    await page.goto(`${here.pathname}?view=management`, { waitUntil: 'domcontentloaded' });
+    const need = page.locator('[data-decision-pillar="need"]');
+    await expect(need).toBeVisible({ timeout: 90000 });
+    const line = need.locator('[data-decision-need-process]');
+    await expect(line).toContainText(`${steps} step`, { timeout: 30000 });
+    await expect(line).toContainText(`${decisions} decision point`);
+    await expect(need).not.toContainText('Nothing on record');
+    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\?view=business#(process-map|business-rules)$/);
+    await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
   });
 
   test('on a phone: the build-up, the full map, the way back — no horizontal scroll', async ({ page }) => {

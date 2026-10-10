@@ -635,10 +635,13 @@
  * border — so the three forms stay three.
  * ------------------------------------------------------------- */
 /* The steering one-pager's paper (roadmap 8.6, redesign 03.10.2026): one A4
-   landscape page. A named page, so no other print of the app changes size. */
+   landscape page. A named page, so no other print of the app changes size.
+   No margin (10.10.2026): Chrome prints its date, title and address only into
+   the page margin, so a sheet without one carries none of them; the sheet
+   brings its own white border instead (`[data-steering-print]` below). */
 @page steering {
   size: A4 landscape;
-  margin: 10mm;
+  margin: 0;
 }
 
 @media print {
@@ -750,34 +753,72 @@
     display: none !important;
   }
 
+  /* One A4 landscape page, in colour (owner, 10.10.2026: "in print the
+     one-pager must really be ONE page — in colour and perfectly formatted, to
+     put in front of a real management"). The page has no margin of its own
+     (`@page steering` above) — that is what leaves Chrome no room for its date,
+     title and address lines — so the sheet brings its own white border.
+     Landscape, not portrait: the four options stand in one even row of
+     ~65 mm cards, where portrait would squeeze them to ~45 mm and push every
+     reason to twice the lines. Type scale on paper: title 20 px, question
+     13 px, body 10 px, section labels and small print 9 px — nothing under 9. */
   [data-steering-print] {
+    page: steering;
+    box-sizing: border-box;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 8mm 12mm 6mm !important;
     border: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    color: #0b1c30 !important;
+    border-radius: 0 !important;
+    background: var(--cc-surface) !important;
+    color: var(--cc-ink) !important;
+    font-size: 10px;
+    line-height: 1.3;
+    break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  [data-steering-print] li {
+  [data-steering-print] * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* No block, card or row is cut between two sheets. */
+  [data-steering-print] li,
+  [data-steering-print] header,
+  [data-steering-print] footer,
+  [data-steering-print] [data-steering-block],
+  [data-steering-print] [data-steering-lists],
+  [data-steering-print] [data-steering-evidence-row] {
     break-inside: avoid;
   }
 
-  /* One A4 landscape page (redesign 03.10.2026): links stay links on paper,
-     without their address printed after them. */
-  /* Roadmap 3.0.6 (left open by the 3.0.5 QA loop): a compact layout for
-     paper instead of printing the screen at 70 %. The zoom shrank every
-     letter, the 11 px small print to under 8 px; this keeps each size on a
-     print scale of its own (nothing under 9 px) and takes the room out of the
-     spacing instead — the screen's breathing space is what paper does not
-     need. The rows stand as before: four options, four figures, two lists. */
-  [data-steering-print] {
-    page: steering;
-    font-size: 10px;
-    line-height: 1.3;
+  /* The frames around it give up their box: no padding, no column, no width
+     limit — the sheet starts at the top-left corner of the paper. */
+  html:has([data-steering-print]),
+  body:has([data-steering-print]),
+  body:has([data-steering-print]) *:has([data-steering-print]) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    transform: none !important;
   }
 
+  /* --- type scale ---------------------------------------------------- */
   [data-steering-print] .cc-text-h2 {
-    font-size: 15px !important;
-    line-height: 1.2 !important;
+    font-size: 20px !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
   }
 
   [data-steering-print] .cc-text-figure {
@@ -786,7 +827,7 @@
   }
 
   [data-steering-print] .text-\[15px\] {
-    font-size: 12px !important;
+    font-size: 13px !important;
   }
 
   [data-steering-print] .text-\[14px\] {
@@ -801,74 +842,296 @@
     font-size: 10px !important;
   }
 
-  [data-steering-print] .text-\[11px\] {
+  [data-steering-print] .text-\[11px\],
+  [data-steering-print] .cc-text-meta {
     font-size: 9px !important;
   }
 
   [data-steering-print] .leading-snug {
-    line-height: 1.25 !important;
+    line-height: 1.28 !important;
+  }
+
+  /* Chips keep their word and icon at the small-print size. */
+  [data-steering-print] [data-cc-form] {
+    font-size: 9px !important;
+    line-height: 13px !important;
+    padding: 0 5px !important;
+  }
+
+  [data-steering-print] [data-cc-form] svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  [data-steering-print] [data-cc-tag] {
+    font-size: 9px !important;
+    line-height: 14px !important;
+  }
+
+  /* --- spacing: the screen's breathing space is what paper does not need */
+  [data-steering-print] .mt-4 {
+    margin-top: 9px !important;
   }
 
   [data-steering-print] .mt-2 {
-    margin-top: 3px !important;
+    margin-top: 4px !important;
   }
 
   [data-steering-print] .mt-1 {
-    margin-top: 1px !important;
+    margin-top: 2px !important;
+  }
+
+  [data-steering-print] .pb-3 {
+    padding-bottom: 7px !important;
+  }
+
+  [data-steering-print] .pt-2 {
+    padding-top: 4px !important;
+  }
+
+  [data-steering-print] .p-3 {
+    padding: 7px !important;
   }
 
   [data-steering-print] .p-2 {
-    padding: 4px !important;
+    padding: 6px !important;
   }
 
   [data-steering-print] .gap-2,
+  [data-steering-print] .gap-3 {
+    gap: 5px !important;
+  }
+
   [data-steering-print] .gap-4 {
-    gap: 4px !important;
+    gap: 10px !important;
   }
 
   [data-steering-print] .space-y-2 > :not(:last-child) {
-    margin-block-end: 2px !important;
+    margin-block-end: 3px !important;
   }
 
   /* The bars keep their height as a mark, not as a band across the page. */
   [data-steering-print] .h-4 {
-    height: 8px !important;
+    height: 9px !important;
   }
 
-  [data-steering-print] a[href]::after {
-    content: none !important;
+  /* --- the rows stand on paper as on a wide screen ------------------- */
+  [data-steering-print] [data-steering-titleblock] {
+    flex-wrap: nowrap !important;
   }
 
-  /* The page starts at the top of the paper: the frames around it give up
-     their padding, and the four figures and the two lists keep their row. */
-  body:has([data-steering-print]) *:has([data-steering-print]) {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    box-shadow: none !important;
+  [data-steering-print] [data-steering-titleside] {
+    flex: 0 0 34% !important;
   }
 
-  [data-steering-figures] {
+  [data-steering-print] [data-steering-stamp] {
+    max-width: none !important;
+  }
+
+  /* The four options of the decision (ADR-079) in one even row: equal
+     widths, equal heights, effort and cost on each card's floor. */
+  [data-steering-options] {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+  }
+
+  [data-steering-evidence-row] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) !important;
+  }
+
+  /* As many equal tiles as there are figures, in one row. */
+  [data-steering-figures] {
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
   }
 
   [data-steering-lists] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
-  /* The four options of the decision (ADR-079) stand in one row on paper,
-     and the blocks close up, so the page stays one page. */
-  [data-steering-options] {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 4px !important;
+  /* A sentence that would run long is cut at its line budget on paper only;
+     on the screen it stands in full. */
+  [data-steering-print] [data-print-clamp] {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  [data-steering-print] .mt-4 {
-    margin-top: 6px !important;
+  [data-steering-print] [data-print-clamp='2'] {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
-  [data-steering-print] .p-3 {
-    padding: 6px !important;
+  [data-steering-print] [data-print-clamp='3'] {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  [data-steering-print] [data-print-clamp='4'] {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+
+  /* Links are useless on paper: the words stay, the address, the underline
+     and the link colour go. */
+  [data-steering-print] a[href]::after {
+    content: none !important;
+  }
+
+  [data-steering-print] a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* --- colour: a restrained board palette from DESIGN.md §1.1 ---------
+     The ground rule of §7.1 above strips every fill and inks every word; the
+     one-pager is the one sheet printed in colour, so it gives back exactly
+     the tokens the screen uses — ink for structure, the five state colours
+     for chips and status words, the level and chart marks for the bars.
+     Each rule names a token class, so nothing here is a colour of its own. */
+  [data-steering-print] .text-cc-ink {
+    color: var(--cc-ink) !important;
+  }
+
+  [data-steering-print] .text-cc-ink-muted {
+    color: var(--cc-ink-muted) !important;
+  }
+
+  [data-steering-print] .text-cc-success {
+    color: var(--cc-success) !important;
+  }
+
+  [data-steering-print] .text-cc-warning {
+    color: var(--cc-warning) !important;
+  }
+
+  [data-steering-print] .text-cc-error {
+    color: var(--cc-error) !important;
+  }
+
+  [data-steering-print] .text-cc-information {
+    color: var(--cc-information) !important;
+  }
+
+  [data-steering-print] .text-cc-neutral {
+    color: var(--cc-neutral) !important;
+  }
+
+  [data-steering-print] .bg-cc-surface {
+    background-color: var(--cc-surface) !important;
+  }
+
+  [data-steering-print] .bg-cc-surface-muted {
+    background-color: var(--cc-surface-muted) !important;
+  }
+
+  [data-steering-print] .bg-cc-success-bg {
+    background-color: var(--cc-success-bg) !important;
+  }
+
+  [data-steering-print] .bg-cc-warning-bg {
+    background-color: var(--cc-warning-bg) !important;
+  }
+
+  [data-steering-print] .bg-cc-error-bg {
+    background-color: var(--cc-error-bg) !important;
+  }
+
+  [data-steering-print] .bg-cc-information-bg {
+    background-color: var(--cc-information-bg) !important;
+  }
+
+  [data-steering-print] .bg-cc-neutral-bg {
+    background-color: var(--cc-neutral-bg) !important;
+  }
+
+  [data-steering-print] .bg-cc-success {
+    background-color: var(--cc-success) !important;
+  }
+
+  [data-steering-print] .bg-cc-warning-mark {
+    background-color: var(--cc-warning-mark) !important;
+  }
+
+  [data-steering-print] .bg-cc-error {
+    background-color: var(--cc-error) !important;
+  }
+
+  [data-steering-print] .bg-cc-information {
+    background-color: var(--cc-information) !important;
+  }
+
+  [data-steering-print] .bg-cc-neutral {
+    background-color: var(--cc-neutral) !important;
+  }
+
+  [data-steering-print] .bg-cc-chart-1 {
+    background-color: var(--cc-chart-1) !important;
+  }
+
+  [data-steering-print] .bg-cc-chart-2 {
+    background-color: var(--cc-chart-2) !important;
+  }
+
+  [data-steering-print] .bg-cc-chart-3 {
+    background-color: var(--cc-chart-3) !important;
+  }
+
+  [data-steering-print] .bg-cc-chart-4 {
+    background-color: var(--cc-chart-4) !important;
+  }
+
+  [data-steering-print] .bg-cc-chart-5 {
+    background-color: var(--cc-chart-5) !important;
+  }
+
+  [data-steering-print] .border-cc-line {
+    border-color: var(--cc-line) !important;
+  }
+
+  [data-steering-print] .border-cc-ink {
+    border-color: var(--cc-ink) !important;
+  }
+
+  [data-steering-print] .border-l-cc-ink {
+    border-left-color: var(--cc-ink) !important;
+  }
+
+  [data-steering-print] .border-cc-field-border {
+    border-color: var(--cc-field-border) !important;
+  }
+
+  [data-steering-print] .border-cc-success,
+  [data-steering-print] .border-cc-success-border {
+    border-color: var(--cc-success) !important;
+  }
+
+  [data-steering-print] .border-cc-warning-line,
+  [data-steering-print] .border-cc-warning-border {
+    border-color: var(--cc-warning-line) !important;
+  }
+
+  [data-steering-print] .border-cc-error,
+  [data-steering-print] .border-cc-error-border {
+    border-color: var(--cc-error) !important;
+  }
+
+  [data-steering-print] .border-cc-information,
+  [data-steering-print] .border-cc-information-border {
+    border-color: var(--cc-information) !important;
+  }
+
+  [data-steering-print] .border-cc-neutral,
+  [data-steering-print] .border-cc-neutral-border {
+    border-color: var(--cc-neutral) !important;
+  }
+
+  /* A filled chip keeps its fill in colour, so it needs no 2 px border to
+     stay apart from the outlined ones (§4: form is the second cue). */
+  [data-steering-print] [data-cc-form='filled'] {
+    border-width: 1px !important;
   }
 
   /* The workspace prints its own short sheet (WorkspacePrintSheet, §7.1 and

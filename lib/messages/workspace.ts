@@ -92,8 +92,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'revision.keep': 'Keep this Stand',
   'revision.refresh': 'Refresh',
   // ManagementAnswers
-  'mgmtAnswers.reading': 'Reading the runs of this project…',
-  'mgmtAnswers.notDetermined': 'Not determined',
   // ThreeViewsStage
   'threeViews.title': 'One case, three views',
   'threeViews.columnsLabel': 'Business, IT and Management on the same fact',
@@ -130,6 +128,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'decision.stateOpen': 'open',
   'decision.stateLimit': 'stays open',
   'decision.limitsLead': 'Stays open with the decision — nothing to do here:',
+  'decision.otherTitle': 'Stated by your account',
+  'decision.yourProcess': 'Your process:',
   'decision.whichPlaces': 'Which places',
   'decision.confirmEllipsis': 'Confirm decision…',
   'decision.withdraw': 'Withdraw decision',
@@ -190,6 +190,11 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'steering.whoActs': 'Who acts',
   'steering.openDecision': 'Open the decision',
   'steering.line': 'line',
+  'steering.printHint': 'For a clean sheet, switch off “Headers and footers” in the print dialog.',
+  'steering.basis': 'The decision and its basis',
+  'steering.pillars': 'What it rests on',
+  'steering.selfDeclaration': 'a self-declaration, not a mandate',
+  'steering.reference': 'Reference',
   // NewProject
   'newProject.createFailed': 'The project could not be created. Nothing was saved.',
   'newProject.loading': 'Loading',
@@ -491,6 +496,16 @@ export function decisionTodoCount(todo: number, limits: number): string {
   return limits > 0 ? `${todo} to do · ${stay}` : `${todo} to do`;
 }
 
+/** DecisionCard — the heading of the merged foundations list (ADR-087). */
+export function decisionRestsOnCount(inPlace: number, total: number): string {
+  return `${WORKSPACE_PAGE_MESSAGES['decision.restsOn']}: ${inPlace} of ${total} in place`;
+}
+
+/** DecisionCard — the contract's limits nobody here can close, folded into one muted line (ADR-085, ADR-087). */
+export function decisionLimitsFolded(n: number): string {
+  return `${n} ${n === 1 ? 'stays' : 'stay'} open whatever is done here`;
+}
+
 /** DecisionCard — the link to the place a pillar or a condition is resolved. */
 export function decisionResolveIn(place: string): string {
   return `Resolve in ${place}`;
@@ -567,3 +582,13 @@ export function newProjectExampleSize(lines: string, size: string): string {
   return `${lines} lines · ${size}`;
 }
 
+
+/** SteeringOnePager — who chose or confirmed the decision, for the title block (ADR-083: name, else e-mail). */
+export function steeringDecidedBy(verb: 'Chosen' | 'Confirmed', by: string, at: string | null): string {
+  return `${verb} by ${by}${at ? ` on ${at}` : ''}`;
+}
+
+/** SteeringOnePager — what a list leaves out on paper: "+2 more". */
+export function steeringMore(n: number): string {
+  return `+${n} more`;
+}

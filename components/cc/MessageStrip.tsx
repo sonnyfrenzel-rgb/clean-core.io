@@ -79,14 +79,16 @@ export default function CcMessageStrip({
           block inside an inline element is invalid markup that browsers repair
           each in their own way (D.5e). `basis-64` lets the actions drop below
           the text on a narrow screen instead of squeezing it to one word a
-          line. */}
+          line; `max-w-full` lets two buttons that do not fit side by side
+          wrap instead of running past a phone's edge (the legacy-blueprint
+          strip, 3.0.7: 465 px of actions on a 360 px screen). */}
       <div data-cc-message-strip-text="" className="min-w-0 flex-1 basis-64">
         {headline ? <b className="font-semibold">{headline}</b> : null}
         {headline ? ' ' : null}
         {children}
       </div>
       {actions ? (
-        <div data-cc-message-strip-actions="" className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+        <div data-cc-message-strip-actions="" className="ml-auto flex max-w-full shrink-0 flex-wrap items-center gap-2">
           {actions}
         </div>
       ) : null}

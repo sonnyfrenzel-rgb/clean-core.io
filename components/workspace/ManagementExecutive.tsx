@@ -11,7 +11,6 @@ import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { CcTag } from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
 import {
-  execBucketsChartLabel,
   execMoreBlockersLabel,
   stdFitGroupLabel,
   stdFitLineLabel,
@@ -22,9 +21,9 @@ import {
   wt,
 } from '@/lib/workspace-messages';
 import { chartLabel, type ChartSegment, type SegmentTone } from '@/lib/management-overview';
-import type { ExecutiveFigure, ExecutiveSummary, ExecutiveTarget } from '@/lib/management-executive';
+import type { ExecutiveSummary, ExecutiveTarget } from '@/lib/management-executive';
+import type { ProvenanceValue } from '@/lib/provenance';
 import { NO_SAP_DEPENDENCY_TITLE, STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
-import { PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 import InfoPopover from './InfoPopover';
 import { STEERING_TITLE } from '@/lib/steering-one-pager';
 import GlossaryTerm from '@/components/GlossaryTerm';
@@ -48,19 +47,19 @@ const STAGE_STATUS: Record<DecisionStage, ObjectStatusValue> = {
  * fold): **the decision** — the question, where it stands, the ONE next action
  * and what is in its way — and **fit to standard** (ADR-069) — one figure, the
  * SAP objects across the four buckets, and by name what blocks the standard
- * path and what does not. The four figures, where every object stands and the
- * evidence per phase are `ExecutiveEvidence`, which the caller puts into its
- * "Evidence" fold. Everything here is handed in by `lib/management-executive.ts`
+ * path and what does not — and, handed in by the caller, the readiness trend
+ * beside it (ADR-087, mockup s5). The four figures, the second bucket bar and
+ * the evidence per phase that once stood in the "Evidence" fold are gone: each
+ * repeated a number this panel, the header or the trend already says
+ * (`DESIGN.md` §2.11 "nothing twice"). Everything here is handed in by `lib/management-executive.ts`
  * and `lib/standard-fit.ts`; this component lays it out and adds the words of
  * its own frame from the catalogue. It fetches nothing, so the demo workspace
  * renders the same panel from its own data.
  *
  * **Charts are also text.** Every bar is `role="img"` with every number in its
- * `aria-label`, and the list beside it carries them again; the phase strip is
- * an ordered list whose items say their state in words. Colours per §1.8: the
- * buckets take the categorical palette and *not assigned* the dashed, unfilled
- * box; the phases take the one phase rule of `lib/workflow-steps.ts`, where
- * green belongs to a checked record alone. The fit figure gets no green: it is
+ * `aria-label`, and the list beside it carries them again. Colours per §1.8:
+ * the buckets take the categorical palette and *not assigned* the dashed,
+ * unfilled box. The fit figure gets no green: it is
  * a reading of imported SAP data, not a proof.
  */
 
@@ -137,41 +136,6 @@ export function StackedBar({
 const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
 const CARD = 'cc-card min-w-0 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc';
 
-function Figure({ figure, hrefFor }: { figure: ExecutiveFigure; hrefFor: (t: ExecutiveTarget) => string }) {
-  return (
-    <li
-      data-executive-figure={figure.key}
-      className="flex min-w-0 flex-col rounded-cc-row border border-cc-line bg-cc-surface p-3"
-    >
-      {figure.value === null ? (
-        <span data-figure-absent="" className="text-[15px] leading-tight font-bold text-cc-ink-muted">
-          {figure.absentWord}
-        </span>
-      ) : (
-        <span data-figure-value="" className="cc-text-figure leading-none text-cc-ink">
-          {figure.value}
-        </span>
-      )}
-      <span className="mt-1 text-[12px] leading-snug font-medium text-cc-ink">{figure.meaning}</span>
-      <span className="mt-2">
-        <CcProvenanceChip value={figure.provenance} />
-      </span>
-      <span data-figure-coverage="" className="mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
-        {figure.coverage}
-      </span>
-      {figure.action ? (
-        <a
-          href={hrefFor(figure.action.target)}
-          data-executive-figure-action=""
-          className="mt-2 text-[12px] font-semibold text-cc-ink underline underline-offset-2"
-        >
-          {figure.action.label}
-        </a>
-      ) : null}
-    </li>
-  );
-}
-
 /** One object on the fit card: name, level, line, why — and where the statement comes from. */
 function FitRow({ item }: { item: StandardFitItem }) {
   return (
@@ -205,26 +169,55 @@ function FitRow({ item }: { item: StandardFitItem }) {
 /** How many objects each list shows before "and N more". */
 const SHOWN = 4;
 
+/**
+ * Something in the way that is not an SAP object — no signed run, a source
+ * changed since it, an input out of date — from the ranked blockers of the
+ * Management model (ADR-087: merged into "What stands in the way").
+ */
+export interface FitOtherBlocker {
+  key: string;
+  label: string;
+  evidence: string;
+  provenance: ProvenanceValue;
+}
+
 function FitList({
   title,
   items,
   empty,
   hook,
   moreHref,
+  other = [],
 }: {
   title: string;
   items: readonly StandardFitItem[];
   empty: string;
   hook: 'blocks' | 'clear';
   moreHref: string;
+  other?: readonly FitOtherBlocker[];
 }) {
   return (
     <section data-standard-fit-list={hook} className="min-w-0">
-      <h4 className={LABEL}>{stdFitGroupLabel(title, items.length)}</h4>
-      {items.length === 0 ? (
+      <h4 className={LABEL}>{stdFitGroupLabel(title, items.length + other.length)}</h4>
+      {items.length === 0 && other.length === 0 ? (
         <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">{empty}</p>
       ) : (
         <ul className="m-0 mt-2 list-none space-y-2 p-0">
+          {other.map((b) => (
+            <li
+              key={b.key}
+              data-standard-fit-blocker={b.key}
+              className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[12px] font-semibold text-cc-ink">{b.label}</span>
+                <CcProvenanceChip value={b.provenance} />
+              </div>
+              {b.evidence ? (
+                <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">{b.evidence}</p>
+              ) : null}
+            </li>
+          ))}
           {items.slice(0, SHOWN).map((item) => (
             <FitRow key={item.objectName} item={item} />
           ))}
@@ -254,8 +247,11 @@ export function StandardFitCard({
   detailsHref,
   setTargetHref,
   otherEdition = null,
+  otherBlockers = [],
 }: {
   fit: StandardFit;
+  /** What else stands in the way that is not an SAP object — listed first under "What stands in the way". */
+  otherBlockers?: readonly FitOtherBlocker[];
   /** The same reading on the other edition, in one line (ADR-079) — or `null`. */
   otherEdition?: string | null;
   /** Where every object with its evidence stands — the bucket detail in the "Evidence" fold. */
@@ -416,6 +412,7 @@ export function StandardFitCard({
           empty={wt('stdFit.nothingBlocks')}
           hook="blocks"
           moreHref={detailsHref}
+          other={otherBlockers}
         />
         <FitList
           title={wt('stdFit.clearTitle')}
@@ -460,6 +457,8 @@ export default function ManagementExecutive({
   options,
   optionsView = null,
   otherEdition = null,
+  otherBlockers = [],
+  trend,
   onOpenOnePager,
 }: {
   summary: ExecutiveSummary;
@@ -495,6 +494,14 @@ export default function ManagementExecutive({
   optionsView?: DecisionOptionsView | null;
   /** The distance to standard on the other edition, in one line. */
   otherEdition?: string | null;
+  /** What else stands in the way that is not an SAP object (ADR-087) — on the fit card. */
+  otherBlockers?: readonly FitOtherBlocker[];
+  /**
+   * The readiness trend — the third block of the first screen (mockup s5,
+   * ADR-087): beside the distance to SAP standard on a wide screen, under it
+   * on a narrow one.
+   */
+  trend?: React.ReactNode;
   /**
    * Opens the steering one-pager — a secondary button at the top of the
    * decision card, where a manager looks (owner, 04.10.2026: "much better but
@@ -705,113 +712,16 @@ export default function ManagementExecutive({
         )}
       </div>
 
-      <div className={cn('min-w-0', decision ? 'lg:col-span-12' : 'lg:col-span-7')}>
-        <StandardFitCard fit={fit} detailsHref={fitDetailsHref} setTargetHref={setTargetHref} otherEdition={otherEdition} />
+      <div className={cn('min-w-0', decision ? (trend ? 'lg:col-span-8' : 'lg:col-span-12') : 'lg:col-span-7')}>
+        <StandardFitCard
+          fit={fit}
+          detailsHref={fitDetailsHref}
+          setTargetHref={setTargetHref}
+          otherEdition={otherEdition}
+          otherBlockers={otherBlockers}
+        />
       </div>
-    </div>
-  );
-}
-
-/**
- * The four figures, where every object the code uses stands, and the evidence
- * per phase — one action deeper, in the caller's "Evidence" fold (§2.11:
- * nothing lost, nothing first).
- */
-export function ExecutiveEvidence({
-  summary,
-  hrefFor,
-}: {
-  summary: ExecutiveSummary;
-  hrefFor: (target: ExecutiveTarget) => string;
-}) {
-  const s = summary;
-  const proven = s.phases.filter((p) => p.tone === 'proven').length;
-  return (
-    <div data-executive-evidence="" className="flex flex-col gap-4">
-      <ul
-        data-executive-figures=""
-        className="m-0 grid list-none grid-cols-1 gap-3 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4"
-      >
-        {s.figures.map((f) => (
-          <Figure key={f.key} figure={f} hrefFor={hrefFor} />
-        ))}
-      </ul>
-
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        {/* Where every object the code uses stands — the project's own objects included. */}
-        <section data-executive-buckets="" className={CARD}>
-          <h3 className="m-0 text-[14px] leading-tight font-bold text-cc-ink">{wt('exec.bucketsTitle')}</h3>
-          {s.buckets ? (
-            <>
-              <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">
-                {s.buckets.platformLabel} {s.buckets.isTarget ? wt('exec.target') : wt('exec.noTarget')} ·{' '}
-                {s.buckets.total} {wt('exec.objects')}
-              </p>
-              <div className="mt-3">
-                <StackedBar
-                  label={execBucketsChartLabel(s.buckets.platformLabel)}
-                  segments={s.buckets.segments}
-                  chart="executive-buckets"
-                  tall
-                />
-              </div>
-              <ul aria-label={wt('exec.bucketsListLabel')} className="m-0 mt-3 list-none space-y-1 p-0">
-                {s.buckets.segments.map((seg) => (
-                  <li
-                    key={seg.key}
-                    data-executive-bucket={seg.key}
-                    data-not-determined={seg.notDetermined ? '' : undefined}
-                    className="flex items-center gap-2 text-[13px] font-medium text-cc-ink"
-                  >
-                    <Swatch tone={seg.tone} />
-                    <span className="min-w-0 flex-1">{seg.label}</span>
-                    <span className="font-semibold tabular-nums">{seg.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-              {s.bucketsAbsent ?? wt('exec.notYetRead')}
-            </p>
-          )}
-        </section>
-
-        {/* Evidence per phase — the one phase rule, words beside the colour. */}
-        <section data-executive-phases="" className={CARD}>
-          <h3 className="m-0 text-[14px] leading-tight font-bold text-cc-ink">
-            {wt('exec.phasesTitle')}{' '}
-            <span className="text-[12px] font-medium text-cc-ink-muted">
-              ({proven}/{s.phases.length})
-            </span>
-          </h3>
-          <ol className="m-0 mt-3 list-none space-y-2 p-0">
-            {s.phases.map((p) => {
-              const tone = PHASE_TONE_CLASS[p.tone];
-              return (
-                <li
-                  key={p.key}
-                  data-executive-phase={p.key}
-                  data-phase-tone={p.tone}
-                  className="flex items-center gap-2"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'block h-3 w-8 shrink-0 rounded-[2px] border',
-                      tone.border,
-                      p.tone === 'none' ? 'border-dashed bg-cc-surface' : tone.fill,
-                    )}
-                  />
-                  <span className="min-w-0 flex-1 text-[13px] font-semibold text-cc-ink">{p.label}</span>
-                  <span className={cn('text-[12px] font-semibold', tone.ink)}>{p.word}</span>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="m-0 mt-3 text-[11px] leading-snug font-medium text-cc-ink-muted">{wt('exec.phasesNote')}</p>
-        </section>
-      </div>
+      {trend ? <div className={cn('min-w-0', decision ? 'lg:col-span-4' : 'lg:col-span-12')}>{trend}</div> : null}
     </div>
   );
 }

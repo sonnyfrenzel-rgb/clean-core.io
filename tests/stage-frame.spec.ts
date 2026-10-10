@@ -11,7 +11,7 @@ import {
   workspaceBackHref,
   WORKSPACE_RETURN,
 } from '../lib/workspace-back-href';
-import { LAYERS, toolMark, workspaceLayers } from '../lib/workspace-model';
+import { LAYER_ADDRESSES, LAYERS, toolMark, workspaceLayers } from '../lib/workspace-model';
 import { buildDemoProject } from '../lib/demo-project';
 import type { PhaseKey, PhaseState } from '../lib/workflow-steps';
 
@@ -36,8 +36,13 @@ const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing
 test.describe('the way back names the view and the layer', () => {
   test('the layer names are the Anchor Bar\'s own', () => {
     const fromModel = Object.fromEntries(workspaceLayers(null).map((l) => [l.key, l.label]));
-    expect(LAYER_LABELS).toEqual(fromModel);
-    expect(Object.keys(LAYER_LABELS).sort()).toEqual([...LAYERS].sort());
+    // Every address a way back may carry has a name — the retired
+    // *Changes & commitments* (ADR-087) included, which no bar shows any more.
+    const { changes, ...live } = LAYER_LABELS;
+    expect(changes).toBe('Changes & commitments');
+    expect(live).toEqual(fromModel);
+    expect(Object.keys(live).sort()).toEqual([...LAYERS].sort());
+    expect(Object.keys(LAYER_LABELS).sort()).toEqual([...LAYER_ADDRESSES].sort());
   });
 
   test('a layer travels into the stage and back, and is said in words', () => {
@@ -61,8 +66,19 @@ test.describe('the way back names the view and the layer', () => {
     expect(stageBackPlace('?view=it&layer=architecture')).toBe('IT view, Objects & dependencies');
     expect(stageBackPlace('?view=it&layer=changes')).toBe('Management view, Decision');
     expect(stageBackPlace('?view=it&layer=costs')).toBe('IT view');
-    // Management keeps its six layers.
-    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=management&layer=costs' })).toBe('/project/p-1?view=management#costs');
+    // Management has no layers since ADR-087: a stage opened from one returns
+    // to where that content lives now — the costs to the Costs row of the
+    // decision, the changes to the decision, the rest to Business and IT.
+    const mgmtBack = (layer: string) =>
+      workspaceBackHref({ projectId: 'p-1', search: `?view=management&from=workspace-tools&layer=${layer}` });
+    expect(mgmtBack('costs')).toBe('/project/p-1?view=management#decision-rests-on-cost');
+    expect(mgmtBack('changes')).toBe('/project/p-1?view=management#decision-card');
+    expect(mgmtBack('need')).toBe('/project/p-1?view=business#process-map');
+    expect(mgmtBack('standard')).toBe('/project/p-1?view=business#standard');
+    expect(mgmtBack('architecture')).toBe('/project/p-1?view=it#it-objects');
+    expect(mgmtBack('evidence')).toBe('/project/p-1?view=it#it-trust');
+    expect(stageBackPlace('?view=management&layer=costs')).toBe('Management view, Costs');
+    expect(stageBackPlace('?view=management&layer=architecture')).toBe('IT view, Objects & dependencies');
     // Business has no Need & process since ADR-080: a link from before it
     // returns to the map, and says so.
     const old = '?view=business&from=workspace-tools&layer=need';
@@ -82,7 +98,9 @@ test.describe('the way back names the view and the layer', () => {
     expect(href).toBe('/demo/tco?view=it&from=workspace-tools&layer=costs');
     // IT has no Costs section since ADR-086: back to the control it left by.
     expect(demoWorkspaceBackHref(href.slice(href.indexOf('?')))).toBe('/demo/workspace?view=it#workspace-tools');
-    expect(demoWorkspaceBackHref('?view=management&layer=costs')).toBe('/demo/workspace?view=management#costs');
+    // Management has no layers since ADR-087; the demo's way back follows the
+    // workspace's rule (the demo's costs card carries the Costs row's address).
+    expect(demoWorkspaceBackHref('?view=management&layer=costs')).toBe('/demo/workspace?view=management#decision-rests-on-cost');
     expect(demoWorkspaceBackHref('?view=it&from=workspace-tools')).toBe('/demo/workspace?view=it#workspace-tools');
     expect(demoWorkspaceBackHref('')).toBe('/demo/workspace');
     expect(demoWorkspaceBackHref('?view=admin&layer=%3Cscript%3E')).toBe('/demo/workspace');

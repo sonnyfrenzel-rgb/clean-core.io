@@ -5,27 +5,27 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import { wt } from '@/lib/workspace-messages';
 
 /**
- * One named fold under the Management answer — "Evidence", "Costs",
- * "Process" (owner 03.10.2026: "an enormous number of boxes
- * … at the start the user cannot grasp it"; ADR-037 "show less, lose nothing").
+ * The one named fold under the Management answer — "Evidence": every object
+ * per bucket and the open questions (ADR-087; owner 03.10.2026: "an enormous
+ * number of boxes … at the start the user cannot grasp it"; ADR-037 "show
+ * less, lose nothing"). The "Costs" and "Process" folds are gone: the costs are
+ * a row of the decision, the process is the Business view's.
  *
- * Collapsed by default. The reader's choice is remembered **in this browser
- * only** (`localStorage`, like the density and the coach marks — ADR-036): it
- * is interface state, never written to the project, a run or an account. A
- * browser that refuses storage simply starts folded again.
+ * **Always starts closed** (owner decision 10.10.2026). It used to remember an
+ * opened fold in this browser (ADR-036), so a fold opened once stood open on
+ * every later visit — and the first screen was no longer the first screen.
+ * Nothing about it is stored anywhere now. A link to anything inside it
+ * ("Every object, with its evidence", `#not-determined`) still opens it and
+ * scrolls to the target.
  *
  * The children stay mounted while folded (`CcDisclosure` hides, it does not
  * unmount), so what they read keeps loading and a printed page still shows
  * them (§7.1).
  */
-const KEY = 'cc.management.fold.';
-
-export type ManagementFoldId = 'evidence' | 'costs' | 'process';
+export type ManagementFoldId = 'evidence';
 
 const TITLE: Record<ManagementFoldId, Parameters<typeof wt>[0]> = {
   evidence: 'mgmtFold.evidence',
-  costs: 'mgmtFold.costs',
-  process: 'mgmtFold.process',
 };
 
 export default function ManagementFold({
@@ -44,13 +44,8 @@ export default function ManagementFold({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem(KEY + id) === 'open') setOpen(true);
-    } catch {
-      // Storage refused (a private window, blocked site data): start folded.
-    }
-    // A link to the fold, or to anything inside it ("Every object, with its
-    // evidence", "#decision-card"), opens it and then scrolls to the target.
+    // A link to the fold, or to anything inside it, opens it and then scrolls
+    // to the target.
     const fromHash = () => {
       const hash = window.location.hash.slice(1);
       if (!hash) return;
@@ -64,16 +59,6 @@ export default function ManagementFold({
     return () => window.removeEventListener('hashchange', fromHash);
   }, [id]);
 
-  const change = (next: boolean) => {
-    setOpen(next);
-    try {
-      if (next) window.localStorage.setItem(KEY + id, 'open');
-      else window.localStorage.removeItem(KEY + id);
-    } catch {
-      // Nothing to remember it in; the fold still works for this visit.
-    }
-  };
-
   return (
     <div
       ref={ref}
@@ -81,7 +66,7 @@ export default function ManagementFold({
       data-management-fold={id}
       className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-2"
     >
-      <CcDisclosure title={wt(TITLE[id])} count={count} summary={summary} level={2} open={open} onOpenChange={change}>
+      <CcDisclosure title={wt(TITLE[id])} count={count} summary={summary} level={2} open={open} onOpenChange={setOpen}>
         <div className="pb-2">{children}</div>
       </CcDisclosure>
     </div>

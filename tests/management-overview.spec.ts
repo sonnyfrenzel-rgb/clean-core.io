@@ -416,6 +416,32 @@ test.describe('(a) one sentence, at most six cards', () => {
     expect(card.match(/setReload\(\(n\) => n \+ 1\);\s*onChanged\?\.\(\);/g)?.length).toBe(2);
   });
 
+  test('the run history holds back the trend only, never the decision (ADR-087)', () => {
+    // The whole answer used to wait for the runs to be read; a slow read held
+    // the decision back. Only the readiness trend needs them.
+    const answers = read('components/workspace/ManagementAnswers.tsx');
+    expect(answers).not.toMatch(/if \(history === undefined\) \{\s*return/);
+    expect(answers).toContain('historyPending={history === undefined}');
+    const component = read('components/workspace/ManagementOverview.tsx');
+    expect(component).toMatch(/historyPending\s*\?\s*\{ state: 'loading', title: overview\.readiness\.title \}/);
+  });
+
+  test('Management renders none of the duplicates the owner dropped (ADR-087) — their models stay', () => {
+    const component = read('components/workspace/ManagementOverview.tsx');
+    // The decision and bucket cards, the levels and blockers cards, the four
+    // figures with the second bucket bar and the phases, the detailed answers.
+    for (const gone of ['data-overview-card="decision"', 'data-overview-card="buckets"', 'data-overview-card="levels"', 'data-overview-card="blockers"', 'ExecutiveEvidence', 'children']) {
+      expect(component, `${gone} is rendered again`).not.toContain(gone);
+    }
+    expect(read('components/workspace/ManagementAnswers.tsx')).not.toContain('data-management-answer');
+    expect(read('components/workspace/ManagementExecutive.tsx')).not.toContain('data-executive-phases');
+    // The models the one-pager and the specs read are still there.
+    const model = read('lib/management-overview.ts');
+    for (const kept of ['export function bucketsCard', 'export function levelsCard', 'export function blockersCard', 'export function decisionOverviewCard']) {
+      expect(model).toContain(kept);
+    }
+  });
+
   test('while the decision is reread, the previous answer is not shown as current', () => {
     // Carried QA finding 89203dfdb3df: after a withdrawal the overview kept
     // the confirmed decision on screen until the new read landed.
@@ -484,106 +510,94 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await signIn(page, ADMIN);
     await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-management-overview]')).toBeVisible({ timeout: 60000 });
-    // The cards stand one action deeper, under the decision panel (§2.11) — in
-    // the "Evidence" fold since 03.10.2026, and within it one more fold.
-    const evidence = page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').first();
-    await evidence.click();
-    await expect(evidence).toHaveAttribute('aria-expanded', 'true');
-    const fold = page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]', {
-      hasText: 'The evidence behind these figures',
-    });
-    await expect(fold).toContainText('The evidence behind these figures');
-    await fold.click();
-    await expect(fold).toHaveAttribute('aria-expanded', 'true');
   }
 
-  test('the decision panel comes first: question, answer, what is in the way, one next step', async ({ page }) => {
+  test('the decision panel comes first: question, answer, what it rests on, one next step — and nothing twice', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await open(page);
     const panel = page.locator('[data-management-executive]');
     await expect(panel.locator('[data-executive-question]')).toContainText('Keep, rebuild, move to SAP standard or retire Z_MGMT_OVERVIEW?');
-    // With a run, the decision record is the panel's hero (owner 03.10.2026):
-    // its headline is the option, and what it rests on stands as four pillars.
+    // With a run, the decision record is the panel's hero (owner 03.10.2026).
+    // The answer names the option once; the card under it does not say it
+    // again (ADR-087) — what it rests on stands as four rows.
     await expect(panel.locator('[data-decision-card][data-decision-status]')).toBeVisible({ timeout: 60000 });
-    await expect(panel.locator('[data-management-headline]')).toHaveText(/No option chosen yet|Rebuild|Retire/);
+    await expect(panel.locator('[data-decision-answer]')).toContainText(/Not decided yet|Rebuild|Retire|Keep|Move to SAP standard/);
+    await expect(panel.locator('[data-decision-headline], [data-decision-why]')).toHaveCount(0);
     await expect(panel.locator('[data-decision-pillar]')).toHaveCount(4);
+    await expect(panel.locator('[data-decision-rests-on-title]')).toHaveText(/^What it rests on: [0-4] of 4 in place$/);
     await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
-    // Beside the decision, fit to standard (ADR-069); the four figures, the
-    // bucket bar of every object and the phases one action deeper, in "Evidence".
+    // Under it the distance to SAP standard, beside it the readiness trend.
     await expect(panel.locator('#standard-fit')).toBeVisible();
-    const evidence = page.locator('[data-executive-evidence]');
-    await expect(evidence.locator('[data-executive-figure]')).toHaveCount(4);
-    const bar = evidence.locator('[data-overview-bar="executive-buckets"]');
-    await expect(bar).toHaveAttribute('role', 'img');
-    await expect(bar).toHaveAttribute('aria-label', /Not assigned \d+/);
-    await expect(evidence.locator('[data-executive-phase]')).toHaveCount(7);
+    await expect(panel.locator('#management-readiness')).toBeVisible();
     await expect(panel, 'an amount of money in the decision panel').not.toContainText(/€|EUR/);
-    // The panel stands above the cards it reads.
-    const [p, c] = await Promise.all([
-      panel.boundingBox(),
-      page.locator('[data-overview-card="decision"]').boundingBox(),
-    ]);
-    expect(p!.y).toBeLessThan(c!.y);
-  });
-
-  test('(b) buckets: a labelled bar per edition, one table, not assigned as its own row', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const card = page.locator('[data-overview-card="buckets"][data-overview-state="ready"]');
-    await expect(card).toBeVisible({ timeout: 60000 });
-    await expect(card.locator('h3')).toContainText('For Private Edition:');
-    for (const platform of ['private', 'public']) {
-      const bar = card.locator(`[data-overview-bar="buckets-${platform}"]`);
-      await expect(bar).toHaveAttribute('role', 'img');
-      await expect(bar).toHaveAttribute('aria-label', /Not assigned \d+/);
+    // What the first screen says is not said again further down (§2.11).
+    for (const gone of ['[data-executive-evidence]', '[data-executive-figure]', '[data-overview-bar="executive-buckets"]', '[data-executive-phase]', '[data-overview-card="decision"]', '[data-overview-card="buckets"]', '[data-overview-card="levels"]', '[data-overview-card="blockers"]', '[data-management-answer]']) {
+      await expect(page.locator(gone), `${gone} is rendered again`).toHaveCount(0);
     }
-    await expect(card.locator('[data-overview-row="not-assigned"]')).toHaveCount(1);
-    await expect(card.locator('[data-overview-coverage]')).toContainText('objects named in the staged source');
-    await expect(card, 'an amount of money on the overview').not.toContainText(/€|EUR/);
+    // One "Open Economics" link under the options, not one per card.
+    await expect(panel.locator('[data-option-open-economics]')).toHaveCount(0);
+    await expect(panel.locator('[data-options-compare-economics]')).toHaveCount(1);
   });
 
-  test('(c) score history: two points on one rule version, the older version named as a break', async ({ page }) => {
+  test('the Evidence fold holds every object per bucket and the open questions — nothing else', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await open(page);
-    const card = page.locator('[data-overview-card="readiness"]');
+    const fold = page.locator('[data-management-fold="evidence"]');
+    await expect(fold.locator('> [data-cc-disclosure="closed"]')).toHaveCount(1);
+    await fold.locator('[data-cc-disclosure-trigger]').first().click();
+    await expect(fold.locator('#public-cloud-fit')).toBeVisible({ timeout: 60000 });
+    await expect(fold.locator('#not-determined')).toBeAttached();
+    // No second bucket bar, no figures, no phases, no source cards.
+    await expect(fold.locator('[data-overview-bar], [data-overview-card], [data-executive-figure]')).toHaveCount(0);
+    await expect(fold, 'an amount of money in the Evidence fold').not.toContainText(/€|EUR/);
+  });
+
+  test('(c) score history on the first screen: two points on one rule version, the older version named as a break', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await open(page);
+    const card = page.locator('#management-readiness [data-overview-card="readiness"]');
     await expect(card.locator('h3')).toHaveText('Clean Core Score 58, up from 42 with the same rules', { timeout: 60000 });
+    // Not one action deeper any more (mockup s5): never inside a fold.
+    expect(await card.evaluate((el) => Boolean(el.closest('[data-management-fold]')))).toBe(false);
     await expect(card.locator('[data-overview-trend]')).toHaveAttribute('aria-label', /42 on 2026-05-20, 58 on 2026-09-09/);
     await expect(card.locator('[data-overview-breaks]')).toContainText('cat-2026-01');
     await expect(card.locator('[data-overview-not-determined="readiness"]')).toBeVisible();
     await expect(card).toContainText('A grade, not a compliance percentage');
   });
 
-  test('(d) levels: state colours with letters, Unknown as a dashed not-determined area', async ({ page }) => {
+  test('(e) what stands in the way: the objects by name, and what else blocks it, each with its evidence', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await open(page);
-    const card = page.locator('[data-overview-card="levels"][data-overview-state="ready"]');
-    await expect(card).toBeVisible({ timeout: 60000 });
-    await expect(card.locator('[data-overview-bar="levels"]')).toHaveAttribute('aria-label', /Level A \d+, Level B \d+, Level C \d+, Level D \d+, Not determined \d+/);
-    for (const key of ['A', 'B', 'C', 'D', 'Unknown']) await expect(card.locator(`[data-overview-row="${key}"]`)).toHaveCount(1);
-    const nd = card.locator('[data-overview-row="Unknown"] [data-chart-swatch]');
-    expect(await nd.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed');
-  });
-
-  test('(e) blockers: an ordered list, evidence on every line', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const card = page.locator('[data-overview-card="blockers"][data-overview-state="ready"]');
-    await expect(card).toBeVisible({ timeout: 60000 });
-    const items = card.locator('[data-overview-blockers] > li');
-    const n = await items.count();
-    for (let i = 0; i < Math.min(n, 5); i++) {
-      await expect(items.nth(i)).toContainText(`${i + 1}.`);
-      await expect(items.nth(i).locator('p')).not.toBeEmpty();
+    const list = page.locator('#standard-fit [data-standard-fit-list="blocks"]');
+    await expect(list).toBeVisible({ timeout: 60000 });
+    for (const row of await list.locator('[data-standard-fit-blocker]').all()) {
+      await expect(row.locator('[data-provenance]').first()).toBeVisible();
+      await expect(row).not.toBeEmpty();
     }
   });
 
-  test('(f) decision: what is open and what it waits for, with a way to the card', async ({ page }) => {
+  test('(f) the decision: what it rests on is one list, every open condition under its foundation', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await open(page);
-    const card = page.locator('[data-overview-card="decision"][data-overview-state="ready"]');
+    const card = page.locator('[data-decision-card][data-decision-status]');
     await expect(card).toBeVisible({ timeout: 60000 });
-    await expect(card.locator('h3')).toContainText(/One decision open \(DEC-1\)|Decision DEC-1/);
-    await expect(card.locator('a[href="#decision-card"]')).toBeVisible();
+    // Every condition stands under one of the four rows (or the account's own row).
+    const conditions = card.locator('[data-decision-condition]');
+    for (const c of await conditions.all()) {
+      expect(await c.evaluate((el) => Boolean(el.closest('[data-decision-pillar], [data-decision-other]')))).toBe(true);
+    }
+    // The limits nobody here can close: one muted folded line under the contract.
+    const limits = card.locator('[data-decision-limits]');
+    for (const l of await limits.all()) {
+      expect(await l.evaluate((el) => Boolean(el.closest('[data-decision-pillar="contract"]')))).toBe(true);
+      await expect(l.locator('[data-cc-disclosure="closed"]')).toHaveCount(1);
+    }
+    // The need's open rules and decision points are said once — in the Need row.
+    await expect(card.getByText(/still needs? a business answer/)).toHaveCount(0);
+    // Each row has one action of its own.
+    for (const key of ['need', 'option', 'cost', 'contract']) {
+      await expect(card.locator(`[data-decision-pillar="${key}"] [data-decision-pillar-action]`)).toHaveCount(1);
+    }
   });
 
   test('forced colours and print keep every chart readable', async ({ browser }) => {
@@ -591,7 +605,7 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     const context = await browser.newContext({ forcedColors: 'active' });
     const page = await context.newPage();
     await open(page);
-    const seg = page.locator('[data-overview-bar="levels"] [data-chart-segment]').first();
+    const seg = page.locator('[data-overview-bar="standard-fit"] [data-chart-segment]').first();
     await expect(seg).toBeVisible({ timeout: 60000 });
     expect(await seg.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('solid');
     await page.emulateMedia({ media: 'print' });
@@ -599,7 +613,7 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     // never the screen's cards: the chart is not on paper at all, rather than
     // on paper without its fills. The sheet is what prints.
     await expect(page.locator('[data-workspace-print]')).toBeVisible();
-    await expect(page.locator('[data-overview-card="levels"]')).toBeHidden();
+    await expect(page.locator('[data-overview-card="readiness"]')).toBeHidden();
     await context.close();
   });
 });

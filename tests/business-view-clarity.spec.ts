@@ -528,6 +528,55 @@ test.describe('the Business view on screen', () => {
     expect(overflowEditing, 'the answering screen scrolls sideways on a phone').toBeLessThanOrEqual(1);
     await context.close();
   });
+
+  /**
+   * QA 59842baa5efe: the fix of 6eaa3be7e7ad (288cf863) in the browser, with a
+   * frame of the follow pending at the moment the hash leaves the map.
+   *
+   * No window to hit: the page is moved off the map every frame, so the follow
+   * has something to correct on every frame and keeps requesting the next one
+   * (it ends only after half a second without a move). That it is alive is
+   * proven, not assumed — it must pull the page back three times. Then, inside
+   * the same frame callback, the hash leaves and the page goes to the top once
+   * more; the frame the follow already requested would pull it back on the very
+   * next frame, so every later frame is sampled and none may move the page.
+   */
+  test('the map follow stops when the hash leaves the map while a frame is pending (QA 59842baa5efe)', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await withoutTips(page);
+    await signInThroughForm(page, account);
+    await open(page, ids.po);
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    // The map has drawn and written its own address before the probe starts.
+    await expect(page.locator('[data-workspace-process="ready"] [data-process-map-canvas]').first()).toBeVisible({ timeout: 90_000 });
+    const result = await page.evaluate(async (mapId) => {
+      const frame = () => new Promise<number>((resolve) => window.requestAnimationFrame(resolve));
+      const elsewhere = 'reader-moved-on';
+      if (document.getElementById(elsewhere)) return { error: `an element #${elsewhere} exists`, pulledBack: 0, after: [] as number[], hash: '' };
+      window.location.hash = `#${mapId}`;
+      let pulledBack = 0;
+      for (let i = 0; i < 120 && pulledBack < 3; i++) {
+        window.scrollTo(0, 0);
+        await frame();
+        await frame();
+        if (window.scrollY > 0) pulledBack++;
+      }
+      // The follow corrected the last move and requested its next frame.
+      window.location.hash = `#${elsewhere}`;
+      window.scrollTo(0, 0);
+      const after: number[] = [];
+      for (let i = 0; i < 40; i++) {
+        await frame();
+        after.push(window.scrollY);
+      }
+      return { error: null, pulledBack, after, hash: window.location.hash };
+    }, BUSINESS_MAP_ID);
+    expect(result.error, 'the probe could not run').toBeNull();
+    expect(result.pulledBack, 'the follow was not running when the hash changed — the test would prove nothing').toBe(3);
+    expect(Math.max(...result.after), 'the follow pulled the page back to the map after the hash left it').toBe(0);
+    expect(result.hash, 'the hash went back to the map').not.toBe(`#${BUSINESS_MAP_ID}`);
+  });
 });
 
 test('the map follow stops as soon as the hash leaves the map (QA 6eaa3be7e7ad)', () => {

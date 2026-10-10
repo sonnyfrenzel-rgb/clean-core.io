@@ -51,13 +51,16 @@ test('no interface code says the ambiguous "Back to workspace" any more', () => 
 });
 
 test('a stage names the project and the view it returns to', () => {
-  expect(stageBackLabel({ projectName: 'Order limit check', search: '?view=management&layer=need' })).toEqual({
+  expect(stageBackLabel({ projectName: 'Order limit check', search: '?view=business&layer=evidence' })).toEqual({
     lead: 'Back to project workspace',
     project: 'Order limit check',
-    place: 'Management view, Need & process',
+    place: 'Business view, Evidence & controls',
   });
-  // IT has no layers since ADR-086: the way back names where the content is now.
+  // IT has no layers since ADR-086, Management none since ADR-087: the way
+  // back names where the content is now.
   expect(stageBackLabel({ projectName: 'Order limit check', search: '?view=it&layer=need' }).place).toBe('Business view, Process map');
+  expect(stageBackLabel({ projectName: 'Order limit check', search: '?view=management&layer=need' }).place).toBe('Business view, Process map');
+  expect(stageBackLabel({ projectName: 'Order limit check', search: '?view=management&layer=changes' }).place).toBe('Management view, Decision');
   // Nothing read yet, nothing in the address: the lead alone, never a guess.
   expect(stageBackLabel({ projectName: '  ', search: '' })).toEqual({
     lead: 'Back to project workspace',

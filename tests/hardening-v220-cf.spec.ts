@@ -119,8 +119,9 @@ test.describe('credentials quoted from the source', () => {
     const source = [
       'REPORT zdemo.',
       "DATA lv_url TYPE string VALUE 'HTTPS://svc:s3cr3tpass@host.example/x?password=hunter2'.",
-      `CALL TRANSACTION '${google}'.`,
-      `CALL TRANSACTION '${aws}'.`,
+      // USING: a batch input; without it the 3.0.7 engine reads GUI navigation (dynpro).
+      `CALL TRANSACTION '${google}' USING lt_bdc.`,
+      `CALL TRANSACTION '${aws}' USING lt_bdc.`,
       `CALL FUNCTION 'Z_REMOTE' DESTINATION '${jwt}'.`,
     ].join('\n');
     const report = buildAbapEvidence(source, 'zdemo.abap');

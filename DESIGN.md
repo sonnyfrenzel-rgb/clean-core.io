@@ -270,11 +270,17 @@ From top to bottom:
    next carries a "Next" tag, and the line under the bar says which tool is next and what it does, beside the legend
    (ADR-060, 03.10.2026, 04.10.2026).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
-   dependencies · Evidence & controls · Changes & commitments. Every layer is a tab, the filled ones first; an empty
-   one stays a tab, muted and marked "empty", and says in its section what is missing — there is no "More" menu
-   (owner, 03.10.2026: "no recognisable menu"; §2.11). Business shows Standard fit and Evidence & controls only: its
-   process is the map and the rules card on the page itself, and a `#need` link there lands on the map (ADR-080).
-   Management shows all six, in its "Process" fold. **IT has no layers** (ADR-086): its own anchor bar jumps within
+   dependencies · Evidence & controls (*Changes & commitments* is no layer since ADR-087: it held a hard-coded
+   "empty" beside a decision with a timeline; `#changes` leads to that decision). Every layer is a tab, the filled
+   ones first; an empty one stays a tab, muted and marked "empty", and says in its section what is missing — there
+   is no "More" menu (owner, 03.10.2026: "no recognisable menu"; §2.11). **Only Business shows layers**, and of them
+   Standard fit and Evidence & controls only: its process is the map and the rules card on the page itself, and a
+   `#need` link there lands on the map (ADR-080). **Management has no layer bar and no anchor bar** (ADR-087): its
+   page is the decision, the distance to SAP standard beside the readiness trend, one "Evidence" fold and one quiet
+   row of links out (§2.11), shorter than an anchor bar would be worth. A layer address in Management goes where
+   that content lives now: Need & process and Standard fit to Business (`#process-map`, `#standard`), Architecture
+   and Evidence to IT (`#it-objects`, `#it-trust`), Costs to the Costs row of the decision (`#decision-rests-on-cost`;
+   the Economics tool without a signed run), Changes to the decision (`#decision-card`). **IT has no layers** (ADR-086): its own anchor bar jumps within
    the page to IT's own sections, in the page's order — **Findings · Objects & dependencies · Open questions · Route ·
    Run & trust** — each with what is in it (a count, the contract id and status, "signed"); a section with nothing in
    it has no anchor, never an "empty" chip, except Open questions, whose "none" is an answer. A layer address in IT
@@ -307,7 +313,7 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 | Element | Does | Does not | Start | Held in |
 |---|---|---|---|---|
 | **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
-| **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086) | does not switch the view | Business: first of its layers with content; IT: the answer at the top | URL fragment (`#need`, `#it-objects`) |
+| **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086); Management has none (ADR-087) | does not switch the view | Business: first of its layers with content; IT and Management: the answer at the top | URL fragment (`#standard`, `#it-objects`) |
 | **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks whether the tool has been used in this project, or is out of date (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
 
 **The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
@@ -444,7 +450,21 @@ For first-time users less is more — the depth stays, it just does not come fir
   layers and no "empty" chip at all: its own anchor bar names only sections that hold something (ADR-086).
 - **One home per view.** A view shows the content that answers its question and links to the rest in one quiet row,
   never a second copy: IT ends in "Process & rules → Business · Standard fit → Business · Costs → Economics · Decision
-  → Management", and shows neither the first look nor "Ask this case", which are Business's (ADR-086).
+  → Management", and shows neither the first look nor "Ask this case", which are Business's (ADR-086). Management
+  ends in "Process & rules → Business · Objects & dependencies → IT · Costs → Economics · Evidence & audit pack →
+  Delivery", and shows neither the layers nor the first look nor the rules editor; its process is one line in the
+  decision's Need row (ADR-087).
+- **Each fact once in Management** (ADR-087). The option is named once — the answer at the top of the decision
+  card, with who chose or confirmed it; the record below does not repeat it as a headline. The four foundations and
+  the open conditions are **one list**, "What it rests on: n of 4 in place": one row per foundation (Need, Option,
+  Costs, Architecture contract) with its state, one line and one action, the conditions nested under the row they
+  belong to (the need's open rules are the Need row's own line, not a second condition), and the limits nobody here
+  can close as one muted folded line under the contract. One "Compare in Economics" link under the four options,
+  not one per card; one steering one-pager button, at the top of the decision card (and in the Export menu). The
+  four detailed answers, the decision and bucket cards, the four figures, the second bucket bar and the evidence
+  per phase are not rendered — each repeated a number the first screen or the header already says; their models
+  stay. Management's one fold, "Evidence", holds every object per bucket and the open questions, and always starts
+  closed — no fold remembers its open state.
 - **Tables** show the first five rows and "Show all 42"; filters appear from ten rows.
 - **Legends only on demand.** A "Legend" button instead of a permanent row of chips; open once on the first visit.
 - **Side column:** at most two cards; further ones under "More about this process". IT's side column has three —
@@ -670,7 +690,7 @@ and the end state never waits for a model — the map's place says what is still
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, the open questions in one line (§5.1, ADR-081).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
-- **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (IT, Management, a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map.
+- **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map. IT and Management show no first look (ADR-086, ADR-087): the process is Business's, and they link to it.
 - **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
 - **The way back** (ADR-072): "← My workspace" above the title of the object page, at every width.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
@@ -688,7 +708,7 @@ and the end state never waits for a model — the map's place says what is still
 |---|---|---|
 | **Business** | Do I still need this, and what changes for me? | Process, business rules (hidden ones too), standard fit with scope item ID, Not determined |
 | **IT** | What exactly, where to, and is it right? | Findings with line and both catalog views, successor API, chain object → meaning → decision → target, architecture contract |
-| **Management** | What do I risk, what do I decide? | The question *Keep, rebuild, move to SAP standard or retire?* as the heading, the answer naming the option with who chose it, the one next action, and **the four options side by side** — what the evidence says for each, effort in days and cost as *Simulation* (ADR-079) — over the decision record; under it the **distance to SAP standard** on the target edition with the other edition in one line (ADR-069, renamed by ADR-079: one figure, the SAP objects across the four buckets, what stands in the way and what has a path to SAP standard, by name); readiness with rule version and history, the four buckets per object (Retire · Keep · Rebuild · No catalogued path), the open decision and costs only as *Simulation* in folds below |
+| **Management** | What do I risk, what do I decide? | The question *Keep, rebuild, move to SAP standard or retire?* as the heading, the answer naming the option with who chose it, the one next action, and **the four options side by side** — what the evidence says for each, effort in days and cost as *Simulation* (ADR-079) — over the decision record; under it the **distance to SAP standard** on the target edition with the other edition in one line (ADR-069, renamed by ADR-079: one figure, the SAP objects across the four buckets, what stands in the way and what has a path to SAP standard, by name) and beside it **readiness with rule version and history** (mockup s5, ADR-087); in one fold below, the four buckets per object (Retire · Keep · Rebuild · No catalogued path) and the open questions; costs only as *Simulation*, as a row of what the decision rests on, the amounts in Economics |
 
 The chain **object → meaning → decision → target → status** can be clicked through in every view, and every number states
 its coverage ("42 findings in 907 of 907 lines · 2 includes not read"). On S the chain is a list
@@ -1131,6 +1151,9 @@ Sonny 15.09.2026):
 - Chips print **word and icon** (icons monochrome), states remain distinguishable without colour.
 - Anchors and IDs are printed as text; links with the target in parentheses, where it is not an anchor.
 - No breaks in the middle of a card or table row.
+- **The steering one-pager** is the one exception (ADR-088): one A4 landscape sheet with a page margin of 0 (no
+  browser header or footer), colour kept with token colours only, links as plain text, raw ids only in the footer's
+  reference line.
 
 ---
 
@@ -1159,6 +1182,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.10 | 10.10.2026 | The Management view shows only its own content (ADR-087, owner 10.10.2026, amending ADR-018, ADR-069 and ADR-080): no layer bar and no anchor bar; the decision, the distance to SAP standard with the readiness trend beside it, one Evidence fold that always starts closed, one row of links out; the four foundations and the open conditions one list; each fact once; layer addresses in Management go where the content lives now; Changes & commitments is no layer (§2.3 item 4, the navigation table, §2.11, §5.5, §5.6). The steering one-pager prints as one A4 landscape sheet without browser header or footer (ADR-088, §7.1) |
 | 1.8.9 | 10.10.2026 | The IT view shows only its own content (ADR-086, owner 10.10.2026, amending ADR-018): no layer bar but its own anchor bar over Findings · Objects & dependencies · Open questions · Route · Run & trust, never an "empty" chip; "What the code uses" and the Architecture layer are one table, Objects & dependencies; the Evidence layer is a compact Run & trust card in the side column; the first look, "Ask this case" and Changes & commitments leave IT; one quiet row of links out to Business, Economics and Management; layer addresses in IT go where the content lives now (§2.3 item 4, §2.11). Written back: since 03.10.2026 every layer is a tab, an empty one marked "empty" — there is no "More" menu (§2.3 item 4, §2.11) |
 | 1.8.8 | 09.10.2026 | Need & process leaves the Business view, which opens on its map with the usage records beside it (ADR-080); *Not determined* becomes one list of open questions per project, grouped by the action that resolves each, and one line everywhere else (ADR-081, §5.5, §6.1) |
 | 1.8.7 | 04.10.2026 | The requirements of the Design tool are one module with a workspace of its own (ADR-078, owner 04.10.2026): a card on Design, the specification as one document with decisions, full text and exports; the requirement status as a fixed list of its own (§4.1) |

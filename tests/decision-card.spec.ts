@@ -800,6 +800,44 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     );
   });
 
+  test('pillars and conditions are one list: every condition under its foundation, the need said once (ADR-087)', () => {
+    const { draft } = deriveDecisionDraft(facts({ need: { revision: null, confirmedDrops: 0, undecided: 25, open: { rules: 12, decisions: 13 } } }));
+    const m = decisionManagerView(draft);
+    expect(m.foundations.map((f) => f.pillar.key)).toEqual(['need', 'option', 'cost', 'contract']);
+    // The need's open rules and decision points are the Need row's own line:
+    // the condition is not listed under it again, and its place is the row's action.
+    const need = m.foundations[0];
+    expect(need.points.some((p) => p.source === 'need-open')).toBe(false);
+    expect(need.pillar.line).toBe('Not confirmed yet: 12 rules and 13 decision points have no business answer.');
+    expect(need.pillar.place).toEqual({ kind: 'view', view: 'business', hash: 'business-rules', action: 'Decide on 12 rules' });
+    // Every other condition stands exactly once, under the row it belongs to.
+    const placed = [...m.foundations.flatMap((f) => [...f.points, ...f.limits]), ...m.other].map((p) => p.id).sort();
+    expect(placed).toEqual(m.points.filter((p) => p.source !== 'need-open').map((p) => p.id).sort());
+    for (const f of m.foundations) {
+      for (const p of [...f.points, ...f.limits]) if (p.source !== 'account') expect(f.pillar.key).toBe(p.source === 'cost-gap' ? 'cost' : 'contract');
+      // The limits nobody here can close stand under the contract only, apart from the tasks.
+      for (const l of f.limits) expect([f.pillar.key, l.kind, l.done]).toEqual(['contract', 'limit', false]);
+    }
+    expect(m.inPlace).toBe(m.pillars.filter((p) => p.inPlace).length);
+    // Presentation only: the record's conditions, counts and readiness are what they were.
+    expect(m.points).toHaveLength(draft.conditions.length);
+    expect(m.todo + m.limits).toBe(m.openPoints);
+  });
+
+  test('the option is the account’s choice in Management (ADR-083); Design only as the separate fact it is', () => {
+    const m = decisionManagerView(deriveDecisionDraft(facts()).draft);
+    const option = m.pillars.find((p) => p.key === 'option')!;
+    expect(option.line).toBe(
+      'Rebuild as In-App ABAP Cloud (RAP), as chosen by your account. Its target architecture is signed off in Design.',
+    );
+    expect(option.line).not.toMatch(/as signed off in Design/);
+    expect(option.place).toEqual({ kind: 'view', view: 'management' });
+    expect(m.why).toMatch(/^Chosen by your account; [0-4] of the 4 foundations below are in place\.$/);
+    expect(decisionManagerView(deriveDecisionDraft(facts({ signedOffArchitecture: null })).draft).why).toBe(
+      'Choose one of the four options above.',
+    );
+  });
+
   test('unassessed code is one count in the line, the constructs with their first line behind it', () => {
     const subject =
       '3 × local function-module call (from line 165), 2 × include whose source was not uploaded (from line 470), 1 × dynamic call or field access (from line 502), 2 × classic list output (from line 658)';

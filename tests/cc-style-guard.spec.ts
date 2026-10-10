@@ -250,6 +250,9 @@ const PROPS_ONLY_SURFACES: string[] = [
   'components/workspace/MetaLine.tsx',
   // The canvas: its name and its badges arrive as props from ProcessMap and BpmnEditor.
   'components/process-map/BpmnCanvas.tsx',
+  // The Management answers: since ADR-087 a frame that reads the run history
+  // and hands everything to the overview; it writes no text of its own.
+  'components/workspace/ManagementAnswers.tsx',
 ];
 
 test.describe('the new surfaces speak from the catalogue too (D.29)', () => {

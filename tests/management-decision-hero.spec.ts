@@ -16,8 +16,12 @@ import { signInViaLanding } from './helpers/sign-in';
  *
  *   - the decision card is the hero of the first card, not inside a fold;
  *   - there is exactly one decision card;
- *   - its four pillars (need, option, costs, architecture contract) render,
- *     each with a provenance chip;
+ *   - its four foundations (need, option, costs, architecture contract) render
+ *     as one list "What it rests on: n of 4 in place", each with a provenance
+ *     chip and one action of its own, the open conditions nested under them
+ *     (ADR-087);
+ *   - the answer names the option once, at the top; the card does not repeat
+ *     it as a headline;
  *   - no visible text in Management names a source file of this product —
  *     not even with the technical fold open;
  *   - nothing scrolls sideways at 390 px.
@@ -98,22 +102,28 @@ test.describe('Management: the decision first, prominent and plain', () => {
       expect((await fold.boundingBox())!.y).toBeGreaterThan(cardBox.y);
     }
 
-    // The headline in big type, with the status beside it.
-    await expect(card.locator('[data-decision-headline]')).not.toBeEmpty();
-    await expect(card.locator('[data-decision-state] [data-cc-object-status]').first()).toBeVisible();
+    // The answer names the option once, at the top of the card (ADR-087); the
+    // record row keeps its status, and no second headline repeats the answer.
+    await expect(page.locator('[data-executive-decision] [data-decision-answer]')).not.toBeEmpty();
+    await expect(card.locator('[data-decision-headline], [data-decision-why]')).toHaveCount(0);
+    await expect(card.locator('[data-decision-record] [data-decision-state] [data-cc-object-status]').first()).toBeVisible();
+    // Who confirmed is said once, beside the answer — never a second line in the card.
+    await expect(card.locator('[data-decision-confirmed-by]')).toHaveCount(0);
 
-    // Four pillars, each with a state chip and one line.
+    // Four foundations in one list, each with a state chip, one line and one action.
+    await expect(card.locator('[data-decision-rests-on-title]')).toHaveText(/^What it rests on: [0-4] of 4 in place$/);
     const pillars = card.locator('[data-decision-pillar]');
     await expect(pillars).toHaveCount(4);
     for (const key of ['need', 'option', 'cost', 'contract']) {
       const pillar = card.locator(`[data-decision-pillar="${key}"]`);
       await expect(pillar.locator('[data-provenance]').first()).toBeVisible();
-      await expect(pillar.locator('a[href]')).toHaveCount(1);
+      await expect(pillar.locator('[data-decision-pillar-action][href]')).toHaveCount(1);
     }
     // Green belongs to proven: no pillar of a decision claims it.
     await expect(card.locator('[data-decision-pillar] [data-provenance="proven"]')).toHaveCount(0);
-    // The run keeps its provenance chip; the self-declaration stays.
-    await expect(card.locator('[data-decision-binding="run"] [data-provenance]')).toHaveCount(1);
+    // The run keeps its provenance chip (in the technical fold, an auditor's
+    // fact); the self-declaration stays.
+    await expect(card.locator('[data-decision-technical] [data-decision-binding="run"] [data-provenance]')).toHaveCount(1);
     await expect(card.locator('[data-decision-self-declaration]')).toContainText('self-declaration');
   });
 
@@ -139,11 +149,11 @@ test.describe('Management: the decision first, prominent and plain', () => {
     await open(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'Management scrolls sideways at 390 px').toBeLessThanOrEqual(0);
-    // The pillars form a grid of at most two columns.
+    // The foundations are one list: one column, rows under each other.
     const xs = await page.locator('[data-decision-pillar]').evaluateAll((els) =>
       [...new Set(els.map((el) => Math.round(el.getBoundingClientRect().x)))],
     );
-    expect(xs.length).toBeLessThanOrEqual(2);
+    expect(xs.length).toBe(1);
     // The decision stands above fit to standard.
     const [d, f] = await Promise.all([
       page.locator('[data-executive-decision]').boundingBox(),

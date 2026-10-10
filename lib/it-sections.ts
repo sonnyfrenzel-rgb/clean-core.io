@@ -10,8 +10,9 @@ import type { Project } from './types';
  * dependencies → Open questions** in the main column and **target profile
  * (with imports) → Route & contract → Run & trust** in the side column. The
  * anchor bar mirrors that order and jumps within the page; a section with
- * nothing in it has no anchor — never an "empty" chip. Business and
- * Management keep the six layers.
+ * nothing in it has no anchor — never an "empty" chip. Business keeps two
+ * layers (ADR-080); Management has none since ADR-087
+ * (`lib/management-sections.ts`).
  *
  * Like a layer, the place is held in the URL fragment and nowhere else: the
  * view is a lens, never stored on a project, run or pack.

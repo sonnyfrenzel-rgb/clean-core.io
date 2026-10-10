@@ -264,20 +264,6 @@ function bpmnProbe(page: Page, name: string): MapProbe {
   };
 }
 
-function flowProbe(page: Page): MapProbe {
-  const surface = page.locator('.react-flow').first();
-  return {
-    name: 'legacy documentation flow (@xyflow)',
-    surface,
-    read: () =>
-      surface.evaluate((el) => {
-        const vp = el.querySelector('.react-flow__viewport') as HTMLElement | null;
-        const m = vp ? new DOMMatrix(getComputedStyle(vp).transform) : new DOMMatrix();
-        return { scale: m.a, x: m.e, y: m.f };
-      }),
-  };
-}
-
 function designProbe(page: Page): MapProbe {
   const surface = page.locator('[data-canvas-scroll]').first();
   return {
@@ -519,7 +505,7 @@ test.describe('phone: every map moves under a finger', () => {
     expect(broken).toEqual([]);
   });
 
-  test('a signed project: the workspace map, the Documentation map and a legacy blueprint flow', async ({ page, context }) => {
+  test('a signed project: the workspace map, the Documentation map, and a legacy blueprint as one strip', async ({ page, context }) => {
     test.setTimeout(420 * 1000);
     if (!acct) await seed();
     await signIn(page);
@@ -539,15 +525,13 @@ test.describe('phone: every map moves under a finger', () => {
     broken.push(...(await exerciseTouch(page, cdp, bpmnProbe(page, 'project documentation map'))));
     broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'project documentation map controls')));
 
+    // Roadmap 3.0.7 (ADR-082): a legacy blueprint is no longer drawn — no flow
+    // to move under a finger, one strip instead. What a finger needs there is
+    // its two buttons, at a size it can hit.
     await page.goto(`/project/${legacyProjectId}/documentation`, { waitUntil: 'domcontentloaded' });
-    const flow = flowProbe(page);
-    const shown = await flow.surface.waitFor({ state: 'visible', timeout: 60000 }).then(() => true, () => false);
-    if (shown) {
-      broken.push(...(await exerciseTouch(page, cdp, flow)));
-      broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'legacy flow controls')));
-    } else {
-      broken.push('legacy documentation flow: not rendered for the legacy blueprint fixture');
-    }
+    await expect(page.locator('[data-legacy-blueprint]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-legacy-blueprint] .react-flow')).toHaveCount(0);
+    broken.push(...(await smallTargets(page.locator('[data-legacy-blueprint] button'), 'legacy blueprint strip')));
 
     console.log(`[mobile-responsive] project maps:\n${broken.join('\n') || '(none)'}`);
     expect(broken).toEqual([]);

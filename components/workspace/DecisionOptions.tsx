@@ -126,14 +126,6 @@ function Card({
       <div className="mt-3 grid gap-3 border-t border-cc-line pt-3">
         <Figure title={wt('decide.effort')} figure={card.effort} hook="effort" />
         <Figure title={wt('decide.cost')} figure={card.cost} hook="cost" />
-        {/* ADR-022: an amount is shown here only as a takeover, with the way to where it arises. */}
-        <a
-          href={hrefFor('tco')}
-          data-option-open-economics=""
-          className="text-[12px] font-semibold text-cc-ink underline underline-offset-2"
-        >
-          {wt('decide.openEconomics')}
-        </a>
       </div>
 
       <div className="mt-auto pt-3">{action}</div>
@@ -270,6 +262,17 @@ export default function DecisionOptions({
           <Card key={card.option} card={card} hrefFor={hrefFor} action={actionFor(card)} />
         ))}
       </ul>
+      {/* ADR-022: an amount is shown here only as a takeover, with the way to
+          where it arises — one link under the four, not one per card (ADR-087). */}
+      <p className="m-0 mt-2">
+        <a
+          href={`${hrefFor('tco')}#economics-compare`}
+          data-options-compare-economics=""
+          className="text-[12px] font-semibold text-cc-ink underline underline-offset-2"
+        >
+          {wt('decide.compareEconomics')}
+        </a>
+      </p>
       {blockedWhy ? (
         <p data-decision-options-blocked="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
           {blockedWhy}

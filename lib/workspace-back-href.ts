@@ -1,8 +1,9 @@
-import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey, type WorkspaceView } from '@/lib/workspace-model';
+import { isWorkspaceView, LAYER_ADDRESSES, VIEW_LABELS, type LayerKey, type WorkspaceView } from '@/lib/workspace-model';
 import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { nav, navViewLabel } from '@/lib/messages/navigation';
 import { BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, IT_SECTION_IDS } from '@/lib/it-sections';
+import { MANAGEMENT_IDS, MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -44,14 +45,15 @@ function backTo(workspace: string, search: string): string {
   // the toolbar of another layer would lose the place the reader was reading.
   // *Need & process* is not a section of Business since ADR-080: a stage
   // opened from it there (a link from before 3.0.6) returns to the map, which
-  // is where the process stands in that view. IT has no layers since ADR-086:
-  // a layer it was opened from returns to where that content lives now.
+  // is where the process stands in that view. IT has no layers since ADR-086,
+  // Management none since ADR-087: a layer either was opened from returns to
+  // where that content lives now.
   const home = layer ? layerHome(asked, layer) : null;
   const view = home ? home.view : asked;
   const query = isWorkspaceView(view) ? `?view=${view}` : '';
   const hash = home
     ? `#${home.hash}`
-    : layer && !(asked === 'it')
+    : layer && !(asked === 'it' || asked === 'management')
       ? `#${mapInBusiness(asked, layer) ? BUSINESS_MAP_ID : layer}`
       : from && LAYER_ID.test(from)
         ? `#${from}`
@@ -67,19 +69,22 @@ function backTo(workspace: string, search: string): string {
  * the control it left by. `null` where the view keeps its layers.
  */
 function layerHome(view: string | null, layer: LayerKey): { view: WorkspaceView; hash: string; label: string } | null {
-  if (view !== 'it') return null;
-  const home = IT_LAYER_ELSEWHERE[layer];
+  if (view !== 'it' && view !== 'management') return null;
+  const home = (view === 'it' ? IT_LAYER_ELSEWHERE : MANAGEMENT_LAYER_ELSEWHERE)[layer];
+  // Costs from IT: its home is the Economics tool itself, and a way back from a
+  // tool does not lead into a tool — it returns to the view's own tools.
   if (home.kind !== 'view') return null;
-  return { view: home.view, hash: home.hash, label: IT_HOME_LABELS[home.hash] ?? LAYER_LABELS[layer] };
+  return { view: home.view, hash: home.hash, label: HOME_LABELS[home.hash] ?? LAYER_LABELS[layer] };
 }
 
-/** The place names of the IT layer homes, as the way back says them. */
-const IT_HOME_LABELS: Readonly<Record<string, string>> = {
+/** The place names of the layer homes in IT and Management, as the way back says them. */
+const HOME_LABELS: Readonly<Record<string, string>> = {
   [BUSINESS_MAP_ID]: 'Process map',
   standard: 'Standard fit',
   [IT_SECTION_IDS.objects]: 'Objects & dependencies',
   [IT_SECTION_IDS.trust]: 'Run & trust',
-  'decision-card': 'Decision',
+  [MANAGEMENT_IDS.decision]: 'Decision',
+  [MANAGEMENT_IDS.costs]: 'Costs',
 };
 
 /**
@@ -180,7 +185,7 @@ function mapInBusiness(view: string | null, layer: LayerKey): boolean {
 export function layerParam(value: string | null | undefined): LayerKey | null {
   if (typeof value !== 'string') return null;
   const bare = value.replace(/^#/, '');
-  return (LAYERS as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
+  return (LAYER_ADDRESSES as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
 }
 
 /**
@@ -199,7 +204,7 @@ export function stageBackPlace(search: string): string | null {
     isWorkspaceView(view) ? navViewLabel(VIEW_LABELS[view]) : null,
     home
       ? home.label
-      : layer && asked !== 'it'
+      : layer && asked !== 'it' && asked !== 'management'
         ? mapInBusiness(asked, layer)
           ? BUSINESS_MAP_LABEL
           : LAYER_LABELS[layer]

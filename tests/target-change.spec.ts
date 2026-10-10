@@ -257,7 +257,9 @@ test.describe('changing the target in the IT view', () => {
 
     // Management reads the new target.
     await goto(page, `/project/${projectId}?view=management`);
-    await expect(page.locator('[data-executive-buckets]')).toContainText('Public Edition', { timeout: 90000 });
+    // The distance to SAP standard is read on the target edition (its title
+    // names it); the second bucket card that used to say it went (ADR-087).
+    await expect(page.locator('#standard-fit[data-standard-fit="ready"] h3')).toContainText('Public Edition', { timeout: 90000 });
   });
 
   test('on a phone the dialog fits and cancel changes nothing', async ({ page, request }) => {

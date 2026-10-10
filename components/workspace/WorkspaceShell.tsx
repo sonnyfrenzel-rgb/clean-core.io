@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
-import CcLinkButton from '@/components/cc/LinkButton';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
@@ -28,7 +27,7 @@ import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
 import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
-import ManagementFold from './ManagementFold';
+import ManagementElsewhere from './ManagementElsewhere';
 import FirstLook from './FirstLook';
 import StartNarrativeMissing from './StartNarrativeMissing';
 import AskThisCase from './AskThisCase';
@@ -52,12 +51,12 @@ import { nextOpenPoint } from '@/lib/next-step';
 import { businessNextStep } from '@/lib/business-next-step';
 import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, runTrust, scrollToWhenThere } from '@/lib/it-sections';
+import { MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
 import { useSourceReading } from '@/hooks/useSourceReading';
 import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
-  LAYERS,
   VIEW_ABOUT,
   VIEW_LABELS,
   VIEW_QUESTIONS,
@@ -75,7 +74,6 @@ import { recordGaps } from '@/lib/legacy-project';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
-import { workflowSteps } from '@/lib/workflow-steps';
 import { pricedOptions } from '@/lib/economics-record';
 import type { Project } from '@/lib/types';
 
@@ -167,12 +165,16 @@ const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];
 
 /**
  * Management opens with its answer (ADR-029): the decision with the page's ONE
- * next action, beside fit to standard (ADR-069) — the full width of the frame
- * (ADR-063), not a narrow column. The decision record itself is that
+ * next action, the four options and what the decision rests on, then the
+ * distance to SAP standard beside the readiness trend — the full width of the
+ * frame (ADR-063), not a narrow column. The decision record itself is that
  * card's hero, never folded (owner 03.10.2026: "the decision must be shown,
- * placed prominently"). Everything else stands in three named folds, collapsed
- * until opened: Evidence, Costs, Process. "Next step" is not a card of its own here: it is
- * the decision card's button, so the page never says it twice.
+ * placed prominently"). One fold follows, Evidence, collapsed whenever the page
+ * opens, and one quiet row of links out (ADR-087): no layer bar, no first
+ * look, no Costs and no Process fold — the process is Business's, the objects
+ * IT's, the amounts Economics', the audit pack Delivery's. "Next step" is not
+ * a card of its own here: it is the decision card's button, so the page never
+ * says it twice.
  */
 const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
 
@@ -279,6 +281,13 @@ export default function WorkspaceShell({
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
+  // A client navigation (`router.push`/`replace`) changes the address without
+  // a `hashchange`, so the layer is read again whenever the view changes —
+  // otherwise a layer the reader left behind stays in state and steers the
+  // redirects below (owner 10.10.2026: Business would not open from IT).
+  useEffect(() => {
+    setHashLayer(layerFromHash(window.location.hash));
+  }, [view]);
 
   const selectLayer = useCallback((next: LayerKey) => {
     // Assigning the hash is a history entry, the same as the view's `push`, so
@@ -338,15 +347,16 @@ export default function WorkspaceShell({
   const [firstLookReading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
   /**
-   * IT renders no first look (ADR-086), yet the search, the print sheet and
-   * the counts read the same reading — so where the first look has not handed
-   * one up, the page reads the source itself, once, the same way.
+   * Only Business renders the first look — IT not since ADR-086, Management
+   * not since ADR-087 — yet the search, the print sheet and the counts read
+   * the same reading in every view. So where the first look has not handed one
+   * up, the page reads the source itself, once, the same way.
    */
-  const itReading = useSourceReading(
+  const ownReading = useSourceReading(
     typeof project?.legacyCode === 'string' ? project.legacyCode : '',
-    view === 'it' && firstLookReading === null,
+    view !== 'business' && firstLookReading === null,
   );
-  const reading = firstLookReading ?? itReading;
+  const reading = firstLookReading ?? ownReading;
   /** From the first look's picture of the main line to the whole map, right under it. */
   const openMap = useCallback(() => {
     document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -380,15 +390,14 @@ export default function WorkspaceShell({
   const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
 
   // The layers count the process, the rules and the capabilities of that
-  // reading (mockups s2, s3).
+  // reading (mockups s2, s3). Only Business shows layers — the sections that
+  // answer its question (owner, 03.10.2026; ADR-080); IT has its own sections
+  // (ADR-086) and Management none (ADR-087).
   const allLayers = useMemo(() => workspaceLayers(project, reading, mapSummary), [project, reading, mapSummary]);
-  // Business shows the sections that answer its question (owner, 03.10.2026);
-  // IT and Management keep all six. The counts are the same objects, so a tab
-  // reads the same figure in every view.
-  const layers = useMemo(
-    () => (view === 'business' ? allLayers.filter((l) => BUSINESS_LAYERS.includes(l.key)) : allLayers),
-    [allLayers, view],
-  );
+  const layers = useMemo(() => allLayers.filter((l) => BUSINESS_LAYERS.includes(l.key)), [allLayers]);
+  // "Your process" in Management: one line in the decision's Need row, counted
+  // as the map counts it (ADR-087) — the Need layer's own count, said once.
+  const processLine = useMemo(() => allLayers.find((l) => l.key === 'need')?.count ?? null, [allLayers]);
 
   /**
    * A link into a section Business no longer shows — `?view=business#costs`
@@ -428,8 +437,11 @@ export default function WorkspaceShell({
     [projectId],
   );
   useEffect(() => {
-    if (view !== 'business' || hashLayer === null || BUSINESS_LAYERS.includes(hashLayer)) return;
-    const elsewhere = BUSINESS_LAYER_ELSEWHERE[hashLayer];
+    // The address as it is now, not the layer state: that may still be the
+    // last view's until the effect above has read it again.
+    const layer = layerFromHash(window.location.hash);
+    if (view !== 'business' || layer === null || BUSINESS_LAYERS.includes(layer)) return;
+    const elsewhere = BUSINESS_LAYER_ELSEWHERE[layer];
     if (elsewhere === 'map') {
       // A fragment-only `replace`: no request, no new history entry; the
       // browser scrolls to the map and `hashchange` clears the layer above.
@@ -442,7 +454,7 @@ export default function WorkspaceShell({
     }
     // Architecture and changes: where they live since ADR-086 — IT's own
     // objects section, and Management's decision.
-    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    const home = IT_LAYER_ELSEWHERE[layer];
     if (home.kind === 'view') goTo(home.view, home.hash, true);
   }, [view, hashLayer, router, goTo, toEconomics]);
 
@@ -454,8 +466,9 @@ export default function WorkspaceShell({
    * and evidence to IT's own sections. `replace`, so Back does not bounce.
    */
   useEffect(() => {
-    if (view !== 'it' || hashLayer === null) return;
-    const home = IT_LAYER_ELSEWHERE[hashLayer];
+    const layer = layerFromHash(window.location.hash);
+    if (view !== 'it' || layer === null) return;
+    const home = IT_LAYER_ELSEWHERE[layer];
     if (home.kind === 'economics') {
       router.replace(toEconomics('it'));
       return;
@@ -466,6 +479,31 @@ export default function WorkspaceShell({
     }
     goTo(home.view, home.hash, true);
   }, [view, hashLayer, router, goTo, toEconomics]);
+
+  /**
+   * Management has no layers since ADR-087. A layer address in Management — an
+   * old link, a bookmark, a stage's way back from before 3.0.7 — goes where
+   * that content lives now (`MANAGEMENT_LAYER_ELSEWHERE`): the process and the
+   * standard fit to Business, architecture and evidence to IT, the changes to
+   * the decision card with its timeline, and the costs to the Costs row of the
+   * decision — or, where no decision can be shown (no signed run), to the
+   * Economics tool. `replace`, so Back does not bounce.
+   */
+  const hasActiveRun = Boolean(project?.activeRunId?.trim());
+  useEffect(() => {
+    if (view !== 'management' || hashLayer === null) return;
+    const home = MANAGEMENT_LAYER_ELSEWHERE[hashLayer];
+    if (home.kind === 'economics' || (hashLayer === 'costs' && !hasActiveRun)) {
+      router.replace(toEconomics('management'));
+      return;
+    }
+    if (home.view === 'management') {
+      window.location.replace(`#${home.hash}`);
+      scrollToWhenThere(home.hash);
+      return;
+    }
+    goTo(home.view, home.hash, true);
+  }, [view, hashLayer, hasActiveRun, router, goTo, toEconomics]);
 
   /**
    * `#process-map` arrives before the map exists — the redirect above runs as
@@ -619,9 +657,10 @@ export default function WorkspaceShell({
    * that appears and is swapped for another is worse than one that arrives
    * late.
    */
+  // Only Business builds the first look up; no other view has one to wait for.
   const marksReady =
     marks.ready &&
-    firstLookSettled &&
+    (firstLookSettled || view !== 'business') &&
     (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
   // "Select the decision point" stands right above the map where Business has
@@ -652,27 +691,11 @@ export default function WorkspaceShell({
   const currentLayer =
     (hashLayer && layers.some((l) => l.key === hashLayer) ? hashLayer : null) ??
     layers.find((l) => l.count !== null)?.key ??
-    (view === 'business' ? BUSINESS_LAYERS[0] : LAYERS[0]);
+    BUSINESS_LAYERS[0];
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
-  // Management's "Costs" fold reads the costs layer straight, whatever layer the bar is on.
-  const costsLayer = layers.find((l) => l.key === 'costs') ?? layers[0];
-  // With figures stored on the Economics stage the fold says how far they are,
-  // never an amount — the amounts stand in Economics (ADR-022).
-  const costsState = useMemo(
-    () => (project?._economics ? workflowSteps(project).find((s) => s.key === 'tco')?.state ?? null : null),
-    [project],
-  );
+  // How many options Economics prices — never an amount (ADR-022); the Costs
+  // row of the decision says it (ADR-085 amendment, ADR-087).
   const costScenario = useMemo(() => (project?._economics ? pricedOptions(project._economics) : null), [project]);
-  const costsSummary =
-    costsState === 'done'
-      ? wt('mgmtFold.costsPriced')
-      : costsState === 'stale'
-        ? wt('mgmtFold.costsStale')
-        : costsState === 'partial'
-          ? wt('mgmtFold.costsStarted')
-          : costsLayer.count
-            ? wt('mgmtFold.costsEmpty')
-            : costsLayer.missing;
 
   /**
    * The status line and the toolbar with Export and "Invite to view" — in
@@ -798,7 +821,14 @@ export default function WorkspaceShell({
               // the conditions and the timeline. It writes only through the
               // commands route, so the Stand check of 6.9 hangs off it.
               <div id="decision-card">
-                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} costScenario={costScenario} revision={decisionRevision} />
+                <DecisionCard
+                  projectId={projectId}
+                  beforeWrite={stand.checkBeforeWrite}
+                  onChanged={onDecisionChanged}
+                  costScenario={costScenario}
+                  revision={decisionRevision}
+                  process={processLine}
+                />
               </div>
             }
             coach={
@@ -1017,6 +1047,8 @@ export default function WorkspaceShell({
   };
   /** Run & trust and the links out of the IT view (ADR-086). */
   const trust = useMemo(() => runTrust(project), [project]);
+  /** The links out of the Management view (ADR-087). */
+  const managementOpen = useCallback((target: WorkspaceView, hash: string) => goTo(target, hash, false), [goTo]);
   const itElsewhere = useMemo(
     () => ({
       open: (target: WorkspaceView, hash: string) => goTo(target, hash, false),
@@ -1203,44 +1235,20 @@ export default function WorkspaceShell({
         </div>
       )}
 
-      {/* Management, under its answer: the steering one-pager, then the four
-          folds (owner 03.10.2026: progressive disclosure). Each summary says
-          what is inside — or, on an early project, why it is still empty and
-          what fills it. The process, its rules and "Ask this case" are the
-          Business view's; here a link leads there, and the first look stays
-          mounted inside "Process" because the page's search and layers read
-          from it. */}
+      {/* Management, under its answer (ADR-087): the place the steering
+          one-pager opens in — from the button at the top of the decision card
+          and from the Export menu, never a second button here — and the quiet
+          row of links out. The process, its rules and "Ask this case" are the
+          Business view's, the objects IT's, the amounts Economics', the audit
+          pack Delivery's. */}
       {view === 'management' && (
         <div className="mt-4 flex flex-col gap-3">
-          {/* Figures only, each with its coverage and a link to its evidence —
-              derived when opened, never stored, printed through the browser
-              (roadmap 8.6). */}
           <SteeringOnePager project={project} projectId={projectId} />
-          <ManagementFold id="costs" summary={costsSummary}>
-            {/* The amounts live in Economics, as a simulation; the costs layer
-                itself is one tab of the bar under "Process". */}
-            <CcLinkButton
-              href={stageHref({ base: `/project/${projectId}`, path: 'tco', view: 'management' })}
-              data-management-open-economics=""
-            >
-              {wt('mgmtFold.openEconomics')}
-            </CcLinkButton>
-          </ManagementFold>
-          <ManagementFold id="process" summary={wt('mgmtFold.processSummary')}>
-            <p className="m-0">
-              <button
-                type="button"
-                onClick={() => onViewChange('business')}
-                data-management-open-business=""
-                className="text-[13px] font-semibold text-cc-ink underline underline-offset-2"
-              >
-                {wt('mgmtFold.openBusiness')}
-              </button>
-            </p>
-            {contentBlocks.layerBar}
-            {contentBlocks.layerSection}
-            {contentBlocks.firstLook}
-          </ManagementFold>
+          <ManagementElsewhere
+            open={managementOpen}
+            economicsHref={toEconomics('management')}
+            deliveryHref={stageHref({ base: `/project/${projectId}`, path: 'delivery', view: 'management', from: WORKSPACE_RETURN.tools })}
+          />
         </div>
       )}
 

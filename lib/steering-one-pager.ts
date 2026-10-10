@@ -19,6 +19,7 @@ import {
 import type { DecisionOption } from './decision-options';
 import type { ChartSegment } from './management-overview';
 import { recommendedArchitecture } from './project-commands';
+import { formatTextDate } from './format';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
@@ -69,6 +70,15 @@ import { recommendedArchitecture } from './project-commands';
 export const STEERING_TITLE = 'Steering one-pager';
 
 export const STEERING_SCOPE = 'Derived when opened; not stored; not part of the signed audit pack.';
+
+/**
+ * The name the printed page carries — the browser takes it for the PDF's file
+ * name and for its own header line: "Steering one-pager — Z_MM_PO_APPROVAL —
+ * 10 Oct 2026" (owner, 10.10.2026: a page for a real management).
+ */
+export function steeringPrintTitle(subject: string, date: string): string {
+  return [STEERING_TITLE, subject.trim(), formatTextDate(date) ?? date].filter(Boolean).join(' — ');
+}
 
 export const STEERING_LEGEND =
   'Proven: backed by a signature or a real run · Confirmed: your account’s own word, not a mandate · ' +
@@ -159,17 +169,28 @@ export type SteeringDecision =
       readiness: string;
       pillars: Array<{ key: PillarKey; title: string; provenance: ProvenanceValue; draft: boolean }>;
       link: SteeringLink;
+      /**
+       * Who chose or confirmed it, for the title block: the account's name where
+       * it is known, else its e-mail (ADR-083 (b)); `null` when nobody has.
+       */
+      decidedBy: { verb: 'Chosen' | 'Confirmed'; by: string; at: string | null } | null;
     }
   | { state: 'not-determined'; reason: string; link: SteeringLink | null };
 
 export interface SteeringOnePager {
   title: string;
+  /** The document title while it prints — `steeringPrintTitle`. */
+  printTitle: string;
   /** "Keep, rebuild, move to SAP standard or retire Z_…?" — the page's question. */
   question: string;
   distance: SteeringDistance;
   header: {
     program: string;
     date: string;
+    /** The date in running text — "10 Oct 2026". */
+    dateText: string;
+    /** The program the page is about — `Z_MM_PO_APPROVAL`; the program name when absent. */
+    subject: string;
     /** What the code was reconstructed to do, or why that is not known. */
     purpose: string;
     purposeProvenance: ProvenanceValue;
@@ -181,9 +202,17 @@ export interface SteeringOnePager {
   risks: SteeringRisk[];
   /** Said when there is no risk to list: why not. */
   risksNote: string | null;
+  /** Risks beyond the ones listed — printed as "+n more", never dropped silently. */
+  risksMore: number;
   /** At most four. */
   nextSteps: SteeringStep[];
-  footnote: { legend: string; scope: string; versions: string | null };
+  /** Next steps beyond the ones listed — "+n more". */
+  nextStepsMore: number;
+  /**
+   * `reference`: the one line that carries raw ids (decision, revision, run) —
+   * small print in the footer, nowhere else on the page.
+   */
+  footnote: { legend: string; scope: string; versions: string | null; reference: string | null };
 }
 
 /** The process the signed source reconstructs to — `lib/process-summary.ts`, counted as the map counts. */
@@ -223,6 +252,11 @@ export interface SteeringSource {
   decisionOutdated?: boolean;
   confirmation?: { account: string; at: string } | null;
   signOff?: { code: string | null; by: string | null; at: string | null } | null;
+  /**
+   * Names of accounts the reader's screen knows, keyed by e-mail (lower case):
+   * who decided is printed by name where it is known, else by e-mail (ADR-083 (b)).
+   */
+  accountNames?: Readonly<Record<string, string>>;
 }
 
 function distanceOf(fit: StandardFit, other: string | null): SteeringDistance {
@@ -297,7 +331,8 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     : src.hasRun || src.mode === 'demo'
       ? notDeterminedWords('the process could not be reconstructed from the source')
       : notDeterminedWords('no signed run, so no process was reconstructed');
-  const decisionWord = src.decision ? `decision ${src.decision.decisionId} ${src.decision.status}` : 'no decision on record';
+  // No raw id in a sentence: the decision's id stands once, in the footer's reference line.
+  const decisionWord = src.decision ? `decision ${src.decision.status}` : 'no decision on record';
   const status =
     src.mode === 'demo'
       ? 'Demo — never signed; no decision on record'
@@ -324,12 +359,23 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     usage: src.project?.usageReport ?? null,
     economics: src.project?._economics ?? null,
   });
+  const nameOf = (account: string): string => src.accountNames?.[account.trim().toLowerCase()]?.trim() || account;
+  const decidedBy =
+    optionsView.stage === 'confirmed' || optionsView.stage === 'outdated'
+      ? src.confirmation
+        ? { verb: 'Confirmed' as const, by: nameOf(src.confirmation.account), at: formatTextDate(src.confirmation.at) }
+        : null
+      : optionsView.stage === 'chosen' && src.signOff?.by
+        ? { verb: 'Chosen' as const, by: nameOf(src.signOff.by), at: formatTextDate(src.signOff.at) }
+        : null;
+  const account = optionsView.stage === 'chosen' ? src.signOff?.by : src.confirmation?.account;
+  const who = optionsView.who && account && decidedBy && decidedBy.by !== account ? optionsView.who.replace(account, decidedBy.by) : optionsView.who;
   if (src.decision && manager) {
     decision = {
       state: 'ready',
       answer: optionsView.answer,
       stage: optionsView.stage,
-      who: optionsView.who,
+      who,
       proposal: optionsView.proposal,
       options: optionsView.cards.map((c) => ({
         option: c.option,
@@ -349,6 +395,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
       readiness: manager.readiness,
       pillars: manager.pillars.map((p) => ({ key: p.key, title: p.title, provenance: p.provenance, draft: p.draft })),
       link: to.decision,
+      decidedBy,
     };
   } else {
     decision = {
@@ -499,7 +546,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
       steps.push({
         key: 'confirm',
         owner: 'Decision maker',
-        text: `Confirm decision ${src.decision.decisionId}, or revise it.`,
+        text: 'Confirm the decision, or revise it.',
         link: to.decision,
       });
     }
@@ -511,7 +558,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
         owner: 'Decision maker',
         text: proposed
           ? `Choose one of the four options — the evidence points to ${proposed.label}.`
-          : 'Choose one of the four options — Rebuild is signed off in Design, the others in the Management view.',
+          : 'Choose one of the four options in the Management view.',
         link: to.decision,
       });
     }
@@ -536,13 +583,26 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
         .join(' · ') || null
     : null;
 
+  const reference =
+    [
+      src.decision ? `decision ${src.decision.decisionId} · revision ${src.decision.revision}` : null,
+      src.project?.activeRunId ? `run ${src.project.activeRunId}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || null;
+  const subject = (src.subject ?? src.program).trim() || src.program;
+  const allRisks = fit.state === 'ready' ? fit.blockers.length : 0;
+
   return {
     title: STEERING_TITLE,
+    printTitle: steeringPrintTitle(subject, src.date),
     question: optionsView.question,
     distance: distanceOf(fit, src.otherEdition ?? null),
     header: {
       program: src.program,
       date: src.date,
+      dateText: formatTextDate(src.date) ?? src.date,
+      subject,
       purpose,
       purposeProvenance: src.process ? 'reconstructed' : 'not-determined',
       status,
@@ -551,7 +611,9 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     figures: figures.slice(0, STEERING_FIGURES_MAX),
     risks,
     risksNote,
+    risksMore: Math.max(0, allRisks - risks.length),
     nextSteps: steps.slice(0, STEERING_STEPS_MAX),
-    footnote: { legend: STEERING_LEGEND, scope: STEERING_SCOPE, versions },
+    nextStepsMore: Math.max(0, steps.length - STEERING_STEPS_MAX),
+    footnote: { legend: STEERING_LEGEND, scope: STEERING_SCOPE, versions, reference },
   };
 }

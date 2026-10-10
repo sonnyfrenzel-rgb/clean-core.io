@@ -378,26 +378,24 @@ test.describe('a project with no runs, in the Management view', () => {
 
     await expect(page.locator('[data-management-headline]')).toContainText('No signed run');
 
-    // The score: a word and its reason, never a number.
-    const score = page.locator('[data-management-figure="clean-core-score"]');
-    await expect(score.locator('[data-figure-absent]')).toHaveText('Not determined');
-    await expect(score.locator('[data-figure-value]')).toHaveCount(0);
-    await expect(score.locator('[data-figure-absent-reason]')).toHaveText('no signed run');
-
-    // The history: not an empty chart, a sentence that says a history needs runs.
-    const history = page.locator('[data-management-figure="history"]');
-    await expect(history.locator('[data-figure-absent-reason]')).toContainText(
-      'No signed run, so there is no Clean Core Score',
-    );
-
-    // Every figure on the screen carries its coverage — the promise 3.0.10 has
-    // to be able to draw, and the one it cannot add afterwards.
-    const figures = page.locator('[data-management-figure]');
-    const covers = page.locator('[data-management-figure] [data-figure-coverage]');
-    await expect(figures).not.toHaveCount(0);
-    expect(await covers.count()).toBe(await figures.count());
+    // The score and its history stand in one place since ADR-087 — the
+    // readiness trend on the first screen (the four detailed answers that
+    // repeated them are gone). A sentence and its reason, never a number, never
+    // an empty chart.
+    const trend = page.locator('#management-readiness [data-overview-card="readiness"]');
+    await expect(trend.locator('h3')).toHaveText('No Clean Core Score: nothing has been analysed under a signature yet', {
+      timeout: 60000,
+    });
+    await expect(trend.locator('[data-provenance]').first()).toHaveAttribute('data-provenance', 'not-determined');
+    await expect(trend.locator('[data-overview-trend]')).toHaveCount(0);
+    await expect(trend).toContainText('No signed run, so there is no Clean Core Score');
+    // Its coverage is printed beside it — the promise 3.0.10 has to be able to
+    // draw, and the one it cannot add afterwards.
+    await expect(trend.locator('[data-overview-coverage]')).not.toBeEmpty();
+    // The detailed answers are not rendered at all any more.
+    await expect(page.locator('[data-management-figure], [data-management-answer]')).toHaveCount(0);
 
     // And no portfolio: this screen compares this project with nothing.
-    await expect(view).toContainText('No comparison with any other');
+    await expect(view).not.toContainText(/portfolio|other projects|average of/i);
   });
 });

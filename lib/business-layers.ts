@@ -9,12 +9,13 @@ import type { LayerKey } from './workspace-model';
  * (`VIEW_QUESTIONS`): the process and its rules — the map and the rules card,
  * which stand on the page itself — how much of it the standard covers, and
  * what the reading rests on. *Need & process* repeated the map's counts there
- * and only linked back up to the map; it stays in IT and Management, where the
- * process row and the rules editor live. *Costs & assumptions* belongs to
- * Economics and to Management's Costs fold, *Architecture & dependencies* to IT
- * and Design, and *Changes & commitments* holds nothing this release can
- * record — it was the "More 1 empty" the owner found dead. All six stay in
- * Management; IT has its own sections instead since ADR-086 (`lib/it-sections.ts`).
+ * and only linked back up to the map. *Costs & assumptions* belongs to
+ * Economics and to the Costs row of Management's decision, *Architecture &
+ * dependencies* to IT and Design, and *Changes & commitments* held nothing this
+ * release can record — it was the "More 1 empty" the owner found dead, and is
+ * no layer at all since ADR-087. IT has its own sections instead since ADR-086
+ * (`lib/it-sections.ts`), Management none since ADR-087
+ * (`lib/management-sections.ts`).
  */
 export const BUSINESS_LAYERS: readonly LayerKey[] = ['standard', 'evidence'];
 

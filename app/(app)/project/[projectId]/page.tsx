@@ -7,6 +7,7 @@ import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
+import { viewSwitchHash } from '@/lib/view-switch';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { useStartRun } from '@/hooks/useStartRun';
 import { useFollowHash } from '@/hooks/useFollowHash';
@@ -27,6 +28,15 @@ import type { Project } from '@/lib/types';
 const FIRST_LOOK_PARAM = 'first';
 
 /**
+ * The `#fragment` a view switch carries over: a subject (`#L42`, CR-14) but
+ * not a place of the old view (`lib/view-switch.ts`, Sonny 10.10.2026).
+ */
+function currentHash(): string {
+  if (typeof window === 'undefined') return '';
+  return viewSwitchHash(window.location.hash);
+}
+
+/**
  * The workspace of a project — roadmap step 1.4, for every account since 3.0.1.
  *
  * Built behind an administrator's preview switch (1.4) and opened to every
@@ -43,16 +53,6 @@ const FIRST_LOOK_PARAM = 'first';
  * no IT focus any more (ADR-057): an old link with `?focus=…` opens the
  * workspace as it would without it, because nothing here reads that parameter.
  */
-/**
- * The `#fragment` of the current address. A view switch rewrites the
- * query and used to drop it, so a shared link to one element lost its place the
- * moment the reader changed the view (Gegenreview c5085bb, CR-14). Same
- * subject, other view, same place.
- */
-function currentHash(): string {
-  return typeof window === 'undefined' ? '' : window.location.hash;
-}
-
 export default function ProjectWorkspacePage() {
   const params = useParams();
   const router = useRouter();
@@ -96,7 +96,13 @@ export default function ProjectWorkspacePage() {
       query.set('view', next);
       // `push`, not `replace`: a view is a place the reader chose to be, and Back
       // should return them to the one they came from (ADR-018).
+      //
+      // The new view opens at its top, never in the middle of where the old
+      // one was scrolled (Sonny, 10.10.2026); a place of the old view is not
+      // carried over (`currentHash`). Deep links into another view (`goTo`:
+      // IT's links out, the decision's conditions) keep their place.
       router.push(`?${query.toString()}${currentHash()}`, { scroll: false });
+      window.scrollTo({ top: 0 });
     },
     [router, searchParams],
   );

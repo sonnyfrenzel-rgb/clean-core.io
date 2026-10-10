@@ -114,9 +114,13 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
       await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
     } else if (view === 'management') {
-      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
-      // Management opens on Need & process, and in the demo that layer is the process map (mockup s15).
-      await expect(page.locator('[data-workspace-layer-section="need"]').first()).toBeVisible();
+      // Management shows only its own content (ADR-087): no layer bar, no
+      // process map — the decision, the distance to standard, the buckets,
+      // costs, decision and handover — and one row of links out.
+      await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
+      await expect(page.locator('[data-management-elsewhere-link]')).toHaveCount(4);
+      await expect(page.locator('[data-demo-management]')).toHaveCount(0);
     } else {
       // IT shows only its own content (ADR-086): no layer bar, no section of
       // it, no map — its own anchor bar, without an "empty" anchor, and the

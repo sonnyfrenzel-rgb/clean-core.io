@@ -26,7 +26,7 @@ import type { PublicCloudFitAssignment } from '../lib/abap/public-cloud-fit';
 import { itObjects } from '../lib/it-objects';
 import { extractCodeInventory } from '../lib/abap/code-assessment';
 import { IT_ANCHORS, IT_LAYER_ELSEWHERE, IT_SECTION_IDS, runTrust } from '../lib/it-sections';
-import { LAYERS } from '../lib/workspace-model';
+import { LAYER_ADDRESSES } from '../lib/workspace-model';
 import type { ItUseRow } from '../lib/it-findings';
 import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
@@ -323,7 +323,8 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
   });
 
   test('every layer address has a home in IT, and IT\'s anchors follow the page', () => {
-    expect(Object.keys(IT_LAYER_ELSEWHERE).sort()).toEqual([...LAYERS].sort());
+    // Every address a layer link may carry, the retired `#changes` included (ADR-087).
+    expect(Object.keys(IT_LAYER_ELSEWHERE).sort()).toEqual([...LAYER_ADDRESSES].sort());
     expect(IT_LAYER_ELSEWHERE.need).toEqual({ kind: 'view', view: 'business', hash: 'process-map' });
     expect(IT_LAYER_ELSEWHERE.standard).toEqual({ kind: 'view', view: 'business', hash: 'standard' });
     expect(IT_LAYER_ELSEWHERE.costs).toEqual({ kind: 'economics' });
@@ -354,8 +355,9 @@ test.describe('the IT order in the shell, as the source writes it (the page is m
     expect(shell).not.toContain('IT_TAIL');
     expect(shell.indexOf('<ItAnswers')).toBeGreaterThan(0);
     // The reading the search, the print sheet and the counts use is still
-    // computed in IT, without rendering the first look there.
-    expect(shell).toMatch(/useSourceReading\([\s\S]*?view === 'it' && firstLookReading === null/);
+    // computed in IT (and in Management since ADR-087), without rendering the
+    // first look there.
+    expect(shell).toMatch(/useSourceReading\([\s\S]*?view !== 'business' && firstLookReading === null/);
     // The demo twin follows: no layer bar and no map in its IT view.
     const demo = read('components/demo/DemoWorkspaceShell.tsx');
     const itBlock = demo.slice(demo.indexOf("{view === 'it' ? ("), demo.indexOf("{view === 'management' ? ("));
