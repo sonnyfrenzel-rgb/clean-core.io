@@ -826,7 +826,7 @@ const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
  * count tested afterwards, a check in a called routine — is not seen, and the
  * caveat then errs on the side of warning.
  */
-function nonEmptyGuarded(table: string, statements: readonly AbapStatement[]): boolean {
+export function nonEmptyGuarded(table: string, statements: readonly AbapStatement[]): boolean {
   const t = `${escapeForRegExp(table)}(?:\\[\\])?`;
   const guard = new RegExp(
     `(?:\\b${t}\\s+IS\\s+NOT\\s+INITIAL\\b|\\bNOT\\s+${t}\\s+IS\\s+INITIAL\\b|\\blines\\(\\s*${t}\\s*\\)\\s*(?:(?:>|GT|<>|NE)\\s*0|(?:>=|GE)\\s*1)\\b)`,

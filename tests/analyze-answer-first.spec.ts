@@ -51,6 +51,14 @@ test.describe('the answer, in words', () => {
     expect(countFindings(groups)).toEqual({ total: 3, bySeverity: { Critical: 1, High: 1, Medium: 1, Low: 0 } });
   });
 
+  test('a finding rated Info counts in the total the headline says (QA e983df6778b3)', () => {
+    const groups = groupEvidenceFindings([
+      finding({ kind: 'bdc', title: 'BDC to ME21N', severity: 'High', objectName: 'ME21N', lineStart: 631 }),
+      finding({ kind: 'standard-table-read', title: 'Read EBAN', severity: 'Info', lineStart: 12 }),
+    ]);
+    expect(countFindings(groups).total).toBe(2);
+  });
+
   test('says the findings and the route in one sentence — no spread, no open count, no percentage', () => {
     const counts = { total: 25, bySeverity: { Critical: 1, High: 3, Medium: 16, Low: 4 } };
     const a = analysisAnswer({ counts, lines: 669, route: 'Side-by-Side (SAP BTP)', routeChosenByReader: false });

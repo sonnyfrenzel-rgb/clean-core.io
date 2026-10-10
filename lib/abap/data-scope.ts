@@ -1,5 +1,6 @@
 import { maskLiterals, readStatements, type AbapStatement } from './statement-reader';
 import { readBlocks, containerAt } from './block-structure';
+import { nonEmptyGuarded } from './business-statement';
 
 /**
  * Data scope, derived values and selection defaults — roadmap 3.0.7, from the
@@ -193,6 +194,9 @@ export function readDataScopeFrom(statements: AbapStatement[]): DataScopeReport 
       chosen.length ? `restricted by the selection screen: ${chosen.join(', ')}` : '',
       fae ? `for the entries of ${fae[1]}` : '',
       keyed.length ? `by ${keyed.join(' and ')}` : '',
+      // QA debd926589b5: an empty driver table drops the whole WHERE — unless the
+      // source checks it for content, the restriction above is not certain.
+      fae && !nonEmptyGuarded(fae[1], statements) ? `every row if ${fae[1]} is empty (the WHERE is then dropped)` : '',
     ].filter(Boolean);
     reads.push({
       line: statement.lineStart,

@@ -274,6 +274,10 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
     expect(choices.every(Boolean)).toBe(true);
     const labels = arms.map(([, arm]) => /<span data-doc-path-arm-when=""[^>]*>([^<]*)<\/span>/.exec(arm)?.[1]?.replace(/&amp;/g, '&'));
     expect(labels).toEqual(choices);
+    // QA fa0c38e095f9: no step read means no Start → End picture, which would claim a completed flow.
+    const none = renderToStaticMarkup(React.createElement(FlowStrip, { path: [] }));
+    expect(none).toContain('data-doc-path-none=""');
+    expect(none).not.toContain('data-doc-path=""');
   });
 
   test('a CASE on another selector stays a sequence', () => {

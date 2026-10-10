@@ -413,6 +413,8 @@ export function flowItems(path: readonly PdPathEntry[]): FlowItem[] {
 }
 
 export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
+  // QA fa0c38e095f9: with no step read, Start → End would draw a completed flow the code does not establish.
+  if (!path.length) return <p data-doc-path-none="" className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.flowNone')}</p>;
   return (
     // `relative`: the track is the containing block of the nodes' `sr-only`
     // spans (position: absolute). Without it they escape the scroll and widen

@@ -135,6 +135,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.flowEnd': 'End',
   'doc.flowEnds': 'ends the run',
   'doc.flowChoices': 'Alternatives: the user chooses one',
+  'doc.flowNone': 'No business step was read from the code, so no path from start to end is drawn.',
   'doc.touchesTitle': 'What it touches in SAP',
   'doc.touchesReads': 'Reads',
   'doc.touchesChanges': 'Changes',

@@ -686,9 +686,15 @@ START-OF-SELECTION.
     const { reads } = readDataScope(report);
     expect(reads.map((r) => r.sentence)).toEqual([
       'EKKO is read only where loekz = space and bsart = c_nb (fixed in the code); restricted by the selection screen: bukrs IN s_bukrs.',
-      'EKPO is read only where elikz = space (fixed in the code); for the entries of gt_ekko.',
+      // QA debd926589b5: gt_ekko is never checked for content, and an empty driver drops the WHERE.
+      'EKPO is read only where elikz = space (fixed in the code); for the entries of gt_ekko; every row if gt_ekko is empty (the WHERE is then dropped).',
     ]);
     expect(reads[1].filters.map((f) => f.origin)).toEqual(['previous-read', 'fixed']);
+  });
+
+  test('a driver table checked for content keeps the restriction plain (QA debd926589b5)', () => {
+    const guarded = report.replace('  SELECT * FROM ekpo', '  CHECK gt_ekko IS NOT INITIAL.\n  SELECT * FROM ekpo');
+    expect(readDataScope(guarded).reads[1].sentence).toBe('EKPO is read only where elikz = space (fixed in the code); for the entries of gt_ekko.');
   });
 
   test('derived values, running totals marked', () => {
