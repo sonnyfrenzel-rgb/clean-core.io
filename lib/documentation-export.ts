@@ -220,6 +220,7 @@ export function buildEngineConfluenceHtml(
     ${runStartsSection}
     <div class="card">${processOverviewSvg(document.overview.path, document.program)}</div>
     <h3 id="pd-steps">${esc(o.tables.steps.caption)}</h3>
+    ${o.whoActsLine ? `<p class="meta" data-doc-who-acts-none="">${esc(o.whoActsLine)}</p>` : ''}
     ${tableOf(o.tables.steps)}`;
 
   // Roadmap 3.0.7: each classification that only sets one field, as one business rule task with its table.
@@ -265,7 +266,7 @@ export function buildEngineConfluenceHtml(
   const a = document.appendix;
   const stepDetailsSection = document.overview.path.map((entry) => entry.kind === 'gate'
     ? `<p class="note">${esc(gateSentence(entry))}</p>`
-    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
+    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry, o.whoActs).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
   const long = longTables(o);
   const completeSection = long.length
     ? `<h3>${esc(COMPLETE_TABLES)}</h3>${long.map((t) => `<h4>${esc(`${t.caption} (${t.rows.length})`)}</h4>${tableOf(t, true)}`).join('')}`

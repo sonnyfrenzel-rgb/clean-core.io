@@ -148,6 +148,10 @@ export interface PdOutline {
   };
   /** Input the code asks for and does not use — under "How a run starts". */
   inputUse: PdText[];
+  /** The code proves the actor of at least one step: the step table says who acts (ADR-084). */
+  whoActs: boolean;
+  /** Without one proven actor: the one sentence the process section says instead of a column. */
+  whoActsLine: string | null;
   /**
    * Roadmap 3.0.7 — the rules section's decision tables: each classification that only
    * sets one field as one business rule task with its table, one row per
@@ -404,6 +408,15 @@ const NOT_DETERMINED = 'Not determined';
 export const actorWord = (actor: PdActor | undefined): string => actor?.who ?? NOT_DETERMINED;
 
 /**
+ * Whether the description says who acts at all (owner decision 10.10.2026,
+ * ADR-084): only when the code proves the actor of at least one step. Then the
+ * step table has its "Who acts" column and an unproven step reads *Not
+ * determined*; otherwise there is no column and no tag, only one sentence.
+ */
+export const actorsProven = (path: readonly PdPathEntry[]): boolean =>
+  path.some((e) => e.kind === 'step' && !!e.actor?.who);
+
+/**
  * The open group of the project's list (ADR-081) whose line lies in the row's
  * lines — the question this row stands on (ADR-084, roadmap 3.0.7 A5). The
  * first one in the list's order (blocking first); undefined when there is none.
@@ -488,14 +501,16 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
   const table = (id: string, caption: string, head: string[], rows: PdRow[], first = 5): PdTable | null =>
     rows.length ? { id, caption, head, rows, first } : null;
 
+  const whoActs = actorsProven(doc.overview.path);
+  const who = (actor: PdActor | undefined): string[] => (whoActs ? [actorWord(actor)] : []);
   const stepRows: PdRow[] = doc.overview.path.map((entry) =>
     entry.kind === 'gate'
-      ? { cells: ['◇', `Decision: ${entry.label}`, actorWord(entry.actor), gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
+      ? { cells: ['◇', `Decision: ${entry.label}`, ...who(entry.actor), gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
       : {
           cells: [
             stepRef(entry),
             `${stepName(entry)}${entry.businessName ? ` (${MODEL_PROPOSAL_LABEL})` : ''}`,
-            actorWord(entry.actor),
+            ...who(entry.actor),
             [choiceLine(entry), entry.line].filter(Boolean).join(' — ') || '—',
           ],
           tech: entry.technicalName,
@@ -533,7 +548,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
         t.selection.map((i) => row([i.meaning, i.required ? 'Yes' : 'No', i.defaultValue ?? '—'], i.name.toUpperCase(), [i.anchor]))),
       data: table('data', wt('doc.dataReads'), ['Business object', 'Owner', 'Which rows'],
         t.data.map((d) => row([d.meaning ?? (d.owner === 'Customer' ? 'Custom table' : 'SAP table'), d.owner, d.scope ?? '—'], d.name, d.anchors))),
-      steps: { id: 'steps', caption: wt('doc.stepsCaption'), head: ['No.', 'Step', wt('doc.whoActs'), 'What happens'], rows: stepRows, first: stepRows.length },
+      steps: { id: 'steps', caption: wt('doc.stepsCaption'), head: ['No.', 'Step', ...(whoActs ? [wt('doc.whoActs')] : []), 'What happens'], rows: stepRows, first: stepRows.length },
       rules: table('rules', 'Business rules and decision points', ['Rule', 'When', 'Then', 'Step'],
         sorted(doc.rules, ruleRank).map((r) => row([r.ref, r.condition, r.effect, r.where ?? 'Whole program'], null, r.anchors)), 6),
       exceptions: table('exceptions', 'Exceptions', ['What happens', 'Step', 'The user sees', 'Result'],
@@ -548,6 +563,8 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
         (doc.derived ?? []).map((d) => row([d.target, d.expression, d.accumulates ? 'Running total' : 'Computed'], d.where, d.anchors))),
     },
     inputUse: t.inputUse ?? [],
+    whoActs,
+    whoActsLine: whoActs ? null : wt('doc.whoActsNotProvable'),
     decisionTables: tables.map(decisionTableTable),
     questions: {
       list,
@@ -592,10 +609,10 @@ export function groupTitle(g: PdTraceGroup): string {
 const withLines = (text: string, anchors: readonly DocAnchor[]) => (anchors.length ? `${text} (${linesLabel(anchors)})` : text);
 
 /** One step of the appendix's step details, as lines of text. */
-export function stepDetailLines(step: PdStep): string[] {
+export function stepDetailLines(step: PdStep, whoActs = true): string[] {
   const out: string[] = [];
   out.push(`Technical: ${step.technicalName} · ${step.anchors.length ? linesLabel(step.anchors) : 'lines not determined'}${step.businessName ? ` · engine name: ${step.name}` : ''}`);
-  if (step.actor) out.push(`${wt('doc.whoActs')}: ${actorWord(step.actor)} — ${step.actor.basis}`);
+  if (step.actor && whoActs) out.push(`${wt('doc.whoActs')}: ${actorWord(step.actor)} — ${step.actor.basis}`);
   if (step.facts) out.push(step.facts);
   if (step.proposal) out.push(`${MODEL_PROPOSAL_LABEL}: ${withLines(step.proposal.text, step.proposal.anchors)}`);
   for (const d of step.does) out.push(withLines(d.text, d.anchors));
@@ -710,6 +727,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     b.push({ k: 'ul', items: textItems(o.inputUse) });
   }
   b.push({ k: 'h', level: 3, text: o.tables.steps.caption });
+  if (o.whoActsLine) b.push({ k: 'p', em: true, text: o.whoActsLine });
   b.push(tableBlock(o.tables.steps));
 
   for (const key of ['rules', 'exceptions', 'outputs'] as const) {
@@ -754,7 +772,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
       continue;
     }
     b.push({ k: 'h', level: 4, text: `${stepRef(entry)}. ${stepName(entry)}` });
-    b.push({ k: 'ul', items: stepDetailLines(entry) });
+    b.push({ k: 'ul', items: stepDetailLines(entry, o.whoActs) });
   }
   const long = longTables(o);
   if (long.length) {

@@ -424,7 +424,7 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     expect(md.slice(0, md.indexOf('## Appendix'))).not.toMatch(/\bsection \d/i);
   });
 
-  test('who acts: a run the code does not prove reads "Not determined"; a dialogue names the user where the dialogue stands', () => {
+  test('who acts: a run the code does not prove has no column, only a sentence; a dialogue names the user where the dialogue stands', async () => {
     // Z_MM_PO_APPROVAL (the demo) holds no dialogue, background or update-task
     // statement: its run lane is the program, so no step's actor is proven.
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
@@ -433,7 +433,22 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
       expect(s.actor?.who ?? null, s.name).toBeNull();
       expect(s.actor?.basis).toMatch(/proves no dialogue/);
     }
-    expect(documentOutline(doc).tables.steps.rows.every((r) => r.cells[2] === 'Not determined')).toBe(true);
+    // Owner decision 10.10.2026: proven only — with no step proven there is no
+    // column and no tag, only one sentence in the process section, in every rendering.
+    const o = documentOutline(doc);
+    expect(o.whoActs).toBe(false);
+    expect(o.tables.steps.head).toEqual(['No.', 'Step', 'What happens']);
+    expect(o.tables.steps.rows.every((r) => r.cells.length === 3 && !r.cells.includes('Not determined'))).toBe(true);
+    expect(o.whoActsLine).toBe('Who acts is not provable from the code: it holds no dialogue, background or update-task statement that says so.');
+    const md = markdownOf(doc);
+    const process = md.slice(md.indexOf(`## ${sectionTitle('overview')}`), md.indexOf(`## ${sectionTitle('rules')}`));
+    expect(process).toContain(o.whoActsLine!);
+    // No column head, and no per-step line in the appendix's step details.
+    expect(md).not.toContain('| Who acts |');
+    expect(md).not.toContain('Who acts: ');
+    const html = await htmlOf(doc);
+    expect(html).toContain('data-doc-who-acts-none=""');
+    expect(html).not.toContain('<th>Who acts</th>');
 
     const dialogue = documentOfSource(DIALOGUE);
     const actors = dialogue.overview.path.filter((e): e is PdStep => e.kind === 'step').map((s) => s.actor);
@@ -442,6 +457,12 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     expect(user?.basis).toContain('POPUP_TO_CONFIRM');
     expect(user?.anchors.length).toBeGreaterThan(0);
     for (const a of actors) expect(a?.who).not.toBeNull();
+    // With a proven actor the column stands, and the sentence does not.
+    const shown = documentOutline(dialogue);
+    expect(shown.whoActs).toBe(true);
+    expect(shown.whoActsLine).toBeNull();
+    expect(shown.tables.steps.head).toEqual(['No.', 'Step', 'Who acts', 'What happens']);
+    expect(await buildEngineConfluenceHtml(dialogue, null).text()).toContain('<th>Who acts</th>');
   });
 
   test('a decision table without an Otherwise row says what happens when no row matches', () => {

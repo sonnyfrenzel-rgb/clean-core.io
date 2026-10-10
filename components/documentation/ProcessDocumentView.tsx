@@ -350,8 +350,8 @@ function ScopeList({ title, items }: { title: string; items: PdText[] }) {
   );
 }
 
-function StepItem({ step }: { step: PdStep }) {
-  const details = stepDetailLines(step);
+function StepItem({ step, whoActs }: { step: PdStep; whoActs: boolean }) {
+  const details = stepDetailLines(step, whoActs);
   const [open, setOpen] = useState(false);
   const id = `pd-step-${step.number}`;
   return (
@@ -370,11 +370,16 @@ function StepItem({ step }: { step: PdStep }) {
             ) : null}
             <span className="cc-text-identifier text-cc-ink">{stepName(step)}</span>
             {step.businessName ? <> <CcProvenanceChip value="proposed" note="name" /></> : null}
-            {' '}
-            {/* ADR-084 (roadmap 3.0.7 B2): who acts, from the evidence the code proves; never a guess. */}
-            <span data-doc-actor={step.actor?.who ?? 'not-determined'} title={step.actor?.basis} className="inline-flex align-middle">
-              {step.actor?.who ? <CcTag>{step.actor.who}</CcTag> : <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.whoActs')}: {actorWord(step.actor)}</span>}
-            </span>
+            {/* ADR-084 (roadmap 3.0.7 B2): who acts, from the evidence the code proves; never a guess —
+                shown only when the code proves it for at least one step (owner decision 10.10.2026). */}
+            {whoActs ? (
+              <>
+                {' '}
+                <span data-doc-actor={step.actor?.who ?? 'not-determined'} title={step.actor?.basis} className="inline-flex align-middle">
+                  {step.actor?.who ? <CcTag>{step.actor.who}</CcTag> : <span className="cc-text-meta font-medium text-cc-ink-muted">{wt('doc.whoActs')}: {actorWord(step.actor)}</span>}
+                </span>
+              </>
+            ) : null}
             {step.line ? <> — {step.line}</> : null}
             {details.length > 1 ? (
               <>
@@ -596,6 +601,7 @@ export default function ProcessDocumentView({
 
         <div id="pd-steps" className="scroll-mt-24">
           <h4 className="m-0 mb-2 cc-text-h3 text-cc-ink">{t.steps.caption}</h4>
+          {outline.whoActsLine ? <p data-doc-who-acts-none="" className="m-0 mb-2 cc-text-cell text-cc-ink-muted">{outline.whoActsLine}</p> : null}
           {mapHref ? <p className="m-0 mb-2 cc-text-cell"><a href={mapHref} className="text-cc-ink underline">Open the map</a></p> : null}
           <ol data-doc-steps="" className="relative m-0 list-none p-0 before:absolute before:bottom-4 before:left-3 before:top-2 before:w-px before:bg-cc-line">
             {doc.overview.path.map((entry) =>
@@ -620,7 +626,7 @@ export default function ProcessDocumentView({
                   </p>
                 </li>
               ) : (
-                <StepItem key={entry.id} step={entry} />
+                <StepItem key={entry.id} step={entry} whoActs={outline.whoActs} />
               ),
             )}
           </ol>

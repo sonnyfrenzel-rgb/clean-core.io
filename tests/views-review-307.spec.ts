@@ -219,7 +219,9 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
     expect(pathLine(doc.overview.path)).toContain(`${slot} one of `);
 
     const outline = documentOutline(doc);
-    // ADR-084: the step table says who acts (column 3) before what happens (column 4).
+    // ADR-084: the step table says who acts (column 3) before what happens (column 4) —
+    // here the code proves it (the ALV list is a dialogue), so the column stands.
+    expect(outline.whoActs).toBe(true);
     expect(outline.tables.steps.head).toEqual(['No.', 'Step', 'Who acts', 'What happens']);
     const alternatives = outline.tables.steps.rows.filter((r) => /^\d+[a-z]$/.test(r.cells[0]));
     expect(alternatives.map((r) => r.cells[3].split(' — ')[0]))

@@ -109,6 +109,8 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.inputUnused': 'Input the code does not use',
   'doc.stepsCaption': 'Steps',
   'doc.whoActs': 'Who acts',
+  // Owner decision 10.10.2026 (ADR-084): proven only — without one proven actor there is no column, only this line.
+  'doc.whoActsNotProvable': 'Who acts is not provable from the code: it holds no dialogue, background or update-task statement that says so.',
   'doc.dataReads': 'Data it reads',
   'doc.derivedValues': 'Values it computes',
   'doc.integrationsTitle': 'Integrations',
