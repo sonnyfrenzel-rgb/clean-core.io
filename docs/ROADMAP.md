@@ -1463,8 +1463,8 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-742 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-743 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-744 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
-| SEC-2026-751 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | fixed in repo, awaiting rules deploy (78485894c874) |
-| SEC-2026-752 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go), same fix as SEC-2026-751 | fixed in repo, awaiting rules deploy (78485894c874) |
+| SEC-2026-751 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | fixed (78485894c874), rules deployed 10.10.2026 |
+| SEC-2026-752 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go), same fix as SEC-2026-751 | fixed (78485894c874), rules deployed 10.10.2026 |
 | SEC-2026-753 | medium | P3 | 3.0.x security hardening - as SEC-2026-699 | fixed (78485894c874) |
 | SEC-2026-754 | medium | P3 | 3.0.x security hardening | fixed (78485894c874) |
 | SEC-2026-755 | info | P3 | 3.0.x security hardening - comment wording | fixed (78485894c874) |
