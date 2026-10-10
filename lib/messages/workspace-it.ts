@@ -58,6 +58,12 @@ export const WORKSPACE_IT_MESSAGES = {
   // The owner's target change in the profile box (owner, 06.10.2026) —
   // `components/workspace/TargetChange.tsx`.
   'tgt.change': 'Change target',
+  // The release a start screen asks a Private Edition project for
+  // (`components/TargetEditionChoice.tsx`, `lib/start-release-handoff.ts`).
+  'tgt.releaseLabel': 'Release (optional)',
+  'tgt.releaseLatest': 'Not sure — use SAP’s latest list',
+  'tgt.releaseHelp':
+    'A named release reads SAP’s list for exactly that release; the latest list can grade an object differently. Change it later with Change target.',
   'tgt.dialogTitle': 'Change the target',
   'tgt.dialogLead':
     'The target decides the levels, the buckets, the route and everything built on them. A change is a new signed analysis run under the new target.',

@@ -7,6 +7,7 @@ import { signEngineRun, START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
 import { missingFrom, writeStartNarrative, type StartNarrative, type StartNarrativeMissing } from '@/lib/start-narrative';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { ownCodeFileName } from '@/lib/own-code-handoff';
+import { clearStartRelease, startReleaseFor } from '@/lib/start-release-handoff';
 import { sourceFileName } from '@/lib/source-file-name';
 import { targetEditionOf } from '@/lib/target-edition';
 import type { Project } from '@/lib/types';
@@ -126,7 +127,12 @@ export function useStartRun({
     setMessage(null);
     setNarrativeMissing(null);
     const fileName = runFileName(project, projectId);
-    const targetProfile = declaredTargetOf(project);
+    // The declared target; a release the start screen asked for and the
+    // project does not carry yet goes up with this first run, exactly as
+    // "Change target" sends one (`lib/start-release-handoff.ts`).
+    const declared = declaredTargetOf(project);
+    const askedRelease = declared.release || deployment !== 'private' ? '' : startReleaseFor(projectId);
+    const targetProfile = askedRelease ? { ...declared, release: askedRelease } : declared;
     void (async () => {
       try {
         // 1. The narrative, when the model is on — bounded, and never the
@@ -164,6 +170,7 @@ export function useStartRun({
         setStep('signing');
         await signEngineRun({ projectId, fileName, deployment, targetProfile, narrative });
         setNarrativeMissing(missing);
+        clearStartRelease(projectId);
         await onSignedRef.current();
         // The project now carries its run, so `startable` holds the next click
         // back; the module guard would only make a later start, in the same

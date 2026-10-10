@@ -39,6 +39,7 @@ import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
+import { leaveStartRelease } from '@/lib/start-release-handoff';
 import CcCard from '@/components/cc/Card';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcField, { CcFieldMessage, CcRequiredMark, CcRequiredNote } from '@/components/cc/Field';
@@ -154,6 +155,8 @@ export default function OwnCodeImport() {
   const [error, setError] = useState<string | null>(null);
   /** The edition the first run is assessed against — asked before the start. */
   const [edition, setEdition] = useState<TargetEdition>('private');
+  /** The Private Edition release the first run reads; `''` reads SAP's latest list. */
+  const [release, setRelease] = useState('');
   /** The project exists but its target was not saved — not "nothing created". */
   const [targetError, setTargetError] = useState<string | null>(null);
   const [personalDataAckFor, setPersonalDataAckFor] = useState('');
@@ -240,13 +243,16 @@ export default function OwnCodeImport() {
       // the Analyze tool. The workspace signs the engine's reading at once, so
       // the full map stands after the build-up (ADR-072); Analyze takes the
       // handoff above for a later run, so nothing is asked twice.
+      // The release is not a field the browser may write; the first run
+      // carries it (`lib/start-release-handoff.ts`), as Change target does.
+      leaveStartRelease(docRef.id, edition === 'private' ? release : '');
       router.push(`/project/${docRef.id}?first=1`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));
       setBusy(false);
     }
-  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition]);
+  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition, release]);
 
   const toggleNaming = useCallback(
     async (next: boolean) => {
@@ -588,7 +594,13 @@ export default function OwnCodeImport() {
         ) : null}
 
         <div className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
-          <TargetEditionChoice value={edition} onChange={setEdition} disabled={busy} />
+          <TargetEditionChoice
+          value={edition}
+          onChange={setEdition}
+          disabled={busy}
+          release={release}
+          onReleaseChange={setRelease}
+        />
         </div>
 
         <TrustBeforeUpload part="pledge" />

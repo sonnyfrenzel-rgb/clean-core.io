@@ -91,7 +91,10 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.profileCatalog': 'Catalog',
   'it.profileNote':
     'Every level on this page is looked up under this profile — the same catalog the signed run of this project reads.',
-  'it.notDeclared': 'not declared',
+  'it.releasePublic':
+    'Always SAP’s current list — SAP upgrades every Public Cloud tenant on the same schedule, so there is no older release to choose.',
+  'it.releaseLatest': 'Not set — SAP’s latest list is used.',
+  'it.releaseSet': 'Set the release',
   'it.notRecorded': 'not recorded',
   'it.routeTitle': 'Route',
   'it.contractTitle': 'Architecture contract',

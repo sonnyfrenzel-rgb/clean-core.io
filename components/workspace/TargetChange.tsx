@@ -61,10 +61,16 @@ export function TargetChangeButton({
   projectId,
   project,
   fit,
+  placement = 'header',
 }: {
   projectId: string;
   project: Project | null;
   fit: Loaded<FitByPlatform> | null;
+  /**
+   * `header` — "Change target" in the card's actions; `release` — "Set the
+   * release" beside a Private Edition release that is not set, the same dialog.
+   */
+  placement?: 'header' | 'release';
 }) {
   const [open, setOpen] = useState(false);
   const uid = typeof window === 'undefined' ? null : (getAuth().currentUser?.uid ?? null);
@@ -72,7 +78,16 @@ export function TargetChangeButton({
   const hasRun = typeof project?.activeRunId === 'string' && project.activeRunId.trim().length > 0;
   const hasSource = typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0;
   if (!project || !owner || !hasRun || !hasSource) return null;
-  return <OwnerTargetChange projectId={projectId} project={project} fit={fit} open={open} setOpen={setOpen} />;
+  return (
+    <OwnerTargetChange
+      projectId={projectId}
+      project={project}
+      fit={fit}
+      open={open}
+      setOpen={setOpen}
+      placement={placement}
+    />
+  );
 }
 
 /**
@@ -86,20 +101,28 @@ function OwnerTargetChange({
   fit,
   open,
   setOpen,
+  placement,
 }: {
   projectId: string;
   project: Project;
   fit: Loaded<FitByPlatform> | null;
   open: boolean;
   setOpen: (open: boolean) => void;
+  placement: 'header' | 'release';
 }) {
   const model = useModelAvailability();
   const { profile } = useUserProfile();
   return (
     <>
-      <CcButton variant="ghost" density="compact" onClick={() => setOpen(true)} data-target-change-open="">
-        {wt('tgt.change')}
-      </CcButton>
+      {placement === 'release' ? (
+        <CcButton variant="ghost" density="compact" onClick={() => setOpen(true)} data-target-change-set-release="">
+          {wt('it.releaseSet')}
+        </CcButton>
+      ) : (
+        <CcButton variant="ghost" density="compact" onClick={() => setOpen(true)} data-target-change-open="">
+          {wt('tgt.change')}
+        </CcButton>
+      )}
       {open ? (
         <TargetChangeDialog
           projectId={projectId}

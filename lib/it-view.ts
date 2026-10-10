@@ -1,4 +1,5 @@
 import type { CloudReadinessGrade } from './abap/abcd-classification';
+import { RELEASE_PINNED_EDITIONS, type Edition } from './assessment-profile';
 import {
   PUBLIC_CLOUD_FIT_BUCKET_LABELS,
   PUBLIC_CLOUD_FIT_BUCKETS,
@@ -296,6 +297,13 @@ export interface CatalogProfile {
   editionDeclared: boolean;
   /** The declared release, or `null` when none is declared. */
   release: string | null;
+  /**
+   * Whether a release can change what this edition's levels are read from.
+   * Only for the Private Edition does SAP publish release-pinned lists
+   * (`RELEASE_PINNED_EDITIONS`); for the Public Edition the current list is the
+   * list, so a missing release is not a gap there and is not shown as one.
+   */
+  releaseMatters: boolean;
   /** "SAP's list for the Private Edition (moving list)", or `null` when the answer named none. */
   catalog: string | null;
   /** `pce-latest · 3f9a…` — the technical name, one level deeper. */
@@ -345,6 +353,7 @@ export function catalogProfile(
     edition,
     editionDeclared,
     release: target.release && target.release.trim() ? target.release.trim() : null,
+    releaseMatters: RELEASE_PINNED_EDITIONS.has(target.edition as Edition),
     catalog: words ?? (catalog?.registryKey ? catalog.registryKey : null),
     catalogKey,
     note,

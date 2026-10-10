@@ -172,6 +172,38 @@ export function pinnedSnapshotForRelease(edition: Edition | string, release: str
   return SHIPPED_CATALOG_SNAPSHOTS.has(key) ? key : null;
 }
 
+/** A Private Edition release SAP publishes a pinned list for, as a start screen offers it. */
+export interface PinnedReleaseOption {
+  /** The release as it is declared and signed, e.g. `2023 FPS03`. Reads back to `snapshot`. */
+  value: string;
+  /** What the reader sees — the value, and for feature pack 0 that it is the initial shipment. */
+  label: string;
+  /** The registry key the release reads, e.g. `pce-2023-3`. */
+  snapshot: string;
+}
+
+/**
+ * The releases a new Private Edition project can name at its start — exactly
+ * the pinned files this build ships (`SHIPPED_CATALOG_SNAPSHOTS`), newest
+ * first, each named so that `pinnedSnapshotForRelease` reads it back to its
+ * own file. A release SAP publishes no pinned list for is not offered: it
+ * would read the moving list anyway, which is the "not sure" choice.
+ */
+export function pinnedReleaseOptions(): PinnedReleaseOption[] {
+  const out: Array<PinnedReleaseOption & { year: number; fps: number }> = [];
+  for (const key of Array.from(SHIPPED_CATALOG_SNAPSHOTS)) {
+    const m = /^pce-(20\d{2})-(\d{1,2})$/.exec(key);
+    if (!m) continue;
+    const year = Number(m[1]);
+    const fps = Number(m[2]);
+    const value = `${year} FPS${String(fps).padStart(2, '0')}`;
+    out.push({ value, label: fps === 0 ? `${value} (initial shipment)` : value, snapshot: key, year, fps });
+  }
+  return out
+    .sort((a, b) => b.year - a.year || b.fps - a.fps)
+    .map(({ value, label, snapshot }) => ({ value, label, snapshot }));
+}
+
 /**
  * The snapshot a profile's verdicts have to come from: the pinned file for a
  * named Private Edition release where SAP publishes one, the edition's moving

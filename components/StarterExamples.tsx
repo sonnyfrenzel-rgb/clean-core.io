@@ -28,6 +28,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSelect from '@/components/cc/Select';
 import CcTag from '@/components/cc/Tag';
 import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
+import { leaveStartRelease } from '@/lib/start-release-handoff';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 
 /**
@@ -79,6 +80,8 @@ export default function StarterExamples({
   const [failed, setFailed] = useState<string | null>(null);
   /** The edition the first run is assessed against — asked before the start. */
   const [edition, setEdition] = useState<TargetEdition>('private');
+  /** The Private Edition release the first run reads; `''` reads SAP's latest list. */
+  const [release, setRelease] = useState('');
   const [viewing, setViewing] = useState<ViewedCode | null>(null);
   /**
    * What the last look at an example's source found, and which card it was
@@ -154,6 +157,9 @@ export default function StarterExamples({
       // The same door "New project" uses: the workspace with its first look —
       // every project opens there (roadmap 3.0.1) — which signs the engine's
       // reading at once, so the full map stands after the build-up (ADR-072).
+      // The release is not a field the browser may write; the first run
+      // carries it (`lib/start-release-handoff.ts`), as Change target does.
+      leaveStartRelease(docRef.id, edition === 'private' ? release : '');
       router.push(`/project/${docRef.id}?first=1`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');
@@ -375,7 +381,13 @@ export default function StarterExamples({
       ) : null}
 
       <div className="flex flex-col gap-4">
-        <TargetEditionChoice value={edition} onChange={setEdition} disabled={!!busy} />
+        <TargetEditionChoice
+          value={edition}
+          onChange={setEdition}
+          disabled={!!busy}
+          release={release}
+          onReleaseChange={setRelease}
+        />
 
         <div data-examples-tier="start-here" className="flex flex-col gap-2">
           <h3 className="m-0 cc-text-label text-cc-ink-muted">Start here</h3>

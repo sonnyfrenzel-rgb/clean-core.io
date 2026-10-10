@@ -2,6 +2,9 @@
 
 import { useId } from 'react';
 import { Cloud, Shield } from 'lucide-react';
+import CcSelect from '@/components/cc/Select';
+import { pinnedReleaseOptions } from '@/lib/assessment-profile';
+import { wt } from '@/lib/workspace-messages';
 
 export type TargetEdition = 'public' | 'private';
 
@@ -35,14 +38,34 @@ const CARD = 'block cursor-pointer rounded-cc-card border p-3 text-left';
 const CARD_ON = 'border-cc-ink bg-cc-surface-muted ring-1 ring-cc-ink';
 const CARD_OFF = 'border-cc-field-border bg-cc-surface hover:border-cc-ink-muted';
 
+/**
+ * The releases a start screen offers for the Private Edition — the pinned
+ * lists SAP publishes, and first the moving list for "not sure" (`''`).
+ */
+export const START_RELEASE_OPTIONS: readonly { value: string; label: string }[] = [
+  { value: '', label: wt('tgt.releaseLatest') },
+  ...pinnedReleaseOptions().map((o) => ({ value: o.value, label: o.label })),
+];
+
 export default function TargetEditionChoice({
   value,
   onChange,
   disabled = false,
+  release,
+  onReleaseChange,
 }: {
   value: TargetEdition;
   onChange: (value: TargetEdition) => void;
   disabled?: boolean;
+  /**
+   * The Private Edition release, asked on the start screens only: a named
+   * release selects SAP's release-pinned list, so it moves the levels and the
+   * findings. Optional — `''` reads SAP's latest list. Without
+   * `onReleaseChange` the question is not asked (the "Change target" dialog
+   * has its own release field).
+   */
+  release?: string;
+  onReleaseChange?: (release: string) => void;
 }) {
   const titleId = useId();
   const name = useId();
@@ -89,6 +112,19 @@ export default function TargetEditionChoice({
           );
         })}
       </div>
+      {value === 'private' && onReleaseChange ? (
+        <div data-target-release-choice="" data-target-release={release ?? ''} className="max-w-md">
+          <CcSelect<string>
+            label={wt('tgt.releaseLabel')}
+            help={wt('tgt.releaseHelp')}
+            options={START_RELEASE_OPTIONS}
+            value={release ?? ''}
+            onChange={onReleaseChange}
+            disabled={disabled}
+            name="target-release"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

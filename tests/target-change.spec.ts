@@ -239,6 +239,9 @@ test.describe('changing the target in the IT view', () => {
     const notice = page.locator('[data-target-change-notice]');
     await expect(notice).toContainText('Target changed from Private Edition 2023 FPS03 to Public Edition', { timeout: 120000 });
     await expect(page.locator('[data-it-profile]')).toContainText('Public Edition');
+    // The Public Edition has no release to choose, and the row says why instead of "not declared".
+    await expect(page.locator('[data-it-profile-release]')).toHaveAttribute('data-it-profile-release', 'current');
+    await expect(page.locator('[data-it-profile-release]')).toContainText('SAP upgrades every Public Cloud tenant');
 
     const project = (await db().collection('projects').doc(projectId).get()).data()!;
     expect(project.s4Deployment).toBe('public');

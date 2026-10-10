@@ -97,8 +97,23 @@ export default function ItRail({
             )}
           </dd>
           <dt className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('it.profileRelease')}</dt>
-          <dd className="m-0 text-[13px] font-semibold text-cc-ink">
-            {profile.release ?? <span className="font-medium text-cc-ink-muted">{wt('it.notDeclared')}</span>}
+          {/* The release only moves the levels where SAP publishes release-pinned
+              lists (the Private Edition). For the Public Edition the row says
+              why there is nothing to choose; for a Private Edition project
+              without one it says what is read instead, with the way to set it. */}
+          <dd data-it-profile-release={profile.release ? 'set' : profile.releaseMatters ? 'latest' : 'current'} className="m-0 text-[13px] font-semibold text-cc-ink">
+            {profile.release ? (
+              profile.release
+            ) : profile.releaseMatters ? (
+              <span className="flex flex-col items-start gap-1">
+                <span className="font-medium text-cc-ink-muted">{wt('it.releaseLatest')}</span>
+                {demo ? null : (
+                  <TargetChangeButton projectId={projectId} project={project} fit={fit} placement="release" />
+                )}
+              </span>
+            ) : (
+              <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('it.releasePublic')}</span>
+            )}
           </dd>
           <dt className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('it.profileCatalog')}</dt>
           <dd data-it-profile-catalog="" className="m-0 text-[13px] font-medium text-cc-ink">
