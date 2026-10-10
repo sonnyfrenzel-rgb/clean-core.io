@@ -94,7 +94,9 @@ jobs:
         with:
           name: qa-review-${{ github.sha }}-${{ github.run_attempt }}
           path: .qa-review/out/qa-review.enc.json
-          retention-days: 14
+          # This report is the delta ledger: the next push starts from it. A quiet dev branch can go
+          # weeks without a push, so it is kept as long as the repository allows (90 days), like qa-full.
+          retention-days: 90
           if-no-files-found: error
 
   smoke:

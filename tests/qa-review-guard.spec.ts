@@ -517,6 +517,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(read('scripts/qa/review.mjs')).toMatch(/commitsBetween: \(from, to\) => Number\(git\(\['rev-list', '--count', `\$\{from\}\.\.\$\{to\}`\]\)\),/);
     // Only push runs can be the previous review.
     expect(read('.github/workflows/qa-review.yml')).toMatch(/gh run list --workflow qa-review\.yml --branch dev --event push --limit 50/);
+    // The delta report is the ledger: kept as long as the repository allows (90 days), so a quiet dev branch keeps it (QA f34d31d63233).
+    const ledger = read('.github/workflows/qa-review.yml');
+    expect(ledger.slice(ledger.indexOf('- name: Upload sealed report'), ledger.indexOf('\n  smoke:'))).toMatch(/retention-days: 90\b/);
     expect(base({ mainBase: () => 'head' }).base).toBeNull(); // head is on main
     // No shared history with main is not "on main": the run stops instead of reviewing one commit.
     expect(() => base({ checkpoint: 'rewritten', mainBase: () => null })).toThrow(/No usable review base/);
@@ -1033,7 +1036,7 @@ test.describe('weekly pipeline health', () => {
     const wf = read('.github/workflows/sync-catalog.yml');
     expect(wf).not.toMatch(/uses:\s*peter-evans\/create-pull-request/);
     expect(wf.slice(wf.indexOf('\npermissions:'), wf.indexOf('\njobs:'))).not.toMatch(/pull-requests/);
-    expect(wf).toMatch(/git push --force "https:\/\/x-access-token:\$\{GH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" HEAD:chore\/sync-cloudification-repo/);
+    expect(wf).toMatch(/push --force "https:\/\/x-access-token:\$\{GH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" HEAD:chore\/sync-cloudification-repo/);
   });
 
   test('the catalog sync keeps its write token away from npm install scripts (SEC-2026-684)', () => {
@@ -1043,6 +1046,38 @@ test.describe('weekly pipeline health', () => {
     // The token is named once, in the push step's env, and nowhere before it.
     expect(wf.match(/github\.token|secrets\.GITHUB_TOKEN/g) ?? []).toHaveLength(1);
     expect(wf.indexOf('GH_TOKEN: ${{ github.token }}')).toBeGreaterThan(wf.indexOf('- name: Push the update to its branch'));
+  });
+
+  test('the catalog sync pushes from a job that never ran npm, with git hooks switched off (QA a9af34d4346f)', () => {
+    const wf = read('.github/workflows/sync-catalog.yml');
+    const top = wf.slice(wf.indexOf('\npermissions:'), wf.indexOf('\njobs:'));
+    expect(top).toMatch(/contents: read/);
+    expect(top).not.toMatch(/write/);
+    const at = { sync: wf.indexOf('\n  sync:'), push: wf.indexOf('\n  push:') };
+    expect(at.sync).toBeGreaterThan(0);
+    expect(at.push).toBeGreaterThan(at.sync);
+    const sync = wf.slice(at.sync, at.push);
+    const push = wf.slice(at.push);
+    // Install scripts run only in the job with no write permission and no token.
+    expect(sync).toContain('npm ci --foreground-scripts');
+    expect(sync).not.toMatch(/write|github\.token|git push|git commit/);
+    // The push job: its own write permission, a fresh checkout, and no npm, npx, tsx or Node setup.
+    expect(push).toMatch(/needs: sync/);
+    expect(push).toMatch(/contents: write/);
+    expect(push).toContain('persist-credentials: false');
+    expect(push).not.toMatch(/\bnpm\b|\bnpx\b|setup-node|\btsx\b/);
+    expect(push).toContain('actions/download-artifact@');
+    // Only the expected paths are accepted, from the artifact and in the working tree.
+    expect(push).toContain("! -path './lib/abap/generated/*.json' ! -path ./lib/demo-release.json");
+    expect(push).toContain("grep -vE '^.. (lib/abap/generated/[^/]+\\.json|lib/demo-release\\.json)$'");
+    // Commit and push run with hooks and fsmonitor off; no bare git commit or push remains.
+    expect(push).not.toMatch(/git (commit|push)\b/);
+    expect(push.match(/git -c core\.hooksPath=\/dev\/null -c core\.fsmonitor=false/g) ?? []).toHaveLength(2);
+    // The token sits in the push step alone.
+    const step = push.indexOf('- name: Push the update to its branch');
+    expect(step).toBeGreaterThan(0);
+    expect(push.slice(step)).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(push.slice(0, step)).not.toMatch(/GH_TOKEN|github\.token/);
   });
 
   test('the health check watches that branch', async () => {

@@ -9,24 +9,33 @@ name: Sync SAP Cloudification Repository
 # that setting off, push the branch, end green. The QA agent's weekly pipeline
 # check (qa-weekly-health.yml) reports the branch while it is ahead of main, and
 # the update reaches production through dev like every other change.
+#
+# Two jobs (QA a9af34d4346f). `npm ci --foreground-scripts` runs third-party install
+# scripts, which can write .git/hooks or .git/config (core.hooksPath, core.fsmonitor,
+# a credential helper). A git commit or push in that same checkout would run them
+# while the write token is in reach. So the job that installs and syncs holds a
+# read-only token and hands over only the data files, as an artifact. The push job
+# starts from a fresh checkout, runs no npm at all, accepts nothing but the expected
+# paths, and runs git with hooks and fsmonitor switched off.
 on:
   schedule:
     - cron: '0 6 * * 1'   # Mondays 06:00 UTC
   workflow_dispatch: {}
 
 permissions:
-  contents: write # push the bot branch; nothing else
+  contents: read
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
-          # The write token must not sit in .git/config while npm install
-          # scripts, tsx and demo:regenerate run. It is handed to the push
-          # step alone, below.
+          # Nothing in this job pushes; npm install scripts, tsx and
+          # demo:regenerate run here, so no token is left in .git/config.
           persist-credentials: false
 
       - name: Setup Node.js
@@ -62,24 +71,92 @@ jobs:
         if: steps.sync.outputs.changed == 'true'
         run: npm run demo:regenerate
 
-      - name: Push the update to its branch
+      # Only the data files leave this job: the catalog JSON and the demo record.
+      - name: Collect the changed data files
         if: steps.sync.outputs.changed == 'true'
+        run: |
+          out="$RUNNER_TEMP/catalog-sync"
+          mkdir -p "$out/lib/abap/generated"
+          cp lib/abap/generated/*.json "$out/lib/abap/generated/"
+          cp lib/demo-release.json "$out/lib/demo-release.json"
+
+      - name: Upload the data files
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: catalog-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalog-sync/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: No change
+        if: steps.sync.outputs.changed == 'false'
+        run: echo "### Catalog unchanged" >> "$GITHUB_STEP_SUMMARY"
+
+  push:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot branch; nothing else
+    steps:
+      # A fresh checkout of the same commit. No package install and no project
+      # script runs in this job, so nothing has had a chance to touch .git/.
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the data files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: catalog-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalog-sync
+
+      # The artifact may hold the catalog JSON files and the demo record and
+      # nothing else: no other path, no subdirectory, no symlink.
+      - name: Accept only the expected paths
+        run: |
+          src="$RUNNER_TEMP/catalog-sync"
+          unexpected=$(cd "$src" && find . -mindepth 1 \( -type l -o \( -type d ! -path ./lib ! -path ./lib/abap ! -path ./lib/abap/generated \) -o \( -type f ! -path './lib/abap/generated/*.json' ! -path ./lib/demo-release.json \) -o \( ! -type f ! -type d \) \) -print)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The sync artifact holds unexpected paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          cp "$src"/lib/abap/generated/*.json lib/abap/generated/
+          cp "$src/lib/demo-release.json" lib/demo-release.json
+          changes=$(git status --porcelain --untracked-files=all)
+          stray=$(printf '%s\n' "$changes" | grep -vE '^.. (lib/abap/generated/[^/]+\.json|lib/demo-release\.json)$' | grep -v '^$' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::The working tree changed outside the catalog and the demo record:"
+            echo "$stray"
+            exit 1
+          fi
+          if [ -z "$changes" ]; then
+            echo "::error::The sync reported a change, but the artifact matches the checkout."
+            exit 1
+          fi
+
+      - name: Commit the update
+        run: |
+          git checkout -B chore/sync-cloudification-repo
+          git add lib/abap/generated/ lib/demo-release.json
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore(catalog): sync SAP Cloudification Repository"
+
+      - name: Push the update to its branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B chore/sync-cloudification-repo
-          git add lib/abap/generated/ lib/demo-release.json
-          git commit -m "chore(catalog): sync SAP Cloudification Repository"
-          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-cloudification-repo
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c credential.helper= \
+            push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-cloudification-repo
           {
             echo "### Catalog update ready"
             echo
             echo "Branch \`chore/sync-cloudification-repo\` holds this week's sync. It is reviewed and brought in through \`dev\`;"
             echo "the weekly QA pipeline check reports it until then."
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: No change
-        if: steps.sync.outputs.changed == 'false'
-        run: echo "### Catalog unchanged" >> "$GITHUB_STEP_SUMMARY"
