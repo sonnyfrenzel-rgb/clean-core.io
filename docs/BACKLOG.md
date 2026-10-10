@@ -3,6 +3,33 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 10.10.2026 — 3.0.7 built on dev, release
+
+**Built (main on Sonny's go, 10.10.2026):** the ZMM engine review completed (batch input field by field,
+authorization check assessed, ABAP run order, one rule per CASE arm, decision tables, User/System lanes,
+ignored input, data scope); the first screen named "First insights into your process", its main line kept
+after the build-up; Documentation lean (ADR-082), the description along a reader's questions (ADR-084) and
+its second round (chapter bar, appendix summary, two pictures, owner-editable RACI); the IT view's own content
+and section bar (ADR-086); the Management view's own content (ADR-087) and the decision's conditions with deep
+links (ADR-085); inputs honest first (ADR-083, block 1); a view switch that opens the new view at its top; the
+steering one-pager on one A4 landscape sheet (ADR-088); Analyze declutter wave 1; the Private Edition release
+asked at the start; My workspace row actions named; tests stub the model by default and a newer push cancels
+the older run. CHANGELOG has the details.
+
+**QA and security:** QA full review of v3.0.6 (`3b742fc`): 19 confirmed and fixed, 16 refuted with evidence;
+delta reviews on dev fixed as they came. Security audit of v3.0.6: SEC-2026-751 to -755 fixed, six refuted.
+
+**Open for Sonny:** deploy `firestore.rules` right after the release (SEC-2026-751/-752, tenant access request
+and `extensibilityRoute` server-only; not before, the v3.0.6 app still writes `extensibilityRoute`); a
+separate test key in its own Google project and read access to the spend for the health check (ROADMAP §7,
+"before 3.0.7", parts 1 and 3); whether a later cost change should make a confirmed decision outdated
+(ROADMAP §7, "after 3.0.7", point 4). A decision with an open need confirmed before 3.0.7 shows outdated until
+it is confirmed again (ADR-085).
+
+**Planned:** SEO/GEO after 3.0 (high priority), 3.0.8 deep links to every choice and back, 3.0.9 SAP
+Architecture Center reference patterns; left for later from 3.0.7: Analyze score hero (needs a mockup),
+Analyze wave 2, IT dependency graph, cost revision in the decision, ADR-083 block 2, unused layer code.
+
 ## Session 09.10.2026 — 3.0.6 built, three QA rounds, release
 
 **Built (main on Sonny's go, 09.10.2026):** open questions instead of "Not determined" (ADR-081); Need &

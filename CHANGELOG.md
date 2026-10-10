@@ -10,6 +10,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.7] — 2026-10-10
+
+The engine finishes what the ZMM review showed, the first screen says what it is, and every view
+and Documentation keep only what their reader needs.
+
+### What everyone notices
+
+- **The first screen is named for what it is.** A new project opens on "First insights into your
+  process", with one sentence saying it is the first reading of the program, not the analysis;
+  the demo tour uses the same name. The main line of the process now stays on the right after the
+  build-up — the overview on top, the detailed map below when you scroll.
+- **The Management view shows only its own content** (ADR-087). The decision comes first: the
+  question, the answer naming the option and who chose or confirmed it, the next step, the four
+  options side by side and the record with Confirm. Beside it the distance to SAP standard and the
+  readiness trend; below it one *Evidence* fold and one row of links to Business, IT, Economics and
+  Delivery. No layer bar, no repeated cards, each fact once.
+- **The decision's open conditions say what to do and link to the place** (ADR-085). "What it
+  rests on" is one list — Need, Option, Costs, Architecture contract — each with its state, one
+  line and one action that opens the exact place in Business or IT. The need condition counts
+  business rules and decision points (12 and 13 for the demo), not every element of the map; the
+  walk-through reaches every one of them. Limits nobody here can close are shown apart under "Stays
+  open with the decision". The Costs row no longer says "Not determined" beside four priced
+  options: Economics prices them on your own assumptions, and the decision does not record costs.
+  Because the condition text changed, a decision with an open need that was confirmed before this
+  release shows as outdated until it is confirmed again.
+- **The steering one-pager prints on one A4 landscape sheet** (ADR-088) — no browser header or
+  footer, links as plain text, ids only in the footer.
+- **The IT view shows only its own content** (ADR-086). Its answer, four figures and the next
+  step, then its own section bar — Findings, Objects & dependencies, Open questions, Route,
+  Run & trust — with the current section marked as you scroll. Findings come before what the code
+  uses; objects and their uses are one table, each use with its own lines; settled open questions
+  fold under "Settled". Old layer links lead to the right place.
+- **Switching views starts the new view at its top.** A place that belongs to the old view is
+  dropped; a subject such as a code line stays, so the other view opens on the same thing.
+- **Documentation says each thing once** (ADR-082). One *Export* menu (Word, Print/PDF, Confluence,
+  Markdown, BPMN 2.0) instead of seven buttons; one card for model proposals; the open questions are
+  the project's one list. Documentation no longer stores its files as generated code, so opening it
+  first can no longer mark code as present. Blueprints stored before 3.0.5 keep their data behind
+  one strip: download as it was, or replace with the code reading.
+- **The process description follows a reader's questions** (ADR-084). Seven chapters in a chapter
+  bar that stays in view, each with a count; the title leads with the process and the program; the
+  run starts with how it starts, its selection screen and defaults; *Systems and data* says which
+  rows each read selects and which values the program computes. *Who acts* appears only where the
+  code proves an actor. Decision tables say how they are read; an open question shared by several
+  rows is said once above the table. Two pictures from the engine: the main path as a flow, and the
+  tables the program reads beside the tables it changes. The appendix opens with a summary table
+  of the steps.
+- **The owner can edit the RACI.** Every cell, role names and roles, saved through the server and
+  then shown as confirmed by the owner, in the exports too; readers see it read-only. The SOP stays
+  a model proposal.
+- **Inputs are honest about what they do** (ADR-083). Transformation's checklist says it is kept in
+  this browser only; the demo no longer shows a Delivery decision the product does not have.
+  Re-reading or regenerating anything you already have asks first — *Replace* or *Keep mine*, with
+  the cost line. An invited reader sees "Only the owner can decide or change this." instead of
+  buttons that do nothing.
+- **Analyze, first clean-up.** The route report survives a reload; one route card with its
+  drivers, confidence and what it holds under, and "Decide in Management" instead of a route switch
+  that recorded no reason; the strategy sentence the code did not support and a "Confirm" that
+  recorded nothing are gone. A notice says when the source changed since the run. Nothing signed
+  changes.
+- **The Private Edition release is asked at the start.** Both start screens offer an optional
+  release (default: SAP's latest list), handed to the first signed run like *Change target*; the
+  target card says what the release means. Public Edition has no release row.
+- **My workspace says what its row buttons do** — "Actions" and "Open project" on wider screens.
+
+### Engine
+
+- **Batch input is read field by field**: the effect reads, for example, "changes the delivery date
+  (EKET-EEIND) via ME22" and is graded as a write to that table with SAP's successor.
+  `CALL TRANSACTION` without `USING` is SAP GUI navigation, not batch input.
+- **The authorization check is assessed**: only the LOW value of a range checked, a display
+  activity while the program writes, writes without a check (findings without a score change).
+- **The process follows ABAP's run order**: a reporting event that ends normally flows into the
+  next; `STOP` continues with `END-OF-SELECTION`. A `CASE` with more than two arms gives one rule per
+  arm; IF/ELSEIF and CASE chains that set one field become one decision table; user actions reached
+  from a list are alternatives, not a sequence. Lanes are named *User* or *System* from role
+  evidence.
+- Internal-table changes are plain steps; the callback program is read at the call site; input that
+  is read and ignored, data scope (`WHERE` filters), computed values and selection presets are
+  reported.
+- Measured on the 300-case benchmark: nodes unchanged, edges 66.94 % → 67.34 %; level agreement on
+  the learning half 120 → 118 (two batch input cases now stricter), holdout 112 → 113. The demo
+  reveals 12 rules instead of 11; its score is unchanged.
+
+### Fixed
+
+- QA full review of v3.0.6 (`3b742fc`): f7c64ceb4e3f, 29935b8109f6, 5b36ba237426, ae49537d00e3,
+  e3d9cca3197b, f34458de6705, d0157527e4b5, bd707017502e, 5e3dfe48fec0, 6d987e6b97cd, e4e8e512167b,
+  76b83beec3c3, fe125dab988e, a9af34d4346f, f34d31d63233, 73f480886489, 04ad2108af07, cb7ed86b0d3b,
+  0ce264ac607d; 16 findings refuted with evidence.
+- QA delta reviews on dev: 1bc866b7ca58, 785474c693d6, 4dab673673fd, f18d0ae677c4, 975b5ad60247,
+  c65a238c3cd2, 59842baa5efe.
+
+### Security
+
+- SEC-2026-751 to SEC-2026-755 are fixed. Two of them, together with a tenant access request and
+  the extensibility route becoming server-written only, take effect with the Firestore rules, which
+  are deployed by hand right after this release.
+
+### Tests
+
+- The test server answers model calls with a stub by default; only listed specs may reach the real
+  model, and a newer push cancels the older test run. Test runs and production still share one
+  model key until a separate test key exists.
+
 ## [v3.0.6] — 2026-10-09
 
 "Not determined" becomes a short list of open questions you can close, the Business view opens
