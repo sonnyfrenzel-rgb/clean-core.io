@@ -11,6 +11,7 @@ import { CONTACT_EMAIL, TERMS_VERSION, USER_MAIL_FROM } from '@/lib/constants';
 // turned `&szlig;` into a space, so the welcome imprint read "Hellerstra e 9".
 import { htmlToText } from '@/lib/mail-text';
 import { recordEmailSent } from '@/lib/email-events';
+import { resendFailureSummary } from '@/lib/transactional-mail';
 
 /**
  * POST /api/account/register
@@ -238,7 +239,7 @@ async function sendMail(
       }),
     });
     if (!res.ok) {
-      console.error(`[Email] Failed to send ${msg.label} via Resend:`, await res.text());
+      console.error(`[Email] Failed to send ${msg.label} via Resend: ${await resendFailureSummary(res)}`);
       return;
     }
     const body = await res.json().catch(() => ({} as any));

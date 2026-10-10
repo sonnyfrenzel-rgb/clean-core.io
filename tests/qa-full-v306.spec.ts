@@ -27,6 +27,37 @@ test('no mail log names its recipient (73f480886489)', () => {
   expect(suppressed, 'the suppressed-mail banner names the person again').not.toMatch(/console\.log\([^;]*(rawName|rawEmail)/);
 });
 
+test('a rejected send logs status and category, never the provider body (785474c693d6)', async () => {
+  const { sendTransactionalMail } = await import('../lib/transactional-mail');
+  const address = 'rejected.person@example.com';
+  const realFetch = globalThis.fetch;
+  const realError = console.error;
+  const realKey = process.env.RESEND_API_KEY;
+  const logged: string[] = [];
+  process.env.RESEND_API_KEY = 're_test_not_a_key';
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ statusCode: 422, name: 'validation_error', message: `Invalid \`to\` field: ${address}` }),
+    { status: 422, headers: { 'Content-Type': 'application/json' } },
+  )) as typeof fetch;
+  console.error = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
+  try {
+    const outcome = await sendTransactionalMail({ to: address, subject: 's', html: '<p>x</p>', label: 'invitation' });
+    expect(outcome.delivered).toBe(false);
+  } finally {
+    globalThis.fetch = realFetch;
+    console.error = realError;
+    if (realKey === undefined) delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY = realKey;
+  }
+  expect(logged).toEqual(['[Email] Resend rejected invitation: status=422 error=validation_error']);
+  expect(logged.join('\n')).not.toContain(address);
+  // The two routes with their own Resend call use the same summary, not the body.
+  for (const rel of ['app/api/account/register/route.ts', 'app/api/request-tenant-access/route.ts']) {
+    const src = read(rel);
+    expect(src, `${rel} logs the provider body again`).not.toMatch(/console\.error\([^;]*\.text\(\)/);
+    expect(src).toContain('await resendFailureSummary(');
+  }
+});
+
 test('a revocation reads the accepted invitations inside its transaction (cb7ed86b0d3b)', () => {
   const src = read('app/api/projects/[projectId]/readers/route.ts');
   const del = src.slice(src.indexOf('export async function DELETE'));

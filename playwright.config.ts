@@ -77,11 +77,12 @@ export default defineConfig({
       RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER || 'test-rate-limit-pepper-for-ci-test-runner-32',
       // Suppress real email dispatch during E2E tests — API routes check `if (resendApiKey)` and skip when empty
       RESEND_API_KEY: '',
-      // Tests never spend the production model budget (roadmap, before 3.0.7):
-      // `/api/gemini` answers with the provider stub unless a spec opts in to
-      // the real model (`lib/gemini-test-stub.ts`). The specs that may are
-      // listed in tests/gemini-real-model-guard.spec.ts. Inert outside the
-      // emulator build and on Cloud Run.
+      // Roadmap "before 3.0.7 — Tests never spend the production model budget",
+      // part (2): `/api/gemini` answers with the provider stub unless a spec
+      // opts in to the real model (`lib/gemini-test-stub.ts`). The specs that
+      // may are listed in tests/gemini-real-model-guard.spec.ts. Until part (1),
+      // a separate test key, is in place, those opt-ins still draw on the key
+      // production uses. Inert outside the emulator build and on Cloud Run.
       GEMINI_TEST_STUB_DEFAULT: 'true',
     },
   },

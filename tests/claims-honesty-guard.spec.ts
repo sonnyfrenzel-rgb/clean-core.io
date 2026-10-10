@@ -645,6 +645,16 @@ test.describe('QA v3.0.6 · the copyable service guides are safe to copy', () =>
     expect(code).toContain('channel.nack(msg, false, false)');
   });
 
+  test('4dab673673fd — Event Mesh does not promise a dead-letter queue it never configures', () => {
+    const code = getCloudServiceDetails('SAP Event Mesh').codeSnippet;
+    // The guide asserts the queue with `{ durable: true }` only; a nack without
+    // requeue is retained only if a dead-letter queue exists on the queue.
+    expect(code).toContain('channel.assertQueue(queue, { durable: true })');
+    expect(code).not.toMatch(/dead-letter queue, not lost/i);
+    expect(code).not.toMatch(/a dead-letter queue configured on the queue keeps it/i);
+    expect(code).toContain('without one they are discarded');
+  });
+
   test('f34458de6705 — the OData key is escaped, not interpolated raw', () => {
     const code = getCloudServiceDetails('Destination Service').codeSnippet;
     expect(code).not.toContain("Orders('${orderId}')");

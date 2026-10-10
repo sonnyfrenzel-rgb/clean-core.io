@@ -4,6 +4,7 @@ import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce, updateExistingProfile, mergeWhileProfileExists } from '@/lib/firebase-admin';
 import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
+import { resendFailureSummary } from '@/lib/transactional-mail';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -270,8 +271,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!resendRes.ok) {
-        const errText = await resendRes.text();
-        console.error('[Email] Failed to send tenant request via Resend API:', errText);
+        console.error(`[Email] Failed to send tenant request via Resend API: ${await resendFailureSummary(resendRes)}`);
       } else {
         adminNotified = true;
         const sent = await resendRes.json().catch(() => ({} as any));

@@ -124,8 +124,9 @@ async function startListening() {
     try {
       eventPayload = JSON.parse(msg.content.toString());
     } catch (err) {
-      // A malformed message will never parse: reject it without requeueing
-      // (a dead-letter queue configured on the queue keeps it for inspection)
+      // A malformed message will never parse: reject it without requeueing.
+      // Rejected messages are kept only if the queue has a dead-letter queue
+      // (set on the queue in Event Mesh); without one they are discarded.
       console.error('[!] Malformed event rejected', err);
       channel.nack(msg, false, false);
       return;
@@ -137,7 +138,8 @@ async function startListening() {
       channel.ack(msg);
     } catch (err) {
       console.error(\`[!] Processing failed for order \${eventPayload.OrderId}\`, err);
-      channel.nack(msg, false, false); // to the dead-letter queue, not lost
+      // Rejected without requeueing: kept only by a dead-letter queue, as above
+      channel.nack(msg, false, false);
     }
   }, { noAck: false });
 }

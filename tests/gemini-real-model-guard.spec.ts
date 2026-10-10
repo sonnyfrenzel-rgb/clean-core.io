@@ -4,7 +4,14 @@ import path from 'path';
 import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_DEFAULT_ENV } from '../lib/gemini-test-stub';
 
 /**
- * Tests never spend the production model budget — roadmap "before 3.0.7" (2).
+ * Roadmap "before 3.0.7 — Tests never spend the production model budget",
+ * part (2): the number of specs that call the real model at all.
+ *
+ * Not yet the whole promise (QA review of 1c5d882f3b6a): part (1), a separate
+ * test key in its own project with its own cap, is still outstanding. Until it
+ * is in place, CI and production share one key, and every spec listed below
+ * spends production's budget on each run. The list is kept to one for that
+ * reason.
  *
  * On the evening of the 3.0.6 release production's model calls answered 429
  * "monthly spending cap exceeded": production, CI and local runs shared one

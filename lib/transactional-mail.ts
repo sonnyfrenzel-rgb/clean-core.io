@@ -46,6 +46,18 @@ export type MailOutcome =
 /** The one sender of every user mail, `lib/constants.ts` (roadmap 3.0.9). */
 const DEFAULT_FROM = USER_MAIL_FROM;
 
+/**
+ * What a log may say about a rejected send: the HTTP status and the provider's
+ * error category (`validation_error`, `rate_limit_exceeded`, …), never the
+ * body. Resend's messages can quote the address they refused, and the
+ * recipient is personal data (QA 785474c693d6, after 73f480886489).
+ */
+export async function resendFailureSummary(res: Response): Promise<string> {
+  const failure = (await res.json().catch(() => ({}))) as { name?: unknown };
+  const category = typeof failure?.name === 'string' && /^[a-z_]{1,64}$/.test(failure.name) ? failure.name : 'unknown';
+  return `status=${res.status} error=${category}`;
+}
+
 export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutcome> {
   const apiKey = process.env.RESEND_API_KEY;
 
@@ -90,7 +102,7 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
   }
 
   if (!res.ok) {
-    console.error(`[Email] Resend rejected ${msg.label}:`, await res.text().catch(() => ''));
+    console.error(`[Email] Resend rejected ${msg.label}: ${await resendFailureSummary(res)}`);
     return { delivered: false, reason: 'rejected', detail: 'The mail provider rejected the message.' };
   }
 
