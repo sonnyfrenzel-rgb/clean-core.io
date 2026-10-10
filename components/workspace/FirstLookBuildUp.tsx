@@ -191,6 +191,9 @@ function ExcerptShape({
 /** How tall the window onto the growing excerpt is; the drawing keeps its own scale inside it. */
 const EXCERPT_VIEW = 440;
 
+/** The end state shrinks the drawing no further: 12 px names stay 11 px. */
+const EXCERPT_MIN_SCALE = 0.92;
+
 /**
  * The drawing itself — also the process picture of the end state
  * (`FirstLook.tsx`), so the process a reader watched grow is the one that stays.
@@ -209,9 +212,12 @@ export function ExcerptSvg({
   named: boolean;
   label?: string;
   /**
-   * The whole drawing, scaled down to the window if it is taller — for the end
-   * state, where nothing grows any more and a cut-off end event would hide how
-   * the process ends. The build-up scrolls the window instead.
+   * The end state: the whole drawing at the width of its card — never wider
+   * than the layout's own scale, never narrower than `EXCERPT_MIN_SCALE`, so a
+   * label stays readable. No window: the card around it scrolls a drawing taller
+   * than it has room for (`FirstLook.tsx`), and a narrow column scrolls it
+   * sideways. Fitting the height instead shrank a five-step main line to half
+   * its size, 6 px labels in a column with room to spare (owner 10.10.2026).
    */
   fit?: boolean;
   /** The build-up only: how far node `index` has grown in, 0 to 1. Absent, every node stands. */
@@ -237,67 +243,82 @@ export function ExcerptSvg({
   // From the names on, the whole process is there and the reader starts at its top.
   const follow = named || fit ? 0 : Math.max(0, Math.min(bottom - EXCERPT_VIEW, frame.height - EXCERPT_VIEW));
   const fitScale = Math.min(1, EXCERPT_VIEW / Math.max(1, frame.height));
-  const scale = fit ? fitScale : 1 + (fitScale - 1) * settle;
+  const scale = 1 + (fitScale - 1) * settle;
   const offset = follow * (1 - settle);
   const growing = (i: number) => (growth ? growth(i) : 1);
+  const svg = (
+    <svg
+      data-first-look-excerpt=""
+      data-first-look-excerpt-fit={fit ? 'width' : undefined}
+      viewBox={`${frame.x} ${frame.y} ${frame.width} ${frame.height}`}
+      width={Math.round(frame.width)}
+      height={Math.round(frame.height)}
+      role="img"
+      aria-label={label}
+      className={cn(
+        'mx-auto block h-auto',
+        fit ? null : 'max-w-full',
+        // A settle is driven frame by frame; a transition would only lag it.
+        fit || (settle > 0 && settle < 1) ? null : 'motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out',
+      )}
+      style={
+        fit
+          ? {
+              width: '100%',
+              maxWidth: Math.round(frame.width),
+              minWidth: Math.round(frame.width * EXCERPT_MIN_SCALE),
+            }
+          : {
+              transform: `translateY(${-offset}px) scale(${scale})`,
+              transformOrigin: 'top center',
+            }
+      }
+    >
+      <defs>
+        <marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 Z" className="fill-cc-ink-muted" />
+        </marker>
+      </defs>
+      {drawing.flows
+        .filter((f) => index.has(f.from) && index.has(f.to))
+        .map((f) => {
+          const g = Math.min(growing(index.get(f.from)!), growing(index.get(f.to)!));
+          return (
+            <g key={f.id} style={g < 1 ? { opacity: g } : undefined}>
+              <polyline
+                points={f.points.map((p) => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                strokeWidth={1.5}
+                markerEnd={`url(#${arrow})`}
+                className="stroke-cc-ink-muted"
+              />
+              {named && f.label
+                ? f.label.lines.map((l, i) => (
+                    <text
+                      key={i}
+                      x={f.label!.box.x + f.label!.box.width / 2}
+                      y={f.label!.box.y + 11 + i * 13}
+                      textAnchor="middle"
+                      fontSize={11}
+                      className="fill-cc-ink-muted"
+                    >
+                      {l}
+                    </text>
+                  ))
+                : null}
+            </g>
+          );
+        })}
+      {shown.map((n, i) => (
+        <ExcerptShape key={n.id} node={n} named={named} newest={n.id === newest && !named} growth={growing(i)} />
+      ))}
+    </svg>
+  );
+  // The end state has no window: the card it stands in decides the height.
+  if (fit) return svg;
   return (
     <div className="overflow-hidden" style={{ maxHeight: EXCERPT_VIEW }}>
-      <svg
-        data-first-look-excerpt=""
-        viewBox={`${frame.x} ${frame.y} ${frame.width} ${frame.height}`}
-        width={Math.round(frame.width * (fit ? scale : 1))}
-        height={Math.round(frame.height * (fit ? scale : 1))}
-        role="img"
-        aria-label={label}
-        className={cn(
-          'mx-auto block h-auto max-w-full',
-          // A settle is driven frame by frame; a transition would only lag it.
-          settle > 0 && settle < 1 ? null : 'motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out',
-        )}
-        style={{
-          transform: fit ? `translateY(${-offset}px)` : `translateY(${-offset}px) scale(${scale})`,
-          transformOrigin: 'top center',
-        }}
-      >
-        <defs>
-          <marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0 0 L10 5 L0 10 Z" className="fill-cc-ink-muted" />
-          </marker>
-        </defs>
-        {drawing.flows
-          .filter((f) => index.has(f.from) && index.has(f.to))
-          .map((f) => {
-            const g = Math.min(growing(index.get(f.from)!), growing(index.get(f.to)!));
-            return (
-              <g key={f.id} style={g < 1 ? { opacity: g } : undefined}>
-                <polyline
-                  points={f.points.map((p) => `${p.x},${p.y}`).join(' ')}
-                  fill="none"
-                  strokeWidth={1.5}
-                  markerEnd={`url(#${arrow})`}
-                  className="stroke-cc-ink-muted"
-                />
-                {named && f.label
-                  ? f.label.lines.map((l, i) => (
-                      <text
-                        key={i}
-                        x={f.label!.box.x + f.label!.box.width / 2}
-                        y={f.label!.box.y + 11 + i * 13}
-                        textAnchor="middle"
-                        fontSize={11}
-                        className="fill-cc-ink-muted"
-                      >
-                        {l}
-                      </text>
-                    ))
-                  : null}
-              </g>
-            );
-          })}
-        {shown.map((n, i) => (
-          <ExcerptShape key={n.id} node={n} named={named} newest={n.id === newest && !named} growth={growing(i)} />
-        ))}
-      </svg>
+      {svg}
     </div>
   );
 }

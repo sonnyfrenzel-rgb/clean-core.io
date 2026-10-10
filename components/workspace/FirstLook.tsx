@@ -3,7 +3,8 @@
 import OpenQuestionsLine from './OpenQuestionsLine';
 import type { OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Check, CircleDashed, FileCode } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, ChevronRight, CircleDashed, FileCode } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -737,7 +738,7 @@ export default function FirstLook({
           {result ? lead : null}
           {result ? (
             <div
-              className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]"
+              className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] xl:grid-cols-[minmax(0,1fr)_minmax(0,600px)]"
             >
               {rulesBelow ? (
                 <BusinessOpening
@@ -789,7 +790,7 @@ export default function FirstLook({
                     where the full map stands under this card (owner 10.10.2026,
                     reversing 03.10.2026): it is the one picture of the process
                     a reader sees without scrolling. */}
-                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />
+                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} sticky={!sourceOpen} />
                 {sourceOpen ? (
                   <div data-first-look-source="" className="min-w-0">
                     <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
@@ -847,13 +848,43 @@ export default function FirstLook({
  * grew, whole and with plain names. A source the engine could not draw says
  * so in one sentence; it never leaves an empty frame.
  */
-function FirstLookProcess({
+export function FirstLookProcess({
   drawing,
   onOpenMap,
+  sticky = false,
 }: {
   drawing: ReturnType<typeof firstLookExcerpt>;
   onOpenMap?: () => void;
+  /** Beside the step list on a wide screen, the card stays in view while the list scrolls. */
+  sticky?: boolean;
 }) {
+  // The drawing stands at the card's width with a readable minimum
+  // (`ExcerptSvg fit`), so a long main line is taller than a screen. On a wide
+  // screen the drawing then scrolls inside the card (on a phone sideways, past
+  // the readable minimum), and the card says so while there is more — never a silent clip (owner 10.10.2026: the line
+  // stopped at "Read vendor" with nothing to say more followed).
+  const scroller = React.useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState<'below' | 'right' | null>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const measure = () =>
+      setMore(
+        el.scrollHeight - el.clientHeight - el.scrollTop > 8
+          ? 'below'
+          : el.scrollWidth - el.clientWidth - el.scrollLeft > 8
+            ? 'right'
+            : null,
+      );
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      observer?.disconnect();
+    };
+  }, [drawing]);
   if (drawing.nodes.length === 0) {
     return (
       <p data-first-look-process="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
@@ -862,17 +893,42 @@ function FirstLookProcess({
     );
   }
   return (
-    <figure data-first-look-process="drawn" className="m-0 flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line p-3">
+    <figure
+      data-first-look-process="drawn"
+      className={cn(
+        'm-0 flex min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4',
+        sticky && 'lg:sticky lg:top-20',
+      )}
+    >
       <figcaption className="text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
         {wt('firstLook.processTitle')}
       </figcaption>
-      <ExcerptSvg drawing={drawing} grown={drawing.nodes.length} named fit label={wt('firstLook.processLabel')} />
+      <div
+        ref={scroller}
+        data-first-look-process-scroll={more ?? 'end'}
+        // A focusable region, so a keyboard reader can scroll a drawing taller than the card.
+        tabIndex={more ? 0 : undefined}
+        role={more ? 'region' : undefined}
+        aria-label={more ? wt('firstLook.processLabel') : undefined}
+        className="min-w-0 overflow-x-auto rounded-cc-row focus-visible:outline-2 focus-visible:outline-cc-focus lg:max-h-[calc(100dvh-16rem)] lg:overflow-y-auto"
+      >
+        <ExcerptSvg drawing={drawing} grown={drawing.nodes.length} named fit label={wt('firstLook.processLabel')} />
+      </div>
+      {more ? (
+        <p
+          data-first-look-process-more={more}
+          className="m-0 flex items-center gap-1 border-t border-cc-line pt-2 text-[12px] font-medium text-cc-ink-muted"
+        >
+          {more === 'below' ? <ChevronDown size={16} aria-hidden={true} /> : <ChevronRight size={16} aria-hidden={true} />}
+          {wt(more === 'below' ? 'firstLook.processMoreBelow' : 'firstLook.processMoreRight')}
+        </p>
+      ) : null}
       {onOpenMap ? (
-        <span className="cc-no-print">
+        <div className="cc-no-print">
           <CcButton variant="ghost" onClick={onOpenMap} data-first-look-open-map="">
             {wt('firstLook.openMap')}
           </CcButton>
-        </span>
+        </div>
       ) : null}
     </figure>
   );

@@ -182,6 +182,14 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
       last = decision;
     }
   }
+  // The walk also stops at the step limit. Where the main line goes on from
+  // there, that is a cut as well — without the marker the drawing would end
+  // on its last step and read as the end of the process (owner 10.10.2026,
+  // "Read vendor" and then nothing).
+  if (!cutAt && steps >= limit && cur) {
+    const on = outOf(root, cur.id).find((f) => !isEnd(byId.get(f.targetId)) && !f.back);
+    cutAt = on ? byId.get(on.targetId) ?? null : null;
+  }
   // ---- where the excerpt stops for room: a marker with what follows ----
   if (cutAt) {
     let remaining = 0;

@@ -147,6 +147,8 @@ export const WORKSPACE_RULES_MESSAGES = {
   'firstLook.processTitle': 'Main line of the process',
   'firstLook.processLabel': 'The main line of the process, each step with the line it was read from',
   'firstLook.processNone': 'The main line could not be drawn from this source.',
+  'firstLook.processMoreBelow': 'The main line goes on below — scroll the drawing',
+  'firstLook.processMoreRight': 'The drawing goes on to the right — scroll it sideways',
   'firstLook.openMap': 'Open the full map',
   'firstLook.confirmNote': 'No model call · your answers are a self-declaration',
   'firstLook.stripTrace': 'Linked to the code',
