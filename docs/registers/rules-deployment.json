@@ -40,7 +40,7 @@
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
   },
   "pending": {
-    "sha256OfLfNormalisedText": "9ad8335bb578fa720941c7c6c0d5ebe8f99fd96bca93e177f0b1a619bc29344c",
+    "sha256OfLfNormalisedText": "643fb2a45cfeff1ebc5b230873fcf61c4f1f29b32ef4a7838f2e080cc7d6e287",
     "recordedAt": "2026-10-10",
     "recordedFor": "SEC-2026-751, SEC-2026-752 - 3.0.x security hardening; waits for Sonny's next rules deploy",
     "addsToClient": [],

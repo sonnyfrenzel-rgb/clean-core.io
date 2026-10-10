@@ -544,9 +544,9 @@ service cloud.firestore {
 
     match /tenant_access_requests/{requestId} {
       allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
-      allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive() &&
-                    isValidAccessRequest(request.resource.data, 5000);
-      allow update, delete: if false;
+      // Written only by /api/request-tenant-access (Admin SDK), before the
+      // administrator is mailed, so the links in that mail always find it.
+      allow create, update, delete: if false;
     }
 
     // F-03: S/4HANA-Credentials: ausschließlich serverseitig (Admin SDK). Clients nie.

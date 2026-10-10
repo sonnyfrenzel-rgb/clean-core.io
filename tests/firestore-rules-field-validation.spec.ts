@@ -167,7 +167,7 @@ test('a registration request is created only in its initial state, for the own a
   expect(await denied(() => setDoc(ref, request)), 'the request the sign-up writes').toBe(false);
 });
 
-test('a tenant access request is created only in its initial state, for the own address', async () => {
+test('a tenant access request is never written by a client — the server records it (QA 04ad2108af07)', async () => {
   const ref = doc(newcomer.db, 'tenant_access_requests', uids.newcomer);
   const request = {
     email: emails.newcomer,
@@ -183,7 +183,7 @@ test('a tenant access request is created only in its initial state, for the own 
   expect(await denied(() => setDoc(ref, { ...request, motivation: 'x'.repeat(5001) })), 'motivation length').toBe(true);
   expect(await denied(() => setDoc(ref, { ...request, createdAt: DAY_AGO })), 'createdAt a day ago').toBe(true);
 
-  expect(await denied(() => setDoc(ref, request)), 'the request the app writes').toBe(false);
+  expect(await denied(() => setDoc(ref, request)), 'even a well-formed request').toBe(true);
 });
 
 test('a support ticket is created open, with bounded text and no further fields', async () => {
