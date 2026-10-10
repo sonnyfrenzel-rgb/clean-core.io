@@ -140,28 +140,123 @@ export function namesThisProgram(
     new RegExp(String.raw`^(?:CALL|PERFORM)\b[\s\S]*\b(?:IMPORTING|CHANGING|TABLES)\b[\s\S]*(?:=\s*|\s)${n}`, 'i'),
   ];
   type Write = { line: number; self: boolean };
+  /** What a statement does to the variable: fills it from this program, writes anything else, or nothing. */
+  const writeOf = (s: AbapStatement): 'self' | 'other' | null => {
+    const text = s.text.trim();
+    if (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(text)) return declaredSelf.test(text) ? 'self' : null;
+    if (selfWrites.some((re) => re.test(text))) return 'self';
+    const masked = maskLiterals(text);
+    return assignmentTarget(text) === name || anyWrite.some((re) => re.test(masked)) ? 'other' : null;
+  };
+  // Roadmap 3.0.7: first the value the way the run reaches the call — see
+  // `valueAlongTheRun`. Only where that path decides nothing does the reading
+  // by line below take over.
+  if (site) {
+    const alongTheRun = valueAlongTheRun(statements, site, writeOf);
+    if (alongTheRun) return alongTheRun === 'self';
+  }
   const writes: Write[] = [];
   for (const s of statements) {
     if (s === site) continue;
-    const text = s.text.trim();
-    if (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(text)) {
-      if (declaredSelf.test(text)) writes.push({ line: s.lineStart, self: true });
-      continue;
-    }
-    if (selfWrites.some((re) => re.test(text))) {
-      writes.push({ line: s.lineStart, self: true });
-      continue;
-    }
-    const masked = maskLiterals(text);
-    if (assignmentTarget(text) === name || anyWrite.some((re) => re.test(masked))) {
-      writes.push({ line: s.lineStart, self: false });
-    }
+    const write = writeOf(s);
+    if (write) writes.push({ line: s.lineStart, self: write === 'self' });
   }
   if (site) {
     const before = writes.filter((w) => w.line < site.lineStart);
     if (before.length > 0) return before.reduce((a, b) => (b.line >= a.line ? b : a)).self;
   }
   return writes.length > 0 && writes.every((w) => w.self);
+}
+
+const ROUTINE_OPENER = /^(FORM|METHOD|FUNCTION|MODULE)$/;
+const ROUTINE_CLOSER = /^(ENDFORM|ENDMETHOD|ENDFUNCTION|ENDMODULE|ENDCLASS)$/;
+const EVENT_OPENER = /^(?:INITIALIZATION|START-OF-SELECTION|END-OF-SELECTION|LOAD-OF-PROGRAM|TOP-OF-PAGE|END-OF-PAGE)\b|^AT\s+(?:SELECTION-SCREEN|LINE-SELECTION|USER-COMMAND|PF\d)/i;
+/** How many routines deep `valueAlongTheRun` follows a `PERFORM` or a caller. */
+const MAX_VALUE_DEPTH = 6;
+
+/** `PERFORM f` into this source — not `IN PROGRAM`, not a dynamic `(name)` — upper-cased, or `null`. */
+function performedForm(statement: AbapStatement): string | null {
+  if (statement.keyword !== 'PERFORM' || /\bIN\s+PROGRAM\b/i.test(statement.text)) return null;
+  const name = /^PERFORM\s+([\w/]+)(?!\s*\()/i.exec(statement.text)?.[1];
+  return name ? name.toUpperCase() : null;
+}
+
+/**
+ * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — the value a variable has at
+ * `site`, read the way the run gets there instead of by line number: backwards
+ * through the processing block of the call, into every `PERFORM` that stands
+ * before it there (its last write decides), and — when the block is a FORM
+ * and nothing in it decides — back into the places that perform it, each of
+ * which must agree. A write in a routine that stands higher up in the source
+ * but runs later, or never, no longer decides what the ALV was handed; a fill
+ * in a routine written further down but performed before the call does.
+ *
+ * `'self'` / `'other'` when that path decides; `null` when it does not (an
+ * event block with no write before the call, a FORM nothing performs, a
+ * chain deeper than `MAX_VALUE_DEPTH`) — the caller then falls back to the
+ * reading by line.
+ */
+function valueAlongTheRun(
+  statements: readonly AbapStatement[],
+  site: AbapStatement,
+  writeOf: (s: AbapStatement) => 'self' | 'other' | null,
+): 'self' | 'other' | null {
+  const formBody = new Map<string, { open: number; close: number }>();
+  for (let i = 0; i < statements.length; i++) {
+    if (statements[i].keyword !== 'FORM') continue;
+    const name = /^FORM\s+([\w/]+)/i.exec(statements[i].text)?.[1]?.toUpperCase();
+    if (!name || formBody.has(name)) continue;
+    let close = i + 1;
+    while (close < statements.length && statements[close].keyword !== 'ENDFORM') close++;
+    formBody.set(name, { open: i, close });
+  }
+
+  /** Walk back from `from` (exclusive) to the start of its block. */
+  const before = (from: number, depth: number, seen: Set<string>, upward: boolean): 'self' | 'other' | null => {
+    for (let i = from - 1; i >= 0; i--) {
+      const s = statements[i];
+      if (ROUTINE_CLOSER.test(s.keyword)) return null;
+      if (ROUTINE_OPENER.test(s.keyword)) {
+        if (s.keyword !== 'FORM') return null;
+        const name = /^FORM\s+([\w/]+)/i.exec(s.text)?.[1]?.toUpperCase();
+        // Inside a performed routine only its own writes count; going up to
+        // its callers is for the block of the call alone.
+        return name && upward ? fromCallers(name, depth, seen) : null;
+      }
+      if (EVENT_OPENER.test(s.text)) return null;
+      const write = writeOf(s);
+      if (write) return write;
+      const form = performedForm(s);
+      if (form && depth < MAX_VALUE_DEPTH && !seen.has(form)) {
+        const body = formBody.get(form);
+        if (body) {
+          const inner = before(body.close, depth + 1, new Set([...seen, form]), false);
+          // `null` from inside means "nothing there decides": keep walking back.
+          if (inner) return inner;
+        }
+      }
+    }
+    return null;
+  };
+
+  /** Every place that performs `form` must agree; one that names another value decides. */
+  const fromCallers = (form: string, depth: number, seen: Set<string>): 'self' | 'other' | null => {
+    if (depth >= MAX_VALUE_DEPTH || seen.has(`caller:${form}`)) return null;
+    const body = formBody.get(form);
+    const callers = statements.filter((s) => performedForm(s) === form
+      && !(body && s.index > body.open && s.index < body.close));
+    if (!callers.length) return null;
+    const next = new Set([...seen, `caller:${form}`]);
+    const values = callers.map((c) => before(c.index, depth + 1, next, true));
+    if (values.includes('other')) return 'other';
+    return values.every((v) => v === 'self') ? 'self' : null;
+  };
+
+  // `index` is the position in the list `statements` was read into; the walk
+  // needs the same numbering, so a statement that is not in this list decides nothing.
+  if (statements[site.index] !== site) return null;
+  // Inside the block of the call: walking back from the site itself.
+  return before(site.index, 0, new Set(), true);
 }
 
 /**

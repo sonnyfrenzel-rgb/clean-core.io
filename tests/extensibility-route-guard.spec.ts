@@ -78,7 +78,9 @@ test.describe('the symptoms that legitimately still force Side-by-Side', () => {
     },
     {
       name: 'BDC / CALL TRANSACTION',
-      code: ['REPORT z_bdc.', "CALL TRANSACTION 'VA01'."].join('\n'),
+      // Batch input is `USING <bdcdata>`; without it the call is SAP GUI
+      // navigation and stays on-stack (roadmap 3.0.7).
+      code: ['REPORT z_bdc.', "CALL TRANSACTION 'VA01' USING lt_bdc."].join('\n'),
     },
     {
       name: 'Native SQL',

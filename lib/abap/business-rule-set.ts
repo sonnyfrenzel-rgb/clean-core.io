@@ -2,6 +2,7 @@ import { afterKeyword, type AbapStatement, type SourceRange } from './statement-
 import { containerAt, type BlockKind, type Container } from './block-structure';
 import type { Branch } from './control-flow';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
+import { readDecisionTable } from './decision-table';
 import {
   buildProcessSkeletonFrom,
   type ProcessSkeleton,
@@ -126,6 +127,8 @@ export type SentenceKey =
   | 'repeated-copies'
   | 'branch-body'
   | 'case-body'
+  /** Roadmap 3.0.7 (e): a constant that is the value of a decision-table row. */
+  | 'decision-value'
   | 'loop-body'
   | 'ends-flow'
   | 'else-ends-flow'
@@ -183,7 +186,12 @@ export type ProcessRelation =
   /** The gateway (or loop) whose condition states the rule. */
   | 'condition'
   /** A node inside the branch (or loop body) the rule decides about. */
-  | 'branch';
+  | 'branch'
+  /**
+   * Roadmap 3.0.7 (e): the gateway of a decision table whose rows set a field
+   * to this constant — the constant is the outcome there, not a test.
+   */
+  | 'value';
 
 export interface RuleProcessElement extends SourceRange {
   nodeId: string;
@@ -230,9 +238,48 @@ export interface BusinessRule {
   withoutProcessElement?: { reason: NoProcessElementReason; detail: string };
 }
 
+/**
+ * Roadmap 3.0.7 (e) — a classification the source writes as an `IF`/`ELSEIF`
+ * chain or a `CASE` whose arms only set one field (`decision-table.ts`): one
+ * table, one row per arm, condition on the left, value on the right, all of it
+ * verbatim. It is not a rule of its own — its conditions are already rules
+ * where they hold a number somebody decided (`ruleIds`), and a rule number is
+ * what a reader's confirmation is stored against.
+ */
+export interface DecisionTable {
+  /** `DT-001`, in source order. Stable per source. */
+  id: string;
+  /** The field every arm sets, as the source writes it: `it_ausgabe-ampel`. */
+  field: string;
+  /** The `CASE` selector; `null` for an `IF` chain. */
+  selector: string | null;
+  /** The whole construct, `IF` to `ENDIF`. */
+  anchor: RuleAnchor;
+  source: RuleSource;
+  rows: Array<{
+    /** The condition as written; `null` for `ELSE`/`WHEN OTHERS` — "otherwise". */
+    condition: string | null;
+    /** The value as written: `c_rot`, `'X'`. */
+    value: string;
+    /** Set when the value is a constant this source declares — its rule counts it as used. */
+    constant?: string;
+    /** The assignment. */
+    anchor: RuleAnchor;
+  }>;
+  /** The gateway the skeleton draws for it (`detail.decisionTable`), when it draws one. */
+  nodeId: string | null;
+  /** The rules whose conditions or constants stand in the table, in id order. */
+  ruleIds: string[];
+}
+
 export interface BusinessRuleSet {
   program: string | null;
   rules: BusinessRule[];
+  /**
+   * Roadmap 3.0.7 (e). Present only when the source holds one, so the reading
+   * of a source without any stays byte for byte what it was.
+   */
+  decisionTables?: DecisionTable[];
   counts: {
     candidates: number;
     rules: number;
@@ -316,6 +363,20 @@ function conditionKey(conditionText: string, renumbered: boolean): string {
  * keywords nor a line number can hold a `|`, so the two separators are always
  * the first two.
  */
+/**
+ * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — the `WHEN` arms of a `CASE`
+ * with more than two arms stand apart: **one rule per arm.** Joined as one
+ * value list, `CASE r_ucomm` with `'&IC1'`, `'ERLED'` and `'LDATUM'` became one
+ * rule whose three function codes "run" the step of the first arm — three
+ * different actions read as one. Two arms stay one rule (a `CASE` that only
+ * tells one value from another, the old join 2); a `WHEN 'A' OR 'B'` arm is
+ * one arm, so its values stay together. `WHEN OTHERS` holds no value and
+ * yields no rule of its own, but counts as an arm.
+ */
+function armsStandApart(occurrence: Occurrence): boolean {
+  return occurrence.origin === 'when' && occurrence.branch?.kind === 'case' && occurrence.branch.arms.length > 2;
+}
+
 function guardKey(keyword: string, lineStart: number, condition: string): string {
   return `${keyword}|${lineStart}|${condition}`;
 }
@@ -481,9 +542,11 @@ class RuleSetBuilder {
 
   build(): BusinessRuleSet {
     const occurrences = this.readOccurrences();
-    const groups = this.join(occurrences);
+    const groups = this.numbered(this.join(occurrences, true), this.join(occurrences, false));
 
+    this.readDecisionTables();
     const rules = groups.map((group, i) => this.rule(`BR-${String(i + 1).padStart(3, '0')}`, group));
+    const decisionTables = this.finishDecisionTables(rules);
 
     const withoutProcessElement: Record<NoProcessElementReason, number> = {
       'declaration-only': 0,
@@ -498,6 +561,7 @@ class RuleSetBuilder {
     return {
       program: this.program,
       rules,
+      ...(decisionTables.length ? { decisionTables } : {}),
       counts: {
         candidates: this.candidates.length,
         rules: rules.length,
@@ -610,8 +674,32 @@ class RuleSetBuilder {
     return [...byPlace.values()];
   }
 
+  /**
+   * Roadmap 3.0.7 — the order the rules are numbered in, so that splitting a
+   * `CASE` into one rule per arm (`armsStandApart`) renumbers nothing that
+   * existed before. A reader's confirmation is stored against `BR-nnn`
+   * (`lib/rules-editor.ts`); had the arms simply taken their places in source
+   * order, every rule after the first split `CASE` would have moved up and
+   * carried somebody else's confirmation. So the numbering of the joins
+   * without the split (`legacy`) is kept: each of its groups keeps its number
+   * for the group that holds its first candidate, and the arms split off it
+   * are numbered after all of them, in source order.
+   */
+  private numbered(groups: Occurrence[][], legacy: Occurrence[][]): Occurrence[][] {
+    if (groups.length === legacy.length) return groups;
+    const firstOf = (group: Occurrence[]) => Math.min(...group.flatMap((o) => o.members));
+    const byFirst = new Map(groups.map((group) => [firstOf(group), group]));
+    const kept = legacy.map((group) => byFirst.get(firstOf(group)));
+    // Every legacy group's first candidate leads a group of its own after the
+    // split too (the split only takes arms away from a group); should that ever
+    // not hold, source order is the honest fallback.
+    if (kept.some((group) => !group)) return groups;
+    const keptSet = new Set(kept);
+    return [...(kept as Occurrence[][]), ...groups.filter((group) => !keptSet.has(group))];
+  }
+
   /** Union of the four joins in the header. Returns the groups in source order. */
-  private join(occurrences: Occurrence[]): Occurrence[][] {
+  private join(occurrences: Occurrence[], splitArms: boolean): Occurrence[][] {
     const parent = occurrences.map((_, i) => i);
     const find = (i: number): number => {
       while (parent[i] !== i) {
@@ -637,8 +725,9 @@ class RuleSetBuilder {
       // 1. one condition — already one occurrence.
       for (const member of occurrence.members) {
         const candidate = this.candidates[member];
-        // 2. one value list.
-        if (candidate.valueSetId) link(`set:${candidate.valueSetId}`, o);
+        // 2. one value list — except the arms of a CASE with more than two:
+        // roadmap 3.0.7, one rule per arm (`armsStandApart`).
+        if (candidate.valueSetId && !(splitArms && armsStandApart(occurrence))) link(`set:${candidate.valueSetId}`, o);
         // 3. one constant: the declaration and every reader.
         if (candidate.origin === 'constant' && candidate.subject) link(`const:${candidate.subject.toUpperCase()}`, o);
         if (candidate.viaConstant) link(`const:${candidate.viaConstant.name.toUpperCase()}`, o);
@@ -690,9 +779,20 @@ class RuleSetBuilder {
     const sentences = new SentenceWriter();
     this.writeDeclarations(sentences, declarations);
     this.writeConditions(sentences, conditions, readings);
+    // Roadmap 3.0.7 (e): a constant that is the value of a decision-table row
+    // is used — as the outcome, not as a test.
+    const asValue = this.decisionValuesOf(declarations);
+    this.writeDecisionValues(sentences, asValue);
     this.writeCaveats(sentences, members);
 
     const processElements = this.processElementsOf(conditions);
+    for (const use of asValue) {
+      const node = use.table.nodeId ? this.skeleton.nodes.find((n) => n.id === use.table.nodeId) : undefined;
+      const element = node ? this.element(node, 'value') : null;
+      if (element && !processElements.some((e) => e.nodeId === element.nodeId && e.relation === 'value')) {
+        processElements.push(element);
+      }
+    }
 
     return {
       id,
@@ -710,6 +810,86 @@ class RuleSetBuilder {
         ? {}
         : { withoutProcessElement: this.whyNoElement(conditions, declarations) }),
     };
+  }
+
+  /* ---------------- decision tables (3.0.7 e) ---------------- */
+
+  private tables: Array<{ table: DecisionTable; branch: Branch }> = [];
+
+  /** Every branch of 2.1 that reads as a decision table, numbered in source order. */
+  private readDecisionTables(): void {
+    const declared = new Map(this.constants.map((c) => [c.written.toUpperCase(), c.written]));
+    const branches = [...this.facts.control.branches].sort((a, b) => a.openIndex - b.openIndex);
+    for (const branch of branches) {
+      const reading = readDecisionTable(branch, this.facts.statements);
+      if (!reading) continue;
+      const opener = this.facts.statements[branch.openIndex];
+      const closer = this.facts.statements[Math.min(branch.closeIndex, this.facts.statements.length - 1)];
+      const container = branch.container ?? null;
+      const table: DecisionTable = {
+        id: `DT-${String(this.tables.length + 1).padStart(3, '0')}`,
+        field: reading.field,
+        selector: reading.selector,
+        anchor: this.anchor({ lineStart: opener.lineStart, lineEnd: closer.lineEnd }),
+        source: this.sourcesOf([{
+          origin: 'if', conditionText: '', container, members: [],
+          lineStart: opener.lineStart, lineEnd: closer.lineEnd,
+        }])[0],
+        rows: reading.rows.map((row) => {
+          const constant = declared.get(row.value.trim().toUpperCase());
+          return {
+            condition: row.condition,
+            value: row.value,
+            ...(constant ? { constant } : {}),
+            anchor: this.anchor({ lineStart: row.lineStart, lineEnd: row.lineEnd }),
+          };
+        }),
+        nodeId: this.index.gatewayOfBranch.get(branch.id)?.id ?? null,
+        ruleIds: [],
+      };
+      this.tables.push({ table, branch });
+    }
+  }
+
+  /** The rows whose value is one of these declared constants. */
+  private decisionValuesOf(declarations: Occurrence[]): Array<{ table: DecisionTable; row: DecisionTable['rows'][number]; name: string }> {
+    if (!this.tables.length || !declarations.length) return [];
+    const names = new Set(declarations
+      .map((d) => this.candidates[d.members[0]]?.subject?.toUpperCase())
+      .filter((n): n is string => !!n));
+    const out: Array<{ table: DecisionTable; row: DecisionTable['rows'][number]; name: string }> = [];
+    for (const { table } of this.tables) {
+      for (const row of table.rows) {
+        if (row.constant && names.has(row.constant.toUpperCase())) out.push({ table, row, name: row.constant });
+      }
+    }
+    return out;
+  }
+
+  private writeDecisionValues(
+    sentences: SentenceWriter,
+    uses: Array<{ table: DecisionTable; row: DecisionTable['rows'][number]; name: string }>,
+  ): void {
+    for (const { table, row, name } of uses) {
+      sentences.add('decision-value', [
+        code(table.field), text(' is set to '), code(name),
+        ...(row.condition ? [text(' where '), code(row.condition), text(' holds')] : [text(' where no earlier row holds')]),
+        text(` (decision table ${table.id}).`),
+      ], [row.anchor]);
+    }
+  }
+
+  /** Ties each table to the rules standing in it, once every rule has its number. */
+  private finishDecisionTables(rules: BusinessRule[]): DecisionTable[] {
+    for (const { table, branch } of this.tables) {
+      const constants = new Set(table.rows.map((r) => r.constant?.toUpperCase()).filter(Boolean));
+      table.ruleIds = rules
+        .filter((rule) => rule.parameters.some((p) => p.origin === 'constant'
+          ? constants.has((p.subject ?? '').toUpperCase())
+          : p.lineStart >= branch.lineStart && p.lineEnd <= branch.lineEnd))
+        .map((rule) => rule.id);
+    }
+    return this.tables.map(({ table }) => table);
   }
 
   private parameter(candidate: RuleCandidate): RuleParameter {
@@ -920,10 +1100,15 @@ class RuleSetBuilder {
     written.add(branch);
     const arms = conditions.filter((o) => o.origin === 'when' && o.branch === branch);
     const literals = arms.flatMap((o) => o.members.map((m) => this.candidates[m].literal));
+    // One arm of several (`armsStandApart`): say which of how many, so the rule
+    // does not read as if the CASE knew only this value.
+    const apart = arms.length === 1 && armsStandApart(arms[0]);
     sentences.add('condition-case', [
       ...this.where(occurrence.container),
       code('CASE'), text(' '), code(branch.selector ?? ''),
-      text(' has a branch of its own for '), ...codeList(literals), text('.'),
+      ...(apart
+        ? [text(` has ${branch.arms.length} branches; this one is for `), ...codeList(literals), text('.')]
+        : [text(' has a branch of its own for '), ...codeList(literals), text('.')]),
     ], [
       this.anchor(this.facts.statements[branch.openIndex]),
       ...arms.map((o) => this.anchor(o)),

@@ -79,13 +79,15 @@ type Pinned = [
 
 const PINNED: Pinned[] = [
   // 121 candidates: 98 of them sit in fourteen copied FORMs, and a constant with
-  // its readers, a value list and a repeated test are one rule each.
-  [LEGACY, 121, 16, { rule: 16, control: 0 }, 10, { 'declaration-only': 1, unreached: 4, 'technical-helper': 1 }],
+  // its readers, a value list and a repeated test are one rule each. Since
+  // 3.0.7 the two arms of its three-arm CASE on the order action are a rule each.
+  [LEGACY, 121, 17, { rule: 17, control: 0 }, 11, { 'declaration-only': 1, unreached: 4, 'technical-helper': 1 }],
   ['Z_BUSINESS_PARTNER_SYNC.txt', 0, 0, { rule: 0, control: 0 }, 0, {}],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 1, 1, { rule: 1, control: 0 }, 1, {}],
   ['Z_INVOICE_EXTRACTOR.txt', 0, 0, { rule: 0, control: 0 }, 0, {}],
-  ['Z_MATERIAL_STOCK_CALC.txt', 3, 1, { rule: 1, control: 0 }, 1, {}],
-  [PO, 14, 11, { rule: 10, control: 1 }, 6, { 'declaration-only': 3, unreached: 2 }],
+  // 3.0.7: a CASE with more than two arms gives one rule per arm.
+  ['Z_MATERIAL_STOCK_CALC.txt', 3, 3, { rule: 3, control: 0 }, 3, {}],
+  [PO, 14, 12, { rule: 11, control: 1 }, 6, { 'declaration-only': 3, unreached: 3 }],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 1, 1, { rule: 1, control: 0 }, 0, { 'not-in-skeleton': 1 }],
   ['Z_SALES_ORDER_CREATOR.txt', 0, 0, { rule: 0, control: 0 }, 0, {}],
 ];
@@ -116,13 +118,13 @@ test.describe('the eight programs this product ships', () => {
     });
   }
 
-  test('all eight together: 140 candidates, 30 rules, one control', () => {
+  test('all eight together: 140 candidates, 34 rules, one control', () => {
     const sets = FILES.map((file) => deriveBusinessRules(read(file)));
     const sum = (pick: (s: BusinessRuleSet) => number) => sets.reduce((n, s) => n + pick(s), 0);
     expect(sum((s) => s.counts.candidates)).toBe(140);
-    expect(sum((s) => s.counts.rules)).toBe(30);
+    expect(sum((s) => s.counts.rules)).toBe(34);
     expect(sum((s) => s.counts.byType.control)).toBe(1);
-    expect(sum((s) => s.counts.withProcessElement)).toBe(18);
+    expect(sum((s) => s.counts.withProcessElement)).toBe(21);
   });
 
   test('every sentence has an anchor, and every anchor quotes its lines verbatim', () => {
@@ -247,12 +249,24 @@ test.describe('candidates that are one rule become one rule', () => {
     expect(countries.sources.map((s) => s.routine)).toEqual(['DERIVE_CUSTOMER_RISK']);
   });
 
-  test('a CASE with three values is one rule with the selector and each WHEN anchored', () => {
-    const [rule] = deriveBusinessRules(read('Z_MATERIAL_STOCK_CALC.txt')).rules;
-    expect(rule.label).toBe("CASE gs_stock-mtart: 'ROH', 'HALB', 'FERT'");
-    expect(rule.sentences[0].text)
-      .toBe("In CALCULATE_VALUATIONS, CASE gs_stock-mtart has a branch of its own for 'ROH', 'HALB' and 'FERT'.");
-    expect(rule.sentences[0].anchors.map((a) => a.lineStart)).toEqual([57, 58, 60, 62]);
+  test('a CASE with three values and WHEN OTHERS is one rule per valued arm, each with the selector and its WHEN anchored', () => {
+    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): three arms are three
+    // decisions, not one rule whose values all "run" the first arm's step.
+    const rules = deriveBusinessRules(read('Z_MATERIAL_STOCK_CALC.txt')).rules;
+    expect(rules.map((r) => r.label)).toEqual([
+      "CASE gs_stock-mtart: 'ROH'", "CASE gs_stock-mtart: 'HALB'", "CASE gs_stock-mtart: 'FERT'",
+    ]);
+    expect(rules[0].sentences[0].text)
+      .toBe("In CALCULATE_VALUATIONS, CASE gs_stock-mtart has 4 branches; this one is for 'ROH'.");
+    expect(rules.map((r) => r.sentences[0].anchors.map((a) => a.lineStart))).toEqual([[57, 58], [57, 60], [57, 62]]);
+  });
+
+  test('a CASE with two arms stays one rule', () => {
+    const source = program([
+      '  CASE lv_kind.', "    WHEN 'A'.", "      lv_x = 'X'.", "    WHEN 'B'.", "      lv_x = 'Y'.", '  ENDCASE.',
+    ].join('\n'));
+    const rules = deriveBusinessRules(source).rules;
+    expect(rules.map((r) => r.label)).toEqual(["CASE lv_kind: 'A', 'B'"]);
   });
 
   test('a constant and the two conditions that read it are one rule — two thresholds stay two', () => {
@@ -384,6 +398,8 @@ test.describe('what the code does not say stays unsaid', () => {
 
 test.describe('a rule tied to no process element says why', () => {
   test(`${PO}: three constants nobody tests, two routines nobody reaches`, () => {
+    // BR-001 … BR-011 keep the numbers they had before 3.0.7; the CASE arm the
+    // split adds is numbered after them (`numbered` in business-rule-set.ts).
     const set = deriveBusinessRules(read(PO));
     const without = set.rules
       .filter((r) => r.withoutProcessElement)
@@ -392,8 +408,9 @@ test.describe('a rule tied to no process element says why', () => {
       "BR-001 declaration-only c_doc_type VALUE 'NB'",
       "BR-002 declaration-only c_release_group VALUE 'ZE'",
       "BR-003 declaration-only c_purch_org VALUE '1000'",
-      "BR-007 unreached CASE gs_eban-knttp: 'K', 'F'",
+      "BR-007 unreached CASE gs_eban-knttp: 'K'",
       "BR-008 unreached lv_mmsta = '01' OR lv_mmsta = 'Z9'",
+      "BR-012 unreached CASE gs_eban-knttp: 'F'",
     ]);
     expect(ruleAt(set, 314)?.withoutProcessElement?.detail)
       .toBe('CHECK_MATERIAL_STATUS is not reached from any event block in this source, so the process skeleton does not draw it.');

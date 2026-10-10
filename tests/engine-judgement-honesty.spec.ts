@@ -222,7 +222,9 @@ test.describe('a legacy construct written inside a literal is not a construct', 
   test('the real statements are all still found', () => {
     const real = [
       'REPORT zcc_real.',
-      "CALL TRANSACTION 'VA01'.",
+      // `USING` makes it batch input; without it the call is SAP GUI
+      // navigation, a classic-screen finding (roadmap 3.0.7).
+      "CALL TRANSACTION 'VA01' USING lt_bdc.",
       'EXEC SQL.',
       'SELECT 1 FROM DUAL',
       'ENDEXEC.',
@@ -241,8 +243,11 @@ test.describe('a legacy construct written inside a literal is not a construct', 
 
   test('the transaction code is still read out of its literal', () => {
     // The operand lives inside the literal on purpose — the construct does not.
-    const bdc = evidence("REPORT zcc_t.\nCALL TRANSACTION 'VA01'.").findings.find((f) => f.kind === 'bdc');
+    const bdc = evidence("REPORT zcc_t.\nCALL TRANSACTION 'VA01' USING lt_bdc.").findings.find((f) => f.kind === 'bdc');
     expect(bdc?.objectName).toBe('VA01');
+    // And from SAP GUI navigation (no `USING`), which is not batch input (3.0.7).
+    const nav = evidence("REPORT zcc_t.\nCALL TRANSACTION 'VA01'.").findings.find((f) => f.kind === 'dynpro');
+    expect(nav?.objectName).toBe('VA01');
   });
 
   test('a function-module name in a literal is still the call target', () => {
@@ -328,7 +333,7 @@ test.describe('the rationale explains the route the report recommends', () => {
     },
     {
       name: 'BDC',
-      code: ['REPORT zcc_bdc.', "CALL TRANSACTION 'VA01'."].join('\n'),
+      code: ['REPORT zcc_bdc.', "CALL TRANSACTION 'VA01' USING lt_bdc."].join('\n'),
       names: /BDC|CALL TRANSACTION/i,
     },
     {

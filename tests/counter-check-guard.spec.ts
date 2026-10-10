@@ -308,8 +308,10 @@ test.describe('every decision gets both arms', () => {
     const legacy = deriveCounterCheckScenarios(example(LEGACY));
     // `A AND B` needs both, and fails on either.
     expect(forRule(legacy, 'BR-001').map((s) => s.combination)).toEqual(['all', 'any']);
-    // A `CASE` lists alternatives; so does an IF/ELSEIF chain grading one field.
-    expect(forRule(po, 'BR-007').map((s) => s.combination)).toEqual(['any', 'all']);
+    // An IF/ELSEIF chain grading one field lists alternatives. A `CASE` with
+    // more than two arms is one rule per arm since 3.0.7, so BR-007 — the
+    // `WHEN 'K'` arm — tests one value, on both arms.
+    expect(forRule(po, 'BR-007').map((s) => s.combination)).toEqual(['single', 'single']);
     expect(forRule(legacy, 'BR-008').map((s) => s.combination)).toEqual(['any', 'all']);
     // And where AND meets OR, no combination is stated at all: the precedence is
     // the code's, and a guess would hand somebody a record that produces the
@@ -325,22 +327,24 @@ test.describe('every decision gets both arms', () => {
     // and are listed instead.
     const po = deriveCounterCheckScenarios(example(PO));
     expect(po.program).toBe('Z_MM_PO_APPROVAL');
+    // 3.0.7: the CASE on the account assignment category is one rule per arm,
+    // 11 → 12 rules and two scenarios more (BR-012, both arms).
     expect(po.counts).toEqual({
-      rules: 11,
-      scenarios: 16,
-      // Two of the sixteen (BR-010, both arms) compare more than the engine
+      rules: 12,
+      scenarios: 18,
+      // Two of the eighteen (BR-010, both arms) compare more than the engine
       // reads and are blocked, not runnable - measured, not chosen.
-      runnable: 14,
+      runnable: 16,
       blocked: { 'subject-not-named': 0, 'value-not-named': 0, 'condition-partly-read': 2 },
       withoutScenario: 3,
       dataNeeds: 22,
-      withCapability: 16,
+      withCapability: 18,
     });
     expect(po.withoutScenario.map((w) => w.ruleId)).toEqual(['BR-001', 'BR-002', 'BR-003']);
 
     const legacy = deriveCounterCheckScenarios(example(LEGACY));
-    expect(legacy.counts.rules).toBe(16);
-    expect(legacy.counts.scenarios).toBe(30);
+    expect(legacy.counts.rules).toBe(17);
+    expect(legacy.counts.scenarios).toBe(32);
     expect(legacy.counts.withoutScenario).toBe(1);
   });
 

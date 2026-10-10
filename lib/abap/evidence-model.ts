@@ -438,8 +438,39 @@ export function buildAbapEvidence(
 
     // -- 2. Legacy Pattern Detections --
 
-    // Batch Data Communication (BDC)
-    if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
+    // Batch Data Communication (BDC) — and SAP GUI navigation, which is not.
+    //
+    // Only `CALL TRANSACTION … USING <bdcdata>` fills the transaction's screens
+    // from the program; that is batch input. Without `USING` the statement
+    // opens the transaction for the person in front of the screen (often with
+    // `SET PARAMETER ID` and `AND SKIP FIRST SCREEN`): nothing is posted by
+    // this code, whatever the user then does in the transaction is their own
+    // dialog. Reading both as BDC cost ten points instead of five, made the
+    // router send a display list side by side, and told the reader the program
+    // "drives" a transaction it only opens (ZMM_BESTELLUEBERSICHT review,
+    // roadmap 3.0.7). The navigation is a classic-UI dependency — the SAP GUI
+    // screens of the called transaction — and is reported as one, with its
+    // transaction code, so the level of the object is still graded.
+    // `call-graph.ts` (`batchInput`) and `isDbWrite` in `business-statement.ts`
+    // make the same distinction with the same test.
+    if (/\bCALL\s+TRANSACTION\b/i.test(codeText) && !/\bUSING\b/i.test(codeText)) {
+      const tcodeMatch = text.match(/\bCALL\s+TRANSACTION\s+'?([\w\/]+)'?/i);
+      const tcode = tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN';
+      addFinding({
+        kind: 'dynpro',
+        title: `SAP GUI navigation to transaction ${tcode}`,
+        severity: 'Medium',
+        confidence: 'High',
+        objectName: tcode,
+        objectType: 'Transaction Code',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `CALL TRANSACTION without USING opens the transaction's screens for the user; the program passes no screen data and posts nothing through it.`,
+        cleanCoreImpact: 'The call depends on the SAP GUI screens of the called transaction. ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.',
+        recommendation: `Replace the call with navigation to the SAP Fiori app for the same business object (intent-based navigation) from a Fiori UI built on a RAP service.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+      });
+    } else if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
       const tcodeMatch = text.match(/\bCALL\s+TRANSACTION\s+'?([\w\/]+)'?/i);
       const tcode = tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN';
       addFinding({

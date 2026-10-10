@@ -207,7 +207,7 @@ test.describe('the business rules of a large source', () => {
       const { proxy, reads } = countingStatements(facts.statements);
       const set = deriveBusinessRulesFrom(source, { ...facts, statements: proxy }, skeleton);
       expect(set.rules.length, 'the source really does carry the rules being counted')
-        .toBe(routines * 2 + 17);
+        .toBe(routines * 2 + 18);
       return reads() / facts.statements.length;
     });
 
@@ -236,13 +236,24 @@ test.describe('the business rules of a large source', () => {
     // `rules[].parameters[].caveat`, that one pair and no other; rule counts
     // unchanged. The QA fixes of a88149856dcc merged beside it (SELECT inside
     // SELECT…ENDSELECT, indented PARAMETERS) move none of these digests.
+    //
+    // **Roadmap 3.0.7 moved three, and only by splitting CASE arms.** A CASE
+    // with more than two arms is one rule per arm (`armsStandApart`): the
+    // 1.000-line example gains one rule (BR-017, the second arm of its CASE on
+    // the order action), `Z_MATERIAL_STOCK_CALC` two, `Z_MM_PO_APPROVAL` one
+    // (BR-012). Every rule that existed keeps its number (`numbered`); the
+    // other five digests are unchanged. The same step adds the decision tables
+    // of 3.0.7 (e) to the two programs that write one — `<fs_order>-risk_text`
+    // in the 1.000-line example (DT-001, rows from BR-004/BR-005) and
+    // `lv_price` in `Z_MATERIAL_STOCK_CALC` — as `decisionTables`, a field a
+    // source without a table does not carry.
     const pinned: Record<string, string> = {
-      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': '2d026c887a78b3055d9cea9cde801d25486dcf9b182a5b2c264e990e06e79e50',
+      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 'be391e3ee0acfd219d83040b26b8b43ca815435df35b347a07e21b293da47935',
       'Z_BUSINESS_PARTNER_SYNC.txt': '9a1e899f8ffd59c50e81c7d18470accd28c53f9c2ee86d40ba639822f0692b1e',
       'Z_EMPLOYEE_EXPENSE_VAL.txt': '778f3a442c623d3e30eaab88fd1f5befe19b207b928512c7f653eb3af198b276',
       'Z_INVOICE_EXTRACTOR.txt': '35d9750084364efced78c549d1813632fd7e28dbf81e3ed5052601ce693a8b19',
-      'Z_MATERIAL_STOCK_CALC.txt': '2212a619e000b96735210221c2535e23d076c65f23cbd5f1c3f8c99e3f500a1b',
-      'Z_MM_PO_APPROVAL.abap': 'edc3a52b47d9f8d5c2fa08754da0e5927d5a6d48abcb3974fc7913d841500b5f',
+      'Z_MATERIAL_STOCK_CALC.txt': '95e5817794981efeeaea63f3a3e647c850a392c2936efb8378b264be444551f9',
+      'Z_MM_PO_APPROVAL.abap': '689901d6983162d32f930793ab69bf896820ae0bd13a87510767d2e888860a16',
       'Z_ORDER_INTEGRITY_CHECK.txt': '637f970bd6e90a83b09b145bc90610332111a52f8380f9e77dfbf4795906094e',
       'Z_SALES_ORDER_CREATOR.txt': '7b079dd80f1dc957a1c6c298de9e68cc6fb21515621ff38b0948fb8c6626f177',
     };
@@ -259,8 +270,11 @@ test.describe('the business rules of a large source', () => {
     // the head of this composite carries ten rules inside a `LOOP AT`, and they
     // name the loop's region now. Moved again by 8ad735c9: 814 caveats read
     // "the currency of the amount" instead of the German sentence, nothing else.
-    expect(set.rules).toHaveLength(817);
-    expect(sha(set)).toBe('69d0dd9afa5568afd8f47c11ed0b8c818c16d4bf77dc9fe304009994c9b00fcb');
+    // 817 → 818 in 3.0.7: the second arm of the 1.000-line program's three-arm
+    // CASE is a rule of its own, and its risk-text chain a decision table (see
+    // the test above).
+    expect(set.rules).toHaveLength(818);
+    expect(sha(set)).toBe('727819f3cffaf92ab889d4ff2c2246de461c5fc90983add243abcc98acc46f53');
   });
 });
 

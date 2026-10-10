@@ -89,12 +89,18 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // and 5 early `RETURN`s: 110→124 / 116→125. BP_SYNC and STOCK two planes each,
   // EXPENSE, INVOICE and SALES one. ORDER_INTEGRITY has no plane and no early
   // exit and keeps its numbers.
-  [LEGACY, 124, 125, 32, 4, 19, 323, 6, 1],
+  //
+  // Roadmap 3.0.7 moved the edges once more and nothing else: a reporting
+  // event block that ends normally hands over to the next one
+  // (`chainReportEvents`, `reason: 'runtime-order'`). LEGACY INITIALIZATION →
+  // AT SELECTION-SCREEN → START-OF-SELECTION → END-OF-SELECTION: 125→128;
+  // BP_SYNC START-OF-SELECTION → END-OF-SELECTION: 17→18. No node moved.
+  [LEGACY, 124, 128, 32, 4, 19, 323, 6, 1],
   // 27.09.2026 (D4): `MESSAGE '…' TYPE 'I'` in END-OF-SELECTION is a dialog
   // box the user confirms — §5.8's popup, a user task. One node more, and the
   // arm of the `IF` that used to run straight into the end now runs through
   // it: 17→18 nodes, 14→15 edges.
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 17, 5, 2, 0, 0, 1, 0],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 18, 5, 2, 0, 0, 1, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 3, 1, 0, 0, 1, 0],
   // ADR-066 residuals (03.10.2026): `CLOSE DATASET` after the TRANSFER loop of
   // EXPORT_TO_APPLICATION_SERVER is a file step of its own, on that routine's

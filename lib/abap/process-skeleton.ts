@@ -4,6 +4,7 @@ import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
 import { databaseWriteIn } from './open-sql-discrimination';
 import { namesThisProgram } from './callback-registrations';
+import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
@@ -213,7 +214,13 @@ export type SkeletonEdgeReason =
   /** `LEAVE SCREEN`, `LEAVE TO SCREEN n`, `LEAVE LIST-PROCESSING` — see `leavesDialogStep`. */
   | 'leave-screen'
   | 'no-return'
-  | 'abort';
+  | 'abort'
+  /**
+   * Roadmap 3.0.7 — the flow from the end of one reporting event block into the
+   * start of the next one ABAP raises in the same run (`chainReportEvents`).
+   * The language's runtime order, not a statement of the source.
+   */
+  | 'runtime-order';
 
 export interface SkeletonEdge {
   from: string;
@@ -448,6 +455,12 @@ const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
   { test: /^AT\s+USER-COMMAND$/i, rank: 11 },
   { test: /^AT\s+PF\d/i, rank: 12 },
 ];
+
+/** Ranks of `RUNTIME_ORDER` the run order of 3.0.7 (`chainReportEvents`) names. */
+const RANK_LOAD_OF_PROGRAM = 0;
+const RANK_START_OF_SELECTION = 5;
+const RANK_GET = 6;
+const RANK_END_OF_SELECTION = 7;
 
 /**
  * `GET` is the one event keyword that is also an ordinary statement.
@@ -1262,6 +1275,9 @@ class SkeletonBuilder {
     // ADR-054, after the fold, so what the fold decides is exactly what it
     // decided before a plane had a start event of its own.
     this.addSubProcessStarts();
+    // Roadmap 3.0.7, once every node and end is settled: a reporting event
+    // block that ends normally hands over to the next one.
+    this.chainReportEvents();
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -3155,6 +3171,34 @@ class SkeletonBuilder {
     return [{ from: join.id, condition: '', kind: 'sequence' }];
   }
 
+  /**
+   * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — a `CASE` on the function
+   * code a person pressed. Its arms are **alternatives the user chooses
+   * from**, each as often and in whatever order they like, not steps that
+   * follow one another: the review found a list callback's "display order",
+   * "set to done" and "change delivery date" numbered 5, 6, 7 on the main
+   * path. The gateway says so in `detail.userAction`, so a view can list the
+   * arms side by side instead of counting them.
+   *
+   * Read off the source only: the selector is `sy-ucomm`, or the first `USING`
+   * parameter of a FORM the ALV calls back as `I_CALLBACK_USER_COMMAND` — the
+   * type pool SLIS hands the function code in that position (`r_ucomm LIKE
+   * sy-ucomm`). A CASE in a routine *performed from* the callback is not
+   * claimed; its selector could be anything by then.
+   */
+  private decidesUserCommand(branch: Branch, ctx: WalkContext): boolean {
+    if (branch.kind !== 'case' || !branch.selector) return false;
+    const selector = branch.selector.trim().toUpperCase();
+    if (selector === 'SY-UCOMM') return true;
+    const callback = this.callbacks.find((c) => c.trigger === 'ALV I_CALLBACK_USER_COMMAND'
+      && ctx.region.kind === 'entry' && ctx.container?.toUpperCase() === c.label.toUpperCase());
+    if (!callback) return false;
+    const block = this.routineBlocks.get(callback.key);
+    const opener = block ? this.statements[block.openIndex]?.text ?? '' : '';
+    const first = /^FORM\s+[\w/]+\s+USING\s+(?:VALUE\s*\(\s*)?([\w/]+)/i.exec(opener)?.[1];
+    return !!first && first.toUpperCase() === selector;
+  }
+
   private walkBranch(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
     const branch = this.branchAt.get(block.openIndex);
     const opener = this.statements[block.openIndex];
@@ -3175,8 +3219,19 @@ class SkeletonBuilder {
     const label = branch.kind === 'case' ? (branch.selector ?? 'CASE') : snippet(opener.text);
     // D2: `IF lo->m( ) = …` runs the method before it decides.
     const before = this.walkMethodCalls(opener, ctx, incoming);
+    // Roadmap 3.0.7 (e): arms that do nothing but set one field are a
+    // classification — `detail.decisionTable` names the field, so a view can
+    // draw the gateway as one business-rule task with its table
+    // (`decision-table.ts`; the rows are in the rule set). The node keeps its
+    // kind and its arms: the process benchmark's blind expected answers model
+    // all 7 such tables of its learning half (6 cases) as a gateway.
+    const table = readDecisionTable(branch, this.statements);
     const gateway = this.addNode('gateway', label, anchorOf(opener), ctx.region, ctx.container, {
-      detail: { branchId: branch.id, branchKind: branch.kind, arms: branch.arms.length },
+      detail: {
+        branchId: branch.id, branchKind: branch.kind, arms: branch.arms.length,
+        ...(this.decidesUserCommand(branch, ctx) ? { userAction: true } : {}),
+        ...(table ? { decisionTable: table.field } : {}),
+      },
     });
     this.connect(before, gateway.id);
 
@@ -3872,6 +3927,10 @@ class SkeletonBuilder {
       // routine (`CHANGING` of a FORM; `EXPORTING`, `CHANGING`, `RETURNING` of
       // a method) is not the normal end either: the caller gets another result
       // back — `cv_ok` stays initial — whether or not a step is drawn between.
+      // Roadmap 3.0.7. `EXIT`, `RETURN` and `STOP` in `START-OF-SELECTION` or
+      // `GET` skip the reporting events still to come, so they are never the
+      // block's normal end while one follows — see `chainReportEvents`.
+      if (this.skipsLaterReportEvents(region, this.statements[statementIndex].keyword)) continue;
       const own = drawn.get(region.key) ?? new Set<number>();
       const results = this.resultWrites(statementIndex);
       const counted = results.size ? new Set([...own, ...results]) : own;
@@ -3880,6 +3939,91 @@ class SkeletonBuilder {
       dropped.add(node.id);
     }
     if (dropped.size) this.nodes = this.nodes.filter((n) => !dropped.has(n.id));
+  }
+
+  /**
+   * The reporting event blocks of one program run, in the order ABAP raises
+   * them: `LOAD-OF-PROGRAM` up to `END-OF-SELECTION` (rule 4), each with its
+   * start node. The list events (`TOP-OF-PAGE`, `AT LINE-SELECTION`, `AT
+   * USER-COMMAND`, …) are not in it: list output and the user raise them, not
+   * the end of the block before.
+   */
+  private reportEventChain(): Array<{ region: SkeletonRegion; rank: number; startId: string }> {
+    const starts = new Map(this.nodes.filter((n) => n.kind === 'start').map((n) => [n.id, n]));
+    return this.regions
+      .filter((r) => r.kind === 'entry' && typeof r.runtimeRank === 'number' && r.runtimeRank <= RANK_END_OF_SELECTION)
+      .flatMap((region) => {
+        const start = region.entryNodeId ? starts.get(region.entryNodeId) : undefined;
+        const origin = start?.detail?.origin;
+        return start && (origin === 'event' || origin === 'implicit')
+          ? [{ region, rank: region.runtimeRank as number, startId: start.id }]
+          : [];
+      })
+      .sort((a, b) => a.rank - b.rank || (a.region.anchor?.lineStart ?? 0) - (b.region.anchor?.lineStart ?? 0));
+  }
+
+  /**
+   * Roadmap 3.0.7 — whether an early exit with this keyword, in this region,
+   * ends the reporting run rather than the block: `EXIT` and `RETURN` (and
+   * `STOP`, which goes on with `END-OF-SELECTION` only) in `START-OF-SELECTION`
+   * or `GET`, while a later reporting event block exists that it skips. The
+   * ABAP keyword documentation on `EXIT`/`STOP` in processing blocks: after
+   * those two events are left with `EXIT`, no further reporting event is
+   * raised and the list is displayed; `STOP` raises `END-OF-SELECTION`.
+   */
+  private skipsLaterReportEvents(region: SkeletonRegion, keyword: string): boolean {
+    if (region.kind !== 'entry' || !['EXIT', 'RETURN', 'STOP'].includes(keyword.toUpperCase())) return false;
+    const rank = region.runtimeRank;
+    if (rank !== RANK_START_OF_SELECTION && rank !== RANK_GET) return false;
+    return this.runEntries.some((e) => e.rank > rank && e.rank <= RANK_END_OF_SELECTION);
+  }
+
+  /**
+   * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — **only an early end ends
+   * the run.** The event blocks of a report used to stand side by side, each
+   * with its own start and end, and a view that wanted one flow had to guess
+   * whether the end of `START-OF-SELECTION` was the end of the run. ABAP
+   * answers it: a block that ends normally hands over to the next reporting
+   * event, so its end gets one flow into the next block's start
+   * (`reason: 'runtime-order'`). An early end decides by its keyword:
+   *
+   * - in `INITIALIZATION`, `AT SELECTION-SCREEN …` (`EXIT`/`RETURN`): the block
+   *   is left and the run goes on — the same flow as the normal end;
+   * - in `START-OF-SELECTION`/`GET`: `STOP` goes on with `END-OF-SELECTION`
+   *   (`reason: 'stop'`), `EXIT`/`RETURN` end the run — no flow;
+   * - an error message, `LEAVE PROGRAM`, a `SUBMIT` that does not return:
+   *   `end-error` or a `no-return` flow — the run ends there, no flow, and a
+   *   normal end reached from a `no-return` flow hands over nothing.
+   *
+   * `LOAD-OF-PROGRAM`'s early ends are left alone: the documentation treats
+   * that block apart, and this reader does not guess.
+   */
+  private chainReportEvents(): void {
+    const chain = this.reportEventChain();
+    if (chain.length < 2) return;
+    const present = new Set(this.nodes.map((n) => n.id));
+    const into = new Map<string, SkeletonEdge[]>();
+    for (const edge of this.edges) into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
+    const endOfSelection = chain.find((c) => c.rank === RANK_END_OF_SELECTION);
+    for (let i = 0; i < chain.length - 1; i++) {
+      const { region, rank } = chain[i];
+      const next = chain[i + 1];
+      const end = region.endNodeId;
+      const arriving = into.get(end) ?? [];
+      if (present.has(end) && arriving.length > 0 && !arriving.some((e) => e.reason === 'no-return')) {
+        this.edges.push({ from: end, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
+      }
+      for (const node of this.nodes) {
+        if (node.region !== region.key || node.detail?.early !== true) continue;
+        const exit = String(node.detail.exit ?? '').toUpperCase();
+        if (rank > RANK_LOAD_OF_PROGRAM && rank < RANK_START_OF_SELECTION && (exit === 'EXIT' || exit === 'RETURN')) {
+          this.edges.push({ from: node.id, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
+        } else if (exit === 'STOP' && endOfSelection && endOfSelection.rank > rank
+          && (rank === RANK_START_OF_SELECTION || rank === RANK_GET)) {
+          this.edges.push({ from: node.id, to: endOfSelection.startId, kind: 'sequence', condition: '', reason: 'stop' });
+        }
+      }
+    }
   }
 
   /**
