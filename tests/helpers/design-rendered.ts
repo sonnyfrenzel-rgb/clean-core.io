@@ -68,6 +68,20 @@ export const CATALOG_OBJECT = 'vbak';
 /** The workspace's first look has built up (`components/workspace/FirstLook.tsx`), as `workspace-a11y` waits for it. */
 const FIRST_LOOK_DONE = '[data-first-look="end-state"], [data-first-look="complete"]';
 
+/**
+ * What says each view of the workspace has drawn its content. Only Business
+ * still draws the first look: IT shows only its own answer since ADR-086
+ * (254ab06e) and Management only its decision since ADR-087 (7fecaa01), so
+ * waiting for the first look there waits for something that never comes.
+ * `data-it-view=""` is the loaded IT answer (`"loading"` while it is not);
+ * Management's trend reads the runs until `data-management-history="read"`.
+ */
+const VIEW_READY = {
+  business: FIRST_LOOK_DONE,
+  it: '[data-it-view=""] [data-it-headline]',
+  management: '[data-management-history="read"] [data-management-executive]',
+} as const;
+
 export const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'] as const;
 
 export const ROUTES: RouteDef[] = [
@@ -91,7 +105,7 @@ export const ROUTES: RouteDef[] = [
     route: `/project/[id] (${view})`,
     session: 'signed-in' as const,
     url: `/project/{project}?view=${view}`,
-    ready: [`[data-workspace-shell="${view}"] h1`, FIRST_LOOK_DONE],
+    ready: [`[data-workspace-shell="${view}"] h1`, VIEW_READY[view]],
   })),
   ...STAGES.map((stage) => ({
     key: `stage-${stage}`,

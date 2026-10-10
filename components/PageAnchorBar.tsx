@@ -139,7 +139,10 @@ export default function PageAnchorBar({
         >
           {lead}
         </span>
-        <ul className="m-0 flex min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
+        {/* `relative`: the track holds the links' `sr-only` tooltips
+            (position: absolute) inside its scroll; without it they escape to
+            the sticky bar and the page scrolls sideways on a phone. */}
+        <ul className="relative m-0 flex min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
           {anchors.map((a) => {
             const on = a.key === current;
             return (

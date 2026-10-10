@@ -423,7 +423,11 @@ test.describe('(a) one sentence, at most six cards', () => {
     expect(answers).not.toMatch(/if \(history === undefined\) \{\s*return/);
     expect(answers).toContain('historyPending={history === undefined}');
     const component = read('components/workspace/ManagementOverview.tsx');
-    expect(component).toMatch(/historyPending\s*\?\s*\{ state: 'loading', title: overview\.readiness\.title \}/);
+    // While the read is in flight the card says it is reading. It used to take
+    // `overview.readiness.title`, which is derived from `history ?? null` and so
+    // said "the runs could not be read" until the read ended (CI 38051799180).
+    expect(component).toMatch(/historyPending\s*\?\s*\{ state: 'loading', title: READINESS_READING \}/);
+    expect(component).toMatch(/const READINESS_READING = 'Reading [^']*';/);
   });
 
   test('Management renders none of the duplicates the owner dropped (ADR-087) — their models stay', () => {

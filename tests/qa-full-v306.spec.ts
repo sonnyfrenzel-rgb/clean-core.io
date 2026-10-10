@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+// Static on purpose, as in verdict-honesty-guard.spec.ts: a dynamic
+// `await import('../lib/transactional-mail')` is resolved at run time, and on the
+// Linux runner its `@/lib/...` imports missed the tsconfig path mapping:
+// "Cannot find module '@/lib/constants'" (CI run 38051799180, shard 5, all three
+// tries), while it passed on Windows. A top-level import goes through the same
+// transform as every other spec's `../lib` import. The module reads
+// RESEND_API_KEY at call time, not at load, so the test below still sets it.
+import { sendTransactionalMail } from '../lib/transactional-mail';
 
 /**
  * QA full review of v3.0.6 — source guards for the confirmed findings that
@@ -28,7 +36,6 @@ test('no mail log names its recipient (73f480886489)', () => {
 });
 
 test('a rejected send logs status and category, never the provider body (785474c693d6)', async () => {
-  const { sendTransactionalMail } = await import('../lib/transactional-mail');
   const address = 'rejected.person@example.com';
   const realFetch = globalThis.fetch;
   const realError = console.error;

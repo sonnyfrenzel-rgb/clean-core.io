@@ -287,7 +287,9 @@ for (const vp of [
       await expect(mark).toHaveCount(0);
 
       // IT: "Next step" under the answer, then the Not determined figure in
-      // the answer, then the decision further down.
+      // the answer — and nothing after it. IT draws no process since ADR-086
+      // (254ab06e), so "Select the decision point" has no target there and
+      // stands in Business, at the map (`IT_COACH_ORDER` in WorkspaceShell).
       const id = new URL(page.url()).pathname.split('/')[2];
       await page.evaluate(() => window.localStorage.removeItem('cc.workspace.coachMarks.dismissed'));
       await page.goto(`/project/${id}?view=it`, { waitUntil: 'domcontentloaded' });
@@ -305,8 +307,10 @@ for (const vp of [
       holds(await measure(page, 'not-determined'), vp.floatForm, 'IT, This is what we could not determine');
       await shot(page, `${vp.slug}-it-2-not-determined`);
       await next(page, 'not-determined');
-      holds(await measure(page, 'decision'), vp.floatForm, 'IT, Select the decision point');
-      await shot(page, `${vp.slug}-it-3-decision`);
+      // A tip that points at nothing is a claim (lib/coach-marks.ts): no
+      // decision tip may appear in IT once its two tips are done.
+      await expect(mark).toHaveCount(0);
+      await expect(page.locator('[data-coach-mark="decision"]')).toHaveCount(0);
 
       // Management: its one tip, "Your next step" on the answer.
       await page.evaluate(() => window.localStorage.removeItem('cc.workspace.coachMarks.dismissed'));

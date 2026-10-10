@@ -76,6 +76,12 @@ async function openWorkspace(page: Page, view: 'business' | 'it' | 'management')
     if ((await evidence.getAttribute('aria-expanded')) !== 'true') await evidence.click();
     return;
   }
+  // IT has no first look since ADR-086 (254ab06e): it shows only its own
+  // answer, so the wait is for that answer to have loaded ("loading" until then).
+  if (view === 'it') {
+    await expect(page.locator('[data-it-view=""] [data-it-headline]')).toBeVisible({ timeout: 90000 });
+    return;
+  }
   await expect(page.locator('[data-first-look="end-state"], [data-first-look="complete"]')).toBeVisible({
     timeout: 60000,
   });

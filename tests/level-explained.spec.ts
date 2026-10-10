@@ -85,14 +85,22 @@ test.describe('where the Management view shows a level, it explains it (owner 06
   test('the distance-to-standard rows and the level table use the explained chip, and no bare chip is left', () => {
     expect(exec).toContain('<CcCleanCoreLevelExplained value={item.level} />');
     expect(exec, 'a bare level chip is left in the Management panel').not.toMatch(/<CcCleanCoreLevel\s/);
-    expect(overview).toMatch(/<CcCleanCoreLevelExplained value=\{r\.key\} trigger=\{r\.label\} \/>/);
     expect(overview, 'a bare level chip is left in the Management overview').not.toMatch(/<CcCleanCoreLevel\s/);
+    // ADR-087 (7fecaa01, owner 10.10.2026): the overview's levels card and its
+    // level table are gone — each fact once, and the level of each object is
+    // said in the distance-to-standard rows above. It must not come back as a
+    // second, differently drawn level list.
+    expect(overview, 'the overview shows levels again beside the distance rows').not.toContain('CcCleanCoreLevelExplained');
   });
 
   test('the explanation never sits inside a picture: the level bar stays role="img", the explained rows are the table under it', () => {
     // An image hides the buttons inside it (the IT view's lesson): the levels
     // bar carries no chip, the table beside it carries the explained ones.
-    expect(overview).toMatch(/<StackedBar label=\{wt\('mgmt\.levelsChart'\)\}/);
+    // The levels bar left the overview with ADR-087 (7fecaa01); the bar it was
+    // drawn with is still a picture and still carries no chip.
+    const bar = exec.slice(exec.indexOf('export function StackedBar('), exec.indexOf('/* ------------------------------------------------------------ pieces */'));
+    expect(bar).toContain('role="img"');
+    expect(bar, 'a level chip sits inside the bar picture').not.toContain('CcCleanCoreLevel');
     expect(read('components/workspace/ManagementExecutive.tsx')).not.toMatch(/role="img"[^>]*>\s*<CcCleanCoreLevelExplained/);
   });
 });

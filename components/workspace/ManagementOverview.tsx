@@ -122,6 +122,9 @@ function Pending<T>({ id, card }: { id: string; card: OverviewCardState<T> }) {
 
 /* ------------------------------------------------------------ trend */
 
+/** The readiness card's title while the run history is read — never a verdict on it. */
+const READINESS_READING = 'Reading the Clean Core Score history…';
+
 const W = 400;
 const H = 120;
 const PAD_X = 28;
@@ -417,9 +420,11 @@ export default function ManagementOverview({
         ? `#${target.id}`
         : '/admin/new-project';
 
-  // Only the trend waits for the run history (ADR-087).
+  // Only the trend waits for the run history (ADR-087). While it is read the
+  // card says so: `overview.readiness.title` is computed from `history ?? null`
+  // and would read "the runs could not be read" until the read ends.
   const readiness: ReadinessCard = historyPending
-    ? { state: 'loading', title: overview.readiness.title }
+    ? { state: 'loading', title: READINESS_READING }
     : overview.readiness;
   // The ranked blockers that are not SAP objects and not the decision's own
   // gaps — those stand on the fit card's objects and in the decision's
@@ -488,7 +493,13 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
     );
   }
   return (
-    <section id={MANAGEMENT_IDS.readiness} data-overview-card="readiness" data-overview-state="ready" className="h-full scroll-mt-20">
+    // The same nesting as the pending card above — the section is the anchor,
+    // the card inside it carries `data-overview-card` — so one address
+    // (`#management-readiness [data-overview-card="readiness"]`) finds the
+    // trend in every state. With both on the section, the address found the
+    // "reading" card and lost the trend the moment it arrived (CI 38051799180).
+    <section id={MANAGEMENT_IDS.readiness} className="h-full scroll-mt-20">
+      <div data-overview-card="readiness" data-overview-state="ready" className="h-full">
       <CcCard title={card.title} meta={<CcProvenanceChip value={card.provenance} />}>
         <Lead text={card.lead} />
         <TrendLine points={card.points} label={mgmtTrendLabel(card.ruleVersion, card.points)} />
@@ -542,6 +553,7 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
         ) : null}
         <Coverage text={card.coverage} />
       </CcCard>
+      </div>
     </section>
   );
 }

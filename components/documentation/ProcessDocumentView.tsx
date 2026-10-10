@@ -414,7 +414,10 @@ export function flowItems(path: readonly PdPathEntry[]): FlowItem[] {
 
 export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
   return (
-    <div className="min-w-0 overflow-x-auto pb-1 [scrollbar-width:thin]">
+    // `relative`: the track is the containing block of the nodes' `sr-only`
+    // spans (position: absolute). Without it they escape the scroll and widen
+    // the page — 1864 px at 390 (CI 38051799180, mobile-responsive).
+    <div className="relative min-w-0 overflow-x-auto pb-1 [scrollbar-width:thin]">
       <ol data-doc-path="" aria-label={wt('doc.flowLabel')} className="m-0 flex w-max list-none items-start p-0">
         <li className="flex items-start"><Terminal /></li>
         {flowItems(path).map((item) => item.kind === 'choice' ? (

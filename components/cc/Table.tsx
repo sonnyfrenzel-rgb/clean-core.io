@@ -115,7 +115,12 @@ export default function CcTable({ caption, columns, rows, limit }: CcTableProps)
   const beyond = (index: number) => limited && !showAll && index >= limit;
 
   return (
-    <div className="w-full overflow-x-auto" data-cc-table-limit={limited ? (showAll ? 'all' : limit) : undefined}>
+    // `relative`: the scroller holds the `sr-only` caption and action-column
+    // header (position: absolute) inside its scroll. Without it they take the
+    // page as their containing block, escape the scroll, and push the page
+    // sideways once the columns are wider than the screen — My workspace at
+    // 844 × 390 since its actions column grew to 232 px (66a9a9a8).
+    <div className="relative w-full overflow-x-auto" data-cc-table-limit={limited ? (showAll ? 'all' : limit) : undefined}>
       <table data-cc-table="" className="w-full border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead className="hidden sm:table-header-group">

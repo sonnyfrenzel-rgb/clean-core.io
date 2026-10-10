@@ -59,9 +59,16 @@ function program(tables: string[]): string {
   ].join('\n');
 }
 const TABLES = ['vbak', 'vbap', 'mara', 'marc', 'kna1', 'lfa1', 'bkpf', 'ekko', 'ekpo', 'likp', 'lips', 'vbrk', 'vbrp', 'mseg', 'mkpf'];
-/** 30 findings: the budget, not the step cap, sets the pace (2400 / 30 = 80 ms). */
-const LONG = program(TABLES);
-/** 10 findings: the step cap sets the pace (2400 / 10 would be 240 ms). */
+/**
+ * 25 findings: the budget, not the step cap, sets the pace (2400 / 25 = 96 ms).
+ * Twelve tables give 24, and since roadmap 3.0.7 (841a91f9, `authority-assessment.ts`)
+ * the engine adds one more: "Data is changed without an authorization check" —
+ * true of this program, which updates and checks nothing. Fifteen tables made
+ * that 31 and a step of 77.4 ms, which no paused clock can land on (CI run
+ * 38051799180); the count has to divide the budget.
+ */
+const LONG = program(TABLES.slice(0, 12));
+/** 11 findings (10 + the authorization one): the step cap sets the pace (2400 / 11 would be 218 ms). */
 const SHORT = program(TABLES.slice(0, 5));
 
 const BUDGET_MS = 2400;

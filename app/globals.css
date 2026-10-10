@@ -768,7 +768,12 @@
     width: auto !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 8mm 12mm 6mm !important;
+    /* 6 mm / 5 mm, was 8 / 6: with every clamped sentence at its line
+       budget (the stress case of steering-one-pager-print.spec.ts) the sheet
+       ran 18 px over A4 in CI 38051799180. This border, the block spacing,
+       the snug leading and the level chips below take ~50 px out of the
+       worst case and cut no word. */
+    padding: 6mm 12mm 5mm !important;
     border: 0 !important;
     border-radius: 0 !important;
     background: var(--cc-surface) !important;
@@ -848,7 +853,7 @@
   }
 
   [data-steering-print] .leading-snug {
-    line-height: 1.28 !important;
+    line-height: 1.22 !important;
   }
 
   /* Chips keep their word and icon at the small-print size. */
@@ -868,9 +873,16 @@
     line-height: 14px !important;
   }
 
+  /* The clean-core level chip of each risk: its screen line (18 px) made the
+     risk's first line 20 px tall on paper — the column that sets the height
+     of the lists row. At the chip size of the others it is 14 px. */
+  [data-steering-print] [data-cc-identifier] {
+    line-height: 12px !important;
+  }
+
   /* --- spacing: the screen's breathing space is what paper does not need */
   [data-steering-print] .mt-4 {
-    margin-top: 9px !important;
+    margin-top: 7px !important;
   }
 
   [data-steering-print] .mt-2 {

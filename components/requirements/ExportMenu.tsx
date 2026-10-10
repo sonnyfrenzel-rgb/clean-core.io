@@ -80,7 +80,12 @@ export default function ExportMenu<K extends string = ExportKind>({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative">
+    // Open, the menu stands over the sticky bars of the content: the
+    // Documentation stage's chapter bar (z-cc-sticky, 3.0.7, 9265e4c3) sits
+    // right under its header and covered the panel's lower items — a click on
+    // "Confluence" landed on the bar (CI 38051799180). The root becomes the
+    // panel's stacking context, one tier above sticky.
+    <div ref={rootRef} className={open ? 'relative z-cc-float' : 'relative'}>
       <CcButton
         ref={buttonRef}
         variant="ghost"

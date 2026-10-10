@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
@@ -61,7 +61,24 @@ export default function WorkspaceRowActions({
   const [at, setAt] = useState<{ top: number; right: number } | null>(null);
   const wrap = useRef<HTMLSpanElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLSpanElement>(null);
   const panelId = useId();
+  // Under the button when the panel fits there, else above it. A fixed panel
+  // cannot be scrolled to: opened from a row near the foot of the screen it
+  // hung "Delete…" below the edge, out of reach (CI 38051799180,
+  // workspace-list-report.spec.ts — the actions grew a label in 66a9a9a8).
+  const place = useCallback(() => {
+    const box = toggleRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const height = panelRef.current?.offsetHeight ?? 0;
+    const below = box.bottom + 4;
+    const top = below + height <= window.innerHeight - 8 ? below : Math.max(8, box.top - 4 - height);
+    setAt({ top, right: Math.max(8, window.innerWidth - box.right) });
+  }, []);
+  // Measured once the panel is in the page, before it is painted.
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -75,10 +92,7 @@ export default function WorkspaceRowActions({
     };
     // Follow the button when the page scrolls or resizes, rather than closing
     // on the first scroll event — focus moves and smooth scrolling fire them.
-    const onScroll = () => {
-      const box = toggleRef.current?.getBoundingClientRect();
-      if (box) setAt({ top: box.bottom + 4, right: Math.max(8, window.innerWidth - box.right) });
-    };
+    const onScroll = place;
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
     window.addEventListener('scroll', onScroll, true);
@@ -89,7 +103,7 @@ export default function WorkspaceRowActions({
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onScroll);
     };
-  }, [open]);
+  }, [open, place]);
 
   const run = (action: () => void) => () => {
     setOpen(false);
@@ -107,8 +121,7 @@ export default function WorkspaceRowActions({
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
             onClick={() => {
-              const box = toggleRef.current?.getBoundingClientRect();
-              if (box) setAt({ top: box.bottom + 4, right: Math.max(8, window.innerWidth - box.right) });
+              place();
               setOpen((v) => !v);
             }}
             data-workspace-more={id}
@@ -120,6 +133,7 @@ export default function WorkspaceRowActions({
           </button>
           {open ? (
             <span
+              ref={panelRef}
               id={panelId}
               data-workspace-more-panel={id}
               style={at ? { top: `${at.top}px`, right: `${at.right}px` } : undefined}

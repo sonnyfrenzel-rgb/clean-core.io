@@ -169,14 +169,19 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   [LEGACY, 87, 83, 15, 16, 8, 1, 1],
   // 27.09.2026 (D4): the information popup in END-OF-SELECTION is a user task
   // now — one flow node and one flow more (17→18, 13→14).
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 16, 3, 4, 3, 0, 0],
+  //
+  // Roadmap 3.0.7 (841a91f9, ZMM review): a write to an internal table of the
+  // program is no SAP data store any more — the routine stays a step, so flow
+  // nodes and flows do not move. BP_SYNC `MODIFY gt_bp_data FROM gs_bp_data`
+  // (line 59) 3→2 stores, STOCK `MODIFY gt_stock FROM gs_stock` (line 73) 4→3.
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 16, 3, 4, 2, 0, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 2, 3, 0, 0, 0],
   // ADR-066 residuals (03.10.2026): the `CLOSE DATASET` behind the TRANSFER
   // loop is a task on the EXPORT_TO_APPLICATION_SERVER plane — one flow node
   // and one flow more (14→15, 11→12); the top plane does not move. Back to
   // 14/11 with the note of 03.10.2026: no "Close file" step any more.
   ['Z_INVOICE_EXTRACTOR.txt', 14, 11, 2, 3, 2, 0, 0],
-  ['Z_MATERIAL_STOCK_CALC.txt', 18, 16, 4, 5, 4, 0, 0],
+  ['Z_MATERIAL_STOCK_CALC.txt', 18, 16, 4, 5, 3, 0, 0],
   [PO, 84, 81, 9, 10, 11, 0, 0],
   // Roadmap 2.14: the file's `FORM` is now the entry point it never had, so
   // the export has something to write. 0→5 flow nodes / 0→4 flows / 0→3 data
@@ -1021,7 +1026,13 @@ test.describe('roadmap 2.16 — lanes in the exported file', () => {
     const laneSets = list<ModdleElement>(process.laneSets);
     expect(laneSets, 'the process carries exactly one laneSet').toHaveLength(1);
     const lanes = list<ModdleElement>(laneSets[0].lanes);
-    expect(lanes.map((l) => l.name)).toEqual(['UPDATE TASK', 'V_VBAK_VKO']);
+    // Roadmap 3.0.7 (841a91f9): the run lane is named for the role its evidence
+    // proves — `System` here, nobody at the keyboard — not after the token that
+    // proved it. Still two lanes; the token stays in the lane's evidence.
+    expect(lanes.map((l) => l.name)).toEqual(['System', 'V_VBAK_VKO']);
+    const run = traceOf(lanes[0]);
+    expect(run?.kind).toBe('system');
+    expect(run?.evidence, 'the run lane lost the statement that proves it').toMatch(/UPDATE TASK@\d+/);
   });
 
   test('every flowNodeRef resolves to a flow node of the same process', async () => {

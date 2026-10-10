@@ -409,7 +409,10 @@ test('the demo shows the engine’s draft read-only and stores nothing', async (
   await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
   await page.locator('[data-spec-card] [data-spec-open]').click();
-  await expect(page).toHaveURL(/\/demo\/design\/requirements$/);
+  // The App Router changes the address only once the new route's payload has
+  // arrived; on a loaded CI runner that took longer than the default 5 s
+  // (CI 38051799180, green on retry). Same allowance as the owner path above.
+  await expect(page).toHaveURL(/\/demo\/design\/requirements$/, { timeout: 60_000 });
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-mode', 'demo', { timeout: 90_000 });
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-state', 'ready', { timeout: 90_000 });
   await expect(page.locator('[data-spec-req]').first()).toBeVisible();

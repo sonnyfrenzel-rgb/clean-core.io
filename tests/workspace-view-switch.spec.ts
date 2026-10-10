@@ -59,8 +59,21 @@ const shell = (page: Page) => page.locator('[data-workspace-shell]');
  * back is seen whenever it lands rather than raced.
  */
 async function switchTo(page: Page, name: 'Business' | 'IT' | 'Management', key: string) {
-  await page.evaluate(() => window.scrollTo(0, Math.max(0, document.documentElement.scrollHeight - window.innerHeight)));
-  await expect.poll(() => page.evaluate(() => window.scrollY), { message: 'the page could not be scrolled before the switch' }).toBeGreaterThan(200);
+  // Scrolled as a reader scrolls — a wheel also ends a deep link's follow,
+  // which a programmatic scroll would be pulled back by.
+  await page.mouse.move(700, 500);
+  await page.mouse.wheel(0, 4000);
+  await expect.poll(() => page.evaluate(() => window.scrollY), { message: 'the page could not be scrolled before the switch' }).toBeGreaterThan(40);
+  // The wheel scrolls smoothly: click once the page has come to rest, as a reader would.
+  await page.evaluate(async () => {
+    let last = -1;
+    let still = 0;
+    while (still < 10) {
+      await new Promise((r) => requestAnimationFrame(r));
+      still = window.scrollY === last ? still + 1 : 0;
+      last = window.scrollY;
+    }
+  });
   await radio(page, name).evaluate((el) => (el as HTMLElement).click());
   await expect(shell(page)).toHaveAttribute('data-workspace-shell', key, { timeout: 30_000 });
   const seen = await page.evaluate(async () => {

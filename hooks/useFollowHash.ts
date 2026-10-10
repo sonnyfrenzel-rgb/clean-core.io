@@ -13,8 +13,13 @@ const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
  * page. The decision card's open conditions link to exactly such places
  * (ADR-085), so this waits for the element, brings it into view, and holds it
  * there until the blocks above it have stopped growing (about half a second
- * without a move), at most five seconds. A scroll, a touch or a key by the
- * reader ends it at once.
+ * without a move), at most five seconds. A scroll, a touch, a key or a
+ * pointer press by the reader ends it at once. The press matters as much as
+ * the scroll: a layer tab sets `#evidence` and the reader then works in the
+ * map above it — a step chosen, the full source opened — and every block that
+ * grows there moved the section, which the follow brought back to the top,
+ * scrolling the reader's own lines out of view (CI 38051799180). A press on a
+ * link to a place ends the old follow and its `hashchange` starts the new one.
  *
  * Nothing is stored and nothing is selected: the fragment stays the address
  * bar's, as the layer's does (ADR-018). The process map has its own follower
@@ -79,6 +84,7 @@ export function useFollowHash(): void {
     window.addEventListener('wheel', end, { passive: true });
     window.addEventListener('touchmove', end, { passive: true });
     window.addEventListener('keydown', end);
+    window.addEventListener('pointerdown', end, { passive: true });
     return () => {
       stop = true;
       window.cancelAnimationFrame(frame);
@@ -86,6 +92,7 @@ export function useFollowHash(): void {
       window.removeEventListener('wheel', end);
       window.removeEventListener('touchmove', end);
       window.removeEventListener('keydown', end);
+      window.removeEventListener('pointerdown', end);
     };
   }, []);
 }

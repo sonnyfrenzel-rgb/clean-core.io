@@ -443,7 +443,12 @@ test.describe('the layers on the screen', () => {
     await expect(page).toHaveURL(/\?view=it#it-objects$/, { timeout: 90000 });
     const routine = page.locator('#it-objects [data-it-object="CHECK_VENDOR"]');
     await expect(routine).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('#it-objects tr', { has: routine }).locator('[data-cc-anchor]')).toHaveText('L225–L234');
+    // `has` is matched inside the row, so it names the cell alone: with the
+    // section's id in front (`#it-objects …`) it matched no row at all, since
+    // that id stands above the row, not in it (CI 38051799180).
+    await expect(
+      page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
+    ).toHaveText('L225–L234');
 
     // Evidence → IT's Run & trust; Need → the Business map.
     await page.goto(`/project/${RUN_ID}?view=management#evidence`, { waitUntil: 'domcontentloaded' });
@@ -471,7 +476,12 @@ test.describe('the layers on the screen', () => {
     await expect(page).toHaveURL(/\?view=it#it-objects$/, { timeout: 90000 });
     const routine = page.locator('#it-objects [data-it-object="CHECK_VENDOR"]');
     await expect(routine).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('#it-objects tr', { has: routine }).locator('[data-cc-anchor]')).toHaveText('L225–L234');
+    // `has` is matched inside the row, so it names the cell alone: with the
+    // section's id in front (`#it-objects …`) it matched no row at all, since
+    // that id stands above the row, not in it (CI 38051799180).
+    await expect(
+      page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
+    ).toHaveText('L225–L234');
     await expect(page.locator('[data-it-objects-count]')).toContainText('1 own object');
 
     // Changes → Management's decision; costs → the Economics tool.
