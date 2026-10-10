@@ -1462,11 +1462,11 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-742 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-743 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-744 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
-| SEC-2026-751 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | scheduled |
-| SEC-2026-752 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go), same fix as SEC-2026-751 | scheduled |
-| SEC-2026-753 | medium | P3 | 3.0.x security hardening - as SEC-2026-699 | scheduled |
-| SEC-2026-754 | medium | P3 | 3.0.x security hardening | scheduled |
-| SEC-2026-755 | info | P3 | 3.0.x security hardening - comment wording | scheduled |
+| SEC-2026-751 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | fixed in repo, awaiting rules deploy (78485894c874) |
+| SEC-2026-752 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go), same fix as SEC-2026-751 | fixed in repo, awaiting rules deploy (78485894c874) |
+| SEC-2026-753 | medium | P3 | 3.0.x security hardening - as SEC-2026-699 | fixed (78485894c874) |
+| SEC-2026-754 | medium | P3 | 3.0.x security hardening | fixed (78485894c874) |
+| SEC-2026-755 | info | P3 | 3.0.x security hardening - comment wording | fixed (78485894c874) |
 
 **Audit of v3.0.6 (`3b742fc`), 10.10.2026: 0 critical, 0 high, 7 medium, 3 low, 1 info — all 85 candidates verified, delta of 146 files, $0.54.** SEC-2026-751 and -752 (P2, one rules change with the next rules deploy) and -753 to -755 (P3) scheduled for 3.0.x security hardening; six refuted (SEC-2026-745 to -750: -746 to -749 as -670/-701/-702, -750 as -685). The reasons are in the sealed register.
 
