@@ -6,13 +6,9 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { sha256Hex } from '../lib/artefact-digest';
-import {
-  buildEngineConfluenceHtml,
-  buildLegacyConfluenceHtml,
-  STALE_EXPORT_NOTE,
-} from '../lib/documentation-export';
-import { fixtureSource, processDocumentOf } from './helpers/business-layer-fixture';
+import { artefactDigest, sha256Hex } from '../lib/artefact-digest';
+import { buildEngineConfluenceHtml, STALE_EXPORT_NOTE } from '../lib/documentation-export';
+import { FIXTURE_FILE, engineDocumentationOf, fixtureSource, processDocumentOf } from './helpers/business-layer-fixture';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
@@ -26,51 +22,29 @@ import { TERMS_VERSION } from '../lib/constants';
  *   2. the exported file opens with the same warning, and a current one does
  *      not.
  *
- * Both halves are tested as data (the two templates) and in a browser, with a
- * real download, against one stale and one current project.
+ * Both halves are tested as data (the template) and in a browser, with a
+ * real download, against one stale and one current project. Since roadmap
+ * 3.0.7 the export sits in the stage header's one Export menu, and the page of
+ * a legacy blueprint is gone with its rendering (a legacy blueprint is
+ * downloaded as it was stored).
  */
-
-const BLUEPRINT = {
-  l1_domain: { name: 'Order to Cash', strategicGoal: 'Clean core', owner: 'Process Owner' },
-  l2_group: { name: 'Sales', processArea: 'Order handling', kpis: ['Cycle time'] },
-  l3_flow: [
-    { id: 'Start', name: 'Trigger', type: 'startEvent', role: 'System', next: ['Task1'] },
-    { id: 'Task1', name: 'Check order', type: 'serviceTask', role: 'System', next: ['End'] },
-    { id: 'End', name: 'Done', type: 'endEvent', role: 'System', next: [] },
-  ],
-  l4_tasks: [
-    {
-      stepId: 'Task1', name: 'Check order', description: 'Checks the order.',
-      inputs: ['Order'], outputs: ['Result'], systems: ['SAP S/4HANA'], complexity: 'Low',
-    },
-  ],
-};
 
 const ENGINE_DOC = processDocumentOf(fixtureSource());
 
-test.describe('the Confluence templates say when they are stale', () => {
-  test('a stale legacy blueprint export opens with the note; a current one does not', async () => {
-    const stale = await buildLegacyConfluenceHtml(BLUEPRINT, null, { stale: true }).text();
+test.describe('the Confluence template says when it is stale', () => {
+  test('a stale process description export opens with the note; a current one does not', async () => {
+    const stale = await buildEngineConfluenceHtml(ENGINE_DOC, null, { stale: true }).text();
     expect(stale).toContain('data-stale-export');
     expect(stale).toContain('Regenerate it before relying on it.');
     // Before the heading, so it is the first thing a reader of the file sees.
     expect(stale.indexOf('data-stale-export')).toBeLessThan(stale.indexOf('<h1>'));
-
     for (const current of [
-      await buildLegacyConfluenceHtml(BLUEPRINT, null, { stale: false }).text(),
-      await buildLegacyConfluenceHtml(BLUEPRINT, null).text(),
+      await buildEngineConfluenceHtml(ENGINE_DOC, null, { stale: false }).text(),
+      await buildEngineConfluenceHtml(ENGINE_DOC, null).text(),
     ]) {
       expect(current).not.toContain('data-stale-export');
       expect(current).not.toContain('Regenerate it before relying on it.');
     }
-  });
-
-  test('a stale engine documentation export opens with the note; a current one does not', async () => {
-    const stale = await buildEngineConfluenceHtml(ENGINE_DOC, null, { stale: true }).text();
-    expect(stale).toContain('data-stale-export');
-    expect(stale.indexOf('data-stale-export')).toBeLessThan(stale.indexOf('<h1>'));
-    const current = await buildEngineConfluenceHtml(ENGINE_DOC, null).text();
-    expect(current).not.toContain('data-stale-export');
   });
 
   test('the note names the state and what to do about it', () => {
@@ -87,14 +61,16 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
   const CURRENT_ID = `doc-current-${STAMP}`;
   const RUN_ID = `doc-stale-run-${STAMP}`;
 
-  const ANALYSED = 'REPORT z_doc_stale.\nSELECT * FROM vbak INTO TABLE @DATA(lt_orders).\nWRITE lt_orders.\n';
-  // The source written afterwards without a new run: every artefact built on
-  // the analysed source is stale (`staleness()` in lib/workflow-steps.ts).
-  const CHANGED = `${ANALYSED}WRITE 'changed'.\n`;
+  // The process description is read from the signed source, so both projects
+  // keep it; the stale one carries the documentation's digest recorded at a
+  // source change — it was written for the previous source
+  // (`staleness()` in lib/workflow-steps.ts), which is what makes it stale.
+  const ANALYSED = fixtureSource();
+  const DOCUMENTATION = JSON.stringify(engineDocumentationOf(ANALYSED));
 
   const fingerprint = {
     sha256: sha256Hex(ANALYSED),
-    fileName: 'Z_DOC_STALE.abap',
+    fileName: FIXTURE_FILE,
     lineCount: ANALYSED.split('\n').length,
     byteSize: ANALYSED.length,
     objectType: 'Report',
@@ -117,19 +93,29 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
       transformationsUsed: 1, transformationsLimit: 50, createdAt: new Date(),
     });
 
-    const fields = (name: string, legacyCode: string) => ({
+    const fields = (name: string, extra: Record<string, unknown> = {}) => ({
       name, userId: uid, createdAt: new Date(), status: 'documented',
-      legacyCode,
+      legacyCode: ANALYSED,
       analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
       cleanCoreScore: 62,
       solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n',
       generatedCode: 'export const ok = true;\n',
-      documentation: JSON.stringify(BLUEPRINT),
+      documentation: DOCUMENTATION,
       activeRunId: RUN_ID,
       inputFingerprint: fingerprint,
+      ...extra,
     });
-    await adminSetDoc('projects', STALE_ID, fields('Stale documentation fixture', CHANGED));
-    await adminSetDoc('projects', CURRENT_ID, fields('Current documentation fixture', ANALYSED));
+    await adminSetDoc('projects', STALE_ID, fields('Stale documentation fixture', {
+      auditMetadata: {
+        inputFingerprint: fingerprint,
+        sourceChange: {
+          runId: RUN_ID,
+          previousSha256: sha256Hex('REPORT z_old.\n'),
+          artefacts: { documentation: artefactDigest('documentation', DOCUMENTATION) },
+        },
+      },
+    }));
+    await adminSetDoc('projects', CURRENT_ID, fields('Current documentation fixture'));
     for (const id of [STALE_ID, CURRENT_ID]) {
       await adminSetDoc(`projects/${id}/runs`, RUN_ID, {
         runId: RUN_ID, projectId: id, userId: uid,
@@ -139,30 +125,38 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
     }
   });
 
-  async function exportFrom(page: Page, projectId: string): Promise<{ button: ReturnType<Page['locator']>; html: string }> {
+  /** Opens the stage's Export menu and reads the Confluence item before the click closes the menu. */
+  async function exportFrom(page: Page, projectId: string): Promise<{ state: string | null; describedBy: string | null; html: string }> {
     await page.goto(`/project/${projectId}/documentation`, { waitUntil: 'domcontentloaded' });
+    const menu = page.locator('[data-documentation-export-menu]');
+    await expect(menu).toBeVisible({ timeout: 90000 });
     const button = page.getByRole('button', { name: /Export Confluence/ });
-    await expect(button).toBeEnabled({ timeout: 90000 });
+    await expect.poll(async () => {
+      if (!(await button.isVisible())) await menu.click();
+      return button.isVisible();
+    }, { timeout: 90000 }).toBe(true);
+    const state = await button.getAttribute('data-export-confluence');
+    const describedBy = await button.getAttribute('aria-describedby');
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), button.click()]);
     const file = path.join(os.tmpdir(), `cc-doc-stale-${projectId}.html`);
     await download.saveAs(file);
     const html = fs.readFileSync(file, 'utf8');
     fs.unlinkSync(file);
-    return { button, html };
+    return { state, describedBy, html };
   }
 
-  test('a stale documentation is exportable, and the button and the file both say it is stale', async ({ page }) => {
+  test('a stale documentation is exportable, and the menu and the file both say it is stale', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD);
 
-    const { button, html } = await exportFrom(page, STALE_ID);
+    const { state, describedBy, html } = await exportFrom(page, STALE_ID);
     // The premise: the workflow contract calls this documentation stale.
-    await expect(page.locator('[data-export-confluence]')).toHaveAttribute('data-export-confluence', 'stale');
+    expect(state).toBe('stale');
 
     const note = page.locator('[data-confluence-stale-note]');
     await expect(note).toBeVisible();
     await expect(note).toContainText('Stale — regenerate first');
-    await expect(button).toHaveAttribute('aria-describedby', 'confluence-export-stale');
+    expect(describedBy).toBe('confluence-export-stale');
 
     expect(html, 'the stale export does not say it is stale').toContain('data-stale-export');
     expect(html).toContain('Regenerate it before relying on it.');
@@ -172,8 +166,8 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
     test.setTimeout(240 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD);
 
-    const { html } = await exportFrom(page, CURRENT_ID);
-    await expect(page.locator('[data-export-confluence]')).toHaveAttribute('data-export-confluence', 'current');
+    const { state, html } = await exportFrom(page, CURRENT_ID);
+    expect(state).toBe('current');
     await expect(page.locator('[data-confluence-stale-note]')).toHaveCount(0);
     expect(html, 'a current export was marked stale').not.toContain('data-stale-export');
   });

@@ -4,14 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  Clock,
   Database,
-  ListChecks,
   PenLine,
   PhoneCall,
   TriangleAlert,
   User,
-  Workflow,
 } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
@@ -28,8 +25,6 @@ import type {
   ProcessHandbook,
 } from '@/lib/process-handbook';
 import { cn } from '@/lib/utils';
-import { inputsSummary, outputsSummary } from '@/lib/documentation-lists';
-import FoldedList from './FoldedList';
 import './handbook.css';
 
 /**
@@ -47,6 +42,11 @@ import './handbook.css';
  * The map itself is the product's `ProcessMap` in its `stage` layout, handed in
  * as `map`: same renderer, same keys, same address, same editor. This file only
  * arranges the room around it.
+ *
+ * Roadmap 3.0.7 ("Documentation lean"): the row of four key figures above the
+ * map and the inputs and outputs under it are gone — the description above
+ * the map carries its own six key figures, and its sections 2 and 6 the
+ * selection screen, the tables read and every effect, each once.
  */
 
 /** `L95` / `L95–114`. */
@@ -69,8 +69,6 @@ export function LineAnchor({ anchor, hot = false }: { anchor: HandbookAnchor | n
   );
 }
 
-export type HandbookFreshness = 'current' | 'stale' | 'not-saved';
-
 export interface HandbookStageProps {
   handbook: ProcessHandbook | null;
   /** True while the handbook is still being read out of the source. */
@@ -83,52 +81,6 @@ export interface HandbookStageProps {
   onSelect: (elementId: string | null) => void;
   /** The signed source — the code card shows its lines and nothing else. */
   source: string | null;
-  freshness: HandbookFreshness;
-}
-
-const KPI_TILES = {
-  indigo: 'bg-cc-seq-1 text-cc-seq-4',
-  warning: 'bg-cc-warning-bg text-cc-warning',
-  success: 'bg-cc-success-bg text-cc-success',
-} as const;
-
-function Kpi({
-  icon,
-  tone,
-  label,
-  value,
-  data,
-}: {
-  icon: React.ReactNode;
-  tone: keyof typeof KPI_TILES;
-  label: string;
-  value: React.ReactNode;
-  data: string;
-}) {
-  return (
-    <div
-      data-handbook-kpi={data}
-      className="flex min-w-0 items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface px-3 py-2 shadow-cc"
-    >
-      <span aria-hidden={true} className={cn('hidden h-8 w-8 shrink-0 items-center justify-center rounded-cc-row sm:inline-flex', KPI_TILES[tone])}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="m-0 cc-text-label text-cc-ink-muted">{label}</p>
-        <p className="m-0 text-[15px] font-bold leading-5 text-cc-ink break-words">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-const FRESHNESS_WORDS: Record<HandbookFreshness, string> = {
-  current: 'Current',
-  stale: 'Stale — regenerate first',
-  'not-saved': 'Not saved yet',
-};
-
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
 }
 
 export default function HandbookStage({
@@ -139,7 +91,6 @@ export default function HandbookStage({
   selected,
   onSelect,
   source,
-  freshness,
 }: HandbookStageProps) {
   const byId = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.id, e])), [model]);
   const chapters = handbook?.chapters ?? [];
@@ -150,8 +101,6 @@ export default function HandbookStage({
     : selected
       ? null
       : (chapters[0] ?? null);
-
-  const counts = handbook?.counts;
 
   /**
    * A step chosen on the map in full screen closes full screen (`BpmnCanvas`)
@@ -182,43 +131,6 @@ export default function HandbookStage({
       )}
     >
       <div className="cc-doc-canvas min-w-0 p-3 md:p-6">
-        <div data-documentation-answer={model ? 'process' : 'none'} className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
-          <Kpi
-            data="process"
-            tone="indigo"
-            icon={<Workflow size={16} aria-hidden={true} />}
-            label="Process"
-            value={model
-              ? `${plural(model.traceability.flowNodes, 'element', 'elements')} · ${model.traceability.anchored}/${model.traceability.flowNodes} anchored`
-              : 'Not read yet'}
-          />
-          <Kpi
-            data="rules"
-            tone="indigo"
-            icon={<ListChecks size={16} aria-hidden={true} />}
-            label="Rules"
-            value={counts ? `${counts.rules} · ${counts.rulesInProcess} in the process` : reading ? 'Reading…' : '—'}
-          />
-          <Kpi
-            data="exceptions"
-            tone="warning"
-            icon={<TriangleAlert size={16} aria-hidden={true} />}
-            label="Exceptions"
-            value={counts
-              ? counts.exceptionsWithLines === counts.exceptions
-                ? `${counts.exceptions} with lines`
-                : `${counts.exceptions} · ${counts.exceptionsWithLines} with lines`
-              : reading ? 'Reading…' : '—'}
-          />
-          <Kpi
-            data="freshness"
-            tone={freshness === 'current' ? 'success' : 'warning'}
-            icon={<Clock size={16} aria-hidden={true} />}
-            label="Freshness"
-            value={FRESHNESS_WORDS[freshness]}
-          />
-        </div>
-
         <div data-handbook-board="" className="min-w-0 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc md:p-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2 className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
@@ -227,7 +139,6 @@ export default function HandbookStage({
             <span className="cc-text-meta text-cc-ink-muted">Select a step to read its chapter</span>
           </div>
           {map}
-          {handbook ? <InputsOutputs handbook={handbook} /> : null}
         </div>
       </div>
 
@@ -246,7 +157,7 @@ export default function HandbookStage({
   );
 }
 
-/* ------------------------------------------------------------------ in and out */
+/* ------------------------------------------------------------------ names */
 
 function objectName(o: HandbookObject): React.ReactNode {
   return o.plain ? (
@@ -256,68 +167,6 @@ function objectName(o: HandbookObject): React.ReactNode {
     </>
   ) : (
     <b className="font-cc-mono font-semibold text-cc-ink">{o.name}</b>
-  );
-}
-
-export function InputsOutputs({ handbook }: { handbook: ProcessHandbook }) {
-  const outs = [
-    ...handbook.writes.map((o) => ({ o, write: true })),
-    ...handbook.calls.map((o) => ({ o, write: false })),
-  ];
-  return (
-    <div data-handbook-io="" className="mt-4 grid grid-cols-1 gap-4 border-t border-cc-line pt-4 md:grid-cols-2">
-      <div className="min-w-0">
-        {handbook.inputs.length === 0 ? (
-          <>
-            <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">In · selection screen</p>
-            <p className="m-0 cc-text-cell text-cc-ink-muted">The program declares no selection screen.</p>
-          </>
-        ) : (
-          // Owner 02.10.2026: more than five rows start folded (`lib/documentation-lists.ts`).
-          <FoldedList name="inputs" title="In · selection screen" rows={handbook.inputs.length} summary={inputsSummary(handbook.inputs)}>
-          <ul className="m-0 list-none p-0">
-            {handbook.inputs.map((input) => (
-              <li key={input.name} className="flex flex-wrap items-center gap-2 border-b border-dashed border-cc-line py-1 cc-text-cell text-cc-ink">
-                <ArrowRight size={12} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-                <b className="font-semibold">{input.plain}</b>
-                <span className="font-cc-mono text-cc-ink-muted">{input.name}</span>
-                <LineAnchor anchor={{ lineStart: input.line, lineEnd: input.line }} />
-              </li>
-            ))}
-          </ul>
-          </FoldedList>
-        )}
-      </div>
-      <div className="min-w-0">
-        {outs.length === 0 ? (
-          <>
-            <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">Out · what changes</p>
-            <p className="m-0 cc-text-cell text-cc-ink-muted">The program writes no table and calls nothing by name.</p>
-          </>
-        ) : (
-          <FoldedList name="outputs" title="Out · what changes" rows={outs.length} summary={outputsSummary(handbook.writes, handbook.calls)}>
-          <ul className="m-0 list-none p-0">
-            {outs.map(({ o, write }) => (
-              <li
-                key={`${write ? 'w' : 'c'}-${o.name}`}
-                className={cn(
-                  'flex flex-wrap items-center gap-2 border-b border-dashed border-cc-line py-1 cc-text-cell',
-                  write ? 'text-cc-error' : 'text-cc-ink',
-                )}
-              >
-                {write
-                  ? <PenLine size={12} aria-hidden={true} className="shrink-0" />
-                  : <PhoneCall size={12} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />}
-                <span className="sr-only">{write ? 'Changes' : 'Calls'}</span>
-                <span className="min-w-0 break-words">{objectName(o)}</span>
-                <LineAnchor anchor={{ lineStart: o.line, lineEnd: o.line }} />
-              </li>
-            ))}
-          </ul>
-          </FoldedList>
-        )}
-      </div>
-    </div>
   );
 }
 

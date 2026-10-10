@@ -604,9 +604,24 @@ function hasGeneratedPackage(code: unknown): boolean {
       !!f &&
       typeof f === 'object' &&
       typeof (f as { path?: unknown }).path === 'string' &&
-      typeof (f as { content?: unknown }).content === 'string',
+      typeof (f as { content?: unknown }).content === 'string' &&
+      !DOCUMENTATION_PACKAGE_FILES.includes((f as { path: string }).path),
   );
 }
+
+/**
+ * Files the Documentation stage used to merge into `generatedCode` (roadmap
+ * 3.0.7, "Documentation lean", item 4). Opening Documentation before
+ * Transformation left a package holding only these, and the package then
+ * counted as generated code. Documentation no longer writes them — Delivery
+ * adds both from `documentation` and `businessDocumentation` — and a package
+ * an earlier build wrote is not code because of them.
+ */
+export const DOCUMENTATION_PACKAGE_FILES: readonly string[] = [
+  'docs/process-documentation.md',
+  'docs/business-documentation.md',
+  'docs/process-blueprint.md',
+];
 
 export function workflowSteps(project: Project | null): RailStep[] {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;

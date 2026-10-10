@@ -40,10 +40,23 @@ test('a truthy non-list in any of the three lists is refused (69cb77382430)', ()
       expect(check.ok, `${list} = ${JSON.stringify(bad)}`).toBe(false);
       expect(check.problems.join(' ')).toContain(list);
     }
+  }
+  for (const list of ['raci_matrix', 'sop_details'] as const) {
     const { [list]: _dropped, ...rest } = good;
     void _dropped;
     expect(checkBusinessDocShape(rest).ok, `${list} missing`).toBe(false);
   }
+});
+
+test('a layer without control checkpoints is the current form (roadmap 3.0.7: the prompt no longer asks for them)', () => {
+  const { audit_controls: _controls, ...current } = good;
+  void _controls;
+  expect(checkBusinessDocShape(current)).toEqual({ ok: true, problems: [] });
+  const prompt = page().slice(page().indexOf('async function runBusinessGeneration'), page().indexOf('const generateBusinessDocumentation'));
+  for (const gone of ['"kpiTarget"', '"audit_controls"', '"controlObjective"', '"assertionMethod"']) {
+    expect(prompt, `the prompt still asks for ${gone}`).not.toContain(gone);
+  }
+  expect(prompt).toContain('Do NOT propose KPI targets, control objectives, audit controls or verification methods');
 });
 
 test('entries and rendered fields that React cannot draw are refused', () => {
@@ -105,10 +118,11 @@ test('replacing the documentation drops the business layer written from the old 
   expect(start, 'the documentation generator').toBeGreaterThan(-1);
   const body = src.slice(start, src.indexOf('}, [projectId, project, signedSource', start));
   // One write: the new document, and the layer that described the old one cleared.
-  expect(body).toContain("tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' })");
-  // …from the package as well, so the handover carries no stale SOP file.
-  expect(body).toMatch(/removeFileFromWorkspace\([\s\S]*?BUSINESS_WORKSPACE_FILE/);
-  expect(src).toContain("const BUSINESS_WORKSPACE_FILE = 'docs/business-documentation.md'");
+  expect(body).toContain("tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup })");
+  // …and a layer file an earlier build merged into the package goes too
+  // (roadmap 3.0.7: the stage writes no package; Delivery writes the file).
+  expect(body).toContain('const cleanup = packageCleanup(current.generatedCode);');
+  expect(src).toContain('DOCUMENTATION_PACKAGE_FILES.includes(');
   // …and from the screen, after the write went through.
   expect(body.indexOf("setBusinessDocumentation('')")).toBeGreaterThan(body.indexOf('await runTransaction'));
 });

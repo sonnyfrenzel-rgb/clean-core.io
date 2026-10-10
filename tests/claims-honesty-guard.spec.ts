@@ -223,6 +223,11 @@ test.describe('a signed-in account reading its own project', () => {
 
   test('UX-029 · the export says what it is, and the caveat is not on hover', async ({ page }) => {
     await page.goto(`/project/${BTP}/documentation`, { waitUntil: 'domcontentloaded' });
+    // Roadmap 3.0.7: every way out of the stage is in its one Export menu; the
+    // caveat stands under the buttons once it is open — a click, never a hover.
+    const menu = page.locator('[data-documentation-export-menu]');
+    await menu.waitFor({ timeout: 60000 });
+    await menu.click();
     await page.waitForSelector('[data-export-caveat]', { timeout: 60000 });
     const caveat = page.locator('[data-export-caveat]');
     await expect(caveat).toBeVisible();

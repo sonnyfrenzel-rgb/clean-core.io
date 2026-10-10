@@ -96,6 +96,8 @@ export interface StatementProposalPanelProps {
   requesting: boolean;
   message: string | null;
   onRequest: () => void;
+  /** The cost line beside the button; `false` where a card says the cost once for all its proposals (roadmap 3.0.7). */
+  costLine?: boolean;
 }
 
 function summaryOf(view: ProposalView): string {
@@ -108,7 +110,7 @@ function summaryOf(view: ProposalView): string {
   return parts.join(' · ');
 }
 
-export function StatementProposalPanel({ view, canRequest, byok, requesting, message, onRequest }: StatementProposalPanelProps) {
+export function StatementProposalPanel({ view, canRequest, byok, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
   const proposed = view?.state === 'proposed';
   // A reader with nothing stored sees nothing at all: there is no action for
   // them here, and an absence is not news.
@@ -123,9 +125,11 @@ export function StatementProposalPanel({ view, canRequest, byok, requesting, mes
           <CcButton variant={proposed ? 'ghost' : 'secondary'} busy={requesting} onClick={onRequest}>
             {proposed ? 'Ask the model again' : 'Propose business sentences'}
           </CcButton>
-          <span data-statement-cost="" className="text-[12px] text-cc-ink-muted">
-            {byok ? STATEMENT_COST_LINE_BYOK : STATEMENT_COST_LINE}
-          </span>
+          {costLine ? (
+            <span data-statement-cost="" className="text-[12px] text-cc-ink-muted">
+              {byok ? STATEMENT_COST_LINE_BYOK : STATEMENT_COST_LINE}
+            </span>
+          ) : null}
         </div>
       )}
     </div>

@@ -26,16 +26,10 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.sopNotInProcess': 'Not a step of the process read from the code',
   'doc.sopResponsible': 'Responsible',
   'doc.sopFull': 'Full SOP',
-  'doc.sopFullSummary': 'Narrative, exception handling and KPI target per step, and the control checkpoints.',
+  'doc.sopFullSummary': 'Narrative and exception handling per step.',
   'doc.sopNarrative': 'Narrative',
   'doc.sopException': 'If the step cannot be completed',
-  'doc.sopKpi': 'KPI target',
   'doc.sopStepColumn': 'Step',
-  'doc.controlsTitle': 'Control checkpoints',
-  'doc.controlsNone': 'The layer names no control checkpoint.',
-  'doc.controlObjective': 'Control objective',
-  'doc.controlMitigation': 'Mitigation',
-  'doc.controlVerification': 'Verification',
 
   'doc.raciTitle': 'Who is responsible',
   'doc.raciNoRows': 'The layer assigns no roles.',
@@ -66,6 +60,33 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessReadFirst': 'Read the documentation from the code',
   'doc.businessGenerating': 'Writing the SOP and the RACI (model)…',
   'doc.derivationTitle': 'How this was derived',
+
+  // Roadmap 3.0.7, "Documentation lean" — one card for the model proposals.
+  'doc.proposalsTitle': 'Model proposals',
+  'doc.proposalsLead':
+    'Written by a language model on top of the process description: who does what at each step, and business wording for the code reading. The steps, their lines and the controls stay the code reading.',
+  'doc.proposalsSentencesTitle': 'Business sentences',
+  'doc.sopControlsFromCode': 'Controls are read from the code — section 8 of the process description. The model proposes no controls and no KPI targets.',
+
+  // The rules table's filter (it replaced the drawer's "Rules outside the process").
+  'doc.rulesFilterLabel': 'Show the rules',
+  'doc.rulesOutsideCaption': 'Rules outside the process',
+  'doc.rulesOutsideLead': 'Values and conditions the code holds that take effect at no step of the drawn process.',
+  'doc.rulesOutsideNone': 'None — every rule the code holds decides at a step.',
+
+  // Section 9 — the project's one list of open questions (ADR-081).
+  'doc.questionsAnswerInWorkspace': 'Answer them, or accept them as known open, in the workspace',
+
+  // The Export menu in the stage header (ADR-078's menu, roadmap 3.0.7).
+  'doc.exportBpmnCaveat': 'BPMN 2.0: import into SAP Signavio or SAP Build has not been verified yet.',
+  'doc.exportPrintCaveat': 'Print / PDF prints the process description from the browser, every row of every table.',
+  'doc.exportStale': 'Stale — regenerate first',
+
+  // A model-written blueprint from before 3.0.5 (roadmap 3.0.7: its rendering retired, its data kept).
+  'doc.legacyStrip': 'A model-written blueprint from before 3.0.5 is stored for this project. It is kept as it was and no longer shown here.',
+  'doc.legacyDownload': 'Download it as it was',
+  'doc.legacyReplace': 'Replace with the code reading',
+  'doc.legacyReaderNote': 'The owner of this project can replace it with the description read from the code.',
 } as const;
 
 export type DocumentationMessageKey = keyof typeof DOCUMENTATION_MESSAGES;
@@ -158,4 +179,40 @@ export function sopStepsCount(n: number): string {
 
 export function stepNumberLabel(n: number, name: string): string {
   return `Step ${n}: ${name}`;
+}
+
+/** The rules table's filter — all rows. */
+export function docRulesFilterAll(n: number): string {
+  return `All (${n})`;
+}
+
+/** The rules table's filter — the rules that decide at no step. */
+export function docRulesFilterOutside(n: number): string {
+  return `Outside the process (${n})`;
+}
+
+/** The step column of a rule outside the process that the table has no row for. */
+export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreached' | 'technical-helper' | 'not-in-skeleton'): string {
+  return {
+    'declaration-only': 'Outside the process — declaration only',
+    unreached: 'Outside the process — not reached',
+    'technical-helper': 'Outside the process — technical helper',
+    'not-in-skeleton': 'Outside the process',
+  }[reason];
+}
+
+/**
+ * The one cost line of the model proposals card (DESIGN.md §2.8): what each
+ * proposal costs, said before any click. Every part is a fact of the page —
+ * the model it names is the one the business layer is asked of, the key is
+ * the one `/api/model-stages` reports.
+ */
+export function docProposalsCostLine(model: string, byok: boolean): string {
+  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation writes the SOP and RACI once when none is on record; the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+}
+
+/** The file name of a legacy blueprint, downloaded as it was stored. */
+export function docLegacyFileName(projectName: string | undefined): string {
+  const base = (projectName || 'Project').replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'Project';
+  return `${base}_blueprint_before_3.0.5.json`;
 }

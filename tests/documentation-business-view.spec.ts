@@ -48,7 +48,11 @@ import { overloadedLayerFor } from './helpers/raci-overload-fixture';
  *     columns, a layer of fourteen roles fits 1440 px without scrolling — the
  *     full SOP is one click away, a phone has no sideways scroll, and without a
  *     business layer the card that offers it follows the process description;
- *   - an invited reader reads the same order and is offered no generation.
+ *   - an invited reader reads the same order and is offered no generation;
+ *   - roadmap 3.0.7: the SOP and RACI and the business sentences are one card
+ *     of model proposals with one cost line, the full SOP carries no KPI
+ *     target and no control checkpoint, and the key figures stand once — in
+ *     the description, not again above the map.
  */
 
 const SOURCE = fixtureSource();
@@ -147,6 +151,11 @@ test.describe('the Confluence export', () => {
     // business layer follows it as a model proposal, the technical trace last.
     const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), LAYER, { processSteps: STEPS }).text();
     expect(html).toContain('Business layer — Model proposal');
+    // Roadmap 3.0.7: a stored layer's KPI targets and control checkpoints are
+    // data, not part of the page; the controls are section 8's.
+    for (const sop of LAYER.sop_details) if (sop.kpiTarget) expect(html).not.toContain(sop.kpiTarget);
+    for (const ctrl of LAYER.audit_controls) expect(html).not.toContain(ctrl.controlObjective);
+    expect(html).toContain('Controls are read from the code: section 8 of the process description.');
     for (const row of LAYER.raci_matrix) expect(html).toContain(`<code>${row.stepId}</code></td><td>${row.r || 'Not determined'}</td>`);
     for (const sop of LAYER.sop_details) {
       expect(html).toContain(`<code>${sop.stepId}</code>`);
@@ -292,6 +301,21 @@ test.describe('the Documentation stage in a browser', () => {
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-sop-full-step]')).toHaveCount(LAYER.sop_details.length);
     await expect(page.locator('[data-sop-full]')).toContainText(LAYER.sop_details[0].narrative);
+    // Roadmap 3.0.7: no KPI target and no model-written control checkpoint —
+    // the controls are the code reading's, section 8, and the fold says so.
+    await expect(page.locator('[data-sop-full]')).not.toContainText('Completed within one business day');
+    await expect(page.locator('[data-sop-full]')).not.toContainText('Approvals follow the four-eyes principle.');
+    await expect(page.locator('[data-sop-controls-from-code]')).toBeVisible();
+
+    // One card for the model proposals, with one cost line.
+    const card = page.locator('[data-model-proposals]');
+    await expect(card).toHaveCount(1);
+    await expect(card.locator('[data-business-sop]')).toHaveCount(1);
+    await expect(card.locator('[data-model-proposals-cost]')).toHaveCount(1);
+    await expect(card.locator('[data-statement-cost]')).toHaveCount(0);
+    // The key figures stand once — in the description's summary.
+    await expect(page.locator('[data-handbook-kpi]')).toHaveCount(0);
+    await expect(page.locator('[data-handbook-drawer]')).toHaveCount(0);
   });
 
   test('phone: the RACI is a list per step and nothing scrolls sideways', async ({ page }) => {
@@ -395,6 +419,8 @@ test.describe('the Documentation stage in a browser', () => {
     await expectReadingOrder(page);
     await expect(page.locator('[data-regenerate-documentation]')).toHaveCount(0);
     await expect(page.locator('[data-regenerate-business-layer]')).toHaveCount(0);
+    // The exports are a reader's too: one Export menu in the stage header (roadmap 3.0.7).
+    await page.locator('[data-documentation-export-menu]').click();
     await expect(page.locator('[data-export-process-md]')).toBeVisible();
 
     await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });

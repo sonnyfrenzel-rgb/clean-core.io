@@ -59,9 +59,15 @@ test('the design export escapes every value the model wrote', () => {
   expect(left, `unescaped in the design export: ${left.join(', ')}`).toEqual([]);
 });
 
-test('the documentation export escapes every value the model wrote', () => {
-  const left = modelValues(read(DOCS_EXPORT), 'const html = `', '_Confluence.html');
-  expect(left, `unescaped in the documentation export: ${left.join(', ')}`).toEqual([]);
+test('the documentation export has one template — the legacy blueprint page is gone with its rendering', () => {
+  // Roadmap 3.0.7 ("Documentation lean"): a blueprint stored before 3.0.5 is
+  // downloaded as it was stored, so the page that printed its model values
+  // (and interpolated one into a class attribute) went. The process
+  // description's template is held by the test below.
+  const src = read(DOCS_EXPORT);
+  expect(src).not.toContain('buildLegacyConfluenceHtml');
+  expect(src).not.toContain('const html = `');
+  expect(src).toContain('const engineHtml = `');
 });
 
 test('the engine documentation export escapes every value it prints', () => {
@@ -98,7 +104,10 @@ test('the engine documentation export carries the business layer, escaped and ma
   expect(engine).toMatch(/\$\{questionsSection\}\s*\$\{businessSection\}\s*\$\{appendixSection\}\s*<\/body>/);
   expect(engine).toContain('Business layer — Model proposal');
   const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const a = document.appendix'));
-  for (const field of ['raci_matrix', 'sop_details', 'audit_controls']) expect(section).toContain(field);
+  for (const field of ['raci_matrix', 'sop_details']) expect(section).toContain(field);
+  // Roadmap 3.0.7: the model proposes no controls and no KPI targets; the
+  // controls are the code reading's, section 8.
+  for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
   const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml('));
@@ -289,12 +298,12 @@ test('nothing foreign is interpolated into an attribute of an exported document'
   const regions: Array<[string, string]> = [
     [ANALYZE, 'const gapsRows'],
     [DESIGN_EXPORT, 'const structureRows'],
-    [DOCS_EXPORT, 'const html = `'],
+    // The documentation export's region was the legacy blueprint page, retired
+    // in roadmap 3.0.7 with its one class ternary.
   ];
   const ends: Record<string, string> = {
     [ANALYZE]: 'export function analysisExportFileName',
     [DESIGN_EXPORT]: 'export function designExportFileName',
-    [DOCS_EXPORT]: '_Confluence.html',
   };
 
   const offenders: string[] = [];
@@ -325,7 +334,6 @@ test('nothing foreign is interpolated into an attribute of an exported document'
   // longer interpolates into any attribute — its method chips were three
   // colour ternaries each and are one neutral class now — so it has no floor.
   expect(checked[ANALYZE], 'the analysis export: no attribute interpolation was found').toBeGreaterThanOrEqual(10);
-  expect(checked[DOCS_EXPORT], 'the documentation export: no attribute interpolation was found').toBeGreaterThanOrEqual(1);
   expect(offenders, `a value reaches an attribute of an exported document:\n${offenders.join('\n')}`).toEqual([]);
 });
 

@@ -26,31 +26,35 @@ import type { DocAnchor } from '@/lib/process-documentation';
 import {
   sectionTitle,
   type PdPoint,
-  type PdQuestion,
   type PdStep,
   type PdText,
   type ProcessDocument,
   type ProcessDocumentSection,
 } from '@/lib/process-document';
 import {
-  BLOCKS_WORD,
+  REQUIREMENT_QUESTIONS,
+  REQUIREMENT_QUESTION_HEAD,
   SOURCE_COLUMN,
   shortTech,
   appendixLead,
   documentOutline,
+  figureText,
   gateLine,
-  questionNumber,
-  questionSourceRows,
+  openQuestionAnchors,
+  openQuestionDetail,
+  openQuestionState,
+  requirementQuestionRows,
   stepDetailLines,
   stepName,
   wordingRows,
   type PdOutline,
-  type PdQuestionGroup,
   type PdRow,
   type PdSectionKey,
   type PdTable,
 } from '@/lib/process-document-outline';
-import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
+import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
+import type { HandbookRuleOutside } from '@/lib/process-handbook';
+import { docRulesOutsideNotInTable, docRulesFilterAll, docRulesFilterOutside, wt } from '@/lib/workspace-messages';
 import { cn } from '@/lib/utils';
 
 /**
@@ -65,10 +69,16 @@ import { cn } from '@/lib/utils';
  * (each a link to its section), the rules and risks to know, and the main path
  * as a strip of numbered steps; then the nine sections as cards, each with its
  * one-line lead and its first few rows — "Show all" for the rest, a step's
- * details and a question's reason one tap deeper. What a file moves to its
- * appendix the screen folds in place (DESIGN.md §2.11: show less, lose
- * nothing). The program's own names stand in a muted source column, never in
- * the sentence; line anchors are small chips.
+ * details one tap deeper. What a file moves to its appendix the screen folds
+ * in place (DESIGN.md §2.11: show less, lose nothing); printed, every row
+ * stands (`CcTable`'s print rule), so "Print / PDF" is this document. The
+ * program's own names stand in a muted source column, never in the sentence;
+ * line anchors are small chips.
+ *
+ * Roadmap 3.0.7 ("Documentation lean"): the rules table carries the filter
+ * that was the drawer's "Rules outside the process", and section 9 is the
+ * project's one list of open questions (ADR-081) with its end states — read
+ * here, answered in the workspace.
  *
  * The technical trace is `ProcessDocumentAppendix`, rendered by the stage at
  * its foot — after the business layer and the map (ADR-077 amended).
@@ -123,10 +133,12 @@ function SectionCard({ id, lead, className, children }: { id: PdSectionKey; lead
   );
 }
 
-/** A table of the outline: its first rows, then "Show all n" (DESIGN.md §2.11). */
+/**
+ * A table of the outline: its first rows, then "Show all n" (DESIGN.md §2.11).
+ * The rows past the first stay in the markup, hidden on screen and printed
+ * (`CcTable`'s `hidden print:table-row`), so the printed description loses none.
+ */
 function OutlineTable({ table }: { table: PdTable }) {
-  const [all, setAll] = useState(false);
-  const rows = all ? table.rows : table.rows.slice(0, table.first);
   const columns: CcTableColumn[] = [
     ...table.head.map((label, i) => ({ key: `c${i}`, label })),
     { key: 'source', label: SOURCE_COLUMN, width: '180px' },
@@ -136,18 +148,12 @@ function OutlineTable({ table }: { table: PdTable }) {
       <CcTable
         caption={table.caption}
         columns={columns}
-        rows={rows.map((row, r) => ({
+        limit={table.first}
+        rows={table.rows.map((row, r) => ({
           key: `r${r}`,
           cells: { ...Object.fromEntries(row.cells.map((cell, i) => [`c${i}`, cell])), source: <Source row={row} /> },
         }))}
       />
-      {table.rows.length > table.first ? (
-        <div className="mt-2">
-          <CcButton variant="ghost" density="compact" aria-expanded={all} onClick={() => setAll((v) => !v)} data-doc-show-all={table.id}>
-            {all ? showFirstLabel(table.first) : showAllLabel(table.rows.length)}
-          </CcButton>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -238,7 +244,7 @@ function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutl
                 {f.label}
               </a>
             </dt>
-            <dd className="m-0 cc-text-figure text-cc-ink">{f.value}</dd>
+            <dd className={f.value === null ? 'm-0 cc-text-cell text-cc-ink-muted' : 'm-0 cc-text-figure text-cc-ink'}>{figureText(f)}</dd>
           </div>
         ))}
       </dl>
@@ -342,83 +348,97 @@ const INTEGRATION_ICONS: Array<[RegExp, React.ComponentType<{ size?: number; cla
 ];
 const integrationIcon = (kind: string) => INTEGRATION_ICONS.find(([re]) => re.test(kind))?.[1] ?? Cog;
 
-function QuestionItem({ q }: { q: PdQuestion }) {
-  const [why, setWhy] = useState(false);
-  const id = `pd-why-${q.number}`;
+/** One group of the project's open questions, read-only: the workspace answers it (ADR-081). */
+function OpenQuestionRow({ group }: { group: OpenQuestionGroup }) {
+  const anchors = openQuestionAnchors(group);
   return (
-    <li data-doc-question={questionNumber(q)} className="min-w-0 border-t border-cc-line py-2 first:border-t-0">
-      <div className="flex min-w-0 items-start gap-2">
-        <span className="mt-0.5 shrink-0 font-cc-mono text-[12px] font-semibold text-cc-ink">{questionNumber(q)}</span>
-        <div className="min-w-0 flex-1">
-          <p className="m-0 cc-text-cell text-cc-ink">{q.question}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <CcTag>{q.owner}</CcTag>
-            {q.blocks ? <span data-doc-question-blocks={q.blocks}><CcStateText state="warning">{BLOCKS_WORD[q.blocks] ?? q.blocks}</CcStateText></span> : null}
-            <Tech>{q.detail}</Tech>
-            <Anchors anchors={q.anchors} max={2} />
-            <button
-              type="button"
-              aria-expanded={why}
-              aria-controls={id}
-              onClick={() => setWhy((v) => !v)}
-              className="cc-text-meta text-cc-ink underline underline-offset-2"
-            >
-              {why ? 'Hide why' : 'Why open?'}
-            </button>
-          </div>
-          {why ? <p id={id} className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{q.why}</p> : null}
-        </div>
+    <li data-doc-open-question={group.action} data-doc-open-question-end={group.end} className="min-w-0 border-t border-cc-line py-2 first:border-t-0">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="cc-text-identifier text-cc-ink">{group.title}</span>
+        <span className="cc-text-meta font-medium text-cc-ink-muted">{group.count}</span>
+        <CcTag>{group.owner}</CcTag>
+        {group.end === 'answered' ? <CcProvenanceChip value="confirmed" /> : null}
+        {group.end === 'open' ? (
+          group.blocksDecision ? <CcStateText state="warning">{openQuestionState(group)}</CcStateText> : null
+        ) : (
+          <span className="cc-text-meta font-medium text-cc-ink-muted">{openQuestionState(group)}</span>
+        )}
+        <Anchors anchors={anchors} max={3} />
       </div>
+      <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{openQuestionDetail(group)}</p>
     </li>
   );
 }
 
-/** "2 block the design · 1 blocks the cutover" — what a group holds up, by kind. */
-function blockingWords(questions: PdQuestion[]): string {
-  return (['design', 'cutover'] as const)
-    .map((kind) => [kind, questions.filter((q) => q.blocks === kind).length] as const)
-    .filter(([, n]) => n > 0)
-    .map(([kind, n]) => `${n} ${n === 1 ? 'blocks' : 'block'} the ${kind}`)
-    .join(' · ');
-}
-
-function QuestionGroup({ group, defaultOpen }: { group: PdQuestionGroup; defaultOpen: boolean }) {
+/** Section 9: the project's one list, its end states, and where to answer it. */
+function OpenQuestionsSection({ list, href, requirementsLine }: { list: OpenQuestions | null; href?: string | null; requirementsLine: string | null }) {
   return (
-    <div data-question-group={group.theme} className="min-w-0 border-t border-cc-line pt-1">
-      <CcDisclosure
-        title={group.title}
-        count={group.questions.length}
-        summary={group.blocking ? blockingWords(group.questions) : undefined}
-        defaultOpen={defaultOpen}
-        level={4}
-        density="compact"
-      >
-        <ul className="m-0 list-none p-0">
-          {group.questions.map((q) => <QuestionItem key={q.number} q={q} />)}
+    <>
+      {list && list.groups.length ? (
+        <ul data-doc-open-questions={list.open} className="m-0 list-none p-0">
+          {list.groups.map((g) => <OpenQuestionRow key={g.action} group={g} />)}
         </ul>
-      </CcDisclosure>
-    </div>
+      ) : null}
+      {list?.limits ? <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">{list.limits}</p> : null}
+      {href ? (
+        <p className="m-0 mt-2 cc-text-cell">
+          <a href={href} data-doc-open-questions-link="" className="text-cc-ink underline underline-offset-2">{wt('doc.questionsAnswerInWorkspace')}</a>
+        </p>
+      ) : null}
+      {requirementsLine ? (
+        <p data-doc-requirement-questions="" className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
+          <a href="#pd-requirement-questions" onClick={(event) => scrollTo(event, 'pd-requirement-questions')} className="text-cc-ink underline-offset-2 hover:underline">
+            {requirementsLine}
+          </a>
+        </p>
+      ) : null}
+    </>
   );
 }
 
-/** The themes as one bar, each segment its share of the questions. */
-function QuestionBar({ groups, total }: { groups: PdQuestionGroup[]; total: number }) {
-  const SHADES = ['bg-cc-chart-1', 'bg-cc-chart-2', 'bg-cc-chart-3', 'bg-cc-chart-4', 'bg-cc-chart-5', 'bg-cc-ink-muted', 'bg-cc-field-border'];
+type RulesFilter = 'all' | 'outside';
+
+/**
+ * Section 4's table with the filter that was the drawer's "Rules outside the
+ * process" (roadmap 3.0.7): the rows whose rule decides at no step of the
+ * drawn process, and — so nothing the drawer listed is lost — the rules of
+ * that kind the table has no row for (a rule no entry point reaches), with the
+ * reason in words.
+ */
+function RulesTable({ table, outside }: { table: PdTable; outside: readonly HandbookRuleOutside[] | null }) {
+  const [filter, setFilter] = useState<RulesFilter>('all');
+  const ids = useMemo(() => new Set((outside ?? []).map((r) => r.id)), [outside]);
+  const filtered = useMemo<PdTable>(() => {
+    if (filter === 'all') return table;
+    const inTable = table.rows.filter((row) => ids.has(row.cells[0]));
+    const shown = new Set(inTable.map((row) => row.cells[0]));
+    const extra: PdRow[] = (outside ?? [])
+      .filter((r) => !shown.has(r.id))
+      .map((r) => ({ cells: [r.id, docRulesOutsideNotInTable(r.reason), r.text, '—'], tech: r.detail || null, anchors: r.anchor ? [r.anchor] : [] }));
+    const rows = [...inTable, ...extra];
+    return { ...table, id: 'rules-outside', caption: wt('doc.rulesOutsideCaption'), rows, first: rows.length };
+  }, [filter, table, ids, outside]);
+  const outsideCount = (outside ?? []).length;
   return (
-    <div data-doc-question-bar="" className="min-w-0">
-      <div aria-hidden={true} className="flex h-2 w-full overflow-hidden rounded-full bg-cc-surface-muted">
-        {groups.map((g, i) => (
-          <span key={g.theme} className={SHADES[i % SHADES.length]} style={{ width: `${(g.questions.length / total) * 100}%` }} />
-        ))}
-      </div>
-      <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-3 gap-y-1 p-0">
-        {groups.map((g, i) => (
-          <li key={g.theme} className="inline-flex items-center gap-1 cc-text-meta font-medium text-cc-ink-muted">
-            <span aria-hidden={true} className={cn('inline-block h-2 w-2 rounded-full', SHADES[i % SHADES.length])} />
-            {g.title} {g.questions.length}
-          </li>
-        ))}
-      </ul>
+    <div className="min-w-0">
+      {outside && outsideCount > 0 ? (
+        <div role="group" aria-label={wt('doc.rulesFilterLabel')} data-doc-rules-filter={filter} className="mb-2 flex flex-wrap items-center gap-2">
+          <CcButton variant={filter === 'all' ? 'secondary' : 'ghost'} density="compact" aria-pressed={filter === 'all'} onClick={() => setFilter('all')} data-doc-rules-filter-all="">
+            {docRulesFilterAll(table.rows.length)}
+          </CcButton>
+          <CcButton variant={filter === 'outside' ? 'secondary' : 'ghost'} density="compact" aria-pressed={filter === 'outside'} onClick={() => setFilter('outside')} data-doc-rules-filter-outside="">
+            {docRulesFilterOutside(outsideCount)}
+          </CcButton>
+        </div>
+      ) : null}
+      {filter === 'outside' ? (
+        <>
+          <p className="m-0 mb-2 cc-text-meta font-medium text-cc-ink-muted">{wt('doc.rulesOutsideLead')}</p>
+          {filtered.rows.length ? <OutlineTable key="outside" table={filtered} /> : <p className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.rulesOutsideNone')}</p>}
+        </>
+      ) : (
+        <OutlineTable key="all" table={table} />
+      )}
     </div>
   );
 }
@@ -427,18 +447,26 @@ export default function ProcessDocumentView({
   document: doc,
   mapHref,
   summary,
+  openQuestions = null,
+  questionsHref = null,
+  rulesOutside = null,
 }: {
   document: ProcessDocument;
   /** Where the live map stands on this page — the diagram of section 3. */
   mapHref?: string;
   /** Anything the stage adds to the summary card, under the main path (for example the clean-core levels of what it changes). */
   summary?: React.ReactNode;
+  /** The project's one list of open questions (ADR-081) — section 9 and its key figure. */
+  openQuestions?: OpenQuestions | null;
+  /** Where the list is answered (the workspace); absent in the demo. */
+  questionsHref?: string | null;
+  /** The rules that decide at no step of the drawn process (`ProcessHandbook.rulesOutside`) — the rules table's filter. */
+  rulesOutside?: readonly HandbookRuleOutside[] | null;
 }) {
-  const outline = useMemo(() => documentOutline(doc), [doc]);
+  const outline = useMemo(() => documentOutline(doc, { openQuestions }), [doc, openQuestions]);
   const p = doc.purpose;
   const t = outline.tables;
   const q = outline.questions;
-  const firstOpen = q.groups.findIndex((g) => g.blocking > 0);
 
   return (
     <div data-process-document="" className="space-y-4 min-w-0">
@@ -500,7 +528,7 @@ export default function ProcessDocumentView({
       </SectionCard>
 
       <SectionCard id="rules" lead={outline.leads.rules}>
-        {t.rules ? <OutlineTable table={t.rules} /> : null}
+        {t.rules ? <RulesTable table={t.rules} outside={rulesOutside} /> : null}
       </SectionCard>
 
       <SectionCard id="exceptions" lead={outline.leads.exceptions}>
@@ -549,20 +577,7 @@ export default function ProcessDocumentView({
       </SectionCard>
 
       <SectionCard id="questions" lead={outline.leads.questions}>
-        {q.groups.length ? (
-          <>
-            <div data-doc-question-summary="" className="mb-3 flex flex-wrap items-center gap-2">
-              <CcProvenanceChip value="not-determined" />
-              <CcTag>{q.business} Business</CcTag>
-              <CcTag>{q.it} IT operations</CcTag>
-              {q.blocking ? <CcStateText state="warning">{q.blocking} block the design or the cutover</CcStateText> : null}
-            </div>
-            <QuestionBar groups={q.groups} total={doc.questions.length} />
-            <div className="mt-3 flex flex-col">
-              {q.groups.map((g, i) => <QuestionGroup key={g.theme} group={g} defaultOpen={i === (firstOpen < 0 ? 0 : firstOpen)} />)}
-            </div>
-          </>
-        ) : null}
+        <OpenQuestionsSection list={q.list} href={questionsHref} requirementsLine={q.requirementsLine} />
       </SectionCard>
     </div>
   );
@@ -592,13 +607,18 @@ export function ProcessDocumentAppendix({ document: doc, children }: { document:
             />
           </CcDisclosure>
           {doc.questions.length ? (
-            <CcDisclosure title="Sources of the open questions" count={doc.questions.length} density="compact">
-              <CcTable
-                caption="Sources of the open questions"
-                columns={[{ key: 'n', label: 'No.' }, { key: 'r', label: 'Source ids' }, { key: 'w', label: 'Why the code cannot answer it' }, { key: 'o', label: 'As the engine asked' }]}
-                rows={questionSourceRows(doc).map((r, i) => ({ key: String(i), cells: { n: r[0], r: <Tech>{r[1]}</Tech>, w: r[2], o: r[3] } }))}
-              />
-            </CcDisclosure>
+            <div id="pd-requirement-questions" data-doc-requirement-question-list="" className="scroll-mt-24">
+              <CcDisclosure title={REQUIREMENT_QUESTIONS} count={doc.questions.length} density="compact">
+                <CcTable
+                  caption={REQUIREMENT_QUESTIONS}
+                  columns={REQUIREMENT_QUESTION_HEAD.map((label, i) => ({ key: `c${i}`, label }))}
+                  rows={requirementQuestionRows(doc).map((r, i) => ({
+                    key: String(i),
+                    cells: Object.fromEntries(r.map((cell, c) => [`c${c}`, c === 4 ? <Tech>{cell}</Tech> : cell])),
+                  }))}
+                />
+              </CcDisclosure>
+            </div>
           ) : null}
         </div>
       ) : null}

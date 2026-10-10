@@ -20,6 +20,7 @@ import DemoDelivery from '@/components/delivery/DemoDelivery';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
 import DemoDocumentation from './DemoDocumentation';
+import { openQuestions } from '@/lib/open-questions';
 import { FoldedListSection } from '@/components/documentation/FoldedList';
 import { couplingSummary, inventorySummary } from '@/lib/documentation-lists';
 import DemoDesign from './DemoDesign';
@@ -313,6 +314,17 @@ function Documentation({ demo, source }: { demo: DemoProject; source: string | n
         gaps={demo.analyze.coverage.unassessed.map((u) => ({ label: u.label, why: u.why, line: u.line }))}
         levels={demo.analyze.levels}
         businessLayer={<ModelHalfNotice what="The business SOP and RACI layer on top of this description" />}
+        /* Section 9 is the one list of open questions (ADR-081, roadmap 3.0.7),
+           over the demo's own coverage sweep; nothing is answered in a demo. */
+        openQuestions={openQuestions({
+          open: {
+            items: demo.analyze.coverage.unassessed.map((u) => ({ label: u.label, why: u.why, anchor: `L${u.line}`, gap: u.gap })),
+            count: demo.analyze.coverage.unassessed.length,
+            noSource: false,
+          },
+          project: null,
+          rules: null,
+        })}
       />
 
       {/* Owner 02.10.2026: the long lists start folded with their count and

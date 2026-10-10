@@ -1,6 +1,8 @@
 /**
- * The Confluence pages of the documentation stage — the legacy blueprint and
- * the engine document (roadmap 3.0.5), as HTML a reviewer opens.
+ * The Confluence page of the documentation stage — the process description
+ * (roadmap 3.0.5, ADR-077), as HTML a reviewer opens. The page of a legacy
+ * blueprint went with its rendering in 3.0.7 ("Documentation lean"): a
+ * blueprint stored before 3.0.5 is downloaded as it was stored.
  *
  * Moved here out of `app/(app)/project/[projectId]/documentation/page.tsx` in
  * block D, step D.16a, unchanged: the page is a screen and is held to the
@@ -28,15 +30,17 @@ import {
 } from '@/lib/process-document';
 import {
   COMPLETE_TABLES,
+  REQUIREMENT_QUESTIONS,
+  REQUIREMENT_QUESTION_HEAD,
   SOURCE_COLUMN,
   appendixLead,
+  figureText,
   longTables,
   moreRowsLine,
   documentOutline,
   gateSentence,
   groupTitle,
-  questionSourceRows,
-  questionTable,
+  requirementQuestionRows,
   sourceText,
   stepDetailLines,
   stepName,
@@ -45,7 +49,8 @@ import {
   type PdTable,
 } from '@/lib/process-document-outline';
 import { processOverviewSvg } from '@/lib/process-overview-svg';
-import { provenance, type ProvenanceValue } from '@/lib/provenance';
+import { provenance } from '@/lib/provenance';
+import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
 import {
   RACI_LETTERS,
@@ -53,7 +58,6 @@ import {
   raciMatrix,
   sopSteps,
   type GlanceAnchor,
-  type GlanceEvidence,
   type ProcessStepRef,
 } from '@/lib/business-summary';
 
@@ -71,20 +75,12 @@ type ModelJson = any;
 export const STALE_EXPORT_NOTE =
   'Stale — this documentation was written for an earlier source or an earlier step. Regenerate it before relying on it.';
 
-/** Options both Confluence pages take. */
+/** Options the Confluence page takes. */
 export interface ConfluenceExportOptions {
   /** True when the documentation phase is `stale` in `workflowSteps(project)`. */
   stale?: boolean;
-  /**
-   * The glance the stage shows above the map (owner 03.10.2026), already in
-   * words — the callouts need the handbook, the coverage sweep and the levels,
-   * which only the page holds. Absent: the file has no glance table, and loses
-   * nothing else.
-   */
-  glance?: {
-    headline: string;
-    callouts: Array<{ title: string; provenance: ProvenanceValue; evidence: GlanceEvidence[]; more: number }>;
-  };
+  /** The project's open questions (ADR-081) for section 9 — the stage passes the list it shows. */
+  openQuestions?: OpenQuestions | null;
   /**
    * The steps the business layer is keyed to, named as the stage names them.
    * Absent for the engine page: read from the document itself.
@@ -94,181 +90,22 @@ export interface ConfluenceExportOptions {
   projectName?: string;
 }
 
+/**
+ * Where the controls of a process stand (roadmap 3.0.7, "Documentation lean"):
+ * section 8, read from the code. The model no longer proposes control
+ * objectives, verification methods or KPI targets — inventions 3.0.5 had
+ * already taken out of the description.
+ */
+export const CONTROLS_FROM_THE_CODE =
+  'Controls are read from the code: section 8 of the process description. The model proposes no controls and no KPI targets.';
+
 /** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
 function staleNoteHtml(options: ConfluenceExportOptions | undefined): string {
   if (!options?.stale) return '';
   return `<p class="card accent-warning" data-stale-export=""><span class="tag tone-warning">Stale</span> ${escapeHtml(STALE_EXPORT_NOTE.replace(/^Stale — /, ''))}</p>`;
 }
 
-/**
- * The legacy blueprint's Confluence page.
- *
- * The export is an HTML document a reviewer opens, and every value in it
- * was written by the model from the customer's own ABAP — a comment in the
- * source is enough to steer it into returning markup (QA review of
- * 33471220d6e9, 06f7c0c56a6c). Nothing generated reaches the document
- * unescaped; the markup around it is ours.
- */
-export function buildLegacyConfluenceHtml(
-  parsedDoc: ModelJson,
-  parsedBusinessDoc: ModelJson | null,
-  options?: ConfluenceExportOptions,
-): Blob {
-  const esc = escapeHtml;
-  const staleSection = staleNoteHtml(options);
-  const glanceSection = glanceHtml(options, parsedBusinessDoc, options?.processSteps ?? []);
-
-  // The stylesheet every stage export shares (`lib/export-style.ts`).
-  const confluenceCSS = EXPORT_STYLE_ELEMENT;
-
-  const html = `
-    <html>
-      <head>
-        <meta charset="utf-8">
-        ${confluenceCSS}
-      </head>
-      <body>
-        ${staleSection}
-        <div class="header">
-          <h1>${esc(parsedDoc.l1_domain?.name || 'Process documentation')}</h1>
-          <div class="meta">Enterprise Integration Specifications & Workflow Definition</div>
-        </div>
-        ${glanceSection}
-        
-        <div class="card-grid">
-          <div class="card">
-            <div class="card-title">Level 1: Business Domain Blueprint</div>
-            <p><strong>Strategic Goal:</strong> ${esc(parsedDoc.l1_domain?.strategicGoal || 'N/A')}</p>
-            <span class="tag tone-neutral">Owner: ${esc(parsedDoc.l1_domain?.owner || 'N/A')}</span>
-          </div>
-          
-          <div class="card">
-            <div class="card-title">Level 2: Process Area Group</div>
-            <p><strong>Process Area:</strong> ${esc(parsedDoc.l2_group?.processArea || 'N/A')}</p>
-            <p><strong>KPI Framework:</strong></p>
-            <div>
-              ${(parsedDoc.l2_group?.kpis || []).map((kpi: string) => `<span class="tag tone-neutral">${esc(kpi)}</span>`).join(' ')}
-            </div>
-          </div>
-        </div>
-        
-        <h2>Level 4: Architectural Task Specifications</h2>
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 10%">ID</th>
-              <th style="width: 25%">Task Name</th>
-              <th style="width: 35%">Functional Description</th>
-              <th style="width: 15%">Complexity</th>
-              <th style="width: 15%">Technology Stack</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(parsedDoc.l4_tasks || []).map((task: any) => `
-              <tr>
-                <td class="mono strong">${esc(task.stepId)}</td>
-                <td><strong>${esc(task.name) || `Task ${esc(task.stepId)}`}</strong></td>
-                 <td>
-                   <p>${esc(task.description)}</p>
-                   <p class="meta">
-                     <strong>Inputs:</strong> ${esc((task.inputs || []).join(', ') || 'N/A')} | 
-                     <strong>Outputs:</strong> ${esc((task.outputs || []).join(', ') || 'N/A')}
-                   </p>
-                 </td>
-                <td>
-                  <span class="${
-                    task.complexity === 'High' ? 'tag tone-error' :
-                    task.complexity === 'Medium' ? 'tag tone-warning' :
-                    'tag tone-neutral'
-                  }">${esc(task.complexity || 'Low')}</span>
-                </td>
-                <td>
-                  ${(task.systems || []).map((sys: string) => `<span class="tag tone-neutral">${esc(sys)}</span>`).join(' ')}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        ${parsedBusinessDoc ? `
-          <h2>Level 5: Standard Operating Procedures (SOP) & RACI Assignment</h2>
-          
-          <h3>RACI Assignment Matrix</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Task ID</th>
-                <th>Responsible (R)</th>
-                <th>Accountable (A)</th>
-                <th>Consulted (C)</th>
-                <th>Informed (I)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(parsedBusinessDoc.raci_matrix || []).map((raci: any) => `
-                <tr>
-                  <td class="mono strong">${esc(raci.stepId)}</td>
-                  <td>${esc(raci.r || 'N/A')}</td>
-                  <td>${esc(raci.a || 'N/A')}</td>
-                  <td>${esc(raci.c || 'N/A')}</td>
-                  <td>${esc(raci.i || 'N/A')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <h3>SOP Operational Playbook</h3>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 15%">Task ID</th>
-                <th style="width: 50%">Operational SOP Description</th>
-                <th style="width: 20%">Business Exception Fallback</th>
-                <th style="width: 15%">KPI Success Metric</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(parsedBusinessDoc.sop_details || []).map((sop: any) => `
-                <tr>
-                  <td class="mono strong">${esc(sop.stepId)}</td>
-                  <td>${esc(sop.narrative || 'N/A')}</td>
-                  <td>${esc(sop.businessException || 'N/A')}</td>
-                  <td class="strong">${esc(sop.kpiTarget || 'N/A')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <h3>Internal Audit Compliance & Risk Controls</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Task ID</th>
-                <th>Control Objective</th>
-                <th>Mitigation Action</th>
-                <th>Assertion Verification Method</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(parsedBusinessDoc.audit_controls || []).map((ctrl: any) => `
-                <tr>
-                  <td class="mono strong">${esc(ctrl.stepId)}</td>
-                  <td><strong>${esc(ctrl.controlObjective || 'N/A')}</strong></td>
-                  <td>${esc(ctrl.mitigationAction || 'N/A')}</td>
-                  <td class="mono">${esc(ctrl.assertionMethod || 'N/A')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        ` : ''}
-      </body>
-    </html>
-  `;
-
-  return new Blob([html], { type: "text/html;charset=utf-8" });
-}
-
-/** The file name both pages are saved under. */
+/** The file name the page is saved under. */
 export function confluenceFileName(projectName: string | undefined): string {
   const fileName = (projectName || 'Project').replace(/\s+/g, '_');
   return `${fileName}_Confluence.html`;
@@ -314,7 +151,7 @@ export function buildEngineConfluenceHtml(
 ): Blob {
   const esc = escapeHtml;
   const staleSection = staleNoteHtml(options);
-  const o = documentOutline(document, { projectName: options?.projectName });
+  const o = documentOutline(document, { projectName: options?.projectName, openQuestions: options?.openQuestions ?? null });
   const lines = (anchors: PdText['anchors']) => esc(linesLabel(anchors));
   const para = (t: PdText) => `<p>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</p>`;
   const item = (t: PdText) => `<li>${esc(t.text)}${t.anchors.length ? ` <small>${lines(t.anchors)}</small>` : ''}</li>`;
@@ -345,7 +182,7 @@ export function buildEngineConfluenceHtml(
       ${o.glance.summary.map(para).join('')}
       <p><strong>${esc('Started by:')}</strong> ${esc(o.glance.trigger.text)}</p>
     </div>
-    <div class="figures">${o.glance.figures.map((f) => `<div class="figure"><p class="value">${esc(String(f.value))}</p><p class="label">${esc(f.label)}</p></div>`).join('')}</div>
+    <div class="figures">${o.glance.figures.map((f) => `<div class="figure"><p class="value">${esc(figureText(f))}</p><p class="label">${esc(f.label)}</p></div>`).join('')}</div>
     ${o.glance.points.length ? `<h3>${esc('Rules and risks to know')}</h3><ul>${o.glance.points.map((pt) => `<li>${pt.ref ? `<strong>${esc(pt.ref)}</strong> ` : ''}${esc(pt.text)} <small>${esc([pt.detail, linesLabel(pt.anchors)].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>` : ''}
     <p class="meta">${esc(`Main path: ${o.glance.path}`)}</p>`;
 
@@ -370,9 +207,12 @@ export function buildEngineConfluenceHtml(
   const outputsSection = `${h2('outputs')}${lead('outputs')}${o.tables.outputs ? tableOf(o.tables.outputs) : empty('outputs')}`;
   const integrationsSection = `${h2('integrations')}${lead('integrations')}${o.tables.integrations ? tableOf(o.tables.integrations) : empty('integrations')}`;
   const controlsSection = `${h2('controls')}${lead('controls')}${o.tables.controls ? tableOf(o.tables.controls) : empty('controls')}`;
-  const questionsSection = `${h2('questions')}${lead('questions')}${o.questions.groups.length
-    ? o.questions.groups.map((g) => `<h3 data-question-group="${esc(g.theme)}">${esc(`${g.title} (${g.questions.length})`)}</h3>${tableOf(questionTable(g))}`).join('')
-    : ''}`;
+  // Section 9 is the project's one list of open questions (ADR-081), with the
+  // end state of every group; the engine's questions about the requirements
+  // stand in appendix A.4.
+  const questionsSection = `${h2('questions')}${lead('questions')}${tableOf(o.questions.table, true)}${o.questions.list?.limits
+    ? `<p class="meta">${esc(o.questions.list.limits)}</p>`
+    : ''}${o.questions.requirementsLine ? `<p>${esc(o.questions.requirementsLine)}</p>` : ''}`;
 
   // The business layer the stage shows: written by a model from the process,
   // marked as a proposal, escaped like the rest. A field the model left empty
@@ -383,19 +223,16 @@ export function buildEngineConfluenceHtml(
   const businessSection = parsedBusinessDoc
     ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
     <p><em>${esc('Written by a language model from the process description above. Not derived from the code, and not verified; the roles are a proposal for the business to confirm.')}</em></p>
-    ${glanceHtml(undefined, parsedBusinessDoc, options?.processSteps ?? processStepsFromDocument(document))}
+    ${glanceHtml(parsedBusinessDoc, options?.processSteps ?? processStepsFromDocument(document))}
     <h3>${esc('RACI assignment')}</h3>
     <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${(parsedBusinessDoc.raci_matrix || [])
       .map((raci: Record<string, unknown>) => `<tr><td><code>${esc(raci.stepId)}</code></td><td>${esc(raci.r || nd)}</td><td>${esc(raci.a || nd)}</td><td>${esc(raci.c || nd)}</td><td>${esc(raci.i || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <h3>${esc('Standard operating procedure')}</h3>
-    <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th><th>KPI</th></tr></thead><tbody>${(parsedBusinessDoc.sop_details || [])
-      .map((sop: Record<string, unknown>) => `<tr><td><code>${esc(sop.stepId)}</code></td><td>${esc(sop.narrative || nd)}</td><td>${esc(sop.businessException || nd)}</td><td>${esc(sop.kpiTarget || nd)}</td></tr>`)
+    <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th></tr></thead><tbody>${(parsedBusinessDoc.sop_details || [])
+      .map((sop: Record<string, unknown>) => `<tr><td><code>${esc(sop.stepId)}</code></td><td>${esc(sop.narrative || nd)}</td><td>${esc(sop.businessException || nd)}</td></tr>`)
       .join('')}</tbody></table>
-    <h3>${esc('Audit controls')}</h3>
-    <table><thead><tr><th>Step</th><th>Control objective</th><th>Mitigation</th><th>Verification</th></tr></thead><tbody>${(parsedBusinessDoc.audit_controls || [])
-      .map((ctrl: Record<string, unknown>) => `<tr><td><code>${esc(ctrl.stepId)}</code></td><td>${esc(ctrl.controlObjective || nd)}</td><td>${esc(ctrl.mitigationAction || nd)}</td><td>${esc(ctrl.assertionMethod || nd)}</td></tr>`)
-      .join('')}</tbody></table>`
+    <p class="meta">${esc(CONTROLS_FROM_THE_CODE)}</p>`
     : '';
 
   const a = document.appendix;
@@ -413,7 +250,7 @@ export function buildEngineConfluenceHtml(
     ${completeSection}
     <h3>${esc('A.3 Wording as read from the code')}</h3>
     ${table(['Section', 'Item', 'As read from the code', 'Lines'], wordingRows(document), [3])}
-    ${document.questions.length ? `<h3>${esc('A.4 Sources of the open questions')}</h3>${table(['No.', 'Source ids', 'Why the code cannot answer it', 'As the engine asked'], questionSourceRows(document), [1])}` : ''}
+    ${document.questions.length ? `<h3>${esc(REQUIREMENT_QUESTIONS)}</h3>${table(REQUIREMENT_QUESTION_HEAD, requirementQuestionRows(document), [4])}` : ''}
     <h3>${esc('A.5 Process elements')}</h3>
     <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${a.elements
       .map((e) => `<tr data-trace-element=""><td><code>${esc(e.id)}</code><br>${esc(e.kind)}</td><td>${esc(e.name)}</td><td>${e.does ? esc(e.does) : e.sameAs ? `<small>${esc(`As at ${e.sameAs}`)}</small>` : ''}</td><td>${esc(e.evidence)}</td></tr>`)
@@ -461,34 +298,17 @@ function processStepsFromDocument(document: ProcessDocument): ProcessStepRef[] {
 const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}-${a.lineEnd}`);
 
 /**
- * The visual summary of the stage as tables (owner 03.10.2026): the headline
- * and the callouts with their evidence, the SOP steps in process order, and
- * the RACI matrix with its gaps. It stands **in addition to** the full
- * sections below it, which keep every row as stored. Every value is escaped;
- * the business-layer tables are marked as a model proposal.
+ * The business layer as tables (owner 03.10.2026): the SOP steps in process
+ * order and the RACI matrix with its gaps. It stands **in addition to** the
+ * full RACI table below it, which keeps every row as stored. Every value is
+ * escaped; the tables are marked as a model proposal.
  */
 function glanceHtml(
-  options: ConfluenceExportOptions | undefined,
   parsedBusinessDoc: ModelJson | null,
   processSteps: ProcessStepRef[],
 ): string {
   const esc = escapeHtml;
   const parts: string[] = [];
-  const glance = options?.glance;
-  if (glance) {
-    const rows = glance.callouts.map((c) => {
-      const evidence = c.evidence
-        .map((e) => [e.ref, e.anchor ? anchorWords(e.anchor) : null, e.label, e.level === undefined ? null : `level ${e.level ?? NOT_DETERMINED_LABEL.toLowerCase()}`]
-          .filter((x): x is string => !!x)
-          .map((x) => esc(x))
-          .join(' · '))
-        .concat(c.more > 0 ? [esc(`and ${c.more} more`)] : [])
-        .join('<br>');
-      return `<tr><td><strong>${esc(c.title)}</strong></td><td>${evidence}</td><td>${esc(provenance(c.provenance).label)}</td></tr>`;
-    }).join('');
-    parts.push(`<h2 data-glance-export="">At a glance</h2><p>${esc(glance.headline)}</p>`
-      + (rows ? `<table><thead><tr><th>What the code shows</th><th>Evidence</th><th>Provenance</th></tr></thead><tbody>${rows}</tbody></table>` : ''));
-  }
   if (parsedBusinessDoc) {
     const steps = sopSteps(parsedBusinessDoc, processSteps);
     const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(provenance(s.step ? s.step.provenance : 'proposed').label)}</td></tr>`).join('');

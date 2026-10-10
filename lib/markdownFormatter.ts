@@ -342,7 +342,9 @@ export function formatBusinessDocsToMarkdown(rawJson: string): string {
       data.sop_details.forEach((sop: any) => {
         md += `### Task: \`${sop.stepId}\`\n`;
         md += `* **Operational Narrative:** ${sop.narrative || 'N/A'}\n`;
-        md += `* **KPI Target:** \`${sop.kpiTarget || 'N/A'}\`\n`;
+        // Roadmap 3.0.7: the prompt no longer asks for a KPI target; a layer
+        // stored before keeps its own, a current one prints no placeholder.
+        if (sop.kpiTarget) md += `* **KPI Target:** \`${sop.kpiTarget}\`\n`;
         md += `* **Business Exception Fallback:** _${sop.businessException || 'N/A'}_\n\n`;
       });
     }

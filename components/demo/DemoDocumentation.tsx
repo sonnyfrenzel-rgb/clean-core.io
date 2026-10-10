@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import HandbookStage from '@/components/documentation/HandbookStage';
-import HandbookDrawer from '@/components/documentation/HandbookDrawer';
 import type { BpmnCanvasNode } from '@/components/process-map/BpmnCanvas';
 import { phoneLayout } from '@/components/process-map/phone-layout';
 import { anchorText } from '@/lib/bpmn/layout';
@@ -20,6 +19,7 @@ import type { ProcessDocumentation } from '@/lib/process-documentation';
 import type { ProcessDocument } from '@/lib/process-document';
 import { businessCallouts, glanceHeadline, notDeterminedCallout, type GlanceGap } from '@/lib/business-summary';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import type { OpenQuestions } from '@/lib/open-questions';
 
 /**
  * The demo's Documentation stage — the same stage a real project shows, in the
@@ -28,8 +28,9 @@ import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
  * file on the server.
  *
  * What the demo leaves out is what needs a project: the code card (the source
- * is not shipped to the browser), editing, saving and the exports. The canvas
- * is the product's own `BpmnCanvas`, not a second renderer.
+ * is not shipped to the browser), editing, saving, answering the open
+ * questions and the exports. The canvas is the product's own `BpmnCanvas`,
+ * not a second renderer.
  */
 const BpmnCanvas = dynamic(() => import('@/components/process-map/BpmnCanvas'), { ssr: false });
 
@@ -39,6 +40,7 @@ export default function DemoDocumentation({
   levels,
   businessLayer,
   source = null,
+  openQuestions = null,
 }: {
   process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   /** The coverage sweep's constructs — the demo's own, read on the server. */
@@ -52,6 +54,8 @@ export default function DemoDocumentation({
    * only — what the phone's narrow map layout is laid out from.
    */
   source?: string | null;
+  /** The demo's open questions (ADR-081), read-only — section 9 of the description. */
+  openQuestions?: OpenQuestions | null;
 }) {
   const handbook = useMemo(() => (process ? handbookFromData(process.handbook) : null), [process]);
   /** The same glance a real project opens with (owner 03.10.2026). */
@@ -139,7 +143,12 @@ export default function DemoDocumentation({
           <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
             Written from the code when the stage opens, no model call. A project exports the same document; its appendix stands at the foot of this page. The demo exports nothing.
           </p>
-          <ProcessDocumentView document={process.document} summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null} />
+          <ProcessDocumentView
+            document={process.document}
+            summary={glance ? <DirectWriteLevels callouts={glance.callouts} /> : null}
+            openQuestions={openQuestions}
+            rulesOutside={handbook.rulesOutside}
+          />
         </section>
       ) : glanceBlock}
 
@@ -170,7 +179,6 @@ export default function DemoDocumentation({
           selected={selected}
           onSelect={select}
           source={null}
-          freshness="current"
           map={
             <BpmnCanvas
               xml={model.xml}
@@ -186,27 +194,6 @@ export default function DemoDocumentation({
               onKeyDown={onKeyDown}
               controls
             />
-          }
-        />
-        <HandbookDrawer
-          handbook={handbook}
-          reading={false}
-          selectedChapter={selected ? (handbook.chapterOf.get(selected) ?? null) : null}
-          onSelect={select}
-          exportActions={null}
-          exportNotes={
-            <p className="m-0 cc-text-meta text-cc-ink-muted">
-              The demo exports nothing. A real project exports this handbook as a PDF brief, a Confluence page and
-              BPMN 2.0.
-            </p>
-          }
-          exportPanel={
-            <p className="m-0 cc-text-cell text-cc-ink-muted">
-              A real project offers three downloads here: the PDF brief (the process, the rules and the open questions
-              with their lines, and the BPMN file beside it), the Confluence page of the stored documentation, and the
-              BPMN 2.0 file for SAP Signavio or another modeller.
-              Import into SAP Signavio or SAP Build has not been verified yet.
-            </p>
           }
         />
       </section>

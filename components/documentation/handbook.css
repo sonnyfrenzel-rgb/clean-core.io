@@ -16,8 +16,3 @@
     background-size: 14px 14px;
   }
 }
-
-/* A row of chapter cards scrolls sideways inside itself, never the page. */
-.cc-doc-chapters {
-  scrollbar-width: thin;
-}

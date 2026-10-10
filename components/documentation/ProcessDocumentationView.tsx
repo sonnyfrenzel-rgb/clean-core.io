@@ -53,9 +53,16 @@ export default function ProcessDocumentationView({
   doc,
   proposal,
   appendix = false,
+  proposalPanel = true,
 }: {
   doc: ProcessDocumentation;
   proposal?: StatementProposalPanelProps;
+  /**
+   * Whether the button that asks for the proposal stands here. The stage puts
+   * it in its one card of model proposals (roadmap 3.0.7) and passes `false`;
+   * the pairs themselves stay at their elements.
+   */
+  proposalPanel?: boolean;
   /**
    * The technical trace under the process description (owner 03.10.2026):
    * each sentence printed once — a shared sentence stands at the first element
@@ -172,7 +179,7 @@ export default function ProcessDocumentationView({
               ? `${statements.length} statements, in the order of the program; ${doc.statements.length - statements.length} repeats merged.`
               : `${statements.length} statements, in the order of the program.`}
         </p>
-        {proposal && <StatementProposalPanel {...proposal} />}
+        {proposal && proposalPanel && <StatementProposalPanel {...proposal} />}
         <ul className="space-y-2 text-sm text-cc-ink">
           {rows
             ? rows.map((row, i) =>

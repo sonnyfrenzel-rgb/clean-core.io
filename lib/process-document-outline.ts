@@ -1,10 +1,11 @@
 import type { DocAnchor } from '@/lib/process-documentation';
 import type { DocBlock } from '@/lib/requirements-export';
+import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
+import { wt } from '@/lib/workspace-messages';
 import {
   EMPTY_SECTION,
   MODEL_PROPOSAL_LABEL,
   PROCESS_DOCUMENT_STATUS,
-  QUESTION_THEMES,
   linesLabel,
   sectionTitle,
   type PdAppendix,
@@ -12,7 +13,6 @@ import {
   type PdPathEntry,
   type PdPoint,
   type PdQuestion,
-  type PdQuestionTheme,
   type PdStep,
   type PdText,
   type PdTraceGroup,
@@ -38,9 +38,11 @@ import {
  *   at a glance  what it does (2–3 sentences), who starts it, six key figures,
  *                the 3–5 rules and risks to know, the main path in one line
  *   1–9          each section: a one-line lead, then a compact table whose
- *                last column ("Source") carries the program's names and lines
+ *                last column ("Source") carries the program's names and lines;
+ *                section 9 is the project's one list of open questions
+ *                (ADR-081, `lib/open-questions.ts`) with its end states
  *   appendix     step details, the code's own wording of every shortened row,
- *                the sources of the open questions, and the technical trace
+ *                the questions about the requirements, and the technical trace
  *
  * Pure: no React, no DOM, no clock.
  */
@@ -51,7 +53,8 @@ export type PdSectionKey = Exclude<ProcessDocumentSection, 'appendix'>;
 export interface PdFigure {
   section: PdSectionKey;
   label: string;
-  value: number;
+  /** `null`: not known to this rendering (the open questions, when the project's list was not passed). */
+  value: number | null;
 }
 
 /** A row of a table: the plain cells, then the program's names and the lines in a muted source column. */
@@ -69,14 +72,6 @@ export interface PdTable {
   rows: PdRow[];
   /** Rows the stage shows before "Show all" (DESIGN.md §2.11); a file prints every row. */
   first: number;
-}
-
-export interface PdQuestionGroup {
-  theme: PdQuestionTheme;
-  title: string;
-  questions: PdQuestion[];
-  /** Questions in it that hold up the design or the cutover. */
-  blocking: number;
 }
 
 export interface PdOutline {
@@ -97,13 +92,33 @@ export interface PdOutline {
     integrations: PdTable | null;
     controls: PdTable | null;
   };
+  /**
+   * Section 9 — the project's one list of open questions (ADR-081), passed in
+   * by the caller because it reads the project (imports, answers, the rules'
+   * state), not only the source. `null` when the rendering was made without
+   * it: the section then says so instead of counting.
+   */
   questions: {
-    groups: PdQuestionGroup[];
-    business: number;
-    it: number;
-    blocking: number;
+    list: OpenQuestions | null;
+    /** One row per group of the list, with its end state; null without a list or without groups. */
+    table: PdTable | null;
+    /** The questions about the requirements the engine raised (`doc.questions`) — decided in Design, listed in A.4. */
+    requirements: number;
+    /** The sentence that points at A.4, or null when there are none. */
+    requirementsLine: string | null;
   };
 }
+
+/** The meta every rendering of the outline takes. */
+export interface PdOutlineMeta {
+  projectName?: string;
+  date?: string;
+  /** The project's open questions (`useOpenQuestions`), for section 9. */
+  openQuestions?: OpenQuestions | null;
+}
+
+/** A key figure as text — a figure this rendering does not know reads *Not determined*, never 0. */
+export const figureText = (f: PdFigure): string => (f.value === null ? 'Not determined' : String(f.value));
 
 /** The column every table ends with: the program's names and the lines. */
 export const SOURCE_COLUMN = 'Source';
@@ -139,8 +154,64 @@ export function resultWord(outcome: string): string {
   return outcome;
 }
 
-/** "Q7" — the number a reader sees for an open question. */
+/** "Q7" — the number a reader sees for a question about the requirements (appendix A.4). */
 export const questionNumber = (q: Pick<PdQuestion, 'number'>) => `Q${q.number}`;
+
+/* ------------------------------------------------------- section 9 (ADR-081) */
+
+/** The end state of a group, in the list's own words (`lib/messages/workspace.ts`). */
+export function openQuestionState(g: OpenQuestionGroup): string {
+  if (g.end === 'resolved') return wt('oq.end.resolved');
+  if (g.end === 'answered') return `${wt('oq.end.answered')} — confirmed by the owner, not proven`;
+  if (g.end === 'accepted') return wt('oq.end.accepted');
+  return g.blocksDecision ? `Open — ${wt('oq.blocks')}` : 'Open';
+}
+
+/**
+ * What settles a group, or what settled it. An answer is quoted with its date
+ * and no account: a file leaves the product, and the address of the person who
+ * answered does not travel with it.
+ */
+export function openQuestionDetail(g: OpenQuestionGroup): string {
+  if (g.end === 'resolved') return g.evidence ?? g.resolves;
+  if (g.answer && g.end === 'answered') return `“${g.answer.text}” (${g.answer.at.slice(0, 10)})`;
+  if (g.answer && g.end === 'accepted') return `Reason: “${g.answer.text}” (${g.answer.at.slice(0, 10)})`;
+  return g.resolves;
+}
+
+/** `L502` → a line anchor; anything else is not a line. */
+function lineAnchor(anchor: string | null): DocAnchor | null {
+  const m = anchor ? /^L(\d+)$/.exec(anchor) : null;
+  return m ? { lineStart: Number(m[1]), lineEnd: Number(m[1]) } : null;
+}
+
+/** The lines a group's questions stand on, for the source column. */
+export function openQuestionAnchors(g: OpenQuestionGroup): DocAnchor[] {
+  return g.lines.map((l) => lineAnchor(l.anchor)).filter((a): a is DocAnchor => a !== null);
+}
+
+/** The groups of the list as one table every rendering prints — open first, then the closed ones. */
+export function openQuestionsTable(list: OpenQuestions): PdTable | null {
+  if (list.groups.length === 0) return null;
+  const rows: PdRow[] = list.groups.map((g) => ({
+    cells: [g.title, g.owner, String(g.count), openQuestionState(g), openQuestionDetail(g)],
+    tech: null,
+    anchors: openQuestionAnchors(g),
+  }));
+  return { id: 'questions', caption: 'Open questions', head: ['Question', 'Owner', 'How many', 'State', 'What settles it'], rows, first: rows.length };
+}
+
+/** Section 9's lead: the list's counts in one line of plain words. */
+function questionsLead(list: OpenQuestions | null): string {
+  if (!list) return 'The open questions are kept with the project and were not passed to this copy.';
+  const closed = list.groups.filter((g) => g.end !== 'open').length;
+  if (list.open === 0) {
+    return list.groups.length
+      ? `No open question is left: ${plural(closed, 'group is', 'groups are')} resolved, answered or accepted.`
+      : EMPTY_SECTION.questions;
+  }
+  return `${plural(list.open, 'open question')}; ${list.blocking} ${list.blocking === 1 ? 'blocks' : 'block'} the decision; ${closed} of ${plural(list.groups.length, 'group')} closed.`;
+}
 
 export const BLOCKS_WORD: Record<'design' | 'cutover', string> = {
   design: 'Blocks the design',
@@ -199,10 +270,9 @@ function sorted<T>(items: readonly T[], rank: (item: T) => number): T[] {
 
 /* ---------------------------------------------------------------- outline */
 
-export function documentOutline(doc: ProcessDocument, meta: { projectName?: string; date?: string } = {}): PdOutline {
+export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}): PdOutline {
   const steps = doc.overview.path.filter((e): e is PdStep => e.kind === 'step');
-  const business = doc.questions.filter((q) => q.owner === 'Business').length;
-  const blocking = doc.questions.filter((q) => q.blocks !== null).length;
+  const list = meta.openQuestions ?? null;
   const brRules = doc.rules.filter((r) => /^BR-\d+$/.test(r.ref) && !/^Always/.test(r.condition)).length;
   const fixedRules = doc.rules.filter((r) => /^Always/.test(r.condition)).length;
   const decisionRows = doc.rules.length - brRules - fixedRules;
@@ -213,7 +283,7 @@ export function documentOutline(doc: ProcessDocument, meta: { projectName?: stri
     { section: 'rules', label: 'Business rules', value: doc.rules.length },
     { section: 'exceptions', label: 'Exceptions', value: doc.exceptions.length },
     { section: 'integrations', label: 'Integrations', value: doc.integrations.length },
-    { section: 'questions', label: 'Open questions', value: doc.questions.length },
+    { section: 'questions', label: 'Open questions', value: list ? list.open : null },
   ];
 
   const stops = doc.exceptions.filter((e) => exceptionRank(e) === 0).length;
@@ -247,9 +317,7 @@ export function documentOutline(doc: ProcessDocument, meta: { projectName?: stri
     controls: doc.controls.length
       ? `${plural(doc.controls.length, 'control')} in the code: ${doc.controls.map((c) => c.kind.replace(/\b([A-Z])([a-z])/g, (_, a: string, b: string) => `${a.toLowerCase()}${b}`)).join(', ')}.`
       : EMPTY_SECTION.controls,
-    questions: doc.questions.length
-      ? `${plural(doc.questions.length, 'open question')}: ${business} for the business, ${doc.questions.length - business} for IT operations; ${blocking} ${blocking === 1 ? 'blocks' : 'block'} the design or cutover.`
-      : EMPTY_SECTION.questions,
+    questions: questionsLead(list),
   };
 
   const t = doc.trigger;
@@ -265,11 +333,6 @@ export function documentOutline(doc: ProcessDocument, meta: { projectName?: stri
           anchors: entry.anchors,
         },
   );
-
-  const groups: PdQuestionGroup[] = QUESTION_THEMES.map((theme) => {
-    const questions = doc.questions.filter((q) => q.theme === theme.key);
-    return { theme: theme.key, title: theme.title, questions, blocking: questions.filter((q) => q.blocks !== null).length };
-  }).filter((g) => g.questions.length > 0);
 
   return {
     title: `Process description — ${meta.projectName || doc.program}`,
@@ -300,24 +363,19 @@ export function documentOutline(doc: ProcessDocument, meta: { projectName?: stri
       controls: table('controls', 'Controls', ['Control', 'What the code does'],
         doc.controls.map((c) => ({ cells: [c.kind, c.text], tech: [c.detail, c.ref].filter(Boolean).join(' · ') || null, anchors: c.anchors })), 8),
     },
-    questions: { groups, business, it: doc.questions.length - business, blocking },
+    questions: {
+      list,
+      table: list ? openQuestionsTable(list) : null,
+      requirements: doc.questions.length,
+      requirementsLine: doc.questions.length
+        ? `${plural(doc.questions.length, 'question', 'questions')} about the requirements ${doc.questions.length === 1 ? 'is a decision' : 'are decisions'} of the requirements workspace in Design; ${REQUIREMENT_QUESTIONS} lists them.`
+        : null,
+    },
   };
 }
 
-/** The rows of one question group, as a table every file prints. */
-export function questionTable(group: PdQuestionGroup): PdTable {
-  return {
-    id: `questions-${group.theme}`,
-    caption: group.title,
-    head: ['No.', 'Question', 'Owner', 'Priority'],
-    rows: group.questions.map((q) => ({
-      cells: [questionNumber(q), q.question, q.owner, q.blocks ? BLOCKS_WORD[q.blocks] : '—'],
-      tech: q.detail,
-      anchors: q.anchors,
-    })),
-    first: group.questions.length,
-  };
-}
+/** The appendix section that lists the engine's questions about the requirements. */
+export const REQUIREMENT_QUESTIONS = 'A.4 Questions about the requirements';
 
 /** The tables whose rows go past what the body shows — printed whole in the appendix. */
 export function longTables(o: PdOutline): PdTable[] {
@@ -377,9 +435,25 @@ export function wordingRows(doc: ProcessDocument): string[][] {
   return rows;
 }
 
-/** Where every open question came from: its source ids, why the code cannot answer it, and how the engine asked it. */
-export function questionSourceRows(doc: ProcessDocument): string[][] {
-  return doc.questions.map((q) => [questionNumber(q), q.refs.join(', '), q.why, q.original.join(' / ')]);
+/** The head of appendix A.4. */
+export const REQUIREMENT_QUESTION_HEAD = ['No.', 'Question', 'Owner', 'Priority', 'Source ids', 'Why the code cannot answer it', 'As the engine asked'];
+
+/**
+ * The engine's questions about the requirements (`doc.questions`): what the
+ * code cannot answer about a rule, the data takeover, the cutover or the
+ * operations. They are decided in Design's requirements workspace (ADR-078);
+ * the description lists them once, here, with where each came from.
+ */
+export function requirementQuestionRows(doc: ProcessDocument): string[][] {
+  return doc.questions.map((q) => [
+    questionNumber(q),
+    q.question,
+    q.owner,
+    q.blocks ? BLOCKS_WORD[q.blocks] : '—',
+    q.refs.join(', '),
+    q.why,
+    q.original.join(' / '),
+  ]);
 }
 
 /* ---------------------------------------------------- Markdown and Word blocks */
@@ -398,7 +472,7 @@ function tableBlock(t: PdTable, whole = true): PdBlock {
  * the headings become Word's heading styles, the tables real tables, and the
  * appendix starts on a page of its own.
  */
-export function processDocumentBlocks(doc: ProcessDocument, meta: { projectName?: string; date?: string } = {}): PdBlock[] {
+export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta = {}): PdBlock[] {
   const o = documentOutline(doc, meta);
   const b: PdBlock[] = [];
   const lead = (key: PdSectionKey) => b.push({ k: 'p', em: true, text: o.leads[key] });
@@ -416,7 +490,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: { projectName?
   b.push({ k: 'h', level: 2, text: 'At a glance' });
   for (const s of o.glance.summary) b.push({ k: 'p', text: s.text });
   b.push({ k: 'p', text: `Started by: ${o.glance.trigger.text}` });
-  b.push({ k: 'table', head: o.glance.figures.map((f) => f.label), rows: [o.glance.figures.map((f) => String(f.value))], muted: [] });
+  b.push({ k: 'table', head: o.glance.figures.map((f) => f.label), rows: [o.glance.figures.map(figureText)], muted: [] });
   if (o.glance.points.length) {
     b.push({ k: 'p', strong: true, text: 'Rules and risks to know' });
     b.push({ k: 'ul', items: o.glance.points.map((p) => `${p.ref ? `${p.ref}: ` : ''}${p.text} (${[p.detail, linesLabel(p.anchors)].filter(Boolean).join(' · ')})`) });
@@ -455,10 +529,9 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: { projectName?
 
   h2('questions');
   lead('questions');
-  for (const g of o.questions.groups) {
-    b.push({ k: 'h', level: 3, text: `${g.title} (${g.questions.length})` });
-    b.push(tableBlock(questionTable(g)));
-  }
+  if (o.questions.table) b.push(tableBlock(o.questions.table));
+  if (o.questions.list?.limits) b.push({ k: 'p', em: true, text: o.questions.list.limits });
+  if (o.questions.requirementsLine) b.push({ k: 'p', text: o.questions.requirementsLine });
 
   b.push({ k: 'pagebreak' });
   h2('appendix');
@@ -483,8 +556,8 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: { projectName?
   b.push({ k: 'h', level: 3, text: 'A.3 Wording as read from the code' });
   b.push({ k: 'table', head: ['Section', 'Item', 'As read from the code', 'Lines'], rows: wordingRows(doc), muted: [3] });
   if (doc.questions.length) {
-    b.push({ k: 'h', level: 3, text: 'A.4 Sources of the open questions' });
-    b.push({ k: 'table', head: ['No.', 'Source ids', 'Why the code cannot answer it', 'As the engine asked'], rows: questionSourceRows(doc), muted: [1] });
+    b.push({ k: 'h', level: 3, text: REQUIREMENT_QUESTIONS });
+    b.push({ k: 'table', head: REQUIREMENT_QUESTION_HEAD, rows: requirementQuestionRows(doc), muted: [4] });
   }
   b.push({ k: 'h', level: 3, text: 'A.5 Process elements' });
   b.push({

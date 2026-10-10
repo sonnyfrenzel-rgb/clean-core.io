@@ -53,8 +53,8 @@ function documentOf(source: string) {
 
 /** Every `[data-doc-list]` on the page: the long ones closed with a summary, the short ones open. */
 async function expectTheRule(page: Page): Promise<{ long: string[]; short: string[] }> {
-  // The lists on screen; the drawer's tabs hold a second copy of In and Out
-  // behind a tab that is not selected.
+  // The lists on screen (roadmap 3.0.7: In and Out under the map and the
+  // drawer are gone; the description's sections 2 and 6 carry them once).
   const lists = page.locator('[data-doc-list]:visible');
   const n = await lists.count();
   expect(n, 'no list on the page carries the rule').toBeGreaterThan(0);
@@ -209,8 +209,9 @@ test.describe('the signed-in Documentation stage', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-engine-documentation]')).toBeAttached({ timeout: 90000 });
-    // The handbook's In and Out under the map are read from the source; wait for them too.
-    await expect(page.locator('[data-handbook-io]').first()).toBeAttached({ timeout: 90000 });
+    // The map and its chapters are read from the source; wait for them too.
+    await expect(page.locator('[data-handbook-stage]').first()).toBeAttached({ timeout: 90000 });
+    await expect(page.locator('[data-handbook-io]')).toHaveCount(0);
 
     // The premise: this example has long lists and short ones.
     expect(doc.steps.length).toBeGreaterThan(LONG_LIST_ROWS);
@@ -251,7 +252,9 @@ test.describe('the signed-in Documentation stage', () => {
     await page.keyboard.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-    // The Confluence export carries every row, folded or not.
+    // The Confluence export carries every row, folded or not. It is one way
+    // out of the stage header's Export menu (roadmap 3.0.7).
+    await page.locator('[data-documentation-export-menu]').click();
     const button = page.getByRole('button', { name: /Export Confluence/ });
     await expect(button).toBeEnabled({ timeout: 60000 });
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), button.click()]);

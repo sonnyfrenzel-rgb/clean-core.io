@@ -47,9 +47,12 @@ import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
  *      legend, and the gaps said in words: a step with no Accountable or with
  *      several, a step with no Responsible, a role Responsible almost
  *      everywhere. On a phone it is a list per step (`DESIGN.md` §2.9);
- *   3. **the full text, folded** — narrative, exception handling, KPI target
- *      and the control checkpoints, every field as stored, a missing one as
- *      *Not determined*.
+ *   3. **the full text, folded** — narrative and exception handling, every
+ *      field as stored, a missing one as *Not determined*. Since roadmap 3.0.7
+ *      ("Documentation lean") the model proposes no KPI targets and no control
+ *      checkpoints — the controls are the code reading's, section 8 of the
+ *      description — and a layer stored before keeps them in its data, not on
+ *      the screen.
  *
  * The layer is a model proposal from end to end and says so on the section,
  * on the matrix and in the fold. Nothing is added to it here: the data is
@@ -368,14 +371,7 @@ function RaciSection({ steps, action }: { steps: SopStep[]; action?: React.React
 
 /* ------------------------------------------------------------- the full text */
 
-const rowsOf = (value: unknown): Array<Record<string, unknown>> =>
-  Array.isArray(value) ? value.filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null) : [];
-
-const textOf = (value: unknown): string | null =>
-  typeof value === 'string' && value.trim() ? value : typeof value === 'number' ? String(value) : null;
-
-function FullSop({ steps, layer }: { steps: SopStep[]; layer: StoredBusinessLayer }) {
-  const controls = rowsOf(layer.audit_controls);
+function FullSop({ steps }: { steps: SopStep[] }) {
   return (
     <div data-sop-full="" className="mt-6 border-t border-cc-line pt-3">
       <CcDisclosure title={wt('doc.sopFull')} count={steps.length} summary={wt('doc.sopFullSummary')} level={3}>
@@ -393,37 +389,13 @@ function FullSop({ steps, layer }: { steps: SopStep[]; layer: StoredBusinessLaye
                 <dd className="m-0 cc-text-cell text-cc-ink">{step.narrative ?? <Missing />}</dd>
                 <dt className="cc-text-label text-cc-ink-muted">{wt('doc.sopException')}</dt>
                 <dd className="m-0 cc-text-cell text-cc-ink">{step.exception ?? <Missing />}</dd>
-                <dt className="cc-text-label text-cc-ink-muted">{wt('doc.sopKpi')}</dt>
-                <dd className="m-0 cc-text-cell text-cc-ink">{step.kpi ?? <Missing />}</dd>
               </dl>
             </li>
           ))}
         </ol>
-        <h4 className="m-0 mt-4 mb-2 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
-          {wt('doc.controlsTitle')} <CcProvenanceChip value="proposed" />
-        </h4>
-        {controls.length === 0 ? (
-          <p className="m-0 cc-text-cell text-cc-ink-muted">{wt('doc.controlsNone')}</p>
-        ) : (
-          <CcTable
-            caption={wt('doc.controlsTitle')}
-            columns={[
-              { key: 'step', label: wt('doc.sopStepColumn'), width: '160px' },
-              { key: 'objective', label: wt('doc.controlObjective') },
-              { key: 'mitigation', label: wt('doc.controlMitigation') },
-              { key: 'assertion', label: wt('doc.controlVerification') },
-            ]}
-            rows={controls.map((ctrl, i) => ({
-              key: String(i),
-              cells: {
-                step: <span className="font-cc-mono">{textOf(ctrl.stepId) ?? NOT_DETERMINED_LABEL}</span>,
-                objective: textOf(ctrl.controlObjective) ?? <Missing />,
-                mitigation: textOf(ctrl.mitigationAction) ?? <Missing />,
-                assertion: textOf(ctrl.assertionMethod) ?? <Missing />,
-              },
-            }))}
-          />
-        )}
+        <p data-sop-controls-from-code="" className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
+          <a href="#pd-controls" className="text-cc-ink underline underline-offset-2">{wt('doc.sopControlsFromCode')}</a>
+        </p>
       </CcDisclosure>
     </div>
   );
@@ -435,12 +407,15 @@ export default function BusinessLayer({
   layer,
   process,
   action,
+  embedded = false,
 }: {
   layer: StoredBusinessLayer;
   /** The steps of the process read from the code, in flow order. */
   process: ProcessStepRef[];
-  /** The owner's "Regenerate SOP and RACI", with its cost line — absent for a reader. */
+  /** The owner's "Regenerate SOP and RACI" — absent for a reader. */
   action?: React.ReactNode;
+  /** Inside the stage's one card of model proposals (roadmap 3.0.7): no card of its own, a heading one level down. */
+  embedded?: boolean;
 }) {
   const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
   // Too many roles: the regenerate action stands in the notice above the matrix, not twice.
@@ -450,10 +425,12 @@ export default function BusinessLayer({
       data-stage-output="businessDocumentation"
       data-business-sop=""
       aria-labelledby="business-sop-title"
-      className={cn(SECTION, 'mb-6')}
+      className={embedded ? 'min-w-0' : cn(SECTION, 'mb-6')}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h2 id="business-sop-title" className="m-0 cc-text-h2 text-cc-ink">{wt('doc.sopTitle')}</h2>
+        {embedded
+          ? <h3 id="business-sop-title" className="m-0 cc-text-h3 text-cc-ink">{wt('doc.sopTitle')}</h3>
+          : <h2 id="business-sop-title" className="m-0 cc-text-h2 text-cc-ink">{wt('doc.sopTitle')}</h2>}
         <CcProvenanceChip value="proposed" />
         <span className="cc-text-meta font-medium text-cc-ink-muted">{sopStepsCount(steps.length)}</span>
       </div>
@@ -461,7 +438,7 @@ export default function BusinessLayer({
       {action && !tooMany ? <div data-business-layer-action="" className="mb-4">{action}</div> : null}
       <SopStrip steps={steps} />
       <RaciSection steps={steps} action={tooMany ? action : undefined} />
-      <FullSop steps={steps} layer={layer} />
+      <FullSop steps={steps} />
     </section>
   );
 }

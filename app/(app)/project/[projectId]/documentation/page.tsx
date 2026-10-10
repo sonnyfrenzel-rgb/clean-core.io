@@ -1,48 +1,39 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, runTransaction } from 'firebase/firestore';
+import { useParams } from 'next/navigation';
+import { doc, runTransaction } from 'firebase/firestore';
 import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
-import { Download, RefreshCw, FileCode2, Briefcase, Target, Settings, Activity, Layers, Box, Rocket, Printer, ExternalLink } from 'lucide-react';
+import { BookOpenText, Download, FileCode2, FileText, Printer, RefreshCw, Rocket, Workflow } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
-import { formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import {
-  LEGACY_BLUEPRINT_NOTICE,
   processDocumentationToMarkdown,
   readStoredDocumentation,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
-import {
-  buildEngineConfluenceHtml,
-  buildLegacyConfluenceHtml,
-  confluenceFileName,
-} from '@/lib/documentation-export';
+import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
-import HandbookDrawer from '@/components/documentation/HandbookDrawer';
-import BusinessGlance, { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
+import { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import BusinessLayer from '@/components/documentation/BusinessLayer';
+import { StatementProposalPanel } from '@/components/documentation/StatementProposal';
+import ExportMenu, { type ExportMenuItem } from '@/components/requirements/ExportMenu';
 import { useBusinessGlance } from '@/hooks/useBusinessGlance';
-import {
-  businessCallouts,
-  glanceHeadline,
-  notDeterminedCallout,
-  type ProcessStepRef,
-} from '@/lib/business-summary';
-import { calloutTitle, glanceHeadlineSentence, wt } from '@/lib/workspace-messages';
+import { businessCallouts, type ProcessStepRef } from '@/lib/business-summary';
+import { docLegacyFileName, docProposalsCostLine, wt } from '@/lib/workspace-messages';
 import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
+import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import ProcessDocumentView, { ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
 import { processDocumentFileName } from '@/lib/process-document';
 import { processDocumentBlocks } from '@/lib/process-document-outline';
@@ -58,7 +49,7 @@ import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
-import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis, DOCUMENTATION_PACKAGE_FILES } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
@@ -78,76 +69,41 @@ import type {
   SaveProcessModelResult,
 } from '@/components/process-map/BpmnEditor';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import {
-  checkBlueprintShape,
-  checkBusinessDocShape,
-  STORED_BLUEPRINT_REJECTED,
-} from './blueprint-schema';
+import { checkBusinessDocShape, STORED_BLUEPRINT_REJECTED } from './blueprint-schema';
 import CcButton from '@/components/cc/Button';
-import CcDialog from '@/components/cc/Dialog';
 import CcEmptyState from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
-import { CcTag } from '@/components/cc/Tag';
 import { t } from '@/lib/cc-messages';
 
 /** A section of this stage — the card of DESIGN.md §1.4. */
 const SECTION = 'rounded-cc-card border border-cc-line bg-cc-surface p-4 md:p-6 shadow-cc';
-/** The micro-label above a heading or a value (§1.2). */
-const LABEL = 'cc-text-label text-cc-ink-muted';
 /** A section heading (§1.2). */
 const H2 = 'cc-text-h2 text-cc-ink';
 
 /**
- * The workspace file the documentation is merged into, named after the stage
- * (UX-169) — the same name the handover writes (`delivery/page.tsx`,
- * `DOCUMENTATION_FILE`), so one project never carries two copies of it.
+ * Roadmap 3.0.7 ("Documentation lean", item 4) — a bug fix. This stage used to
+ * merge its two Markdown files into `generatedCode`, and `hasGeneratedPackage`
+ * (`lib/workflow-steps.ts`) counts any file of a package: opening
+ * Documentation before Transformation marked code as present. It writes no
+ * package any more — Delivery adds both files from `documentation` and
+ * `businessDocumentation` — and a write of this stage takes the files an
+ * earlier build put there back out (`{}` when there are none, so nothing else
+ * of the package is ever touched).
  */
-const DOCUMENTATION_WORKSPACE_FILE = 'docs/process-documentation.md';
-
-/** The workspace file of the business layer (SOP, RACI, controls). */
-const BUSINESS_WORKSPACE_FILE = 'docs/business-documentation.md';
-
-/** The workspace package without one file; `generatedCode` as stored, or `[]`. */
-const removeFileFromWorkspace = (generatedCode: string, filePath: string): string => {
+const packageCleanup = (generatedCode: unknown): { generatedCode?: string } => {
+  if (typeof generatedCode !== 'string') return {};
   try {
-    const parsed = JSON.parse(generatedCode);
-    if (Array.isArray(parsed)) return JSON.stringify(parsed.filter((f: { path?: string }) => f?.path !== filePath));
+    const parsed: unknown = JSON.parse(generatedCode);
+    if (!Array.isArray(parsed)) return {};
+    const kept = parsed.filter((f) => !(f && typeof f === 'object' && DOCUMENTATION_PACKAGE_FILES.includes(String((f as { path?: unknown }).path))));
+    return kept.length === parsed.length ? {} : { generatedCode: JSON.stringify(kept) };
   } catch {
-    // Not a package: nothing in it can be the business layer's file.
+    // A flat source from before packages: nothing of this stage is in it.
+    return {};
   }
-  return generatedCode;
 };
-
-const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
-  let files: Array<{ path: string, content: string }> = [];
-  if (generatedCode) {
-    try {
-      const parsed = JSON.parse(generatedCode);
-      if (Array.isArray(parsed)) {
-        files = parsed;
-      }
-    } catch (e) {
-      files = [
-        {
-          path: 'srv/service.ts',
-          content: generatedCode
-        }
-      ];
-    }
-  }
-  const existingFileIdx = files.findIndex(f => f.path === filePath);
-  if (existingFileIdx !== -1) {
-    files[existingFileIdx].content = fileContent;
-  } else {
-    files.push({ path: filePath, content: fileContent });
-  }
-  return JSON.stringify(files);
-};
-
-// Dynamically import ProcessFlow to avoid SSR issues
-const ProcessFlow = dynamic(() => import('@/components/ProcessFlow'), { ssr: false });
 
 /**
  * Roadmap 2.5 — the reading BPMN view of the process the engine reconstructed.
@@ -221,7 +177,6 @@ const extractJSON = (text: string) => {
 
 export default function DocumentationPage() {
   const { projectId } = useParams();
-  const router = useRouter();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
   const modelAvailability = useModelAvailability();
 
@@ -229,44 +184,17 @@ export default function DocumentationPage() {
   const [loading, setLoading] = useState(true);
   // A failed load is said, not shown as an empty stage (131d46bc4ffd).
   const [loadError, setLoadError] = useState('');
-  
+
   const [documentation, setDocumentation] = useState('');
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [docError, setDocError] = useState('');
   /** True when `docError` is a refused model answer rather than a blocked start. */
   const [docRejected, setDocRejected] = useState(false);
-  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
-  // The task specification is a modal (UX-034, roadmap 3.0.4) — `CcDialog`
-  // below, since block D, D.16a.
-  const [activeTask, setActiveTask] = useState<any | null>(null);
 
   // Stage 2 Business Documentation States
   const [businessDocumentation, setBusinessDocumentation] = useState('');
   const [isGeneratingBusinessDoc, setIsGeneratingBusinessDoc] = useState(false);
   const [businessDocError, setBusinessDocError] = useState('');
-
-  // Roadmap 4.4 — the brief. It reads the whole program twice (the rule reader
-  // and the coverage sweep), so the button says it is working and says why when
-  // it could not finish.
-  const [isBuildingBrief, setIsBuildingBrief] = useState(false);
-  const [briefError, setBriefError] = useState('');
-
-  const handleNodeClick = (nodeId: string) => {
-    setHighlightedTaskId(nodeId);
-    if (parsedDoc?.l4_tasks) {
-      const task = parsedDoc.l4_tasks.find((t: any) => t.stepId === nodeId);
-      if (task) {
-        setActiveTask(task);
-      }
-    }
-    const element = document.getElementById(`task-${nodeId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    setTimeout(() => {
-      setHighlightedTaskId(prev => prev === nodeId ? null : prev);
-    }, 3000);
-  };
 
   // Fetch Project Data
   useEffect(() => {
@@ -299,42 +227,30 @@ export default function DocumentationPage() {
   }, [projectId]);
 
   /**
-   * What is stored, sorted into three cases — roadmap 3.0.5.
+   * What is stored, sorted into three cases — roadmap 3.0.5, retired in 3.0.7.
    *
-   * - `engineDoc`: the document the engine wrote (`lib/process-documentation.ts`).
-   * - `parsedDoc`: a blueprint a language model wrote before 3.0.5. It is shown
-   *   as it was, under a notice that says what it is — never migrated, never
-   *   deleted. Its shape is still checked before it is drawn: a document an
-   *   earlier build stored in a form the page cannot draw becomes an explained
-   *   empty state instead of a crash (QA 0d8443fae823 / 58201e6aaedb).
-   * - `storedBlueprintRejected`: something is stored and neither of the two
-   *   can be drawn from it. The reader is told so, and generating replaces it.
+   * - `engine`: the document the engine wrote (`lib/process-documentation.ts`).
+   * - `legacy`: a blueprint a language model wrote before 3.0.5. Never
+   *   migrated, never deleted — and since 3.0.7 ("Documentation lean") no
+   *   longer drawn: one strip says what it is, offers it for download exactly
+   *   as it was stored, and offers to replace it with the code reading.
+   * - `rejected`: a document in the engine's form this stage cannot read. The
+   *   reader is told so, and reading the code again replaces it.
    */
-  const blueprint = useMemo<{ engine: ProcessDocumentation | null; doc: any | null; rejected: boolean }>(() => {
+  const blueprint = useMemo<{ engine: ProcessDocumentation | null; legacy: string | null; rejected: boolean }>(() => {
     const stored = readStoredDocumentation(documentation);
-    if (stored.kind === 'none') return { engine: null, doc: null, rejected: false };
-    if (stored.kind === 'engine') return { engine: stored.doc, doc: null, rejected: false };
+    if (stored.kind === 'none') return { engine: null, legacy: null, rejected: false };
+    if (stored.kind === 'engine') return { engine: stored.doc, legacy: null, rejected: false };
     if (stored.kind === 'engine-invalid') {
       console.error('Stored documentation rejected:', stored.problems);
-      return { engine: null, doc: null, rejected: true };
+      return { engine: null, legacy: null, rejected: true };
     }
-    try {
-      const parsed = extractJSON(stored.raw);
-      const shape = checkBlueprintShape(parsed);
-      if (!shape.ok) {
-        console.error('Stored documentation rejected:', shape.problems);
-        return { engine: null, doc: null, rejected: true };
-      }
-      return { engine: null, doc: parsed, rejected: false };
-    } catch (e) {
-      console.error("Parsed documentation is invalid:", e);
-      return { engine: null, doc: null, rejected: true };
-    }
+    return { engine: null, legacy: stored.raw, rejected: false };
   }, [documentation]);
   const engineDoc = blueprint.engine;
-  /** The legacy blueprint, when that is what is stored. */
-  const parsedDoc = blueprint.doc;
-  const hasDocument = Boolean(engineDoc || parsedDoc);
+  /** The legacy blueprint as it was stored, when that is what is stored. */
+  const legacyBlueprint = blueprint.legacy;
+  const hasDocument = Boolean(engineDoc);
   const storedBlueprintRejected = blueprint.rejected;
 
   const parsedBusinessDoc = useMemo(() => {
@@ -380,7 +296,8 @@ export default function DocumentationPage() {
     replaceLayer.current = null;
     if (!project || !projectId) return;
     // Never a silent no-op (owner 03.10.2026): the reason is said where the button is.
-    if (!documentation) {
+    // Written from the process description only: a legacy blueprint is not read any more.
+    if (!engineDoc) {
       setBusinessDocError(wt('doc.businessNeedsDocumentation'));
       return;
     }
@@ -404,11 +321,9 @@ export default function DocumentationPage() {
     // Roadmap 3.0.5: the engine document goes in as its Markdown — the process
     // element by element with its BPMN ids, and the business statements of the
     // whole program. `stepId` below is then the element id the map and the
-    // `.bpmn` export use. A blueprint stored before 3.0.5 goes in as it was.
-    const blueprintContext = engineDoc ? processDocumentationToMarkdown(engineDoc) : documentation;
-    const stepsDescription = engineDoc
-      ? 'Process Documentation read from the ABAP code (BPMN elements with their ids and line ranges, and the business statements of the whole program). Use the element ids as stepId'
-      : 'Process Blueprint (BPMN flow and Level 4 tasks)';
+    // `.bpmn` export use.
+    const blueprintContext = processDocumentationToMarkdown(engineDoc);
+    const stepsDescription = 'Process Documentation read from the ABAP code (BPMN elements with their ids and line ranges, and the business statements of the whole program). Use the element ids as stepId';
 
     try {
       const prompt = `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.
@@ -420,8 +335,8 @@ CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 - RACI roles: a SMALL, REALISTIC set for this one process — typically 4 to 6 roles, never more than 7 in the whole matrix. Use short, generic role names (e.g. Requester, Buyer, Approver, Purchasing Lead, Process Owner, Finance), not the job titles of a large corporation, and REUSE the same roles across the steps. For a step the program runs on its own, name the business role that is responsible for its outcome.
 - Every step has EXACTLY ONE Accountable ("a") and at least one Responsible ("r"). Consulted ("c") and Informed ("i") only where they matter; leave them empty otherwise. If you cannot tell who is accountable for a step, leave "a" empty rather than guessing.
 - The roles are a proposal the business will confirm; do not invent organisational detail the process does not show. Avoid IT roles (Developer, Architect, System).
-- KPIs must be BUSINESS KPIs (e.g. process cycle time, data accuracy / quality %, first-pass yield, compliance adherence %, exception rate). Never technical metrics (write success rate, response time in ms, schema adherence).
-- Exceptions and controls must be BUSINESS actions (escalation, four-eyes / dual approval, manual review, segregation of duties, periodic control testing, exception-report review) — not technical remediation.
+- Exceptions must be BUSINESS actions (escalation, dual approval, manual review) — not technical remediation.
+- Do NOT propose KPI targets, control objectives, audit controls or verification methods: the process does not show them, and the controls of this process are read from the code elsewhere.
 
 Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`).
 DO NOT include any text before or after the JSON.
@@ -444,16 +359,7 @@ Structure the JSON exactly like this:
     {
       "stepId": "Task1",
       "narrative": "Plain-business, step-by-step description of how the business handles this process step and the outcome it produces (3-4 sentences). No technical detail.",
-      "businessException": "Business fallback if the step cannot be completed (e.g. escalate to the Process Owner, route for manual review, apply dual approval).",
-      "kpiTarget": "Business KPI target (e.g. Process cycle time < 1 business day; 100% data-quality compliance; < 2% exception rate)."
-    }
-  ],
-  "audit_controls": [
-    {
-      "stepId": "Task1",
-      "controlObjective": "Business / compliance control goal (e.g. Ensure master-data accuracy and segregation of duties).",
-      "mitigationAction": "Business mitigation (e.g. mandatory approval workflow, four-eyes principle, data-quality review before release).",
-      "assertionMethod": "Business verification (e.g. periodic internal-audit review, control sign-off, exception-report review)."
+      "businessException": "Business fallback if the step cannot be completed (e.g. escalate to the Process Owner, route for manual review, apply dual approval)."
     }
   ]
 }`;
@@ -497,23 +403,25 @@ Structure the JSON exactly like this:
         // A regeneration replaces the layer it was asked for, and only that one.
         if (typeof current.businessDocumentation === 'string' && current.businessDocumentation.trim()
           && (replacing === null || current.businessDocumentation !== replacing)) {
-          return { kept: current.businessDocumentation as string, code: (current.generatedCode ?? project.generatedCode) as string };
+          return { kept: current.businessDocumentation as string, cleanup: {} };
         }
-        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, BUSINESS_WORKSPACE_FILE, formatBusinessDocsToMarkdown(responseText));
-        // Codex architecture-02: the layer is written twice — as itself and
-        // into the package — so it is refused by name before the commit when
-        // the project would outgrow its 1 MiB document.
-        const size = checkProjectWrite(current, { businessDocumentation: responseText, generatedCode: merged }, projectDoc.path, 'update');
+        // Not into the package (roadmap 3.0.7, item 4): Delivery writes the
+        // layer's file from `businessDocumentation` itself. A file an earlier
+        // build merged into the package is taken out with this write.
+        const cleanup = packageCleanup(current.generatedCode);
+        // Codex architecture-02: refused by name before the commit when the
+        // project would outgrow its 1 MiB document.
+        const size = checkProjectWrite(current, { businessDocumentation: responseText, ...cleanup }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
-        tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
-        return { kept: null, code: merged };
+        tx.update(projectDoc, { businessDocumentation: responseText, ...cleanup });
+        return { kept: null, cleanup };
       });
 
       // Shown only once it is stored (52487ee4cacc): a layer the transaction
       // refused is not this project's business documentation.
       const storedLayer = updatedCode.kept ?? responseText;
       setBusinessDocumentation(storedLayer);
-      setProject(prev => prev ? { ...prev, businessDocumentation: storedLayer, generatedCode: updatedCode.code } : null);
+      setProject(prev => prev ? { ...prev, businessDocumentation: storedLayer, ...updatedCode.cleanup } : null);
 
     } catch (err: unknown) {
       console.error('Business documentation generation error:', err);
@@ -584,30 +492,25 @@ Structure the JSON exactly like this:
   const isPhone = useBreakpointS();
 
   /**
-   * Owner 03.10.2026 — the business reader's first look: what the process does,
-   * where the problems are, what is not determined. Read from the handbook, the
-   * coverage sweep and the levels of the tables the code writes
-   * (`lib/business-summary.ts`); nothing is written and no model is called.
+   * The clean-core levels of the SAP data the code changes, beside the
+   * description's summary (ADR-077, amended twice): the direct-write callouts
+   * of `lib/business-summary.ts`, read from the handbook and the levels of the
+   * tables the code writes. Nothing is written and no model is called.
    */
   const glanceInputs = useBusinessGlance(
     signedSource?.source ?? null,
     handbook.handbook,
     project ? catalogLookupTargetOf(project) : null,
   );
-  const glance = useMemo(() => {
-    const hb = handbook.handbook;
-    return {
-      headline: hb ? glanceHeadline(hb) : null,
-      callouts: hb ? businessCallouts(hb, glanceInputs.levels) : [],
-      notDetermined: notDeterminedCallout(glanceInputs.gaps),
-    };
-  }, [handbook.handbook, glanceInputs]);
+  const callouts = useMemo(
+    () => (handbook.handbook ? businessCallouts(handbook.handbook, glanceInputs.levels) : []),
+    [handbook.handbook, glanceInputs],
+  );
 
   /**
    * The steps of the process the business layer is keyed to — the engine
    * document's elements, named as the map names them and with the map's
-   * provenance (a step a person confirmed reads *Confirmed*). A legacy
-   * blueprint's tasks were written by a model and carry no lines.
+   * provenance (a step a person confirmed reads *Confirmed*).
    */
   const processSteps: ProcessStepRef[] = engineDoc
     ? engineDoc.steps.map((step) => {
@@ -620,13 +523,7 @@ Structure the JSON exactly like this:
           provenance: element?.status ?? step.provenance,
         };
       })
-    : (parsedDoc?.l4_tasks ?? []).map((task: { stepId?: unknown; name?: unknown }) => ({
-        id: String(task.stepId ?? ''),
-        name: typeof task.name === 'string' && task.name ? task.name : String(task.stepId ?? ''),
-        technicalName: String(task.stepId ?? ''),
-        anchor: null,
-        provenance: 'proposed' as const,
-      }));
+    : [];
 
   const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
   const statementProposal = useStatementProposal(
@@ -635,6 +532,14 @@ Structure the JSON exactly like this:
     modelAvailability,
   );
   const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
+
+  /**
+   * The project's one list of open questions (ADR-081) — section 9 of the
+   * description and of every export (roadmap 3.0.7, item 6). Read here, the
+   * same hook every view reads; answered in the workspace.
+   */
+  const openQuestionsOfProject = useOpenQuestions(project, projectIdStr ?? '');
+  const questionsHref = projectIdStr ? `/project/${encodeURIComponent(projectIdStr)}?view=it#not-determined` : null;
 
   /**
    * Owner 03.10.2026 — the process description, built as soon as the stage
@@ -670,9 +575,9 @@ Structure the JSON exactly like this:
    * active run signed and the map this page already drew from it — no model, no
    * key and no network beyond the one write.
    *
-   * Still on a button, never on opening the stage: writing the project is the
-   * reader's decision, and a stored legacy blueprint is only replaced when they
-   * ask for it.
+   * Written when the owner opens the stage (owner 03.10.2026, below), and on
+   * "Read again from the code"; a stored legacy blueprint is only replaced
+   * when the owner asks for it.
    */
   const generateDocumentation = useCallback(async () => {
     if (!project || !projectId) return;
@@ -731,27 +636,25 @@ Structure the JSON exactly like this:
         if (current.activeRunId !== builtFromRun || current.legacyCode !== signedSource.source) {
           throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
         }
-        // The business layer (RACI, SOP, controls) was written from the
-        // documentation this replaces, keyed to its step ids. Kept, it would be
-        // shown and exported as current beside a document whose elements it
-        // does not describe (QA full review 96b39ec78c97) — so it goes with the
-        // document it was built on, from the project and from the package.
-        const merged = removeFileFromWorkspace(
-          addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built)),
-          BUSINESS_WORKSPACE_FILE,
-        );
+        // The business layer (RACI, SOP) was written from the documentation
+        // this replaces, keyed to its step ids. Kept, it would be shown and
+        // exported as current beside a document whose elements it does not
+        // describe (QA full review 96b39ec78c97) — so it goes with the
+        // document it was built on. Nothing goes into the package (roadmap
+        // 3.0.7, item 4); what an earlier build put there comes out.
+        const cleanup = packageCleanup(current.generatedCode);
         // Codex architecture-02, as for the business layer above.
-        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' }, projectDoc.path, 'update');
+        const size = checkProjectWrite(current, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
-        tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' });
-        return merged;
+        tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup });
+        return cleanup;
       });
 
       // Shown only once it is stored: a document the transaction refused is
       // not this project's documentation.
       setDocumentation(stored);
       setBusinessDocumentation('');
-      setProject(prev => prev ? { ...prev, documentation: stored, generatedCode: updatedCode, status: 'documented', businessDocumentation: '' } : null);
+      setProject(prev => prev ? { ...prev, documentation: stored, status: 'documented', businessDocumentation: '', ...updatedCode } : null);
     } catch (err: unknown) {
       console.error('Documentation generation error:', err);
       setDocError(err instanceof Error ? err.message : String(err));
@@ -1061,117 +964,27 @@ Structure the JSON exactly like this:
   };
 
   /**
-   * Roadmap 4.4 — the brief: the process picture, the rules and the open
-   * questions, every statement with its lines, as a PDF, and the `.bpmn` beside
-   * it in one download.
-   *
-   * Everything it needs is already derivable from the source the active run
-   * signed — the map on this page, 2.6's export, 3.4's rules, the coverage
-   * sweep and 3.5's confirmations — so no model is called and nothing is
-   * stored. The brief enters no run and no audit pack; it is a summary.
-   *
-   * The BPMN is taken from the same export the map was built from and put into
-   * the archive unchanged, so the file in the download and the file behind
-   * "Export BPMN" are the same bytes.
-   *
-   * The confirmations are fetched and a failure to read them is not a failure
-   * to write the brief: the third section then says that nothing could be read,
-   * which is true, instead of a document that does not arrive.
-   */
-  const downloadBrief = async () => {
-    if (!signedSource || !processMap.model || isBuildingBrief) return;
-    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    setIsBuildingBrief(true);
-    setBriefError('');
-    try {
-      const [exporter, rules, coverage, briefModel, briefPackage, statesClient, statesModel, zipModule] =
-        await Promise.all([
-          import('@/lib/bpmn/export'),
-          import('@/lib/abap/business-rule-set'),
-          import('@/lib/abap/coverage'),
-          import('@/lib/brief/model'),
-          import('@/lib/brief/package'),
-          import('@/lib/process-states-client'),
-          import('@/lib/process-states'),
-          import('jszip'),
-        ]);
-
-      const bpmn = exporter.buildBpmnExportFromSource(signedSource.source, {
-        processName: project?.name || signedSource.fileName,
-        sourceFileName: signedSource.fileName,
-        names: 'plain',
-        wrap: exporter.READING_WRAP,
-      });
-
-      const view = idStr ? await statesClient.fetchProcessStates(idStr) : null;
-      const states = view
-        ? statesModel.readProcessStates(view.entries, statesModel.subjectIdsOf(view.subjects))
-        : null;
-
-      const brief = briefModel.buildProcessBrief({
-        map: processMap.model,
-        stats: bpmn.stats,
-        rules: rules.deriveBusinessRules(signedSource.source),
-        coverage: coverage.assessCoverage(signedSource.source),
-        states,
-      });
-
-      const pack = briefPackage.buildBriefPackage({
-        brief,
-        bpmnXml: bpmn.xml,
-        name: `${project?.name || 'Project'}_Process`,
-        generatedAt: new Date().toISOString(),
-      });
-
-      const zip = new zipModule.default();
-      for (const file of pack.files) zip.file(file.name, file.data);
-      saveAs(await zip.generateAsync({ type: 'blob' }), pack.name);
-    } catch (err: unknown) {
-      console.error('Brief export failed:', err);
-      setBriefError('The brief could not be written from this source.');
-    } finally {
-      setIsBuildingBrief(false);
-    }
-  };
-
-  /**
-   * The Confluence page — of the engine document, or of a legacy blueprint.
-   * Both templates live in `lib/documentation-export.ts` (block D, D.16a):
-   * they are documents with a stylesheet of their own, not this screen.
+   * The phases of the workflow contract — the tools bar, and whether the
+   * documentation is stale.
    */
   const phases = workflowSteps(project);
   /**
    * Owner decision 30.09.2026 (QA c8ae21453b3b): a stale documentation stays
-   * exportable, but neither the button nor the file hides that it is stale.
+   * exportable, but neither the menu nor the file hides that it is stale.
    * The state is the workflow contract's (`lib/workflow-steps.ts`), the same
    * one the stepper and the stale notice above read.
    */
   const documentationStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
 
+  /** The Confluence page of the process description (`lib/documentation-export.ts`). */
   const downloadConfluenceHTML = () => {
-    // Owner 03.10.2026 — the file opens with the same glance the stage shows,
-    // as a table, and keeps every row of the full layer below it.
-    const options = {
+    if (!processDocument.document) return;
+    const blob = buildEngineConfluenceHtml(processDocument.document, parsedBusinessDoc, {
       stale: documentationStale,
-      glance: glance.headline
-        ? {
-            headline: glanceHeadlineSentence(glance.headline),
-            callouts: [...glance.callouts, ...(glance.notDetermined ? [glance.notDetermined] : [])].map((c) => ({
-              title: calloutTitle(c),
-              provenance: c.provenance,
-              evidence: c.evidence,
-              more: c.count - c.evidence.length,
-            })),
-          }
-        : undefined,
       processSteps,
-    };
-    const blob = engineDoc && processDocument.document
-      ? buildEngineConfluenceHtml(processDocument.document, parsedBusinessDoc, { ...options, projectName: project?.name })
-      : parsedDoc
-        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc, options)
-        : null;
-    if (!blob) return;
+      projectName: project?.name,
+      openQuestions: openQuestionsOfProject,
+    });
     saveAs(blob, confluenceFileName(project?.name));
   };
 
@@ -1180,11 +993,60 @@ Structure the JSON exactly like this:
     const built = processDocument.document;
     if (!built) return;
     const { blocksMarkdown, blocksDocx } = await import('@/lib/requirements-export');
-    const blocks = processDocumentBlocks(built, { projectName: project?.name || built.program, date: new Date().toISOString().slice(0, 10) });
+    const blocks = processDocumentBlocks(built, {
+      projectName: project?.name || built.program,
+      date: new Date().toISOString().slice(0, 10),
+      openQuestions: openQuestionsOfProject,
+    });
     const blob = format === 'md'
       ? new Blob([blocksMarkdown(blocks)], { type: 'text/markdown;charset=utf-8' })
       : await blocksDocx(blocks);
     saveAs(blob, processDocumentFileName(project?.name, format));
+  };
+
+  /** A blueprint stored before 3.0.5, exactly as it was stored — the data is kept, its rendering is not. */
+  const downloadLegacyBlueprint = () => {
+    if (!legacyBlueprint) return;
+    saveAs(new Blob([legacyBlueprint], { type: 'application/json;charset=utf-8' }), docLegacyFileName(project?.name));
+  };
+
+  /**
+   * Roadmap 3.0.7 — one Export menu in the stage header (ADR-078's menu)
+   * instead of seven buttons in three places: Word · Print / PDF · Confluence ·
+   * Markdown · BPMN 2.0. The PDF is the description itself, printed from the
+   * browser (everything else on the page is `cc-no-print`); the brief of
+   * roadmap 4.4 is gone with it. Each way out is offered once there is
+   * something true to export.
+   */
+  type DocExport = 'docx' | 'print' | 'html' | 'md' | 'bpmn';
+  const exportItems: Array<ExportMenuItem<DocExport>> = [
+    ...(processDocument.document ? [
+      { kind: 'docx' as const, label: 'Word', hint: '.docx with cover, sections and appendix', icon: <FileText size={16} aria-hidden={true} />, attrs: { 'data-export-process-docx': '' } },
+      { kind: 'print' as const, label: 'Print / PDF', hint: 'the process description, from the browser', icon: <Printer size={16} aria-hidden={true} />, attrs: { 'data-export-print': '' } },
+      {
+        kind: 'html' as const,
+        label: 'Confluence',
+        hint: 'a page to paste or upload',
+        icon: <BookOpenText size={16} aria-hidden={true} />,
+        attrs: {
+          'data-export-confluence': documentationStale ? 'stale' : 'current',
+          'aria-label': 'Export Confluence',
+          'aria-describedby': documentationStale ? 'confluence-export-stale' : undefined,
+        },
+      },
+      { kind: 'md' as const, label: 'Markdown', hint: '.md, the same document as text', icon: <FileCode2 size={16} aria-hidden={true} />, attrs: { 'data-export-process-md': '' } },
+    ] : []),
+    // Roadmap 2.6 — drawn from the skeleton of the signed run, so it exists as
+    // soon as the run does and says nothing the code does not.
+    ...(signedSource ? [
+      { kind: 'bpmn' as const, label: 'BPMN 2.0', hint: 'the process with line ranges, for SAP Signavio', icon: <Workflow size={16} aria-hidden={true} />, attrs: { 'data-export-bpmn': '', 'aria-label': 'Export BPMN 2.0' } },
+    ] : []),
+  ];
+  const onExport = (kind: DocExport) => {
+    if (kind === 'print') window.print();
+    else if (kind === 'html') downloadConfluenceHTML();
+    else if (kind === 'md' || kind === 'docx') void downloadProcessDocument(kind);
+    else void downloadBPMN();
   };
 
   if (loading) return (
@@ -1209,44 +1071,26 @@ Structure the JSON exactly like this:
   );
 
   /**
-   * What the business layer costs before the click — DESIGN.md §2.8. Every
-   * part of it is a fact of this page: the model it names is the one
-   * `generateBusinessDocumentation` passes to `/api/gemini`, the key is the one
-   * `/api/model-stages` reports, and that route meters by the hour, not by the
-   * analysis run.
+   * What the model proposals cost before any click — DESIGN.md §2.8, one line
+   * for the card (roadmap 3.0.7). Every part of it is a fact of this page: the
+   * model it names is the one `generateBusinessDocumentation` passes to
+   * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
+   * route meters by the hour, not by the analysis run.
    */
-  const businessCostLine = `One model call (${PRODUCT_GEMINI_MODEL})${
-    modelAvailability.keySource === 'byok' ? ', with your own Gemini key' : ''
-  }. Opening Documentation writes it once when none is on record; it is not counted against your analysis runs and counts toward the hourly limit on model calls of this account.`;
+  const proposalsCostLine = docProposalsCostLine(PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok');
 
-  const tracePanel = engineDoc ? (
-    <ProcessDocumentationView
-      appendix
-      doc={engineDoc}
-      proposal={{
-        view: statementProposal.view,
-        canRequest: isOwner,
-        byok: modelAvailability.keySource === 'byok',
-        requesting: statementProposal.requesting,
-        message: statementProposal.message,
-        onRequest: statementProposal.request,
-      }}
-    />
-  ) : null;
-  /**
-   * The glance of ADR-068. A process description opens with its own summary
-   * (owner 04.10.2026, ADR-077 amended twice), so for one the stage adds only
-   * the clean-core levels of the SAP data it changes; the full glance stands
-   * on its own above a legacy blueprint, which has no description.
-   */
-  const glanceProps = {
-    headline: glance.headline,
-    callouts: glance.callouts,
-    notDetermined: glance.notDetermined,
-    reading: handbook.status === 'loading' || processMap.status === 'loading',
-    noSource: !signedSource,
+  const statementPanelProps = {
+    view: statementProposal.view,
+    canRequest: isOwner,
+    byok: modelAvailability.keySource === 'byok',
+    requesting: statementProposal.requesting,
+    message: statementProposal.message,
+    onRequest: statementProposal.request,
   };
-  /** The technical trace, last on the page — after the business layer and the map. */
+  const tracePanel = engineDoc ? (
+    <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} />
+  ) : null;
+  /** The technical trace, last on the page — after the model proposals and the map. */
   const appendixPanel = engineDoc ? (
     <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
   ) : null;
@@ -1254,7 +1098,10 @@ Structure the JSON exactly like this:
     processDocument.document ? (
       <ProcessDocumentView
         document={processDocument.document}
-        summary={<DirectWriteLevels callouts={glance.callouts} />}
+        summary={<DirectWriteLevels callouts={callouts} />}
+        openQuestions={openQuestionsOfProject}
+        questionsHref={questionsHref}
+        rulesOutside={handbook.handbook?.rulesOutside ?? null}
       />
     ) : processDocument.status === 'failed' ? (
       <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace at the foot of this page is complete.</CcMessageStrip>
@@ -1263,186 +1110,12 @@ Structure the JSON exactly like this:
         <CcSkeleton shape="text" label="the process description" count={4} />
       </div>
     )
-  ) : parsedDoc ? (
-    <div className="space-y-6">
-      {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this
-          stage. Shown as it was, never migrated and never deleted, and
-          said to be what it is before anything in it is read. */}
-      <div data-legacy-blueprint>
-        <CcMessageStrip state="warning">{LEGACY_BLUEPRINT_NOTICE}</CcMessageStrip>
-      </div>
-
-      {/* No description to open with, so the glance stands on its own. */}
-      <BusinessGlance {...glanceProps} />
-
-      {/* L1 & L2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <section className={SECTION}>
-          <div className="flex items-center gap-3 mb-4">
-            <Briefcase size={20} aria-hidden={true} className="text-cc-ink-muted" />
-            <div>
-              <p className={LABEL}>Level 1 Blueprint</p>
-              <h2 className={H2}>Business Domain</h2>
-            </div>
-          </div>
-          <dl className="space-y-3">
-            <div>
-              <dt className={LABEL}>Integration Domain</dt>
-              <dd className="cc-text-h3 text-cc-ink">{parsedDoc.l1_domain?.name}</dd>
-            </div>
-            <div>
-              <dt className={LABEL}>Strategic Goal</dt>
-              <dd className="cc-text-body text-cc-ink">{parsedDoc.l1_domain?.strategicGoal}</dd>
-            </div>
-            <div>
-              <dt className={LABEL}>Service Owner</dt>
-              <dd className="mt-1"><CcTag>{parsedDoc.l1_domain?.owner}</CcTag></dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className={SECTION}>
-          <div className="flex items-center gap-3 mb-4">
-            <Target size={20} aria-hidden={true} className="text-cc-ink-muted" />
-            <div>
-              <p className={LABEL}>Level 2 Blueprint</p>
-              <h2 className={H2}>Process Area Group</h2>
-            </div>
-          </div>
-          <dl className="space-y-3">
-            <div>
-              <dt className={LABEL}>Process Area</dt>
-              <dd className="cc-text-h3 text-cc-ink">{parsedDoc.l2_group?.name}</dd>
-            </div>
-            <div>
-              <dt className={LABEL}>Functional Context</dt>
-              <dd className="cc-text-body text-cc-ink">{parsedDoc.l2_group?.processArea}</dd>
-            </div>
-            <div>
-              <dt className={LABEL}>KPI Framework</dt>
-              <dd className="mt-1 flex flex-wrap gap-2">
-                {(parsedDoc.l2_group?.kpis || []).map((kpi: string, i: number) => (
-                  <CcTag key={i}>{kpi}</CcTag>
-                ))}
-              </dd>
-            </div>
-          </dl>
-        </section>
-      </div>
-
-      {/* Process Flow Map */}
-      <section className={SECTION}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-          <div className="flex items-center gap-3">
-            <Activity size={20} aria-hidden={true} className="text-cc-ink-muted" />
-            <div>
-              <p className={LABEL}>Level 3 Flow</p>
-              <h2 className={H2}>Interactive BPMN Map</h2>
-            </div>
-          </div>
-
-          {/* BPMN legend — the shapes, each with its word. */}
-          <div className="flex flex-wrap items-center gap-3 cc-text-meta text-cc-ink-muted">
-            <span className={LABEL}>Legend:</span>
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden={true} className="inline-block h-3 w-3 rounded-full border border-cc-ink-muted" />
-              Start
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden={true} className="inline-block h-3 w-4 rounded-cc-row border border-cc-ink-muted" />
-              Task
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden={true} className="inline-block h-3 w-3 rotate-45 border border-cc-ink-muted" />
-              Gateway
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden={true} className="inline-block h-3 w-3 rounded-full border-2 border-cc-ink" />
-              End
-            </span>
-          </div>
-        </div>
-        <div className="relative">
-          {parsedDoc.l3_flow && (
-            <ProcessFlow flow={parsedDoc.l3_flow} tasks={parsedDoc.l4_tasks} onNodeClick={handleNodeClick} />
-          )}
-        </div>
-        <p className="mt-2 cc-text-meta text-cc-ink-muted">Tip: select a node to open its task specification below.</p>
-      </section>
-
-      {/* Task Definitions */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Settings size={20} aria-hidden={true} className="text-cc-ink-muted" />
-          <div>
-            <p className={LABEL}>Level 4</p>
-            <h2 className={H2}>Architectural Task Index</h2>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(parsedDoc.l4_tasks || []).map((task: any, i: number) => {
-            const isHighlighted = highlightedTaskId === task.stepId;
-            return (
-              <article
-                key={i}
-                id={`task-${task.stepId}`}
-                data-task-card={task.stepId}
-                className={clsx(
-                  'flex flex-col rounded-cc-card border bg-cc-surface p-4 shadow-cc',
-                  isHighlighted ? 'border-cc-ink bg-cc-surface-muted' : 'border-cc-line',
-                )}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <span className="cc-text-identifier font-cc-mono text-cc-ink">Task {task.stepId}</span>
-                  <CcTag>Complexity: {task.complexity || 'Low'}</CcTag>
-                </div>
-
-                <h3 className="cc-text-h3 text-cc-ink mb-1">{task.name || `Task ${task.stepId}`}</h3>
-                <p className="cc-text-cell text-cc-ink-muted mb-4 flex-grow">{task.description}</p>
-
-                <dl className="grid grid-cols-2 gap-3 border-t border-cc-line pt-3">
-                  <div className="min-w-0">
-                    <dt className={clsx(LABEL, 'flex items-center gap-1')}>
-                      <Layers size={12} aria-hidden={true} className="shrink-0" /> Inputs
-                    </dt>
-                    <dd className="cc-text-cell text-cc-ink break-words">{(task.inputs || []).join(', ') || 'N/A'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={clsx(LABEL, 'flex items-center gap-1')}>
-                      <Box size={12} aria-hidden={true} className="shrink-0" /> Outputs
-                    </dt>
-                    <dd className="cc-text-cell text-cc-ink break-words">{(task.outputs || []).join(', ') || 'N/A'}</dd>
-                  </div>
-                  <div className="col-span-2 min-w-0">
-                    <dt className={LABEL}>Systems</dt>
-                    <dd className="cc-text-cell text-cc-ink break-words">
-                      {Array.isArray(task.systems) ? task.systems.join(', ') : (task.systems || 'Not stated')}
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="mt-4">
-                  <CcButton
-                    onClick={() => setActiveTask(task)}
-                    icon={<FileCode2 size={16} aria-hidden={true} />}
-                    data-open-task={task.stepId}
-                  >
-                    Open specification
-                  </CcButton>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-    </div>
   ) : null;
 
   /**
    * What stands between the reader and the business layer, said before the
    * click: the same blockers the generation itself checks
-   * (`generationBlockers`), and the documentation it is written from.
+   * (`generationBlockers`), and the description it is written from.
    */
   const businessBlockers: string[] = [
     ...generationBlockers(project, 'documentation'),
@@ -1450,23 +1123,23 @@ Structure the JSON exactly like this:
   ];
 
   /**
-   * Owner 03.10.2026 — the business layer as a step strip and a RACI matrix
-   * (`components/documentation/BusinessLayer.tsx`), with the full text one
-   * fold deeper. Without a layer, the offer to propose one, in one line.
+   * Roadmap 3.0.7 ("Documentation lean", item 7) — one card for what a model
+   * proposes on top of the description: the SOP and RACI (ADR-068, written
+   * once when the stage opens, decision 03.10.2026) and the business sentences
+   * over the engine's (roadmap 17.10, on request), with one cost line. RACI
+   * stays a proposal; the controls are the code reading's, section 8.
    */
-  const businessPanel = isGeneratingBusinessDoc ? (
-    <section data-business-layer-offer="" data-business-layer-writing="" className={clsx(SECTION, 'mb-6')} aria-busy="true">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className={H2}>{wt('doc.businessGenerating')}</h2>
-        <CcProvenanceChip value="proposed" />
-      </div>
-      <p role="status" className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-        {businessStartedAt === null ? 0 : businessElapsed} s of at most {Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} s. {businessCostLine}
+  const businessPart = isGeneratingBusinessDoc ? (
+    <div className="flex flex-col gap-2">
+      <h3 className="m-0 cc-text-h3 text-cc-ink">{wt('doc.businessGenerating')}</h3>
+      <p role="status" className="m-0 cc-text-cell text-cc-ink-muted">
+        {businessStartedAt === null ? 0 : businessElapsed} s of at most {Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} s.
       </p>
-      <div className="mt-3"><CcSkeleton shape="table" label="the business layer" count={3} /></div>
-    </section>
+      <CcSkeleton shape="table" label="the business layer" count={3} />
+    </div>
   ) : parsedBusinessDoc ? (
     <BusinessLayer
+      embedded
       layer={parsedBusinessDoc}
       process={processSteps}
       action={isOwner && modelAvailability.enabled('documentation') ? (
@@ -1485,7 +1158,6 @@ Structure the JSON exactly like this:
             >
               {wt('doc.businessRegenerate')}
             </CcButton>
-            <span className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
           </div>
           {businessDocError ? (
             <CcMessageStrip state="error" headline="The business layer was not generated again.">{businessDocError}</CcMessageStrip>
@@ -1494,16 +1166,9 @@ Structure the JSON exactly like this:
       ) : undefined}
     />
   ) : (
-    <section
-      data-business-layer-offer=""
-      aria-labelledby="business-offer-title"
-      className="mb-6 rounded-cc-card border border-cc-field-border bg-cc-surface p-4 shadow-cc md:p-6"
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="business-offer-title" className={H2}>{wt('doc.businessOfferTitle')}</h2>
-        <CcProvenanceChip value="proposed" />
-      </div>
-      <p className="m-0 mt-1 mb-4 max-w-3xl cc-text-body text-cc-ink">{wt('doc.businessOfferLead')}</p>
+    <div className="flex flex-col gap-3">
+      <h3 id="business-offer-title" className="m-0 cc-text-h3 text-cc-ink">{wt('doc.businessOfferTitle')}</h3>
+      <p className="m-0 max-w-3xl cc-text-cell text-cc-ink">{wt('doc.businessOfferLead')}</p>
       {/* An invited reader reads: no button offers a write the rules refuse,
           and the owner's model settings are not the reader's business. */}
       {project && !isOwner ? (
@@ -1529,16 +1194,15 @@ Structure the JSON exactly like this:
           >
             {wt('doc.businessGenerate')}
           </CcButton>
-          <span data-business-layer-cost className="cc-text-meta text-cc-ink-muted">{businessCostLine}</span>
         </div>
       )}
       {/* Why the button waits, in words — never a button that does nothing. */}
       {isOwner && modelAvailability.enabled('documentation') && businessBlockers.length > 0 ? (
-        <div id="business-layer-blocked" data-business-layer-blocked="" className="mt-4">
+        <div id="business-layer-blocked" data-business-layer-blocked="">
           <CcMessageStrip
             state="information"
             headline={wt('doc.businessBlockedTitle')}
-            actions={!hasDocument && signedSource && processMap.model ? (
+            actions={!hasDocument && legacyBlueprint === null && signedSource && processMap.model ? (
               <CcButton onClick={generateDocumentation} busy={isGeneratingDoc} data-business-read-first="">
                 {wt('doc.businessReadFirst')}
               </CcButton>
@@ -1549,25 +1213,53 @@ Structure the JSON exactly like this:
         </div>
       ) : null}
       {otherTabWriting ? (
-        <p data-business-layer-other-tab="" className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
+        <p data-business-layer-other-tab="" className="m-0 cc-text-cell text-cc-ink-muted">
           Another tab of this browser is writing the business layer right now. Reload this stage when it is done.
         </p>
       ) : null}
       {businessDocError && (
-        <div className="mt-4">
-          <CcMessageStrip
-            state="error"
-            headline="The business layer was not generated."
-            actions={
-              modelAvailability.enabled('documentation') && businessBlockers.length === 0
-                ? <CcButton onClick={generateBusinessDocumentation} disabled={isGeneratingDoc}>Try again</CcButton>
-                : undefined
-            }
-          >
-            {businessDocError}
-          </CcMessageStrip>
-        </div>
+        <CcMessageStrip
+          state="error"
+          headline="The business layer was not generated."
+          actions={
+            modelAvailability.enabled('documentation') && businessBlockers.length === 0
+              ? <CcButton onClick={generateBusinessDocumentation} disabled={isGeneratingDoc}>Try again</CcButton>
+              : undefined
+          }
+        >
+          {businessDocError}
+        </CcMessageStrip>
       )}
+    </div>
+  );
+
+  /** Whether an invited reader sees anything of the business sentences — the panel shows nothing to a reader without a proposal. */
+  const sentencesShown = engineDoc && (isOwner || statementProposal.view?.state === 'proposed');
+
+  const proposalsCard = (
+    <section
+      aria-labelledby="model-proposals-title"
+      data-model-proposals=""
+      data-business-layer-offer={!parsedBusinessDoc ? '' : undefined}
+      data-business-layer-writing={isGeneratingBusinessDoc ? '' : undefined}
+      aria-busy={isGeneratingBusinessDoc ? true : undefined}
+      className={clsx(SECTION, 'cc-no-print mb-6 flex flex-col gap-4')}
+    >
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 id="model-proposals-title" className={clsx(H2, 'm-0')}>{wt('doc.proposalsTitle')}</h2>
+          <CcProvenanceChip value="proposed" />
+        </div>
+        <p className="m-0 mt-1 max-w-3xl cc-text-cell text-cc-ink-muted">{wt('doc.proposalsLead')}</p>
+        <p data-model-proposals-cost="" data-business-layer-cost="" className="m-0 mt-1 max-w-3xl cc-text-meta text-cc-ink-muted">{proposalsCostLine}</p>
+      </div>
+      {businessPart}
+      {sentencesShown ? (
+        <div data-model-proposals-sentences="" className="border-t border-cc-line pt-4">
+          <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">{wt('doc.proposalsSentencesTitle')}</h3>
+          <StatementProposalPanel {...statementPanelProps} costLine={false} />
+        </div>
+      ) : null}
     </section>
   );
 
@@ -1578,15 +1270,15 @@ Structure the JSON exactly like this:
         reasons={[
           ...generationBlockers(project, 'documentation'),
           ...(documentationStale
-            ? [`The blueprint shown here was written for ${previousBasis(project)}.`]
+            ? [`The documentation shown here was written for ${previousBasis(project)}.`]
             : []),
         ]}
       />
 
-      {/* A slim title with the two exports of the map a reader takes away
-          (the PDF brief and BPMN); the description's own exports stand at its
-          head. The frame (progress, header, back link) is shared and unstyled
-          here; everything under it is this stage's. */}
+      {/* A slim title with the one Export menu (roadmap 3.0.7, ADR-078's
+          menu): every way out of this stage in one place. The frame
+          (progress, header, back link) is shared; everything under it is
+          this stage's. */}
       <StageHeader tools={{ steps: phases, current: 'documentation' }}
         stage="documentation"
         projectName={project?.name}
@@ -1596,47 +1288,31 @@ Structure the JSON exactly like this:
             note={documentationStale ? 'regenerate first' : hasDocument ? 'current' : 'code reading'}
           />
         }
-        actions={signedSource ? (
-          <>
-            {/* Roadmap 4.4 — the brief: a PDF and the BPMN in one archive.
-                Offered once the map is read, because before that there is no
-                process to describe. */}
-            {processMap.model ? (
-              <CcButton
-                density="cozy"
-                onClick={downloadBrief}
-                busy={isBuildingBrief}
-                data-export-brief
-                aria-label="PDF brief — export the PDF and the BPMN file in one archive"
-                icon={<Printer size={16} aria-hidden={true} />}
-              >
-                PDF
-              </CcButton>
+        actions={exportItems.length ? (
+          <div data-documentation-exports="" className="cc-no-print flex flex-col items-start gap-1 md:items-end">
+            <ExportMenu<DocExport>
+              items={exportItems}
+              onExport={onExport}
+              align="end"
+              triggerAttrs={{ 'data-documentation-export-menu': '' }}
+              note={
+                <>
+                  {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part
+                      that is not established, in the same breath — never on hover. */}
+                  {signedSource ? <p data-export-caveat="" className="m-0 cc-text-meta text-cc-ink-muted">{wt('doc.exportBpmnCaveat')}</p> : null}
+                  {processDocument.document ? <p data-export-print-caveat="" className="m-0 cc-text-meta text-cc-ink-muted">{wt('doc.exportPrintCaveat')}</p> : null}
+                </>
+              }
+            />
+            {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
+            {documentationStale && processDocument.document ? (
+              <span id="confluence-export-stale" data-confluence-stale-note="">
+                <CcStateText state="warning">{wt('doc.exportStale')}</CcStateText>
+              </span>
             ) : null}
-            {/* Roadmap 2.6 — drawn from the skeleton of the signed run, so it
-                exists as soon as the run does and says nothing the code does
-                not. Without a signed source there is nothing true to export. */}
-            <CcButton
-              variant="secondary"
-              density="cozy"
-              onClick={downloadBPMN}
-              data-export-bpmn
-              aria-label="Export BPMN 2.0"
-              icon={<Download size={16} aria-hidden={true} />}
-            >
-              BPMN 2.0
-            </CcButton>
-          </>
+          </div>
         ) : undefined}
       />
-
-      {briefError && (
-        <div className="mb-4 max-w-xl">
-          <CcMessageStrip state="error">
-            <span data-brief-error>{briefError}</span>
-          </CcMessageStrip>
-        </div>
-      )}
 
       {/* Two different things used to share one heading. A blocked start is a
           refusal before anything is read; a refused answer is a reading that
@@ -1658,10 +1334,10 @@ Structure the JSON exactly like this:
       )}
 
       {/* Owner 04.10.2026 (ADR-077 amended) — the stage reads top-down like
-          the document a business reader opens: the process description first,
-          with what it does for the business as its opening and its exports at
-          its head; the business layer a model proposes right after it; the map
-          with its chapters to explore below; the technical trace last. */}
+          the document a business reader opens: the process description first;
+          the model proposals right after it; the map with its chapters to
+          explore below; the technical trace last. Printed, the description
+          and its appendix are the page — everything else is `cc-no-print`. */}
       <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 max-w-3xl">
@@ -1670,54 +1346,19 @@ Structure the JSON exactly like this:
               Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
             </p>
           </div>
-          {hasDocument ? (
-            <div data-documentation-exports="" className="flex flex-wrap items-start gap-2">
-              {/* The Confluence page waits for a stored documentation — there is
-                  nothing to export before one exists. A stale one stays
-                  exportable, and neither the button nor the file hides that it
-                  is stale (owner decision 30.09.2026, QA c8ae21453b3b). */}
-              <span className="inline-flex flex-col items-start gap-1">
-                <CcButton
-                  density="cozy"
-                  onClick={downloadConfluenceHTML}
-                  disabled={isGeneratingDoc || (Boolean(engineDoc) && !processDocument.document)}
-                  data-export-confluence={documentationStale ? 'stale' : 'current'}
-                  aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
-                  aria-label="Export Confluence"
-                  icon={<ExternalLink size={14} aria-hidden={true} />}
-                >
-                  Confluence
-                </CcButton>
-                {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
-                {documentationStale && (
-                  <span id="confluence-export-stale" data-confluence-stale-note="">
-                    <CcStateText state="warning">Stale — regenerate first</CcStateText>
-                  </span>
-                )}
-              </span>
-              {processDocument.document ? (
-                <>
-                  <CcButton density="cozy" onClick={() => void downloadProcessDocument('md')} data-export-process-md="" icon={<FileCode2 size={14} aria-hidden={true} />}>
-                    Markdown
-                  </CcButton>
-                  <CcButton density="cozy" onClick={() => void downloadProcessDocument('docx')} data-export-process-docx="" icon={<Download size={14} aria-hidden={true} />}>
-                    Word
-                  </CcButton>
-                </>
-              ) : null}
-              {isOwner ? (
-                <CcButton
-                  variant="secondary"
-                  density="cozy"
-                  onClick={generateDocumentation}
-                  disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
-                  busy={isGeneratingDoc}
-                  data-regenerate-documentation
-                  icon={<RefreshCw size={16} aria-hidden={true} />}
-                >
-                  {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
-                </CcButton>
-              ) : null}
+          {hasDocument && isOwner ? (
+            <div className="cc-no-print">
+              <CcButton
+                variant="secondary"
+                density="cozy"
+                onClick={generateDocumentation}
+                disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+                busy={isGeneratingDoc}
+                data-regenerate-documentation
+                icon={<RefreshCw size={16} aria-hidden={true} />}
+              >
+                Read again from the code
+              </CcButton>
             </div>
           ) : null}
         </div>
@@ -1732,6 +1373,38 @@ Structure the JSON exactly like this:
           <div id="documentation-report" data-stage-output="documentation">
             {technicalPanel}
           </div>
+        ) : legacyBlueprint !== null ? (
+          /* Roadmap 3.0.7 — a blueprint a model wrote before 3.0.5. Its data
+             is kept (never migrated, never deleted); its rendering is gone:
+             one strip, the file as it was, and the way to the code reading. */
+          <div data-legacy-blueprint="" data-stage-output="documentation">
+            <CcMessageStrip
+              state="warning"
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <CcButton density="cozy" onClick={downloadLegacyBlueprint} icon={<Download size={16} aria-hidden={true} />} data-legacy-blueprint-download="">
+                    {wt('doc.legacyDownload')}
+                  </CcButton>
+                  {isOwner ? (
+                    <CcButton
+                      variant="primary"
+                      density="cozy"
+                      onClick={generateDocumentation}
+                      disabled={!signedSource || !processMap.model}
+                      busy={isGeneratingDoc}
+                      data-legacy-blueprint-replace=""
+                      data-regenerate-documentation=""
+                    >
+                      {wt('doc.legacyReplace')}
+                    </CcButton>
+                  ) : null}
+                </div>
+              }
+            >
+              {wt('doc.legacyStrip')}
+              {project && !isOwner ? <> {wt('doc.legacyReaderNote')}</> : null}
+            </CcMessageStrip>
+          </div>
         ) : project && !isOwner ? (
           /* An invited reader reads: nothing is written on their visit, and no
              button offers a write the rules refuse. */
@@ -1742,7 +1415,6 @@ Structure the JSON exactly like this:
           </CcMessageStrip>
         ) : (
           <div className="space-y-4">
-            {/* Said before either branch, because it is true in both. */}
             {storedBlueprintRejected && (
               <CcMessageStrip state="warning">
                 <span data-stored-blueprint-rejected>{STORED_BLUEPRINT_REJECTED}</span>
@@ -1779,19 +1451,18 @@ Structure the JSON exactly like this:
         )}
       </section>
 
-      {/* The business layer — who does what, who is accountable — a model's
-          proposal on top of the description, so it follows it. Not on record:
-          the card that offers it, or says why it cannot run. */}
-      {businessPanel}
+      {/* The model proposals — who does what, who is accountable, and the
+          business sentences — on top of the description, so after it. */}
+      {proposalsCard}
 
       {/* Explore the process: the map as the code runs it, a chapter beside
-          it, the chapters in a drawer below (owner decision 01.10.2026,
-          proposal B). The level and the selection stay in the address. */}
+          it (owner decision 01.10.2026, proposal B). The level and the
+          selection stay in the address. */}
       <section
         ref={exploreRef}
         aria-labelledby="documentation-explore"
         data-documentation-explore=""
-        className="mb-8 scroll-mt-24"
+        className="cc-no-print mb-8 scroll-mt-24"
       >
         <h2 id="documentation-explore" className="m-0 cc-text-h2 text-cc-ink">Explore the process</h2>
         <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
@@ -1805,7 +1476,6 @@ Structure the JSON exactly like this:
           selected={resolved.node}
           onSelect={selectElement}
           source={signedSource?.source ?? null}
-          freshness={documentationStale ? 'stale' : hasDocument ? 'current' : 'not-saved'}
           map={signedSource && processMap.model ? (
             <div data-process-map-section="">
               <ProcessMap
@@ -1842,72 +1512,11 @@ Structure the JSON exactly like this:
             </div>
           )}
         />
-
-        <HandbookDrawer
-          handbook={handbook.handbook}
-          reading={handbook.status === 'loading'}
-          selectedChapter={resolved.node ? (handbook.handbook?.chapterOf.get(resolved.node) ?? null) : null}
-          onSelect={selectElement}
-          exportActions={
-            <>
-              {signedSource && processMap.model ? (
-                <CcButton onClick={downloadBrief} busy={isBuildingBrief} icon={<Printer size={14} aria-hidden={true} />}>
-                  PDF
-                </CcButton>
-              ) : null}
-              {signedSource ? (
-                <CcButton variant="secondary" onClick={downloadBPMN} icon={<Download size={14} aria-hidden={true} />}>
-                  BPMN 2.0
-                </CcButton>
-              ) : null}
-            </>
-          }
-          exportNotes={
-            <>
-              {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part that is
-                  not established — whether it lands in Signavio or SAP Build — in
-                  the same breath, never on hover. */}
-              <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
-                <CcTag>BPMN 2.0 XML</CcTag>
-                <span data-export-caveat>Import into SAP Signavio or SAP Build has not been verified yet.</span>
-              </p>
-              {/* Roadmap 4.4 — what the brief holds, said before it is asked for. */}
-              <p data-brief-caveat className="m-0 cc-text-meta text-cc-ink-muted">
-                PDF brief: the PDF and the BPMN file in one archive, every statement with its lines or marked not
-                determined — a summary, not a signed audit pack.
-              </p>
-            </>
-          }
-          exportPanel={
-            <dl className="m-0 grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-cc-row border border-cc-line p-4">
-                <dt className="cc-text-h3 text-cc-ink">PDF brief</dt>
-                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  Process, rules and open questions with their lines, plus the BPMN file. Not a signed audit pack.
-                </dd>
-              </div>
-              <div className="rounded-cc-row border border-cc-line p-4">
-                <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
-                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  {hasDocument
-                    ? 'The process description, the business layer and the technical trace as one HTML page to paste into Confluence. A stale one says so at the top. The same document as Markdown and Word.'
-                    : 'Available once the process description above has been saved.'}
-                </dd>
-              </div>
-              <div className="rounded-cc-row border border-cc-line p-4">
-                <dt className="cc-text-h3 text-cc-ink">BPMN 2.0</dt>
-                <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  The process as the code runs it, with line ranges. Import into a modeller has not been verified yet.
-                </dd>
-              </div>
-            </dl>
-          }
-        />
       </section>
 
       {/* Roadmap 3.2 — what was kept, and what changed between two of them. */}
       {signedSource && (
-        <section data-process-revisions-section className={clsx(SECTION, 'mb-8')}>
+        <section data-process-revisions-section className={clsx(SECTION, 'cc-no-print mb-8')}>
           <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
           {baselineRefusal ? (
             <div className="mb-3" data-revision-baseline-refused="">
@@ -1927,94 +1536,9 @@ Structure the JSON exactly like this:
           as it is last in every export. */}
       {!isGeneratingDoc && appendixPanel ? <div className="mb-8">{appendixPanel}</div> : null}
 
-      {/* Level 4 task specification — a dialog (§2.6). Focus in, Tab kept
-          inside, Escape closes, focus back to the button that opened it: the
-          same modal contract the hand-built drawer had (UX-034, roadmap 3.0.4),
-          now from the library. */}
-      <CcDialog
-        open={activeTask !== null}
-        onClose={() => setActiveTask(null)}
-        title={activeTask ? (activeTask.name || `Task ${activeTask.stepId}`) : ''}
-        lead="Level 4 task specification"
-        size="wide"
-        data-task-dialog=""
-        actions={<CcButton onClick={() => setActiveTask(null)}>Close specification</CcButton>}
-      >
-        {activeTask && (
-          <div className="space-y-4">
-            <div>
-              <h3 className={LABEL}>Functional Description &amp; Role Responsibility</h3>
-              <p className="cc-text-body text-cc-ink mt-1">{activeTask.description}</p>
-            </div>
-
-            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-cc-line py-3">
-              <div>
-                <dt className={LABEL}>Step ID</dt>
-                <dd className="cc-text-identifier font-cc-mono text-cc-ink mt-1">{activeTask.stepId}</dd>
-              </div>
-              <div>
-                <dt className={LABEL}>Logic Complexity</dt>
-                <dd className="mt-1"><CcTag>{activeTask.complexity || 'Low'}</CcTag></dd>
-              </div>
-              <div>
-                <dt className={LABEL}>Estimated Effort</dt>
-                <dd className="cc-text-cell text-cc-ink mt-1">{activeTask.estimatedDuration || 'Not stated'}</dd>
-              </div>
-            </dl>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-                <h3 className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
-                  <Layers size={14} aria-hidden={true} /> Input Parameters
-                </h3>
-                <ul className="space-y-1 cc-text-cell text-cc-ink list-disc pl-4">
-                  {(activeTask.inputs || []).map((inp: string, idx: number) => (
-                    <li key={idx}>{inp}</li>
-                  ))}
-                  {(!activeTask.inputs || activeTask.inputs.length === 0) && <li>N/A</li>}
-                </ul>
-              </div>
-              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-                <h3 className={clsx(LABEL, 'flex items-center gap-2 mb-1')}>
-                  <Box size={14} aria-hidden={true} /> Output Results
-                </h3>
-                <ul className="space-y-1 cc-text-cell text-cc-ink list-disc pl-4">
-                  {(activeTask.outputs || []).map((out: string, idx: number) => (
-                    <li key={idx}>{out}</li>
-                  ))}
-                  {(!activeTask.outputs || activeTask.outputs.length === 0) && <li>N/A</li>}
-                </ul>
-              </div>
-            </div>
-
-            <div>
-              <h3 className={clsx(LABEL, 'mb-2')}>Target Platform &amp; Tech Stack</h3>
-              <div className="flex flex-wrap gap-2">
-                {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Not stated']).map((sys: string, idx: number) => (
-                  <CcTag key={idx}>{sys}</CcTag>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className={clsx(LABEL, 'mb-2')}>Technical &amp; Execution Mapping</h3>
-              {/* What the blueprint stored, or that it stored nothing. The
-                  hand-built drawer printed an invented `router.post('/sync')`
-                  handler when the field was empty — code nobody wrote, dressed
-                  as the mapping of this task. */}
-              {activeTask.technicalMapping ? (
-                <pre className="m-0 max-h-[220px] overflow-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] leading-5 text-cc-ink">
-                  <code>{activeTask.technicalMapping}</code>
-                </pre>
-              ) : (
-                <p className="cc-text-cell text-cc-ink-muted">Not stated</p>
-              )}
-            </div>
-          </div>
-        )}
-      </CcDialog>
-
-      <StageFooter />
+      <div className="cc-no-print">
+        <StageFooter />
+      </div>
     </StageFrame>
   );
 }
