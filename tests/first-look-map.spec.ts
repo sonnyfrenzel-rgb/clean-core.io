@@ -45,8 +45,9 @@ async function firstScreen(page: Page) {
   await expect(page.locator('[data-process-story]')).toBeInViewport();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
-  // The two-node main line does not stand above it a second time.
-  await expect(page.locator('[data-first-look-process="drawn"]')).toHaveCount(0);
+  // The main line stays on the right after the build-up (owner 10.10.2026,
+  // reversing 03.10.2026).
+  await expect(page.locator('[data-first-look-process="drawn"]')).toBeVisible();
 }
 
 test.describe('a new project: the first look ends on the full map', () => {

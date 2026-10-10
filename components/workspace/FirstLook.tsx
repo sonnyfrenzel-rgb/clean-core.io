@@ -304,9 +304,8 @@ export default function FirstLook({
   narrative?: BuildUpNarrative | null;
   /**
    * True where the signed map stands directly under this card (Business). The
-   * picture of the main line then gives way to it: the same process twice,
-   * one of them a two-node excerpt, was what the owner read as "a small main
-   * line" (03.10.2026). Without the map below, the picture stays (ADR-059).
+   * row of first steps then gives way to it. The picture of the main line on
+   * the right stays (owner 10.10.2026, reversing 03.10.2026).
    */
   fullMapBelow?: boolean;
   /**
@@ -738,11 +737,7 @@ export default function FirstLook({
           {result ? lead : null}
           {result ? (
             <div
-              className={
-                fullMapBelow && !sourceOpen
-                  ? 'grid grid-cols-1 gap-4'
-                  : 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]'
-              }
+              className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]"
             >
               {rulesBelow ? (
                 <BusinessOpening
@@ -790,10 +785,11 @@ export default function FirstLook({
                 />
               )}
               <div className="flex min-w-0 flex-col gap-4">
-                {/* The full map stands right under this card where it is
-                    signed (ADR-072); the two-node main line would only be the
-                    same process again, smaller. */}
-                {fullMapBelow ? null : <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />}
+                {/* The main line stays on the right after the build-up, also
+                    where the full map stands under this card (owner 10.10.2026,
+                    reversing 03.10.2026): it is the one picture of the process
+                    a reader sees without scrolling. */}
+                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />
                 {sourceOpen ? (
                   <div data-first-look-source="" className="min-w-0">
                     <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
