@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { verifyRunIntegrity } from '../lib/run-signature';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -268,5 +269,10 @@ test.describe('own code imported for Private Edition 2023 FPS03', () => {
     expect(profile?.release).toBe('2023 FPS03');
     expect(profile?.catalogSnapshot?.registryKey).toBe('pce-2023-3');
     expect(run?.runHash, 'the run is signed').toBeTruthy();
+    // Signed over the profile, not only carrying it (QA 7d7769d325f1): the
+    // stored run verifies, and the same run with another release does not.
+    expect(verifyRunIntegrity(run!, process.env.AUDIT_SIGNING_KEY!)).toEqual({ valid: true });
+    const otherRelease = { ...run!, assessmentProfile: { ...(run!.assessmentProfile as object), release: '2025 FPS01' } };
+    expect(verifyRunIntegrity(otherRelease, process.env.AUDIT_SIGNING_KEY!).valid).toBe(false);
   });
 });

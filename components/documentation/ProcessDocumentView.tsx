@@ -433,7 +433,7 @@ export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] 
                 <div key={arm[0].id} data-doc-path-arm="" className="flex items-start">
                   {/* The answer that selects this arm (QA 867a59061693): without it two alternatives are indistinguishable. */}
                   {arm[0].choice?.when ? (
-                    <span data-doc-path-arm-when="" className="mr-1 mt-2 w-20 shrink-0 text-[11px] font-medium text-cc-ink-muted line-clamp-2">
+                    <span data-doc-path-arm-when="" title={arm[0].choice.when} className="mr-1 mt-2 w-28 shrink-0 break-words text-[11px] font-medium text-cc-ink-muted">
                       {arm[0].choice.when}
                     </span>
                   ) : null}
