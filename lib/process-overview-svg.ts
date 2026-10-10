@@ -1,6 +1,6 @@
 import { escapeHtml } from '@/lib/export-safety';
 import { EXPORT_COLORS, EXPORT_FONT } from '@/lib/export-style';
-import { linesLabel, type PdPathEntry } from '@/lib/process-document';
+import { linesLabel, stepRef, type PdPathEntry } from '@/lib/process-document';
 
 /**
  * The main path of the process description as one picture — the overview a
@@ -49,7 +49,7 @@ export function processOverviewSvg(path: readonly PdPathEntry[], title: string):
       const top = y - BOX_H / 2;
       parts.push(`<line x1="${n(CX)}" y1="${n(prevBottom)}" x2="${n(CX)}" y2="${n(top - 2)}" stroke="${C.fieldBorder}" stroke-width="1.5" marker-end="url(#pd-arrow)"/>`);
       parts.push(`<rect x="${n(CX - BOX_W / 2)}" y="${n(top)}" width="${n(BOX_W)}" height="${n(BOX_H)}" rx="8" fill="${C.surfaceMuted}" stroke="${C.ink}" stroke-width="1"/>`);
-      parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y - 3)}" font-size="13" font-weight="700" fill="${C.ink}">${esc(clip(`${entry.number}. ${entry.businessName ?? entry.name}`))}</text>`);
+      parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y - 3)}" font-size="13" font-weight="700" fill="${C.ink}">${esc(clip(`${stepRef(entry)}. ${entry.businessName ?? entry.name}`))}</text>`);
       // The plain line under the name; the lines and the sub-steps beside the box, muted.
       parts.push(`<text x="${n(CX - BOX_W / 2 + 12)}" y="${n(y + 14)}" font-size="11" fill="${C.inkMuted}">${esc(clip(entry.line || entry.technicalName, 44))}</text>`);
       const count = entry.subSteps.length + entry.moreSubSteps;
@@ -63,7 +63,12 @@ export function processOverviewSvg(path: readonly PdPathEntry[], title: string):
       parts.push(`<text x="${n(CX + r + 10)}" y="${n(y - 2)}" font-size="12" font-weight="600" fill="${C.ink}">${esc(clip(entry.label, 36))}</text>`);
       const ending = entry.outcomes.find((o) => o.ends);
       const other = entry.outcomes.filter((o) => !o.ends);
-      const note = ending
+      // Roadmap 3.0.7: a decision table is one business rule task; a user choice lists alternatives.
+      const note = entry.decisionTable
+        ? `Business rule task · decision table ${entry.decisionTable.id}, ${entry.decisionTable.rows} rows`
+        : entry.choice
+          ? `The user chooses one: ${entry.outcomes.map((o) => o.when).join(' · ')}`
+          : ending
         ? `${ending.when}: the run ends`
         : other.length > 1 ? other.map((o) => `${o.when}: ${o.then.replace(/^continue with /, '')}`).join(' · ') : '';
       if (note) parts.push(`<text x="${n(CX + r + 10)}" y="${n(y + 13)}" font-size="11" fill="${C.inkMuted}">${esc(clip(note, 60))}</text>`);

@@ -24,6 +24,7 @@ import {
   MODEL_PROPOSAL_LABEL,
   linesLabel,
   sectionTitle,
+  stepRef,
   type PdText,
   type ProcessDocument,
   type ProcessDocumentSection,
@@ -202,7 +203,11 @@ export function buildEngineConfluenceHtml(
     <div class="card">${processOverviewSvg(document.overview.path, document.program)}</div>
     ${tableOf(o.tables.steps)}`;
 
-  const rulesSection = `${h2('rules')}${lead('rules')}${o.tables.rules ? tableOf(o.tables.rules) : empty('rules')}`;
+  // Roadmap 3.0.7: each classification that only sets one field, as one business rule task with its table.
+  const decisionTablesSection = o.decisionTables
+    .map((d) => `<h3 data-doc-decision-table="${esc(d.id)}">${esc(d.caption)}</h3>${tableOf(d, true)}`)
+    .join('');
+  const rulesSection = `${h2('rules')}${lead('rules')}${o.tables.rules ? tableOf(o.tables.rules) : o.decisionTables.length ? '' : empty('rules')}${decisionTablesSection}`;
   const exceptionsSection = `${h2('exceptions')}${lead('exceptions')}${o.tables.exceptions ? tableOf(o.tables.exceptions) : empty('exceptions')}`;
   const outputsSection = `${h2('outputs')}${lead('outputs')}${o.tables.outputs ? tableOf(o.tables.outputs) : empty('outputs')}`;
   const integrationsSection = `${h2('integrations')}${lead('integrations')}${o.tables.integrations ? tableOf(o.tables.integrations) : empty('integrations')}`;
@@ -238,7 +243,7 @@ export function buildEngineConfluenceHtml(
   const a = document.appendix;
   const stepDetailsSection = document.overview.path.map((entry) => entry.kind === 'gate'
     ? `<p class="note">${esc(gateSentence(entry))}</p>`
-    : `<h4 data-doc-step="">${esc(`${entry.number}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
+    : `<h4 data-doc-step="">${esc(`${stepRef(entry)}. ${stepName(entry)}`)}</h4><ul>${stepDetailLines(entry).map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`).join('');
   const long = longTables(o);
   const completeSection = long.length
     ? `<h3>${esc(COMPLETE_TABLES)}</h3>${long.map((t) => `<h4>${esc(`${t.caption} (${t.rows.length})`)}</h4>${tableOf(t, true)}`).join('')}`

@@ -74,6 +74,17 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.rulesOutsideLead': 'Values and conditions the code holds that take effect at no step of the drawn process.',
   'doc.rulesOutsideNone': 'None — every rule the code holds decides at a step.',
 
+  // Roadmap 3.0.7 — a classification that only sets one field, as one business
+  // rule task with its decision table (Documentation section 4, Business view rules).
+  'doc.decisionTablesTitle': 'Decision tables',
+  'doc.decisionTablesLead':
+    'Classifications the code writes as one IF/ELSEIF or CASE chain that only sets one field. Each is one business rule task: one row per branch, the condition and the value as the code writes them.',
+  'doc.businessRuleTask': 'Business rule task',
+  'doc.decisionTableWhen': 'When',
+  'doc.decisionTableValue': 'Value',
+  'doc.decisionTableLines': 'Lines',
+  'doc.userChoice': 'User choice',
+
   // Section 9 — the project's one list of open questions (ADR-081).
   'doc.questionsAnswerInWorkspace': 'Answer them, or accept them as known open, in the workspace',
 
@@ -179,6 +190,16 @@ export function sopStepsCount(n: number): string {
 
 export function stepNumberLabel(n: number, name: string): string {
   return `Step ${n}: ${name}`;
+}
+
+/** "Rules in this table: BR-001, BR-002" — the business rules a decision table holds. */
+export function decisionTableRulesLine(ids: readonly string[]): string {
+  return `${ids.length === 1 ? 'Rule' : 'Rules'} in this table: ${ids.join(', ')}`;
+}
+
+/** The accessible name of one decision table. */
+export function decisionTableCaption(id: string, name: string): string {
+  return `Decision table ${id}: ${name}`;
 }
 
 /** The rules table's filter — all rows. */

@@ -1,4 +1,5 @@
 import type { DocAnchor } from '@/lib/process-documentation';
+import type { DecisionTableView } from '@/lib/decision-tables';
 
 /**
  * The process description of the Documentation stage (owner 03.10.2026,
@@ -137,7 +138,20 @@ export interface PdSubStep {
 
 export interface PdStep {
   kind: 'step';
+  /** Unique, in path order — ids and anchors use it; a reader sees `ref` (`stepRef`). */
   number: number;
+  /**
+   * What a reader sees: `5`, or `5a`, `5b` for the alternatives of one user
+   * choice, which share one place on the path (roadmap 3.0.7). Absent: the
+   * number is the reference.
+   */
+  ref?: string;
+  /**
+   * Set when the step is one of the alternatives a user chooses from at a
+   * decision on what they pressed (`detail.userAction`) — not the next step of
+   * a sequence. `when` is that arm as the map labels it.
+   */
+  choice?: { gateId: string; when: string };
   /** The BPMN element id — the map, the `.bpmn` file and the appendix use it. */
   id: string;
   /** The engine's plain name. */
@@ -167,7 +181,22 @@ export interface PdGate {
   label: string;
   anchor: DocAnchor | null;
   outcomes: Array<{ when: string; then: string; ends: boolean }>;
+  /**
+   * Roadmap 3.0.7: a decision on what the user pressed — its arms are
+   * alternatives the user chooses from, as often and in whatever order they
+   * like, and the steps of each are listed side by side, not counted on.
+   */
+  choice?: true;
+  /**
+   * Roadmap 3.0.7: the decision only sets one field — it reads as one business
+   * rule task with its decision table (`ProcessDocument.decisionTables`), not
+   * as arms that lead somewhere.
+   */
+  decisionTable?: { id: string; field: string; selector: string | null; rows: number };
 }
+
+/** The step's reference as a reader sees it: `5`, or `5a` for an alternative of a user choice. */
+export const stepRef = (step: Pick<PdStep, 'number' | 'ref'>): string => step.ref ?? String(step.number);
 
 export type PdPathEntry = PdStep | PdGate;
 
@@ -327,6 +356,13 @@ export interface ProcessDocument {
   trigger: { start: PdText[]; selection: PdInput[]; data: PdData[] };
   overview: { sentence: string; traceability: string; path: PdPathEntry[]; decisions: number };
   rules: PdRule[];
+  /**
+   * Roadmap 3.0.7: the classifications the code writes as an `IF`/`ELSEIF` or
+   * `CASE` chain that only sets one field — each one business rule task with
+   * its table (`lib/decision-tables.ts`), printed in section 4. Only the
+   * tables the program reaches. Absent: none.
+   */
+  decisionTables?: DecisionTableView[];
   exceptions: PdException[];
   outputs: PdEffect[];
   integrations: PdIntegration[];
@@ -438,6 +474,7 @@ export function documentTexts(doc: ProcessDocument): string[] {
     }
   }
   doc.rules.forEach((r) => { add(r.ref); add(r.condition); add(r.effect); add(r.full); });
+  (doc.decisionTables ?? []).forEach((d) => { add(d.id); d.rows.forEach((r) => { add(r.condition ?? undefined); add(r.value); }); });
   doc.exceptions.forEach((e) => { add(e.what); add(e.shown); add(e.message); add(e.outcome); });
   doc.outputs.forEach((e) => { add(e.what); add(e.full); });
   doc.integrations.forEach((i) => { add(i.name); add(i.purpose); });

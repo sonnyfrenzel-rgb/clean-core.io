@@ -21,6 +21,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ask.noLine': 'no line',
   'ask.otherwise': 'otherwise',
   'ask.endsFlow': 'ends the flow here',
+  'ask.continuesWith': 'skips the rest of this block; the run goes on with',
   'ask.oneRule': 'One rule stands on this decision point:',
   'ask.showCode': 'Show the code',
   // CoachMarks

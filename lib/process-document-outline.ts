@@ -2,12 +2,14 @@ import type { DocAnchor } from '@/lib/process-documentation';
 import type { DocBlock } from '@/lib/requirements-export';
 import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import { wt } from '@/lib/workspace-messages';
+import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
 import {
   EMPTY_SECTION,
   MODEL_PROPOSAL_LABEL,
   PROCESS_DOCUMENT_STATUS,
   linesLabel,
   sectionTitle,
+  stepRef,
   type PdAppendix,
   type PdGate,
   type PdPathEntry,
@@ -92,6 +94,12 @@ export interface PdOutline {
     integrations: PdTable | null;
     controls: PdTable | null;
   };
+  /**
+   * Roadmap 3.0.7 — section 4's decision tables: each classification that only
+   * sets one field as one business rule task with its table, one row per
+   * branch (condition → value), every row with its line. Empty: none.
+   */
+  decisionTables: PdTable[];
   /**
    * Section 9 — the project's one list of open questions (ADR-081), passed in
    * by the caller because it reads the project (imports, answers, the rules'
@@ -220,8 +228,37 @@ export const BLOCKS_WORD: Record<'design' | 'cutover', string> = {
 
 /** A decision point between two steps, in one line. */
 export function gateLine(gate: PdGate): string {
-  return gate.outcomes.map((o) => `${o.when}: ${o.then}`).join('; ');
+  // Roadmap 3.0.7: a decision that only sets one field is one business rule task with its table.
+  if (gate.decisionTable) {
+    const d = gate.decisionTable;
+    return `${BUSINESS_RULE_TASK}: ${lcFirst(decisionTableTaskName(d))} — decision table ${d.id}, ${plural(d.rows, 'row')}`;
+  }
+  const arms = gate.outcomes.map((o) => `${o.when}: ${o.then}`).join('; ');
+  // Roadmap 3.0.7: the arms of a user choice are alternatives, not a sequence.
+  return gate.choice ? `${USER_CHOICE_LEAD}: ${arms}` : arms;
 }
+
+/** What a decision that only sets one field is called (BPMN's business rule task, DESIGN.md §5.8). */
+export const BUSINESS_RULE_TASK = 'Business rule task';
+
+const lcFirst = (s: string) => `${s.charAt(0).toLowerCase()}${s.slice(1)}`;
+
+/** One decision table as a table of the outline: "When" → "Value", the constant and the line in the source column. */
+export function decisionTableTable(d: DecisionTableView): PdTable {
+  return {
+    id: `decision-${d.id}`,
+    caption: `${d.id} · ${BUSINESS_RULE_TASK}: ${lcFirst(decisionTableTaskName(d))}${d.where ? ` (${d.where})` : ''}`,
+    head: [...DECISION_TABLE_HEAD],
+    rows: d.rows.map((r) => ({ cells: [decisionRowWhen(d, r.condition), r.value], tech: r.constant, anchors: [r.anchor] })),
+    first: d.rows.length,
+  };
+}
+
+/** How a decision on what the user pressed opens — its arms are chosen from, not run in turn. */
+export const USER_CHOICE_LEAD = 'The user chooses one, as often and in any order';
+
+/** "Alternative 'DONE'" — what the step list says of a step that is one choice of the user. */
+export const choiceLine = (step: PdStep): string | null => (step.choice ? `User choice ${step.choice.when}` : null);
 
 /** A decision point as one sentence of the appendix, with its line. */
 export function gateSentence(gate: PdGate): string {
@@ -231,12 +268,19 @@ export function gateSentence(gate: PdGate): string {
 /** The step's own name — the model's business name where one is stored, marked by the renderer. */
 export const stepName = (step: PdStep) => step.businessName ?? step.name;
 
-/** The main path in one line: "1 Check authority → 2 Read requisition → …". */
+/**
+ * The main path in one line: "1 Check authority → 2 Read requisition → …". The
+ * alternatives of one user choice stand in one place, side by side: "5 one of
+ * Display order / Mark done / Change date" (roadmap 3.0.7).
+ */
 export function pathLine(path: readonly PdPathEntry[]): string {
-  return path
-    .filter((e): e is PdStep => e.kind === 'step')
-    .map((s) => `${s.number} ${stepName(s)}`)
-    .join(' → ');
+  const parts: Array<{ slot: string; names: string[]; gateId: string | null }> = [];
+  for (const s of path.filter((e): e is PdStep => e.kind === 'step')) {
+    const known = s.choice ? parts.find((p) => p.gateId === s.choice?.gateId) : undefined;
+    if (known) known.names.push(stepName(s));
+    else parts.push({ slot: s.choice ? stepRef(s).replace(/[a-z]+(?:\.\d+)?$/, '') : stepRef(s), names: [stepName(s)], gateId: s.choice?.gateId ?? null });
+  }
+  return parts.map((p) => (p.gateId ? `${p.slot} one of ${p.names.join(' / ')}` : `${p.slot} ${p.names[0]}`)).join(' → ');
 }
 
 /* ---------------------------------------------------------------- ordering */
@@ -272,6 +316,7 @@ function sorted<T>(items: readonly T[], rank: (item: T) => number): T[] {
 
 export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}): PdOutline {
   const steps = doc.overview.path.filter((e): e is PdStep => e.kind === 'step');
+  const tables = doc.decisionTables ?? [];
   const list = meta.openQuestions ?? null;
   const brRules = doc.rules.filter((r) => /^BR-\d+$/.test(r.ref) && !/^Always/.test(r.condition)).length;
   const fixedRules = doc.rules.filter((r) => /^Always/.test(r.condition)).length;
@@ -303,8 +348,8 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
       : EMPTY_SECTION.trigger,
     overview: doc.overview.sentence,
     rules: doc.rules.length
-      ? `${plural(doc.rules.length, 'rule')}: ${plural(brRules, 'business rule')}, ${plural(decisionRows, 'decision point')}, ${plural(fixedRules, 'fixed value')}.`
-      : EMPTY_SECTION.rules,
+      ? `${plural(doc.rules.length, 'rule')}: ${plural(brRules, 'business rule')}, ${plural(decisionRows, 'decision point')}, ${plural(fixedRules, 'fixed value')}${tables.length ? `; ${plural(tables.length, 'decision table')}` : ''}.`
+      : tables.length ? `${plural(tables.length, 'decision table')}.` : EMPTY_SECTION.rules,
     exceptions: doc.exceptions.length
       ? `${plural(stops, 'case stops', 'cases stop')} the run with an error; ${plural(warns, 'warns', 'warn')} and continue; ${plural(ends, 'ends', 'end')} a step or the run early.`
       : EMPTY_SECTION.exceptions,
@@ -328,7 +373,11 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     entry.kind === 'gate'
       ? { cells: ['◇', `Decision: ${entry.label}`, gateLine(entry)], tech: null, anchors: entry.anchor ? [entry.anchor] : [] }
       : {
-          cells: [String(entry.number), `${stepName(entry)}${entry.businessName ? ` (${MODEL_PROPOSAL_LABEL})` : ''}`, entry.line || '—'],
+          cells: [
+            stepRef(entry),
+            `${stepName(entry)}${entry.businessName ? ` (${MODEL_PROPOSAL_LABEL})` : ''}`,
+            [choiceLine(entry), entry.line].filter(Boolean).join(' — ') || '—',
+          ],
           tech: entry.technicalName,
           anchors: entry.anchors,
         },
@@ -363,6 +412,7 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
       controls: table('controls', 'Controls', ['Control', 'What the code does'],
         doc.controls.map((c) => ({ cells: [c.kind, c.text], tech: [c.detail, c.ref].filter(Boolean).join(' · ') || null, anchors: c.anchors })), 8),
     },
+    decisionTables: tables.map(decisionTableTable),
     questions: {
       list,
       table: list ? openQuestionsTable(list) : null,
@@ -525,6 +575,12 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     h2(key);
     lead(key);
     add(o.tables[key]);
+    if (key === 'rules') {
+      for (const d of o.decisionTables) {
+        b.push({ k: 'p', strong: true, text: d.caption });
+        b.push(tableBlock(d));
+      }
+    }
   }
 
   h2('questions');
@@ -542,7 +598,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
       b.push({ k: 'p', em: true, text: gateSentence(entry) });
       continue;
     }
-    b.push({ k: 'h', level: 4, text: `${entry.number}. ${stepName(entry)}` });
+    b.push({ k: 'h', level: 4, text: `${stepRef(entry)}. ${stepName(entry)}` });
     b.push({ k: 'ul', items: stepDetailLines(entry) });
   }
   const long = longTables(o);

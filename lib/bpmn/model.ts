@@ -160,7 +160,11 @@ export interface ExportFlow {
    * the label, as the file has always written it.
    */
   label?: string;
-  /** Set on a flow `chainEntries` drew between two report events: runtime order, not a statement. */
+  /**
+   * Set on a flow `chainEntries` drew between two report events: runtime order,
+   * not a statement. The skeleton's own reason stays on `edge` (`runtime-order`,
+   * or `stop` for `STOP` going on with `END-OF-SELECTION`).
+   */
   runtimeOrder?: boolean;
 }
 
@@ -278,6 +282,30 @@ export function isEarlyEnd(node: SkeletonNode): boolean {
   return node.kind === 'end' && node.detail?.early === true;
 }
 
+/**
+ * Roadmap 3.0.7 — a skeleton flow of the run order rather than of a statement:
+ * the end of a reporting event block into the next block
+ * (`reason: 'runtime-order'`), or `STOP` into `END-OF-SELECTION`
+ * (`reason: 'stop'`, when it crosses into that block).
+ */
+function isRunOrderEdge(edge: SkeletonEdge): boolean {
+  return edge.reason === 'runtime-order' || edge.reason === 'stop';
+}
+
+/**
+ * The report event blocks the skeleton chains into one run (`chainReportEvents`
+ * in `lib/abap/process-skeleton.ts`): `LOAD-OF-PROGRAM` up to
+ * `END-OF-SELECTION`. List events, callbacks, dialog modules and every other
+ * entry are raised by something else and keep a band of their own.
+ */
+const RUN_ORDER_LAST_RANK = 7;
+function isRunEvent(start: SkeletonNode | undefined): boolean {
+  if (!start || start.kind !== 'start') return false;
+  const origin = start.detail?.origin;
+  const rank = start.detail?.runtimeRank;
+  return (origin === 'event' || origin === 'implicit') && typeof rank === 'number' && rank <= RUN_ORDER_LAST_RANK;
+}
+
 function tagOf(node: SkeletonNode): BpmnTag {
   // A multi-instance `LOOP AT` whose body draws no element is the other half of
   // §5.8's row — *an activity* with the marker, and no plane behind it.
@@ -359,8 +387,11 @@ export interface ExportModelOptions {
    * Draw the report events of the top plane as **one** flow in their fixed
    * runtime order (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION,
    * END-OF-SELECTION) instead of one band each — the business reading
-   * (owner, 01.10.2026). A block that draws nothing is folded away. Applies only
-   * when every entry is a report event; a dialog program keeps its bands.
+   * (owner, 01.10.2026). A block that draws nothing is folded away. Since
+   * roadmap 3.0.7 the flows are the skeleton's run order (`reason:
+   * 'runtime-order'` / `'stop'`): only an early end ends the run, and the blocks
+   * of the run are joined even when the program also has callbacks, list
+   * events or dialog modules — those keep a band of their own each.
    * Default: on exactly when `labels` are given.
    */
   chainEntries?: boolean;
@@ -389,6 +420,8 @@ class ModelBuilder {
   private owner = new Map<string, { node: ExportNode; parent: ExportContainer }>();
   private storeIds = new IdRegistry('ds-');
   private poolIds = new IdRegistry('pool-');
+  /** Skeleton edges of the run order between two report event blocks (roadmap 3.0.7) — drawn by `chainEntries`. */
+  private runOrder: SkeletonEdge[] = [];
 
   constructor(private skeleton: ProcessSkeleton, private labels: PlainLabels | null, private chain = false) {}
 
@@ -401,6 +434,15 @@ class ModelBuilder {
     for (const edge of this.skeleton.edges) {
       const region = this.regionOfNode.get(edge.from);
       if (!region || this.regionOfNode.get(edge.to) !== region) {
+        // Roadmap 3.0.7: the skeleton's run order — the end of one reporting
+        // event block into the start of the next, and `STOP` into
+        // `END-OF-SELECTION` — crosses regions by definition. The business
+        // reading draws it (`chainEntries`); the banded technical reading has
+        // no place for a flow between two bands and leaves it out.
+        if (this.chain && region && this.regionOfNode.has(edge.to) && isRunOrderEdge(edge)) {
+          this.runOrder.push(edge);
+          continue;
+        }
         this.droppedEdges += 1;
         continue;
       }
@@ -724,15 +766,31 @@ class ModelBuilder {
    * first and the start of the second become one milestone event. Every step
    * keeps its anchor; only the event keywords' own lines leave the picture, and
    * they stay in the Technical names view.
+   *
+   * **Which flows (roadmap 3.0.7, ZMM_BESTELLUEBERSICHT review).** The skeleton
+   * decides the run order (`chainReportEvents`), and this draws exactly its
+   * flows (`this.runOrder`) — no flow of its own. So only an early end ends the
+   * run: a block's normal end hands over to the next block; `RETURN`/`EXIT` in
+   * `AT SELECTION-SCREEN` leave the block and the run goes on; `STOP` goes on
+   * with `END-OF-SELECTION` (`reason: 'stop'`); `EXIT` in
+   * `START-OF-SELECTION`, an error message, a `SUBMIT` that does not return end
+   * it and get no flow. An early end that goes on is no end any more: it
+   * becomes a throw event on its own line with a flow on, so its anchor stays.
+   *
+   * **Which blocks.** The reporting events of the run, `LOAD-OF-PROGRAM` up to
+   * `END-OF-SELECTION`, merged into the first band. Until 3.0.7 one callback,
+   * list event or dialog module among the entries switched the chaining off
+   * altogether, and the event blocks of a report with an ALV callback stood
+   * unconnected side by side; those entries now keep a band of their own each,
+   * after the run — something else raises them, not the end of a block.
    */
   private chainEntries(root: ExportContainer): void {
-    if (root.bands.length < 2) return;
     const byId = new Map(root.nodes.map((n) => [n.id, n]));
-    const isReportEvent = (band: ExportBand) => {
-      const start = band.entryId ? byId.get(band.entryId) : undefined;
-      return !!start && start.source.detail?.origin === 'event' && typeof start.source.detail?.runtimeRank === 'number';
-    };
-    if (!root.bands.every(isReportEvent)) return;
+    const runBands = root.bands.filter((band) => isRunEvent(band.entryId ? byId.get(band.entryId)?.source : undefined));
+    if (runBands.length < 2) {
+      this.droppedEdges += this.runOrder.length;
+      return;
+    }
 
     const drop = (id: string) => {
       root.nodes = root.nodes.filter((n) => n.id !== id);
@@ -745,57 +803,113 @@ class ModelBuilder {
         n.outgoing = n.outgoing.filter((x) => x !== id);
       }
     };
-    // Blocks that draw nothing: start → end, and nothing else.
-    let bands = root.bands.filter((band) => {
-      const own = band.nodeIds.filter((id) => byId.has(id));
-      if (own.length > 2 || root.bands.length < 2) return true;
-      for (const f of root.flows.filter((f) => own.includes(f.sourceId))) dropFlow(f.id);
-      own.forEach(drop);
-      return false;
-    });
-    if (!bands.length) bands = root.bands.slice(0, 1);
 
-    const merged: ExportBand = {
-      key: bands.map((b) => b.key).join('+'),
-      anchorId: bands[0].anchorId,
-      nodeIds: [],
-      entryId: bands[0].entryId,
-      endId: bands[bands.length - 1].endId,
+    // The skeleton's run order, between nodes of the top plane.
+    let links = this.runOrder
+      .filter((edge) => byId.has(edge.from) && byId.has(edge.to))
+      .map((edge) => ({ from: edge.from, to: edge.to, edge }));
+    this.droppedEdges += this.runOrder.length - links.length;
+
+    // Blocks that draw nothing: start → end, and nothing else. What led into
+    // one leads on to where it led; a block that leads nowhere ends the run.
+    const empty = runBands.filter((band) => band.nodeIds.filter((id) => byId.has(id)).length <= 2);
+    if (empty.length === runBands.length) empty.shift();
+    for (const band of empty) {
+      const own = new Set(band.nodeIds);
+      const ins = links.filter((l) => !own.has(l.from) && own.has(l.to));
+      const outs = links.filter((l) => own.has(l.from) && !own.has(l.to));
+      links = links.filter((l) => !own.has(l.from) && !own.has(l.to));
+      for (const i of ins) for (const o of outs) links.push({ from: i.from, to: o.to, edge: i.edge });
+      for (const f of root.flows.filter((f) => own.has(f.sourceId) || own.has(f.targetId))) dropFlow(f.id);
+      band.nodeIds.filter((id) => byId.has(id)).forEach(drop);
+    }
+    const seenLinks = new Set<string>();
+    links = links.filter((l) => {
+      const key = `${l.from}>${l.to}`;
+      if (seenLinks.has(key)) return false;
+      seenLinks.add(key);
+      return true;
+    });
+    const kept = runBands.filter((band) => !empty.includes(band));
+
+    const addFlow = (from: ExportNode, to: ExportNode, edge: SkeletonEdge) => {
+      const flowEdge: SkeletonEdge = { ...edge, from: from.source.id, to: to.source.id };
+      const flow: ExportFlow = {
+        id: `fl-${from.id}-${to.id}`,
+        sourceId: from.id,
+        targetId: to.id,
+        condition: '',
+        edge: flowEdge,
+        back: false,
+        label: this.labels ? this.labels.flow(flowEdge) : undefined,
+        runtimeOrder: true,
+      };
+      root.flows.push(flow);
+      from.outgoing.push(flow.id);
+      to.incoming.push(flow.id);
     };
-    bands.forEach((band, i) => {
-      merged.nodeIds.push(...band.nodeIds.filter((id) => byId.has(id)));
-      const next = bands[i + 1];
-      if (!next || !band.endId || !next.entryId) return;
-      const end = byId.get(band.endId);
-      const start = byId.get(next.entryId);
-      if (!end || !start) return;
-      const into = root.flows.filter((f) => f.targetId === end.id);
+
+    for (const band of kept) {
+      const start = band.entryId ? byId.get(band.entryId) : undefined;
+      if (!start) continue;
+      const ins = links.filter((l) => l.to === start.id);
+      if (!ins.length) continue;
       const outOf = root.flows.filter((f) => f.sourceId === start.id);
-      if (into.length === 1 && outOf.length === 1 && !outOf[0].condition) {
+      const only = ins.length === 1 ? byId.get(ins[0].from) : undefined;
+      const intoOnly = only ? root.flows.filter((f) => f.targetId === only.id) : [];
+      if (only && only.tag === 'endEvent' && !isEarlyEnd(only.source)
+        && intoOnly.length === 1 && outOf.length === 1 && !outOf[0].condition) {
         // Join directly: the flow into the end now leads to the first step of the next block.
-        const flow = into[0];
+        const flow = intoOnly[0];
         const target = byId.get(outOf[0].targetId) as ExportNode;
-        end.incoming = end.incoming.filter((x) => x !== flow.id);
+        only.incoming = only.incoming.filter((x) => x !== flow.id);
         flow.targetId = target.id;
         flow.edge = { ...flow.edge, to: target.source.id, reason: flow.edge.reason ?? undefined };
         target.incoming.push(flow.id);
         dropFlow(outOf[0].id);
-        drop(end.id);
+        drop(only.id);
         drop(start.id);
         flow.runtimeOrder = true;
-      } else {
-        // One milestone where the two blocks meet.
-        start.tag = 'intermediateThrowEvent';
-        for (const flow of into) {
+        continue;
+      }
+      // One milestone where the blocks meet.
+      start.tag = 'intermediateThrowEvent';
+      for (const link of ins) {
+        const from = byId.get(link.from);
+        if (!from) continue;
+        if (isEarlyEnd(from.source)) {
+          // `STOP`, or `RETURN` in `AT SELECTION-SCREEN`: the block is left
+          // and the run goes on — an event on its own line, not an end.
+          from.tag = 'intermediateThrowEvent';
+          if (this.labels) from.name = 'Skips the rest of this block';
+          addFlow(from, start, link.edge);
+          continue;
+        }
+        for (const flow of root.flows.filter((f) => f.targetId === from.id)) {
           flow.targetId = start.id;
           start.incoming.push(flow.id);
         }
-        drop(end.id);
+        drop(from.id);
       }
-    });
-    merged.nodeIds = merged.nodeIds.filter((id) => byId.has(id));
-    for (const n of root.nodes) n.band = 0;
-    root.bands = [merged];
+    }
+
+    const live = (band: ExportBand) => band.nodeIds.filter((id) => byId.has(id));
+    const last = kept[kept.length - 1];
+    const merged: ExportBand = {
+      key: kept.map((b) => b.key).join('+'),
+      anchorId: kept[0].anchorId,
+      nodeIds: kept.flatMap(live),
+      entryId: kept[0].entryId && byId.has(kept[0].entryId) ? kept[0].entryId : null,
+      endId: last.endId && byId.has(last.endId) ? last.endId : null,
+    };
+    // The run first, then every entry something else raises, in its own band.
+    const others = root.bands.filter((band) => !runBands.includes(band));
+    root.bands = [merged, ...others];
+    const bandOf = new Map<string, number>();
+    root.bands.forEach((band, i) => band.nodeIds.forEach((id) => bandOf.set(id, i)));
+    const merging = new Set(merged.nodeIds);
+    root.nodes = [...root.nodes.filter((n) => merging.has(n.id)), ...root.nodes.filter((n) => !merging.has(n.id))];
+    for (const n of root.nodes) n.band = bandOf.get(n.id) ?? 0;
   }
 
   /** Decision 4: one data store per table, one reference to it per band. */

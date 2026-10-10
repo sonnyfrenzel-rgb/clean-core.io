@@ -25,6 +25,7 @@ import { CcTag } from '@/components/cc/Tag';
 import type { DocAnchor } from '@/lib/process-documentation';
 import {
   sectionTitle,
+  stepRef,
   type PdPoint,
   type PdStep,
   type PdText,
@@ -56,6 +57,7 @@ import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import type { HandbookRuleOutside } from '@/lib/process-handbook';
 import { docRulesOutsideNotInTable, docRulesFilterAll, docRulesFilterOutside, wt } from '@/lib/workspace-messages';
 import { cn } from '@/lib/utils';
+import DecisionTables from './DecisionTables';
 
 /**
  * The process description on the Documentation stage — the outline of
@@ -193,7 +195,18 @@ function PathStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
       {path.map((entry, i) => (
         <li key={entry.id} className="inline-flex items-center gap-1">
           {i > 0 ? <ArrowRight size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" /> : null}
-          {entry.kind === 'gate' ? (
+          {entry.kind === 'gate' && entry.decisionTable ? (
+            // Roadmap 3.0.7: a decision that only sets one field is one business rule task.
+            <span
+              data-doc-path-rule-task={entry.decisionTable.id}
+              title={`${entry.label} — ${gateLine(entry)}`}
+              className="inline-flex items-center gap-1 rounded-full border border-cc-line bg-cc-surface py-0.5 pl-1 pr-2"
+            >
+              <ListChecks size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+              <span className="cc-text-meta text-cc-ink">{entry.decisionTable.id}</span>
+              <span className="sr-only">{gateLine(entry)}</span>
+            </span>
+          ) : entry.kind === 'gate' ? (
             <span
               data-doc-path-gate=""
               className="inline-flex h-6 w-6 items-center justify-center"
@@ -203,8 +216,8 @@ function PathStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
               <span className="sr-only">Decision point: {entry.label} — {gateLine(entry)}</span>
             </span>
           ) : (
-            <span data-doc-path-step={entry.number} className="inline-flex items-center gap-1 rounded-full border border-cc-line bg-cc-surface-muted py-0.5 pl-0.5 pr-2">
-              <span aria-hidden={true} className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cc-ink px-1 text-[11px] font-semibold text-cc-on-dark">{entry.number}</span>
+            <span data-doc-path-step={entry.number} data-doc-path-choice={entry.choice ? '' : undefined} className="inline-flex items-center gap-1 rounded-full border border-cc-line bg-cc-surface-muted py-0.5 pl-0.5 pr-2">
+              <span aria-hidden={true} className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cc-ink px-1 text-[11px] font-semibold text-cc-on-dark">{stepRef(entry)}</span>
               <span className="cc-text-meta text-cc-ink">{stepName(entry)}</span>
             </span>
           )}
@@ -293,13 +306,19 @@ function StepItem({ step }: { step: PdStep }) {
   const [open, setOpen] = useState(false);
   const id = `pd-step-${step.number}`;
   return (
-    <li data-doc-main-step={step.number} className="relative flex min-w-0 gap-3 pb-2">
+    <li data-doc-main-step={step.number} data-doc-step-choice={step.choice ? step.choice.gateId : undefined} className={cn('relative flex min-w-0 gap-3 pb-2', step.choice && 'pl-4')}>
       <span aria-hidden={true} className="relative z-[1] inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-cc-ink px-1 text-[12px] font-semibold text-cc-on-dark">
-        {step.number}
+        {stepRef(step)}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <p className="m-0 min-w-0 flex-1 basis-80 cc-text-cell text-cc-ink-muted">
+            {step.choice ? (
+              // Roadmap 3.0.7: one of the alternatives the user chooses from, not the next step.
+              <span data-doc-choice="" className="mr-1 cc-text-meta font-semibold text-cc-ink-muted">
+                {wt('doc.userChoice')} {step.choice.when}:
+              </span>
+            ) : null}
             <span className="cc-text-identifier text-cc-ink">{stepName(step)}</span>
             {step.businessName ? <> <CcProvenanceChip value="proposed" note="name" /></> : null}
             {step.line ? <> — {step.line}</> : null}
@@ -510,8 +529,18 @@ export default function ProcessDocumentView({
         {mapHref ? <p className="m-0 mb-2 cc-text-cell"><a href={mapHref} className="text-cc-ink underline">Open the map</a></p> : null}
         <ol data-doc-steps="" className="relative m-0 list-none p-0 before:absolute before:bottom-4 before:left-3 before:top-2 before:w-px before:bg-cc-line">
           {doc.overview.path.map((entry) =>
-            entry.kind === 'gate' ? (
-              <li key={entry.id} data-doc-gate="" className="relative flex min-w-0 items-start gap-3 pb-2">
+            entry.kind === 'gate' && entry.decisionTable ? (
+              <li key={entry.id} data-doc-rule-task={entry.decisionTable.id} className="relative flex min-w-0 items-start gap-3 pb-2">
+                <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border border-cc-ink bg-cc-surface">
+                  <ListChecks size={14} className="text-cc-ink" />
+                </span>
+                <p className="m-0 min-w-0 cc-text-cell text-cc-ink-muted">
+                  <span className="font-semibold text-cc-ink">{gateLine(entry)}</span>
+                  {entry.anchor ? <> <Anchors anchors={[entry.anchor]} /></> : null}
+                </p>
+              </li>
+            ) : entry.kind === 'gate' ? (
+              <li key={entry.id} data-doc-gate={entry.choice ? 'choice' : ''} className="relative flex min-w-0 items-start gap-3 pb-2">
                 <span aria-hidden={true} className="relative z-[1] inline-flex h-6 w-6 shrink-0 items-center justify-center">
                   <span className="block h-3 w-3 rotate-45 border border-cc-ink bg-cc-surface" />
                 </span>
@@ -528,7 +557,12 @@ export default function ProcessDocumentView({
       </SectionCard>
 
       <SectionCard id="rules" lead={outline.leads.rules}>
-        {t.rules ? <RulesTable table={t.rules} outside={rulesOutside} /> : null}
+        {t.rules || doc.decisionTables?.length ? (
+          <div className="flex min-w-0 flex-col gap-4">
+            {t.rules ? <RulesTable table={t.rules} outside={rulesOutside} /> : null}
+            <DecisionTables tables={doc.decisionTables ?? []} />
+          </div>
+        ) : null}
       </SectionCard>
 
       <SectionCard id="exceptions" lead={outline.leads.exceptions}>

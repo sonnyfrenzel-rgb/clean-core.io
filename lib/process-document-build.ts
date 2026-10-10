@@ -3,6 +3,7 @@ import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import { assessCoverage } from '@/lib/abap/coverage';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
+import { decisionTableViews } from '@/lib/decision-tables';
 import { anchorNarrative } from '@/lib/abap/narrative-anchors';
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { callWord, plainOf, plainStepLine, readerQuestions, tablesPhrase, tableWord, thirdPerson, type RawQuestion } from '@/lib/process-document-words';
@@ -229,6 +230,9 @@ function routineAt(routines: Routine[], line: number): Routine | null {
 /* -------------------------------------------------------------- the builder */
 
 const isGateway = (e: ProcessMapElement) => /Gateway$/.test(e.tag);
+/** `a`, `b`, … `z`, then `aa` — the letter of one alternative of a user choice. */
+const armLetter = (arm: number): string =>
+  arm < 26 ? String.fromCharCode(97 + arm) : `${armLetter(Math.floor(arm / 26) - 1)}${String.fromCharCode(97 + (arm % 26))}`;
 const isEvent = (e: ProcessMapElement) => isEventTag(e.tag) || e.tag === 'boundaryEvent';
 
 export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocument {
@@ -313,8 +317,56 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const proposals = (input.proposals ?? []).filter((p) => !p.contradicts && p.text.trim() && p.anchors.length > 0);
   const usedProposals = new Set<number>();
 
+  const skeletonNode = new Map(skeleton.nodes.map((n) => [n.id, n]));
+  // Roadmap 3.0.7: the classifications that only set one field, as one
+  // business rule task with its table each — only those the program reaches.
+  const decisionTables = decisionTableViews(ruleSet).filter((d) => reachedLine(d.anchor.lineStart));
+  const tableAtNode = new Map(decisionTables.filter((d) => d.nodeId).map((d) => [d.nodeId as string, d]));
+  const whenOf = (branch: ProcessMapElement['branches'][number]) =>
+    branch.label || (branch.condition ? `If ${branch.condition}` : 'Otherwise');
+
+  // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): the arms of a decision on
+  // what the user pressed (`detail.userAction`, a `CASE` on `sy-ucomm` or on a
+  // list callback's function code) are alternatives the user chooses from, as
+  // often and in whatever order they like — not steps that follow one another.
+  // The review found "display order", "set to done" and "change delivery date"
+  // numbered 5, 6, 7 on the main path. A step reached from exactly one arm,
+  // before the arms meet again, is that arm's alternative.
+  const pathSet = new Set(pathIds);
+  const choiceOf = new Map<string, { gateId: string; arm: number; when: string }>();
+  const choiceGates = new Set<string>();
+  for (const id of pathIds) {
+    const element = byId.get(id);
+    if (!element || !isGateway(element)) continue;
+    if (!element.nodeId || skeletonNode.get(element.nodeId)?.detail?.userAction !== true) continue;
+    choiceGates.add(element.id);
+    const reach = element.branches.map((branch) => {
+      const seen = new Set<string>();
+      const queue = [branch.to];
+      while (queue.length) {
+        const at = queue.shift() as string;
+        if (seen.has(at) || at === element.id || !pathSet.has(at)) continue;
+        seen.add(at);
+        for (const next of byId.get(at)?.branches ?? []) queue.push(next.to);
+      }
+      return seen;
+    });
+    reach.forEach((ids, arm) => {
+      for (const x of ids) {
+        if (reach.some((other, k) => k !== arm && other.has(x))) continue;
+        if (!choiceOf.has(x)) choiceOf.set(x, { gateId: element.id, arm, when: whenOf(element.branches[arm]) });
+      }
+    });
+  }
+
   const path: PdPathEntry[] = [];
+  // `number` is the step's own, unique, in path order; `ref` is what a reader
+  // sees — the same number while the path is a sequence, `5a`, `5b`, `5c` for
+  // the alternatives of one user choice, which share the one place `5`.
   let number = 0;
+  let place = 0;
+  const slotOf = new Map<string, number>();
+  const armSteps = new Map<string, number>();
   for (const id of pathIds) {
     const element = byId.get(id);
     if (!element || isEvent(element)) continue;
@@ -322,6 +374,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     // listed under outputs and stays in the appendix.
     if (element.technicalName.toUpperCase() === 'WRITE') continue;
     if (isGateway(element)) {
+      const choice = choiceGates.has(element.id);
+      const table = element.nodeId ? tableAtNode.get(element.nodeId) : undefined;
       const gate: PdGate = {
         kind: 'gate',
         id: element.id,
@@ -331,16 +385,29 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
           const target = byId.get(branch.to);
           const ends = !!target && isEventTag(target.tag) && /end/i.test(target.tag);
           return {
-            when: branch.label || (branch.condition ? `If ${branch.condition}` : 'Otherwise'),
-            then: ends ? 'the run ends' : `continue with ${q(target ? nameOf(target) : branch.toLabel)}`,
-            ends,
+            when: whenOf(branch),
+            then: ends ? (choice ? 'nothing else happens' : 'the run ends') : `continue with ${q(target ? nameOf(target) : branch.toLabel)}`,
+            ends: ends && !choice,
           };
         }),
+        ...(choice ? { choice: true as const } : {}),
+        ...(table ? { decisionTable: { id: table.id, field: table.field, selector: table.selector, rows: table.rows.length } } : {}),
       };
       path.push(gate);
       continue;
     }
     number += 1;
+    const alternative = choiceOf.get(id) ?? null;
+    let ref: string;
+    if (alternative) {
+      if (!slotOf.has(alternative.gateId)) slotOf.set(alternative.gateId, ++place);
+      const key = `${alternative.gateId}|${alternative.arm}`;
+      const nth = (armSteps.get(key) ?? 0) + 1;
+      armSteps.set(key, nth);
+      ref = `${slotOf.get(alternative.gateId)}${armLetter(alternative.arm)}${nth > 1 ? `.${nth}` : ''}`;
+    } else {
+      ref = String(++place);
+    }
     const ids = subtree(id);
     const hasChildren = ids.length > 1;
     const routine = routines.find((r) => r.name === element.technicalName.toUpperCase()) ?? null;
@@ -403,6 +470,9 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     const step: PdStep = {
       kind: 'step',
       number,
+      // Only where it differs from the number, so a description without a user choice stays as it was.
+      ...(ref !== String(number) ? { ref } : {}),
+      ...(alternative ? { choice: { gateId: alternative.gateId, when: alternative.when } } : {}),
       id,
       name: nameOf(element),
       technicalName: element.technicalName,
@@ -1016,6 +1086,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     trigger: { start, selection: inputs, data },
     overview: { sentence: overviewSentence, traceability: engine.traceability.sentence, path, decisions },
     rules,
+    ...(decisionTables.length ? { decisionTables } : {}),
     exceptions,
     outputs,
     integrations,

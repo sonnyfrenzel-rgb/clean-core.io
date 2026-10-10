@@ -48,6 +48,8 @@ import {
 import { publishProcessStates, useProcessStates } from '@/hooks/useProcessStates';
 import type { Project } from '@/lib/types';
 import RulesDoneLine from './RulesDoneLine';
+import DecisionTables from '@/components/documentation/DecisionTables';
+import { decisionTableViews } from '@/lib/decision-tables';
 import {
   wt,
   rulesAnsweredOf,
@@ -441,6 +443,8 @@ export default function BusinessRulesEditor({
     [reading, source],
   );
   const entries = useMemo(() => ruleEntries(view), [view]);
+  // Roadmap 3.0.7: classifications that only set one field, each one business rule task with its table.
+  const decisionTables = useMemo(() => decisionTableViews(reading?.ruleSet), [reading]);
   const status = useMemo(() => rulesStatus(outcome, reading ? rules.map((r) => r.id) : null), [outcome, reading, rules]);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -655,6 +659,11 @@ export default function BusinessRulesEditor({
             </p>
           ) : null}
           <ul className="m-0 flex list-none flex-col p-0">{answered.map((rule) => row(rule, false))}</ul>
+          {decisionTables.length ? (
+            <div className="mt-4 border-t border-cc-line pt-3">
+              <DecisionTables tables={decisionTables} tone="unlinked" />
+            </div>
+          ) : null}
         </CcCard>
       </div>
     );

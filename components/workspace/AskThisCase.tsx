@@ -163,6 +163,11 @@ function CodeBranches({ answer }: { answer: Extract<PreAnswered, { kind: 'answer
             {branch.endsFlow ? (
               <span className="text-[12px] font-medium text-cc-ink-muted">{wt('ask.endsFlow')}</span>
             ) : null}
+            {branch.continuesWith ? (
+              <span data-ask-continues="" className="text-[12px] font-medium text-cc-ink-muted">
+                {wt('ask.continuesWith')} <span className="font-cc-mono">{branch.continuesWith}</span>
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>

@@ -60,6 +60,12 @@ export interface AnsweredBranch {
   reason?: string;
   /** True when this branch ends the process — a rejection, an abort, a message. */
   endsFlow: boolean;
+  /**
+   * Roadmap 3.0.7: the branch leaves its block early and the run goes on with
+   * this reporting event — `STOP` → `END-OF-SELECTION`, `RETURN` in `AT
+   * SELECTION-SCREEN` → the next block. The event as the source writes it.
+   */
+  continuesWith?: string;
   anchor: string | null;
   /**
    * The branch for a business reader — "Yes: the run stops with the message
@@ -99,9 +105,25 @@ export type PreAnswered = AnsweredQuestion | NoQuestion;
 
 const ENDS_FLOW = new Set(['end', 'end-error']);
 
+/**
+ * Roadmap 3.0.7 — where the run goes on after this end, when it does: the
+ * start of the next reporting event block the skeleton chains it to
+ * (`reason: 'runtime-order'`), or `END-OF-SELECTION` after a `STOP`
+ * (`reason: 'stop'`). `STOP` in `START-OF-SELECTION` skips the rest of the
+ * block, not the rest of the run, and `RETURN` in `AT SELECTION-SCREEN` leaves
+ * the check and the run goes on — neither is "the run ends here". Null: the
+ * run ends at this node.
+ */
+function goesOnAt(skeleton: ProcessSkeleton, node: SkeletonNode | undefined): SkeletonNode | null {
+  if (!node || !ENDS_FLOW.has(node.kind)) return null;
+  const on = skeleton.edges.find((e) => e.from === node.id && (e.reason === 'runtime-order' || e.reason === 'stop'));
+  return on ? skeleton.nodes.find((n) => n.id === on.to) ?? null : null;
+}
+
 function endsFlow(skeleton: ProcessSkeleton, edge: SkeletonEdge): boolean {
-  if (edge.reason === 'stop' || edge.reason === 'abort' || edge.reason === 'no-return') return true;
   const target = skeleton.nodes.find((n) => n.id === edge.to);
+  if (goesOnAt(skeleton, target)) return false;
+  if (edge.reason === 'stop' || edge.reason === 'abort' || edge.reason === 'no-return') return true;
   return target ? ENDS_FLOW.has(target.kind) : false;
 }
 
@@ -159,14 +181,20 @@ export function preAnsweredQuestion(
   const branches: AnsweredBranch[] = edges.map((edge) => {
     const target = skeleton.nodes.find((n) => n.id === edge.to);
     const ends = endsFlow(skeleton, edge);
+    // Only an early exit "goes on with" a block; a block's normal end reads as the step being done.
+    const next = target?.detail?.early === true ? goesOnAt(skeleton, target) : null;
     return {
       condition: edge.condition.length > 0 ? edge.condition : null,
       target: target?.label ?? edge.to,
       ...(edge.reason ? { reason: edge.reason } : {}),
       endsFlow: ends,
+      ...(next ? { continuesWith: next.label } : {}),
       anchor: target?.anchor ? anchorLabel(target.anchor.lineStart, target.anchor.lineEnd) : null,
       ...(labels
-        ? { plain: plainBranch(labels.flow(edge), target ? (labels.nodes.get(target.id) ?? null) : null, target, ends, edge) }
+        ? {
+            plain: plainBranch(labels.flow(edge), target ? (labels.nodes.get(target.id) ?? null) : null, target, ends, edge,
+              next ? (labels.nodes.get(next.id) ?? null) : undefined),
+          }
         : {}),
     };
   });
@@ -242,10 +270,27 @@ function plainBranch(
   target: SkeletonNode | undefined,
   ends: boolean,
   edge: SkeletonEdge,
+  /**
+   * Set when the branch leaves its block early and the run goes on (roadmap
+   * 3.0.7): the plain name of the block it goes on with, or null when the
+   * wording has none.
+   */
+  goesOnWith?: string | null,
 ): string | null {
   const when = arm.trim() || (edge.condition.length > 0 ? 'If so' : 'Otherwise');
   const where = targetLabel?.trim() ?? '';
-  if (TECHNICAL.test(when) || TECHNICAL.test(where)) return null;
+  if (TECHNICAL.test(when)) return null;
+  if (goesOnWith !== undefined) {
+    const next = goesOnWith?.trim() ?? '';
+    return next && !TECHNICAL.test(next)
+      ? `${when}: the rest of this block is skipped, and the run goes on with “${next}”.`
+      : `${when}: the rest of this block is skipped, and the run goes on.`;
+  }
+  if (TECHNICAL.test(where)) return null;
+  if (target?.kind === 'end' && target.detail?.early !== true && !ends) {
+    // The normal end of a reporting event block the run goes on from.
+    return `${when}: this step is done, and the process goes on.`;
+  }
   if (target?.kind === 'end-error') {
     return where
       ? `${when}: the run stops with the message “${where.replace(STOP_PREFIX, '')}”.`
