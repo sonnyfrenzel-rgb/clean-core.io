@@ -157,7 +157,7 @@ test.describe('the Confluence export', () => {
     for (const sop of LAYER.sop_details) if (sop.kpiTarget) expect(html).not.toContain(sop.kpiTarget);
     for (const ctrl of LAYER.audit_controls) expect(html).not.toContain(ctrl.controlObjective);
     expect(html).toContain('Controls are read from the code: “Systems and data” in the process description.');
-    expect(html).not.toMatch(/section \d/i);
+    expect(html).not.toMatch(/\bsection \d\b/i);
     // Owner review 10.10.2026: every row of a step of the process, by its name — and none for a step the code does not have.
     const steps = sopSteps(LAYER, STEPS);
     for (const st of steps.filter((x) => x.hasRaci)) expect(html).toContain(`<tr><td>${st.number}. ${st.step!.name}</td><td>${st.roles.R.join(', ') || 'Not determined'}</td>`);

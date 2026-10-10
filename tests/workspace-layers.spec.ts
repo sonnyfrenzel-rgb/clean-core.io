@@ -123,7 +123,8 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     // No layer bar and no layer section are rendered for Management.
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell).not.toMatch(/data-management-fold|ManagementFold id="(?:process|costs)"/);
-    expect(shell).toContain('MANAGEMENT_LAYER_ELSEWHERE[hashLayer]');
+    // Read from the address as it is, not the layer state (QA 6ec03d013196).
+    expect(shell).toContain('MANAGEMENT_LAYER_ELSEWHERE[layer]');
   });
 
   test('an empty project has five empty layers, each saying what is missing — and inventing no row', () => {

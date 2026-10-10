@@ -41,7 +41,8 @@ jobs:
   # nearly at once, made the cost peak: every superseded run kept testing - and
   # calling the model - although only the newest commit is ever deployed.
   #
-  # The group sits on `build` and `e2e` only, per branch, and nowhere else. Never
+  # The group sits on `build` and `e2e` only (and `e2e-claim`, which takes the
+  # e2e groups early), per branch, and nowhere else. Never
   # at workflow level and never on validate, security, deploy-runner, deploy or
   # smoke-production: a deploy that is running is never cancelled mid-way, and no
   # deploy is ever a pending job a later run could cancel (the reason
@@ -130,6 +131,25 @@ jobs:
           path: next-build.tar
           retention-days: 1
           if-no-files-found: error
+
+  # Ends the older run's shards as soon as a newer push starts, whatever its own
+  # build does (QA 2905834664bc). `e2e` needs `build`, so on its own it enters
+  # its group only after a green build: a newer push whose build failed left the
+  # older shards testing - and calling the model - for nothing. This job needs
+  # nothing, takes each shard's group at once and ends in seconds; the newer
+  # run's own shards then take the group as before. It holds no secret and runs
+  # no install, and no deploy job needs it.
+  e2e-claim:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-${{ github.ref }}-${{ matrix.shard }}
+      cancel-in-progress: true
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - name: Claim the shard group
+        run: echo "Shard ${{ matrix.shard }} of an older run on this branch is ended."
 
   # The suite as six shards in parallel, each on its own runner (09.10.2026).
   #

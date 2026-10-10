@@ -91,9 +91,9 @@ test('both jobs run the same check, and only the test jobs have a concurrency gr
   // A group on the run or on a deploy would cancel a newer run's pending deploy
   // when an older run queues later — so none at workflow level…
   expect(src).not.toMatch(/^concurrency:/m);
-  // …and exactly two at job level, on the two test jobs and nowhere else.
+  // …and exactly three at job level, on the two test jobs and the shard claim, nowhere else.
   const groups = [...src.matchAll(/^( *)concurrency:/gm)];
-  expect(groups.map((m) => m[1].length)).toEqual([4, 4]);
+  expect(groups.map((m) => m[1].length)).toEqual([4, 4, 4]);
   for (const name of ['validate', 'security', 'deploy-runner', 'deploy', 'smoke-production']) {
     expect(job(src, name), `${name} must never be in a concurrency group`).not.toMatch(/^ {4}concurrency:/m);
   }
@@ -102,6 +102,21 @@ test('both jobs run the same check, and only the test jobs have a concurrency gr
   expect(job(src, 'e2e')).toMatch(
     /\n {4}concurrency:\n {6}group: e2e-\$\{\{ github\.ref \}\}-\$\{\{ matrix\.shard \}\}\n {6}cancel-in-progress: true\n/,
   );
+  // QA 2905834664bc: a newer push ends the older shards even when its own build
+  // fails. The claim needs nothing, takes the very group of each e2e shard, and
+  // no deploy waits for it.
+  const claim = job(src, 'e2e-claim');
+  expect(claim).not.toMatch(/^ {4}needs:/m);
+  expect(claim).toMatch(
+    /\n {4}concurrency:\n {6}group: e2e-\$\{\{ github\.ref \}\}-\$\{\{ matrix\.shard \}\}\n {6}cancel-in-progress: true\n/,
+  );
+  const shards = (text: string) => /\n {8}shard: (\[[^\]]*\])/.exec(text)?.[1];
+  expect(shards(claim)).toBeTruthy();
+  expect(shards(claim)).toBe(shards(job(src, 'e2e')));
+  expect(claim).not.toMatch(/secrets\.|npm (?:ci|install)/);
+  for (const name of ['validate', 'security', 'deploy-runner', 'deploy']) {
+    expect(job(src, name), `${name} must not wait for the shard claim`).not.toMatch(/needs:[^\n]*e2e-claim/);
+  }
   // A cancelled test job stops the deploy: the gate needs both, and the deploy needs the gate.
   expect(job(src, 'validate')).toMatch(/\n {4}needs: \[build, e2e\]\n/);
   expect(job(src, 'deploy')).toContain("needs.validate.result == 'success'");

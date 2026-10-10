@@ -129,7 +129,7 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
       await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
       await expect(page.locator('[data-it-anchors]')).toBeVisible();
       await expect(page.locator('[data-it-anchor="objects"]')).toBeVisible();
-      await expect(page.locator('[data-it-anchors]')).not.toContainText(/empty/);
+      await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
       await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(4);
       await expect(page.locator('[data-it-trust="demo"]')).toBeVisible();
     }

@@ -46,15 +46,25 @@ export function useFollowHash(): void {
       stop = false;
       const started = performance.now();
       let lastTop: number | null = null;
+      // Where the target stood in the document, and where the page was scrolled
+      // to, right after the last bring-into-view. A page that has moved while
+      // the target has not was scrolled by the reader — by the scrollbar too,
+      // which sends no wheel, touch or key (QA d29f4fcf9481) — and ends it.
+      let lastDocTop = 0;
+      let lastScrollY = 0;
       let stillSince = started;
       const tick = (now: number) => {
         if (stop || idOf() !== id || now - started > 5000) return;
         const target = document.getElementById(id);
         if (target) {
           const top = Math.round(target.getBoundingClientRect().top);
+          const docTop = Math.round(top + window.scrollY);
+          if (lastTop !== null && Math.abs(window.scrollY - lastScrollY) > 1 && Math.abs(docTop - lastDocTop) <= 1) return;
           if (lastTop === null || Math.abs(top - lastTop) > 1) {
             target.scrollIntoView({ block: 'start' });
             lastTop = Math.round(target.getBoundingClientRect().top);
+            lastScrollY = window.scrollY;
+            lastDocTop = Math.round(lastTop + lastScrollY);
             stillSince = now;
           } else if (now - stillSince > 500) {
             return;

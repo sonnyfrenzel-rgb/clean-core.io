@@ -491,9 +491,13 @@ export default function WorkspaceShell({
    */
   const hasActiveRun = Boolean(project?.activeRunId?.trim());
   useEffect(() => {
-    if (view !== 'management' || hashLayer === null) return;
-    const home = MANAGEMENT_LAYER_ELSEWHERE[hashLayer];
-    if (home.kind === 'economics' || (hashLayer === 'costs' && !hasActiveRun)) {
+    // The address as it is now, as in Business and IT: the layer state may
+    // still be the last view's — a switch from Business `#standard` would
+    // otherwise send the reader straight back (QA 6ec03d013196).
+    const layer = layerFromHash(window.location.hash);
+    if (view !== 'management' || layer === null) return;
+    const home = MANAGEMENT_LAYER_ELSEWHERE[layer];
+    if (home.kind === 'economics' || (layer === 'costs' && !hasActiveRun)) {
       router.replace(toEconomics('management'));
       return;
     }

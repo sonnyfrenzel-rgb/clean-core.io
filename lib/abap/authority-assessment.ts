@@ -1,6 +1,6 @@
 import { readStatements, type AbapStatement } from './statement-reader';
 import { readCallGraphFrom, type AuthorityCheck } from './call-graph';
-import { readBatchInputFrom } from './batch-input';
+import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { readBlocks } from './block-structure';
 
 /**
@@ -63,6 +63,22 @@ export interface AuthorityAssessment {
 /** The display activity of the `ACTVT` field: 03. */
 const DISPLAY_ACTIVITY = '03';
 
+/** Function codes that only confirm or leave a screen: Enter, Back, Exit, Cancel, a new transaction. */
+const NON_CHANGING_OK_CODE = /^(?:\/0+|ENTE|\/EBACK|\/EEND|\/ECAN|\/BACK|\/N.*)$/i;
+
+/**
+ * A batch input is a change only where its rows say so. `CALL TRANSACTION
+ * 'VA03' USING it_bdc` that fills nothing but the order number and presses
+ * Enter opens the order for display. A call counts as a write when it fills a
+ * field that is not a document or master-data number (`key`), or presses a
+ * function code other than Enter, Back or Exit — or when none of its rows can be
+ * read at all, because a name computed at run time is not guessed at.
+ */
+function mayChange(call: BatchInputCall): boolean {
+  if (call.fields.length === 0 && call.okCodes.length === 0) return true;
+  return call.fields.some((f) => !f.key) || call.okCodes.some((code) => !NON_CHANGING_OK_CODE.test(code));
+}
+
 export function assessAuthority(source: string): AuthorityAssessment {
   return assessAuthorityFrom(readStatements(source));
 }
@@ -90,7 +106,7 @@ export function assessAuthorityFrom(statements: AbapStatement[]): AuthorityAsses
 
   const writes: AuthorityRelevantWrite[] = [
     ...graph.databaseWrites.map((w) => ({ line: w.lineStart, target: w.table, via: 'database-write' as const })),
-    ...readBatchInputFrom(statements).map((c) => ({ line: c.line, target: c.transaction ?? 'CALL TRANSACTION', via: 'batch-input' as const })),
+    ...readBatchInputFrom(statements).filter(mayChange).map((c) => ({ line: c.line, target: c.transaction ?? 'CALL TRANSACTION', via: 'batch-input' as const })),
   ].sort((a, b) => a.line - b.line);
 
   const issues: AuthorityIssue[] = [];

@@ -33,6 +33,7 @@ import {
   stepRef,
   type PdData,
   type PdGate,
+  type PdPathEntry,
   type PdPoint,
   type PdStep,
   type PdText,
@@ -385,15 +386,62 @@ function FlowStep({ step }: { step: PdStep }) {
  * says how many tables it reads and changes, counted from the code. On a narrow
  * screen the flow scrolls inside its own track; the page does not.
  */
-function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
+type FlowItem =
+  | { kind: 'entry'; entry: PdPathEntry }
+  /** The alternatives of one user choice: one row per arm, the arms stacked (QA a5c979bd9e1c). */
+  | { kind: 'choice'; gateId: string; arms: PdStep[][] };
+
+/** The path as the strip draws it: consecutive steps of one user choice become one stack of alternatives. */
+export function flowItems(path: readonly PdPathEntry[]): FlowItem[] {
+  const items: FlowItem[] = [];
+  for (const entry of path) {
+    const choice = entry.kind === 'step' ? entry.choice : undefined;
+    if (entry.kind === 'step' && choice) {
+      const last = items[items.length - 1];
+      if (last?.kind === 'choice' && last.gateId === choice.gateId) {
+        const arm = last.arms.find((a) => a[0].choice?.when === choice.when);
+        if (arm) arm.push(entry);
+        else last.arms.push([entry]);
+      } else {
+        items.push({ kind: 'choice', gateId: choice.gateId, arms: [[entry]] });
+      }
+      continue;
+    }
+    items.push({ kind: 'entry', entry });
+  }
+  return items;
+}
+
+export function FlowStrip({ path }: { path: ProcessDocument['overview']['path'] }) {
   return (
     <div className="min-w-0 overflow-x-auto pb-1 [scrollbar-width:thin]">
       <ol data-doc-path="" aria-label={wt('doc.flowLabel')} className="m-0 flex w-max list-none items-start p-0">
         <li className="flex items-start"><Terminal /></li>
-        {path.map((entry) => (
-          <li key={entry.id} className="flex items-start">
+        {flowItems(path).map((item) => item.kind === 'choice' ? (
+          <li key={`choice-${item.gateId}`} className="flex items-start">
             <Connector />
-            {entry.kind === 'gate' ? <FlowGate gate={entry} /> : <FlowStep step={entry} />}
+            <div
+              role="group"
+              data-doc-path-choices={item.gateId}
+              aria-label={wt('doc.flowChoices')}
+              className="flex flex-col gap-1 border-l border-dashed border-cc-field-border pl-2"
+            >
+              {item.arms.map((arm) => (
+                <div key={arm[0].id} data-doc-path-arm="" className="flex items-start">
+                  {arm.map((step, i) => (
+                    <React.Fragment key={step.id}>
+                      {i ? <Connector /> : null}
+                      <FlowStep step={step} />
+                    </React.Fragment>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </li>
+        ) : (
+          <li key={item.entry.id} className="flex items-start">
+            <Connector />
+            {item.entry.kind === 'gate' ? <FlowGate gate={item.entry} /> : <FlowStep step={item.entry} />}
           </li>
         ))}
         <li className="flex items-start"><Connector /><Terminal end /></li>

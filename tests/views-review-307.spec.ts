@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+import { build } from 'esbuild';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { buildBpmnExportFromSource, buildReadingExports } from '../lib/bpmn/export';
@@ -228,6 +233,42 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
       .toEqual(['User choice Double-click (&IC1)', 'User choice DONE', 'User choice DATE']);
     // The user chooses each of them; the program's own steps of this dialogue run are the system's.
     expect(alternatives.map((r) => r.cells[2])).toEqual(['User', 'User', 'User']);
+  });
+
+  // QA a5c979bd9e1c: the "Main path" picture drew the alternatives one after the
+  // other, joined by arrows — the very sequence this section says they are not.
+  // Bundled with esbuild and rendered, the pattern of tests/process-states-view.spec.ts.
+  test('the main-path picture stacks the alternatives, with no arrow from one to the next', async () => {
+    test.setTimeout(120 * 1000);
+    const root = path.resolve(__dirname, '..');
+    const out = path.resolve(root, 'tmp', 'views-review-307');
+    fs.mkdirSync(out, { recursive: true });
+    await build({
+      entryPoints: [path.resolve(root, 'components', 'documentation', 'ProcessDocumentView.tsx')],
+      outfile: path.join(out, 'ProcessDocumentView.cjs'),
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      alias: { '@': root },
+      logLevel: 'silent',
+    });
+    const { FlowStrip } = require(path.join(out, 'ProcessDocumentView.cjs')) as {
+      FlowStrip: (props: { path: ReturnType<typeof documentOf>['overview']['path'] }) => React.ReactElement;
+    };
+    const doc = documentOf(REPORT);
+    const html = renderToStaticMarkup(React.createElement(FlowStrip, { path: doc.overview.path }));
+    const group = /<div role="group" data-doc-path-choices="[^"]*"[^>]*>([\s\S]*?)<\/div><\/li>/.exec(html);
+    expect(group, 'one group holds the alternatives').not.toBeNull();
+    const arms = [...(group?.[1] ?? '').matchAll(/<div data-doc-path-arm=""[^>]*>([\s\S]*?)<\/a><\/div>/g)];
+    expect(arms).toHaveLength(3);
+    // Each alternative stands in its own row: none of them is drawn after an arrow from another.
+    for (const [, arm] of arms) expect(arm).not.toContain('aria-hidden="true" class="mt-4');
+    // Every choice step is inside the group, none on the line of the sequence.
+    const choiceSteps = (html.match(/data-doc-path-choice=""/g) ?? []).length;
+    expect(choiceSteps).toBe(3);
+    expect((group?.[1].match(/data-doc-path-choice=""/g) ?? []).length).toBe(3);
   });
 
   test('a CASE on another selector stays a sequence', () => {

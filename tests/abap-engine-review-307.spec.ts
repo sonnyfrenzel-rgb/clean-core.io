@@ -570,6 +570,35 @@ START-OF-SELECTION.
     // A change to an internal table is no change of data.
     expect(assessAuthority('REPORT z.\nDATA gt TYPE STANDARD TABLE OF i.\nSTART-OF-SELECTION.\n  DELETE gt INDEX 1.\n').issues).toEqual([]);
   });
+
+  // QA review of 7fecaa0102eb: a batch input that only names the order and
+  // presses Enter opens it for display — it is no change of data.
+  test('a batch input that only opens a document is no write', () => {
+    const bdc = (tcode: string, extra: string) => `REPORT zdemo_open.
+PARAMETERS p_vbeln TYPE vbak-vbeln.
+DATA it_bdc TYPE STANDARD TABLE OF bdcdata.
+DATA ls_bdc TYPE bdcdata.
+START-OF-SELECTION.
+  ls_bdc-program = 'SAPMV45A'.
+  ls_bdc-dynpro = '0102'.
+  ls_bdc-dynbegin = 'X'.
+  APPEND ls_bdc TO it_bdc.
+  CLEAR ls_bdc.
+  ls_bdc-fnam = 'VBAK-VBELN'.
+  ls_bdc-fval = p_vbeln.
+  APPEND ls_bdc TO it_bdc.
+${extra}  ls_bdc-fnam = 'BDC_OKCODE'.
+  ls_bdc-fval = '/00'.
+  APPEND ls_bdc TO it_bdc.
+  CALL TRANSACTION '${tcode}' USING it_bdc MODE 'E'.
+`;
+    const display = assessAuthority(bdc('VA03', ''));
+    expect(display.writes).toEqual([]);
+    expect(display.issues).toEqual([]);
+    const change = assessAuthority(bdc('VA02', "  ls_bdc-fnam = 'VBAK-LIFSK'.\n  ls_bdc-fval = '01'.\n  APPEND ls_bdc TO it_bdc.\n"));
+    expect(change.writes.map((w) => `${w.via} ${w.target}`)).toEqual(['batch-input VA02']);
+    expect(change.issues.map((i) => i.kind)).toEqual(['write-without-check']);
+  });
 });
 
 /* ------------------------------------------------------------------ (i) */
@@ -674,5 +703,12 @@ START-OF-SELECTION.
       "p_offen value 'X' declaration false",
       's_bedat LOW sy-datum - 365 initialization false',
     ]);
+  });
+
+  // QA review of 7fecaa0102eb: a checkbox without DEFAULT starts unchecked,
+  // and that is a starting state the reader is told, obligatory or not.
+  test('a checkbox without DEFAULT is listed as starting empty', () => {
+    const { defaults } = readDataScope('REPORT z.\nPARAMETERS p_test AS CHECKBOX.\nPARAMETERS p_name TYPE c LENGTH 10.\n');
+    expect(defaults.map((d) => `${d.name} ${d.part} [${d.value}] ${d.obligatory}`)).toEqual(['p_test value [] false']);
   });
 });

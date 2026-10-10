@@ -132,7 +132,7 @@ export function readDataScopeFrom(statements: AbapStatement[]): DataScopeReport 
         // A checkbox without DEFAULT starts empty, and an obligatory input
         // without one starts empty and must be filled: both say what the
         // screen shows before anybody types, so both are listed.
-        if (obligatory) defaults.push({ name: input[2], line: statement.lineStart, value: '', part: 'value', from: 'declaration', obligatory });
+        defaults.push({ name: input[2], line: statement.lineStart, value: '', part: 'value', from: 'declaration', obligatory });
       }
     }
     const constant = /^CONSTANTS\s*:?\s*([\w/]+)/i.exec(text);
