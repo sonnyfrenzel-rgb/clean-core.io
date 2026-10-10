@@ -95,8 +95,8 @@ test.describe('the answer, in words', () => {
       finding({ kind: 'custom-table-write', title: 'Write ZMM_PO_ATTACH', severity: 'High', objectName: 'ZMM_PO_ATTACH', lineStart: 647 }),
       finding({ kind: 'standard-table-read', title: 'Read LFA1', severity: 'Medium', objectName: 'LFA1', lineStart: 146 }),
     ]);
-    expect(effect).toEqual({ standard: ['EBAN'], custom: ['ZMM_PO_APPR', 'ZMM_PO_ATTACH'] });
-    expect(dataEffectSentence(effect)).toBe('It writes to 1 SAP standard table (EBAN) and 2 custom tables (ZMM_PO_APPR, ZMM_PO_ATTACH).');
+    expect(effect).toEqual({ standard: ['EBAN'], custom: ['ZMM_PO_APPR', 'ZMM_PO_ATTACH'], batchInput: [] });
+    expect(dataEffectSentence(effect)).toBe('The engine found writes to 1 SAP standard table (EBAN) and 2 custom tables (ZMM_PO_APPR, ZMM_PO_ATTACH).');
     const chips = dataEffectParts(effect).filter((p): p is { table: string; kind: string } => 'table' in p);
     expect(chips).toEqual([
       { table: 'EBAN', kind: 'standard-table-write' },
@@ -105,9 +105,20 @@ test.describe('the answer, in words', () => {
     ]);
     // Five names, four shown, the rest counted — never dropped in silence.
     const many = dataEffect(['A', 'B', 'C', 'D', 'E'].map((n, i) => finding({ objectName: n, lineStart: i + 1 })));
-    expect(dataEffectSentence(many)).toBe('It writes to 5 SAP standard tables (A, B, C, D and 1 more).');
+    expect(dataEffectSentence(many)).toBe('The engine found writes to 5 SAP standard tables (A, B, C, D and 1 more).');
     // No write found is said within what the engine checks, not as a property of the program.
     expect(dataEffectSentence(dataEffect([]))).toBe('In what it checks, the engine found no write to a database table.');
+  });
+
+  // QA review 12ebed426ba6: a change through batch input is a change of data —
+  // a program whose only change is a batch input must not read "no write".
+  test('the data effect names the tables a batch input changes', () => {
+    const only = dataEffect([finding({ kind: 'batch-input', title: 'Batch input changes EKET via ME22', severity: 'High', objectName: 'EKET', lineStart: 12 })]);
+    expect(only).toEqual({ standard: [], custom: [], batchInput: ['EKET'] });
+    expect(dataEffectSentence(only)).toBe('The engine found changes through batch input to 1 SAP standard table (EKET).');
+    expect(dataEffectParts(only).filter((p) => 'table' in p)).toEqual([{ table: 'EKET', kind: 'batch-input' }]);
+    const both = dataEffect([finding({ lineStart: 3 }), finding({ kind: 'batch-input', title: 'Batch input changes EKET via ME22', severity: 'High', objectName: 'EKET', lineStart: 12 })]);
+    expect(dataEffectSentence(both)).toBe('The engine found writes to 1 SAP standard table (EBAN) and changes through batch input to 1 SAP standard table (EKET).');
   });
 
   test('the severity is not said twice in a title', () => {

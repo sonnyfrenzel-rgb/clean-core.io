@@ -284,8 +284,16 @@ export function buildAbapEvidence(
   // Roadmap 3.0.7 — batch input read field by field (`batch-input.ts`). The
   // screen fields a call fills name the table it changes where their structure
   // is a database table SAP lists; the dialog structures of the transaction
-  // (`RM06E`, `RV45A`) are not. Keyed by the line the call starts on.
-  const batchAt = new Map<number, BatchInputCall>(readBatchInput(code).map((call) => [call.line, call]));
+  // (`RM06E`, `RV45A`) are not. Keyed by the line the call starts on, in
+  // statement order: two calls written on one line each take their own, not
+  // the last one's transaction and fields (QA review, 9a6689897a0f).
+  const batchAt = new Map<number, BatchInputCall[]>();
+  for (const call of readBatchInput(code)) batchAt.set(call.line, [...(batchAt.get(call.line) ?? []), call]);
+  const takeBatch = (line: number, via: BatchInputCall['via']): BatchInputCall | undefined => {
+    const calls = batchAt.get(line);
+    const index = calls ? calls.findIndex((c) => c.via === via) : -1;
+    return index >= 0 ? calls!.splice(index, 1)[0] : undefined;
+  };
   const batchWrites = (call: BatchInputCall | undefined): BatchInputWrite[] =>
     call ? writesOf(call, isSapDatabaseTable) : [];
   // Roadmap 3.0.7 — the authorization checks assessed, by line.
@@ -586,7 +594,7 @@ export function buildAbapEvidence(
       });
     } else if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
       const tcodeMatch = text.match(/\bCALL\s+TRANSACTION\s+'?([\w\/]+)'?/i);
-      const call = batchAt.get(stmt.line);
+      const call = takeBatch(stmt.line, 'call-transaction');
       // A code held in a constant is the constant's value, not its name (3.0.7).
       const tcode = call?.transaction ?? (tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN');
       const writes = batchWrites(call);
@@ -624,7 +632,7 @@ export function buildAbapEvidence(
       // A batch-input session row: the same screens, run later from SM35. The
       // call itself costs nothing here (it never did); what its rows change is
       // graded like the direct call's.
-      const call = batchAt.get(stmt.line);
+      const call = takeBatch(stmt.line, 'session');
       for (const write of batchWrites(call)) addBatchInputWrite(write, call?.transaction ?? 'UNKNOWN', stmt.line, text, true);
     }
 

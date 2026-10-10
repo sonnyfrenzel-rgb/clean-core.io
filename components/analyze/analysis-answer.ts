@@ -156,10 +156,17 @@ export interface DataEffect {
   standard: string[];
   /** Custom (customer-namespace) tables written, distinct, in the order first found. */
   custom: string[];
+  /**
+   * Tables changed through the screens of a transaction (batch input), distinct,
+   * in the order first found. No direct write, but a change all the same: left
+   * out, a program whose only change is a batch input read "no write" (QA
+   * review, 12ebed426ba6).
+   */
+  batchInput: string[];
 }
 
-/** The two finding kinds a data effect is read from — also the findings groups the chips open. */
-export const DATA_EFFECT_KINDS = { standard: 'standard-table-write', custom: 'custom-table-write' } as const;
+/** The finding kinds a data effect is read from — also the findings groups the chips open. */
+export const DATA_EFFECT_KINDS = { standard: 'standard-table-write', custom: 'custom-table-write', batchInput: 'batch-input' } as const;
 
 /** Read off the engine's findings only: the kind and the object it names. Nothing else is inferred. */
 export function dataEffect(findings: readonly EvidenceFinding[]): DataEffect {
@@ -172,7 +179,7 @@ export function dataEffect(findings: readonly EvidenceFinding[]): DataEffect {
     }
     return names;
   };
-  return { standard: of(DATA_EFFECT_KINDS.standard), custom: of(DATA_EFFECT_KINDS.custom) };
+  return { standard: of(DATA_EFFECT_KINDS.standard), custom: of(DATA_EFFECT_KINDS.custom), batchInput: of(DATA_EFFECT_KINDS.batchInput) };
 }
 
 /** A piece of the data-effect sentence: words, or a table that becomes a chip opening its findings group. */
@@ -182,20 +189,27 @@ export type EffectPart = { text: string } | { table: string; kind: string };
 export const EFFECT_NAMES_SHOWN = 4;
 
 /**
- * The data-effect sentence as parts, deterministic: "It writes to 1 SAP
- * standard table (EBAN) and 2 custom tables (ZMM_PO_APPR, ZMM_PO_ATTACH)."
- * With no write found it says so — within what the engine checks, never as a
- * claim about the whole program.
+ * The data-effect sentence as parts, deterministic: "The engine found writes
+ * to 1 SAP standard table (EBAN) and 2 custom tables (ZMM_PO_APPR,
+ * ZMM_PO_ATTACH)." Found, not "it writes to": like the no-write case, the
+ * sentence is what the engine found, never an inventory of the whole program
+ * (QA review, 39f0f506ed92). Changes through batch input follow as their own
+ * clause.
  */
 export function dataEffectParts(effect: DataEffect): EffectPart[] {
   const groups = [
     { names: effect.standard, kind: DATA_EFFECT_KINDS.standard, one: 'SAP standard table', many: 'SAP standard tables' },
     { names: effect.custom, kind: DATA_EFFECT_KINDS.custom, one: 'custom table', many: 'custom tables' },
   ].filter((g) => g.names.length > 0);
-  if (groups.length === 0) return [{ text: 'In what it checks, the engine found no write to a database table.' }];
-  const parts: EffectPart[] = [{ text: 'It writes to ' }];
-  groups.forEach((g, gi) => {
+  const batch = effect.batchInput.length > 0
+    ? [{ names: effect.batchInput, kind: DATA_EFFECT_KINDS.batchInput, one: 'SAP standard table', many: 'SAP standard tables' }]
+    : [];
+  if (groups.length === 0 && batch.length === 0) return [{ text: 'In what it checks, the engine found no write to a database table.' }];
+  const parts: EffectPart[] = [{ text: 'The engine found ' }];
+  [...groups, ...batch].forEach((g, gi) => {
     if (gi > 0) parts.push({ text: ' and ' });
+    if (gi === 0 && g.kind !== DATA_EFFECT_KINDS.batchInput) parts.push({ text: 'writes to ' });
+    if (g.kind === DATA_EFFECT_KINDS.batchInput) parts.push({ text: 'changes through batch input to ' });
     parts.push({ text: `${plural(g.names.length, g.one, g.many)} (` });
     const shown = g.names.slice(0, EFFECT_NAMES_SHOWN);
     shown.forEach((name, i) => {

@@ -844,3 +844,20 @@ START-OF-SELECTION.
     expect(assessAuthority(display).writes).toEqual([]);
   });
 });
+
+// QA review (9a6689897a0f): two batch-input calls written on one line each keep
+// their own transaction; keyed by line alone, the second overwrote the first.
+test.describe('QA review — batch input calls on one line', () => {
+  test('two CALL TRANSACTION statements on one line keep their own transaction', () => {
+    const src = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata, ls TYPE bdcdata.
+START-OF-SELECTION.
+  ls-fnam = 'EKET-EEIND'. ls-fval = '20260101'. APPEND ls TO it_a.
+  ls-fnam = 'VBAK-LIFSK'. ls-fval = '01'. APPEND ls TO it_b.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'. CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+`;
+    expect(readBatchInput(src).map((c) => `${c.line} ${c.transaction}`)).toEqual(['6 ME22', '6 VA02']);
+    const bdc = buildAbapEvidence(src, 'zx.abap', 'private').findings.filter((f) => f.kind === 'bdc');
+    expect(bdc.map((f) => f.objectName)).toEqual(['ME22', 'VA02']);
+  });
+});
