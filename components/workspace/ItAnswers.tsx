@@ -397,8 +397,6 @@ export default function ItAnswers({
       {showContent ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-4">
-            <UsesCard uses={read.uses} summary={uses} catalogNote={profile.note} />
-
             {view.rows.length > 0 ? (
               <div id="it-findings" className="scroll-mt-4">
                 <CcCard
@@ -623,6 +621,10 @@ export default function ItAnswers({
                 </CcCard>
               </div>
             ) : null}
+
+            {/* Findings first, then the objects they sit on (Sonny, 10.10.2026):
+                what is wrong matters more to the IT reader than the inventory. */}
+            <UsesCard uses={read.uses} summary={uses} catalogNote={profile.note} />
 
             {/* The open questions — in this view, not at the foot of the page
                 (ADR-081): the same list as in Business and Management. */}
