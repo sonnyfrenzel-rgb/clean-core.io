@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -65,6 +65,7 @@ import {
   type BucketKey,
   type ItFilters,
   type WhereTo,
+  chainLine,
 } from '@/lib/it-view';
 import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
@@ -232,8 +233,10 @@ export default function ItAnswers({
         coupling: project?.dataCoupling,
         uses: source?.uses,
         findings: source?.rows,
+        // The stored inventory records no lines; the ranges are read from the source.
+        code: project?.legacyCode,
       }),
-    [project?.codeInventory, project?.dataCoupling, source],
+    [project?.codeInventory, project?.dataCoupling, project?.legacyCode, source],
   );
   const demo = findings !== undefined;
   const contract = useContract(projectId, !demo);
@@ -489,7 +492,7 @@ export default function ItAnswers({
                           {view.chainTitle}
                         </h4>
                         <span data-it-chain-coverage="" className="text-[12px] font-medium text-cc-ink-muted">
-                          {view.chainCoverage.sentence}
+                          {chainLine(view)}
                         </span>
                       </div>
                       <ol className="m-0 mt-2 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-4">
@@ -779,7 +782,12 @@ function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote
               limit={5}
               rows={objects.rows.map((r) => ({ key: r.key, cells: objectCells(r) }))}
             />
-            <p data-it-catalog-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+            {objects.rows.some((r) => !r.successor) ? (
+              <p data-it-successor-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
+                {wt('itv.successorNoneNote')}
+              </p>
+            ) : null}
+            <p data-it-catalog-note="" className="m-0 mt-1 text-[11px] leading-snug font-medium text-cc-ink-muted">
               {catalogNote}
             </p>
           </div>
@@ -869,7 +877,12 @@ function objectCells(r: ItObjectRow): Record<string, React.ReactNode> {
     successor: r.successor ? (
       <span className="text-[12px] font-semibold break-all text-cc-ink">{r.successor}</span>
     ) : (
-      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('itv.successorNone')}</span>
+      // A dash, not the same sentence on every row; the note under the table
+      // says what it means, and a screen reader hears the words.
+      <span className="text-[12px] font-medium text-cc-ink-muted" data-it-successor-none="">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">{wt('itv.successorNone')}</span>
+      </span>
     ),
   };
 }
@@ -922,39 +935,143 @@ function anchorsOf(content: {
  * the other two views, but in-page jumps to IT's own sections rather than a
  * switch between panels. Plain fragment links: the place is the address, Back
  * returns to it, and nothing is stored.
+ *
+ * It looks like the layer bar (`LayerBar.tsx`) so the three views share one
+ * navigation strip: a delimited surface with its eyebrow ("On this page"), a
+ * muted track, and the section the reader is in raised with an ink ring and
+ * `aria-current="location"`. Links, not tabs: each is a jump, so the WAI-ARIA
+ * tabs pattern of the layer bar does not apply. Where the reader is follows
+ * the scroll — the last section whose top has passed under the bar — and a
+ * click marks its target at once. On a phone the row scrolls sideways inside
+ * its track and the page does not.
  */
 function ItAnchorBar({ anchors }: { anchors: ItAnchor[] }) {
+  const [current, setCurrent] = useState<ItSectionKey | null>(null);
+  /** A section the reader jumped to stays marked until they scroll away from where the jump landed. */
+  const pinned = useRef<{ key: ItSectionKey; at: number; y: number | null } | null>(null);
+  const keys = anchors.map((a) => a.key).join(' ');
+
+  useEffect(() => {
+    const list = keys ? (keys.split(' ') as ItSectionKey[]) : [];
+    if (list.length === 0 || typeof window === 'undefined') return;
+    // The line a section has to reach to count as the one being read: under
+    // the shell bar and this bar, with a little room.
+    const LINE = 160;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const pin = pinned.current;
+      if (pin) {
+        // The jump scrolls smoothly; while it runs, and until the reader moves
+        // on from where it landed, the section they chose is the one marked.
+        if (Date.now() - pin.at < 1000) {
+          pin.y = window.scrollY;
+          setCurrent(pin.key);
+          return;
+        }
+        if (pin.y === null || Math.abs(window.scrollY - pin.y) < 80) {
+          setCurrent(pin.key);
+          return;
+        }
+        pinned.current = null;
+      }
+      // The section the line runs through; where two do (the side column
+      // beside the main one on a wide screen), the main column's — the one
+      // further left. Before the first section, none.
+      let at: { key: ItSectionKey; left: number } | null = null;
+      let passed: ItSectionKey | null = null;
+      for (const key of list) {
+        const el = document.getElementById(IT_SECTION_IDS[key]);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top > LINE) continue;
+        passed = key;
+        if (r.bottom > LINE && (!at || r.left < at.left)) at = { key, left: r.left };
+      }
+      setCurrent(at ? at.key : passed);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure);
+    };
+    // An observer per section says when one crosses the line; the scroll
+    // listener covers sections taller than the screen, which cross nothing
+    // while the reader is inside them.
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(schedule, { rootMargin: `-${LINE}px 0px 0px 0px`, threshold: [0, 1] });
+    for (const key of list) {
+      const el = document.getElementById(IT_SECTION_IDS[key]);
+      if (el) observer?.observe(el);
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    schedule();
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('hashchange', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [keys]);
+
   if (anchors.length === 0) return null;
   return (
     <nav aria-label={wt('itv.anchorsLabel')} data-it-anchors="" className="cc-no-print sticky top-14 z-cc-sticky mt-4 bg-cc-page py-2">
-      {/* The look of the layer bar of the other two views (same tray, same
-          count pill), one row on a phone scrolled within itself, so the sticky
-          bar never grows over the content it points into. */}
-      <ul className="m-0 flex min-w-0 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
-        {anchors.map((a) => (
-          <li key={a.key} className="shrink-0">
-            <a
-              href={`#${IT_SECTION_IDS[a.key]}`}
-              data-it-anchor={a.key}
-              className="group inline-flex items-stretch rounded-cc-row text-[13px] font-semibold whitespace-nowrap text-cc-ink no-underline pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-            >
-              {/* The hover surface sits on an inner span, as in the layer bar:
-                  the link keeps no surface of its own (§1.5). */}
-              <span className="inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1 group-hover:bg-cc-surface">
-                <span>{a.label}</span>
-                {a.count ? (
+      <div className="flex min-w-0 items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-1 shadow-cc">
+        <span
+          aria-hidden={true}
+          className="shrink-0 pl-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase max-sm:hidden"
+        >
+          {wt('itv.anchorsLead')}
+        </span>
+        <ul className="m-0 flex min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
+          {anchors.map((a) => {
+            const on = a.key === current;
+            return (
+              <li key={a.key} className="shrink-0">
+                <a
+                  href={`#${IT_SECTION_IDS[a.key]}`}
+                  data-it-anchor={a.key}
+                  data-it-anchor-state={on ? 'on' : 'off'}
+                  aria-current={on ? 'location' : undefined}
+                  onClick={() => {
+                    pinned.current = { key: a.key, at: Date.now(), y: null };
+                    setCurrent(a.key);
+                  }}
+                  className={cn(
+                    'group inline-flex items-stretch rounded-cc-row text-[13px] whitespace-nowrap text-cc-ink no-underline pointer-coarse:min-h-11',
+                    'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus',
+                    on ? 'font-bold' : 'font-semibold',
+                  )}
+                >
+                  {/* The raised surface sits on an inner span, as in the layer
+                      bar: the link keeps no surface of its own (§1.5). */}
                   <span
-                    data-it-anchor-count=""
-                    className="rounded-full border border-cc-line bg-cc-surface px-2 text-[11px] leading-[18px] font-semibold text-cc-ink-muted tabular-nums"
+                    className={cn(
+                      'inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1',
+                      on ? 'bg-cc-surface shadow-cc ring-1 ring-cc-ink' : 'group-hover:bg-cc-surface',
+                    )}
                   >
-                    {a.count}
+                    <span>{a.label}</span>
+                    {a.count ? (
+                      <span
+                        data-it-anchor-count=""
+                        className={cn(
+                          'rounded-full border px-2 text-[11px] leading-[18px] font-semibold tabular-nums',
+                          on ? 'border-cc-ink text-cc-ink' : 'border-cc-line bg-cc-surface text-cc-ink-muted',
+                        )}
+                      >
+                        {a.count}
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }

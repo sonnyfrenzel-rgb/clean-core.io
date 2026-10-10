@@ -61,6 +61,9 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'oq.end.resolved': 'Resolved by evidence',
   'oq.end.answered': 'Answered',
   'oq.end.accepted': 'Accepted as known open',
+  'oq.settledTitle': 'Settled',
+  'oq.settledLead':
+    'Not counted as open: settled by evidence, answered by the owner, or accepted as known open. An answer stays a self-declaration, never proof.',
   'oq.answer': 'Answer',
   'oq.answerOrAccept': 'Answer it, or accept it as known open',
   'oq.answerLabel': 'Your answer',

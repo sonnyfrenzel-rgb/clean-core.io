@@ -12,6 +12,7 @@ import '../lib/abap/catalog-snapshots';
 import {
   NO_FILTERS,
   catalogProfile,
+  chainLine,
   catalogSnapshotWords,
   filterRows,
   isItRight,
@@ -23,6 +24,7 @@ import {
 } from '../lib/it-view';
 import type { PublicCloudFitAssignment } from '../lib/abap/public-cloud-fit';
 import { itObjects } from '../lib/it-objects';
+import { extractCodeInventory } from '../lib/abap/code-assessment';
 import { IT_ANCHORS, IT_LAYER_ELSEWHERE, IT_SECTION_IDS, runTrust } from '../lib/it-sections';
 import { LAYERS } from '../lib/workspace-model';
 import type { ItUseRow } from '../lib/it-findings';
@@ -249,6 +251,47 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
     const objects = itObjects({ inventory: [], coupling: [], uses: built.uses, findings: built.rows });
     expect(objects.rows.find((r) => r.object === 'VBAK' && r.use === 'write')?.batchInput).toBe('all');
     expect(objects.rows.find((r) => r.object === 'VBAK' && r.use === 'read')?.batchInput).toBeNull();
+  });
+
+  test('"used by" on the stored inventory: the ranges come from the source, so a call in a FORM is that FORM’s', () => {
+    // The inventory a run stores (`extractCodeInventory`) names the objects and
+    // records no lines; before the ranges were read from the source, every use
+    // of the demo read "outside the listed own objects".
+    const src = read('public/starter-examples/Z_MM_PO_APPROVAL.abap');
+    const built = findingsOf(src, 'Z_MM_PO_APPROVAL.abap', 'private', 'pce-latest');
+    const inventory = extractCodeInventory(src);
+    expect(inventory.every((i) => i.lineStart === undefined)).toBe(true);
+    const out = itObjects({ inventory, coupling: [], uses: built.uses, findings: built.rows, code: src });
+    const use = (object: string, kind: string) => out.rows.find((r) => r.object === object && r.use === kind)!;
+    expect(use('BAPI_PO_CREATE1', 'call').usedBy).toEqual(['CREATE_PURCHASE_ORDER']);
+    expect(use('BAPI_PO_CREATE1', 'call').usedOutside).toBe(false);
+    expect(use('GUI_UPLOAD', 'call').usedBy).toEqual(['UPLOAD_ATTACHMENT']);
+    expect(use('CONVERT_TO_LOCAL_CURRENCY', 'call').usedBy).toEqual(['CONVERT_TO_EUR']);
+    expect(use('ENQUEUE_EMEBANE', 'call').usedBy).toEqual(['LOCK_REQUISITION']);
+    expect(use('SAP_WAPI_CREATE_EVENT', 'call').usedBy).toEqual(['REQUEST_APPROVAL']);
+    expect(use('EBAN', 'write').usedBy.sort()).toEqual(['HOLD_FOR_BUYER', 'SET_REQUISITION_STATUS']);
+    // Every use of the demo stands in one of its FORM routines.
+    expect(out.rows.filter((r) => r.side === 'dependency' && r.usedOutside).map((r) => r.object)).toEqual([]);
+    // The own object carries its range; a report or include gets none — the file is not proven to be all of it.
+    expect(out.rows.find((r) => r.object === 'CREATE_PURCHASE_ORDER')?.range).toEqual({ start: 556, end: 612 });
+    expect(out.rows.find((r) => r.object === 'Z_MM_PO_APPROVAL' && r.side === 'own-object')?.range).toBeNull();
+    // Without the source nothing is guessed: the uses stand outside, as before.
+    const blind = itObjects({ inventory, coupling: [], uses: built.uses, findings: built.rows });
+    expect(blind.rows.find((r) => r.object === 'BAPI_PO_CREATE1')?.usedOutside).toBe(true);
+  });
+
+  test('the chain line says in plain words for how many places the chain holds and why the rest stop', () => {
+    const view = itFindingsView({ rows: ROWS, sourceSha256: 'a', rulesDerived: 0 });
+    expect(chainLine(view)).toBe(
+      'The chain from requirement to target is complete for none of the 4 places in the code. All 4 stop at Requirement: no business rule the engine derived covers their lines.',
+    );
+    const mixed = itFindingsView({
+      rows: [row({ rulesCoveringLine: ['BR-001'] }), row({ id: 'CC-002', successor: null, targetOptions: [], rulesCoveringLine: ['BR-002'] }), row({ id: 'CC-003' })],
+      sourceSha256: 'a', rulesDerived: 2,
+    });
+    expect(chainLine(mixed)).toBe(
+      'The chain from requirement to target is complete for 1 of the 3 places in the code. 1 stops at Requirement: no business rule the engine derived covers its line. 1 stops at Target draft: SAP names no successor and the router no route to draft a target from.',
+    );
   });
 
   test('nothing recorded is said, never a table of nothing', () => {

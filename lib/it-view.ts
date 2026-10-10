@@ -8,7 +8,7 @@ import {
   type PublicCloudFitBucket,
   type TargetPlatform,
 } from './abap/public-cloud-fit';
-import type { ItFindingRow, ItFindingsSource, ItView } from './it-findings';
+import type { ChainLinkId, ItFindingRow, ItFindingsSource, ItView } from './it-findings';
 import { distinctFindingCount, placesInTheCode } from './it-findings';
 
 /**
@@ -116,6 +116,36 @@ export function isItRight(view: Pick<ItView, 'rows' | 'unreadable' | 'headline' 
     `The chain from requirement to target is complete for ${complete} of ${n} ${placesInTheCode(n)}` +
     (ends.length > 0 ? ` — ${ends.join(', ')}.` : '.')
   );
+}
+
+/** Why a chain stops at a link — only the requirement and the target can be missing (`chainOf`). */
+const WHY_CHAIN_STOPS: Partial<Record<ChainLinkId, (n: number) => string>> = {
+  requirement: (n) => `no business rule the engine derived covers ${n === 1 ? 'its line' : 'their lines'}`,
+  target: () => 'SAP names no successor and the router no route to draft a target from',
+};
+
+/**
+ * The line beside the chain of the chosen finding, in plain words: for how many
+ * places the chain holds from requirement to target, and why the rest stop.
+ * The same facts as `ItView.chainCoverage` — "0 of 31 places in the code in
+ * this run, chain complete · 31 end at Requirement" read as a list of terms.
+ */
+export function chainLine(view: Pick<ItView, 'rows' | 'unreadable' | 'chainCoverage' | 'chainEnds'>): string {
+  if (view.unreadable) return view.chainCoverage.sentence;
+  const n = view.rows.length;
+  const complete = view.chainCoverage.counted ?? 0;
+  const head =
+    complete === n
+      ? `The chain from requirement to target is complete for all ${n} ${placesInTheCode(n)}.`
+      : `The chain from requirement to target is complete for ${complete === 0 ? 'none' : complete} of the ${n} ${placesInTheCode(n)}.`;
+  const stops = view.chainEnds
+    .filter((e) => e.count > 0)
+    .map((e) => {
+      const who = e.count === n ? (n === 1 ? 'It stops' : `All ${n} stop`) : `${e.count} ${e.count === 1 ? 'stops' : 'stop'}`;
+      const why = WHY_CHAIN_STOPS[e.link]?.(e.count);
+      return `${who} at ${e.label}${why ? `: ${why}` : ''}.`;
+    });
+  return [head, ...stops].join(' ');
 }
 
 /* ------------------------------------------------------- where to: buckets */

@@ -257,16 +257,23 @@ test.describe('what could not be read says so', () => {
 test.describe('the route’s own derivation, on the product’s largest example', () => {
   const EXAMPLE = 'public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
-  test('41 findings, 25 with an object, and not one requirement borrowed from a neighbour', () => {
+  test('42 findings, 26 with an object, and not one requirement borrowed from a neighbour', () => {
     const built = findingsOf(read(EXAMPLE), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
     const view = itFindingsView(built);
 
     // The premise, measured rather than assumed. 41 since 30.09.2026: the
     // PERFORM add_log USING 'WARN' 'GUI_DOWNLOAD' literal at line 553 no longer
     // counts as a GUI download (QA full review of fc787674705f, 90cdec9128c9).
-    expect(built.rows.length).toBe(41);
-    expect(built.rows.filter((r) => r.objectName !== null).length).toBe(25);
-    expect(built.rulesDerived).toBe(16);
+    // 42 since 10.10.2026 (engine slice 3.0.7, 42368738): the batch input to
+    // VA02 at lines 463-467 is read as what it does — it changes the delivery
+    // block VBAK-LIFSK of the order — so one finding names VBAK as written
+    // (level D), beside the BDC finding on the transaction itself. The same
+    // slice derives one more rule (16 -> 17).
+    expect(built.rows.length).toBe(42);
+    expect(built.rows.filter((r) => r.objectName !== null).length).toBe(26);
+    expect(built.rulesDerived).toBe(17);
+    const batchInput = built.rows.find((r) => r.objectName === 'VBAK' && r.level === 'D');
+    expect(batchInput, 'the write through batch input is not the new row').toBeTruthy();
 
     // Both catalog views travel with every graded row, and only with those.
     for (const r of built.rows) {
@@ -288,15 +295,16 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // The honest state of the chain today: nothing is complete, and every chain
     // stops at the requirement. 17 of them have a rule in the same routine, and
     // that is reported as a neighbourhood and counted nowhere else.
-    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(41);
+    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(42);
     expect(view.chainCoverage.counted).toBe(0);
-    expect(view.requirementNote).toContain('17 of 41');
+    expect(view.requirementNote).toContain('17 of 42');
     expect(view.requirementNote).toContain('neighbourhood, not a cause');
 
-    // C 22, B 2, Unknown 1 — measured 23.09.2026.
+    // C 22, B 2, Unknown 1 — measured 23.09.2026; D 1 since 10.10.2026, the
+    // batch-input write to VBAK above (a write, so D; every read stays C).
     const dist = Object.fromEntries(view.distribution.slices.map((s) => [s.grade, s.count]));
-    expect(dist).toMatchObject({ A: 0, B: 2, C: 22, D: 0, Unknown: 1 });
-    expect(view.distribution.coverage.sentence).toContain('25 of 41');
+    expect(dist).toMatchObject({ A: 0, B: 2, C: 22, D: 1, Unknown: 1 });
+    expect(view.distribution.coverage.sentence).toContain('26 of 42');
   });
 });
 
@@ -414,7 +422,8 @@ test.describe('the IT view on a real project, in a browser', () => {
 
     // ADR-029: the chain names the finding it is for, and its coverage stands
     // beside it rather than in a popover.
-    await expect(page.locator('[data-it-chain-coverage]')).toContainText('chain complete');
+    // In plain words (chainLine): for how many places it holds, and why the rest stop.
+    await expect(page.locator('[data-it-chain-coverage]')).toContainText('The chain from requirement to target is complete for');
     const links = page.locator('[data-it-chain-link]');
     await expect(links).toHaveCount(4);
     await expect(page.locator('[data-it-chain-link="requirement"] [data-it-chain-absent]')).toHaveText(

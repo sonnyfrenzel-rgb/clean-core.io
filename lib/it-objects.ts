@@ -1,6 +1,8 @@
 import type { CloudReadinessGrade } from './abap/abcd-classification';
 import type { ItFindingRow, ItUseRow } from './it-findings';
 import type { CodeInventoryItem, DataCouplingEntry } from './types';
+import { readStatements } from './abap/statement-reader';
+import { readBlocks, type Container } from './abap/block-structure';
 
 /**
  * "Objects & dependencies" of the IT view — one table for what used to be two
@@ -14,6 +16,11 @@ import type { CodeInventoryItem, DataCouplingEntry } from './types';
  *   - **Used by** is the own object whose line range holds the line of the
  *     use — the innermost one where ranges nest. A use on a line no listed
  *     object holds is said to be so, never given to the program by default.
+ *     The inventory a run stores (`extractCodeInventory`) names each object
+ *     but records no lines, so the range of a subroutine, method, dialog
+ *     module, function module or class is read from the source itself
+ *     (`readBlocks`), matched by name and kind. A report or include gets no
+ *     range: the uploaded file is not proven to be all of it.
  *   - **Owner** has three answers, as `DataCouplingEntry.isStandard` has: your
  *     own (Z/Y or customer namespace), SAP, or not determined — a reserved
  *     namespace (`/ACME/…`) is neither by its name.
@@ -97,21 +104,52 @@ interface Range {
   end: number;
 }
 
+/** Which container kind of `readBlocks` an inventory type is. */
+const CONTAINER_OF_TYPE: Partial<Record<CodeInventoryItem['type'], Container['kind']>> = {
+  'Form Routine': 'form',
+  'Function Module': 'function',
+  Class: 'class',
+};
+
+/**
+ * The line range of each named container of the source, keyed `kind:NAME` —
+ * the first one where a name repeats. Empty without a source.
+ */
+export function sourceRanges(code: string | null | undefined): Map<string, { start: number; end: number }> {
+  const out = new Map<string, { start: number; end: number }>();
+  if (typeof code !== 'string' || code.trim().length === 0) return out;
+  for (const c of readBlocks(readStatements(code)).containers) {
+    if (c.kind === 'event') continue;
+    const key = `${c.kind}:${c.name.toUpperCase()}`;
+    if (!out.has(key)) out.set(key, { start: c.lineStart, end: c.lineEnd });
+  }
+  return out;
+}
+
 export function itObjects({
   inventory,
   coupling,
   uses,
   findings,
+  code,
 }: {
   inventory: readonly CodeInventoryItem[] | null | undefined;
   coupling: readonly DataCouplingEntry[] | null | undefined;
   /** `undefined` when the findings route did not record the uses. */
   uses: readonly ItUseRow[] | null | undefined;
   findings: readonly ItFindingRow[] | null | undefined;
+  /** The program source, for the line ranges the stored inventory does not record. */
+  code?: string | null;
 }): ItObjects {
-  const own = (Array.isArray(inventory) ? inventory : []).filter(
-    (i): i is CodeInventoryItem => typeof i === 'object' && i !== null && str(i.objectName).length > 0,
-  );
+  const fromSource = sourceRanges(code);
+  const own = (Array.isArray(inventory) ? inventory : [])
+    .filter((i): i is CodeInventoryItem => typeof i === 'object' && i !== null && str(i.objectName).length > 0)
+    .map((i): CodeInventoryItem => {
+      if (isNum(i.lineStart)) return i;
+      const kind = CONTAINER_OF_TYPE[i.type];
+      const read = kind ? fromSource.get(`${kind}:${str(i.objectName).toUpperCase()}`) : undefined;
+      return read ? { ...i, lineStart: read.start, lineEnd: read.end } : i;
+    });
   const tableEntries = (Array.isArray(coupling) ? coupling : []).filter(
     (e): e is DataCouplingEntry => typeof e === 'object' && e !== null && str(e.tableName).length > 0,
   );

@@ -64,6 +64,8 @@ export default function OpenQuestions({
   /** The demo has no project to write to and no stage to link into. */
   demo?: boolean;
 }) {
+  const openGroups = questions.groups.filter((g) => g.end === 'open');
+  const settledGroups = questions.groups.filter((g) => g.end !== 'open');
   return (
     <section id={OPEN_QUESTIONS_ID} data-open-questions={questions.open} className="scroll-mt-20" aria-label={wt('oq.title')}>
       <CcCard title={wt('oq.title')} count={questions.open} meta={<CcProvenanceChip value="not-determined" />}>
@@ -87,20 +89,47 @@ export default function OpenQuestions({
             {wt('oq.none')}
           </p>
         ) : null}
-        <ul className="m-0 mt-3 list-none divide-y divide-cc-line p-0">
-          {questions.groups.map((group) => (
-            <Group
-              key={group.action}
-              group={group}
-              projectId={projectId}
-              view={view}
-              owner={owner && !demo}
-              hasRun={hasRun}
-              demo={demo}
-              onAnswered={onAnswered}
-            />
-          ))}
-        </ul>
+        {/* Only open groups stand in the list the count counts. A group its
+            evidence resolved, an answered one and one accepted as known open
+            are not open questions (ADR-081's end states): they sit folded under
+            "Settled", with their count, so the header and the list agree. */}
+        {openGroups.length > 0 ? (
+          <ul data-open-questions-list="open" className="m-0 mt-3 list-none divide-y divide-cc-line p-0">
+            {openGroups.map((group) => (
+              <Group
+                key={group.action}
+                group={group}
+                projectId={projectId}
+                view={view}
+                owner={owner && !demo}
+                hasRun={hasRun}
+                demo={demo}
+                onAnswered={onAnswered}
+              />
+            ))}
+          </ul>
+        ) : null}
+        {settledGroups.length > 0 ? (
+          <div data-open-questions-settled={settledGroups.length} className="mt-3 border-t border-cc-line pt-2">
+            <CcDisclosure title={wt('oq.settledTitle')} count={settledGroups.length}>
+              <p className="m-0 mb-2 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('oq.settledLead')}</p>
+              <ul data-open-questions-list="settled" className="m-0 list-none divide-y divide-cc-line p-0">
+                {settledGroups.map((group) => (
+                  <Group
+                    key={group.action}
+                    group={group}
+                    projectId={projectId}
+                    view={view}
+                    owner={owner && !demo}
+                    hasRun={hasRun}
+                    demo={demo}
+                    onAnswered={onAnswered}
+                  />
+                ))}
+              </ul>
+            </CcDisclosure>
+          </div>
+        ) : null}
         {questions.limits ? (
           <p data-open-questions-limits="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted">
             {questions.limits}

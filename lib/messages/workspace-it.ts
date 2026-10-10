@@ -58,6 +58,7 @@ export const WORKSPACE_IT_MESSAGES = {
   // The IT view's own sections (owner decision 10.10.2026, ADR-086): its
   // anchor bar, the merged objects table, Run & trust and the links out.
   'itv.anchorsLabel': 'Sections of the IT view',
+  'itv.anchorsLead': 'On this page',
   'itv.anchorFindings': 'Findings',
   'itv.anchorObjects': 'Objects & dependencies',
   'itv.anchorQuestions': 'Open questions',
@@ -84,9 +85,10 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.usedByOutside': 'outside the listed own objects',
   'itv.usedByOwn': 'own object',
   'itv.successorNone': 'no finding names one',
+  'itv.successorNoneNote': '— under Successor: no finding on that object names a successor.',
 
   'itv.trustTitle': 'Run & trust',
-  'itv.trustRun': 'Signed run',
+  'itv.trustRun': 'Analysis run',
   'itv.trustFingerprint': 'Source fingerprint',
   'itv.trustPack': 'Audit pack',
   'itv.trustPackNone': 'not exported for this run',
