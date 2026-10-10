@@ -70,6 +70,8 @@ export function containsOrUnknown(commit, head, { exists = isCommit, ancestor = 
  *
  * 1. an explicit base from a manual run wins;
  * 2. otherwise the last reviewed checkpoint, when it is an ancestor of head;
+ *    (moved past the last push review by complete slices or a complete full review on main: checkpoint.mjs);
+ *    a checkpoint that is the head itself leaves an empty delta;
  * 3. otherwise — no checkpoint, or one a force push made unusable — everything
  *    not yet on main. The push event's own `before` is never used as a fallback:
  *    after a cancelled, failed or rewritten history it silently narrows the
@@ -89,6 +91,9 @@ export const MAX_CHECKPOINT_COMMITS = 300;
 
 export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainBase, commitsBetween = () => 0, maxCommits = MAX_CHECKPOINT_COMMITS }) {
   if (overrideBase) return { base: overrideBase, reason: 'base given for this run' };
+  // Reviewed up to the head already (a complete slice ending here, checkpoint.mjs): an empty delta, not a re-read of
+  // everything not yet on main.
+  if (checkpoint && checkpoint === head) return { base: head, reason: 'head already reviewed — nothing since the checkpoint' };
   const usable = checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head);
   const tooFar = usable && commitsBetween(checkpoint, head) > maxCommits;
   if (usable && !tooFar) return { base: checkpoint, reason: 'last reviewed checkpoint' };

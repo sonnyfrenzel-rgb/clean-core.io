@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          mkdir -p .qa-review/prev
+          mkdir -p .qa-review/prev .qa-review/slices .qa-review/full
           # Fifty runs back; when none of them has a report, review.mjs falls back to everything not yet on main.
           # Push runs only: a manual run reviews a range it was given, and its checkpoint is not this branch's
           # (06.10.2026: a slice review of 04.10. became the base of two pushes, 1,385 commits back).
@@ -79,8 +79,19 @@ jobs:
             [ "$id" = "$RUN_ID" ] && continue
             if gh run download "$id" --pattern 'qa-review-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
           done
+          # What may move that checkpoint forward (scripts/qa/lib/checkpoint.mjs, 10.10.2026): complete manual slices
+          # that start exactly at it, one after the other, and a complete full review of a release on main. A slice
+          # that starts anywhere else, or did not read all of its range, is ignored - the protection above stays.
+          for id in $(gh run list --workflow qa-review.yml --branch dev --event workflow_dispatch --limit 30 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+            [ "$id" = "$RUN_ID" ] && continue
+            gh run download "$id" --pattern 'qa-review-*' -D ".qa-review/slices/$id" > /dev/null 2>&1 || true
+          done
+          for id in $(gh run list --workflow qa-review.yml --branch main --event push --limit 30 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+            if gh run download "$id" --pattern 'qa-full-*' -D .qa-review/full > /dev/null 2>&1; then break; fi
+          done
 
       - name: Review the delta
+        id: review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
@@ -92,7 +103,9 @@ jobs:
       - name: Upload sealed report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: qa-review-${{ github.sha }}-${{ github.run_attempt }}
+          # Named after the reviewed head: for a manual slice that is its `head`, not the tip it was dispatched on,
+          # so `await.mjs <head> --slice` finds it (review.mjs writes the head as a step output).
+          name: qa-review-${{ steps.review.outputs.head || github.sha }}-${{ github.run_attempt }}
           path: .qa-review/out/qa-review.enc.json
           # This report is the delta ledger: the next push starts from it. A quiet dev branch can go
           # weeks without a push, so it is kept as long as the repository allows (90 days), like qa-full.

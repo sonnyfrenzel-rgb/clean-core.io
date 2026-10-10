@@ -521,6 +521,8 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     const ledger = read('.github/workflows/qa-review.yml');
     expect(ledger.slice(ledger.indexOf('- name: Upload sealed report'), ledger.indexOf('\n  smoke:'))).toMatch(/retention-days: 90\b/);
     expect(base({ mainBase: () => 'head' }).base).toBeNull(); // head is on main
+    // Reviewed up to the head already (a complete slice ending there): an empty delta, not everything not yet on main.
+    expect(base({ checkpoint: 'head' }).base).toBe('head');
     // No shared history with main is not "on main": the run stops instead of reviewing one commit.
     expect(() => base({ checkpoint: 'rewritten', mainBase: () => null })).toThrow(/No usable review base/);
     expect(() => base({ mainBase: () => null })).toThrow(/No usable review base/);
@@ -553,6 +555,161 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     }
   });
 
+  /**
+   * 10.10.2026: the push checkpoint sat at 1c5d882f3b6a while three complete manual slices had read 1c5d882f..d939fb5b,
+   * so every push re-read all of v3.0.7 and stayed incomplete. Complete slices that chain from the checkpoint, and a
+   * complete full review of a release on main, move it now — a stray slice still does not (06.10.2026).
+   */
+  test.describe('the checkpoint moves past what complete slices and a complete full review read', () => {
+    // A linear history c0 < c1 < … < c9; c9 is the head of the push.
+    const sha = (i: number) => `${i}`.padStart(2, '0').repeat(20);
+    const order = (x: string) => Array.from({ length: 10 }, (_, i) => sha(i)).indexOf(x);
+    const isAncestorOf = (a: string, b: string) => order(a) >= 0 && order(b) >= 0 && order(a) <= order(b);
+    const head = sha(9);
+    const fps = (r: { findings: { fingerprint: string }[] }) => r.findings.map((x) => x.fingerprint).sort();
+    const f = (fp: string, extra: Record<string, unknown> = {}) => ({ fingerprint: fp, severity: 'medium', file: 'a.ts', title: fp, ...extra });
+    const slice = (b: number, h: number, over: Record<string, unknown> = {}) => ({
+      range: { base: sha(b), head: sha(h), checkpoint: sha(h) },
+      incomplete: false,
+      verdict: 'go_with_notes',
+      coverage: { reviewed: ['a.ts'], notReviewed: [] },
+      findings: [] as unknown[],
+      resolved: [] as unknown[],
+      meta: { run: { id: `run-${b}-${h}` } },
+      ...over,
+    });
+    const full = (h: number, over: Record<string, unknown> = {}) => ({ ...slice(0, h), range: { base: null, head: sha(h), checkpoint: sha(h) }, ...over });
+
+    test('a complete slice that starts at the checkpoint is adopted, and its findings are carried', async () => {
+      const { advanceCheckpoint } = await lib('checkpoint.mjs');
+      const r = advanceCheckpoint({ checkpoint: sha(1), head, findings: [f('old')], slices: [slice(1, 4, { findings: [f('new'), f('old', { carried: true })] })], isAncestorOf });
+      expect(r.checkpoint).toBe(sha(4));
+      expect(r.adopted).toEqual([{ base: sha(1), head: sha(4), run: 'run-1-4' }]);
+      expect(fps(r)).toEqual(['new', 'old']);
+    });
+
+    test('slices chain from the checkpoint as far as they reach, in any order they were downloaded', async () => {
+      const { advanceCheckpoint, advanceNote } = await lib('checkpoint.mjs');
+      const slices = [slice(6, 7), slice(1, 3, { findings: [f('first')] }), slice(3, 6, { findings: [f('second')] })];
+      const r = advanceCheckpoint({ checkpoint: sha(1), head, findings: [], slices, isAncestorOf });
+      expect(r.checkpoint).toBe(sha(7));
+      expect(r.adopted.map((a: { head: string }) => a.head)).toEqual([sha(3), sha(6), sha(7)]);
+      // The second slice never saw the first one's finding: it is still carried, not dropped.
+      expect(fps(r)).toEqual(['first', 'second']);
+      expect(advanceNote(r)).toMatch(/3 complete slice review\(s\) adopted up to 070707070707/);
+      // A gap ends the chain: 7..8 is missing, so 8..9 is not adopted.
+      expect(advanceCheckpoint({ checkpoint: sha(1), head, slices: [...slices, slice(8, 9)], isAncestorOf }).checkpoint).toBe(sha(7));
+      // Two slices from the same base: the one that reaches further.
+      expect(advanceCheckpoint({ checkpoint: sha(1), head, slices: [slice(1, 2), slice(1, 5)], isAncestorOf }).checkpoint).toBe(sha(5));
+      // A slice up to the head itself leaves an empty delta (chooseBase: checkpoint === head).
+      expect(advanceCheckpoint({ checkpoint: sha(1), head, slices: [slice(1, 9)], isAncestorOf }).checkpoint).toBe(head);
+    });
+
+    test('a finding a slice resolved stays resolved when a later slice merely carried it, and comes back when one raised it', async () => {
+      const { advanceCheckpoint } = await lib('checkpoint.mjs');
+      const resolvedThenCarried = advanceCheckpoint({
+        checkpoint: sha(1),
+        head,
+        findings: [f('fixed')],
+        slices: [slice(1, 2, { resolved: [f('fixed')] }), slice(2, 3, { findings: [f('fixed', { carried: true })] })],
+        isAncestorOf,
+      });
+      expect(fps(resolvedThenCarried)).toEqual([]);
+      const raisedAgain = advanceCheckpoint({ checkpoint: sha(1), head, findings: [f('fixed')], slices: [slice(1, 2, { resolved: [f('fixed')] }), slice(2, 3, { findings: [f('fixed')] })], isAncestorOf });
+      expect(fps(raisedAgain)).toEqual(['fixed']);
+    });
+
+    test('a stray or incomplete slice never moves the checkpoint (06.10.2026)', async () => {
+      const { advanceCheckpoint } = await lib('checkpoint.mjs');
+      const moved = (slices: unknown[], checkpoint: string | null = sha(1)) => advanceCheckpoint({ checkpoint, head, findings: [f('kept')], slices, isAncestorOf });
+      // Starts anywhere but exactly at the checkpoint — behind it or ahead of it.
+      expect(moved([slice(0, 5)]).checkpoint).toBe(sha(1));
+      expect(moved([slice(2, 5)]).checkpoint).toBe(sha(1));
+      // Did not read all of its range.
+      expect(moved([slice(1, 5, { incomplete: true, range: { base: sha(1), head: sha(5), checkpoint: sha(1) } })]).checkpoint).toBe(sha(1));
+      expect(moved([slice(1, 5, { coverage: { reviewed: [], notReviewed: [{ path: 'b.ts', reason: 'outside the cap' }] } })]).checkpoint).toBe(sha(1));
+      expect(moved([slice(1, 5, { verdict: 'no_review' })]).checkpoint).toBe(sha(1));
+      expect(moved([slice(1, 5, { verdict: undefined })]).checkpoint).toBe(sha(1));
+      // Ends outside the history of this head.
+      expect(moved([{ ...slice(1, 5), range: { base: sha(1), head: 'f'.repeat(40), checkpoint: 'f'.repeat(40) } }]).checkpoint).toBe(sha(1));
+      // Not a full commit id (it would reach git as an argument).
+      expect(moved([{ ...slice(1, 5), range: { base: sha(1), head: '0505050', checkpoint: '0505050' } }]).checkpoint).toBe(sha(1));
+      // Without a push checkpoint nothing is adopted: the fallback stays everything not yet on main.
+      const none = moved([slice(1, 5)], null);
+      expect(none.checkpoint).toBeNull();
+      expect(none.adopted).toEqual([]);
+      // The register is the push review's when nothing was adopted.
+      expect(fps(moved([slice(2, 5)]))).toEqual(['kept']);
+    });
+
+    test('a complete full review of a release on main moves it; a skipped, incomplete or unrelated one does not', async () => {
+      const { advanceCheckpoint, advanceNote } = await lib('checkpoint.mjs');
+      const at = (fullReviews: unknown[], slices: unknown[] = []) => advanceCheckpoint({ checkpoint: sha(1), head, findings: [f('dev')], slices, fullReviews, isAncestorOf });
+      const r = at([full(5)]);
+      expect(r.checkpoint).toBe(sha(5));
+      expect(r.fullReview).toBe(sha(5));
+      expect(advanceNote(r)).toMatch(/complete full review of release 050505050505/);
+      // The main ledger's findings stay there; dev's register is unchanged.
+      expect(fps(r)).toEqual(['dev']);
+      // v3.0.7 (32285aee): the full review ran out of its cap — incomplete, so it moves nothing. No full review
+      // at all (a release under the thresholds) moves nothing either.
+      expect(at([full(5, { incomplete: true, range: { base: null, head: sha(5), checkpoint: null }, coverage: { reviewed: [], notReviewed: [{ path: 'x.ts', reason: 'cap' }] } })]).checkpoint).toBe(sha(1));
+      expect(at([full(5, { verdict: 'no_review' })]).checkpoint).toBe(sha(1));
+      expect(at([]).checkpoint).toBe(sha(1));
+      // Behind the checkpoint, or not in the history of this head.
+      expect(at([full(0)]).checkpoint).toBe(sha(1));
+      expect(at([{ ...full(5), range: { base: null, head: 'e'.repeat(40), checkpoint: 'e'.repeat(40) } }]).checkpoint).toBe(sha(1));
+      // Slices first, then the release, then slices that start at the release.
+      const mixed = at([full(6)], [slice(1, 3, { findings: [f('slice')] }), slice(6, 8)]);
+      expect(mixed.checkpoint).toBe(sha(8));
+      expect(mixed.adopted.map((a: { head: string }) => a.head)).toEqual([sha(3), sha(8)]);
+      expect(mixed.fullReview).toBe(sha(6));
+      expect(fps(mixed)).toEqual(['dev', 'slice']);
+    });
+
+    test('review.mjs and the workflow are wired to it', () => {
+      const src = read('scripts/qa/review.mjs');
+      expect(src).toMatch(/slices: sealedReports\(SLICES_DIR, secret\),/);
+      expect(src).toMatch(/fullReviews: sealedReports\(FULL_DIR, secret, 'qa-full\.enc\.json'\),/);
+      expect(src).toMatch(/checkpoint: advance\.checkpoint,/);
+      expect(src).toContain('if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `head=${range.head}\\n`);');
+      const wf = read('.github/workflows/qa-review.yml');
+      const fetch = wf.slice(wf.indexOf('- name: Fetch the previous sealed report'), wf.indexOf('- name: Review the delta'));
+      // The previous report is still a push run's; slices go to a directory of their own, one per run.
+      expect(fetch).toMatch(/--branch dev --event push --limit 50 [^\n]*\n[^\n]*\n\s+if gh run download "\$id" --pattern 'qa-review-\*' -D \.qa-review\/prev /);
+      expect(fetch).toMatch(/gh run list --workflow qa-review\.yml --branch dev --event workflow_dispatch --limit 30 /);
+      expect(fetch).toContain(`gh run download "$id" --pattern 'qa-review-*' -D ".qa-review/slices/$id"`);
+      expect(fetch).toMatch(/--branch main --event push --limit 30 [^\n]*\n\s+if gh run download "\$id" --pattern 'qa-full-\*' -D \.qa-review\/full /);
+      expect(wf).toMatch(/- name: Review the delta\n\s+id: review\n/);
+    });
+
+    test('a slice result is found by its head: the artifact names it, await.mjs --slice looks for it', async () => {
+      const { sliceRunFor } = await lib('gh.mjs');
+      const h = 'a'.repeat(40);
+      const runs = [
+        { databaseId: 1, status: 'completed', createdAt: '2026-10-10T08:00:00Z', event: 'workflow_dispatch' },
+        { databaseId: 2, status: 'completed', createdAt: '2026-10-10T09:00:00Z', event: 'workflow_dispatch' },
+        { databaseId: 3, status: 'in_progress', createdAt: '2026-10-10T10:00:00Z', event: 'workflow_dispatch' },
+      ];
+      const artifacts: Record<number, string[]> = { 1: [`qa-review-${h}-1`], 2: [`qa-review-${'b'.repeat(40)}-1`], 3: [] };
+      let listed: string[] = [];
+      const list = (args: string[]) => ((listed = args), runs);
+      const names = (id: number) => artifacts[id];
+      expect(sliceRunFor('qa-review.yml', h, 'dev', { list, names })?.databaseId).toBe(1);
+      expect(listed).toEqual(expect.arrayContaining(['--event', 'workflow_dispatch', '--branch', 'dev']));
+      // The newest matching run wins; a run still in progress has no artifact yet and is polled again.
+      artifacts[2] = [`qa-review-${h}-2`];
+      expect(sliceRunFor('qa-review.yml', h, 'dev', { list, names })?.databaseId).toBe(2);
+      expect(sliceRunFor('qa-review.yml', 'c'.repeat(40), 'dev', { list, names })).toBeNull();
+      // Only a full commit id: a prefix must not match another head's artifact.
+      expect(sliceRunFor('qa-review.yml', 'aaaaaaa', 'dev', { list, names })).toBeNull();
+      const src = read('scripts/qa/await.mjs');
+      expect(src).toMatch(/\.\.\.\(SLICE \? \{ find: sliceRunFor \} : \{\}\)/);
+      expect(src).toMatch(/if \(SLICE\) \{[\s\S]*?return needsAnotherRound\(review\) \? 3 : 0;/);
+      expect(read('scripts/qa/lib/gh.mjs').match(/const run = find\(workflow, sha, branch\);/g)).toHaveLength(2);
+    });
+  });
+
   test('a review that could not read all of its delta is incomplete: no clean go, checkpoint stays', async () => {
     const { buildReport, needsAnotherRound } = await lib('report.mjs');
     const clean = { review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: ['a.ts'] };
@@ -565,7 +722,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     const complete = buildReport({ range, results: [clean], previous: null, refuted: [], notReviewed: [], triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
     expect(complete.range.checkpoint).toBe(range.head);
     expect(needsAnotherRound(complete)).toBe(false);
-    expect(read('scripts/qa/review.mjs')).toMatch(/checkpoint: previous\?\.range\?\.checkpoint \?\? previous\?\.range\?\.head/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/checkpoint: lastPush\?\.range\?\.checkpoint \?\? lastPush\?\.range\?\.head/);
   });
 
   test('a deleted file keeps its diff, and its removed exports are looked up', async () => {
@@ -584,7 +741,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(src).toMatch(/succeeded\('Delta review'\) \? sealedReports\(dir, secret\)\.find\(\(r\) => r\.range\?\.head === sha && current\(r\.meta\?\.run\)\)/);
     expect(src).toMatch(/succeeded\('Smoke check'\) \? sealedReports\(dir, secret, 'qa-smoke\.enc\.json'\)\.find\(\(s\) => s\.head === sha && current\(s\.run\)\)/);
     const wf = read('.github/workflows/qa-review.yml');
-    expect(wf).toContain('name: qa-review-${{ github.sha }}-${{ github.run_attempt }}');
+    expect(wf).toContain('name: qa-review-${{ steps.review.outputs.head || github.sha }}-${{ github.run_attempt }}');
     expect(wf).toContain('name: qa-smoke-${{ github.sha }}-${{ github.run_attempt }}');
     expect(read('scripts/qa/review.mjs')).toMatch(/run: \{ id: env\.GITHUB_RUN_ID \|\| null, attempt: env\.GITHUB_RUN_ATTEMPT \|\| null \}/);
   });

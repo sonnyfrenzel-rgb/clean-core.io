@@ -5,9 +5,11 @@
  *
  *   node scripts/qa/await.mjs [commit] [--timeout=60]           the delta review and smoke check of a push to dev
  *   node scripts/qa/await.mjs <commit> --full [--timeout=120]    the full review of a release on main
+ *   node scripts/qa/await.mjs <head> --slice [--timeout=60]      a manual slice review (workflow_dispatch) ending at <head>
  *
  * Exit codes — the loop is driven by these, so they are part of the contract:
- *   0  go: no blocking finding and the smoke check passed (--full: no blocking finding and nothing unread)
+ *   0  go: no blocking finding and the smoke check passed (--full: no blocking finding and nothing unread;
+ *      --slice: no blocking finding and nothing unread — a slice has no smoke check)
  *   3  work to do: blocking findings, or the smoke check did not pass (--full: findings to verify and schedule)
  *   2  no result: the run failed, was superseded, timed out, or the loop is revoked — or the review read none of
  *      its code (verdict `no_review`): a run that read nothing has no result either, however many carried
@@ -26,7 +28,7 @@
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gh, ghJson, jobsOf, killSwitch, waitForJob, waitForRun } from './lib/gh.mjs';
+import { gh, ghJson, jobsOf, killSwitch, sliceRunFor, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
 import { isBlocking, needsAnotherRound, readNothing, renderHeader, renderText } from './lib/report.mjs';
 import { renderSmoke } from './lib/smoke.mjs';
@@ -34,6 +36,8 @@ import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
 
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const FULL = process.argv.includes('--full');
+/** A manual slice: its run belongs to the tip it was dispatched on, so it is found by its artifact's head (gh.mjs sliceRunFor). */
+const SLICE = !FULL && process.argv.includes('--slice');
 const timeoutMin = Number((process.argv.find((a) => a.startsWith('--timeout=')) || (FULL ? '--timeout=120' : '--timeout=60')).split('=')[1]);
 
 /** 'revoked', 'on' or 'unknown' (see killSwitch); anything but 'on' stops. */
@@ -49,7 +53,7 @@ function reportNothingRead(report, file, full) {
   console.log(
     full
       ? 'Nothing of this release was read; the reasons are under NOT REVIEWED above. Fix the cause on dev — the next release gets its full review.'
-      : `Nothing of this delta was read. Review it in slices that fit: gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>, oldest first (docs/QA-REVIEW-LOOP.md §8).`,
+      : `Nothing of this delta was read. Review it in slices that fit: gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>, oldest first, the first one from base=${String(report.range?.checkpoint || report.range?.base || '<checkpoint>').slice(0, 12)}, each waited for with \`await.mjs <head> --slice\`. Complete slices that chain from the checkpoint move it for the next push (docs/QA-REVIEW-LOOP.md §8).`,
   );
 }
 
@@ -100,9 +104,13 @@ async function main() {
   // A release on main is one job; a push to dev is two, and the review is not
   // made to wait for the smoke check.
   const wait = FULL ? waitForRun : (workflow, commit, opts) => waitForJob(workflow, commit, 'Delta review', opts);
-  const run = await wait('qa-review.yml', sha, { timeoutMs: deadline - Date.now(), branch: FULL ? 'main' : 'dev' });
+  const run = await wait('qa-review.yml', sha, { timeoutMs: deadline - Date.now(), branch: FULL ? 'main' : 'dev', ...(SLICE ? { find: sliceRunFor } : {}) });
   if (!run) {
-    console.log(`No QA run exists for ${short} on ${FULL ? 'main' : 'dev'}. Was it pushed there?`);
+    console.log(
+      SLICE
+        ? `No finished slice review of ${short} on dev within ${timeoutMin} min (artifact qa-review-${sha}-<attempt>). Was it dispatched with head=${short}?`
+        : `No QA run exists for ${short} on ${FULL ? 'main' : 'dev'}. Was it pushed there? A manual slice ending there: add --slice.`,
+    );
     return 2;
   }
   if (run.timedOut) {
@@ -150,6 +158,13 @@ async function main() {
   if (readNothing(review)) {
     reportNothingRead(review, join(LOCAL_DIR, `${short}.review.json`), false);
     return 2;
+  }
+
+  // A slice has no smoke check: its review is the whole result. A complete one also moves the push checkpoint
+  // when it starts exactly there (checkpoint.mjs).
+  if (SLICE) {
+    console.log(`\n${renderText(review)}\n\nSlice ${String(review.range.base || '').slice(0, 12)}..${short} — no smoke check for a manual run.`);
+    return needsAnotherRound(review) ? 3 : 0;
   }
 
   // Findings first: the smoke check of a commit about to be superseded decides nothing.

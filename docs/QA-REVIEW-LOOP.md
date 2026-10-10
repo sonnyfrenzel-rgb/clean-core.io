@@ -64,7 +64,7 @@ only asked for once the loop is clean.
                 │      acceptance criteria, secret redaction)             │
                 │   4. batches by risk, estimated cost budget             │
                 │   5. Auto Router (high), strict answer, no tools        │
-                │   6. seal the report → artifact qa-review-<sha>         │
+                │   6. seal the report → artifact qa-review-<head>        │
                 │                                                         ▼
                 └── job smoke ── waits for deploy.yml of the same commit ─┘
                     checks /api/health (commit) and its deep probe, routes incl. sign-in,
@@ -224,6 +224,27 @@ rest is in the step report.
 - **The starting point of a review** is the last reviewed checkpoint if it is an
   ancestor of the head — otherwise everything that is not yet on `main`. The `before`
   of the push is never taken; only a manual run may specify a base.
+- **What moves the checkpoint** (since 10.10.2026, `scripts/qa/lib/checkpoint.mjs`). The
+  checkpoint comes from the last *push* review only (`--event push`, the 06.10.2026 fix
+  against stray slice checkpoints). Two other reviews may move it forward, and nothing else:
+  1. **Complete manual slices that chain from it.** A slice (`workflow_dispatch` with
+     base/head) is adopted when its base is *exactly* the checkpoint, its head is an
+     ancestor of the pushed head, and it read everything (`incomplete: false`,
+     `notReviewed` empty, a verdict other than `no_review`). Its head becomes the
+     checkpoint, and a slice starting there is adopted next, as far as the chain reaches.
+     Their findings are carried like a push review's (a finding one slice resolved stays
+     resolved when a later slice merely carried it). A slice that starts anywhere else, or
+     did not read all of its range, is ignored — it can never become the base.
+  2. **A complete full review of a release on `main`** that lies between the checkpoint
+     and the head: it read every reviewable file of that release, so everything up to it
+     has been read. A release *alone* does not move it — since 06.10.2026 a release gets a
+     full review only for a larger change, and one that runs out of its cap is incomplete
+     (v3.0.7, `32285aee`). Its findings stay in the full-review ledger.
+  Slices are tried first, then a full review, then slices from there. A checkpoint that
+  reaches the head leaves an empty delta (verdict `go`, "head already reviewed"). The
+  report names what moved it in `range.baseReason` and `meta.checkpointAdvance`. Why:
+  from 07.10. to 10.10.2026 the checkpoint sat at `1c5d882f3b6a`; the range never fit
+  one review, every push re-read all of v3.0.7, and three complete slices could not move it.
 
 **Fewer rounds at the same quality (Sonny, 15.09.2026, proposals A–C):** Most
 rounds until then went back to three causes, not to product errors.
@@ -280,8 +301,10 @@ node scripts/qa/review.mjs --dry                            # delta, pre-check, 
 QA_BASE_OVERRIDE=<sha> QA_HEAD=<sha> node scripts/qa/review.mjs --dry  # for a specific range
 node scripts/qa/review.mjs --local                          # real review locally (costs money), plaintext to .qa-review/out/
 node scripts/qa/await.mjs <sha> --timeout=60                # fetch the result of a pushed commit
+node scripts/qa/await.mjs <head> --slice                    # fetch the result of a manual slice ending at <head>
 node scripts/qa/refute.mjs <fingerprint> "<reason>"         # file a refuted finding
-gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run the review of a range
+gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run the review of a range (full ids;
+                                                            # its artifact is qa-review-<head>-<attempt>)
 ```
 
 ---
@@ -296,7 +319,7 @@ gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run t
 | Smoke "new revision serving: no" | deploy ran, but `/api/health` reports a different commit | check the Cloud Run revision (`gcloud run services describe clean-core-dev --region=europe-west1 --project=cleancore-491216`) |
 | Job `smoke-production` red in `deploy.yml` | the production revision of a main deploy failed a check | download the artifact `prod-smoke-<sha>-<attempt>`, read it with `node scripts/qa/smoke.mjs --open <file>`, then decide on the rollback (§11) |
 | Report names "NOT REVIEWED" | delta over the budget | cut smaller or re-check the range specifically via `workflow_dispatch` |
-| Verdict `no_review`, `await.mjs` exit 2 "Nothing of this delta was read" | no batch fit into the budget, or every call failed | measure the range with `--dry` (§7), then check it in slices via `workflow_dispatch`, oldest first and one after the other — a new run on `dev` aborts the running one. `node scripts/qa/review.mjs --dry` with `QA_BASE_OVERRIDE`/`QA_HEAD` shows beforehand whether a slice becomes complete (`notReviewed` empty) |
+| Verdict `no_review`, `await.mjs` exit 2 "Nothing of this delta was read" | no batch fit into the budget, or every call failed | measure the range with `--dry` (§7), then check it in slices via `workflow_dispatch`, oldest first and one after the other — a new run on `dev` aborts the running one. The first slice starts exactly at the report's checkpoint, each next one at the previous head; wait for each with `await.mjs <head> --slice`. Complete slices chained that way move the checkpoint for the next push (§4); a slice with any other base does not. `node scripts/qa/review.mjs --dry` with `QA_BASE_OVERRIDE`/`QA_HEAD` shows beforehand whether a slice becomes complete (`notReviewed` empty) |
 | A finding comes back after refutation | title changed → new fingerprint | refute again; the reason refers to the earlier one |
 | "no review content (finish_reason=length …)" | reasoning used up the output budget | since 06.10.2026 the delta review splits that batch in two and reads both halves; an entry that fails alone is listed as NOT REVIEWED and the report is incomplete. Only the full review still fails the run — raise `maxOutputTokens` in `config.mjs` there as a step of its own |
 

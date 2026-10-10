@@ -14,6 +14,7 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUDGET, EFFORT, estimateCostUsd, MODELS, publicByDesignValues, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
+import { advanceCheckpoint, advanceNote } from './lib/checkpoint.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer, modelsOf } from './lib/openrouter.mjs';
 import { isCutOff, packBatches, partLabel, partsOf, splitBatch } from './lib/pack.mjs';
@@ -27,6 +28,9 @@ const LOCAL = process.argv.includes('--local') || process.argv.includes('--dry')
 const DRY = process.argv.includes('--dry');
 const OUT_DIR = process.env.QA_OUT_DIR || join(LOCAL_DIR, 'out');
 const PREV_DIR = process.env.QA_PREV_DIR || join(LOCAL_DIR, 'prev');
+/** Reports of manual slice runs on dev and the latest full review on main — read only to move the checkpoint (checkpoint.mjs). */
+const SLICES_DIR = process.env.QA_SLICES_DIR || join(LOCAL_DIR, 'slices');
+const FULL_DIR = process.env.QA_FULL_DIR || join(LOCAL_DIR, 'full');
 /** The response schema travels with every request and is billed as input. */
 const SCHEMA_CHARS = JSON.stringify(REVIEW_SCHEMA).length;
 
@@ -35,23 +39,35 @@ async function main() {
   const secret = env.QA_REVIEW_KEY;
   if (!secret) throw new Error('QA_REVIEW_KEY is not set. The report is never written unsealed.');
 
-  const previous = sealedReports(PREV_DIR, secret)[0] || null;
+  const lastPush = sealedReports(PREV_DIR, secret)[0] || null;
   const refuted = loadRefuted(secret);
 
   // Delta since the last reviewed checkpoint; without a usable one, everything not yet on main (chooseBase).
   const head = git(['rev-parse', commitIdOrNull(env.QA_HEAD) || 'HEAD']);
+  // An incomplete review keeps the checkpoint where it was, so unread code comes round again — unless a complete
+  // manual slice starting exactly there, or a complete full review of a release on main, has read further
+  // (checkpoint.mjs; a slice that starts anywhere else is ignored).
+  const advance = advanceCheckpoint({
+    checkpoint: lastPush?.range?.checkpoint ?? lastPush?.range?.head,
+    head,
+    findings: lastPush?.findings || [],
+    slices: sealedReports(SLICES_DIR, secret),
+    fullReviews: sealedReports(FULL_DIR, secret, 'qa-full.enc.json'),
+    isAncestorOf: isAncestor,
+  });
+  // The findings of adopted slices are carried like a push review's.
+  const previous = lastPush && advance.adopted.length ? { ...lastPush, findings: advance.findings } : lastPush;
   const chosen = chooseBase({
     head,
     overrideBase: commitIdOrNull(env.QA_BASE_OVERRIDE),
-    // An incomplete review keeps the checkpoint where it was, so unread code comes round again.
-    checkpoint: previous?.range?.checkpoint ?? previous?.range?.head,
+    checkpoint: advance.checkpoint,
     isAncestorOf: isAncestor,
     mainBase: mergeBaseWithMain,
     // A checkpoint hundreds of commits back is a stray report, not this branch's last review (git-delta.mjs).
     commitsBetween: (from, to) => Number(git(['rev-list', '--count', `${from}..${to}`])),
   });
   const range = resolveRange({ base: chosen.base, head });
-  if (range.base === chosen.base) range.baseReason = chosen.reason;
+  if (range.base === chosen.base) range.baseReason = chosen.base === advance.checkpoint && advanceNote(advance) ? `${chosen.reason} (${advanceNote(advance)})` : chosen.reason;
 
   const secretHits = [];
   const publicValues = publicByDesignValues();
@@ -105,6 +121,7 @@ async function main() {
       JSON.stringify(
         {
           range: { base: range.base, head: range.head, baseReason: range.baseReason, commits: range.commits.length },
+          checkpointAdvance: { adopted: advance.adopted, fullReview: advance.fullReview },
           changedFiles: all.length,
           reviewable: files.map((f) => `${f.path} [${f.tags.join(',')}] ${f.diff.length}ch callers:${f.callers.length} parts:${entries.filter((e) => e.path === f.path).length}`),
           triage: { tags: triage.tags, elevated: triage.elevated, signals: triage.signals.length, criteria: triage.criteria.length, codeWithoutTests: triage.codeWithoutTests },
@@ -197,7 +214,9 @@ async function main() {
       estimatedCostUsd,
       costUsd, // null when OpenRouter did not report the cost of every call
       budget: { maxCostUsd: BUDGET.maxCostUsd, maxBatches: BUDGET.maxBatches },
-      skipped: files.length ? null : 'no reviewable code in the delta — prose, assets or generated files only',
+      skipped: files.length ? null : range.base === range.head ? 'nothing to review — the head was already reviewed completely' : 'no reviewable code in the delta — prose, assets or generated files only',
+      // What moved the checkpoint past the last push review (checkpoint.mjs): adopted slices, a full review on main.
+      checkpointAdvance: advance.adopted.length || advance.fullReview ? { from: lastPush?.range?.checkpoint ?? null, adopted: advance.adopted, fullReview: advance.fullReview } : null,
       changedFiles: all.length,
       redactedSecrets: secretHits.length,
     },
@@ -205,6 +224,9 @@ async function main() {
 
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(join(OUT_DIR, 'qa-review.enc.json'), JSON.stringify(seal(report, secret)));
+  // The artifact is named after the reviewed head, not the dispatched ref, so a slice's result is found by its head
+  // (await.mjs --slice). A commit id is public; nothing else goes out here.
+  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `head=${range.head}\n`);
 
   const summary = publicSummary(report);
   console.log(`QA review ${summary.head}: ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · ${summary.models}`);
