@@ -1462,6 +1462,13 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-742 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-743 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
 | SEC-2026-744 | info | P3 | 3.0.6 security hardening - comment wording | fixed (920b78e) |
+| SEC-2026-751 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-752 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go), same fix as SEC-2026-751 | scheduled |
+| SEC-2026-753 | medium | P3 | 3.0.x security hardening - as SEC-2026-699 | scheduled |
+| SEC-2026-754 | medium | P3 | 3.0.x security hardening | scheduled |
+| SEC-2026-755 | info | P3 | 3.0.x security hardening - comment wording | scheduled |
+
+**Audit of v3.0.6 (`3b742fc`), 10.10.2026: 0 critical, 0 high, 7 medium, 3 low, 1 info — all 85 candidates verified, delta of 146 files, $0.54.** SEC-2026-751 and -752 (P2, one rules change with the next rules deploy) and -753 to -755 (P3) scheduled for 3.0.x security hardening; six refuted (SEC-2026-745 to -750: -746 to -749 as -670/-701/-702, -750 as -685). The reasons are in the sealed register.
 
 **Audit of v3.0.5 (`4810125`), 07.10.2026: 0 critical, 0 high, 1 medium, 4 low, 3 info — all 81 candidates verified, delta of 108 files, $0.54.** SEC-2026-737 (P2) and -739 to -744 (P3) scheduled for 3.0.6 security hardening, the rules items with the next rules deploy; SEC-2026-738 refuted as a duplicate of -737. All concern code older than 3.0.5.
 
