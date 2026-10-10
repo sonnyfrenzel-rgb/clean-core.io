@@ -92,7 +92,12 @@ export default function RouteCard({
       side
       title="Extensibility route"
       data-route-card=""
-      right={overridden ? <CcProvenanceChip value="confirmed" note="your choice" /> : <CcProvenanceChip value="reconstructed" note="fixed rules" />}
+      right={overridden
+        ? <CcProvenanceChip value="confirmed" note="your choice" />
+        : route
+          ? <CcProvenanceChip value="reconstructed" note="fixed rules" />
+          // No route on record is not a reconstructed one (QA b1add7227503).
+          : <CcProvenanceChip value="not-determined" />}
     >
       <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
         <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
