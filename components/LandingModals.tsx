@@ -539,11 +539,17 @@ export default function LandingModals() {
       setAuthMode('success');
       setIsSubmitting(false);
     } catch (error: any) {
+      // An unknown address ends exactly like a sent reset: telling the two
+      // apart would let anyone test which addresses have an account (QA
+      // db48799dc6a2).
+      if (error.code === 'auth/user-not-found') {
+        setAuthMode('success');
+        setIsSubmitting(false);
+        return;
+      }
       console.error('Reset error:', error);
       let errorMsg = 'Error sending password reset email.';
-      if (error.code === 'auth/user-not-found') {
-        errorMsg = 'No account found with this email address.';
-      } else if (error.code === 'auth/invalid-email') {
+      if (error.code === 'auth/invalid-email') {
         errorMsg = 'Invalid email address.';
       }
       setAuthError(errorMsg);
@@ -786,7 +792,7 @@ export default function LandingModals() {
           <div className="text-center">
             <DialogMark icon={CheckCircle2} centered />
             <p className="mb-5 cc-text-body text-cc-ink-muted">
-              We've sent a password reset link to <span className="font-semibold text-cc-ink">{email}</span>. Please click the link in that email to reset your credentials.
+              If an account exists for <span className="font-semibold text-cc-ink">{email}</span>, we've sent it a password reset link. Please click the link in that email to reset your credentials.
             </p>
 
             <div className="flex flex-col">

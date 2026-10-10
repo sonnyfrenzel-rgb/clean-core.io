@@ -99,7 +99,7 @@ export default function WorkspaceHub({
 
   const decideRules = () => {
     document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
-    requestRuleEditing();
+    requestRuleEditing(projectId);
   };
 
   return (

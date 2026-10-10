@@ -27,6 +27,12 @@ test('9e437b2930c4 — the invitation preview is shown only to the account it wa
   expect(src).toMatch(/\{shownPreview && \(/);
 });
 
+test('f7c64ceb4e3f — the accepted state is shown only to the account that accepted', () => {
+  const src = read('app/(app)/invitation/[projectId]/[invitationId]/page.tsx');
+  expect(src).toMatch(/const accepted = acceptedState && acceptedState\.readFor === previewKey \? acceptedState : null;/);
+  expect(src).toMatch(/setAccepted\(\{ readFor: `\$\{user\.uid\}\|\$\{projectId\}\|\$\{invitationId\}`, projectName:/);
+});
+
 test('76118078e97f — the assistant starts from the greeting when the project changes', () => {
   const src = read('components/GlossaryChatbot.tsx');
   expect(src).toMatch(/if \(messagesFor !== projectId\) \{\s*setMessagesFor\(projectId\);\s*setMessages\(\[greeting\(\)\]\);/);

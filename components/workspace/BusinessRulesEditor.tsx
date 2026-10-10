@@ -110,9 +110,12 @@ export const BUSINESS_RULES_ID = 'business-rules';
  * not be mounted yet (the layer is opened by the same click), so the request is
  * held until an editor picks it up, as well as announced to one that is there.
  */
-let pendingEdit = false;
-export function requestRuleEditing(): void {
-  pendingEdit = true;
+// Holds the project the request was made for, so a request left over from one
+// project can never open the editor of another after a navigation (QA
+// 29935b8109f6).
+let pendingEdit: string | null = null;
+export function requestRuleEditing(projectId: string): void {
+  pendingEdit = projectId;
   window.dispatchEvent(new Event(EDIT_RULES_EVENT));
 }
 
@@ -486,14 +489,15 @@ export default function BusinessRulesEditor({
     const onEdit = () => {
       // Held until the owner is known and the record has been read.
       if (!owner || outcome === null) return;
-      pendingEdit = false;
+      if (pendingEdit !== projectId) return;
+      pendingEdit = null;
       void startEditing();
       (rootRef.current ?? document.getElementById('need'))?.scrollIntoView({ block: 'start' });
     };
-    if (pendingEdit) onEdit();
+    if (pendingEdit === projectId) onEdit();
     window.addEventListener(EDIT_RULES_EVENT, onEdit);
     return () => window.removeEventListener(EDIT_RULES_EVENT, onEdit);
-  }, [owner, startEditing, outcome]);
+  }, [owner, startEditing, outcome, projectId]);
 
   useEffect(() => {
     if (editing) editRef.current?.focus();

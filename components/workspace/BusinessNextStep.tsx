@@ -59,7 +59,7 @@ export default function BusinessNextStep({
       return;
     }
     document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
-    requestRuleEditing();
+    requestRuleEditing(projectId);
   };
 
   return (

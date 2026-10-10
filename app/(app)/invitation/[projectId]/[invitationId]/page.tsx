@@ -42,7 +42,10 @@ export default function InvitationPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [accepted, setAccepted] = useState<{ projectName: string } | null>(null);
+  // Bound to the account it was accepted with, like the preview below: after a
+  // sign-out or an account switch the project name is no longer shown (QA
+  // f7c64ceb4e3f).
+  const [acceptedState, setAccepted] = useState<{ readFor: string; projectName: string } | null>(null);
   // The preview remembers whom it was read for: it is shown only to that
   // account, for that invitation. It used to stay on screen after a sign-out
   // or a switch to another account (QA slice review of 81810c8026e0,
@@ -50,6 +53,7 @@ export default function InvitationPage() {
   const [preview, setPreview] = useState<{ readFor: string; invitedBy: string; expiresAt: string } | null>(null);
   const previewKey = user ? `${user.uid}|${projectId}|${invitationId}` : null;
   const shownPreview = preview && preview.readFor === previewKey ? preview : null;
+  const accepted = acceptedState && acceptedState.readFor === previewKey ? acceptedState : null;
 
   // Signed in: ask who sent it and until when. Any refusal simply leaves the
   // page as it was — the accept button gives the reason when it is pressed.
@@ -100,7 +104,7 @@ export default function InvitationPage() {
         setError(String(body?.error || 'This invitation could not be opened.'));
         return;
       }
-      setAccepted({ projectName: String(body?.projectName || '') });
+      setAccepted({ readFor: `${user.uid}|${projectId}|${invitationId}`, projectName: String(body?.projectName || '') });
     } catch {
       setError('The invitation could not be opened just now. Try again in a moment.');
     } finally {

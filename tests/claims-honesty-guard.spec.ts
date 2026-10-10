@@ -625,6 +625,28 @@ test.describe('62c08912d745 · a service guide names the client that service spe
   });
 });
 
+test.describe('QA v3.0.6 · the copyable service guides are safe to copy', () => {
+  test('ae49537d00e3 — PostgreSQL verifies the server certificate', () => {
+    const code = getCloudServiceDetails('PostgreSQL on SAP BTP').codeSnippet;
+    expect(code).not.toMatch(/rejectUnauthorized:\s*false/);
+    expect(code).toContain('ssl: config.sslrootcert ? { ca: config.sslrootcert } : true');
+  });
+
+  test('e3d9cca3197b — Event Mesh guards the parse and acknowledges only after processing', () => {
+    const code = getCloudServiceDetails('SAP Event Mesh').codeSnippet;
+    const parse = code.indexOf('JSON.parse(');
+    expect(code.lastIndexOf('try {', parse), 'JSON.parse runs outside a try').toBeGreaterThan(-1);
+    expect(code.indexOf('channel.ack(msg)')).toBeGreaterThan(code.indexOf('await processSalesOrder('));
+    expect(code).toContain('channel.nack(msg, false, false)');
+  });
+
+  test('f34458de6705 — the OData key is escaped, not interpolated raw', () => {
+    const code = getCloudServiceDetails('Destination Service').codeSnippet;
+    expect(code).not.toContain("Orders('${orderId}')");
+    expect(code).toContain(`encodeURIComponent(\`'\${String(orderId).replace(/'/g, "''")}'\`)`);
+  });
+});
+
 test.describe('64a43c210f49 · the read-only board does not promise a discussion', () => {
   test('there is no board left to promise one (owner 02.10.2026, ADR-061)', () => {
     // QA review of 4b4586aff273 caught a "Technical Q&A" topic on a read-only

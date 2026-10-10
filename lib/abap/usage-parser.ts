@@ -46,6 +46,22 @@ const COLUMN_SYNONYMS: Record<string, string[]> = {
   objectType: ['OBJECT_TYPE', 'TYPE', 'TADIR', 'TYP', 'OBJ_TYPE', 'SUBC'],
 };
 
+/**
+ * Column names of SAP usage exports (SCMON, UPL, ST03N/SUSG) that the parser
+ * does not read but may name in a warning. Only these headings are ever copied
+ * into the stored warnings; any other unmapped heading is only counted.
+ */
+const KNOWN_SAP_COLUMNS: ReadonlySet<string> = new Set([
+  ...Object.values(COLUMN_SYNONYMS).flat().map((s) => s.toUpperCase()),
+  'PACKAGE', 'DEVCLASS', 'PAKET', 'SOFTWARE_COMPONENT', 'DLVUNIT', 'APPLICATION_COMPONENT', 'COMPONENT',
+  'TCODE', 'TRANSACTION', 'TRANSACTION_CODE', 'SUB_OBJECT', 'SUBOBJECT', 'SUB_TYPE', 'PROCESSING_TYPE',
+  'ROOT_OBJECT', 'ROOT_TYPE', 'ENTRY_POINT', 'ENTRY_POINT_TYPE', 'TASK_TYPE', 'TASKTYPE',
+  'SYSID', 'SYSTEM', 'SYSTEM_ID', 'CLIENT', 'MANDT', 'MANDANT', 'INSTANCE', 'HOST', 'SERVER',
+  'FIRST_USED', 'FIRST_EXECUTION', 'DATE', 'DATUM', 'PERIOD', 'MONTH', 'WEEK', 'YEAR',
+  'RUNTIME', 'RESPONSE_TIME', 'CPU_TIME', 'DB_TIME', 'AVG_RUNTIME', 'TOTAL_RUNTIME',
+  'DESCRIPTION', 'TEXT', 'BESCHREIBUNG', 'NAMESPACE', 'STATUS', 'SOURCE',
+]);
+
 // ── Public API ─────────────────────────────────────────────────────
 
 /**
@@ -76,16 +92,17 @@ export async function parseUsage(file: File, options: UsageImportOptions | Usage
   const mappedHeaders = new Set(Object.values(mapping));
   const unmapped = headers.filter(h => !mappedHeaders.has(h));
   if (unmapped.length > 0) {
-    // The warnings are stored with the report. A heading that is itself an
-    // address — a pivoted export with one column per user — is personal data
-    // however it got there, so it is counted, never copied (QA full review of
-    // v2.20.0, d371bd76e13b).
-    const personal = unmapped.filter((h) => h.includes('@'));
-    const listed = unmapped.filter((h) => !h.includes('@'));
+    // The warnings are stored with the report, so a heading is copied into
+    // them only when it is a known SAP column name. Anything else — a pivoted
+    // export with one column per user (JSMITH, jane.doe@example.com) — may be
+    // personal data however it got there, so it is counted, never copied (QA
+    // full review of v2.20.0, d371bd76e13b; v3.0.6, 5b36ba237426).
+    const listed = unmapped.filter((h) => KNOWN_SAP_COLUMNS.has(h.toUpperCase().trim()));
+    const others = unmapped.length - listed.length;
     const parts = [
       ...(listed.length ? [listed.join(', ')] : []),
-      ...(personal.length
-        ? [`${personal.length} column${personal.length === 1 ? '' : 's'} whose heading looks like an e-mail address (not listed)`]
+      ...(others
+        ? [`${others} column${others === 1 ? '' : 's'} with a heading that is not a known SAP column name (not listed)`]
         : []),
     ];
     warnings.push(`Unmapped columns ignored: ${parts.join('; ')}`);

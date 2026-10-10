@@ -736,12 +736,18 @@ test.describe('P4 — concatenation is union', () => {
             merged.set(e.tableName, { reads: e.readCount ?? 0, writes: e.writeCount ?? 0, lines, isCustom: e.isCustom });
           }
         }
+        // The access type is a function of the merged counts (the engine's rule
+        // in code-assessment.ts), so it is compared too: a union that kept the
+        // counts right but the access of one part would pass otherwise (QA full
+        // review of v3.0.6, d0157527e4b5).
+        const accessOf = (reads: number, writes: number) =>
+          reads > 0 && writes > 0 ? 'Read/Write' : writes > 0 ? 'Write' : reads > 0 ? 'Read' : 'Reference';
         expect(
-          both.coupling.map((e) => `${e.tableName} | ${counted(e.readCount)}r/${counted(e.writeCount)}w | ${linesOf(e).join(',')} | custom=${e.isCustom}`).sort(),
+          both.coupling.map((e) => `${e.tableName} | ${counted(e.readCount)}r/${counted(e.writeCount)}w | ${e.accessType} | ${linesOf(e).join(',')} | custom=${e.isCustom}`).sort(),
           `${label}: data coupling is not the merge of the parts`,
         ).toEqual(
           [...merged]
-            .map(([table, v]) => `${table} | ${v.reads}r/${v.writes}w | ${v.lines.join(',')} | custom=${v.isCustom}`)
+            .map(([table, v]) => `${table} | ${v.reads}r/${v.writes}w | ${accessOf(v.reads, v.writes)} | ${v.lines.join(',')} | custom=${v.isCustom}`)
             .sort(),
         );
       }

@@ -593,8 +593,8 @@ export default function FirstLook({
   /** "Decide on rules" from the opening: the rules card of this page, in its answering mode. */
   const decideRules = useCallback(() => {
     document.getElementById(BUSINESS_RULES_ID)?.scrollIntoView({ block: 'start' });
-    requestRuleEditing();
-  }, []);
+    requestRuleEditing(projectId);
+  }, [projectId]);
 
   const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
 
@@ -759,6 +759,7 @@ export default function FirstLook({
                   onDecideRules={owner && !onReviewRules ? decideRules : onReviewRules}
                   details={
                     <EndState
+                      projectId={projectId}
                       result={result}
                       proposedName={proposedName}
                       status={status}
@@ -774,6 +775,7 @@ export default function FirstLook({
                 />
               ) : (
                 <EndState
+                  projectId={projectId}
                   result={result}
                   proposedName={proposedName}
                   status={status}
@@ -931,6 +933,7 @@ function Fact({ fact, label, traceability }: { fact: CardFact; label: React.Reac
  * the first look knew is gone.
  */
 function EndState({
+  projectId,
   result,
   proposedName,
   status,
@@ -943,6 +946,8 @@ function EndState({
   endStateOnly,
   questions,
 }: {
+  /** The project a rule request is made for (QA 29935b8109f6). */
+  projectId: string;
   result: Result;
   questions: OpenQuestionsModel | null;
   /** The full map stands right under the card, so the one-row strip of its first steps is not repeated. */
@@ -975,7 +980,7 @@ function EndState({
     // is chosen by the address (ADR-018), and the editor opens there for the
     // owner. In Business they have a block of their own.
     if (!document.getElementById(BUSINESS_RULES_ID)) window.location.hash = 'need';
-    requestRuleEditing();
+    requestRuleEditing(projectId);
   };
   // The switch shows the code *behind* a plain line; where every line is
   // already code it would switch nothing, so it is not offered.

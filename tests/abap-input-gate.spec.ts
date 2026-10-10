@@ -87,6 +87,11 @@ test.describe('the screens use the shared rules, not private copies', () => {
     expect(s).toContain("from '@/lib/abap-input-check'");
     const handler = s.slice(s.indexOf('const handleAnalyze'), s.indexOf('const handleAnalyze') + 1200);
     expect(handler, 'the scan runs inside handleAnalyze, on the final string').toContain('scanCodeContent(codeToAnalyze)');
+    // Importing the check is not using it: the handler itself must refuse
+    // non-ABAP text and stop there (QA full review of v3.0.6, 9d75f435421a).
+    expect(handler, 'handleAnalyze no longer refuses non-ABAP text before the run').toMatch(
+      /if \(!isLegacyCode\(codeToAnalyze\)\) \{[^}]*\breturn;\s*\}/,
+    );
     expect(s).not.toContain("code.trim().length > 0; // Relaxed check");
   });
 });

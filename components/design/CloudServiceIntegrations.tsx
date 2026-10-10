@@ -81,9 +81,13 @@ async function fetchLegacyData(orderId, userJwt) {
     jwt: userJwt // Auto-propagates user context
   });
 
+  // An OData string key doubles every single quote; the key is then URL-encoded,
+  // so an order ID can never change the path or the query of the request
+  const key = encodeURIComponent(\`'\${String(orderId).replace(/'/g, "''")}'\`);
+
   // Execute authenticated outbound call through the destination proxy
   const response = await axios({
-    url: \`\${destination.url}/sap/opu/odata/sap/ZELEMENTS_SRV/Orders('\${orderId}')\`,
+    url: \`\${destination.url}/sap/opu/odata/sap/ZELEMENTS_SRV/Orders(\${key})\`,
     headers: {
       ...destination.authHeaders, // Dynamically injected principal headers
       'Accept': 'application/json'
@@ -113,15 +117,33 @@ async function startListening() {
   console.log(\`[*] Listening for S/4HANA events on queue: \${queue}\`);
 
   // Async subscriber processing S/4HANA sales order creation events
-  channel.consume(queue, (msg) => {
-    if (msg !== null) {
-      const eventPayload = JSON.parse(msg.content.toString());
-      console.log(\`[x] Received Order ID: \${eventPayload.OrderId}\`);
-      
-      // Process transaction logic asynchronously
-      channel.ack(msg);
+  channel.consume(queue, async (msg) => {
+    if (msg === null) return;
+
+    let eventPayload;
+    try {
+      eventPayload = JSON.parse(msg.content.toString());
+    } catch (err) {
+      // A malformed message will never parse: reject it without requeueing
+      // (a dead-letter queue configured on the queue keeps it for inspection)
+      console.error('[!] Malformed event rejected', err);
+      channel.nack(msg, false, false);
+      return;
     }
-  });
+
+    try {
+      await processSalesOrder(eventPayload);
+      // Acknowledge only after the event was processed
+      channel.ack(msg);
+    } catch (err) {
+      console.error(\`[!] Processing failed for order \${eventPayload.OrderId}\`, err);
+      channel.nack(msg, false, false); // to the dead-letter queue, not lost
+    }
+  }, { noAck: false });
+}
+
+async function processSalesOrder(eventPayload) {
+  // Your transaction logic for the created sales order
 }`
   },
   postgresql: {
@@ -142,7 +164,9 @@ const pool = new Pool({
   database: config.dbname,
   user: config.username,
   password: config.password,
-  ssl: { rejectUnauthorized: false }
+  // Verify the server certificate: against the CA the service binding
+  // provides, otherwise against the system's trusted CAs
+  ssl: config.sslrootcert ? { ca: config.sslrootcert } : true
 });
 
 async function queryExtensionData(userId) {
