@@ -23,6 +23,9 @@ test.describe('the hard-coded-literal lint', () => {
       context: "const referenceItem01 = out.find(i => i.belnr === '1900000001');",
     });
     expect(findings[0].sentence).toContain("compares against the hard-coded value '1900000001', a document number of the code's own demo data");
+    // The lint never reads the original, so it claims nothing about it (QA review of 11e3bc7d90e8).
+    expect(findings[0].sentence).toContain('Check whether it should be looked up per item.');
+    expect(findings[0].sentence).not.toMatch(/the original/i);
   });
 
   test('the fixed service, which looks the reference up per item, is clean', () => {
@@ -74,5 +77,8 @@ test.describe('the prompt rules', () => {
     expect(page.slice(at, at + 400)).toContain('${CODE_DRAFT_BUSINESS_RULES}');
     expect(page).toContain('hardCodedLiteralFindings(files)');
     expect(page).toContain('data-hard-coded-literals');
+    // The warning says what was found and what to check — not what the original does (QA review of 11e3bc7d90e8).
+    expect(page).toContain('A fixed document or partner number was found in the business logic; check whether it should be looked up per item.');
+    expect(page).not.toContain('The original looks such values up per item');
   });
 });

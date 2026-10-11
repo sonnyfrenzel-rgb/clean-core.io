@@ -861,6 +861,21 @@ export function workflowSteps(project: Project | null): RailStep[] {
         ? `All ${plural(tests.total, 'test case')} returned a pass in a recorded sandbox run against mocks — not against an SAP system.`
         : `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`,
     });
+  } else if (failure.state === 'current' && (executed === 0 || tests.passed === tests.total)) {
+    // The run was tried and gave no result (owner report 11.10.2026): said as
+    // such, with its cause and how often — never "no test run on record". A
+    // current failed run outranks verdicts the case list only carries as labels
+    // (QA review of 11e3bc7d90e8): "all marked as passed" must not hide it, nor
+    // read as done and refuse the closure the failure is the basis for.
+    const marked = tests.passed > 0 ? ` ${tests.passed} marked as passed with no test run on record.` : '';
+    testing = phase('testing', {
+      state: 'partial',
+      runFailed: true,
+      badge: 'Run failed',
+      detail:
+        `${plural(tests.total, 'case')} generated.${marked} ${failureSentence(failure.failure)} ` +
+        'Fix the cause and run again, or close testing with a reason — it then reads "not verified".',
+    });
   } else if (tests.passed === tests.total) {
     // Every case says it passed, and no execution on record says so. Still
     // `done` — a verdict is on the project and the phase's own output exists —
@@ -871,17 +886,6 @@ export function workflowSteps(project: Project | null): RailStep[] {
       detail:
         `All ${plural(tests.total, 'test case')} are marked as passed, and no test run is on record for this code. ` +
         'Run the suite in stage 5 to record one.',
-    });
-  } else if (executed === 0 && failure.state === 'current') {
-    // The run was tried and gave no result (owner report 11.10.2026): said as
-    // such, with its cause and how often — never "no test run on record".
-    testing = phase('testing', {
-      state: 'partial',
-      runFailed: true,
-      badge: 'Run failed',
-      detail:
-        `${plural(tests.total, 'case')} generated. ${failureSentence(failure.failure)} ` +
-        'Fix the cause and run again, or close testing with a reason — it then reads "not verified".',
     });
   } else if (executed === 0) {
     testing = phase('testing', {

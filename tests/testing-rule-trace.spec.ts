@@ -22,8 +22,11 @@ import { TESTING_RESPONSE_SCHEMA } from '../lib/model-response-schema';
  * 3.0.10 (owner 11.10.2026, external review F-01/F-05): every material
  * business rule of the ORIGINAL gets a case whose expected result is stated
  * from the original, traced to the rule's id and lines; each case is then
- * assessed old against new — unchanged / deliberately changed / defect / not
- * yet assessable — from the run's verdict and the owner's decision on the rule.
+ * assessed old against new — passed against a model-stated expectation /
+ * deliberately changed / defect / not yet assessable — from the run's verdict
+ * and the owner's decision on the rule. A traced pass is never "unchanged"
+ * (QA review of 11e3bc7d90e8): nothing ties the test's assertion to the stated
+ * result, and that result is the model's reading of the original.
  *
  * The source below is the credit-reference rule of ZFI_AR_COLLECTION_WORKLIST
  * (original lines 534–566) in small: a reference validates identity with the
@@ -154,8 +157,13 @@ test.describe('old against new, per case', () => {
     expect(assessCase({ trace: t, verdict: 'Skipped' }).sentence).toContain('(Skipped)');
   });
 
-  test('a traced case that passed is unchanged; one that failed is a defect — unless the owner marked the rule to change', () => {
-    expect(assessCase({ trace: t, verdict: 'Passed' }).value).toBe('unchanged');
+  test('a traced case that passed reads "passed, expectation model-stated, not verified" — never unchanged; one that failed is a defect — unless the owner marked the rule to change', () => {
+    const passed = assessCase({ trace: t, verdict: 'Passed' });
+    expect(passed.value).toBe('passed-model-stated');
+    expect(passed.sentence).toContain('model-stated from the original');
+    expect(passed.sentence).toContain('not verified');
+    expect(passed.sentence).toContain('bucket UNKNOWN');
+    expect(passed.sentence).not.toMatch(/unchanged|gives the result the original gives|proven/i);
     const defect = assessCase({ trace: t, verdict: 'Failed' });
     expect(defect.value).toBe('defect');
     expect(defect.sentence).toContain('BR-002');
@@ -163,7 +171,10 @@ test.describe('old against new, per case', () => {
     expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'keep' }).value).toBe('defect');
     expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'change' }).value).toBe('deliberately-changed');
     expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'drop' }).value).toBe('deliberately-changed');
-    expect(assessCase({ trace: t, verdict: 'Passed', ruleState: 'change' }).sentence).toContain('The decided change is not in the code yet');
+    const passedAgainstChange = assessCase({ trace: t, verdict: 'Passed', ruleState: 'change' });
+    expect(passedAgainstChange.value).toBe('passed-model-stated');
+    expect(passedAgainstChange.sentence).toContain('check whether the decided change is in the code yet');
+    expect(passedAgainstChange.sentence).toContain('not verified');
   });
 
   test('a case without a trace says nothing about old against new; the invariant does', () => {
@@ -175,5 +186,7 @@ test.describe('old against new, per case', () => {
   test('the counts read as one line', () => {
     const counts = countAssessments(['unchanged', 'defect', 'defect', 'not-assessable', 'deliberately-changed']);
     expect(assessmentSummary(counts)).toBe('Old against new: 1 unchanged · 1 deliberately changed · 2 defects · 1 not yet assessable');
+    const traced = countAssessments(['passed-model-stated', 'passed-model-stated', 'defect']);
+    expect(assessmentSummary(traced)).toBe('Old against new: 0 unchanged · 2 passed, expectation model-stated, not verified · 1 defect · 0 not yet assessable');
   });
 });

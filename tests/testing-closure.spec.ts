@@ -175,6 +175,24 @@ test.describe('a run that gave no result is on record as such', () => {
     expect(testingOf(moved).badge).toBe('Test draft');
   });
 
+  test('owner-marked passes do not hide a current failed run, and closure stays available on it (QA review of 11e3bc7d90e8)', () => {
+    // Every case labelled Passed on the case list, no receipt, and a run that
+    // gave no result for exactly this code and suite.
+    const p = withFailure(base({ testCases: CASES.map((c) => ({ ...c, status: 'Passed' })) } as Partial<Project>));
+    const testing = testingOf(p);
+    expect(testing.state).toBe('partial');
+    expect(testing.badge).toBe('Run failed');
+    expect(testing.runFailed).toBe(true);
+    expect(testing.proven).toBeFalsy();
+    expect(testing.detail).toContain('gave no result');
+    expect(testing.detail).toContain('10 marked as passed with no test run on record');
+    const basis = testingClosureBasis(p);
+    expect(basis.ok && basis.basis.kind).toBe('run-error');
+    // Without the failure record the same labels still read "Self-reported".
+    const labelled = base({ testCases: CASES.map((c) => ({ ...c, status: 'Passed' })) } as Partial<Project>);
+    expect(testingOf(labelled).badge).toBe('Self-reported');
+  });
+
   test('the Testing tool and Delivery read the same record', () => {
     const p = withFailure(base(), '2026-10-11T14:35:02.000Z', 2);
     const run = lastRun(p, null);

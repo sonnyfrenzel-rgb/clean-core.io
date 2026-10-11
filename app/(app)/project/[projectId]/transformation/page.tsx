@@ -1475,7 +1475,7 @@ ${CODE_DRAFT_BUSINESS_RULES}
         <div className="mb-6" data-hard-coded-literals={literalFindings.length}>
           <CcMessageStrip state="warning" headline="Hard-coded values in the business logic">
             <span className="block">
-              The generated code compares against fixed document or partner numbers. The original looks such values up per item; with a fixed value every item depends on one demo record. Regenerate, or correct it before the tests are written.
+              A fixed document or partner number was found in the business logic; check whether it should be looked up per item. Regenerate, or correct it before the tests are written.
             </span>
             <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5">
               {literalFindings.slice(0, 8).map((f) => (

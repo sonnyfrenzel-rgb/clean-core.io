@@ -24,10 +24,13 @@
  *     data. Validated, never repaired into something the model did not write;
  *   - the **check** of the lines and the rule id against the signed source is
  *     the product's (`checkScenarioOrigin`, the same check `derivedFrom` gets);
- *   - the **assessment** — unchanged / deliberately changed / defect / not yet
- *     assessable — is derived from the run's verdict and the owner's decision
- *     on the rule (`keep`/`change`/`drop`/`clarify`, `lib/process-states.ts`).
- *     Nothing is "unchanged" before a run says so.
+ *   - the **assessment** — passed against a model-stated expectation /
+ *     deliberately changed / defect / not yet assessable — is derived from the
+ *     run's verdict and the owner's decision on the rule
+ *     (`keep`/`change`/`drop`/`clarify`, `lib/process-states.ts`). A traced
+ *     case that passed is never "unchanged": nothing ties the test's assertion
+ *     to `expectedFromOriginal`, and that result is the model's reading of the
+ *     original, not a result of running it (QA review of 11e3bc7d90e8).
  */
 
 import type { BusinessRuleSet } from './abap/business-rule-set';
@@ -341,13 +344,15 @@ export function ruleCoverageSentence(c: RuleCoverage): string {
 /* ------------------------------------------------------------ assessment */
 
 /**
- * The four answers the review asks for, per case (§6.4): unchanged,
- * deliberately changed, defect, not yet assessable.
+ * The answers per case (§6.4): unchanged (the product's own invariant cases
+ * only), passed against a model-stated expectation, deliberately changed,
+ * defect, not yet assessable.
  */
-export type CaseAssessment = 'unchanged' | 'deliberately-changed' | 'defect' | 'not-assessable';
+export type CaseAssessment = 'unchanged' | 'passed-model-stated' | 'deliberately-changed' | 'defect' | 'not-assessable';
 
 export const CASE_ASSESSMENT_WORD: Record<CaseAssessment, string> = {
   unchanged: 'Unchanged',
+  'passed-model-stated': 'Passed · expectation not verified',
   'deliberately-changed': 'Deliberately changed',
   defect: 'Defect',
   'not-assessable': 'Not yet assessable',
@@ -363,8 +368,10 @@ export interface CaseAssessmentReading {
  *
  *   - no run, or a verdict that judged nothing (Not run, Skipped, Todo,
  *     Error) → not yet assessable — the default, never a pass by absence;
- *   - a traced case that passed → unchanged: the target gives the original's
- *     result for this rule and input;
+ *   - a traced case that passed → passed against a model-stated expectation:
+ *     the target did what the test expected. That the assertion checks the
+ *     stated result of the original is not established, and the stated result
+ *     is the model's reading of the original — so never "unchanged";
  *   - a traced case that failed, on a rule the owner marked "change
  *     deliberately" or "drop" → deliberately changed;
  *   - a traced case that failed otherwise → defect, until the owner decides
@@ -402,13 +409,14 @@ export function assessCase(input: {
     };
   }
   if (verdict === 'Passed') {
+    const notVerified = `The expected result for ${trace.ruleId} is model-stated from the original (${trace.expectedFromOriginal}), not verified — neither by running the original nor by checking that the test asserts it.`;
     if (ruleState === 'change' || ruleState === 'drop') {
       return {
-        value: 'unchanged',
-        sentence: `The target gives the original's result for ${trace.ruleId} — although the rule is marked "${ruleState === 'change' ? 'change deliberately' : 'drop'}". The decided change is not in the code yet.`,
+        value: 'passed-model-stated',
+        sentence: `The case passed although ${trace.ruleId} is marked "${ruleState === 'change' ? 'change deliberately' : 'drop'}" — check whether the decided change is in the code yet. ${notVerified}`,
       };
     }
-    return { value: 'unchanged', sentence: `The target gives the result the original gives for ${trace.ruleId}: ${trace.expectedFromOriginal}` };
+    return { value: 'passed-model-stated', sentence: `The case passed. ${notVerified}` };
   }
   if (ruleState === 'change' || ruleState === 'drop') {
     return {
@@ -424,15 +432,17 @@ export function assessCase(input: {
 
 export interface AssessmentCounts {
   unchanged: number;
+  passedModelStated: number;
   deliberatelyChanged: number;
   defect: number;
   notAssessable: number;
 }
 
 export function countAssessments(values: readonly CaseAssessment[]): AssessmentCounts {
-  const c: AssessmentCounts = { unchanged: 0, deliberatelyChanged: 0, defect: 0, notAssessable: 0 };
+  const c: AssessmentCounts = { unchanged: 0, passedModelStated: 0, deliberatelyChanged: 0, defect: 0, notAssessable: 0 };
   for (const v of values) {
     if (v === 'unchanged') c.unchanged++;
+    else if (v === 'passed-model-stated') c.passedModelStated++;
     else if (v === 'deliberately-changed') c.deliberatelyChanged++;
     else if (v === 'defect') c.defect++;
     else c.notAssessable++;
@@ -440,10 +450,11 @@ export function countAssessments(values: readonly CaseAssessment[]): AssessmentC
   return c;
 }
 
-/** "Old against new: 6 unchanged · 1 deliberately changed · 2 defects · 3 not yet assessable". */
+/** "Old against new: 1 unchanged · 5 passed, expectation model-stated, not verified · 1 deliberately changed · 2 defects · 3 not yet assessable". */
 export function assessmentSummary(c: AssessmentCounts): string {
   const parts: string[] = [];
   parts.push(`${c.unchanged} unchanged`);
+  if (c.passedModelStated > 0) parts.push(`${c.passedModelStated} passed, expectation model-stated, not verified`);
   if (c.deliberatelyChanged > 0) parts.push(`${c.deliberatelyChanged} deliberately changed`);
   parts.push(`${c.defect} ${c.defect === 1 ? 'defect' : 'defects'}`);
   parts.push(`${c.notAssessable} not yet assessable`);

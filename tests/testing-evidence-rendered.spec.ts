@@ -74,7 +74,11 @@ function card(extra: Record<string, unknown> = {}) {
 
 test('the card: rule coverage, old against new, the invariant with the gap read from the code, and a suite that constrains nothing', () => {
   const html = card();
-  expect(html).toContain('What the tests prove about the original');
+  // QA review of 11e3bc7d90e8: a pass shows the target did what the test
+  // expected; the expectation is reconstructed from the original, not run on it.
+  expect(html).toContain('What the tests check against the original');
+  expect(html).not.toContain('What the tests prove');
+  expect(html).toContain('not a result of running the original');
   expect(html).toContain('2 of 4 business rules of the original have a case with an expected result from the original · not covered: BR-004, BR-010');
   expect(html).toContain('Old against new: 1 unchanged · 1 defect · 1 not yet assessable');
   expect(html).toContain('data-test-evidence-invariant="applicable"');
@@ -91,6 +95,11 @@ test('before a probe: the reason it cannot run yet, or the button', () => {
   const blocked = card({ mutation: null, probe: { state: 'idle', error: null }, probeBasis: 'No recorded run covers the current code and suite. Run the tests first.' });
   expect(blocked).toContain('Not probed yet. No recorded run covers the current code and suite. Run the tests first.');
   expect(blocked).not.toContain('Probe the suite with mutants');
+  // A probe that failed is not "not probed yet" (QA review of 11e3bc7d90e8).
+  const failed = card({ mutation: null, probe: { state: 'error', error: 'The sandbox runner is not reachable.' } });
+  expect(failed).toContain('The last probe gave no result, so it is not known whether the tests would notice a defect.');
+  expect(failed).toContain('The sandbox runner is not reachable.');
+  expect(failed).not.toContain('Not probed yet');
   const ready = card({ mutation: null, probe: { state: 'idle', error: null } });
   expect(ready).toContain('Probe the suite with mutants');
   const notApplicable: InvariantPlan = { applicable: false, reason: 'The generated code registers no HTTP route the product can read.', endpoints: [] };

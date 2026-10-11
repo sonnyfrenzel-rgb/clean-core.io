@@ -1123,7 +1123,8 @@ export default function TestingSandboxPage() {
   /** ADR-094 — testing closed by the owner without a passing run. */
   const testsClosed = testingClosureReading(project).state === 'current';
   /**
-   * 3.0.10 — per case: unchanged / deliberately changed / defect / not yet
+   * 3.0.10 — per case: unchanged (invariant cases) / passed against a
+   * model-stated expectation / deliberately changed / defect / not yet
    * assessable, from the verdict of the last run (receipt or session) and the
    * owner's decision on the traced rule. Default: not yet assessable.
    */

@@ -56,10 +56,10 @@ export default function TestEvidenceCard({
   return (
     <section data-test-evidence="" aria-labelledby="test-evidence-title" className="mt-5 border-t border-cc-line pt-4">
       <h3 id="test-evidence-title" className="m-0 cc-text-h3 text-cc-ink">
-        What the tests prove about the original
+        What the tests check against the original
       </h3>
       <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-        A pass says the target did what the test expected. These three lines say whether the expectation came from the original, whether one selection gives one population, and whether the tests would notice a defect at all.
+        A pass says the target did what the test expected. The expected result is the model’s reconstruction from the original code, not a result of running the original. These three lines say whether the expectation was stated from the original, whether one selection gives one population, and whether the tests would notice a defect at all.
       </p>
 
       <dl className="m-0 mt-3 flex flex-col gap-3">
@@ -121,6 +121,8 @@ export default function TestEvidenceCard({
               </>
             ) : probe.state === 'running' ? (
               <p className="m-0">The suite is running against mutants of the generated code…</p>
+            ) : probe.state === 'error' ? (
+              <p className="m-0">The last probe gave no result, so it is not known whether the tests would notice a defect.</p>
             ) : (
               <p className="m-0">
                 Not probed yet.{' '}
