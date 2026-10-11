@@ -10,6 +10,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.9] — 2026-10-11
+
+The target names its SAP reference architecture, every tool has one "On this page" bar, Economics
+helps you state your figures, and a Private Edition program no longer loses points for writing its
+own tables.
+
+### What everyone notices
+
+- **The target names its SAP reference architecture** (ADR-089). Design and the workspace name,
+  for the target and for each building block, the current reference architecture of the SAP
+  Architecture Center that fits — linked, with how well it fits and why. The mapping is reviewed
+  by hand; only the metadata is synced, every Monday, onto a branch that is reviewed before it
+  ships. SAP's Architecture Center is credited on `/licenses` (Apache-2.0).
+- **One "On this page" bar in every tool with sections** (ADR-091) — same place, same wording,
+  sticky under the shell bar. Design and Economics have none.
+- **Economics helps you state your figures.** The currency is picked from a list as you type —
+  "EU", "Euro" or "Germany" offers EUR, "US" or "Dollar" USD — for the ten currencies our readers
+  come from, and any other ISO code can still be typed. Every figure has a hint, its unit and a
+  message that says what is allowed. Every proposed effort says how it was proposed, with this
+  project's numbers (for example "668 lines ÷ 1,000 × 2–5 days"). The option cards show their
+  figures instead of only a chip, explain what is still missing — the upgrade deferral, in plain
+  words — and offer the input next to it. "Cost: Not determined" says why and leads to the missing
+  field. Each section shows "Saving…", "Saved · time" or "Not saved · Retry". Nothing has a
+  default: every figure is still yours to state.
+- **A test status is read only from what the server recorded.** A stored "Simulated" names no
+  execution any more; the mock-run label comes from the server's receipt of a run.
+
+### Engine
+
+- **Own Z/Y table writes cost no Clean Core Score points in Private Edition** (owner decision,
+  10.10.2026). Public Cloud keeps the deduction; a write to an SAP table, or to a namespaced
+  `/…/` table, costs the same as before in both editions. Runs signed before 3.0.9 keep the rule
+  they were signed under, so their score still adds up when it is read again. The demo moves from
+  23 to 37 in Private Edition, the reference analysis from 31 to 45 — both stay in the same band.
+  The Clean Core Score page states the edition rule.
+
+### Security
+
+- **SEC-2026-758, SEC-2026-764:** per-account limits on projects and support tickets created
+  from the browser. They take effect with the Firestore rules, deployed by hand right after this
+  release — the app first, then the rules.
+- **SEC-2026-759:** the client no longer reads a retired connection field; the production data
+  that still held it was cleaned before this release.
+
+### Fixed
+
+- QA reviews on dev: every finding fixed or refuted with evidence.
+
+### Tests
+
+- Guards for the write limit (rules, against the emulator), for the retired connection field,
+  for the score rule per edition and engine version, for the currency list and the Economics
+  help, for the reference-architecture mapping and the "On this page" bar, and for the weekly
+  sync workflow.
+
 ## [v3.0.8] — 2026-10-11
 
 Search engines and answer engines hear the 3.0 story: the pages people arrive on say what they find,

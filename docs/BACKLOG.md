@@ -3,6 +3,23 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 11.10.2026 (afternoon) — 3.0.9 released
+
+**Built (main on Sonny's go, 11.10.2026):** SAP reference architecture for the target (ADR-089) with a weekly
+Architecture Center sync onto `chore/sync-sap-architecture-center`; the "On this page" bar (ADR-091); Private
+Edition own Z/Y table writes cost no score points, runs signed before 3.0.9 keep their rule (option c, Sonny
+11.10.2026); test status from the server's receipt (aad42f51c028); SEC-2026-758/-764 write limits and
+SEC-2026-759; Economics inputs with a currency list, hints, proposal explanations and a visible saved state
+(Sonny, 11.10.2026). CHANGELOG has the details.
+
+**Sonny's step:** `npm run deploy:rules` after the app is live (write limits, SEC-2026-758/-764), then
+`npm run rules:verify`.
+
+**Open:** "the failed execution status still read from a client-writable field" (row after 3.0.9); the
+BPMN STOP-only check (row "to check"); line 1 of `docs/ROADMAP.md` carries register rows written above the
+title since 3e96671e (06.10.2026) — move them into §12 and fix the writer; the Nova comparison and a
+"Prepare drafts" proposal await Sonny's decision.
+
 ## Session 11.10.2026 — 3.0.8 released
 
 **Built (main on Sonny's go, 11.10.2026):** SEO/GEO after 3.0, roadmap 3.0.8 items 1–8 (titles for the
