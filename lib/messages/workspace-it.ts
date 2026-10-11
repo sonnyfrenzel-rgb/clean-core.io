@@ -86,6 +86,18 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.successorNone': 'no finding names one',
   'itv.successorNoneNote': '— under Successor: no finding on that object names a successor.',
 
+  // The dependency graph beside the table (roadmap after 3.0.7, item 3) —
+  // `components/workspace/ItDependencyGraph.tsx`, model `lib/it-dependency-graph.ts`.
+  'itv.graphTitle': 'Dependency graph',
+  'itv.graphLead':
+    'The rows of the table below as a picture: the program and its own objects on the left, what they call, read or write on the right, and on each line between them the use and its lines. Select a node or a label to go to its row. The table is the complete answer and the text version of this picture.',
+  'itv.graphLabel': 'Dependency graph of the program and the objects it uses',
+  'itv.graphToTable': 'Go to the table',
+  'itv.graphProgram': 'The program',
+  'itv.graphProgramKind': 'program — uses outside a listed own object',
+  'itv.graphScroll': 'The picture scrolls sideways.',
+  'itv.graphNotAsked': 'level not asked',
+
   'itv.trustTitle': 'Run & trust',
   'itv.trustRun': 'Analysis run',
   'itv.trustFingerprint': 'Source fingerprint',
@@ -199,6 +211,65 @@ export function itvNoLevelLabel(n: number): string {
 /** "Show all 12 objects" is the table's; this is the line anchor's accessible name. */
 export function itvLineLabel(object: string, line: number): string {
   return `${object}, source line ${line}`;
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "L61, L98" or "L61 +3" — the lines on an edge's label, at most two. */
+function graphLines(lines: readonly number[]): string {
+  if (lines.length === 0) return 'lines not recorded';
+  if (lines.length <= 2) return lines.map((l) => `L${l}`).join(', ');
+  return `L${lines[0]} +${lines.length - 1}`;
+}
+
+/** "read · L61, L98" — the visible label of one edge: the table's word for the use, and the lines. */
+export function itvGraphEdgeLabel(useWord: string, lines: readonly number[]): string {
+  return `${useWord} · ${graphLines(lines)}`;
+}
+
+/** "level C", "level Unknown", "level not asked". */
+function levelPhrase(level: string | null): string {
+  return level === null ? 'level not asked' : `level ${level}`;
+}
+
+/** "CHECK_AUTHORITY: EBAN read at lines 61 and 98, level C. Go to its row in the table." */
+export function itvGraphEdgeName(from: string, object: string, useWord: string, lines: readonly number[], level: string | null): string {
+  const at =
+    lines.length === 0
+      ? 'lines not recorded'
+      : lines.length === 1
+        ? `at line ${lines[0]}`
+        : `at lines ${lines.slice(0, -1).join(', ')} and ${lines[lines.length - 1]}`;
+  return `${from}: ${object} ${useWord} ${at}, ${levelPhrase(level)}. Go to its row in the table.`;
+}
+
+/** "EBAN, table, level D (worst of its uses). Go to its row in the table." */
+export function itvGraphObjectName(object: string, kind: string, level: string | null, uses: number): string {
+  const lvl = uses > 1 && level !== null ? `${levelPhrase(level)} (worst of its ${uses} uses)` : levelPhrase(level);
+  return `${object}, ${kind}, ${lvl}. Go to its row in the table.`;
+}
+
+/** "READ_REQUISITION, Form Routine, L60–L75. Go to its row in the table." */
+export function itvGraphSourceName(name: string, kind: string, range: string | null, toRow: boolean): string {
+  return `${name}, ${kind}${range ? `, ${range}` : ''}. ${toRow ? 'Go to its row in the table.' : 'Go to the table.'}`;
+}
+
+/**
+ * "12 of 27 objects · 14 of 28 uses, worst level first" when the graph is
+ * capped, "3 objects · 3 uses" when it is whole. A use is a row of the table
+ * (object and use) — the count of the view's "Uses" figure.
+ */
+export function itvGraphShown(objects: number, totalObjects: number, uses: number, totalUses: number): string {
+  if (objects === totalObjects && uses === totalUses) {
+    return `${plural(objects, 'object', 'objects')} · ${plural(uses, 'use', 'uses')}`;
+  }
+  return `${objects} of ${plural(totalObjects, 'object', 'objects')} · ${uses} of ${plural(totalUses, 'use', 'uses')}, worst level first`;
+}
+
+/** "and 15 more objects — see the table", or the uses where no object was left out. */
+export function itvGraphMore(hiddenObjects: number, hiddenUses: number): string {
+  if (hiddenObjects > 0) return `and ${hiddenObjects} more ${hiddenObjects === 1 ? 'object' : 'objects'} — see the table`;
+  return `and ${hiddenUses} more ${hiddenUses === 1 ? 'use' : 'uses'} — see the table`;
 }
 
 /** "Private Edition 2023 FPS03 → Public Edition: 3 objects change bucket". */

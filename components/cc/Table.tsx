@@ -80,6 +80,13 @@ export interface CcTableProps {
   rows: readonly CcTableRowSpec[];
   /** Show only the first `limit` rows and a "Show all N" button (§2.11). */
   limit?: number;
+  /**
+   * A row another part of the page sends the reader to — the IT view's
+   * dependency graph does. A new object each time it is sent; when its row
+   * stands after the limit, the table opens to show all, as a click on
+   * "Show all" would.
+   */
+  reveal?: { key: string } | null;
 }
 
 const CELL = 'block px-3 py-2 align-top text-[13px] font-medium text-cc-ink sm:table-cell';
@@ -107,11 +114,18 @@ function openRow(event: React.MouseEvent<HTMLTableRowElement>, onOpen: () => voi
   onOpen();
 }
 
-export default function CcTable({ caption, columns, rows, limit }: CcTableProps) {
+export default function CcTable({ caption, columns, rows, limit, reveal = null }: CcTableProps) {
   const [first, ...rest] = columns;
   const bodyId = useId();
   const [showAll, setShowAll] = useState(false);
   const limited = limit !== undefined && limit > 0 && rows.length > limit;
+  // A row sent from elsewhere opens the table when it is hidden — adjusted
+  // while rendering, React's pattern for state that follows a prop.
+  const [revealed, setRevealed] = useState(reveal);
+  if (reveal !== revealed) {
+    setRevealed(reveal);
+    if (reveal && limited && rows.findIndex((r) => r.key === reveal.key) >= (limit ?? 0)) setShowAll(true);
+  }
   const beyond = (index: number) => limited && !showAll && index >= limit;
 
   return (

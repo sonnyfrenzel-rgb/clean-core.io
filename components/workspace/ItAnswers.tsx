@@ -48,7 +48,6 @@ import {
   type ChainLinkId,
   type ItFindingRow,
   type ItFindingsSource,
-  type ItUseRow,
 } from '@/lib/it-findings';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import {
@@ -67,9 +66,10 @@ import {
   type WhereTo,
   chainLine,
 } from '@/lib/it-view';
-import { itOpening, itState, kindWord, usesSummary } from '@/lib/it-state';
+import { itOpening, itState, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
 import PageAnchorBar from '@/components/PageAnchorBar';
+import ItDependencyGraph, { objectKindWord, objectUseWord } from './ItDependencyGraph';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
 /**
@@ -723,13 +723,6 @@ function byLevelThenLine(a: ItFindingRow, b: ItFindingRow): number {
   return rank(a.level) - rank(b.level) || a.lineStart - b.lineStart;
 }
 
-const USE_WORDS: Record<ItUseRow['use'], WorkspaceMessageKey> = {
-  call: 'itv.useCall',
-  read: 'itv.useRead',
-  write: 'itv.useWrite',
-  use: 'itv.useUse',
-};
-
 const BASIS_WORDS: Record<string, WorkspaceMessageKey> = {
   catalog: 'itv.basisCatalog',
   'catalog-residual': 'itv.basisResidual',
@@ -754,8 +747,6 @@ const OWNER_WORDS: Record<ItObjectRow['owner'], WorkspaceMessageKey> = {
   undetermined: 'itv.ownerUndetermined',
 };
 
-const USE_KINDS = new Set(['bapi', 'function-module', 'table', 'transaction', 'program', 'object']);
-
 /**
  * Objects & dependencies (ADR-086) — what used to be two answers with two
  * counts, "What the code uses" and the *Architecture & dependencies* layer,
@@ -766,6 +757,28 @@ const USE_KINDS = new Set(['bapi', 'function-module', 'table', 'transaction', 'p
  * and what a level is not, and is never folded away.
  */
 function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote: string }) {
+  /** The row the graph sent the reader to — marked like a chosen finding, in ink. */
+  const [jump, setJump] = useState<{ key: string } | null>(null);
+  const [tableJump, setTableJump] = useState(0);
+  const open = useCallback((rowKey: string | null) => {
+    if (rowKey === null) setTableJump((n) => n + 1);
+    else setJump({ key: rowKey });
+  }, []);
+  // After the table has shown the row: bring it into view and move the focus
+  // to it, so a keyboard reader lands where the graph pointed.
+  useEffect(() => {
+    if (!jump) return;
+    const row = document.querySelector<HTMLElement>(`[data-it-objects-table] [data-cc-table-row="${CSS.escape(jump.key)}"]`);
+    row?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row?.querySelector<HTMLElement>('[data-it-object-focus]')?.focus({ preventScroll: true });
+  }, [jump]);
+  useEffect(() => {
+    if (tableJump === 0) return;
+    const table = document.querySelector<HTMLElement>('[data-it-objects-table]');
+    table?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    table?.focus({ preventScroll: true });
+  }, [tableJump]);
+
   return (
     <div id={IT_SECTION_IDS.objects} className="scroll-mt-28">
       <CcCard title={wt('itv.objectsTitle')} count={objects.recorded ? objects.rows.length : undefined}>
@@ -781,12 +794,18 @@ function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote
             <p data-it-objects-count="" className="m-0 mb-2 text-[12px] leading-snug font-semibold text-cc-ink">
               {itvObjectsCount(objects.own, objects.tables, objects.calls)}
             </p>
-            <CcTable
-              caption={wt('itv.objectsCaption')}
-              columns={OBJECT_COLUMNS}
-              limit={5}
-              rows={objects.rows.map((r) => ({ key: r.key, cells: objectCells(r) }))}
-            />
+            {/* The same rows as a picture (roadmap after 3.0.7, item 3) — the
+                overview; the table under it stays the whole answer. */}
+            <ItDependencyGraph objects={objects} onOpen={open} />
+            <div data-it-objects-table="" tabIndex={-1} className="mt-3 scroll-mt-28">
+              <CcTable
+                caption={wt('itv.objectsCaption')}
+                columns={OBJECT_COLUMNS}
+                limit={5}
+                reveal={jump}
+                rows={objects.rows.map((r) => ({ key: r.key, selected: jump?.key === r.key, cells: objectCells(r) }))}
+              />
+            </div>
             {objects.rows.some((r) => !r.successor) ? (
               <p data-it-successor-note="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
                 {wt('itv.successorNoneNote')}
@@ -808,6 +827,9 @@ function objectCells(r: ItObjectRow): Record<string, React.ReactNode> {
     object: (
       <span
         className="block"
+        // The graph moves the focus here when it sends the reader to this row.
+        tabIndex={-1}
+        data-it-object-focus=""
         data-it-object={r.object}
         data-it-object-side={r.side}
         data-it-use={dep ? r.object : undefined}
@@ -815,7 +837,7 @@ function objectCells(r: ItObjectRow): Record<string, React.ReactNode> {
       >
         <span className="block font-mono text-[13px] font-semibold break-all text-cc-ink">{r.object}</span>
         <span className="block text-[11px] font-medium text-cc-ink-muted">
-          {dep && USE_KINDS.has(r.kind) ? kindWord(r.kind as ItUseRow['kind']) : r.kind}
+          {dep ? objectKindWord(r.kind) : r.kind}
           {r.remote ? ` · ${wt('itv.remote')}` : ''}
         </span>
       </span>
@@ -838,13 +860,7 @@ function objectCells(r: ItObjectRow): Record<string, React.ReactNode> {
     ),
     use: (
       <span className="text-[12px] font-semibold text-cc-ink" data-it-object-use={r.batchInput ? 'write-batch-input' : r.use}>
-        {r.use === 'defined'
-          ? wt('itv.useDefined')
-          : r.batchInput === 'all'
-            ? wt('itv.useWriteBatchInput')
-            : r.batchInput === 'some'
-              ? wt('itv.useWriteBatchInputSome')
-              : wt(USE_WORDS[r.use])}
+        {objectUseWord(r.use, r.batchInput)}
       </span>
     ),
     lines: (
