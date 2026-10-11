@@ -342,7 +342,7 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
   test('tests: a passing receipt, a failing receipt, a closure and nothing are four different statements', () => {
     const passed = finished(withReceipt(fiProject(), 'Passed')).file('STATUS.md')!;
     expect(passed).toMatch(/\| Tests \| Passed — All 10 scenarios passed\./);
-    expect(passed).toContain('isolated sandbox against mocks');
+    expect(passed).toContain('in the test runner against mocks');
 
     const failed = finished(withReceipt(fiProject(), 'Failed')).file('STATUS.md')!;
     expect(failed).toMatch(/\| Tests \| Failed — 0 of 10 scenarios passed, 10 failed\./);

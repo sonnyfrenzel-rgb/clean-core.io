@@ -73,7 +73,7 @@ test.describe('a package of documentation files is not generated code', () => {
     const docTx = src.slice(src.indexOf('const generateDocumentation = useCallback('), src.indexOf('const autoDocFor = useRef'));
     expect(docTx).toContain("tx.update(projectDoc, { documentation: stored, status: 'documented', businessDocumentation: '', ...cleanup })");
     const bizTx = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const generateBusinessDocumentation'));
-    expect(bizTx).toContain('tx.update(projectDoc, { businessDocumentation: responseText, ...cleanup })');
+    expect(bizTx).toContain('tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup })');
   });
 
   test('Delivery still adds both documentation files to the bundle from the project fields', () => {

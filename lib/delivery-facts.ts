@@ -245,7 +245,7 @@ export function testFactsOf(project: HandoverProject, phases: readonly RailStep[
   const receipt = coveringTestRunReceipt(p);
   if (receipt) {
     const ev = testEvidence(project);
-    const env = 'in the isolated sandbox against mocks (Demonstrated · mock), not against an SAP system';
+    const env = 'in the test runner against mocks (Demonstrated · mock), not against an SAP system';
     const detail = [
       `Run on ${day(receipt.executedAt)}, ${env}; exit code ${receipt.exitCode}.`,
       receipt.stubs.length ? `Packages replaced by mocks: ${receipt.stubs.join(', ')}.` : 'No package was replaced by a mock.',
