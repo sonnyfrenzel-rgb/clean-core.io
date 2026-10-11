@@ -13,6 +13,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
+import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -334,7 +335,7 @@ You must return your output strictly in JSON format. Do not include any markdown
 interface DesignData {
   projectName: string; // The name of this modernization project
   architectureOverview: {
-    approachDescription: string; // A concise 2-3 sentence overview of the clean core RAP approach. Focus on in-app extensibility, standard RAP business object adaptations, or custom released RAP endpoints.
+    approachDescription: string; // A concise 2-4 sentence overview of the clean core RAP approach. Focus on in-app extensibility, standard RAP business object adaptations, or custom released RAP endpoints. Say why RAP over adopting the SAP standard and over a side-by-side CAP application, and what is not known that could change it (see OPTIONS below).
     nodeFramework: string; // Value MUST be: "SAP RAP (RESTful Application Programming)" with a brief justification
     runtimePlatform: string; // Value MUST be: "SAP S/4HANA Core (Developer Extensibility)"
   };
@@ -363,6 +364,10 @@ interface DesignData {
   }>;
 }
 
+${SAP_REFERENCE_PROMPT_RULES}
+
+OPTIONS: ${OPTION_COMPARISON_RULE}
+
 ${designContext}
 
 ${DESIGN_ANSWER_REMINDER}`
@@ -372,7 +377,7 @@ You must return your output strictly in JSON format. Do not include any markdown
 interface DesignData {
   projectName: string; // The name of this modernization project
   architectureOverview: {
-    approachDescription: string; // A concise 2-3 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side.
+    approachDescription: string; // A concise 2-4 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side. Say why a side-by-side CAP application over adopting the SAP standard and over an in-app RAP extension — the need for external users, several systems, own orchestration or scale that justifies the extra operation — and what is not known that could change it (see OPTIONS below).
     nodeFramework: string; // Value MUST be: "SAP CAP (Cloud Application Programming model)" with a brief justification
     runtimePlatform: string; // Value MUST be: "${BTP_FIRST}"
   };
@@ -391,10 +396,10 @@ interface DesignData {
   };
   sapStandardApiMapping?: Array<{
     legacyTableOrFunction: string; // Legacy database table (e.g., KNA1, BSEG, LFA1, VBAK) or BAPI being integrated
-    sapStandardApiName: string; // Official standard released SAP API name (e.g. API_BUSINESS_PARTNER, API_SALES_ORDER_SRV, API_OUTBOUND_DELIVERY_SRV)
+    sapStandardApiName: string; // The technical name of a released SAP API you are certain exists (e.g. API_BUSINESS_PARTNER, API_SALES_ORDER_SRV, API_OUTBOUND_DELIVERY_SRV)
     apiHubUrl: string; // Reference link to api.sap.com (e.g. https://api.sap.com/api/API_BUSINESS_PARTNER/overview)
-    apiId: string; // Official API ID reference (e.g. SAP_COM_0008, SAP_COM_0109, etc.)
-    description: string; // Clear technical rationale of how this API replaces direct DB SELECTs to keep the core clean
+    apiId: string; // The API's ID on api.sap.com — for most APIs the same as sapStandardApiName. Never a communication scenario (SAP_COM_...) here; an empty string when you are not certain.
+    description: string; // How this API replaces the direct DB access, and what it does NOT cover (fields, views, edition restrictions). Never a general replacement for several tables without that.
   }>;
   securityHardening: Array<{
     category: string; // e.g. Authentication, Network, Coding, Audit
@@ -407,6 +412,10 @@ interface DesignData {
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
 }
+
+${SAP_REFERENCE_PROMPT_RULES}
+
+OPTIONS: ${OPTION_COMPARISON_RULE}
 
 ${designContext}
 

@@ -8,6 +8,8 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { sapApiHubUrl } from '@/lib/export-safety';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import type { CleanCoreLevelValue } from '@/lib/clean-core-level';
+import { SapCheckedText } from '@/components/SapIdentifierCheck';
+import { catalogNoteForMapping } from '@/lib/sap-reference-check';
 
 interface ApiMapping {
   legacyTableOrFunction: string;
@@ -71,7 +73,10 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping, levels = 
             {/* The mapping — which API, which ID, which address — is the model's. */}
             {embedded ? null : <CcProvenanceChip value="proposed" />}
           </div>
-          <p className="cc-text-cell text-cc-ink-muted mt-1">Officially <GlossaryTerm termKey="Released Interface" className="text-cc-ink-muted">Released standard S/4HANA Public APIs</GlossaryTerm> mapped to fully decouple direct legacy database access.</p>
+          {/* External review F-03: the model's IDs were printed as SAP's. Each one is checked now. */}
+          <p className="cc-text-cell text-cc-ink-muted mt-1">
+            <GlossaryTerm termKey="Released Interface" className="text-cc-ink-muted">Released SAP APIs</GlossaryTerm> the model proposes in place of direct database access. Each identifier is checked against SAP data this product holds; a verified ID is SAP&apos;s, not proof that it covers this use.
+          </p>
         </div>
         <span className="shrink-0 self-start sm:self-auto">
           <CcTag>api.sap.com Reference</CcTag>
@@ -95,9 +100,17 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping, levels = 
                 </span>
               );
             })(),
-            target: <span className="cc-text-cell font-semibold text-cc-ink [overflow-wrap:anywhere]">{map.sapStandardApiName}</span>,
-            apiId: <span className="font-cc-mono cc-text-meta text-cc-ink">{map.apiId}</span>,
-            role: <span className="cc-text-cell text-cc-ink">{map.description}</span>,
+            target: <span className="cc-text-cell font-semibold text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={map.sapStandardApiName} /></span>,
+            apiId: <span className="font-cc-mono cc-text-meta text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={map.apiId} /></span>,
+            role: (
+              <span className="cc-text-cell text-cc-ink">
+                <SapCheckedText text={map.description} />
+                {(() => {
+                  const note = catalogNoteForMapping(map.legacyTableOrFunction, map.sapStandardApiName, map.apiId);
+                  return note ? <span data-design-mapping-catalog="" className="mt-1 block cc-text-meta text-cc-ink-muted">{note}</span> : null;
+                })()}
+              </span>
+            ),
             action: sapApiHubUrl(map.apiHubUrl) ? (
               <a
                 href={sapApiHubUrl(map.apiHubUrl)}

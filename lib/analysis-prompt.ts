@@ -2,6 +2,7 @@ import type { AbapEvidenceReport } from './abap/evidence-model';
 import { anchorInstruction } from './abap/narrative-anchors';
 import type { ExtensibilityRouteReport } from './abap/extensibility-router';
 import { BTP, BTP_FIRST } from './sap-naming';
+import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from './sap-reference-check';
 
 /**
  * The prompt of the Analyze stage, assembled in one place so it can be tested as a whole.
@@ -34,15 +35,19 @@ No field of this output states an amount of money — no cost, saving, price, bu
 
 ${anchorInstruction(evidenceReport.findings, code.split(/\r?\n/).length)}
 
+${SAP_REFERENCE_PROMPT_RULES}
+
+${OPTION_COMPARISON_RULE} Write that comparison into recommendations.cloudReadiness.
+
 interface AnalysisData {
   projectTitle: string;
   cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${routeReport.cleanCoreScore}
   summary: string; // Plain english business executive summary. Every sentence that states something about THIS program must end with an anchor in one of the forms listed under CITATIONS above. General advice stays uncited.
   asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code.
   standardFit: {
-    potential: 'High' | 'Medium' | 'Low';
-    targetStandardProcess: string; 
-    rationale: string; 
+    potential: 'High' | 'Medium' | 'Low'; // 'High' only when the rationale lists, capability by capability, the standard function that covers each one. Otherwise 'Medium' or 'Low'.
+    targetStandardProcess: string; // The standard process in words. An app ID, scope item or communication scenario only under the SAP IDENTIFIERS rules above.
+    rationale: string; // The capabilities the code performs, which of them a named standard function covers, and which are unconfirmed or not known (target release, usage, volumes). No claim of full coverage without that list.
   };
   gaps: Array<{
     title: string; 
@@ -52,9 +57,9 @@ interface AnalysisData {
     complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
-    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Mark each API as "(Catalog Match)", "(Candidate)", or "(Needs Validation)" based on whether you are certain the API exists and covers the use case. Do NOT say "rewrite" here — only name the standard alternative.
+    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Mark each API as "(Catalog Match)", "(Candidate)", or "(Needs Validation)" based on whether you are certain the API exists and covers the use case, and follow the SAP IDENTIFIERS rules above. Do NOT say "rewrite" here — only name the standard alternative.
     decommissioning: string; // STEP 2: What legacy objects can be RETIRED after the standard alternative from Step 1 is adopted and validated? Never say "delete" — use "retire after replacement validation, data migration assessment, and business sign-off". Be explicit about which custom objects are candidates for retirement. Must be consistent with keepCoreClean.
-    cloudReadiness: string; // STEP 3: If Step 1 fully replaces the legacy code, state "No rewrite needed — standard replacement covers all functionality." If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. For complex programs, describe a HYBRID approach: which components go to RAP/In-App, which to CAP on ${BTP}, which to Integration Suite/Event Mesh, and which to Fiori/UI5. NEVER contradict Step 1 or Step 2.
+    cloudReadiness: string; // STEP 3: First the option comparison required above: which option you recommend, the reason over the others, and what is not known that could change it. If Step 1 appears to replace the legacy code, name the capabilities that rests on and say the fit is to be confirmed before the code is retired — never claim it covers all functionality. If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. For complex programs, describe a HYBRID approach: which components go to RAP/In-App, which to CAP on ${BTP}, which to Integration Suite/Event Mesh, and which to Fiori/UI5. NEVER contradict Step 1 or Step 2.
   };
   strategicNextSteps: string[]; 
   extensibilityRouting: {

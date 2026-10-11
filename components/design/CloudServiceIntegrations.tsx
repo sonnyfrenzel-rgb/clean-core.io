@@ -8,6 +8,7 @@ import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SapReferenceInline, SapReferenceList } from '@/components/design/SapReference';
+import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import { REFERENCE_OF_SERVICE } from '@/lib/sap-reference-architectures';
 import { getCloudServiceKey, type CloudServiceKey } from '@/lib/cloud-service-key';
 
@@ -390,7 +391,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
             >
               <div className="min-w-0">
                 <h4 className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">{service.serviceName}</h4>
-                <p className="m-0 cc-text-cell text-cc-ink">{service.purpose}</p>
+                <p className="m-0 cc-text-cell text-cc-ink"><SapCheckedText text={service.purpose} /></p>
                 {/* Roadmap 3.0.9: the SAP reference pattern of the block, a link per block. */}
                 <SapReferenceInline bindings={REFERENCE_OF_SERVICE[getCloudServiceKey(service.serviceName)]} />
               </div>
@@ -435,7 +436,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
           <div className="space-y-6">
             <div>
               <h3 className="cc-text-label text-cc-ink-muted mb-2">Service Binding Role</h3>
-              <p className="cc-text-body font-semibold text-cc-ink">{activeService.purpose}</p>
+              <p className="cc-text-body font-semibold text-cc-ink"><SapCheckedText text={activeService.purpose} /></p>
             </div>
 
             <div>

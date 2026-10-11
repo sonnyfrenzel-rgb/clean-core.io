@@ -7,6 +7,13 @@ import {
 } from './process-documentation';
 import { readModelGaps, gapsUnreadableSentence } from './model-gaps';
 import { BTP, BTP_FIRST, sapNamesForDisplay } from './sap-naming';
+import {
+  COVERAGE_CLAIM_NOTE,
+  annotateSapReferences as checked,
+  catalogNoteForMapping,
+  coverageClaims,
+  sapReferenceAppendixMarkdown,
+} from './sap-reference-check';
 
 /**
  * Professional Markdown Formatting Engine
@@ -25,16 +32,23 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     let md = `# Business Analysis Report: ${data.projectTitle || 'ABAP Modernization'}\n\n`;
     md += `## Clean Core Compliance Baseline\n`;
     md += `**Compliance Score:** \`${data.cleanCoreScore || 0} / 100\`\n\n`;
-    md += `> **Executive Summary:** ${data.summary || ''}\n\n`;
-    
+    md += `> **Executive Summary:** ${checked(data.summary || '')}\n\n`;
+
     md += `## As-Is Process & Legacy Context\n`;
-    md += `${data.asIsContext || 'No context available.'}\n\n`;
-    
+    md += `${checked(data.asIsContext || 'No context available.')}\n\n`;
+
     if (data.standardFit) {
+      // The fit is the model's word. SAP identifiers in it are checked, and a
+      // claim of full coverage is said to be unbacked (external review F-03/F-09).
       md += `## Target Standard Process & SAP Fit\n`;
-      md += `- **Fit Potential:** **${data.standardFit.potential || 'N/A'}**\n`;
-      md += `- **Target Standard Process:** \`${data.standardFit.targetStandardProcess || 'N/A'}\`\n`;
-      md += `- **Technical Rationale:** ${data.standardFit.rationale || 'N/A'}\n\n`;
+      md += `> Model proposal. SAP identifiers below are checked against SAP data this product holds.\n\n`;
+      md += `- **Fit Potential (model's estimate, not a measured fit):** ${data.standardFit.potential || 'N/A'}\n`;
+      md += `- **Target Standard Process:** \`${checked(data.standardFit.targetStandardProcess || 'N/A')}\`\n`;
+      md += `- **Technical Rationale:** ${checked(data.standardFit.rationale || 'N/A')}\n`;
+      if (data.standardFit.potential === 'High' || coverageClaims(`${data.standardFit.rationale ?? ''} ${data.recommendations?.cloudReadiness ?? ''}`).length) {
+        md += `- **Note:** ${COVERAGE_CLAIM_NOTE}\n`;
+      }
+      md += `\n`;
     }
     
     // A single object is one gap; any other shape is said, not left out (lib/model-gaps.ts).
@@ -46,7 +60,7 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
         md += `| Gap / Capability | Severity | Complexity | Recommended Extensibility Strategy | Technical Rationale |\n`;
         md += `| :--- | :---: | :---: | :--- | :--- |\n`;
         gapsReading.gaps.forEach((g) => {
-          md += `| **${g.title || 'Untitled Gap'}** | \`${g.severity || 'Medium'}\` | \`${g.complexity || 'Medium'}\` | **${g.strategy || 'Side-by-Side'}** | ${g.rationale || ''} |\n`;
+          md += `| **${checked(g.title || 'Untitled Gap')}** | \`${g.severity || 'Medium'}\` | \`${g.complexity || 'Medium'}\` | **${checked(g.strategy || 'Side-by-Side')}** | ${checked(g.rationale || '')} |\n`;
         });
         md += `\n`;
       }
@@ -57,19 +71,27 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     
     if (data.recommendations) {
       md += `## Clean Core Architecture Recommendations\n`;
-      md += `- **Keep Core Clean Strategy:** ${data.recommendations.keepCoreClean || 'N/A'}\n`;
-      md += `- **Decommissioning / Deactivation Strategy:** ${data.recommendations.decommissioning || 'N/A'}\n`;
-      md += `- **Transformed Cloud Readiness:** ${data.recommendations.cloudReadiness || 'N/A'}\n\n`;
+      md += `- **Keep Core Clean Strategy:** ${checked(data.recommendations.keepCoreClean || 'N/A')}\n`;
+      md += `- **Decommissioning / Deactivation Strategy:** ${checked(data.recommendations.decommissioning || 'N/A')}\n`;
+      md += `- **Transformed Cloud Readiness:** ${checked(data.recommendations.cloudReadiness || 'N/A')}\n\n`;
     }
-    
+
     if (Array.isArray(data.strategicNextSteps) && data.strategicNextSteps.length > 0) {
       md += `## Architectural Next Steps\n`;
       data.strategicNextSteps.forEach((step: string, idx: number) => {
-        md += `${idx + 1}. **${step}**\n`;
+        md += `${idx + 1}. **${checked(step)}**\n`;
       });
       md += `\n`;
     }
-    
+
+    // Every SAP identifier of the report, with its state and SAP source (external review F-03).
+    md += sapReferenceAppendixMarkdown(
+      data.summary, data.asIsContext, data.standardFit?.targetStandardProcess, data.standardFit?.rationale,
+      ...gapsReading.gaps.flatMap((g) => [g.title, g.strategy, g.rationale]),
+      data.recommendations?.keepCoreClean, data.recommendations?.decommissioning, data.recommendations?.cloudReadiness,
+      ...(Array.isArray(data.strategicNextSteps) ? data.strategicNextSteps : []),
+    );
+
     return md;
   } catch (e) {
     return withoutUnapprovedMoney(rawJson);
@@ -87,7 +109,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
     
     if (data.architectureOverview) {
       md += `## Architecture Overview\n`;
-      md += `${data.architectureOverview.approachDescription || ''}\n\n`;
+      md += `${checked(data.architectureOverview.approachDescription || '')}\n\n`;
       md += `- **Target Node.js Framework:** \`${data.architectureOverview.nodeFramework || 'Express'}\`\n`;
       md += `- **Recommended Runtime Platform:** \`${data.architectureOverview.runtimePlatform ? sapNamesForDisplay(data.architectureOverview.runtimePlatform) : BTP_FIRST}\`\n\n`;
     }
@@ -119,7 +141,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
       md += `## ${BTP} & Native Cloud Services Integration\n`;
       data.cloudServices.forEach((service: any) => {
         md += `### ${service.serviceName}\n`;
-        md += `**Purpose in Project:** ${service.purpose}\n\n`;
+        md += `**Purpose in Project:** ${checked(service.purpose)}\n\n`;
         if (Array.isArray(service.npmPackages) && service.npmPackages.length > 0) {
           md += `**Required Node.js SDK Packages:** ${service.npmPackages.map((pkg: string) => `\`${pkg}\``).join(', ')}\n\n`;
         }
@@ -129,16 +151,17 @@ export function formatDesignToMarkdown(rawJson: string): string {
     if (data.dataSync) {
       md += `## Data Synchronization & Integration Pattern\n`;
       md += `### **Pattern:** \`${data.dataSync.patternName || 'Event-Driven'}\`\n`;
-      md += `${data.dataSync.description || ''}\n\n`;
+      md += `${checked(data.dataSync.description || '')}\n\n`;
     }
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
       md += `## SAP Business Accelerator Hub Mappings\n`;
-      md += `The side-by-side extension communicates with S/4HANA via released standard interfaces to keep the core clean:\n\n`;
-      md += `| Legacy Object | Target Released SAP Public API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
+      md += `Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.\n\n`;
+      md += `| Legacy Object | Proposed SAP API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.sapStandardApiMapping.forEach((map: any) => {
-        md += `| \`${map.legacyTableOrFunction}\` | **${map.sapStandardApiName}** | \`${map.apiId}\` | ${map.description} | ${sapApiHubUrl(map.apiHubUrl) ? `[API Hub Reference](${sapApiHubUrl(map.apiHubUrl)})` : 'no API Hub link'} |\n`;
+        const note = catalogNoteForMapping(map.legacyTableOrFunction, map.sapStandardApiName, map.apiId);
+        md += `| \`${map.legacyTableOrFunction}\` | **${checked(map.sapStandardApiName)}** | \`${checked(map.apiId)}\` | ${checked(map.description)}${note ? ` ${note}` : ''} | ${sapApiHubUrl(map.apiHubUrl) ? `[API Hub Reference](${sapApiHubUrl(map.apiHubUrl)})` : 'no API Hub link'} |\n`;
       });
       md += `\n`;
     }
@@ -165,7 +188,14 @@ export function formatDesignToMarkdown(rawJson: string): string {
         md += `\n`;
       });
     }
-    
+
+    // Every SAP identifier of the design, with its state and SAP source (external review F-03).
+    md += sapReferenceAppendixMarkdown(
+      data.architectureOverview?.approachDescription, data.dataSync?.description,
+      ...(Array.isArray(data.cloudServices) ? data.cloudServices.map((sv: any) => sv?.purpose) : []),
+      ...(Array.isArray(data.sapStandardApiMapping) ? data.sapStandardApiMapping.flatMap((m: any) => [m?.sapStandardApiName, m?.apiId, m?.description]) : []),
+    );
+
     return md;
   } catch (e) {
     return rawJson;

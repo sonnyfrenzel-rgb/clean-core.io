@@ -49,6 +49,7 @@ import { findingsWorklist } from '@/lib/findings-worklist';
 import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
+import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
 import { routeDrivers, routeExtensibility } from '@/lib/abap/extensibility-router';
 import { signedRecommendationOf, signedRouteReport } from '@/lib/signed-route-report';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
@@ -1362,6 +1363,21 @@ export default function AnalyzePage() {
               ) : (
                 <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
               )}
+              {/* SAP identifiers the model named anywhere in its analysis,
+                  each checked against SAP data this product holds (external
+                  review F-03). The anchored summary keeps its own renderer. */}
+              <SapIdentifierChecks
+                texts={[
+                  analysisData.summary,
+                  analysisData.asIsContext,
+                  analysisData.standardFit?.targetStandardProcess,
+                  analysisData.standardFit?.rationale,
+                  analysisData.recommendations?.keepCoreClean,
+                  analysisData.recommendations?.decommissioning,
+                  analysisData.recommendations?.cloudReadiness,
+                ]}
+                title="SAP identifiers named in the model's analysis"
+              />
             </div>
           </FoldedSection>
 

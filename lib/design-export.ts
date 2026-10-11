@@ -24,6 +24,8 @@ import { EXPORT_CSS } from '@/lib/export-style';
 import { SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture, type TargetArchitectureCode } from '@/lib/project-commands';
 import { getCloudServiceKey } from '@/lib/cloud-service-key';
+// SAP identifiers the model wrote, each followed by its check (external review F-03).
+import { annotateSapReferences as checked, catalogNoteForMapping } from '@/lib/sap-reference-check';
 import {
   ARCHITECTURE_CENTER_SOURCE,
   FIT_LABEL,
@@ -161,7 +163,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
       return `
         <div class="card">
           <h4>${esc(svc.serviceName)}</h4>
-          <p class="muted">${esc(svc.purpose)}</p>
+          <p class="muted">${esc(checked(svc.purpose))}</p>
           <div class="meta">
             <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code>${esc(pkg)}</code>`).join(', ') || 'None'}
           </div>
@@ -190,16 +192,16 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
     const apiMappingRows = data.sapStandardApiMapping?.map(map => `
         <tr>
           <td class="mono strong">${esc(map.legacyTableOrFunction)}</td>
-          <td class="strong">${esc(map.sapStandardApiName)}</td>
-          <td class="mono">${esc(map.apiId)}</td>
-          <td class="muted">${esc(map.description)}</td>
+          <td class="strong">${esc(checked(map.sapStandardApiName))}</td>
+          <td class="mono">${esc(checked(map.apiId))}</td>
+          <td class="muted">${esc([checked(map.description), catalogNoteForMapping(map.legacyTableOrFunction, map.sapStandardApiName, map.apiId)].filter(Boolean).join(' '))}</td>
           <td>${sapApiHubLink(map.apiHubUrl, 'api.sap.com →')}</td>
         </tr>
       `).join('') || '';
 
     const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
         <h2>SAP Business Accelerator Hub Mappings</h2>
-        <p>Decoupled communication mappings dynamically generated to keep the S/4HANA core clean:</p>
+        <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.</p>
         <table>
           <thead>
             <tr>
@@ -232,7 +234,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
           <div class="content">
             <div class="summary-box">
               <h3>Architectural Approach</h3>
-              <p>${esc(data.architectureOverview?.approachDescription)}</p>
+              <p>${esc(checked(data.architectureOverview?.approachDescription))}</p>
             </div>
 
             ${referenceSection}
@@ -272,7 +274,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
 
             <h2>Data Synchronization Pattern</h2>
             <p><strong>Pattern:</strong> <strong>${esc(data.dataSync?.patternName)}</strong></p>
-            <p>${esc(data.dataSync?.description)}</p>
+            <p>${esc(checked(data.dataSync?.description))}</p>
 
             ${apiMappingSection}
 

@@ -4,6 +4,8 @@ import { CheckCircle2, Layers, Trash2, Info } from 'lucide-react';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
+import { SapCheckedText } from '@/components/SapIdentifierCheck';
+import { COVERAGE_CLAIM_NOTE, coverageClaims } from '@/lib/sap-reference-check';
 
 /** A step of the model's three-word answer: an amount, not a state (§1.8) — never green. */
 const FIT_STEP = SEQUENTIAL_CHART_COLORS[SEQUENTIAL_CHART_COLORS.length - 1].bg;
@@ -55,12 +57,16 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
               <CheckCircle2 size={16} aria-hidden="true" className="shrink-0" />
               <span className="cc-text-label">Standard Fit</span>
             </div>
-            <h4 className="cc-text-h3 text-cc-ink">{standardFit?.targetStandardProcess || 'S/4HANA Best Practice'}</h4>
-            <p className="cc-text-cell text-cc-ink">{standardFit?.rationale}</p>
+            {/* SAP identifiers the model named are checked in place (external review F-03). */}
+            <h4 className="cc-text-h3 text-cc-ink">{standardFit?.targetStandardProcess ? <SapCheckedText text={standardFit.targetStandardProcess} /> : 'S/4HANA Best Practice'}</h4>
+            <p className="cc-text-cell text-cc-ink"><SapCheckedText text={standardFit?.rationale} /></p>
+            {standardFit && (standardFit.potential === 'High' || coverageClaims(`${standardFit.rationale ?? ''} ${recommendations?.cloudReadiness ?? ''}`).length > 0) ? (
+              <p data-coverage-claim="" className="cc-text-meta text-cc-ink-muted">{COVERAGE_CLAIM_NOTE}</p>
+            ) : null}
           </div>
           <div>
             <div className="flex items-center justify-between gap-2 cc-text-label text-cc-ink-muted mb-2">
-              <span>Standardization Fit</span>
+              <span>Standardization Fit (model&apos;s estimate)</span>
               {/* 90 / 50 / 15 % were three numbers picked to look like a
                   measurement. What the model actually returns is one of three
                   words, so that is what is shown — with a bar of three steps
@@ -91,7 +97,7 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
               <span className="cc-text-label">Modern Extension</span>
             </div>
             <h4 className="cc-text-h3 text-cc-ink">Side-by-Side SAP BTP / Node.js</h4>
-            <p className="cc-text-cell text-cc-ink">{recommendations?.cloudReadiness || 'Custom API layers and microservices completely transformed from standard core.'}</p>
+            <p className="cc-text-cell text-cc-ink">{recommendations?.cloudReadiness ? <SapCheckedText text={recommendations.cloudReadiness} /> : 'Custom API layers and microservices completely transformed from standard core.'}</p>
           </div>
           {/* "Cloud Readiness 95 %" and the bar under it were a number and a
               width written into the file — nothing measures either, and the
@@ -111,7 +117,7 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
               <span className="cc-text-label">Decommission</span>
             </div>
             <h4 className="cc-text-h3 text-cc-ink">Redundant & Obsolete Logic</h4>
-            <p className="cc-text-cell text-cc-ink">{recommendations?.decommissioning || 'Obsolete SAP workarounds, manual validation structures, and unused code blocks.'}</p>
+            <p className="cc-text-cell text-cc-ink">{recommendations?.decommissioning ? <SapCheckedText text={recommendations.decommissioning} /> : 'Obsolete SAP workarounds, manual validation structures, and unused code blocks.'}</p>
           </div>
           {/* Same as the column before: no ratio was ever computed. */}
         </div>

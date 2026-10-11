@@ -11,6 +11,7 @@ import ApiBusinessHubMapping from '@/components/design/ApiBusinessHubMapping';
 import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChecklist';
 import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import SectionBoundary from '@/components/SectionBoundary';
+import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import type { DesignData } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { BTP, sapNamesForDisplay } from '@/lib/sap-naming';
@@ -257,7 +258,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
           {design.dataSync.description ? (
             <div className="flex min-w-0 flex-col gap-1">
               <h4 className="m-0 cc-text-h3 text-cc-ink">Data sync: {design.dataSync.patternName}</h4>
-              <p className="m-0 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">{design.dataSync.description}</p>
+              <p className="m-0 cc-text-cell text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={design.dataSync.description} /></p>
             </div>
           ) : (
             <NotWritten what="Data sync pattern" />
@@ -321,7 +322,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
         </div>
         {design.architectureOverview.approachDescription ? (
           <p data-design-approach="" className="m-0 max-w-4xl text-[15px] leading-relaxed text-cc-ink [overflow-wrap:anywhere]">
-            {design.architectureOverview.approachDescription}
+            <SapCheckedText text={design.architectureOverview.approachDescription} />
           </p>
         ) : (
           <NotWritten what="Architecture overview" />
