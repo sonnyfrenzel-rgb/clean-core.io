@@ -94,6 +94,10 @@ review of a real FI case.
 - An open popover — "What the tools do", "Why?", the message popover, a glossary term, a level
   explanation — stands over the sticky bars of the page. The "On this page" bar cut through
   "What the tools do" on Documentation and Testing.
+- A large program no longer freezes the page. Laying out the process map of a 1,500-line program
+  took about a minute in the browser, a 2,000-line one several minutes; the map's flow router now
+  needs seconds (2.6 s and about 15 s for the first build), draws the same flows, and the reading is
+  kept for the page, so switching views and tools does not lay it out again.
 
 ## [v3.0.9] — 2026-10-11
 
