@@ -7,6 +7,7 @@ import {
   choiceAddress,
   choiceHref,
   economicsChoice,
+  isChoiceBase,
   isChoiceKey,
   ORIGINS,
   originBackHref,
@@ -235,6 +236,34 @@ test.describe('the origin is a key of a closed list, or nothing', () => {
       const href = choiceHref({ base: BASE, choice: 'economics.rates', view: 'it', origin: bad as OriginKey });
       expect(href, bad).toBe(`${BASE}/tco?view=it#economics-step-rates`);
       expect(stageHref({ base: BASE, path: 'tco', view: 'it', origin: bad as OriginKey }), bad).toBe(`${BASE}/tco?view=it`);
+    }
+  });
+
+  test('a base that is not /project/<id> or /demo gets no href (QA 89c3f6a94e56)', () => {
+    const bad = [
+      '//evil',
+      '//attacker.example',
+      'https://evil',
+      '/project/../x',
+      '/project/..',
+      '/project/%2e%2e',
+      '/project/a%2F..%2Fx',
+      '/project/a\\b',
+      '/project/',
+      '/project/p-1/',
+      '/projects/p-1',
+      'javascript:alert(1)',
+      '',
+    ];
+    for (const base of bad) {
+      expect(isChoiceBase(base), base).toBe(false);
+      expect(choiceHref({ base, choice: 'economics.rates', view: 'it' }), base).toBeNull();
+      expect(choiceHref({ base, choice: 'management.confirm', view: 'it' }), base).toBeNull();
+      expect(originBackHref({ base, origin: 'management.options' }), base).toBeNull();
+      expect(originBackHref({ base, origin: 'delivery.next' }), base).toBeNull();
+    }
+    for (const base of [BASE, '/demo', `/project/${encodeURIComponent('Ab3_x-9')}`, `/project/${encodeURIComponent('p 1')}`]) {
+      expect(isChoiceBase(base), base).toBe(true);
     }
   });
 });

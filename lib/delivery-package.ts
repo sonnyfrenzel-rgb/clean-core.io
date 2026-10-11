@@ -303,6 +303,12 @@ export interface PackageReading {
   packageJson: PackageJsonShape | null;
   dependencies: Record<string, string>;
   capRuntime: boolean;
+  /**
+   * Something in the package starts CAP: the start script runs `cds-serve` / `cds run|serve|watch`,
+   * or the service entry imports @sap/cds and calls `cds.serve` / `cds.server`. A dependency and a
+   * .cds file alone do not — the entry may start plain Express.
+   */
+  capServed: boolean;
   serviceCds: string[];
   schemaCds: string[];
   express: string[];
@@ -330,11 +336,18 @@ export function readPackage(entries: readonly BundleEntry[], route: DeliveryFact
   const abap = paths.some((p) => /\.abap$/i.test(p) && !p.startsWith('erp-triggers/'));
   const kind: PackageReading['kind'] =
     route === 'abap-cloud' || (abap && !pkg && code.length === 0) ? 'abap' : code.length > 0 || pkg ? 'node' : 'documents-only';
+  const start = typeof pkg?.scripts?.start === 'string' ? pkg.scripts.start : '';
+  const entry = serviceEntry({ packageJson: pkg, sources });
+  const entryContent = entry ? byPath.get(entry) ?? '' : '';
+  const capServed =
+    /(^|[\s;&|])(cds-serve|cds-ts\s+(run|serve|watch)|cds\s+(run|serve|watch))\b/.test(start) ||
+    (/from\s+['"]@sap\/cds['"]|require\(\s*['"]@sap\/cds['"]\s*\)/.test(entryContent) && /\bcds\s*\.\s*(serve|server)\b/.test(entryContent));
   return {
     kind,
     packageJson: pkg,
     dependencies: all,
     capRuntime: '@sap/cds' in all,
+    capServed,
     serviceCds: cds.filter((e) => /\bservice\s+[\w.]+/.test(e.content)).map((e) => e.path),
     schemaCds: cds.filter((e) => /\bentity\s+[\w.]+/.test(e.content) && !/\bservice\s+[\w.]+/.test(e.content)).map((e) => e.path),
     express: imports(/from\s+['"]express['"]|require\(\s*['"]express['"]\s*\)/),
@@ -368,7 +381,7 @@ const TOOLCHAIN = Object.freeze({
 });
 
 /** The service's entry: `main` when it names a source in the package, else `srv/service.ts`, else the first source. */
-export function serviceEntry(reading: PackageReading): string | null {
+export function serviceEntry(reading: Pick<PackageReading, 'packageJson' | 'sources'>): string | null {
   const main = typeof reading.packageJson?.main === 'string' ? reading.packageJson.main : null;
   if (main && reading.sources.includes(main)) return main;
   if (reading.sources.includes('srv/service.ts')) return 'srv/service.ts';
@@ -757,7 +770,7 @@ export function packageCapabilities(reading: PackageReading, facts: DeliveryFact
   if (reading.kind !== 'node') return [];
   const caps: Capability[] = [];
   const capProposed = capArchitectureProposed(reading, facts);
-  const capRunning = reading.capRuntime && reading.serviceCds.length > 0;
+  const capRunning = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
   if (capProposed || reading.capRuntime) {
     caps.push({
       key: 'cap-runtime',
@@ -765,16 +778,18 @@ export function packageCapabilities(reading: PackageReading, facts: DeliveryFact
       status: capRunning ? 'implemented' : 'proposed',
       evidence: capRunning
         ? `@sap/cds in package.json and a service model (${reading.serviceCds.join(', ')}).`
-        : reading.capRuntime
-          ? '@sap/cds is in package.json, but no CDS service model is in the package.'
-          : 'No @sap/cds dependency in package.json, so nothing starts a CAP runtime.',
+        : reading.capRuntime && reading.serviceCds.length
+          ? `@sap/cds is in package.json and a service model (${reading.serviceCds.join(', ')}) is in the package, but neither the start script nor the entry starts CAP — not verified.`
+          : reading.capRuntime
+            ? '@sap/cds is in package.json, but no CDS service model is in the package.'
+            : 'No @sap/cds dependency in package.json, so nothing starts a CAP runtime.',
     });
     caps.push({
       key: 'service-model',
       label: 'CDS service model',
-      status: reading.serviceCds.length ? (reading.capRuntime ? 'implemented' : 'proposed') : 'missing',
+      status: reading.serviceCds.length ? (capRunning ? 'implemented' : 'proposed') : 'missing',
       evidence: reading.serviceCds.length
-        ? `${reading.serviceCds.join(', ')}${reading.capRuntime ? '' : ' — no runtime serves it'}.`
+        ? `${reading.serviceCds.join(', ')}${capRunning ? '' : reading.capRuntime ? ' — nothing in the package is shown to serve it' : ' — no runtime serves it'}.`
         : 'No .cds file in the package defines a service.',
     });
   }
@@ -861,7 +876,7 @@ export function implementationStatement(reading: PackageReading, facts: Delivery
     return 'Delivered implementation: ABAP objects for an abapGit import — not imported into, activated in or run in an SAP system.';
   }
   if (reading.kind !== 'node') return 'Delivered implementation: none — the package holds documents only.';
-  const capRunning = reading.capRuntime && reading.serviceCds.length > 0;
+  const capRunning = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
   const what = capRunning ? 'CAP service' : reading.express.length ? 'Express service' : 'Node.js code';
   const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on synthetic data';
   const delivered = `delivered implementation: ${what} ${data}`;

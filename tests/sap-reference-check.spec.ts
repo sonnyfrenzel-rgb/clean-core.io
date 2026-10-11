@@ -234,6 +234,11 @@ test.describe('the prompts carry the rules (source guards)', () => {
       ['lib/analysis-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)/],
     ];
     for (const [rel, re] of sites) expect(read(rel), rel).toMatch(re);
+    // The legacy, non-JSON narrative is model-written too: its identifiers are
+    // listed with their check right under the prose (QA 3d9477ec8c7b).
+    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toMatch(
+      /renderMarkdownSafe\(withoutUnapprovedMoney\(project\.analysis\)\)[^<]*\/>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<SapIdentifierChecks\s+texts=\{\[withoutUnapprovedMoney\(project\.analysis\)\]\}/,
+    );
     // The table no longer says "Officially released … fully decouple".
     expect(read('components/design/ApiBusinessHubMapping.tsx')).not.toMatch(/Officially/);
   });

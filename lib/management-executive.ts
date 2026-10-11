@@ -53,7 +53,23 @@ export type ExecutiveCosts =
    * No cost revision in the decision record, and figures stored on the
    * Economics stage (03.10.2026): a scenario on record, not bound to anything.
    */
-  | { state: 'stored'; revision: string; words: string; priced: number; total: number; complete: boolean; stale: boolean }
+  | {
+      state: 'stored';
+      revision: string;
+      words: string;
+      priced: number;
+      total: number;
+      complete: boolean;
+      stale: boolean;
+      /**
+       * ADR-092, for a confirmed decision: whether its record names the cost
+       * revision it was priced on (`recorded`), records that no figures were
+       * stored when it was confirmed (`no-figures`), was confirmed before 3.0.10
+       * and names none (`not-recorded`), or the answer did not say (`unknown`).
+       * `null` when no decision is confirmed.
+       */
+      confirmed?: 'recorded' | 'no-figures' | 'not-recorded' | 'unknown' | null;
+    }
   | { state: 'not-entered'; reason: string }
   | { state: 'unknown'; reason: string };
 
@@ -186,7 +202,19 @@ export function costsFromDecision(decision: Loaded<DecisionRead>, stored: Stored
   if (decision.state === 'absent') return fromStore() ?? { state: 'unknown', reason: decision.reason };
   const cost = decisionShown(decision.value).bindings.find((b) => b.key === 'cost') ?? null;
   if (!cost || cost.revision === null) {
-    return fromStore() ?? { state: 'not-entered', reason: cost?.notDeterminedReason?.trim() || 'No cost assumptions were stated.' };
+    const check = decision.value.cost;
+    const confirmed: NonNullable<Extract<ExecutiveCosts, { state: 'stored' }>['confirmed']> | null =
+      decision.value.stored?.status !== 'confirmed'
+        ? null
+        : !check
+          ? 'unknown'
+          : check.state === 'not-recorded'
+            ? 'not-recorded'
+            : check.recorded.revision === null
+              ? 'no-figures'
+              : 'recorded';
+    if (stored) return { state: 'stored', ...stored, confirmed };
+    return { state: 'not-entered', reason: cost?.notDeterminedReason?.trim() || 'No cost assumptions were stated.' };
   }
   return { state: 'bound', revision: cost.revision, provenance: cost.provenance, note: cost.note };
 }
@@ -199,6 +227,15 @@ export function storedCostsOf(project: Project | null, steps: readonly RailStep[
   const { priced, total } = pricedOptions(econ);
   return { revision: econ.revision, words: economicsInWords(econ), priced, total, complete: tco?.state === 'done', stale: tco?.state === 'stale' };
 }
+
+/** ADR-092, what the decision record says about the cost revision — the number is never guessed. */
+const CONFIRMED_COST_WORDS: Record<NonNullable<Extract<ExecutiveCosts, { state: 'stored' }>['confirmed']> | 'none', string> = {
+  recorded: 'the confirmed decision names the revision it was priced on',
+  'no-figures': 'the confirmed decision records that no cost figures were stored when it was confirmed',
+  'not-recorded': 'the confirmed decision does not record the revision it was priced on (confirmed before 3.0.10)',
+  unknown: 'whether the confirmed decision records the revision it was priced on was not read',
+  none: 'confirming the decision records the revision it is priced on',
+};
 
 const ECONOMICS: ExecutiveAction = {
   label: 'Enter your figures in Economics',
@@ -411,8 +448,9 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
               ? 'costs on your own figures, every option priced — a scenario, not a quote; amounts stand in Economics'
               : `costs on your own figures, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
           provenance: 'simulation',
-          // ADR-092: a confirmation records the revision it is priced on; this summary does not read that record.
-          coverage: `your assumptions in Economics (${costs.words}) — a confirmed decision names the revision it was priced on`,
+          // ADR-092: a confirmation since 3.0.10 records the revision it is priced on; one taken
+          // before records none, and the number is never guessed.
+          coverage: `your assumptions in Economics (${costs.words}) — ${CONFIRMED_COST_WORDS[costs.confirmed ?? 'none']}`,
           action: { ...ECONOMICS, label: 'Open in Economics' },
         }
       : {

@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { managementOverview, type FitByPlatform, type FitResult, type Loaded, type OverviewSource } from '../lib/management-overview';
+import { managementOverview, type DecisionRead, type FitByPlatform, type FitResult, type Loaded, type OverviewSource } from '../lib/management-overview';
+import { DECISION_COST_BASIS_FORMAT, type DecisionCostBasis } from '../lib/decision-cost';
 import { managementAnswers, runHistoryEntry, type RunHistoryEntry } from '../lib/management-answers';
 import {
   costsFromDecision,
@@ -214,6 +215,38 @@ test.describe('the decision panel', () => {
     });
     expect(e.status).toBe('confirmed');
     expect(e.answer).toContain('self-declaration');
+  });
+
+  test('stored costs: the coverage names a recorded cost revision only when the confirmed decision has one (QA b0c5e958a238, ADR-092)', () => {
+    const draft = emptyProjectDecision();
+    const STORED = { revision: 'econ-rev-3', words: '5 years, 4 options', priced: 4, total: 4, complete: true, stale: false };
+    const basis = (revision: string | null): DecisionCostBasis => ({
+      format: DECISION_COST_BASIS_FORMAT,
+      revision,
+      sequence: revision ? 3 : null,
+      at: null,
+      cheapest: null,
+      noCheapest: null,
+    } as DecisionCostBasis);
+    const coverageOf = (value: DecisionRead) => {
+      const e = exec(project(), { decision: ready(value) }, { costs: costsFromDecision(ready(value), STORED) });
+      return e.figures.find((f) => f.key === 'costs')!.coverage;
+    };
+    const confirmed = { draft, stored: { ...draft, status: 'confirmed' as const } };
+    // Confirmed before 3.0.10: nothing is recorded, and nothing is claimed.
+    const before = coverageOf({ ...confirmed, cost: { state: 'not-recorded', current: basis('econ-rev-3') } });
+    expect(before).not.toContain('names the revision it was priced on');
+    expect(before).toContain('does not record the revision it was priced on');
+    // Confirmed since 3.0.10 on a revision: the record names it.
+    const since = coverageOf({ ...confirmed, cost: { state: 'same', recorded: basis('econ-rev-3'), current: basis('econ-rev-3') } });
+    expect(since).toContain('the confirmed decision names the revision it was priced on');
+    // Confirmed with no figures stored then: no revision is claimed.
+    const none = coverageOf({ ...confirmed, cost: { state: 'changed', recorded: basis(null), current: basis('econ-rev-3') } });
+    expect(none).not.toContain('names the revision');
+    // The route did not answer the check: not read, not claimed.
+    expect(coverageOf(confirmed)).toContain('was not read');
+    // Nothing confirmed: what a confirmation would do, not what one did.
+    expect(coverageOf({ draft, stored: null })).toContain('confirming the decision records the revision it is priced on');
   });
 
   test('in the demo the step is your own code, and the proposal is named as one', () => {

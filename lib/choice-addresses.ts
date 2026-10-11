@@ -15,7 +15,8 @@
  * origin is a key of a **closed list** (`ORIGINS`) and nothing else: no path,
  * no id, no URL travels in the address, so the way back cannot be pointed
  * anywhere this module does not name (no open redirect — the same stance as
- * `lib/return-path.ts`). It is never stored, never sent to an API, and it goes
+ * `lib/return-path.ts`). The base the hrefs are built on is checked too
+ * (`isChoiceBase`): `/project/<id>` or `/demo`, nothing else. It is never stored, never sent to an API, and it goes
  * one level deep: the way back carries no origin of its own.
  *
  * Pure: no component imports, no browser. `tests/choice-addresses.spec.ts`
@@ -322,6 +323,28 @@ export function originOf(search: string | URLSearchParams | null | undefined): O
 
 /* ------------------------------------------------------------------- hrefs */
 
+/**
+ * Whether a base is one this module builds on: the demo's `/demo`, or
+ * `/project/<id>` with one path segment that holds no `/`, `\`, `?`, `#` or
+ * whitespace as written, and is not `.`/`..` and holds no `/` or `\` once
+ * decoded (the caller encodes the id, so `p%201` is fine). Anything else —
+ * `//host`, `https://host`, `/project/../x` — gets no href, so every address
+ * this module returns stays a path of this origin (QA 89c3f6a94e56).
+ */
+export function isChoiceBase(base: unknown): base is string {
+  if (typeof base !== 'string') return false;
+  if (base === DEMO_ROUTE) return true;
+  const m = /^\/project\/([^/\\?#\s]+)$/.exec(base);
+  if (!m) return false;
+  let id: string;
+  try {
+    id = decodeURIComponent(m[1]);
+  } catch {
+    return false;
+  }
+  return id !== '.' && id !== '..' && !/[/\\]/.test(id);
+}
+
 /** The workspace page under a base: `/project/<id>`, or `/demo/workspace` for the demo's `/demo`. */
 function workspaceOf(base: string): string {
   return base === DEMO_ROUTE ? DEMO_WORKSPACE_ROUTE : base;
@@ -344,7 +367,8 @@ function viewHref(base: string, view: WorkspaceView | null, origin: OriginKey | 
  * `base` is `/project/<id>` (encoded by the caller, as for `stageHref`) or
  * `/demo`. `view` is the reader's view — a tool keeps it, so the tool's own way
  * back to the workspace still returns there. An origin that is not on the list
- * is left out; a parameterised key whose id is not an id loses its anchor.
+ * is left out; a parameterised key whose id is not an id loses its anchor. A
+ * base that is neither (`isChoiceBase`) gets `null`, never an href.
  */
 export function choiceHref({
   base,
@@ -356,7 +380,8 @@ export function choiceHref({
   choice: ChoiceKey;
   origin?: OriginKey | null;
   view?: string | null;
-}): string {
+}): string | null {
+  if (!isChoiceBase(base)) return null;
   const address = choiceAddress(choice);
   const from = isOriginKey(origin) ? origin : null;
   if (!address) return viewHref(base, isWorkspaceView(view) ? view : null, from, null);
@@ -387,7 +412,7 @@ export function originBackHref({
   /** The address the reader is on, for the view to keep. */
   search?: string;
 }): string | null {
-  if (!isOriginKey(origin)) return null;
+  if (!isOriginKey(origin) || !isChoiceBase(base)) return null;
   const { surface, anchor } = ORIGINS[origin];
   const asked = new URLSearchParams(search).get('view');
   const view = isWorkspaceView(asked) ? asked : null;

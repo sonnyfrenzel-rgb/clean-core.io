@@ -1401,6 +1401,13 @@ export default function AnalyzePage() {
           className="cc-prose"
           dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(withoutUnapprovedMoney(project.analysis)) }}
         />
+        {/* The prose renderer cannot carry an inline mark, so the SAP
+            identifiers it names are listed with their check beside it, as in
+            the structured report (QA 3d9477ec8c7b). */}
+        <SapIdentifierChecks
+          texts={[withoutUnapprovedMoney(project.analysis)]}
+          title="SAP identifiers named in the model's analysis"
+        />
       </div>
     );
   };

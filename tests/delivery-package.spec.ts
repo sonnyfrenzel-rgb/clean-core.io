@@ -314,11 +314,25 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
     expect(manifest.businessRules).toMatchObject({ state: 'read', total: 12, undecided: 12 });
   });
 
+  // The entry serves CAP itself: the shipped start script runs the entry (normalisedPackageJson), so
+  // only the entry can be the evidence that CAP is started.
+  const CAP_ENTRY = `import cds from '@sap/cds';
+import express from 'express';
+
+const app = express();
+app.get('/health', (_req, res) => res.json({ ok: true }));
+await cds.serve('all').in(app);
+app.listen(4004);
+export default app;
+`;
+
   test('a CAP runtime with a service model is implemented, and then nothing says "proposed"', () => {
     const pkg = JSON.parse(PACKAGE) as Array<{ path: string; content: string }>;
     const json = JSON.parse(MODEL_PACKAGE_JSON);
     json.dependencies['@sap/cds'] = '^8.0.0';
-    const cap = pkg.map((f) => (f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f));
+    const cap = pkg.map((f) =>
+      f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f.path === 'srv/service.ts' ? { ...f, content: CAP_ENTRY } : f,
+    );
     cap.push({ path: 'srv/service.cds', content: 'using fi from \'../db/schema\';\nservice WorklistService { entity Items as projection on fi.Items; }\n' });
     const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap) })));
     const manifest = JSON.parse(out.file('manifest.json')!);
@@ -327,6 +341,23 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
     expect(capability('service-model').status).toBe('implemented');
     expect(manifest.files.find((f: { path: string }) => f.path === 'db/schema.cds').status).toBe('implemented');
     expect(manifest.implementation).not.toContain('proposed');
+  });
+
+  test('@sap/cds and a service model with an entry that starts plain Express is not a CAP runtime (QA 186e14f906b2)', () => {
+    const pkg = JSON.parse(PACKAGE) as Array<{ path: string; content: string }>;
+    const json = JSON.parse(MODEL_PACKAGE_JSON);
+    json.dependencies['@sap/cds'] = '^8.0.0';
+    const cap = pkg.map((f) => (f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f));
+    cap.push({ path: 'srv/service.cds', content: 'using fi from \'../db/schema\';\nservice WorklistService { entity Items as projection on fi.Items; }\n' });
+    const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap) })));
+    const manifest = JSON.parse(out.file('manifest.json')!);
+    const capability = (k: string) => manifest.capabilities.find((c: { key: string }) => c.key === k);
+    expect(capability('cap-runtime').status).toBe('proposed');
+    expect(capability('cap-runtime').evidence).toContain('not verified');
+    expect(capability('service-model').status).toBe('proposed');
+    expect(capability('http-service').evidence).toContain('Express');
+    expect(manifest.implementation).not.toContain('CAP service');
+    expect(manifest.implementation).toContain('Express service');
   });
 
   test('every file is listed with the SHA-256 of what ships, the manifest excepted', () => {
