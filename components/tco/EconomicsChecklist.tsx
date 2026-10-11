@@ -17,11 +17,11 @@ import { cn } from '@/lib/utils';
  * Each row is one figure the stage needs from the reader and its state, and
  * the field opens under the row (owner decision 01.10.2026, proposal A), so
  * "what is missing" and "where do I enter it" are the same line. The rows and their states come from `lib/economics-checklist.ts`,
- * which reads the comparison's own gaps â€” the list cannot claim a figure is
+ * which reads the comparison's own gaps — the list cannot claim a figure is
  * there that the comparison counts as missing, or the other way round.
  *
  * A stated figure is "done" in the information colour, never green: a number
- * a reader typed in is theirs, not evidence (DESIGN.md Â§1.1).
+ * a reader typed in is theirs, not evidence (DESIGN.md §1.1).
  */
 
 const STATUS_WORD: Record<ChecklistStatus, string> = {
@@ -32,7 +32,7 @@ const STATUS_WORD: Record<ChecklistStatus, string> = {
   assumed: 'assumed',
 };
 
-/** The colour a status is drawn in â€” the word on the right and the dot on the left. */
+/** The colour a status is drawn in — the word on the right and the dot on the left. */
 function statusState(status: ChecklistStatus): 'information' | 'neutral' | 'warning' {
   if (status === 'done') return 'information';
   if (status === 'open') return 'neutral';
@@ -53,7 +53,7 @@ const WORD_CLASS: Record<'information' | 'neutral' | 'warning', string> = {
 
 /**
  * One row of the checklist (proposal A, "What the comparison still needs"): a
- * state dot, what the figure is â€” with the reader's value once there is one â€”
+ * state dot, what the figure is — with the reader's value once there is one —
  * and how far it is, in a word. The field opens under the row on a click, so
  * the list reads as a status list first and a form second; the field stays in
  * the page while closed, so nothing it holds is lost and the print footer and
@@ -68,7 +68,7 @@ export function ChecklistLine({
   children,
 }: {
   row: ChecklistRow;
-  /** The reader's value in a few words â€” "800 CHF / day", "668 LoC from your source". */
+  /** The reader's value in a few words — "800 CHF / day", "668 LoC from your source". */
   summary?: ReactNode;
   /** For rows entered per option: the section that holds their fields. */
   target?: string;
@@ -84,8 +84,8 @@ export function ChecklistLine({
       <span className="min-w-0">
         <span className="block cc-text-cell text-cc-ink">
           {row.label}
-          {row.note ? ` â€” ${row.note}` : null}
-          {summary ? <span className="text-cc-ink"> Â· {summary}</span> : null}
+          {row.note ? ` — ${row.note}` : null}
+          {summary ? <span className="text-cc-ink"> · {summary}</span> : null}
         </span>
         {row.detail && row.detail !== 'from your source' && row.detail !== 'stated' ? (
           <span className="block cc-text-meta font-medium text-cc-ink-muted">{row.detail}</span>
@@ -140,8 +140,8 @@ export function ChecklistLine({
 
 /**
  * A figure input's state: the text as typed, and what it states. The text is
- * the reader's â€” "-5" stays on screen with a message saying why it is not a
- * figure â€” and the page holds the figure it states, or `null` (Â§2.7: say what
+ * the reader's — "-5" stays on screen with a message saying why it is not a
+ * figure — and the page holds the figure it states, or `null` (§2.7: say what
  * is wrong and what is allowed; no silent value). A figure set from outside
  * (loaded, taken over from a proposal) replaces the text.
  *
@@ -186,13 +186,13 @@ export function figureMessage(
 ): { valueState?: 'error' | 'warning'; message?: string } {
   if (!input.left) return {};
   if (input.problem) return { valueState: 'error', message: input.problem };
-  if (value === null) return { valueState: 'warning', message: 'Your figure â€” there is no default.' };
+  if (value === null) return { valueState: 'warning', message: 'Your figure — there is no default.' };
   return {};
 }
 
 /**
- * A figure the reader states. Empty until they do â€” there is no default â€” and
- * it says so once the reader has left it (Â§2.7, on blur). The unit stands in
+ * A figure the reader states. Empty until they do — there is no default — and
+ * it says so once the reader has left it (§2.7, on blur). The unit stands in
  * the field's frame: the currency in front once one is stated, "/ day",
  * "years", "per year" behind. `data` carries the names specs and the print
  * footer address the field by.
@@ -214,14 +214,14 @@ export function FigureField({
   value: number | null;
   onChange: (v: number | null) => void;
   data: Record<`data-${string}`, string>;
-  /** Which bounds apply â€” the stored record's own (`lib/economics-help.ts`). */
+  /** Which bounds apply — the stored record's own (`lib/economics-help.ts`). */
   kind: FigureKind;
   prefix?: ReactNode;
   suffix?: ReactNode;
 }) {
   const input = useFigureInput(value, kind, onChange);
   return (
-    <CcField label={note ? `${label} â€” ${note}` : label} required help={hint} {...figureMessage(input, value)}>
+    <CcField label={note ? `${label} — ${note}` : label} required help={hint} {...figureMessage(input, value)}>
       {({ id, describedBy, ariaRequired, invalid, className }) => (
         <div className="flex max-w-[20rem] items-center gap-2">
           {prefix ? (
@@ -257,9 +257,9 @@ export function FigureField({
 }
 
 /**
- * The stage's currency, stated once (roadmap 7.11), without a default â€” as a
- * combobox since 11.10.2026 (owner: "When I type EUâ€¦, let me pick EUR from a
- * list right away, US â†’ USD"). Typing filters the ten currencies of
+ * The stage's currency, stated once (roadmap 7.11), without a default — as a
+ * combobox since 11.10.2026 (owner: "When I type EU…, let me pick EUR from a
+ * list right away, US → USD"). Typing filters the ten currencies of
  * `lib/currency-options.ts` by code, name, sign or country; arrow keys move,
  * Enter picks, Escape closes. A full ISO 4217 code states itself as typed, so
  * any other currency stays possible. Search text that is no code states
@@ -349,12 +349,12 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
       : !currency
         ? {
             valueState: 'warning' as const,
-            message: 'Yours to state â€” there is no default. Type a code, a currency or a country and pick it from the list.',
+            message: 'Yours to state — there is no default. Type a code, a currency or a country and pick it from the list.',
           }
         : {};
 
   return (
-    <CcField label="Currency â€” no default" required help={RATES_HELP.currency} {...message}>
+    <CcField label="Currency — no default" required help={RATES_HELP.currency} {...message}>
       {({ id, describedBy, ariaRequired, invalid, className }) => (
         <div className="flex max-w-[20rem] flex-col gap-1">
           <div className="relative">
@@ -411,7 +411,7 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
                     <span className="font-cc-mono font-semibold">{m.option.code}</span>
                     <span className="min-w-0 truncate">
                       {m.option.name}
-                      {m.via ? <span className="text-cc-ink-muted"> Â· {m.via}</span> : null}
+                      {m.via ? <span className="text-cc-ink-muted"> · {m.via}</span> : null}
                     </span>
                     <span className="flex items-center gap-1 text-cc-ink-muted">
                       {m.option.symbol}
@@ -424,12 +424,12 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
           </div>
           {open && text.trim() && matches.length === 0 && readCurrencyEntry(text).kind === 'search' ? (
             <span className="cc-text-meta text-cc-ink-muted" data-economics-currency-none="">
-              No currency in the list matches â€œ{text.trim()}â€. Type its three-letter ISO 4217 code instead.
+              No currency in the list matches “{text.trim()}”. Type its three-letter ISO 4217 code instead.
             </span>
           ) : null}
           {currency && !problem ? (
             <span className="cc-text-meta text-cc-ink-muted" data-economics-currency-stated={currency}>
-              {known ? `${known.code} â€” ${known.name} (${known.symbol})` : `${currency} â€” stated as typed`}
+              {known ? `${known.code} — ${known.name} (${known.symbol})` : `${currency} — stated as typed`}
             </span>
           ) : null}
         </div>
@@ -438,7 +438,7 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
   );
 }
 
-/** The release cadence and its confirmation â€” a proposal until confirmed (ADR-035). */
+/** The release cadence and its confirmation — a proposal until confirmed (ADR-035). */
 export function CadenceField({
   perYear,
   confirmed,
@@ -476,7 +476,7 @@ export function CadenceField({
 }
 
 /**
- * A slider in the field frame of Â§2.7, with what it stands at said in words â€”
+ * A slider in the field frame of §2.7, with what it stands at said in words —
  * a range has no text of its own.
  */
 export function RangeField({
