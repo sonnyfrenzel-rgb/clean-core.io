@@ -89,6 +89,12 @@ review of a real FI case.
   and the mutation probe, the delivery package, the business page and its provenance, the readable
   rule titles, the finished project's process and the choice addresses.
 
+### Fixed after release (11.10.2026, same version)
+
+- An open popover — "What the tools do", "Why?", the message popover, a glossary term, a level
+  explanation — stands over the sticky bars of the page. The "On this page" bar cut through
+  "What the tools do" on Documentation and Testing.
+
 ## [v3.0.9] — 2026-10-11
 
 The target names its SAP reference architecture, every tool has one "On this page" bar, Economics

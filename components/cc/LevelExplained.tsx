@@ -225,7 +225,7 @@ function ExplainedMark({
         hidden={!open}
         {...panelData}
         style={place ? { top: place.top, left: place.left } : undefined}
-        className="fixed z-cc-popover block print:hidden w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left whitespace-normal shadow-cc-dialog focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus"
+        className="fixed z-cc-float block print:hidden w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left whitespace-normal shadow-cc-dialog focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus"
       >
         {children}
       </span>

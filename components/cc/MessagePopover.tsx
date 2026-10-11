@@ -134,7 +134,8 @@ export default function CcMessagePopover({
   };
 
   return (
-    <span className="relative inline-flex" data-cc-message-popover="">
+    // Open, one tier above the sticky bars (owner, 11.10.2026: no overlaps).
+    <span className={cn('relative inline-flex', open && 'z-cc-float')} data-cc-message-popover="">
       {/* The `ghost` button, built from the shared classes rather than through
           `CcButton` because the popover needs a ref to give the focus back to,
           and `CcButton` does not hand one out. Same classes, same data

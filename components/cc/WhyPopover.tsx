@@ -85,7 +85,9 @@ export default function CcWhyPopover({
   }, [open]);
 
   return (
-    <span className="relative inline-flex align-middle">
+    // Open, the root stands one tier above the sticky bars, so they never cut
+    // through the panel (owner, 11.10.2026); closed it stays plain.
+    <span className={open ? 'relative z-cc-float inline-flex align-middle' : 'relative inline-flex align-middle'}>
       {trigger ? (
         <button
           ref={triggerRef}

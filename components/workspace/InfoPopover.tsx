@@ -70,7 +70,11 @@ export default function InfoPopover({
   }, [open]);
 
   return (
-    <span className="relative inline-flex align-middle">
+    // Open, the panel stands over the sticky bars of the content (the "On this
+    // page" bar, z-cc-sticky, ADR-091) — they covered "What the tools do" on
+    // every tool page (owner, 11.10.2026). As in ExportMenu, the root becomes
+    // the panel's stacking context one tier above sticky; closed it stays plain.
+    <span className={cn('relative inline-flex align-middle', open && 'z-cc-float')}>
       {label ? (
         <button
           ref={buttonRef}

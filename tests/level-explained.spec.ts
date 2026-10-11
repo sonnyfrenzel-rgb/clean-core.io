@@ -51,8 +51,8 @@ test.describe('the explanation works without a mouse', () => {
     expect(src).toContain(":focus-visible");
     // A thumb-sized target on a phone and under a coarse pointer (DESIGN.md §2.9).
     expect(src).toContain('pointer-coarse:min-h-11');
-    // On the popover layer of the scale, and never clipped by a scrolling table.
-    expect(src).toContain('z-cc-popover');
+    // On the float layer of the scale (over the sticky bars, owner 11.10.2026), and never clipped by a scrolling table.
+    expect(src).toContain('z-cc-float');
     expect(src).toMatch(/className="fixed /);
   });
 
@@ -138,7 +138,8 @@ test.describe('level chips explain themselves everywhere (3.0.6)', () => {
 
   test('on paper only the chip prints: the panel is hidden even when open, the target shrinks', () => {
     const src = read('components/cc/LevelExplained.tsx');
-    expect(src).toMatch(/className="fixed z-cc-popover block print:hidden /);
+    // A fixed panel on the float layer: over the sticky bars, never cut by them (owner, 11.10.2026).
+    expect(src).toMatch(/className="fixed z-cc-float block print:hidden /);
     expect(src).toContain('print:min-h-0');
   });
 });

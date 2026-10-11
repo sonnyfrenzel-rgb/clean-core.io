@@ -69,7 +69,8 @@ export default function GlossaryTerm({ termKey, children, className }: GlossaryT
   }
 
   return (
-    <span ref={wrapRef} className="relative inline-block">
+    // Open, one tier above the sticky bars (owner, 11.10.2026: no overlaps).
+    <span ref={wrapRef} className={cn('relative inline-block', open && 'z-cc-float')}>
       <button
         ref={triggerRef}
         type="button"
