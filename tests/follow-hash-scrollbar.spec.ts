@@ -15,11 +15,66 @@ import { build } from 'esbuild';
  * serves from a route, with a block above the place that keeps growing. The
  * "drag" is `window.scrollTo` over a few frames — a scroll with no wheel, no
  * touch and no key, which is what the scrollbar produces.
+ *
+ * Since every choice has one address (owner 11.10.2026, package A) the hook
+ * also re-follows a client navigation to a new query, sends `cc:reveal` before
+ * it waits, and gives the focus to the place an origin-carrying link named.
+ * `next/navigation` is replaced by a stub whose `useSearchParams` reads the
+ * address and changes on a `stub-nav` event — what Next's router does on a
+ * `Link` to the same page with another query.
  */
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.resolve(ROOT, 'tmp', 'follow-hash-scrollbar');
 let bundle = '';
+let choiceBundle = '';
+
+const STUB = `import { useSyncExternalStore } from 'react';
+const subscribe = (cb: () => void) => {
+  window.addEventListener('stub-nav', cb);
+  window.addEventListener('popstate', cb);
+  return () => { window.removeEventListener('stub-nav', cb); window.removeEventListener('popstate', cb); };
+};
+export function useSearchParams() {
+  return new URLSearchParams(useSyncExternalStore(subscribe, () => window.location.search, () => ''));
+}
+`;
+
+/** A page with a place that appears late, a place inside a fold only `useRevealOnHash` opens, and a control in each. */
+const CHOICE_ENTRY = `import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { useFollowHash } from '@/hooks/useFollowHash';
+import { useRevealOnHash } from '@/hooks/useRevealOnHash';
+function Fold() {
+  const [open, setOpen] = useState(false);
+  useRevealOnHash((id) => id === 'folded', () => setOpen(true));
+  return <div data-fold={open ? 'open' : 'closed'}>{open ? <section id="folded" style={{ height: 80 }}><button data-choice-focus="">Confirm</button></section> : null}</div>;
+}
+function App() {
+  useFollowHash();
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setShown(true), 100); return () => clearTimeout(t); }, []);
+  return (
+    <div>
+      <div style={{ height: 1500 }} />
+      {shown ? <section id="place" style={{ height: 80 }}><p>place</p><button data-choice-focus="">Sign off</button></section> : null}
+      <div style={{ height: 1500 }} />
+      <section id="plain" style={{ height: 80 }}>plain</section>
+      <div style={{ height: 1500 }} />
+      <Fold />
+      <div style={{ height: 6000 }} />
+    </div>
+  );
+}
+createRoot(document.getElementById('root')!).render(<App />);
+`;
+
+/** A client navigation the way Next's router makes one: a new history entry, no load, no `hashchange`. */
+const navigate = (page: Page, url: string) =>
+  page.evaluate((u) => {
+    window.history.pushState(null, '', u);
+    window.dispatchEvent(new Event('stub-nav'));
+  }, url);
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
@@ -57,25 +112,33 @@ function App() {
 createRoot(document.getElementById('root')!).render(<App />);
 `,
   );
-  const result = await build({
-    entryPoints: [entry],
-    bundle: true,
-    write: false,
-    format: 'iife',
-    platform: 'browser',
-    jsx: 'automatic',
-    alias: { '@': ROOT },
-    define: { 'process.env.NODE_ENV': '"production"' },
-    logLevel: 'silent',
-  });
-  bundle = result.outputFiles[0].text;
+  const stub = path.join(OUT, 'navigation-stub.ts');
+  fs.writeFileSync(stub, STUB);
+  const choiceEntry = path.join(OUT, 'choice-entry.tsx');
+  fs.writeFileSync(choiceEntry, CHOICE_ENTRY);
+  const bundleOf = async (file: string) =>
+    (
+      await build({
+        entryPoints: [file],
+        bundle: true,
+        write: false,
+        format: 'iife',
+        platform: 'browser',
+        jsx: 'automatic',
+        alias: { '@': ROOT, 'next/navigation': stub },
+        define: { 'process.env.NODE_ENV': '"production"' },
+        logLevel: 'silent',
+      })
+    ).outputFiles[0].text;
+  bundle = await bundleOf(entry);
+  choiceBundle = await bundleOf(choiceEntry);
 });
 
-const servePage = (page: Page, bodyStyle = 'margin:0') =>
+const servePage = (page: Page, bodyStyle = 'margin:0', code = () => bundle) =>
   page.route('http://follow.test/**', (route) =>
     route.fulfill({
       contentType: 'text/html',
-      body: `<!doctype html><html><body style="${bodyStyle}"><div id="root"></div><script>${bundle.replace(/<\/script/g, '<\\/script')}</script></body></html>`,
+      body: `<!doctype html><html><body style="${bodyStyle}"><div id="root"></div><script>${code().replace(/<\/script/g, '<\\/script')}</script></body></html>`,
     }),
   );
 
@@ -123,4 +186,90 @@ test('a scroll by the scrollbar ends the follow while the place is still moving'
   });
   await page.waitForTimeout(1000);
   expect(await page.evaluate(() => window.scrollY), 'the follow pulled the reader back').toBe(0);
+});
+
+test.describe("a choice's address: re-follow, reveal, focus (package A)", () => {
+  const serveChoice = (page: Page) => servePage(page, 'margin:0', () => choiceBundle);
+  const topOf = (page: Page, id: string) =>
+    page.evaluate((i) => { const el = document.getElementById(i); return el ? Math.round(el.getBoundingClientRect().top) : null; }, id);
+  const activeIn = (page: Page, id: string) =>
+    page.evaluate((i) => Boolean(document.getElementById(i)?.contains(document.activeElement)), id);
+
+  test("a client navigation to a new query and place is followed, and the place's control takes the focus", async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?view=it');
+    await page.waitForSelector('#place');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    await navigate(page, '/?view=management&origin=it.next-step#place');
+    await expect.poll(() => topOf(page, 'place')).toBe(0);
+    // Settled: the control marked for the arrival has the focus, the place is
+    // marked, and taking the focus scrolled nothing.
+    await expect.poll(() => page.evaluate(() => document.activeElement?.textContent)).toBe('Sign off');
+    await expect(page.locator('#place')).toHaveAttribute('data-arrived', '');
+    expect(await topOf(page, 'place')).toBe(0);
+  });
+
+  test('a place inside a closed fold is revealed before the follow waits for it', async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?view=it');
+    await page.waitForSelector('#place');
+    await expect(page.locator('[data-fold]')).toHaveAttribute('data-fold', 'closed');
+
+    await navigate(page, '/?view=it&origin=management.options#folded');
+    await expect(page.locator('[data-fold]')).toHaveAttribute('data-fold', 'open');
+    await expect.poll(() => topOf(page, 'folded')).toBe(0);
+    await expect.poll(() => activeIn(page, 'folded')).toBe(true);
+  });
+
+  test('the fold opens for an address the page is loaded with, too', async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?origin=management.options#folded');
+    await expect(page.locator('[data-fold]')).toHaveAttribute('data-fold', 'open');
+    await expect.poll(() => topOf(page, 'folded')).toBe(0);
+  });
+
+  test('without an origin the place is followed but the focus stays where it was', async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/#place');
+    await expect.poll(() => topOf(page, 'place')).toBe(0);
+    await page.waitForTimeout(1200);
+    expect(await activeIn(page, 'place')).toBe(false);
+    expect(await page.locator('#place').getAttribute('data-arrived')).toBeNull();
+    // An origin that is not on the list is no origin.
+    await navigate(page, '/?origin=//evil#plain');
+    await expect.poll(() => topOf(page, 'plain')).toBe(0);
+    await page.waitForTimeout(1200);
+    expect(await activeIn(page, 'plain')).toBe(false);
+  });
+
+  test('a view switch that keeps its subject fragment is not followed again', async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?view=it#place');
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+    await page.waitForTimeout(800);
+    // The switch opens the new view at its top (setView), keeping the subject.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await navigate(page, '/?view=business#place');
+    await page.waitForTimeout(1000);
+    expect(await page.evaluate(() => window.scrollY), 'the view switch was followed back down').toBe(0);
+  });
+
+  test("a reader's scroll still ends a re-follow, and then no focus is taken", async ({ page }) => {
+    await serveChoice(page);
+    await page.setViewportSize({ width: 1000, height: 700 });
+    await page.goto('http://follow.test/?view=it');
+    await page.waitForSelector('#place');
+    await navigate(page, '/?view=it&origin=it.next-step#plain');
+    // In view, still inside the half second the follow waits before it settles.
+    await expect.poll(() => page.evaluate(() => window.scrollY), { intervals: [20] }).toBeGreaterThan(2000);
+    await page.evaluate(() => window.dispatchEvent(new WheelEvent('wheel')));
+    await page.waitForTimeout(1500);
+    expect(await activeIn(page, 'plain')).toBe(false);
+  });
 });

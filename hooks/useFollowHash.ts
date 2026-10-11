@@ -1,7 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { originOf } from '@/lib/choice-addresses';
+
+/** Sent before the follow waits for its place: `detail.id` names it, so a closed tab or fold can open (`useRevealOnHash`). */
+export const REVEAL_EVENT = 'cc:reveal';
 
 const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -24,8 +29,29 @@ const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
  * Nothing is stored and nothing is selected: the fragment stays the address
  * bar's, as the layer's does (ADR-018). The process map has its own follower
  * in the shell, so its id is left to it.
+ *
+ * Every choice has one address (`lib/choice-addresses.ts`, owner 11.10.2026),
+ * and three things follow from that here:
+ *
+ *   - **A new address on the same page is followed too.** A link from one view
+ *     to another (`?view=it` → `?view=management#decision-card`) is a client
+ *     navigation: no load, no `hashchange`. The follow starts again when the
+ *     query changes and the fragment is a new one, or the address names an
+ *     origin (a choice's link). A view switch that keeps its subject fragment
+ *     (`#L42`) is not followed: the new view opens at its top.
+ *   - **A hidden place is asked to show itself first.** Before waiting, the
+ *     follow sends `cc:reveal` with the id, so a tab, a fold or an editing
+ *     mode that holds the place can open (`hooks/useRevealOnHash.ts`).
+ *   - **An arrival by a choice's link takes the focus.** Once the place has
+ *     settled (half a second still, or the five-second cap) and the reader has
+ *     not taken over, the control in it marked `data-choice-focus` — else the
+ *     place itself — takes the focus without scrolling, and the place is marked
+ *     `data-arrived`. Only where the address carries an origin: a layer tab or an
+ *     anchor bar keeps the focus where the reader's keys put it.
  */
 export function useFollowHash(): void {
+  const search = useSearchParams()?.toString() ?? '';
+  const followRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     let frame = 0;
     let stop = true;
@@ -41,14 +67,25 @@ export function useFollowHash(): void {
       }
       return PLACE_ID.test(id) && id !== BUSINESS_MAP_ID ? id : null;
     };
+    // The fragment the last follow started for, so a query change that keeps it is not a new arrival.
+    let lastHash: string | null = null;
+    const arrive = (target: HTMLElement) => {
+      if (!originOf(window.location.search)) return;
+      const control = target.querySelector<HTMLElement>('[data-choice-focus]') ?? target;
+      if (control === target && !target.hasAttribute('tabindex') && target.tabIndex < 0) target.tabIndex = -1;
+      control.focus({ preventScroll: true });
+      if (!target.hasAttribute('data-arrived')) target.setAttribute('data-arrived', '');
+    };
     const follow = () => {
       window.cancelAnimationFrame(frame);
+      lastHash = window.location.hash;
       const id = idOf();
       if (!id) {
         stop = true;
         return;
       }
       stop = false;
+      window.dispatchEvent(new CustomEvent(REVEAL_EVENT, { detail: { id } }));
       const started = performance.now();
       let lastTop: number | null = null;
       // Where the target stood in the document, and where the page was scrolled
@@ -59,7 +96,12 @@ export function useFollowHash(): void {
       let lastScrollY = 0;
       let stillSince = started;
       const tick = (now: number) => {
-        if (stop || idOf() !== id || now - started > 5000) return;
+        if (stop || idOf() !== id) return;
+        if (now - started > 5000) {
+          const late = document.getElementById(id);
+          if (late) arrive(late);
+          return;
+        }
         const target = document.getElementById(id);
         if (target) {
           const top = Math.round(target.getBoundingClientRect().top);
@@ -77,6 +119,7 @@ export function useFollowHash(): void {
             lastDocTop = Math.round(lastTop + lastScrollY);
             stillSince = now;
           } else if (now - stillSince > 500) {
+            arrive(target);
             return;
           }
         }
@@ -85,6 +128,9 @@ export function useFollowHash(): void {
       frame = window.requestAnimationFrame(tick);
     };
     follow();
+    followRef.current = () => {
+      if (window.location.hash !== lastHash || originOf(window.location.search)) follow();
+    };
     window.addEventListener('hashchange', follow);
     window.addEventListener('wheel', end, { passive: true });
     window.addEventListener('touchmove', end, { passive: true });
@@ -92,6 +138,7 @@ export function useFollowHash(): void {
     window.addEventListener('pointerdown', end, { passive: true });
     return () => {
       stop = true;
+      followRef.current = null;
       window.cancelAnimationFrame(frame);
       window.removeEventListener('hashchange', follow);
       window.removeEventListener('wheel', end);
@@ -100,4 +147,13 @@ export function useFollowHash(): void {
       window.removeEventListener('pointerdown', end);
     };
   }, []);
+
+  // A client navigation changed the query: follow the new address, if it is one.
+  // The first run is the mount, which the effect above has followed already.
+  const seen = useRef(search);
+  useEffect(() => {
+    if (seen.current === search) return;
+    seen.current = search;
+    followRef.current?.();
+  }, [search]);
 }

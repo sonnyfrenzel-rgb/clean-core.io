@@ -90,3 +90,19 @@ test('every way back to the list says "My workspace"', () => {
   expect(shell).toMatch(/href="\/dashboard"[\s\S]{0,200}?data-workspace-back=""[\s\S]{0,300}?wt\('nav\.backToMyWorkspace'\)[\s\S]{0,200}?wt\('nav\.allProjects'\)/);
   expect(code('app/(app)/layout.tsx')).toContain("nav('nav.myWorkspace')");
 });
+
+test('the way back from a choice says "Back to" and the place, from the catalogue (package A)', () => {
+  expect(NAVIGATION_MESSAGES['nav.backTo']).toBe('Back to');
+  // It is neither of the two workspace names: it leads to a place, not a workspace.
+  expect(NAVIGATION_MESSAGES['nav.backTo']).not.toMatch(/workspace/i);
+  // The link draws its words from what it is handed; it writes none of its own.
+  const link = code('components/ChoiceBackLink.tsx');
+  expect(link).toContain('{label.lead}');
+  expect(link).toContain('{label.place}');
+  // Text between two tags on one line — the pattern of `tests/cc-style-guard.spec.ts`.
+  expect(link.match(/>([^<>{}\n]*[A-Za-z]{2,}[^<>{}\n]*)</g) ?? []).toEqual([]);
+  // And the words it is handed come from the catalogue, through the address module.
+  const addresses = code('lib/choice-addresses.ts');
+  expect(addresses).toContain("nav('nav.backTo')");
+  expect(addresses).not.toMatch(/'Back to/);
+});

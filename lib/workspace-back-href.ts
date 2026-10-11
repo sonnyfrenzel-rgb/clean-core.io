@@ -1,9 +1,12 @@
 import { isWorkspaceView, LAYER_ADDRESSES, VIEW_LABELS, type LayerKey, type WorkspaceView } from '@/lib/workspace-model';
-import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
+import { DEMO_ROUTE, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { nav, navViewLabel } from '@/lib/messages/navigation';
 import { BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, IT_SECTION_IDS } from '@/lib/it-sections';
 import { MANAGEMENT_IDS, MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
+// A cycle with `lib/choice-addresses.ts` (it builds on `stageHref`): both sides
+// use the other only inside functions, never at module evaluation.
+import { isOriginKey, originBackHref, originBackLabel, originOf, type OriginKey } from '@/lib/choice-addresses';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -107,10 +110,30 @@ export function stageBackLink({
   search: string;
   /** A demo stage (`/demo/<stage>`): back to `/demo/workspace`. */
   demo?: boolean;
-}): { kind: 'none' } | { kind: 'link'; href: string } {
-  if (demo) return { kind: 'link', href: demoWorkspaceBackHref(search) };
-  if (!projectId) return { kind: 'none' };
-  return { kind: 'link', href: workspaceBackHref({ projectId, search }) };
+}): { kind: 'none' } | { kind: 'link'; href: string; origin?: StageOriginLink } {
+  if (!demo && !projectId) return { kind: 'none' };
+  const href = demo ? demoWorkspaceBackHref(search) : workspaceBackHref({ projectId, search });
+  const origin = originLink(demo ? DEMO_ROUTE : `/project/${encodeURIComponent(projectId)}`, search);
+  return origin ? { kind: 'link', href, origin } : { kind: 'link', href };
+}
+
+/** The way back to the place that asked for a choice made on this stage — one level deep. */
+export interface StageOriginLink {
+  key: OriginKey;
+  href: string;
+  label: { lead: string; place: string };
+}
+
+/**
+ * The origin link of an address, or `null` where it carries no origin of the
+ * closed list (`originOf`). Shared by the stage header and the workspace.
+ */
+export function originLink(base: string, search: string): StageOriginLink | null {
+  const key = originOf(search);
+  if (!key) return null;
+  const href = originBackHref({ base, origin: key, search });
+  const label = originBackLabel(key, search);
+  return href && label ? { key, href, label } : null;
 }
 
 /**
@@ -140,6 +163,8 @@ export function stageHref({
   view,
   from,
   layer,
+  origin,
+  hash,
 }: {
   /** `/project/<id>`, or `/demo` for the demo's stages. */
   base: string;
@@ -148,14 +173,25 @@ export function stageHref({
   from?: WorkspaceReturnPoint;
   /** The layer the reader is in (`#need`), so the way back returns to it. */
   layer?: string | null;
+  /**
+   * The place that asked for a choice in this stage (`lib/choice-addresses.ts`):
+   * `&origin=<key>`, only a key of the closed `ORIGINS` list. It travels even
+   * without a view (the demo), since the way back to it does not need one.
+   */
+  origin?: OriginKey | null;
+  /** The place in the stage to land on — `#<id>`, an id or nothing. */
+  hash?: string | null;
 }): string {
   const target = `${base}/${path}`;
-  if (!isWorkspaceView(view)) return target;
+  const fragment = typeof hash === 'string' && LAYER_ID.test(hash.replace(/^#/, '')) ? `#${hash.replace(/^#/, '')}` : '';
+  const carried = isOriginKey(origin) ? origin : null;
+  if (!isWorkspaceView(view)) return `${target}${carried ? `?${new URLSearchParams({ origin: carried }).toString()}` : ''}${fragment}`;
   const params = new URLSearchParams({ view });
   if (from) params.set('from', from);
   const known = layerParam(layer);
   if (known) params.set('layer', known);
-  return `${target}?${params.toString()}`;
+  if (carried) params.set('origin', carried);
+  return `${target}?${params.toString()}${fragment}`;
 }
 
 /**

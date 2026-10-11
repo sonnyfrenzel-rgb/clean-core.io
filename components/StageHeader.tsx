@@ -7,6 +7,7 @@ import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import { stageBackLink } from '@/lib/workspace-back-href';
 import { useShellProjectName } from '@/lib/shell-context';
 import StageBackText from '@/components/StageBackText';
+import ChoiceBackLink from '@/components/ChoiceBackLink';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar } from '@/components/workspace/ToolBar';
@@ -40,6 +41,11 @@ import { StageToolBar } from '@/components/workspace/ToolBar';
  * opened from when the address carries them (`?view=`, `?from=`), and to the
  * workspace's default view when it does not. Every account has the workspace
  * since roadmap 3.0.1 (ADR-061), so the link leads there for every reader.
+ *
+ * A stage reached through a choice's address (`?origin=<key>`,
+ * `lib/choice-addresses.ts`) shows the way back to the place that asked
+ * instead — "Back to Management view, Options" (`data-stage-back="origin"`,
+ * `components/ChoiceBackLink.tsx`); the footer keeps the way to the workspace.
  *
  * The link is navigation, and navigation does not print (§7.1): it carries
  * `cc-no-print`, so no stage has to hide it on paper by itself — on paper it
@@ -133,7 +139,12 @@ export default function StageHeader({
       data-stage-header={stage ?? ''}
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
-      {back.kind === 'link' && (
+      {back.kind === 'link' && back.origin ? (
+        // A choice made here was asked for elsewhere (`?origin=`, a key of the
+        // closed list in `lib/choice-addresses.ts`): the way back leads there,
+        // one level deep. The tool bar and the footer still lead to the workspace.
+        <ChoiceBackLink href={back.origin.href} label={back.origin.label} stage />
+      ) : back.kind === 'link' && (
         <Link
           href={back.href}
           data-stage-back="workspace"

@@ -10,6 +10,7 @@ import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { viewSwitchHash } from '@/lib/view-switch';
 import { layerRedirect } from '@/lib/layer-redirect';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { originOf } from '@/lib/choice-addresses';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { useStartRun } from '@/hooks/useStartRun';
 import { useFollowHash } from '@/hooks/useFollowHash';
@@ -112,7 +113,14 @@ export default function ProjectWorkspacePage() {
   const leaving = target && !(target.kind === 'view' && target.view === arrival?.view) ? target : null;
   let leavingHref: string | null = null;
   if (leaving?.kind === 'economics') {
-    leavingHref = stageHref({ base: `/project/${projectId}`, path: 'tco', view: arrival?.view, from: WORKSPACE_RETURN.tools });
+    // A redirect is the same arrival: the place that asked for it comes along.
+    leavingHref = stageHref({
+      base: `/project/${projectId}`,
+      path: 'tco',
+      view: arrival?.view,
+      from: WORKSPACE_RETURN.tools,
+      origin: originOf(searchParams?.toString()),
+    });
   } else if (leaving?.kind === 'view') {
     const query = new URLSearchParams(searchParams?.toString() ?? '');
     query.set('view', leaving.view);
@@ -149,6 +157,10 @@ export default function ProjectWorkspacePage() {
     (next: WorkspaceView) => {
       const query = new URLSearchParams(searchParams?.toString() ?? '');
       query.set('view', next);
+      // The place that asked for a choice belongs to the view the reader
+      // arrived in; a view switch leaves it (`lib/choice-addresses.ts`). A
+      // redirect of an old address keeps it — it is the same arrival.
+      query.delete('origin');
       // `push`, not `replace`: a view is a place the reader chose to be, and Back
       // should return them to the one they came from (ADR-018).
       //

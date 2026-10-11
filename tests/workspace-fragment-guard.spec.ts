@@ -45,3 +45,15 @@ test('a subject is carried over, a place of the old view is not', () => {
   for (const id of Object.values(MANAGEMENT_IDS)) expect(viewSwitchHash(`#${id}`), id).toBe('');
   for (const place of [BUSINESS_MAP_ID, 'business-rules']) expect(viewSwitchHash(`#${place}`), place).toBe('');
 });
+
+test('a view switch drops the origin of a choice; a redirect of the arrival keeps it (package A)', () => {
+  const src = fs.readFileSync(PAGE, 'utf8');
+  const set = src.slice(src.indexOf('const setView = useCallback('));
+  const body = set.slice(0, set.indexOf('[router, searchParams]'));
+  // Deleted from the query the switch pushes, before it pushes it.
+  expect(body).toMatch(/query\.set\('view', next\);[\s\S]*?query\.delete\('origin'\);[\s\S]*?router\.push\(`\?\$\{query\.toString\(\)\}\$\{currentHash\(\)\}`/);
+  // The layer redirect to another view rewrites the query it arrived with, origin included,
+  // and the one to Economics hands the origin on.
+  expect(src).toMatch(/const query = new URLSearchParams\(searchParams\?\.toString\(\) \?\? ''\);\s*query\.set\('view', leaving\.view\);/);
+  expect(src).toMatch(/path: 'tco',[\s\S]{0,200}origin: originOf\(searchParams\?\.toString\(\)\)/);
+});

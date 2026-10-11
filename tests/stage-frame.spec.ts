@@ -385,3 +385,121 @@ test.describe('one frame for every stage, rendered', () => {
     }
   });
 });
+
+test.describe('a stage reached through a choice leads back to the place that asked (package A)', () => {
+  test('stageHref carries an origin of the list and a place, and is unchanged without them', () => {
+    // Byte for byte what it was without the two new fields.
+    expect(stageHref({ base: '/project/p-1', path: 'design', view: 'it', from: WORKSPACE_RETURN.tools, layer: 'standard' })).toBe(
+      '/project/p-1/design?view=it&from=workspace-tools&layer=standard',
+    );
+    expect(stageHref({ base: '/project/p-1', path: 'design', view: 'it', origin: null, hash: null })).toBe('/project/p-1/design?view=it');
+    expect(stageHref({ base: '/demo', path: 'tco' })).toBe('/demo/tco');
+    // With them: the origin last in the query, the place as the fragment.
+    expect(stageHref({ base: '/project/p-1', path: 'design', view: 'it', from: WORKSPACE_RETURN.nextStep, origin: 'it.next-step', hash: 'architect-sign-off' })).toBe(
+      '/project/p-1/design?view=it&from=next-step&origin=it.next-step#architect-sign-off',
+    );
+    expect(stageHref({ base: '/project/p-1', path: 'tco', hash: '#economics-compare' })).toBe('/project/p-1/tco#economics-compare');
+    expect(stageHref({ base: '/demo', path: 'delivery', origin: 'management.options' })).toBe('/demo/delivery?origin=management.options');
+    // Nothing that is not an origin of the list, or not an id, is carried.
+    expect(stageHref({ base: '/project/p-1', path: 'tco', view: 'it', origin: '//evil' as never, hash: 'a b' })).toBe('/project/p-1/tco?view=it');
+    expect(stageHref({ base: '/project/p-1', path: 'tco', hash: 'javascript:alert(1)' })).toBe('/project/p-1/tco');
+  });
+
+  test('the header draws the origin link in place of the workspace link, and the footer keeps the workspace', () => {
+    const header = read('components/StageHeader.tsx');
+    expect(header).toMatch(/back\.kind === 'link' && back\.origin \? \(\s*(\/\/[^\n]*\n\s*)*<ChoiceBackLink href=\{back\.origin\.href\} label=\{back\.origin\.label\} stage \/>/);
+    expect(header).toContain('data-stage-back="workspace"');
+    const link = read('components/ChoiceBackLink.tsx');
+    expect(link).toContain("data-stage-back={stage ? 'origin' : undefined}");
+    expect(link, 'navigation prints').toMatch(/data-choice-back="header"[\s\S]*cc-no-print/);
+    expect(link, 'the pill prints').toMatch(/data-choice-back="pill"[\s\S]*cc-no-print[\s\S]*sm:hidden/);
+    expect(read('components/StageFooter.tsx')).not.toContain('ChoiceBackLink');
+  });
+
+  test('rendered: the phone pill shows only while the header link is out of view, and stands above a sticky bar', async ({ page }) => {
+    test.setTimeout(120_000);
+    const out = path.resolve(ROOT, 'tmp', 'choice-back-link');
+    fs.mkdirSync(out, { recursive: true });
+    const linkStub = path.join(out, 'link-stub.tsx');
+    fs.writeFileSync(linkStub, `import React from 'react';
+export default function Link({ href, ...rest }: { href: string } & React.ComponentProps<'a'>) { return <a href={href} {...rest} />; }
+`);
+    const entry = path.join(out, 'entry.tsx');
+    fs.writeFileSync(entry, `import React from 'react';
+import { createRoot } from 'react-dom/client';
+import ChoiceBackLink from '@/components/ChoiceBackLink';
+function App() {
+  const bar = location.search.includes('bar');
+  return (
+    <div>
+      <ChoiceBackLink href="/project/p-1?view=management#decision-options" label={{ lead: 'Back to', place: 'Management view, Options' }} stage />
+      <div style={{ height: 3000 }} />
+      {bar ? <div className="sticky" data-test-bar="" style={{ position: 'sticky', bottom: 0, height: 64, background: '#eee' }}>Save</div> : null}
+      <div style={{ height: 400 }} />
+    </div>
+  );
+}
+createRoot(document.getElementById('root')!).render(<App />);
+`);
+    const { build } = await import('esbuild');
+    const code = (
+      await build({
+        entryPoints: [entry],
+        bundle: true,
+        write: false,
+        format: 'iife',
+        platform: 'browser',
+        jsx: 'automatic',
+        alias: { '@': ROOT, 'next/link': linkStub },
+        define: { 'process.env.NODE_ENV': '"production"' },
+        // `BackLink` (for its class) reads the profile, whose Firebase config reads the environment.
+        banner: { js: 'var process = { env: {} };' },
+        logLevel: 'silent',
+      })
+    ).outputFiles[0].text;
+    // The few utility classes the pill's place depends on, as Tailwind emits them.
+    const css = '.fixed{position:fixed}.left-4{left:16px}@media (min-width:640px){.sm\\:hidden{display:none}}';
+    await page.route('http://choice.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: `<!doctype html><html><head><style>${css}</style></head><body style="margin:0"><div id="root"></div><script>${code.replace(/<\/script/g, '<\\/script')}</script></body></html>`,
+      }),
+    );
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    const pill = page.locator('[data-choice-back="pill"]');
+    const header = page.locator('[data-choice-back="header"]');
+
+    await page.setViewportSize({ width: 390, height: 700 });
+    await page.goto('http://choice.test/');
+    await page.waitForTimeout(500);
+    expect(errors).toEqual([]);
+    await expect(header).toHaveAttribute('data-stage-back', 'origin');
+    await expect(header).toHaveAttribute('href', '/project/p-1?view=management#decision-options');
+    await expect(header).toContainText('Back to');
+    await expect(header).toContainText('Management view, Options');
+    await expect(pill, 'the header link is in view').toHaveCount(0);
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect(pill).toBeVisible();
+    await expect(pill).toHaveAttribute('href', '/project/p-1?view=management#decision-options');
+    const box = (await pill.boundingBox())!;
+    expect(Math.round(box.y + box.height), 'the pill stands at the foot').toBe(700 - 16);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(pill, 'back in view, the pill goes').toHaveCount(0);
+
+    // A sticky bar at the foot: the pill rises above it.
+    await page.goto('http://choice.test/?bar');
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect(pill).toBeVisible();
+    const barTop = await page.locator('[data-test-bar]').evaluate((el) => Math.round(el.getBoundingClientRect().top));
+    expect(barTop).toBe(700 - 64);
+    await expect.poll(async () => Math.round(((await pill.boundingBox())!.y + (await pill.boundingBox())!.height))).toBeLessThanOrEqual(barTop - 16);
+
+    // Desktop: no pill, whatever the scroll.
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto('http://choice.test/');
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await page.waitForTimeout(300);
+    await expect(pill).toBeHidden();
+  });
+});
