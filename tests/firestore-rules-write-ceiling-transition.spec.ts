@@ -103,6 +103,10 @@ test.afterAll(async () => {
 test('with the rules live in production, the app still creates projects and tickets (fallback)', async () => {
   test.skip(!register.pending, 'no rules deploy is pending - there is no transition to test');
   const text = deployedRulesText();
+  // CI checks out the whole history (fetch-depth: 0), so a missing commit there is
+  // a broken fixture, not a shallow clone: fail rather than skip the one test that
+  // proves the transition (QA 400bdb64f91a). Only a local shallow clone skips.
+  if (process.env.CI) expect(text, `commit ${DEPLOYED_RULES_COMMIT} must be in the CI checkout`).not.toBeNull();
   test.skip(text === null, `commit ${DEPLOYED_RULES_COMMIT} is not in this clone (shallow checkout)`);
   expect(
     lfHash(text!),
