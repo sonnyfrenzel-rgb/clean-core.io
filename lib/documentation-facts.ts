@@ -79,6 +79,12 @@ export function capabilityFactsOf(
   const dynamic = calls.performs.filter((p) => p.dynamic).length
     + calls.functionModules.filter((f) => f.dynamic).length
     + tables.unresolved.length;
+  // A change whose table is named at run time: its possible targets are left
+  // out of `writes` (never the target, R26), so it is recorded here and keeps
+  // "no posting" from being said (QA review of 11e3bc7d90e8).
+  const dynamicWrites = tables.unresolved
+    .filter((u) => u.access === 'write')
+    .map((u) => ({ name: u.expression.toUpperCase(), line: u.line }));
   return {
     version: CAPABILITY_FACTS_VERSION,
     reads,
@@ -88,5 +94,6 @@ export function capabilityFactsOf(
     calls: uniqueCalls,
     authority,
     dynamic,
+    dynamicWrites,
   };
 }

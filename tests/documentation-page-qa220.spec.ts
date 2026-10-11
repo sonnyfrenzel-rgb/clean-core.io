@@ -72,6 +72,14 @@ test('entries and rendered fields that React cannot draw are refused', () => {
   expect(checkBusinessDocShape(null).ok).toBe(false);
 });
 
+test('an SOP claim without text is refused: a step of such claims would show nothing (QA review of 11e3bc7d90e8)', () => {
+  const withClaims = (claims: unknown[]) => ({ ...good, sop_details: [{ stepId: 'T', claims }] });
+  expect(checkBusinessDocShape(withClaims([{ text: 'The list is shown.', basis: 'code', lines: [3] }])).ok).toBe(true);
+  for (const claim of [{}, { text: null }, { text: '' }, { text: '   ' }, { basis: 'code', lines: [3] }, { text: ['a'] }]) {
+    expect(checkBusinessDocShape(withClaims([claim])).ok, JSON.stringify(claim)).toBe(false);
+  }
+});
+
 test('the page gates both the generation and the stored layer on the shape check', () => {
   const src = page();
   const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));

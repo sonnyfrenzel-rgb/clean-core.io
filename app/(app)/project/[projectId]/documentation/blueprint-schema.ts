@@ -94,8 +94,11 @@ export function checkBusinessDocShape(parsed: unknown): BlueprintCheck {
         if (!Array.isArray(entry.claims)) {
           problems.push(`\`${list}[${i}].claims\` is ${typeName(entry.claims)}, not a list.`);
         } else {
+          // A claim is its text: one without any (`{}`, `{ text: "" }`) is not
+          // drawn by `sopStatementsOf`, so a step of such claims would show
+          // nothing at all — refused, like a field of the wrong type (QA review of 11e3bc7d90e8).
           entry.claims.forEach((claim, c) => {
-            if (!isPlainObject(claim) || (claim.text !== undefined && claim.text !== null && !isRenderable(claim.text))) {
+            if (!isPlainObject(claim) || !isRenderable(claim.text) || !String(claim.text).trim()) {
               problems.push(`\`${list}[${i}].claims[${c}]\` has no text a page can show.`);
             }
           });

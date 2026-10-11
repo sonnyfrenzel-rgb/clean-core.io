@@ -160,17 +160,26 @@ function partOf(whole: string, part: string): boolean {
 }
 
 /**
- * The shape of a sentence: what is left once the program's names, numbers and
- * quoted texts are taken out. Two sentences of one shape say the same thing
- * about different fields — "If the field p_grace is less than 0 or … greater
- * than 30, an error message is output." and the same for p_gap.
+ * The shape of a sentence: what is left once the program's variable names are
+ * taken out. Two sentences of one shape say the same thing about different
+ * fields — "If the field p_grace is less than 0 or … greater than 30, an error
+ * message is output." and the same for p_rest with the same limits.
+ *
+ * Numbers, quoted texts and named constants (`c_yes`, `gc_limit`) stay: they
+ * are the thresholds and values a business reader checks, and an entry shows
+ * only its first sentence — "> 30" and "> 60" folded into one entry printed
+ * one threshold for both (QA review of 11e3bc7d90e8).
  */
+const QUOTED = /“[^”]*”|"[^"]*"|'[^']*'/g;
+const CONSTANT = /^(?:[glm]?c|co)_/i;
 export function statementShape(text: string): string {
-  return text
-    .replace(/“[^”]*”|"[^"]*"|'[^']*'/g, '«q»')
-    .replace(/\b[a-z][\w]*[_-][\w-]*\b/gi, '«f»')
-    .replace(/\b\d[\d.,]*\b/g, '«n»')
-    .replace(/\b(?:field|value|table) «f»/gi, '«f»')
+  const unquoted = text.split(QUOTED);
+  const quoted = text.match(QUOTED) ?? [];
+  return unquoted
+    .map((part) => part
+      .replace(/\b[a-z][\w]*[_-][\w-]*\b/gi, (name) => (CONSTANT.test(name) ? name : '«f»'))
+      .replace(/\b(?:field|value|table) «f»/gi, '«f»'))
+    .reduce((out, part, i) => out + part + (quoted[i] ?? ''), '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

@@ -55,12 +55,24 @@ export interface CapabilityFacts {
   authority: FactObject[];
   /** Places whose target the code computes at run time (dynamic PERFORM, CALL FUNCTION, SELECT FROM (var)). */
   dynamic: number;
+  /**
+   * Database changes whose table the code names only at run time
+   * (`MODIFY (lv_table) …`), by the expression as written. Absent in facts
+   * stored before it was recorded (QA review of 11e3bc7d90e8).
+   */
+  dynamicWrites?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';
 
 export interface CapabilityAnswer {
   present: boolean;
+  /**
+   * False when the source does not let the engine say: the capability is not
+   * shown, but a change to a table named only at run time could be it. Such a
+   * capability is "not determined", never absent.
+   */
+  determined: boolean;
   /** The lines that show it, when present. */
   evidence: FactObject[];
   /** What the program does not do, in one plain sentence — said when absent. */
@@ -82,6 +94,16 @@ const LOG_CALLS = /^(?:BAL_LOG_|BAL_DB_SAVE|BAL_MSG_|APPL_LOG_|CL_BALI_|BAL_DSP_
 const names = (list: readonly FactObject[]) => list.map((o) => o.name);
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
+/** Whether the source shows a capability to be absent — not shown, and nothing left open that could be it. */
+export const isAbsent = (answer: CapabilityAnswer): boolean => !answer.present && answer.determined;
+
+/**
+ * Database changes whose table is named only at run time. Facts stored before
+ * these were recorded say only how many places are dynamic, so any such place
+ * leaves a change open.
+ */
+const openWrites = (facts: CapabilityFacts): number => facts.dynamicWrites?.length ?? facts.dynamic;
+
 /** Per capability: does the source show it, and if not, the sentence that says so. */
 export function capabilityPresence(facts: CapabilityFacts): Record<Capability, CapabilityAnswer> {
   const call = (re: RegExp) => facts.calls.filter((c) => re.test(c.name.toUpperCase()));
@@ -96,10 +118,12 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
   const mail = call(MAIL_CALLS);
   const log = call(LOG_CALLS);
   const remote = facts.calls.filter((c) => !!c.destination);
+  const writesOpen = openWrites(facts) > 0;
   return {
     posting: {
       short: 'no posting in the code',
       present: postingEvidence.length > 0,
+      determined: postingEvidence.length > 0 || !writesOpen,
       evidence: postingEvidence,
       absent: transactions.length
         ? `It changes no table itself, issues no COMMIT WORK and registers no update task; it only opens ${plural(transactions.length, 'transaction')} (${names(transactions).join(', ')}) for the user.`
@@ -108,36 +132,42 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
     ledger: {
       short: 'no ledger reconciliation in the code',
       present: ledger.length > 0,
+      determined: true,
       evidence: ledger,
       absent: 'It does not reconcile against the general ledger: no ledger table (GLT0, FAGLFLEXT, ACDOCA, BSIS …) is read and no ledger balance is called. Totals it checks are its own arithmetic.',
     },
     'credit-exposure': {
       short: 'no credit exposure in the code',
       present: exposure.length > 0,
+      determined: true,
       evidence: exposure,
       absent: 'It computes no credit exposure: no credit-management total (S066, S067, UKM …) is read and no exposure function is called.',
     },
     approval: {
       short: 'no approval workflow in the code',
       present: approval.length > 0,
+      determined: true,
       evidence: approval,
       absent: 'It has no approval, release or override workflow: no workflow or release function is called.',
     },
     mail: {
       short: 'no correspondence in the code',
       present: mail.length > 0,
+      determined: true,
       evidence: mail,
       absent: 'It sends no e-mail, letter or other correspondence: no send function is called.',
     },
     'audit-log': {
       short: 'no audit log in the code',
       present: log.length > 0 || facts.writes.length > 0,
+      determined: log.length > 0 || facts.writes.length > 0 || !writesOpen,
       evidence: [...log, ...facts.writes],
       absent: 'It keeps no persistent log or audit record: no application log is written and no table is changed.',
     },
     remote: {
       short: 'no other system in the code',
       present: remote.length > 0,
+      determined: true,
       evidence: remote,
       absent: 'It calls no other system: no call names a DESTINATION.',
     },
@@ -177,7 +207,7 @@ export function absentClaims(text: string, facts: CapabilityFacts | null): Absen
   const out: AbsentClaim[] = [];
   for (const capability of Object.keys(CLAIMS) as Capability[]) {
     const m = CLAIMS[capability].exec(text);
-    if (!m || presence[capability].present) continue;
+    if (!m || !isAbsent(presence[capability])) continue;
     out.push({ capability, words: m[0], reason: presence[capability].absent, short: presence[capability].short });
   }
   return out;
@@ -209,5 +239,6 @@ export function readCapabilityFacts(value: unknown): CapabilityFacts | null {
   const objs = (x: unknown) => Array.isArray(x) && x.every((o) => !!o && typeof o === 'object' && typeof (o as FactObject).name === 'string' && Number.isInteger((o as FactObject).line));
   if (!objs(v.reads) || !objs(v.writes) || !objs(v.commits) || !objs(v.updateTask) || !objs(v.calls) || !objs(v.authority)) return null;
   if (typeof v.dynamic !== 'number') return null;
+  if (v.dynamicWrites !== undefined && !objs(v.dynamicWrites)) return null;
   return value as CapabilityFacts;
 }

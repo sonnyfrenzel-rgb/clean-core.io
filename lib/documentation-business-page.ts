@@ -1,5 +1,5 @@
 import type { DocAnchor } from '@/lib/process-documentation';
-import { capabilityPresence, type Capability, type CapabilityFacts, type FactObject } from '@/lib/documentation-capabilities';
+import { capabilityPresence, isAbsent, type Capability, type CapabilityFacts, type FactObject } from '@/lib/documentation-capabilities';
 
 /**
  * The business page every documentation opens with (owner 11.10.2026, external
@@ -164,8 +164,18 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
       ['remote', true],
     ];
     for (const [cap, relevant] of order) {
-      if (!relevant || presence[cap].present) continue;
+      if (!relevant || !isAbsent(presence[cap])) continue;
       doesNot.push({ text: presence[cap].absent, anchors: [], basis: 'reconstructed' });
+    }
+    // A change to a table named only at run time could be a posting: not determined, never "does not post".
+    if (!presence.posting.determined) {
+      limits.push({
+        text: facts.dynamicWrites
+          ? 'Whether it posts or changes data in SAP is not determined: it changes a table whose name the code sets only at run time.'
+          : 'Whether it posts or changes data in SAP is not determined: places in the code name their target only at run time, and this documentation was read before a change to such a table was told apart from other dynamic places.',
+        anchors: (facts.dynamicWrites ?? []).slice(0, 3).map(anchor),
+        basis: 'not-determined',
+      });
     }
     const master = facts.reads.filter((r) => MASTER_DATA.test(r.name));
     if (master.length) {

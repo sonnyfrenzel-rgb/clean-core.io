@@ -1,4 +1,4 @@
-import { capabilityPresence, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
+import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { docStepName, readStoredDocumentation, type ProcessDocumentation } from '@/lib/process-documentation';
 import { RACI_LETTERS, lettersOf, raciMatrix, sopSteps, stepsNotInProcess, type ProcessStepRef, type SopStep, type StoredBusinessLayer } from '@/lib/business-summary';
 import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
@@ -71,10 +71,25 @@ function stepLines(step: SopStep, layer: Json): string {
   return lines(first);
 }
 
+/**
+ * What the file says when the stored layer cannot be read. The model's raw
+ * text is never printed in its place: it carries no basis per sentence, and as
+ * the file's whole body it would read as the SOP (QA review of 11e3bc7d90e8).
+ */
+export const UNREADABLE_SOP_MARKDOWN = [
+  '# Business SOP',
+  '',
+  '## Could not be read — not verified',
+  '',
+  'A business SOP is stored for this project, but it is not in a form this file can read, so it is not printed. '
+    + 'Nothing here is a statement about the process. Generating it again in the Documentation tool replaces it.',
+  '',
+].join('\n');
+
 export function businessSopMarkdown(rawJson: string, documentation?: string | ProcessDocumentation | null): string {
   if (!rawJson) return '';
   const layer = parse(rawJson);
-  if (!layer) return rawJson;
+  if (!layer) return UNREADABLE_SOP_MARKDOWN;
   const doc = typeof documentation === 'string'
     ? (() => { const stored = readStoredDocumentation(documentation); return stored.kind === 'engine' ? stored.doc : null; })()
     : documentation ?? null;
@@ -89,7 +104,7 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
 
   if (facts) {
     const presence = capabilityPresence(facts);
-    const absent = (Object.keys(presence) as Array<keyof typeof presence>).filter((k) => !presence[k].present);
+    const absent = (Object.keys(presence) as Array<keyof typeof presence>).filter((k) => isAbsent(presence[k]));
     if (absent.length) {
       out.push('## What the program does not do', '');
       out.push('Read from the whole source (Reconstructed). A sentence below that says otherwise is a proposal, not in the program.', '');
@@ -129,7 +144,10 @@ export function businessSopMarkdown(rawJson: string, documentation?: string | Pr
   if (controls.length) {
     const name = new Map(steps.map((s) => [s.stepId, nameOf(s, layer)]));
     out.push(`## Controls an earlier proposal named — ${SOP_BASIS['not-in-program'].label}`, '');
-    out.push('The controls of this process are read from the code, in the process documentation. These were proposed by a model before 3.0.7.', '');
+    // QA review of 11e3bc7d90e8: the rows are model proposals only — the sentence
+    // that introduces them must not read as if they came from the code.
+    out.push('These rows are historical: a language model proposed them before 3.0.7, and nothing in them was read from or checked against the code.', '');
+    out.push('Separately, the controls the code actually has are listed in the process documentation.', '');
     out.push('| Step | Control objective | Mitigation | Assertion |');
     out.push('| :--- | :--- | :--- | :--- |');
     for (const c of controls) {

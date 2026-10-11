@@ -1,4 +1,4 @@
-import { capabilityPresence, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
+import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { docStepName, processDocumentationToMarkdown, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 
 /**
@@ -31,7 +31,7 @@ export const SOP_STEPS_DESCRIPTION =
 export function sopFactsBlock(facts: CapabilityFacts | null): string {
   if (!facts) return 'What the program does not do: not recorded with this documentation — treat every claim of posting, approval, reconciliation, correspondence or logging as a proposal.';
   const presence = capabilityPresence(facts);
-  const absent = (Object.keys(presence) as Array<keyof typeof presence>).filter((k) => !presence[k].present).map((k) => `- ${presence[k].absent}`);
+  const absent = (Object.keys(presence) as Array<keyof typeof presence>).filter((k) => isAbsent(presence[k])).map((k) => `- ${presence[k].absent}`);
   return absent.length
     ? `What the program does NOT do (read from the whole source — never write the opposite as a fact):\n${absent.join('\n')}`
     : 'What the program does not do: the engine found no capability absent.';

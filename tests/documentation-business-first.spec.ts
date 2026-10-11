@@ -149,7 +149,7 @@ test.describe('what counts as a business statement', () => {
       { text: 'If the field p_keydt is greater than sy-datum, an error message is output.', anchors: [a(20), a(21)], grain: 'group' },
       { text: 'The error message "Future key dates are outside this report scope" is output.', anchors: [a(21)], grain: 'statement' },
       { text: 'If the field p_grace is less than 0 or the field p_grace is greater than 30, the field gv_bad is set to X.', anchors: [a(30), a(31)], grain: 'group' },
-      { text: 'If the field p_gap is less than 0 or the field p_gap is greater than 365, the field gv_bad is set to X.', anchors: [a(33), a(34)], grain: 'group' },
+      { text: 'If the field p_rest is less than 0 or the field p_rest is greater than 30, the field gv_bad is set to X.', anchors: [a(33), a(34)], grain: 'group' },
       { text: 'The subroutine add_field is called.', anchors: [a(40)], grain: 'statement' },
     ]);
     expect(view.total).toBe(8);
@@ -158,6 +158,20 @@ test.describe('what counts as a business statement', () => {
     expect(view.groups[1].text).toBe('If the field p_keydt is greater than sy-datum, the error message "Future key dates are outside this report scope" is output.');
     expect(view.groups[2].anchors.map((x) => x.lineStart)).toEqual([30, 31, 33, 34]);
     expect(view.folded).toBe(3);
+  });
+
+  test('rules that differ in a threshold, a literal or a constant stay separate entries (QA review of 11e3bc7d90e8)', () => {
+    const a = (l: number) => ({ lineStart: l, lineEnd: l });
+    const pairs: Array<[string, string]> = [
+      ['If the field p_days is greater than 30, the field gv_flag is set to X.', 'If the field p_days is greater than 60, the field gv_flag is set to X.'],
+      ['If the field ls_item-action is "CREDIT_OR_ZERO", the item is skipped.', 'If the field ls_item-action is "REVIEW_PROPOSAL", the item is skipped.'],
+      ['If the field p_mode is c_yes, the field gv_flag is set to X.', 'If the field p_mode is c_no, the field gv_flag is set to X.'],
+    ];
+    for (const [first, second] of pairs) {
+      const view = businessStatementView([{ text: first, anchors: [a(10)] }, { text: second, anchors: [a(20)] }]);
+      expect(view.groups.map((g) => g.text), first).toEqual([first, second]);
+      expect(view.folded).toBe(0);
+    }
   });
 
   test('two different messages the user sees are never folded into one', () => {
@@ -246,6 +260,48 @@ test.describe('the business SOP: step names, provenance on every sentence, nothi
     const facts = factsOf(poSource());
     expect(capabilityPresence(facts).posting.present).toBe(true);
     expect(absentClaims('The purchase order is created and posted.', facts)).toEqual([]);
+  });
+
+  test('a change to a table named at run time makes posting not determined, never absent (QA review of 11e3bc7d90e8)', () => {
+    const DYNAMIC = `REPORT zdyn_write.
+PARAMETERS p_tab TYPE tabname DEFAULT 'ZCUST_LOG'.
+DATA: lv_table TYPE tabname,
+      ls_row   TYPE zcust_log.
+lv_table = p_tab.
+MODIFY (lv_table) FROM ls_row.
+`;
+    const facts = factsOf(DYNAMIC);
+    expect(facts.writes).toEqual([]);
+    expect(facts.dynamicWrites).toEqual([{ name: 'LV_TABLE', line: 6 }]);
+    const presence = capabilityPresence(facts);
+    expect(presence.posting.present).toBe(false);
+    expect(presence.posting.determined).toBe(false);
+    expect(presence['audit-log'].determined).toBe(false);
+    expect(absentClaims('The open items are posted and cleared automatically.', facts)).toEqual([]);
+    const md = processDocumentationToMarkdown(engineOf(DYNAMIC, 'zdyn_write.abap'));
+    expect(md).not.toContain('It does not post or change data in SAP');
+    expect(md).toContain('Whether it posts or changes data in SAP is not determined');
+    expect(businessSopPrompt(engineOf(DYNAMIC, 'zdyn_write.abap'))).not.toContain('It does not post or change data in SAP');
+    // Facts stored before dynamic writes were recorded: any dynamic place leaves it open.
+    const { dynamicWrites: _dw, ...stored } = facts;
+    void _dw;
+    expect(capabilityPresence(stored).posting.determined).toBe(false);
+    // Without any dynamic place the FI report still says it does not post.
+    expect(capabilityPresence(factsOf(FI_SOURCE)).posting.determined).toBe(true);
+  });
+
+  test('an unreadable stored SOP is never exported as the SOP, and legacy control rows read as model proposals (QA review of 11e3bc7d90e8)', () => {
+    const raw = 'Sure! Here is the SOP: the AR Lead approves every posting.';
+    const md = formatBusinessDocsToMarkdown(raw);
+    expect(md).not.toContain(raw);
+    expect(md).not.toContain('AR Lead');
+    expect(md).toContain('## Could not be read — not verified');
+    const doc = engineOf(FI_SOURCE);
+    const layer = { ...reviewedLayer(doc), audit_controls: [{ stepId: doc.steps[0].id, controlObjective: 'Ledger tie-out', mitigationAction: 'Review', assertionMethod: 'Sample' }] };
+    const legacy = formatBusinessDocsToMarkdown(JSON.stringify(layer), JSON.stringify(doc));
+    const section = legacy.slice(legacy.indexOf('## Controls an earlier proposal named'));
+    expect(section).toContain('a language model proposed them before 3.0.7, and nothing in them was read from or checked against the code');
+    expect(section).not.toMatch(/controls of this process are read from the code/i);
   });
 
   test('every statement carries its basis, the exception is a proposal, and an old narrative is a proposal at best', () => {
