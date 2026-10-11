@@ -32,6 +32,8 @@ import {
   type StateEntry,
 } from '@/lib/process-states';
 import type { Project } from '@/lib/types';
+import { testingClosureBasis } from '@/lib/workflow-steps';
+import { testRunSubject } from '@/lib/test-receipt';
 
 /** The rules' size limit of `process-states/route.ts`: `deriveBusinessRules` is quadratic in the source. */
 const MAX_RULES_SOURCE_BYTES = 256 * 1024;
@@ -302,6 +304,13 @@ export async function POST(
           questionBases = openQuestionBases(notDetermined(project as Project), rules, project as Project);
         }
 
+        // ADR-094 — whether testing may be closed, and on what, from the
+        // project this transaction read: the same derivation the Testing tool
+        // shows, so both refuse the same things. Only for the closure.
+        const closing = commandName === 'close-testing';
+        const testingBasis = closing ? testingClosureBasis(project as Project) : null;
+        const testSubject = closing ? testRunSubject(project) : null;
+
         const state: ProjectCommandState = {
           activeRunId: project.activeRunId,
           approvedByArchitect: project.approvedByArchitect,
@@ -321,6 +330,9 @@ export async function POST(
           // answer is merged into them rather than replacing the others.
           openQuestions: project.openQuestions,
           openQuestionBases: questionBases,
+          testingClosureBasis: testingBasis,
+          testSubject,
+          testingClosure: project.testingClosure,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {

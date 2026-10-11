@@ -404,6 +404,10 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
         ? 'partial'
         : by.testing.verifiedOutside
           ? 'confirmed'
+          : by.testing.closedUnverified
+            ? // ADR-094 — closed by the owner without a passing run: on record,
+              // not verified, never `done` and never green.
+              'draft'
           : failed > 0 || outsideFailed
             ? 'failed'
             : statusOfPhase(by.testing),
@@ -411,7 +415,9 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
     from: 'testing',
     provenance:
       staleChip(by.testing) ??
-      (outside.state === 'current'
+      (by.testing.closedUnverified
+        ? 'confirmed'
+        : outside.state === 'current'
         ? outside.summary.kind
         : recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],

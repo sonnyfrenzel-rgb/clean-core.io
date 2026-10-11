@@ -638,6 +638,8 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     decision: { status: 'confirmed', revision: 1, confirmation: { account: 'cto@example.com', at: '2026-09-24T08:00:00.000Z' } },
     // ADR-081 — an open question answered past the command route.
     openQuestions: { 'add-includes': { end: 'answered', text: 'Reads the plant.', basis: 'add-includes-1-x', by: 'cto@example.com', at: '2026-10-09T08:00:00.000Z' } },
+    // ADR-094 — testing closed without a passing run, past the command route.
+    testingClosure: { v: 1, reason: 'tested-elsewhere', note: null, account: 'cto@example.com', at: '2026-10-11T08:00:00.000Z' },
   };
   // Every server-only field needs a forgery here: a missing one is `undefined`,
   // which the SDK refuses before the rules are ever asked.

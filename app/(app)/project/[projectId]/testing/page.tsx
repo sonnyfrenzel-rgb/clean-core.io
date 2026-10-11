@@ -66,6 +66,8 @@ import { coveringTestRunReceipt } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
+import TestingClosureCard from '@/components/testing/TestingClosureCard';
+import { CLOSED_NOT_VERIFIED, failureSentence, testingClosureReading } from '@/lib/testing-closure';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
 import ScenarioList, { type ScenarioCase, type ScenarioOutsideResult, type ScenarioRunResult } from '@/components/testing/ScenarioList';
 import TestScopeLegend from '@/components/testing/TestScopeLegend';
@@ -1095,6 +1097,8 @@ export default function TestingSandboxPage() {
   const phases = workflowSteps(project);
   /** The last run, from the receipt on the project or this session — never assumed. */
   const run = lastRun(project, testResults);
+  /** ADR-094 — testing closed by the owner without a passing run. */
+  const testsClosed = testingClosureReading(project).state === 'current';
   /** Something to report on: scenarios, a suite that could not be read back, or a run. Until then the tool shows its first step, not a row of tiles saying None. */
   const hasTestingRecord = testCases.length > 0 || !!storedSuiteRejected || run.kind !== 'none';
   /**
@@ -1417,14 +1421,19 @@ export default function TestingSandboxPage() {
               n: 2,
               // ADR-075: on the ABAP Cloud route the step shows the result from
               // the reader's own SAP system once one is on record.
-              word: isAbapCloud
+              // ADR-094: closed by the owner without a passing run.
+              word: testsClosed
+                ? CLOSED_NOT_VERIFIED
+                : isAbapCloud
                 ? outside.state === 'current'
                   ? outside.verifies
                     ? 'No failure in your SAP system'
                     : 'Failing or incomplete in your SAP system'
                   : 'Not run here'
                 : undefined,
-              state: isAbapCloud
+              state: testsClosed
+                ? 'done'
+                : isAbapCloud
                 ? outside.state === 'current' && outside.verifies
                   ? 'done'
                   : 'unavailable'
@@ -1498,10 +1507,31 @@ export default function TestingSandboxPage() {
               </div>
             )}
 
+            {/* ADR-094 — a run that gave no result is on record as such: its
+                cause and how often, after a reload too, never "no run on record". */}
+            {!runError && run.kind === 'failed' ? (
+              <div data-test-run-failed="" className="mb-4">
+                <CcMessageStrip state="error" headline="The last run gave no result">
+                  {failureSentence(run.failure)}
+                </CcMessageStrip>
+              </div>
+            ) : null}
+
             {/* Counters once there is something to count: a run on record or
                 in this session. Before that they were a row of zeros and
                 dashes under a disabled button. */}
             {run.kind !== 'none' ? <TestPipeline written={testCases.length} run={run} /> : null}
+
+            {/* ADR-094 — a failed or impossible run can be concluded: closed by
+                the owner with a reason, "not verified", never passed. */}
+            {project && testCases.length > 0 ? (
+              <TestingClosureCard
+                projectId={String(projectId)}
+                project={project}
+                isOwner={isOwner}
+                onChanged={(fields) => setProject((prev) => (prev ? { ...prev, ...fields } : prev))}
+              />
+            ) : null}
 
                       {(testResults || aiExplanation) && (
                         <div className="mt-5 border-t border-cc-line pt-4">

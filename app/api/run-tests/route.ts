@@ -20,6 +20,7 @@ import { registerCapability, revokeCapability } from '@/lib/s4-proxy-capability-
 import { credentialHeaders } from '@/lib/s4-proxy';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from '@/lib/testing-closure';
 
 /**
  * POST /api/run-tests
@@ -79,6 +80,49 @@ interface Execution {
   exitCode: number;
   stubbedPackages: string[];
   runner: NonNullable<TestRunReceipt['runner']>;
+}
+
+/**
+ * ADR-094 — a run of the project's own suite that gave no result is recorded
+ * as such: `testRunFailure` on the project, server-written (a key the client
+ * allowlist of `firestore.rules` does not contain), with the kind, the first
+ * line of the cause, the time, the account and how many attempts in a row
+ * failed for the same code and suite. Before it, such a run left nothing
+ * behind and every view said "no test run on record" (owner report
+ * 11.10.2026). Written only onto the project this run read, as it stood when
+ * it was read — the receipt's own condition — and never for a draft run (its
+ * code and suite are a candidate, not the project's). A failure to record is
+ * logged and does not change the answer: the run's own error still goes back.
+ */
+async function recordRunFailure(
+  projectId: string,
+  uid: string,
+  read: Record<string, unknown>,
+  kind: TestRunFailureKind,
+  cause: string,
+): Promise<TestRunFailure | null> {
+  try {
+    const { db } = await getAdminDb();
+    const ref: DocumentReference = db.collection('projects').doc(projectId);
+    return await db.runTransaction(async (tx: Transaction) => {
+      const fresh = await tx.get(ref);
+      if (!fresh.exists) return null;
+      const now = (fresh.data() || {}) as Record<string, unknown>;
+      if (now.userId !== uid || !sameTestRunInputs(read, now)) return null;
+      const failure = nextTestRunFailure(now.testRunFailure, {
+        subject: testRunSubject(now),
+        at: new Date().toISOString(),
+        by: uid,
+        kind,
+        cause,
+      });
+      tx.set(ref, { testRunFailure: failure }, { merge: true });
+      return failure;
+    });
+  } catch (err) {
+    logger.error('run-tests: the failed run could not be recorded', { route: 'api/run-tests', projectId, error: errMessage(err) });
+    return null;
+  }
 }
 
 export async function POST(req: Request) {
@@ -277,9 +321,14 @@ export async function POST(req: Request) {
   const mode = s4Environment === 'live' ? 'live' : 'mock';
   const runnerConfig = readRunnerConfig();
   const target = resolveRunnerTarget(mode, runnerConfig);
+  // A run of the project's own suite against mocks; a draft or a live run is not recorded as the project's failure.
+  const recordsFailure = !draft && mode === 'mock';
   if (target.kind === 'unavailable') {
+    const runFailure = recordsFailure
+      ? await recordRunFailure(sanitizedProjectId, decodedToken.uid, projectData, 'runner-unavailable', target.reason)
+      : null;
     return NextResponse.json(
-      { output: '', error: target.reason, exitCode: 1, testResults: [] },
+      { output: '', error: target.reason, exitCode: 1, testResults: [], ...(runFailure ? { runFailure } : {}) },
       { status: target.status },
     );
   }
@@ -365,8 +414,11 @@ export async function POST(req: Request) {
       );
       if (!call.ok) {
         logger.error('run-tests: the isolated runner did not deliver a usable report', { projectId: sanitizedProjectId, reason: call.reason });
+        const runFailure = recordsFailure
+          ? await recordRunFailure(sanitizedProjectId, decodedToken.uid, projectData, 'runner-error', call.reason)
+          : null;
         return NextResponse.json(
-          { output: '', error: call.reason, exitCode: 1, testResults: [] },
+          { output: '', error: call.reason, exitCode: 1, testResults: [], ...(runFailure ? { runFailure } : {}) },
           { status: call.status },
         );
       }
@@ -383,7 +435,10 @@ export async function POST(req: Request) {
       // the receipt as `local-emulator`, never presented as the isolated runner.
       const outcome = await executeSandboxRun({ files, suiteCode: testCode, patterns, allowUnsandboxed: true });
       if (outcome.kind === 'unavailable') {
-        return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1 }, { status: 500 });
+        const runFailure = recordsFailure
+          ? await recordRunFailure(sanitizedProjectId, decodedToken.uid, projectData, 'runner-unavailable', outcome.reason)
+          : null;
+        return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1, ...(runFailure ? { runFailure } : {}) }, { status: 500 });
       }
       execution = {
         buildError: outcome.kind === 'build-error' ? outcome.message : null,
@@ -400,9 +455,14 @@ export async function POST(req: Request) {
     if (execution.buildError !== null) {
       // `buildError` lets the client auto-heal (ask the AI to repair the offending
       // generated module/test code) and retry, rather than surfacing a dead end.
+      // The project's own suite not compiling is recorded as a failed run
+      // (ADR-094) — the auto-heal's drafts are not the project's and are not.
+      const runFailure = recordsFailure
+        ? await recordRunFailure(sanitizedProjectId, decodedToken.uid, projectData, 'build-error', execution.buildError)
+        : null;
       return NextResponse.json(
         { output: '', error: `Compilation failed:
-${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner: runnerInfo, ...(draft ? { draftId: draft.draftId } : {}) },
+${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner: runnerInfo, ...(draft ? { draftId: draft.draftId } : {}), ...(runFailure ? { runFailure } : {}) },
         { status: 200 },
       );
     }

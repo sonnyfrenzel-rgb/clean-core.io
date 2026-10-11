@@ -1,5 +1,6 @@
 import { coveringTestRunReceipt, isTestRunReceipt } from '@/lib/test-receipt';
 import { outsideCountsLine, outsideReading } from '@/lib/sap-test-results';
+import { CLOSED_NOT_VERIFIED, testingClosureReading, testRunFailureReading, type TestRunFailure } from '@/lib/testing-closure';
 
 /**
  * Where testing stands, read from what the project and this session hold.
@@ -35,15 +36,23 @@ export type LastRun =
   | { kind: 'recorded'; at: string; counts: RunCounts }
   /** Ran in this session, and no receipt covers it. */
   | { kind: 'session'; counts: RunCounts }
+  /**
+   * ADR-094 — the last run for this code and suite gave no result (did not
+   * compile, no runner, no usable answer), recorded by the server.
+   */
+  | { kind: 'failed'; at: string; failure: TestRunFailure }
   /** A receipt is on the project, for code or a suite that has since changed. */
   | { kind: 'earlier'; at: string }
   | { kind: 'none' };
 
 export function lastRun(
-  project: Parameters<typeof coveringTestRunReceipt>[0],
+  project: (Parameters<typeof coveringTestRunReceipt>[0] & { testRunFailure?: unknown }) | null | undefined,
   sessionResults: ReadonlyArray<{ status?: string }> | null,
 ): LastRun {
   const receipt = coveringTestRunReceipt(project);
+  // A failure is current only while no receipt recorded after it covers the suite.
+  const failure = testRunFailureReading(project);
+  if (failure.state === 'current') return { kind: 'failed', at: failure.failure.at, failure: failure.failure };
   if (receipt) {
     return { kind: 'recorded', at: receipt.executedAt, counts: countVerdicts(receipt.verdicts.map((v) => v.status)) };
   }
@@ -90,7 +99,14 @@ export function deliveryTestingTitle(
       ? `${outsideCountsLine(outside.summary)} — ABAP Unit, imported from your SAP system`
       : `${outsideCountsLine(outside.summary)} — ABAP Unit, confirmed by you`;
   }
+  // ADR-094 — closed by the owner without a passing run.
+  if (testingClosureReading(project as Parameters<typeof testingClosureReading>[0]).state === 'current') {
+    return `${CLOSED_NOT_VERIFIED}: ${cases} ${kind} tests, closed without a passing run`;
+  }
   const run = lastRun(project, null);
+  if (run.kind === 'failed') {
+    return `Run failed: ${cases} ${kind} tests, the last run gave no result${run.failure.attempts > 1 ? ` (${run.failure.attempts} attempts)` : ''}`;
+  }
   if (run.kind !== 'recorded') return `Test draft: ${cases} ${kind} tests, no run on record`;
   return `${run.counts.passed} of ${cases} ${kind} tests passed`;
 }

@@ -7,6 +7,7 @@ import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseGeneratedPackage, replaceFileContent, repairTarget, suiteRepairImportHint } from '@/lib/generated-package';
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
+import type { TestRunFailure } from '@/lib/testing-closure';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
@@ -137,7 +138,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null };
+  type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null; runFailure?: TestRunFailure };
 
   /** POST to the repair-draft route (roadmap 8.7). Returns the parsed body and whether it was accepted. */
   const repairDraftCall = async (body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: any }> => {
@@ -207,6 +208,14 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         result = JSON.parse(textResponse);
       } catch (err) {
         throw new Error(`Execution environment failure (Status ${response.status}). The sandbox may be restarting, or returned an invalid API response.`);
+      }
+
+      // ADR-094 — the server recorded this run as one that gave no result. The
+      // page holds what the server wrote, so the tool and the phase contract
+      // say "Run failed" at once rather than after a reload.
+      if (result.runFailure && setProject) {
+        const runFailure = result.runFailure;
+        setProject((prev: Project | null) => (prev ? { ...prev, testRunFailure: runFailure } : prev));
       }
 
       // Compilation/syntax error in AI-generated code (returned as HTTP 200 + buildError).

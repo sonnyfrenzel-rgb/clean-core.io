@@ -53,6 +53,14 @@ import {
 } from '@/lib/project-decision';
 import { isSideBySideRoute } from '@/lib/sap-naming';
 import { readCostBasis, type DecisionCostBasis } from '@/lib/decision-cost';
+import {
+  TESTING_CLOSURE_VERSION,
+  isTestingClosure,
+  validateClosureBody,
+  type TestSubject,
+  type TestingClosure,
+} from '@/lib/testing-closure';
+import type { TestingClosureBasis } from '@/lib/workflow-steps';
 
 /* ------------------------------------------------------------------ fields */
 
@@ -72,7 +80,7 @@ export const RELEASE_FIELDS = [
  * write it. None of these may appear in the `affectedKeys().hasOnly([…])`
  * allowlist of `firestore.rules`.
  */
-export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport', 'decision', 'openQuestions'] as const;
+export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport', 'decision', 'openQuestions', 'testingClosure'] as const;
 
 export type ServerOnlyProjectField = (typeof SERVER_ONLY_PROJECT_FIELDS)[number];
 
@@ -339,6 +347,8 @@ export const PROJECT_COMMANDS = [
   'confirm-decision',
   'withdraw-decision',
   'record-open-question',
+  'close-testing',
+  'reopen-testing',
 ] as const;
 export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
@@ -378,7 +388,14 @@ export type ProjectCommandBody =
       end: 'answered' | 'accepted' | 'reopen';
       text?: string;
       basis?: string;
-    };
+    }
+  /**
+   * ADR-094 — testing closed without a passing run: a reason (and a note),
+   * bound to the code and suite the page showed (`subjectKey`). The basis —
+   * what failed — is the server's, never the body's.
+   */
+  | { command: 'close-testing'; reason: string; note?: string; expectedSubject: string }
+  | { command: 'reopen-testing' };
 
 /** The part of the project document a command is allowed to look at. */
 export interface ProjectCommandState {
@@ -467,6 +484,16 @@ export interface ProjectCommandState {
    * refuses a sign-off; a reopen needs no basis.
    */
   openQuestionBases?: Partial<Record<OpenQuestionAction, string>> | null;
+  /**
+   * ADR-094 — may testing be closed now, and on what (`testingClosureBasis()`
+   * in `lib/workflow-steps.ts`), derived by the caller from the project its
+   * transaction read. `undefined`/`null` refuses a closure.
+   */
+  testingClosureBasis?: TestingClosureBasis | null;
+  /** ADR-094 — the subject the closure binds (`testRunSubject` of the same read). */
+  testSubject?: TestSubject | null;
+  /** ADR-094 — the closure as it sits on the project, for `reopen-testing`. */
+  testingClosure?: unknown;
 }
 
 /**
@@ -954,6 +981,46 @@ export function validateProjectCommand(
     return { ok: true, action: 'PROJECT_OPEN_QUESTION_RECORDED', fields: { openQuestions: stored } };
   }
 
+  /* ------------------------------------------------------------ ADR-094 */
+
+  if (command === 'close-testing') {
+    // A self-declaration: the owner's word that testing ends here without a
+    // passing run. It is never a pass — the phase reads "not verified" — and
+    // the record of what failed is the server's, not the body's.
+    const basis = state.testingClosureBasis;
+    if (!basis || !state.testSubject) {
+      return refuse(409, 'testing-unknown', 'Where testing stands could not be read just now, so nothing was written. Try again.');
+    }
+    if (!basis.ok) return refuse(409, basis.code, basis.error);
+    if (typeof body.expectedSubject !== 'string' || body.expectedSubject !== basis.subjectKey) {
+      return refuse(
+        409,
+        'tests-moved',
+        'The code, the test suite or the analysis run changed since the page was read. Nothing was written. Reload the page and decide on what it shows.',
+      );
+    }
+    const checked = validateClosureBody(body, basis.basis.kind);
+    if (!checked.ok) return refuse(400, 'malformed-closure', checked.error);
+    const closure: TestingClosure = {
+      v: TESTING_CLOSURE_VERSION,
+      subject: state.testSubject,
+      reason: checked.value.reason,
+      note: checked.value.note,
+      basis: basis.basis,
+      account: actor.email || 'the signed-in account',
+      at: actor.now,
+    };
+    return { ok: true, action: 'PROJECT_TESTING_CLOSED', fields: { testingClosure: closure } };
+  }
+
+  if (command === 'reopen-testing') {
+    if (!isTestingClosure(state.testingClosure)) {
+      return refuse(409, 'not-closed', 'Testing is not closed, so there is nothing to reopen.');
+    }
+    // The journal entry keeps that it was closed; the project no longer says so.
+    return { ok: true, action: 'PROJECT_TESTING_REOPENED', fields: { testingClosure: null } };
+  }
+
   // The only command left: `withdraw-decision`. An `if` rather than a bare
   // fallthrough — a command added here later must say which one it is rather
   // than silently inheriting whatever sits last in the function.
@@ -1002,6 +1069,9 @@ export function fieldsWrittenByCommands(): string[] {
     activeRunEvidence: runEvidence,
     // ADR-081: the answer below is bound to a group the project has.
     openQuestionBases: { 'add-usage': 'add-usage-1-x' },
+    // ADR-094: a suite that may be closed.
+    testingClosureBasis: { ok: true, subjectKey: 'k', basis: { kind: 'no-runner', line: 'x' } },
+    testSubject: { runId: 'run', codeDigest: null, suiteDigest: null, casesDigest: null },
   };
   const bodies: unknown[] = [
     {
@@ -1020,6 +1090,8 @@ export function fieldsWrittenByCommands(): string[] {
     { command: 'record-decision-draft', decision: emptyProjectDecision() },
     // ADR-081.
     { command: 'record-open-question', action: 'add-usage', end: 'accepted', text: 'x', basis: 'add-usage-1-x' },
+    // ADR-094.
+    { command: 'close-testing', reason: 'not-testable-here', expectedSubject: 'k' },
   ];
   const written = new Set<string>();
   for (const body of bodies) {

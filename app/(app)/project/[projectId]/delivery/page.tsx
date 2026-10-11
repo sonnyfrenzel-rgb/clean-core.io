@@ -80,6 +80,7 @@ import {
 } from '@/components/delivery/DeliveryObjectPage';
 import { deliveryTestingTitle, lastRun, countsLine } from '@/components/testing/testing-summary';
 import { outsideReading, outsideShortfall } from '@/lib/sap-test-results';
+import { closureHandoverLine, failureSentence, testingClosureReading } from '@/lib/testing-closure';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
@@ -165,6 +166,8 @@ export default function DeliveryPage() {
   } = testEvidence(project);
   /** The run the Testing stage reports — a covering receipt, or none. */
   const recordedTestRun = lastRun(project, null);
+  /** ADR-094 — testing closed by the owner without a passing run. */
+  const testingClosure = testingClosureReading(project);
   /** ADR-075: a result from the reader's own SAP system, which the title above names. */
   const outsideTests = outsideReading(project as Parameters<typeof outsideReading>[0]);
   const phases = workflowSteps(project);
@@ -903,6 +906,12 @@ jobs:
                                 ? 'Nothing to verify'
                                 : testingPhase.state === 'stale'
                                   ? `Written for ${previousBasis(project)} — regenerate in stage 5`
+                                  // ADR-094 — closed by the owner without a passing run:
+                                  // named, not a blocker, never a pass.
+                                  : testingClosure.state === 'current'
+                                    ? closureHandoverLine(testingClosure.closure)
+                                  : recordedTestRun.kind === 'failed'
+                                    ? failureSentence(recordedTestRun.failure)
                                   // The result from your SAP system: the scenarios carry no
                                   // verdict of this tool's own, and counting them "without a
                                   // result" under "2 of 2 passed" contradicted the title.

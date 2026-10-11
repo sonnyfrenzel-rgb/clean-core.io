@@ -94,6 +94,18 @@ export interface Project {
    */
   outsideTestResult?: import('./sap-test-results').OutsideTestSummary;
   /**
+   * ADR-094 — the last run that gave no result (did not compile, no runner,
+   * no usable answer). Written only by `/api/run-tests` with the Admin SDK;
+   * not in the client allowlist (`lib/testing-closure.ts`).
+   */
+  testRunFailure?: import('./testing-closure').TestRunFailure;
+  /**
+   * ADR-094 — testing closed by the owner without a passing run, with a
+   * reason: a self-declaration, never a pass. Written only by the project
+   * commands (`close-testing`, `reopen-testing`); `null` once reopened.
+   */
+  testingClosure?: import('./testing-closure').TestingClosure | null;
+  /**
    * What the requirements specification holds (ADR-078): counts, the revision
    * and the source it was read from. Written only by
    * `/api/projects/{id}/requirements-spec` with the Admin SDK, beside the

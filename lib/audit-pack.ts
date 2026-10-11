@@ -905,6 +905,12 @@ export interface UserAttestations {
   approvedBy?: string;
   architectSignOffAt?: unknown;
   architectJustifiedOverride?: string;
+  /**
+   * ADR-094 — testing closed by the owner without a passing run, as one
+   * sentence (`closureSentence`). The account's word, never a test result:
+   * it stands here, outside the signature, and in no signed file.
+   */
+  testingClosure?: string;
 }
 
 export function generateUserAttestations(
@@ -950,7 +956,8 @@ of the engine. The signed files (00–06) hold the evidence; this one holds the 
 | Approver | ${mdCell(a.approvedBy)} |
 | Sign-off timestamp | ${mdCell(signOffAt)} |
 | Override justification | ${mdCell(a.architectJustifiedOverride)} |
-
+${a.testingClosure ? `| Testing closed without a passing run (not verified) | ${mdCell(a.testingClosure)} |
+` : ''}
 To rely on any of this, obtain it from the person named above through your own
 governance process. To check the evidence, verify the pack: the files the signature
 covers are listed under \`files\` in \`manifest.json\`; this one is listed under

@@ -338,12 +338,18 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
       : notDeterminedWords('no signed run, so no process was reconstructed');
   // No raw id in a sentence: the decision's id stands once, in the footer's reference line.
   const decisionWord = src.decision ? `decision ${src.decision.status}` : 'no decision on record';
+  // ADR-094 — testing closed by the owner without a passing run is said where
+  // the project's standing is said, so the committee never reads it as tested.
+  const testsClosed =
+    src.mode !== 'demo' && !!src.project && workflowSteps(src.project).some((s) => s.key === 'testing' && s.closedUnverified)
+      ? ' · tests not verified (closed without a passing run)'
+      : '';
   const status =
     src.mode === 'demo'
       ? 'Demo — never signed; no decision on record'
       : src.hasRun
-        ? `Analysis signed${runDate ? ` on ${runDate.slice(0, 10)}` : ''} · ${decisionWord}`
-        : `No signed analysis run yet · ${decisionWord}`;
+        ? `Analysis signed${runDate ? ` on ${runDate.slice(0, 10)}` : ''} · ${decisionWord}${testsClosed}`
+        : `No signed analysis run yet · ${decisionWord}${testsClosed}`;
 
   /* ---------------------------------------------------------- decision */
   let decision: SteeringDecision;

@@ -9,6 +9,7 @@ import CcWhyPopover from '@/components/cc/WhyPopover';
 import StageMetaDetails from '@/components/StageMetaDetails';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { countsLine, type LastRun } from './testing-summary';
+import { failureReason } from '@/lib/testing-closure';
 import { outsideChipNote, outsideCountsLine, type OutsideReading } from '@/lib/sap-test-results';
 
 /**
@@ -195,6 +196,16 @@ export default function TestingHeader({
       </>
     );
     runProvenance = 'demonstrated-mock';
+  } else if (run.kind === 'failed') {
+    // ADR-094 — the run was tried and gave no result; said as such, with its
+    // cause, never as "no run on record".
+    runFigure = <span className={WORD}>Failed</span>;
+    runSub = (
+      <>
+        <CcDateText value={run.at} format="datetime" /> · no result
+        {run.failure.attempts > 1 ? ` (${run.failure.attempts} attempts in a row)` : ''} — {failureReason(run.failure)}
+      </>
+    );
   } else if (run.kind === 'earlier') {
     runFigure = <span className={WORD}>Earlier</span>;
     runSub = (

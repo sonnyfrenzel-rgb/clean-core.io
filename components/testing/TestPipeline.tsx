@@ -31,14 +31,16 @@ export default function TestPipeline({ written, run }: { written: number; run: L
     {
       key: 'run',
       label: 'Run',
-      value: counts ? String(counts.total) : run.kind === 'earlier' ? '—' : '0',
+      value: counts ? String(counts.total) : run.kind === 'earlier' || run.kind === 'failed' ? '—' : '0',
       sub: counts
         ? counts.noResult > 0
           ? `against mocks · ${counts.noResult} without a result`
           : 'against mocks'
         : run.kind === 'earlier'
           ? 'not on this version'
-          : 'against mocks',
+          : run.kind === 'failed'
+            ? 'failed — no result'
+            : 'against mocks',
       bar: 'bg-cc-neutral',
       on: !!counts && counts.total > 0,
     },

@@ -125,6 +125,21 @@ export const NOTHING_OPEN =
   'Nothing is open. Every phase this product can finish has its own evidence on record; ' +
   'Economics is a scenario on your own figures, never a step the path waits on.';
 
+/**
+ * ADR-094 — the same fact when Testing is done because the owner closed it
+ * without a passing run. "Every phase … has its own evidence" would then be
+ * false of Testing, so it is named: closed, not verified, a self-declaration.
+ */
+export const NOTHING_OPEN_TESTS_NOT_VERIFIED =
+  'Nothing is open. Testing was closed without a passing run — not verified, a self-declaration; ' +
+  'every other phase this product can finish has its own evidence on record. ' +
+  'Economics is a scenario on your own figures, never a step the path waits on.';
+
+/** What the card says when nothing is open, for these steps. */
+export function nothingOpenText(steps: readonly Pick<RailStep, 'key' | 'closedUnverified'>[]): string {
+  return steps.some((s) => s.key === 'testing' && s.closedUnverified) ? NOTHING_OPEN_TESTS_NOT_VERIFIED : NOTHING_OPEN;
+}
+
 export interface NextOpenPoint {
   key: PhaseKey;
   /** The phase's own label — "Design", "Testing" — from the one phase list. */

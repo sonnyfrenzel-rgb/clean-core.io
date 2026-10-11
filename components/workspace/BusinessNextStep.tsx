@@ -32,9 +32,12 @@ export default function BusinessNextStep({
   projectId,
   onDecideRules,
   base,
+  noneText,
 }: {
   step: Step;
   projectId: string;
+  /** What stands when nothing is open (`nothingOpenText`, ADR-094). */
+  noneText?: string;
   /** Where the stages live — `/demo` for the demo; the project's by default. */
   base?: string;
   /** Where "Decide on n rules" leads when the page has its own rules card (the demo). */
@@ -49,6 +52,7 @@ export default function BusinessNextStep({
         level={2}
         variant="bar"
         base={base}
+        noneText={noneText}
       />
     );
   }

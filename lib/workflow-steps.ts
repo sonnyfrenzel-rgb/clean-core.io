@@ -7,13 +7,23 @@ import {
   unverifiedInputs,
   type UnverifiedInput,
 } from './input-manifest';
-import { coveringTestRunReceipt, executedPasses } from './test-receipt';
+import { coveringTestRunReceipt, executedPasses, testRunSubject } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { PROFILE_INPUT_ID } from './assessment-profile';
 import { liveProfileDigest, recordedProfileOf } from './assessment-target';
 import { outsideCountsLine, outsideReading, outsideShortfall, type OutsideKind } from './sap-test-results';
 import { recordProgress } from './economics-record';
 import { countSourceLines } from './source-lines';
+import {
+  CLOSED_NOT_VERIFIED,
+  closureSentence,
+  failureSentence,
+  subjectKey,
+  testingClosureReading,
+  testRunFailureReading,
+  type ClosureBasis,
+} from './testing-closure';
+import { isAbapUnitRoute } from './test-runnability';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -104,6 +114,18 @@ export interface RailStep {
    * is `done`, never green, and `null` whenever the phase is not `done`.
    */
   verifiedOutside: OutsideKind | null;
+  /**
+   * ADR-094 — the testing phase (and the delivery phase that rests on it) is
+   * `done` because the owner closed testing without a passing run, with a
+   * reason: a self-declaration, "not verified", never green. Absent otherwise.
+   */
+  closedUnverified?: true;
+  /**
+   * ADR-094 — the last run on record failed or gave no result, so the way on
+   * is to look at that run (and fix it or close testing), not "Run the tests"
+   * once more. Only on a testing phase that is not `done`.
+   */
+  runFailed?: true;
   /** A few words for a badge — "Test draft", "Model estimate". */
   badge: string;
   /** What is on record, in the product's own words. */
@@ -244,7 +266,10 @@ export function phaseNeeds(
  * design". One wording for every place that offers the next step: the list
  * report, "Next step" in every view, and the Management decision panel.
  */
-export function phaseActionLabel(step: { key: PhaseKey; state: PhaseState; label: string }, hasSource: boolean): string {
+export function phaseActionLabel(
+  step: { key: PhaseKey; state: PhaseState; label: string; runFailed?: true },
+  hasSource: boolean,
+): string {
   if (step.key === 'analyze') {
     if (!hasSource) return 'Upload the code';
     return step.state === 'stale' ? 'Run the analysis again' : 'Run the analysis';
@@ -259,6 +284,9 @@ export function phaseActionLabel(step: { key: PhaseKey; state: PhaseState; label
     case 'documentation':
       return started ? 'Review the documentation' : 'Write the documentation';
     case 'testing':
+      // ADR-094: after a failed run, "Run the tests" again was the loop the
+      // owner reported; the way on is the failed run — fix it, or close testing.
+      if (started && step.runFailed) return 'Review the failed run';
       return started ? 'Run the tests' : 'Prepare the tests';
     case 'tco':
       return 'Estimate the costs';
@@ -654,10 +682,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
 
   // `proven` is opt-in and can only ever be true on a `done` phase: a phase that
   // forgets to claim it is amber, which is the safe direction. Roadmap 1.7.
-  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven' | 'mock' | 'verifiedOutside'> & {
+  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven' | 'mock' | 'verifiedOutside' | 'closedUnverified' | 'runFailed'> & {
     proven?: boolean;
     mock?: boolean;
     verifiedOutside?: OutsideKind | null;
+    closedUnverified?: boolean;
+    runFailed?: boolean;
   };
   const phase = (key: PhaseKey, s: PhaseFacts): RailStep => {
     const p = PHASES.find((x) => x.key === key)!;
@@ -673,6 +703,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
       proven: s.state === 'done' && s.proven === true,
       mock: s.state === 'done' && s.proven === true && s.mock === true,
       verifiedOutside: s.state === 'done' && s.proven !== true ? s.verifiedOutside ?? null : null,
+      ...(s.state === 'done' && s.proven !== true && s.closedUnverified ? { closedUnverified: true as const } : {}),
+      ...(s.state !== 'done' && s.runFailed ? { runFailed: true as const } : {}),
     };
   };
 
@@ -775,9 +807,24 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // account's confirmation, server-written and bound to the run, code, test
   // class and scenario list it was given for (`lib/sap-test-results.ts`).
   const outside = outsideReading(project);
+  // ADR-094 — a run that gave no result, and testing closed without a pass.
+  const failure = testRunFailureReading(project);
+  const closure = testingClosureReading(project);
+  const closedPhase = (c: Extract<typeof closure, { state: 'current' }>['closure']): RailStep =>
+    phase('testing', {
+      state: 'done',
+      closedUnverified: true,
+      badge: CLOSED_NOT_VERIFIED,
+      detail: `${closureSentence(c)} Not verified — a self-declaration, not a test result.`,
+    });
   let testing: RailStep;
   if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
+  } else if (closure.state === 'current' && !(outside.state === 'current' && outside.verifies) && !(tests.passed === tests.total && tests.attestedPasses === tests.total)) {
+    // Closed by the owner without a passing run: done, never proven. A passing
+    // run or a passing result from the reader's own system on the same suite
+    // outranks it (checked above in the condition) — a closure never hides a pass.
+    testing = closedPhase(closure.closure);
   } else if (outside.state === 'current') {
     const s = outside.summary;
     const counts = outsideCountsLine(s);
@@ -794,11 +841,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
       : phase('testing', {
           state: 'partial',
           badge: s.failed > 0 || (s.coverage?.failed ?? 0) > 0 ? 'Failures · your system' : 'Incomplete',
+          runFailed: s.failed > 0 || (s.coverage?.failed ?? 0) > 0,
           detail:
             (s.kind === 'imported'
               ? `Imported from your SAP system: ${counts}.`
               : `You confirmed ${counts} in your SAP system, run on ${s.ranOn}.`) +
-            ` ${outsideShortfall(s)} Record a passing run to hand over.`,
+            ` ${outsideShortfall(s)} Record a passing run, or close testing with a reason, to hand over.`,
         });
   } else if (tests.passed === tests.total && tests.attestedPasses === tests.total) {
     // Proven: every case carries a verdict that is the result of an execution,
@@ -824,6 +872,17 @@ export function workflowSteps(project: Project | null): RailStep[] {
         `All ${plural(tests.total, 'test case')} are marked as passed, and no test run is on record for this code. ` +
         'Run the suite in stage 5 to record one.',
     });
+  } else if (executed === 0 && failure.state === 'current') {
+    // The run was tried and gave no result (owner report 11.10.2026): said as
+    // such, with its cause and how often — never "no test run on record".
+    testing = phase('testing', {
+      state: 'partial',
+      runFailed: true,
+      badge: 'Run failed',
+      detail:
+        `${plural(tests.total, 'case')} generated. ${failureSentence(failure.failure)} ` +
+        'Fix the cause and run again, or close testing with a reason — it then reads "not verified".',
+    });
   } else if (executed === 0) {
     testing = phase('testing', {
       state: 'partial',
@@ -838,6 +897,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   } else {
     testing = phase('testing', {
       state: 'partial',
+      runFailed: tests.attestedFailures > 0 || failure.state === 'current',
       // A failure on the case list alone is the owner's label, as a pass is
       // above: `Failures` is for failures a recorded run reported.
       badge: tests.attestedFailures > 0 ? 'Failures' : tests.failed > 0 ? 'Self-reported' : 'Partly run',
@@ -851,7 +911,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
         tests.withoutVerdict > 0 ? `${tests.withoutVerdict} not run` : null,
       ]
         .filter(Boolean)
-        .join(', ') + '.',
+        .join(', ') +
+        '.' +
+        (failure.state === 'current' ? ` ${failureSentence(failure.failure)}` : '') +
+        (tests.attestedFailures > 0 || failure.state === 'current'
+          ? ' Fix it and run again, or close testing with a reason — it then reads "not verified".'
+          : ''),
     });
   }
 
@@ -933,14 +998,19 @@ export function workflowSteps(project: Project | null): RailStep[] {
         proven: testing.proven,
         mock: testing.mock,
         verifiedOutside: testing.verifiedOutside,
-        badge: testing.proven
+        closedUnverified: testing.closedUnverified === true,
+        badge: testing.closedUnverified
+          ? 'Ready · tests not verified'
+          : testing.proven
           ? (testing.mock ? 'Ready · mock tests' : 'Ready')
           : testing.verifiedOutside === 'imported'
             ? 'Ready · imported tests'
             : testing.verifiedOutside === 'confirmed'
               ? 'Ready · confirmed tests'
               : 'Unverified',
-        detail: testing.mock
+        detail: testing.closedUnverified && closure.state === 'current'
+          ? `Code and documentation are on record; tests are not verified — ${closureSentence(closure.closure).replace(/^Closed/, 'testing was closed')} Whether to deploy remains an architect’s decision.`
+          : testing.mock
           ? 'Code, documentation and a passing sandbox test run against mocks are on record — not a run against an SAP system. Whether to deploy remains an architect’s decision.'
           : testing.proven
           ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.'
@@ -971,6 +1041,9 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const blockers = handoverBlockers(project);
   const stale = (base: RailStep, detail: string, badge = 'Stale'): RailStep => ({
     ...base,
+    // A stale phase is neither closed nor waiting on a failed run of this suite.
+    closedUnverified: undefined,
+    runFailed: undefined,
     state: 'stale',
     done: false,
     proven: false,
@@ -1054,4 +1127,75 @@ export function workflowSummary(steps: RailStep[]) {
   const next =
     steps.find((s) => !s.done && s.key !== 'tco') ?? steps.find((s) => s.key === 'delivery') ?? steps[steps.length - 1];
   return { doneCount, total: steps.length, next };
+}
+
+/**
+ * ADR-094 — may testing be closed without a passing run now, and on what.
+ *
+ * Read by the Testing tool to offer "Close testing without a passing run" and
+ * by `close-testing` on the server, against the project its transaction read —
+ * so the two refuse the same things. Closing needs a suite that is current,
+ * not already done, and a negative record to close on: a recorded run with
+ * failures (or a result from the reader's own system with failures), a run
+ * that gave no result, or a route with no runner here (ABAP Unit). Without one
+ * there is nothing to conclude yet: the suite is run first.
+ */
+export type TestingClosureBasis =
+  | { ok: true; subjectKey: string; basis: ClosureBasis }
+  | { ok: false; code: string; error: string };
+
+export function testingClosureBasis(project: Project | null): TestingClosureBasis {
+  const tests = testEvidence(project);
+  if (!project || tests.total === 0) return { ok: false, code: 'no-suite', error: 'There is no test suite to close.' };
+  if (typeof project.activeRunId !== 'string' || !project.activeRunId) {
+    return { ok: false, code: 'no-run', error: 'The project has no signed analysis run.' };
+  }
+  if (testingClosureReading(project).state === 'current') {
+    return { ok: false, code: 'already-closed', error: 'Testing is already closed for this suite.' };
+  }
+  const testing = workflowSteps(project).find((s) => s.key === 'testing')!;
+  if (testing.state === 'stale') {
+    return { ok: false, code: 'suite-stale', error: 'The test suite was written for a previous source. Regenerate it first.' };
+  }
+  if (testing.state === 'done') {
+    return { ok: false, code: 'testing-done', error: 'Testing is already done for this suite; there is nothing to close.' };
+  }
+  const key = subjectKey(testRunSubjectOf(project));
+  const outside = outsideReading(project);
+  if (outside.state === 'current' && !outside.verifies) {
+    return { ok: true, subjectKey: key, basis: { kind: 'failed-run', line: `The result from your SAP system: ${outsideCountsLine(outside.summary)}.` } };
+  }
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const failure = testRunFailureReading(project);
+  if (failure.state === 'current') {
+    return { ok: true, subjectKey: key, basis: { kind: 'run-error', line: failureSentence(failure.failure) } };
+  }
+  if (receipt && (tests.attestedFailures > 0 || receipt.exitCode !== 0)) {
+    const day = receipt.executedAt.slice(0, 10);
+    const notRun = Math.max(0, tests.total - tests.attestedPasses - tests.attestedFailures);
+    return {
+      ok: true,
+      subjectKey: key,
+      basis: {
+        kind: 'failed-run',
+        line:
+          `The recorded run of ${day}: ${tests.attestedPasses} of ${tests.total} passed` +
+          (tests.attestedFailures > 0 ? `, ${tests.attestedFailures} failed` : '') +
+          (notRun > 0 ? `, ${notRun} without a result` : '') +
+          '.',
+      },
+    };
+  }
+  if (isAbapUnitRoute(project)) {
+    return { ok: true, subjectKey: key, basis: { kind: 'no-runner', line: 'Nothing here runs ABAP Unit; the suite runs only in your own SAP system.' } };
+  }
+  return {
+    ok: false,
+    code: 'nothing-failed',
+    error: 'No failed or impossible run is on record for this suite. Run the tests first; if the run fails, testing can be closed with a reason.',
+  };
+}
+
+function testRunSubjectOf(project: Project) {
+  return testRunSubject(project as Parameters<typeof testRunSubject>[0]);
 }

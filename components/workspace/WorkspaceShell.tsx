@@ -48,7 +48,8 @@ import type { ProcessSummary } from '@/lib/process-summary';
 import { signedSourceOf } from '@/lib/signed-source';
 import type { StartRun } from '@/hooks/useStartRun';
 import type { BuildUpMapState, BuildUpNarrative } from './FirstLookBuildUp';
-import { nextOpenPoint } from '@/lib/next-step';
+import { nextOpenPoint, nothingOpenText } from '@/lib/next-step';
+import { workflowSteps } from '@/lib/workflow-steps';
 import { businessNextStep } from '@/lib/business-next-step';
 import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { runTrust, scrollToWhenThere } from '@/lib/it-sections';
@@ -594,6 +595,8 @@ export default function WorkspaceShell({
   // the project has no run until it is signed — so it is marked as running
   // rather than offered as "Run the analysis" (owner, 09.10.2026).
   const startRunning = startRun?.phase === 'running';
+  // ADR-094 — "nothing is open" says so when Testing was closed without a pass.
+  const nothingOpen = useMemo(() => nothingOpenText(workflowSteps(project)), [project]);
   const nextStep = useMemo(() => {
     const point = nextOpenPoint(project, account);
     return point && point.key === 'analyze' && startRunning ? { ...point, running: true as const } : point;
@@ -875,7 +878,7 @@ export default function WorkspaceShell({
         <div data-coach-target="next-step">
           {view === 'business' ? (
             businessStep ? (
-              <BusinessNextStep step={businessStep} projectId={projectId} />
+              <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} />
             ) : (
               <div
                 data-next-step-pending=""
@@ -888,7 +891,7 @@ export default function WorkspaceShell({
               </div>
             )
           ) : (
-            <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" />
+            <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} variant="card" noneText={nothingOpen} />
           )}
         </div>
         {/* Business: the target and its SAP reference pattern, one line
@@ -1214,7 +1217,7 @@ export default function WorkspaceShell({
                   />
                 </div>
                 <div data-coach-target="next-step">
-                  <NextStepCard point={nextStep} projectId={projectId} view={view} level={3} variant="bar" />
+                  <NextStepCard point={nextStep} projectId={projectId} view={view} level={3} variant="bar" noneText={nothingOpen} />
                 </div>
               </div>
             }

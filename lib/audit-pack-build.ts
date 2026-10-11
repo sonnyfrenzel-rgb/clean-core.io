@@ -19,6 +19,7 @@
  * client-writable field and asserts that no signed byte moves.
  */
 
+import { closureSentence, testingClosureReading } from '@/lib/testing-closure';
 import type { Project } from '@/lib/types';
 import { buildEvidenceChain, coversOf, type CoverEntry } from '@/lib/evidence-chain';
 import {
@@ -182,5 +183,10 @@ export function attestationsOf(projectData: Record<string, unknown>): UserAttest
     approvedBy: str(projectData.approvedBy),
     architectSignOffAt: projectData.architectSignOffAt,
     architectJustifiedOverride: str(projectData.architectJustifiedOverride),
+    // ADR-094 — only while it is the last word on the suite the project holds.
+    ...(() => {
+      const closure = testingClosureReading(projectData as Parameters<typeof testingClosureReading>[0]);
+      return closure.state === 'current' ? { testingClosure: closureSentence(closure.closure) } : {};
+    })(),
   };
 }

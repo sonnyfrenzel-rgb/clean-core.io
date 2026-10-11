@@ -56,8 +56,11 @@ export default function NextStepCard({
   level = 3,
   variant = 'card',
   base,
+  noneText = NOTHING_OPEN,
 }: {
   point: NextOpenPoint | null;
+  /** What stands when nothing is open (`nothingOpenText`, ADR-094). */
+  noneText?: string;
   projectId: string;
   /**
    * The view the card stands in. The button carries it, and this card as its
@@ -99,7 +102,7 @@ export default function NextStepCard({
           </Heading>
           {point === null ? (
             <p data-next-step-state="none" className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">
-              {NOTHING_OPEN}
+              {noneText}
             </p>
           ) : (
             <div
@@ -146,7 +149,7 @@ export default function NextStepCard({
             data-next-step-state="none"
             className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
           >
-            {NOTHING_OPEN}
+            {noneText}
           </p>
         ) : (
           <div

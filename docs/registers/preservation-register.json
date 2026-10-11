@@ -172,7 +172,7 @@
       "contract": "lib/project-commands.ts",
       "guard": "tests/project-command-boundary.spec.ts",
       "journal": "audit_events — written by the Admin SDK (logAuditEvent), readable or writable by no client",
-      "roadmapStep": "0.7 (8.4 fuer `decision`, 3.0.6 / ADR-081 fuer `openQuestions`)",
+      "roadmapStep": "0.7 (8.4 fuer `decision`, 3.0.6 / ADR-081 fuer `openQuestions`, ADR-094 fuer `testingClosure`)",
       "fields": [
         "approvedBy",
         "approvedByArchitect",
@@ -182,9 +182,10 @@
         "usageReport",
         "atcReport",
         "decision",
-        "openQuestions"
+        "openQuestions",
+        "testingClosure"
       ],
-      "reason": "The five approval fields and the usage import. An approval is created on the server or not at all: until roadmap 0.7 the browser also wrote `approvedBy`, i.e. the address that stands on the approval. It now comes from the verified ID token, the timestamp from the server clock. `usageReport` was only checked as `is map` in the rules (security audit v2.11.0); the route holds it to the key set of lib/abap/usage-model.ts and a row limit. `atcReport` (roadmap 7.1, ATC import) never entered the rules as client-writable: same construction, same key-set-and-limit protection in lib/project-commands.ts from the start, so that an imported ATC finding is held server-side to its own model instead of to `is map`. `decision` (roadmap 8.4) likewise: the draft is normalised by lib/project-decision.ts and its fingerprint recomputed instead of believed, status and confirmation are set exclusively by the route, and the confirmation is bound to the run that was read (8.8, CR-11). `openQuestions` (3.0.6, ADR-081): the owner's answers to the open questions, checked by lib/open-questions.ts (closed action list, answered / accepted / reopen, text limit, basis), account and time from the server; a self-declaration that enters no run and changes no figure.",
+      "reason": "The five approval fields and the usage import. An approval is created on the server or not at all: until roadmap 0.7 the browser also wrote `approvedBy`, i.e. the address that stands on the approval. It now comes from the verified ID token, the timestamp from the server clock. `usageReport` was only checked as `is map` in the rules (security audit v2.11.0); the route holds it to the key set of lib/abap/usage-model.ts and a row limit. `atcReport` (roadmap 7.1, ATC import) never entered the rules as client-writable: same construction, same key-set-and-limit protection in lib/project-commands.ts from the start, so that an imported ATC finding is held server-side to its own model instead of to `is map`. `decision` (roadmap 8.4) likewise: the draft is normalised by lib/project-decision.ts and its fingerprint recomputed instead of believed, status and confirmation are set exclusively by the route, and the confirmation is bound to the run that was read (8.8, CR-11). `openQuestions` (3.0.6, ADR-081): the owner's answers to the open questions, checked by lib/open-questions.ts (closed action list, answered / accepted / reopen, text limit, basis), account and time from the server; a self-declaration that enters no run and changes no figure. `testingClosure` (ADR-094, owner 11.10.2026): testing closed by the owner without a passing run, with a reason from a closed list and an optional note (lib/testing-closure.ts); the basis (what failed) is derived by the server from the project read in the transaction, bound to the code and suite (`expectedSubject`), account and time from the server; a self-declaration that never reads as a pass, and `reopen-testing` sets it to null.",
       "stillAttestedNotSigned": "The audit pack still lists these fields in 07-user-attested.md: they remain a self-declaration of the signed-in account. Server-validated means truthfully recorded, not official."
     },
     "clientWritableFieldsNoStageWrites": {

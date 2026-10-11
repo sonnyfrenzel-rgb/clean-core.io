@@ -41,6 +41,7 @@ import { sha256Hex } from './artefact-digest';
 import { toDate } from './format';
 import { outsideChipNote, outsideCountsLine, outsideReading, outsideShortfall } from './sap-test-results';
 import { pricedOptions } from './economics-record';
+import { closureHandoverLine, closureReasonText, testingClosureReading } from './testing-closure';
 
 /* ------------------------------------------------------------------ links */
 
@@ -331,6 +332,9 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   // ADR-075 — a result from the reader's own SAP system, on the ABAP Cloud route.
   const outside = outsideReading(project);
+  // ADR-094 — closed by the owner without a passing run: the account's word,
+  // named as such, never a result.
+  const closure = testingClosureReading(project);
   const tests = ev.total === 0
     ? link('tests', {
         provenance: 'not-determined', provenanceNote: null, value: null, by: null, at: null,
@@ -342,6 +346,15 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
           value: `${plural(ev.total, 'test case')} written`,
           by: null, at: null, missing: testPhase.detail,
         })
+      : testPhase.closedUnverified && closure.state === 'current'
+        ? link('tests', {
+            provenance: 'confirmed',
+            provenanceNote: 'closed by you · not verified',
+            value: 'Not verified — testing closed without a passing run',
+            by: closure.closure.account,
+            at: closure.closure.at,
+            missing: `${closureHandoverLine(closure.closure)} A self-declaration, not a test result; the audit pack carries it as your statement, not as evidence.`,
+          })
       : outside.state === 'current'
         ? link('tests', {
             // Imported from a result file, or the account's word: never *Proven*,
@@ -573,6 +586,15 @@ export function confirmationsOf(project: HandoverProject): Confirmation[] {
       provenance: s.kind,
     });
   }
+  const closure = testingClosureReading(project);
+  if (closure.state === 'current') {
+    out.push({
+      what: `Closed testing without a passing run — not verified: ${closureReasonText(closure.closure)}`,
+      account: closure.closure.account,
+      at: closure.closure.at,
+      provenance: 'confirmed',
+    });
+  }
   const decision = storedDecisionOf(project);
   for (const c of decision?.conditions ?? []) {
     if (c.attestation) {
@@ -617,6 +639,10 @@ export function handoverTimeline(project: HandoverProject): TimelineEntry[] {
         : 'ABAP Unit run in your SAP system confirmed — a self-declaration',
       outside.summary.recordedBy,
     );
+  }
+  const closure = testingClosureReading(project);
+  if (closure.state === 'current') {
+    push(closure.closure.at, 'Testing closed without a passing run — not verified, a self-declaration', closure.closure.account);
   }
   const decision = storedDecisionOf(project);
   for (const e of decision?.timeline ?? []) {
@@ -675,7 +701,7 @@ export function handoverNextStep(
     };
   }
   const testing = phase('testing');
-  if (!testing.proven && !testing.verifiedOutside) {
+  if (!testing.proven && !testing.verifiedOutside && !testing.closedUnverified) {
     return {
       kind: 'open',
       headline: 'Run the test suite',
@@ -689,7 +715,9 @@ export function handoverNextStep(
     return {
       kind: 'open',
       headline: 'Confirm the decision',
-      reason: testing.verifiedOutside
+      reason: testing.closedUnverified
+        ? `Code and documentation are there; testing was closed without a passing run (not verified); no confirmed decision is. ${travels}`
+        : testing.verifiedOutside
         ? `Code, documentation and ${testing.verifiedOutside === 'imported' ? 'a passing test result imported from your SAP system' : 'your confirmation that the tests passed in your SAP system (a self-declaration)'} are there; no confirmed decision is. ${travels}`
         : `Code, documentation and a recorded test run are there; no confirmed decision is. ${travels}`,
       href: `/project/${projectId}?view=management`,
@@ -888,9 +916,14 @@ export function handoverStillNeeded(
   else if (docs.provenance === 'proposed') add('documentation', 'Documentation read from the code — this one is the earlier, model-written form', 'documentation');
 
   const tests = by('tests');
+  // ADR-094 — testing closed without a passing run is not a gap the handover
+  // waits on; the chain names it "not verified" and it travels with the package.
+  const closed = testingClosureReading(project).state === 'current' && tests.provenanceNote === 'closed by you · not verified';
   if (tests.state === 'open') add('tests', 'An executed test suite — no suite generated yet', 'testing');
   else if (tests.state === 'stale') add('tests', 'A test suite for the current source', 'testing');
-  else if (tests.provenance === 'imported' || tests.provenance === 'confirmed') {
+  else if (closed) {
+    // nothing to add
+  } else if (tests.provenance === 'imported' || tests.provenance === 'confirmed') {
     // ADR-075: a result from your SAP system completes this line only when it
     // verifies the phase — no failure, every scenario with a result.
     const outside = outsideReading(project);
@@ -965,6 +998,8 @@ export function handoverFacets(
     ? { key: 'quality', label: 'Quality', value: 'No tests', sub: 'No test suite generated', provenance: 'not-determined', basis: 'No test cases are on record.' }
     : tests.state === 'stale'
       ? { key: 'quality', label: 'Quality', value: 'Stale', sub: 'Written for a previous source', provenance: 'stale', basis: phase('testing').detail }
+      : phase('testing').closedUnverified
+        ? { key: 'quality', label: 'Quality', value: 'Not verified', sub: 'Testing closed without a passing run', provenance: 'confirmed', basis: phase('testing').detail }
       : tests.provenance === 'demonstrated-mock'
         ? { key: 'quality', label: 'Quality', value: ev.attestedFailures > 0 ? 'Failing' : 'Run on record', sub: `${tests.value} · sandbox, against mocks`, provenance: 'demonstrated-mock', basis: 'A recorded sandbox run against mocks — not an SAP system.' }
         : tests.provenance === 'imported' || tests.provenance === 'confirmed'
