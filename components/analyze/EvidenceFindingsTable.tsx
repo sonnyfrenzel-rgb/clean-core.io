@@ -38,6 +38,8 @@ import {
 import { successorSourceNote } from '@/lib/successor-source';
 import FindingsFocus from './FindingsFocus';
 import ProgramMap from './ProgramMap';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import { analyzeAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
 import ObjectSection from './ObjectSection';
 import SourcePanel from './SourcePanel';
 
@@ -45,7 +47,7 @@ import SourcePanel from './SourcePanel';
  * The body of the Analyze object page — proposal A (owner decision
  * 01.10.2026), with B's program map for "Where in the program":
  *
- *   an anchor bar (sticky under the shell bar), then two columns —
+ *   two columns (the anchor bar above them is the page's, `AnalyzeAnchorBar`) —
  *   main:  the Clean Core Score (passed in), Look here first, Where in the
  *          program, Findings by kind;
  *   side:  the route (passed in) and what was not determined (passed in) —
@@ -162,56 +164,37 @@ function SeverityMix({ rows }: { rows: readonly FindingRow[] }) {
   );
 }
 
-const SECTIONS = [
-  { id: 'analyze-score', label: 'Clean Core Score' },
-  { id: 'analyze-focus', label: 'Look here first' },
-  { id: 'analyze-where', label: 'Where in the program' },
-  { id: 'analyze-kinds', label: 'Findings by kind' },
-] as const;
-
-/** The anchor bar of the object page, with the section in view marked. */
-function AnchorBar({ counts }: { counts: Partial<Record<(typeof SECTIONS)[number]['id'], number>> }) {
-  const [active, setActive] = useState<string>(SECTIONS[0].id);
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return undefined;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActive(visible[0].target.id);
-      },
-      { rootMargin: '-120px 0px -55% 0px' },
-    );
-    for (const s of SECTIONS) {
-      const el = document.getElementById(s.id);
-      if (el) observer.observe(el);
-    }
-    return () => observer.disconnect();
-  }, []);
-  return (
-    <nav
-      aria-label="Sections"
-      data-analyze-anchors=""
-      className="cc-no-print sticky top-14 z-10 -mx-4 border-b border-cc-line bg-cc-surface px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-    >
-      <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
-        {SECTIONS.map((s) => (
-          <li key={s.id} className="shrink-0">
-            <a
-              href={`#${s.id}`}
-              aria-current={active === s.id ? 'location' : undefined}
-              className={clsx(
-                'inline-flex items-center gap-1 border-b-2 px-3 pt-3 pb-2 cc-text-cell whitespace-nowrap text-cc-ink',
-                active === s.id ? 'border-cc-ink font-bold' : 'border-transparent',
-              )}
-            >
-              {s.label}
-              {counts[s.id] !== undefined ? <span className="font-medium text-cc-ink-muted">({counts[s.id]})</span> : null}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+/**
+ * The anchor bar of the Analyze stage (ADR-091): `PageAnchorBar`, the one
+ * in-page bar of every tool, with the sections `lib/page-anchors.ts` names.
+ * The page draws it under the answer, outside this component, so it stays in
+ * view through the two folds below the findings; the counts are read off the
+ * same findings this component lists, by the same rules.
+ */
+export function AnalyzeAnchorBar({
+  findings,
+  sourceLines = 0,
+  score,
+  summary = false,
+}: {
+  findings: readonly EvidenceFinding[];
+  sourceLines?: number;
+  score: number | null;
+  /** A model summary is on record. */
+  summary?: boolean;
+}) {
+  const anchors = useMemo(() => {
+    const rows = findingRows(findings);
+    return analyzeAnchors({
+      score,
+      picks: lookHereFirst(rows).length,
+      // The same condition as "Where in the program" below.
+      where: programMap(rows, sourceLines).length > 0 && sourceLines > 0,
+      findings: rows.length,
+      summary,
+    });
+  }, [findings, sourceLines, score, summary]);
+  return <PageAnchorBar anchors={anchors} label={PAGE_ANCHOR_LABELS.analyze} name="analyze-anchor" plural="analyze-anchors" />;
 }
 
 export default function EvidenceFindingsTable({
@@ -326,9 +309,7 @@ export default function EvidenceFindingsTable({
 
   return (
     <div data-analysis-findings="" className="min-w-0">
-      <AnchorBar counts={{ 'analyze-focus': picks.length, 'analyze-kinds': rows.length }} />
-
-      <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
         <div className="flex min-w-0 flex-col gap-5">
           {scoreSection}
 

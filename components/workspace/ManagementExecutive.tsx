@@ -28,6 +28,7 @@ import InfoPopover from './InfoPopover';
 import { STEERING_TITLE } from '@/lib/steering-one-pager';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import type { DecisionOptionsView, DecisionStage } from '@/lib/decision-option-signals';
+import { raUrl } from '@/lib/sap-reference-architectures';
 import type { ObjectStatusValue } from '@/lib/object-status';
 
 /** Where the decision stands, as the object status beside the answer (ADR-079). */
@@ -635,6 +636,21 @@ export default function ManagementExecutive({
                 {optionsView.who ? (
                   <span data-decision-who="" className="basis-full text-[12px] leading-snug font-medium text-cc-ink-muted">
                     {optionsView.who}
+                  </span>
+                ) : null}
+                {/* The SAP reference pattern of the chosen target — one line,
+                    no card (roadmap 3.0.9, ADR-089). */}
+                {optionsView.reference ? (
+                  <span data-decision-reference="" className="basis-full text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {optionsView.reference.text}
+                    {optionsView.reference.ras.map((id) => (
+                      <span key={id}>
+                        {' '}
+                        <a href={raUrl(id)} target="_blank" rel="noopener noreferrer" className="font-semibold text-cc-ink underline underline-offset-2">
+                          {id}
+                        </a>
+                      </span>
+                    ))}
                   </span>
                 ) : null}
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronRight, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,8 @@ import type { ProvenanceValue, SemanticState } from '@/lib/provenance';
 /**
  * The Delivery tool as an object page — owner decision 01.10.2026, direction A
  * (`scratchpad/design-proposals/proposal-A-delivery.html`): a metaline under
- * the title, four facets, a status line, an anchor bar, then the sections as
+ * the title, four facets, a status line, an anchor bar (`PageAnchorBar`, the
+ * one bar of every tool since ADR-091), then the sections as
  * cards with a side column. The real stage and the demo draw the same pieces;
  * neither decides anything here. Every value arrives as a prop, read on the
  * real stage from `lib/handover.ts` and on the demo from the engine run of
@@ -109,67 +110,6 @@ export function DeliveryStatusLine({ items }: { items: StatusItem[] }) {
         </div>
       ))}
     </dl>
-  );
-}
-
-/* ------------------------------------------------------------- anchor bar */
-
-export interface AnchorItem {
-  id: string;
-  label: string;
-  count?: number;
-}
-
-/**
- * The sections, as a sticky bar under the shell. The section in view is
- * underlined (scroll-spy); a click jumps there. Links, not tabs: every section
- * stays on the page.
- */
-export function DeliveryAnchorBar({ items }: { items: AnchorItem[] }) {
-  const [current, setCurrent] = useState(items[0]?.id ?? '');
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return undefined;
-    const seen = new Map<string, boolean>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) seen.set(e.target.id, e.isIntersecting);
-        const first = items.find((i) => seen.get(i.id));
-        if (first) setCurrent(first.id);
-      },
-      { rootMargin: '-120px 0px -55% 0px' },
-    );
-    for (const i of items) {
-      const el = document.getElementById(i.id);
-      if (el) observer.observe(el);
-    }
-    return () => observer.disconnect();
-  }, [items]);
-
-  return (
-    <nav
-      aria-label="Sections"
-      data-delivery-anchors=""
-      className="cc-no-print sticky top-14 z-20 -mx-4 border-b border-cc-line bg-cc-surface px-4 md:mx-0 md:px-0"
-    >
-      <div className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
-        {items.map((i) => (
-          <a
-            key={i.id}
-            href={`#${i.id}`}
-            aria-current={current === i.id ? 'location' : undefined}
-            onClick={() => setCurrent(i.id)}
-            className={cn(
-              'border-b-2 px-3 pt-3 pb-3 text-[13px] whitespace-nowrap text-cc-ink no-underline',
-              current === i.id ? 'border-cc-ink font-bold' : 'border-transparent font-medium hover:border-cc-line',
-            )}
-          >
-            {i.label}
-            {i.count !== undefined ? <span className="ml-1 font-medium text-cc-ink-muted">({i.count})</span> : null}
-          </a>
-        ))}
-      </div>
-    </nav>
   );
 }
 

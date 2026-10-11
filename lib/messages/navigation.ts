@@ -24,6 +24,8 @@ export const NAVIGATION_MESSAGES = {
   'nav.allProjects': 'all projects',
   'nav.goToMyWorkspace': 'Go to My workspace',
   'nav.backToProjectWorkspace': 'Back to project workspace',
+  // The eyebrow of every in-page anchor bar (`components/PageAnchorBar.tsx`, ADR-091): one wording on every tool.
+  'nav.onThisPage': 'On this page',
 } as const;
 
 export type NavigationMessageKey = keyof typeof NAVIGATION_MESSAGES;

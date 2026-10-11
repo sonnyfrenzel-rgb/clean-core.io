@@ -19,7 +19,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import ArchitectSignOff, { architectureOptionLabel, type TargetArchitecture } from '@/components/ArchitectSignOff';
-import { recommendedArchitecture } from '@/lib/project-commands';
+import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
@@ -1297,6 +1297,13 @@ ${DESIGN_ANSWER_REMINDER}`;
                   cleanCoreScore={project?.cleanCoreScore}
                   s4Deployment={project?.s4Deployment}
                   findings={findings}
+                  // The SAP reference row names the signed-off target, else the
+                  // recommendation the card names (roadmap 3.0.9).
+                  targetArchitecture={
+                    signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
+                      ? project.targetArchitecture
+                      : recommendation
+                  }
                 />
               </SectionBoundary>
             ) : null

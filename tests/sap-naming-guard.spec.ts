@@ -49,6 +49,9 @@ import { FEATURE_SLUGS } from '../lib/features-content';
  * stored route value `SIDE_BY_SIDE_ROUTE`, a data contract that projects, runs
  * and signed packs carry. `lib/abap/generated/` is not read either: it is SAP's
  * catalog, synced from SAP's repository, and the roadmap keeps it unchanged.
+ * `lib/generated/sap-architecture-center.json` is not read for the same reason:
+ * the titles of SAP's reference architectures, synced as SAP writes them
+ * (scripts/sync-sap-architecture-center.ts, roadmap 3.0.9).
  * Comments are not read — they are not shown.
  */
 
@@ -56,6 +59,7 @@ const ROOT = path.resolve(__dirname, '..');
 const SOURCE_DIRS = ['app', 'components', 'lib', 'hooks'];
 const HELPER = path.join('lib', 'sap-naming.ts');
 const SAP_CATALOG_DATA = path.join('lib', 'abap', 'generated') + path.sep;
+const SAP_ARCHITECTURE_DATA = path.join('lib', 'generated', 'sap-architecture-center.json');
 const TEXT_EXT = /\.(html?|txt|vtt|md|json|xml|svg|csv)$/i;
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -129,7 +133,7 @@ test.describe('SAP naming (roadmap 3.0.15) — source', () => {
     for (const dir of SOURCE_DIRS) {
       for (const full of walk(path.join(ROOT, dir))) {
         const rel = path.relative(ROOT, full);
-        if (rel === HELPER || rel.startsWith(SAP_CATALOG_DATA)) continue;
+        if (rel === HELPER || rel.startsWith(SAP_CATALOG_DATA) || rel === SAP_ARCHITECTURE_DATA) continue;
         if (/\.(tsx?|mjs|js)$/.test(rel)) {
           files++;
           for (const { line, text } of textsOf(full)) {

@@ -146,7 +146,8 @@ test.describe('the demo Transformation renders the Object Page', () => {
     await expect(tool.locator('[data-transformation-facet="Released successors"]')).toContainText(`of ${distinctFindings} named`);
     await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${distinctFindings} FINDINGS`);
     await expect(tool.locator('[data-code-status]')).toContainText(`${distinctFindings} findings at ${places} places in the code`);
-    await expect(tool.locator('a[href="#tf-changes"]')).toContainText(`(${distinctFindings})`);
+    // The anchor bar's count chip (PageAnchorBar, ADR-091) — the number alone, no parentheses.
+    await expect(tool.locator('a[href="#tf-changes"] [data-tf-anchor-count]')).toHaveText(String(distinctFindings));
     await expect(tool).not.toContainText(`${places} findings`);
     await expect(tool.locator('[data-demo-package]')).toContainText('The demo stops where the model begins');
     // No generated file is shown in a demo.

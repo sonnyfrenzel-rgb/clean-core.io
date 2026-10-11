@@ -279,6 +279,74 @@ test.describe('every stage stays on the type scale', () => {
   });
 });
 
+/**
+ * The "On this page" bar sits in the same place on every tool that has one
+ * (ADR-091) — the rendered half of `tests/page-anchor-guard.spec.ts`.
+ *
+ * The four bars it replaced each stood somewhere else: Analyze's inside the
+ * findings (sticky only until the list ended), Transformation's and Testing's
+ * bled into the gutter with negative margins, Delivery's had its own surface.
+ * Here, on a used project at desktop width: the bar starts at the frame's x
+ * and spans the frame, sticks 56 px from the top (under the shell bar), says
+ * "On this page", stands above every section it names, and is still in view
+ * after scrolling to the last of them. Design and Economics have none.
+ */
+test.describe('the "On this page" bar stands in the same place on every tool', () => {
+  test('same x, full width, sticky under the shell bar, above its sections — and none on Design or Economics', async ({ page }) => {
+    test.setTimeout(6 * 60 * 1000);
+    const seeded = await seedStageProject({ prefix: 'stagebar', admin: true, acceptTerms: true, rich: true });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, { email: seeded.email, password: seeded.password });
+
+    const WITH_BAR = ['analyze', 'transformation', 'testing', 'delivery'];
+    const offSpec: string[] = [];
+    for (const stage of STAGES) {
+      await page.goto(`/project/${seeded.projectId}/${stage}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
+      await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
+      const bars = page.locator('[data-page-anchors]');
+      if (!WITH_BAR.includes(stage) && stage !== 'documentation') {
+        await expect(bars, `${stage} carries an anchor bar (ADR-091 says none)`).toHaveCount(0);
+        continue;
+      }
+      // Documentation draws its chapter bar once a description is on record.
+      if (stage === 'documentation' && (await bars.count()) === 0) continue;
+      await expect(bars, `${stage}: no "On this page" bar`).toHaveCount(1);
+      const m = await page.evaluate(() => {
+        const bar = document.querySelector('[data-page-anchors]') as HTMLElement;
+        const frame = document.querySelector('[data-stage-frame]') as HTMLElement;
+        const b = bar.getBoundingClientRect();
+        const f = frame.getBoundingClientRect();
+        const s = getComputedStyle(bar);
+        const targets = Array.from(bar.querySelectorAll('a[href^="#"]')).map((a) => (a.getAttribute('href') || '').slice(1));
+        const missing = targets.filter((id) => !document.getElementById(id));
+        const tops = targets.map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? Infinity);
+        return {
+          left: b.left, width: b.width, frameLeft: f.left, frameWidth: f.width,
+          position: s.position, top: s.top, text: bar.textContent || '', missing, targets,
+          aboveAll: tops.every((top) => top >= b.bottom - 1),
+        };
+      });
+      if (Math.abs(m.left - m.frameLeft) > 1) offSpec.push(`${stage}: the bar starts at x=${m.left}, the frame at ${m.frameLeft}`);
+      if (Math.abs(m.width - m.frameWidth) > 1) offSpec.push(`${stage}: the bar is ${m.width} px wide, the frame ${m.frameWidth}`);
+      if (m.position !== 'sticky' || m.top !== '56px') offSpec.push(`${stage}: the bar is ${m.position} at ${m.top}, wants sticky at 56px`);
+      if (!m.text.includes('On this page')) offSpec.push(`${stage}: the bar does not say "On this page"`);
+      if (m.missing.length) offSpec.push(`${stage}: the bar names sections that are not on the page: ${m.missing.join(', ')}`);
+      if (!m.aboveAll) offSpec.push(`${stage}: the bar stands below a section it names`);
+
+      // Still in view at the last section it names: it was not left behind in a container that ended earlier.
+      const last = m.targets.at(-1);
+      if (last) {
+        await page.evaluate((id) => document.getElementById(id)?.scrollIntoView({ block: 'start' }), last);
+        await page.waitForTimeout(300);
+        const top = await bars.evaluate((el) => el.getBoundingClientRect().top);
+        if (Math.abs(top - 56) > 2) offSpec.push(`${stage}: scrolled to #${last}, the bar is at y=${top}, not under the shell bar`);
+      }
+    }
+    expect(offSpec, 'the "On this page" bar is off its place').toEqual([]);
+  });
+});
+
 test.describe('"Back to workspace" leads to the view and layer the stage was opened from (QA 472315d93455, e5483b2e4ca7)', () => {
   test('view and layer are kept, anything unknown is dropped, and the way back is always the workspace', () => {
     expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it&from=it-answers-heading' })).toBe(

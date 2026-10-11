@@ -251,7 +251,6 @@ export function DocumentChapterBar({ document: doc, openQuestions = null, classN
     <PageAnchorBar
       anchors={anchors}
       label={wt('doc.chaptersLabel')}
-      lead={wt('doc.chaptersLead')}
       name="doc-chapter"
       plural="doc-chapters"
       className={cn('mb-3', className)}

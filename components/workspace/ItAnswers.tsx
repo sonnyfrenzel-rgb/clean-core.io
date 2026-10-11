@@ -952,7 +952,6 @@ function ItAnchorBar({ anchors }: { anchors: ItAnchor[] }) {
     <PageAnchorBar
       anchors={anchors.map((a) => ({ key: a.key, target: IT_SECTION_IDS[a.key], label: a.label, count: a.count }))}
       label={wt('itv.anchorsLabel')}
-      lead={wt('itv.anchorsLead')}
       name="it-anchor"
       plural="it-anchors"
       className="mt-4"

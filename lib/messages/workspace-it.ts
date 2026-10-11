@@ -58,7 +58,6 @@ export const WORKSPACE_IT_MESSAGES = {
   // The IT view's own sections (owner decision 10.10.2026, ADR-086): its
   // anchor bar, the merged objects table, Run & trust and the links out.
   'itv.anchorsLabel': 'Sections of the IT view',
-  'itv.anchorsLead': 'On this page',
   'itv.anchorFindings': 'Findings',
   'itv.anchorObjects': 'Objects & dependencies',
   'itv.anchorQuestions': 'Open questions',

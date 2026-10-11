@@ -15,6 +15,8 @@ import { useSignedInUid } from '@/components/workspace/BusinessRulesEditor';
 import type { Project } from '@/lib/types';
 import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import { PAGE_ANCHOR_LABELS, testingAnchors } from '@/lib/page-anchors';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -1230,6 +1232,21 @@ export default function TestingSandboxPage() {
           ]}
         />
       ) : null}
+
+      {/* The tool's anchor bar (ADR-091) — the steps and sections below, under
+          the header and its figures, before the first step. Its own element
+          under the frame, so it stays in view down to the last section. */}
+      <PageAnchorBar
+        anchors={testingAnchors({
+          scenarios: testCases.length,
+          handChecks: program ? program.gaps.length : null,
+          sapResult: isAbapCloud && testCases.length > 0,
+        })}
+        label={PAGE_ANCHOR_LABELS.testing}
+        name="testing-anchor"
+        plural="testing-anchors"
+        className="mb-3"
+      />
 
       {/* One guided flow instead of tabs, a segmented switch and cards inside
           them: write → run → check by hand, each a numbered step that says

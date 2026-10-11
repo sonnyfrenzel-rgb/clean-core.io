@@ -6,6 +6,9 @@ import type { SupportFinding } from '@/lib/abap/class-model';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import { bandRange, scoreBand } from '@/lib/clean-core-score';
 import { BTP, SIDE_BY_SIDE_LABEL, isSideBySideRoute } from '@/lib/sap-naming';
+import type { TargetArchitectureCode } from '@/lib/project-commands';
+import { REFERENCE_OF_TARGET, REFERENCE_WORDING, eventSourceSentence } from '@/lib/sap-reference-architectures';
+import { SapReferenceList } from '@/components/design/SapReference';
 
 interface RoutingRationaleProps {
   /** Optional: absent on runs created before the extensibility router (pre-v1.14). */
@@ -14,6 +17,13 @@ interface RoutingRationaleProps {
   s4Deployment?: 'public' | 'private';
   /** Optional: defaults to [] — never crash the page on legacy runs. */
   findings?: SupportFinding[];
+  /**
+   * The target the "SAP reference" row names (roadmap 3.0.9): the signed-off
+   * target, else the recommendation. Without it the row reads the route —
+   * `cap` side-by-side, `rap` in-app. The row only reads the target; it never
+   * changes the route, its drivers or the score.
+   */
+  targetArchitecture?: TargetArchitectureCode | null;
 }
 
 /**
@@ -26,6 +36,7 @@ export default function RoutingRationale({
   cleanCoreScore,
   s4Deployment,
   findings = [],
+  targetArchitecture = null,
 }: RoutingRationaleProps) {
   // Guard: legacy projects/runs analyzed before the extensibility router carry no
   // route on the run document. Render nothing instead of crashing the page —
@@ -46,6 +57,7 @@ export default function RoutingRationale({
   if (!extensibilityRoute) return null;
 
   const isBtp = isSideBySideRoute(extensibilityRoute);
+  const target: TargetArchitectureCode = targetArchitecture ?? (isBtp ? 'cap' : 'rap');
 
   return (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
@@ -104,6 +116,22 @@ export default function RoutingRationale({
                 : 'Not specified'}
           </span>
         </div>
+      </div>
+
+      {/* SAP reference (roadmap 3.0.9, ADR-089): the pattern SAP documents for
+          the target — badge, linked title, SAP's date, and the reason beside
+          the badge, not in a tooltip. Read after the route, never before it. */}
+      <div data-routing-sap-reference={target} className="mb-8 bg-cc-surface-muted border border-cc-line rounded-cc-row p-4">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-2">
+          <span className="cc-text-label text-cc-ink-muted">SAP reference</span>
+          <span className="cc-text-meta text-cc-ink-muted">— {REFERENCE_WORDING}, not a statement by SAP about this code</span>
+        </div>
+        <SapReferenceList bindings={REFERENCE_OF_TARGET[target]} />
+        {target === 'event' ? (
+          <p data-routing-event-source="" className="m-0 mt-2 cc-text-cell text-cc-ink">
+            {eventSourceSentence(s4Deployment)}
+          </p>
+        ) : null}
       </div>
 
       {/* Key evidence findings */}

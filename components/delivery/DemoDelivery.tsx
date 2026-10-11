@@ -13,8 +13,9 @@ import { catalogForReader } from '@/lib/messages/demo';
 import type { DemoProject } from '@/lib/demo-project';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import { deliveryAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
 import {
-  DeliveryAnchorBar,
   DeliveryArtefactCard,
   DeliveryChainBoxes,
   DeliveryFacets,
@@ -123,12 +124,12 @@ export default function DemoDelivery({
         />
       </div>
 
-      <DeliveryAnchorBar
-        items={[
-          { id: 'evidence-chain', label: 'Evidence chain' },
-          { id: 'still-needed', label: 'Still needed', count: missing.length },
-          { id: 'artefacts', label: 'Artefacts', count: 4 },
-        ]}
+      {/* The tool's anchor bar, as on a project (ADR-091). */}
+      <PageAnchorBar
+        anchors={deliveryAnchors({ stillNeeded: missing.length, artefacts: 4, pack: 'Not available', slides: false })}
+        label={PAGE_ANCHOR_LABELS.delivery}
+        name="delivery-anchor"
+        plural="delivery-anchors"
       />
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -251,6 +252,7 @@ export default function DemoDelivery({
 
         <aside className="flex min-w-0 flex-col gap-4" aria-label="Audit pack and signature">
           <DeliverySection
+            id="audit-pack"
             title="Audit pack"
             meta={
               <span

@@ -20,6 +20,7 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import NextStepCard from './NextStepCard';
 import UsageRecords from './UsageRecords';
 import BusinessNextStep from './BusinessNextStep';
+import TargetReferenceLine from './TargetReferenceLine';
 import WorkspaceHub from './WorkspaceHub';
 import BusinessRulesEditor, { BUSINESS_RULES_ID, useIsOwner } from './BusinessRulesEditor';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
@@ -892,6 +893,7 @@ export default function WorkspaceShell({
         </div>
         {/* Business: the target and its SAP reference pattern, one line
             (roadmap 3.0.9, ADR-089). Management says it beside the decision. */}
+        {view === 'business' ? <TargetReferenceLine project={project} /> : null}
       </div>
     ),
     // Business only: the business rules, once, in their own card under the map

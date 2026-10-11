@@ -70,6 +70,14 @@ import type { StandardFit } from './standard-fit';
 import type { ProvenanceValue } from './provenance';
 import { formatDays } from './format';
 import { measuredCount } from './usage-count';
+import type { TargetArchitectureCode } from './project-commands';
+import { REFERENCE_OF_TARGET, referencePatternLine, type SapRaId } from './sap-reference-architectures';
+
+/** The one reference line of a chosen target (ADR-089). */
+function referenceOf(code: TargetArchitectureCode): { text: string; ras: SapRaId[] } {
+  const line = referencePatternLine(code);
+  return { text: line.text, ras: line.ras };
+}
 
 export type OptionSignal = 'for' | 'against' | 'not-determined';
 
@@ -127,6 +135,12 @@ export interface DecisionOptionsView {
   cards: OptionCard[];
   /** The Economics revision every amount comes from, or `null` when none is stored. */
   costRevision: string | null;
+  /**
+   * "SAP-documented pattern for this target: yes · partly · none" for the
+   * chosen option's target (roadmap 3.0.9, ADR-089) — the one line beside the
+   * answer; `null` while no option is chosen.
+   */
+  reference: { text: string; ras: SapRaId[] } | null;
 }
 
 export interface DecisionOptionsSource {
@@ -466,5 +480,6 @@ export function decisionOptionsView(src: DecisionOptionsSource): DecisionOptions
     proposed,
     cards,
     costRevision: src.economics?.revision ?? null,
+    reference: chosen && chosenCode !== null && chosenCode in REFERENCE_OF_TARGET ? referenceOf(chosenCode as TargetArchitectureCode) : null,
   };
 }

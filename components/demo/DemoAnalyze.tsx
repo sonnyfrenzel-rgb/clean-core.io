@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
-import EvidenceFindingsTable, { type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
+import EvidenceFindingsTable, { AnalyzeAnchorBar, type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import RouteCard from '@/components/analyze/RouteCard';
@@ -173,6 +173,9 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
           { key: 'successors', label: 'Successors', value: rows.length ? `${withSuccessor(rows)} of ${rows.length} named` : 'no finding', dot: 'bg-cc-chart-3' },
         ]}
       />
+
+      {/* The tool's anchor bar, as on a project (ADR-091). The demo has no model summary, so no anchor for it. */}
+      <AnalyzeAnchorBar findings={a.findings} sourceLines={sourceLines} score={a.cleanCoreScore} />
 
       <EvidenceFindingsTable
         findings={a.findings}

@@ -117,7 +117,6 @@ export const DOCUMENTATION_MESSAGES = {
 
   // Owner review 10.10.2026 — the chapter bar (the IT view's anchor bar, ADR-086): seven chapters, the reader question as each chip's tooltip.
   'doc.chaptersLabel': 'Chapters of the process description',
-  'doc.chaptersLead': 'On this page',
   'doc.chapterOverview': 'How it works',
   'doc.chapterRules': 'Rules',
   'doc.chapterExceptions': 'Exceptions',

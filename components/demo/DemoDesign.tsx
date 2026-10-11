@@ -177,6 +177,7 @@ export default function DemoDesign({
               cleanCoreScore={demo.design.cleanCoreScore}
               s4Deployment={demo.deployment}
               findings={findings}
+              targetArchitecture={code}
             />
           </SectionBoundary>
         }

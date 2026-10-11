@@ -33,6 +33,8 @@ import {
 } from '@/lib/transformation-view';
 import TransformationFlowChart, { TARGET_COLOUR } from './TransformationFlow';
 import { successorSourceNote } from '@/lib/successor-source';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import { PAGE_ANCHOR_LABELS, transformationAnchors } from '@/lib/page-anchors';
 
 /**
  * The Transformation tool as a Fiori Object Page — proposal A of 01.10.2026,
@@ -348,13 +350,8 @@ export default function TransformationObjectPage({
   const shown = allChanges ? ordered : ordered.slice(0, FIRST_CHANGES);
   const maxKind = Math.max(1, ...kinds.map((k) => k.total));
 
-  const anchors: Array<[string, string, number | undefined]> = [
-    ['tf-flow', 'Code to package', undefined],
-    ['tf-package', 'Generated package', files === null ? undefined : files.length],
-    ['tf-changes', 'From finding to change', figures.findings],
-    ['tf-plan', 'Plan by kind', kinds.length],
-    ...extraAnchors.map(([id, label]) => [id, label, undefined] as [string, string, number | undefined]),
-  ];
+  // The tool's anchor bar (ADR-091): the sections `lib/page-anchors.ts` names, by the same counts as the sections.
+  const anchors = transformationAnchors({ files: files === null ? null : files.length, findings: figures.findings, kinds: kinds.length, extra: extraAnchors });
 
   // The facet's bar: findings per target, in the flow's colours.
   const stack = flow.targets.map((t) => ({ kind: t.kind, count: t.count, label: t.label }));
@@ -465,27 +462,13 @@ export default function TransformationObjectPage({
         ) : null}
       </p>
 
-      <nav
-        aria-label="Sections of this tool"
-        className="sticky top-14 z-cc-popover -mx-4 mt-3 border-b border-cc-line bg-cc-surface px-4 sm:mx-0 sm:px-0"
-      >
-        <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
-          {anchors.map(([id, label, count], i) => (
-            <li key={id} className="shrink-0">
-              <a
-                href={`#${id}`}
-                className={cn(
-                  'inline-block whitespace-nowrap border-b-2 px-3 pb-2 pt-3 text-[14px] text-cc-ink no-underline',
-                  i === 0 ? 'border-cc-ink font-bold' : 'border-transparent font-medium hover:border-cc-line',
-                )}
-              >
-                {label}
-                {count !== undefined ? <span className="ml-1 cc-text-meta font-medium text-cc-ink-muted">({count})</span> : null}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <PageAnchorBar
+        anchors={anchors}
+        label={PAGE_ANCHOR_LABELS.transformation}
+        name="tf-anchor"
+        plural="tf-anchors"
+        className="mt-3"
+      />
 
       {/* The big picture runs across both columns (proposal A: images full width). */}
       <div className="mt-5">

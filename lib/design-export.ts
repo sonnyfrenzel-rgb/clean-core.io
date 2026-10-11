@@ -22,14 +22,99 @@ import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { EXPORT_CSS } from '@/lib/export-style';
 import { SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { isTargetArchitecture, recommendedArchitecture, type TargetArchitectureCode } from '@/lib/project-commands';
+import { getCloudServiceKey } from '@/lib/cloud-service-key';
+import {
+  ARCHITECTURE_CENTER_SOURCE,
+  FIT_LABEL,
+  REFERENCE_OF_SERVICE,
+  REFERENCE_OF_TARGET,
+  REFERENCE_WORDING,
+  SAP_REFERENCE_ARCHITECTURES,
+  VERIFIED_AT,
+  eventSourceSentence,
+  raUrl,
+  type ReferenceBinding,
+} from '@/lib/sap-reference-architectures';
 
 /** The stylesheet every stage export shares (`lib/export-style.ts`). */
 const baseCSS = EXPORT_CSS;
+
+/** The target the reference section names: the signed-off target, else the recommendation. */
+function exportTarget(project: Project): { code: TargetArchitectureCode; basis: string } | null {
+  if (project.approvedByArchitect === true && isTargetArchitecture(project.targetArchitecture)) {
+    return { code: project.targetArchitecture, basis: 'signed off in Design' };
+  }
+  const code = recommendedArchitecture(project);
+  return code ? { code, basis: 'recommended by the analysis' } : null;
+}
+
+/** One binding as a table row: RA ID and title (linked), fit, reason, SAP's date and our verification date. */
+function referenceRow(b: ReferenceBinding): string {
+  const ra = b.ra ? SAP_REFERENCE_ARCHITECTURES[b.ra] : null;
+  return `
+          <tr>
+            <td class="mono strong">${ra ? `<a href="${escapeHtml(raUrl(ra.id))}">${escapeHtml(ra.id)}</a>` : '—'}</td>
+            <td>${ra ? escapeHtml(ra.title) : '—'}</td>
+            <td class="strong">${escapeHtml(FIT_LABEL[b.fit])}</td>
+            <td class="muted">${escapeHtml(b.why)}</td>
+            <td class="mono">${ra ? escapeHtml(ra.lastUpdate) : '—'}</td>
+            <td class="mono">${escapeHtml(b.verifiedAt)}</td>
+          </tr>`;
+}
+
+/**
+ * "SAP reference pattern for the target" (roadmap 3.0.9, ADR-089): the RA ID
+ * and our verification date beside the target. Read from the hand-curated
+ * mapping; it changes neither the route nor the score, and it is not part of
+ * the signed audit pack.
+ */
+export function designReferenceSection(project: Project): string {
+  const target = exportTarget(project);
+  const intro = `<p class="muted">${escapeHtml(REFERENCE_WORDING)} — the pattern SAP documents for this kind of target in the SAP Architecture Center (${escapeHtml(ARCHITECTURE_CENTER_SOURCE.license)}), checked on ${escapeHtml(VERIFIED_AT)}. Not a statement by SAP about this code, and not a reason for the route.</p>`;
+  if (!target) {
+    return `<h2>${escapeHtml(REFERENCE_WORDING)}</h2>${intro}<p>No target architecture is known for this project, so no pattern is named.</p>`;
+  }
+  const rows = REFERENCE_OF_TARGET[target.code].map(referenceRow).join('');
+  const event = target.code === 'event' ? `<p>${escapeHtml(eventSourceSentence(project.s4Deployment))}</p>` : '';
+  return `
+            <h2>${escapeHtml(REFERENCE_WORDING)}</h2>
+            ${intro}
+            <p><strong>Target:</strong> <span class="mono">${escapeHtml(target.code)}</span> (${escapeHtml(target.basis)})</p>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 10%;">RA</th>
+                  <th style="width: 25%;">Title</th>
+                  <th style="width: 12%;">Fit</th>
+                  <th>Why</th>
+                  <th style="width: 11%;">Updated by SAP</th>
+                  <th style="width: 10%;">Verified</th>
+                </tr>
+              </thead>
+              <tbody>${rows}
+              </tbody>
+            </table>
+            ${event}`;
+}
+
+/** One service's reference, as a line on its card. */
+function serviceReference(serviceName: string): string {
+  const linked = REFERENCE_OF_SERVICE[getCloudServiceKey(serviceName)].filter((b) => b.ra !== null);
+  if (linked.length === 0) return 'none';
+  return linked
+    .map((b) => {
+      const ra = SAP_REFERENCE_ARCHITECTURES[b.ra!];
+      return `<a href="${escapeHtml(raUrl(ra.id))}">${escapeHtml(ra.id)}</a> (${escapeHtml(FIT_LABEL[b.fit].toLowerCase())}, verified ${escapeHtml(b.verifiedAt)})`;
+    })
+    .join(' · ');
+}
 
 /** The design page as one HTML string, or `null` when there is no design. */
 export function buildDesignExportHtml(currentProject: Project): string | null {
   if (!currentProject?.solutionDesign) return null;
   const esc = escapeHtml;
+  const referenceSection = designReferenceSection(currentProject);
 
   let htmlContent = '';
 
@@ -70,15 +155,20 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
         </tr>
       `).join('') || '';
 
-    const servicesCards = data.cloudServices?.map(svc => `
+    const servicesCards = data.cloudServices?.map(svc => {
+      // Built by us from the hand-curated mapping, escaped inside (ADR-089).
+      const serviceReferenceSection = serviceReference(String(svc.serviceName ?? ''));
+      return `
         <div class="card">
           <h4>${esc(svc.serviceName)}</h4>
           <p class="muted">${esc(svc.purpose)}</p>
           <div class="meta">
             <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code>${esc(pkg)}</code>`).join(', ') || 'None'}
           </div>
+          <div class="meta"><strong>SAP reference pattern:</strong> ${serviceReferenceSection}</div>
         </div>
-      `).join('') || '';
+      `;
+    }).join('') || '';
 
     const securityRows = data.securityHardening?.map(item => `
         <tr>
@@ -144,6 +234,8 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
               <h3>Architectural Approach</h3>
               <p>${esc(data.architectureOverview?.approachDescription)}</p>
             </div>
+
+            ${referenceSection}
 
             <h2>${onStack ? 'ABAP Cloud (RAP) Artifact Blueprint' : 'Side-by-Side Node.js Project Blueprint'}</h2>
             <p>Recommended folder and file organization for the transformed extension:</p>
@@ -223,6 +315,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
           </div>
           <div class="content">
             ${renderMarkdownSafe(currentProject.solutionDesign)}
+            ${referenceSection}
           </div>
         </body>
         </html>

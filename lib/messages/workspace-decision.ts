@@ -40,6 +40,10 @@ export const WORKSPACE_DECISION_MESSAGES = {
   'decide.place.fit': 'See what stands in the way',
   'decide.statusFacet': 'Decision',
   'decide.otherEdition': 'The other edition',
+  // Roadmap 3.0.9 (ADR-089): the one line on the SAP reference pattern of the target.
+  'decide.refTarget': 'Target',
+  'decide.refSignedOff': 'confirmed in Design',
+  'decide.refRecommended': 'recommended by the analysis',
 } as const;
 
 /** "Choose Keep?" */

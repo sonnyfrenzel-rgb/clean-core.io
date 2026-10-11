@@ -268,7 +268,10 @@ From top to bottom:
    keyboard-reachable "What the tools do" at the end of the line under the bar opens all seven purposes at once —
    no "i" after each tool (04.10.2026); the phone menu prints it under each tool; the tool the phase contract names
    next carries a "Next" tag, and the line under the bar says which tool is next and what it does, beside the legend
-   (ADR-060, 03.10.2026, 04.10.2026).
+   (ADR-060, 03.10.2026, 04.10.2026). Until this browser has opened Analyze once for the project, a done Analyze
+   carries a "Result ready" tag in the information colour beside its check, and the Business work area says "Your
+   analysis is ready" with the signed run's figures and a secondary "Read the analysis" — a pointer kept in the
+   browser only, never a phase state: the next step stays the phase contract's (ADR-090).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls (*Changes & commitments* is no layer since ADR-087: it held a hard-coded
    "empty" beside a decision with a timeline; `#changes` leads to that decision). Every layer is a tab, the filled
@@ -326,7 +329,11 @@ the workspace (ADR-060): the seven tools with their marks and the legend, the st
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
 It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
 footer are gone (ADR-061). Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
-stay, in the scale of §1.2 (micro label, body text).
+stay, in the scale of §1.2 (micro label, body text). A tool with several long sections carries the **"On this page" bar** (ADR-091) — the IT view's anchor
+bar, `PageAnchorBar`, the same on every tool: under the header and the page's answer, before the first section, at the
+frame's full width, sticky under the shell bar, the section being read marked. Analyze, Transformation, Documentation,
+Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
+navigation) do not.
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A
@@ -1182,6 +1189,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |
 | 1.8.10 | 10.10.2026 | The Management view shows only its own content (ADR-087, owner 10.10.2026, amending ADR-018, ADR-069 and ADR-080): no layer bar and no anchor bar; the decision, the distance to SAP standard with the readiness trend beside it, one Evidence fold that always starts closed, one row of links out; the four foundations and the open conditions one list; each fact once; layer addresses in Management go where the content lives now; Changes & commitments is no layer (§2.3 item 4, the navigation table, §2.11, §5.5, §5.6). The steering one-pager prints as one A4 landscape sheet without browser header or footer (ADR-088, §7.1) |
 | 1.8.9 | 10.10.2026 | The IT view shows only its own content (ADR-086, owner 10.10.2026, amending ADR-018): no layer bar but its own anchor bar over Findings · Objects & dependencies · Open questions · Route · Run & trust, never an "empty" chip; "What the code uses" and the Architecture layer are one table, Objects & dependencies; the Evidence layer is a compact Run & trust card in the side column; the first look, "Ask this case" and Changes & commitments leave IT; one quiet row of links out to Business, Economics and Management; layer addresses in IT go where the content lives now (§2.3 item 4, §2.11). Written back: since 03.10.2026 every layer is a tab, an empty one marked "empty" — there is no "More" menu (§2.3 item 4, §2.11) |
 | 1.8.8 | 09.10.2026 | Need & process leaves the Business view, which opens on its map with the usage records beside it (ADR-080); *Not determined* becomes one list of open questions per project, grouped by the action that resolves each, and one line everywhere else (ADR-081, §5.5, §6.1) |

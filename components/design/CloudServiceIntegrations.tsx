@@ -7,6 +7,9 @@ import CcDialog from '@/components/cc/Dialog';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
+import { SapReferenceInline, SapReferenceList } from '@/components/design/SapReference';
+import { REFERENCE_OF_SERVICE } from '@/lib/sap-reference-architectures';
+import { getCloudServiceKey, type CloudServiceKey } from '@/lib/cloud-service-key';
 
 /** A snippet as plain lines for the code surface — no highlighting is claimed. */
 function snippetLines(code: string): CcCodeLine[] {
@@ -28,7 +31,7 @@ interface CloudServiceIntegrationsProps {
   embedded?: boolean;
 }
 
-export const cloudServiceDetails: Record<string, {
+export const cloudServiceDetails: Record<CloudServiceKey, {
   title: string;
   details: string;
   whyCritical: string;
@@ -339,43 +342,9 @@ try {
   }
 };
 
-/**
- * "SAP S/4HANA …" is the ERP system, not a database service. The substring `hana`
- * sits inside it, so any rule that matches on `hana` alone claims every S/4HANA
- * destination, OData service and extension name as a database.
- */
-const S4 = /s\/?4\s*hana/;
+export { getCloudServiceKey };
 
-export const getCloudServiceDetails = (serviceName: string) => {
-  const name = serviceName.toLowerCase();
-  // BTP / Node.js services
-  if (name.includes('xsuaa') || (name.includes('identity') && !name.includes('iam'))) return cloudServiceDetails.xsuaa;
-  if (name.includes('destination') || name.includes('connectivity') || name.includes('sdk')) return cloudServiceDetails.destination;
-  if (name.includes('mesh') || name.includes('messaging') || name.includes('amqp')) return cloudServiceDetails.eventmesh;
-  /*
-   * One rule used to read `postgres || hana || database` and return the PostgreSQL
-   * guide for all three. "SAP HANA Cloud Database" therefore handed an architect the
-   * `pg` package, PostgreSQL credentials and a PostgreSQL connection — for a service
-   * that speaks none of it (QA 62c08912d745, 498a8c35f988). The guide was not merely
-   * unhelpful; it was copyable, and it cannot connect.
-   *
-   * So each database is matched by its own name, and a service that only says
-   * "database" gets the generic binding guide at the bottom rather than a driver
-   * picked by guesswork. Naming the wrong client is worse than naming none.
-   */
-  if (name.includes('postgres')) return cloudServiceDetails.postgresql;
-  if (name.includes('hana') && !S4.test(name)) return cloudServiceDetails.hanaCloud;
-  // A database with no vendor in its name: the generic service-binding guide,
-  // before the RAP branch below can read the word "service" in it.
-  if (name.includes('database') || /\bdb\b/.test(name)) return cloudServiceDetails.default;
-  // SAP-native / RAP services
-  if (name.includes('cds') || name.includes('view') || name.includes('i_') || name.includes('projection')) return cloudServiceDetails.cdsView;
-  if (name.includes('iam') || name.includes('role') || name.includes('auth')) return cloudServiceDetails.iamRoles;
-  if (name.includes('luw') || name.includes('transaction') || name.includes('session')) return cloudServiceDetails.luwManager;
-  if (name.includes('badi') || name.includes('enhancement') || name.includes('exit')) return cloudServiceDetails.badi;
-  if (name.includes('service') || name.includes('srvb') || name.includes('srvd') || name.includes('rap') || name.includes('odata')) return cloudServiceDetails.rapService;
-  return cloudServiceDetails.default;
-};
+export const getCloudServiceDetails = (serviceName: string) => cloudServiceDetails[getCloudServiceKey(serviceName)];
 
 export default function CloudServiceIntegrations({ cloudServices, embedded = false }: CloudServiceIntegrationsProps) {
   const [activeService, setActiveService] = useState<CloudService | null>(null);
@@ -422,6 +391,8 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
               <div className="min-w-0">
                 <h4 className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">{service.serviceName}</h4>
                 <p className="m-0 cc-text-cell text-cc-ink">{service.purpose}</p>
+                {/* Roadmap 3.0.9: the SAP reference pattern of the block, a link per block. */}
+                <SapReferenceInline bindings={REFERENCE_OF_SERVICE[getCloudServiceKey(service.serviceName)]} />
               </div>
               <div className="flex min-w-0 flex-wrap items-center gap-1">
                 <span className="sr-only">{label}:</span>
@@ -475,6 +446,11 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
             <div>
               <h3 className="cc-text-label text-cc-ink-muted mb-2">Why This is Critical for Clean Core</h3>
               <p className="cc-text-cell text-cc-ink border-l-2 border-cc-line pl-4 py-1">{details.whyCritical}</p>
+            </div>
+
+            <div data-sap-reference-block="">
+              <h3 className="cc-text-label text-cc-ink-muted mb-2">SAP reference pattern</h3>
+              <SapReferenceList bindings={REFERENCE_OF_SERVICE[getCloudServiceKey(activeService.serviceName)]} />
             </div>
 
             {hasPackages && (

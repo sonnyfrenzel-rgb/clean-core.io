@@ -1176,11 +1176,6 @@
             "why": "non-secret connection metadata; the password is write-only"
           },
           {
-            "field": "s4Config",
-            "from": "project",
-            "why": "deprecated cleartext fallback, still read"
-          },
-          {
             "field": "name",
             "from": "project",
             "why": "Excel export name"

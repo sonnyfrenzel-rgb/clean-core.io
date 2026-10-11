@@ -2,6 +2,8 @@
 
 import React from 'react';
 import CcCard from '@/components/cc/Card';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import { PAGE_ANCHOR_LABELS, testingAnchors } from '@/lib/page-anchors';
 import { TestingMetaLine } from '@/components/testing/TestingHeader';
 import ToolSection from '@/components/testing/ToolSection';
 import HandChecks, { type HandCheckGap } from '@/components/testing/HandChecks';
@@ -46,6 +48,15 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
           { label: 'catalog', value: catalogForReader(demo.catalogVersion), title: demo.catalogVersion },
           { label: 'snapshot', value: demo.catalogSnapshot },
         ]}
+      />
+
+      {/* The tool's anchor bar, as on a project (ADR-091): the three steps, no scenarios in a demo. */}
+      <PageAnchorBar
+        anchors={testingAnchors({ scenarios: 0, handChecks: gaps.length, sapResult: false })}
+        label={PAGE_ANCHOR_LABELS.testing}
+        name="testing-anchor"
+        plural="testing-anchors"
+        className="mb-3"
       />
 
       <div data-testing-flow="" className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">

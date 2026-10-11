@@ -94,7 +94,7 @@ import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
-import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
+import EvidenceFindingsTable, { AnalyzeAnchorBar } from '@/components/analyze/EvidenceFindingsTable';
 import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
@@ -1188,6 +1188,9 @@ export default function AnalyzePage() {
             {...answerFacts()}
           />
 
+          {/* The tool's anchor bar (ADR-091), under the answer, before the first section. */}
+          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} score={signedCleanCoreScore} />
+
           <EvidenceFindingsTable
             findings={evidenceFindings}
             sourceLines={sourceLines}
@@ -1284,6 +1287,9 @@ export default function AnalyzePage() {
             onExplainScore={() => setShowScoreModal(true)}
             {...answerFacts()}
           />
+
+          {/* The tool's anchor bar (ADR-091), under the answer, before the first section. */}
+          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} score={signedCleanCoreScore} summary />
 
           <EvidenceFindingsTable
             findings={evidenceFindings}

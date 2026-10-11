@@ -47,7 +47,8 @@ test('the seeded project counts findings as Analyze does and names the places in
   await expect(tool.locator('[data-transformation-facet="Released successors"]')).toContainText(`of ${findings} named`);
   await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${findings} FINDINGS`);
   await expect(tool.locator('[data-code-status]')).toContainText(`${findings} findings at ${places} places in the code`);
-  await expect(tool.locator('a[href="#tf-changes"]')).toContainText(`(${findings})`);
+  // The anchor bar's count chip (PageAnchorBar, ADR-091) — the number alone, no parentheses.
+  await expect(tool.locator('a[href="#tf-changes"] [data-tf-anchor-count]')).toHaveText(String(findings));
   await expect(tool).not.toContainText(`${places} findings`);
   // The repeated read is one change with its three places, not three changes.
   const showAll = tool.getByRole('button', { name: /Show all \d+ changes/ });

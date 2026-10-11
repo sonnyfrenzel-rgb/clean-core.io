@@ -2,27 +2,24 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { nav } from '@/lib/messages/navigation';
+import type { PageAnchor } from '@/lib/page-anchors';
 
-/** One in-page jump of the bar: where it goes, what it is called, what is in it. */
-export interface PageAnchor {
-  key: string;
-  /** The id of the section on the page — the link's fragment. */
-  target: string;
-  label: string;
-  /** A count or a word ("none", "signed"); empty or null shows the label alone. */
-  count?: string | null;
-  /** The reader question the section answers — the chip's tooltip. */
-  title?: string;
-}
+export type { PageAnchor } from '@/lib/page-anchors';
 
 /**
- * The in-page anchor bar — first IT's (ADR-086), now also the Documentation
+ * The in-page anchor bar — first IT's (ADR-086), then the Documentation
  * stage's chapter bar (owner review 10.10.2026: "like the IT view's anchor
- * bar"). One component so the two cannot drift apart.
+ * bar"), and since ADR-091 the one bar of every tool that has one: Analyze,
+ * Transformation, Documentation, Testing and Delivery, and their demo twins.
+ * One component so they cannot drift apart; which sections each names, by
+ * which id, is `lib/page-anchors.ts` (IT: `lib/it-sections.ts`; Documentation:
+ * the outline's chapters).
  *
  * It looks like the layer bar (`components/workspace/LayerBar.tsx`) so the views
  * and the tools share one navigation strip: a delimited surface with its
- * eyebrow ("On this page"), a muted track, and the section the reader is in
+ * eyebrow ("On this page", the same words on every page — the component says
+ * it, a page cannot), a muted track, and the section the reader is in
  * raised with an ink ring and `aria-current="location"`. Links, not tabs: each
  * is a jump, so the WAI-ARIA tabs pattern of the layer bar does not apply.
  * Where the reader is follows the scroll — the section the reading line runs
@@ -30,8 +27,15 @@ export interface PageAnchor {
  * once. Sticky under the shell bar; on a phone the row scrolls sideways inside
  * its track and the page does not.
  *
+ * Where it stands is the same on every tool (ADR-091): under the stage's header
+ * and the page's answer (facets, status line), before the first section, at
+ * the frame's full width — and in an element that runs to the foot of the
+ * page, so it stays in view to the last section it names.
+ * `tests/page-anchor-guard.spec.ts` holds the ids and the place.
+ *
  * `name` keeps each bar's own data attributes (`data-it-anchor`,
- * `data-doc-chapter`) for the specs and the screenshots that find it by them.
+ * `data-doc-chapter`, `data-analyze-anchor`…) for the specs and the
+ * screenshots that find it by them; `data-page-anchors` is on every bar.
  * `onJump` lets a page scroll instead of navigating, where the fragment is
  * taken by something else (the Documentation stage keeps the map's level in
  * the address).
@@ -39,7 +43,6 @@ export interface PageAnchor {
 export default function PageAnchorBar({
   anchors,
   label,
-  lead,
   name,
   plural,
   onJump,
@@ -48,8 +51,6 @@ export default function PageAnchorBar({
   anchors: readonly PageAnchor[];
   /** The bar's accessible name. */
   label: string;
-  /** The eyebrow: "On this page". */
-  lead: string;
   /** `data-<name>` on each link, `data-<plural>` on the bar. */
   name: string;
   plural: string;
@@ -129,6 +130,7 @@ export default function PageAnchorBar({
   return (
     <nav
       aria-label={label}
+      data-page-anchors=""
       {...{ [`data-${plural}`]: '' }}
       className={cn('cc-no-print sticky top-14 z-cc-sticky bg-cc-page py-2', className)}
     >
@@ -137,7 +139,7 @@ export default function PageAnchorBar({
           aria-hidden={true}
           className="shrink-0 pl-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase max-sm:hidden"
         >
-          {lead}
+          {nav('nav.onThisPage')}
         </span>
         {/* `relative`: the track holds the links' `sr-only` tooltips
             (position: absolute) inside its scroll; without it they escape to

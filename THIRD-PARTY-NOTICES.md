@@ -18,6 +18,21 @@ The data has been transformed by Clean-Core.io:
 - merged with Clean-Core.io's own curated, field-level mappings, which take
   precedence (see `lib/abap/catalog-service.ts`).
 
+## SAP Architecture Center (metadata and one quoted passage)
+
+This product includes metadata (IDs, short IDs, titles, last-update dates and
+archive state) of the reference architectures in the **SAP Architecture Center**
+(https://github.com/SAP/architecture-center), and quotes one passage of
+`docs/ref-arch/RA0001/readme.md`, © 2024 SAP SE or an SAP affiliate company and
+architecture-center contributors, licensed under the Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0). Used in
+`lib/generated/sap-architecture-center.json` (written by
+`scripts/sync-sap-architecture-center.ts`) and `lib/sap-reference-architectures.ts`;
+the mapping of Clean-Core.io targets to these reference architectures is
+Clean-Core.io's own. No diagram is included — the reference architectures are
+linked, not embedded. The upstream repository ships no `NOTICE` file (checked
+10.10.2026; REUSE.toml carries the copyright and license per path).
+
 ## Trademarks
 
 SAP, S/4HANA, ABAP and other SAP product and service names are trademarks or

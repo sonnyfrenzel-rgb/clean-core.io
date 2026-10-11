@@ -6,7 +6,7 @@ import CcTable from '@/components/cc/Table';
 export const metadata: Metadata = withTwitterCard({
   title: 'Third-Party Notices & Licenses | Clean-Core.io',
   description:
-    'Open-source software and data Clean-Core.io is built on, with the required attributions — including the SAP Cloudification Repository under Apache-2.0.',
+    'Open-source software and data Clean-Core.io is built on, with its attributions — SAP Cloudification Repository and SAP Architecture Center, Apache-2.0.',
   alternates: {
     canonical: 'https://clean-core.io/licenses',
   },
@@ -92,6 +92,36 @@ export default function LicensesPage() {
               <p>
                 <strong>No NOTICE file:</strong> the upstream repository does not ship an
                 Apache <code className={CODE}>NOTICE</code> text file, so Apache-2.0 §4(d) does not apply.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-cc-line" />
+
+          {/* SAP Architecture Center */}
+          <section>
+            <h2 className={H2}>
+              Data — SAP Architecture Center
+            </h2>
+            <div className="space-y-3 text-sm">
+              <p>
+                Clean-Core.io includes metadata of the reference architectures in the <strong>SAP Architecture Center</strong>{' '}
+                (<a href="https://github.com/SAP/architecture-center" className={LINK} target="_blank" rel="noopener noreferrer">github.com/SAP/architecture-center</a>)
+                — their IDs, titles, last-update dates and archive state — and quotes one passage of the reference
+                architecture RA0001, © 2024 SAP SE or an SAP affiliate company and the architecture-center contributors.
+              </p>
+              <p>
+                Licensed under the <strong>Apache License, Version 2.0</strong>. A copy of the license is available at{' '}
+                <a href="https://www.apache.org/licenses/LICENSE-2.0" className={LINK} target="_blank" rel="noopener noreferrer">apache.org/licenses/LICENSE-2.0</a>.
+              </p>
+              <p>
+                <strong>Modifications:</strong> the metadata is read into Clean-Core.io&rsquo;s own format; which
+                reference architecture fits which target is Clean-Core.io&rsquo;s own mapping, not SAP&rsquo;s. No
+                diagram is included — the reference architectures are linked, not embedded.
+              </p>
+              <p>
+                <strong>No NOTICE file:</strong> the upstream repository does not ship an
+                Apache <code className={CODE}>NOTICE</code> text file (checked 10.10.2026), so Apache-2.0 §4(d) does not apply.
               </p>
             </div>
           </section>

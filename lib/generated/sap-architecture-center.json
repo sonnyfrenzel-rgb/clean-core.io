@@ -1,0 +1,246 @@
+{
+  "source": "https://github.com/SAP/architecture-center",
+  "branch": "dev",
+  "commit": "79b40e802c8f927be17e200d250f849e6adb2906",
+  "syncedAt": "2026-10-10",
+  "architectures": [
+    {
+      "id": "RA0001",
+      "slug": "196eba",
+      "title": "Designing Event-Driven Applications on SAP BTP",
+      "lastUpdate": "2025-10-10",
+      "archived": false
+    },
+    {
+      "id": "RA0002",
+      "slug": "bbfc34",
+      "title": "Multi-Region HA/DR Resiliency for SAP BTP",
+      "lastUpdate": "2025-02-19",
+      "archived": true
+    },
+    {
+      "id": "RA0003",
+      "slug": "17c8c5",
+      "title": "Federated Machine Learning with SAP Datasphere",
+      "lastUpdate": "2025-01-23",
+      "archived": true
+    },
+    {
+      "id": "RA0004",
+      "slug": "b27373",
+      "title": "Explore your Hyperscaler data with SAP Business Data Cloud",
+      "lastUpdate": "2026-05-08",
+      "archived": false
+    },
+    {
+      "id": "RA0005",
+      "slug": "39eb58",
+      "title": "Generative AI on SAP BTP with CAP and SAP AI Core",
+      "lastUpdate": "2025-09-02",
+      "archived": false
+    },
+    {
+      "id": "RA0006",
+      "slug": "c16841",
+      "title": "Secure connectivity with SAP Private Link service",
+      "lastUpdate": "2025-01-22",
+      "archived": true
+    },
+    {
+      "id": "RA0007",
+      "slug": "5942d2",
+      "title": "Multitenant SaaS Application on SAP BTP using CAP",
+      "lastUpdate": "2025-01-31",
+      "archived": true
+    },
+    {
+      "id": "RA0008",
+      "slug": "0a229d",
+      "title": "SAP Integration Suite Edge Integration Cell on Hyperscalers",
+      "lastUpdate": "2025-04-18",
+      "archived": true
+    },
+    {
+      "id": "RA0009",
+      "slug": "c1e07f",
+      "title": "SAP Task Center: Central Inbox for Unified Tasks",
+      "lastUpdate": "2025-02-11",
+      "archived": true
+    },
+    {
+      "id": "RA0010",
+      "slug": "1a8cb9",
+      "title": "Establish a central entry point with SAP Build Work Zone",
+      "lastUpdate": "2026-05-22",
+      "archived": false
+    },
+    {
+      "id": "RA0011",
+      "slug": "e4f25a",
+      "title": "SAP HANA Cloud as a Certified Esri ArcGIS Geodatabase",
+      "lastUpdate": "2025-03-25",
+      "archived": true
+    },
+    {
+      "id": "RA0012",
+      "slug": "8aceea",
+      "title": "Medallion Architecture for Big Data in SAP HANA Cloud",
+      "lastUpdate": "2025-04-03",
+      "archived": true
+    },
+    {
+      "id": "RA0013",
+      "slug": "e1732d",
+      "title": "Enterprise Data Strategy with SAP Business Data Cloud",
+      "lastUpdate": "2026-05-12",
+      "archived": false
+    },
+    {
+      "id": "RA0014",
+      "slug": "24c626",
+      "title": "Network Performance in Multi-Regional SAP Solutions",
+      "lastUpdate": "2025-05-07",
+      "archived": true
+    },
+    {
+      "id": "RA0015",
+      "slug": "b3c3ac",
+      "title": "Business-to-Government Integration Reference Architecture",
+      "lastUpdate": "2024-08-01",
+      "archived": true
+    },
+    {
+      "id": "RA0016",
+      "slug": "8e8d58",
+      "title": "Secure Service Consumption Across Hyperscalers",
+      "lastUpdate": "2025-05-14",
+      "archived": true
+    },
+    {
+      "id": "RA0017",
+      "slug": "ffc84b",
+      "title": "Connect Business Processes with SAP Master Data Integration",
+      "lastUpdate": "2024-08-01",
+      "archived": true
+    },
+    {
+      "id": "RA0018",
+      "slug": "b86487",
+      "title": "Integrate and Extend with SAP Build Process Automation",
+      "lastUpdate": "2025-05-14",
+      "archived": true
+    },
+    {
+      "id": "RA0019",
+      "slug": "89ab6b",
+      "title": "SAP IAM integration with SAP Cloud Identity Services",
+      "lastUpdate": "2025-05-13",
+      "archived": true
+    },
+    {
+      "id": "RA0020",
+      "slug": "e9b7df",
+      "title": "B2B Integration with SAP Integration Suite",
+      "lastUpdate": "2024-08-01",
+      "archived": true
+    },
+    {
+      "id": "RA0021",
+      "slug": "6501d5",
+      "title": "App2App Integration with SAP Integration Suite",
+      "lastUpdate": "2024-08-01",
+      "archived": true
+    },
+    {
+      "id": "RA0022",
+      "slug": "5f90af",
+      "title": "API Managed Integration with SAP Integration Suite",
+      "lastUpdate": "2024-08-01",
+      "archived": true
+    },
+    {
+      "id": "RA0023",
+      "slug": "b51e91",
+      "title": "DevOps on SAP BTP with CI/CD and SAP Build",
+      "lastUpdate": "2026-09-28",
+      "archived": false
+    },
+    {
+      "id": "RA0024",
+      "slug": "464deb",
+      "title": "Integrating and Extending Joule, SAP's AI Copilot",
+      "lastUpdate": "2026-03-16",
+      "archived": false
+    },
+    {
+      "id": "RA0025",
+      "slug": "4b76ae",
+      "title": "Transitioning Architectures from SAP NetWeaver",
+      "lastUpdate": "2025-08-02",
+      "archived": true
+    },
+    {
+      "id": "RA0026",
+      "slug": "0f87e5",
+      "title": "Embodied AI Agents & Robotics for SAP Business AI",
+      "lastUpdate": "2026-05-12",
+      "archived": false
+    },
+    {
+      "id": "RA0027",
+      "slug": "a3e184",
+      "title": "SAP Enterprise Threat Detection with SIEM and SOAR",
+      "lastUpdate": "2026-01-26",
+      "archived": false
+    },
+    {
+      "id": "RA0028",
+      "slug": "14d25a",
+      "title": "SAP SuccessFactors HXM Suite Reference Architecture",
+      "lastUpdate": "2026-03-18",
+      "archived": false
+    },
+    {
+      "id": "RA0029",
+      "slug": "98efa0",
+      "title": "Agentic AI & AI Agents on SAP Business AI Platform",
+      "lastUpdate": "2026-08-27",
+      "archived": false
+    },
+    {
+      "id": "RA0030",
+      "slug": "766aa3",
+      "title": "SAP Document AI Reference Architecture on SAP BTP",
+      "lastUpdate": "2026-06-03",
+      "archived": false
+    },
+    {
+      "id": "RA0031",
+      "slug": "458ff4",
+      "title": "Decentralized Identity Verification on SAP BTP",
+      "lastUpdate": "2026-06-15",
+      "archived": false
+    },
+    {
+      "id": "RA0032",
+      "slug": "a22904",
+      "title": "SAP Data Accelerator: Governed Partner Access to SAP Data",
+      "lastUpdate": "2026-08-17",
+      "archived": false
+    },
+    {
+      "id": "RA0033",
+      "slug": "2ecb7e",
+      "title": "HANA AI Toolkit Local MCP Server for SAP HANA Cloud",
+      "lastUpdate": "2026-06-15",
+      "archived": false
+    },
+    {
+      "id": "RA0034",
+      "slug": "jkg4j2",
+      "title": "SAP AI Agent Hub for Enterprise AI Governance",
+      "lastUpdate": "2026-10-01",
+      "archived": false
+    }
+  ]
+}

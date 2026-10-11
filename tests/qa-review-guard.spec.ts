@@ -1243,6 +1243,34 @@ test.describe('weekly pipeline health', () => {
     const { BOT_BRANCHES } = await lib('health.mjs');
     expect(BOT_BRANCHES).toContain('chore/sync-cloudification-repo');
   });
+
+  test('the SAP Architecture Center sync runs weekly in the same shape: read-only sync job, push job without npm, one accepted path (3.0.9)', async () => {
+    const wf = read('.github/workflows/sync-architecture-center.yml');
+    expect(wf).toMatch(/schedule:\s*\n\s*- cron: '[^']+ \* \* 1'/);
+    expect(wf).not.toMatch(/uses:\s*peter-evans\/create-pull-request/);
+    const top = wf.slice(wf.indexOf('\npermissions:'), wf.indexOf('\njobs:'));
+    expect(top).toMatch(/contents: read/);
+    expect(top).not.toMatch(/write|pull-requests/);
+    const at = { sync: wf.indexOf('\n  sync:'), push: wf.indexOf('\n  push:') };
+    expect(at.push).toBeGreaterThan(at.sync);
+    const sync = wf.slice(at.sync, at.push);
+    const push = wf.slice(at.push);
+    expect(sync).toContain('persist-credentials: false');
+    expect(sync).toContain('npx tsx scripts/sync-sap-architecture-center.ts');
+    expect(sync).not.toMatch(/write|github\.token|git push|git commit/);
+    expect(push).toMatch(/needs: sync/);
+    expect(push).toMatch(/contents: write/);
+    expect(push).toContain('persist-credentials: false');
+    expect(push).not.toMatch(/\bnpm\b|\bnpx\b|setup-node|\btsx\b/);
+    expect(push).toContain('! -path ./lib/generated/sap-architecture-center.json');
+    expect(push).toContain("grep -vE '^.. lib/generated/sap-architecture-center\\.json$'");
+    expect(push).not.toMatch(/git (commit|push)\b/);
+    expect(push.match(/git -c core\.hooksPath=\/dev\/null -c core\.fsmonitor=false/g) ?? []).toHaveLength(2);
+    expect(wf.match(/github\.token|secrets\.GITHUB_TOKEN/g) ?? []).toHaveLength(1);
+    expect(push).toMatch(/push --force "https:\/\/x-access-token:\$\{GH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" HEAD:chore\/sync-sap-architecture-center/);
+    const { BOT_BRANCHES } = await lib('health.mjs');
+    expect(BOT_BRANCHES).toContain('chore/sync-sap-architecture-center');
+  });
 });
 
 test.describe('the deployed revision can be told apart', () => {
