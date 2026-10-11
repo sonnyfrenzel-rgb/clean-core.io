@@ -155,6 +155,21 @@ test.describe('the Documentation map: whole process, zoom, full screen', () => {
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
     const { panel } = await exerciseTheMap(page, 'project');
     await expect(panel).not.toHaveAttribute('data-handbook-panel', 'none');
+
+    // Owner 11.10.2026: "the one circled button does nothing, or I can't see
+    // it." Here the outline stands under the map (the canvas keeps the width),
+    // so opening it brings it into view and takes the focus to it.
+    const frame = page.locator('[data-map-canvas-frame]');
+    const outline = frame.locator('[data-process-outline-toggle]');
+    await expect(frame.getByText('Outline', { exact: true })).toBeVisible();
+    await expect(outline).toHaveAttribute('aria-pressed', 'true');
+    await outline.click();
+    await expect(outline).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('[data-process-map-outline-column]')).toBeHidden();
+    await outline.click();
+    const column = page.locator('[data-process-map-outline-column]');
+    await expect(column).toBeInViewport();
+    await expect(column).toBeFocused();
   });
 
   test('when the browser refuses full screen the map covers the window, and Escape leaves it', async ({ page }) => {

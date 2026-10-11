@@ -305,6 +305,39 @@ test.describe('levels in full screen and inline — desktop', () => {
     await page.locator('[data-workspace-process] [data-process-outline-toggle]').first().click();
     await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'open');
 
+    // Owner 11.10.2026: "BPMN view button labels — and the one circled button
+    // does nothing, or I can't see it." Every button of the row says its word
+    // at 1440 px; Outline shows that it is on, and opening it puts the outline
+    // on screen beside the map, where it was pressed.
+    const tools = page.locator('[data-workspace-process] [data-map-view-tools]').first();
+    for (const word of ['Zoom out', 'Zoom in', 'Fit', 'Outline', 'Keyboard', 'Full screen']) {
+      await expect(tools.getByText(word, { exact: true }), `"${word}" is said beside its icon`).toBeVisible();
+    }
+    const outlineToggle = tools.locator('[data-process-outline-toggle]');
+    const fit = tools.locator('[data-map-fit]');
+    const look = (el: Element) => getComputedStyle(el).backgroundColor;
+    await expect(outlineToggle).toHaveAttribute('aria-pressed', 'true');
+    expect(await outlineToggle.evaluate(look), 'Outline looks the same on as the plain Fit button').not.toBe(await fit.evaluate(look));
+    await outlineToggle.click();
+    await expect(outlineToggle).toHaveAttribute('aria-pressed', 'false');
+    await page.mouse.move(0, 0); // a hovered ghost button is tinted; compare at rest
+    expect(await outlineToggle.evaluate(look), 'Outline off still looks pressed').toBe(await fit.evaluate(look));
+    await outlineToggle.click();
+    const column = page.locator('[data-workspace-process] [data-process-map-outline-column]').first();
+    const mapFrame = page.locator('[data-workspace-process] [data-map-canvas-frame]').first();
+    await expect(column).toBeInViewport();
+    const [c, f] = await Promise.all([column.boundingBox(), mapFrame.boundingBox()]);
+    expect(c!.x + c!.width, 'the outline is not left of the map').toBeLessThanOrEqual(f!.x + 1);
+    expect(c!.y, 'the outline does not stand beside the map').toBeLessThan(f!.y + f!.height);
+    expect(c!.y + c!.height, 'the outline does not stand beside the map').toBeGreaterThan(f!.y);
+    // In full screen the outline is not in sight, so its toggle is not offered there.
+    await tools.locator('[data-map-fullscreen-toggle]').click();
+    await expect(mapFrame).toHaveAttribute('data-map-fullscreen', 'true');
+    await expect(mapFrame.locator('[data-process-outline-toggle]')).toHaveCount(0);
+    await expect(mapFrame.getByText('Keyboard', { exact: true })).toBeVisible();
+    await mapFrame.locator('[data-map-fullscreen-toggle]').click();
+    await expect(mapFrame).toHaveAttribute('data-map-fullscreen', 'false');
+
     // Narrower than 1280 px: the outline starts folded for a viewer who never chose, and details lie over the map.
     await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline'));
     await page.setViewportSize({ width: 1200, height: 900 });

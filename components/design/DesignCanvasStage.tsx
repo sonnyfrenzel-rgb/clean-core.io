@@ -1096,6 +1096,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                     <div role="toolbar" aria-label="Canvas view" data-canvas-controls="" className="flex items-center gap-1 max-[719px]:hidden">
                       <CcIconButton
                         label="Zoom out"
+                        text="Zoom out"
                         title="Zoom out"
                         data-canvas-zoom-out=""
                         onClick={() => setZoom(Math.max(ARCHITECTURE_ZOOM.min, zoom - ARCHITECTURE_ZOOM.step))}
@@ -1108,6 +1109,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                       </span>
                       <CcIconButton
                         label="Zoom in"
+                        text="Zoom in"
                         title="Zoom in"
                         data-canvas-zoom-in=""
                         onClick={() => setZoom(Math.min(ARCHITECTURE_ZOOM.max, zoom + ARCHITECTURE_ZOOM.step))}
@@ -1115,12 +1117,13 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                       >
                         <Plus size={16} aria-hidden={true} />
                       </CcIconButton>
-                      <CcIconButton label="Fit to the width" title="Fit to the width" data-canvas-fit="" onClick={() => setZoom('fit')}>
+                      <CcIconButton label="Fit to the width" text="Fit" title="Fit to the width" data-canvas-fit="" onClick={() => setZoom('fit')}>
                         <Scan size={16} aria-hidden={true} />
                       </CcIconButton>
                       <CcIconButton
                         ref={fullToggleRef}
                         label={filled ? 'Exit full screen' : 'Full screen'}
+                        text={filled ? 'Exit full screen' : 'Full screen'}
                         title={filled ? 'Exit full screen (Esc)' : 'Full screen'}
                         aria-pressed={filled}
                         data-canvas-fullscreen-toggle=""

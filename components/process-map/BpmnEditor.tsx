@@ -1166,6 +1166,7 @@ export default function BpmnEditor({
         <CcIconButton
           data-editor-minimap-toggle=""
           label={wt('editor.minimap')}
+          text={wt('editor.minimap')}
           aria-pressed={minimap}
           onClick={() => setMinimap((was) => !was)}
         >

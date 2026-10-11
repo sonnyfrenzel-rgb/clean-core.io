@@ -121,8 +121,11 @@ export interface BpmnCanvasProps {
    * the frame that goes full screen.
    */
   levelPath?: React.ReactNode;
-  /** More controls for the row (the outline toggle, the help), after fit. */
-  tools?: React.ReactNode;
+  /**
+   * More controls for the row (the outline toggle, the help), after fit; a
+   * function receives whether the frame is in full screen.
+   */
+  tools?: React.ReactNode | ((filled: boolean) => React.ReactNode);
   /** A panel under the row, inside the frame (the keyboard help). */
   toolsPanel?: React.ReactNode;
 }

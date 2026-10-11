@@ -37,6 +37,9 @@ export const PROCESS_MAP_MESSAGES = {
   'map.outlineShow': 'Show the outline',
   'map.outlineHide': 'Hide the outline',
   'map.keyboardHelp': 'Keyboard and mouse',
+  /** The words beside the toggles' icons; each is contained in its full name above. */
+  'map.outlineShort': 'Outline',
+  'map.keyboardShort': 'Keyboard',
 
   // ProcessCodeCard
   'map.sourceFor': 'Source for',

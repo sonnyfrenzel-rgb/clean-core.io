@@ -8,6 +8,8 @@ import { editorZoomLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * Zoom out, the zoom in per cent, zoom in, fit — and the full-screen toggle.
+ * Each says its word beside its icon from 768 px up (owner 11.10.2026: "BPMN
+ * view button labels"); a phone keeps the squares and their 44 px targets.
  * The editor's controls, drawn by the editor and by the reading map alike, so
  * the two canvases a reader meets are moved the same way (owner 02.10.2026:
  * "I need + - and full screen here too, like everywhere else").
@@ -33,7 +35,7 @@ export function CanvasZoomControls({
 }) {
   return (
     <>
-      <CcIconButton {...hook(scope, 'zoom-out')} label={wt('editor.zoomOut')} onClick={() => onZoomBy(1 / 1.2)}>
+      <CcIconButton {...hook(scope, 'zoom-out')} label={wt('editor.zoomOut')} text={wt('editor.zoomOut')} onClick={() => onZoomBy(1 / 1.2)}>
         <ZoomOut size={16} aria-hidden={true} />
       </CcIconButton>
       <span
@@ -42,10 +44,10 @@ export function CanvasZoomControls({
       >
         {editorZoomLabel(zoom)}
       </span>
-      <CcIconButton {...hook(scope, 'zoom-in')} label={wt('editor.zoomIn')} onClick={() => onZoomBy(1.2)}>
+      <CcIconButton {...hook(scope, 'zoom-in')} label={wt('editor.zoomIn')} text={wt('editor.zoomIn')} onClick={() => onZoomBy(1.2)}>
         <ZoomIn size={16} aria-hidden={true} />
       </CcIconButton>
-      <CcIconButton {...hook(scope, 'fit')} label={wt('editor.fit')} onClick={onFit}>
+      <CcIconButton {...hook(scope, 'fit')} label={wt('editor.fit')} text={wt('editor.fitShort')} onClick={onFit}>
         <Scan size={16} aria-hidden={true} />
       </CcIconButton>
     </>
@@ -85,6 +87,7 @@ export function CanvasFullscreenToggle({
       {...hook(scope, 'fullscreen-toggle')}
       ref={buttonRef}
       label={wt('editor.fullscreen')}
+      text={wt('editor.fullscreen')}
       aria-pressed={false}
       onClick={onToggle}
     >
@@ -117,8 +120,12 @@ export function MapViewTools({
   fullscreenRef?: React.Ref<HTMLButtonElement>;
   /** The level path and the way up (`ProcessBreadcrumb`). */
   levelPath?: React.ReactNode;
-  /** More of the map's own toggles, after fit. */
-  tools?: React.ReactNode;
+  /**
+   * More of the map's own toggles, after fit — or a function of `filled`, for
+   * a toggle that acts on something outside the full-screen frame and so has
+   * no place in full screen (the outline).
+   */
+  tools?: React.ReactNode | ((filled: boolean) => React.ReactNode);
 }) {
   return (
     <div
@@ -133,7 +140,7 @@ export function MapViewTools({
         {levelPath ? <div data-map-level-path="" className="min-w-0">{levelPath}</div> : null}
         <div className="flex flex-wrap items-center gap-2">
           <CanvasZoomControls scope="map" zoom={zoom} onZoomBy={onZoomBy} onFit={onFit} />
-          {tools}
+          {typeof tools === 'function' ? tools(filled) : tools}
         </div>
       </div>
       <span className="shrink-0">

@@ -336,16 +336,35 @@ export default function ProcessMap({
     }
     return stage || typeof window === 'undefined' || window.innerWidth >= 1280;
   });
+  /**
+   * Opening the outline has to be seen where it is pressed (owner 11.10.2026:
+   * "the one circled button does nothing, or I can't see it"). Beside the map
+   * it is: the column stands at the map's top left. In the Documentation stage
+   * it stands under the map — the canvas keeps the full width there (owner
+   * decision 01.10.2026) — so opening it brings it into view and takes the
+   * focus to it; anywhere else it does that only when the column is off screen.
+   */
+  const outlineRef = useRef<HTMLDivElement>(null);
   const toggleOutline = useCallback(() => {
-    setOutlineOpen((was) => {
-      try {
-        window.localStorage.setItem(OUTLINE_KEY, was ? 'closed' : 'open');
-      } catch {
-        /* the choice holds for this visit */
-      }
-      return !was;
+    const opening = !outlineOpen;
+    try {
+      window.localStorage.setItem(OUTLINE_KEY, opening ? 'open' : 'closed');
+    } catch {
+      /* the choice holds for this visit */
+    }
+    setOutlineOpen(opening);
+    if (!opening) return;
+    // After the commit: the column is laid out where it now stands.
+    window.requestAnimationFrame(() => {
+      const column = outlineRef.current;
+      if (!column) return;
+      const box = column.getBoundingClientRect();
+      const onScreen = box.height > 0 && box.top >= 0 && box.top < window.innerHeight - 48;
+      if (onScreen && !stage) return;
+      if (!onScreen) column.scrollIntoView({ block: 'start' });
+      column.focus({ preventScroll: true });
     });
-  }, []);
+  }, [outlineOpen, stage]);
   /** The keyboard hint, behind the map's help button rather than in a column of its own. */
   const [helpOpen, setHelpOpen] = useState(false);
   const [highlight, setHighlight] = useState<PathHighlight>('none');
@@ -834,7 +853,11 @@ export default function ProcessMap({
             : 'grid gap-3'}
       >
         <div
+          ref={outlineRef}
           data-process-map-outline-column=""
+          tabIndex={-1}
+          role="region"
+          aria-label={wt('map.outlineShort')}
           className={stage
             ? `order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1${outlineOpen ? '' : ' lg:hidden'}`
             : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : ' lg:hidden'}`}
@@ -892,25 +915,31 @@ export default function ProcessMap({
               controls
               openFit="whole"
               levelPath={<ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
-              tools={(
+              tools={(filled: boolean) => (
                 <>
-                  <span className="hidden lg:inline-flex">
-                    <CcIconButton
-                      data-process-outline-toggle=""
-                      label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}
-                      aria-pressed={outlineOpen}
-                      onClick={toggleOutline}
-                    >
-                      {outlineOpen
-                        ? <PanelLeftClose size={16} aria-hidden={true} />
-                        : <PanelLeftOpen size={16} aria-hidden={true} />}
-                    </CcIconButton>
-                  </span>
+                  {/* The outline stands outside the full-screen frame, so in
+                      full screen the toggle would act on nothing in sight. */}
+                  {filled ? null : (
+                    <span className="hidden lg:inline-flex">
+                      <CcIconButton
+                        data-process-outline-toggle=""
+                        label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}
+                        text={wt('map.outlineShort')}
+                        aria-pressed={outlineOpen}
+                        onClick={toggleOutline}
+                      >
+                        {outlineOpen
+                          ? <PanelLeftClose size={16} aria-hidden={true} />
+                          : <PanelLeftOpen size={16} aria-hidden={true} />}
+                      </CcIconButton>
+                    </span>
+                  )}
                   {/* The keyboard help is a desktop one; a phone keeps its row for the map. */}
                   <span className="hidden md:inline-flex">
                     <CcIconButton
                       data-process-map-help-toggle=""
                       label={wt('map.keyboardHelp')}
+                      text={wt('map.keyboardShort')}
                       aria-expanded={helpOpen}
                       onClick={() => setHelpOpen((was) => !was)}
                     >

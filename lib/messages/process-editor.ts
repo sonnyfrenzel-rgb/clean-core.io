@@ -13,6 +13,8 @@ export const PROCESS_EDITOR_MESSAGES = {
   'editor.zoomIn': 'Zoom in',
   'editor.zoomOut': 'Zoom out',
   'editor.fit': 'Fit to screen',
+  /** The word beside the fit icon; contained in `editor.fit`. */
+  'editor.fitShort': 'Fit',
   'editor.tidy': 'Tidy layout',
   'editor.compare': 'Compare with the as-is process',
   'editor.minimap': 'Overview map',
