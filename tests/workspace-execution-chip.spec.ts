@@ -57,3 +57,63 @@ test('without a receipt there is no execution chip at all', () => {
   delete (p as unknown as Record<string, unknown>).testRunReceipt;
   expect(execution(p).provenance).toBeNull();
 });
+
+/*
+ * Roadmap 3.0.9 (QA full review aad42f51c028). `testCases[].status` is in the
+ * client allowlist of `firestore.rules`, and nothing writes `Simulated` any more
+ * — only old data or a direct browser write carry it. It named a mock execution
+ * (*mock only*, *Demonstrated · mock*, "N simulated") that no server ever saw.
+ */
+test.describe('a client-written `Simulated` names no execution', () => {
+  const simulatedOnly = () => {
+    const p = project({
+      testCases: [
+        { id: 'TC_01', title: 'adds', status: 'Simulated' },
+        { id: 'TC_02', title: 'adds again', status: 'Simulated' },
+      ],
+    });
+    delete (p as unknown as Record<string, unknown>).testRunReceipt;
+    return p;
+  };
+
+  test('without a server record: no mock-only status, no mock chip, no simulation in the detail', () => {
+    const p = simulatedOnly();
+    const exec = execution(p);
+    expect(exec.status).not.toBe('mock-only');
+    expect(exec.status).toBe('partial');
+    expect(exec.provenance).toBeNull();
+    expect(exec.detail).not.toMatch(/simulat/i);
+
+    const testing = workflowSteps(p).find((s) => s.key === 'testing')!;
+    expect(testing).toMatchObject({ state: 'partial', badge: 'Test draft', proven: false });
+    expect(testing.mock).toBeFalsy();
+    expect(testing.detail).toContain('no test run on record');
+    expect(testing.detail).not.toMatch(/simulat/i);
+  });
+
+  test('beside an executed verdict a stored `Simulated` counts as not run', () => {
+    const p = project({
+      testCases: [
+        { id: 'TC_01', title: 'adds', status: 'Passed' },
+        { id: 'TC_02', title: 'adds again', status: 'Simulated' },
+      ],
+    });
+    delete (p as unknown as Record<string, unknown>).testRunReceipt;
+    const testing = workflowSteps(p).find((s) => s.key === 'testing')!;
+    expect(testing.detail).toContain('1 not run');
+    expect(testing.detail).not.toMatch(/simulat/i);
+    expect(execution(p).provenance).toBeNull();
+  });
+
+  test('with the server record: the recorded mock run carries the mock chip', () => {
+    // Same stored strings, plus the receipt `/api/run-tests` writes with the
+    // Admin SDK: the chip now rests on the server's record, not on the string.
+    const p = simulatedOnly();
+    (p as unknown as Record<string, unknown>).testRunReceipt = receiptFor(p as unknown as Record<string, unknown>, [
+      { id: 'TC_01', status: 'Passed' },
+      { id: 'TC_02', status: 'Passed' },
+    ]);
+    expect(execution(p).provenance).toBe('demonstrated-mock');
+    expect(execution(p).status).not.toBe('mock-only');
+  });
+});

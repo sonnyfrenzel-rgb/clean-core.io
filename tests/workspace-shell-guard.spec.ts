@@ -228,15 +228,18 @@ test.describe('the seven statuses', () => {
     expect(need.detail).toMatch(/no business rule has been confirmed/i);
   });
 
-  test('a simulation is "mock only" and never a partial pass', () => {
-    const s = facetStatus(
-      populated({ testCases: draft.map((t) => ({ ...t, status: 'Simulated' as const })) }),
-    );
-    expect(s.execution).toBe('mock-only');
-    const execution = workspaceStatusLine(
-      populated({ testCases: draft.map((t) => ({ ...t, status: 'Simulated' as const })) }),
-    ).find((x) => x.facet === 'execution')!;
-    expect(execution.provenance).toBe('demonstrated-mock');
+  test('a stored `Simulated` is no execution: no mock chip, never a partial pass', () => {
+    // Roadmap 3.0.9 (aad42f51c028): the string is client-writable and nothing
+    // writes it any more, so it cannot name a mock execution. The mock chip
+    // comes from the server's receipt (tests/workspace-execution-chip.spec.ts).
+    // No receipt: `populated` would otherwise attach the one the server writes.
+    const simulated = () =>
+      populated({ testCases: draft.map((t) => ({ ...t, status: 'Simulated' as const })), testRunReceipt: undefined });
+    const s = facetStatus(simulated());
+    expect(s.execution).not.toBe('mock-only');
+    expect(s.execution).not.toBe('done');
+    const execution = workspaceStatusLine(simulated()).find((x) => x.facet === 'execution')!;
+    expect(execution.provenance).toBeNull();
   });
 
   test('a failing run is failed, not partial', () => {

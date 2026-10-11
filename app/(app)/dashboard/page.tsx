@@ -834,7 +834,6 @@ function ProjectDeliverables({
         `- **Test cases generated:** ${tests.total}`,
         `- **Passed:** ${tests.passed}`,
         `- **Failed:** ${tests.failed}`,
-        `- **Simulated (mock context, not a test run):** ${tests.simulated}`,
         `- **No recorded result:** ${tests.withoutVerdict}`,
         '',
         tests.passed + tests.failed === 0

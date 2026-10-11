@@ -157,7 +157,6 @@ export default function DeliveryPage() {
     total: testCaseCount,
     passed: testsPassed,
     failed: testsFailed,
-    simulated: testsSimulated,
     connectivity: testsConnectivity,
     withoutVerdict: testsWithoutVerdict,
   } = testEvidence(project);
@@ -908,7 +907,6 @@ jobs:
                                       ? `${testsPassed} marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.`
                                       : [
                                         testsFailed > 0 ? `${testsFailed} marked as failed` : null,
-                                        testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
                                         testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,
                                         testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,
                                       ].filter(Boolean).join(' · ') || 'Not run yet'

@@ -265,7 +265,7 @@
         "where": [
           {
             "module": "lib/workspace-model.ts",
-            "evidence": "tests.filter((t) => t?.status === 'Simulated')"
+            "evidence": "const receipt = coveringTestRunReceipt("
           }
         ],
         "note": "Execution reads the verdicts the server wrote; the workspace writes none."
@@ -1301,10 +1301,10 @@
           },
           {
             "module": "lib/workspace-model.ts",
-            "evidence": "const mockOnly = tests.length > 0 && executed === 0 && simulated > 0;"
+            "evidence": "const recordedMockRun = receipt !== null && receipt.environment === 'mock' && receipt.verdicts.length > 0;"
           }
         ],
-        "note": "The verdicts as the Execution status, mock only and failed as statuses of their own. The cases and the suite are read in the Testing tool."
+        "note": "The verdicts as the Execution status, failed as a status of its own, and a recorded run against mocks named from the server's receipt (a stored Simulated names no execution since 3.0.9). The cases and the suite are read in the Testing tool."
       }
     },
     {

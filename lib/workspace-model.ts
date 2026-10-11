@@ -374,14 +374,17 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
     restsOn: [evidenceOf(by.design)],
   };
 
-  // Execution — a test run. "mock only" is its own object status because a
-  // simulation that reads as a partial pass is the single most expensive lie
-  // this product could tell.
+  // Execution — a test run.
+  //
+  // A stored `Simulated` no longer earns the *mock only* status or the
+  // *Demonstrated · mock* chip (roadmap 3.0.9, QA full review aad42f51c028).
+  // Only the browser ever wrote that string — nothing writes it today — and
+  // `testCases[].status` is in the client allowlist of `firestore.rules`, so on
+  // its own it named a mock execution that no server saw. Such a case reads as
+  // what the record holds: no test run (`testEvidence` counts it as without a
+  // verdict). The mock chip comes from the server-written receipt below.
   const tests = Array.isArray(project?.testCases) ? project!.testCases! : [];
-  const simulated = tests.filter((t) => t?.status === 'Simulated').length;
-  const executed = tests.filter((t) => t?.status === 'Passed' || t?.status === 'Failed').length;
   const failed = tests.filter((t) => t?.status === 'Failed').length;
-  const mockOnly = tests.length > 0 && executed === 0 && simulated > 0;
   // A recorded run is a sandbox run against mocks — `TestRunReceipt.environment`
   // names it, and today it is always `mock`. The Testing and Handover views say
   // *Demonstrated · mock* about it (lib/handover.ts); this facet said *Proven*,
@@ -403,16 +406,14 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
           ? 'confirmed'
           : failed > 0 || outsideFailed
             ? 'failed'
-            : mockOnly
-              ? 'mock-only'
-              : statusOfPhase(by.testing),
+            : statusOfPhase(by.testing),
     detail: by.testing.detail,
     from: 'testing',
     provenance:
       staleChip(by.testing) ??
       (outside.state === 'current'
         ? outside.summary.kind
-        : mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+        : recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],
   };
 

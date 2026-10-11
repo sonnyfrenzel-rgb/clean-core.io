@@ -273,10 +273,12 @@ export interface TestEvidence {
   total: number;
   passed: number;
   failed: number;
-  simulated: number;
   /** Live-tenant checks that reached the system — not tests of the code (E07-F01). */
   connectivity: number;
-  /** Generated cases that carry no executed verdict: never run, skipped, todo, pending, errored. */
+  /**
+   * Generated cases that carry no executed verdict: never run, skipped, todo,
+   * pending, errored — and a stored `Simulated`.
+   */
   withoutVerdict: number;
   /**
    * How many cases an attributable execution reports as passed — counted from
@@ -300,15 +302,23 @@ export interface TestEvidence {
 
 /**
  * Verdicts, counted. Only `Passed` and `Failed` are results of an execution;
- * `Simulated` is a mock, `Connectivity` a tenant that answered, and `Not run`,
- * `Skipped`, `Todo`, `Pending`, `Error` or absent are the honest absence of a
- * result.
+ * `Connectivity` is a tenant that answered, and `Not run`, `Skipped`, `Todo`,
+ * `Pending`, `Error`, `Simulated` or absent are the honest absence of a result.
+ *
+ * `Simulated` is not a category of its own any more (roadmap 3.0.9, QA full
+ * review aad42f51c028). Only the browser ever wrote it — a run the Testing hook
+ * made up for an ABAP Unit suite until 02.10.2026, with no request to any
+ * server — and nothing writes it today; `testCases[].status` is in the client
+ * allowlist of `firestore.rules`. Counting it apart told the reader that a
+ * simulation had taken place, on the word of a field that cannot say who wrote
+ * it. A stored `Simulated` therefore reads as what it is on the record: no
+ * execution. A run against mocks is named from the server's receipt instead
+ * (`coveringTestRunReceipt(…).environment === 'mock'`).
  */
 export function testEvidence(project: Project | null): TestEvidence {
   const cases = Array.isArray(project?.testCases) ? project!.testCases! : [];
   const passed = cases.filter((t) => t?.status === 'Passed').length;
   const failed = cases.filter((t) => t?.status === 'Failed').length;
-  const simulated = cases.filter((t) => t?.status === 'Simulated').length;
   const connectivity = cases.filter((t) => t?.status === 'Connectivity').length;
   const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
   const ids = cases.map((t) => String(t?.id ?? ''));
@@ -317,9 +327,8 @@ export function testEvidence(project: Project | null): TestEvidence {
     total: cases.length,
     passed,
     failed,
-    simulated,
     connectivity,
-    withoutVerdict: cases.length - passed - failed - simulated - connectivity,
+    withoutVerdict: cases.length - passed - failed - connectivity,
     attestedPasses: executedPasses(receipt, ids),
     attestedFailures: [...new Set(ids)].filter((id) => failedInReceipt.has(id)).length,
   };
@@ -794,7 +803,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   } else if (tests.passed === tests.total && tests.attestedPasses === tests.total) {
     // Proven: every case carries a verdict that is the result of an execution,
     // and an attributable run reported that execution. `testEvidence` refuses to
-    // count `Simulated` or `Connectivity` as one.
+    // count a stored `Simulated` or a `Connectivity` row as one.
     testing = phase('testing', {
       state: 'done',
       proven: true,
@@ -821,7 +830,6 @@ export function workflowSteps(project: Project | null): RailStep[] {
       badge: 'Test draft',
       detail:
         `Test draft: ${plural(tests.total, 'case')} generated, no test run on record.` +
-        (tests.simulated > 0 ? ` ${tests.simulated} simulated — a simulation is not a test run.` : '') +
         (tests.connectivity > 0 ? ` ${tests.connectivity} connectivity checks reached the tenant — not tests of the code.` : '') +
         (outside.state === 'earlier'
           ? ' A result from your SAP system is on record for an earlier run, code, test class or scenario list — record it again.'
@@ -840,7 +848,6 @@ export function workflowSteps(project: Project | null): RailStep[] {
             ? `${tests.failed} failed`
             : `${tests.failed} marked as failed with no test run on record`
           : null,
-        tests.simulated > 0 ? `${tests.simulated} simulated` : null,
         tests.withoutVerdict > 0 ? `${tests.withoutVerdict} not run` : null,
       ]
         .filter(Boolean)

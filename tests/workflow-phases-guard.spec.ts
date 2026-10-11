@@ -85,9 +85,14 @@ test.describe('the contract', () => {
   });
 
   test('a simulation is not a pass, not even beside real passes', () => {
+    // A stored `Simulated` is a client-writable string nothing writes any more:
+    // it reads as no test run, and the detail does not name a simulation
+    // (roadmap 3.0.9, aad42f51c028).
     const sim = byKey(acceptanceProject({ testCases: draftTests.map((t) => ({ ...t, status: 'Simulated' as const })) }));
     expect(sim.testing.state).toBe('partial');
-    expect(sim.testing.detail).toMatch(/simulated — a simulation is not a test run/);
+    expect(sim.testing.badge).toBe('Test draft');
+    expect(sim.testing.detail).toContain('no test run on record');
+    expect(sim.testing.detail).not.toMatch(/simulat/i);
 
     // The delivery page's old condition — passed > 0, no failures, no missing
     // verdicts — went green on exactly this.
