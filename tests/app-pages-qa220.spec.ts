@@ -193,30 +193,47 @@ test('the FAQ, Knowledge answer and Part 6 of the guide do not promise every SAP
   }
 });
 
+const LEVEL_PROMISE = /(?:level|Level A–D)[^.\n]{0,40}\bevery SAP object\b|\bevery SAP object (?:the code |it )?(?:uses|touches)\b[^.]{0,30}(?:graded|Level|level)|Every SAP object the code uses (?:is graded|gets a Level)/g;
+
+/** The sentence a match stands in: up to the next full stop or line break, at most 300 characters. */
+function sentenceAt(s: string, index: number, length: number): string {
+  const from = index + length;
+  const stops = [s.indexOf('.', from), s.indexOf('\n', from)].filter((i) => i >= 0).map((i) => i + 1);
+  return s.slice(index, Math.min(from + 300, ...stops));
+}
+
+/** The level promises in a text whose own sentence never says Unknown. */
+function unqualifiedLevelPromises(s: string): string[] {
+  return [...s.matchAll(LEVEL_PROMISE)]
+    .map((m) => sentenceAt(s, m.index, m[0].length))
+    .filter((sentence) => !/Unknown/.test(sentence));
+}
+
 test('no public text promises every SAP object a level — each one says Unknown where SAP has no answer (owner, 11.10.2026)', () => {
-  // The same rule as above, for every public text that names the level: the
-  // landing and its FAQ, llms.txt, the README, the whitepaper, the guide's
-  // capability list, the release summary and the method pages.
-  const promise = /(?:level|Level A–D)[^.\n]{0,40}\bevery SAP object\b|\bevery SAP object (?:the code |it )?(?:uses|touches)\b[^.]{0,30}(?:graded|Level|level)|Every SAP object the code uses (?:is graded|gets a Level)/;
-  for (const rel of [
-    'app/page.tsx',
-    'lib/landing-faq.ts',
-    'app/llms.txt/route.ts',
-    'README.md',
-    'lib/whitepaper.ts',
-    'components/whitepaper/WhitepaperDocument.tsx',
-    'lib/clean-core-capabilities.ts',
-    'lib/release-summary.ts',
-    'app/(app)/knowledge/page.tsx',
-    'app/(app)/how-it-works/page.tsx',
-    'app/(app)/abap-custom-code-analysis/page.tsx',
-    'app/(app)/clean-core-explained/page.tsx',
-  ]) {
-    const s = read(rel);
-    // A promise is one whose own sentence never says Unknown.
-    const unqualified = [...s.matchAll(new RegExp(promise, 'g'))]
-      .map((m) => s.slice(m.index, s.indexOf('.', m.index + m[0].length) + 1 || undefined))
-      .filter((sentence) => !/Unknown/.test(sentence));
-    expect(unqualified, rel).toEqual([]);
-  }
+  // The same rule as above, for every text the product or the repository
+  // shows: every source under app/, components/ and lib/, and the README —
+  // the landing and its FAQ, llms.txt, the whitepaper, the guide, the release
+  // summary, the method pages (/method/levels among them, QA 0fc1f07269a7) and
+  // any page still to come.
+  const files: string[] = ['README.md'];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.join(__dirname, '..', dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) walk(rel);
+      else if (/\.(tsx?|md)$/.test(e.name)) files.push(rel);
+    }
+  };
+  for (const dir of ['app', 'components', 'lib']) walk(dir);
+  expect(files).toContain('app/method/levels/page.tsx');
+  const found = files.flatMap((rel) => unqualifiedLevelPromises(read(rel)).map((sentence) => `${rel}: ${sentence}`));
+  expect(found).toEqual([]);
+});
+
+test('the level-promise guard reads one sentence, not the rest of the file (QA 4943733016c8)', () => {
+  // No full stop after the promise and an unrelated "Unknown" further down:
+  // the sentence ends at the line break, so the promise is still found.
+  expect(unqualifiedLevelPromises("const a = 'Level A–D for every SAP object the code uses'\nconst b = 'Unknown';\n")).toHaveLength(1);
+  expect(unqualifiedLevelPromises("Level A–D for every SAP object it uses, or Unknown where SAP's data holds none.")).toEqual([]);
+  // Neither a full stop nor a line break: no more than 300 characters are read.
+  expect(unqualifiedLevelPromises(`Level A–D for every SAP object it uses ${'x'.repeat(400)} Unknown`)).toHaveLength(1);
 });
