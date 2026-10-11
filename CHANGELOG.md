@@ -78,6 +78,11 @@ review of a real FI case.
   approval and escalation are never stated as current practice. The technical reconstruction is
   the appendix; on the FI case 526 sentences become 83 entries.
 
+### Fixed
+
+- Three QA review rounds on dev: every finding fixed with a test or refuted with evidence; a phone
+  layout that was twice the screen wide on Analyze and the demo.
+
 ### Tests
 
 - Guards and rendered tests for the score hero, the testing closure, the rule trace, the invariant

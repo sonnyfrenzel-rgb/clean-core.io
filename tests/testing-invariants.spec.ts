@@ -140,6 +140,43 @@ test.describe('QA review of 35b97d90c6e1', () => {
     expect(result.skip).toBeUndefined();
     expect(result.problems).toEqual([]);
   });
+
+  test('the delimiter is counted outside quotes: a quoted header with commas does not make the file comma-separated', async () => {
+    // QA review of 19a460385054 (a79b2915077b).
+    const run = new Function(`${INVARIANT_RUNTIME_JS}\nreturn __ccSharedSelectionInvariant;`)() as (
+      h: unknown,
+      app: unknown,
+      spec: unknown,
+    ) => Promise<{ problems?: string[]; skip?: string }>;
+    const rows = [
+      { kunnr: 'A', amount: 10 },
+      { kunnr: 'A', amount: 5 },
+      { kunnr: 'B', amount: 7 },
+    ];
+    const csv = (sel: Array<{ kunnr: string; amount: number }>) =>
+      '"Customer, account, number";amount\r\n' + sel.map((r) => `${r.kunnr};${r.amount}`).join('\r\n') + '\r\n';
+    // Same rows, wrong amounts under a selection: only a sum can show it, and only
+    // when the amount column is read. With the wrong delimiter the export has no
+    // comparable column and the check finds nothing; read right, it must say so.
+    const h = {
+      invoke: async (_app: unknown, _method: string, path: string, opts: { query?: Record<string, string>; body?: Record<string, string> }) => {
+        const sel = opts.query ?? opts.body ?? {};
+        const picked = sel.kunnr ? rows.filter((r) => r.kunnr === sel.kunnr) : rows;
+        if (path === '/Items') return { status: 200, json: picked };
+        return { status: 200, text: csv(sel.kunnr ? picked.map((r) => ({ ...r, amount: r.amount + 1 })) : picked) };
+      },
+    };
+    const spec = {
+      endpoints: [
+        { role: 'list', method: 'GET', path: '/Items', send: 'query' },
+        { role: 'export', method: 'GET', path: '/ExportFile', send: 'query' },
+      ],
+      selection: ['kunnr'],
+    };
+    const result = await run(h, {}, spec);
+    expect(result.skip).toBeUndefined();
+    expect(result.problems?.length ?? 0).toBeGreaterThan(0);
+  });
 });
 
 async function runSuite(service: string) {

@@ -345,7 +345,16 @@ async function __ccSharedSelectionInvariant(h, app, spec) {
       else if (!q && s[i] === '\n') { headEnd = i; break; }
     }
     const head = s.slice(0, headEnd);
-    const delim = [';', '\t', ','].map((d) => [d, head.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+    // Counted outside quotes: a quoted header "Customer, account" holds no separator.
+    const outside = (d) => {
+      let n = 0;
+      for (let i = 0, q = false; i < head.length; i++) {
+        if (head[i] === '"') q = !q;
+        else if (!q && head[i] === d) n++;
+      }
+      return n;
+    };
+    const delim = [';', '\t', ','].map((d) => [d, outside(d)]).sort((a, b) => b[1] - a[1])[0][0];
     const records = [];
     let cells = [];
     let cur = '';
