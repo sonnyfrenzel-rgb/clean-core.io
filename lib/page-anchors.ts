@@ -42,7 +42,6 @@ export interface PageAnchor {
  */
 export const PAGE_ANCHOR_IDS = {
   analyze: {
-    score: 'analyze-score',
     focus: 'analyze-focus',
     where: 'analyze-where',
     kinds: 'analyze-kinds',
@@ -85,13 +84,12 @@ const n = (count: number) => String(count);
 /* ------------------------------------------------------------------ Analyze */
 
 /**
- * Analyze: the score, Look here first, Where in the program, Findings by kind,
- * then the two folds below the findings. The side column (route, not
- * determined) is beside the findings and needs no jump.
+ * Analyze: Look here first, Where in the program, Findings by kind, then the
+ * two folds below the findings. The side column (route, not determined) is
+ * beside the findings and needs no jump. The Clean Core Score has no anchor:
+ * it is the hero above the bar, the top of the page (ADR-092).
  */
 export function analyzeAnchors(content: {
-  /** The signed Clean Core Score, or null where none was computed. */
-  score: number | null;
   /** How many findings "Look here first" picks — 0 hides the anchor. */
   picks: number;
   /** Whether "Where in the program" is drawn (a program map over a source). */
@@ -102,9 +100,7 @@ export function analyzeAnchors(content: {
   summary: boolean;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.analyze;
-  const out: PageAnchor[] = [
-    { key: 'score', target: ids.score, label: 'Clean Core Score', count: content.score === null ? null : n(content.score), title: 'How far is this code from clean core?' },
-  ];
+  const out: PageAnchor[] = [];
   if (content.picks > 0) out.push({ key: 'focus', target: ids.focus, label: 'Look here first', count: n(content.picks), title: 'Which findings matter most?' });
   if (content.where) out.push({ key: 'where', target: ids.where, label: 'Where in the program', title: 'Where in the code are the findings?' });
   out.push({ key: 'kinds', target: ids.kinds, label: 'Findings by kind', count: content.findings > 0 ? n(content.findings) : 'none', title: 'Every finding, grouped' });

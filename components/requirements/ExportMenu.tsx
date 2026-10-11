@@ -17,6 +17,9 @@ import CcButton from '@/components/cc/Button';
  * same menu for its five ways out, with its own `items`, its own data
  * attributes on the trigger and a `note` under the buttons — one control
  * instead of seven buttons in three places.
+ *
+ * Since ADR-092 (11.10.2026) Analyze uses it twice: "Export ▾" for its one way
+ * out, and "Add evidence ▾" (`label`, `icon`) for its two optional imports.
  */
 export type ExportKind = 'docx' | 'md' | 'html' | 'print';
 
@@ -43,6 +46,8 @@ export default function ExportMenu<K extends string = ExportKind>({
   triggerAttrs,
   note,
   align = 'start',
+  label = 'Export',
+  icon,
 }: {
   onExport: (kind: K) => void;
   /** The ways out; the specification's four when absent. */
@@ -53,6 +58,10 @@ export default function ExportMenu<K extends string = ExportKind>({
   note?: React.ReactNode;
   /** `end`: the panel opens leftwards from the button's right edge on a wide screen — for a menu at the right of a header. */
   align?: 'start' | 'end';
+  /** The trigger's word — "Export" unless the menu holds something else ("Add evidence"). */
+  label?: string;
+  /** The trigger's icon — the download arrow for an export. */
+  icon?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -89,13 +98,13 @@ export default function ExportMenu<K extends string = ExportKind>({
       <CcButton
         ref={buttonRef}
         variant="ghost"
-        icon={<Download size={16} aria-hidden={true} />}
+        icon={icon ?? <Download size={16} aria-hidden={true} />}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
         {...(triggerAttrs ?? { 'data-spec-export-menu': '' })}
       >
-        Export
+        {label}
         <ChevronDown size={14} aria-hidden={true} />
       </CcButton>
       {open ? (

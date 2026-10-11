@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
-import EvidenceFindingsTable, { AnalyzeAnchorBar, type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
-import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
+import EvidenceFindingsTable, { AnalyzeAnchorBar, openSourceLine, type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import RouteCard from '@/components/analyze/RouteCard';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
@@ -13,12 +13,9 @@ import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
-import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
-import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
-import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
-import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
-import { accessUseOfKind, findingRows, SEVERITY_ORDER, withSuccessor } from '@/lib/findings-view';
+import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
+import { accessUseOfKind, findingRows, SEVERITY_ORDER } from '@/lib/findings-view';
 import { routeDrivers } from '@/lib/abap/extensibility-router';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -36,11 +33,11 @@ import { countSourceLines } from '@/lib/source-lines';
 /**
  * The demo's Analyze stage — the object page a real project's Analyze stage
  * shows (proposal A, owner decision 01.10.2026), on the same components:
- * the answer and its four facets (`AnalysisAnswer`), the Clean Core Score with
- * Clean-Core.io's bands (`CleanCoreScoreSection`), Look here first, Where in
- * the program with its source panel, Findings by kind (`EvidenceFindingsTable`),
- * the route and what was not determined in the side column, and the folds
- * below. Every figure comes from `lib/demo-project.ts`, which ran the engine of
+ * the Clean Core Score as the hero with its deductions and four facets
+ * (`AnalysisAnswer`, ADR-092 — "Demo — never signed" where a project names its
+ * signed run), Look here first, Where in the program with its source panel,
+ * Findings by kind (`EvidenceFindingsTable`), the route and what was not
+ * determined in the side column, and the folds below. Every figure comes from `lib/demo-project.ts`, which ran the engine of
  * this release over the example on the server, and is derived here exactly as
  * `app/(app)/project/[projectId]/analyze/page.tsx` derives it for a signed run
  * without a narrative.
@@ -98,6 +95,13 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
     () => (a.coverage?.gaps ?? []).map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
     [a.coverage],
   );
+  // The kinds the breakdown counts as not assessed, as the real page reads them.
+  const scoreGaps = useMemo(() => (a.coverage && !a.coverage.complete ? notAssessedItems : []), [a.coverage, notAssessedItems]);
+  // The breakdown arrives at the demo's score by construction (lib/demo-project.ts checks it).
+  const pointsOfKind = useMemo(
+    () => (a.scoreBreakdown.score === a.cleanCoreScore ? (kind: string) => a.scoreBreakdown.lines.find((l) => l.kind === kind)?.points ?? 0 : undefined),
+    [a.scoreBreakdown, a.cleanCoreScore],
+  );
 
   // The same three things the real page reads off the source in the browser.
   const { constructs, constructSummary, missingDeps } = useMemo(() => {
@@ -148,34 +152,37 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
   return (
     <div className="space-y-6 font-sans" data-demo-analyze="" data-demo-score-band={band.key}>
       <AnalysisAnswer
-        answer={analysisAnswer({
-          counts: findingCounts,
-          lines: sourceLines,
-          route,
-          routeChosenByReader: false,
-        })}
-        effect={dataEffect(a.findings)}
-        counts={findingCounts}
         score={a.cleanCoreScore}
+        breakdown={a.scoreBreakdown}
+        findings={a.findings}
+        notAssessed={scoreGaps}
+        edition={demo.deployment}
+        engineVersion={APP_VERSION}
         onExplainScore={() => setScoreOpen(true)}
-        severities={SEVERITY_ORDER.map((key) => ({ key, count: rows.filter((r) => r.finding.severity === key).length }))}
-        levels={levelFacet}
-        meta={{
+        provenance={{
+          run: null,
+          demo: true,
+          engine: APP_VERSION,
+          rules: null,
           fileName,
           lines: sourceLines || null,
           catalog: catalog && catalog.includes('@') ? catalog.split(' + ')[0] : catalog,
-          engine: APP_VERSION,
+          target: `${demo.deployment === 'public' ? 'Public Edition' : 'Private Edition'} assumed for the demo`,
         }}
-        status={[
-          { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
-          { key: 'run', label: 'Run', value: 'demo, never signed', dot: 'bg-cc-neutral' },
-          { key: 'target', label: 'Target', value: `${demo.deployment === 'public' ? 'Public Edition' : 'Private Edition'} · assumed for the demo`, dot: 'bg-cc-chart-2' },
-          { key: 'successors', label: 'Successors', value: rows.length ? `${withSuccessor(rows)} of ${rows.length} named` : 'no finding', dot: 'bg-cc-chart-3' },
-        ]}
+        severities={SEVERITY_ORDER.map((key) => ({ key, count: rows.filter((r) => r.finding.severity === key).length }))}
+        findingCount={findingCounts.total}
+        levels={levelFacet}
+        route={route}
+        routeChosenByReader={false}
+        decideHref="/demo/workspace?view=management"
+        questionsHref="/demo/workspace?view=it#not-determined"
+        rerunHref={null}
+        onOpenLine={source ? openSourceLine : undefined}
+        signedLabel="Clean Core Score of the demo"
       />
 
-      {/* The tool's anchor bar, as on a project (ADR-091). The demo has no model summary, so no anchor for it. */}
-      <AnalyzeAnchorBar findings={a.findings} sourceLines={sourceLines} score={a.cleanCoreScore} />
+      {/* The tool's anchor bar, as on a project (ADR-091), under the score hero (ADR-092). The demo has no model summary, so no anchor for it. */}
+      <AnalyzeAnchorBar findings={a.findings} sourceLines={sourceLines} />
 
       <EvidenceFindingsTable
         findings={a.findings}
@@ -184,10 +191,9 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         levels={levels}
         steps={a.processSteps}
         notAssessed={notAssessedItems}
-        scoreSection={
-          <CleanCoreScoreSection score={a.cleanCoreScore} breakdown={a.scoreBreakdown} onExplain={() => setScoreOpen(true)} />
-        }
+        pointsOf={pointsOfKind}
         fileName={fileName}
+        sideTopLabel={`Route · ${shortRoute(route) ?? 'not determined'}`}
         sideTop={({ openLine }) => (
           // The same card as a signed project's, from the router's report the
           // demo computed on the server — drivers, assumptions, confidence.
@@ -204,7 +210,16 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
             openLine={openLine}
           />
         )}
-        sideBottom={<NotDeterminedSide items={openItems} />}
+        sideBottom={
+          <NotDeterminedSide
+            items={openItems}
+            summary={{
+              places: scoreGaps.reduce((n, g) => n + (g.count > 0 ? g.count : 0), 0),
+              kinds: scoreGaps.length,
+              points: a.scoreBreakdown.score === a.cleanCoreScore ? a.scoreBreakdown.unassessedPoints : null,
+            }}
+          />
+        }
       />
 
       {/* Where a real run's model summary stands: folded, saying the demo has none. */}
@@ -212,22 +227,23 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         <DemoStops what="The analysis narrative — the summary a model writes beside this evidence —" />
       </FoldedSection>
 
-      {/* One section of technical detail, folded — as the real page draws it. */}
+      {/* One section of technical detail, folded — as the real page draws it.
+          The complexity and criticality meters left it with ADR-092 (owner
+          decision Q3); the inventory and the data coupling are the IT view's
+          (Q4), linked from here. */}
       <FoldedSection id="analyze-technical-detail" data-analysis-technical-detail="" title="Technical detail">
-        <FoldedPart title="Complexity and criticality">
-          <p className="m-0 cc-text-cell text-cc-ink-muted">
-            Complexity {a.complexityScore}/10 and criticality {a.criticalityScore}/10, both on the engine’s own ten-point
-            scale over the same source.
-          </p>
-        </FoldedPart>
         <FoldedPart title="Language constructs the engine resolved" data-analysis-constructs={constructs.length}>
           <CoverageVerdict findings={constructs} summary={constructSummary} />
           <ConstructFindings findings={constructs} />
         </FoldedPart>
         <FoldedPart title="Code inventory and data access">
-          <CodeInventoryTable codeInventory={demo.documentation.inventory} />
-          <ModuleHeatmap codeInventory={demo.documentation.inventory} />
-          <DataCouplingTable dataCoupling={demo.documentation.coupling} />
+          <p className="m-0 cc-text-cell text-cc-ink-muted" data-analyze-objects-link="">
+            The code inventory, its modules and the tables the code reads and writes are in the IT view:{' '}
+            <Link href="/demo/workspace?view=it#it-objects" className="font-semibold text-cc-ink underline underline-offset-2">
+              Objects &amp; dependencies
+            </Link>
+            .
+          </p>
         </FoldedPart>
       </FoldedSection>
 

@@ -12,7 +12,7 @@ import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
-import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shield, Cloud, BookOpenText, FilePlus2, Activity, ListChecks } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -22,8 +22,6 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
-import { STATE_CLASSES } from '@/components/cc/state';
-import type { SemanticState } from '@/lib/provenance';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGeminiWithReceipt } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
@@ -57,13 +55,10 @@ import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 
-import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
-import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
 import AssessmentProfileSummary from '@/components/analyze/AssessmentProfileSummary';
 import AssessmentTargetFields from '@/components/analyze/AssessmentTargetFields';
 import { catalogLookupTargetOf, declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
-import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
@@ -83,7 +78,6 @@ import SectionBoundary from '@/components/SectionBoundary';
 import NotGenerated from '@/components/NotGenerated';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import PersonalDataHints from '@/components/PersonalDataHints';
-import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
@@ -94,18 +88,18 @@ import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
-import EvidenceFindingsTable, { AnalyzeAnchorBar } from '@/components/analyze/EvidenceFindingsTable';
-import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
+import EvidenceFindingsTable, { AnalyzeAnchorBar, openSourceLine } from '@/components/analyze/EvidenceFindingsTable';
+import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
 import { BTP, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
 import { profileCoverage } from '@/lib/assessment-profile';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { formatTextDate } from '@/lib/format';
-import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
-import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
+import NotDeterminedSide, { type NotDeterminedSummary, type OpenItem } from '@/components/analyze/NotDeterminedSide';
+import ExportMenu from '@/components/requirements/ExportMenu';
 import OpenQuestionsLine from '@/components/workspace/OpenQuestionsLine';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
@@ -114,7 +108,7 @@ import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
 import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
-import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER, withSuccessor } from '@/lib/findings-view';
+import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
 import { scoreRuleFor, signedEngineVersionOf } from '@/lib/score-rule';
 import { readProcess } from '@/lib/first-look';
@@ -786,6 +780,11 @@ export default function AnalyzePage() {
   // The rule is the signed run's: its deployment and engine version, so a run
   // signed before 3.0.9 is explained by the rule it was scored by.
   const scoreRule = scoreRuleFor(project?.s4Deployment === 'public' ? 'public' : 'private', signedEngineVersionOf(project));
+  // The kinds the breakdown counts as not assessed — the coverage report's gaps, when it is incomplete.
+  const scoreGaps = useMemo(
+    () => (evidenceReport?.coverage && !evidenceReport.coverage.complete ? notAssessedItems : []),
+    [evidenceReport, notAssessedItems],
+  );
   const scoreParts = useMemo(
     () =>
       evidenceReport
@@ -858,6 +857,22 @@ export default function AnalyzePage() {
     typeof project?.cleanCoreScore === 'number'
       ? project.cleanCoreScore
       : null;
+
+  /**
+   * The hero's deductions add up to the signed score (ADR-092). Only then does
+   * Findings by kind carry its Points column — the same deductions per kind —
+   * and the side card name the points the places not assessed cost.
+   */
+  const scoreAddsUp = scoreParts !== null && signedCleanCoreScore !== null && scoreParts.score === signedCleanCoreScore;
+  const pointsOfKind = useMemo(
+    () => (scoreAddsUp && scoreParts ? (kind: string) => scoreParts.lines.find((l) => l.kind === kind)?.points ?? 0 : undefined),
+    [scoreAddsUp, scoreParts],
+  );
+  const notDeterminedSummary: NotDeterminedSummary = {
+    places: scoreGaps.reduce((n, g) => n + (g.count > 0 ? g.count : 0), 0),
+    kinds: scoreGaps.length,
+    points: scoreAddsUp && scoreParts ? scoreParts.unassessedPoints : null,
+  };
 
   /**
    * The router's report for the signed run's evidence (audit M-1, 10.10.2026).
@@ -938,6 +953,29 @@ export default function AnalyzePage() {
   // (ADR-081).
   // The project's open questions (ADR-081), in their one line beside what
   // this analysis could not settle; the list stands in the workspace.
+  const phases = workflowSteps(project);
+  const analyzePhase = phases.find((p) => p.key === 'analyze');
+  /*
+   * The source or an input changed after the signed run (register L-05, audit
+   * M-8): every figure of the report is about what that run read, so the page
+   * says so — with the stepper's own sentence (`lib/workflow-steps.ts`) and the
+   * one way on — at the top of the score hero (ADR-092). This page has no
+   * re-run; a new run starts in the workspace's IT view.
+   */
+  const staleNotice =
+    analyzePhase?.state === 'stale' ? (
+      <StaleNotice
+        title={analyzePhase.badge === 'Inputs changed' ? 'The inputs changed since the signed run' : 'The source changed since the signed run'}
+        reasons={[analyzePhase.detail]}
+        action={
+          typeof projectId === 'string' ? (
+            <a href={`/project/${encodeURIComponent(projectId)}?view=it`} className="font-semibold text-cc-ink underline underline-offset-2">
+              Run it again in the IT view
+            </a>
+          ) : null
+        }
+      />
+    ) : null;
   const openQuestionsOfProject = useOpenQuestions(project, typeof projectId === 'string' ? projectId : '');
   const questionsLine = (
     <OpenQuestionsLine
@@ -952,48 +990,48 @@ export default function AnalyzePage() {
   const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(evidenceFindings)), [evidenceFindings]);
   const sourceLines = countSourceLines(legacyCode ?? '');
 
-  /** The head's facets and status line, the same in both kinds of report. */
-  const answerFacts = () => {
+  /**
+   * The score hero's figures (ADR-092), the same in every kind of report. The
+   * signed score itself is passed beside them, by name, where the hero is drawn.
+   * What the status line said — evidence, run, target, successors — is the
+   * hero's provenance (run, engine, target) and a column of Findings by kind.
+   */
+  const heroProps = () => {
     const catalogRaw = project?.auditMetadata?.modelCard?.catalogVersion;
     const catalog = catalogRaw ? catalogForReader(catalogRaw) : null;
+    const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
+    const pid = typeof projectId === 'string' ? encodeURIComponent(projectId) : null;
     return {
-      severities: SEVERITY_ORDER.map((key) => ({ key, count: evidenceRows.filter((r) => r.finding.severity === key).length })),
-      levels: levelFacet,
-      meta: {
+      breakdown: scoreParts,
+      findings: evidenceFindings,
+      notAssessed: scoreGaps,
+      edition: project?.s4Deployment === 'public' || project?.s4Deployment === 'private' ? project.s4Deployment : null,
+      engineVersion: signedEngineVersionOf(project),
+      onExplainScore: () => setShowScoreModal(true),
+      provenance: {
+        // Signed when and as which run, leading to the run in the workspace's Evidence layer.
+        run: runId
+          ? { id: runId, when: formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp), href: pid ? `/project/${pid}#evidence` : undefined }
+          : null,
+        engine: project?.auditMetadata?.modelCard?.engineVersion ?? signedEngineVersionOf(project),
+        rules: recordedProfileOf(project)?.ruleVersion ?? null,
         fileName: sourceFileName(project),
         lines: sourceLines || null,
         // A catalog version the reader form cannot shorten keeps its base name only — never a hash on screen.
         catalog: catalog && catalog.includes('@') ? catalog.split(' + ')[0] : catalog,
-        engine: project?.auditMetadata?.modelCard?.engineVersion ?? null,
+        target: targetStatusValue(project),
       },
-      status: [
-        // Evidence · Run · Target · Successors (owner 10.10.2026, audit M-6).
-        // The evidence is the engine's alone; the model's summary, when there
-        // is one, says what it is where it stands, folded below. The route is
-        // not here: the answer sentence and the route card say it.
-        { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
-        // Signed when and as which run, leading to the run in the workspace's Evidence layer.
-        { key: 'run', label: 'Run', value: runStatusValue(), dot: 'bg-cc-neutral', href: project?.activeRunId && typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}#evidence` : undefined },
-        // What the result is valid for: the target profile the run signed, covered or not.
-        { key: 'target', label: 'Target', value: targetStatusValue(project), dot: 'bg-cc-chart-2' },
-        // How much of the way has a named successor.
-        { key: 'successors', label: 'Successors', value: evidenceRows.length ? `${withSuccessor(evidenceRows)} of ${evidenceRows.length} named` : 'no finding', dot: 'bg-cc-chart-3' },
-      ],
+      severities: SEVERITY_ORDER.map((key) => ({ key, count: evidenceRows.filter((r) => r.finding.severity === key).length })),
+      findingCount: findingCounts.total,
+      levels: levelFacet,
+      decideHref,
+      questionsHref: pid ? `/project/${pid}?view=it#not-determined` : null,
+      // This page has no re-run; a new run starts in the workspace's IT view.
+      rerunHref: pid ? `/project/${pid}?view=it` : null,
+      onOpenLine: legacyCode && sourceLines > 0 ? openSourceLine : undefined,
+      notice: staleNotice,
     };
   };
-
-  /** "signed 9 Oct 2026 · 3f2a1b7c" — the run as the audit pack names it. */
-  const runStatusValue = () => {
-    const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
-    if (!runId) return 'no signed run';
-    const when = formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp);
-    return when ? `signed ${when} · ${runId.slice(0, 8)}` : `signed · ${runId.slice(0, 8)}`;
-  };
-
-  /** The Clean Core Score section, first in the main column. */
-  const scoreSection = (
-    <CleanCoreScoreSection score={signedCleanCoreScore} breakdown={scoreParts} onExplain={() => setShowScoreModal(true)} />
-  );
 
   /** What the engine could not settle in the source itself — the same three in both kinds of report. */
   const sourceOpenItems = (): OpenItem[] => {
@@ -1025,48 +1063,25 @@ export default function AnalyzePage() {
     return items;
   };
 
-  /** Complexity and criticality on the engine's 1–10 scale — part of the technical detail. */
-  const renderMeters = () => {
-    // Recomputed from the code on the page, on the 1–10 scale.
-    const liveComplexity = legacyCode ? computeComplexityScore(legacyCode) : project?.complexityScore;
-    const liveCriticality = legacyCode ? computeCriticalityScore(legacyCode) : project?.criticalityScore;
-    if (liveComplexity === undefined && liveCriticality === undefined) return null;
-    return (
-      <>
-        {(liveComplexity !== undefined || liveCriticality !== undefined) && (
-          <div className="flex flex-wrap gap-4">
-            {liveComplexity !== undefined && (
-              <ScoreMeter
-                title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex."
-                icon={<Layers size={16} aria-hidden="true" />}
-                label="Complexity"
-                value={liveComplexity}
-                caption={liveComplexity >= 7 ? 'High — significant refactoring needed' : liveComplexity >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}
-              />
-            )}
-            {liveCriticality !== undefined && (
-              <ScoreMeter
-                title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical."
-                icon={<Zap size={16} aria-hidden="true" />}
-                label="Criticality"
-                value={liveCriticality}
-                caption={liveCriticality >= 7 ? 'Mission-critical — requires careful planning' : liveCriticality >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}
-              />
-            )}
-          </div>
-        )}
-      </>
-    );
-  };
-
-  /** Inventory, data access, the levels A–D and the review hints. */
+  /**
+   * The levels A–D per object and the review hints. The code inventory, its
+   * modules and the data coupling are said once, in the IT view's "Objects &
+   * dependencies" (ADR-086); since ADR-092 (owner decision Q4, 11.10.2026)
+   * Analyze links there instead of drawing them a second time.
+   */
   const renderInventory = () => {
     if (!project) return null;
     return (
       <>
-        <CodeInventoryTable codeInventory={project.codeInventory || []} />
-        <ModuleHeatmap codeInventory={project.codeInventory || []} />
-        <DataCouplingTable dataCoupling={project.dataCoupling || []} />
+        {typeof projectId === 'string' ? (
+          <p className="m-0 cc-text-cell text-cc-ink-muted" data-analyze-objects-link="">
+            The code inventory, its modules and the tables the code reads and writes are in the IT view:{' '}
+            <a href={`/project/${encodeURIComponent(projectId)}?view=it#it-objects`} className="font-semibold text-cc-ink underline underline-offset-2">
+              Objects &amp; dependencies
+            </a>
+            .
+          </p>
+        ) : null}
         {/* Cloud Readiness Classification (A–D) */}
         <AssessmentProfileSummary project={project} />
         <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
@@ -1116,27 +1131,23 @@ export default function AnalyzePage() {
 
   /**
    * "Technical detail" — one section at the bottom, folded (owner decision
-   * 02.10.2026). It gathers what used to be four: complexity and criticality,
-   * the language constructs the engine resolved, the code inventory with data
-   * access and the levels A–D, and the imported usage and ATC results. Each
-   * keeps its own heading inside; nothing in it was removed.
+   * 02.10.2026): the language constructs the engine resolved, the levels A–D
+   * per object with the compliance hints, and the imported usage and ATC
+   * results. The complexity and criticality meters left it with ADR-092 (owner
+   * decision Q3, 11.10.2026) — display only: both stay in the signed run, the
+   * audit pack, Delivery and the stakeholder slides.
    */
-  const renderTechnicalDetail = (extra?: React.ReactNode) => {
-    const meters = renderMeters();
+  const renderTechnicalDetail = () => {
     return (
       <FoldedSection id="analyze-technical-detail" data-analysis-technical-detail="" title="Technical detail">
-        {meters ? <FoldedPart title="Complexity and criticality">{meters}</FoldedPart> : null}
         <FoldedPart title="Language constructs the engine resolved" data-analysis-constructs={findings.length}>
           {/* Coverage verdict and the construct checklist, with its Confirm. */}
           <CoverageVerdict findings={findings} summary={findingsSummary} />
           <ConstructFindings findings={findings} />
         </FoldedPart>
-        <FoldedPart title="Code inventory, data access and clean core levels A–D">
+        <FoldedPart title="Clean core levels A–D per object and compliance hints">
           <SectionBoundary name="Assessment & Value">
-            <div className="space-y-8">
-              {renderInventory()}
-              {extra}
-            </div>
+            <div className="space-y-8">{renderInventory()}</div>
           </SectionBoundary>
         </FoldedPart>
         {renderImports()}
@@ -1175,21 +1186,14 @@ export default function AnalyzePage() {
       return (
         <div className="space-y-6 font-sans" data-evidence-only-report>
           <AnalysisAnswer
-            answer={analysisAnswer({
-              counts: findingCounts,
-              lines: sourceLines,
-              route: evidenceRoute,
-              routeChosenByReader: evidenceOverridden,
-            })}
-            effect={dataEffect(evidenceFindings)}
-            counts={findingCounts}
             score={signedCleanCoreScore}
-            onExplainScore={() => setShowScoreModal(true)}
-            {...answerFacts()}
+            route={evidenceRoute}
+            routeChosenByReader={evidenceOverridden}
+            {...heroProps()}
           />
 
-          {/* The tool's anchor bar (ADR-091), under the answer, before the first section. */}
-          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} score={signedCleanCoreScore} />
+          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-092). */}
+          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} />
 
           <EvidenceFindingsTable
             findings={evidenceFindings}
@@ -1198,8 +1202,9 @@ export default function AnalyzePage() {
             levels={{ status: levelLookup.status, of: levelOf }}
             steps={processSteps}
             notAssessed={notAssessedItems}
-            scoreSection={scoreSection}
+            pointsOf={pointsOfKind}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
+            sideTopLabel={`Route · ${shortRoute(evidenceRoute) ?? 'not determined'}`}
             sideTop={({ openLine }) => (
               <RouteCard
                 route={evidenceRoute}
@@ -1216,7 +1221,7 @@ export default function AnalyzePage() {
                 stageOutput
               />
             )}
-            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
+            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} summary={notDeterminedSummary} />}
           />
 
           {/* Where the model's summary would stand: folded, saying it is not there. */}
@@ -1230,7 +1235,7 @@ export default function AnalyzePage() {
             />
           </FoldedSection>
 
-          {renderTechnicalDetail(<WhyScorePanel project={project} />)}
+          {renderTechnicalDetail()}
         </div>
       );
     }
@@ -1270,26 +1275,17 @@ export default function AnalyzePage() {
         });
       }
 
-      const answer = analysisAnswer({
-        counts: findingCounts,
-        lines: sourceLines,
-        route: shownRoute,
-        routeChosenByReader: routeIsOverridden,
-      });
-
       return (
         <div className="space-y-6 font-sans">
           <AnalysisAnswer
-            answer={answer}
-            effect={dataEffect(evidenceFindings)}
-            counts={findingCounts}
             score={signedCleanCoreScore}
-            onExplainScore={() => setShowScoreModal(true)}
-            {...answerFacts()}
+            route={shownRoute}
+            routeChosenByReader={routeIsOverridden}
+            {...heroProps()}
           />
 
-          {/* The tool's anchor bar (ADR-091), under the answer, before the first section. */}
-          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} score={signedCleanCoreScore} summary />
+          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-092). */}
+          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} summary />
 
           <EvidenceFindingsTable
             findings={evidenceFindings}
@@ -1298,9 +1294,10 @@ export default function AnalyzePage() {
             levels={{ status: levelLookup.status, of: levelOf }}
             steps={processSteps}
             notAssessed={notAssessedItems}
-            scoreSection={scoreSection}
+            pointsOf={pointsOfKind}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} />}
+            sideTopLabel={`Route · ${shortRoute(shownRoute) ?? 'not determined'}`}
+            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} summary={notDeterminedSummary} />}
             sideTop={({ openLine }) => (
               /* The route, as the rules recommended it — or as an earlier build's switch stored it. */
               <RouteCard
@@ -1378,19 +1375,26 @@ export default function AnalyzePage() {
       );
     }
 
+    // A project analysed before runs existed, with a narrative that is not
+    // JSON: the score hero over the prose (ADR-092). The "Why this route &
+    // score" panel that stood under it said the hero's figures a second time.
     return (
-      <>
-      <div
-        className="cc-prose"
-        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(withoutUnapprovedMoney(project.analysis)) }}
-      />
-      <WhyScorePanel project={project} />
-      </>
+      <div className="space-y-6 font-sans">
+        <AnalysisAnswer
+          score={signedCleanCoreScore}
+          route={project.extensibilityRoute ?? null}
+          routeChosenByReader={false}
+          {...heroProps()}
+        />
+        <div
+          className="cc-prose"
+          dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(withoutUnapprovedMoney(project.analysis)) }}
+        />
+      </div>
     );
   };
 
-  const phases = workflowSteps(project);
-  const analyzePhase = phases.find((p) => p.key === 'analyze');
+
   /** The run's report is on screen rather than the upload form. */
   const hasResults = hasStoredResults;
 
@@ -1418,34 +1422,58 @@ export default function AnalyzePage() {
         actions={
           legacyCode || (hasResults && project?.analysis) ? (
             <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
-              {/* Two optional imports as small actions (owner decision
-                  02.10.2026); each opens the upload it always had, in a
-                  dialog, instead of two large panels on the page. */}
+              {/* The two optional imports behind one "Add evidence" menu (owner
+                  decision Q5, 11.10.2026, ADR-092); each still opens the upload
+                  it always had, in a dialog, and `?add=usage|atc` opens it
+                  directly (ADR-081). */}
               {legacyCode ? (
-                <>
-                  <CcButton variant="ghost" data-analyze-add-usage="" onClick={() => setImportDialog('usage')}>
-                    Add usage data
-                  </CcButton>
-                  <CcButton variant="ghost" data-analyze-add-atc="" onClick={() => setImportDialog('atc')}>
-                    Add ATC results
-                  </CcButton>
-                </>
+                <ExportMenu<'usage' | 'atc'>
+                  label="Add evidence"
+                  icon={<FilePlus2 size={16} aria-hidden={true} />}
+                  align="end"
+                  triggerAttrs={{ 'data-analyze-add-evidence': '' }}
+                  items={[
+                    {
+                      kind: 'usage',
+                      label: 'Usage data',
+                      hint: 'SCMON, UPL or ST03N exports, for usage-weighted risk',
+                      icon: <Activity size={16} aria-hidden={true} />,
+                      attrs: { 'data-analyze-add-usage': '', 'aria-label': 'Add usage data' },
+                    },
+                    {
+                      kind: 'atc',
+                      label: 'ATC results',
+                      hint: 'an ABAP Test Cockpit worklist, compared with the findings',
+                      icon: <ListChecks size={16} aria-hidden={true} />,
+                      attrs: { 'data-analyze-add-atc': '', 'aria-label': 'Add ATC results' },
+                    },
+                  ]}
+                  onExport={(kind) => setImportDialog(kind)}
+                />
               ) : null}
+              {/* The one way out, in the Export menu of ADR-078/082. */}
               {hasResults && project?.analysis ? (
-                <CcButton
-                  variant="secondary"
-                  icon={<FileCode2 size={16} aria-hidden="true" />}
-                  onClick={() => exportToConfluence()}
-                >
-                  Export Confluence
-                </CcButton>
+                <ExportMenu<'html'>
+                  align="end"
+                  triggerAttrs={{ 'data-analyze-export-menu': '' }}
+                  items={[
+                    {
+                      kind: 'html',
+                      label: 'Confluence',
+                      hint: 'a page to paste or upload',
+                      icon: <BookOpenText size={16} aria-hidden={true} />,
+                      attrs: { 'data-analyze-export-confluence': '', 'aria-label': 'Export Confluence' },
+                    },
+                  ]}
+                  onExport={() => void exportToConfluence()}
+                />
               ) : null}
             </div>
           ) : undefined
         }
       >
         {hasResults
-          ? 'What the evidence engine found in this code, the route it recommends, and what is still open.'
+          ? 'How far this code is from clean core, why, and where in the code.'
           : 'Extracting business intelligence and technical dependencies from your legacy assets.'}
       </StageHeader>
 
@@ -1466,24 +1494,6 @@ export default function AnalyzePage() {
         </div>
       )}
 
-      {/* The source or an input changed after the signed run (register L-05,
-          audit M-8): every figure below is about what that run read, so the
-          page says so above them — with the stepper's own sentence
-          (`lib/workflow-steps.ts`) and the one way on. This page has no re-run;
-          a new run starts in the workspace's IT view. */}
-      {hasResults && analyzePhase?.state === 'stale' ? (
-        <StaleNotice
-          title={analyzePhase.badge === 'Inputs changed' ? 'The inputs changed since the signed run' : 'The source changed since the signed run'}
-          reasons={[analyzePhase.detail]}
-          action={
-            typeof projectId === 'string' ? (
-              <a href={`/project/${encodeURIComponent(projectId)}?view=it`} className="font-semibold text-cc-ink underline underline-offset-2">
-                Run it again in the IT view
-              </a>
-            ) : null
-          }
-        />
-      ) : null}
 
       {searchParams.get('reason') === 'no-run' && !project?.activeRunId && (
         <div className="mb-8">
@@ -1966,27 +1976,20 @@ function routeNotRecorded(overridden: boolean, confidence: number | null, ration
   );
 }
 
-const EDITION_SHORT: Record<string, string> = {
-  public: 'Public Edition',
-  private: 'Private Edition',
-  btp: 'SAP BTP ABAP environment',
-  'on-premise': 'on-premise',
-};
-
 /**
- * The status line's Target (audit M-6, §3.5): the target profile the run
- * signed and whether the catalog answers for it — "Private Edition ·
- * S4HANA-2023-FPS02 · covered", or "· unconfirmed (2)". The full card is in
- * the technical detail; a run signed before profiles existed says so.
+ * The target the run signed and whether the catalog answers for it —
+ * "S4HANA-2023-FPS02 · covered", or "· unconfirmed (2)" (audit M-6, §3.5),
+ * said in the score hero's provenance since ADR-092. The edition is the
+ * hero's own line. A run signed before profiles existed says so.
  */
-function targetStatusValue(project: Project | null): string {
-  if (!project?.activeRunId) return 'no signed run';
+function targetStatusValue(project: Project | null): string | null {
+  if (!project?.activeRunId) return null;
   const profile = recordedProfileOf(project);
-  if (!profile) return 'not recorded';
+  if (!profile) return 'target profile not recorded';
   const coverage = profileCoverage(profile);
   const open = coverage.gaps.filter((g) => g.severity !== 'notes').length;
   const verdict = coverage.state === 'covered' ? 'covered' : `${coverage.state}${open ? ` (${open})` : ''}`;
-  return [EDITION_SHORT[profile.edition] ?? profile.edition, profile.release || 'release not named', verdict].join(' · ');
+  return [`target ${profile.release || 'release not named'}`, verdict].join(' · ');
 }
 
 /** A deployment choice card. Chosen = ink outline, never green (§1.1: choosing proves nothing). */
@@ -2081,38 +2084,6 @@ function DeploymentChoice({
           </span>
         </label>
       ))}
-    </div>
-  );
-}
-
-/** The four tiers the score explanation lists — the same words as before, in one place. */
-
-/**
- * A score's state. Only the end that needs attention is coloured; the good end
- * stays neutral, because green is reserved for what is proven (ADR-007) and a
- * low complexity or a high confidence is a measurement, not a proof.
- */
-function scoreState(value: number, direction: 'higher-is-better' | 'lower-is-better'): SemanticState {
-  if (direction === 'higher-is-better') return value >= 85 ? 'neutral' : value >= 70 ? 'warning' : 'error';
-  return value >= 7 ? 'error' : value >= 4 ? 'warning' : 'neutral';
-}
-
-/** Complexity or criticality on the 1–10 scale, with its bar. */
-function ScoreMeter({ title, icon, label, value, caption }: { title: string; icon: React.ReactNode; label: string; value: number; caption: string }) {
-  const classes = STATE_CLASSES[scoreState(value, 'lower-is-better')];
-  return (
-    <div className="bg-cc-surface border border-cc-line rounded-cc-card px-4 py-3 shadow-cc" title={title}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className={classes.text}>{icon}</span>
-        <span className="cc-text-meta text-cc-ink-muted">{label}</span>
-        <span className={clsx('cc-text-identifier', classes.text)}>
-          {value}<span className="text-cc-ink-muted font-medium">/10</span>
-        </span>
-      </div>
-      <div className="w-32 h-2 bg-cc-surface-muted border border-cc-line rounded-full overflow-hidden" aria-hidden="true">
-        <div className={clsx('h-full rounded-full', classes.mark)} style={{ width: `${(value / 10) * 100}%` }} />
-      </div>
-      <p className="cc-text-meta font-medium text-cc-ink-muted mt-2">{caption}</p>
     </div>
   );
 }

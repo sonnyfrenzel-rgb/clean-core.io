@@ -135,8 +135,12 @@ test.describe('a stored analysis with amounts in its prose', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    // The Confluence page is an item of the one Export menu since ADR-092 (11.10.2026).
+    await page.locator('[data-analyze-export-menu]').click({ timeout: 60000 });
     const exportButton = page.getByRole('button', { name: /Export Confluence/ });
     await expect(exportButton).toBeVisible({ timeout: 60000 });
+    // Closed again, so the page is read as shown; it is opened once more for the download below.
+    await page.keyboard.press('Escape');
     // The model's summary is folded since 02.10.2026; open it, so the prose is read as shown.
     await page.locator('#analyze-summary [data-cc-disclosure-trigger]').first().click();
     await expect(page.locator('#analyze-summary [data-cc-disclosure-region]').first()).toBeVisible();
@@ -145,6 +149,7 @@ test.describe('a stored analysis with amounts in its prose', () => {
     // Not vacuous: the prose is on the page, with its amount replaced.
     expect(text).toContain(NO_AMOUNT);
 
+    await page.locator('[data-analyze-export-menu]').click();
     const [download] = await Promise.all([page.waitForEvent('download'), exportButton.click()]);
     const html = fs.readFileSync(await download.path(), 'utf8');
     expect(html).toContain('Business Analysis Report');

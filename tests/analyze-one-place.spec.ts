@@ -12,7 +12,8 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  * times, the findings twice, the second time as a model's "Gaps Prioritization
  * Matrix" with mostly empty quadrants.
  *
- * Now: facets, score and findings on top; the route and what is not determined
+ * Now: the score as the hero on top (ADR-092, 11.10.2026), with its four
+ * facets, then the findings; the route and what is not determined
  * in the side column, once each — two cards (10.10.2026: the severity donut
  * went, the route switch went, and the route card's one action is the
  * decision in Management); below, two folded sections — the model's
@@ -35,7 +36,8 @@ test.describe('the stage, read', () => {
       expect(src, rel).not.toContain('data-stage-output="worklist"');
       expect(src, rel).not.toMatch(/title="Why this route — decision path/);
       // One side card for not determined, one fold each for the summary and the detail.
-      expect(src, rel).toMatch(/<NotDeterminedSide items=\{openItems\}( questions=\{questionsLine\})? \/>/);
+      expect(src, rel).toMatch(/<NotDeterminedSide\s+items=\{openItems\}(\s+questions=\{questionsLine\})?\s+summary=\{[\s\S]*?\}\s*\/>/);
+      expect(src.match(/<NotDeterminedSide\b/g)?.length, rel).toBe(rel === PAGE ? 2 : 1);
       expect(src, rel).toMatch(/title="Technical detail"/);
       expect(src, rel).toMatch(/title="Model summary"/);
       // The big upload panels are gone.
@@ -46,14 +48,21 @@ test.describe('the stage, read', () => {
     expect(read('components/tco/BusinessValuePlan.tsx')).toMatch(/readStoredAnalysis<AnalysisData>\(analysis\)/);
   });
 
-  test('the status line is Evidence · Run · Target · Successors, in the real page and in the demo', () => {
-    // Owner 10.10.2026 (audit M-6): the route is said by the answer and the
-    // route card; the status line says what the result is valid for and how
-    // much of it has a named successor.
+  test('the status line is folded into the score hero, in the real page and in the demo', () => {
+    // ADR-092 (owner approval 11.10.2026): Evidence, Run and Target are the
+    // score's provenance (H3, H4) — "no model involved", the signed run or
+    // "Demo — never signed", engine, file, catalog, target — and "Successors
+    // n of m" is a column of Findings by kind, per kind. Nothing of it is lost.
     for (const rel of [PAGE, DEMO]) {
-      const keys = [...read(rel).matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1]);
-      expect(keys, rel).toEqual(['evidence', 'run', 'target', 'successors']);
+      expect([...read(rel).matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)], rel).toHaveLength(0);
+      expect(read(rel), rel).toMatch(/provenance[=:]\s*\{/);
     }
+    const hero = read('components/analyze/CleanCoreScoreSection.tsx');
+    expect(hero).toContain('no model involved');
+    expect(hero).toContain('Demo — never signed');
+    expect(hero).toContain('provenance.target');
+    expect(read(DEMO)).toMatch(/run: null,\s*demo: true,/);
+    expect(read('components/analyze/EvidenceFindingsTable.tsx')).toContain('with successor');
   });
 
   test('one route card, shared; no route switch; the next action is the decision in Management', () => {
@@ -112,10 +121,11 @@ async function expectOnePlaceEach(page: Page) {
     await expect(detailTrigger).toHaveAttribute('aria-expanded', 'true', { timeout: 2000 });
   }).toPass({ timeout: 30000 });
   const detail = page.locator('#analyze-technical-detail');
-  for (const part of ['Complexity and criticality', 'Language constructs the engine resolved']) {
-    await expect(detail.getByRole('heading', { level: 3, name: part })).toBeVisible();
-  }
-  await expect(detail.getByRole('heading', { level: 3, name: /^Code inventory/ })).toBeVisible();
+  await expect(detail.getByRole('heading', { level: 3, name: 'Language constructs the engine resolved' })).toBeVisible();
+  // The meters left Analyze (ADR-092, owner decision Q3); the inventory and the
+  // data coupling are the IT view's, linked from here (Q4).
+  await expect(detail.getByRole('heading', { level: 3, name: 'Complexity and criticality' })).toHaveCount(0);
+  await expect(detail.locator('[data-analyze-objects-link] a')).toHaveAttribute('href', /view=it#it-objects$/);
 }
 
 test.describe('the stage, rendered', () => {
@@ -145,13 +155,16 @@ test.describe('the stage, rendered', () => {
     // Two cards in the side column, not three.
     await expect(page.locator('aside[aria-label="Route and what is open"] > section')).toHaveCount(2);
 
-    // The two optional imports: small header actions, each opening its upload in a dialog.
+    // The two optional imports: one "Add evidence" menu (ADR-092, owner decision
+    // Q5), each item opening its upload in a dialog.
+    await page.locator('[data-analyze-add-evidence]').click();
     await page.locator('[data-analyze-add-usage]').click();
     const usage = page.getByRole('dialog', { name: 'Add usage data' });
     await expect(usage).toBeVisible();
     await expect(usage.locator('[data-analyze-usage-dialog]')).toBeVisible();
     await usage.getByRole('button', { name: 'Close' }).last().click();
     await expect(usage).toBeHidden();
+    await page.locator('[data-analyze-add-evidence]').click();
     await page.locator('[data-analyze-add-atc]').click();
     const atc = page.getByRole('dialog', { name: 'Add ATC results' });
     await expect(atc).toBeVisible();

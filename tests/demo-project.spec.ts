@@ -253,21 +253,21 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     await openStage(page, 'analyze');
     const head = page.locator('[data-analysis-answer]');
     await expect(head).toBeVisible();
-    // The finding count of a real run of the same example: one per pattern and object.
-    await expect(head.locator('h2')).toContainText(`${demo.analyze.distinctFindings} findings to review in this code`);
-    await expect(page.locator('[data-analysis-facet="Findings"]')).toContainText(String(demo.analyze.distinctFindings));
-    // The score, computed, with Clean-Core.io's band.
+    // The score is the hero (ADR-092): computed, with Clean-Core.io's band,
+    // and its deductions add up to it.
     const band = scoreBand(demo.analyze.cleanCoreScore);
-    const scoreFacet = page.locator('[data-analysis-facet="Clean Core Score"]');
-    await expect(scoreFacet).toContainText(`${demo.analyze.cleanCoreScore} of 100`);
-    await expect(scoreFacet).toContainText(band.label);
+    await expect(head.locator('[data-analyze-score-value]')).toHaveText(String(demo.analyze.cleanCoreScore));
+    await expect(head.locator(`[data-analyze-score-band="${band.key}"]`)).toContainText(band.label);
     await expect(page.locator(`[data-score-band="${band.key}"][data-score-band-current="true"]`)).toBeVisible();
     await expect(page.locator('[data-score-breakdown="shown"]')).toBeVisible();
+    await expect(head.locator('[data-score-total]')).toContainText(String(demo.analyze.cleanCoreScore));
+    // The finding count of a real run of the same example: one per pattern and object.
+    await expect(page.locator('[data-analysis-facet="Findings"]')).toContainText(String(demo.analyze.distinctFindings));
     // The levels were looked up on the server — a demo never waits on the catalog.
-    await expect(page.locator('[data-analysis-facet="Level distribution"] [data-level-bar]')).toBeVisible();
+    await expect(page.locator('[data-analysis-facet="Clean core levels"] [data-level-bar]')).toBeVisible();
     // The model's part is said to be missing, not filled in.
     await expect(page.getByTestId('demo-stage-analyze')).toContainText('The demo stops where the model begins.');
-    await expect(page.locator('[data-analysis-status]')).toContainText('demo, never signed');
+    await expect(head.locator('[data-analysis-meta]')).toContainText('Demo — never signed');
 
     // Where in the program: a dot opens the source at its line.
     const first = demo.analyze.findings.find((f) => f.severity === 'Critical') ?? demo.analyze.findings[0];

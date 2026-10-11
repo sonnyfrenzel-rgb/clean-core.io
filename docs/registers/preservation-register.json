@@ -440,24 +440,14 @@
             "why": "headline score"
           },
           {
-            "field": "complexityScore",
-            "from": "run",
-            "why": "assessment panel"
-          },
-          {
-            "field": "criticalityScore",
-            "from": "run",
-            "why": "assessment panel"
-          },
-          {
             "field": "codeInventory",
             "from": "run",
-            "why": "inventory table"
+            "why": "the clean core levels A-D per object in the technical detail. The inventory table, the module heatmap and the data coupling table left Analyze on 11.10.2026 (ADR-092, owner decision Q4): they are the IT view's Objects & dependencies, linked from the technical detail. complexityScore and criticalityScore are no longer read here (Q3): the page computes them for the run it signs, and they stay in the run, the audit pack, Delivery and the slides"
           },
           {
             "field": "dataCoupling",
             "from": "run",
-            "why": "data coupling table"
+            "why": "the clean core levels A-D per object and the compliance review hints in the technical detail"
           },
           {
             "field": "extensibilityRoute",

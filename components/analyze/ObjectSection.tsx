@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,6 +19,7 @@ export default function ObjectSection({
   side = false,
   className,
   children,
+  fold,
   ...data
 }: {
   id?: string;
@@ -28,7 +30,9 @@ export default function ObjectSection({
   side?: boolean;
   className?: string;
   children: React.ReactNode;
+  fold?: { open: boolean; onToggle: () => void };
 } & { [key: `data-${string}`]: string | number | undefined }) {
+  const shut = fold ? !fold.open : false;
   return (
     <section
       id={id}
@@ -38,12 +42,25 @@ export default function ObjectSection({
     >
       <header className={cn('flex flex-wrap items-center justify-between gap-3', side ? 'px-4 pt-4' : 'px-4 pt-4 sm:px-5')}>
         <h2 id={id ? `${id}-title` : undefined} className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-          {title}
+          {fold ? (
+            <button
+              type="button"
+              aria-expanded={fold.open}
+              onClick={fold.onToggle}
+              data-section-fold=""
+              className="-my-2 flex min-h-11 items-center gap-2 text-left"
+            >
+              <ChevronRight size={16} aria-hidden={true} className={cn('text-cc-ink-muted motion-safe:transition-transform', fold.open && 'rotate-90')} />
+              {title}
+            </button>
+          ) : (
+            title
+          )}
         </h2>
-        {right}
+        {shut ? null : right}
       </header>
-      {lead ? <p className={cn('m-0 mt-1 cc-text-cell text-cc-ink-muted', side ? 'px-4' : 'px-4 sm:px-5')}>{lead}</p> : null}
-      <div className={cn(side ? 'px-4 pt-3 pb-4' : 'px-4 pt-3 pb-4 sm:px-5 sm:pb-5')}>{children}</div>
+      {lead && !shut ? <p className={cn('m-0 mt-1 cc-text-cell text-cc-ink-muted', side ? 'px-4' : 'px-4 sm:px-5')}>{lead}</p> : null}
+      {shut ? <div className="pb-4" /> : <div className={cn(side ? 'px-4 pt-3 pb-4' : 'px-4 pt-3 pb-4 sm:px-5 sm:pb-5')}>{children}</div>}
     </section>
   );
 }

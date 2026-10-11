@@ -1,30 +1,32 @@
 'use client';
 
-import React from 'react';
-import { HelpCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import CcIconButton from '@/components/cc/IconButton';
-import CcAnchor from '@/components/cc/Anchor';
-import StageMetaDetails from '@/components/StageMetaDetails';
-import { severityChartMark, levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
-import { scoreBand } from '@/lib/clean-core-score';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { severityChartMark } from '@/lib/chart-colors';
+import type { ScoreBreakdown } from '@/lib/clean-core-score';
+import { scoreRuleFor } from '@/lib/score-rule';
+import { editionName, otherEditionFigure, scoreHeroModel, type Edition, type HeroFinding, type HeroGap } from '@/lib/score-hero';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
-import { dataEffectParts, dataEffectSentence, type AnalysisAnswerText, type DataEffect, type FindingCounts } from './analysis-answer';
-import { ScoreScale } from './CleanCoreScoreSection';
-import { showFindingsKind } from './EvidenceFindingsTable';
+import { shortRoute } from './analysis-answer';
+import { ScoreDeductions, ScoreFigure, ScoreHelp, type ScoreProvenance } from './CleanCoreScoreSection';
 
 /**
- * The head of the Analyze object page (proposal A, owner decision 01.10.2026):
- * the answer in one sentence (ADR-029, §2.11) and one sentence on what the
- * code writes, then three facet tiles — findings, the Clean Core Score, the
- * clean core levels — each with its figure, its words and a micro chart, then
- * the status line (Evidence · Run · Target · Successors, owner 10.10.2026).
+ * The head of Analyze: the Clean Core Score as the hero (ADR-092, owner
+ * approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`).
  *
- * The Clean Core Score is shown as what it is — a grade from 5 to 100, "a
- * grade, not a compliance percentage" (DESIGN.md §6.1, glossary B) — never as
- * a percentage or a ring that fills up to one; its tile carries the band the
- * score falls in, explained in full in the score section below. Nothing here
- * comes from a model.
+ * It replaces what stood here — the answer sentence, three facet tiles, the
+ * status line Evidence · Run · Target · Successors and the "Details" meta line
+ * — and the separate score section below them. Top to bottom: the score with
+ * its band, the edition rule and where it comes from (H1–H4) beside what moves
+ * it (H5, H6); then one row of four facets (F1–F4) — findings by severity, the
+ * clean core levels, the recommended route, what is not determined.
+ *
+ * The counts the answer sentence said are F1; "without a model" is H4; run,
+ * engine and target are the score's provenance (H3, H4); "Successors n of m"
+ * is a column of Findings by kind, per kind. Nothing here comes from a model,
+ * and nothing is green: green means proven, and a score is a grade.
  */
 export interface SeverityPart {
   key: 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
@@ -39,202 +41,217 @@ export interface LevelFacet {
   noObject: number;
 }
 
-export interface MetaFacts {
-  fileName?: string | null;
-  lines?: number | null;
-  catalog?: string | null;
-  engine?: string | null;
-}
-
-export interface StatusEntry {
-  key: string;
-  label: string;
-  value: string;
-  /** The dot's colour class. */
-  dot: string;
-  /** Where the value leads — the run to the workspace's Evidence layer. */
-  href?: string;
-}
-
 export default function AnalysisAnswer({
-  answer,
-  effect,
-  counts,
   score,
+  breakdown,
+  findings,
+  notAssessed,
+  edition,
+  engineVersion,
   onExplainScore,
+  provenance,
   severities,
+  findingCount,
   levels,
-  meta,
-  status,
+  route,
+  routeChosenByReader,
+  decideHref,
+  questionsHref,
+  rerunHref,
+  onOpenLine,
+  signedLabel = 'Clean Core Score of the signed run',
+  notice,
 }: {
-  answer: AnalysisAnswerText;
-  /** The tables the code writes, from the engine's findings — the second sentence. */
-  effect: DataEffect;
-  counts: FindingCounts;
   /** The signed score, or null when the run computed none. */
   score: number | null;
+  /** The deductions, recomputed from the findings on this page with the run's rule; null without a source. */
+  breakdown: ScoreBreakdown | null;
+  /** The engine's findings the breakdown was computed from — for the lines each deduction comes from. */
+  findings: readonly HeroFinding[];
+  /** The kinds of construct the engine did not assess, with their first line. */
+  notAssessed: readonly HeroGap[];
+  /** The project's target edition as the run recorded it. */
+  edition: Edition | null;
+  /** The engine the run was signed with — it decides the score rule. */
+  engineVersion: string | null;
   onExplainScore: () => void;
+  provenance: ScoreProvenance;
   severities: readonly SeverityPart[];
+  /** Distinct findings — one per pattern and object. */
+  findingCount: number;
   levels: LevelFacet;
-  meta: MetaFacts;
-  status: readonly StatusEntry[];
+  route: string | null | undefined;
+  routeChosenByReader: boolean;
+  decideHref: string | null;
+  questionsHref: string | null;
+  rerunHref: string | null;
+  /** Opens the source at a line; without it the line chips are text. */
+  onOpenLine?: (line: number) => void;
+  signedLabel?: string;
+  /** A notice about the run — the stale strip — at the top of the hero. */
+  notice?: React.ReactNode;
 }) {
-  const critical = counts.bySeverity.Critical;
-  const high = counts.bySeverity.High;
-  const serious = [critical ? `${critical} critical` : null, high ? `${high} high` : null].filter(Boolean);
-  const metaParts = [
-    meta.fileName ? <b key="f" className="font-semibold text-cc-ink">{meta.fileName}</b> : null,
-    typeof meta.lines === 'number' && meta.lines > 0 ? `${meta.lines.toLocaleString('en-US')} lines` : null,
-    meta.catalog ? `catalog ${meta.catalog}` : null,
-    meta.engine ? `engine ${meta.engine}` : null,
-  ].filter(Boolean);
-  const band = score !== null ? scoreBand(score) : null;
+  const rule = scoreRuleFor(edition ?? 'private', engineVersion);
+  const model = useMemo(
+    () => (breakdown ? scoreHeroModel(breakdown, findings, notAssessed, rule) : null),
+    [breakdown, findings, notAssessed, rule],
+  );
+  const addsUp = breakdown !== null && score !== null && breakdown.score === score;
+  const other = useMemo(
+    () => (addsUp && breakdown ? otherEditionFigure(findings, breakdown.unassessedKinds, edition ?? 'private', engineVersion) : null),
+    [addsUp, breakdown, findings, edition, engineVersion],
+  );
+  const places = findings.length;
+  const ndPlaces = notAssessed.reduce((n, g) => n + (g.count > 0 ? g.count : 0), 0);
 
   return (
-    <section data-analysis-answer="" aria-labelledby="analysis-answer-title" className="min-w-0">
-      {/* Behind "Details" until asked for (owner 02.10.2026, DESIGN.md §2.11). */}
-      {metaParts.length ? (
-        <StageMetaDetails>
-          <p className="m-0 font-cc-mono cc-text-meta font-medium text-cc-ink-muted break-words" data-analysis-meta="">
-            {metaParts.map((p, i) => (
-              <React.Fragment key={i}>
-                {i > 0 ? ' · ' : null}
-                {p}
-              </React.Fragment>
-            ))}
-          </p>
-        </StageMetaDetails>
-      ) : null}
-      <h2 id="analysis-answer-title" className="m-0 mt-3 cc-text-h2 text-cc-ink text-balance">
-        {answer.headline}
-      </h2>
-      <p className="m-0 mt-1 max-w-4xl cc-text-cell text-cc-ink-muted">{answer.detail}</p>
-      {/* The data effect, deterministic (audit §3.7): each table is a chip that
-          opens its group under Findings by kind. */}
-      <p className="m-0 mt-1 max-w-4xl cc-text-cell text-cc-ink-muted" data-analysis-effect={dataEffectSentence(effect)}>
-        {dataEffectParts(effect).map((part, i) =>
-          'text' in part ? (
-            <React.Fragment key={i}>{part.text}</React.Fragment>
+    <section
+      data-analysis-answer=""
+      data-analyze-score={score ?? 'none'}
+      aria-labelledby="analysis-answer-title"
+      className="min-w-0 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
+    >
+      {notice ? <div className="px-4 pt-4 sm:px-6 [&_[data-stale-notice]]:mb-0">{notice}</div> : null}
+      <div className="grid grid-cols-1 lg:grid-cols-[25rem_minmax(0,1fr)]">
+        <div className="min-w-0 border-cc-line p-4 sm:px-6 sm:py-5 lg:border-r">
+          <div className="flex items-center gap-2">
+            <h2 id="analysis-answer-title" className="m-0 cc-text-label text-cc-ink-muted">
+              Clean Core Score
+            </h2>
+            <span className="ml-auto">
+              <ScoreHelp onExplain={onExplainScore} />
+            </span>
+          </div>
+          {score !== null ? (
+            <ScoreFigure
+              score={score}
+              edition={edition}
+              freeWrites={addsUp && breakdown ? breakdown.freeOwnTableWrites : 0}
+              other={other}
+              provenance={provenance}
+            />
           ) : (
-            <CcAnchor key={i} label={`${part.table}, show its findings`} onOpen={() => showFindingsKind(part.kind)}>
-              {part.table}
-            </CcAnchor>
-          ),
-        )}
-      </p>
+            <div className="mt-2">
+              <p className="m-0 cc-text-title text-cc-ink">Not yet computed</p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">This run computed no score.</p>
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 px-4 pb-4 sm:px-6 sm:pb-5 lg:pt-5">
+          <ScoreDeductions
+            score={score}
+            breakdown={breakdown}
+            model={model}
+            edition={edition}
+            signedLabel={signedLabel}
+            onOpenLine={onOpenLine}
+            questionsHref={questionsHref}
+            rerunHref={rerunHref}
+          />
+        </div>
+      </div>
 
-      {/* Three facets. The fourth, "Not assessed", said again what the side
-          card "Not determined" lists, with a second count of a different thing
-          (ADR-081): the side card is the one list on this stage, and the
-          project's open questions are one line under it. */}
-      <dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
-        <Facet label="Findings">
-          <dd className="m-0 mt-2 flex flex-wrap items-baseline gap-x-2">
-            <span className="cc-text-figure text-cc-ink">{counts.total}</span>
-            <span className="cc-text-cell text-cc-ink-muted">{serious.length ? serious.join(' · ') : 'none critical or high'}</span>
+      <dl className="m-0 grid grid-cols-2 border-t border-cc-line lg:grid-cols-4" data-analysis-facets="">
+        <Facet label="Findings" pin="F1" index={0}>
+          <dd className="m-0 mt-1 flex flex-wrap items-baseline gap-x-2">
+            <span className="cc-text-figure text-cc-ink">{findingCount}</span>
+            <span className="cc-text-meta font-medium text-cc-ink-muted">
+              in {places} {places === 1 ? 'place' : 'places'}
+            </span>
           </dd>
-          <dd className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
-            {meta.lines ? `in all ${meta.lines.toLocaleString('en-US')} lines, by fixed rules` : 'by fixed rules'}
-          </dd>
-          <dd className="m-0 mt-3">
+          <dd className="m-0 mt-2">
             <StackBar parts={severities} />
           </dd>
+          <dd className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
+            <span className="hidden sm:inline">{severities.map((s) => `${s.key} ${s.count}`).join(' · ')}</span>
+            <span className="sm:hidden">
+              {severities
+                .filter((s) => s.key === 'Critical' || s.key === 'High')
+                .map((s) => `${s.key} ${s.count}`)
+                .join(' · ')}
+            </span>
+          </dd>
         </Facet>
 
-        <Facet
-          label="Clean Core Score"
-          emphasis
-          help={
-            <CcIconButton label="What the Clean Core Score is" title="What the Clean Core Score is" onClick={onExplainScore}>
-              <HelpCircle size={16} aria-hidden="true" />
-            </CcIconButton>
-          }
-        >
-          <dd className="m-0 mt-2 flex flex-wrap items-baseline gap-x-1">
-            {score !== null ? (
-              // One inline run, so the figure reads "28 of 100" as text too —
-              // two flex items would put a line break between them.
-              <span>
-                <span className="cc-text-figure text-cc-ink">{score}</span>
-                <span className="cc-text-cell text-cc-ink-muted"> of 100</span>
-              </span>
-            ) : (
-              <span className="cc-text-h3 text-cc-ink">Not yet computed</span>
-            )}
+        <Facet label="Clean core levels" pin="F2" index={1}>
+          <dd className="m-0 mt-1">
+            <LevelChips levels={levels} />
           </dd>
-          <dd className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
-            {score !== null ? 'A grade, not a compliance percentage' : 'This run computed no score'}
-          </dd>
-          {score !== null && band ? (
-            <dd className="m-0 mt-3">
-              <ScoreScale score={score} compact />
-              <a
-                href="#analyze-score"
-                className="mt-2 inline-block cc-text-meta text-cc-ink underline underline-offset-2"
-              >
-                {band.from}–{band.to} · {band.label}
-              </a>
-            </dd>
-          ) : null}
-        </Facet>
-
-        <Facet label="Level distribution">
-          <dd className="m-0 mt-2">
-            <LevelBar levels={levels} />
-          </dd>
-          <dd className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
+          <dd className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
             {levels.status === 'loading'
               ? 'Looking up the catalog …'
               : levels.status === 'error'
                 ? 'The catalog lookup did not answer — no level is shown.'
-                : `per finding, from the SAP catalog${levels.noObject ? ` · ${levels.noObject} name no object` : ''} · not signed`}
+                : `${graded(levels)} of ${graded(levels) + levels.dist.Unknown + levels.noObject} findings · from SAP's catalog${
+                    edition ? `, read for ${editionName(edition)}` : ''
+                  } · not signed`}
           </dd>
         </Facet>
 
-      </dl>
+        <Facet label="Recommended route" pin="F3" index={2}>
+          <dd className="m-0 mt-1 cc-text-h2 text-cc-ink">{shortRoute(route) ?? 'Not determined'}</dd>
+          <dd className="m-0 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 cc-text-meta font-medium text-cc-ink-muted">
+            {routeChosenByReader ? (
+              <span>stored by an earlier build&rsquo;s switch; the rules recommended the other route</span>
+            ) : route ? (
+              <CcProvenanceChip value="reconstructed" note="fixed rules" />
+            ) : null}
+            {decideHref ? (
+              <span>
+                · decided in{' '}
+                <a href={decideHref} className="font-semibold text-cc-ink underline underline-offset-2">
+                  Management
+                </a>
+              </span>
+            ) : null}
+          </dd>
+        </Facet>
 
-      <ul className="m-0 mt-3 flex list-none flex-wrap gap-x-5 gap-y-1 p-0 cc-text-meta" data-analysis-status="">
-        {status.map((s) => (
-          <li key={s.key} className="inline-flex items-center gap-2">
-            <span aria-hidden={true} className={cn('h-2 w-2 rounded-full', s.dot)} />
-            <span className="cc-text-label text-cc-ink-muted">{s.label}</span>
-            {s.href ? (
-              <a href={s.href} className="text-cc-ink underline underline-offset-2">
-                {s.value}
-              </a>
+        <Facet label="Not determined" pin="F4" index={3}>
+          <dd className="m-0 mt-1 flex flex-wrap items-baseline gap-x-2">
+            <span className="cc-text-figure text-cc-ink">{ndPlaces}</span>
+            <span className="cc-text-meta font-medium text-cc-ink-muted">
+              {ndPlaces === 1 ? 'place' : 'places'}
+              {notAssessed.length ? `, ${notAssessed.length} ${notAssessed.length === 1 ? 'kind' : 'kinds'}` : ''}
+            </span>
+          </dd>
+          <dd className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
+            {ndPlaces === 0 ? (
+              'Every construct read was within the engine’s checks.'
+            ) : questionsHref ? (
+              <>
+                <span className="hidden sm:inline">Open questions for the project: </span>
+                <a href={questionsHref} className="font-semibold text-cc-ink underline underline-offset-2">
+                  see the list
+                </a>
+                <span className="hidden sm:inline"> — includes, call targets, ATC results</span>
+              </>
             ) : (
-              <span className="text-cc-ink">{s.value}</span>
+              'Not defects, and not cleared either.'
             )}
-          </li>
-        ))}
-      </ul>
+          </dd>
+        </Facet>
+      </dl>
     </section>
   );
 }
 
-function Facet({
-  label,
-  help,
-  emphasis = false,
-  children,
-}: {
-  label: string;
-  help?: React.ReactNode;
-  emphasis?: boolean;
-  children: React.ReactNode;
-}) {
+const graded = (levels: LevelFacet) => levels.dist.A + levels.dist.B + levels.dist.C + levels.dist.D;
+
+/** Four facets: two by two on a phone, one row from L — the rules between them follow the grid. */
+function Facet({ label, pin, index, children }: { label: string; pin: string; index: number; children: React.ReactNode }) {
   return (
     <div
       data-analysis-facet={label}
+      data-hero-pin={pin}
       className={cn(
-        'min-w-0 rounded-cc-card border bg-cc-surface px-3 py-3 sm:px-4',
-        emphasis ? 'border-cc-ink shadow-[inset_0_0_0_1px_var(--cc-ink)]' : 'border-cc-line',
+        'min-w-0 border-cc-line px-4 py-3 sm:px-6',
+        index < 2 && 'border-b lg:border-b-0',
+        index % 2 === 0 && 'border-r',
+        index === 1 && 'lg:border-r',
       )}
     >
-      <dt className="flex min-h-6 items-center justify-between gap-1 cc-text-label text-cc-ink-muted">
-        <span>{label}</span>
-        {help}
-      </dt>
+      <dt className="cc-text-label text-cc-ink-muted">{label}</dt>
       {children}
     </div>
   );
@@ -266,51 +283,35 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
   );
 }
 
-/**
- * The text on a level's block. The blocks are filled with the level's chart
- * colour at full strength, so the letter is white on A, B and D (6.5–7.6 : 1)
- * and ink on C, whose warning mark holds white at only 3.2 : 1 but ink at
- * 5.4 : 1 (DESIGN.md §1.1, warning marks).
- */
-const LEVEL_TEXT: Record<'B' | 'A' | 'C' | 'D', string> = {
-  A: 'text-cc-on-dark',
-  B: 'text-cc-on-dark',
-  C: 'text-cc-ink',
-  D: 'text-cc-on-dark',
-};
-
-/** Findings per clean core level as labelled blocks: `B 6 · C 19 · D 2 · ? 4`. */
-function LevelBar({ levels }: { levels: LevelFacet }) {
+/** Every level letter with its count, and the findings without a level: `A 0 · B 2 · C 19 · D 2 · Unknown 4`. */
+function LevelChips({ levels }: { levels: LevelFacet }) {
   if (levels.status !== 'ready') {
-    return <div data-chart-segment="" data-not-determined="" className={cn('h-7 w-full rounded-cc-row', NOT_DETERMINED_CHART.bg)} style={NOT_DETERMINED_CHART.hatch} />;
+    return <span className="cc-text-meta text-cc-ink-muted">—</span>;
   }
-  const grades = (['A', 'B', 'C', 'D'] as const).filter((g) => levels.dist[g] > 0);
   const unknown = levels.dist.Unknown + levels.noObject;
-  const label = [...grades.map((g) => `level ${g}: ${levels.dist[g]}`), unknown ? `no level: ${unknown}` : null].filter(Boolean).join(', ');
-  if (grades.length === 0 && unknown === 0) return <span className="cc-text-cell text-cc-ink-muted">No finding to grade</span>;
   return (
-    <div role="img" aria-label={`Findings by clean core level — ${label}.`} className="flex h-7 w-full gap-px overflow-hidden rounded-cc-row" data-level-bar="">
-      {grades.map((g) => (
+    <span
+      className="flex flex-wrap items-center gap-x-2 gap-y-1"
+      data-level-bar=""
+      aria-label={`Findings by clean core level — ${(['A', 'B', 'C', 'D'] as const).map((g) => `level ${g}: ${levels.dist[g]}`).join(', ')}, no level: ${unknown}.`}
+      role="img"
+    >
+      {(['A', 'B', 'C', 'D'] as const).map((g) => (
         <span
           key={g}
-          data-chart-segment=""
           data-level-block={g}
-          className={cn('grid min-w-9 place-items-center rounded-cc-row cc-text-meta font-semibold', levelChartColor(g).bg, LEVEL_TEXT[g])}
-          style={{ flex: `${levels.dist[g]} 0 0` }}
+          className={cn('inline-flex items-center gap-1 cc-text-meta', levels.dist[g] === 0 ? 'text-cc-ink-muted' : 'text-cc-ink', levels.dist[g] === 0 && 'max-sm:hidden')}
         >
-          {g} {levels.dist[g]}
+          <CcCleanCoreLevel value={g} />
+          {levels.dist[g]}
         </span>
       ))}
-      {unknown ? (
-        <span
-          data-chart-segment=""
-          data-not-determined=""
-          className={cn('grid min-w-9 place-items-center rounded-cc-row cc-text-meta text-cc-ink-muted', NOT_DETERMINED_CHART.bg)}
-          style={{ flex: `${unknown} 0 0` }}
-        >
-          ? {unknown}
-        </span>
-      ) : null}
-    </div>
+      <span
+        data-not-determined=""
+        className="inline-flex items-center rounded-[4px] border border-dashed border-cc-field-border px-2 cc-text-meta text-cc-ink-muted"
+      >
+        Unknown {unknown}
+      </span>
+    </span>
   );
 }

@@ -41,6 +41,7 @@ import ProgramMap from './ProgramMap';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { analyzeAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
 import ObjectSection from './ObjectSection';
+import { useBreakpointS } from '@/hooks/useBreakpointS';
 import SourcePanel from './SourcePanel';
 
 /**
@@ -48,8 +49,8 @@ import SourcePanel from './SourcePanel';
  * 01.10.2026), with B's program map for "Where in the program":
  *
  *   two columns (the anchor bar above them is the page's, `AnalyzeAnchorBar`) —
- *   main:  the Clean Core Score (passed in), Look here first, Where in the
- *          program, Findings by kind;
+ *   main:  Look here first, Where in the program, Findings by kind (the Clean
+ *          Core Score is the hero above the bar since 11.10.2026, ADR-092);
  *   side:  the route (passed in) and what was not determined (passed in) —
  *          two cards at most (DESIGN.md §2.11). The severity donut that stood
  *          between them said the Findings facet's bar a third time and went
@@ -91,6 +92,17 @@ const SHOW_KIND_EVENT = 'cc-analyze-show-kind';
 export function showFindingsKind(kind: string): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent<string>(SHOW_KIND_EVENT, { detail: kind }));
+}
+
+/**
+ * Open the source at a line from outside the list — the line chips of the
+ * score hero above (ADR-092). The same DOM-event route as `showFindingsKind`;
+ * where no source can be shown, the line is picked in the list instead.
+ */
+const OPEN_LINE_EVENT = 'cc-analyze-open-line';
+export function openSourceLine(line: number): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<number>(OPEN_LINE_EVENT, { detail: line }));
 }
 
 /** What the side column's first card may do inside the list: open the source at a line, or a kind's group. */
@@ -174,26 +186,23 @@ function SeverityMix({ rows }: { rows: readonly FindingRow[] }) {
 export function AnalyzeAnchorBar({
   findings,
   sourceLines = 0,
-  score,
   summary = false,
 }: {
   findings: readonly EvidenceFinding[];
   sourceLines?: number;
-  score: number | null;
   /** A model summary is on record. */
   summary?: boolean;
 }) {
   const anchors = useMemo(() => {
     const rows = findingRows(findings);
     return analyzeAnchors({
-      score,
       picks: lookHereFirst(rows).length,
       // The same condition as "Where in the program" below.
       where: programMap(rows, sourceLines).length > 0 && sourceLines > 0,
       findings: rows.length,
       summary,
     });
-  }, [findings, sourceLines, score, summary]);
+  }, [findings, sourceLines, summary]);
   return <PageAnchorBar anchors={anchors} label={PAGE_ANCHOR_LABELS.analyze} name="analyze-anchor" plural="analyze-anchors" />;
 }
 
@@ -204,10 +213,11 @@ export default function EvidenceFindingsTable({
   levels = NO_LEVELS,
   steps = [],
   notAssessed = [],
-  scoreSection,
+  pointsOf,
   sideTop,
   sideBottom,
   fileName = 'source',
+  sideTopLabel = 'Route',
 }: {
   findings: readonly EvidenceFinding[];
   /** Lines of the source the findings point into; 0 when it is not on the page. */
@@ -219,14 +229,20 @@ export default function EvidenceFindingsTable({
   steps?: readonly ProcessStepBand[];
   /** Where each kind of construct not assessed begins. */
   notAssessed?: ReadonlyArray<{ label: string; firstLine: number }>;
-  /** The Clean Core Score section, the first of the main column. */
-  scoreSection?: React.ReactNode;
+  /**
+   * What a kind of finding takes off the score — the hero's deductions, for the
+   * Points column of Findings by kind (ADR-092). Absent where the deductions do
+   * not add up to the signed score: then no column, rather than a second sum.
+   */
+  pointsOf?: (kind: string) => number;
   /** The route card, the first of the side column — a function when its line anchors open the source here. */
   sideTop?: React.ReactNode | ((api: FindingsSideApi) => React.ReactNode);
   /** What was not determined, the last of the side column. */
   sideBottom?: React.ReactNode;
   /** The source's file name, for the source panel's label. */
   fileName?: string;
+  /** On a phone the route card is folded under this line — "Route · Side-by-Side" (ADR-092). */
+  sideTopLabel?: string;
 }) {
   const [query, setQuery] = useState('');
   const [severity, setSeverity] = useState<SeverityFilter>('All');
@@ -238,6 +254,11 @@ export default function EvidenceFindingsTable({
   const [sourceAt, setSourceAt] = useState<number | null>(null);
   /** What opened the panel — it gets the focus back when the panel closes. */
   const [opener, setOpener] = useState<HTMLElement | null>(null);
+  // On a phone the full list and the route card are folded, each with its
+  // count (ADR-092, the mockup's phone frame; §2.11 "show less, lose nothing").
+  const phone = useBreakpointS();
+  const [kindsOpen, setKindsOpen] = useState(false);
+  const [routeOpen, setRouteOpen] = useState(false);
 
   const rows = useMemo(() => findingRows(findings), [findings]);
   const groups = useMemo(() => groupRows(rows, grouping), [rows, grouping]);
@@ -257,8 +278,10 @@ export default function EvidenceFindingsTable({
     setLines(null);
   };
 
-  const scrollToList = (id: string) =>
+  const scrollToList = (id: string) => {
+    setKindsOpen(true);
     requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+  };
 
   // "Show in the list" on a focus card: group by kind, open that group and bring it into view.
   const showKind = (kind: string) => {
@@ -293,26 +316,36 @@ export default function EvidenceFindingsTable({
   };
   const rowsAtSource = sourceAt === null ? [] : rows.filter((r) => r.lines.includes(sourceAt));
 
-  // A table chip in the answer above asks for its group.
+  // A table chip asks for its group; a line chip of the score hero for its line.
   const showKindRef = React.useRef(showKind);
+  const openLineRef = React.useRef((line: number) => (canShowSource ? openSource(line) : showLineInList(line)));
   useEffect(() => {
     showKindRef.current = showKind;
+    openLineRef.current = (line: number) => (canShowSource ? openSource(line) : showLineInList(line));
   });
   useEffect(() => {
     const onShow = (e: Event) => {
       const kind = (e as CustomEvent<string>).detail;
       if (typeof kind === 'string' && kind) showKindRef.current(kind);
     };
+    const onLine = (e: Event) => {
+      const line = (e as CustomEvent<number>).detail;
+      if (typeof line === 'number' && line > 0) openLineRef.current(line);
+    };
     window.addEventListener(SHOW_KIND_EVENT, onShow);
-    return () => window.removeEventListener(SHOW_KIND_EVENT, onShow);
+    window.addEventListener(OPEN_LINE_EVENT, onLine);
+    return () => {
+      window.removeEventListener(SHOW_KIND_EVENT, onShow);
+      window.removeEventListener(OPEN_LINE_EVENT, onLine);
+    };
   }, []);
+  const showPoints = Boolean(pointsOf) && grouping === 'kind';
+  const sideTopNode = typeof sideTop === 'function' ? sideTop({ openLine: canShowSource ? openSource : undefined, showKind }) : sideTop;
 
   return (
     <div data-analysis-findings="" className="min-w-0">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
         <div className="flex min-w-0 flex-col gap-5">
-          {scoreSection}
-
           <ObjectSection
             id="analyze-focus"
             title={
@@ -383,6 +416,7 @@ export default function EvidenceFindingsTable({
 
           <ObjectSection
             id="analyze-kinds"
+            fold={phone ? { open: kindsOpen, onToggle: () => setKindsOpen((v) => !v) } : undefined}
             title={
               <>
                 Findings by kind <span className="font-medium text-cc-ink-muted">({rows.length})</span>
@@ -438,6 +472,22 @@ export default function EvidenceFindingsTable({
                   </p>
                 ) : null}
 
+                {showPoints ? (
+                  // The column heads of the group rows (wide screens) — Points is the
+                  // hero's deductions per kind, so the list adds up to the score.
+                  <div
+                    aria-hidden={true}
+                    className="mt-3 hidden grid-cols-[1rem_minmax(0,1.4fr)_minmax(0,9rem)_minmax(0,7rem)_minmax(0,9rem)_3.5rem] gap-3 px-4 cc-text-label text-cc-ink-muted sm:grid"
+                    data-findings-columns=""
+                  >
+                    <span />
+                    <span>Kind</span>
+                    <span>Severity</span>
+                    <span>Levels</span>
+                    <span>Successor named</span>
+                    <span className="text-right">Points</span>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-col gap-2" data-findings-groups={shown.length}>
                   {shown.length === 0 ? (
                     <CcNoMatches onClear={clear} />
@@ -467,7 +517,12 @@ export default function EvidenceFindingsTable({
                               aria-expanded={g.open}
                               aria-controls={regionId}
                               onClick={() => setOpenState((s) => ({ ...s, [g.kind]: !g.open }))}
-                              className="grid w-full grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left sm:grid-cols-[1rem_minmax(0,1.4fr)_minmax(0,9rem)_minmax(0,7rem)_minmax(0,9rem)] sm:px-4"
+                              className={clsx(
+                                'grid w-full grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left sm:px-4',
+                                showPoints
+                                  ? 'sm:grid-cols-[1rem_minmax(0,1.4fr)_minmax(0,9rem)_minmax(0,7rem)_minmax(0,9rem)_3.5rem]'
+                                  : 'sm:grid-cols-[1rem_minmax(0,1.4fr)_minmax(0,9rem)_minmax(0,7rem)_minmax(0,9rem)]',
+                              )}
                             >
                               <ChevronRight
                                 size={16}
@@ -502,6 +557,15 @@ export default function EvidenceFindingsTable({
                               <span className={clsx('cc-text-meta', succ ? 'text-cc-ink' : 'text-cc-ink-muted')}>
                                 {succ}/{g.matching.length} with successor
                               </span>
+                              {showPoints && pointsOf ? (
+                                <span
+                                  className="hidden text-right font-cc-mono cc-text-meta text-cc-ink tabular-nums sm:block"
+                                  data-findings-group-points={pointsOf(g.kind)}
+                                >
+                                  <span className="sr-only">Score points: </span>
+                                  {pointsOf(g.kind) > 0 ? `−${pointsOf(g.kind)}` : '0'}
+                                </span>
+                              ) : null}
                             </button>
                           </h3>
                           <div id={regionId} className={clsx(!g.open && 'hidden print:block')}>
@@ -537,7 +601,24 @@ export default function EvidenceFindingsTable({
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4" aria-label="Route and what is open">
-          {typeof sideTop === 'function' ? sideTop({ openLine: canShowSource ? openSource : undefined, showKind }) : sideTop}
+          {phone && sideTopNode ? (
+            <div className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc" data-phone-fold="route">
+              <h2 className="m-0">
+                <button
+                  type="button"
+                  aria-expanded={routeOpen}
+                  onClick={() => setRouteOpen((v) => !v)}
+                  className="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-left cc-text-h2 text-cc-ink"
+                >
+                  <ChevronRight size={16} aria-hidden={true} className={clsx('text-cc-ink-muted motion-safe:transition-transform', routeOpen && 'rotate-90')} />
+                  {sideTopLabel}
+                </button>
+              </h2>
+              {routeOpen ? <div className="px-2 pb-2">{sideTopNode}</div> : null}
+            </div>
+          ) : (
+            sideTopNode
+          )}
           {sideBottom}
         </aside>
       </div>

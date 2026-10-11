@@ -62,10 +62,11 @@ const BAR_CALLERS = [
 /** Where each tool draws its sections — the real page and its demo twin. */
 const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: string[]; demoIds: string[] }> = {
   analyze: {
-    real: [PAGE('analyze'), 'components/analyze/EvidenceFindingsTable.tsx', 'components/analyze/CleanCoreScoreSection.tsx'],
-    demo: ['components/demo/DemoAnalyze.tsx', 'components/analyze/EvidenceFindingsTable.tsx', 'components/analyze/CleanCoreScoreSection.tsx'],
-    // The demo has no model summary, and so no anchor for it.
-    demoIds: ['score', 'focus', 'where', 'kinds', 'detail'],
+    real: [PAGE('analyze'), 'components/analyze/EvidenceFindingsTable.tsx'],
+    demo: ['components/demo/DemoAnalyze.tsx', 'components/analyze/EvidenceFindingsTable.tsx'],
+    // The demo has no model summary, and so no anchor for it. No anchor for the
+    // score: it is the hero above the bar, the page's top (ADR-092).
+    demoIds: ['focus', 'where', 'kinds', 'detail'],
   },
   transformation: {
     real: ['components/transformation/TransformationObjectPage.tsx', PAGE('transformation')],
@@ -207,16 +208,18 @@ test.describe('only ids that render', () => {
     };
 
     // Analyze — nothing picked, no map, no summary: those anchors go; the list says "none".
-    const bare = analyzeAnchors({ score: null, picks: 0, where: false, findings: 0, summary: false });
+    // The score has no anchor: it is the hero above the bar (ADR-092), so the bar starts with Look here first.
+    const bare = analyzeAnchors({ picks: 0, where: false, findings: 0, summary: false });
     check('analyze', bare);
-    expect(bare.map((a) => a.key)).toEqual(['score', 'kinds', 'detail']);
-    expect(bare.find((a) => a.key === 'score')!.count).toBeNull();
+    expect(bare.map((a) => a.key)).toEqual(['kinds', 'detail']);
     expect(bare.find((a) => a.key === 'kinds')!.count).toBe('none');
-    const full = analyzeAnchors({ score: 62, picks: 3, where: true, findings: 41, summary: true });
+    const full = analyzeAnchors({ picks: 3, where: true, findings: 41, summary: true });
     check('analyze', full);
     expect(full.map((a) => [a.key, a.count ?? null])).toEqual([
-      ['score', '62'], ['focus', '3'], ['where', null], ['kinds', '41'], ['summary', null], ['detail', null],
+      ['focus', '3'], ['where', null], ['kinds', '41'], ['summary', null], ['detail', null],
     ]);
+    expect(full.some((a) => a.label === 'Clean Core Score')).toBe(false);
+    expect(Object.values(PAGE_ANCHOR_IDS.analyze)).not.toContain('analyze-score');
 
     // Transformation — the demo's package has no count; an empty plan has no anchor.
     const demoTf = transformationAnchors({ files: null, findings: 12, kinds: 0 });

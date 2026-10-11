@@ -157,11 +157,15 @@ test.describe('the page, rendered in the workspace', () => {
     await signInThroughForm(page, acct);
     await page.goto(`/project/${acct.projectId}/analyze?view=it&from=workspace-tools`, { waitUntil: 'domcontentloaded' });
 
+    // Since ADR-092 (11.10.2026) the answer is the score hero: the figure, its
+    // band, what it is not, and what moves it.
     const answer = page.locator('[data-analysis-answer]');
     await expect(answer).toBeVisible({ timeout: 90000 });
-    await expect(answer.locator('h2')).toContainText(/findings? to review in this code|found nothing/);
-    await expect(answer).toContainText('A grade, not a compliance percentage');
-    await expect(answer).toContainText(/Clean Core Score\s*\n?\s*62 of 100/i);
+    await expect(answer.locator('h2')).toHaveText('Clean Core Score');
+    await expect(answer.locator('[data-analyze-score-value]')).toHaveText('62');
+    await expect(answer).toContainText('of 100');
+    await expect(answer).toContainText('not a compliance percentage and not an SAP measure');
+    await expect(answer.locator('[data-analysis-facet="Findings"]')).toContainText(/\d+/);
 
     // The answer stands above the findings; what is not determined stands
     // beside them, in the side column, and nowhere else.
@@ -191,6 +195,10 @@ test.describe('the page, rendered in the workspace', () => {
     // The answer no longer repeats the count as a facet of its own (ADR-081:
     // the duplicate Analyze facet went) — the side card is the one place.
     await expect(answer).not.toContainText(/\d+ things? not determined/);
+    // Since ADR-092 the card says it in one line; the entries are one action deeper.
+    const fold = open.locator('[data-not-determined-items] [data-cc-disclosure-trigger]').first();
+    await expect(fold).toHaveAttribute('aria-expanded', 'false');
+    await fold.click();
     const items = open.locator('[data-not-determined-item]');
     await expect(items).toHaveCount(n);
 

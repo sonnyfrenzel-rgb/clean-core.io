@@ -1,17 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { CircleHelp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import type { SupportLevel } from '@/lib/abap/support-matrix';
+import { LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
 import type { SupportSummary } from '@/lib/abap/findings-detector';
 import { stateChartColor } from '@/lib/chart-colors';
 import { SUPPORT_LEVEL_STATE } from '@/lib/support-level';
 import SupportLevelMark from './SupportLevelMark';
 import { formatPercent } from '@/lib/format';
-import CcDialog from '@/components/cc/Dialog';
-import CcIconButton from '@/components/cc/IconButton';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 
 interface CoverageVerdictProps {
@@ -19,27 +15,14 @@ interface CoverageVerdictProps {
   summary: SupportSummary | null;
 }
 
-const EXPLANATIONS: { level: SupportLevel; title: string; text: string }[] = [
-  {
-    level: 'fully',
-    title: 'Fully Supported',
-    text: 'Statically verified constructs that map 1:1 to released standard models or automatically transformed APIs on SAP BTP.',
-  },
-  {
-    level: 'partial',
-    title: 'Review Required',
-    text: 'Complex patterns (e.g. 3-table joins or custom enhancements) that require architectural sign-off to ensure clean core compliance.',
-  },
-  {
-    level: 'not-supported',
-    title: 'Out of Scope',
-    text: 'Legacy UI components or internal system kernel calls that have no cloud-equivalent APIs and must be decommissioned or fully re-architected.',
-  },
-];
+/*
+ * The three labels are the support matrix's own words (`LEVEL_LABEL`). The
+ * explanation dialog that stood here ("statically verified … map 1:1 to
+ * released standard models", "kernel calls … must be decommissioned") made
+ * claims no rule of the engine makes, and went with ADR-092 (11.10.2026).
+ */
 
 export default function CoverageVerdict({ findings, summary }: CoverageVerdictProps) {
-  const [showExplanation, setShowExplanation] = useState(false);
-
   const total = findings.length;
   const counts = summary?.counts || { fully: 0, partial: 0, notSupported: 0 };
   // A missing summary used to become 'fully' — the best verdict available,
@@ -61,9 +44,9 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
   const offset = (fraction: number) => circ - circ * fraction;
 
   const counters: { level: SupportLevel; title: string; fraction: number; count: number }[] = [
-    { level: 'fully', title: 'Fully Supported', fraction: fullyShare, count: counts.fully },
-    { level: 'partial', title: 'Review Required', fraction: reviewShare, count: counts.partial },
-    { level: 'not-supported', title: 'Out of Scope', fraction: outOfScopeShare, count: counts.notSupported },
+    { level: 'fully', title: LEVEL_LABEL.fully, fraction: fullyShare, count: counts.fully },
+    { level: 'partial', title: LEVEL_LABEL.partial, fraction: reviewShare, count: counts.partial },
+    { level: 'not-supported', title: LEVEL_LABEL['not-supported'], fraction: outOfScopeShare, count: counts.notSupported },
   ];
 
   const segments: { level: SupportLevel; fraction: number; rotate: number }[] = [
@@ -77,17 +60,11 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
       <div className="flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Left column: Title & counters */}
         <div className="space-y-5 flex-1 w-full">
-          <div className="flex items-center gap-2">
-            <span className="cc-text-label text-cc-ink-muted">Deterministic audit</span>
-            <CcIconButton label="What is Coverage Verdict?" title="What is Coverage Verdict?" onClick={() => setShowExplanation(true)}>
-              <CircleHelp size={16} aria-hidden="true" />
-            </CcIconButton>
-          </div>
-
           <div>
+            <span className="cc-text-label text-cc-ink-muted">Deterministic reading</span>
             <h3 className="cc-text-h2 text-cc-ink">Coverage Verdict</h3>
             <p className="cc-text-cell text-cc-ink-muted mt-1">
-              Statically resolved ABAP language constructs mapped directly to target platform capabilities.
+              The language constructs the engine resolved, each read against the support matrix of the target.
             </p>
           </div>
 
@@ -143,25 +120,6 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
         </div>
       </div>
 
-      <CcDialog
-        open={showExplanation}
-        onClose={() => setShowExplanation(false)}
-        title="Coverage Verdict Architecture"
-        lead="The Coverage Verdict is computed statically by analyzing your custom repository against released SAP S/4HANA APIs and the SAP BTP cloud guidelines."
-      >
-        <span className="cc-text-label text-cc-ink-muted">EA Assessment Guidelines</span>
-        <div className="mt-2 space-y-3">
-          {EXPLANATIONS.map((e) => (
-            <div key={e.level} className="flex gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-              <SupportLevelMark level={e.level} label="" />
-              <div>
-                <h3 className="cc-text-h3 text-cc-ink">{e.title}</h3>
-                <p className="cc-text-cell text-cc-ink-muted mt-1">{e.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CcDialog>
     </section>
   );
 }

@@ -119,17 +119,16 @@ test.describe('4. the head does not contradict itself about the model', () => {
     expect(a.detail).not.toContain('Summary');
   });
 
-  test('the status line keeps the evidence and the narrative apart', () => {
+  test('the score hero keeps the evidence and the narrative apart', () => {
     const page = read('app/(app)/project/[projectId]/analyze/page.tsx');
     expect(page).not.toContain('engine, with a model narrative');
-    expect(page).toContain("{ key: 'evidence', label: 'Evidence', value: 'engine only, no model'");
-    // Evidence · Run · Target · Successors (owner decision 10.10.2026): the
-    // narrative is not a status of its own — it says what it is where it
-    // stands, folded as "Model summary" and marked "Model proposal" — and the
-    // route is said by the answer and the route card, not a third time here.
-    expect(page).not.toContain("key: 'narrative'");
-    expect(page).not.toContain("key: 'route'");
-    expect([...page.matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1])).toEqual(['evidence', 'run', 'target', 'successors']);
+    // Since ADR-092 (11.10.2026) the status line is gone: "engine only, no
+    // model" is the hero's provenance line — the "Reconstructed · fixed rules"
+    // chip and "no model involved" — and the narrative still says what it is
+    // where it stands, folded as "Model summary" and marked "Model proposal".
+    expect(page).not.toMatch(/\{ key: '(\w+)', label: '\w+', value:/);
+    const hero = read('components/analyze/CleanCoreScoreSection.tsx');
+    expect(hero).toMatch(/<CcProvenanceChip value="reconstructed" note="fixed rules" \/>\s*no model involved/);
     expect(page).toMatch(/title="Model summary"\s*aside=\{<CcProvenanceChip value="proposed" \/>\}/);
   });
 });

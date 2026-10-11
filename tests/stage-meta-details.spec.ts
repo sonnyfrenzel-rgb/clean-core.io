@@ -17,7 +17,6 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 /** Where each stage draws its line, and the hook the line keeps. */
 const LINES = {
-  analyze: '[data-analysis-meta]',
   testing: '[data-testing-meta]',
   tco: '[data-workspace-meta]',
   delivery: '[data-delivery-meta]',
@@ -58,11 +57,15 @@ test.describe('the stage meta line is behind "Details"', () => {
     for (const rel of [
       'components/testing/TestingHeader.tsx',
       'components/delivery/DeliveryObjectPage.tsx',
-      'components/analyze/AnalysisAnswer.tsx',
       'app/(app)/project/[projectId]/tco/page.tsx',
     ]) {
       expect(read(rel), `${rel} draws a meta line outside StageMetaDetails`).toContain('<StageMetaDetails');
     }
+    // Analyze is the exception since ADR-092 (11.10.2026): its file · lines ·
+    // catalog · engine is the score's provenance, said once beside the figure
+    // it describes, in the hero — not behind a "Details" button.
+    expect(read('components/analyze/AnalysisAnswer.tsx')).not.toContain('<StageMetaDetails');
+    expect(read('components/analyze/CleanCoreScoreSection.tsx')).toContain('data-analysis-meta=""');
     // The workspace's own line is not a stage's: it keeps its view rule (open in IT, §2.11).
     const stages = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
     for (const s of stages) {
@@ -79,11 +82,19 @@ test.describe('the stage meta line is behind "Details"', () => {
 
   test('on the demo stages', async ({ page }) => {
     test.setTimeout(5 * 60_000);
-    for (const stage of ['analyze', 'testing', 'delivery'] as const) {
+    for (const stage of ['testing', 'delivery'] as const) {
       await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
       await expectBehindDetails(page, `[data-testid="demo-stage-${stage}"]`, LINES[stage], /lines/);
     }
+    // Analyze: in the score hero, open, and the demo says it was never signed (ADR-092).
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
+    const meta = page.locator('[data-testid="demo-stage-analyze"] [data-analysis-meta]');
+    await expect(meta).toBeVisible();
+    await expect(meta).toContainText('Demo — never signed');
+    await expect(meta).toContainText(/lines/);
+    await expect(page.locator('[data-testid="demo-stage-analyze"] [data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
   });
 
   test('on the project stages', async ({ page }) => {
@@ -97,7 +108,13 @@ test.describe('the stage meta line is behind "Details"', () => {
       },
     });
     await signInThroughForm(page, acct);
-    for (const stage of ['analyze', 'testing', 'tco', 'delivery'] as const) {
+    // Analyze: the provenance stands open in the score hero (ADR-092).
+    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-analysis-meta]')).toContainText('v2.20.0');
+    await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
+    for (const stage of ['testing', 'tco', 'delivery'] as const) {
       await page.goto(`/project/${acct.projectId}/${stage}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
       // Economics reads the signed run's manifest (`metaLine`), which this seed

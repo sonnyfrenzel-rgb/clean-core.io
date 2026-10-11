@@ -310,6 +310,8 @@ test('the usage import asks the same question, and it matters more there', async
   // one does, in a column the parser is about to throw away — which is exactly
   // why the person has to see it before the file is handed over rather than
   // after. The upload opens from the header action "Add usage data" (02.10.2026).
+  // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+  await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
   await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
   await page.locator('[data-usage-file]').setInputFiles({
     name: 'scmon.csv',
@@ -337,6 +339,8 @@ test('the usage import asks the same question, and it matters more there', async
 test("a second usage file replaces the first one's preview", async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openUploadScreen(page);
+  // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+  await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
   await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
 
   const confirm = page.locator('[data-usage-confirm]');

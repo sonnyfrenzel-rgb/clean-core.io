@@ -77,7 +77,9 @@ export default function FindingsFocus({
       <p className="sr-only">
         {picks.length} of {total} findings, picked by fixed rules.
       </p>
-      <ol className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-3">
+      {/* On a phone the picks stand side by side and swipe (ADR-092, the
+          mockup's phone frame); from M they are three columns. */}
+      <ol className="m-0 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
         {picks.map((pick) => {
           const { row, reason } = pick;
           const ef = row.finding;
@@ -90,7 +92,7 @@ export default function FindingsFocus({
               key={`${ef.kind}-${ef.objectName ?? ef.title}`}
               data-focus-kind={ef.kind}
               className={cn(
-                'flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-4',
+                'flex w-[85%] min-w-0 shrink-0 snap-start flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-4 md:w-auto md:shrink',
                 FOCUS_BAR[ef.severity] ?? 'shadow-[inset_4px_0_0_var(--cc-line)]',
               )}
             >
@@ -156,6 +158,11 @@ export default function FindingsFocus({
           );
         })}
       </ol>
+      {picks.length > 1 ? (
+        <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted md:hidden" data-findings-focus-swipe="">
+          {picks.length - 1} more · swipe
+        </p>
+      ) : null}
     </div>
   );
 }

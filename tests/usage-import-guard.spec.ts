@@ -247,6 +247,8 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add usage data" (owner decision 02.10.2026).
+    // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+    await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
     await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
     await page.locator('[data-usage-window-from]').fill('2026-02-01');
     await page.locator('[data-usage-window-to]').fill('2026-04-30');
@@ -325,6 +327,8 @@ test.describe('a save the server refused is not shown as imported', () => {
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add usage data" (owner decision 02.10.2026).
+    // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+    await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
     await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
     await page.locator('[data-usage-window-from]').fill('2026-02-01');
     await page.locator('[data-usage-window-to]').fill('2026-04-30');

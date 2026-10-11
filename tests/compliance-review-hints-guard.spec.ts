@@ -319,12 +319,14 @@ test.describe('the source says "often carry", never "contains"', () => {
       '<ComplianceReviewHints',
     );
     expect(src).toContain("from '@/components/ComplianceReviewHints'");
-    // Both branches that show the table evidence — the evidence-only report and
-    // the analysed one. One of them carrying the hint and the other not is how a
-    // reader comes to see it on Monday and not on Tuesday.
-    expect(src.match(/<ComplianceReviewHints/g) ?? []).toHaveLength(
-      (src.match(/<DataCouplingTable/g) ?? []).length,
-    );
+    // Wherever the stage shows the table evidence — since ADR-092 (11.10.2026)
+    // the levels A–D per object read off the data coupling; the coupling table
+    // itself is the IT view's. One of them carrying the hint and the other not
+    // is how a reader comes to see it on Monday and not on Tuesday.
+    expect(src).not.toMatch(/<DataCouplingTable/);
+    const tables = (src.match(/<AbcdClassificationPanel dataCoupling=/g) ?? []).length;
+    expect(tables).toBeGreaterThan(0);
+    expect(src.match(/<ComplianceReviewHints/g) ?? []).toHaveLength(tables);
   });
 
   test('and the rule itself catches the sentence it exists for', () => {
