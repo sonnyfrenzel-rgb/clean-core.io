@@ -67,14 +67,6 @@ export interface ManualTestRequirement {
   verificationSteps: string[];
 }
 
-export interface S4Config {
-  url?: string;
-  username?: string;
-  password?: string;
-  authType?: 'basic' | 'oauth2' | 'sap_hub' | 'btp_destination';
-  btpDestinationJson?: string;
-}
-
 export interface Project {
   id?: string;
   userId?: string;
@@ -116,8 +108,6 @@ export interface Project {
   extensibilityRoute?: string;
   s4Deployment?: 'public' | 'private';
   s4Environment?: 'mock' | 'live';
-  /** @deprecated Use s4Meta — s4Config stored cleartext secrets */
-  s4Config?: S4Config;
   s4Meta?: {
     configured: boolean;
     url: string;

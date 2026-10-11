@@ -608,13 +608,6 @@ export default function SettingsPage() {
         // Password/BTP-JSON are NOT loaded back (write-only).
         // UI placeholder will show "•••••• (stored)" when configured.
         setS4Password('');
-      } else if (profile.s4Config) {
-        // Legacy fallback for not-yet-migrated profiles
-        setS4Url(profile.s4Config.url || '');
-        setS4Username(profile.s4Config.username || '');
-        setS4Password('');
-        setS4AuthType(profile.s4Config.authType || 'basic');
-        setS4TokenUrl(profile.s4Config.tokenUrl || '');
       }
     }
   }, [profile]);

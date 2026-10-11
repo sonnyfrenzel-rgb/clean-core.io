@@ -188,7 +188,7 @@ export default function TestingSandboxPage() {
    * different statement as soon as the form had been edited since it was saved
    * (QA review of 33471220d6e9, 40e1db9fd37a).
    */
-  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string; legacy?: boolean } | null>(null);
+  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
   /** "You have not saved this yet" is not a failed connection — see the test handler. */
   const [unsavedNotice, setUnsavedNotice] = useState('');
   /** An export that fails has to say so on the page; see `exportTestCasesToExcel`. */
@@ -325,15 +325,6 @@ export default function TestingSandboxPage() {
         setS4AuthType((project.s4Meta.authType as any) || 'basic');
         setS4Password('');
         if (project.s4Meta.url) setShowSetupGuide(false);
-      } else if (project.s4Config) {
-        // Legacy fallback
-        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic', btpDestinationJson: project.s4Config.btpDestinationJson || '', legacy: true });
-        setS4Url(project.s4Config.url || '');
-        setS4Username(project.s4Config.username || '');
-        setS4Password('');
-        setS4AuthType(project.s4Config.authType || 'basic');
-        setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
-        if (project.s4Config.url) setShowSetupGuide(false);
       } else if (profile?.s4Meta?.configured) {
         setSavedS4({ url: profile.s4Meta.url || '', username: profile.s4Meta.username || '', authType: (profile.s4Meta.authType as string) || 'basic', btpDestinationJson: '' });
         setS4Url(profile.s4Meta.url || '');
@@ -341,15 +332,6 @@ export default function TestingSandboxPage() {
         setS4AuthType((profile.s4Meta.authType as any) || 'basic');
         setS4Password('');
         if (profile.s4Meta.url) setShowSetupGuide(false);
-      } else if (profile?.s4Config) {
-        // Legacy fallback
-        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic', btpDestinationJson: profile.s4Config.btpDestinationJson || '', legacy: true });
-        setS4Url(profile.s4Config.url || '');
-        setS4Username(profile.s4Config.username || '');
-        setS4Password('');
-        setS4AuthType(profile.s4Config.authType || 'basic');
-        setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
-        if (profile.s4Config.url) setShowSetupGuide(false);
       }
     }
   }, [project, profile]);
@@ -1891,9 +1873,7 @@ export default function TestingSandboxPage() {
                               </dd>
                               <dt className={LABEL}>Secret</dt>
                               <dd className="m-0 min-w-0 cc-text-cell text-cc-ink">
-                                {savedS4.legacy
-                                  ? 'Saved by an earlier version, not in the encrypted store — save the connection again to move it there.'
-                                  : 'Stored encrypted (AES-256-GCM) on the server · never shown again'}
+                                Stored encrypted (AES-256-GCM) on the server · never shown again
                               </dd>
                               <dt className={LABEL}>What it may do</dt>
                               <dd className="m-0 min-w-0 cc-text-cell text-cc-ink">Connection check · read OData metadata · one read-only OData call — nothing that writes</dd>

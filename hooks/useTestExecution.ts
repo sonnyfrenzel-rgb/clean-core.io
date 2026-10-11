@@ -389,8 +389,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         projectId, 
         code: project?.generatedCode,
         selectedTestIds: selectedTestCases.map(tc => tc.id),
-        s4Environment: project?.s4Environment,
-        s4Config: project?.s4Config
+        s4Environment: project?.s4Environment
       };
       
       if (smokeTests.length > 0) {

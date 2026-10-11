@@ -72,8 +72,6 @@ export interface UserProfile {
   termsAcceptedAt?: any;
   s4TenantAccessRequested?: boolean;
   s4TenantAccessAllowed?: boolean;
-  /** @deprecated Use s4Meta instead — s4Config contained cleartext secrets */
-  s4Config?: any;
   s4Meta?: {
     configured: boolean;
     url: string;
