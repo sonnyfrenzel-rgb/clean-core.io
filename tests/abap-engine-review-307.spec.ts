@@ -856,8 +856,118 @@ START-OF-SELECTION.
   ls-fnam = 'VBAK-LIFSK'. ls-fval = '01'. APPEND ls TO it_b.
   CALL TRANSACTION 'ME22' USING it_a MODE 'N'. CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
 `;
-    expect(readBatchInput(src).map((c) => `${c.line} ${c.transaction}`)).toEqual(['6 ME22', '6 VA02']);
-    const bdc = buildAbapEvidence(src, 'zx.abap', 'private').findings.filter((f) => f.kind === 'bdc');
+    const calls = readBatchInput(src);
+    expect(calls.map((c) => `${c.line} ${c.transaction}`)).toEqual(['6 ME22', '6 VA02']);
+    // Each call fills only the row appended to its own table (QA review of 46ad87a933b4).
+    expect(calls.map((c) => `${c.transaction}: ${c.fields.map((f) => f.field).join(', ')}`)).toEqual([
+      'ME22: EKET-EEIND',
+      'VA02: VBAK-LIFSK',
+    ]);
+    const findings = buildAbapEvidence(src, 'zx.abap', 'private').findings;
+    const bdc = findings.filter((f) => f.kind === 'bdc');
     expect(bdc.map((f) => f.objectName)).toEqual(['ME22', 'VA02']);
+    const writes = findings.filter((f) => f.kind === 'batch-input');
+    expect(writes.map((f) => `${f.objectName} ${/via (\w+)/.exec(f.title)?.[1]}`)).toEqual(['EKET ME22', 'VBAK VA02']);
+    expect(writes.find((f) => f.objectName === 'EKET')?.technicalDetail).toContain('batch input to ME22');
+    expect(writes.find((f) => f.objectName === 'VBAK')?.technicalDetail).toContain('batch input to VA02');
+  });
+
+  test('a carrier that appends to the table it is given keeps each call to its own rows', () => {
+    const src = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata.
+START-OF-SELECTION.
+  PERFORM bdc_field TABLES it_a USING 'EKET-EEIND' '20260101'.
+  PERFORM bdc_field TABLES it_b USING 'VBAK-LIFSK' '01'.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+FORM bdc_field TABLES pt_bdc STRUCTURE bdcdata USING p_fnam p_fval.
+  DATA ls TYPE bdcdata.
+  ls-fnam = p_fnam.
+  ls-fval = p_fval.
+  APPEND ls TO pt_bdc.
+ENDFORM.
+`;
+    const macro = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata.
+DEFINE bdc_f.
+  APPEND VALUE #( fnam = &1 fval = &2 ) TO &3.
+END-OF-DEFINITION.
+START-OF-SELECTION.
+  bdc_f 'EKET-EEIND' '20260101' it_a.
+  bdc_f 'VBAK-LIFSK' '01' it_b.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+`;
+    // A carrier that appends to one global table: every call reads it, nothing is split.
+    const global = `REPORT zx.
+DATA: bdcdata TYPE STANDARD TABLE OF bdcdata WITH HEADER LINE.
+START-OF-SELECTION.
+  PERFORM bdc_field USING 'EKET-EEIND' '20260101'.
+  CALL TRANSACTION 'ME22' USING bdcdata MODE 'N'.
+  REFRESH bdcdata.
+  PERFORM bdc_field USING 'VBAK-LIFSK' '01'.
+  CALL TRANSACTION 'VA02' USING bdcdata MODE 'N'.
+FORM bdc_field USING fnam fval.
+  CLEAR bdcdata.
+  bdcdata-fnam = fnam.
+  bdcdata-fval = fval.
+  APPEND bdcdata.
+ENDFORM.
+`;
+    const fieldsOf = (source: string) =>
+      readBatchInput(source).map((c) => `${c.transaction}: ${c.fields.map((f) => f.field).join(', ')}`);
+    expect(fieldsOf(src)).toEqual(['ME22: EKET-EEIND', 'VA02: VBAK-LIFSK']);
+    expect(fieldsOf(macro)).toEqual(['ME22: EKET-EEIND', 'VA02: VBAK-LIFSK']);
+    expect(fieldsOf(global)).toEqual(['ME22: EKET-EEIND, VBAK-LIFSK', 'VA02: EKET-EEIND, VBAK-LIFSK']);
+  });
+
+  test('VALUE #( ) rows built for two tables stay with their own call', () => {
+    const src = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata.
+START-OF-SELECTION.
+  it_a = VALUE #( ( program = 'SAPMM06E' dynpro = '0105' dynbegin = 'X' )
+                  ( fnam = 'EKET-EEIND' fval = '20260101' ) ).
+  APPEND VALUE #( fnam = 'VBAK-LIFSK' fval = '01' ) TO it_b.
+  APPEND LINES OF VALUE bdcdata_tab( ( fnam = 'VBAK-FAKSK' fval = '02' ) ) TO it_b.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+`;
+    const [me22, va02] = readBatchInput(src);
+    expect(me22.fields.map((f) => f.field)).toEqual(['EKET-EEIND']);
+    expect(me22.screens.map((s) => `${s.program} ${s.screen}`)).toEqual(['SAPMM06E 0105']);
+    expect(va02.fields.map((f) => f.field)).toEqual(['VBAK-LIFSK', 'VBAK-FAKSK']);
+    expect(va02.screens).toEqual([]);
+  });
+
+  test('a row whose table is copied into another call\'s table stays with both calls', () => {
+    const src = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata, ls TYPE bdcdata.
+START-OF-SELECTION.
+  ls-fnam = 'EKET-EEIND'. ls-fval = '20260101'. APPEND ls TO it_a.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  it_b = it_a.
+  CALL TRANSACTION 'ME22' USING it_b MODE 'E'.
+`;
+    expect(readBatchInput(src).map((c) => c.fields.map((f) => f.field))).toEqual([['EKET-EEIND'], ['EKET-EEIND']]);
+    // The same through a routine given both tables, and through APPEND LINES OF.
+    const routine = src.replace('it_b = it_a.', 'PERFORM copy USING it_a CHANGING it_b.');
+    expect(readBatchInput(routine).map((c) => c.fields.map((f) => f.field))).toEqual([['EKET-EEIND'], ['EKET-EEIND']]);
+    const lines = src.replace('it_b = it_a.', 'APPEND LINES OF it_a TO it_b.');
+    expect(readBatchInput(lines).map((c) => c.fields.map((f) => f.field))).toEqual([['EKET-EEIND'], ['EKET-EEIND']]);
+    // A row appended on one branch or the other has no single table: it stays with both.
+    const branches = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata, ls TYPE bdcdata.
+PARAMETERS p_a AS CHECKBOX.
+START-OF-SELECTION.
+  ls-fnam = 'VBAK-LIFSK'. ls-fval = '01'.
+  IF p_a = 'X'.
+    APPEND ls TO it_a.
+  ELSE.
+    APPEND ls TO it_b.
+  ENDIF.
+  CALL TRANSACTION 'VA02' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+`;
+    expect(readBatchInput(branches).map((c) => c.fields.map((f) => f.field))).toEqual([['VBAK-LIFSK'], ['VBAK-LIFSK']]);
   });
 });

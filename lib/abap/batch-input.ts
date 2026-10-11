@@ -35,6 +35,21 @@ import { readBlocks, containerAt, type Container } from './block-structure';
  * batch-input call of the source reads the same table, every row of the source
  * is that table's (rows built in a sibling routine, `PERFORM build` before
  * `PERFORM post`).
+ *
+ * Of those, a row stays out of a call only when the source says it went to
+ * another call's table (QA review of 46ad87a933b4: `APPEND ls TO it_a` for ME22
+ * and `APPEND ls TO it_b` for VA02 gave both calls both fields). A row's table
+ * is read where it is written plainly — the next `APPEND <wa> TO <table>` /
+ * `INSERT <wa> INTO TABLE <table>` of its work area within a few statements,
+ * the `APPEND INITIAL LINE … ASSIGNING <fs>` before a field-symbol row, the
+ * target of `<table> = VALUE #( … )` or `APPEND [LINES OF] VALUE #( … ) TO
+ * <table>`, the table a carrier's body appends to (literal, or the argument
+ * that names it). A row is dropped from a call only when its table is known,
+ * differs from the call's, is the table of another batch-input call, and no
+ * statement copies the one into the other (`it_b = it_a`, `MOVE`,
+ * `APPEND LINES OF`, a routine or method given both). A row whose table is not
+ * read, or is ambiguous, stays with every call that reaches it — a real write
+ * is never dropped for a guess.
  * Pure: no catalogue, no model, no clock.
  */
 
@@ -165,10 +180,75 @@ function carrierOf(parameters: string[], body: AbapStatement[], macro: boolean):
   return carrier.field !== undefined || carrier.program !== undefined ? carrier : null;
 }
 
-type Event =
+/**
+ * The internal table a carrier's body appends its row to: a literal name, or
+ * the argument at the call site that names it (`&3` of a macro, a `TABLES`,
+ * `USING` or `CHANGING` parameter of a FORM). Absent when the body appends to
+ * none, or to more than one.
+ */
+type CarrierTable =
+  | { literal: string }
+  | { macroArg: number }
+  | { formParam: { clause: string; index: number } };
+
+type Event = (
   | { kind: 'screen'; program: string; screen: string; index: number; line: number }
   | { kind: 'field'; raw: string; value: string; index: number; line: number }
-  | { kind: 'unread'; index: number; line: number };
+  | { kind: 'unread'; index: number; line: number }
+) & {
+  /** The internal table the row is appended to, upper-cased; `null` when it is not read. */
+  table: string | null;
+};
+
+const TABLE_OPERAND = String.raw`([\w/<>&~-]+(?:\[\])?)`;
+const normTable = (name: string): string => name.toUpperCase().replace(/\[\]$/, '');
+
+/**
+ * The row and the table of an `APPEND`/`INSERT` into an internal table:
+ * `APPEND ls TO it_a` → `ls`, `IT_A`; `APPEND bdcdata.` (header line) →
+ * `bdcdata`, `BDCDATA`. `lines` for `LINES OF`, whose source is a table.
+ */
+function appendOf(text: string): { source: string; table: string; lines: boolean } | null {
+  const body = text.replace(/\.\s*$/, '').trim();
+  if (/^(?:APPEND|INSERT)\s+INITIAL\s+LINE\b/i.test(body)) return null;
+  let m = new RegExp(String.raw`^APPEND\s+(LINES\s+OF\s+)?([\s\S]+)\s+TO\s+${TABLE_OPERAND}(?:\s+(?:SORTED\s+BY|ASSIGNING|REFERENCE\s+INTO)\b[\s\S]*)?$`, 'i').exec(body);
+  if (m) return { source: m[2].trim(), table: normTable(m[3]), lines: !!m[1] };
+  m = new RegExp(String.raw`^INSERT\s+(LINES\s+OF\s+)?([\s\S]+)\s+INTO\s+(?:TABLE\s+)?${TABLE_OPERAND}(?:\s+(?:INDEX|ASSIGNING|REFERENCE\s+INTO)\b[\s\S]*)?$`, 'i').exec(body);
+  if (m) return { source: m[2].trim(), table: normTable(m[3]), lines: !!m[1] };
+  m = /^APPEND\s+([\w/]+)$/i.exec(body);
+  if (m) return { source: m[1], table: normTable(m[1]), lines: false };
+  return null;
+}
+
+/** `APPEND INITIAL LINE TO it ASSIGNING <fs>` → `<FS>`, `IT`. */
+function initialLineOf(text: string): { fieldSymbol: string; table: string } | null {
+  const m = new RegExp(String.raw`^(?:APPEND\s+INITIAL\s+LINE\s+TO|INSERT\s+INITIAL\s+LINE\s+INTO\s+(?:TABLE\s+)?)\s*${TABLE_OPERAND}[\s\S]*?\bASSIGNING\s+(?:FIELD-SYMBOL\()?(<[\w/]+>)`, 'i').exec(text.trim());
+  return m ? { fieldSymbol: m[2].toUpperCase(), table: normTable(m[1]) } : null;
+}
+
+/** Statements a work area's row is not followed across. */
+const ROW_BOUNDARY = /^(?:FORM|ENDFORM|METHOD|ENDMETHOD|MODULE|ENDMODULE|FUNCTION|ENDFUNCTION|DEFINE|END-OF-DEFINITION|CALL\s+TRANSACTION)\b/i;
+const ROW_WINDOW = 10;
+
+/** Arguments by clause: `PERFORM x TABLES it USING 'A' b` → TABLES [it], USING ['A', b]. */
+function clausesOf(tokens: string[], skipTypes: boolean): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  let clause = '';
+  for (let k = 0; k < tokens.length; k++) {
+    const token = tokens[k].replace(/\.$/, '');
+    const upper = token.toUpperCase();
+    if (['TABLES', 'USING', 'CHANGING', 'RAISING'].includes(upper)) { clause = upper; continue; }
+    if (!clause || !token) continue;
+    if (skipTypes && ['TYPE', 'LIKE', 'STRUCTURE'].includes(upper)) {
+      k++;
+      while (k < tokens.length && ['REF', 'TO', 'STANDARD', 'SORTED', 'HASHED', 'ANY', 'TABLE', 'OF', 'LINE'].includes(tokens[k].toUpperCase())) k++;
+      continue;
+    }
+    const name = skipTypes ? upper.replace(/^VALUE\(|\)$/g, '') : token;
+    out.set(clause, [...(out.get(clause) ?? []), name]);
+  }
+  return out;
+}
 
 export function readBatchInput(source: string): BatchInputCall[] {
   return readBatchInputFrom(readStatements(source));
@@ -178,7 +258,7 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
   const structure = readBlocks(statements);
 
   // The carriers: FORMs and macros whose body fills a row from a parameter.
-  const carriers = new Map<string, { carrier: Carrier; macro: boolean }>();
+  const carriers = new Map<string, { carrier: Carrier; macro: boolean; table?: CarrierTable }>();
   const formParameters = (opener: string): string[] => {
     const m = /\b(?:USING|CHANGING)\b([\s\S]*)$/i.exec(opener);
     if (!m) return [];
@@ -196,8 +276,67 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     if (!name) continue;
     const body = statements.slice(block.openIndex + 1, block.closeIndex);
     const carrier = carrierOf(block.kind === 'form' ? formParameters(opener) : [], body, block.kind === 'define');
-    if (carrier) carriers.set(name, { carrier, macro: block.kind === 'define' });
+    if (!carrier) continue;
+    // The table the carrier's row goes to — one, or it is not read.
+    const appended = new Set<string>();
+    for (const statement of body) {
+      const append = appendOf(statement.text);
+      if (append) appended.add(append.table);
+      const initial = initialLineOf(statement.text);
+      if (initial) appended.add(initial.table);
+    }
+    let table: CarrierTable | undefined;
+    if (appended.size === 1) {
+      const target = [...appended][0];
+      const macroArg = /^&(\d)$/.exec(target);
+      if (block.kind === 'define') {
+        table = macroArg ? { macroArg: Number(macroArg[1]) - 1 } : { literal: target };
+      } else if (!macroArg) {
+        const clauses = clausesOf(splitArguments(opener.replace(/^FORM\s+[\w/]+/i, '')), true);
+        for (const [clause, names] of clauses) {
+          const index = names.indexOf(target);
+          if (index >= 0) { table = { formParam: { clause, index } }; break; }
+        }
+        table ??= { literal: target };
+      }
+    }
+    carriers.set(name, { carrier, macro: block.kind === 'define', ...(table ? { table } : {}) });
   }
+
+  // The table an in-place row (`ls-fnam = …`) goes to: the next APPEND/INSERT
+  // of its work area before the next row of it starts, or — for a field
+  // symbol — the `APPEND INITIAL LINE … ASSIGNING` nearest before it. One
+  // table, or the row's table is not read.
+  const rowTableOf = (workArea: string, at: number): string | null => {
+    const wa = workArea.toUpperCase();
+    const tables = new Set<string>();
+    const newRow = new RegExp(`^${wa.replace(/[^\w]/g, (c) => `\\${c}`)}-(?:FNAM|PROGRAM)\\s*=`, 'i');
+    for (let j = at + 1; j < Math.min(statements.length, at + 1 + ROW_WINDOW); j++) {
+      const text = statements[j].text;
+      if (ROW_BOUNDARY.test(text) || newRow.test(text)) break;
+      const append = appendOf(text);
+      if (append && !append.lines && append.source.toUpperCase() === wa) tables.add(append.table);
+    }
+    if (!tables.size && wa.startsWith('<')) {
+      for (let j = at - 1; j >= Math.max(0, at - ROW_WINDOW); j--) {
+        const text = statements[j].text;
+        if (ROW_BOUNDARY.test(text)) break;
+        const initial = initialLineOf(text);
+        if (initial && initial.fieldSymbol === wa) { tables.add(initial.table); break; }
+      }
+    }
+    return tables.size === 1 ? [...tables][0] : null;
+  };
+  // The table a `VALUE #( … )` statement's rows go to.
+  const valueTableOf = (text: string, at: number): string | null => {
+    const append = appendOf(text);
+    if (append && /^VALUE\b/i.test(append.source.replace(/^LINES\s+OF\s+/i, ''))) return append.table;
+    const assigned = /^(?:DATA\(([\w/]+)\)|([\w/<>-]+)(?:\[\])?)\s*=\s*VALUE\b/i.exec(text.trim());
+    if (!assigned) return null;
+    const target = (assigned[1] ?? assigned[2]).toUpperCase();
+    // A work area filled whole and appended after: its table.
+    return rowTableOf(target, at) ?? target;
+  };
 
   const events: Event[] = [];
   const insideCarrier = (line: number) => {
@@ -216,25 +355,37 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     const text = statement.text;
 
     // 1. A call of a carrier.
-    const perform = /^PERFORM\s+([\w/]+)(?:\s+USING\s+([\s\S]*?))?\.?$/i.exec(text);
+    // `TABLES` before `USING` names the table the row goes to, not a field.
+    const perform = /^PERFORM\s+([\w/]+)(?:\s+TABLES\s+[\s\S]*?)?(?:\s+USING\s+([\s\S]*?))?\.?$/i.exec(text);
     const callee = perform ? perform[1].toUpperCase() : statement.keyword;
     const entry = carriers.get(callee);
     if (entry && (perform ? !entry.macro : entry.macro)) {
       const args = splitArguments(perform ? (perform[2] ?? '') : text.slice(statement.keyword.length).replace(/\.\s*$/, ''));
       const { carrier } = entry;
+      // The table the carrier's row goes to, as this call names it.
+      let table: string | null = null;
+      if (entry.table && 'literal' in entry.table) table = entry.table.literal;
+      else if (entry.table && 'macroArg' in entry.table) {
+        const arg = args[entry.table.macroArg];
+        table = arg && literalValue(arg) === null ? normTable(arg) : null;
+      } else if (entry.table && perform) {
+        const { clause, index } = entry.table.formParam;
+        const arg = clausesOf(splitArguments(text.replace(/^PERFORM\s+[\w/]+/i, '')), false).get(clause)?.[index];
+        table = arg && literalValue(arg) === null ? normTable(arg) : null;
+      }
       const program = carrier.program !== undefined ? literalValue(args[carrier.program]) : null;
       const screen = carrier.screen !== undefined ? literalValue(args[carrier.screen]) : null;
       if (program && screen) {
-        events.push({ kind: 'screen', program: program.toUpperCase(), screen, index: i, line: statement.lineStart });
+        events.push({ kind: 'screen', program: program.toUpperCase(), screen, index: i, line: statement.lineStart, table });
       }
       const field = carrier.field !== undefined ? literalValue(args[carrier.field]) : null;
       if (carrier.field !== undefined && !field && (args[carrier.field] ?? '').trim()) {
-        events.push({ kind: 'unread', index: i, line: statement.lineStart });
+        events.push({ kind: 'unread', index: i, line: statement.lineStart, table });
       }
       if (field) {
         events.push({
           kind: 'field', raw: field, value: carrier.value !== undefined ? args[carrier.value] ?? '' : '',
-          index: i, line: statement.lineStart,
+          index: i, line: statement.lineStart, table,
         });
       }
       continue;
@@ -242,30 +393,31 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     if (insideCarrier(statement.lineStart)) continue;
 
     // 2. The row written in place.
-    const fnam = /^[\w/<>]+-FNAM\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(text);
+    const fnam = /^([\w/<>]+)-FNAM\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(text);
     if (fnam) {
-      const raw = literalValue(fnam[1]);
+      const raw = literalValue(fnam[2]);
       let value = '';
       for (let j = i + 1; j < Math.min(statements.length, i + 4); j++) {
         const fval = /^[\w/<>]+-FVAL\s*=\s*(.+?)\s*\.?$/i.exec(statements[j].text);
         if (fval) { value = fval[1]; break; }
       }
-      if (raw) events.push({ kind: 'field', raw, value, index: i, line: statement.lineStart });
+      if (raw) events.push({ kind: 'field', raw, value, index: i, line: statement.lineStart, table: rowTableOf(fnam[1], i) });
       continue;
     }
     // A field name computed at run time: not guessed at, but not nothing either.
-    if (/^[\w/<>]+-FNAM\s*=\s*[^'\s]/i.test(text)) {
-      events.push({ kind: 'unread', index: i, line: statement.lineStart });
+    const computed = /^([\w/<>]+)-FNAM\s*=\s*[^'\s]/i.exec(text);
+    if (computed) {
+      events.push({ kind: 'unread', index: i, line: statement.lineStart, table: rowTableOf(computed[1], i) });
       continue;
     }
-    const program = /^[\w/<>]+-PROGRAM\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(text);
+    const program = /^([\w/<>]+)-PROGRAM\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(text);
     if (program) {
       for (let j = i + 1; j < Math.min(statements.length, i + 4); j++) {
         const dynpro = /^[\w/<>]+-DYNPRO\s*=\s*('(?:[^']|'')*')\s*\.?$/i.exec(statements[j].text);
         if (dynpro) {
-          const p = literalValue(program[1]);
+          const p = literalValue(program[2]);
           const d = literalValue(dynpro[1]);
-          if (p && d) events.push({ kind: 'screen', program: p.toUpperCase(), screen: d, index: i, line: statement.lineStart });
+          if (p && d) events.push({ kind: 'screen', program: p.toUpperCase(), screen: d, index: i, line: statement.lineStart, table: rowTableOf(program[1], i) });
           break;
         }
       }
@@ -275,15 +427,16 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     // 3. `VALUE #( … )` rows with literals.
     if (/\bVALUE\s+[\w#]*\s*\(/i.test(text)) {
       const rows = /\bPROGRAM\s*=\s*('(?:[^']|'')*')\s+DYNPRO\s*=\s*('(?:[^']|'')*')|\bFNAM\s*=\s*('(?:[^']|'')*')(?:\s+FVAL\s*=\s*('(?:[^']|'')*'|[^\s)]+))?/gi;
-      if (/\bFNAM\s*=\s*[^'\s]/i.test(text)) events.push({ kind: 'unread', index: i, line: statement.lineStart });
+      const table = valueTableOf(text, i);
+      if (/\bFNAM\s*=\s*[^'\s]/i.test(text)) events.push({ kind: 'unread', index: i, line: statement.lineStart, table });
       for (const m of text.matchAll(rows)) {
         if (m[1]) {
           const p = literalValue(m[1]);
           const d = literalValue(m[2]);
-          if (p && d) events.push({ kind: 'screen', program: p.toUpperCase(), screen: d, index: i, line: statement.lineStart });
+          if (p && d) events.push({ kind: 'screen', program: p.toUpperCase(), screen: d, index: i, line: statement.lineStart, table });
         } else {
           const raw = literalValue(m[3]);
-          if (raw) events.push({ kind: 'field', raw, value: m[4] ?? '', index: i, line: statement.lineStart });
+          if (raw) events.push({ kind: 'field', raw, value: m[4] ?? '', index: i, line: statement.lineStart, table });
         }
       }
     }
@@ -355,6 +508,55 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     return c?.name ?? '';
   };
 
+  // Tables the source may copy into one another (`it_b = it_a`, `MOVE`,
+  // `APPEND LINES OF`, a routine or method given both): one table for the
+  // question below, since a row in the one can end up in the other.
+  const callTables = new Set(calls.map((c) => c.table).filter((t): t is string => t !== null));
+  const relevant = new Set([...callTables, ...events.map((e) => e.table).filter((t): t is string => t !== null)]);
+  const parent = new Map<string, string>();
+  const root = (name: string): string => {
+    let at = name;
+    while (parent.has(at) && parent.get(at) !== at) at = parent.get(at)!;
+    return at;
+  };
+  const link = (a: string, b: string) => {
+    const ra = root(normTable(a));
+    const rb = root(normTable(b));
+    if (ra !== rb) parent.set(ra, rb);
+  };
+  const IDENT = String.raw`([\w/<>~-]+)(?:\[\])?`;
+  for (const statement of statements) {
+    if (statement.nativeSql || defineAt.has(statement.index)) continue;
+    const text = statement.text.replace(/\.\s*$/, '').trim();
+    const assigned = new RegExp(String.raw`^(?:DATA\(([\w/]+)\)|${IDENT})\s*=\s*([\s\S]+)$`, 'i').exec(text);
+    if (assigned) {
+      const target = assigned[1] ?? assigned[2];
+      const rhs = assigned[3].trim();
+      const source =
+        new RegExp(String.raw`^${IDENT}$`, 'i').exec(rhs)?.[1] ??
+        new RegExp(String.raw`^CORRESPONDING\s+[\w#~/]*\s*\(\s*(?:BASE\s*\(\s*[^)]*\)\s*)?${IDENT}`, 'i').exec(rhs)?.[1] ??
+        new RegExp(String.raw`^VALUE\s+[\w#~/]*\s*\(\s*BASE\s+${IDENT}`, 'i').exec(rhs)?.[1];
+      if (source) link(target, source);
+      continue;
+    }
+    const move = new RegExp(String.raw`^MOVE(?:-CORRESPONDING)?\s+${IDENT}\s+TO\s+${IDENT}`, 'i').exec(text);
+    if (move) { link(move[1], move[2]); continue; }
+    const append = appendOf(text);
+    if (append?.lines) {
+      const source = new RegExp(String.raw`^${IDENT}$`, 'i').exec(append.source)?.[1];
+      if (source) link(source, append.table);
+      continue;
+    }
+    // A routine, function or method given two of the tables may copy one into the other.
+    const keyword = statement.keyword;
+    if ((keyword === 'PERFORM' && !carriers.has(/^PERFORM\s+([\w/]+)/i.exec(text)?.[1]?.toUpperCase() ?? ''))
+      || (keyword === 'CALL' && !/^CALL\s+TRANSACTION\b/i.test(text))
+      || /->|=>/.test(text)) {
+      const named = [...new Set(text.split(/[^\w/<>~-]+/).map((w) => normTable(w)).filter((w) => relevant.has(w)))];
+      for (let k = 1; k < named.length; k++) link(named[0], named[k]);
+    }
+  }
+
   return calls.map((call) => {
     const scope = reach(containerName(call.line));
     let mine = events.filter((e) => scope.has(containerName(e.line)));
@@ -377,6 +579,13 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
       const c = containerAt(structure.containers, e.line);
       return (c?.lineStart ?? e.line) === nearest.get(c?.name ?? '') || !c;
     });
+    // A row the source appends to another batch-input call's table is that
+    // call's, not this one's — unless the one table may be copied into the
+    // other. A row whose table is not read stays.
+    if (call.table) {
+      const own = root(call.table);
+      mine = mine.filter((e) => !e.table || e.table === call.table || !callTables.has(e.table) || root(e.table) === own);
+    }
     const screens: BatchInputScreen[] = [];
     const fields: BatchInputField[] = [];
     const okCodes: string[] = [];
