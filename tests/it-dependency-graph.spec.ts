@@ -14,6 +14,12 @@ import {
   type Box,
 } from '../lib/it-dependency-graph';
 import { itvGraphEdgeLabel, itvGraphMore, itvGraphShown } from '../lib/messages/workspace-it';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { adminSetDoc } from './helpers/admin-seed';
+import firebaseConfig from '../firebase-config.json';
+import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The IT view's dependency graph (roadmap after 3.0.7, item 3) — the rows of
@@ -288,5 +294,126 @@ test.describe('source guards', () => {
     // Every node and label is a button with a name; the curves are hidden from assistive technology.
     expect(view).toMatch(/<svg\s+aria-hidden="true"/);
     expect(view.match(/type="button"/g)?.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+/* ------------------------------------------------- the rendered graph */
+
+/**
+ * QA review of fa1df10cb361 (da990041f4ae): the tests above hold the model and
+ * the layout; this one holds the promise a reader meets — a node or an edge
+ * label activated from the keyboard reveals its row of the table (past the
+ * table's first five, where it is not displayed until asked for) and moves the
+ * focus there, and the capped picture's "and N more — see the table" reaches
+ * the table itself. Needs the server and the emulators, like every signed-in spec.
+ */
+test.describe('the graph on the screen sends the reader to the table row', () => {
+  test.describe.configure({ mode: 'serial' });
+  const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const EMAIL = `it-graph-${STAMP}@cleancore-test.io`;
+  const PASSWORD = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
+  const PROJECT_ID = `it-graph-${STAMP}`;
+
+  test.beforeAll(async () => {
+    test.setTimeout(180 * 1000);
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch { /* already connected */ }
+    const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Graph', lastName: 'Reader', email: EMAIL, tier: 'pilot', status: 'approved',
+      activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+    });
+    // Z_MM_PO_APPROVAL: more objects than the graph draws, so it is capped
+    // (held server-free above) and more rows than the table shows at first.
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'Dependency graph fixture', userId: cred.user.uid, createdAt: new Date(), status: 'created',
+      legacyCode: read('public/starter-examples/Z_MM_PO_APPROVAL.abap'),
+    });
+  });
+
+  test('Enter on a node and on an edge label reveals the row and focuses it; the capped link reaches the table', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+
+    const graph = page.locator('[data-it-graph]');
+    await expect(graph, 'the dependency graph never rendered').toBeVisible({ timeout: 60000 });
+    await expect(graph).toHaveAttribute('data-it-graph-capped', 'yes');
+    const table = page.locator('[data-it-objects-table]');
+    await expect(table.locator('[data-cc-table-limit="5"]')).toHaveCount(1);
+    const rowOf = (key: string) => table.locator(`[data-cc-table-row="${key}"]`);
+
+    /** The first control of `selector` whose row the table does not display yet. */
+    const pickHidden = async (selector: string) => {
+      const keys = await graph.locator(selector).evaluateAll((els) =>
+        els.map((el) => el.getAttribute('data-it-graph-row') ?? '').filter(Boolean),
+      );
+      for (const key of keys) {
+        if ((await rowOf(key).count()) === 1 && !(await rowOf(key).isVisible())) return key;
+      }
+      return null;
+    };
+
+    // An edge label first, while the table still shows only its first five rows.
+    const edgeRow = await pickHidden('[data-it-graph-edge]');
+    expect(edgeRow, 'no edge label points past the first five rows of the table').not.toBeNull();
+    await expect(rowOf(edgeRow!)).toBeHidden();
+    const edge = graph.locator(`[data-it-graph-edge][data-it-graph-row="${edgeRow}"]`).first();
+    await edge.focus();
+    await expect(edge).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(rowOf(edgeRow!)).toBeVisible();
+    await expect(rowOf(edgeRow!)).toHaveAttribute('data-cc-table-row', edgeRow!);
+    await expect(rowOf(edgeRow!).locator('[data-it-object-focus]')).toBeFocused();
+    await expect(rowOf(edgeRow!)).toBeInViewport();
+
+    // Then a node: the table is open now, so the row is displayed — the focus still has to move to it.
+    const nodeRow = await graph.locator('[data-it-graph-node="object"]').evaluateAll((els) =>
+      els.map((el) => el.getAttribute('data-it-graph-row') ?? '').find((k) => k !== '') ?? null,
+    );
+    expect(nodeRow, 'no object node names a row').not.toBeNull();
+    const node = graph.locator(`[data-it-graph-node="object"][data-it-graph-row="${nodeRow}"]`).first();
+    await node.focus();
+    await page.keyboard.press('Enter');
+    await expect(rowOf(nodeRow!)).toBeVisible();
+    await expect(rowOf(nodeRow!).locator('[data-it-object-focus]')).toBeFocused();
+    await expect(rowOf(nodeRow!)).toBeInViewport();
+
+    // The capped picture says how much it left out, and the link reaches the table.
+    const more = graph.locator('[data-it-graph-more] button');
+    await expect(more).toHaveText(/^and \d+ more (?:objects?|uses?) — see the table$/);
+    await more.focus();
+    await page.keyboard.press('Enter');
+    await expect(table).toBeFocused();
+    await expect(table).toBeInViewport();
+  });
+
+  test('on a fresh page, Enter on a node whose row is past the first five reveals that row too', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    const graph = page.locator('[data-it-graph]');
+    await expect(graph).toBeVisible({ timeout: 60000 });
+    const table = page.locator('[data-it-objects-table]');
+    const rowOf = (key: string) => table.locator(`[data-cc-table-row="${key}"]`);
+    const keys = await graph.locator('[data-it-graph-node]').evaluateAll((els) =>
+      els.map((el) => el.getAttribute('data-it-graph-row') ?? '').filter(Boolean),
+    );
+    let hidden: string | null = null;
+    for (const key of keys) {
+      if ((await rowOf(key).count()) === 1 && !(await rowOf(key).isVisible())) { hidden = key; break; }
+    }
+    expect(hidden, 'no graph node points past the first five rows of the table').not.toBeNull();
+    const node = graph.locator(`[data-it-graph-node][data-it-graph-row="${hidden}"]`).first();
+    await node.focus();
+    await page.keyboard.press('Enter');
+    await expect(rowOf(hidden!)).toBeVisible();
+    await expect(rowOf(hidden!).locator('[data-it-object-focus]')).toBeFocused();
   });
 });

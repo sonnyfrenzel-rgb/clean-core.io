@@ -247,6 +247,21 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(stepName(node('read', 'ZMM_X', { tables: ['ZMM_X'], single: true }))).toBe('Read ZMM_X');
     expect(stepName(node('write', 'GT_ITEMS', { operation: 'MODIFY' }))).toBe('Update items list');
     expect(stepName(node('service-task', 'BAPI_PO_CREATE1'))).toBe('Create purchase order');
+    // The calls in business words (owner, 11.10.2026): what the step does, never
+    // the SAP technique that does it — the function module stays underneath.
+    expect(stepName(node('service-task', 'GUI_DOWNLOAD'))).toBe("Save a file to the user's PC");
+    expect(stepName(node('service-task', 'GUI_UPLOAD'))).toBe("Read a file from the user's PC");
+    expect(stepName(node('service-task', 'WS_DOWNLOAD'))).toBe("Save a file to the user's PC");
+    expect(stepName(node('service-task', 'WS_UPLOAD'))).toBe("Read a file from the user's PC");
+    expect(stepName(node('service-task', 'BAPI_TRANSACTION_COMMIT'))).toBe('Save the changes');
+    expect(stepName(node('service-task', 'BAPI_TRANSACTION_ROLLBACK'))).toBe('Discard the changes');
+    expect(stepName(node('service-task', 'DB_COMMIT'))).toBe('Save the changes');
+    expect(stepName(node('service-task', 'REUSE_ALV_GRID_DISPLAY'))).toBe('Show the result list');
+    expect(stepName(node('service-task', 'REUSE_ALV_LIST_DISPLAY'))).toBe('Show the result list');
+    expect(stepName(node('service-task', 'REUSE_ALV_FIELDCATALOG_MERGE'))).toBe('Define the list columns');
+    expect(stepName(node('service-task', 'REUSE_ALV_POPUP_TO_SELECT'))).toBe('Ask the user to pick from a list');
+    expect(stepName(node('service-task', 'MASTER_IDOC_DISTRIBUTE'))).toBe('Send data to partner systems');
+    expect(stepName(node('service-task', 'F4IF_INT_TABLE_VALUE_REQUEST'))).toBe('Offer a list of values to pick from');
     expect(stepName(node('service-task', 'LV_FM', { dynamic: true }))).toBe('Run a step chosen at runtime');
     expect(stepName(node('transaction', 'ZXY1'))).toBe('Run transaction ZXY1');
     expect(stepName(node('output', 'WRITE', { target: 'list' }))).toBe('Show the result list');

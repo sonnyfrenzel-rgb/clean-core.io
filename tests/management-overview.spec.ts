@@ -544,6 +544,12 @@ test.describe('(a) one sentence, at most six cards', () => {
     expect(card).toContain('Analysis done');
     expect(card).toContain('data-overview-run="run-1"');
     expect(card).toContain('href="/project/p-one/analyze');
+    // The band beside the score, and the run link itself: "Analysis done · Run <id>",
+    // the link pointing at Analyze and naming the run.
+    expect(card).toMatch(/data-overview-fact=""[^>]*>75 of 100 · significant rework \(60–80\)/);
+    expect(card).toMatch(
+      /Analysis done · <a href="\/project\/p-one\/analyze[^"]*" data-overview-run="run-1"[^>]*>Run run-1<\/a>/,
+    );
     expect(card).toContain('A trend appears after the next analysis measured by the same rule.');
     expect(card).toContain('data-provenance="proven"');
     // Nothing that reads as an open item: no dashed "Not determined: 0 runs", no
