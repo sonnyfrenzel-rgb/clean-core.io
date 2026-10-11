@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { BTP, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
 
 interface Checkpoint {
   checkpointName: string;
@@ -275,6 +276,23 @@ export default function ExtensibilityDecisionMatrix({
         </div>
         )}
       </div>
+
+      {/* Every checkpoint and both tracks are the model's words; the SAP
+          identifiers in them carry their check (QA bead0ed34426). */}
+      <SapIdentifierChecks
+        texts={[
+          ...checkpoints.flatMap((cp) => [cp.checkpointName, cp.question, cp.evaluation, cp.cleanCoreImpact]),
+          ...(comparative
+            ? [comparative.inAppABAPCloud, comparative.sideBySideBTP].flatMap((t) => [
+                t?.technicalFeasibility,
+                t?.fitDetails,
+                ...(Array.isArray(t?.pros) ? t.pros : []),
+                ...(Array.isArray(t?.cons) ? t.cons : []),
+              ])
+            : []),
+        ]}
+        title="SAP identifiers named in the decision path"
+      />
     </div>
   );
 }

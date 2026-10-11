@@ -432,21 +432,39 @@ export function sapIdMark(check: SapIdCheck): string {
 }
 
 /**
+ * The occurrences that carry a mark: the first of every identifier, and every
+ * later one the model gave a wrong name — "F0380 (Process Collections
+ * Worklist) … F0380 (Credit Management)" marks both, so the second wrong name
+ * does not read as covered by the first one's "verified" (QA 53b44083e460). A
+ * plain repeat, or the same wrong name again, stays unmarked.
+ */
+export function occurrencesToMark(checks: readonly SapIdCheck[]): SapIdCheck[] {
+  const marked = new Set<string>();
+  const out: SapIdCheck[] = [];
+  for (const c of checks) {
+    const id = c.id.toUpperCase();
+    const wrongName = c.status === 'mismatch' ? `${id}|${norm(c.modelName ?? '')}` : null;
+    if (marked.has(id) && (wrongName === null || marked.has(wrongName))) continue;
+    marked.add(id);
+    if (wrongName) marked.add(wrongName);
+    out.push(c);
+  }
+  return out;
+}
+
+/**
  * The text with a mark after the first occurrence of every SAP identifier in
- * it: `F2358 [name does not match SAP's (SAP: F2358 is “Monitor Purchase Order
+ * it, and after every later one under another wrong name (`occurrencesToMark`):
+ * `F2358 [name does not match SAP's (SAP: F2358 is “Monitor Purchase Order
  * Items”, SAP KBA 3696098)]`. Plain text in, plain text out — the markdown
  * exports and the HTML exports (escaped after this) both read it.
  */
 export function annotateSapReferences(text: unknown): string {
   if (typeof text !== 'string') return text == null ? '' : String(text);
   if (!text) return text;
-  const seen = new Set<string>();
   let out = '';
   let pos = 0;
-  for (const c of findSapIdentifiers(text)) {
-    const key = c.id.toUpperCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
+  for (const c of occurrencesToMark(findSapIdentifiers(text))) {
     const end = c.index + c.length;
     out += text.slice(pos, end) + ` [${sapIdMark(c)}]`;
     pos = end;
@@ -484,7 +502,10 @@ export function catalogNoteForMapping(legacy: string | null | undefined, ...mode
   const entry = SAP_API_CATALOG[legacy.trim().toUpperCase()];
   if (!entry) return null;
   const named = modelApis.filter(Boolean).map((s) => String(s).toUpperCase());
-  if (named.some((n) => n.includes(entry.view.toUpperCase()))) return null;
+  // The successor as a whole identifier: NOT_API_X does not name API_X (QA c9c5b3463951).
+  const view = entry.view.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const whole = new RegExp(`(?:^|[^A-Z0-9_])${view}(?![A-Z0-9_])`);
+  if (named.some((n) => whole.test(n))) return null;
   return `This product's SAP API catalog (${SAP_API_CATALOG_VERSION}) names ${entry.view} (${entry.type}) as the successor of ${legacy.trim().toUpperCase()}, not the API proposed here.`;
 }
 
@@ -499,13 +520,12 @@ const OVERCLAIM = [
   /\bno rewrite (?:is )?needed\b/i,
 ];
 
-/** The phrases in a text that claim full standard coverage. */
+/** The phrases in a text that claim full standard coverage — every occurrence, not the first per pattern. */
 export function coverageClaims(text: unknown): string[] {
   if (!text || typeof text !== 'string') return [];
   const out: string[] = [];
   for (const re of OVERCLAIM) {
-    const m = re.exec(text);
-    if (m) out.push(m[0]);
+    for (const m of text.matchAll(new RegExp(re.source, 'gi'))) out.push(m[0]);
   }
   return out;
 }

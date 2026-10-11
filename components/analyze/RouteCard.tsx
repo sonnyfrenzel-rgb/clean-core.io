@@ -8,6 +8,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ObjectSection from '@/components/analyze/ObjectSection';
+import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
 import type { RouteDriver } from '@/lib/abap/extensibility-router';
 import { BTP, SIDE_BY_SIDE_LABEL, isSideBySideRoute, routeLabel } from '@/lib/sap-naming';
 
@@ -63,6 +64,12 @@ export interface RouteCardProps {
   stageOutput?: boolean;
   /** "Why this route": the decision path, one action deeper (real page only). */
   children?: React.ReactNode;
+  /**
+   * The target and the rationale are a model's words (the stored analysis), not
+   * the router's: every SAP identifier in them is listed with its check (QA
+   * bead0ed34426). The router's own report names none and passes nothing.
+   */
+  modelWords?: boolean;
 }
 
 /** How many assumptions stand open; the rest are one action deeper. */
@@ -82,6 +89,7 @@ export default function RouteCard({
   openLine,
   stageOutput = false,
   children,
+  modelWords = false,
 }: RouteCardProps) {
   const btp = route ? isSideBySideRoute(route) : false;
   const drivers = derived && derived !== 'differs' && !overridden ? derived.drivers : null;
@@ -228,6 +236,15 @@ export default function RouteCard({
         Target system:{' '}
         {deployment === 'public' ? 'S/4HANA Public Cloud' : deployment === 'private' ? 'Private Cloud / RISE' : 'not specified'}
       </p>
+
+      {/* The artefact and the rationale as shown, when they are the model's
+          words: an SAP identifier in them carries its check (QA bead0ed34426). */}
+      {modelWords ? (
+        <SapIdentifierChecks
+          texts={[route && !overridden ? targetArtifact : null, rationale]}
+          title="SAP identifiers named in the route"
+        />
+      ) : null}
 
       <div className="mt-3" data-route-next="">
         <CcLinkButton href={decideHref} variant="secondary" density="compact">

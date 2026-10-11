@@ -390,7 +390,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
               className="grid min-w-0 grid-cols-1 gap-2 px-4 py-3 min-[900px]:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)_auto] min-[900px]:items-center min-[900px]:gap-4"
             >
               <div className="min-w-0">
-                <h4 className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">{service.serviceName}</h4>
+                <h4 className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={service.serviceName} /></h4>
                 <p className="m-0 cc-text-cell text-cc-ink"><SapCheckedText text={service.purpose} /></p>
                 {/* Roadmap 3.0.9: the SAP reference pattern of the block, a link per block. */}
                 <SapReferenceInline bindings={REFERENCE_OF_SERVICE[getCloudServiceKey(service.serviceName)]} />
@@ -399,7 +399,8 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
                 <span className="sr-only">{label}:</span>
                 {packages.map((pkg, pIdx) => (
                   <code key={pIdx} className="max-w-full font-cc-mono cc-text-meta text-cc-ink [overflow-wrap:anywhere]">
-                    <CcTag>{pkg}</CcTag>
+                    {/* "Released SAP objects" are model-named identifiers too (QA 666aaffb90ab). */}
+                    <CcTag><SapCheckedText text={pkg} /></CcTag>
                   </code>
                 ))}
               </div>
@@ -460,7 +461,8 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
                 <div className="flex flex-wrap gap-2">
                   {details.npmPackages.map((pkg, idx) => (
                     <code key={idx} className="font-cc-mono cc-text-meta text-cc-ink">
-                      <CcTag>{pkg}</CcTag>
+                      {/* "Released SAP objects" are model-named identifiers too (QA 666aaffb90ab). */}
+                    <CcTag><SapCheckedText text={pkg} /></CcTag>
                     </code>
                   ))}
                 </div>

@@ -162,10 +162,10 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
       const serviceReferenceSection = serviceReference(String(svc.serviceName ?? ''));
       return `
         <div class="card">
-          <h4>${esc(svc.serviceName)}</h4>
+          <h4>${esc(checked(svc.serviceName))}</h4>
           <p class="muted">${esc(checked(svc.purpose))}</p>
           <div class="meta">
-            <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code>${esc(pkg)}</code>`).join(', ') || 'None'}
+            <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code>${esc(checked(pkg))}</code>`).join(', ') || 'None'}
           </div>
           <div class="meta"><strong>SAP reference pattern:</strong> ${serviceReferenceSection}</div>
         </div>

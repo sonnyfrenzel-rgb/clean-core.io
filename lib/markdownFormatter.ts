@@ -141,10 +141,10 @@ export function formatDesignToMarkdown(rawJson: string): string {
     if (Array.isArray(data.cloudServices) && data.cloudServices.length > 0) {
       md += `## ${BTP} & Native Cloud Services Integration\n`;
       data.cloudServices.forEach((service: any) => {
-        md += `### ${service.serviceName}\n`;
+        md += `### ${checked(service.serviceName)}\n`;
         md += `**Purpose in Project:** ${checked(service.purpose)}\n\n`;
         if (Array.isArray(service.npmPackages) && service.npmPackages.length > 0) {
-          md += `**Required Node.js SDK Packages:** ${service.npmPackages.map((pkg: string) => `\`${pkg}\``).join(', ')}\n\n`;
+          md += `**Required Node.js SDK Packages:** ${service.npmPackages.map((pkg: string) => `\`${checked(pkg)}\``).join(', ')}\n\n`;
         }
       });
     }
@@ -193,7 +193,9 @@ export function formatDesignToMarkdown(rawJson: string): string {
     // Every SAP identifier of the design, with its state and SAP source (external review F-03).
     md += sapReferenceAppendixMarkdown(
       data.architectureOverview?.approachDescription, data.dataSync?.description,
-      ...(Array.isArray(data.cloudServices) ? data.cloudServices.map((sv: any) => sv?.purpose) : []),
+      ...(Array.isArray(data.cloudServices)
+        ? data.cloudServices.flatMap((sv: any) => [sv?.serviceName, sv?.purpose, ...(Array.isArray(sv?.npmPackages) ? sv.npmPackages : [])])
+        : []),
       ...(Array.isArray(data.sapStandardApiMapping) ? data.sapStandardApiMapping.flatMap((m: any) => [m?.sapStandardApiName, m?.apiId, m?.description]) : []),
     );
 

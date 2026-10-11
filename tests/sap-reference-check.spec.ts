@@ -14,6 +14,8 @@ import {
 } from '../lib/sap-reference-check';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown } from '../lib/markdownFormatter';
 import { buildAnalysisPrompt } from '../lib/analysis-prompt';
+import { buildDesignExportHtml } from '../lib/design-export';
+import type { Project } from '../lib/types';
 
 /**
  * SAP identifiers a model wrote are checked — owner, 11.10.2026, external
@@ -136,6 +138,14 @@ test.describe('the marks travel into the text a reader gets', () => {
     expect(annotateSapReferences('No identifiers here.')).toBe('No identifiers here.');
   });
 
+  test('a later occurrence under a wrong name is marked too; a plain repeat is not (QA 53b44083e460)', () => {
+    const text = 'Use F0380 (Process Collections Worklist). Then F0380 (Credit Management Cockpit) for limits. F0380 again.';
+    const out = annotateSapReferences(text);
+    expect(out).toContain('F0380 [verified: SAP lists F0380 as “Process Collections Worklist”');
+    expect(out).toContain("F0380 [name does not match SAP's (SAP: F0380 is “Process Collections Worklist”");
+    expect(out.match(/F0380 \[/g)).toHaveLength(2);
+  });
+
   test('business-analysis.md marks the identifiers and lists them with their sources', () => {
     const analysis = {
       projectTitle: 'Collections',
@@ -182,10 +192,40 @@ test.describe('the marks travel into the text a reader gets', () => {
     expect(md).toMatch(/Model proposal/);
   });
 
+  test('a cloud service named by an SAP identifier carries its check in both design exports (QA 6e345a77002f, 7fb4ff25c598)', () => {
+    const design = {
+      projectName: 'X',
+      architectureOverview: { approachDescription: 'An approach.', nodeFramework: 'CAP', runtimePlatform: 'BTP' },
+      nodeAppBlueprint: { projectStructure: [], apiEndpoints: [] },
+      cloudServices: [{ serviceName: 'F2358 (Process Collections Worklist)', purpose: 'The worklist.', npmPackages: ['SAP_COM_9999'] }],
+      dataSync: { patternName: 'Pull', description: 'Pull.' },
+      sapStandardApiMapping: [],
+      securityHardening: [],
+      roadmap: [],
+    };
+    const md = formatDesignToMarkdown(JSON.stringify(design));
+    expect(md).toContain("### F2358 [name does not match SAP's (SAP: F2358 is “Monitor Purchase Order Items”, SAP KBA 3696098)] (Process Collections Worklist)");
+    expect(md).toContain('`SAP_COM_9999 [not verified — check before use]`');
+    // The appendix lists them with their source.
+    expect(md).toMatch(/\| `F2358` \| Fiori app \| name does not match SAP's[^\n]*userapps\.support\.sap\.com/);
+    expect(md).toMatch(/\| `SAP_COM_9999` \|/);
+
+    const project = { id: 'p', name: 'X', solutionDesign: JSON.stringify(design), extensibilityRoute: 'Side-by-Side (SAP BTP)' } as unknown as Project;
+    const html = buildDesignExportHtml(project)!;
+    expect(html).toContain('<h4>F2358 [name does not match SAP&#39;s (SAP: F2358 is “Monitor Purchase Order Items”, SAP KBA 3696098)]');
+    expect(html).toContain('<code>SAP_COM_9999 [not verified — check before use]</code>');
+  });
+
   test('the catalog note says what our catalog names instead, and nothing when it agrees', () => {
     expect(catalogNoteForMapping('BSID', 'API_JOURNALENTRYITEMBASIC_SRV')).toMatch(/I_OperationalAcctgDocItem/);
     expect(catalogNoteForMapping('KNA1', 'API_BUSINESS_PARTNER')).toBeNull();
     expect(catalogNoteForMapping('ZTABLE', 'API_X')).toBeNull();
+  });
+
+  test('the catalog successor counts only as a whole identifier, never inside a longer one (QA c9c5b3463951)', () => {
+    expect(catalogNoteForMapping('KNA1', 'NOT_API_BUSINESS_PARTNER')).toMatch(/names API_BUSINESS_PARTNER/);
+    expect(catalogNoteForMapping('KNA1', 'API_BUSINESS_PARTNER_X')).toMatch(/names API_BUSINESS_PARTNER/);
+    expect(catalogNoteForMapping('KNA1', 'Use API_BUSINESS_PARTNER (A_BusinessPartner)')).toBeNull();
   });
 
   test('the appendix is empty when there is nothing to check', () => {
@@ -199,6 +239,10 @@ test.describe('coverage claims', () => {
     expect(coverageClaims('No rewrite needed — standard replacement covers all functionality.').length).toBeGreaterThan(0);
     expect(coverageClaims('A High Fit for the standard.')).not.toEqual([]);
     expect(coverageClaims('Two of five capabilities are covered; three are unconfirmed.')).toEqual([]);
+  });
+
+  test('every occurrence is returned, not the first per pattern (QA 130fbe8202e7)', () => {
+    expect(coverageClaims('Full coverage of billing. Later: full coverage of dunning.')).toEqual(['Full coverage', 'full coverage']);
   });
 });
 
@@ -229,6 +273,8 @@ test.describe('the prompts carry the rules (source guards)', () => {
       ['components/design/CloudServiceIntegrations.tsx', /<SapCheckedText/],
       ['components/design/DesignDocument.tsx', /<SapCheckedText/],
       ['app/(app)/project/[projectId]/analyze/page.tsx', /<SapIdentifierChecks/],
+      // The route card of the stored analysis checks the model's target and rationale (QA bead0ed34426).
+      ['app/(app)/project/[projectId]/analyze/page.tsx', /targetArtifact=\{analysisData\.extensibilityRouting\?\.targetArtifact[^}]*\}[\s\S]{0,600}?\bmodelWords\b/],
       ['lib/markdownFormatter.ts', /annotateSapReferences as checked[\s\S]*\bchecked\(data\.standardFit/],
       ['lib/design-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)/],
       ['lib/analysis-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)/],

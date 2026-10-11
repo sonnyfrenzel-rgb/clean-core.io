@@ -9,6 +9,7 @@ import {
   SAP_ID_KIND_LABEL,
   checkSapReferences,
   findSapIdentifiers,
+  occurrencesToMark,
   sapIdMark,
   type SapIdCheck,
   type SapIdStatus,
@@ -60,19 +61,17 @@ export function SapIdMark({ check }: { check: SapIdCheck }) {
 
 /**
  * The text as the model wrote it, with a mark after the first occurrence of
- * every SAP identifier in it. Text without identifiers comes back unchanged.
+ * every SAP identifier in it and after every later one under another wrong
+ * name (`occurrencesToMark`). Text without identifiers comes back unchanged.
  */
 export function SapCheckedText({ text }: { text: string | null | undefined }) {
   if (!text) return null;
   const checks = findSapIdentifiers(text);
   if (checks.length === 0) return <>{text}</>;
-  const seen = new Set<string>();
   const parts: React.ReactNode[] = [];
   let pos = 0;
-  for (const c of checks) {
+  for (const c of occurrencesToMark(checks)) {
     const key = c.id.toUpperCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
     const end = c.index + c.length;
     parts.push(text.slice(pos, end));
     parts.push(<SapIdMark key={`${key}-${c.index}`} check={c} />);

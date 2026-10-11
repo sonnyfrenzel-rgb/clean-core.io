@@ -1309,6 +1309,7 @@ export default function AnalyzePage() {
                 decideHref={decideHref}
                 openLine={openLine}
                 stageOutput
+                modelWords
               >
                 {/* "Why this route" — the decision path and the standard fit,
                     one action deeper (owner decision 02.10.2026). What drives
