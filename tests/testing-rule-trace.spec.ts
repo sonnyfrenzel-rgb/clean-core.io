@@ -157,7 +157,7 @@ test.describe('old against new, per case', () => {
     expect(assessCase({ trace: t, verdict: 'Skipped' }).sentence).toContain('(Skipped)');
   });
 
-  test('a traced case that passed reads "passed, expectation model-stated, not verified" — never unchanged; one that failed is a defect — unless the owner marked the rule to change', () => {
+  test('a traced case that passed reads "passed, expectation model-stated, not verified" — never unchanged; one that failed is a defect — or, on a rule the owner marked to change, not determined', () => {
     const passed = assessCase({ trace: t, verdict: 'Passed' });
     expect(passed.value).toBe('passed-model-stated');
     expect(passed.sentence).toContain('model-stated from the original');
@@ -169,8 +169,12 @@ test.describe('old against new, per case', () => {
     expect(defect.sentence).toContain('BR-002');
     expect(defect.sentence).toContain('bucket UNKNOWN');
     expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'keep' }).value).toBe('defect');
-    expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'change' }).value).toBe('deliberately-changed');
-    expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'drop' }).value).toBe('deliberately-changed');
+    // QA 6e1e9a6a3c3b: a rule decision does not make a failure deliberate.
+    const failedOnChange = assessCase({ trace: t, verdict: 'Failed', ruleState: 'change' });
+    expect(failedOnChange.value).toBe('failed-rule-changing');
+    expect(failedOnChange.sentence).toContain('not determined');
+    expect(failedOnChange.sentence).not.toMatch(/deliberate(ly)? change[sd]?|not a defect/i);
+    expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'drop' }).value).toBe('failed-rule-changing');
     const passedAgainstChange = assessCase({ trace: t, verdict: 'Passed', ruleState: 'change' });
     expect(passedAgainstChange.value).toBe('passed-model-stated');
     expect(passedAgainstChange.sentence).toContain('check whether the decided change is in the code yet');
@@ -184,8 +188,8 @@ test.describe('old against new, per case', () => {
   });
 
   test('the counts read as one line', () => {
-    const counts = countAssessments(['unchanged', 'defect', 'defect', 'not-assessable', 'deliberately-changed']);
-    expect(assessmentSummary(counts)).toBe('Old against new: 1 unchanged · 1 deliberately changed · 2 defects · 1 not yet assessable');
+    const counts = countAssessments(['unchanged', 'defect', 'defect', 'not-assessable', 'failed-rule-changing']);
+    expect(assessmentSummary(counts)).toBe('Old against new: 1 unchanged · 1 failed on a rule marked to change, not determined · 2 defects · 1 not yet assessable');
     const traced = countAssessments(['passed-model-stated', 'passed-model-stated', 'defect']);
     expect(assessmentSummary(traced)).toBe('Old against new: 0 unchanged · 2 passed, expectation model-stated, not verified · 1 defect · 0 not yet assessable');
   });

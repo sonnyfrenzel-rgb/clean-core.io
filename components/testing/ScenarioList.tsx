@@ -229,7 +229,7 @@ export function ScenarioDetails({
   isAbapCloud: boolean;
   test: ScenarioTest;
   where: ScopeReading;
-  /** 3.0.10 — unchanged / deliberately changed / defect / not yet assessable. */
+  /** 3.0.10 — unchanged (invariant) / passed, expectation not verified / failed on a rule marked to change / defect / not yet assessable. */
   assessment?: CaseAssessmentReading | null;
   /** Where the scenario says it comes from, and the check of it. */
   origin: OriginReading;
