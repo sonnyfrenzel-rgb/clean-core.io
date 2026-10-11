@@ -253,7 +253,9 @@ test.describe('the stored form', () => {
     expect(md).toContain('No language model wrote its process structure or its statements.');
     expect(md).not.toContain('No language model wrote any of it');
     expect(md).toContain('business names and lanes from the naming stage are model proposals');
-    expect(md).toContain('## Not determined');
+    // Owner 11.10.2026: the gaps stand under the evidence and open decisions, before the appendix.
+    expect(md).toContain('**Not determined**');
+    expect(md.indexOf('**Not determined**')).toBeLessThan(md.indexOf('## Appendix: technical reconstruction'));
     for (const gap of doc.notDetermined) expect(md).toContain(`**${gap.subject}:** ${NOT_DETERMINED_LABEL}`);
     expect(md).toContain('M_BANF_EKG');
     expect(md).not.toMatch(/\bKPI target\b|\bestimated\b/i);

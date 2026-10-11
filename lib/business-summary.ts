@@ -1,5 +1,7 @@
 import { gradeKey, isCustomerObject, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { ProvenanceValue } from '@/lib/provenance';
+import type { CapabilityFacts } from '@/lib/documentation-capabilities';
+import { layerFacts, rowLines, sopStatementsOf, type SopStatement } from '@/lib/sop-provenance';
 
 /**
  * The business reader's view of the Documentation stage — owner, 03.10.2026
@@ -247,6 +249,8 @@ export interface StoredBusinessLayer {
   raci_matrix?: unknown;
   sop_details?: unknown;
   audit_controls?: unknown;
+  /** What the program can do, stored with the layer since 3.0.10 (`lib/documentation-capabilities.ts`). */
+  facts?: unknown;
 }
 
 /** A step of the process as the engine read it — from the stored documentation. */
@@ -257,6 +261,8 @@ export interface ProcessStepRef {
   anchor: GlanceAnchor | null;
   /** The step's own provenance — `reconstructed`, or `confirmed` once a person confirmed it. */
   provenance: ProvenanceValue;
+  /** The step's lines — its call and the body of the routine it runs; a claim of the SOP must cite one of them. */
+  lines?: GlanceAnchor[];
 }
 
 export type RaciLetter = 'R' | 'A' | 'C' | 'I';
@@ -283,6 +289,21 @@ export interface SopStep {
    * 10.10.2026). The card is flagged as thin, never hidden.
    */
   thin: boolean;
+  /**
+   * The SOP's sentences for this step, each with its basis (owner 11.10.2026,
+   * external review F-06): Reconstructed only where the model cited a line of
+   * the step and nothing contradicts the code; organisational elements and
+   * capabilities the program does not have are a proposal, not in the program.
+   */
+  statements: SopStatement[];
+  /** The business exception — always an organisational proposal; null when none was written. */
+  exceptionStatement: SopStatement | null;
+}
+
+/** What the statements of the SOP are judged against. */
+export interface SopJudgement {
+  /** What the program can do; absent: the facts stored with the layer, else none. */
+  facts?: CapabilityFacts | null;
 }
 
 /** Fillers a model writes when it has nothing to say about a step. */
@@ -339,7 +360,7 @@ export function firstSentence(value: string | null): string | null {
  * code does not have is never a row of the SOP or the RACI. Only when no
  * process is known (an empty list) is the layer drawn as it was written.
  */
-export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]): SopStep[] {
+export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[], judgement: SopJudgement = {}): SopStep[] {
   const sop = rows(layer.sop_details);
   const raci = rows(layer.raci_matrix);
   const sopById = new Map<string, Record<string, unknown>>();
@@ -365,10 +386,15 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]):
   const known = order.filter((id) => position.has(id)).sort((a, b) => position.get(a)! - position.get(b)!);
   const unknown = process.length ? [] : order.filter((id) => !position.has(id));
 
+  const facts = judgement.facts !== undefined ? judgement.facts : layerFacts(layer);
+  const roles = [...new Set(raci.flatMap((r) => [r.r, r.a, r.c, r.i].flatMap(splitRoles)))];
   return [...known, ...unknown].map((stepId, i) => {
     const s = sopById.get(stepId);
     const r = raciById.get(stepId);
-    const narrative = text(s?.narrative);
+    const ref = byId.get(stepId);
+    const judged = sopStatementsOf(s, { stepLines: ref?.lines?.length ? ref.lines : rowLines(s), facts, roles });
+    const claimed = judged.statements.map((st) => st.text).join(' ');
+    const narrative = text(s?.narrative) ?? (claimed || null);
     return {
       stepId,
       number: i + 1,
@@ -385,6 +411,8 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[]):
       },
       hasRaci: r !== undefined,
       thin: isThinNarrative(narrative),
+      statements: judged.statements,
+      exceptionStatement: judged.exception,
     };
   });
 }

@@ -124,9 +124,11 @@ test('the Confluence page carries the six columns, the key and the further roles
 
 test('the prompt asks for a small, realistic set of roles and one Accountable per step', () => {
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
-  expect(page).toContain('typically 4 to 6 roles, never more than 7');
-  expect(page).toContain('EXACTLY ONE Accountable');
-  expect(page).toContain('The roles are a proposal the business will confirm');
+  // Owner 11.10.2026: the prompt lives in `lib/business-sop-prompt.ts`.
+  const prompt = fs.readFileSync(path.join(__dirname, '..', 'lib', 'business-sop-prompt.ts'), 'utf8');
+  expect(prompt).toContain('typically 4 to 6 roles, never more than 7');
+  expect(prompt).toContain('EXACTLY ONE Accountable');
+  expect(prompt).toContain('The roles are a proposal the business will confirm');
   // An owner can ask for a new proposal; the transaction replaces only the layer it was asked to replace.
   expect(page).toContain('data-regenerate-business-layer');
   expect(page).toContain('current.businessDocumentation !== replacing');
@@ -213,7 +215,8 @@ test('the owner RACI replaces the model RACI in the matrix and in every file, an
   expect(file.note).not.toContain('Mara Weber');
   expect(file.head).toEqual(['No.', 'Step', ...matrix.roles.map((r) => r.name), 'Check']);
   const proposal = raciFileTable(LAYER, STEPS, null)!;
-  expect(proposal.note).toMatch(/^Model proposal/);
+  // Owner 11.10.2026 (external review F-06): a RACI the owner did not save is a proposal, not in the program.
+  expect(proposal.note).toMatch(/^Proposal — not in the program/);
   const html = await buildEngineConfluenceHtml(processDocumentOf(SOURCE), merged, { processSteps: STEPS, raciEdit: record }).text();
   expect(html).toContain('RACI matrix — Edited by the owner');
   expect(html).toContain('data-raci-edited=""');

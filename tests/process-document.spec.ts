@@ -86,9 +86,11 @@ for (const [file] of EXAMPLES) {
       expect(order).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
       const md = markdownOf(doc);
       const headings = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-      expect(headings).toEqual(['At a glance', ...PROCESS_DOCUMENT_SECTIONS.map((s) => s.title)]);
+      // Owner 11.10.2026 (external review F-07): the business page opens every rendering, before the glance.
+      expect(headings).toEqual(['In short', 'At a glance', ...PROCESS_DOCUMENT_SECTIONS.map((s) => s.title)]);
       // The cover and the summary stand before section 1; the diagram after the overview's heading.
-      expect(html.indexOf('data-doc-cover')).toBeLessThan(html.indexOf('data-glance-export'));
+      expect(html.indexOf('data-doc-cover')).toBeLessThan(html.indexOf('data-business-page'));
+      expect(html.indexOf('data-business-page')).toBeLessThan(html.indexOf('data-glance-export'));
       expect(html.indexOf('data-glance-export')).toBeLessThan(html.indexOf('data-doc-section="overview"'));
       expect(html).toContain('<svg');
       expect(html.indexOf('<svg')).toBeGreaterThan(html.indexOf('data-doc-section="overview"'));
@@ -220,8 +222,12 @@ test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
     // Before 04.10.2026 the body (everything above the appendix) was 2,801
     // words by this count; the owner asked for about half.
-    const body = wordCount(bodyOf(markdownOf(doc)));
+    // Owner 11.10.2026: the business page in front of it is a page of its own, held to a page.
+    const md = markdownOf(doc);
+    const page = md.slice(md.indexOf('## In short'), md.indexOf('## At a glance'));
+    const body = wordCount(bodyOf(md).replace(page, ''));
     expect(body, `the body has ${body} words`).toBeLessThanOrEqual(1650);
+    expect(wordCount(page), 'the business page is one page').toBeLessThanOrEqual(400);
     const summary = doc.glance.summary.map((s) => s.text).join(' ');
     expect(summary).toContain('creates the purchase order');
     expect(summary).toContain('the purchase requisition');

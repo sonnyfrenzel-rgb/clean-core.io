@@ -62,12 +62,14 @@ import {
   stepName,
   stepSummaryRows,
   wordingRows,
+  BUSINESS_TARGET_ANCHOR,
   type PdOutline,
   type PdRow,
   type PdSectionKey,
   type PdTable,
 } from '@/lib/process-document-outline';
 import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
+import { BUSINESS_PAGE, type BusinessPageLine } from '@/lib/documentation-business-page';
 import type { HandbookRuleOutside } from '@/lib/process-handbook';
 import { docRulesOutsideNotInTable, docRulesFilterAll, docRulesFilterOutside, wt } from '@/lib/workspace-messages';
 import { cn } from '@/lib/utils';
@@ -543,6 +545,69 @@ function SapTouches({ doc }: { doc: ProcessDocument }) {
   );
 }
 
+/**
+ * The business page (owner 11.10.2026, external review F-07, §6.1): what the
+ * program does, what it does not do, the limits of the reading, owner and
+ * approval, and the questions a reader asks — each a link to the section that
+ * answers it. Engine facts only; the same page every export opens with.
+ */
+function BusinessPageCard({ outline }: { outline: PdOutline }) {
+  const page = outline.business;
+  const list = (items: BusinessPageLine[], attr: string) => (
+    <ul data-business-page-list={attr} className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+      {items.map((line, i) => (
+        <li key={i} data-business-page-line={line.basis} className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 cc-text-cell text-cc-ink">
+          <span className="min-w-0">{line.text}</span>
+          <Anchors anchors={line.anchors} max={2} />
+          {line.basis === 'reconstructed' ? null : <CcProvenanceChip value={line.basis} />}
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <section id="pd-in-short" data-business-page="" aria-labelledby="pd-in-short-title" className={cn(CARD, 'scroll-mt-28 md:p-6')}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="pd-in-short-title" className="m-0 cc-text-h2 text-cc-ink">{BUSINESS_PAGE.title}</h3>
+        <CcProvenanceChip value="reconstructed" note="from the code" />
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0">
+          <h4 className="m-0 cc-text-h3 text-cc-ink">{BUSINESS_PAGE.does}</h4>
+          {list(page.does, 'does')}
+        </div>
+        <div className="min-w-0">
+          <h4 className="m-0 cc-text-h3 text-cc-ink">{BUSINESS_PAGE.doesNot}</h4>
+          {list(page.doesNot, 'does-not')}
+        </div>
+        <div className="min-w-0">
+          <h4 className="m-0 cc-text-h3 text-cc-ink">{BUSINESS_PAGE.limits}</h4>
+          {list(page.limits, 'limits')}
+        </div>
+        <div className="min-w-0">
+          <h4 className="m-0 cc-text-h3 text-cc-ink">{BUSINESS_PAGE.owner}</h4>
+          {list([page.owner, page.approval], 'owner')}
+        </div>
+      </div>
+      <div className="mt-4 border-t border-cc-line pt-3">
+        <h4 className="m-0 cc-text-h3 text-cc-ink">{BUSINESS_PAGE.questions}</h4>
+        <ul data-business-questions="" className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+          {page.questions.map((q) => {
+            const target = BUSINESS_TARGET_ANCHOR[q.target];
+            return (
+              <li key={q.question} data-business-question={q.target} className="min-w-0 cc-text-cell text-cc-ink-muted">
+                <a href={`#${target}`} onClick={(event) => scrollTo(event, target)} className="font-semibold text-cc-ink underline underline-offset-2">
+                  {q.question}
+                </a>{' '}
+                — {q.answer}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function Glance({ doc, outline, extra }: { doc: ProcessDocument; outline: PdOutline; extra?: React.ReactNode }) {
   const g = outline.glance;
   return (
@@ -869,6 +934,7 @@ export default function ProcessDocumentView({
 
   return (
     <div data-process-document="" className="space-y-4 min-w-0">
+      <BusinessPageCard outline={outline} />
       <Glance doc={doc} outline={outline} extra={summary} />
 
       <SectionCard id="overview" lead={outline.leads.overview}>

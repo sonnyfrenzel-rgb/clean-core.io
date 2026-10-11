@@ -36,6 +36,8 @@ import { cn } from '@/lib/utils';
 import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
 import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { raciDraftOf } from '@/lib/raci-edit';
+import { SOP_BASIS, type SopStatement } from '@/lib/sop-provenance';
+import type { CapabilityFacts } from '@/lib/documentation-capabilities';
 import RaciEditor, { type RaciDraft } from './RaciEditor';
 
 /**
@@ -119,9 +121,40 @@ function StepAnchor({ step }: { step: SopStep }) {
   );
 }
 
-/** The step's own provenance; a step the code does not have is the model's. */
+/**
+ * The provenance of what the card says (owner 11.10.2026, external review
+ * F-06): the outcome is the model's sentence, so the chip is that sentence's
+ * basis — Reconstructed only where it cites a line of the step — not the
+ * step's. A step the code does not have is the model's.
+ */
 function StepChip({ step }: { step: SopStep }) {
-  return <CcProvenanceChip value={step.step ? step.step.provenance : 'proposed'} />;
+  const first = step.statements[0];
+  if (!step.step) return <CcProvenanceChip value="proposed" />;
+  if (!first) return <CcProvenanceChip value="not-determined" />;
+  return <StatementChip statement={first} />;
+}
+
+/** One SOP sentence's basis as a chip — "Model proposal · not in the program" for an organisational element. */
+function StatementChip({ statement }: { statement: SopStatement }) {
+  const basis = SOP_BASIS[statement.basis];
+  return <CcProvenanceChip value={basis.chip} note={statement.basis === 'reconstructed' ? undefined : basis.note} />;
+}
+
+/** The SOP's sentences for a step, each with its basis and, for one not in the program, why. */
+function Statements({ statements }: { statements: SopStatement[] }) {
+  if (!statements.length) return <Missing />;
+  return (
+    <ul data-sop-statements={statements.length} className="m-0 flex list-none flex-col gap-1 p-0">
+      {statements.map((st, i) => (
+        <li key={i} data-sop-statement={st.basis} className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 cc-text-cell text-cc-ink">
+          <span className="min-w-0">{st.text}</span>
+          <StatementChip statement={st} />
+          {st.anchors.length ? <CcAnchor label={anchorLabel(st.anchors[0])}>{anchorText(st.anchors[0])}</CcAnchor> : null}
+          {st.basis === 'not-in-program' && st.reason ? <span className="cc-text-meta text-cc-ink-muted">{st.reason}</span> : null}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function stepName(step: SopStep): string {
@@ -480,9 +513,9 @@ function FullSop({ steps }: { steps: SopStep[] }) {
               </div>
               <dl className="m-0 mt-2 grid grid-cols-1 gap-2 md:grid-cols-[180px_minmax(0,1fr)]">
                 <dt className="cc-text-label text-cc-ink-muted">{wt('doc.sopNarrative')}</dt>
-                <dd className="m-0 cc-text-cell text-cc-ink">{step.narrative ?? <Missing />}</dd>
+                <dd className="m-0 min-w-0"><Statements statements={step.statements} /></dd>
                 <dt className="cc-text-label text-cc-ink-muted">{wt('doc.sopException')}</dt>
-                <dd className="m-0 cc-text-cell text-cc-ink">{step.exception ?? <Missing />}</dd>
+                <dd className="m-0 min-w-0">{step.exceptionStatement ? <Statements statements={[step.exceptionStatement]} /> : <Missing />}</dd>
               </dl>
             </li>
           ))}
@@ -503,6 +536,7 @@ export default function BusinessLayer({
   action,
   embedded = false,
   raciEditing,
+  facts,
 }: {
   layer: StoredBusinessLayer;
   /** The owner's RACI: edit, save, and whose it is (owner request 10.10.2026). Absent: read-only, no edit offered. */
@@ -513,8 +547,10 @@ export default function BusinessLayer({
   action?: React.ReactNode;
   /** Inside the stage's one card of model proposals (roadmap 3.0.7): no card of its own, a heading one level down. */
   embedded?: boolean;
+  /** What the program can do — each SOP sentence is judged against it; absent: the facts stored with the layer. */
+  facts?: CapabilityFacts | null;
 }) {
-  const steps = useMemo(() => sopSteps(layer, process), [layer, process]);
+  const steps = useMemo(() => sopSteps(layer, process, facts === undefined ? {} : { facts }), [layer, process, facts]);
   // Owner review 10.10.2026: a row for a step the process does not have is never drawn — said once, in words.
   const dropped = useMemo(() => stepsNotInProcess(layer, process), [layer, process]);
   // Too many roles: the regenerate action stands in the notice above the matrix, not twice.

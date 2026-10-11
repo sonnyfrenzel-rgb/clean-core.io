@@ -51,11 +51,14 @@ import {
   stepDetailLines,
   stepName,
   wordingRows,
+  BUSINESS_TARGET_ANCHOR,
   type PdSectionKey,
   type PdTable,
 } from '@/lib/process-document-outline';
 import { processOverviewSvg } from '@/lib/process-overview-svg';
-import { provenance } from '@/lib/provenance';
+import { BUSINESS_PAGE, businessPageLineText, type BusinessPage } from '@/lib/documentation-business-page';
+import { SOP_BASIS, layerFacts, sopBasisText, type SopStatement } from '@/lib/sop-provenance';
+import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import type { OpenQuestions } from '@/lib/open-questions';
 import { raciGapWord, raciLetterWord } from '@/lib/messages/documentation';
 import { RACI_EDITED_IN_FILE, type RaciEditRecord } from '@/lib/raci-edit';
@@ -66,6 +69,7 @@ import {
   raciMatrix,
   sopSteps,
   type GlanceAnchor,
+  type SopJudgement,
   type ProcessStepRef,
 } from '@/lib/business-summary';
 
@@ -199,6 +203,20 @@ export function buildEngineConfluenceHtml(
     <p class="muted"><span class="tag tone-information">${esc('Reconstructed')}</span> ${esc(o.note)}</p>
   </div>`;
 
+  // Owner 11.10.2026 (external review F-07, §6.1): the business page first — engine facts only,
+  // the questions as links into the page. Every value is escaped; the anchors are our own keys.
+  const bp = o.business;
+  const bpItem = (l: BusinessPage['does'][number]) => `<li data-business-page-line="${esc(l.basis)}">${esc(businessPageLineText(l))}</li>`;
+  const businessPageSection = `<h2 id="pd-in-short" data-business-page="">${esc(BUSINESS_PAGE.title)}</h2>
+    <div class="summary-box">
+      <h3>${esc(BUSINESS_PAGE.does)}</h3><ul>${bp.does.map(bpItem).join('')}</ul>
+      <h3>${esc(BUSINESS_PAGE.doesNot)}</h3><ul>${bp.doesNot.map(bpItem).join('')}</ul>
+      <h3>${esc(BUSINESS_PAGE.limits)}</h3><ul>${bp.limits.map(bpItem).join('')}</ul>
+      <h3>${esc(BUSINESS_PAGE.owner)}</h3><ul>${[bp.owner, bp.approval].map(bpItem).join('')}</ul>
+      <h3>${esc(BUSINESS_PAGE.questions)}</h3>
+      <ul data-business-questions="">${bp.questions.map((q) => `<li><a href="#${esc(BUSINESS_TARGET_ANCHOR[q.target])}">${esc(q.question)}</a> — ${esc(q.answer)}</li>`).join('')}</ul>
+    </div>`;
+
   // ADR-084: purpose and scope stand in the glance — what it covers and what it leaves out, under the risks.
   const scopeSection = table(['Scope', 'What', SOURCE_COLUMN], [
     ...g.covers.map((s) => [wt('doc.covers'), s.text, sourceText({ tech: s.detail ?? null, anchors: s.anchors })]),
@@ -262,21 +280,23 @@ export function buildEngineConfluenceHtml(
   // Owner review 10.10.2026: only the steps of the process — a row the model
   // wrote for a step the code does not have is not printed (`sopSteps`).
   const steps = options?.processSteps ?? processStepsFromDocument(document);
-  const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps) : [];
+  // Owner 11.10.2026 (external review F-06): every SOP sentence with its basis, judged against what the program can do.
+  const judgement = { facts: readCapabilityFacts(document.facts) ?? layerFacts(parsedBusinessDoc) };
+  const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps, judgement) : [];
   const edited = options?.raciEdit ?? null;
   const editedNote = edited ? RACI_EDITED_IN_FILE + ' · ' + edited.editedAt.slice(0, 10) + '.' : '';
   const businessSection = parsedBusinessDoc
     ? `<h2 data-business-layer="">${esc('Business layer — Model proposal')}</h2>
-    <p><em>${esc('Written by a language model from the process description above. Not derived from the code, and not verified; the roles are a proposal for the business to confirm.')}</em></p>
+    <p><em>${esc('Written by a language model from the process description above. Every sentence says its basis: Reconstructed only where it cites a line of its step and nothing in it contradicts the code; roles, approvals, escalations and anything the program does not do are a proposal, not in the program.')}</em></p>
     ${edited ? `<p data-raci-edited=""><span class="tag tone-information">${esc('Confirmed')}</span> ${esc("The RACI below is the owner's, not the model's. " + editedNote)}</p>` : ''}
-    ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null)}
+    ${glanceHtml(parsedBusinessDoc, steps, edited ? editedNote : null, judgement)}
     <h3>${esc('RACI assignment')}</h3>
     <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${sop.filter((st) => st.hasRaci)
       .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${esc(st.roles.R.join(', ') || nd)}</td><td>${esc(st.roles.A.join(', ') || nd)}</td><td>${esc(st.roles.C.join(', ') || nd)}</td><td>${esc(st.roles.I.join(', ') || nd)}</td></tr>`)
       .join('')}</tbody></table>
     <h3>${esc('Standard operating procedure')}</h3>
     <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th></tr></thead><tbody>${sop
-      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${esc(st.narrative || nd)}</td><td>${esc(st.exception || nd)}</td></tr>`)
+      .map((st) => `<tr><td>${esc(String(st.number) + '. ' + (st.step?.name ?? st.stepId))}</td><td>${sopStatementsHtml(st.statements)}</td><td>${sopStatementsHtml(st.exceptionStatement ? [st.exceptionStatement] : [])}</td></tr>`)
       .join('')}</tbody></table>
     <p class="meta">${esc(CONTROLS_FROM_THE_CODE)}</p>`
     : '';
@@ -313,6 +333,7 @@ export function buildEngineConfluenceHtml(
   const engineHtml = `<html><head><meta charset="utf-8"><title>${esc(o.title)}</title>${exportCSS}${docCSS}</head><body>
     ${staleSection}
     ${coverSection}
+    ${businessPageSection}
     ${glanceSection}
     ${overviewSection}
     ${rulesSection}
@@ -347,16 +368,30 @@ const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.line
  * full RACI table below it, which keeps every row as stored. Every value is
  * escaped; the tables are marked as a model proposal.
  */
+/** The SOP sentences of one cell, each with its basis; *Not determined* when there are none. Every value escaped. */
+export function sopStatementsHtml(list: readonly SopStatement[]): string {
+  if (!list.length) return escapeHtml(NOT_DETERMINED_LABEL);
+  return `<ul>${list.map(statementHtml).join('')}</ul>`;
+}
+
+/** One SOP sentence with its basis as a tag — the tag reads as the stage's chip does. Escaped, our own classes. */
+function statementHtml(st: SopStatement): string {
+  const esc = escapeHtml;
+  const tone = st.basis === 'reconstructed' || st.basis === 'confirmed' ? 'tone-information' : 'tone-warning';
+  return `<li data-sop-statement="${esc(st.basis)}">${esc(st.text)} <span class="tag ${tone}">${esc(sopBasisText(st))}</span>${st.reason && st.basis === 'not-in-program' ? ` <small>${esc(st.reason)}</small>` : ''}</li>`;
+}
+
 function glanceHtml(
   parsedBusinessDoc: ModelJson | null,
   processSteps: ProcessStepRef[],
   editedNote: string | null = null,
+  judgement: SopJudgement = {},
 ): string {
   const esc = escapeHtml;
   const parts: string[] = [];
   if (parsedBusinessDoc) {
-    const steps = sopSteps(parsedBusinessDoc, processSteps);
-    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(provenance(s.step ? s.step.provenance : 'proposed').label)}</td></tr>`).join('');
+    const steps = sopSteps(parsedBusinessDoc, processSteps, judgement);
+    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.statements[0]?.text ?? s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(s.statements[0] ? SOP_BASIS[s.statements[0].basis].label : NOT_DETERMINED_LABEL)}</td></tr>`).join('');
     parts.push(`<h3>SOP steps — Model proposal</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
     const matrix = raciMatrix(steps);
     if (matrix.steps.length > 0) {

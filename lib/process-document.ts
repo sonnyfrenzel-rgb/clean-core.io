@@ -1,5 +1,6 @@
 import type { DocAnchor } from '@/lib/process-documentation';
 import type { DecisionTableView } from '@/lib/decision-tables';
+import type { CapabilityFacts } from '@/lib/documentation-capabilities';
 
 /**
  * The process description of the Documentation stage (owner 03.10.2026,
@@ -480,6 +481,13 @@ export interface ProcessDocument {
   controls: PdControl[];
   questions: PdQuestion[];
   appendix: PdAppendix;
+  /**
+   * What the program can do, read from the whole source (`lib/documentation-facts.ts`)
+   * — the business page says from it what the program does not do, and the
+   * SOP check holds a model's sentence against it (owner 11.10.2026). Absent
+   * in a description built before 3.0.10.
+   */
+  facts?: CapabilityFacts;
 }
 
 /* ------------------------------------------------------- the business part */

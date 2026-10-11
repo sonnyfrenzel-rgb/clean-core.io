@@ -17,6 +17,7 @@ import {
 } from '@/lib/process-documentation';
 import { stripModelMarkdown } from '@/lib/model-text';
 import { countSourceLines } from '@/lib/source-lines';
+import { capabilityFactsOf } from '@/lib/documentation-facts';
 
 /**
  * The builder of the stage-4 document — roadmap 3.0.5, Weg C.
@@ -121,6 +122,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
       id: element.id,
       kind: element.kind,
       technicalName: element.technicalName,
+      plainName: cleanName(element.plainName ?? null),
       businessName,
       lane,
       namingProvenance: businessName || lane ? 'proposed' : null,
@@ -199,5 +201,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     proposedLanes,
     notDetermined: DOCUMENTATION_GAPS.map((gap) => ({ ...gap })),
     disclaimer: PROCESS_DOCUMENTATION_DISCLAIMER,
+    // Owner 11.10.2026: what the program can do, so the business page can say what it does not.
+    facts: capabilityFactsOf(source, skeleton),
   };
 }

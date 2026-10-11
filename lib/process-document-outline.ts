@@ -2,6 +2,8 @@ import type { DocAnchor } from '@/lib/process-documentation';
 import type { DocBlock } from '@/lib/requirements-export';
 import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import { wt } from '@/lib/workspace-messages';
+import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPage, type BusinessPageTarget } from '@/lib/documentation-business-page';
+import { readCapabilityFacts } from '@/lib/documentation-capabilities';
 import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
 import {
   EMPTY_SECTION,
@@ -140,6 +142,13 @@ export interface PdChapter {
 export interface PdOutline {
   /** "<project> — <PROGRAM>", or the program alone when the project carries its name (ADR-084). */
   title: string;
+  /**
+   * The business page every rendering opens with (owner 11.10.2026, external
+   * review F-07): what it does, what it does not do, the limits, owner and
+   * approval, and the questions a reader asks, each leading to its section
+   * (`lib/documentation-business-page.ts`).
+   */
+  business: BusinessPage;
   /** The seven chapters, in the page's order — the stage's chapter bar. */
   chapters: PdChapter[];
   /** "Process description" — the line under the title. */
@@ -610,8 +619,21 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
     { key: 'questions', label: wt('doc.chapterQuestions'), count: list ? n(list.open) : null, question: list ? `${wt('doc.goToOpen')} — ${plural(list.open, 'open question')}` : wt('doc.goToOpen') },
     { key: 'appendix', label: wt('doc.chapterAppendix'), count: null, question: wt('doc.chapterAppendixQuestion') },
   ];
+  const tableWords = new Map([...t.data, ...(doc.writes ?? [])].map((d) => [d.name.toUpperCase(), d.meaning]));
+  const business = buildBusinessPage({
+    program: doc.program,
+    summary: doc.glance.summary,
+    facts: readCapabilityFacts(doc.facts),
+    counts: { steps: steps.length, decisions: doc.overview.decisions, rules: doc.rules.length + tables.length, exceptions: doc.exceptions.length, inputs: t.selection.length },
+    tableWord: (name) => tableWords.get(name.toUpperCase()) ?? null,
+    // The owner's RACI is the one thing a person recorded here (ADR-084 (13)): "edited 2026-10-10".
+    recorded: meta.raci && meta.raci.note.startsWith(RACI_EDITED_NOTE)
+      ? { raci: `edited ${meta.raci.note.slice(RACI_EDITED_NOTE.length).replace(/^ · /, '').slice(0, 10)}` }
+      : null,
+  });
   return {
     title: documentTitle(doc.program, meta.projectName),
+    business,
     chapters,
     subtitle: PROCESS_DOCUMENT_SUBTITLE,
     cover: [
@@ -796,7 +818,8 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   const o = documentOutline(doc, meta);
   const b: PdBlock[] = [];
   const lead = (key: PdSectionKey) => b.push({ k: 'p', em: true, text: o.leads[key] });
-  const h2 = (key: ProcessDocumentSection) => b.push({ k: 'h', level: 2, text: sectionTitle(key) });
+  // Every section carries its key as the anchor (`#pd-<key>`), so the business page's questions link to it.
+  const h2 = (key: ProcessDocumentSection) => b.push({ k: 'h', level: 2, text: sectionTitle(key), id: `pd-${key}` });
   const shared = (t: PdTable) => {
     for (const q of t.shared ?? []) b.push({ k: 'p', em: true, text: sharedQuestionLine(q, t.rows.length) });
   };
@@ -813,6 +836,9 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   b.push({ k: 'p', em: true, text: o.subtitle });
   b.push({ k: 'table', head: ['', ''], rows: o.cover.map(([k, v]) => [k, v]), muted: [] });
   b.push({ k: 'note', text: o.note });
+
+  // Owner 11.10.2026 (external review F-07, §6.1): a business page first — engine facts only.
+  b.push(...businessPageBlocks(o.business));
 
   b.push({ k: 'h', level: 2, text: 'At a glance' });
   for (const s of o.glance.summary) b.push({ k: 'p', text: s.text });
@@ -866,7 +892,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
   lead('systems');
   for (const part of ['data', 'integrations', 'controls'] as const) {
     const t = o.tables[part];
-    b.push({ k: 'h', level: 3, text: part === 'data' ? wt('doc.dataReads') : part === 'integrations' ? wt('doc.integrationsTitle') : wt('doc.controlsTitle') });
+    b.push({ k: 'h', level: 3, text: part === 'data' ? wt('doc.dataReads') : part === 'integrations' ? wt('doc.integrationsTitle') : wt('doc.controlsTitle'), id: `pd-${part}` });
     b.push({ k: 'p', em: true, text: o.partLeads[part] });
     add(t);
     if (part === 'data' && o.tables.derived) {
@@ -938,4 +964,49 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     b.push({ k: 'ul', items: doc.appendix.lanes.map((t) => withLines(t.text, t.anchors)) });
   }
   return b;
+}
+
+/** The business page as blocks — the same page the stage and the Confluence page show. */
+export function businessPageBlocks(page: BusinessPage): PdBlock[] {
+  const list = (items: BusinessPage['does']): PdBlock => ({ k: 'ul', items: items.map(businessPageLineText) });
+  return [
+    { k: 'h', level: 2, text: BUSINESS_PAGE.title, id: 'pd-in-short' },
+    { k: 'p', strong: true, text: BUSINESS_PAGE.does },
+    list(page.does),
+    { k: 'p', strong: true, text: BUSINESS_PAGE.doesNot },
+    list(page.doesNot),
+    { k: 'p', strong: true, text: BUSINESS_PAGE.limits },
+    list(page.limits),
+    { k: 'p', strong: true, text: BUSINESS_PAGE.owner },
+    list([page.owner, page.approval]),
+    { k: 'p', strong: true, text: BUSINESS_PAGE.questions },
+    {
+      k: 'links',
+      items: page.questions.map((q) => ({ text: q.question, href: BUSINESS_TARGET_ANCHOR[q.target], plain: businessTargetTitle(q.target), tail: q.answer })),
+    },
+  ];
+}
+
+/** How a file's RACI note begins when the owner edited it — `RACI_EDITED_IN_FILE` of `lib/raci-edit.ts`, which imports this module. */
+const RACI_EDITED_NOTE = 'Edited by the owner of the project';
+
+/**
+ * Where an entry question of the business page leads in the process
+ * description — the section, or the part of it, that answers it (ADR-084 keys).
+ */
+export const BUSINESS_TARGET_ANCHOR: Readonly<Record<BusinessPageTarget, string>> = {
+  data: 'pd-data',
+  rules: 'pd-rules',
+  exceptions: 'pd-exceptions',
+  changes: 'pd-outputs',
+  questions: 'pd-questions',
+};
+
+/** The title of the part an entry question leads to, for a file that cannot link. */
+export function businessTargetTitle(target: BusinessPageTarget): string {
+  return target === 'data' ? `${sectionTitle('systems')} — ${wt('doc.dataReads')}`
+    : target === 'rules' ? sectionTitle('rules')
+      : target === 'exceptions' ? sectionTitle('exceptions')
+        : target === 'changes' ? sectionTitle('outputs')
+          : sectionTitle('questions');
 }

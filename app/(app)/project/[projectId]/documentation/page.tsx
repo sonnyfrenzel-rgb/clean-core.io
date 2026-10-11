@@ -15,11 +15,12 @@ import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import {
-  processDocumentationToMarkdown,
   readStoredDocumentation,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
+import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '@/lib/business-sop-prompt';
+import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
@@ -300,6 +301,12 @@ export default function DocumentationPage() {
    * the transaction replaces exactly this layer and keeps any other one.
    */
   const replaceLayer = useRef<string | null>(null);
+  /**
+   * The steps (named, with their lines) and the program's capability facts the
+   * business layer is stored with (owner 11.10.2026) — read when the answer
+   * arrives; kept current by an effect below, where both are known.
+   */
+  const sopInputs = useRef<{ steps: ProcessStepRef[]; facts: CapabilityFacts | null }>({ steps: [], facts: null });
 
   async function runBusinessGeneration(): Promise<void> {
     const replacing = replaceLayer.current;
@@ -328,51 +335,15 @@ export default function DocumentationPage() {
     const ceiling = new AbortController();
     const timer = setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS);
     
-    // Roadmap 3.0.5: the engine document goes in as its Markdown — the process
-    // element by element with its BPMN ids, and the business statements of the
-    // whole program. `stepId` below is then the element id the map and the
-    // `.bpmn` export use.
-    const blueprintContext = processDocumentationToMarkdown(engineDoc);
-    const stepsDescription = 'Process Documentation read from the ABAP code (BPMN elements with their ids and line ranges, and the business statements of the whole program). Use the element ids as stepId';
+    // Roadmap 3.0.5: the engine document goes in as its Markdown — the
+    // business page, the process and, as its appendix, the elements with their
+    // BPMN ids and every statement. `stepId` below is then the element id the
+    // map and the `.bpmn` export use. Owner 11.10.2026 (external review F-06):
+    // every sentence comes back as a claim with its basis, and the prompt says
+    // what the program does not do (`lib/business-sop-prompt.ts`).
 
     try {
-      const prompt = `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.
-Based on the following ${stepsDescription}, generate the corresponding Business SOP & RACI Matrix layer.
-
-CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
-- Write exclusively in business and process terms. Describe WHAT happens for the business and WHO is responsible — never HOW it is implemented technically.
-- Do NOT mention any technical or IT concept. Forbidden terms: source code, API/OData/CDS/CAP/RAP/SDK, database/table/Z-table, JSON/schema/payload, HANA, deployment/pipeline, HTTP, latency/milliseconds, unit test, retry/rollback. All technical detail already lives in the separate Technical Blueprint and must NOT be repeated here.
-- RACI roles: a SMALL, REALISTIC set for this one process — typically 4 to 6 roles, never more than 7 in the whole matrix. Use short, generic role names (e.g. Requester, Buyer, Approver, Purchasing Lead, Process Owner, Finance), not the job titles of a large corporation, and REUSE the same roles across the steps. For a step the program runs on its own, name the business role that is responsible for its outcome.
-- Every step has EXACTLY ONE Accountable ("a") and at least one Responsible ("r"). Consulted ("c") and Informed ("i") only where they matter; leave them empty otherwise. If you cannot tell who is accountable for a step, leave "a" empty rather than guessing.
-- The roles are a proposal the business will confirm; do not invent organisational detail the process does not show. Avoid IT roles (Developer, Architect, System).
-- Exceptions must be BUSINESS actions (escalation, dual approval, manual review) — not technical remediation.
-- Do NOT propose KPI targets, control objectives, audit controls or verification methods: the process does not show them, and the controls of this process are read from the code elsewhere.
-
-Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`).
-DO NOT include any text before or after the JSON.
-
-Process Blueprint Context:
-${blueprintContext}
-
-Structure the JSON exactly like this:
-{
-  "raci_matrix": [
-    {
-      "stepId": "Task1",
-      "r": "Responsible role who performs the step (e.g. Buyer)",
-      "a": "Exactly one Accountable role (e.g. Purchasing Lead)",
-      "c": "Consulted role, only where it matters (e.g. Approver), else empty",
-      "i": "Informed role, only where it matters (e.g. Requester), else empty"
-    }
-  ],
-  "sop_details": [
-    {
-      "stepId": "Task1",
-      "narrative": "Plain-business, step-by-step description of how the business handles this process step and the outcome it produces (3-4 sentences). No technical detail.",
-      "businessException": "Business fallback if the step cannot be completed (e.g. escalate to the Process Owner, route for manual review, apply dual approval)."
-    }
-  ]
-}`;
+      const prompt = businessSopPrompt(engineDoc);
 
       console.log('Generating business process compliance for project:', project.name);
       let responseText: string;
@@ -394,6 +365,15 @@ Structure the JSON exactly like this:
       if (!shape.ok) {
         throw new Error(`Invalid business documentation schema returned by AI: ${shape.problems.join(' ')}`);
       }
+      // Owner 11.10.2026: stored with the business name and the lines of every
+      // step and the program's capability facts, so every rendering — the
+      // delivery package's file included — names each step and judges each
+      // sentence without the source.
+      const storedText = JSON.stringify(enrichBusinessLayer(
+        extractJSON(responseText) as Record<string, unknown>,
+        sopStepInfos(engineDoc, new Map(sopInputs.current.steps.map((st) => [st.id, st.name])), new Map(sopInputs.current.steps.map((st) => [st.id, st.lines ?? []]))),
+        sopInputs.current.facts ?? readCapabilityFacts(engineDoc.facts),
+      ));
 
       // One transaction, for the same reason as above (ade8ec0b8903). The
       // layer was written from this run's documentation; if another tab
@@ -421,15 +401,15 @@ Structure the JSON exactly like this:
         const cleanup = packageCleanup(current.generatedCode);
         // Codex architecture-02: refused by name before the commit when the
         // project would outgrow its 1 MiB document.
-        const size = checkProjectWrite(current, { businessDocumentation: responseText, ...cleanup }, projectDoc.path, 'update');
+        const size = checkProjectWrite(current, { businessDocumentation: storedText, ...cleanup }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
-        tx.update(projectDoc, { businessDocumentation: responseText, ...cleanup });
+        tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup });
         return { kept: null, cleanup };
       });
 
       // Shown only once it is stored (52487ee4cacc): a layer the transaction
       // refused is not this project's business documentation.
-      const storedLayer = updatedCode.kept ?? responseText;
+      const storedLayer = updatedCode.kept ?? storedText;
       setBusinessDocumentation(storedLayer);
       setProject(prev => prev ? { ...prev, businessDocumentation: storedLayer, ...updatedCode.cleanup } : null);
 
@@ -516,24 +496,6 @@ Structure the JSON exactly like this:
     () => (handbook.handbook ? businessCallouts(handbook.handbook, glanceInputs.levels) : []),
     [handbook.handbook, glanceInputs],
   );
-
-  /**
-   * The steps of the process the business layer is keyed to — the engine
-   * document's elements, named as the map names them and with the map's
-   * provenance (a step a person confirmed reads *Confirmed*).
-   */
-  const processSteps: ProcessStepRef[] = engineDoc
-    ? engineDoc.steps.map((step) => {
-        const element = processMap.model?.elements.find((e) => e.id === step.id);
-        return {
-          id: step.id,
-          name: element?.label ?? step.businessName ?? step.technicalName,
-          technicalName: step.technicalName,
-          anchor: step.anchor,
-          provenance: element?.status ?? step.provenance,
-        };
-      })
-    : [];
 
   const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
   const statementProposal = useStatementProposal(
@@ -625,6 +587,36 @@ Structure the JSON exactly like this:
     typeof project?.analysis === 'string' && project.analysis.trim() ? project.analysis : null,
     proposalInputs,
   );
+
+  /**
+   * The steps of the process the business layer is keyed to — the engine
+   * document's elements, named as the map names them and with the map's
+   * provenance (a step a person confirmed reads *Confirmed*). Each carries its
+   * lines — its own and, for a step of the description's main path, the body
+   * of the routine it runs: an SOP sentence is *Reconstructed* only when the
+   * model cites one of them (owner 11.10.2026, external review F-06).
+   */
+  const processSteps: ProcessStepRef[] = useMemo(() => {
+    if (!engineDoc) return [];
+    const pathLines = new Map<string, Array<{ lineStart: number; lineEnd: number }>>();
+    for (const entry of processDocument.document?.overview.path ?? []) {
+      if (entry.kind === 'step') pathLines.set(entry.id, entry.anchors);
+    }
+    return engineDoc.steps.map((step) => {
+      const element = processMap.model?.elements.find((e) => e.id === step.id);
+      return {
+        id: step.id,
+        name: element?.label ?? step.businessName ?? step.technicalName,
+        technicalName: step.technicalName,
+        anchor: step.anchor,
+        provenance: element?.status ?? step.provenance,
+        lines: [...(step.anchor ? [step.anchor] : []), ...(pathLines.get(step.id) ?? [])],
+      };
+    });
+  }, [engineDoc, processMap.model, processDocument.document]);
+  useEffect(() => {
+    sopInputs.current = { steps: processSteps, facts: processDocument.document?.facts ?? null };
+  }, [processSteps, processDocument.document]);
 
   /**
    * Roadmap 3.0.5, Weg C — the documentation is read out of the code.
@@ -1229,6 +1221,7 @@ Structure the JSON exactly like this:
       embedded
       layer={businessLayer ?? parsedBusinessDoc}
       process={processSteps}
+      facts={processDocument.document?.facts ?? readCapabilityFacts(engineDoc?.facts) ?? undefined}
       raciEditing={{
         canEdit: isOwner,
         editedLine: raciEdit ? raciEditedLine(raciEdit.editedBy, formatTextDate(raciEdit.editedAt) ?? raciEdit.editedAt.slice(0, 10)) : null,

@@ -1,4 +1,7 @@
 import type { ProvenanceValue } from '@/lib/provenance';
+import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
+import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
+import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
 
 /**
  * The process documentation of stage 4 — roadmap 3.0.5, Weg C (Sonny, 24.09.2026).
@@ -106,6 +109,12 @@ export interface DocStep {
   anchor: DocAnchor | null;
   /** Set exactly when `anchor` is null. */
   undetermined: DocUndetermined | null;
+  /**
+   * The engine's plain name — what the step does for the business ("Show the
+   * result list"), the map's label without a naming stage. Absent in a
+   * documentation read before 3.0.10.
+   */
+  plainName?: string | null;
   /** The sub-process this element is drawn in; null for the top level. */
   level: string | null;
   next: DocFlow[];
@@ -184,6 +193,14 @@ export interface ProcessDocumentation {
   proposedLanes: DocProposedLane[];
   notDetermined: DocGap[];
   disclaimer: string;
+  /**
+   * What the program can do, read from the whole source (`lib/documentation-facts.ts`):
+   * the tables it reads and changes, its commits, calls and authorization
+   * checks. The business page says from it what the program does **not** do,
+   * and the SOP check holds a model's sentence against it (owner 11.10.2026).
+   * Absent in a documentation read before 3.0.10 — then *Not determined*.
+   */
+  facts?: CapabilityFacts;
 }
 
 /* ------------------------------------------------------------ the reader */
@@ -294,62 +311,178 @@ export function stepEvidence(step: Pick<DocStep, 'anchor' | 'undetermined'>): st
 /** Table cells in Markdown: one line, no pipe that would open a column. */
 const cell = (text: string): string => text.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
 
+/** A routine's token in words when no plain name was stored: `BUILD_WORKLIST` → "Build worklist". */
+function humaniseToken(token: string): string {
+  if (!/^[A-Z0-9_/]+$/.test(token) || !/_/.test(token)) return token;
+  const words = token.replace(/^\/\w+\//, '').split('_').filter(Boolean).map((w) => w.toLowerCase());
+  return words.length ? `${words[0].charAt(0).toUpperCase()}${words[0].slice(1)} ${words.slice(1).join(' ')}`.trim() : token;
+}
+
+/** The name a business reader sees for a step: the naming stage's, else the engine's plain name, else the token in words. */
+export function docStepName(step: Pick<DocStep, 'businessName' | 'technicalName'> & { plainName?: string | null }): string {
+  const plain = step.plainName?.trim();
+  return step.businessName ?? (plain || humaniseToken(step.technicalName));
+}
+
+/** The anchors of the package Markdown — stable, so a link from one file into another keeps working. */
+export const PROCESS_DOCUMENTATION_ANCHORS = {
+  inShort: 'in-short',
+  process: 'process',
+  rules: 'rules',
+  exceptions: 'exceptions',
+  changes: 'changes',
+  data: 'systems-and-data',
+  evidence: 'evidence',
+  appendix: 'appendix',
+  elements: 'a1-elements',
+  statements: 'a3-statements',
+} as const;
+
+const TARGET_ANCHOR: Record<BusinessPageTarget, string> = {
+  data: PROCESS_DOCUMENTATION_ANCHORS.data,
+  rules: PROCESS_DOCUMENTATION_ANCHORS.rules,
+  exceptions: PROCESS_DOCUMENTATION_ANCHORS.exceptions,
+  changes: PROCESS_DOCUMENTATION_ANCHORS.changes,
+  questions: PROCESS_DOCUMENTATION_ANCHORS.evidence,
+};
+
+/** The section titles of the package Markdown, in reading order (owner 11.10.2026, external review §8). */
+export const PROCESS_DOCUMENTATION_SECTIONS = [
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.inShort, title: BUSINESS_PAGE.title },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.process, title: '1. How the process works' },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.rules, title: '2. Rules and exceptions' },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.changes, title: '3. What it changes — options and changes' },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.data, title: '4. Systems and data' },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.evidence, title: '5. Evidence and open decisions' },
+  { anchor: PROCESS_DOCUMENTATION_ANCHORS.appendix, title: 'Appendix: technical reconstruction' },
+] as const;
+
+/** `L42`, `L95–114`, four at most — the short line label of the business part. */
+function shortLines(anchors: readonly DocAnchor[]): string {
+  const words = [...new Set(anchors.map((a) => (a.lineEnd > a.lineStart ? `L${a.lineStart}–${a.lineEnd}` : `L${a.lineStart}`)))];
+  return words.length > 4 ? `${words.slice(0, 4).join(', ')} and ${words.length - 4} more` : words.join(', ');
+}
+
+/** One entry of the business list, with how many sentences it stands for. */
+function groupLine(g: StatementGroup): string {
+  const similar = g.count > 1 ? ` — stands for ${g.count} near-identical sentences` : '';
+  return `${g.text} (Reconstructed, ${shortLines(g.anchors)}${similar})`;
+}
+
+const heading = (level: 2 | 3, anchor: string, title: string): string[] => [`<a id="${anchor}"></a>`, '', `${'#'.repeat(level)} ${title}`, ''];
+
 /**
  * The Markdown the workspace file `docs/process-documentation.md`, the
- * delivery bundle (`process-documentation.md`) and the dashboard export
- * carry. Same content as the stage shows, same order, nothing added.
+ * delivery bundle (`process-documentation.md`) and the dashboard export carry.
+ *
+ * Owner 11.10.2026 (external review of the FI Collection Worklist package,
+ * F-07 and §8): readable first. It opens with the business page — what the
+ * program does, what it does not do, the limits of the reading, owner and
+ * approval, and the questions a reader asks, each a link into the document —
+ * then the process, the rules and exceptions, what it changes, systems and
+ * data, the evidence and open decisions, and the technical reconstruction last
+ * as the appendix. The business list holds business statements only:
+ * structure definitions, field assignments, label texts and bare calls stand
+ * in the appendix, which keeps every sentence the engine read, and
+ * near-identical sentences are one entry with their count
+ * (`lib/abap/business-statement-kind.ts`). Every statement carries its lines
+ * and its provenance; nothing the engine read is dropped.
  */
 export function processDocumentationToMarkdown(doc: ProcessDocumentation): string {
-  const out: string[] = [];
-  out.push(`# Process documentation — ${doc.processName}`, '');
-  out.push(`> ${doc.disclaimer}`, '');
-  out.push(`- **Source:** \`${doc.fileName}\`, ${doc.lineCount} lines, SHA-256 \`${doc.sourceSha256}\``);
-  out.push(`- **Process:** ${doc.overview}`);
-  out.push(`- **Traceability:** ${doc.traceability.sentence}`);
-  if (doc.naming.notice) out.push(`- **Business names:** ${doc.naming.notice}`);
-  out.push('');
-
-  out.push('## The process, element by element', '');
-  out.push('Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are a Model proposal.', '');
-  out.push('| Element | Kind | Name | Lane | Evidence | Next |');
-  out.push('| :--- | :--- | :--- | :--- | :--- | :--- |');
+  const A = PROCESS_DOCUMENTATION_ANCHORS;
+  const facts = readCapabilityFacts(doc.facts);
+  const view = businessStatementView(doc.statements);
+  const byKind = (kind: StatementGroup['kind']) => view.groups.filter((g) => g.kind === kind);
+  const rules = byKind('rule');
+  const exceptions = byKind('exception');
+  const dataStatements = byKind('data');
+  const controls = byKind('control');
+  const along = byKind('step');
+  const isGate = (s: DocStep) => /decision/i.test(s.kind);
+  const isEvent = (s: DocStep) => /^(?:start|end)\b/i.test(s.kind);
+  const topSteps = doc.steps.filter((s) => s.level === null && !isEvent(s) && !isGate(s));
+  const page = buildBusinessPage({
+    program: doc.processName,
+    facts,
+    counts: {
+      steps: doc.steps.filter((s) => !isEvent(s) && !isGate(s)).length,
+      decisions: doc.steps.filter(isGate).length,
+      rules: rules.length,
+      exceptions: exceptions.length,
+    },
+  });
   const statementById = new Map(doc.statements.map((s) => [s.id, s]));
-  for (const step of doc.steps) {
-    const name = step.businessName
-      ? `${step.businessName} (${step.technicalName}) — Model proposal`
-      : step.technicalName;
-    const lane = step.lane ? `${step.lane} — Model proposal` : '';
-    const next = step.next
-      .map((flow) => (flow.condition ? `${flow.to} [${flow.condition}]` : flow.to))
-      .join(', ');
-    out.push(`| ${cell(step.id)} | ${cell(step.kind)} | ${cell(name)} | ${cell(lane)} | ${cell(stepEvidence(step))} | ${cell(next)} |`);
-  }
+  const out: string[] = [];
+
+  out.push(`# Process documentation — ${doc.processName}`, '');
+  out.push(`*\`${doc.fileName}\` · ${doc.lineCount} lines · SHA-256 \`${doc.sourceSha256.slice(0, 16)}…\` · Reconstructed from the code — to be confirmed by the business*`, '');
+  out.push(`> ${doc.disclaimer}`, '');
+  out.push(`**Contents:** ${PROCESS_DOCUMENTATION_SECTIONS.map((s) => `[${s.title}](#${s.anchor})`).join(' · ')}`, '');
+
+  /* ------------------------------------------------------ the business page */
+  out.push(...heading(2, A.inShort, BUSINESS_PAGE.title));
+  out.push(`**${BUSINESS_PAGE.does}**`, '');
+  for (const line of page.does) out.push(`- ${businessPageLineText(line)}`);
+  out.push('', `**${BUSINESS_PAGE.doesNot}**`, '');
+  for (const line of page.doesNot) out.push(`- ${businessPageLineText(line)}`);
+  out.push('', `**${BUSINESS_PAGE.limits}**`, '');
+  for (const line of page.limits) out.push(`- ${businessPageLineText(line)}`);
+  out.push('', `**${BUSINESS_PAGE.owner}**`, '');
+  out.push(`- ${businessPageLineText(page.owner)}`, `- ${businessPageLineText(page.approval)}`);
+  out.push('', `**${BUSINESS_PAGE.questions}**`, '');
+  for (const q of page.questions) out.push(`- [${q.question}](#${TARGET_ANCHOR[q.target]}) — ${q.answer}`);
   out.push('');
 
-  const withSentence = doc.steps.filter((step) => step.statementId && statementById.has(step.statementId));
-  if (withSentence.length > 0) {
-    out.push('### What the elements do', '');
-    for (const step of withSentence) {
-      const sentence = statementById.get(step.statementId as string)!;
-      out.push(`- **${step.businessName ?? step.technicalName}** (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
-    }
+  /* ---------------------------------------------------------- 1. the process */
+  out.push(...heading(2, A.process, PROCESS_DOCUMENTATION_SECTIONS[1].title));
+  out.push(`${doc.overview} The main path, in the order of the program; every step with its lines. Provenance: Reconstructed. Business names from the naming stage are a Model proposal.`, '');
+  // A step says what it does only with a sentence of its own — a rule stands under the rules, and a sentence is said once.
+  const said = new Set<string>();
+  topSteps.forEach((step, i) => {
+    const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
+    const kind = sentence ? statementKind(sentence.text) : null;
+    const own = !!sentence && (kind === 'step' || kind === 'data') && !said.has(sentence.id);
+    if (own) said.add(sentence.id);
+    const does = own ? ` — ${sentence.text}` : '';
+    const proposal = step.businessName ? ' (name: Model proposal)' : '';
+    out.push(`${i + 1}. **${docStepName(step)}**${proposal}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`);
+  });
+  if (topSteps.length === 0) out.push('No step stands on the top level of the process.');
+  out.push('');
+  if (along.length) {
+    out.push('**What it does along the way**', '');
+    for (const g of along) out.push(`- ${groupLine(g)}`);
     out.push('');
   }
+  out.push(`Every element of the map, with its id, kind and successors: [Appendix A.1](#${A.elements}).`, '');
 
-  out.push('## Business statements, across the whole program', '');
-  if (doc.statements.length === 0) {
-    out.push('The engine formed no business statement from this source.', '');
+  /* -------------------------------------------------- 2. rules and exceptions */
+  out.push(...heading(2, A.rules, PROCESS_DOCUMENTATION_SECTIONS[2].title));
+  const t = view.technical;
+  out.push(
+    `${view.groups.length} business statements from the ${view.total} sentences the engine read; ${view.folded} near-identical ones are folded into them. `
+    + `Not business statements, kept complete in [Appendix A.3](#${A.statements}): ${t.structure} structure definitions, ${t.assignment} field assignments, ${t.label} label texts and ${t.call} bare calls.`,
+    '',
+  );
+  out.push('### Rules', '');
+  if (rules.length) for (const g of rules) out.push(`- ${groupLine(g)}`);
+  else out.push('No condition in the code decides a value or a path.');
+  out.push('', ...heading(3, A.exceptions, 'Exceptions'));
+  if (exceptions.length) for (const g of exceptions) out.push(`- ${groupLine(g)}`);
+  else out.push('No message stops or warns the user.');
+  out.push('');
+
+  /* ------------------------------------------------------------ 3. changes */
+  out.push(...heading(2, A.changes, PROCESS_DOCUMENTATION_SECTIONS[3].title));
+  if (facts) {
+    out.push(facts.writes.length
+      ? `- Tables it changes: ${facts.writes.map((w) => `${w.name} (L${w.line})`).join(', ')}. (Reconstructed)`
+      : '- It changes no table in SAP. (Reconstructed, read across the whole source)');
   } else {
-    out.push(`${doc.statements.length} statements, in the order of the program. Provenance: Reconstructed.`, '');
-    for (const statement of doc.statements) {
-      out.push(`- ${statement.text} — ${anchorsWords(statement.anchors)}`);
-    }
-    out.push('');
+    out.push(`- Tables it changes: ${NOT_DETERMINED_LABEL} — this documentation was read before that reading was recorded with it.`);
   }
-
-  out.push('## Update task and commit', '');
   if (doc.effects.registrations.length === 0 && doc.effects.events.length === 0) {
-    out.push('The source registers no update module and issues no COMMIT WORK or ROLLBACK WORK.', '');
+    out.push('- It registers no update module and issues no COMMIT WORK or ROLLBACK WORK.');
   } else {
     for (const registration of doc.effects.registrations) {
       const moduleName = registration.module ?? 'a module named at runtime';
@@ -369,10 +502,26 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
       const wait = event.kind === 'commit' ? commitWaitWords(event.andWait) : '';
       out.push(`- \`${event.token}\`${wait} — ${rangeWords(event.anchor)}`);
     }
+  }
+  out.push(`- What changes with SAP S/4HANA — the target, the option and the program decision — is decided in Design and in the Management view; this file records what the program does today. The open points stand in [Evidence and open decisions](#${A.evidence}).`, '');
+
+  /* -------------------------------------------------------- 4. systems and data */
+  out.push(...heading(2, A.data, PROCESS_DOCUMENTATION_SECTIONS[4].title));
+  out.push('### Data it reads', '');
+  if (facts) out.push(facts.reads.length ? `Tables: ${facts.reads.map((r) => `${r.name} (L${r.line})`).join(', ')}.` : 'It reads no table by name.', '');
+  if (dataStatements.length) {
+    out.push('Which rows each read takes:', '');
+    for (const g of dataStatements) out.push(`- ${groupLine(g)}`);
     out.push('');
   }
-
-  out.push('## Lanes', '');
+  if (facts?.calls.length) {
+    out.push('### Calls', '');
+    out.push(`${facts.calls.map((c) => `${c.name} (${c.kind}${c.destination ? `, destination ${c.destination}` : ''}, L${c.line})`).join(', ')}.`, '');
+  }
+  out.push('### Controls', '');
+  if (controls.length) for (const g of controls) out.push(`- ${groupLine(g)}`);
+  else out.push('No authorization check in the code.');
+  out.push('', '### Who acts', '');
   out.push('Read from the code (Reconstructed). A lane is the token the source writes, never a job title.', '');
   for (const lane of doc.lanes) {
     out.push(`- ${lane.name || '(program)'} — ${lane.kind}${lane.basis.length ? `, from ${lane.basis.join(', ')}` : ''} — ${rangeWords(lane.anchor)}`);
@@ -386,10 +535,57 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   }
   out.push('');
 
-  out.push('## Not determined', '');
+  /* ------------------------------------------------ 5. evidence and open decisions */
+  out.push(...heading(2, A.evidence, PROCESS_DOCUMENTATION_SECTIONS[5].title));
+  out.push(`- **Source:** \`${doc.fileName}\`, ${doc.lineCount} lines, SHA-256 \`${doc.sourceSha256}\``);
+  out.push(`- **Process:** ${doc.overview}`);
+  out.push(`- **Traceability:** ${doc.traceability.sentence} A line anchor proves where a shape comes from, not that it is right for the business.`);
+  if (doc.naming.notice) out.push(`- **Business names:** ${doc.naming.notice}`);
+  out.push('', '**Not determined**', '');
   for (const gap of doc.notDetermined) {
     out.push(`- **${gap.subject}:** ${NOT_DETERMINED_LABEL} — ${gap.reason}`);
   }
+  out.push('', '---', '');
+
+  /* ------------------------------------------------------------- the appendix */
+  out.push(...heading(2, A.appendix, PROCESS_DOCUMENTATION_SECTIONS[6].title));
+  out.push('*The complete reading, as the engine wrote it: every element of the map and every sentence, with its lines. The sections above are built from it.*', '');
+  out.push(...heading(3, A.elements, 'A.1 The process, element by element'));
+  out.push('Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are a Model proposal.', '');
+  out.push('| Element | Kind | Name | Lane | Evidence | Next |');
+  out.push('| :--- | :--- | :--- | :--- | :--- | :--- |');
+  for (const step of doc.steps) {
+    const name = step.businessName
+      ? `${step.businessName} (${step.technicalName}) — Model proposal`
+      : step.technicalName;
+    const lane = step.lane ? `${step.lane} — Model proposal` : '';
+    const next = step.next
+      .map((flow) => (flow.condition ? `${flow.to} [${flow.condition}]` : flow.to))
+      .join(', ');
+    out.push(`| ${cell(step.id)} | ${cell(step.kind)} | ${cell(name)} | ${cell(lane)} | ${cell(stepEvidence(step))} | ${cell(next)} |`);
+  }
   out.push('');
+
+  const withSentence = doc.steps.filter((step) => step.statementId && statementById.has(step.statementId));
+  if (withSentence.length > 0) {
+    out.push('### A.2 What the elements do', '');
+    for (const step of withSentence) {
+      const sentence = statementById.get(step.statementId as string)!;
+      out.push(`- **${step.businessName ?? step.technicalName}** (${step.id}): ${sentence.text} — ${anchorsWords(sentence.anchors)}`);
+    }
+    out.push('');
+  }
+
+  out.push(...heading(3, A.statements, 'A.3 Every statement as read'));
+  if (doc.statements.length === 0) {
+    out.push('The engine formed no statement from this source.', '');
+  } else {
+    out.push(`${doc.statements.length} statements, in the order of the program. Provenance: Reconstructed.`, '');
+    for (const statement of doc.statements) {
+      out.push(`- ${statement.text} — ${anchorsWords(statement.anchors)}`);
+    }
+    out.push('');
+  }
   return out.join('\n');
 }
+

@@ -161,7 +161,9 @@ test.describe('the Confluence export', () => {
     // Owner review 10.10.2026: every row of a step of the process, by its name — and none for a step the code does not have.
     const steps = sopSteps(LAYER, STEPS);
     for (const st of steps.filter((x) => x.hasRaci)) expect(html).toContain(`<tr><td>${st.number}. ${st.step!.name}</td><td>${st.roles.R.join(', ') || 'Not determined'}</td>`);
-    for (const st of steps) if (st.narrative) expect(html).toContain(st.narrative);
+    // Owner 11.10.2026 (external review F-06): the narrative stands sentence by sentence, each with its basis.
+    for (const st of steps) for (const sentence of st.statements) expect(html).toContain(sentence.text);
+    expect(html).toContain('data-sop-statement="');
     expect(html).not.toContain(UNKNOWN_STEP_ID);
     // The SOP strip and the matrix as tables, each row.
     for (const st of steps) {
@@ -310,7 +312,11 @@ test.describe('the Documentation stage in a browser', () => {
     await fold.click();
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-sop-full-step]')).toHaveCount(LAYER.sop_details.length - 1);
-    await expect(page.locator('[data-sop-full]')).toContainText(LAYER.sop_details[0].narrative);
+    // Owner 11.10.2026: sentence by sentence, each with its basis chip.
+    for (const sentence of LAYER.sop_details[0].narrative.split(/(?<=[.!?])\s+/)) {
+      await expect(page.locator('[data-sop-full]')).toContainText(sentence);
+    }
+    await expect(page.locator('[data-sop-full] [data-sop-statement]').first()).toBeVisible();
     // Roadmap 3.0.7: no KPI target and no model-written control checkpoint —
     // the controls are the code reading's, in the systems section, and the fold says so.
     await expect(page.locator('[data-sop-full]')).not.toContainText('Completed within one business day');

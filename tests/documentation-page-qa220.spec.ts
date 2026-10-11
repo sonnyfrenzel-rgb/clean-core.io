@@ -52,7 +52,9 @@ test('a layer without control checkpoints is the current form (roadmap 3.0.7: th
   const { audit_controls: _controls, ...current } = good;
   void _controls;
   expect(checkBusinessDocShape(current)).toEqual({ ok: true, problems: [] });
-  const prompt = page().slice(page().indexOf('async function runBusinessGeneration'), page().indexOf('const generateBusinessDocumentation'));
+  // Owner 11.10.2026: the prompt moved out of the page into `lib/business-sop-prompt.ts`; the page calls it.
+  expect(page()).toContain('const prompt = businessSopPrompt(engineDoc);');
+  const prompt = fs.readFileSync(path.join(process.cwd(), 'lib', 'business-sop-prompt.ts'), 'utf8');
   for (const gone of ['"kpiTarget"', '"audit_controls"', '"controlObjective"', '"assertionMethod"']) {
     expect(prompt, `the prompt still asks for ${gone}`).not.toContain(gone);
   }
@@ -85,7 +87,9 @@ test('the business layer is shown only after the transaction stored it (52487ee4
   const transaction = gen.indexOf('await runTransaction(');
   // What is shown is what the transaction returned: this answer, or a layer another writer stored first.
   const shown = gen.indexOf('setBusinessDocumentation(storedLayer)');
-  expect(gen).toContain('const storedLayer = updatedCode.kept ?? responseText;');
+  // Owner 11.10.2026: what is stored is the answer with each step's name, lines and the program's facts.
+  expect(gen).toContain('const storedLayer = updatedCode.kept ?? storedText;');
+  expect(gen).toContain('tx.update(projectDoc, { businessDocumentation: storedText, ...cleanup });');
   expect(transaction).toBeGreaterThan(-1);
   expect(shown).toBeGreaterThan(transaction);
   expect(gen.split('setBusinessDocumentation(').length - 1).toBe(1);

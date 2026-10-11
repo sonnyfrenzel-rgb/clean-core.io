@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
-import { buildEngineConfluenceHtml } from '../lib/documentation-export';
+import { buildEngineConfluenceHtml, sopStatementsHtml } from '../lib/documentation-export';
 import { buildProcessDocument } from '../lib/process-document-build';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -107,7 +107,8 @@ test('the engine documentation export carries the business layer, escaped and ma
   // Owner review 10.10.2026: the RACI and SOP tables are read through `sopSteps` —
   // only the steps of the process, never a row the model wrote for a step the
   // code does not have — and the owner's RACI, when one is saved, is said once.
-  expect(engine).toContain('const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps) : [];');
+  // Owner 11.10.2026 (external review F-06): each SOP sentence is judged against what the program can do.
+  expect(engine).toContain('const sop = parsedBusinessDoc ? sopSteps(parsedBusinessDoc, steps, judgement) : [];');
   expect(section).toContain('sop.filter((st) => st.hasRaci)');
   expect(section).toContain('data-raci-edited');
   // Roadmap 3.0.7: the model proposes no controls and no KPI targets; the
@@ -115,8 +116,11 @@ test('the engine documentation export carries the business layer, escaped and ma
   for (const gone of ['audit_controls', 'kpiTarget', 'controlObjective']) expect(section).not.toContain(gone);
   const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
-  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml('));
+  const raw = all.filter((e) => !e.startsWith('esc(') && !e.startsWith('glanceHtml(') && !e.startsWith('sopStatementsHtml('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
+  // The SOP sentences go through one helper, which prints every value through the escaper (fed hostile text below).
+  expect(sopStatementsHtml([{ text: '<script>x</script>', basis: 'not-in-program', anchors: [], reason: '<b>r</b>', short: 'organisational' }]))
+    .not.toMatch(/<script>|<b>/);
 });
 
 test('the analysis and design stages build their Confluence pages only through the escaping modules', () => {

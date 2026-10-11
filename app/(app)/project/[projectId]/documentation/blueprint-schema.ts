@@ -84,9 +84,21 @@ export function checkBusinessDocShape(parsed: unknown): BlueprintCheck {
         problems.push(`\`${list}[${i}]\` is ${typeName(entry)}, not an object.`);
         return;
       }
-      for (const field of fields) {
+      for (const field of [...fields, 'stepName']) {
         if (entry[field] !== undefined && entry[field] !== null && !isRenderable(entry[field])) {
           problems.push(`\`${list}[${i}].${field}\` is ${typeName(entry[field])}, not text.`);
+        }
+      }
+      // Owner 11.10.2026: an SOP step is a list of claims, each with its basis — each claim's text is drawn.
+      if (list === 'sop_details' && entry.claims !== undefined) {
+        if (!Array.isArray(entry.claims)) {
+          problems.push(`\`${list}[${i}].claims\` is ${typeName(entry.claims)}, not a list.`);
+        } else {
+          entry.claims.forEach((claim, c) => {
+            if (!isPlainObject(claim) || (claim.text !== undefined && claim.text !== null && !isRenderable(claim.text))) {
+              problems.push(`\`${list}[${i}].claims[${c}]\` has no text a page can show.`);
+            }
+          });
         }
       }
     });

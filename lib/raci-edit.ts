@@ -258,4 +258,4 @@ export function raciFileTable(
 /** The heading of the RACI in a file. */
 export const RACI_FILE_TITLE = 'Who is responsible (RACI)';
 /** The provenance line of the model's RACI in a file. */
-export const RACI_PROPOSAL_IN_FILE = 'Model proposal — the roles are a proposal for the business to confirm.';
+export const RACI_PROPOSAL_IN_FILE = 'Proposal — not in the program: the code names no role, so the roles are a proposal for the business to confirm, not current practice.';

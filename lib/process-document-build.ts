@@ -16,6 +16,7 @@ import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requirements';
 import { buildNfrSet, type NfrSet, NFR_OWNER_LABEL } from '@/lib/non-functional-requirements';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
+import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { NOT_DETERMINED_LABEL, commitWaitWords, rangeWords, stepEvidence, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 import { isEventTag, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { buildNavigation } from '@/lib/process-navigation';
@@ -1426,6 +1427,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     controls,
     questions,
     appendix,
+    // Owner 11.10.2026: what the program can do — the business page says from it what it does not.
+    facts: capabilityFactsOf(source, skeleton, { calls, tables }),
   };
 }
 

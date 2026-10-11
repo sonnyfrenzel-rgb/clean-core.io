@@ -301,7 +301,14 @@ export function requirementsFileName(projectName: string, ext: 'md' | 'docx'): s
  * ==================================================================== */
 
 export type DocBlock =
-  | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string }
+  /** `id`: an anchor a link in the same document points at (`#pd-rules`) — Markdown and HTML only. */
+  | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string; id?: string }
+  /**
+   * Links into the same document (owner 11.10.2026: clickable entry questions).
+   * `href` is an in-page anchor; `plain` is what a file without links prints after
+   * the arrow (Word); `tail` follows the link in every spelling.
+   */
+  | { k: 'links'; items: Array<{ text: string; href: string; plain: string; tail?: string }> }
   | { k: 'p'; text: string; strong?: boolean; em?: boolean }
   | { k: 'note'; text: string }
   /** `muted`: columns printed small and grey (a source column of names and lines). */
@@ -319,11 +326,22 @@ export type DocBlock =
   /** A new page in Word and in print; nothing in Markdown. */
   | { k: 'pagebreak' };
 
+/** An anchor id our own code writes: letters, digits and hyphens only — never a value from a model or a source. */
+const SAFE_ID = /^[a-z][a-z0-9-]{0,60}$/;
+
+/** Link text in Markdown: no bracket that would close the link. */
+const mdLinkText = (t: string) => t.replace(/[[\]]/g, '');
+
 export function blocksMarkdown(blocks: DocBlock[]): string {
   const out: string[] = [];
   for (const b of blocks) {
-    if (b.k === 'h') out.push(`${'#'.repeat(b.level)} ${b.text}`, '');
-    else if (b.k === 'p') out.push(b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text, '');
+    if (b.k === 'h') {
+      if (b.id && SAFE_ID.test(b.id)) out.push(`<a id="${b.id}"></a>`, '');
+      out.push(`${'#'.repeat(b.level)} ${b.text}`, '');
+    } else if (b.k === 'links') {
+      b.items.forEach((l) => out.push(`- ${SAFE_ID.test(l.href) ? `[${mdLinkText(l.text)}](#${l.href})` : l.text}${l.tail ? ` — ${l.tail}` : ''}`));
+      out.push('');
+    } else if (b.k === 'p') out.push(b.strong ? `**${b.text}**` : b.em ? `*${b.text}*` : b.text, '');
     else if (b.k === 'note') out.push(`> ${b.text}`, '');
     else if (b.k === 'table') {
       out.push(`| ${b.head.map(mdCell).join(' | ')} |`, `|${b.head.map(() => '---').join('|')}|`);
@@ -363,7 +381,8 @@ export function blocksHtml(blocks: DocBlock[]): string {
   const th = 'style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;background:#f1f5f9"';
   const parts: string[] = [];
   for (const b of blocks) {
-    if (b.k === 'h') parts.push(`<h${b.level}>${esc(b.text)}</h${b.level}>`);
+    if (b.k === 'h') parts.push(`<h${b.level}${b.id && SAFE_ID.test(b.id) ? ` id="${b.id}"` : ''}>${esc(b.text)}</h${b.level}>`);
+    else if (b.k === 'links') parts.push(`<ul>${b.items.map((l) => `<li>${SAFE_ID.test(l.href) ? `<a href="#${l.href}">${esc(l.text)}</a>` : esc(l.text)}${l.tail ? ` — ${esc(l.tail)}` : ''}</li>`).join('')}</ul>`);
     else if (b.k === 'p') parts.push(`<p>${b.strong ? `<strong>${esc(b.text)}</strong>` : b.em ? `<em>${esc(b.text)}</em>` : esc(b.text)}</p>`);
     else if (b.k === 'note') parts.push(`<p><em>${esc(b.text)}</em></p>`);
     else if (b.k === 'table') {
@@ -425,6 +444,8 @@ function blocksDocument(blocks: DocBlock[]): string {
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
     else if (block.k === 'ol') block.items.forEach((t, i) => b.push(para(run(`${i + 1}. ${t}`))));
     else if (block.k === 'ul') block.items.forEach((t) => b.push(para(run(`•  ${t}`))));
+    // Word gets the section a link leads to in words: an internal hyperlink needs a bookmark on the heading.
+    else if (block.k === 'links') block.items.forEach((l) => b.push(para(run(`•  ${l.text} → ${l.plain}${l.tail ? ` — ${l.tail}` : ''}`))));
     else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
     else if (block.k === 'code') {
       for (const a of block.items) {
