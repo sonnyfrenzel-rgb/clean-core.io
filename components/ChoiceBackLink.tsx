@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
+import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
 
 /**
  * The way back from a choice to the place that asked for it — "← Back to
@@ -102,7 +103,7 @@ export default function ChoiceBackLink({
           tabIndex={-1}
           aria-hidden="true"
           style={{ bottom: GAP + lift, maxWidth: `min(${PILL_MAX}px, calc(100vw - ${2 * GAP}px))` }}
-          className="cc-no-print fixed left-4 z-cc-float inline-flex min-h-11 items-center gap-1 rounded-full border border-cc-line bg-cc-surface px-3 text-[13px] font-semibold text-cc-ink no-underline shadow-cc sm:hidden"
+          className={`${CC_BUTTON_BASE} ${CC_BUTTON_VARIANT_CLASSES.ghost} ${CC_BUTTON_DENSITY_CLASSES.compact} cc-no-print fixed left-4 z-cc-float no-underline shadow-cc sm:hidden`}
         >
           {words}
         </Link>
