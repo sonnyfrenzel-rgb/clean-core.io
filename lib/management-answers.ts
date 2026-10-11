@@ -411,9 +411,10 @@ export function scoreTrend(
       withoutRuleVersion,
       withoutScore,
       sentence:
-        `One run on rule version ${ruleVersion}. There is no history: a history needs two runs ` +
-        'measured by the same rule, and a line through one point would invent the second.' +
-        breakSentence,
+        // A measurement, not a gap (owner, 11.10.2026): the analysis is done and
+        // its score stands. No line is drawn through one point — the card says
+        // when a trend will appear instead of what is missing.
+        `Measured once on rule version ${ruleVersion}. ${TREND_HINT}` + breakSentence,
       coverage: cover,
     };
   }
@@ -441,6 +442,12 @@ export function scoreTrend(
     coverage: cover,
   };
 }
+
+/**
+ * What one run says about the history, as a neutral hint rather than a gap: a
+ * trend needs a second run measured by the same rule (owner, 11.10.2026).
+ */
+export const TREND_HINT = 'A trend appears after the next analysis measured by the same rule.';
 
 /* --------------------------------------------------------------- the answers */
 
@@ -737,7 +744,9 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
         }`
       : trend.state === 'trend'
         ? `Clean Core Score ${value} — ${trend.sentence}`
-        : `Clean Core Score ${value} on rule version ${trend.ruleVersion ?? 'not determined'}, with no history yet.`;
+        : trend.state === 'single-run'
+          ? `Clean Core Score ${value}, measured once on rule version ${trend.ruleVersion}. ${TREND_HINT}`
+          : `Clean Core Score ${value} on rule version ${trend.ruleVersion ?? 'not determined'}, with no history yet.`;
 
   return {
     id: 'score',

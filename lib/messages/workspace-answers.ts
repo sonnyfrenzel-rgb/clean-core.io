@@ -137,6 +137,8 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.trendLabelLead': 'Clean Core Score by run on rule version',
   'mgmt.on': 'on',
   'mgmt.ruleVersion': 'Rule version:',
+  'mgmt.ruleVersionTitle': 'Rule version',
+  'mgmt.analysisDone': 'Analysis done',
   'mgmt.notDeterminedLower': 'not determined',
   'mgmt.trendCaption': 'Clean Core Score of each run on this rule version',
   'mgmt.colDate': 'Date',

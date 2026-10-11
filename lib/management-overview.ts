@@ -1,5 +1,6 @@
-import { SCORE_BANDS_SOURCE, scoreWithBand } from './clean-core-score';
-import { coverage, SCORE_MEANING, type ManagementView, type ScoreTrend } from './management-answers';
+import { SCORE_BANDS_SOURCE, SCORE_NATURE, scoreWithBand } from './clean-core-score';
+import { formatTextDate } from './format';
+import { coverage, TREND_HINT, type ManagementView, type ScoreTrend } from './management-answers';
 import { levelDistribution, placesInTheCode, type ItFindingsSource } from './it-findings';
 import { LEVEL_OVERLAY_NOTE } from './process-overlays';
 import {
@@ -207,6 +208,18 @@ export type ReadinessCard = OverviewCardState<{
   breaks: string[];
   /** Runs that cannot be placed — no score, or no complete rule version. */
   notDetermined: { count: number; sentence: string };
+  /**
+   * The score with its band and where the bands come from — one line, the fact
+   * the card leads with. `null` without a score.
+   */
+  fact: string | null;
+  /**
+   * The one measurement when the rule version has exactly one scored run: the
+   * analysis is done and this is what it measured (owner, 11.10.2026). The card
+   * then shows no chart and no one-row table — this line carries the run.
+   */
+  single: { runId: string; date: string | null } | null;
+  /** What the history says; with one run a neutral hint, never a gap. */
   sentence: string;
   provenance: ProvenanceValue;
 }>;
@@ -433,23 +446,51 @@ export function readinessCard(trend: ScoreTrend): ReadinessCard {
         : `Clean Core Score ${trend.score}, ${delta > 0 ? 'up' : 'down'} from ${first} with the same rules`;
   } else if (trend.state === 'no-rule-version') {
     title = `Clean Core Score ${trend.score} — no history: the run records no complete rule version`;
+  } else if (trend.state === 'single-run' && points.length === 1) {
+    // One run is a measurement, not an open item (owner, 11.10.2026): the title
+    // says what was measured and when, not what a history would still need.
+    const when = formatTextDate(trend.points[0].createdAt);
+    title = when
+      ? `Clean Core Score ${trend.score} · measured on ${when}`
+      : `Clean Core Score ${trend.score} · measured on one signed run`;
   } else {
-    title = `Clean Core Score ${trend.score} on one run — no history yet`;
+    title = `Clean Core Score ${trend.score} on one run`;
+  }
+
+  const single =
+    trend.state === 'single-run' && trend.score !== null && points.length === 1
+      ? { runId: points[0].runId, date: points[0].date }
+      : null;
+
+  // The history in words. With two or more runs the movement — the rule
+  // version stands once, under the card, and the breaks in their own list; with
+  // one run a neutral hint. Every other state keeps the trend's own reason.
+  let sentence = trend.sentence;
+  if (trend.state === 'trend' && points.length >= 2) {
+    const first = points[0].score;
+    const last = points[points.length - 1].score;
+    const delta = last - first;
+    const movement =
+      delta === 0 ? 'unchanged' : `${delta > 0 ? 'up' : 'down'} ${plural(Math.abs(delta), 'point', 'points')}`;
+    sentence = `${first} → ${last}, ${movement}, over ${plural(points.length, 'run', 'runs')} measured by the same rule.`;
+  } else if (single) {
+    sentence = TREND_HINT;
   }
 
   return {
     state: 'ready',
     title,
-    // The Einordnung stands under the title, never only in a popover (ADR-029).
-    lead:
-      `A grade, not a compliance percentage. ${SCORE_MEANING}` +
-      (trend.score === null ? '' : ` ${scoreWithBand(trend.score)} — ${SCORE_BANDS_SOURCE}.`),
+    // The Einordnung stands under the title, never only in a popover (ADR-029)
+    // — one line, said once.
+    lead: `${SCORE_NATURE}.`,
     coverage: trend.coverage.sentence,
     ruleVersion: trend.ruleVersion,
     points,
     breaks,
     notDetermined,
-    sentence: trend.sentence,
+    fact: trend.score === null ? null : `${scoreWithBand(trend.score)} — ${SCORE_BANDS_SOURCE}.`,
+    single,
+    sentence,
     provenance: trend.score === null ? 'not-determined' : 'proven',
   };
 }

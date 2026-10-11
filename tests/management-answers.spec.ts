@@ -239,8 +239,11 @@ test.describe('the Clean Core Score, its rule version and its history', () => {
     const trend = scoreTrend(signedOff, [entry()]);
     expect(trend.state).toBe('single-run');
     expect(trend.points.length).toBe(1);
-    expect(trend.sentence).toContain('There is no history');
-    expect(trend.sentence).toContain('a line through one point would invent the second');
+    // A measurement, not a gap (owner, 11.10.2026): what was measured, and a
+    // neutral hint when a trend will appear — no "no history", no invented line.
+    expect(trend.sentence).toContain('Measured once on rule version');
+    expect(trend.sentence).toContain('A trend appears after the next analysis measured by the same rule.');
+    expect(trend.sentence).not.toMatch(/no history|line through one point/);
   });
 
   test('runs of another rule version are named as a break, never plotted', () => {

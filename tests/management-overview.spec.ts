@@ -211,13 +211,38 @@ test.describe('(c) the Clean Core Score over one rule version', () => {
     expect(card.title).toBe('Clean Core Score 58, up from 42 with the same rules');
     // ADR-029: the Einordnung stands under the title, not only in a popover.
     expect(card.lead).toContain('A grade, not a compliance percentage');
+    // Two runs keep the history in words; the rule version stands once, under the card.
+    expect(card.sentence).toBe('42 → 58, up 16 points, over 2 runs measured by the same rule.');
+    expect(card.single).toBeNull();
   });
 
-  test('one run is no history: one point, no line, and the title says so', () => {
-    const card = readinessCard(scoreTrend(project({ activeRunId: 'run-1' }), [entry({ runId: 'run-1' })]));
+  test('one run is a measurement, not an open item: the fact leads, the history is a neutral hint', () => {
+    // Owner, 11.10.2026: "doesn't fit — Analyze was done." One run reads as
+    // what was measured and when, never as something missing.
+    const card = readinessCard(
+      scoreTrend(project({ activeRunId: 'run-1' }), [entry({ runId: 'run-1', createdAt: '2026-10-11T09:00:00.000Z', cleanCoreScore: 75 })]),
+    );
     if (card.state !== 'ready') throw new Error('not ready');
     expect(card.points).toHaveLength(1);
-    expect(card.title).toContain('no history yet');
+    expect(card.title).toBe('Clean Core Score 75 · measured on 11 Oct 2026');
+    expect(card.single).toEqual({ runId: 'run-1', date: '2026-10-11' });
+    expect(card.fact).toBe("75 of 100 · significant rework (60–80) — Clean-Core.io's bands, derived from the deductions.");
+    expect(card.sentence).toBe('A trend appears after the next analysis measured by the same rule.');
+    expect(card.provenance).toBe('proven');
+    expect(card.notDetermined.count).toBe(0);
+    // The grade explanation is one line, said once.
+    expect(card.lead).toBe('A grade, not a compliance percentage — and not an SAP measure.');
+    // Nothing on the card reads as a gap, and the rule version is not in the prose.
+    for (const text of [card.title, card.lead, card.fact ?? '', card.sentence]) {
+      expect(text).not.toMatch(/no history|not determined|line through one point|rules-v1\.0/i);
+    }
+  });
+
+  test('one run without a date still leads with the measurement', () => {
+    const card = readinessCard(scoreTrend(project({ activeRunId: 'run-1' }), [entry({ runId: 'run-1', createdAt: null })]));
+    if (card.state !== 'ready') throw new Error('not ready');
+    expect(card.title).toBe('Clean Core Score 42 · measured on one signed run');
+    expect(card.single).toEqual({ runId: 'run-1', date: null });
   });
 
   test('runs that cannot be placed are counted as not determined, not dropped', () => {
@@ -483,6 +508,56 @@ test.describe('(a) one sentence, at most six cards', () => {
     expect(read).not.toContain('Reading the Clean Core Score history');
   });
 
+  test('rendered: one run reads as a finished measurement — fact, run link, hint, the rule version once', async () => {
+    test.setTimeout(120 * 1000);
+    const root = path.resolve(__dirname, '..');
+    const out = path.resolve(root, 'tmp', 'management-overview-rendered-one-run', 'ManagementOverview.cjs');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    await build({
+      entryPoints: [path.resolve(root, 'components', 'workspace', 'ManagementOverview.tsx')],
+      outfile: out,
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      alias: { '@': root },
+      logLevel: 'silent',
+    });
+    const ManagementOverview = require(out).default as React.ComponentType<Record<string, unknown>>;
+    const p = project({ activeRunId: 'run-1' });
+    const one = [entry({ runId: 'run-1', createdAt: '2026-10-11T09:00:00.000Z', cleanCoreScore: 75 })];
+    const html = renderToStaticMarkup(
+      React.createElement(ManagementOverview, {
+        project: p,
+        projectId: 'p-one',
+        view: managementAnswers(p, one, null),
+        historyPending: false,
+        decision: React.createElement('div', null, 'The decision'),
+      }),
+    );
+    const at = html.indexOf('data-overview-card="readiness"');
+    expect(at, 'the readiness card is rendered').toBeGreaterThan(-1);
+    const card = html.slice(at, html.indexOf('</section>', at));
+    expect(card).toContain('data-overview-runs="one"');
+    expect(card).toContain('Clean Core Score 75 · measured on 11 Oct 2026');
+    expect(card).toContain('Analysis done');
+    expect(card).toContain('data-overview-run="run-1"');
+    expect(card).toContain('href="/project/p-one/analyze');
+    expect(card).toContain('A trend appears after the next analysis measured by the same rule.');
+    expect(card).toContain('data-provenance="proven"');
+    // Nothing that reads as an open item: no dashed "Not determined: 0 runs", no
+    // one-row table, no line through one point, no "no history".
+    expect(card).not.toContain('data-overview-not-determined');
+    expect(card).not.toContain('data-overview-table');
+    expect(card).not.toContain('data-overview-trend');
+    expect(card).not.toMatch(/no history|Not determined:/);
+    // The grade explanation once, the rule version once (in its disclosure).
+    expect(card.split('not a compliance percentage').length - 1).toBe(1);
+    expect(card.split('rules-v1.0').length - 1).toBe(1);
+    expect(card).toContain('data-cc-disclosure="closed"');
+  });
+
   test('Management renders none of the duplicates the owner dropped (ADR-087) — their models stay', () => {
     const component = read('components/workspace/ManagementOverview.tsx');
     // The decision and bucket cards, the levels and blockers cards, the four
@@ -618,7 +693,10 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     expect(await card.evaluate((el) => Boolean(el.closest('[data-management-fold]')))).toBe(false);
     await expect(card.locator('[data-overview-trend]')).toHaveAttribute('aria-label', /42 on 2026-05-20, 58 on 2026-09-09/);
     await expect(card.locator('[data-overview-breaks]')).toContainText('cat-2026-01');
-    await expect(card.locator('[data-overview-not-determined="readiness"]')).toBeVisible();
+    // Every seeded run is drawn or named as a break, so there is nothing to
+    // count as not determined — and no dashed box saying "0" (owner, 11.10.2026).
+    await expect(card.locator('[data-overview-not-determined="readiness"]')).toHaveCount(0);
+    await expect(card.locator('[data-overview-table]')).toBeVisible();
     await expect(card).toContainText('A grade, not a compliance percentage');
   });
 

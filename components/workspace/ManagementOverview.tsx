@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import CcCard from '@/components/cc/Card';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTable from '@/components/cc/Table';
 import { getAuth } from '@/lib/firebase';
@@ -87,15 +88,6 @@ import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
 function Coverage({ text }: { text: string }) {
   return (
     <p data-overview-coverage="" className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted">
-      {text}
-    </p>
-  );
-}
-
-function Lead({ text }: { text: string | null }) {
-  if (!text) return null;
-  return (
-    <p data-overview-lead="" className="m-0 text-[12px] leading-snug font-semibold text-cc-ink">
       {text}
     </p>
   );
@@ -463,7 +455,12 @@ export default function ManagementOverview({
         optionsView={hasRun ? options : null}
         otherEdition={otherEdition}
         otherBlockers={otherBlockers}
-        trend={<ReadinessTrend card={readiness} />}
+        trend={
+          <ReadinessTrend
+            card={readiness}
+            runHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
+          />
+        }
         onOpenOnePager={openSteeringOnePager}
       />
 
@@ -489,7 +486,7 @@ export default function ManagementOverview({
  * named and never drawn; runs that cannot be placed are counted as *not
  * determined*.
  */
-function ReadinessTrend({ card }: { card: ReadinessCard }) {
+function ReadinessTrend({ card, runHref }: { card: ReadinessCard; runHref: string }) {
   if (card.state !== 'ready') {
     return (
       <section id={MANAGEMENT_IDS.readiness} className="h-full scroll-mt-20">
@@ -504,15 +501,48 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
     // trend in every state. With both on the section, the address found the
     // "reading" card and lost the trend the moment it arrived (CI 38051799180).
     <section id={MANAGEMENT_IDS.readiness} className="h-full scroll-mt-20">
-      <div data-overview-card="readiness" data-overview-state="ready" className="h-full">
+      <div
+        data-overview-card="readiness"
+        data-overview-state="ready"
+        data-overview-runs={card.single ? 'one' : card.points.length >= 2 ? 'trend' : 'none'}
+        className="h-full"
+      >
       <CcCard title={card.title} meta={<CcProvenanceChip value={card.provenance} />}>
-        <Lead text={card.lead} />
-        <TrendLine points={card.points} label={mgmtTrendLabel(card.ruleVersion, card.points)} />
-        <p data-overview-rule-version="" className="m-0 mt-1 font-cc-mono text-[11px] text-cc-ink-muted">
-          {mgmtRuleVersionLabel(card.ruleVersion)}
+        {card.fact ? (
+          // The fact first: the score, its band and — with one run — the run it
+          // was measured on. One run is a finished analysis, not an open item
+          // (owner, 11.10.2026).
+          <p data-overview-fact="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">
+            {card.fact}
+          </p>
+        ) : null}
+        {card.single ? (
+          <p data-overview-single="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink">
+            {wt('mgmt.analysisDone')} ·{' '}
+            <a
+              href={runHref}
+              data-overview-run={card.single.runId}
+              className="font-cc-mono whitespace-nowrap text-cc-ink underline underline-offset-2"
+            >
+              {wt('mgmt.colRun')} {card.single.runId}
+            </a>
+          </p>
+        ) : null}
+        <p data-overview-lead="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+          {card.lead}
         </p>
-        <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">{card.sentence}</p>
-        {card.points.length > 0 ? (
+        <TrendLine points={card.points} label={mgmtTrendLabel(card.ruleVersion, card.points)} />
+        <p
+          data-overview-sentence=""
+          className={
+            card.single
+              ? 'm-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted'
+              : 'm-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink'
+          }
+        >
+          {card.sentence}
+        </p>
+        {card.points.length >= 2 ? (
           <div data-overview-table="" className="mt-2">
             <CcTable
               caption={wt('mgmt.trendCaption')}
@@ -525,7 +555,7 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
                 key: p.runId,
                 cells: {
                   date: (
-                    <span data-overview-row={p.runId} className="font-cc-mono">
+                    <span data-overview-row={p.runId} className="font-cc-mono whitespace-nowrap tabular-nums">
                       {p.date ?? wt('mgmt.notRecorded')}
                     </span>
                   ),
@@ -536,17 +566,21 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
             />
           </div>
         ) : null}
-        <div
-          data-overview-not-determined="readiness"
-          data-not-determined=""
-          className="mt-2 flex items-start gap-2 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2"
-        >
-          <Swatch tone="not-determined" />
-          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
-            <span className="font-semibold">{mgmtNotDeterminedRunsLabel(card.notDetermined.count)}</span> —{' '}
-            {card.notDetermined.sentence}
-          </p>
-        </div>
+        {card.notDetermined.count > 0 ? (
+          // Counted, never dropped — and shown only when there is something to
+          // count: a dashed box that says "0" reads as a gap that is not there.
+          <div
+            data-overview-not-determined="readiness"
+            data-not-determined=""
+            className="mt-2 flex items-start gap-2 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2"
+          >
+            <Swatch tone="not-determined" />
+            <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
+              <span className="font-semibold">{mgmtNotDeterminedRunsLabel(card.notDetermined.count)}</span> —{' '}
+              {card.notDetermined.sentence}
+            </p>
+          </div>
+        ) : null}
         {card.breaks.length > 0 ? (
           <ul data-overview-breaks="" className="m-0 mt-2 list-none space-y-1 p-0">
             {card.breaks.map((b) => (
@@ -556,6 +590,19 @@ function ReadinessTrend({ card }: { card: ReadinessCard }) {
             ))}
           </ul>
         ) : null}
+        {card.ruleVersion ? (
+          // The rule version, said once and one action deeper: it is what makes
+          // two runs comparable, not what the reader decides on.
+          <div data-overview-rule-version="" className="mt-2">
+            <CcDisclosure title={wt('mgmt.ruleVersionTitle')}>
+              <p className="m-0 font-cc-mono text-[11px] break-words text-cc-ink-muted">{card.ruleVersion}</p>
+            </CcDisclosure>
+          </div>
+        ) : (
+          <p data-overview-rule-version="" className="m-0 mt-2 font-cc-mono text-[11px] text-cc-ink-muted">
+            {mgmtRuleVersionLabel(card.ruleVersion)}
+          </p>
+        )}
         <Coverage text={card.coverage} />
       </CcCard>
       </div>
