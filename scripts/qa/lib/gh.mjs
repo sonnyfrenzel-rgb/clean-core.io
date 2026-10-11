@@ -67,12 +67,14 @@ export function runFor(workflow, sha, branch = null) {
  * The newest completed manual run (workflow_dispatch) on `branch` whose delta-review artifact is named after `sha`,
  * or null. A slice is dispatched on the tip of dev, so its run's own commit is that tip and `runFor` cannot find it;
  * since 10.10.2026 the artifact carries the reviewed head instead (qa-review.yml, review.mjs). A run still in
- * progress has no artifact yet: the caller keeps polling.
+ * progress has no artifact yet: the caller keeps polling. Fifty runs, not ten: other manual runs on the branch
+ * (smoke checks, further slices) can push the right one out of a short window (QA e8a1245626f4, 75dcff652e40).
+ * Runs are read newest first and the search stops at the first match, so the artifact lookups stay few.
  */
 export function sliceRunFor(workflow, sha, branch = 'dev', { list = ghJson, names = artifactNames } = {}) {
   const head = String(sha).replace(/[^0-9a-f]/g, '');
   if (head.length !== 40) return null;
-  const runs = list(['run', 'list', '--workflow', workflow, '--event', 'workflow_dispatch', '--branch', branch, '--limit', '10', '--json', 'databaseId,headSha,status,conclusion,createdAt,event']) || [];
+  const runs = list(['run', 'list', '--workflow', workflow, '--event', 'workflow_dispatch', '--branch', branch, '--limit', '50', '--json', 'databaseId,headSha,status,conclusion,createdAt,event']) || [];
   const re = new RegExp(`^qa-review-${head}-\\d+$`);
   return (
     runs

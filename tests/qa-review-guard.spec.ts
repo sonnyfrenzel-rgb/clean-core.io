@@ -697,6 +697,8 @@ test.describe('spend is capped and only the delta is reviewed', () => {
       const names = (id: number) => artifacts[id];
       expect(sliceRunFor('qa-review.yml', h, 'dev', { list, names })?.databaseId).toBe(1);
       expect(listed).toEqual(expect.arrayContaining(['--event', 'workflow_dispatch', '--branch', 'dev']));
+      // A window of ten missed the run behind other manual runs (QA e8a1245626f4, 75dcff652e40).
+      expect(listed[listed.indexOf('--limit') + 1]).toBe('50');
       // The newest matching run wins; a run still in progress has no artifact yet and is polled again.
       artifacts[2] = [`qa-review-${h}-2`];
       expect(sliceRunFor('qa-review.yml', h, 'dev', { list, names })?.databaseId).toBe(2);
