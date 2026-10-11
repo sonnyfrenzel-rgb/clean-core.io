@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { build } from 'esbuild';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { scoreBreakdown } from '../lib/clean-core-score';
@@ -129,5 +132,56 @@ test.describe('the hero on the page', () => {
     expect(page).toContain("'data-analyze-add-atc': ''");
     expect(page).toMatch(/const asked = searchParams\.get\('add'\);\s*return asked === 'usage' \|\| asked === 'atc' \? asked : null;/);
     expect(page).not.toMatch(/>\s*Add usage data\s*<\/CcButton>|>\s*Export Confluence\s*<\/CcButton>/);
+  });
+});
+
+test.describe('a floored score: the sum line says what the left side comes to, then the floor (QA 3c6cfc5de45d)', () => {
+  // Rendered, not grepped: the section bundled with esbuild and rendered with the real React.
+  const OUT = path.resolve(ROOT, 'tmp', 'score-hero-floor', String(process.pid));
+  let ScoreDeductions: (props: Record<string, unknown>) => React.ReactElement;
+
+  test.beforeAll(async () => {
+    test.setTimeout(120 * 1000);
+    fs.mkdirSync(OUT, { recursive: true });
+    await build({
+      entryPoints: [path.resolve(ROOT, 'components', 'analyze', 'CleanCoreScoreSection.tsx')],
+      outfile: path.join(OUT, 'CleanCoreScoreSection.cjs'),
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'lucide-react', 'next/*'],
+      alias: { '@': ROOT },
+      logLevel: 'silent',
+    });
+    ScoreDeductions = require(path.join(OUT, 'CleanCoreScoreSection.cjs')).ScoreDeductions;
+  });
+
+  const sumOf = (unassessedKinds: number) => {
+    // Three of each of the four heaviest kinds: 40 + 18 + 25 + 16 = 99 points, so 100 − 99 is below the floor.
+    const findings = ['modification', 'enhancement', 'standard-table-write', 'custom-table-write'].flatMap((kind, k) =>
+      [1, 2, 3].map((i) => ({ kind, objectType: 'Table', objectName: `ZTAB${k}${i}`, lineStart: 10 * k + i })),
+    );
+    const gaps = Array.from({ length: unassessedKinds }, (_, i) => ({ label: `Gap ${i + 1}`, count: 1, firstLine: 100 + i }));
+    const breakdown = scoreBreakdown(findings, unassessedKinds, 'custom-writes-charged');
+    const model = scoreHeroModel(breakdown, findings, gaps, 'custom-writes-charged');
+    const html = renderToStaticMarkup(
+      React.createElement(ScoreDeductions, {
+        score: breakdown.score, breakdown, model, edition: 'private', signedLabel: 'Clean Core Score of the signed run',
+        questionsHref: null, rerunHref: null,
+      }),
+    );
+    const sum = /<p[^>]*data-score-sum=""[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '';
+    return { breakdown, model, text: sum.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() };
+  };
+
+  test('the arithmetic on the left is true, and the floor is named as the step to the score', () => {
+    const { breakdown, model, text } = sumOf(2);
+    expect(breakdown.floored).toBe(true);
+    expect(model.deducted).toBe(99);
+    expect(breakdown.score).toBe(5);
+    expect(text).toBe('100 − 99 for what the code does − 10 for what could not be assessed = −9, raised to the floor of 5 = 5');
+    const plain = sumOf(0).text;
+    expect(plain).toBe('100 − 99 for what the code does = 1, raised to the floor of 5 = 5');
   });
 });

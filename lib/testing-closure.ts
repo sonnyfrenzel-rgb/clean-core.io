@@ -136,9 +136,26 @@ export function failureCause(text: string | null | undefined): string {
 /** The record to write for this failed attempt — one more attempt when the stored one is for the same subject. */
 export function nextTestRunFailure(
   stored: unknown,
-  input: { subject: TestSubject; at: string; by: string; kind: TestRunFailureKind; cause: string },
+  input: {
+    subject: TestSubject;
+    at: string;
+    by: string;
+    kind: TestRunFailureKind;
+    cause: string;
+    /**
+     * When the receipt that covers this subject was executed, if one does. A
+     * run that gave a result after the stored failure breaks the row: fail,
+     * run, fail again is one attempt, not two in a row (QA 02095ce5c0a7) — the
+     * same comparison `testRunFailureReading` makes.
+     */
+    receiptAt?: string | null;
+  },
 ): TestRunFailure {
-  const previous = isTestRunFailure(stored) && sameSubject(stored.subject, input.subject) ? stored.attempts : 0;
+  const inARow =
+    isTestRunFailure(stored) &&
+    sameSubject(stored.subject, input.subject) &&
+    !(typeof input.receiptAt === 'string' && input.receiptAt >= stored.at);
+  const previous = inARow && isTestRunFailure(stored) ? stored.attempts : 0;
   return {
     v: TEST_RUN_FAILURE_VERSION,
     subject: input.subject,
@@ -349,6 +366,16 @@ export function closureReasonText(c: TestingClosure): string {
 export function closureSentence(c: TestingClosure): string {
   const day = formatTextDate(c.at) ?? c.at.slice(0, 10);
   return `Closed without a passing run by ${c.account} on ${day}: ${closureReasonText(c)}.`;
+}
+
+/**
+ * The provenance note beside a closed testing phase. "you" only for the reader
+ * who closed it — the owner, the one account `close-testing` accepts; a reader
+ * the project is shared with sees the recorded account instead of being told
+ * they made the statement themselves (QA 035a6c65b96f).
+ */
+export function closureByline(c: TestingClosure, viewerIsOwner: boolean): string {
+  return `closed by ${viewerIsOwner ? 'you' : c.account} · not verified`;
 }
 
 /** The handover's line: "Tests: not verified — closed by x@y on 11 Oct 2026: …" */

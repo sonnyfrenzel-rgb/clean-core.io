@@ -133,6 +133,11 @@ test('closed: the card says who closed it, when and why, "not verified", and the
   const reader = text(card(closed(failed()), false));
   expect(reader).toContain('Closed · not verified');
   expect(reader).not.toContain('Reopen testing');
+  // …attributed to the account that made it: "you" is the owner alone, a
+  // shared reader is never told the statement is theirs (QA 035a6c65b96f).
+  expect(t).toContain('closed by you · not verified');
+  expect(reader).toContain('closed by owner@example.com · not verified');
+  expect(reader).not.toContain('closed by you');
 });
 
 test('nothing failed: no closure is offered; a reader is told the owner can close it', () => {

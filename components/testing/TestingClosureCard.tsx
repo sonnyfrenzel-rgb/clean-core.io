@@ -12,6 +12,7 @@ import {
   CLOSED_NOT_VERIFIED,
   CLOSURE_REASON_LABELS,
   MAX_CLOSURE_NOTE_CHARS,
+  closureByline,
   closureSentence,
   reasonsFor,
   testingClosureReading,
@@ -103,7 +104,7 @@ export default function TestingClosureCard({
               reopens it.
             </span>
             <span className="flex flex-wrap items-center gap-2">
-              <CcProvenanceChip value="confirmed" note="closed by you · not verified" />
+              <CcProvenanceChip value="confirmed" note={closureByline(c, isOwner)} />
               <span className="cc-text-meta text-cc-ink-muted">
                 <CcDateText value={c.at} format="datetime" />
               </span>

@@ -388,6 +388,9 @@ export function serviceEntry(reading: Pick<PackageReading, 'packageJson' | 'sour
   return reading.sources.find((p) => p.startsWith('srv/')) ?? reading.sources[0] ?? null;
 }
 
+/** A path as one shell word: as it is when it is plain, single-quoted otherwise. */
+const shellArg = (p: string) => (/^[\w./-]+$/.test(p) ? p : `'${p.replace(/'/g, `'\\''`)}'`);
+
 const npmName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'clean-core-package';
 
 /**
@@ -402,7 +405,7 @@ const npmName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
  */
 export function normalisedPackageJson(
   raw: string | undefined,
-  opts: { name: string; entry: string | null; testFile: string | null; runner: TestRunner | null },
+  opts: { name: string; entry: string | null; testFiles: readonly string[]; runner: TestRunner | null },
 ): { content: string; notes: string[] } {
   const notes: string[] = [];
   const parsed = parseJsonObject(raw);
@@ -446,8 +449,10 @@ export function normalisedPackageJson(
     scripts.dev = `tsx watch ${opts.entry}`;
   }
   scripts.build = 'tsc -p tsconfig.json';
-  if (opts.testFile && opts.runner) {
-    scripts.test = opts.runner === 'playwright' ? 'playwright test' : `tsx --test ${opts.testFile}`;
+  // Every suite file the package holds, not the first: with one named here and
+  // two shipped, `npm test` ran one and CI passed while the other failed.
+  if (opts.testFiles.length > 0 && opts.runner) {
+    scripts.test = opts.runner === 'playwright' ? 'playwright test' : `tsx --test ${opts.testFiles.map(shellArg).join(' ')}`;
   }
   const dropped = before.filter((s) => !(s in scripts));
   if (before.length > 0) {
@@ -592,11 +597,11 @@ export function flatTsconfig(): string {
   )}\n`;
 }
 
-const PLAYWRIGHT_CONFIG = (testFile: string) => `import { defineConfig } from '@playwright/test';
+const PLAYWRIGHT_CONFIG = (testFiles: readonly string[]) => `import { defineConfig } from '@playwright/test';
 
-// The suite's file name is not one Playwright matches by default, so it is named here.
+// The suite's file names are not ones Playwright matches by default, so they are named here.
 export default defineConfig({
-  testMatch: ['${testFile}'],
+  testMatch: [${testFiles.map((f) => `'${f.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`).join(', ')}],
 });
 `;
 
@@ -644,11 +649,12 @@ export function applyNodeTemplates(
 
   const reading = readPackage(out, 'side-by-side');
   const entry = serviceEntry(reading);
-  const testFile = reading.testFiles.includes('test.ts') ? 'test.ts' : reading.testFiles[0] ?? null;
+  // `test.ts` first when there is one, then the others in the package's order.
+  const testFiles = [...reading.testFiles].sort((a, b) => Number(b === 'test.ts') - Number(a === 'test.ts'));
   const pkg = normalisedPackageJson(out.find((e) => e.path === 'package.json')?.content, {
     name: opts.name,
     entry,
-    testFile,
+    testFiles,
     runner: reading.runner,
   });
   put('package.json', pkg.content, 'normalised');
@@ -665,10 +671,10 @@ export function applyNodeTemplates(
     notes.Dockerfile = ['The generated Dockerfile was removed: the package has no service source it could start.'];
   }
 
-  if (reading.runner === 'playwright' && testFile && !out.some((e) => /^playwright\.config\.(ts|js|mjs)$/.test(e.path))) {
-    put('playwright.config.ts', PLAYWRIGHT_CONFIG(testFile), 'template');
+  if (reading.runner === 'playwright' && testFiles.length > 0 && !out.some((e) => /^playwright\.config\.(ts|js|mjs)$/.test(e.path))) {
+    put('playwright.config.ts', PLAYWRIGHT_CONFIG(testFiles), 'template');
   }
-  put('.github/workflows/ci.yml', packageCiWorkflow(!!testFile), 'template');
+  put('.github/workflows/ci.yml', packageCiWorkflow(testFiles.length > 0), 'template');
   return { entries: out, notes };
 }
 

@@ -7,6 +7,7 @@ import {
   CLOSED_NOT_VERIFIED,
   closureSentence,
   failureCause,
+  failureSentence,
   nextTestRunFailure,
   subjectKey,
   testingClosureReading,
@@ -138,6 +139,29 @@ test.describe('a run that gave no result is on record as such', () => {
       subject: testRunSubject(other), at: '2026-10-11T15:00:00.000Z', by: 'owner-uid', kind: 'runner-error', cause: 'x',
     });
     expect(restarted.attempts).toBe(1);
+  });
+
+  test('fail, a run with a result, fail again: one attempt, not two in a row (QA 02095ce5c0a7)', () => {
+    const p = base();
+    const first = withFailure(p, '2026-10-11T14:35:02.000Z');
+    const stored = (first as { testRunFailure: unknown }).testRunFailure;
+    const ran = receipt(p, '2026-10-11T15:00:00.000Z', 'Passed');
+    const again = nextTestRunFailure(stored, {
+      subject: testRunSubject(p), at: '2026-10-11T16:00:00.000Z', by: 'owner-uid', kind: 'build-error', cause: BUILD_ERROR,
+      receiptAt: ran.executedAt,
+    });
+    expect(again.attempts).toBe(1);
+    expect(failureSentence(again)).not.toContain('in a row');
+    // A receipt from before the stored failure does not break the row.
+    const older = nextTestRunFailure(stored, {
+      subject: testRunSubject(p), at: '2026-10-11T16:00:00.000Z', by: 'owner-uid', kind: 'build-error', cause: BUILD_ERROR,
+      receiptAt: '2026-10-11T14:00:00.000Z',
+    });
+    expect(older.attempts).toBe(2);
+    // The route hands over the covering receipt it read in the same transaction.
+    expect(read('app/api/run-tests/route.ts')).toMatch(
+      /nextTestRunFailure\(now\.testRunFailure, \{[\s\S]*receiptAt: coveringTestRunReceipt\(now\)\?\.executedAt \?\? null,[\s\S]*\}\);/,
+    );
   });
 
   test('the phase says "Run failed" with the cause and the count — never "no test run on record"', () => {

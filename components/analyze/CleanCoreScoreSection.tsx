@@ -380,9 +380,10 @@ export function ScoreDeductions({
             <span className="hidden sm:inline">
               100 − {model.deducted} for what the code does
               {model.notAssessed ? ` − ${model.notAssessed.points} for what could not be assessed` : ''}{' '}
+              {/* Floored, the left side does not come to the score: it says what it comes to, then the floor (QA 3c6cfc5de45d). */}
+              {model.floored ? `= ${signedFigure(100 - model.deducted - (model.notAssessed?.points ?? 0))}, raised to the floor of ${SCORE_FLOOR} ` : ''}
             </span>
             = <b className="font-bold text-cc-ink">{score}</b>
-            {model.floored ? <span className="hidden sm:inline"> (never below {SCORE_FLOOR})</span> : null}
           </p>
         ) : null}
       </div>
@@ -553,6 +554,9 @@ function DeductionTable({
 /** One grid for the header and every row: what · where (from S) · weight (from M) · points. */
 const ROW =
   'grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-x-3 px-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)_3.5rem] md:grid-cols-[minmax(0,1fr)_minmax(0,9rem)_10rem_3.5rem]';
+
+/** A figure with a typographic minus: "−20". */
+const signedFigure = (value: number): string => (value < 0 ? `−${-value}` : String(value));
 
 /** A row's points: "−23", "0", or a subtotal. Read out with its unit. */
 function Points({ value, muted = false }: { value: number; muted?: boolean }) {

@@ -123,6 +123,7 @@ async function recordRunFailure(
         by: uid,
         kind,
         cause,
+        receiptAt: coveringTestRunReceipt(now)?.executedAt ?? null,
       });
       tx.set(ref, { testRunFailure: failure }, { merge: true });
       return failure;

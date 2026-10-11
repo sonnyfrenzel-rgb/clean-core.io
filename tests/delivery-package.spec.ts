@@ -509,6 +509,21 @@ test.describe('the build and test files agree with each other and with the suite
     expect(pkg.file('playwright.config.ts')).toContain("testMatch: ['test.ts']");
   });
 
+  test('two suite files: `npm test` runs both, so CI cannot pass while one of them fails (QA 9b7c29b32973)', () => {
+    const two = JSON.stringify([...JSON.parse(PACKAGE), { path: 'srv/aging.test.ts', content: SUITE }]);
+    const pkg = finished(fiProject({ generatedCode: two }));
+    const json = JSON.parse(pkg.file('package.json')!);
+    expect(json.scripts.test).toBe('tsx --test test.ts srv/aging.test.ts');
+    expect(pkg.file('.github/workflows/ci.yml')).toContain('- run: npm test');
+    // The README calls each of them part of `npm test`; now each of them is.
+    for (const name of ['test.ts', 'srv/aging.test.ts']) expect(pkg.file('README.md')).toMatch(new RegExp(`\`${name.replace(/\./g, '\\.')}\` — Test suite \\(node:test\\) — \`npm test\``));
+
+    const pwSuite = "import { test, expect } from '@playwright/test';\ntest('a', async () => { expect(1).toBe(1); });\n";
+    const pwTwo = JSON.stringify([...JSON.parse(PACKAGE), { path: 'srv/aging.test.ts', content: pwSuite }]);
+    const pw = finished(fiProject({ generatedCode: pwTwo, testSuite: { code: pwSuite } }));
+    expect(pw.file('playwright.config.ts')).toContain("testMatch: ['test.ts', 'srv/aging.test.ts']");
+  });
+
   test('without a suite there is no test script and CI does not call one', () => {
     const p = fiProject({ testSuite: undefined, testCases: [] });
     const bundle = createDeliveryBundle();

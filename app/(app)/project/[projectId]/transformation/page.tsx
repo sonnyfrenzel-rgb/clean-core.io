@@ -385,7 +385,7 @@ export default function TransformationPage() {
         content: normalisedPackageJson(undefined, {
           name: 'clean-core-modernized-service',
           entry: 'srv/service.ts',
-          testFile: null,
+          testFiles: [],
           runner: null,
         }).content,
       },
