@@ -37,5 +37,14 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "7247edb096c9789cb51eb9774849743878d71c7d3faf7e9507f2b27a1d4a04e5",
+    "recordedAt": "2026-10-11",
+    "recordedFor": "SEC-2026-758, SEC-2026-764 - 3.0.9 security hardening: a per-account write ceiling on the projects and support tickets a browser creates (write_ceilings/{uid}, lib/write-ceiling.ts); waits for Sonny's next rules deploy",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Deploy after the app that writes the ceiling (3.0.9): the rules then refuse a create without its step, so the app must be live first. Until the deploy, the old rules are live and lib/write-ceiling.ts falls back to the plain create. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

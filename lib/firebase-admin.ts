@@ -949,6 +949,9 @@ export async function deleteUserDataAndAccount(
   await tryDelete('s4_credentials', () => db.collection('s4_credentials').doc(uid).delete());
   await tryDelete('mfa_secrets', () => db.collection('mfa_secrets').doc(uid).delete());
   await tryDelete('mfa_pending', () => db.collection('mfa_pending').doc(uid).delete());
+  //    The per-account write ceiling (`lib/write-ceiling.ts`): counts and the
+  //    ids of the last created project and ticket.
+  await tryDelete('write_ceilings', () => db.collection('write_ceilings').doc(uid).delete());
   // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 

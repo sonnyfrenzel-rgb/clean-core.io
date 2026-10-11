@@ -20,6 +20,7 @@ import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
+import { createWithinCeiling } from '../lib/write-ceiling';
 
 /**
  * Roadmap 3.0.12 — a suspended account loses its data at the rules, at once
@@ -124,7 +125,7 @@ test('1 · while the account is active, the owner reads and writes project, run 
   expect(await denied(() => updateDoc(doc(db, 'projects', PROJECT), { solutionDesign: 'draft' })), 'project write').toBe(false);
   expect(await denied(() => updateDoc(doc(db, 'users', uids.owner), { firstName: 'Active' })), 'profile write').toBe(false);
   expect(
-    await denied(() => setDoc(doc(db, 'projects', `suspended-create-a-${stamp}`), {
+    await denied(() => createWithinCeiling(db, 'projects', uids.owner, {
       name: 'New', status: 'uploaded', userId: uids.owner, createdAt: new Date(),
     })),
     'project create',
@@ -166,7 +167,7 @@ test('3 · suspended, with the same still-valid token, the owner loses project, 
   ).toBe(true);
   expect(await denied(() => updateDoc(doc(db, 'projects', PROJECT), { solutionDesign: 'still mine' })), 'project write').toBe(true);
   expect(
-    await denied(() => setDoc(doc(db, 'projects', `suspended-create-b-${stamp}`), {
+    await denied(() => createWithinCeiling(db, 'projects', uids.owner, {
       name: 'New', status: 'uploaded', userId: uids.owner, createdAt: new Date(),
     })),
     'project create',
@@ -227,7 +228,7 @@ test('7 · an erased account — profile gone, token still valid — reads and c
   expect(await denied(() => getDoc(doc(db, 'projects', OTHER_PROJECT))), 'project read').toBe(true);
   expect(await denied(() => updateDoc(doc(db, 'projects', OTHER_PROJECT), { solutionDesign: 'after' })), 'project write').toBe(true);
   expect(
-    await denied(() => setDoc(doc(db, 'projects', `suspended-create-c-${stamp}`), {
+    await denied(() => createWithinCeiling(db, 'projects', uids.other, {
       name: 'New', status: 'uploaded', userId: uids.other, createdAt: new Date(),
     })),
     'project create',

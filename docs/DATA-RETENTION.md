@@ -23,6 +23,7 @@ Two sub-processors receive data in transit for the features that require them �
 | `abap_examples/{id}` | User-saved ABAP snippets | `userId` | Life of account | ✅ query delete |
 | `support_tickets/{id}` | Support messages | `userId` | Life of account | ✅ query delete |
 | `files/{id}` | Uploaded file metadata | `userId` | Life of account | ✅ query delete |
+| `write_ceilings/{uid}` | Per-account write ceiling of the browser's own creates (`lib/write-ceiling.ts`, `firestore.rules`): per kind (project, support ticket) a count, the start of its one-day window and the id of the last created document | uid | Life of account | ✅ direct |
 | `user_secrets/{uid}/providers/*` | **Encrypted BYOK Gemini keys** (AES-256-GCM under `BYOK_ENCRYPTION_KEY`, key version recorded and bound with uid and provider into the additional data; never `S4_ENCRYPTION_KEY`) | uid | Life of account | ✅ recursiveDelete |
 | `s4_credentials/{uid}` | **Encrypted S/4HANA creds** (AES-256-GCM) | uid | Life of account | ✅ direct |
 | `mfa_secrets/{uid}` | **Legacy** (until roadmap 0.13): application-level TOTP secret + hashed backup codes — no longer written; emptied by enrolment, disablement, `scripts/mfa-reset.ts` and deletion | uid | Until the account enrols Firebase's factor or is deleted | ✅ direct |

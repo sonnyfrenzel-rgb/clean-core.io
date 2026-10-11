@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
-  addDoc,
   collection,
   doc,
   getDocs,
@@ -18,6 +17,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { targetEditionOf } from '@/lib/target-edition';
+import { createWithinCeiling } from '@/lib/write-ceiling';
 import { ArrowDownUp, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -445,7 +445,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       if (!project || !user) return;
       setActionError(null);
       try {
-        const copy = await addDoc(collection(getDb(), 'projects'), {
+        const copy = await createWithinCeiling(getDb(), 'projects', user.uid, {
           name: `${project.name} - Copy`,
           status: 'uploaded',
           legacyCode: project.legacyCode || '',

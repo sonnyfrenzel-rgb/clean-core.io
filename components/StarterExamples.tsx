@@ -2,7 +2,8 @@
 
 import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc } from 'firebase/firestore';
+import { createWithinCeiling } from '@/lib/write-ceiling';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { landViewedCode, loadStarterExample, type StarterExample, type ViewedCode } from '@/lib/starter-examples';
 import { personalDataHintKey, scanForPersonalDataHints, type PersonalDataHint } from '@/lib/personal-data-hints';
@@ -134,7 +135,7 @@ export default function StarterExamples({
         setBusy(null);
         return;
       }
-      const docRef = await addDoc(collection(getDb(), 'projects'), {
+      const docRef = await createWithinCeiling(getDb(), 'projects', userId, {
         name: isExample ? item.example.name : objectName(item.snippet),
         status: 'uploaded',
         legacyCode,

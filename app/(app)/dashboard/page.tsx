@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, serverTimestamp, getDocs, limit } from 'firebase/firestore';
+import { createWithinCeiling } from '@/lib/write-ceiling';
 import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, HelpCircle, UserPlus, Play } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
@@ -227,7 +228,7 @@ export default function Dashboard() {
 
     setIsCreating(true);
     try {
-      const docRef = await addDoc(collection(db, 'projects'), {
+      const docRef = await createWithinCeiling(db, 'projects', user.uid, {
         name: projectName,
         status: 'uploaded',
         userId: user.uid,
@@ -275,7 +276,7 @@ export default function Dashboard() {
 
   const handleCopyProject = async (project: any) => {
     try {
-      await addDoc(collection(db, 'projects'), {
+      await createWithinCeiling(db, 'projects', user.uid, {
         name: `${project.name} - Copy`,
         status: 'uploaded',
         legacyCode: project.legacyCode || '',

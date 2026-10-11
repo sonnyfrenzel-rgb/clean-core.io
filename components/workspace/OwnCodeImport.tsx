@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc } from 'firebase/firestore';
+import { createWithinCeiling } from '@/lib/write-ceiling';
 import { Code2, Download, FileCode, FileText, Info, PenLine, ShieldAlert, X } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -217,7 +218,7 @@ export default function OwnCodeImport() {
     setBusy(true);
     setError(null);
     try {
-      const docRef = await addDoc(collection(getDb(), 'projects'), {
+      const docRef = await createWithinCeiling(getDb(), 'projects', user.uid, {
         name: trimmedName.slice(0, 254),
         status: 'uploaded',
         legacyCode: assembly.source,

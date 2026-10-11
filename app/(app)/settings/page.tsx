@@ -13,7 +13,8 @@ import {
   ArrowLeft, Copy, Smartphone, X, ArrowRight, Globe,
   BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
+import { createWithinCeiling } from '@/lib/write-ceiling';
 import { getDb, getAuth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import {
   EmailAuthProvider,
@@ -656,9 +657,10 @@ export default function SettingsPage() {
     setTicketStatus('idle');
     try {
       const db = getDb();
-      const auth = getAuth();
-      await addDoc(collection(db, 'support_tickets'), {
-        userId: auth.currentUser?.uid,
+      const uid = getAuth().currentUser?.uid;
+      if (!uid) throw new Error('Not signed in.');
+      await createWithinCeiling(db, 'support_tickets', uid, {
+        userId: uid,
         subject,
         message,
         status: 'open',

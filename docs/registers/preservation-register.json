@@ -38,12 +38,12 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "d7c48ac1ab550d998dfe4be71d0fea14581693b0d3e49c95757649e558d6c6ff",
+      "sha256OfLfNormalisedText": "7247edb096c9789cb51eb9774849743878d71c7d3faf7e9507f2b27a1d4a04e5",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
         "read": "owner (resource.data.userId == request.auth.uid), or a uid on `readers` — an accepted, not revoked invitation (roadmap 5.4). Not admin: the operator's read was removed on 16.09.2026. Since roadmap 3.0.12 either grant also needs accountActive(): the caller's own profile is not `suspended`/`deleted`/`disabled`.",
-        "create": "keys exactly within [name, status, userId, createdAt, legacyCode, fromExample]; status in [uploaded, created]",
+        "create": "keys exactly within [name, status, userId, createdAt, legacyCode, fromExample]; status in [uploaded, created]; since 3.0.9 only together with one step of the account's write ceiling (write_ceilings/{uid}, lib/write-ceiling.ts)",
         "delete": "never from a client — server only, via DELETE /api/projects/{projectId}",
         "clientWritableFields": [
           "status",

@@ -19,6 +19,7 @@ import path from 'path';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
+import { createWithinCeiling } from '../lib/write-ceiling';
 
 /**
  * Field validation of the client write paths in firestore.rules.
@@ -187,7 +188,9 @@ test('a tenant access request is never written by a client — the server record
 });
 
 test('a support ticket is created open, with bounded text and no further fields', async () => {
-  const tickets = collection(owner.db, 'support_tickets');
+  // Through the app's own create path, so each refusal is about the field and
+  // not about the write ceiling (tests/firestore-rules-write-ceiling.spec.ts).
+  const create = (data: Record<string, unknown>) => createWithinCeiling(owner.db, 'support_tickets', uids.owner, data);
   const ticket = {
     userId: uids.owner,
     subject: 'A question',
@@ -196,13 +199,13 @@ test('a support ticket is created open, with bounded text and no further fields'
     createdAt: serverTimestamp(),
   };
 
-  expect(await denied(() => addDoc(tickets, { ...ticket, status: 'closed' })), 'status').toBe(true);
-  expect(await denied(() => addDoc(tickets, { ...ticket, priority: 'urgent' })), 'extra field').toBe(true);
-  expect(await denied(() => addDoc(tickets, { ...ticket, subject: 'x'.repeat(501) })), 'subject length').toBe(true);
-  expect(await denied(() => addDoc(tickets, { ...ticket, message: 'x'.repeat(20001) })), 'message length').toBe(true);
-  expect(await denied(() => addDoc(tickets, { ...ticket, createdAt: DAY_AGO })), 'createdAt a day ago').toBe(true);
+  expect(await denied(() => create({ ...ticket, status: 'closed' })), 'status').toBe(true);
+  expect(await denied(() => create({ ...ticket, priority: 'urgent' })), 'extra field').toBe(true);
+  expect(await denied(() => create({ ...ticket, subject: 'x'.repeat(501) })), 'subject length').toBe(true);
+  expect(await denied(() => create({ ...ticket, message: 'x'.repeat(20001) })), 'message length').toBe(true);
+  expect(await denied(() => create({ ...ticket, createdAt: DAY_AGO })), 'createdAt a day ago').toBe(true);
 
-  expect(await denied(() => addDoc(tickets, ticket)), 'the ticket the settings page writes').toBe(false);
+  expect(await denied(() => create(ticket)), 'the ticket the settings page writes').toBe(false);
 });
 
 test('uploads carry only their own fields, on create and on update', async () => {
@@ -237,14 +240,15 @@ test('uploads and support tickets are read by their owner only', async () => {
 
 test('a new project is stamped with the time of its creation and typed source', async () => {
   const project = { name: 'Typed project', status: 'uploaded', userId: uids.owner, createdAt: serverTimestamp() };
-  const fresh = () => doc(owner.db, 'projects', `fields-create-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  // The app's own create path, write ceiling included (SEC-2026-758).
+  const create = (data: Record<string, unknown>) => createWithinCeiling(owner.db, 'projects', uids.owner, data);
 
-  expect(await denied(() => setDoc(fresh(), { ...project, createdAt: 'now' })), 'createdAt as text').toBe(true);
-  expect(await denied(() => setDoc(fresh(), { ...project, createdAt: DAY_AGO })), 'createdAt a day ago').toBe(true);
-  expect(await denied(() => setDoc(fresh(), { ...project, legacyCode: 42 })), 'source not text').toBe(true);
-  expect(await denied(() => setDoc(fresh(), { ...project, fromExample: 'yes' })), 'flag not boolean').toBe(true);
+  expect(await denied(() => create({ ...project, createdAt: 'now' })), 'createdAt as text').toBe(true);
+  expect(await denied(() => create({ ...project, createdAt: DAY_AGO })), 'createdAt a day ago').toBe(true);
+  expect(await denied(() => create({ ...project, legacyCode: 42 })), 'source not text').toBe(true);
+  expect(await denied(() => create({ ...project, fromExample: 'yes' })), 'flag not boolean').toBe(true);
 
-  expect(await denied(() => setDoc(fresh(), { ...project, legacyCode: 'REPORT z.', fromExample: true })), 'the project the dashboard writes').toBe(false);
+  expect(await denied(() => create({ ...project, legacyCode: 'REPORT z.', fromExample: true })), 'the project the dashboard writes').toBe(false);
 });
 
 test('client-writable project fields keep their type and size', async () => {
@@ -310,8 +314,9 @@ test('client-writable project fields keep their type and size', async () => {
 
 test('a stage label is set only on a project an analysis has run on', async () => {
   // Created the way the dashboard creates one: before any analysis.
-  const ref = doc(owner.db, 'projects', `fields-fresh-${Date.now()}`);
-  await setDoc(ref, { name: 'Fresh project', status: 'uploaded', userId: uids.owner, createdAt: serverTimestamp() });
+  const ref = await createWithinCeiling(owner.db, 'projects', uids.owner, {
+    name: 'Fresh project', status: 'uploaded', userId: uids.owner, createdAt: serverTimestamp(),
+  });
   for (const status of ['designed', 'testing', 'documented']) {
     expect(await denied(() => updateDoc(ref, { status })), `${status} before an analysis`).toBe(true);
   }

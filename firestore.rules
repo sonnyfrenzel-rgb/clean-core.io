@@ -312,6 +312,22 @@ service cloud.firestore {
              data.exports.diff(before.exports).changedKeys().size() == 0;
     }
 
+    // SEC-2026-758, SEC-2026-764: a per-account write ceiling on the documents
+    // a browser creates for itself — projects and support tickets. The count
+    // lives in `write_ceilings/{uid}` (rule at the end of this file); a create
+    // is allowed only when the same request takes one step of that count and
+    // names the new document's id there. One step names one id, and an id can
+    // be created once, so every created document stands on its own step.
+    // The client side is lib/write-ceiling.ts.
+    function ceilingPath() {
+      return /databases/$(database)/documents/write_ceilings/$(request.auth.uid);
+    }
+
+    function ceilingTaken(kind, docId) {
+      return existsAfter(ceilingPath()) &&
+             getAfter(ceilingPath()).data.get(kind + 'Id', '') == docId;
+    }
+
     match /projects/{projectId} {
       // Nobody but the owner reads a project. The administrator used to be able
       // to, and Sonny took that away on 16.09.2026: a customer's ABAP is the
@@ -331,8 +347,10 @@ service cloud.firestore {
       // project has the same route as anyone else: be invited.
       allow read: if isAuthenticated() && resource != null &&
                   ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));
-      // Quota enforcement and field validation are server-side
-      allow create: if isAuthenticated() && 
+      // A browser creates its own projects: a closed field list, bounded
+      // values, and one step of the account's write ceiling (ceilingTaken).
+      // The analysis quota is the server's, when a run is created.
+      allow create: if isAuthenticated() &&
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
                     request.resource.data.keys().hasOnly(['name', 'status', 'userId', 'createdAt', 'legacyCode', 'fromExample']) &&
                     request.resource.data.userId == request.auth.uid &&
@@ -341,7 +359,8 @@ service cloud.firestore {
                     request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255 &&
                     isCreationTime(request.resource.data.createdAt) &&
                     (!('legacyCode' in request.resource.data) || isBoundedString(request.resource.data.legacyCode, 0, 999999)) &&
-                    (!('fromExample' in request.resource.data) || request.resource.data.fromExample is bool);
+                    (!('fromExample' in request.resource.data) || request.resource.data.fromExample is bool) &&
+                    ceilingTaken('project', projectId);
       // F-01: Owner may update their project, but userId and createdAt are immutable
       // (neither is on the allowlist below). Type and size of the fields on it are
       // checked by isValidProject() on the whole document and by
@@ -462,7 +481,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                   resource != null && resource.data.userId == request.auth.uid && accountActive();
       allow create: if isAuthenticated() && accountActive() &&
-                    isValidSupportTicket(request.resource.data);
+                    isValidSupportTicket(request.resource.data) &&
+                    ceilingTaken('ticket', ticketId);
       allow update, delete: if false;
     }
 
@@ -611,6 +631,49 @@ service cloud.firestore {
 
     match /rate_limits/{key} {
       allow read, write: if false;
+    }
+
+    // SEC-2026-758, SEC-2026-764: the per-account write ceiling (see
+    // ceilingTaken above). Per kind three fields: `<kind>Count` creates in the
+    // current window, `<kind>Window` when that window began (a server time),
+    // `<kind>Id` the document the last step was taken for. A step either adds
+    // one within the window, up to the kind's ceiling, or — once the window is
+    // older than a day, or there is none yet — opens a new window at one.
+    // Nothing else moves: the count never goes down, the window never back.
+    function ceilingKeys() {
+      return ['projectCount', 'projectWindow', 'projectId', 'ticketCount', 'ticketWindow', 'ticketId'];
+    }
+
+    function ceilingBefore() {
+      return resource == null ? {} : resource.data;
+    }
+
+    function ceilingStep(after, before, kind, ceiling) {
+      return isBoundedString(after.get(kind + 'Id', null), 1, 128) &&
+             after.get(kind + 'Count', null) is int &&
+             (
+               (before.get(kind + 'Window', null) is timestamp &&
+                after.get(kind + 'Window', null) == before[kind + 'Window'] &&
+                after[kind + 'Count'] == before.get(kind + 'Count', 0) + 1 &&
+                after[kind + 'Count'] <= ceiling) ||
+               ((!(before.get(kind + 'Window', null) is timestamp) ||
+                  request.time > before[kind + 'Window'] + duration.value(1, 'd')) &&
+                after.get(kind + 'Window', null) == request.time &&
+                after[kind + 'Count'] == 1)
+             );
+    }
+
+    match /write_ceilings/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && accountActive() &&
+                    request.resource.data.keys().hasOnly(ceilingKeys()) &&
+                    (
+                      (request.resource.data.diff(ceilingBefore()).affectedKeys().hasOnly(['projectCount', 'projectWindow', 'projectId']) &&
+                       ceilingStep(request.resource.data, ceilingBefore(), 'project', 50)) ||
+                      (request.resource.data.diff(ceilingBefore()).affectedKeys().hasOnly(['ticketCount', 'ticketWindow', 'ticketId']) &&
+                       ceilingStep(request.resource.data, ceilingBefore(), 'ticket', 10))
+                    );
+      allow delete: if false;
     }
   }
 }

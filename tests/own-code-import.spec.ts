@@ -257,7 +257,9 @@ test.describe('own code: the handoff to Analyze', () => {
     expect(np).toContain("router.push('/admin/new-project/upload')");
     // The upload page writes exactly one project, with its source, on start.
     const page = read('components/workspace/OwnCodeImport.tsx');
-    expect(page.match(/addDoc\(/g)?.length).toBe(1);
+    // Through the write ceiling's create path (SEC-2026-758), never a bare addDoc.
+    expect(page.match(/createWithinCeiling\(/g)?.length).toBe(1);
+    expect(page).not.toMatch(/addDoc\(/);
     expect(page).toContain('legacyCode: assembly.source');
     // Paying is a statement, never a radio the reader cannot really choose.
     expect(page).not.toContain('CcRadioGroup');

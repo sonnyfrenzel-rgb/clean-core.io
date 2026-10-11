@@ -22,6 +22,7 @@ import path from 'path';
 import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
+import { createWithinCeiling } from '../lib/write-ceiling';
 
 /**
  * Roadmap 5.4 and 5.5 — what the new read rule opens, and what it must not.
@@ -216,7 +217,7 @@ test('4 · no browser writes `readers`, by any path', async () => {
   // A stranger cannot create a project with a readers list either.
   await signIn(STRANGER);
   expect(
-    await denied(() => setDoc(doc(db, 'projects', `readers-create-${stamp}`), {
+    await denied(() => createWithinCeiling(db, 'projects', uids.stranger, {
       name: 'Mine', status: 'uploaded', userId: uids.stranger, createdAt: new Date(), readers: [uids.stranger],
     })),
     'create with readers',

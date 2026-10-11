@@ -128,10 +128,23 @@ test.describe('the rules keep the shape the emulator test depends on', () => {
     // document is the evaluation error — and it names no other path.
     expect(text, 'no rule spells out a second document inline').not.toContain('get(/databases/');
     expect(text).not.toContain('exists(/databases/');
+    // SEC-2026-758, SEC-2026-764 admit a second one, and only on a create: the
+    // caller's own write ceiling, read as it stands *after* the request
+    // (getAfter/existsAfter), never on a read or a list query.
     const paths = [...text.matchAll(/\/databases\/\$\(database\)\/documents\/[^;\n]*/g)].map((m) => m[0].trim());
-    expect(paths, 'one document path in the whole file').toEqual(['/databases/$(database)/documents/users/$(request.auth.uid)']);
-    const gets = [...text.matchAll(/\b(get|exists)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
-    expect(new Set(gets), 'every get()/exists() reads that one path').toEqual(new Set(['exists(callerProfilePath)', 'get(callerProfilePath)']));
+    expect(paths, 'two document paths in the whole file').toEqual([
+      '/databases/$(database)/documents/users/$(request.auth.uid)',
+      '/databases/$(database)/documents/write_ceilings/$(request.auth.uid)',
+    ]);
+    const gets = [...text.matchAll(/\b(get|exists|getAfter|existsAfter)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
+    expect(new Set(gets), 'every get()/exists() reads one of those paths').toEqual(new Set([
+      'exists(callerProfilePath)', 'get(callerProfilePath)', 'existsAfter(ceilingPath)', 'getAfter(ceilingPath)',
+    ]));
+    const ceiling = text.slice(text.indexOf('function ceilingTaken('), text.indexOf('match /projects/{projectId}'));
+    expect(ceiling.indexOf('existsAfter(ceilingPath()) &&'), 'the ceiling is read behind existsAfter()')
+      .toBeGreaterThan(-1);
+    expect(ceiling.indexOf('existsAfter(ceilingPath()) &&')).toBeLessThan(ceiling.indexOf('getAfter(ceilingPath())'));
+    expect([...text.matchAll(/ceilingTaken\('/g)].length, 'only the two create rules ask for the ceiling').toBe(2);
     // The guard comes first, and it is a requirement rather than a way out: a
     // missing profile is an inactive account, as on the server — erasure
     // deletes the profile while the ID token lives on (QA review of

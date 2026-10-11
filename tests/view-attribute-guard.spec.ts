@@ -9,6 +9,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { buildAuditPackContents, signedGeneratorInput, attestationsOf, type AuditPackSource } from '../lib/audit-pack-build';
 import { adminSetCustomClaim } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
+import { createWithinCeiling } from '../lib/write-ceiling';
 
 /**
  * `expect.arrayContaining([a, b, c])` matches when the array holds **all** of
@@ -85,7 +86,7 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
 
   const EMAIL = `view-guard-rules-${Date.now()}@cleancore-test.io`;
   const PASSWORD = 'ViewAttributeGuard123!';
-  const PROJECT_ID = `p-view-guard-rules-${Date.now()}`;
+  let PROJECT_ID = '';
   let uid = '';
 
   test.beforeAll(async () => {
@@ -102,18 +103,18 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
       transformationsLimit: 5,
       createdAt: new Date(),
     });
-    await setDoc(doc(clientDb, 'projects', PROJECT_ID), {
+    // The app's own create path, write ceiling included (SEC-2026-758).
+    PROJECT_ID = (await createWithinCeiling(clientDb, 'projects', uid, {
       name: 'View guard fixture',
       status: 'created',
       userId: uid,
       createdAt: new Date(),
-    });
+    })).id;
   });
 
   test('a project cannot be created carrying a view', async () => {
-    const freshId = `p-view-guard-create-${Date.now()}`;
     await expect(
-      setDoc(doc(clientDb, 'projects', freshId), {
+      createWithinCeiling(clientDb, 'projects', uid, {
         name: 'x',
         status: 'created',
         userId: uid,
