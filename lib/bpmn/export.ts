@@ -225,12 +225,24 @@ export function buildReadingExports(
   source: string,
   options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion'>,
 ): { bpmn: BpmnExport; technical: BpmnExport } {
+  // The same source and options always give the same reading, and laying out a
+  // large program takes seconds: the map, the process summary and every tool of
+  // the workspace ask for it again (owner, 11.10.2026 — a 2,000-line program
+  // froze each page it opened). The last few are kept; callers only read them.
+  const key = JSON.stringify([options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source]);
+  const hit = readingCache.get(key);
+  if (hit) return hit;
   const skeleton = buildProcessSkeleton(source);
-  return {
+  const out = {
     bpmn: buildBpmnExport(skeleton, { ...options, source, names: 'plain', wrap: READING_WRAP }),
     technical: buildBpmnExport(skeleton, { ...options, source, wrap: READING_WRAP }),
   };
+  if (readingCache.size >= 4) readingCache.delete(readingCache.keys().next().value as string);
+  readingCache.set(key, out);
+  return out;
 }
+
+const readingCache = new Map<string, { bpmn: BpmnExport; technical: BpmnExport }>();
 
 /** Columns per row of a level the phone's view narrows, and the fewest it goes to. */
 export const PHONE_WRAP = 3;

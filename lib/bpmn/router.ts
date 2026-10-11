@@ -49,44 +49,70 @@ export function outward(side: Side, p: Point, d = STUB): Point {
   return { x: p.x + DIR[side].x * d, y: p.y + DIR[side].y * d };
 }
 
-/** A binary heap keyed by number — the A* open list. */
+/** Pops after which a search that has found nothing asks whether any way exists. */
+const REACHABILITY_AFTER = 20_000;
+
+/**
+ * A binary heap keyed by number — the A* open list. Ordered by key, then by
+ * value, exactly as before; kept in two typed arrays, because an array of
+ * `[key, value]` pairs and destructuring swaps allocated millions of small
+ * arrays on a large program and froze the browser for a minute (owner,
+ * 11.10.2026: a 2,000-line program; 7.6 million pops on the 1,500-line FI case).
+ */
 class Heap {
-  private items: Array<[number, number]> = [];
+  private keys = new Float64Array(1024);
+  private values = new Int32Array(1024);
+  private n = 0;
   push(key: number, value: number) {
-    const a = this.items;
-    a.push([key, value]);
-    let i = a.length - 1;
+    if (this.n === this.keys.length) {
+      const keys = new Float64Array(this.n * 2);
+      keys.set(this.keys);
+      this.keys = keys;
+      const values = new Int32Array(this.n * 2);
+      values.set(this.values);
+      this.values = values;
+    }
+    const k = this.keys;
+    const v = this.values;
+    let i = this.n;
+    this.n += 1;
+    k[i] = key;
+    v[i] = value;
     while (i > 0) {
       const p = (i - 1) >> 1;
-      if (a[p][0] < a[i][0] || (a[p][0] === a[i][0] && a[p][1] <= a[i][1])) break;
-      [a[p], a[i]] = [a[i], a[p]];
+      if (k[p] < k[i] || (k[p] === k[i] && v[p] <= v[i])) break;
+      const tk = k[p]; k[p] = k[i]; k[i] = tk;
+      const tv = v[p]; v[p] = v[i]; v[i] = tv;
       i = p;
     }
   }
   pop(): number | undefined {
-    const a = this.items;
-    if (!a.length) return undefined;
-    const top = a[0][1];
-    const last = a.pop() as [number, number];
-    if (a.length) {
-      a[0] = last;
+    if (this.n === 0) return undefined;
+    const k = this.keys;
+    const v = this.values;
+    const top = v[0];
+    this.n -= 1;
+    const n = this.n;
+    if (n > 0) {
+      k[0] = k[n];
+      v[0] = v[n];
       let i = 0;
       for (;;) {
         const l = i * 2 + 1;
         const r = l + 1;
         let m = i;
-        const less = (x: number, y: number) => a[x][0] < a[y][0] || (a[x][0] === a[y][0] && a[x][1] < a[y][1]);
-        if (l < a.length && less(l, m)) m = l;
-        if (r < a.length && less(r, m)) m = r;
+        if (l < n && (k[l] < k[m] || (k[l] === k[m] && v[l] < v[m]))) m = l;
+        if (r < n && (k[r] < k[m] || (k[r] === k[m] && v[r] < v[m]))) m = r;
         if (m === i) break;
-        [a[m], a[i]] = [a[i], a[m]];
+        const tk = k[m]; k[m] = k[i]; k[i] = tk;
+        const tv = v[m]; v[m] = v[i]; v[i] = tv;
         i = m;
       }
     }
     return top;
   }
   get size() {
-    return this.items.length;
+    return this.n;
   }
 }
 
@@ -118,6 +144,8 @@ export class Router {
   private prev: Int32Array | null = null;
   private closed: Uint8Array | null = null;
   private touched: number[] = [];
+  /** Reachability buffer, reset after each walk. */
+  private seen: Uint8Array | null = null;
 
   constructor(xLines: number[], yLines: number[], private obstacles: Bounds[]) {
     this.xs = uniqSorted(xLines);
@@ -198,6 +226,61 @@ export class Router {
     }
   }
 
+  /** Reachability walk for `route`: can a start arrive at a goal by the moves `route` allows? */
+  private reachable(startStates: number[], goals: Map<number, PortChoice>): boolean {
+    const nx = this.xs.length;
+    const ny = this.ys.length;
+    const N = nx * ny * 4;
+    if (!this.seen || this.seen.length !== N) this.seen = new Uint8Array(N);
+    const seen = this.seen;
+    const stack: number[] = [];
+    const marked: number[] = [];
+    const want: Record<Side, number> = { left: 0, right: 1, top: 2, bottom: 3 };
+    const opposite = [1, 0, 3, 2];
+    for (const s of startStates) {
+      if (!seen[s]) {
+        seen[s] = 1;
+        marked.push(s);
+        stack.push(s);
+      }
+    }
+    let ok = false;
+    while (stack.length) {
+      const state = stack.pop() as number;
+      const p = state >> 2;
+      const d = state & 3;
+      const goal = goals.get(p);
+      if (goal && d !== opposite[want[goal.side]]) {
+        ok = true;
+        break;
+      }
+      const i = p % nx;
+      const j = (p - i) / nx;
+      for (let nd = 0; nd < 4; nd += 1) {
+        if (nd === opposite[d]) continue;
+        const ni = nd === 0 ? i + 1 : nd === 1 ? i - 1 : i;
+        const nj = nd === 2 ? j + 1 : nd === 3 ? j - 1 : j;
+        if (ni < 0 || nj < 0 || ni >= nx || nj >= ny) continue;
+        if (nd < 2) {
+          const leg = this.idx(Math.min(i, ni), j);
+          if (this.hBlocked[leg] || this.hUsed[leg]) continue;
+        } else {
+          const leg = this.idx(i, Math.min(j, nj));
+          if (this.vBlocked[leg] || this.vUsed[leg]) continue;
+        }
+        const np = this.idx(ni, nj);
+        if (this.pointBlocked[np] && !goals.has(np)) continue;
+        const ns = np * 4 + nd;
+        if (seen[ns]) continue;
+        seen[ns] = 1;
+        marked.push(ns);
+        stack.push(ns);
+      }
+    }
+    for (const s of marked) seen[s] = 0;
+    return ok;
+  }
+
   /**
    * Route one flow. Returns the polyline from a port of `from` to a port of
    * `to`, or null when the grid holds no way at all.
@@ -269,7 +352,16 @@ export class Router {
       for (const q of goalPoints) best = Math.min(best, Math.abs(x - q.x) + Math.abs(y - q.y));
       return best;
     };
+    // A flow with no way at all is known without A*: a plain reachability walk
+    // over the same moves answers in one pass, where the search would pop every
+    // state many times before it gives up — three quarters of all work on a
+    // 2,000-line program (owner, 11.10.2026). Asked only once a search runs long
+    // (a flow that has a way usually needs a few thousand pops); same moves,
+    // same answer: null.
+    let pops = 0;
     while (heap.size) {
+      pops += 1;
+      if (pops === REACHABILITY_AFTER && found < 0 && !this.reachable(starts.map((s) => s.state), goals)) return null;
       const state = heap.pop() as number;
       if (closed[state]) continue;
       closed[state] = 1;
