@@ -411,7 +411,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
                   onClick={() => setActiveService(service)}
                   aria-haspopup="dialog"
                 >
-                  Details<span className="sr-only"> of {service.serviceName}</span>
+                  Details<span className="sr-only"> of <SapCheckedText text={service.serviceName} /></span>
                 </CcButton>
               </div>
             </li>

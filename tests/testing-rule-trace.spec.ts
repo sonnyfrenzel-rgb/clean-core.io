@@ -173,7 +173,7 @@ test.describe('old against new, per case', () => {
     const failedOnChange = assessCase({ trace: t, verdict: 'Failed', ruleState: 'change' });
     expect(failedOnChange.value).toBe('failed-rule-changing');
     expect(failedOnChange.sentence).toContain('not determined');
-    expect(failedOnChange.sentence).not.toMatch(/deliberate(ly)? change[sd]?|not a defect/i);
+    expect(failedOnChange.sentence).not.toMatch(/\bdeliberate(?:ly)? change[sd]?\b|\bnot a defect\b/i);
     expect(assessCase({ trace: t, verdict: 'Failed', ruleState: 'drop' }).value).toBe('failed-rule-changing');
     const passedAgainstChange = assessCase({ trace: t, verdict: 'Passed', ruleState: 'change' });
     expect(passedAgainstChange.value).toBe('passed-model-stated');
