@@ -157,7 +157,7 @@ test.describe('the page, rendered in the workspace', () => {
     await signInThroughForm(page, acct);
     await page.goto(`/project/${acct.projectId}/analyze?view=it&from=workspace-tools`, { waitUntil: 'domcontentloaded' });
 
-    // Since ADR-092 (11.10.2026) the answer is the score hero: the figure, its
+    // Since ADR-093 (11.10.2026) the answer is the score hero: the figure, its
     // band, what it is not, and what moves it.
     const answer = page.locator('[data-analysis-answer]');
     await expect(answer).toBeVisible({ timeout: 90000 });
@@ -195,7 +195,7 @@ test.describe('the page, rendered in the workspace', () => {
     // The answer no longer repeats the count as a facet of its own (ADR-081:
     // the duplicate Analyze facet went) — the side card is the one place.
     await expect(answer).not.toContainText(/\d+ things? not determined/);
-    // Since ADR-092 the card says it in one line; the entries are one action deeper.
+    // Since ADR-093 the card says it in one line; the entries are one action deeper.
     const fold = open.locator('[data-not-determined-items] [data-cc-disclosure-trigger]').first();
     await expect(fold).toHaveAttribute('aria-expanded', 'false');
     await fold.click();

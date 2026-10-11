@@ -319,7 +319,7 @@ test.describe('the source says "often carry", never "contains"', () => {
       '<ComplianceReviewHints',
     );
     expect(src).toContain("from '@/components/ComplianceReviewHints'");
-    // Wherever the stage shows the table evidence — since ADR-092 (11.10.2026)
+    // Wherever the stage shows the table evidence — since ADR-093 (11.10.2026)
     // the levels A–D per object read off the data coupling; the coupling table
     // itself is the IT view's. One of them carrying the hint and the other not
     // is how a reader comes to see it on Monday and not on Tuesday.

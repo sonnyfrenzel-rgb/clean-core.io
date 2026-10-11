@@ -442,7 +442,7 @@
           {
             "field": "codeInventory",
             "from": "run",
-            "why": "the clean core levels A-D per object in the technical detail. The inventory table, the module heatmap and the data coupling table left Analyze on 11.10.2026 (ADR-092, owner decision Q4): they are the IT view's Objects & dependencies, linked from the technical detail. complexityScore and criticalityScore are no longer read here (Q3): the page computes them for the run it signs, and they stay in the run, the audit pack, Delivery and the slides"
+            "why": "the clean core levels A-D per object in the technical detail. The inventory table, the module heatmap and the data coupling table left Analyze on 11.10.2026 (ADR-093, owner decision Q4): they are the IT view's Objects & dependencies, linked from the technical detail. complexityScore and criticalityScore are no longer read here (Q3): the page computes them for the run it signs, and they stay in the run, the audit pack, Delivery and the slides"
           },
           {
             "field": "dataCoupling",

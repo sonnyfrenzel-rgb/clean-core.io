@@ -196,7 +196,7 @@ test.describe('the analysis export is a document, not a program', () => {
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#analysis-report', { timeout: 60000 });
 
-    // An item of the one Export menu since ADR-092 (11.10.2026).
+    // An item of the one Export menu since ADR-093 (11.10.2026).
     await page.locator('[data-analyze-export-menu]').click({ timeout: 60000 });
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 60000 }),

@@ -87,7 +87,7 @@ const n = (count: number) => String(count);
  * Analyze: Look here first, Where in the program, Findings by kind, then the
  * two folds below the findings. The side column (route, not determined) is
  * beside the findings and needs no jump. The Clean Core Score has no anchor:
- * it is the hero above the bar, the top of the page (ADR-092).
+ * it is the hero above the bar, the top of the page (ADR-093).
  */
 export function analyzeAnchors(content: {
   /** How many findings "Look here first" picks — 0 hides the anchor. */

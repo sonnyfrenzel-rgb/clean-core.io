@@ -135,7 +135,7 @@ test.describe('a stored analysis with amounts in its prose', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
-    // The Confluence page is an item of the one Export menu since ADR-092 (11.10.2026).
+    // The Confluence page is an item of the one Export menu since ADR-093 (11.10.2026).
     await page.locator('[data-analyze-export-menu]').click({ timeout: 60000 });
     const exportButton = page.getByRole('button', { name: /Export Confluence/ });
     await expect(exportButton).toBeVisible({ timeout: 60000 });

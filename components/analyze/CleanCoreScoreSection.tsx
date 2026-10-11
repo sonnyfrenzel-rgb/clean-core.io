@@ -19,7 +19,7 @@ import {
 import { editionName, type Edition, type HeroDeduction, type OtherEditionFigure, type ScoreHeroModel } from '@/lib/score-hero';
 
 /**
- * The Clean Core Score as the hero of Analyze (ADR-092, owner approval
+ * The Clean Core Score as the hero of Analyze (ADR-093, owner approval
  * 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`, pins
  * H1–H6). Earlier (01.10.2026) it was a section of its own under the answer,
  * with four band cards; the score stood three times on the page — a facet, the

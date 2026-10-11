@@ -253,7 +253,7 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     await openStage(page, 'analyze');
     const head = page.locator('[data-analysis-answer]');
     await expect(head).toBeVisible();
-    // The score is the hero (ADR-092): computed, with Clean-Core.io's band,
+    // The score is the hero (ADR-093): computed, with Clean-Core.io's band,
     // and its deductions add up to it.
     const band = scoreBand(demo.analyze.cleanCoreScore);
     await expect(head.locator('[data-analyze-score-value]')).toHaveText(String(demo.analyze.cleanCoreScore));

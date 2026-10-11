@@ -61,7 +61,7 @@ test.describe('the stage meta line is behind "Details"', () => {
     ]) {
       expect(read(rel), `${rel} draws a meta line outside StageMetaDetails`).toContain('<StageMetaDetails');
     }
-    // Analyze is the exception since ADR-092 (11.10.2026): its file · lines ·
+    // Analyze is the exception since ADR-093 (11.10.2026): its file · lines ·
     // catalog · engine is the score's provenance, said once beside the figure
     // it describes, in the hero — not behind a "Details" button.
     expect(read('components/analyze/AnalysisAnswer.tsx')).not.toContain('<StageMetaDetails');
@@ -87,7 +87,7 @@ test.describe('the stage meta line is behind "Details"', () => {
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
       await expectBehindDetails(page, `[data-testid="demo-stage-${stage}"]`, LINES[stage], /lines/);
     }
-    // Analyze: in the score hero, open, and the demo says it was never signed (ADR-092).
+    // Analyze: in the score hero, open, and the demo says it was never signed (ADR-093).
     await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
     const meta = page.locator('[data-testid="demo-stage-analyze"] [data-analysis-meta]');
@@ -108,7 +108,7 @@ test.describe('the stage meta line is behind "Details"', () => {
       },
     });
     await signInThroughForm(page, acct);
-    // Analyze: the provenance stands open in the score hero (ADR-092).
+    // Analyze: the provenance stands open in the score hero (ADR-093).
     await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });

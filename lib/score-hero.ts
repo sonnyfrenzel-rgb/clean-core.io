@@ -1,5 +1,5 @@
 /**
- * The figures of the Analyze hero (ADR-092, owner approval 11.10.2026, mockup
+ * The figures of the Analyze hero (ADR-093, owner approval 11.10.2026, mockup
  * `docs/roadmap/analyze-score-hero-mockup.html`) — the deduction table in a
  * reader's words, the lines each deduction comes from, and the other edition's
  * figure.

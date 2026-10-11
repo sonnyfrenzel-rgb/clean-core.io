@@ -13,7 +13,7 @@ import { shortRoute } from './analysis-answer';
 import { ScoreDeductions, ScoreFigure, ScoreHelp, type ScoreProvenance } from './CleanCoreScoreSection';
 
 /**
- * The head of Analyze: the Clean Core Score as the hero (ADR-092, owner
+ * The head of Analyze: the Clean Core Score as the hero (ADR-093, owner
  * approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`).
  *
  * It replaces what stood here — the answer sentence, three facet tiles, the

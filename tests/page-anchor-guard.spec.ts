@@ -65,7 +65,7 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
     real: [PAGE('analyze'), 'components/analyze/EvidenceFindingsTable.tsx'],
     demo: ['components/demo/DemoAnalyze.tsx', 'components/analyze/EvidenceFindingsTable.tsx'],
     // The demo has no model summary, and so no anchor for it. No anchor for the
-    // score: it is the hero above the bar, the page's top (ADR-092).
+    // score: it is the hero above the bar, the page's top (ADR-093).
     demoIds: ['focus', 'where', 'kinds', 'detail'],
   },
   transformation: {
@@ -208,7 +208,7 @@ test.describe('only ids that render', () => {
     };
 
     // Analyze — nothing picked, no map, no summary: those anchors go; the list says "none".
-    // The score has no anchor: it is the hero above the bar (ADR-092), so the bar starts with Look here first.
+    // The score has no anchor: it is the hero above the bar (ADR-093), so the bar starts with Look here first.
     const bare = analyzeAnchors({ picks: 0, where: false, findings: 0, summary: false });
     check('analyze', bare);
     expect(bare.map((a) => a.key)).toEqual(['kinds', 'detail']);

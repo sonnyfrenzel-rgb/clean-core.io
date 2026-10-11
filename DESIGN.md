@@ -117,6 +117,7 @@ focus rings and field boundaries stay visible.
 | Object identifier (title) | 13 px / **600** | "Vendor block list validation" |
 | Meta/chip | 12 px / **600** | Chip and tag text, meta line, hint below a field |
 | Micro label | 11 px / **600**, CAPITALS, `0.08em` | Column headers, facet label |
+| Hero figure (`cc-text-hero`) — Analyze's Clean Core Score, once (ADR-093) | 64 px / **800**, `-0.03em`, tabular (56 px on a phone) | "37" |
 
 **Lower limit 11 px.** No content in capitals, only labels. 900 does not exist in the workspace — it flattens the
 hierarchy. **12 px is a step of its own** (ADR-047), not the gap between 11 and 13: chips, identifiers, tags,
@@ -209,8 +210,11 @@ radius like the element. Never `outline: none` without this substitute. The focu
   state tokens themselves, not a second red and amber. Every band has ≥ 3 : 1 against the card and the page
   (6.5 / 6.2, 3.2 / 3.0, 6.3 / 6.0 and 16.0 / 15.2 : 1 on `--cc-surface` / `--cc-page`; WCAG 1.4.11) — the bar is
   the chart, so no band may fade into the card. Every band is drawn at full strength; the band the score is in is
-  told by the marker (ink with a white ring), its range, its label and its highlighted card, never by colour alone
-  and never by fading the others; the band label stays ink (ADR-057). One source for every surface that draws a
+  told by the marker (ink with a white ring), its range, its label and its highlighted name under the scale, never by colour alone
+  and never by fading the others; the band label stays ink (ADR-057). On Analyze the score is the **hero** (ADR-093):
+  the figure, its band on the one scale with the four names under it, "not a compliance percentage and not an SAP
+  measure", the edition rule with the other edition's figure, the run it was signed in, and beside it every
+  deduction of the score's table summing to the signed figure — with *Not determined* as its own row, never folded. One source for every surface that draws a
   band: `scoreBandChartColor` in `lib/chart-colors.ts`.
 - **Data marks are drawn at full strength** — no opacity tint on a bar segment, arc or block. Critical and High
   share the error colour; the word and the gap between segments keep them apart. A level block in a chart is filled
@@ -331,7 +335,8 @@ It is the one way across for every account and in the demo; the seven-circle ste
 footer are gone (ADR-061). Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
 stay, in the scale of §1.2 (micro label, body text). A tool with several long sections carries the **"On this page" bar** (ADR-091) — the IT view's anchor
 bar, `PageAnchorBar`, the same on every tool: under the header and the page's answer, before the first section, at the
-frame's full width, sticky under the shell bar, the section being read marked. Analyze, Transformation, Documentation,
+frame's full width, sticky under the shell bar, the section being read marked (on Analyze under the score hero, which
+has no anchor of its own — ADR-093). Analyze, Transformation, Documentation,
 Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
 navigation) do not.
 
@@ -1189,6 +1194,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.12 | 11.10.2026 | Analyze: the Clean Core Score is the hero, and declutter wave 2 (ADR-093, owner approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`): the score with its band, scale, edition rule, the other edition's figure and its provenance beside the deduction table that sums to the signed score; one row of four facets; the "On this page" bar under the hero without a score anchor; one "Add evidence" and one "Export" menu; complexity/criticality meters and the inventory tables leave Analyze (display only); the hero figure joins the type scale: §1.2, §1.8, §2.3 |
 | 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |
 | 1.8.10 | 10.10.2026 | The Management view shows only its own content (ADR-087, owner 10.10.2026, amending ADR-018, ADR-069 and ADR-080): no layer bar and no anchor bar; the decision, the distance to SAP standard with the readiness trend beside it, one Evidence fold that always starts closed, one row of links out; the four foundations and the open conditions one list; each fact once; layer addresses in Management go where the content lives now; Changes & commitments is no layer (§2.3 item 4, the navigation table, §2.11, §5.5, §5.6). The steering one-pager prints as one A4 landscape sheet without browser header or footer (ADR-088, §7.1) |
 | 1.8.9 | 10.10.2026 | The IT view shows only its own content (ADR-086, owner 10.10.2026, amending ADR-018): no layer bar but its own anchor bar over Findings · Objects & dependencies · Open questions · Route · Run & trust, never an "empty" chip; "What the code uses" and the Architecture layer are one table, Objects & dependencies; the Evidence layer is a compact Run & trust card in the side column; the first look, "Ask this case" and Changes & commitments leave IT; one quiet row of links out to Business, Economics and Management; layer addresses in IT go where the content lives now (§2.3 item 4, §2.11). Written back: since 03.10.2026 every layer is a tab, an empty one marked "empty" — there is no "More" menu (§2.3 item 4, §2.11) |

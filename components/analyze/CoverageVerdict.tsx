@@ -19,7 +19,7 @@ interface CoverageVerdictProps {
  * The three labels are the support matrix's own words (`LEVEL_LABEL`). The
  * explanation dialog that stood here ("statically verified … map 1:1 to
  * released standard models", "kernel calls … must be decommissioned") made
- * claims no rule of the engine makes, and went with ADR-092 (11.10.2026).
+ * claims no rule of the engine makes, and went with ADR-093 (11.10.2026).
  */
 
 export default function CoverageVerdict({ findings, summary }: CoverageVerdictProps) {

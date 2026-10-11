@@ -12,7 +12,7 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  * times, the findings twice, the second time as a model's "Gaps Prioritization
  * Matrix" with mostly empty quadrants.
  *
- * Now: the score as the hero on top (ADR-092, 11.10.2026), with its four
+ * Now: the score as the hero on top (ADR-093, 11.10.2026), with its four
  * facets, then the findings; the route and what is not determined
  * in the side column, once each — two cards (10.10.2026: the severity donut
  * went, the route switch went, and the route card's one action is the
@@ -49,7 +49,7 @@ test.describe('the stage, read', () => {
   });
 
   test('the status line is folded into the score hero, in the real page and in the demo', () => {
-    // ADR-092 (owner approval 11.10.2026): Evidence, Run and Target are the
+    // ADR-093 (owner approval 11.10.2026): Evidence, Run and Target are the
     // score's provenance (H3, H4) — "no model involved", the signed run or
     // "Demo — never signed", engine, file, catalog, target — and "Successors
     // n of m" is a column of Findings by kind, per kind. Nothing of it is lost.
@@ -122,7 +122,7 @@ async function expectOnePlaceEach(page: Page) {
   }).toPass({ timeout: 30000 });
   const detail = page.locator('#analyze-technical-detail');
   await expect(detail.getByRole('heading', { level: 3, name: 'Language constructs the engine resolved' })).toBeVisible();
-  // The meters left Analyze (ADR-092, owner decision Q3); the inventory and the
+  // The meters left Analyze (ADR-093, owner decision Q3); the inventory and the
   // data coupling are the IT view's, linked from here (Q4).
   await expect(detail.getByRole('heading', { level: 3, name: 'Complexity and criticality' })).toHaveCount(0);
   await expect(detail.locator('[data-analyze-objects-link] a')).toHaveAttribute('href', /view=it#it-objects$/);
@@ -155,7 +155,7 @@ test.describe('the stage, rendered', () => {
     // Two cards in the side column, not three.
     await expect(page.locator('aside[aria-label="Route and what is open"] > section')).toHaveCount(2);
 
-    // The two optional imports: one "Add evidence" menu (ADR-092, owner decision
+    // The two optional imports: one "Add evidence" menu (ADR-093, owner decision
     // Q5), each item opening its upload in a dialog.
     await page.locator('[data-analyze-add-evidence]').click();
     await page.locator('[data-analyze-add-usage]').click();

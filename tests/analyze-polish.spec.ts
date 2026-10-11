@@ -122,7 +122,7 @@ test.describe('4. the head does not contradict itself about the model', () => {
   test('the score hero keeps the evidence and the narrative apart', () => {
     const page = read('app/(app)/project/[projectId]/analyze/page.tsx');
     expect(page).not.toContain('engine, with a model narrative');
-    // Since ADR-092 (11.10.2026) the status line is gone: "engine only, no
+    // Since ADR-093 (11.10.2026) the status line is gone: "engine only, no
     // model" is the hero's provenance line — the "Reconstructed · fixed rules"
     // chip and "no model involved" — and the narrative still says what it is
     // where it stands, folded as "Model summary" and marked "Model proposal".

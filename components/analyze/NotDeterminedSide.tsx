@@ -14,7 +14,7 @@ export interface OpenItem {
   body?: React.ReactNode;
 }
 
-/** The places not assessed, as the hero counts them (ADR-092). */
+/** The places not assessed, as the hero counts them (ADR-093). */
 export interface NotDeterminedSummary {
   places: number;
   kinds: number;
@@ -24,7 +24,7 @@ export interface NotDeterminedSummary {
 
 /**
  * "Not determined" — the side card of the Analyze stage (owner decision
- * 02.10.2026; one line since ADR-092, 11.10.2026). The places the engine could
+ * 02.10.2026; one line since ADR-093, 11.10.2026). The places the engine could
  * not assess stand in the score hero as their own row and facet, *Not
  * determined*, never folded away; this card says it once in one line, leads to
  * the project's one list of open questions (ADR-081), and keeps what this

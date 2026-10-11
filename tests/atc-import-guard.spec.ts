@@ -182,7 +182,7 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
-    // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+    // Behind the one "Add evidence" menu since ADR-093 (owner decision Q5, 11.10.2026).
     await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
     await page.locator('[data-analyze-add-atc]').click({ timeout: 60000 });
     await page.locator('[data-atc-file]').setInputFiles({
@@ -257,7 +257,7 @@ test.describe('a save the server refused is not shown as imported', () => {
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
-    // Behind the one "Add evidence" menu since ADR-092 (owner decision Q5, 11.10.2026).
+    // Behind the one "Add evidence" menu since ADR-093 (owner decision Q5, 11.10.2026).
     await page.locator('[data-analyze-add-evidence]').click({ timeout: 60000 });
     await page.locator('[data-analyze-add-atc]').click({ timeout: 60000 });
     await page.locator('[data-atc-file]').setInputFiles({

@@ -34,7 +34,7 @@ import { countSourceLines } from '@/lib/source-lines';
  * The demo's Analyze stage — the object page a real project's Analyze stage
  * shows (proposal A, owner decision 01.10.2026), on the same components:
  * the Clean Core Score as the hero with its deductions and four facets
- * (`AnalysisAnswer`, ADR-092 — "Demo — never signed" where a project names its
+ * (`AnalysisAnswer`, ADR-093 — "Demo — never signed" where a project names its
  * signed run), Look here first, Where in the program with its source panel,
  * Findings by kind (`EvidenceFindingsTable`), the route and what was not
  * determined in the side column, and the folds below. Every figure comes from `lib/demo-project.ts`, which ran the engine of
@@ -181,7 +181,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         signedLabel="Clean Core Score of the demo"
       />
 
-      {/* The tool's anchor bar, as on a project (ADR-091), under the score hero (ADR-092). The demo has no model summary, so no anchor for it. */}
+      {/* The tool's anchor bar, as on a project (ADR-091), under the score hero (ADR-093). The demo has no model summary, so no anchor for it. */}
       <AnalyzeAnchorBar findings={a.findings} sourceLines={sourceLines} />
 
       <EvidenceFindingsTable
@@ -228,7 +228,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
       </FoldedSection>
 
       {/* One section of technical detail, folded — as the real page draws it.
-          The complexity and criticality meters left it with ADR-092 (owner
+          The complexity and criticality meters left it with ADR-093 (owner
           decision Q3); the inventory and the data coupling are the IT view's
           (Q4), linked from here. */}
       <FoldedSection id="analyze-technical-detail" data-analysis-technical-detail="" title="Technical detail">

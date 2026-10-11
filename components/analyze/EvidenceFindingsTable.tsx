@@ -50,7 +50,7 @@ import SourcePanel from './SourcePanel';
  *
  *   two columns (the anchor bar above them is the page's, `AnalyzeAnchorBar`) —
  *   main:  Look here first, Where in the program, Findings by kind (the Clean
- *          Core Score is the hero above the bar since 11.10.2026, ADR-092);
+ *          Core Score is the hero above the bar since 11.10.2026, ADR-093);
  *   side:  the route (passed in) and what was not determined (passed in) —
  *          two cards at most (DESIGN.md §2.11). The severity donut that stood
  *          between them said the Findings facet's bar a third time and went
@@ -96,7 +96,7 @@ export function showFindingsKind(kind: string): void {
 
 /**
  * Open the source at a line from outside the list — the line chips of the
- * score hero above (ADR-092). The same DOM-event route as `showFindingsKind`;
+ * score hero above (ADR-093). The same DOM-event route as `showFindingsKind`;
  * where no source can be shown, the line is picked in the list instead.
  */
 const OPEN_LINE_EVENT = 'cc-analyze-open-line';
@@ -231,7 +231,7 @@ export default function EvidenceFindingsTable({
   notAssessed?: ReadonlyArray<{ label: string; firstLine: number }>;
   /**
    * What a kind of finding takes off the score — the hero's deductions, for the
-   * Points column of Findings by kind (ADR-092). Absent where the deductions do
+   * Points column of Findings by kind (ADR-093). Absent where the deductions do
    * not add up to the signed score: then no column, rather than a second sum.
    */
   pointsOf?: (kind: string) => number;
@@ -241,7 +241,7 @@ export default function EvidenceFindingsTable({
   sideBottom?: React.ReactNode;
   /** The source's file name, for the source panel's label. */
   fileName?: string;
-  /** On a phone the route card is folded under this line — "Route · Side-by-Side" (ADR-092). */
+  /** On a phone the route card is folded under this line — "Route · Side-by-Side" (ADR-093). */
   sideTopLabel?: string;
 }) {
   const [query, setQuery] = useState('');
@@ -255,7 +255,7 @@ export default function EvidenceFindingsTable({
   /** What opened the panel — it gets the focus back when the panel closes. */
   const [opener, setOpener] = useState<HTMLElement | null>(null);
   // On a phone the full list and the route card are folded, each with its
-  // count (ADR-092, the mockup's phone frame; §2.11 "show less, lose nothing").
+  // count (ADR-093, the mockup's phone frame; §2.11 "show less, lose nothing").
   const phone = useBreakpointS();
   const [kindsOpen, setKindsOpen] = useState(false);
   const [routeOpen, setRouteOpen] = useState(false);

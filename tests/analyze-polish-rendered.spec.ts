@@ -130,7 +130,7 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
     inputFingerprint: { fileName: string };
   };
   expect(run.inputFingerprint.fileName, 'the run was signed under the paste placeholder').toBe('Z_MM_PO_APPROVAL.abap');
-  // The provenance stands in the score hero, beside the figure it describes (ADR-092, 11.10.2026).
+  // The provenance stands in the score hero, beside the figure it describes (ADR-093, 11.10.2026).
   await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
   await expect(page.locator('[data-analysis-meta]')).toContainText('Z_MM_PO_APPROVAL.abap');
   await expect(page.locator('body')).not.toContainText('manual-input.abap');
@@ -156,7 +156,7 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
 
   // 4, without a narrative: the evidence is the engine's; no summary was written,
   // and the folded "Model summary" says so. The status line is the hero's
-  // provenance since ADR-092 (11.10.2026); successors are a column per kind.
+  // provenance since ADR-093 (11.10.2026); successors are a column per kind.
   const meta = page.locator('[data-analysis-meta]');
   await expect(meta).toContainText('no model involved');
   await expect(meta).toContainText('signed');
@@ -184,7 +184,7 @@ test('with a model narrative stored, the head says which part is the proposal', 
   await head.scrollIntoViewIfNeeded();
   await shot(page, 'head-narrative', '[data-analysis-answer]');
 
-  // The hero says the score's evidence is the engine's (ADR-092); the fold says whose the summary is.
+  // The hero says the score's evidence is the engine's (ADR-093); the fold says whose the summary is.
   await expect(head).toContainText('no model involved');
   await expect(head).not.toContainText('The Model summary further down');
   await expect(head).not.toContainText('with a model narrative');

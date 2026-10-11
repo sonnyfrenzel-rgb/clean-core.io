@@ -87,7 +87,7 @@ test.describe('D.31 in the source', () => {
       'app/(app)/project/[projectId]/delivery/page.tsx',
       'components/analyze/AbcdClassificationPanel.tsx',
       // CodeInventoryTable, DataCouplingTable and ModuleHeatmap left with
-      // ADR-092 (11.10.2026): the IT view's Objects & dependencies says them.
+      // ADR-093 (11.10.2026): the IT view's Objects & dependencies says them.
     ]) {
       const line = read(rel).split('\n').find((l) => l.includes('badgeSeverity='));
       expect(line, `${rel} no longer passes badgeSeverity`).toBeTruthy();

@@ -9,7 +9,7 @@ import { otherEditionFigure, scoreHeroModel } from '../lib/score-hero';
 import { APP_VERSION } from '../lib/version';
 
 /**
- * The Analyze score hero (ADR-092, owner approval 11.10.2026, mockup
+ * The Analyze score hero (ADR-093, owner approval 11.10.2026, mockup
  * `docs/roadmap/analyze-score-hero-mockup.html`): every figure it shows is read
  * off `scoreBreakdown()` under the signed run's rule, and the table sums
  * exactly to the score the router signs. `lib/score-hero.ts` only adds where —

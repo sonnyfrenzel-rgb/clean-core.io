@@ -18,7 +18,7 @@ import CcButton from '@/components/cc/Button';
  * attributes on the trigger and a `note` under the buttons — one control
  * instead of seven buttons in three places.
  *
- * Since ADR-092 (11.10.2026) Analyze uses it twice: "Export ▾" for its one way
+ * Since ADR-093 (11.10.2026) Analyze uses it twice: "Export ▾" for its one way
  * out, and "Add evidence ▾" (`label`, `icon`) for its two optional imports.
  */
 export type ExportKind = 'docx' | 'md' | 'html' | 'print';

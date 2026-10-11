@@ -363,7 +363,7 @@
  *
  *   cc-text-title       22 / 800 / -0.02em   project title, stage title
  *   cc-text-figure      22 / 800 / -0.02em / tabular   a key figure (D.31)
- *   cc-text-hero        56→64 / 800 / -0.03em / tabular   Analyze's score, once (ADR-092)
+ *   cc-text-hero        56→64 / 800 / -0.03em / tabular   Analyze's score, once (ADR-093)
  *   cc-text-h2         15 / 700             section title
  *   cc-text-h3          14 / 700             card title
  *   cc-text-body        14 / 500 / 1.55      running text
@@ -393,7 +393,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The one hero figure — the Clean Core Score at the top of Analyze (ADR-092,
+/* The one hero figure — the Clean Core Score at the top of Analyze (ADR-093,
    owner approval 11.10.2026). Louder than the page's name on purpose, and only
    there: the score is what the tool answers. 56 px on a phone, 64 px from S
    up; tabular digits; 800, never 900 (§1.2). */

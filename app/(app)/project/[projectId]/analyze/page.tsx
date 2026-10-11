@@ -859,7 +859,7 @@ export default function AnalyzePage() {
       : null;
 
   /**
-   * The hero's deductions add up to the signed score (ADR-092). Only then does
+   * The hero's deductions add up to the signed score (ADR-093). Only then does
    * Findings by kind carry its Points column — the same deductions per kind —
    * and the side card name the points the places not assessed cost.
    */
@@ -959,7 +959,7 @@ export default function AnalyzePage() {
    * The source or an input changed after the signed run (register L-05, audit
    * M-8): every figure of the report is about what that run read, so the page
    * says so — with the stepper's own sentence (`lib/workflow-steps.ts`) and the
-   * one way on — at the top of the score hero (ADR-092). This page has no
+   * one way on — at the top of the score hero (ADR-093). This page has no
    * re-run; a new run starts in the workspace's IT view.
    */
   const staleNotice =
@@ -991,7 +991,7 @@ export default function AnalyzePage() {
   const sourceLines = countSourceLines(legacyCode ?? '');
 
   /**
-   * The score hero's figures (ADR-092), the same in every kind of report. The
+   * The score hero's figures (ADR-093), the same in every kind of report. The
    * signed score itself is passed beside them, by name, where the hero is drawn.
    * What the status line said — evidence, run, target, successors — is the
    * hero's provenance (run, engine, target) and a column of Findings by kind.
@@ -1066,7 +1066,7 @@ export default function AnalyzePage() {
   /**
    * The levels A–D per object and the review hints. The code inventory, its
    * modules and the data coupling are said once, in the IT view's "Objects &
-   * dependencies" (ADR-086); since ADR-092 (owner decision Q4, 11.10.2026)
+   * dependencies" (ADR-086); since ADR-093 (owner decision Q4, 11.10.2026)
    * Analyze links there instead of drawing them a second time.
    */
   const renderInventory = () => {
@@ -1133,7 +1133,7 @@ export default function AnalyzePage() {
    * "Technical detail" — one section at the bottom, folded (owner decision
    * 02.10.2026): the language constructs the engine resolved, the levels A–D
    * per object with the compliance hints, and the imported usage and ATC
-   * results. The complexity and criticality meters left it with ADR-092 (owner
+   * results. The complexity and criticality meters left it with ADR-093 (owner
    * decision Q3, 11.10.2026) — display only: both stay in the signed run, the
    * audit pack, Delivery and the stakeholder slides.
    */
@@ -1192,7 +1192,7 @@ export default function AnalyzePage() {
             {...heroProps()}
           />
 
-          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-092). */}
+          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-093). */}
           <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} />
 
           <EvidenceFindingsTable
@@ -1284,7 +1284,7 @@ export default function AnalyzePage() {
             {...heroProps()}
           />
 
-          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-092). */}
+          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-093). */}
           <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} summary />
 
           <EvidenceFindingsTable
@@ -1376,7 +1376,7 @@ export default function AnalyzePage() {
     }
 
     // A project analysed before runs existed, with a narrative that is not
-    // JSON: the score hero over the prose (ADR-092). The "Why this route &
+    // JSON: the score hero over the prose (ADR-093). The "Why this route &
     // score" panel that stood under it said the hero's figures a second time.
     return (
       <div className="space-y-6 font-sans">
@@ -1423,7 +1423,7 @@ export default function AnalyzePage() {
           legacyCode || (hasResults && project?.analysis) ? (
             <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
               {/* The two optional imports behind one "Add evidence" menu (owner
-                  decision Q5, 11.10.2026, ADR-092); each still opens the upload
+                  decision Q5, 11.10.2026, ADR-093); each still opens the upload
                   it always had, in a dialog, and `?add=usage|atc` opens it
                   directly (ADR-081). */}
               {legacyCode ? (
@@ -1979,7 +1979,7 @@ function routeNotRecorded(overridden: boolean, confidence: number | null, ration
 /**
  * The target the run signed and whether the catalog answers for it —
  * "S4HANA-2023-FPS02 · covered", or "· unconfirmed (2)" (audit M-6, §3.5),
- * said in the score hero's provenance since ADR-092. The edition is the
+ * said in the score hero's provenance since ADR-093. The edition is the
  * hero's own line. A run signed before profiles existed says so.
  */
 function targetStatusValue(project: Project | null): string | null {
