@@ -38,7 +38,7 @@ const EXAMPLES = fs
  */
 const GERMAN_WORDS =
   /\b(und|oder|nicht|kein|keine|keinen|wird|werden|wurde|ist|sind|mit|für|fuer|einer|einen|der|das|des|dem|den|auf|aus|bei|nach|wenn|sonst|nur|auch|noch|über|ueber|zur|zum|vom|wie|dass|sich|Satz|Sätze|Zeile|Tabelle|Feld|Wert|gesetzt|ausgegeben|gelesen|aufgerufen|übernommen|verlassen|Treffer|Meldung|Unterprogramm|Baustein|Berechtigung)\b/;
-const GERMAN_LETTERS = /[äöüÄÖÜß„“]/;
+const GERMAN_LETTERS = /[„“äöüÄÖÜß]/;
 
 /**
  * What the engine wrote, without what it quotes from the source: identifiers

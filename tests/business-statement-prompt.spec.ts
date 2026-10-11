@@ -200,6 +200,6 @@ test('the prompt orders English sentences — owner decision 01.10.2026 ("alles 
   const prompt = buildStatementPrompt(buildStatementContext([{ name: 'demo.abap', code: SOURCE }]));
   expect(prompt).toContain('1. English, one sentence');
   expect(prompt).not.toMatch(/\bGerman\b/);
-  expect(prompt).not.toMatch(/[äöüÄÖÜß„]/);
+  expect(prompt).not.toMatch(/[„äöüÄÖÜß]/);
   expect(prompt).not.toMatch(/\b(wird|werden|der Betrag|die Kundennummer)\b/);
 });
