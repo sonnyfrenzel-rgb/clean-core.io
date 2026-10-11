@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-10",
+  "written": "2026-10-11",
   "entries": [
     {
       "case": "CC-001",
@@ -3768,7 +3768,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
     },
     {
       "case": "CC-026",
@@ -3917,7 +3917,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
     },
     {
       "case": "CC-027",
@@ -7928,19 +7928,19 @@
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
         {
           "name": "artefaktlevel",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht."
     },
     {
       "case": "CC-054",
@@ -8238,7 +8238,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
     },
     {
       "case": "CC-056",
@@ -9579,7 +9579,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
     },
     {
       "case": "CC-065",

@@ -126,6 +126,27 @@ function namesModule(text: string, pattern: string): boolean {
 }
 
 /**
+ * The function module `pattern` matched, upper-cased — the name `namesModule`
+ * finds — or null. A finding caused by a call records the module it calls as
+ * its `objectName`, the way a table read records the table, so the clean core
+ * level is looked up for that module (owner, 11.10.2026: "levels are missing
+ * here" — the ALV and GUI file-transfer rows named no object and showed "?").
+ */
+function calledModule(text: string, pattern: string): string | null {
+  const call = new RegExp(`^\\s*CALL\\s+FUNCTION\\s+['\`](${pattern})['\`]`, 'i').exec(text);
+  if (call) return call[1].toUpperCase();
+  if (!/^\s*CONSTANTS\b/i.test(text)) return null;
+  const constant = new RegExp(`['\`](${pattern})['\`]`, 'i').exec(text);
+  return constant ? constant[1].toUpperCase() : null;
+}
+
+/** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
+function staticCallTarget(text: string): string | null {
+  const m = /\bCALL\s+FUNCTION\s+['`]([\w/]+)['`]/i.exec(text);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
  * Conventional ABAP prefixes for local/global data objects and parameters.
  * Used only in combination with "not present in either SAP artifact" — 103 real
  * SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share these prefixes and must
@@ -677,12 +698,15 @@ export function buildAbapEvidence(
     // `statement-reader.ts` documents. So this reads `text`, not `codeText` —
     // but only the literal a `CALL FUNCTION` (or a constant) names: in
     // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
-    if (namesModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY')) {
+    const alvModule = calledModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY');
+    if (alvModule) {
       addFinding({
         kind: 'classic-alv',
         title: 'Legacy ALV Grid Display',
         severity: 'Medium',
         confidence: 'High',
+        objectName: alvModule,
+        objectType: 'Function Module',
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `Usage of REUSE_ALV function modules.`,
@@ -694,12 +718,16 @@ export function buildAbapEvidence(
 
     // GUI Download / Local File access. Function-module names again (`text`,
     // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
-    if (namesModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)') || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
+    // The finding names what the statement calls: the module, or the class.
+    const guiModule = calledModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)');
+    if (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
       addFinding({
         kind: 'gui-download',
         title: 'Legacy Frontend File Upload/Download',
         severity: 'Medium',
         confidence: 'High',
+        objectName: guiModule ?? 'CL_GUI_FRONTEND_SERVICES',
+        objectType: guiModule ? 'Function Module' : 'Class',
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `Usage of GUI_DOWNLOAD, GUI_UPLOAD, or cl_gui_frontend_services to interact with the local client file system.`,
@@ -744,11 +772,14 @@ export function buildAbapEvidence(
 
     // Update Task / Asynchronous V2 Updates
     if (/\bIN\s+UPDATE\s+TASK\b/i.test(codeText)) {
+      // The update module, where the call names it in a literal.
+      const updateModule = staticCallTarget(text);
       addFinding({
         kind: 'update-task',
         title: 'Asynchronous Update Task (IN UPDATE TASK)',
         severity: 'High',
         confidence: 'High',
+        ...(updateModule ? { objectName: updateModule, objectType: 'Function Module' } : {}),
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `CALL FUNCTION ... IN UPDATE TASK.`,
@@ -760,11 +791,15 @@ export function buildAbapEvidence(
 
     // Program coupling (SUBMIT)
     if (/\bSUBMIT\b[\s\S]+?\bAND\s+RETURN\b/i.test(codeText) || /^\s*SUBMIT\b/i.test(codeText)) {
+      // The program, where it is written as a name; `SUBMIT (lv_prog)` names none.
+      const submitted = /^\s*SUBMIT\s+([A-Z_/][\w/]*)/i.exec(codeText);
+      const program = submitted && !/^(?:VIA|USING|WITH|AND|TO|EXPORTING)$/i.test(submitted[1]) ? submitted[1].toUpperCase() : null;
       addFinding({
         kind: 'submit',
         title: 'Legacy Program Coupling via SUBMIT',
         severity: 'Medium',
         confidence: 'High',
+        ...(program ? { objectName: program, objectType: 'Program' } : {}),
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `SUBMIT statement calling another report dynamically.`,
@@ -871,6 +906,8 @@ export function buildAbapEvidence(
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
         severity: 'Medium',
         confidence: 'High',
+        objectName: 'SO_NEW_DOCUMENT_SEND_API1',
+        objectType: 'Function Module',
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `Usage of legacy SAPOffice mail API.`,
@@ -891,7 +928,10 @@ export function buildAbapEvidence(
       if (local && !/\bDESTINATION\b/i.test(codeText)) {
         const fm = local[1].toUpperCase();
         const answer = functionModuleCatalogAnswer(fm, catalogSnapshot);
-        if (answer?.notAnApi && !findings.some((f) => f.lineStart === stmt.line && f.objectName === fm)) {
+        // Only an earlier finding of this kind stands in for it: the update-task
+        // and mail findings name their module too since 11.10.2026, and they
+        // say something else about the same call.
+        if (answer?.notAnApi && !findings.some((f) => f.kind === 'unreleased-api' && f.lineStart === stmt.line && f.objectName === fm)) {
           addFinding({
             kind: 'unreleased-api',
             title: `Call of function module ${fm}, which SAP lists as ${answer.state}`,
@@ -913,11 +953,13 @@ export function buildAbapEvidence(
 
     // Credit Management custom logic — the module name is a literal, so `text`.
     if (/Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i.test(text) && /CALL\s+FUNCTION/i.test(text)) {
+      const creditModule = staticCallTarget(text);
       addFinding({
         kind: 'credit-management',
         title: `Credit Management Custom Logic`,
         severity: 'High',
         confidence: 'High',
+        ...(creditModule ? { objectName: creditModule, objectType: 'Function Module' } : {}),
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `Custom credit management function module detected. Evaluate if SAP FSCM / Advanced Credit Management (F1007) can replace this custom risk engine.`,

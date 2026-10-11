@@ -493,6 +493,72 @@ export function accessUseOfKind(kind: string): 'read' | 'write' | null {
   return null;
 }
 
+/**
+ * Why a finding has no clean core level — owner, 11.10.2026: three kinds of
+ * finding showed a bare "?" where the others showed a letter.
+ *
+ * A level belongs to an SAP object that SAP's release or classification file
+ * lists (`docs/ARCHITECTURE.md` §4.2), and it is looked up for the finding's
+ * `objectName`. A finding without one has no level, for one of two reasons:
+ *
+ *   - `statement` — the finding is about a statement of the language itself:
+ *     `AUTHORITY-CHECK`, `COMMIT WORK`, native SQL, `CALL SCREEN`. There is no
+ *     SAP object to grade. An `AUTHORITY-CHECK` names an authorization object,
+ *     but authorization objects are in neither SAP file (both list only
+ *     classes, interfaces, tables, CDS views and function modules), so grading
+ *     one would read a missing entry as level C — a level SAP never gave it.
+ *   - `no-object` — the engine records no object for the finding: a name held
+ *     in a variable, a literal value, a check the program does not make.
+ *
+ * Never a letter and never "Unknown": "Unknown" (shown "—") is an object that
+ * was looked up and SAP's data held no answer for. Null where the finding
+ * names an object — then the lookup answers.
+ */
+export interface NoLevelReason {
+  kind: 'statement' | 'no-object';
+  /** The word in the Level cell. */
+  label: string;
+  /** The first line of the explanation. */
+  title: string;
+  detail: string;
+}
+
+const STATEMENT_OF_KIND: Readonly<Partial<Record<string, string>>> = {
+  'authority-check': 'AUTHORITY-CHECK',
+  'commit-work': 'COMMIT WORK',
+  'native-sql': 'native SQL (EXEC SQL or ADBC)',
+  dynpro: 'CALL SCREEN or a screen MODULE',
+};
+
+export function noLevelReason(finding: Pick<EvidenceFinding, 'kind' | 'objectName' | 'snippet'>): NoLevelReason | null {
+  if (finding.objectName?.trim()) return null;
+  const snippet = finding.snippet ?? '';
+  // The authorization finding about a check the program does not make is
+  // anchored at a write, not at an AUTHORITY-CHECK: no statement to name.
+  const statement =
+    finding.kind === 'authority-check' && !/^\s*AUTHORITY-CHECK\b/i.test(snippet) ? undefined : STATEMENT_OF_KIND[finding.kind];
+  if (statement) {
+    const authObject = finding.kind === 'authority-check' ? /\bOBJECT\s+'([^']+)'/i.exec(snippet)?.[1]?.toUpperCase() : undefined;
+    return {
+      kind: 'statement',
+      label: 'Statement',
+      title: 'No level: a statement, not an SAP object',
+      detail:
+        `This finding is about the ABAP statement ${statement} itself. A clean core level belongs to an SAP object that SAP's release or classification file lists, and a statement is not one — so there is no level here, rather than an unknown one.` +
+        (finding.kind === 'authority-check'
+          ? ` ${authObject ? `The authorization object it checks, ${authObject}, is` : 'Authorization objects are'} in neither of SAP's files, so it carries no level either.`
+          : ''),
+    };
+  }
+  return {
+    kind: 'no-object',
+    label: 'No object',
+    title: 'No level: no SAP object named',
+    detail:
+      'The engine records no SAP object for this finding — the statement names none it can read (a name held in a variable, a literal value, a check the program does not make) — so there is nothing to look up in SAP\'s data.',
+  };
+}
+
 /** Other ways of grouping the list besides by kind. */
 export type GroupingKey = 'kind' | 'severity' | 'line';
 

@@ -257,7 +257,7 @@ test.describe('what could not be read says so', () => {
 test.describe('the route’s own derivation, on the product’s largest example', () => {
   const EXAMPLE = 'public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
-  test('42 findings, 26 with an object, and not one requirement borrowed from a neighbour', () => {
+  test('42 findings, 32 with an object, and not one requirement borrowed from a neighbour', () => {
     const built = findingsOf(read(EXAMPLE), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
     const view = itFindingsView(built);
 
@@ -269,8 +269,12 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // block VBAK-LIFSK of the order — so one finding names VBAK as written
     // (level D), beside the BDC finding on the transaction itself. The same
     // slice derives one more rule (16 -> 17).
+    // 32 with an object since 11.10.2026 (owner: "levels are missing here"):
+    // a finding caused by a call names what it calls — Z_CREDIT_EXPOSURE_READ,
+    // the update module, GUI_DOWNLOAD, SO_NEW_DOCUMENT_SEND_API1,
+    // REUSE_ALV_GRID_DISPLAY and the SUBMITted RV_ORDER_FLOW_INFORMATION.
     expect(built.rows.length).toBe(42);
-    expect(built.rows.filter((r) => r.objectName !== null).length).toBe(26);
+    expect(built.rows.filter((r) => r.objectName !== null).length).toBe(32);
     expect(built.rulesDerived).toBe(17);
     const batchInput = built.rows.find((r) => r.objectName === 'VBAK' && r.level === 'D');
     expect(batchInput, 'the write through batch input is not the new row').toBeTruthy();
@@ -302,9 +306,13 @@ test.describe('the route’s own derivation, on the product’s largest example'
 
     // C 22, B 2, Unknown 1 — measured 23.09.2026; D 1 since 10.10.2026, the
     // batch-input write to VBAK above (a write, so D; every read stays C).
+    // Since 11.10.2026 the six named calls are graded too: GUI_DOWNLOAD and
+    // SO_NEW_DOCUMENT_SEND_API1 B (SAP: classicAPI), REUSE_ALV_GRID_DISPLAY and
+    // RV_ORDER_FLOW_INFORMATION C (SAP objects in neither file),
+    // Z_CREDIT_EXPOSURE_READ and Z_SD_LEGACY_LOG_WRITE not determined (customer).
     const dist = Object.fromEntries(view.distribution.slices.map((s) => [s.grade, s.count]));
-    expect(dist).toMatchObject({ A: 0, B: 2, C: 22, D: 1, Unknown: 1 });
-    expect(view.distribution.coverage.sentence).toContain('26 of 42');
+    expect(dist).toMatchObject({ A: 0, B: 4, C: 24, D: 1, Unknown: 3 });
+    expect(view.distribution.coverage.sentence).toContain('32 of 42');
   });
 });
 

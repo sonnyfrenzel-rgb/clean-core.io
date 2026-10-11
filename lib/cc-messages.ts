@@ -46,6 +46,8 @@ export const CC_MESSAGES = {
 
   // The explanation behind a clean core level chip — components/cc/LevelExplained.tsx.
   'level.whatItMeans': 'what this level means',
+  // Where a finding has no level at all (a statement, or no object named).
+  'level.none': 'no clean core level, why',
 
   // The Message Popover of the edit footer — DESIGN.md §2.6, §2.3 item 6.
   'checks.title': 'Checks',

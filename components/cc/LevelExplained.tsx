@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState
 import { t } from '@/lib/cc-messages';
 import type { CleanCoreLevelValue } from '@/lib/clean-core-level';
 import { cleanCoreLevelExplanation } from '@/lib/clean-core-level-explain';
+import type { NoLevelReason } from '@/lib/findings-view';
 import { CcCleanCoreLevel } from './Identifier';
 
 /**
@@ -47,6 +48,73 @@ export function CcCleanCoreLevelExplained({
   trigger?: React.ReactNode;
 }) {
   const explanation = cleanCoreLevelExplanation(value);
+  return (
+    <ExplainedMark
+      wrapperData={{ 'data-cc-level-explained': value }}
+      triggerData={{ 'data-cc-level-trigger': value }}
+      panelData={{ 'data-cc-level-explanation': value }}
+      srSuffix={t('level.whatItMeans')}
+      wide={Boolean(trigger)}
+      mark={trigger ?? <CcCleanCoreLevel value={value} withLabel={withLabel} />}
+    >
+      <span className="block text-[13px] leading-snug font-semibold text-cc-ink">{explanation.title}</span>
+      <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink">{explanation.meaning}</span>
+      {explanation.atc ? (
+        <span className="mt-2 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.atc}</span>
+      ) : null}
+      <span className="mt-1 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.caveat}</span>
+      <span className="mt-1 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.source}</span>
+    </ExplainedMark>
+  );
+}
+
+/**
+ * Where a finding has no clean core level at all — owner, 11.10.2026: a bare
+ * "?" in the Level column said nothing. The finding is about a statement of
+ * the language (`AUTHORITY-CHECK`, `COMMIT WORK`, `CALL SCREEN`) or names no
+ * object the engine could read, and a level belongs to an SAP object listed in
+ * SAP's data. So the cell says which of the two it is, in a word, and explains
+ * it on hover, focus and tap like a level chip — never a letter, never the
+ * "—" of a level that was looked up and not determined.
+ */
+export function CcNoLevelExplained({ reason }: { reason: NoLevelReason }) {
+  return (
+    <ExplainedMark
+      wrapperData={{ 'data-cc-no-level': reason.kind }}
+      triggerData={{ 'data-cc-no-level-trigger': reason.kind }}
+      panelData={{ 'data-cc-no-level-explanation': reason.kind }}
+      srSuffix={t('level.none')}
+      wide={false}
+      mark={
+        <span className="cc-text-meta font-medium text-cc-ink-muted underline decoration-dotted underline-offset-2">
+          {reason.label}
+        </span>
+      }
+    >
+      <span className="block text-[13px] leading-snug font-semibold text-cc-ink">{reason.title}</span>
+      <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink">{reason.detail}</span>
+    </ExplainedMark>
+  );
+}
+
+/** The mechanics both marks share: hover, focus and tap open the explanation; Escape and a tap outside close it. */
+function ExplainedMark({
+  wrapperData,
+  triggerData,
+  panelData,
+  srSuffix,
+  wide,
+  mark,
+  children,
+}: {
+  wrapperData: Record<string, string>;
+  triggerData: Record<string, string>;
+  panelData: Record<string, string>;
+  srSuffix: string;
+  wide: boolean;
+  mark: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -107,13 +175,13 @@ export function CcCleanCoreLevelExplained({
   }, [open, closeAll, measure]);
 
   return (
-    <span className="inline-flex align-middle" data-cc-level-explained={value}>
+    <span className="inline-flex align-middle" {...wrapperData}>
       <button
         ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-describedby={id}
-        data-cc-level-trigger={value}
+        {...triggerData}
         onClick={() => {
           // A click that follows a hover keeps the panel open (pinned); a
           // second click closes it, whatever opened it.
@@ -139,11 +207,11 @@ export function CcCleanCoreLevelExplained({
           'inline-flex min-h-6 cursor-help items-center rounded-[4px] border-0 bg-transparent p-0 text-left text-inherit ' +
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus ' +
           'max-[600px]:min-h-11 pointer-coarse:min-h-11 print:min-h-0 print:cursor-auto ' +
-          (trigger ? 'w-full justify-center' : '')
+          (wide ? 'w-full justify-center' : '')
         }
       >
-        {trigger ?? <CcCleanCoreLevel value={value} withLabel={withLabel} />}
-        <span className="sr-only">{`, ${t('level.whatItMeans')}`}</span>
+        {mark}
+        <span className="sr-only">{`, ${srSuffix}`}</span>
       </button>
       <span
         ref={panelRef}
@@ -151,17 +219,11 @@ export function CcCleanCoreLevelExplained({
         role="tooltip"
         tabIndex={-1}
         hidden={!open}
-        data-cc-level-explanation={value}
+        {...panelData}
         style={place ? { top: place.top, left: place.left } : undefined}
         className="fixed z-cc-popover block print:hidden w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left whitespace-normal shadow-cc-dialog focus:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus"
       >
-        <span className="block text-[13px] leading-snug font-semibold text-cc-ink">{explanation.title}</span>
-        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink">{explanation.meaning}</span>
-        {explanation.atc ? (
-          <span className="mt-2 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.atc}</span>
-        ) : null}
-        <span className="mt-1 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.caveat}</span>
-        <span className="mt-1 block text-[11px] leading-snug font-medium text-cc-ink-muted">{explanation.source}</span>
+        {children}
       </span>
     </span>
   );

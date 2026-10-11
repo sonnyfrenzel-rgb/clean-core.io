@@ -16,7 +16,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 import { CcSeverity, CcCleanCoreLevel } from '@/components/cc/Identifier';
-import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
+import { CcCleanCoreLevelExplained, CcNoLevelExplained } from '@/components/cc/LevelExplained';
 import {
   calmTitle,
   filterActive,
@@ -24,6 +24,7 @@ import {
   groupHint,
   groupRows,
   lookHereFirst,
+  noLevelReason,
   pageOf,
   programMap,
   SEVERITY_ORDER,
@@ -32,6 +33,7 @@ import {
   type FindingRow,
   type FindingsFilter,
   type GroupingKey,
+  type NoLevelReason,
   type ProcessStepBand,
   type ShownSeverity,
 } from '@/lib/findings-view';
@@ -70,17 +72,20 @@ const COLUMNS = [
   { key: 'line', label: 'Line', width: '5.5rem' },
   { key: 'severity', label: 'Severity', width: '6rem' },
   { key: 'what', label: 'What' },
-  { key: 'level', label: 'Level', width: '4rem' },
+  { key: 'level', label: 'Level', width: '5.5rem' },
   { key: 'successor', label: 'Successor' },
 ] as const;
 
 export interface LevelLookup {
   status: 'loading' | 'ready' | 'error';
-  /** The level of a finding (row); null when it names no object or none was found. */
+  /** The level of a finding (row); null when it names no object (`noLevelReason` says why) or the lookup has not answered. */
   of: (finding: EvidenceFinding) => CloudReadinessGrade | null;
 }
 
 const NO_LEVELS: LevelLookup = { status: 'error', of: () => null };
+
+/** The order of a group's level summary: A → D, then not determined. */
+const LEVEL_ORDER: readonly string[] = ['A', 'B', 'C', 'D', 'Unknown'];
 
 /**
  * Open a kind's group under "Findings by kind" from outside the list — the
@@ -114,6 +119,9 @@ export interface FindingsSideApi {
 
 function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: LevelLookup['status'], openSource?: (line: number) => void) {
   const ef = r.finding;
+  // A finding that names no SAP object has no level whatever the lookup says
+  // — a statement, or no object named — and the cell says which (owner, 11.10.2026).
+  const noLevel = noLevelReason(ef);
   const sev = normaliseSeverity(ef.severity);
   return {
     line: (
@@ -133,10 +141,13 @@ function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: Leve
         {ef.objectName ? <span className="block cc-text-meta font-medium text-cc-ink-muted">{calmTitle(ef.title)}</span> : null}
       </span>
     ),
-    level: level ? (
+    level: noLevel ? (
+      <CcNoLevelExplained reason={noLevel} />
+    ) : level ? (
       <CcCleanCoreLevelExplained value={level} />
     ) : lookup === 'ready' ? (
-      <span className="cc-text-meta text-cc-ink-muted" title="No level: the finding names no object">?</span>
+      // Named, looked up, and SAP's data holds no answer: not determined.
+      <CcCleanCoreLevelExplained value="Unknown" />
     ) : (
       <span className="cc-text-meta text-cc-ink-muted" title={lookup === 'loading' ? 'Looking up the catalog' : 'The catalog lookup did not answer'}>
         —
@@ -496,9 +507,17 @@ export default function EvidenceFindingsTable({
                       const page = pageOf(g.matching, Boolean(expanded[g.kind]));
                       const hint = grouping === 'kind' ? groupHint(g) : '';
                       const succ = withSuccessor(g.matching);
+                      // The group's levels, A → D and not determined, then the
+                      // findings without a level by reason — never a bare "?".
                       const lvl = new Map<string, number>();
+                      const noLevels = new Map<NoLevelReason['kind'], { reason: NoLevelReason; n: number }>();
                       for (const r of g.matching) {
-                        const l = levels.of(r.finding) ?? '?';
+                        const reason = noLevelReason(r.finding);
+                        if (reason) {
+                          noLevels.set(reason.kind, { reason, n: (noLevels.get(reason.kind)?.n ?? 0) + 1 });
+                          continue;
+                        }
+                        const l = levels.of(r.finding) ?? 'Unknown';
                         lvl.set(l, (lvl.get(l) ?? 0) + 1);
                       }
                       const regionId = `findings-group-${g.kind}-rows`;
@@ -539,20 +558,30 @@ export default function EvidenceFindingsTable({
                               </span>
                               <span className="hidden flex-wrap items-center gap-1 sm:flex">
                                 {levels.status === 'ready'
-                                  ? [...lvl.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([l, n]) => (
+                                  ? [...lvl.entries()].sort(([a], [b]) => LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b)).map(([l, n]) => (
                                       <span key={l} className="inline-flex items-center gap-1">
-                                        {l === '?' ? (
-                                          <span className="cc-text-meta text-cc-ink-muted">?</span>
-                                        ) : (
-                                          // Bare on purpose: this summary sits inside the group's
-                                          // disclosure button, and a button cannot hold another.
-                                          // The rows below explain each level (roadmap 3.0.6).
-                                          <CcCleanCoreLevel value={l as CloudReadinessGrade} />
-                                        )}
+                                        {/* Bare on purpose: this summary sits inside the group's
+                                            disclosure button, and a button cannot hold another.
+                                            The rows below explain each level (roadmap 3.0.6). */}
+                                        <CcCleanCoreLevel value={l as CloudReadinessGrade} />
                                         <span className="cc-text-meta text-cc-ink">{n}</span>
                                       </span>
                                     ))
                                   : null}
+                                {[...noLevels.values()].map(({ reason, n }) => (
+                                  // Not behind the lookup: having no level waits for none.
+                                  // Bare here too; the rows below explain it on a tap.
+                                  <span
+                                    key={reason.kind}
+                                    className="inline-flex items-center gap-1"
+                                    data-findings-group-no-level={reason.kind}
+                                    title={reason.title}
+                                  >
+                                    <span className="cc-text-meta font-medium text-cc-ink-muted">{reason.label}</span>
+                                    <span className="sr-only">, no clean core level:</span>
+                                    <span className="cc-text-meta text-cc-ink">{n}</span>
+                                  </span>
+                                ))}
                               </span>
                               <span className={clsx('cc-text-meta', succ ? 'text-cc-ink' : 'text-cc-ink-muted')}>
                                 {succ}/{g.matching.length} with successor
