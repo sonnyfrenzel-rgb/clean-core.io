@@ -4,7 +4,7 @@ import { getAuth, getDb } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
-import { parseGeneratedPackage, replaceFileContent, repairTarget } from '@/lib/generated-package';
+import { parseGeneratedPackage, replaceFileContent, repairTarget, suiteRepairImportHint } from '@/lib/generated-package';
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
@@ -88,7 +88,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
    * we are fixing the transformed application module (app.ts) or the test suite,
    * because either can carry an AI-introduced syntax error.
    */
-  const autoHealCode = async (errorOutput: string, currentCode: string, kind: 'module' | 'test', filePath?: string) => {
+  const autoHealCode = async (errorOutput: string, currentCode: string, kind: 'module' | 'test', filePath?: string, codeUnderTest?: string) => {
     const label = kind === 'module'
       ? (filePath ? `generated source file \`${filePath}\`` : 'transformed application module (app.ts)')
       : 'Node.js test suite (test.ts)';
@@ -97,7 +97,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
 
 Common causes: a colon used where a semicolon/comma was expected, a missing bracket, an invalid TypeScript annotation, or a bad import path.
 ${kind === 'test'
-  ? "IMPORTANT: the application under test is in './app' (app.ts) in the same directory — import from './app', not './index'."
+  ? suiteRepairImportHint(codeUnderTest)
   : filePath
     ? `IMPORTANT: this is one file of a multi-file package and other files import from it. Keep every export and every import path exactly as they are; return this one file only.`
     : "IMPORTANT: this is a self-contained module; keep all exported functions/classes so the tests can import them from './app'."}
@@ -244,7 +244,9 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             draftTarget = { kind: 'module' };
             nextPayload = { ...currentPayload, code: repaired };
           } else {
-            repaired = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
+            // The suite's imports name the package's own paths; the prompt says
+            // so instead of sending the model to './app' (owner report 11.10.2026).
+            repaired = await autoHealCode(errText, currentPayload.tests?.code || '', 'test', undefined, currentPayload.code);
             draftTarget = { kind: 'test' };
             nextPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: repaired } as Project['testSuite'] };
           }

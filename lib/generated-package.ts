@@ -239,3 +239,31 @@ export function replaceFileContent(files: GeneratedFile[], index: number, conten
   }
   return JSON.stringify(files.map((f, i) => (i === index ? { ...f, content } : f)));
 }
+
+/**
+ * What the repair prompt for a test suite says about where the code under test
+ * lives.
+ *
+ * A flat legacy module is materialised as `app.ts` (`sandboxFilesFromStoredCode`),
+ * so its suite imports `./app`. A generated package keeps its own paths — the
+ * suite imports `./srv/service` or whatever the package holds — and the prompt
+ * used to say `./app` for both. Asked to repair a suite of a package, the model
+ * did as told and moved the import to `./app`, which no package contains: every
+ * repair failed with `Could not resolve "./app"`, and the run never got past the
+ * compiler (owner report 11.10.2026, FI_Collection_Worklist — the repaired suite
+ * was the original with one quote fixed and the import changed to `./app`).
+ */
+export function suiteRepairImportHint(code: string | null | undefined): string {
+  const pkg = parseGeneratedPackage(code);
+  if (!pkg) {
+    return "IMPORTANT: the application under test is in './app' (app.ts) in the same directory — import from './app', not './index'.";
+  }
+  const sources = pkg.map((f) => f.path).filter((p) => /\.(ts|tsx|js|mjs|cjs)$/.test(p));
+  const listed = (sources.length > 0 ? sources : pkg.map((f) => f.path)).slice(0, 12).join(', ');
+  const example = `./${(sources[0] ?? 'srv/service.ts').replace(/\.(ts|tsx|js|mjs|cjs)$/, '')}`;
+  return (
+    `IMPORTANT: the application under test is a multi-file package (${listed}), laid out from the directory of the suite. ` +
+    `Keep every import of the suite exactly as it is — its paths are relative to the package root (for example '${example}'). ` +
+    "There is no './app' and no './index'; never import from either."
+  );
+}
