@@ -918,7 +918,11 @@ test('the documentation stage exports the skeleton of the signed run, not a mode
   expect(page).not.toMatch(/<bpmn:|<bpmndi:/);
   expect(page).toContain("import('@/lib/bpmn/export')");
   // Built from the source whose digest the active run signed, and from nothing else.
-  const handler = page.slice(page.indexOf('const downloadBPMN'), page.indexOf('const downloadConfluenceHTML'));
+  // The handler ends at its own closing brace: the RACI helper of the other
+  // exports (`exportRaci`) sits between it and the Confluence export since e8a12456.
+  const start = page.indexOf('const downloadBPMN');
+  const handler = page.slice(start, page.indexOf('\n  };', start));
+  expect(handler).toContain('saveAs(blob, bpmnFileName(');
   expect(handler).toContain('buildBpmnExportFromSource(');
   expect(handler).toContain('signedSource');
   expect(handler).not.toMatch(/parsedDoc|parsedBusinessDoc|l3_flow|sop_details|raci/);

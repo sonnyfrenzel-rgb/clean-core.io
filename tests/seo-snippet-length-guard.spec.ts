@@ -80,7 +80,12 @@ async function effectiveMeta(file: string, params: Record<string, string>): Prom
   let title: string | undefined;
   let description: string | undefined;
   for (const f of chain) {
-    const mod = (await import(f)) as MetaModule;
+    // `require`, not `await import(f)`: on Node 22 (CI) a run-time import()
+    // loads the page outside Playwright's tsconfig path mapping and every
+    // `@/lib/...` import in it fails with "Cannot find module" (CI run
+    // 38084646404, shard 5); Node 24 resolves it, so it passed on this machine.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require(f) as MetaModule;
     const meta = mod.metadata ?? (mod.generateMetadata ? await mod.generateMetadata({ params: Promise.resolve(params) } as never) : undefined);
     if (!meta) continue;
     title ??= titleOf(meta);
