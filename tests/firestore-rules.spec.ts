@@ -5,6 +5,7 @@ import { initializeFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
+import { createWithinCeiling } from '../lib/write-ceiling';
 
 // Initialize Firebase SDK in Node context for seeding and validation
 const firebaseApp = initializeApp(firebaseConfig);
@@ -246,13 +247,13 @@ test.describe('Firestore Security Rules: AnalysisRuns subcollection validation',
     // Sign in as owner
     await signInWithEmailAndPassword(firebaseAuth, OWNER_EMAIL, TEST_PASSWORD);
 
-    const newProjectId = `new-test-project-${Date.now()}`;
-    const newProjectRef = doc(firestoreDb, 'projects', newProjectId);
-
+    // Since 3.0.9 (SEC-2026-758) a browser create takes a step of the account's
+    // write ceiling in the same transaction, as the app does; the field rules are
+    // what this test reads, so both creates go through that path.
     // 1. Create with forbidden field 'analysis' (should fail)
     let createWithAnalysisFailed = false;
     try {
-      await setDoc(newProjectRef, {
+      await createWithinCeiling(firestoreDb, 'projects', ownerUid, {
         name: 'New Project',
         status: 'uploaded',
         userId: ownerUid,
@@ -267,7 +268,7 @@ test.describe('Firestore Security Rules: AnalysisRuns subcollection validation',
     // 2. Create with allowed fields only (should succeed)
     let createAllowedSucceeded = true;
     try {
-      await setDoc(newProjectRef, {
+      await createWithinCeiling(firestoreDb, 'projects', ownerUid, {
         name: 'New Project Succeeded',
         status: 'uploaded',
         userId: ownerUid,

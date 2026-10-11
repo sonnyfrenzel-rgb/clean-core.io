@@ -218,7 +218,14 @@ test.describe('every demo screen says what it is', () => {
     await expect(page.getByTestId('demo-no-pack')).toContainText('no download here');
 
     const stage = page.getByTestId('demo-stage-delivery');
-    await expect(stage.locator('a, button').filter({ hasText: /download|audit pack|export|sign off|signature/i })).toHaveCount(0);
+    // The "On this page" bar (ADR-091) names the sections it jumps to — "Audit
+    // pack" among them — with in-page links; a jump is not an offer. Every other
+    // link and button counts.
+    // The bar's links only ever jump within the page …
+    await expect(stage.locator('[data-page-anchors] a:not([href^="#"]), [data-page-anchors] button')).toHaveCount(0);
+    // … and outside it there is nothing to download, export or sign.
+    const actions = stage.locator('a:not([data-page-anchors] a), button:not([data-page-anchors] button)');
+    await expect(actions.filter({ hasText: /download|audit pack|export|sign off|signature/i })).toHaveCount(0);
     await expect(stage.locator('a[download]')).toHaveCount(0);
   });
 });
