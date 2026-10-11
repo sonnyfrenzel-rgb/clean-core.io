@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, CircleHelp, PenLine, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
@@ -479,6 +479,32 @@ export default function SpecDocument({
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<SpecRequirement | null>(null);
+  /**
+   * A requirement moved by its arrows stays under the pointer: before the move
+   * its block's top is noted, after the new order is drawn the page scrolls by
+   * the distance the block travelled, and the same arrow takes the focus. Without
+   * it the block jumped away and the next click landed on the arrow of the
+   * requirement that took its place — so two requirements swapped back and forth
+   * and none could be moved further (owner, 11.10.2026).
+   */
+  const moving = useRef<{ id: string; direction: -1 | 1; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const pending = moving.current;
+    if (!pending) return;
+    moving.current = null;
+    const block = document.getElementById(`req-${pending.id}`);
+    if (!block) return;
+    const travelled = block.getBoundingClientRect().top - pending.top;
+    if (travelled !== 0) window.scrollBy({ top: travelled, behavior: 'instant' as ScrollBehavior });
+    const arrow = block.querySelector<HTMLElement>(pending.direction < 0 ? '[data-spec-req-up]' : '[data-spec-req-down]');
+    arrow?.focus({ preventScroll: true });
+  });
+  const moveKeepingPlace = (id: string, direction: -1 | 1) => {
+    if (moveRequirement(spec, id, direction) === spec) return; // first or last of its kind: nothing moves
+    const block = document.getElementById(`req-${id}`);
+    moving.current = { id, direction, top: block ? block.getBoundingClientRect().top : 0 };
+    onChange((s) => moveRequirement(s, id, direction), `Moved ${id}`);
+  };
   const decisions = new Map(spec.decisions.map((d) => [d.id, d]));
   const functional = spec.requirements.filter((r) => r.kind === 'functional');
   const nonFunctional = spec.requirements.filter((r) => r.kind === 'non-functional');
@@ -515,7 +541,7 @@ export default function SpecDocument({
         onEdit={() => setEditing(`req:${r.id}`)}
         onDone={() => setEditing(null)}
         onChange={(next, change) => onChange((s) => ({ ...s, requirements: s.requirements.map((x) => (x.id === r.id ? next : x)) }), change)}
-        onMove={(dir) => onChange((s) => moveRequirement(s, r.id, dir), `Moved ${r.id}`)}
+        onMove={(dir) => moveKeepingPlace(r.id, dir)}
         onDelete={() => setDeleting(r)}
         onOpenDecision={onOpenDecision}
         proposal={proposalFor(r)}

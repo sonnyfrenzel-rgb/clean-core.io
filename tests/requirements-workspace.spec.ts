@@ -188,6 +188,34 @@ test('the owner edits a requirement with the formatting bar and sets its status;
   await context.close();
 });
 
+test('a requirement moved by its arrow stays under the pointer, so repeated clicks walk it through the list', async ({ browser }) => {
+  // Owner, 11.10.2026: after one move the block jumped away and the next click
+  // at the same spot hit the arrow of the requirement that took its place — two
+  // requirements swapped back and forth. Clicking the same screen point three
+  // times must move the same requirement three places.
+  test.setTimeout(300_000);
+  const { context, page } = await signedInPage(browser, OWNER);
+  await noModel(page);
+  await openWorkspace(page);
+  await expect(page.locator('[data-spec-req^="FR-"]').first()).toBeVisible({ timeout: 60_000 });
+  const order = () => page.locator('[data-spec-req^="FR-"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-spec-req')));
+  const before = await order();
+  expect(before.length, 'the seeded specification has enough functional requirements').toBeGreaterThanOrEqual(6);
+  const moved = before[1]!;
+  const down = page.locator(`[data-spec-req-down="${moved}"]`);
+  await down.scrollIntoViewIfNeeded();
+  const box = (await down.boundingBox())!;
+  for (let step = 1; step <= 3; step++) {
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(async () => (await order()).indexOf(moved), { timeout: 10_000 }).toBe(1 + step);
+  }
+  // The arrow kept the focus, so the keyboard walks on from where the pointer did.
+  await expect(down).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await order()).indexOf(moved), { timeout: 10_000 }).toBe(5);
+  await context.close();
+});
+
 test('the model’s wording is offered beside a statement — marked, never applied until asked', async ({ browser }) => {
   test.setTimeout(300_000);
   const { context, page } = await signedInPage(browser, OWNER);
