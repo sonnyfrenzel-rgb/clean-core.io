@@ -56,6 +56,16 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import BusinessValuePlan from '@/components/tco/BusinessValuePlan';
+import SaveStatus from '@/components/tco/SaveStatus';
+import {
+  RATES_HELP,
+  combineSaves,
+  savedStepState,
+  sectionKeysOf,
+  sectionSave,
+  sectionsWithFigures,
+  type SectionSave,
+} from '@/lib/economics-help';
 
 /** The size the forecast models when there is no source to count. */
 const DEFAULT_LOC = 8500;
@@ -291,6 +301,18 @@ export default function TcoCalculatorPage() {
     [assumptions, loc, sourceLoc, upgradeFreq, upgradesStated, fpFreq, featurePacksStated, oneTimeCost],
   );
   const serialized = useMemo(() => serializeEconomics(payload), [payload]);
+  // What was last stored, per section, as state the page can render from
+  // (owner, 11.10.2026: "show clearly when something was saved"). `body` is
+  // the serialized payload of the last save — or, before the first, what was
+  // loaded; `at` the time each section was last saved.
+  const [stored, setStored] = useState<{ body: string | null; at: Record<string, string> }>({ body: null, at: {} });
+  if (hydrated && stored.body === null) {
+    const loadedAt = project?._economics?.savedAt ?? null;
+    setStored({
+      body: serialized,
+      at: loadedAt ? Object.fromEntries(sectionsWithFigures(serialized).map((k) => [k, loadedAt])) : {},
+    });
+  }
   const latestRef = useRef(serialized);
   /** What is stored — or, before the first save, what was loaded. */
   const storedRef = useRef<string | null>(null);
@@ -353,6 +375,14 @@ export default function TcoCalculatorPage() {
         } else {
           storedRef.current = body;
           setSave({ state: 'saved' });
+          // Every section this save changed is saved now, at the server's time.
+          setStored((prev) => {
+            const before = sectionKeysOf(prev.body);
+            const after = sectionKeysOf(body);
+            const at = { ...prev.at };
+            for (const k of Object.keys(after)) if (after[k] !== before[k]) at[k] = record.savedAt;
+            return { body, at };
+          });
           // The phase and the tool's check read the stored record, so they move now.
           setProject((p) => (p ? { ...p, _economics: record, _economicsLoadFailed: false } : p));
         }
@@ -470,14 +500,23 @@ export default function TcoCalculatorPage() {
   const ratesDone = progress.rates;
   const effortDone = progress.effort;
   const compared = progress.compared;
+  // Saved or not, per section: what is on screen against what was last stored.
+  const currentKeys = sectionKeysOf(serialized);
+  const storedKeys = sectionKeysOf(stored.body);
+  const sectionStatus = (key: string): SectionSave =>
+    sectionSave({ dirty: stored.body !== null && currentKeys[key] !== storedKeys[key], savedAt: stored.at[key] ?? null, save });
+  const ratesSave = sectionStatus('rates');
+  const effortSave = combineSaves(assumptions.options.map((o) => sectionStatus(`option:${o.id}`)));
+  const retry = () => void flush({ force: true });
   const steps: EconomicsStepInfo[] = [
     { n: 1, id: 'economics-step-codebase', title: 'Your codebase', state: progress.codebase ? 'done' : 'input' },
-    { n: 2, id: 'economics-step-rates', title: 'Your rates', state: ratesDone ? 'done' : 'input' },
+    // A step is done once its figures are complete *and* stored (owner, 11.10.2026).
+    { n: 2, id: 'economics-step-rates', title: 'Your rates', state: savedStepState(ratesDone, ratesSave) ?? 'input' },
     {
       n: 3,
       id: 'economics-step-effort',
       title: 'Effort per option',
-      state: effortDone ? 'done' : pending.length > 0 ? 'proposal' : 'input',
+      state: savedStepState(effortDone, effortSave) ?? (pending.length > 0 ? 'proposal' : 'input'),
     },
     {
       n: 4,
@@ -487,7 +526,8 @@ export default function TcoCalculatorPage() {
       waitingFor: !ratesDone && !effortDone ? 'steps 2 and 3' : !ratesDone ? 'step 2' : 'step 3',
     },
   ];
-  const next = steps.slice(1).find((s) => s.state !== 'done' && s.state !== 'waiting') ?? null;
+  // A step being saved is not the next thing to do; one that failed to save is.
+  const next = steps.slice(1).find((s) => s.state !== 'done' && s.state !== 'waiting' && s.state !== 'saving') ?? null;
   const isNext = (n: number) => next?.n === n;
 
   const goTo = (id: string, focus = true) => {
@@ -517,7 +557,28 @@ export default function TcoCalculatorPage() {
     goTo('economics-step-effort', false);
   };
 
+  // A field of step 2 by its `data-cost-field`: scrolled to, with the cursor in it.
+  const goToField = (field: string) => {
+    const el = document.querySelector<HTMLElement>(`[data-cost-field="${field}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center' });
+    const control = el.matches('input') ? el : el.querySelector<HTMLInputElement>('input');
+    control?.focus({ preventScroll: true });
+  };
+  // An option card's fields, opened at one of them.
+  const openOptionAt = (id: string, field: string) => {
+    setEditingOptions((cur) => (cur.has(id) ? cur : new Set(cur).add(id)));
+    // The panel is hidden until the next render; focus after it.
+    window.setTimeout(() => goToField(field), 0);
+  };
+
   const guide = (() => {
+    if (next?.state === 'unsaved') {
+      return {
+        sentence: `Your figures in step ${next.n} are complete but not saved yet${save.state === 'failed' ? `: ${save.message}` : '.'}`,
+        action: <CcButton variant="primary" data-economics-next-action="" onClick={retry}>Retry saving</CcButton>,
+      };
+    }
     if (next?.n === 2) {
       return {
         sentence: 'Enter your currency and what a developer day and a key-user day cost you. Nothing has a default.',
@@ -666,6 +727,7 @@ export default function TcoCalculatorPage() {
         <EconomicsStep
           step={steps[1]}
           next={isNext(2)}
+          status={isOwner ? <SaveStatus status={ratesSave} onRetry={retry} live scope="rates" /> : undefined}
           guidance={
             <>
               Enter what a developer day and a <GlossaryTerm termKey="Key-user day">key-user day</GlossaryTerm> cost
@@ -679,25 +741,31 @@ export default function TcoCalculatorPage() {
             <div className="hidden sm:block" aria-hidden={true} />
             <FigureField
               label="Developer day rate"
-              hint="SAP ABAP / SAP BTP development, per day."
+              hint={RATES_HELP.devRate}
+              kind="rate"
               value={devRate}
               onChange={setDevRate}
-              suffix={currency ? `${currency} / day` : '/ day'}
+              prefix={currency || undefined}
+              suffix="/ day"
               data={{ 'data-cost-field': 'dev-day-rate', ...forecastName('dev-rate') }}
             />
             <FigureField
               label="Key-user day rate"
-              hint="The people who test a change by hand, per day."
+              hint={RATES_HELP.testRate}
+              kind="rate"
               value={userRate}
               onChange={setUserRate}
-              suffix={currency ? `${currency} / day` : '/ day'}
+              prefix={currency || undefined}
+              suffix="/ day"
               data={{ 'data-cost-field': 'test-day-rate', ...forecastName('user-rate') }}
             />
             <FigureField
               label="Time horizon in years"
-              hint="One-off and recurring effort only compare over a period you name."
+              hint={RATES_HELP.horizon}
+              kind="horizon"
               value={assumptions.horizonYears}
               onChange={(v) => patch({ horizonYears: v })}
+              suffix="years"
               data={{ 'data-cost-field': 'horizon-years' }}
             />
             <CadenceField
@@ -719,6 +787,7 @@ export default function TcoCalculatorPage() {
         <EconomicsStep
           step={steps[2]}
           next={isNext(3)}
+          status={isOwner ? <SaveStatus status={effortSave} onRetry={retry} live scope="effort" /> : undefined}
           guidance={
             proposal
               ? 'Each option needs its effort in days. Take over the proposal from the size of your code as your own figure, or enter your own. Keep also needs a yearly maintenance effort, proposed the same way.'
@@ -742,6 +811,15 @@ export default function TcoCalculatorPage() {
             onPatchOption={patchOption}
             editing={editingOptions}
             onToggleEdit={toggleOption}
+            onOpenEdit={openOptionAt}
+            onGoToField={goToField}
+            loc={loc}
+            sourceLoc={sourceLoc}
+            saveStatus={
+              isOwner
+                ? (id) => <SaveStatus status={sectionStatus(`option:${id}`)} onRetry={retry} scope={`option:${id}`} />
+                : undefined
+            }
           />
         </EconomicsStep>
         </fieldset>
@@ -818,9 +896,10 @@ export default function TcoCalculatorPage() {
                       <FigureField
                         label="One-time modernisation budget"
                         hint="Your one-time refactoring and deployment budget."
+                        kind="budget"
                         value={oneTimeCost}
                         onChange={setOneTimeCost}
-                        suffix={currency || undefined}
+                        prefix={currency || undefined}
                         data={{ 'data-tco-cost': 'investment' }}
                       />
                     </div>

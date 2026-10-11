@@ -28,7 +28,7 @@
  * doing nothing.
  */
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { formatDays, formatNumber } from '@/lib/format';
 import {
   COMPARISON_KIND,
@@ -43,8 +43,23 @@ import {
   type BaselineProposal,
   type EffortDays,
   type EffortProposal,
+  type EffortRange,
 } from '@/lib/cost-assumptions';
-import { CircleAlert, CircleDashed } from 'lucide-react';
+import {
+  EFFORT_HELP,
+  PROPOSAL_STANDING,
+  baselineDerivation,
+  baselineUpliftText,
+  costBlockers,
+  effortDerivation,
+  linesBasis,
+  releasesInHorizonText,
+  type DerivationLine,
+  type FigureKind,
+} from '@/lib/economics-help';
+import { figureMessage, useFigureInput } from '@/components/tco/EconomicsChecklist';
+import CcStateText from '@/components/cc/StateText';
+import { CircleAlert } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcDisclosure from '@/components/cc/Disclosure';
@@ -113,10 +128,13 @@ export function initialCostAssumptions(): CostAssumptions {
   return { ...emptyCostAssumptions(), version: COST_ASSUMPTIONS_VERSION, options: SEED_OPTIONS };
 }
 
-const num = (raw: string): number | null => {
-  if (raw.trim() === '') return null;
-  const v = Number(raw);
-  return Number.isFinite(v) ? v : null;
+/**
+ * "Not determined", with the reason the page has always given: a statement of
+ * its own, never a zero (`Stated` in `lib/cost-assumptions.ts`).
+ */
+const NOT_DETERMINED_DELAY: CostOption['upgradeDelay'] = {
+  state: 'not-determined',
+  reason: 'nobody has established how far the upgrade would slip',
 };
 
 /** A stored half-filled figure reads back as "no figure", never as NaN on screen. */
@@ -151,8 +169,11 @@ function withOneOffCorner(
 
 /**
  * A figure the reader states. Every field on this panel is mandatory (ADR-035),
- * so every one carries the asterisk and `aria-required`. An empty field says
- * so once the reader has left it (§2.7: on blur, not on the first keystroke).
+ * so every one carries the asterisk and `aria-required`. It is read and
+ * explained the way step 2 reads its figures (`useFigureInput`): an empty
+ * field says so once the reader has left it, a figure the save would refuse
+ * says what is wrong and what is allowed (§2.7: on blur, not on the first
+ * keystroke).
  */
 function NumField({
   id,
@@ -160,41 +181,53 @@ function NumField({
   value,
   onChange,
   hint,
+  kind = 'days',
+  suffix,
 }: {
   id: string;
   label: string;
   value: number | null;
   onChange: (v: number | null) => void;
   hint?: string;
+  kind?: FigureKind;
+  suffix?: string;
 }) {
-  const [left, setLeft] = useState(false);
-  const missing = value === null && left;
+  const input = useFigureInput(value, kind, onChange);
   return (
-    <CcField
-      label={label}
-      required
-      help={hint}
-      valueState={missing ? 'warning' : undefined}
-      message={missing ? 'Your figure — there is no default.' : undefined}
-    >
-      {({ id: controlId, describedBy, ariaRequired, className }) => (
-        <input
-          id={controlId}
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="any"
-          value={value ?? ''}
-          placeholder="enter your figure"
-          data-cost-field={id}
-          aria-required={ariaRequired}
-          aria-describedby={describedBy}
-          onBlur={() => setLeft(true)}
-          onChange={(e) => onChange(num(e.target.value))}
-          className={className}
-        />
+    <CcField label={label} required help={hint} {...figureMessage(input, value)}>
+      {({ id: controlId, describedBy, ariaRequired, invalid, className }) => (
+        <div className="flex items-center gap-2">
+          <input
+            id={controlId}
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="any"
+            value={input.raw}
+            placeholder="enter your figure"
+            data-cost-field={id}
+            aria-required={ariaRequired}
+            aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
+            onBlur={input.onBlur}
+            onChange={input.onChange}
+            className={className}
+          />
+          {suffix ? <span className="cc-text-meta whitespace-nowrap text-cc-ink-muted">{suffix}</span> : null}
+        </div>
       )}
     </CcField>
+  );
+}
+
+/** A group of effort fields under a legend, with one line of what the group means. */
+function EffortGroup({ legend, help, children }: { legend: string; help: ReactNode; children: ReactNode }) {
+  return (
+    <fieldset className="m-0 min-w-0 space-y-2 border-0 p-0">
+      <legend className="cc-text-label text-cc-ink">{legend}</legend>
+      <p className="m-0 cc-text-meta text-cc-ink-muted">{help}</p>
+      {children}
+    </fieldset>
   );
 }
 
@@ -202,11 +235,13 @@ function NumField({
 function EffortFields({
   idPrefix,
   label,
+  help,
   value,
   onChange,
 }: {
   idPrefix: string;
   label: string;
+  help: ReactNode;
   value: EffortDays | null;
   onChange: (v: EffortDays | null) => void;
 }) {
@@ -219,13 +254,22 @@ function EffortFields({
   const shown = (key: keyof EffortDays) =>
     value && Number.isFinite(value[key]) ? (value[key] as number) : null;
   return (
-    <fieldset className="min-w-0 space-y-2">
-      <legend className="cc-text-label text-cc-ink-muted">{label}</legend>
+    <EffortGroup legend={label} help={help}>
       <div className="grid grid-cols-2 gap-3">
-        <NumField id={`${idPrefix}-dev`} label="Dev days" value={shown('devDays')} onChange={(v) => set('devDays', v)} />
-        <NumField id={`${idPrefix}-test`} label="Test days" value={shown('testDays')} onChange={(v) => set('testDays', v)} />
+        <NumField
+          id={`${idPrefix}-dev`}
+          label="Dev days"
+          value={shown('devDays')}
+          onChange={(v) => set('devDays', v)}
+        />
+        <NumField
+          id={`${idPrefix}-test`}
+          label="Test days"
+          value={shown('testDays')}
+          onChange={(v) => set('testDays', v)}
+        />
       </div>
-    </fieldset>
+    </EffortGroup>
   );
 }
 
@@ -418,10 +462,125 @@ function EffortChip({
   );
 }
 
+const days = (v: number | null | undefined) =>
+  typeof v === 'number' && Number.isFinite(v) ? `${formatDays(v)}` : '—';
+
+/** An entered one-off range in words: "1.3–3.3 developer and 0.67–1.7 test days once". */
+export function oneOffWords(range: EffortRange): string {
+  return `${days(range.low.devDays)}–${days(range.high.devDays)} developer and ${days(range.low.testDays)}–${days(range.high.testDays)} test days once`;
+}
+
+/** An entered dev/test pair in words: "1.7 developer and 1.2 test days per release". */
+export function pairWords(pair: EffortDays, per: string): string {
+  return `${days(pair.devDays)} developer and ${days(pair.testDays)} test days ${per}`;
+}
+
+/** The upgrade deferral as it stands, in words. */
+export function deferralWords(delay: CostOption['upgradeDelay']): string | null {
+  if (!delay) return null;
+  if (delay.state === 'not-determined') return `Not determined — ${delay.reason || 'no reason given'}`;
+  const n = delay.value.releasesDeferred;
+  return `${formatNumber(n, { maximumFractionDigits: 1 }) ?? String(n)} release${n === 1 ? '' : 's'} deferred`;
+}
+
+/** What each open group is, why the option needs it, and the field that takes it. */
+const GROUP_HELP: Record<OptionGroup['key'], { what: string; action: string; field: (id: string) => string }> = {
+  baseline: {
+    what: EFFORT_HELP.baseline,
+    action: 'Enter the maintenance baseline',
+    field: (id) => `${id}-baseline-dev`,
+  },
+  'one-off': {
+    what: EFFORT_HELP.oneOff,
+    action: 'Enter the one-off effort',
+    field: (id) => `${id}-oneoff-low-dev`,
+  },
+  'per-release': {
+    what: EFFORT_HELP.perRelease,
+    action: 'Enter the effort per release',
+    field: (id) => `${id}-per-release-dev`,
+  },
+  deferral: {
+    what: EFFORT_HELP.deferral,
+    action: 'Enter the upgrade deferral',
+    field: (id) => `${id}-upgrade-delay`,
+  },
+};
+
+/** "How is this proposed?" — the derivation of a proposal, line by line, with this project's numbers. */
+function Derivation({
+  title,
+  lines,
+  basis,
+  extra,
+  data,
+}: {
+  title: string;
+  lines: DerivationLine[];
+  basis: string;
+  extra?: string;
+  data: string;
+}) {
+  return (
+    <div data-cost-derivation={data} className="cc-no-print">
+      <CcDisclosure title={title}>
+        <div className="space-y-2">
+          <p className="m-0 cc-text-meta text-cc-ink-muted">From {basis}.</p>
+          <ul className="m-0 list-none space-y-1 p-0">
+            {lines.map((l) => (
+              <li key={l.key} data-cost-derivation-line={l.key} className="cc-text-cell text-cc-ink">
+                <span className="text-cc-ink-muted">{l.label}: </span>
+                {l.formula} = <span className="font-semibold">{l.result}</span>
+              </li>
+            ))}
+          </ul>
+          {extra ? <p className="m-0 cc-text-meta text-cc-ink-muted">{extra}</p> : null}
+          <p className="m-0 cc-text-meta text-cc-ink-muted">{PROPOSAL_STANDING}</p>
+        </div>
+      </CcDisclosure>
+    </div>
+  );
+}
+
+/** One value of a card: what it is, its provenance once, and the value itself — never a chip without the figure. */
+function CardValue({
+  label,
+  chip,
+  children,
+  data,
+}: {
+  label: string;
+  chip?: ReactNode;
+  children: ReactNode;
+  data: Record<`data-${string}`, string>;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1" {...data}>
+      <dt className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
+        {label}
+        {chip}
+      </dt>
+      <dd className="m-0 cc-text-cell text-cc-ink">{children}</dd>
+    </div>
+  );
+}
+
 /**
- * Step 3: one card per option — where its effort stands, the proposal and the
- * one action that takes it over, what the option still lacks, and its fields
- * behind "Enter my own figures".
+ * Step 3: one card per option (owner, 11.10.2026: "you don't understand at all
+ * what exactly is meant, it is hidden, and it doesn't show properly when it
+ * was saved / taken over"). A card reads top to bottom:
+ *
+ *   - its figures — the effort, Keep's maintenance baseline and upgrade
+ *     deferral — each as a value with its provenance chip beside it, once;
+ *     a proposal shows its figures and how they were derived;
+ *   - what it still needs, each with what it is, why, and the action that
+ *     opens the field for it;
+ *   - its cost, or why there is none yet — with a way to the figure in step 2
+ *     it waits for;
+ *   - whether it is saved.
+ *
+ * The fields stay behind "Enter my own figures" / "Change figures"; an open
+ * item's own action opens them at its field.
  */
 export default function OptionComparison({
   assumptions,
@@ -431,6 +590,11 @@ export default function OptionComparison({
   onPatchOption,
   editing,
   onToggleEdit,
+  onOpenEdit,
+  onGoToField,
+  loc,
+  sourceLoc,
+  saveStatus,
 }: {
   assumptions: CostAssumptions;
   comparison: CostComparison;
@@ -444,15 +608,30 @@ export default function OptionComparison({
    */
   editing: ReadonlySet<string>;
   onToggleEdit: (id: string) => void;
+  /** Opens a card's fields and puts the cursor in one of them. */
+  onOpenEdit?: (id: string, field: string) => void;
+  /** Scrolls to a field of step 2 by its `data-cost-field` and puts the cursor in it. */
+  onGoToField?: (field: string) => void;
+  /** The lines the proposals were computed from, and the lines of the source. */
+  loc?: number;
+  sourceLoc?: number | null;
+  /** Whether one card's figures are saved. */
+  saveStatus?: (optionId: string) => ReactNode;
 }) {
   const patchOption = onPatchOption;
   // A figure typed by hand is the reader's own, wherever the field started from.
   const typed = (id: string, p: Partial<CostOption>) => patchOption(id, { ...p, effortSource: 'stated' });
   const proposals: OptionProposals = { effort: proposal, baseline: baselineProposal };
   const pending = pendingProposals(assumptions.options, proposals);
+  const basis = typeof loc === 'number' ? linesBasis(loc, sourceLoc ?? null) : null;
+  const releases = releasesInHorizonText(assumptions.releaseCadence?.perYear, assumptions.horizonYears);
+  const openAt = (id: string, field: string) => {
+    if (onOpenEdit) onOpenEdit(id, field);
+    else if (!editing.has(id)) onToggleEdit(id);
+  };
   return (
     <div data-cost-comparison="">
-      <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
+      <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-2">
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
@@ -475,8 +654,15 @@ export default function OptionComparison({
             .filter(Boolean)
             .join(', and for ');
           const priced = Boolean(cost && cost.total);
+          const blockers = priced ? [] : costBlockers(cost?.coverage.gaps ?? []);
+          const shared = blockers.filter((b) => b.scope === 'shared');
+          const own = blockers.filter((b) => b.scope === 'own');
           const isEditing = editing.has(option.id);
           const panelId = `cost-option-fields-${option.id}`;
+          const deferral = deferralWords(option.upgradeDelay);
+          const effortDerived = proposal && typeof loc === 'number' && (state === 'proposal' || state === 'from-proposal');
+          const baselineDerived =
+            baselineProposal && typeof loc === 'number' && (baselineState === 'proposal' || baselineState === 'from-proposal');
           return (
             <li key={option.id} className="min-w-0">
               <article
@@ -486,22 +672,68 @@ export default function OptionComparison({
                 aria-labelledby={`cost-option-title-${option.id}`}
                 className="cc-card flex h-full min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-col gap-1">
                   <h3 id={`cost-option-title-${option.id}`} className="cc-text-h3 text-cc-ink">
                     {option.label}
                   </h3>
-                  <EffortChip state={state} />
+                  {saveStatus ? <div data-cost-option-save={option.id}>{saveStatus(option.id)}</div> : null}
                 </div>
 
-                {baselineState ? (
-                  <p
-                    className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted"
-                    data-cost-option-baseline={option.id}
-                  >
-                    Maintenance baseline per year:
-                    <EffortChip state={baselineState} data="data-baseline-chip" />
-                  </p>
-                ) : null}
+                <dl className="m-0 flex flex-col gap-3">
+                  <CardValue label="Effort" chip={<EffortChip state={state} />} data={{ 'data-cost-option-effort': option.id }}>
+                    {state === 'proposal' && proposal ? (
+                      <span>{proposalWords(proposal)}</span>
+                    ) : option.oneOff || option.perRelease ? (
+                      <span className="flex flex-col">
+                        <span>{option.oneOff ? oneOffWords(option.oneOff) : 'One-off effort: not entered'}</span>
+                        <span>
+                          {option.perRelease ? `then ${pairWords(option.perRelease, 'per release')}` : 'Effort per release: not entered'}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-cc-ink-muted">Not entered yet.</span>
+                    )}
+                  </CardValue>
+                  {effortDerived && basis ? (
+                    <Derivation
+                      title="How is this proposed?"
+                      lines={effortDerivation(loc as number, proposal)}
+                      basis={basis}
+                      data={`effort-${option.id}`}
+                    />
+                  ) : null}
+
+                  {baselineState ? (
+                    <CardValue
+                      label="Maintenance baseline per year"
+                      chip={<EffortChip state={baselineState} data="data-baseline-chip" />}
+                      data={{ 'data-cost-option-baseline': option.id }}
+                    >
+                      {baselineState === 'proposal' && baselineProposal ? (
+                        <span data-cost-baseline-proposal={option.id}>{baselineWords(baselineProposal)}</span>
+                      ) : option.maintenanceBaselinePerYear ? (
+                        <span>{pairWords(option.maintenanceBaselinePerYear, 'per year')}</span>
+                      ) : (
+                        <span className="text-cc-ink-muted">Not entered yet.</span>
+                      )}
+                    </CardValue>
+                  ) : null}
+                  {baselineDerived && basis ? (
+                    <Derivation
+                      title="How is the baseline proposed?"
+                      lines={baselineDerivation(loc as number, baselineProposal)}
+                      basis={basis}
+                      extra={baselineUpliftText(baselineProposal)}
+                      data={`baseline-${option.id}`}
+                    />
+                  ) : null}
+
+                  {isComparison ? (
+                    <CardValue label="Upgrade deferral" data={{ 'data-cost-option-deferral': option.id }}>
+                      {deferral ?? <span className="text-cc-ink-muted">Not stated yet.</span>}
+                    </CardValue>
+                  ) : null}
+                </dl>
 
                 {parts.effort || parts.baseline ? (
                   <div className="flex flex-col gap-2" data-cost-option-proposal={option.id}>
@@ -509,14 +741,6 @@ export default function OptionComparison({
                     <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
                       Proposed for {proposedFor} — not yours until you take it over
                     </p>
-                    {parts.effort && proposal ? (
-                      <p className="m-0 cc-text-cell text-cc-ink">{proposalWords(proposal)}</p>
-                    ) : null}
-                    {parts.baseline && baselineProposal ? (
-                      <p className="m-0 cc-text-cell text-cc-ink" data-cost-baseline-proposal={option.id}>
-                        {baselineWords(baselineProposal)}
-                      </p>
-                    ) : null}
                     <div className="cc-no-print">
                       <CcButton
                         variant={pending.length === 1 ? 'primary' : 'secondary'}
@@ -533,27 +757,81 @@ export default function OptionComparison({
                   {openGroups.length > 0 ? (
                     <>
                       <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">Still needs</p>
-                      <ul className="m-0 list-none space-y-1 p-0" data-cost-option-gaps={option.id}>
+                      <ul className="m-0 list-none space-y-3 p-0" data-cost-option-gaps={option.id}>
                         {openGroups.map((g) => (
-                          <li key={g.key} className="flex items-center gap-2 cc-text-cell text-cc-ink">
-                            <CircleDashed size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-                            <span>{g.label}</span>
+                          <li
+                            key={g.key}
+                            data-cost-option-gap={g.key}
+                            className="flex flex-col gap-1 rounded-cc-row border border-dashed border-cc-field-border p-3"
+                          >
+                            <span className="flex flex-wrap items-center gap-2">
+                              <CcStateText state="neutral" hollow>
+                                Open
+                              </CcStateText>
+                              <span className="cc-text-cell font-semibold text-cc-ink">{g.label}</span>
+                            </span>
+                            <span className="cc-text-meta text-cc-ink-muted">{GROUP_HELP[g.key].what}</span>
+                            <span className="cc-no-print flex flex-wrap gap-2">
+                              <CcButton
+                                variant="secondary"
+                                data-cost-option-fill={`${option.id}:${g.key}`}
+                                onClick={() => openAt(option.id, GROUP_HELP[g.key].field(option.id))}
+                              >
+                                {GROUP_HELP[g.key].action}
+                              </CcButton>
+                              {g.key === 'deferral' ? (
+                                <CcButton
+                                  data-cost-delay-not-determined-inline=""
+                                  onClick={() => patchOption(option.id, { upgradeDelay: NOT_DETERMINED_DELAY })}
+                                >
+                                  Mark as not determined
+                                </CcButton>
+                              ) : null}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     </>
                   ) : null}
-                  <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
-                    Cost:
-                    {priced ? (
-                      <span className="text-cc-ink">priced in step 4</span>
-                    ) : (
-                      // No figure is not a warning: it is the absence of a verdict (§1.1).
-                      <span data-cost-option-not-determined={option.id}>
-                        <CcProvenanceChip value="not-determined" />
-                      </span>
-                    )}
-                  </p>
+                  <div className="flex flex-col gap-1">
+                    <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+                      Cost:
+                      {priced ? (
+                        <span className="text-cc-ink">priced in step 4</span>
+                      ) : (
+                        // No figure is not a warning: it is the absence of a verdict (§1.1).
+                        <span data-cost-option-not-determined={option.id}>
+                          <CcProvenanceChip value="not-determined" />
+                        </span>
+                      )}
+                    </p>
+                    {!priced && blockers.length > 0 ? (
+                      <div className="flex flex-col gap-1 cc-text-meta text-cc-ink-muted" data-cost-option-why={option.id}>
+                        {shared.length > 0 ? (
+                          <span className="flex flex-wrap items-center gap-x-1 gap-y-1">
+                            <span>Waits for step 2:</span>
+                            {shared.map((b, i) => (
+                              <span key={b.label} className="inline-flex items-center">
+                                <CcButton
+                                  data-cost-option-go-to={b.field ?? ''}
+                                  onClick={() => b.field && onGoToField?.(b.field)}
+                                >
+                                  {b.label}
+                                </CcButton>
+                                {i < shared.length - 1 ? <span aria-hidden={true}>,</span> : null}
+                              </span>
+                            ))}
+                          </span>
+                        ) : null}
+                        {own.length > 0 ? (
+                          <span>
+                            {shared.length > 0 ? 'And on this card: ' : 'Needs on this card: '}
+                            {own.map((b) => b.label).join(', ')}.
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                   {priced && cost?.coverage.state === 'unconfirmed' ? (
                     <p className="m-0 flex items-start gap-1 cc-text-cell text-cc-warning">
                       <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
@@ -570,19 +848,16 @@ export default function OptionComparison({
                     onClick={() => onToggleEdit(option.id)}
                   >
                     {isEditing
-                      ? 'Close'
+                      ? 'Close the fields'
                       : state === 'proposal' || state === 'not-entered'
                         ? 'Enter my own figures'
-                        : openGroups.length > 0
-                          ? 'Fill in'
-                          : 'Change figures'}
+                        : 'Change figures'}
                   </CcButton>
                 </div>
 
                 <div id={panelId} hidden={!isEditing} data-cost-option-fields={option.id}>
                   <div className="space-y-4 border-t border-cc-line pt-4 print:hidden">
-                    <fieldset className="min-w-0 space-y-2">
-                      <legend className="cc-text-label text-cc-ink-muted">One-off effort (range)</legend>
+                    <EffortGroup legend="One-off effort (range)" help={`${EFFORT_HELP.oneOff} ${EFFORT_HELP.devDays} ${EFFORT_HELP.testDays}`}>
                       <div className="grid grid-cols-2 gap-3">
                         {([
                           ['low', 'devDays', 'Low · dev days'],
@@ -599,11 +874,12 @@ export default function OptionComparison({
                           />
                         ))}
                       </div>
-                    </fieldset>
+                    </EffortGroup>
 
                     <EffortFields
                       idPrefix={`${option.id}-per-release`}
                       label="Recurring effort per release"
+                      help={`${EFFORT_HELP.perRelease} ${releases}`}
                       value={option.perRelease}
                       onChange={(v) => typed(option.id, { perRelease: v })}
                     />
@@ -612,6 +888,7 @@ export default function OptionComparison({
                       <EffortFields
                         idPrefix={`${option.id}-baseline`}
                         label="Maintenance baseline per year"
+                        help={EFFORT_HELP.baseline}
                         value={option.maintenanceBaselinePerYear}
                         // Typed by hand is the reader's own, wherever the field started from.
                         onChange={(v) =>
@@ -621,11 +898,12 @@ export default function OptionComparison({
                     ) : null}
 
                     {isComparison ? (
-                      <fieldset className="min-w-0 space-y-2">
-                        <legend className="cc-text-label text-cc-ink-muted">Upgrade deferral</legend>
+                      <EffortGroup legend="Upgrade deferral" help={EFFORT_HELP.deferral}>
                         <NumField
                           id={`${option.id}-upgrade-delay`}
                           label="Releases deferred"
+                          kind="deferral"
+                          suffix="releases"
                           value={
                             option.upgradeDelay?.state === 'stated' ? option.upgradeDelay.value.releasesDeferred : null
                           }
@@ -634,22 +912,14 @@ export default function OptionComparison({
                               upgradeDelay: v === null ? null : { state: 'stated', value: { releasesDeferred: v } },
                             })
                           }
-                          hint="Not priced — nothing here knows what a deferred upgrade costs. Stated, because it is part of what doing nothing is."
                         />
                         <CcButton
                           data-cost-delay-not-determined
-                          onClick={() =>
-                            patchOption(option.id, {
-                              upgradeDelay: {
-                                state: 'not-determined',
-                                reason: 'nobody has established how far the upgrade would slip',
-                              },
-                            })
-                          }
+                          onClick={() => patchOption(option.id, { upgradeDelay: NOT_DETERMINED_DELAY })}
                         >
                           Not determined
                         </CcButton>
-                      </fieldset>
+                      </EffortGroup>
                     ) : null}
                   </div>
                 </div>

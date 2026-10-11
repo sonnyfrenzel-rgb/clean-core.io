@@ -33,7 +33,12 @@ import { formatDays, formatLines } from '@/lib/format';
  * colour, never green: a figure the reader typed is theirs, not evidence (§1.1).
  */
 
-export type StepState = 'done' | 'input' | 'proposal' | 'waiting';
+/**
+ * `saving` and `unsaved` since 11.10.2026 (owner: "show clearly when something
+ * was saved"): a step whose figures are complete is only *done* once they are
+ * stored — until then it is being saved, or, after a failed save, not saved.
+ */
+export type StepState = 'done' | 'input' | 'proposal' | 'waiting' | 'saving' | 'unsaved';
 
 export interface EconomicsStepInfo {
   n: 1 | 2 | 3 | 4;
@@ -53,6 +58,11 @@ export function stepWord(step: Pick<EconomicsStepInfo, 'state' | 'waitingFor'>):
       return 'Your input needed';
     case 'proposal':
       return 'Proposal available';
+    // The save line beside it says how the save stands; the word says the figures are in.
+    case 'saving':
+      return 'Complete';
+    case 'unsaved':
+      return 'Complete, not saved';
     default:
       return step.waitingFor ? `Waits for ${step.waitingFor}` : 'Waiting';
   }
@@ -62,6 +72,8 @@ function StepStateText({ step }: { step: EconomicsStepInfo }) {
   const word = stepWord(step);
   if (step.state === 'done') return <CcStateText state="information">{word}</CcStateText>;
   if (step.state === 'proposal') return <CcStateText state="warning">{word}</CcStateText>;
+  if (step.state === 'unsaved') return <CcStateText state="error">{word}</CcStateText>;
+  if (step.state === 'saving') return <CcStateText state="neutral">{word}</CcStateText>;
   return (
     <CcStateText state="neutral" hollow>
       {word}
@@ -177,12 +189,15 @@ export function EconomicsStep({
   next,
   guidance,
   right,
+  status,
   children,
 }: {
   step: EconomicsStepInfo;
   next: boolean;
   guidance: ReactNode;
   right?: ReactNode;
+  /** Whether the step's figures are saved — beside its state, under the title. */
+  status?: ReactNode;
   children: ReactNode;
 }) {
   const headingId = `${step.id}-title`;
@@ -206,7 +221,10 @@ export function EconomicsStep({
               <span className="sr-only">Step {step.n}: </span>
               {step.title}
             </h2>
-            <StepStateText step={step} />
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <StepStateText step={step} />
+              {status}
+            </span>
           </div>
         </div>
         {right}
