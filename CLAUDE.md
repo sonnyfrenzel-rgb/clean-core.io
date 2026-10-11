@@ -22,7 +22,9 @@ Signavio API connection. Rules that hold everywhere:
 - **Sharing = read access by invitation**: a link bound to one confirmed e-mail
   address, including source code, with expiry and revocation.
 Deliberately not built: tenants, SSO, guests, role mandates, a self-hosted edition,
-ALM adapters, portfolio steering. Besides `ROADMAP.md`, only `docs/roadmap/` is
+ALM adapters, portfolio steering (owners, waves, capacity). A read-only batch run with
+an aggregated portfolio view is planned (3.0.12, owner decision 11.10.2026) — every
+program stays its own project and signed run; nothing aggregated is signed. Besides `ROADMAP.md`, only `docs/roadmap/` is
 active (the mockups; the Phase 0 work packages moved to `docs/archiv/roadmap-2.8/` on 2026-10-02); every earlier roadmap — 2.0, the
 2.7 bundle with the acceptance catalogs and the 08.09 finding register — is in
 `docs/archiv/` (index: `docs/archiv/README.md`) and loses wherever it contradicts
