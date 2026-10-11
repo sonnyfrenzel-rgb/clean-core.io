@@ -84,6 +84,39 @@ import { closureHandoverLine, failureSentence, testingClosureReading } from '@/l
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
+import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
+import { deliveryFactsOf, ruleFactsOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
+import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
+
+/** Why the business rules' states are not in the package — the codes the process-states route answers with. */
+const RULES_UNREAD: Partial<Record<StatesReadRefusal, string>> = {
+  'no-baseline': 'the process has not been reconstructed from a signed run yet.',
+  'no-source': 'the project holds no source.',
+  'source-moved': 'the source changed since the signed run.',
+  'source-too-large': 'the source is too large for the rule reader.',
+};
+
+/**
+ * The findings behind the Clean Core Score, read the way Analyze reads them
+ * (`GET /api/projects/{id}/evidence`), for the deduction table in
+ * docs/decision.md. A failed read is said in the file, never filled in.
+ */
+async function readScoreEvidence(projectId: string): Promise<{ evidence: ScoreEvidence | null; unread: string | null }> {
+  try {
+    const token = await getAuth().currentUser?.getIdToken();
+    if (!token) return { evidence: null, unread: 'the findings could not be read (not signed in)' };
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/evidence`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = (await res.json().catch(() => null)) as { evidence?: ScoreEvidence; error?: unknown } | null;
+    if (!res.ok || !body?.evidence || !Array.isArray(body.evidence.findings)) {
+      return { evidence: null, unread: typeof body?.error === 'string' && body.error ? body.error : 'the findings could not be read' };
+    }
+    return { evidence: body.evidence, unread: null };
+  } catch {
+    return { evidence: null, unread: 'the findings could not be read' };
+  }
+}
 
 /** The documentation stage's name, as the stepper spells it (UX-169). */
 const DOCUMENTATION_LABEL = PHASES.find((p) => p.key === 'documentation')?.label ?? 'Documentation';
@@ -126,10 +159,10 @@ Side-by-Side Extensibility on ${BTP_FIRST} using CAP (Node.js/TypeScript). S/4HA
 
 ## Development Rules
 1. **Decoupled Architecture**: Direct DB access is blocked. Integrate via released OData APIs through SAP Destination service destinations on ${BTP}.
-2. **Endpoint Security**: Secure CAP endpoints (db/schema.cds, srv/service.cds) with SAP XSUAA. Enforce JWT verification.
-3. **Testing**: Mock ERP data for local development. Execute 'npm test' before container packaging.
-4. **CI/CD Quality Gates**: Run the generated GitHub Actions pipeline on every PR.
-5. **Containerization**: Deploy using the root 'Dockerfile' to Cloud Foundry, Kyma, or GCP.
+2. **Endpoint Security**: Secure every service endpoint with SAP XSUAA and enforce JWT verification. What the package wires today is listed in STATUS.md.
+3. **Testing**: Mock ERP data for local development. Run the test suite before container packaging.
+4. **CI/CD Quality Gates**: Run the GitHub Actions pipeline in .github/workflows on every PR.
+5. **Containerization**: Build the container from the root Dockerfile once the open steps in STATUS.md are done; it is not approved for production.
 `;
   }
 };
@@ -335,7 +368,6 @@ export default function DeliveryPage() {
       // Loaded on the click that builds the bundle, not with the stage
       // (~28 kB gzip of the stage's first JavaScript, docs/perf/REPORT.md).
       const { default: JSZip } = await import('jszip');
-      const zip = new JSZip();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
       // The entry names of a generated package come from the model, and the
@@ -349,80 +381,16 @@ export default function DeliveryPage() {
         return;
       }
       const isModular = source.kind === 'package';
+
+      // The files are collected first and written into the archive at the end:
+      // README.md, STATUS.md, docs/decision.md and manifest.json are written
+      // from the files that are actually there (owner, 11.10.2026; external
+      // review F-04, F-05, F-08, F-09, F-10) — `lib/delivery-package.ts`.
+      const bundle = createDeliveryBundle();
       if (source.kind === 'package') {
         source.files.forEach((file) => {
-          zip.file(file.path, file.content);
+          bundle.file(file.path, file.content, 'generated');
         });
-        console.log(`[ZIP Handover] Successfully bundled ${source.files.length} modular project files.`);
-      }
-
-      // "Reference patterns" (roadmap 3.0.9): the SAP reference pattern of the
-      // signed-off target, else of the engine's recommendation — read from the
-      // hand-curated mapping, never chosen by a model.
-      const referenceTarget =
-        project.approvedByArchitect === true && isTargetArchitecture(project.targetArchitecture)
-          ? project.targetArchitecture
-          : recommendedArchitecture(project);
-      const referenceSection = referencePatternsReadme(referenceTarget, project.s4Deployment);
-
-      // Bundle structure README.md
-      if (isAbapCloud) {
-        zip.file("README.md", `# ${project.name} (ABAP Cloud Developer Extensibility)
-This bundle was automatically generated by Clean-Core.io.
-
-## abapGit Layout — what is verified, and what is not
-The repository configuration file \`.abapgit.xml\` follows the format documented at
-https://docs.abapgit.org/user-guide/repo-settings/dot-abapgit.html, and the sources sit under the
-\`/src/\` folder it names. That is the layout abapGit expects, so the repository can be linked with the
-abapGit Eclipse ADT plugin or the SAP GUI standalone tool.
-
-What has **not** been verified: nobody imported this bundle into an SAP system. The object metadata
-files (\`*.clas.xml\` and the rest) were generated here, not produced by an abapGit serializer, so the
-names, packages and attributes in them may need adjusting before the objects activate. Treat the
-bundle as a starting point for an import, not as an import that is known to succeed.
-
-## Structure
-- src/zcl_demo_rap_behavior.clas.abap: RAP custom CRUD behavior implementation class.
-- src/zcl_demo_rap_behavior.clas.xml: Behavior class metadata descriptor.
-- src/z_demo_rap_ddls.ddls.asddls: ABAP CDS projection data definition view.
-- src/z_demo_rap_bdef.bdef.asbdef: Custom RAP Behavior Definition.
-- src/z_demo_rap_srvd.srvd.assrvd: RAP Service Definition exposing core capabilities.
-- src/z_demo_rap_srvb.srvb.assrvb: RAP Service Binding config (OData V4 Web API).
-- src/zcl_demo_rap_test.clas.abap: ABAP Unit Test Class verifying behavior logic.
-- src/zcl_demo_rap_test.clas.xml: ABAP Unit Class metadata XML.
-- .abapgit.xml: The abapGit repository configuration file (master language, starting folder, folder logic).
-- docs/: High-grade architectural specifications and analysis reports.
-
-## Getting Started
-1. Import the \`/src\` folder into your target S/4HANA development package using abapGit.
-2. Activate all Dictionary and RAP objects in Eclipse ADT.
-3. Run the ABAP Unit test class ZCL_DEMO_RAP_TEST to verify correctness.
-
-${referenceSection}`);
-      } else {
-        zip.file("README.md", `# ${project.name} (Side-by-Side Decoupled Extension on ${BTP_FIRST})
-This bundle was automatically generated by Clean-Core.io.
-
-## Structure
-${isModular ? `- db/schema.cds: Database schema & entities.
-- srv/service.cds: OData Service endpoint definition.
-- srv/service.ts: Modernized application logic handler.
-- package.json: Node.js dependency manager config.
-- Dockerfile: Production container deployment setup.
-- test.ts: Automated test suite verification script.
-- erp-triggers/zcl_core_event_publisher.clas.abap: S/4HANA Core event trigger class (released BAdI) notifying Event Mesh.` 
-: `- src/app.ts: The modernized Node.js application (TypeScript).
-- src/test.ts: The corresponding test execution script.
-- package.json: Node.js dependency configuration.`}
-- docs/: Architectural specifications and domain analysis.
-
-## Getting Started
-1. Install dependencies: \`npm install\`
-2. Build the project: \`npm run build\` or run in dev: \`npm run dev\`
-3. Execute automated tests: \`npm test\`
-4. Deploy the ABAP trigger under \`erp-triggers/\` inside your S/4HANA core system to activate the event routing.
-
-${referenceSection}`);
       }
 
       if (isAbapCloud) {
@@ -435,7 +403,7 @@ ${referenceSection}`);
         // and `VERSION` are not fields of this file at all, and `START_CLASS` was
         // additionally hard-wired to ZCL_DEMO_RAP_TEST — a class out of a demo,
         // shipped inside every customer's package. It is gone rather than guessed.
-        zip.file(".abapgit.xml", `<?xml version="1.0" encoding="utf-8"?>
+        bundle.file(".abapgit.xml", `<?xml version="1.0" encoding="utf-8"?>
 <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
  <asx:values>
   <DATA>
@@ -444,6 +412,8 @@ ${referenceSection}`);
    <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>
    <IGNORE>
     <item>/README.md</item>
+    <item>/STATUS.md</item>
+    <item>/manifest.json</item>
     <item>/abaplint.json</item>
     <item>/docs/</item>
    </IGNORE>
@@ -451,11 +421,9 @@ ${referenceSection}`);
  </asx:values>
 </asx:abap>`);
 
-        if (!isModular) {
-          const src = zip.folder("src");
-          if (src && project.generatedCode) {
-            src.file("zcl_demo_rap_behavior.clas.abap", project.generatedCode);
-            src.file("zcl_demo_rap_behavior.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
+        if (!isModular && project.generatedCode) {
+          bundle.file("src/zcl_demo_rap_behavior.clas.abap", project.generatedCode, 'generated');
+          bundle.file("src/zcl_demo_rap_behavior.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
 <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
  <asx:values>
   <VSEOCLASS>
@@ -470,59 +438,22 @@ ${referenceSection}`);
   </VSEOCLASS>
  </asx:values>
 </asx:abap>`);
-          }
         }
       }
 
-      if (!isAbapCloud && !isModular) {
-        zip.file("package.json", JSON.stringify({
-          "name": project.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          "version": "1.0.0",
-          "description": "Clean-Core Transformation Output",
-          "main": "dist/app.js",
-          "scripts": {
-            "start": "node dist/app.js",
-            "build": "tsc",
-            "test": "node --test dist/test.js"
-          },
-          "dependencies": {
-            "express": "^4.19.2",
-            "zod": "^3.23.0"
-          },
-          "devDependencies": {
-            "@types/express": "^4.17.21",
-            "@types/node": "^20.0.0",
-            "typescript": "^5.0.0"
-          }
-        }, null, 2));
-
-        // `build` is `tsc`, and `tsc` without a project file compiles nothing
-        // and prints its help. `main` and `test` read `dist/`, so the sources
-        // under `src/` are compiled there.
-        zip.file("tsconfig.json", JSON.stringify({
-          "compilerOptions": {
-            "target": "ES2022",
-            "module": "commonjs",
-            "rootDir": "src",
-            "outDir": "dist",
-            "strict": true,
-            "esModuleInterop": true,
-            "skipLibCheck": true
-          },
-          "include": ["src"]
-        }, null, 2));
-
-        const src = zip.folder("src");
-        if (src && project.generatedCode) {
-          src.file("app.ts", project.generatedCode);
-        }
+      // The single-source layout: the module under src/, compiled to dist/.
+      // package.json, tsconfig.json and the CI come from the templates in
+      // `lib/delivery-package.ts` (`applyNodeTemplates`), so the build, the test
+      // script and the CI agree with each other (b795a6e204b0).
+      if (!isAbapCloud && !isModular && project.generatedCode) {
+        bundle.file("src/app.ts", project.generatedCode, 'generated');
       }
 
       // Add Test Suite (if not already included inside modular files)
       if (project.testSuite?.code) {
         if (isAbapCloud) {
-          zip.file("src/zcl_demo_rap_test.clas.abap", project.testSuite.code);
-          zip.file("src/zcl_demo_rap_test.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
+          bundle.file("src/zcl_demo_rap_test.clas.abap", project.testSuite.code, 'generated');
+          bundle.file("src/zcl_demo_rap_test.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
 <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
  <asx:values>
   <VSEOCLASS>
@@ -541,23 +472,21 @@ ${referenceSection}`);
 </asx:abap>`);
         } else {
           const testPath = isModular ? "test.ts" : "src/test.ts";
-          zip.file(testPath, project.testSuite.code);
+          bundle.file(testPath, project.testSuite.code, 'generated');
         }
       }
 
       // Documentation formatted into corporate markdown specifications
-      const docs = zip.folder("docs");
-      if (docs) {
-        if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
-        if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
-        if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
-        if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
-        docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
-      }
+      const docs = bundle.folder("docs");
+      if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
+      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
+      if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
+      if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
+      docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
 
-      // Add linter and CI configurations based on route
+      // The linter of the ABAP route. The Node route's CI comes from the templates.
       if (isAbapCloud) {
-        zip.file("abaplint.json", JSON.stringify({
+        bundle.file("abaplint.json", JSON.stringify({
           "global": {
             "files": "/src/**/*.*"
           },
@@ -575,35 +504,40 @@ ${referenceSection}`);
             "forbidden_statements": ["SELECT * FROM vbak", "SELECT * FROM bseg", "INSERT INTO vbak"]
           }
         }, null, 2));
-      } else {
-        const workflows = zip.folder(".github/workflows");
-        if (workflows) {
-          workflows.file("ci.yml", `name: Node.js CI/CD Quality Gate
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    # No lockfile is generated with the bundle, and \`npm ci\` refuses to run
-    # without one; it is used once the team has committed theirs.
-    - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-    - run: npm run build --if-present
-    - run: npm test
-`);
-        }
       }
 
+      // "Reference patterns" (roadmap 3.0.9): the SAP reference pattern of the
+      // signed-off target, else of the engine's recommendation — read from the
+      // hand-curated mapping, never chosen by a model.
+      const referenceTarget =
+        project.approvedByArchitect === true && isTargetArchitecture(project.targetArchitecture)
+          ? project.targetArchitecture
+          : recommendedArchitecture(project);
+      const referenceSection = referencePatternsReadme(referenceTarget, project.s4Deployment);
+
+      // What STATUS.md and docs/decision.md say comes from records: the
+      // confirmed business rules and the findings behind the score are read
+      // from their routes now; a read that fails is said, never filled in.
+      const [statesRead, evidenceRead] = await Promise.all([
+        readProcessStatesOutcome(projectId as string),
+        readScoreEvidence(projectId as string),
+      ]);
+      const rules = statesRead.ok
+        ? ruleFactsOf(statesRead.view)
+        : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.');
+      const facts = deliveryFactsOf(project as HandoverProject, {
+        phases,
+        rules,
+        score: scoreFactsOf(project as HandoverProject, evidenceRead.evidence, evidenceRead.unread),
+        generatedAt: new Date().toISOString(),
+        appVersion: APP_VERSION,
+        referenceSection,
+        documentationFromEngine: isEngineDocumentation(project.documentation),
+      });
+      const finished = finishDeliveryPackage({ entries: bundle.entries, facts, layout: isModular ? 'package' : 'flat' });
+
+      const zip = new JSZip();
+      for (const f of finished.files) zip.file(f.path, f.content);
       const content = await zip.generateAsync({ type: "blob" });
       await saveAs(content, `${project.name.replace(/\s+/g, '_')}_DeliveryPackage.zip`);
       setToast('Delivery bundle downloaded');
@@ -988,7 +922,7 @@ jobs:
                 icon={<Package size={18} aria-hidden="true" />}
                 title="Delivery bundle"
                 chip={hasGeneratedCode ? <CcProvenanceChip value="proposed" /> : <CcProvenanceChip value="not-determined" />}
-                detail="The generated code, the test suite, the documentation and the developer guide as one ZIP. Built in your browser and not signed."
+                detail="The generated code, the test suite and the documentation as one ZIP, with STATUS.md and a manifest that say what is decided, tested and only proposed. A review version, built in your browser and not signed."
                 action={
                   <CcButton
                     variant="ghost"

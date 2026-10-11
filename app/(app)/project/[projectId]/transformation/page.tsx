@@ -27,6 +27,7 @@ import { CcTag } from '@/components/cc/Tag';
 import { STATE_CLASSES } from '@/components/cc/state';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import { SUPPORT_LEVEL_STATE } from '@/lib/support-level';
+import { normalisedPackageJson, packageDockerfile } from '@/lib/delivery-package';
 import { callGemini } from '@/lib/gemini';
 import { parseModelJsonObject, retryNotice, unusableAnswerMessage, unusableFromModelError, type UnusableAnswer } from '@/lib/model-json';
 import type { Project } from '@/lib/types';
@@ -362,7 +363,11 @@ export default function TransformationPage() {
       // Not a valid JSON array matching ProjectFile schema
     }
     
-    // Legacy fallback
+    // Legacy fallback: one flat source, shown with the build files the
+    // package templates of the delivery bundle write
+    // (`lib/delivery-package.ts`) — Node.js 22, the service run through tsx,
+    // and a runtime stage that takes the sources, never the builder's
+    // node_modules (owner, 11.10.2026; external review F-05).
     return [
       {
         path: 'srv/service.ts',
@@ -370,52 +375,16 @@ export default function TransformationPage() {
       },
       {
         path: 'package.json',
-        content: `{
-  "name": "clean-core-modernized-service",
-  "version": "1.0.0",
-  "description": "Modernized clean-core Node.js service",
-  "main": "srv/service.js",
-  "type": "module",
-  "scripts": {
-    "start": "node srv/service.js",
-    "dev": "tsx watch srv/service.ts",
-    "test": "playwright test"
-  },
-  "dependencies": {
-    "express": "^4.19.2",
-    "pino": "^9.1.0",
-    "pino-pretty": "^11.1.0",
-    "@sap/xssec": "^4.1.0",
-    "passport": "^0.7.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/express": "^4.17.21",
-    "@types/node": "^20.12.12",
-    "tsx": "^4.10.1",
-    "@playwright/test": "^1.44.0"
-  }
-}`
+        content: normalisedPackageJson(undefined, {
+          name: 'clean-core-modernized-service',
+          entry: 'srv/service.ts',
+          testFile: null,
+          runner: null,
+        }).content,
       },
       {
         path: 'Dockerfile',
-        content: `# Multi-stage Build for Lean & Secure Production Container
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build || true
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --only=production
-COPY --from=builder /app/srv ./srv
-USER node
-EXPOSE 3000
-CMD ["node", "srv/service.js"]`
+        content: packageDockerfile('srv/service.ts', ['srv']),
       }
     ];
   };
