@@ -992,3 +992,20 @@ ${filler}
       .toEqual(['ME22:EKET-EEIND', 'VA02:EKET-EEIND']);
   });
 });
+
+// QA review (37fc500fb244): a scan whose window ends exactly at the end of the
+// source reached the row's end; the one destination it saw is known.
+test('a destination scan ending exactly at the end of the source keeps its known table', () => {
+  const head = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata, ls TYPE bdcdata, lv_n TYPE i.
+START-OF-SELECTION.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+  ls-fnam = 'EKET-EEIND'.`;
+  // Ten statements after the row's first one, the last of the source.
+  const tail = ["ls-fval = '20260101'.", 'APPEND ls TO it_a.', ...Array.from({ length: 8 }, (_, i) => `lv_n = ${i}.`)];
+  const src = `${head}\n${tail.map((s) => `  ${s}`).join('\n')}\n`;
+  const calls = readBatchInput(src);
+  expect(calls.map((c) => `${c.transaction}:${c.fields.map((f) => f.field).join(',')}`))
+    .toEqual(['ME22:EKET-EEIND', 'VA02:']);
+});

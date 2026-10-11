@@ -323,6 +323,8 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
       const append = appendOf(text);
       if (append && !append.lines && append.source.toUpperCase() === wa) tables.add(append.table);
     }
+    // The window ending exactly at the end of the source reached the row's end too.
+    if (at + 1 + ROW_WINDOW >= statements.length) closed = true;
     if (!closed && tables.size) return null;
     if (!tables.size && wa.startsWith('<')) {
       for (let j = at - 1; j >= Math.max(0, at - ROW_WINDOW); j--) {
