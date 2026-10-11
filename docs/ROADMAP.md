@@ -1482,6 +1482,10 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-763 | low | P3 | 3.0.x security hardening | scheduled |
 | SEC-2026-764 | low | P3 | fixed in 3.0.9 - with SEC-2026-758 | fixed |
 | SEC-2026-771 | info | P3 | 3.0.x security hardening - comment wording | scheduled |
+| SEC-2026-774 | medium | P2 | CSP rebuild - approved 03.10.2026, in progress (as SEC-2026-674) | scheduled |
+| SEC-2026-775 | info | P3 | 3.0.x security hardening - comment wording (with SEC-2026-771) | scheduled |
+
+**Audit of v3.0.8 (`1c8e756`), 11.10.2026: 0 critical, 1 high, 1 medium, 0 low, 1 info — all 58 candidates verified, delta of 104 files, $0.37.** SEC-2026-774 (P2) joins the CSP rebuild with SEC-2026-674; SEC-2026-775 (P3) goes to 3.0.x security hardening with SEC-2026-771; the one reported as high, SEC-2026-773, is refuted as SEC-2026-756. The reasons are in the sealed register.
 
 **Audit of v3.0.7 (`32285ae`), 10.10.2026: 0 critical, 1 high, 4 medium, 4 low, 8 info — all 151 candidates verified, delta of 268 files, $0.92.** SEC-2026-758 and -759 (P2) and -764 (P3) scheduled for 3.0.9 security hardening, -762, -763 and -771 (P3) for 3.0.x security hardening; -757 falls under the owner decision of 03.10.2026; ten refuted (SEC-2026-756 as -685/-750, -760 as -725, -761 as -680, -765 to -770 and -772: the comments hold against the code). The reasons are in the sealed register.
 
