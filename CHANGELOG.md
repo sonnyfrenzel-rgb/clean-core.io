@@ -10,6 +10,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.10] — 2026-10-11
+
+Analyze leads with the score and what moves it, a failed test run can be closed honestly, and the
+delivery package, the tests and the documentation say what they are based on — after an external
+review of a real FI case.
+
+### What everyone notices
+
+- **Analyze: the score is the hero** (ADR-093, mockup approved by the owner). The signed Clean
+  Core Score with its band, the edition rule with the other edition's figure ("computed from the
+  same findings; only one is signed") and where it comes from; below it "What moves it" — every
+  deduction, largest first, with its lines, adding up to the signed score. Meters, the code
+  inventory, the module heatmap and data coupling leave Analyze; the inventory is the IT view's.
+  One "Add evidence" menu and one Export menu.
+- **A finished project opens with its process.** In My workspace the project's name opens the
+  workspace (Business view with the process map and First insights); Continue goes to the next
+  open tool. Analyze links to "Process (BPMN)".
+- **Every choice has one address and a way back** (foundation). A link to a choice lands on the
+  element, not on the top of the tool, and the target offers "Back to …" the place the reader came
+  from.
+- **IT: a dependency graph** beside the object table — the same inventory and line ranges, as a
+  picture.
+- **The decision names the cost revision it was priced on** (ADR-092). A later cost change makes a
+  confirmed decision outdated only when a different option is now the cheapest; otherwise it says
+  "priced on revision N, costs changed since". Decisions confirmed before 3.0.10 say that the
+  revision was not recorded.
+- **Readable process and rules.** Process steps say what they do for the business ("Show the
+  result list", "Read a file from the user's PC") with the SAP technique underneath; every
+  business rule has a title in words — fields, operators and AND/OR — with the ABAP condition
+  kept below it.
+- **Every finding names the SAP object it is graded on**, or says it is a statement with no level
+  — no bare question mark. The level facet counts statements as statements, not as Unknown.
+- **The process map's buttons say what they do**, and Outline opens beside the map.
+- **Requirements:** a requirement moved by its arrow stays under the pointer and keeps the focus.
+- **Management:** the score trend with one run says what was measured, not what is missing.
+
+### Testing
+
+- **A failed or impossible test run can be closed** by the project owner with a reason (ADR-094).
+  The project moves on, marked "Closed · not verified" — never "proven". Delivery reads "Ready ·
+  tests not verified"; the audit pack carries the closure as a user attestation only. A newer run
+  or other code makes it no longer apply. A run that gave no result is recorded with its cause.
+- **The suite repair names the package's own import paths.** It used to tell the model "./app" for
+  every route, so every repair of a package suite failed to build.
+- **Tests trace the business rules** (ADR-095): at least one case per rule, with the expected
+  result stated from the original ABAP; each case says unchanged, deliberately changed, defect or
+  not yet assessable. A shared-selection invariant checks that list, totals and export agree, and
+  a mutation probe says how many deliberate defects the suite catches.
+- **Code drafts** follow four rules (no demo values in logic, full-key lookups, one selection,
+  posted values kept); hard-coded document numbers are flagged.
+
+### Delivery and documentation
+
+- **The package tells the truth.** README is written from the files actually in the archive;
+  STATUS.md and manifest.json state the decision, the business rules decided and open, the tests
+  (passed, failed, closed or not run), the data mode and the known limits, each file with its
+  status and SHA-256; docs/decision.md shows the score's deduction table. One consistent set of
+  build and test templates on Node 22. The ERP publisher is a sketch, never a released BAdI.
+- **SAP apps, scope items, APIs and communication scenarios named by the model are checked** —
+  verified with source, mismatched, or not verified.
+- **Documentation opens with one business page** built from engine facts only — what the program
+  does, what it does not do, the limits of the reading. Every SOP sentence says whether it was
+  reconstructed from the code, proposed by the model, or is a proposal not in the program; roles,
+  approval and escalation are never stated as current practice. The technical reconstruction is
+  the appendix; on the FI case 526 sentences become 83 entries.
+
+### Tests
+
+- Guards and rendered tests for the score hero, the testing closure, the rule trace, the invariant
+  and the mutation probe, the delivery package, the business page and its provenance, the readable
+  rule titles, the finished project's process and the choice addresses.
+
 ## [v3.0.9] — 2026-10-11
 
 The target names its SAP reference architecture, every tool has one "On this page" bar, Economics

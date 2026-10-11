@@ -31,7 +31,7 @@ export type ScoreRule = 'custom-writes-charged' | 'own-custom-writes-free';
 /** The first engine version that scores own Z/Y writes free in Private Edition. */
 export const OWN_TABLE_WRITES_FREE_FROM = '3.0.9';
 
-/** `[major, minor, patch]` of `v3.0.9`, `3.0.9` or `3.0.9-dev.1`; null for anything else. */
+/** `[major, minor, patch]` of an engine version: an optional leading "v", then major.minor.patch, any suffix such as "-dev.1" ignored; null for anything else. */
 export function parseEngineVersion(version: unknown): [number, number, number] | null {
   if (typeof version !== 'string') return null;
   const m = /^\s*v?(\d+)\.(\d+)\.(\d+)/i.exec(version);

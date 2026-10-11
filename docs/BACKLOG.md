@@ -3,6 +3,20 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 11.10.2026 (evening) — 3.0.10 released
+
+**Built (main on Sonny's go, 11.10.2026):** the 3.0.7 leftovers (Analyze score hero and declutter wave 2,
+ADR-093; IT dependency graph; cost revision in the decision, ADR-092), "Every choice" package A, the owner's
+fixes of the day (requirement arrows, map buttons and Outline, readable rule titles, levels for every finding,
+one-run score trend, a finished project opens with its process, business-language process steps), the test
+suite repair and the closure of a failed test run (ADR-094), and everything from the external review of the
+FI case: delivery package truth, SAP IDs checked, rule-traced tests with invariant and mutation probe
+(ADR-095), a business page first with provenance. CHANGELOG has the details.
+
+**Open:** redeploy the test runner so `TC_INV_01` runs (it reports Skipped until then); corpus CC-054 expects B
+for `REUSE_ALV_GRID_DISPLAY`, the residual rule gives C; "Every choice" packages B–G; then the roadmap
+clean-up Sonny asked for.
+
 ## Session 11.10.2026 (afternoon) — 3.0.9 released
 
 **Built (main on Sonny's go, 11.10.2026):** SAP reference architecture for the target (ADR-089) with a weekly
