@@ -273,9 +273,13 @@ export async function POST(
         // this snapshot and not from an earlier one, for the reason the run is
         // read here. Only for this command: it runs the catalog-backed engine.
         let derivedDecisionFingerprint: string | null = null;
+        // ADR-092 — the cost revision the confirmation records, read by the
+        // same derivation in the same transaction (`cost_assumptions/current`).
+        let costBasisNow: ProjectCommandState['costBasisNow'] = null;
         if (commandName === 'confirm-decision') {
           const derived = await deriveProjectDecision(db, projectId, project, new Date().toISOString(), tx);
           derivedDecisionFingerprint = derived.ok ? derived.answer.draft.fingerprint : null;
+          costBasisNow = derived.ok ? derived.answer.costNow : null;
         }
 
         // Owner decision 02.10.2026 — the sign-off's "recommended" is the
@@ -310,6 +314,7 @@ export async function POST(
           // is a confirmation of something else.
           decision: project.decision,
           derivedDecisionFingerprint,
+          costBasisNow,
           profileDrift: profileDriftNow,
           contractRecommendation,
           // ADR-081 — the stored answers, read in this transaction, so one

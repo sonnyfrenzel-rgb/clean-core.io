@@ -52,6 +52,7 @@ import {
   SERVER_LIFECYCLE_KINDS,
 } from '@/lib/project-decision';
 import { isSideBySideRoute } from '@/lib/sap-naming';
+import { readCostBasis, type DecisionCostBasis } from '@/lib/decision-cost';
 
 /* ------------------------------------------------------------------ fields */
 
@@ -416,6 +417,15 @@ export interface ProjectCommandState {
    * 4b4586aff273). `undefined` or `null` refuses, as `activeRunEvidence` does.
    */
   derivedDecisionFingerprint?: string | null;
+  /**
+   * ADR-092 — the cost basis Economics gives now (`costBasisOf()` of
+   * `projects/{id}/cost_assumptions/current`), read by the caller in the same
+   * transaction as the derivation above (`answer.costNow`). A confirmation
+   * records it beside the decision, outside the fingerprint. `undefined` or
+   * `null` refuses, as `derivedDecisionFingerprint` does: a decision confirmed
+   * without it would read as one taken before 3.0.10.
+   */
+  costBasisNow?: DecisionCostBasis | null;
   /**
    * Roadmap 7.10 (CR-02) - the active run's target profile against the one the
    * project states now (`profileDrift()` in `lib/assessment-target.ts`),
@@ -881,12 +891,22 @@ export function validateProjectCommand(
     if (coverage.state === 'blocked') {
       return refuse(409, 'decision-blocked', `This decision cannot be confirmed. ${coverage.sentence}`);
     }
+    // ADR-092: the cost revision it is priced on, as the server read it.
+    if (!state.costBasisNow) {
+      return refuse(
+        409,
+        'costs-unread',
+        'The cost figures of this project could not be read just now, so the decision cannot record what it was priced on. Nothing was written. Try again.',
+      );
+    }
     return {
       ok: true,
       action: 'PROJECT_DECISION_CONFIRMED',
       fields: {
         decision: {
           ...stored.decision,
+          // Beside the record, never in its fingerprint (ADR-092).
+          costBasis: state.costBasisNow,
           status: 'confirmed',
           confirmation: {
             // The server's answer to "who", off the verified ID token — and the
@@ -944,6 +964,8 @@ export function validateProjectCommand(
       return refuse(409, 'not-confirmed', 'There is no confirmed decision to withdraw.');
     }
     const confirmation = isPlainObject(state.decision) ? state.decision.confirmation : null;
+    // What it was priced on stays with what was confirmed (ADR-092).
+    const costBasis = isPlainObject(state.decision) ? readCostBasis(state.decision.costBasis) : null;
     return {
       ok: true,
       action: 'PROJECT_DECISION_WITHDRAWN',
@@ -952,7 +974,7 @@ export function validateProjectCommand(
         // what happened, and a withdrawal that erased it would leave a decision
         // nobody ever made — the audit pack would then be missing the half that
         // explains why anything downstream exists.
-        decision: { ...stored.decision, status: 'withdrawn', confirmation },
+        decision: { ...stored.decision, status: 'withdrawn', confirmation, ...(costBasis ? { costBasis } : {}) },
       },
     };
   }

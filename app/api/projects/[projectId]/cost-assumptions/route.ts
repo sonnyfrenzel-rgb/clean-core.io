@@ -19,6 +19,7 @@ import {
   ECONOMICS_DOC,
   ECONOMICS_LIMITS,
   ECONOMICS_RECORD_FORMAT,
+  nextRevisionMarks,
   readEconomicsRecord,
   validateEconomicsPayload,
   type EconomicsRecord,
@@ -172,14 +173,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
         const s = run.exists ? run.data()?.cleanCoreScore : undefined;
         score = typeof s === 'number' && Number.isFinite(s) ? s : null;
       }
+      // ADR-092: the revision's number and first-saved time are counted here,
+      // from the record this save replaces, read in the same transaction — a
+      // decision names the revision it was priced on by that number.
+      const economicsRef = projectRef.collection(ECONOMICS_COLLECTION).doc(ECONOMICS_DOC);
+      const before = await tx.get(economicsRef);
+      const previous = before.exists ? readEconomicsRecord(before.data()) : null;
+      const revision = costAssumptionsRevision(checked.value.assumptions);
+      const savedAt = new Date().toISOString();
       const record: EconomicsRecord = {
         formatVersion: ECONOMICS_RECORD_FORMAT,
         ...checked.value,
-        revision: costAssumptionsRevision(checked.value.assumptions),
+        revision,
         basis: { runId, score },
-        savedAt: new Date().toISOString(),
+        savedAt,
+        ...nextRevisionMarks(previous, revision, savedAt),
       };
-      tx.set(projectRef.collection(ECONOMICS_COLLECTION).doc(ECONOMICS_DOC), { ...record, savedBy: gate.uid });
+      tx.set(economicsRef, { ...record, savedBy: gate.uid });
       return record;
     });
     if (!outcome) return NextResponse.json({ error: 'Project not found.' }, { status: 404 });

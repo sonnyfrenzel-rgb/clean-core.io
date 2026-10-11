@@ -22,6 +22,7 @@ import {
 } from './project-decision';
 import type { ProvenanceValue } from './provenance';
 import { sapNamesForDisplay } from './sap-naming';
+import type { DecisionCostBasis, DecisionCostCheck, OutdatedReason } from './decision-cost';
 
 /**
  * The Management overview — roadmap 3.0.10.
@@ -105,6 +106,10 @@ export interface DecisionRead {
    * when, and the engine's route. All optional: an older answer lacks them.
    */
   unchanged?: boolean;
+  /** ADR-092 — the cost check, the revision a confirmation records now, and why the record is out of date. */
+  cost?: DecisionCostCheck | null;
+  costNow?: DecisionCostBasis | null;
+  outdated?: OutdatedReason[];
   runId?: string | null;
   evidenceDigest?: string | null;
   canDecide?: boolean;

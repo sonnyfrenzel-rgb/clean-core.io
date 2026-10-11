@@ -126,6 +126,37 @@ export interface EconomicsRecord extends EconomicsPayload {
   basis: { runId: string | null; score: number | null };
   /** ISO time of the last save. */
   savedAt: string;
+  /**
+   * The number of this cost revision, counted by the server (ADR-092): 1 for
+   * the first revision saved, one more each time a save changes `revision`,
+   * the same when a save leaves it as it was (a forecast input only). Absent on
+   * a record saved before 3.0.10 — revisions before were not counted, and the
+   * number is never guessed.
+   */
+  sequence?: number;
+  /** ISO time the revision `revision` was first saved — `savedAt` moves with every save, this does not. Absent before 3.0.10. */
+  revisionAt?: string;
+}
+
+/**
+ * The number and the first-saved time of the revision a save stores (ADR-092),
+ * from the record it replaces. Same revision: both carried over. Another
+ * revision: one more than before, saved now. No record before: revision 1. A
+ * record before that was saved before 3.0.10 carries no number, and counting
+ * starts again at 1 — said in the ADR, so "revision 1" never claims to be the
+ * first figures ever entered.
+ */
+export function nextRevisionMarks(
+  previous: EconomicsRecord | null,
+  revision: string,
+  now: string,
+): { sequence: number; revisionAt: string } {
+  if (previous && previous.revision === revision) {
+    // A record from before 3.0.10 knows only its last save — a time that
+    // revision was saved at, which is what the date beside its number says.
+    return { sequence: previous.sequence ?? 1, revisionAt: previous.revisionAt ?? (previous.savedAt || now) };
+  }
+  return { sequence: previous?.sequence !== undefined ? previous.sequence + 1 : 1, revisionAt: now };
 }
 
 /* ------------------------------------------------------------ validation */
@@ -388,6 +419,9 @@ export function readEconomicsRecord(v: unknown): EconomicsRecord | null {
       score: typeof basis.score === 'number' && Number.isFinite(basis.score) ? basis.score : null,
     },
     savedAt: typeof v.savedAt === 'string' ? v.savedAt : '',
+    // ADR-092: read only when well-formed; absent on a record from before 3.0.10.
+    ...(typeof v.sequence === 'number' && Number.isInteger(v.sequence) && v.sequence >= 1 ? { sequence: v.sequence } : {}),
+    ...(typeof v.revisionAt === 'string' && v.revisionAt ? { revisionAt: v.revisionAt } : {}),
   };
 }
 

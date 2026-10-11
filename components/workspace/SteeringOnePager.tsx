@@ -31,6 +31,7 @@ import {
 import type { ObjectStatusValue } from '@/lib/object-status';
 import type { DecisionStatus } from '@/lib/project-decision';
 import type { Project } from '@/lib/types';
+import { outdatedReasonsOfAnswer, type DecisionCostCheck, type OutdatedReason } from '@/lib/decision-cost';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/cc-messages';
 import { steeringDecidedBy, steeringMore, wt } from '@/lib/workspace-messages';
@@ -79,6 +80,8 @@ export default function SteeringOnePager({
         unreadable: string | null;
         status?: DecisionStatus | null;
         outdated?: boolean;
+        outdatedReasons?: OutdatedReason[];
+        cost?: DecisionCostCheck | null;
         confirmation?: { account: string; at: string } | null;
         signOff?: { code: string | null; by: string | null; at: string | null } | null;
       }
@@ -164,6 +167,8 @@ export default function SteeringOnePager({
           draft?: ProjectDecision;
           stored?: (ProjectDecision & { confirmation?: { account: string; at: string } | null }) | null;
           unchanged?: boolean;
+          cost?: DecisionCostCheck | null;
+          outdated?: OutdatedReason[];
           signOff?: { code: string | null; by: string | null; at: string | null } | null;
           error?: string;
         }>('decision'),
@@ -184,7 +189,9 @@ export default function SteeringOnePager({
           record,
           unreadable: null,
           status: confirmed ? 'confirmed' : (d.json.stored?.status ?? 'draft'),
-          outdated: Boolean(confirmed && d.json.unchanged === false),
+          outdated: outdatedReasonsOfAnswer(d.json).length > 0,
+          outdatedReasons: outdatedReasonsOfAnswer(d.json),
+          cost: confirmed ? (d.json.cost ?? null) : null,
           confirmation: confirmed?.confirmation ?? null,
           signOff: d.json.signOff ?? null,
         });
@@ -274,6 +281,8 @@ export default function SteeringOnePager({
             decisionUnreadable: decision.unreadable,
             decisionStatus: decision.status ?? null,
             decisionOutdated: decision.outdated ?? false,
+            decisionOutdatedReasons: decision.outdatedReasons ?? [],
+            decisionCost: decision.cost ?? null,
             confirmation: decision.confirmation ?? null,
             signOff: decision.signOff ?? null,
             process,

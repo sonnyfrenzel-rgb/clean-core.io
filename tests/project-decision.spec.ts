@@ -41,6 +41,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { evidenceDigest } from '../lib/run-evidence-digest';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
+import { costBasisOf } from '../lib/decision-cost';
 import { APP_VERSION } from '../lib/version';
 
 /**
@@ -502,6 +503,8 @@ test.describe('8.4 — the confirmation is the account\'s, and it is bound to th
     // The fixtures are built by `buildProjectDecision`, i.e. they *are* what the
     // server derives; `decision-card.spec.ts` covers a record that is not.
     derivedDecisionFingerprint: d.fingerprint,
+    // ADR-092: the route reads the cost basis in the same transaction; none stored here.
+    costBasisNow: costBasisOf(null),
     ...over,
   });
   const confirm = (d: ProjectDecision, over: Record<string, unknown> = {}) => ({

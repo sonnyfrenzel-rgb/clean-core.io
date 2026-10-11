@@ -456,6 +456,11 @@ export function decisionMovedSentence(revision: number | string): string {
   return `The evidence behind this decision has changed since it was confirmed. Withdraw it to confirm revision ${revision}, which binds what the project stands on now.`;
 }
 
+/** DecisionCard — a confirmed decision on whose costs a different option is now the cheapest (ADR-092). */
+export function decisionCostMovedSentence(): string {
+  return 'On your current costs a different option is the cheapest than on the revision this decision was priced on. Withdraw it and confirm it again to record today’s costs — or choose the other option.';
+}
+
 /** DecisionCard — who confirmed, and on which day. */
 export function decisionConfirmedBy(account: string, day: string): string {
   return `Confirmed by ${account} on ${day}.`;

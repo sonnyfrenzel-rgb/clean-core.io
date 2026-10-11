@@ -25,11 +25,13 @@
  *     off (roadmap 0.7, bound to its run since 8.8). Nothing else in the
  *     product records a chosen option; a recommendation nobody signed off is
  *     not one, so it is not read.
- *   - **cost** — never bound here. The option comparison of 7.4 is stored
- *     with the project since 03.10.2026 (`lib/economics-record.ts`), but
- *     binding one of its revisions into a decision is not built, so there is
- *     no revision to name; the binding says so with 7.4's own sentence rather
- *     than inventing one.
+ *   - **cost** — not bound into the fingerprint. The option comparison of
+ *     7.4 is stored with the project since 03.10.2026
+ *     (`lib/economics-record.ts`); a confirmation records the revision it was
+ *     priced on beside the record (`costBasis`, ADR-092, `lib/decision-cost.ts`),
+ *     outside the fingerprint, so that a cost change outdates a confirmed
+ *     decision only when a different option is now the cheapest — never on
+ *     every save in Economics, as a fingerprinted binding would.
  *   - **need** — the newest confirmed need revision (roadmap 3.5), counted
  *     against the subjects of the reconstructed process by the route.
  *   - **contract** — the architecture contract of the run; for an option that
@@ -39,6 +41,16 @@
 
 import type { ArchitectureContract } from './architecture-contract';
 import type { OptionKind } from './cost-assumptions';
+import type { EconomicsRecord } from './economics-record';
+import {
+  costBasisOf,
+  decisionCostCheck,
+  outdatedReasons,
+  readCostBasis,
+  type DecisionCostBasis,
+  type DecisionCostCheck,
+  type OutdatedReason,
+} from './decision-cost';
 import { buildProjectDecision, type NeedOpenParts, type SignOffBasis } from './project-decision-build';
 import { FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT } from './sap-naming';
 import {
@@ -82,12 +94,23 @@ export interface DecisionDraftFacts {
   handedOver: boolean;
   /** The decision record on the project, raw — normalised here, never trusted. */
   stored: unknown;
+  /**
+   * ADR-092 — the Economics record of the project as the server read it
+   * (`null`: none stored). Absent when the caller did not read it; then no cost
+   * check is made and nothing is said about costs.
+   */
+  economics?: EconomicsRecord | null;
   /** Server clock, ISO 8601. */
   now: string;
 }
 
 /** A stored decision as the card reads it: the normalised record plus the server's status and confirmation. */
-export type StoredDecision = ProjectDecision & { status: DecisionStatus; confirmation: DecisionConfirmation | null };
+export type StoredDecision = ProjectDecision & {
+  status: DecisionStatus;
+  confirmation: DecisionConfirmation | null;
+  /** ADR-092 — the cost revision the confirmation was priced on; `null` when none is recorded (before 3.0.10, or never confirmed). */
+  costBasis: DecisionCostBasis | null;
+};
 
 export interface DecisionDraftAnswer {
   /** The decision the evidence gives today — what a confirmation would bind. */
@@ -96,6 +119,12 @@ export interface DecisionDraftAnswer {
   stored: StoredDecision | null;
   /** True when the stored record is exactly the draft: nothing moved since it was written. */
   unchanged: boolean;
+  /** ADR-092 — the cost basis Economics gives now, what a confirmation records; `null` when it was not read. */
+  costNow: DecisionCostBasis | null;
+  /** ADR-092 — a confirmed record's cost revision against today's; `null` when nothing is confirmed or costs were not read. */
+  cost: DecisionCostCheck | null;
+  /** ADR-085 + ADR-092 — why the confirmed record is out of date; empty when it is not. */
+  outdated: OutdatedReason[];
 }
 
 const STATUSES: readonly DecisionStatus[] = ['draft', 'confirmed', 'withdrawn', 'superseded'];
@@ -119,7 +148,7 @@ export function readStoredDecision(raw: unknown): StoredDecision | null {
   if (!read.ok) return null;
   const doc = raw as Record<string, unknown>;
   const status = STATUSES.includes(doc.status as DecisionStatus) ? (doc.status as DecisionStatus) : 'draft';
-  return { ...read.decision, status, confirmation: readConfirmation(doc.confirmation) };
+  return { ...read.decision, status, confirmation: readConfirmation(doc.confirmation), costBasis: readCostBasis(doc.costBasis) };
 }
 
 /** The one sentence a decision without a hand-written summary carries. Derived, like everything else in it. */
@@ -163,12 +192,23 @@ function draftAt(facts: DecisionDraftFacts, revision: number, draftedAt: string)
 /** The draft of this project and the record it would replace — see "The revision rule" in the header. */
 export function deriveDecisionDraft(facts: DecisionDraftFacts): DecisionDraftAnswer {
   const stored = readStoredDecision(facts.stored);
-  if (!stored) return { draft: draftAt(facts, 1, facts.now), stored: null, unchanged: false };
+  const costNow = facts.economics === undefined ? null : costBasisOf(facts.economics);
+  if (!stored) return { draft: draftAt(facts, 1, facts.now), stored: null, unchanged: false, costNow, cost: null, outdated: [] };
 
+  // ADR-092: only a confirmed record was priced on anything.
+  const confirmed = stored.status === 'confirmed';
+  const cost = confirmed && costNow ? decisionCostCheck(stored.costBasis, costNow) : null;
   const draftedAt = stored.timeline.find((e) => e.kind === 'decision-drafted')?.at ?? facts.now;
   const same = draftAt(facts, stored.revision, draftedAt);
   if (same.fingerprint === stored.fingerprint && stored.status !== 'withdrawn') {
-    return { draft: same, stored, unchanged: true };
+    return { draft: same, stored, unchanged: true, costNow, cost, outdated: outdatedReasons({ confirmed, unchanged: true, cost }) };
   }
-  return { draft: draftAt(facts, stored.revision + 1, facts.now), stored, unchanged: false };
+  return {
+    draft: draftAt(facts, stored.revision + 1, facts.now),
+    stored,
+    unchanged: false,
+    costNow,
+    cost,
+    outdated: outdatedReasons({ confirmed, unchanged: false, cost }),
+  };
 }

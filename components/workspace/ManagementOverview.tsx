@@ -43,6 +43,7 @@ import {
   type TrendChartPoint,
 } from '@/lib/management-overview';
 import type { Project } from '@/lib/types';
+import { outdatedReasonsOfAnswer } from '@/lib/decision-cost';
 import { IT_TARGET_PROFILE_ID } from '@/components/workspace/ItRail';
 
 /**
@@ -292,6 +293,9 @@ export default function ManagementOverview({
               draft: d.draft,
               stored: d.stored ?? null,
               unchanged: d.unchanged,
+              cost: d.cost ?? null,
+              costNow: d.costNow ?? null,
+              ...(Array.isArray(d.outdated) ? { outdated: d.outdated } : {}),
               runId: d.runId ?? null,
               evidenceDigest: d.evidenceDigest ?? null,
               canDecide: d.canDecide === true,
@@ -368,7 +372,8 @@ export default function ManagementOverview({
       fit: fitFigure,
       decision: confirmed ?? read?.draft ?? null,
       status: confirmed ? 'confirmed' : read ? (read.stored?.status ?? 'draft') : null,
-      outdated: Boolean(confirmed && read && read.unchanged === false),
+      outdated: Boolean(read && outdatedReasonsOfAnswer(read).length > 0),
+      outdatedReasons: read ? outdatedReasonsOfAnswer(read) : [],
       confirmation: confirmed?.confirmation ?? null,
       signOff: read?.signOff ?? null,
       engineRoute: read?.engineRoute ?? null,

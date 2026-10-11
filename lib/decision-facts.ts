@@ -16,6 +16,7 @@ import {
 } from '@/lib/process-states';
 import { deriveDecisionDraft, type DecisionDraftAnswer, type DecisionDraftFacts } from '@/lib/decision-draft';
 import type { InputManifest } from '@/lib/input-manifest';
+import { ECONOMICS_COLLECTION, ECONOMICS_DOC, readEconomicsRecord, type EconomicsRecord } from '@/lib/economics-record';
 
 /**
  * The decision of one project as the server derives it from the project's own
@@ -214,6 +215,19 @@ export async function deriveProjectDecision(
   }
   const digest = run ? evidenceDigest(run) : null;
 
+  // ADR-092 — the Economics figures the decision is priced on, read in the
+  // same transaction as the project: a save in Economics between this read and
+  // a confirmation's commit aborts the confirmation instead of recording a
+  // revision that is no longer the project's. A record this server cannot read
+  // counts as none — the costs are then "no figures", never guessed.
+  const economicsRef: DocumentReference = db
+    .collection('projects')
+    .doc(projectId)
+    .collection(ECONOMICS_COLLECTION)
+    .doc(ECONOMICS_DOC);
+  const economicsSnap = await (tx ? tx.get(economicsRef) : economicsRef.get());
+  const economics: EconomicsRecord | null = economicsSnap.exists ? readEconomicsRecord(economicsSnap.data()) : null;
+
   const manifest = manifestOfRun(run);
   const built = contractOfProject(data, manifest);
   const auditMetadata = (data.auditMetadata ?? {}) as { auditPackExportedAt?: unknown };
@@ -232,6 +246,7 @@ export async function deriveProjectDecision(
     need: await needFactsOf(db, projectId, source, tx),
     handedOver: isoOf(auditMetadata.auditPackExportedAt) !== null,
     stored: data.decision,
+    economics,
     now,
   });
   return { ok: true, answer, runId: run ? activeRunId : null, evidenceDigest: digest };

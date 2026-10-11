@@ -24,6 +24,7 @@ import {
 } from '@/lib/decision-manager';
 import { MANAGEMENT_IDS } from '@/lib/management-sections';
 import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
+import { outdatedReasonsOfAnswer, type DecisionCostBasis, type DecisionCostCheck, type OutdatedReason } from '@/lib/decision-cost';
 import { stageHref } from '@/lib/workspace-back-href';
 import { cn } from '@/lib/utils';
 import InfoPopover from './InfoPopover';
@@ -35,6 +36,7 @@ import {
   decisionDeriveFailed,
   decisionLatest,
   decisionLimitsFolded,
+  decisionCostMovedSentence,
   decisionMovedSentence,
   decisionOpenCount,
   decisionResolveIn,
@@ -69,6 +71,10 @@ interface DecisionAnswer {
   draft: ProjectDecision;
   stored: (ProjectDecision & { status: DecisionStatus; confirmation: DecisionConfirmation | null }) | null;
   unchanged: boolean;
+  /** ADR-092 — the recorded cost revision against today's, the revision a confirmation records now, and why the record is out of date. */
+  cost?: DecisionCostCheck | null;
+  costNow?: DecisionCostBasis | null;
+  outdated?: OutdatedReason[];
   runId: string | null;
   evidenceDigest: string | null;
   canDecide: boolean;
@@ -161,7 +167,10 @@ export default function DecisionCard({
     return answer.draft;
   }, [answer]);
   const view = useMemo(() => (shown ? decisionCardView(shown) : null), [shown]);
-  const m = useMemo(() => (shown ? decisionManagerView(shown, costScenario) : null), [shown, costScenario]);
+  const m = useMemo(
+    () => (shown ? decisionManagerView(shown, costScenario, { check: answer?.cost ?? null, now: answer?.costNow ?? null }) : null),
+    [shown, costScenario, answer],
+  );
 
   const account = typeof window === 'undefined' ? null : (getAuth().currentUser?.email ?? null);
 
@@ -259,7 +268,10 @@ export default function DecisionCard({
   }
 
   const isConfirmed = shown.status === 'confirmed';
-  const moved = isConfirmed && !answer.unchanged;
+  // One outdated state with its reasons (ADR-085, ADR-092): the evidence moved,
+  // or a different option is now the cheapest. One way back for both.
+  const reasons = outdatedReasonsOfAnswer(answer);
+  const moved = reasons.length > 0;
   const blocked = view.coverage.state === 'blocked';
 
   return (
@@ -373,8 +385,10 @@ export default function DecisionCard({
       ) : null}
 
       {moved ? (
-        <p data-decision-moved="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
-          {decisionMovedSentence(answer.draft.revision)}
+        <p data-decision-moved={reasons.join(' ')} className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
+          {reasons.includes('evidence') ? decisionMovedSentence(answer.draft.revision) : null}
+          {reasons.length > 1 ? ' ' : null}
+          {reasons.includes('cost') ? decisionCostMovedSentence() : null}
         </p>
       ) : null}
 

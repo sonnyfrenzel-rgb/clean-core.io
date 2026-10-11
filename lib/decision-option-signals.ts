@@ -53,6 +53,7 @@ import {
   type CostOption,
 } from './cost-assumptions';
 import { economicsInWords, restoreAssumptions, type EconomicsRecord } from './economics-record';
+import type { OutdatedReason } from './decision-cost';
 import {
   DECISION_OPTIONS,
   DECISION_OPTION_LABELS,
@@ -152,8 +153,10 @@ export interface DecisionOptionsSource {
   /** The decision as the card shows it: the confirmed record, else the draft; `null` while unread. */
   decision: ProjectDecision | null;
   status: DecisionStatus | null;
-  /** The stored record is confirmed but the evidence moved since. */
+  /** The stored record is confirmed but the evidence moved since, or a different option is now the cheapest. */
   outdated?: boolean;
+  /** Why it is outdated (ADR-085, ADR-092); absent reads as the evidence, as before 3.0.10. */
+  outdatedReasons?: readonly OutdatedReason[];
   confirmation: { account: string; at: string } | null;
   /** The sign-off on the project — who chose the option, and when. */
   signOff: { code: string | null; by: string | null; at: string | null } | null;
@@ -459,9 +462,14 @@ export function decisionOptionsView(src: DecisionOptionsSource): DecisionOptions
     answer = src.hasRun ? 'Not decided yet — no option is chosen.' : 'Not decided yet — the decision needs a signed run first.';
   } else if (src.status === 'confirmed') {
     stage = src.outdated ? 'outdated' : 'confirmed';
-    answer = src.outdated
-      ? `Decided: ${named} — but the evidence changed since it was confirmed.`
-      : `Decided: ${named}.`;
+    const reasons = src.outdatedReasons && src.outdatedReasons.length > 0 ? src.outdatedReasons : ['evidence'];
+    answer = !src.outdated
+      ? `Decided: ${named}.`
+      : reasons.includes('evidence') && reasons.includes('cost')
+        ? `Decided: ${named} — but the evidence changed and a different option is now the cheapest since it was confirmed.`
+        : reasons.includes('cost')
+          ? `Decided: ${named} — but on your current costs a different option is the cheapest.`
+          : `Decided: ${named} — but the evidence changed since it was confirmed.`;
     who = src.confirmation
       ? `Confirmed by ${src.confirmation.account} on ${date(src.confirmation.at) ?? 'an unreadable date'} — a self-declaration, not a mandate.`
       : null;

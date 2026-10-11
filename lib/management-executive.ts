@@ -411,7 +411,8 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
               ? 'costs on your own figures, every option priced — a scenario, not a quote; amounts stand in Economics'
               : `costs on your own figures, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
           provenance: 'simulation',
-          coverage: `your assumptions in Economics (${costs.words}) — the decision does not record costs`,
+          // ADR-092: a confirmation records the revision it is priced on; this summary does not read that record.
+          coverage: `your assumptions in Economics (${costs.words}) — a confirmed decision names the revision it was priced on`,
           action: { ...ECONOMICS, label: 'Open in Economics' },
         }
       : {

@@ -20,6 +20,7 @@ import type { DecisionOption } from './decision-options';
 import type { ChartSegment } from './management-overview';
 import { recommendedArchitecture } from './project-commands';
 import { formatTextDate } from './format';
+import type { DecisionCostCheck, OutdatedReason } from './decision-cost';
 
 /**
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
@@ -250,6 +251,10 @@ export interface SteeringSource {
   /** What the decision route answers beyond the record (ADR-079). */
   decisionStatus?: DecisionStatus | null;
   decisionOutdated?: boolean;
+  /** Why it is outdated (ADR-085, ADR-092). */
+  decisionOutdatedReasons?: readonly OutdatedReason[];
+  /** ADR-092 — the confirmed record's cost revision against today's. */
+  decisionCost?: DecisionCostCheck | null;
   confirmation?: { account: string; at: string } | null;
   signOff?: { code: string | null; by: string | null; at: string | null } | null;
   /**
@@ -344,7 +349,9 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
   let decision: SteeringDecision;
   const storedEcon = src.project?._economics ?? null;
   const storedScenario = storedEcon ? pricedOptions(storedEcon) : null;
-  const manager = src.decision ? decisionManagerView(src.decision, storedScenario) : null;
+  const manager = src.decision
+    ? decisionManagerView(src.decision, storedScenario, { check: src.decisionCost ?? null, now: null })
+    : null;
   const optionsView = decisionOptionsView({
     subject: src.subject ?? src.program,
     mode: src.mode,
@@ -353,6 +360,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     decision: src.decision,
     status: src.decisionStatus ?? src.decision?.status ?? null,
     outdated: src.decisionOutdated ?? false,
+    outdatedReasons: src.decisionOutdatedReasons,
     confirmation: src.confirmation ?? null,
     signOff: src.signOff ?? null,
     engineRoute: recommendedArchitecture(src.project ?? {}),

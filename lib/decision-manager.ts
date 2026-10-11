@@ -30,6 +30,7 @@ import type { ProvenanceValue } from './provenance';
 import { contractParts } from './decision-card';
 import { sapNamesForDisplay } from './sap-naming';
 import { DECISION_OPTION_LABELS, optionOfArchitecture } from './decision-options';
+import { costRevisionWords, decisionCostLine, type DecisionCostBasis, type DecisionCostCheck } from './decision-cost';
 
 /**
  * Where a point is resolved: a stage of the project, or another view of the
@@ -263,19 +264,39 @@ export function unassessedParts(subject: string | null): { places: number; detai
 }
 
 /**
- * What the Economics stage has stored, when the decision binds no cost
- * revision of it: how many options its figures price (never an amount).
+ * What the Economics stage has stored: how many options its figures price
+ * (never an amount).
  *
- * The decision never binds them: `lib/decision-draft.ts` derives every draft
- * with `assumptions: null` — binding a revision of the stored comparison is not
- * built (ADR-085, amendment of 10.10.2026). So figures on record are not an
- * older decision's blind spot, and recording the decision again would not take
- * them in; the pillar says what they are (a simulation in Economics) and that
- * the decision does not record them.
+ * The fingerprinted cost binding stays unbound: `lib/decision-draft.ts`
+ * derives every draft with `assumptions: null`. Since ADR-092 a confirmation
+ * records the revision it was priced on beside the record (`DecisionCosts`
+ * below); this count says what Economics holds for a decision not confirmed yet.
  */
 export type StoredCostScenario = { priced: number; total: number };
 
-function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostScenario | null = null): DecisionPillar {
+/**
+ * ADR-092 — what the decision route answers about costs: the recorded revision
+ * against today's (`check`, for a confirmed record) and the revision a
+ * confirmation would record now (`now`). Both `null` when the route sent none.
+ */
+export interface DecisionCosts {
+  check: DecisionCostCheck | null;
+  now: DecisionCostBasis | null;
+}
+
+const COMPARE_PLACE: DecisionPlace = {
+  kind: 'stage',
+  path: 'tco',
+  hash: DECISION_PLACE_IDS.economicsCompare,
+  action: 'Compare the options in Economics',
+};
+
+function pillarOf(
+  decision: ProjectDecision,
+  key: PillarKey,
+  stored: StoredCostScenario | null = null,
+  costs: DecisionCosts | null = null,
+): DecisionPillar {
   const b = decision.bindings.find((x) => x.key === key) ?? null;
   const revision = b?.revision ?? null;
   const provenance: ProvenanceValue = b && revision !== null ? b.provenance : 'not-determined';
@@ -319,10 +340,27 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
   }
 
   if (key === 'cost') {
-    // Figures in Economics the decision does not record (ADR-085, amendment of
-    // 10.10.2026): the chip says what they are — a simulation — and the line
-    // says where they stand. "Not determined" beside "4 of 4 priced" read as a
-    // contradiction (owner, 10.10.2026). Never in place: nothing is bound.
+    // ADR-092: a confirmed decision names the cost revision it was priced on —
+    // or says it was confirmed before that was recorded, never guessed. In
+    // place while that revision is recorded and no other option has become the
+    // cheapest since; a simulation, never more.
+    const check = decision.status === 'confirmed' ? (costs?.check ?? null) : null;
+    if (check && (!b || revision === null)) {
+      const recorded = check.state === 'not-recorded' ? null : check.recorded;
+      const priced = recorded ? recorded.revision !== null : !!stored && stored.priced > 0;
+      return {
+        ...base,
+        provenance: priced ? 'simulation' : 'not-determined',
+        inPlace: !!recorded && recorded.revision !== null && check.state !== 'outdated',
+        title: 'Costs',
+        line: decisionCostLine(check),
+        place: COMPARE_PLACE,
+      };
+    }
+    // Figures in Economics a decision not confirmed yet does not record: the
+    // chip says what they are — a simulation — and the line says where they
+    // stand and what a confirmation records. "Not determined" beside "4 of 4
+    // priced" read as a contradiction (owner, 10.10.2026). Never in place.
     if ((!b || revision === null) && stored && stored.priced > 0) {
       const which =
         stored.priced !== stored.total
@@ -330,13 +368,14 @@ function pillarOf(decision: ProjectDecision, key: PillarKey, stored: StoredCostS
           : stored.total === 1
             ? 'the one option'
             : `all ${stored.total} options`;
+      const records = costs?.now && costs.now.revision !== null ? costRevisionWords(costs.now) : 'the revision it is priced on';
       return {
         ...base,
         provenance: 'simulation',
         inPlace: false,
         title: 'Costs',
-        line: `Economics prices ${which} on your own assumptions; the decision does not record costs.`,
-        place: { kind: 'stage', path: 'tco', hash: DECISION_PLACE_IDS.economicsCompare, action: 'Compare the options in Economics' },
+        line: `Economics prices ${which} on your own assumptions; confirming the decision records ${records}.`,
+        place: COMPARE_PLACE,
       };
     }
     const line =
@@ -498,9 +537,13 @@ const BLOCKING_WORDS: Partial<Record<DecisionGapCode, string>> = {
   'option-not-chosen': 'no option is chosen yet',
 };
 
-export function decisionManagerView(decision: ProjectDecision, stored: StoredCostScenario | null = null): DecisionManagerView {
+export function decisionManagerView(
+  decision: ProjectDecision,
+  stored: StoredCostScenario | null = null,
+  costs: DecisionCosts | null = null,
+): DecisionManagerView {
   const coverage = decisionCoverage(decision);
-  const pillars = (['need', 'option', 'cost', 'contract'] as const).map((k) => pillarOf(decision, k, stored));
+  const pillars = (['need', 'option', 'cost', 'contract'] as const).map((k) => pillarOf(decision, k, stored, costs));
   const option = decision.bindings.find((b) => b.key === 'option')?.revision ?? null;
   const inPlace = pillars.filter((p) => p.inPlace).length;
   const points = decision.conditions.map(decisionPoint);

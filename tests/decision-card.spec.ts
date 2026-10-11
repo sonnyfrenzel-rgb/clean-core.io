@@ -29,6 +29,9 @@ import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 import { APP_VERSION } from '../lib/version';
+import { costBasisOf } from '../lib/decision-cost';
+import { ECONOMICS_COLLECTION, ECONOMICS_DOC } from '../lib/economics-record';
+import { KEEP_CHEAPEST, OVERLAP, REBUILD_CHEAPEST, record as economicsRecord } from './helpers/decision-cost-fixtures';
 
 /**
  * Roadmap 8.4, second half — the "Open decision" card of the workspace
@@ -112,6 +115,8 @@ const stateWith = (decision: unknown, derivedFrom: DecisionDraftFacts = facts())
     activeRunEvidence: DIGEST,
     decision,
     derivedDecisionFingerprint: deriveDecisionDraft({ ...derivedFrom, stored: decision }).draft.fingerprint,
+    // ADR-092: the cost basis the route reads in the same transaction — no figures here.
+    costBasisNow: costBasisOf(null),
   }) as ProjectCommandState;
 
 test.describe('8.4 card — what the draft binds on this project', () => {
@@ -279,6 +284,8 @@ test.describe('8.4 card — a confirmation derives from the transaction it commi
     expect(direct, 'read outside the transaction').toEqual([]);
     expect(viaTx).toEqual([
       'projects/p1/runs/run-1',
+      // ADR-092: the cost revision a confirmation records, read in the same transaction.
+      `projects/p1/${ECONOMICS_COLLECTION}/${ECONOMICS_DOC}`,
       `projects/p1/${PROCESS_STATE_COLLECTION}?newest`,
       `projects/p1/${PROCESS_REVISION_COLLECTION}/1`,
     ]);
@@ -318,6 +325,87 @@ test.describe('8.4 card — the two commands the card sends', () => {
     // And the card, reading it back, finds nothing moved.
     const again = deriveDecisionDraft(facts({ stored: confirmed.fields.decision }));
     expect(again.unchanged).toBe(true);
+  });
+
+  // ADR-092 (owner, 11.10.2026): the confirmation records the cost revision the
+  // route read, beside the record and outside its fingerprint; a later cost
+  // change outdates it only when a different option is now the cheapest, and
+  // the way back is the one a moved need takes — withdraw, confirm again.
+  test('the confirmation records the cost revision; only a different cheapest option outdates it', () => {
+    const priced = economicsRecord(REBUILD_CHEAPEST, 1, '2026-10-10T09:00:00.000Z');
+    const first = deriveDecisionDraft(facts({ economics: priced }));
+    expect(first.costNow?.cheapest?.optionId).toBe('rebuild');
+    const recorded = validateProjectCommand({ command: 'record-decision-draft', decision: first.draft }, stateWith(undefined), ACTOR);
+    if (!recorded.ok) throw new Error(recorded.code);
+    // A draft records no cost basis — only a confirmation does.
+    expect((recorded.fields.decision as Record<string, unknown>).costBasis).toBeUndefined();
+
+    const confirmBody = {
+      command: 'confirm-decision',
+      expectedDecisionFingerprint: first.draft.fingerprint,
+      expectedRunId: 'run-1',
+      expectedEvidenceDigest: DIGEST,
+    };
+    // Without the cost basis read by the server, nothing is confirmed.
+    const unread = validateProjectCommand(confirmBody, { ...stateWith(recorded.fields.decision), costBasisNow: undefined }, ACTOR);
+    expect(unread).toMatchObject({ ok: false, status: 409, code: 'costs-unread' });
+
+    const confirmed = validateProjectCommand(
+      confirmBody,
+      { ...stateWith(recorded.fields.decision), costBasisNow: deriveDecisionDraft(facts({ economics: priced, stored: recorded.fields.decision })).costNow },
+      ACTOR,
+    );
+    if (!confirmed.ok) throw new Error(confirmed.code);
+    const onProject = confirmed.fields.decision;
+    const stored = readStoredDecision(onProject);
+    expect(stored?.costBasis).toMatchObject({ sequence: 1, cheapest: { optionId: 'rebuild' } });
+    // Outside the fingerprint: the record is exactly the decision derived without costs.
+    expect(stored?.fingerprint).toBe(first.draft.fingerprint);
+
+    // Same revision: confirmed, "priced on revision 1".
+    const same = deriveDecisionDraft(facts({ economics: priced, stored: onProject }));
+    expect(same.unchanged).toBe(true);
+    expect(same.outdated).toEqual([]);
+    expect(decisionManagerView(same.stored!, null, { check: same.cost, now: same.costNow }).pillars.find((p) => p.key === 'cost')).toMatchObject({
+      line: 'Priced on revision 1 (10 Oct 2026), on which "Rebuild" is the cheapest option.',
+      provenance: 'simulation',
+      inPlace: true,
+    });
+
+    // Costs changed, no cheapest option now: confirmed, with the note.
+    const overlap = deriveDecisionDraft(facts({ economics: economicsRecord(OVERLAP, 2, '2026-10-11T08:00:00.000Z'), stored: onProject }));
+    expect(overlap.cost?.state).toBe('changed');
+    expect(overlap.outdated).toEqual([]);
+
+    // A different option is the cheapest now: outdated, by cost — the fingerprint did not move.
+    const keepNow = deriveDecisionDraft(facts({ economics: economicsRecord(KEEP_CHEAPEST, 3, '2026-10-11T09:00:00.000Z'), stored: onProject }));
+    expect(keepNow.unchanged).toBe(true);
+    expect(keepNow.outdated).toEqual(['cost']);
+    const line = decisionManagerView(keepNow.stored!, null, { check: keepNow.cost, now: keepNow.costNow }).pillars.find((p) => p.key === 'cost');
+    expect(line?.line).toBe(
+      'Priced on revision 1 (10 Oct 2026), when "Rebuild" was the cheapest; costs changed since (revision 3 (11 Oct 2026)), and now "Keep" is.',
+    );
+    expect(line?.inPlace).toBe(false);
+
+    // The way back: withdraw (the cost basis stays with what was confirmed), then a new revision.
+    const withdrawn = validateProjectCommand({ command: 'withdraw-decision' }, stateWith(onProject), ACTOR);
+    if (!withdrawn.ok) throw new Error(withdrawn.code);
+    expect(readStoredDecision(withdrawn.fields.decision)?.costBasis?.sequence).toBe(1);
+    const next = deriveDecisionDraft(facts({ economics: economicsRecord(KEEP_CHEAPEST, 3), stored: withdrawn.fields.decision }));
+    expect(next.draft.revision).toBe(stored!.revision + 1);
+    expect(next.outdated).toEqual([]);
+  });
+
+  test('a decision confirmed before 3.0.10 says its cost revision is not recorded, and is not outdated by cost', () => {
+    const { draft } = deriveDecisionDraft(facts());
+    const legacy = { ...draft, status: 'confirmed', confirmation: { account: ACTOR.email, at: ACTOR.now, selfDeclaration: SELF_DECLARATION } };
+    const read = deriveDecisionDraft(facts({ economics: economicsRecord(KEEP_CHEAPEST, 2), stored: legacy }));
+    expect(read.stored?.costBasis).toBeNull();
+    expect(read.cost?.state).toBe('not-recorded');
+    expect(read.outdated).toEqual([]);
+    expect(decisionManagerView(read.stored!, { priced: 2, total: 2 }, { check: read.cost, now: read.costNow }).pillars.find((p) => p.key === 'cost')?.line).toBe(
+      'Cost revision not recorded (decision taken before 3.0.10).',
+    );
   });
 
   test('a blocked draft is refused by the server too — the disabled button is not the only guard', () => {
@@ -567,6 +655,7 @@ test.describe('8.4 card — an option that generates nothing (G4-F1)', () => {
         activeRunEvidence: active.digest,
         decision: onProject,
         derivedDecisionFingerprint: atConfirmation.answer.draft.fingerprint,
+        costBasisNow: atConfirmation.answer.costNow,
       } as ProjectCommandState,
       ACTOR,
     );
@@ -724,12 +813,13 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     // Never invented: the cost revision is not bound, and the pillar says so.
     expect(by.cost.provenance).toBe('not-determined');
     expect(by.cost.line).toMatch(/No cost assumptions entered yet/);
-    // Figures stored on Economics, which no decision records (the draft never
-    // binds them — ADR-085, amendment of 10.10.2026): the chip says what they
-    // are, a simulation, and the line agrees with it — never "Not determined"
-    // beside "priced", never in place, never an amount (owner, 10.10.2026).
+    // Figures stored on Economics, which a draft does not record (the
+    // fingerprint never binds them — ADR-085, amendment of 10.10.2026; a
+    // confirmation records the revision beside it — ADR-092): the chip says
+    // what they are, a simulation, and the line agrees with it — never "Not
+    // determined" beside "priced", never in place, never an amount.
     const stored = Object.fromEntries(decisionManagerView(draft, { priced: 2, total: 3 }).pillars.map((p) => [p.key, p]));
-    expect(stored.cost.line).toBe('Economics prices 2 of 3 options on your own assumptions; the decision does not record costs.');
+    expect(stored.cost.line).toBe('Economics prices 2 of 3 options on your own assumptions; confirming the decision records the revision it is priced on.');
     expect(stored.cost.provenance).toBe('simulation');
     expect(stored.cost.inPlace).toBe(false);
     expect(stored.cost.place).toEqual({
@@ -739,7 +829,7 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
       action: 'Compare the options in Economics',
     });
     expect(decisionManagerView(draft, { priced: 4, total: 4 }).pillars.find((p) => p.key === 'cost')?.line).toBe(
-      'Economics prices all 4 options on your own assumptions; the decision does not record costs.',
+      'Economics prices all 4 options on your own assumptions; confirming the decision records the revision it is priced on.',
     );
     expect(decisionManagerView(draft, { priced: 0, total: 3 }).pillars.find((p) => p.key === 'cost')?.line).toMatch(/No cost assumptions entered yet/);
     // Green is reserved for proven: no pillar of a decision is proven.

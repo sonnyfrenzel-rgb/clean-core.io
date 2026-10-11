@@ -13,7 +13,9 @@ import { toDate } from '@/lib/format';
  * The decision of one project, derived — roadmap 8.4, the half the workspace
  * card reads.
  *
- * `GET` → `{ draft, stored, unchanged, runId, evidenceDigest, canDecide }`.
+ * `GET` → `{ draft, stored, unchanged, costNow, cost, outdated, runId, evidenceDigest, canDecide }`.
+ * `cost` and `outdated` are ADR-092's: the confirmed record's cost revision
+ * against today's, and why the record is out of date (`lib/decision-cost.ts`).
  *
  * **Why a route and not a call in the browser.** The draft binds the
  * architecture contract, and the contract is built from `buildAbapEvidence`,
