@@ -9,6 +9,11 @@ import { connectAuthToEmulator, connectFirestoreToEmulator, EMULATOR_PASSWORD } 
 import { adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
+import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { otherEditionFigure } from '../lib/score-hero';
+import { APP_VERSION } from '../lib/version';
+import { expectScoreHeroAddsUp } from './helpers/score-hero-dom';
 
 /**
  * The real "start from an example" path, end to end: a project written with
@@ -128,8 +133,33 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   expect(project.activeRunId, 'no signed run').toBeTruthy();
   const run = (await getDoc(doc(clientDb, 'projects', PROJECT_ID, 'runs', project.activeRunId!))).data() as {
     inputFingerprint: { fileName: string };
+    cleanCoreScore: number;
   };
   expect(run.inputFingerprint.fileName, 'the run was signed under the paste placeholder').toBe('Z_MM_PO_APPROVAL.abap');
+
+  // The score hero of the signed run, read row by row off the reloaded page
+  // (QA review of 11e3bc7d90e8): every deduction, largest first, each at its
+  // lines, summing to the score the run signed; its band; the other edition's
+  // figure for the same findings. The figures are recomputed here from the
+  // source, independently of the page.
+  const evidence = buildAbapEvidence(SOURCE,'Z_MM_PO_APPROVAL.abap', 'private');
+  const routed = routeExtensibility(evidence, 'private', APP_VERSION).cleanCoreScore;
+  expect(run.cleanCoreScore, 'the signed run and the engine disagree').toBe(routed);
+  const gaps = evidence.coverage && !evidence.coverage.complete ? evidence.coverage.gaps.length : 0;
+  const otherFigure = otherEditionFigure(evidence.findings, gaps, 'private', APP_VERSION);
+  await expectScoreHeroAddsUp(page, {
+    score: run.cleanCoreScore,
+    edition: 'private',
+    otherScore: otherFigure.score,
+    signedLabel: 'Clean Core Score of the signed run',
+    minDeductions: 3,
+  });
+  // The EBAN writes are the largest single deduction, at both lines (the mockup's measured case).
+  const eban = page.locator('[data-analysis-answer] li[data-score-deduction="standard-table-write"]');
+  await expect(eban).toContainText('EBAN');
+  await expect(eban.locator('[data-cc-anchor]:visible')).toHaveText(['L246', 'L455']);
+  await expect(page.locator('[data-analysis-answer] [data-score-largest]')).toHaveAttribute('data-score-largest', 'standard-table-write');
+  await expect(page.locator('[data-analysis-answer] [data-score-run]')).toContainText(project.activeRunId!.slice(0, 8));
   // The provenance stands in the score hero, beside the figure it describes (ADR-093, 11.10.2026).
   await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
   await expect(page.locator('[data-analysis-meta]')).toContainText('Z_MM_PO_APPROVAL.abap');

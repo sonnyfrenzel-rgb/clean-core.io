@@ -16,6 +16,8 @@ import { scoreBreakdown, scoreBand } from '../lib/clean-core-score';
 import { findingRows } from '../lib/findings-view';
 import { APP_VERSION } from '../lib/version';
 import { scoreRuleFor } from '../lib/score-rule';
+import { otherEditionFigure } from '../lib/score-hero';
+import { expectScoreHeroAddsUp } from './helpers/score-hero-dom';
 
 /**
  * The demo project — roadmap step 0.10, `DESIGN.md` §6.1.2.
@@ -282,6 +284,35 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     expect(demo.analyze.worklist).toHaveLength(demo.analyze.distinctFindings);
     await expect(page.locator('[data-worklist-status]')).toHaveCount(0);
     await expect(page.locator('[data-analysis-not-determined]')).toHaveCount(1);
+  });
+
+  test('the score hero, row by row: largest first, each at its lines, summing to the score (QA 11e3bc7d90e8)', async ({ page }) => {
+    const demo = buildDemoProject();
+    const gaps = demo.analyze.coverage && !demo.analyze.coverage.complete ? demo.analyze.coverage.gaps.length : 0;
+    const other = otherEditionFigure(demo.analyze.findings, gaps, demo.deployment, APP_VERSION);
+    expect(other.sameRule).toBe(false);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await openStage(page, 'analyze');
+    const hero = await expectScoreHeroAddsUp(page, {
+      score: demo.analyze.cleanCoreScore,
+      edition: demo.deployment,
+      otherScore: other.score,
+      signedLabel: 'Clean Core Score of the demo',
+      minDeductions: 3,
+    });
+    // The rows are the score's own table, kind for kind and point for point.
+    expect(hero.deductions.map((d) => [d.kind, -d.points])).toEqual(
+      [...demo.analyze.scoreBreakdown.lines]
+        .filter((l) => l.points > 0)
+        .sort((a, b) => b.points - a.points)
+        .map((l) => [l.kind, l.points]),
+    );
+    // A line chip opens the source at its line.
+    const firstChip = page.locator('[data-analysis-answer] li[data-score-deduction] [data-cc-anchor]:visible').first();
+    await expect(firstChip).toHaveAttribute('aria-label', /^Source line \d+, open the source$/);
+    await firstChip.click();
+    await expect(page.locator('[data-analyze-source-panel]')).toBeVisible();
+    await expect(page.locator('[data-analyze-source-panel]')).toContainText(demo.sourceFile);
   });
 
   test('Economics shows no output until the assumptions are the reader’s', async ({ page }) => {
