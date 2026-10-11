@@ -489,9 +489,11 @@ export default function WorkspaceShell({
    * `#process-map` arrives before the map exists — the redirect above runs as
    * soon as the view is known, a link from a stage lands on a page still
    * loading — so the browser's own jump finds nothing and the reader stays at
-   * the top. Wait for the map, bring it into view, and hold it there until the
-   * blocks above it have stopped growing (about half a second without a move),
-   * at most five seconds; a scroll by the reader ends it at once.
+   * the top. Wait for the map, bring it into view, and hold it there for five
+   * seconds while the blocks above it grow; a scroll, a wheel or a key by the
+   * reader ends it at once. Not until the page is still for a moment: the blocks
+   * above grow in steps (the first look, the result line), and a pause between
+   * two steps read as the end left the reader a screen above the map.
    */
   useEffect(() => {
     if (view !== 'business') return;
@@ -510,7 +512,6 @@ export default function WorkspaceShell({
       stop = false;
       const started = performance.now();
       let lastTop: number | null = null;
-      let stillSince = started;
       const tick = (now: number) => {
         if (stop || !onMap() || now - started > 5000) return;
         const map = document.getElementById(BUSINESS_MAP_ID);
@@ -519,9 +520,6 @@ export default function WorkspaceShell({
           if (lastTop === null || Math.abs(top - lastTop) > 1) {
             map.scrollIntoView({ block: 'start' });
             lastTop = Math.round(map.getBoundingClientRect().top);
-            stillSince = now;
-          } else if (now - stillSince > 500) {
-            return;
           }
         }
         frame = window.requestAnimationFrame(tick);

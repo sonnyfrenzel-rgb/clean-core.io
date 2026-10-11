@@ -535,7 +535,7 @@ test.describe('the Business view on screen', () => {
    *
    * No window to hit: the page is moved off the map every frame, so the follow
    * has something to correct on every frame and keeps requesting the next one
-   * (it ends only after half a second without a move). That it is alive is
+   * (it ends only when its five seconds are up). That it is alive is
    * proven, not assumed — it must pull the page back three times. Then, inside
    * the same frame callback, the hash leaves and the page goes to the top once
    * more; the frame the follow already requested would pull it back on the very
