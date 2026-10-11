@@ -35,7 +35,7 @@ export const USP_SHORT =
  * every surface — the landing says it the same way.
  */
 export const USP_LONG =
-  'For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is the free workspace that reads the code before any model does, draws the business process as BPMN with a line anchor on every element, or the reason it has none, shows SAP’s clean core level for every SAP object it touches — and then carries the same evidence through the whole way: a target design, a transformed code draft and test scenarios, run in an isolated runner or in your own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it could not determine.';
+  'For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is the free workspace that reads the code before any model does, draws the business process as BPMN with a line anchor on every element, or the reason it has none, shows SAP’s clean core level for each SAP object it touches, or Unknown where SAP’s published data holds no answer — and then carries the same evidence through the whole way: a target design, a transformed code draft and test scenarios, run in an isolated runner or in your own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it could not determine.';
 
 /**
  * The numbered sections, in reading order: the anchor, the eyebrow over the
@@ -192,7 +192,7 @@ export const SUMMARY_CARDS = [
   {
     k: 'What you get',
     t: 'The process, the rules and SAP’s view of every object',
-    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for every SAP object it touches. Then a target design, a code draft and tests on the same evidence — and a signed record of the analysis they rest on.',
+    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for each SAP object it touches, or Unknown where SAP’s data holds no answer. Then a target design, a code draft and tests on the same evidence — and a signed record of the analysis they rest on.',
   },
   {
     k: 'What stays with you',
@@ -244,7 +244,7 @@ export const WORKSPACE_FACTS = [
   },
   {
     t: 'A print sheet per project',
-    d: 'One printable sheet: the process as numbered steps, the business rules with the answer on record, every SAP object the code names with its clean core level A–D, and everything that was not determined. The level prints as orientation — it is not part of the signed run.',
+    d: 'One printable sheet: the process as numbered steps, the business rules with the answer on record, every SAP object the code names with its clean core level A–D or Unknown, and everything that was not determined. The level prints as orientation — it is not part of the signed run.',
   },
 ];
 

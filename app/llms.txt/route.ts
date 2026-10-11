@@ -29,7 +29,7 @@ export function GET() {
 For the person who has to decide what happens to a custom ABAP program, Clean-Core.io
 is the free workspace that reads the code before any model does, draws the business
 process as BPMN with a line anchor on every element, or the reason it has none, shows SAP's clean core level for
-every SAP object it touches — and then carries the same evidence through the whole way:
+each SAP object it touches, or Unknown where SAP's published data holds no answer — and then carries the same evidence through the whole way:
 a target design, a transformed code draft and test scenarios, run in an isolated runner or
 in the user's own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain
 code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it
@@ -76,7 +76,8 @@ ${WHAT_CHANGED_ANSWER}
 
 1. Process: the engine reads the ABAP program and reconstructs its business process as
    BPMN; every element carries the line it came from, or the reason it has none.
-2. Level A–D: every SAP object the code uses is graded under a versioned rule
+2. Level A–D: each SAP object the code uses is graded under a versioned rule, or marked
+   Unknown where SAP's published data holds no answer
    (${baseUrl}/method/levels); the Clean Core Score (5–100, higher is better) starts at
    100 and takes points off for the constructs found.
 3. Decision: the Management view asks one question of the program — keep, rebuild, move
@@ -96,7 +97,8 @@ Details and limits: ${baseUrl}/how-it-works.
 - A BPMN editor with revisions: every save is a new revision; the reconstruction itself
   is never overwritten. The process leaves and comes back as a BPMN 2.0 XML file. There
   is no connection to SAP Signavio, and import into SAP Signavio has not been verified.
-- SAP's clean core level A–D for every SAP object the code touches, and the Clean Core
+- SAP's clean core level A–D for each SAP object the code touches (Unknown where SAP's
+  published data holds no answer), and the Clean Core
   Score (5–100, higher is better) in four bands.
 - Business, IT and Management views of the same facts.
 - Seven tools: Analyze, Design, Transformation, Documentation, Testing, Economics,

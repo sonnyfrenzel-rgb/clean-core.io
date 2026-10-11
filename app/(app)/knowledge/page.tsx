@@ -166,7 +166,7 @@ export default function KnowledgePage() {
         </div>
         <ol className="max-w-3xl list-decimal space-y-2 pl-5 text-sm font-medium leading-relaxed text-cc-ink">
           <li><strong>Process:</strong> the business process read from the code as BPMN, with a line anchor on every element or the reason it has none, and the business rules hard-coded in the program.</li>
-          <li><strong>Level A–D:</strong> every SAP object the code uses, graded from SAP&apos;s published Cloudification Repository and object classification under a versioned rule — an orientation; ABAP Test Cockpit stays the authority.</li>
+          <li><strong>Level A–D:</strong> each SAP object the code uses, graded from SAP&apos;s published Cloudification Repository and object classification under a versioned rule, or marked Unknown where neither holds an answer — an orientation; ABAP Test Cockpit stays the authority.</li>
           <li><strong>Decision:</strong> keep, rebuild, move to SAP standard or retire, in the Management view, recorded by the signed-in account.</li>
           <li><strong>Design, code draft, tests:</strong> on the same evidence, each a Model proposal for a person to review.</li>
           <li><strong>Signature:</strong> every completed analysis is stored as an immutable run signed by the server.</li>

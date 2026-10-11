@@ -41,7 +41,7 @@ export const CAPABILITIES: Capability[] = [
     stage: 'Analyze',
     title: 'The process, read from the code, and Level A–D',
     output:
-      'The business process the program runs, drawn as BPMN with a line anchor on every element or the reason it has none; the business rules hard-coded in it, each with its line; the Level A–D of every SAP object the code uses; the findings at their lines and the Clean Core Score — sealed as a signed, immutable run.',
+      'The business process the program runs, drawn as BPMN with a line anchor on every element or the reason it has none; the business rules hard-coded in it, each with its line; the Level A–D of each SAP object the code uses, or Unknown where SAP’s published data holds no answer; the findings at their lines and the Clean Core Score — sealed as a signed, immutable run.',
     benefit:
       'Replaces "we think this program is risky" with statements somebody can check against the lines they came from. A deterministic engine reads the source before any language model does, so the evidence does not depend on a model.',
     effort:

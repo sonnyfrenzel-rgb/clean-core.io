@@ -56,7 +56,7 @@ const TOOL_ROWS = [
   },
   {
     tool: 'Clean-Core.io',
-    does: 'A free web workspace for one custom ABAP program: the process as BPMN with line anchors, Level A–D for every SAP object it uses, one decision — keep, rebuild, move to SAP standard or retire — then a design, a code draft and tests, sealed as a signed run.',
+    does: 'A free web workspace for one custom ABAP program: the process as BPMN with line anchors, Level A–D for each SAP object it uses (or Unknown), one decision — keep, rebuild, move to SAP standard or retire — then a design, a code draft and tests, sealed as a signed run.',
     stronger: 'Explaining to the business what a program does and carrying the same evidence to a decision, with what it could not determine named.',
     together: 'It is not a security scanner, not a linter for a whole repository and not the authority on release state; it reads uploaded source, not your system.',
   },
@@ -293,7 +293,7 @@ export default function AbapAnalysisPage() {
                 <Check className={CHECK} size={16} aria-hidden="true" /> Released successors where SAP names one
               </li>
               <li className="flex items-center gap-2">
-                <Check className={CHECK} size={16} aria-hidden="true" /> Level A–D for every SAP object used
+                <Check className={CHECK} size={16} aria-hidden="true" /> Level A–D (or Unknown) for each SAP object used
               </li>
               <li className="flex items-center gap-2">
                 <Check className={CHECK} size={16} aria-hidden="true" /> Reduces technical upgrade debt

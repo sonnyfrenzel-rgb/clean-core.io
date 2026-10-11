@@ -186,7 +186,7 @@ export default function HowItWorksPage() {
             How It <span className="text-cc-brand-strong">Works</span>
           </h1>
           <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
-            One chain from a custom ABAP program to a decision and a signed record: the process as BPMN with line anchors, Level A–D for every SAP object, the decision, then design, code draft and tests. The engine reads the code first; what a language model writes comes after it and is marked as a Model proposal.
+            One chain from a custom ABAP program to a decision and a signed record: the process as BPMN with line anchors, Level A–D for each SAP object (or Unknown), the decision, then design, code draft and tests. The engine reads the code first; what a language model writes comes after it and is marked as a Model proposal.
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function HowItWorksPage() {
           <li className={STAGE_CARD}>
             <div className="flex items-center gap-3">
               <div className={STAGE_NUMBER} aria-hidden="true">2</div>
-              <h3 className={H3}>Level A–D for every SAP object</h3>
+              <h3 className={H3}>Level A–D, or Unknown, for each SAP object</h3>
             </div>
             <p className={STAGE_TEXT}>
               Every SAP object the code uses is looked up in SAP&apos;s published Cloudification Repository and object classification ({catalogObjects}) and graded Level A–D under a versioned rule, or marked Unknown where neither holds an answer for it rather than given a guessed level; an SAP object the code writes directly is Level D, whatever its own level. The findings give the Clean Core Score, 5–100, higher is better — Clean-Core.io&apos;s own grade, not an SAP measure. The level is an orientation: ABAP Test Cockpit stays the authority. How the level is derived:{' '}

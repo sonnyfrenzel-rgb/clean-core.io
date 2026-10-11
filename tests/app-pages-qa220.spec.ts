@@ -192,3 +192,31 @@ test('the FAQ, Knowledge answer and Part 6 of the guide do not promise every SAP
     expect(s, rel).toMatch(/grades each SAP object[^"`]{0,140}Unknown/);
   }
 });
+
+test('no public text promises every SAP object a level — each one says Unknown where SAP has no answer (owner, 11.10.2026)', () => {
+  // The same rule as above, for every public text that names the level: the
+  // landing and its FAQ, llms.txt, the README, the whitepaper, the guide's
+  // capability list, the release summary and the method pages.
+  const promise = /(?:level|Level A–D)[^.\n]{0,40}\bevery SAP object\b|\bevery SAP object (?:the code |it )?(?:uses|touches)\b[^.]{0,30}(?:graded|Level|level)|Every SAP object the code uses (?:is graded|gets a Level)/;
+  for (const rel of [
+    'app/page.tsx',
+    'lib/landing-faq.ts',
+    'app/llms.txt/route.ts',
+    'README.md',
+    'lib/whitepaper.ts',
+    'components/whitepaper/WhitepaperDocument.tsx',
+    'lib/clean-core-capabilities.ts',
+    'lib/release-summary.ts',
+    'app/(app)/knowledge/page.tsx',
+    'app/(app)/how-it-works/page.tsx',
+    'app/(app)/abap-custom-code-analysis/page.tsx',
+    'app/(app)/clean-core-explained/page.tsx',
+  ]) {
+    const s = read(rel);
+    // A promise is one whose own sentence never says Unknown.
+    const unqualified = [...s.matchAll(new RegExp(promise, 'g'))]
+      .map((m) => s.slice(m.index, s.indexOf('.', m.index + m[0].length) + 1 || undefined))
+      .filter((sentence) => !/Unknown/.test(sentence));
+    expect(unqualified, rel).toEqual([]);
+  }
+});

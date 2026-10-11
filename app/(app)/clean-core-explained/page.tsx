@@ -55,7 +55,7 @@ const IN_SHORT: { q: string; a: string; part: string; partLabel: string }[] = [
   },
   {
     q: 'How do I find the objects that break clean core?',
-    a: "Check each object against SAP's released-object contract — which interfaces it uses, how it touches data, whether its patterns exist in the cloud at all — and confirm with ABAP Test Cockpit. Clean-Core.io does this for one program at a time and shows the Level A–D of every SAP object it uses, with the line it comes from.",
+    a: "Check each object against SAP's released-object contract — which interfaces it uses, how it touches data, whether its patterns exist in the cloud at all — and confirm with ABAP Test Cockpit. Clean-Core.io does this for one program at a time and shows the Level A–D of each SAP object it uses — or Unknown where SAP's published data holds no answer — with the line it comes from.",
     part: '#platform',
     partLabel: 'Part 6',
   },

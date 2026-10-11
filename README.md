@@ -65,8 +65,9 @@ Model proposal.
   to clean core*), with the deductions that moved it. A grade, not a compliance
   percentage, and not an SAP measure. A map shows where in the program each finding sits;
   a click opens the code at that line.
-- **Clean Core Level A–D.** Every SAP object the code uses is graded Level A–D from SAP's
-  published Cloudification Repository and object classification, with the rule version
+- **Clean Core Level A–D.** Each SAP object the code uses is graded Level A–D from SAP's
+  published Cloudification Repository and object classification, or marked Unknown where
+  neither holds an answer, with the rule version
   that produced it. The level is an orientation, not an ATC result, and is not part of
   the signed audit pack.
 - **Where each statement comes from.** Every statement carries one of nine provenance
