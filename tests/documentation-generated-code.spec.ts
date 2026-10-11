@@ -79,7 +79,7 @@ test.describe('a package of documentation files is not generated code', () => {
   test('Delivery still adds both documentation files to the bundle from the project fields', () => {
     const delivery = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(delivery).toContain('docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation))');
-    expect(delivery).toContain('docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation))');
+    expect(delivery).toContain('docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation))');
   });
 });
 

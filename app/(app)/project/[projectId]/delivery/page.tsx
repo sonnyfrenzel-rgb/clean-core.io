@@ -481,7 +481,7 @@ export default function DeliveryPage() {
       if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
       if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
-      if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
+      if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
       docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
 
       // The linter of the ABAP route. The Node route's CI comes from the templates.
@@ -1046,7 +1046,7 @@ export default function DeliveryPage() {
                       disabled={handoverBlocked}
                       onClick={() => {
                         if (handoverBlocked) return;
-                        const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
+                        const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '', project.documentation)], { type: "text/markdown;charset=utf-8" });
                         const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
                         saveAs(blob, `${fileName}_BusinessDocumentation.md`);
                       }}
