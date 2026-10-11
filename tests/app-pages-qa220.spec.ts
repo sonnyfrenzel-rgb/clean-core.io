@@ -198,7 +198,8 @@ const LEVEL_PROMISE = /(?:level|Level A–D)[^.\n]{0,40}\bevery SAP object\b|\be
 /** The sentence a match stands in: up to the next full stop or line break, at most 300 characters. */
 function sentenceAt(s: string, index: number, length: number): string {
   const from = index + length;
-  const stops = [s.indexOf('.', from), s.indexOf('\n', from)].filter((i) => i >= 0).map((i) => i + 1);
+  // A full stop, an exclamation or question mark (QA fc2dc3ff66ad), or a line break.
+  const stops = ['.', '!', '?', '\n'].map((c) => s.indexOf(c, from)).filter((i) => i >= 0).map((i) => i + 1);
   return s.slice(index, Math.min(from + 300, ...stops));
 }
 
@@ -234,6 +235,9 @@ test('the level-promise guard reads one sentence, not the rest of the file (QA 4
   // the sentence ends at the line break, so the promise is still found.
   expect(unqualifiedLevelPromises("const a = 'Level A–D for every SAP object the code uses'\nconst b = 'Unknown';\n")).toHaveLength(1);
   expect(unqualifiedLevelPromises("Level A–D for every SAP object it uses, or Unknown where SAP's data holds none.")).toEqual([]);
+  // An exclamation or question mark ends the sentence as well (QA fc2dc3ff66ad).
+  expect(unqualifiedLevelPromises('Level A–D for every SAP object! Unknown where SAP has no answer.')).toHaveLength(1);
+  expect(unqualifiedLevelPromises('Level A–D for every SAP object? Unknown where SAP has no answer.')).toHaveLength(1);
   // Neither a full stop nor a line break: no more than 300 characters are read.
   expect(unqualifiedLevelPromises(`Level A–D for every SAP object it uses ${'x'.repeat(400)} Unknown`)).toHaveLength(1);
 });
