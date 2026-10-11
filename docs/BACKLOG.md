@@ -3,6 +3,26 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 11.10.2026 — 3.0.8 released
+
+**Built (main on Sonny's go, 11.10.2026):** SEO/GEO after 3.0, roadmap 3.0.8 items 1–8 (titles for the
+searches that come in, the 3.0 chain on `/how-it-works` and `/knowledge`, one SAP clean core page, dated facts
+and "what changed in 3.0", PDFs canonical, one cloudification page, the ABAP tool comparison, brand
+disambiguation); no public text promises every SAP object a level (owner, 11.10.2026); "Result ready"
+(ADR-090); the map follow that lands on the map; batch input bound to its own call. CHANGELOG has the details.
+
+**CI:** red on every run since `bb0ad132` (10.10. evening) — the snippet guard's run-time `import()` on Node 22,
+a BPMN guard slice, and a real race: a link to `#process-map` could leave the reader a screen above the map.
+All three fixed; reproduced on a production build in a clean worktree before the fix.
+
+**QA:** every delta review on dev fixed or refuted with evidence; 36 refutations of `e8a1245` re-verified and
+recorded. **Security:** SEC-2026-759 — the production count found one project and one profile of one account
+with a cleartext `s4Config` password; deleted on Sonny's go (11.10.2026), 0 left. Removing the legacy read path
+follows in 3.0.9.
+
+**Open for Sonny:** Search Console — request re-indexing of the changed pages (row 3.0.8), and in about three
+weeks a Performance export with "compare to previous period".
+
 ## Session 10.10.2026 — 3.0.7 built on dev, release
 
 **Built (main on Sonny's go, 10.10.2026):** the ZMM engine review completed (batch input field by field,

@@ -10,6 +10,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.8] — 2026-10-11
+
+Search engines and answer engines hear the 3.0 story: the pages people arrive on say what they find,
+the method pages describe the 3.0 chain, and no public text promises more than the engine answers.
+
+### What everyone notices
+
+- **The pages people search for say what they are.** `/sap-cloudification`, `/catalog` and
+  `/abap-custom-code-analysis` have titles and descriptions written for the searches that reach
+  them ("cloudify SAP", "cloudification repository viewer") — and say plainly that SAP has its own
+  viewer. Every page in a sitemap keeps its title within 60 and its description within 155
+  characters, so a search result no longer cuts the brand or the limits off.
+- **`/how-it-works` and `/knowledge` describe 3.0.** The process as BPMN with line anchors, the
+  Level A–D, the decision, then design, code draft and tests on the same evidence, sealed as a
+  signed run — instead of the 2.x pipeline they still described.
+- **One page answers "SAP clean core".** `/clean-core-explained` opens with a definition; the two
+  PDFs point search engines to their HTML pages, and the three cloudification pages no longer
+  compete — `/features/cloudification-catalog` hands over to `/sap-cloudification`.
+- **Dated facts.** `/facts`, `llms.txt` and the landing FAQ say what Clean-Core.io is as of this
+  version and what changed in 3.0, read from the version itself.
+- **An honest comparison of ABAP analysis tools** on `/abap-custom-code-analysis`: the OWASP ABAP
+  scanner, abaplint, ATC/Code Inspector and SonarQube, each with what it is for.
+- **No text promises every SAP object a level.** Where SAP's published data holds no answer for an
+  object, the level is *Unknown*, and every public text — landing, FAQ, `llms.txt`, README,
+  whitepaper, guide, method pages — now says so.
+- **A finished analysis is not overlooked** (ADR-090). "Result ready" on the Analyze chip and
+  "Your analysis is ready" in the hub, until this browser has opened Analyze.
+- **The main line on the first screen shows all of itself** — readable labels, a cue when more
+  follows, the button inside its card.
+- **A link to the process map lands on the map.** It used to stop a screen above it when the
+  blocks above the map grew in steps; the page now holds the map for five seconds, and any wheel,
+  touch, key or press of the reader — a scrollbar drag included — ends that at once.
+- **Old layer addresses** redirect reliably on a fresh load, and the open-questions line no longer
+  shifts the page.
+
+### Engine
+
+- **Batch input stays with its own call.** Two `CALL TRANSACTION … USING` on one line keep their
+  own transaction, and a screen field belongs to the call whose table it was appended to — before,
+  two calls in one routine each got every field. Where the table cannot be read with certainty,
+  nothing is dropped.
+- A batch input to a Create transaction creates a document; the data-effect sentence names
+  batch-input changes; a `FOR ALL ENTRIES` guard counts only where it covers the read; constants
+  that are only decision-table values are no business rule.
+- The process benchmark (300 cases) is unchanged by these fixes.
+
+### Fixed
+
+- The route card says "not determined" when no route is on record; the rule that decides whether
+  the signed route report is shown is its own module with a behavioural test.
+- The exported overview draws a business-rule task as a task; the steering one-pager opens by
+  click; exports wait for the saved RACI; Authorization values of any length are redacted.
+- QA reviews of `32285ae`, `e8a1245`, `46ad87a`, `1e34e3a`, `dc0f92e`, `b651578` and `347c6b3`:
+  every finding fixed or refuted with evidence; the refutations are in the sealed register.
+
+### Search and answer engines
+
+- The Organization carries `alternateName` and `knowsAbout` against the brand mix-ups;
+  `/method/levels` dates itself as an ISO date; the PDFs are canonical to their pages.
+
+### Tests
+
+- The snippet-length guard reads every sitemap page's metadata; it loads page modules with
+  `require`, since a run-time `import()` misses the path mapping on Node 22.
+- A guard reads every public text that names the level and fails on a sentence that grades every
+  SAP object without saying *Unknown*.
+- The map-follow tests prove the follow is alive before they test that it stops.
+
 ## [v3.0.7] — 2026-10-10
 
 The engine finishes what the ZMM review showed, the first screen says what it is, and every view
