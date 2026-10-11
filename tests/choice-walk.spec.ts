@@ -112,7 +112,7 @@ test('a choice’s address opens its place with the focus, and the way back retu
   // The choice's one address, with the origin it was asked from.
   const href = choiceHref({ base, choice: 'economics.rates', origin: 'it.target-profile', view: 'it' });
   expect(href).toBe(`${base}/tco?view=it&origin=it.target-profile#economics-step-rates`);
-  await page.goto(href, { waitUntil: 'domcontentloaded' });
+  await page.goto(href!, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-stage-header="tco"]')).toBeVisible({ timeout: 90_000 });
 
   // Revealed, brought into view, focused, marked as arrived.
