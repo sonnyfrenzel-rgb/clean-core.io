@@ -80,10 +80,15 @@ test.describe('Analyze page - QA full review of v2.20.0', () => {
 });
 
 test('ae68c0b99961: the route report is drawn only from the evidence of the source the run signed', () => {
+  // The rule moved to lib/signed-route-report.ts (QA e8a1245626f4, d9993476ee4e),
+  // where tests/signed-route-report.spec.ts runs it; the page hands it the
+  // evidence's source fingerprint.
   const text = src();
   const memo = text.slice(text.indexOf('const routeReport = useMemo('), text.indexOf('const routeDerived = useMemo('));
-  expect(memo).toContain('project.auditMetadata?.inputFingerprint?.sha256');
-  expect(memo).toContain('evidenceSourceSha === signedSourceSha');
-  expect(memo).toMatch(/const addsUp = sameSource && /);
+  expect(memo).toContain('signedRouteReport({ evidenceReport, evidenceSourceSha, project, signedCleanCoreScore })');
+  const rule = fs.readFileSync(path.resolve(ROOT, 'lib/signed-route-report.ts'), 'utf8');
+  expect(rule).toContain('project.auditMetadata?.inputFingerprint?.sha256');
+  expect(rule).toContain('evidenceSourceSha === signedSourceSha');
+  expect(rule).toMatch(/const addsUp = sameSource && /);
   expect(text).toContain("const evidenceSourceSha = projectEvidence.state === 'ready' ? projectEvidence.value.sourceSha256 : null;");
 });

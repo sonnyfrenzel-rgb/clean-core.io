@@ -50,6 +50,7 @@ import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
 import { routeDrivers, routeExtensibility } from '@/lib/abap/extensibility-router';
+import { signedRecommendationOf, signedRouteReport } from '@/lib/signed-route-report';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
@@ -97,7 +98,7 @@ import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
 import { analysisAnswer, countFindings, dataEffect, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
-import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
 import { profileCoverage } from '@/lib/assessment-profile';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { formatTextDate } from '@/lib/format';
@@ -850,22 +851,15 @@ export default function AnalyzePage() {
    * every reload. It is recomputed from the evidence the server read for the
    * signed run, with the run's deployment — and used only when it arrives at
    * the route and the score that run signed, the same "adds up" rule as the
-   * score's deductions. Otherwise it is `'differs'`, said in the route card,
-   * and nothing is drawn from it.
+   * score's deductions — and only for the evidence of the source the run
+   * signed. Otherwise it is `'differs'`, said in the route card, and nothing
+   * is drawn from it. The rule is `lib/signed-route-report.ts`, where a spec
+   * exercises it (tests/signed-route-report.spec.ts).
    */
-  const routeReport = useMemo(() => {
-    if (!evidenceReport || !project) return null;
-    const deployment = project.s4Deployment === 'public' ? 'public' : 'private';
-    const derived = routeExtensibility(evidenceReport, deployment);
-    const recommended = signedRecommendationOf(project.originalRecommendation) ?? project.extensibilityRoute ?? null;
-    // The evidence has to be of the source the run signed: a source changed
-    // since can arrive at the same route and score with other drivers
-    // (QA ae68c0b99961).
-    const signedSourceSha = project.auditMetadata?.inputFingerprint?.sha256;
-    const sameSource = !signedSourceSha || evidenceSourceSha === signedSourceSha;
-    const addsUp = sameSource && derived.recommendedRoute === recommended && derived.cleanCoreScore === signedCleanCoreScore;
-    return addsUp ? derived : null;
-  }, [evidenceReport, evidenceSourceSha, project, signedCleanCoreScore]);
+  const routeReport = useMemo(
+    () => signedRouteReport({ evidenceReport, evidenceSourceSha, project, signedCleanCoreScore }),
+    [evidenceReport, evidenceSourceSha, project, signedCleanCoreScore],
+  );
   /** What the route card draws from it: drivers and assumptions, said as not shown, or nothing to say. */
   const routeDerived = useMemo(() => {
     if (!evidenceReport) return null;
@@ -1936,20 +1930,6 @@ export default function AnalyzePage() {
 // ---------------------------------------------------------------------------
 // Shared pieces of this page (block D, step D.10a). Tokens only; no palette.
 // ---------------------------------------------------------------------------
-
-/**
- * The route the run recommended, as `/api/runs/create` signed it
- * (`originalRecommendation`). Runs record the route itself; a project an
- * older client wrote may hold `cap` / `rap`. Anything else is not read as a
- * route.
- */
-function signedRecommendationOf(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const v = value.trim();
-  if (v === 'cap' || v === SIDE_BY_SIDE_ROUTE) return SIDE_BY_SIDE_ROUTE;
-  if (v === 'rap' || v === IN_APP_ROUTE) return IN_APP_ROUTE;
-  return null;
-}
 
 /**
  * What the run did not record about its route — one muted line in the route
