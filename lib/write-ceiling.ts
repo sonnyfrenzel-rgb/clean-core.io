@@ -1,5 +1,4 @@
 import {
-  FirestoreError,
   collection,
   doc,
   runTransaction,
@@ -86,7 +85,11 @@ export async function createWithinCeiling(
     // refused. The create then goes alone, which those older rules allow and
     // the newer ones refuse — so this never writes past the ceiling. Remove
     // once the rules deploy is recorded in docs/registers/rules-deployment.json.
-    if (error instanceof FirestoreError && error.code === 'permission-denied') {
+    // The code is read, not the class: FirebaseError's constructor resets the
+    // prototype to its own, so `instanceof FirestoreError` is never true and
+    // the fallback never ran (QA review of b3d276e88aba;
+    // tests/firestore-rules-write-ceiling-transition.spec.ts).
+    if ((error as { code?: unknown } | null)?.code === 'permission-denied') {
       await setDoc(ref, data);
       return ref;
     }
