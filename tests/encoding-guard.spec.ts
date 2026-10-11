@@ -26,9 +26,13 @@ const CONT =
 // continuation marks as its sequence carries (QA b9d71ce407f4: "カ", E3 82 AB,
 // becomes "ã‚«"): two-byte leads C2-DF, three-byte E0-EF, four-byte F0-F4. Four
 // two-byte leads are German letters in their own right, and "Gruß“" or "Ü—" is
-// clean text: after Ä, Ö, Ü and ß only a mark that is not typographic punctuation
-// counts.
-const PUNCTUATION = '\\u2013\\u2014\\u2018\\u2019\\u201A\\u201C\\u201D\\u201E\\u2026\\u00A0-\\u00BF';
+// clean text: after Ä, Ö, Ü and ß a mark that closes a word — a closing quote,
+// a dash, an ellipsis — is text. Opening low quotes and the Latin-1 range are not
+// exempt (QA f426da59981d: "Ä‚" is "Ă", C4 82, misread). Known limit: a
+// character whose bytes are one of those four leads plus a closing mark — "ą"
+// (C4 85) as "Ä…", "ē" (C4 93) as "Ä“" — reads exactly like German text and is
+// not caught; no byte pattern can tell the two apart.
+const PUNCTUATION = '\\u2013\\u2014\\u2019\\u201C\\u201D\\u2026';
 const CONT_NOT_PUNCTUATION = `(?![${PUNCTUATION}])${CONT}`;
 const DOUBLE_ENCODED = new RegExp(
   [
@@ -81,6 +85,8 @@ test('the guard rejects every mark of the round trip, the euro sign included', (
     katakana: 'ã‚«',
     cAcute: 'Ä‡',
     emoji: 'ðŸ˜€',
+    // QA f426da59981d: a German-letter lead before an opening low quote ("Ă", C4 82).
+    aBreve: 'Ä‚',
   };
   for (const [name, text] of Object.entries(mangled)) {
     expect(DOUBLE_ENCODED.test(`Price: 5 ${text} per seat`), name).toBe(true);
