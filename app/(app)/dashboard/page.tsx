@@ -15,8 +15,8 @@ import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quot
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
-import { workflowSteps, workflowSummary, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
-import { projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
+import { workflowSteps, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
+import { projectContinueHref, projectOpenHref, projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
 import ProjectProgressCell from '@/components/ProjectProgress';
 
 import StarterExamples from '@/components/StarterExamples';
@@ -297,10 +297,11 @@ export default function Dashboard() {
   // "Continue" goes to the first phase that is not done, as the shared contract
   // reads it. It used to follow `status`, a label the client writes, and sent
   // any project scoring above 90 straight to Delivery whatever else was missing.
-  const continuePath = (project: any) => {
-    const { next } = workflowSummary(workflowSteps(project));
-    return `/project/${project.id}/${next.path}`;
-  };
+  // Once nothing is open it leads to the workspace, not to the last tool
+  // (`projectContinueHref`). The project's name always opens its workspace
+  // (ADR-061) — it used to share this path, so a finished project opened on
+  // Delivery and its process seemed gone (owner, 11.10.2026).
+  const continuePath = (project: any) => projectContinueHref(project.id, workflowSteps(project));
   const handleProceed = (project: any) => {
     setProceedingId(project.id);
     router.push(continuePath(project));
@@ -468,7 +469,7 @@ export default function Dashboard() {
             >
               {isOpen ? <ChevronDown size={16} aria-hidden={true} /> : <ChevronRight size={16} aria-hidden={true} />}
             </CcIconButton>
-            <Link href={continuePath(project)} data-dashboard-open={project.id} className="min-w-0">
+            <Link href={projectOpenHref(project.id)} data-dashboard-open={project.id} className="min-w-0">
               <CcObjectIdentifier title={project.name} identifier={project.id} />
             </Link>
           </span>

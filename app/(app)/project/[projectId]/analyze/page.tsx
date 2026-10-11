@@ -12,10 +12,12 @@ import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
-import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shield, Cloud, BookOpenText, FilePlus2, Activity, ListChecks } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shield, Cloud, BookOpenText, FilePlus2, Activity, ListChecks, Workflow } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcLinkButton from '@/components/cc/LinkButton';
+import { workspaceProcessHref } from '@/lib/workspace-back-href';
 import { CcTag } from '@/components/cc/Tag';
 import CcDialog from '@/components/cc/Dialog';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -1415,6 +1417,20 @@ export default function AnalyzePage() {
         actions={
           legacyCode || (hasResults && project?.analysis) ? (
             <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
+              {/* The process is not drawn here: its BPMN map stands in the
+                  Business view (ADR-080). A reader who looks for it in Analyze
+                  gets the way there at once (owner, 11.10.2026) — where a run is
+                  signed, since the map is drawn only from signed source. */}
+              {project?.activeRunId?.trim() ? (
+                <CcLinkButton
+                  variant="ghost"
+                  href={workspaceProcessHref(projectId as string)}
+                  icon={<Workflow size={16} aria-hidden={true} />}
+                  data-analyze-open-process=""
+                >
+                  Process (BPMN)
+                </CcLinkButton>
+              ) : null}
               {/* The two optional imports behind one "Add evidence" menu (owner
                   decision Q5, 11.10.2026, ADR-093); each still opens the upload
                   it always had, in a dialog, and `?add=usage|atc` opens it

@@ -88,6 +88,29 @@ function nextActionLabel(step: RailStep, hasSource: boolean): string {
   return phaseActionLabel(step, hasSource);
 }
 
+/**
+ * Where a project opens from "My workspace": its workspace (ADR-061), which
+ * opens in the Business view with the first insights and the process map
+ * (ADR-072, ADR-080) — whatever phase the project is in. The name of a project
+ * used to lead to its next open tool, so a project clicked through to Delivery
+ * opened on Delivery every time, and its process seemed gone (owner,
+ * 11.10.2026).
+ */
+export function projectOpenHref(projectId: string): string {
+  return `/project/${encodeURIComponent(projectId)}`;
+}
+
+/**
+ * Where "Continue" leads: the next open tool, as the phase contract names it
+ * (`workflowSummary`) — and the workspace once nothing is open, since there is
+ * nothing left to continue and the finished project's place is its process,
+ * not the last tool used.
+ */
+export function projectContinueHref(projectId: string, steps: RailStep[]): string {
+  const { next } = workflowSummary(steps);
+  return next.done ? projectOpenHref(projectId) : `${projectOpenHref(projectId)}/${next.path}`;
+}
+
 export function stepOfLabel(n: number, total: number): string {
   return `Step ${n} of ${total}`;
 }

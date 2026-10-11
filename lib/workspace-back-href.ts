@@ -212,6 +212,16 @@ export const LAYER_LABELS: Readonly<Record<LayerKey, string>> = {
 /** The process map's place in the way back, where Business has no section of that name (ADR-080). */
 export const BUSINESS_MAP_LABEL = 'Process map';
 
+/**
+ * The project's process — its BPMN map in the Business view (ADR-080), the one
+ * place the process stands. Analyze links here: the tool reads findings, never
+ * draws the process, and a reader who looks for the BPMN there must find the
+ * way to it at once (owner, 11.10.2026).
+ */
+export function workspaceProcessHref(projectId: string): string {
+  return `/project/${encodeURIComponent(projectId)}?view=business#${BUSINESS_MAP_ID}`;
+}
+
 /** Business reached by a layer it no longer shows, whose content is its map (ADR-080). */
 function mapInBusiness(view: string | null, layer: LayerKey): boolean {
   return view === 'business' && BUSINESS_LAYER_ELSEWHERE[layer] === 'map';
