@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyze score hero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ======================================================================
+   Mockup — roadmap "after 3.0.7", items (1) and (2). Concept, not built.
+   Tokens: DESIGN.md §1 (light theme only), score bands §1.8 / ADR-057.
+   Figures: Z_MM_PO_APPROVAL (starter example, 668 lines), measured with
+   the engine of v3.0.9 on 11.10.2026 — lib/demo-release.json and
+   lib/clean-core-score.ts scoreBreakdown(), both edition rules.
+   ====================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#ffffff;--cc-surface-muted:#f9fafb;
+  --cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-focus:#1d4ed8;
+  --ok:#047857;--ok-bg:#ecfdf5;--ok-bd:#a7f3d0;
+  --warn:#92400e;--warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-line:#b45309;--warn-mark:#d97706;
+  --err:#b91c1c;--err-bg:#fef2f2;--err-bd:#fecaca;
+  --info:#1d4ed8;--info-bg:#eff6ff;--info-bd:#bfdbfe;
+  --neu:#4b5563;--neu-bg:#f9fafb;--neu-bd:#e5e7eb;
+  --code-bg:#030712;--code-ink:#e5e7eb;--code-muted:#9ca3af;--code-kw:#c4b5fd;--code-lit:#fcd34d;--code-name:#93c5fd;
+  --score-1:#b91c1c;--score-2:#d97706;--score-3:#4f46e5;--score-4:#1e1b4b;
+  --cat-1:#334155;
+  --r-card:12px;--r-row:8px;
+  --sh:0 1px 2px rgb(0 0 0 / .04);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#dfe3ec;font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}
+h1,h2,h3{margin:0}
+a{color:inherit}
+code{font-family:var(--mono)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+
+/* ---------- document chrome (not part of the product) ---------- */
+.doc{max-width:1980px;margin:0 auto;padding:24px 16px 64px}
+.note{background:#fff;border:1px solid #cfd5e1;border-radius:16px;padding:24px 28px;max-width:1180px;margin:0 auto 24px;box-shadow:0 8px 24px rgba(11,28,48,.08)}
+.note .kick{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5b21b6}
+.note h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:4px 0 8px}
+.note p,.note li{font-size:14px;font-weight:500;line-height:1.6}
+.note ol,.note ul{margin:8px 0 0;padding-left:20px}
+.note li+li{margin-top:4px}
+.note .facts{margin-top:12px;font-size:12px;color:var(--cc-ink-muted);font-family:var(--mono);line-height:1.6}
+.pin{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:600;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 5px;line-height:17px;margin-left:6px;vertical-align:1px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.sheet-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#374151;margin:32px 0 12px}
+.row{display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.legend{width:440px;flex:none;background:#fff;border:1px solid #cfd5e1;border-radius:16px;padding:20px 22px;box-shadow:0 8px 24px rgba(11,28,48,.08)}
+.legend h2{font-size:15px;font-weight:700;margin-bottom:4px}
+.legend .lead{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;margin-bottom:12px}
+.legend h3{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:16px 0 6px;display:flex;align-items:center;gap:8px}
+.legend h3 .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend li{font-size:13px;line-height:1.5;padding:7px 0;border-top:1px solid #eef0f3}
+.legend li b{font-weight:600}
+.legend li .why{display:block;color:var(--cc-ink-muted);font-size:12px;font-weight:500;margin-top:1px}
+.legend .ask{margin-top:16px;padding:12px 14px;border:1px dashed #a78bfa;border-radius:8px;background:#faf8ff}
+.legend .ask li{border-top:0;padding:4px 0}
+
+/* ---------- product frame ---------- */
+.frame{background:var(--cc-page);border:1px solid #cfd5e1;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(11,28,48,.12);flex:none}
+.frame.desk{width:1440px}
+.frame.phone{width:390px;border-radius:28px;border:8px solid #111827}
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:#fff;border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:#f0fdf4;color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.body{max-width:1536px;margin:0 auto;padding:16px 32px 32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);text-decoration:none}
+.toolsbar{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
+.toolsbar .k{margin-right:6px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px}
+.tool.on{color:var(--cc-ink);border-color:var(--cc-ink)}
+.tool .ck{color:var(--ok)}
+.tool .nx{font-size:11px;font-weight:600;border:1px solid var(--cc-ink);border-radius:4px;padding:0 4px;color:var(--cc-ink)}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh{display:flex;align-items:flex-end;gap:16px;margin-top:18px}
+.sh .eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+.sh .acts{margin-left:auto;display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;white-space:nowrap;text-decoration:none}
+.btn.sm{font-size:12px;padding:6px 10px;min-height:28px}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:#f0fdf4;border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.qbtn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;border:1.5px solid var(--cc-ink-muted);color:var(--cc-ink-muted);font-size:12px;font-weight:700;flex:none}
+
+/* ---------- the hero ---------- */
+.hero{margin-top:16px;background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-card);box-shadow:var(--sh)}
+.hero-grid{display:grid;grid-template-columns:400px minmax(0,1fr);gap:0}
+.hero-left{padding:20px 24px;border-right:1px solid var(--cc-line)}
+.hero-right{padding:20px 24px;min-width:0}
+.hk{display:flex;align-items:center;gap:8px}
+.big{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+.big b{font-size:64px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.big span{font-size:16px;font-weight:600;color:var(--cc-ink-muted)}
+.band{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:15px;font-weight:700}
+.band .sw{width:12px;height:12px;border-radius:3px;background:var(--score-1)}
+.band small{font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.scale{position:relative;margin-top:14px;height:12px;display:flex;gap:2px}
+.scale span{height:12px;border-radius:2px}
+.scale .m{position:absolute;top:-5px;width:6px;height:22px;background:var(--cc-ink);border-radius:2px;box-shadow:0 0 0 2px #fff;transform:translateX(-3px)}
+.ticks{position:relative;height:16px;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--cc-ink-muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.bandnames{display:grid;grid-template-columns:60fr 21fr 10fr 9fr;gap:2px;margin-top:2px;font-size:11px;font-weight:600;color:var(--cc-ink-muted);line-height:1.3}
+.bandnames .on{color:var(--cc-ink)}
+.nature{margin-top:14px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);line-height:1.5}
+.nature a{color:var(--cc-ink);font-weight:600}
+.prov{margin-top:14px;padding-top:12px;border-top:1px solid var(--cc-line);display:grid;gap:6px}
+.prov .l{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);flex-wrap:wrap}
+.prov .l b{font-weight:600;color:var(--cc-ink)}
+.mono{font-family:var(--mono);font-size:12px}
+.edition{margin-top:12px;border:1px solid var(--cc-line);background:var(--cc-surface-muted);border-radius:var(--r-row);padding:10px 12px;font-size:13px;line-height:1.5}
+.edition b{font-weight:700}
+.edition .sub{font-size:12px;color:var(--cc-ink-muted);margin-top:2px}
+
+.moves-h{display:flex;align-items:baseline;gap:10px}
+.moves-h h2{font-size:15px;font-weight:700}
+.moves-h .r{margin-left:auto;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.moves-lead{font-size:13px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.5}
+.dt{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+.dt th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);padding:6px 8px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted);white-space:nowrap}
+.dt td{padding:8px;border-bottom:1px solid #eef0f3;vertical-align:middle;font-weight:500;line-height:1.4}
+.dt td.what b{display:block;font-weight:600;color:var(--cc-ink)}
+.dt td.what span{display:block;font-size:12px;color:var(--cc-ink-muted)}
+.dt td.what span.pv{display:inline-flex;font-size:11px;color:var(--neu);margin:2px 0}
+.dt td.pts{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;width:64px}
+.dt td.bar{width:170px}
+.dt .bt{height:10px;background:#f3f4f6;border-radius:2px;position:relative}
+.dt .bt i{position:absolute;left:0;top:0;bottom:0;background:var(--cat-1);border-radius:2px}
+.dt .bt i.nd{background:repeating-linear-gradient(135deg,#6b7280 0 3px,#fff 3px 6px);box-shadow:inset 0 0 0 1px #6b7280}
+.dt tr.free td{color:var(--cc-ink-muted)}
+.dt tr.free td.pts{color:var(--cc-ink-muted);font-weight:600}
+.dt tr.sum td{border-bottom:0;border-top:1px solid var(--cc-ink);font-weight:700}
+.dt tr.sub td{background:var(--cc-surface-muted);font-weight:600}
+.anc{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--info);background:var(--info-bg);border:1px solid var(--info-bd);border-radius:4px;padding:0 5px;line-height:17px;white-space:nowrap;margin:1px 2px 1px 0;text-decoration:none}
+.anc.more{color:var(--cc-ink-muted);background:#fff;border-color:var(--cc-line)}
+.pv{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle}
+.pv svg.i{width:12px;height:12px}
+.pv.rec{color:var(--info);background:#fff;border-color:var(--info)}
+.pv.nd{color:var(--neu);background:#fff;border-color:var(--neu)}
+.pv.prop{color:var(--warn);background:#fff;border-color:var(--warn-line);border-style:dashed}
+.lever{margin-top:12px;display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;padding:10px 12px;border-left:3px solid var(--cc-ink);background:var(--cc-surface-muted);border-radius:0 8px 8px 0}
+
+/* facets under the hero */
+.facets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid var(--cc-line)}
+.facet{padding:12px 24px;border-right:1px solid var(--cc-line)}
+.facet:last-child{border-right:0}
+.fv{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-top:2px;display:flex;align-items:baseline;gap:6px}
+.fv small{font-size:12px;font-weight:500;color:var(--cc-ink-muted);letter-spacing:0}
+.fd{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;line-height:1.4}
+.sevbar,.lvbar{display:flex;height:8px;gap:2px;margin-top:6px}
+.sevbar span,.lvbar span{border-radius:2px}
+.lvchips{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.lv{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 6px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid}
+.lv.A{background:var(--info-bg);border-color:var(--info-bd);color:var(--info)}
+.lv.B{background:#f3f4f6;border-color:#d1d5db;color:#374151}
+.lv.C{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn)}
+.lv.D{background:var(--err-bg);border-color:var(--err-bd);color:var(--err)}
+.lv.U{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted);border-style:dashed}
+.sev{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid}
+.sev.crit{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+.sev.high{background:var(--err-bg);border-color:var(--err-bd);color:var(--err)}
+.link{font-size:12px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px}
+
+/* anchor bar, sections */
+.anchors{display:flex;align-items:center;gap:2px;margin-top:16px;padding:0 12px;background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-card);box-shadow:var(--sh);overflow:hidden;white-space:nowrap}
+.anchors .k{margin-right:10px}
+.anchors a{display:inline-flex;align-items:center;gap:6px;padding:11px 10px 9px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);border-bottom:2px solid transparent;text-decoration:none}
+.anchors a.on{color:var(--cc-ink);font-weight:600;border-bottom-color:var(--cc-ink)}
+.anchors .c{font-size:11px;font-weight:600;border:1px solid var(--cc-line);border-radius:999px;padding:0 6px;color:var(--cc-ink-muted)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;margin-top:16px;align-items:start}
+.stack{display:grid;gap:16px;min-width:0}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-card);padding:16px;box-shadow:var(--sh);min-width:0}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ch h2{font-size:15px;font-weight:700}
+.ch h3{font-size:14px;font-weight:700}
+.ch .r{margin-left:auto;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.lf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fcard{border:1px solid var(--cc-line);border-left:3px solid var(--err);border-radius:var(--r-row);padding:12px}
+.fcard .t{font-size:13px;font-weight:600;margin-top:6px}
+.fcard .d{font-size:12px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.code{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:11px;border-radius:6px;padding:6px 8px;margin-top:8px;line-height:1.6;white-space:pre;overflow:hidden}
+.code .n{color:var(--code-muted)}.code .kw{color:var(--code-kw)}.code .nm{color:var(--code-name)}.code .lit{color:var(--code-lit)}
+.strip{position:relative;height:120px;margin-top:6px}
+.strip .ln{position:absolute;left:180px;right:8px;height:1px;background:var(--cc-line)}
+.strip .lab{position:absolute;left:0;width:170px;text-align:right;font-size:12px;font-weight:500;color:var(--cc-ink)}
+.strip .d{position:absolute;width:10px;height:10px;border-radius:999px;transform:translate(-50%,-50%)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);padding:6px 8px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted)}
+.tbl td{padding:8px;border-bottom:1px solid #eef0f3;font-weight:500;vertical-align:top}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px}
+.seg span{padding:3px 10px;font-size:12px;font-weight:600;color:var(--cc-ink-muted);border-radius:6px}
+.seg span.on{background:var(--cc-ink);color:#fff}
+.fold{background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-card);padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;box-shadow:var(--sh)}
+.fold .muted{font-weight:500;color:var(--cc-ink-muted);font-size:13px}
+.fold .r{margin-left:auto}
+.side-p{font-size:13px;line-height:1.5;color:var(--cc-ink-muted);margin-top:6px}
+.route{border:1px solid var(--cc-line);border-radius:var(--r-row);padding:10px 12px;display:flex;gap:10px;align-items:center;font-weight:600;font-size:14px}
+.oq{font-size:13px;line-height:1.5}
+.oq b{font-weight:700}
+
+/* phone */
+.phone .shell{padding:0 12px;gap:10px;height:52px}
+.phone .body{padding:12px 16px 24px}
+.phone .sh{display:block;margin-top:12px}
+.phone .sh .acts{margin-top:10px}
+.phone .hero-grid{display:block}
+.phone .hero-left{border-right:0;padding:16px}
+.phone .hero-right{padding:0 16px 16px}
+.phone .big b{font-size:56px}
+.phone .facets{grid-template-columns:1fr 1fr}
+.phone .facet{padding:10px 16px;border-bottom:1px solid var(--cc-line)}
+.phone .facet:nth-child(2n){border-right:0}
+.phone .dt td.bar{display:none}
+.phone .dt th.bar{display:none}
+.phone .anchors{overflow:hidden}
+.phone .lf{display:block}
+.phone .cols{display:block}
+.phone .card{padding:14px}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- ================================================================ -->
+<section class="note" id="decision">
+  <div class="kick">For the owner's approval · roadmap "after 3.0.7", items (1) and (2) · concept, nothing built</div>
+  <h1>Analyze: the Clean Core Score as the hero, and declutter wave 2</h1>
+  <p><b>What you are asked to approve.</b> Three things, each on its own:</p>
+  <ol>
+    <li><b>The hero</b> (pins <span class="pin">H1</span>–<span class="pin">H6</span>): the score becomes the first block of Analyze, full width, under the stage header — the number with its band on the one scale, what moved it as a table of deductions in plain words with line links, the edition rule in one line, and where the figure comes from (signed run, engine, rules). It replaces the answer header's three facets, the status line and the separate score section.</li>
+    <li><b>Wave 2 as listed beside each frame</b> — every block Analyze shows today, marked <i>kept</i>, <i>folded into …</i> or <i>removed</i>, each with its reason. Nothing signed changes; nothing leaves the product that is not said once elsewhere.</li>
+    <li><b>Answers to the five open questions</b> at the end of the list (other edition's figure, the largest-deduction line, complexity/criticality, the inventory tables, one "Add evidence" menu).</li>
+  </ol>
+  <p style="margin-top:10px">Honesty rules kept on every frame: the score is "a grade, not a compliance percentage — and not an SAP measure"; band names and ranges are the ones of <code>lib/clean-core-score.ts</code>; the 20 points for what the engine could not assess stay visible as <i>Not determined</i>, never folded away; the model's text keeps <i>Model proposal</i>; no green on the score (green means proven).</p>
+  <div class="facts">Case: Z_MM_PO_APPROVAL (starter example, 668 lines) as an own project with target Private Edition · engine v3.0.9 · rules levels 3c38976c5841 · figures measured 11.10.2026 with scoreBreakdown() under both rules: Private 37, Public 23 · 31 places / 25 findings · Critical 2 · High 3 · Medium 21 · Low 4 · Info 1 · levels A 0 · B 2 · C 19 · D 2 · Unknown 4 (27 of 31 places) · route Side-by-Side on SAP BTP · 8 places in 4 kinds not assessed · run id and date are illustrative.</div>
+</section>
+
+<!-- ================================================================ -->
+<div class="sheet-title">Desktop · 1440 px</div>
+<div class="row">
+
+<div class="frame desk" id="desktop-frame">
+  <header class="shell">
+    <div class="logo"><span class="lg"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M8 12l3 3 5-6"/></svg></span><span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span></div>
+    <nav class="path"><span>My workspace</span><span>›</span><span>Z_MM_PO_APPROVAL</span><span>›</span><span class="cur">Analyze</span></nav>
+    <div class="shell-r"><span class="btn ghost sm">Ask this case</span><span class="av">SF</span></div>
+  </header>
+
+  <div class="body">
+    <a class="back" href="#">← Back to project workspace · Z_MM_PO_APPROVAL</a>
+    <div class="toolsbar">
+      <span class="k">Tools</span>
+      <span class="tool on">Analyze <span class="ck">✓</span></span>
+      <span class="tool">Design <span class="nx">Next</span></span>
+      <span class="tool">Transformation</span><span class="tool">Documentation</span><span class="tool">Testing</span><span class="tool">Economics</span><span class="tool">Delivery</span>
+    </div>
+
+    <div class="sh">
+      <div>
+        <div class="eyebrow">Tool · Z_MM_PO_APPROVAL</div>
+        <h1>Analyze</h1>
+        <p class="lead">How far this code is from clean core, why, and where in the code.</p>
+      </div>
+      <div class="acts">
+        <span class="btn ghost">Add evidence ▾<span class="pin">W8</span></span>
+        <span class="btn ghost">Export ▾<span class="pin">W9</span></span>
+      </div>
+    </div>
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero" aria-label="Clean Core Score">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <div class="hk"><span class="k">Clean Core Score</span><span class="pin">H1</span><span style="margin-left:auto" class="qbtn" title="What the bands mean">?</span></div>
+          <div class="big"><b>37</b><span>of 100</span></div>
+          <div class="band"><span class="sw"></span>Far from clean core <small>· band 5–59</small></div>
+
+          <div class="scale" role="img" aria-label="Score 37 of 100 in the band 5–59, far from clean core">
+            <span style="width:60%;background:var(--score-1)"></span>
+            <span style="width:21%;background:var(--score-2)"></span>
+            <span style="width:10%;background:var(--score-3)"></span>
+            <span style="width:9%;background:var(--score-4)"></span>
+            <i class="m" style="left:37%"></i>
+          </div>
+          <div class="ticks"><span style="left:0;transform:none">0</span><span style="left:60%">60</span><span style="left:81%">81</span><span style="left:91%">91</span><span style="left:100%;transform:translateX(-100%)">100</span></div>
+          <div class="bandnames"><span class="on">Far from clean core</span><span>Significant rework</span><span>Some</span><span>Close</span></div>
+
+          <p class="nature">A grade for this one piece of code, higher is better — <b>not a compliance percentage and not an SAP measure</b>. Clean-Core.io's bands, derived from the deductions. <a href="#">How the score is computed</a><span class="pin">H2</span></p>
+
+          <div class="edition">
+            <b>Scored for Private Edition</b> — the project's target.<span class="pin">H3</span>
+            <div class="sub">Writes to the program's own Z tables cost nothing there (on-stack developer extensibility). Under Public Edition rules the same findings give <b>23</b>: those two writes cost 14 points. Computed from the same findings; only 37 is signed.</div>
+          </div>
+
+          <div class="prov"><span class="pin" style="margin:0;justify-self:start">H4</span>
+            <div class="l"><span class="pv rec"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Reconstructed · fixed rules</span> no model involved</div>
+            <div class="l">In the <b>signed run</b> <span class="mono">3f2a1b7c</span> · 11 Oct 2026 · engine <span class="mono">v3.0.9</span> · rules <span class="mono">3c38976c5841</span></div>
+            <div class="l">Z_MM_PO_APPROVAL.abap · 668 lines · catalog 2024.FPS02</div>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="moves-h"><h2>What moves it</h2><span class="pin">H5</span><span class="r">100 − 43 for what the code does − 20 for what could not be assessed = <b style="color:var(--cc-ink)">37</b></span></div>
+          <p class="moves-lead">Every deduction of the score's table, the largest first. A line chip opens the source at that line.</p>
+          <table class="dt">
+            <thead><tr><th>What the code does</th><th>Where</th><th class="bar">Weight</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td class="what"><b>Writes straight into an SAP standard table</b><span>2 writes to EBAN (purchase requisitions) · first 20, each further 3</span></td><td><a class="anc" href="#">L246</a><a class="anc" href="#">L455</a></td><td class="bar"><div class="bt"><i style="width:92%"></i></div></td><td class="pts">−23</td></tr>
+              <tr><td class="what"><b>Runs a transaction by batch input</b><span>ME21N, create purchase order</span></td><td><a class="anc" href="#">L631</a></td><td class="bar"><div class="bt"><i style="width:40%"></i></div></td><td class="pts">−10</td></tr>
+              <tr><td class="what"><b>Transfers a file through the SAP GUI</b><span>GUI_UPLOAD, 1 upload</span></td><td><a class="anc" href="#">L121</a></td><td class="bar"><div class="bt"><i style="width:20%"></i></div></td><td class="pts">−5</td></tr>
+              <tr><td class="what"><b>Reads SAP standard tables directly</b><span>18 reads, EBAN, EKKO, EKPO, LFA1 and 10 more · capped at 5</span></td><td><a class="anc" href="#">L61</a><a class="anc more" href="#">+17</a></td><td class="bar"><div class="bt"><i style="width:20%"></i></div></td><td class="pts">−5</td></tr>
+              <tr class="free"><td class="what"><b style="color:var(--cc-ink-muted)">Writes to the program's own Z tables</b><span>ZMM_PO_APPR, ZMM_PO_ATTACH · free in Private Edition, −14 in Public</span></td><td><a class="anc" href="#">L450</a><a class="anc" href="#">L647</a></td><td class="bar"><div class="bt"></div></td><td class="pts">0</td></tr>
+              <tr class="sub"><td class="what" colspan="3">What the code does</td><td class="pts">57</td></tr>
+              <tr><td class="what"><b>Statements the engine could not assess</b> <span class="pv nd">Not determined</span><span>4 kinds, 8 places: local function-module calls (3), includes not uploaded (2), a dynamic call (1), classic list output (2) · 5 points per kind. Not defects, and not cleared either.</span></td><td><a class="anc" href="#">L165</a><a class="anc" href="#">L470</a><a class="anc" href="#">L502</a><a class="anc" href="#">L658</a></td><td class="bar"><div class="bt"><i class="nd" style="width:80%"></i></div></td><td class="pts">−20</td></tr>
+              <tr class="sum"><td class="what" colspan="3">Clean Core Score of the signed run</td><td class="pts">37</td></tr>
+            </tbody>
+          </table>
+          <div class="lever"><span class="pin" style="margin:0">H6</span><span><b>The largest single deduction:</b> the two direct writes to EBAN, 23 points. Settling the 8 places that could not be assessed (<a class="link" href="#">open questions</a>) can move the score either way — the 20 points come off, findings may come in.</span></div>
+        </div>
+      </div>
+
+      <div class="facets">
+        <div class="facet"><div class="k">Findings <span class="pin">F1</span></div><div class="fv">25 <small>in 31 places</small></div>
+          <div class="sevbar"><span style="flex:2;background:var(--err)"></span><span style="flex:3;background:var(--err)"></span><span style="flex:21;background:var(--warn-mark)"></span><span style="flex:4;background:var(--neu)"></span><span style="flex:1;background:var(--info)"></span></div>
+          <div class="fd">Critical 2 · High 3 · Medium 21 · Low 4 · Info 1</div></div>
+        <div class="facet"><div class="k">Clean core levels <span class="pin">F2</span></div>
+          <div class="lvchips"><span class="lv A">A 0</span><span class="lv B">B 2</span><span class="lv C">C 19</span><span class="lv D">D 2</span><span class="lv U">Unknown 4</span></div>
+          <div class="fd">27 of 31 places · from SAP's catalog, read for Private Edition · not signed</div></div>
+        <div class="facet"><div class="k">Recommended route <span class="pin">F3</span></div><div class="fv" style="font-size:15px">Side-by-Side on SAP BTP</div>
+          <div class="fd"><span class="pv rec">Reconstructed · fixed rules</span> · decided in <a class="link" href="#">Management</a></div></div>
+        <div class="facet"><div class="k">Not determined <span class="pin">F4</span></div><div class="fv">8 <small>places, 4 kinds</small></div>
+          <div class="fd">Open questions for the project: <a class="link" href="#">see the list</a> — includes, call targets, ATC results</div></div>
+      </div>
+    </section>
+
+    <!-- anchor bar -->
+    <nav class="anchors"><span class="k">On this page</span><a class="on" href="#">Look here first <span class="c">3</span></a><a href="#">Where in the program</a><a href="#">Findings by kind <span class="c">25</span></a><a href="#">Model summary</a><a href="#">Technical detail</a><span class="pin">K1</span></nav>
+
+    <div class="cols">
+      <div class="stack">
+        <section class="card">
+          <div class="ch"><h2>Look here first</h2><span class="pv rec">Reconstructed · by severity and kind</span><span class="pin">K2</span><span class="r">3 of 25 findings, picked by fixed rules</span></div>
+          <div class="lf">
+            <div class="fcard"><span class="sev crit">Critical</span> <span class="lv D">D</span> <a class="anc" href="#">L246</a>
+              <div class="t">Direct write to SAP table EBAN</div><div class="d">Purchase requisitions changed past SAP's own logic. Successor named by SAP: API_PURCHASEREQUISITION_SRV.</div>
+              <div class="code"><span class="n">246</span>  <span class="kw">UPDATE</span> eban <span class="kw">SET</span> statu = <span class="lit">'H'</span></div></div>
+            <div class="fcard"><span class="sev crit">Critical</span> <span class="lv D">D</span> <a class="anc" href="#">L455</a>
+              <div class="t">Direct write to SAP table EBAN</div><div class="d">Second write to the same table. Same successor.</div>
+              <div class="code"><span class="n">455</span>  <span class="kw">UPDATE</span> eban <span class="kw">SET</span> statu = iv_status</div></div>
+            <div class="fcard"><span class="sev high">High</span> <span class="lv C">C</span> <a class="anc" href="#">L631</a>
+              <div class="t">Batch input to ME21N</div><div class="d">Creates the purchase order through the screens. No released successor named.</div>
+              <div class="code"><span class="n">631</span>  <span class="kw">CALL TRANSACTION</span> <span class="lit">'ME21N'</span> <span class="kw">USING</span> …</div></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="ch"><h2>Where in the program</h2><span class="r">every finding at its line · bigger dot, more severe</span></div>
+          <div class="strip">
+            <div class="lab" style="top:6px">Direct writes, SAP tables</div><div class="ln" style="top:14px"></div>
+            <div class="d" style="top:14px;left:calc(180px + (100% - 188px)*.368);width:14px;height:14px;background:var(--err)"></div>
+            <div class="d" style="top:14px;left:calc(180px + (100% - 188px)*.681);width:14px;height:14px;background:var(--err)"></div>
+            <div class="lab" style="top:36px">Writes, own Z tables</div><div class="ln" style="top:44px"></div>
+            <div class="d" style="top:44px;left:calc(180px + (100% - 188px)*.674);width:12px;height:12px;background:var(--err)"></div>
+            <div class="d" style="top:44px;left:calc(180px + (100% - 188px)*.969);width:12px;height:12px;background:var(--err)"></div>
+            <div class="lab" style="top:66px">Batch input</div><div class="ln" style="top:74px"></div>
+            <div class="d" style="top:74px;left:calc(180px + (100% - 188px)*.945);width:12px;height:12px;background:var(--err)"></div>
+            <div class="lab" style="top:96px">Reads, SAP tables (18)</div><div class="ln" style="top:104px"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.09);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.147);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.219);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.276);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.39);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.446);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.48);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.54);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.563);background:var(--warn-mark)"></div>
+            <div class="d" style="top:104px;left:calc(180px + (100% - 188px)*.71);background:var(--warn-mark)"></div>
+          </div>
+          <p class="side-p" style="margin-top:0">… four more rows below (GUI upload, commits, authority check, table access).</p>
+        </section>
+
+        <section class="card">
+          <div class="ch"><h2>Findings by kind</h2><span class="r" style="margin-left:8px">(25)</span><span style="margin-left:auto" class="seg"><span class="on">Kind</span><span>Severity</span><span>Line</span></span></div>
+          <table class="tbl">
+            <thead><tr><th>Kind</th><th>Findings</th><th>Levels</th><th>Successor named</th><th>Points</th></tr></thead>
+            <tbody>
+              <tr><td><b>Direct writes to SAP standard tables</b><br><span class="mono" style="color:var(--cc-ink-muted)">EBAN</span></td><td>2</td><td><span class="lv D">D 2</span></td><td>2 of 2</td><td>−23</td></tr>
+              <tr><td><b>Writes to custom tables</b><br><span class="mono" style="color:var(--cc-ink-muted)">ZMM_PO_APPR, ZMM_PO_ATTACH</span></td><td>2</td><td><span class="lv B">B 2</span></td><td>—</td><td>0</td></tr>
+              <tr><td><b>Batch input to transactions</b><br><span class="mono" style="color:var(--cc-ink-muted)">ME21N</span></td><td>1</td><td><span class="lv C">C 1</span></td><td>none named</td><td>−10</td></tr>
+              <tr><td><b>Direct reads of SAP standard tables</b><br><span class="mono" style="color:var(--cc-ink-muted)">EBAN, EKKO, EKPO, LFA1 …</span></td><td>18</td><td><span class="lv C">C 18</span></td><td>…</td><td>−5</td></tr>
+            </tbody>
+          </table>
+          <p class="side-p">+ 4 more kinds · the "Points" column is new: the same deductions as the hero, so table and score read as one.<span class="pin">K3</span></p>
+        </section>
+      </div>
+
+      <aside class="stack">
+        <section class="card">
+          <div class="ch"><h3>Extensibility route</h3><span class="pv rec" style="margin-left:auto">Reconstructed · fixed rules</span></div>
+          <div class="route">☁ Side-by-Side on SAP BTP</div>
+          <p class="side-p">Drivers: direct writes to EBAN <a class="anc" href="#">L246</a>, batch input <a class="anc" href="#">L631</a>. Read from the signed evidence; the route changes nothing in the score.</p>
+          <div style="margin-top:10px"><span class="btn secondary sm">Decide in Management</span></div>
+          <p class="side-p">› Why this route · Show</p>
+        </section>
+        <section class="card">
+          <div class="ch"><h3>Not determined</h3><span class="pv nd" style="margin-left:auto">Not determined</span><span class="pin">K4</span></div>
+          <p class="oq"><b>8 places</b> the engine could not assess, in 4 kinds — 20 points of the score.</p>
+          <p class="side-p">Open questions of the project are answered in one list. <a class="link" href="#">Open the list</a></p>
+          <p class="side-p">A result covers what the engine checks, which is not the whole program.</p>
+        </section>
+      </aside>
+    </div>
+
+    <div class="stack" style="margin-top:16px">
+      <div class="fold">› Model summary <span class="muted">· Show</span><span class="r"><span class="pv prop">✎ Model proposal</span></span></div>
+      <div class="fold">› Technical detail <span class="muted">· Show — language constructs, levels A–D per object, compliance hints, imported usage and ATC results</span><span class="pin">K5</span></div>
+    </div>
+  </div>
+</div>
+
+<aside class="legend" id="desktop-legend">
+  <h2>Wave 2 — what happens to each block Analyze shows today</h2>
+  <p class="lead">Measured against the live page (3.0.9) and <code>analyze/page.tsx</code>. Pins refer to the frames.</p>
+
+  <h3><span class="dot" style="background:var(--ok)"></span>Kept</h3>
+  <ul>
+    <li><b>Stage header, tools bar, "Back to project workspace"</b><span class="why">ADR-050/060/063 — the same frame on every tool.</span></li>
+    <li><b>"On this page" bar</b> <span class="pin">K1</span><span class="why">ADR-091; it now starts under the hero, so its first anchor is "Look here first", and "Clean Core Score 62" leaves it — the score is the page's top.</span></li>
+    <li><b>Look here first</b> <span class="pin">K2</span><span class="why">The three findings to read first, with code — the step from score to code.</span></li>
+    <li><b>Where in the program</b><span class="why">The only picture of where in 668 lines the findings sit.</span></li>
+    <li><b>Findings by kind</b> (Kind · Severity · Line) <span class="pin">K3</span><span class="why">The complete list; gains a Points column so it adds up to the hero.</span></li>
+    <li><b>Route card</b> with "Why this route" and "Decide in Management"<span class="why">Wave 1's one route card; the decision stays in Management (ADR-083 a).</span></li>
+    <li><b>Model summary</b> (folded, <i>Model proposal</i>) and <b>Technical detail</b> (folded) <span class="pin">K5</span><span class="why">Outside the signature by design; one action deeper.</span></li>
+    <li><b>Stale strip</b> and the "run made with a different engine" notice<span class="why">Move into the hero: when the deductions do not add up to the signed score, the table gives way to that one sentence and "Run the analysis again".</span></li>
+    <li><b>"Understanding Clean Core" dialog</b><span class="why">Opened by the hero's "?" — the one place that explains all four bands.</span></li>
+  </ul>
+
+  <h3><span class="dot" style="background:var(--info)"></span>Folded into the hero</h3>
+  <ul>
+    <li><b>Score facet in the answer header</b> → H1<span class="why">The score stood three times (facet, section, anchor chip). Now once.</span></li>
+    <li><b>Score section with four band cards</b> → scale + band names (H1), full sentences behind "?"<span class="why">Four cards of 6–8 lines each took a screen to say what one labelled scale says; nothing lost, the dialog has every sentence.</span></li>
+    <li><b>"What moves it" paragraph</b> → deduction table H5<span class="why">Today it is prose and, on a mismatch, says nothing. The table names each kind in plain words, its lines and its points.</span></li>
+    <li><b>Answer sentence</b> ("3 findings to review — 1 high … the engine read all N lines without a model")<span class="why">→ the lead under the stage title and H4 "no model involved"; the counts go to F1.</span></li>
+    <li><b>Status line Evidence · Run · Target · Successors</b> → H3/H4, F3<span class="why">Run, engine and target are the score's provenance; "Successors n of m" goes to the table's column, where it is per kind.</span></li>
+    <li><b>"Details" button</b> (file, lines, catalog, engine) → H4<span class="why">Said once, beside the figure it describes.</span></li>
+    <li><b>Findings and Level distribution facets</b> → F1, F2<span class="why">Kept as figures, one row under the hero, with severity words and every level letter.</span></li>
+    <li><b>"Not determined" side card</b> → F4 + one side card K4<span class="why">The 20 points stand in the hero as <i>Not determined</i>; the card keeps one line and the link to ADR-081's one list.</span></li>
+    <li><b>WhyScorePanel</b> (Technical detail)<span class="why">Its route rationale is the route card's, its score is the hero; nothing of its own is left.</span></li>
+    <li><b>"Add usage data" + "Add ATC results"</b> → one "Add evidence ▾" <span class="pin">W8</span><span class="why">Two ghost buttons for one kind of act; <code>?add=usage|atc</code> keeps opening the dialog directly (ADR-081).</span></li>
+    <li><b>"Export Confluence"</b> → one "Export ▾" <span class="pin">W9</span><span class="why">ADR-078/082's Export menu, as on Documentation and Design.</span></li>
+  </ul>
+
+  <h3><span class="dot" style="background:var(--err)"></span>Removed</h3>
+  <ul>
+    <li><b>Complexity and criticality meters</b> (Technical detail)<span class="why">Two more 1–10 scores beside the one score; "criticality — business impact … mission-critical" is a heuristic the code cannot prove. Needs your go (Q3).</span></li>
+    <li><b>Code inventory table, module heatmap, data coupling table</b><span class="why">Said once in the IT view's "Objects &amp; dependencies" (ADR-086); a link stays in Technical detail. Needs your go (Q4).</span></li>
+    <li><b>CoverageVerdict explanation texts</b> ("statically verified … map 1:1 to released standard models", "kernel calls … must be decommissioned")<span class="why">Claims no rule of the engine makes; the construct list stays, its three labels get the words of the support matrix.</span></li>
+  </ul>
+
+  <div class="ask">
+    <h3 style="margin-top:0">Open questions for you</h3>
+    <ul>
+      <li><b>Q1</b> Show the other edition's figure (23 under Public) in H3, or only say that the rule differs?</li>
+      <li><b>Q2</b> Keep H6 "the largest single deduction" — arithmetic from the table, but it reads like advice.</li>
+      <li><b>Q3</b> Remove the complexity and criticality meters from Analyze? Only the display goes: both stay in the signed run, the audit pack, Delivery and the stakeholder slides, which read them today.</li>
+      <li><b>Q4</b> Inventory and data coupling only in IT, with a link from Technical detail?</li>
+      <li><b>Q5</b> One "Add evidence ▾" menu instead of two buttons?</li>
+      <li style="color:var(--cc-ink-muted)">Also needed with the build: ADR-091's Analyze anchor list amended (no "Clean Core Score" anchor), and the demo's hero says "Demo — never signed" in H4 instead of a run.</li>
+    </ul>
+  </div>
+</aside>
+</div>
+
+<!-- ================================================================ -->
+<div class="sheet-title">Phone · 390 px</div>
+<div class="row">
+
+<div class="frame phone" id="phone-frame">
+  <header class="shell">
+    <div class="logo"><span class="lg"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M8 12l3 3 5-6"/></svg></span><span><span class="n">Clean-Core<em>.io</em></span></span></div>
+    <div class="shell-r"><span class="av">SF</span></div>
+  </header>
+  <div class="body">
+    <a class="back" href="#">← Back to project workspace</a>
+    <div class="toolsbar"><span class="tool">Tools ▾ · Analyze ✓</span></div>
+    <div class="sh">
+      <div class="eyebrow">Tool · Z_MM_PO_APPROVAL</div>
+      <h1>Analyze</h1>
+      <p class="lead">How far this code is from clean core, why, and where.</p>
+      <div class="acts"><span class="btn ghost sm">Add evidence ▾</span> <span class="btn ghost sm">Export ▾</span></div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <div class="hk"><span class="k">Clean Core Score</span><span style="margin-left:auto" class="qbtn">?</span></div>
+          <div class="big"><b>37</b><span>of 100</span></div>
+          <div class="band"><span class="sw"></span>Far from clean core <small>· 5–59</small></div>
+          <div class="scale">
+            <span style="width:60%;background:var(--score-1)"></span><span style="width:21%;background:var(--score-2)"></span><span style="width:10%;background:var(--score-3)"></span><span style="width:9%;background:var(--score-4)"></span>
+            <i class="m" style="left:37%"></i>
+          </div>
+          <div class="ticks"><span style="left:0;transform:none">0</span><span style="left:60%">60</span><span style="left:81%">81</span><span style="left:100%;transform:translateX(-100%)">100</span></div>
+          <p class="nature">A grade, not a compliance percentage — and not an SAP measure. <a href="#">How it is computed</a></p>
+          <div class="edition"><b>Scored for Private Edition</b>, the project's target. Public Edition rules: 23 — own Z-table writes cost 14 there.</div>
+          <div class="prov">
+            <div class="l"><span class="pv rec">Reconstructed · fixed rules</span></div>
+            <div class="l">Signed run <span class="mono">3f2a1b7c</span> · 11 Oct 2026 · v3.0.9</div>
+          </div>
+        </div>
+        <div class="hero-right">
+          <div class="moves-h"><h2>What moves it</h2><span class="r">= 37</span></div>
+          <table class="dt">
+            <tbody>
+              <tr><td class="what"><b>Writes straight into SAP table EBAN</b><span>2 writes</span><a class="anc" href="#">L246</a><a class="anc" href="#">L455</a></td><td class="pts">−23</td></tr>
+              <tr><td class="what"><b>Batch input to ME21N</b><a class="anc" href="#">L631</a></td><td class="pts">−10</td></tr>
+              <tr><td class="what"><b>Could not be assessed</b> <span class="pv nd">Not determined</span><span>8 places, 4 kinds</span></td><td class="pts">−20</td></tr>
+            </tbody>
+          </table>
+          <p class="side-p"><a class="link" href="#">All 6 deductions</a> · GUI file transfer −5, reads of SAP tables −5, own Z-table writes 0</p>
+        </div>
+      </div>
+      <div class="facets">
+        <div class="facet"><div class="k">Findings</div><div class="fv">25 <small>31 places</small></div><div class="fd">Critical 2 · High 3</div></div>
+        <div class="facet"><div class="k">Levels</div><div class="lvchips"><span class="lv B">B 2</span><span class="lv C">C 19</span><span class="lv D">D 2</span></div><div class="fd">+ Unknown 4 · A 0</div></div>
+        <div class="facet" style="border-bottom:0"><div class="k">Route</div><div class="fd" style="color:var(--cc-ink);font-weight:600">Side-by-Side on SAP BTP</div></div>
+        <div class="facet" style="border-bottom:0"><div class="k">Not determined</div><div class="fv">8 <small>places</small></div></div>
+      </div>
+    </section>
+
+    <nav class="anchors"><a class="on" href="#">Look here first <span class="c">3</span></a><a href="#">Where in the program</a><a href="#">Findings</a></nav>
+
+    <div class="cols">
+      <section class="card" style="margin-top:12px">
+        <div class="ch"><h2>Look here first</h2></div>
+        <div class="fcard"><span class="sev crit">Critical</span> <span class="lv D">D</span> <a class="anc" href="#">L246</a>
+          <div class="t">Direct write to SAP table EBAN</div><div class="d">Successor named by SAP: API_PURCHASEREQUISITION_SRV.</div></div>
+        <p class="side-p">2 more · swipe</p>
+      </section>
+      <div class="fold" style="margin-top:12px">› Findings by kind <span class="muted">(25)</span></div>
+      <div class="fold" style="margin-top:8px">› Route · Side-by-Side</div>
+      <div class="fold" style="margin-top:8px">› Model summary <span class="r"><span class="pv prop">Model proposal</span></span></div>
+      <div class="fold" style="margin-top:8px">› Technical detail</div>
+    </div>
+  </div>
+</div>
+
+<aside class="legend">
+  <h2>Phone — what changes against today</h2>
+  <p class="lead">Today the phone page is about 5,000 px tall and the score's band cards alone fill two screens; the score is first seen as a cut-off facet.</p>
+  <ul>
+    <li><b>The hero comes first, stacked</b><span class="why">Score, band, scale, the two honesty lines and the provenance in the first screen at 390 × 844.</span></li>
+    <li><b>Three deductions, then "All 6 deductions"</b><span class="why">The two largest and the <i>Not determined</i> row always show — the 20 points are never behind a tap.</span></li>
+    <li><b>Facets 2 × 2</b><span class="why">Instead of three stacked cards with an unreadable level bar.</span></li>
+    <li><b>Findings, route, model summary, technical detail folded</b><span class="why">§2.11 "show less, lose nothing"; each fold names its count.</span></li>
+    <li><b>Not built for phone: the deduction weight bars</b><span class="why">The points column carries the figure; a 60 px bar adds nothing at this width.</span></li>
+  </ul>
+</aside>
+</div>
+
+</div>
+</body>
+</html>
