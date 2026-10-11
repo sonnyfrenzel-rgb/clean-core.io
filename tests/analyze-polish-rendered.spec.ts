@@ -184,8 +184,9 @@ test('with a model narrative stored, the head says which part is the proposal', 
   await head.scrollIntoViewIfNeeded();
   await shot(page, 'head-narrative', '[data-analysis-answer]');
 
-  // The hero says the score's evidence is the engine's (ADR-093); the fold says whose the summary is.
-  await expect(head).toContainText('no model involved');
+  // This project has no signed run, so the hero has no score and names no score
+  // provenance (ADR-093); it never borrows the narrative. The fold says whose the summary is.
+  await expect(head).toContainText('Not yet computed');
   await expect(head).not.toContainText('The Model summary further down');
   await expect(head).not.toContainText('with a model narrative');
   // The proposal is marked where it stands, while it is still folded.
