@@ -1,7 +1,7 @@
 import { gradeKey, isCustomerObject, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { ProvenanceValue } from '@/lib/provenance';
 import type { CapabilityFacts } from '@/lib/documentation-capabilities';
-import { layerFacts, rowLines, sopStatementsOf, type SopStatement } from '@/lib/sop-provenance';
+import { layerFacts, rowLines, rowSentences, sopStatementsOf, type SopStatement } from '@/lib/sop-provenance';
 
 /**
  * The business reader's view of the Documentation stage — owner, 03.10.2026
@@ -392,7 +392,7 @@ export function sopSteps(layer: StoredBusinessLayer, process: ProcessStepRef[], 
     const s = sopById.get(stepId);
     const r = raciById.get(stepId);
     const ref = byId.get(stepId);
-    const judged = sopStatementsOf(s, { stepLines: ref?.lines?.length ? ref.lines : rowLines(s), facts, roles });
+    const judged = sopStatementsOf(s, { stepLines: ref?.lines?.length ? ref.lines : rowLines(s), facts, roles, stepSentences: rowSentences(s) });
     const claimed = judged.statements.map((st) => st.text).join(' ');
     const narrative = text(s?.narrative) ?? (claimed || null);
     return {

@@ -1,5 +1,6 @@
 import { capabilityPresence, isAbsent, readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { docStepName, processDocumentationToMarkdown, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
+import type { SopSentence } from '@/lib/sop-provenance';
 
 /**
  * The prompt of the business SOP and RACI, and what is stored with its answer
@@ -55,7 +56,7 @@ CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 
 CRITICAL — EVERY SENTENCE CARRIES ITS BASIS:
 - Write each step as "claims": one sentence per claim, 2 to 4 claims per step.
-- "basis": "code" ONLY when the sentence restates what the documentation below says the program does at this step, and "lines" lists the source line numbers of THIS step that hold it (the line numbers printed in the documentation). Without such a line the basis is "proposal".
+- "basis": "code" ONLY when the sentence is a sentence the documentation below writes for this step, copied word for word, and "lines" lists the source line numbers of THIS step that hold it (the line numbers printed in the documentation). Any other wording, and any sentence without such a line, has the basis "proposal".
 - "basis": "proposal" for everything else: who does it, why, how often, and every organisational element — roles or job titles, approval, release, override, escalation, dual control, sign-off, policy, notification of people, audit or compliance records.
 - NEVER upgrade a technical fact. Internal arithmetic checks are NOT a reconciliation against the general ledger or control totals. The current credit record is NOT a credit exposure analysis or a credit-limit breach. A warning shown to the user is NOT an audit message or log. Reading a reference is NOT taking over its terms. A list of proposals is NOT a posting, a clearing, a dunning run or a letter.
 - Do not describe as current practice anything the list below says the program does not do. If you suggest it, write it as a proposal ("could", "a business may decide to") with "basis": "proposal".
@@ -92,20 +93,44 @@ Structure the JSON exactly like this:
 }`;
 }
 
-/** A step as the layer is stored with it: its business name and its lines. */
+/** A step as the layer is stored with it: its business name, its lines and the engine's sentences of those lines. */
 export interface SopStepInfo {
   id: string;
   name: string;
   lines: DocAnchor[];
+  /** What the engine wrote for this step (`stepSentencesOf`) — the only wording a claim is Reconstructed with. */
+  sentences: SopSentence[];
+}
+
+const inside = (a: DocAnchor, ranges: readonly DocAnchor[]) => ranges.some((r) => r.lineStart <= a.lineStart && a.lineEnd <= r.lineEnd);
+
+/**
+ * The engine's sentences of one step (QA review of 35b97d90c6e1): the 17.7
+ * sentence standing at the element, every engine sentence whose lines all lie
+ * in the step's lines, and the step's plain name. Deterministic — read from the
+ * stored documentation, never from the model.
+ */
+export function stepSentencesOf(doc: ProcessDocumentation, step: ProcessDocumentation['steps'][number], lines: readonly DocAnchor[]): SopSentence[] {
+  const out: SopSentence[] = [];
+  const seen = new Set<string>();
+  const add = (text: string, anchors: readonly DocAnchor[]) => {
+    if (!text.trim() || !anchors.length || seen.has(text)) return;
+    seen.add(text);
+    out.push({ text, anchors: anchors.map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })) });
+  };
+  for (const st of doc.statements) {
+    if (st.id === step.statementId || (lines.length > 0 && st.anchors.length > 0 && st.anchors.every((a) => inside(a, lines)))) add(st.text, st.anchors);
+  }
+  if (step.plainName && step.anchor) add(step.plainName, [step.anchor]);
+  return out;
 }
 
 /** The steps of the stored documentation, named for a business reader (never a node id). */
 export function sopStepInfos(doc: ProcessDocumentation, names?: ReadonlyMap<string, string>, lines?: ReadonlyMap<string, readonly DocAnchor[]>): SopStepInfo[] {
-  return doc.steps.map((step) => ({
-    id: step.id,
-    name: names?.get(step.id) ?? docStepName(step),
-    lines: [...(step.anchor ? [step.anchor] : []), ...(lines?.get(step.id) ?? [])].map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })),
-  }));
+  return doc.steps.map((step) => {
+    const own = [...(step.anchor ? [step.anchor] : []), ...(lines?.get(step.id) ?? [])].map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd }));
+    return { id: step.id, name: names?.get(step.id) ?? docStepName(step), lines: own, sentences: stepSentencesOf(doc, step, own) };
+  });
 }
 
 /**
@@ -121,10 +146,15 @@ export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: read
   const withStep = (row: unknown) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
     const r = { ...(row as Record<string, unknown>) };
+    // What a later reader takes as the engine's — name, lines, sentences — is never the model's.
+    delete r.stepName;
+    delete r.stepLines;
+    delete r.stepSentences;
     const step = typeof r.stepId === 'string' ? byId.get(r.stepId) : undefined;
     if (step) {
       r.stepName = step.name;
       r.stepLines = step.lines;
+      r.stepSentences = step.sentences;
     }
     if (Array.isArray(r.claims) && (typeof r.narrative !== 'string' || !r.narrative.trim())) {
       r.narrative = r.claims
@@ -134,8 +164,12 @@ export function enrichBusinessLayer(parsed: Record<string, unknown>, steps: read
     }
     return r;
   };
+  // A `facts` the model wrote is dropped: a later reader takes the field as the engine's
+  // capability evidence (QA review of 35b97d90c6e1). Only the engine's facts travel with the layer.
+  const { facts: _modelFacts, ...answer } = parsed;
+  void _modelFacts;
   return {
-    ...parsed,
+    ...answer,
     raci_matrix: rows(parsed.raci_matrix).map(withStep),
     sop_details: rows(parsed.sop_details).map(withStep),
     ...(facts ? { facts } : {}),

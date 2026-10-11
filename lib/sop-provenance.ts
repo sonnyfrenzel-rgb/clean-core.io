@@ -21,10 +21,18 @@ import {
  * carries the same provenance, sentence by sentence:
  *
  *   - **Reconstructed** — the model tagged the sentence as read from the code
- *     and cited lines that lie in the step's own lines (the call and the body
- *     of the routine it runs), and nothing in it asserts a capability the
- *     source shows to be absent;
- *   - **Model proposal** — the model's wording, unchecked;
+ *     and the sentence *is* one the engine wrote for this step (`stepSentences`:
+ *     the 17.7 sentence at the element, an engine sentence of the step's own
+ *     lines, or the step's plain name — compared after folding case, spaces,
+ *     quotes and the closing stop), and nothing in it asserts a capability the
+ *     source shows to be absent. Its lines are the engine sentence's lines.
+ *     A cited line alone is not enough (QA review of 35b97d90c6e1): a line of
+ *     the step shows *that* something happens there, not that the model's
+ *     sentence says it right — "the worklist shows each open item" at a
+ *     `SELECT` line is the model's wording;
+ *   - **Model proposal** — the model's wording, unchecked. Where the model
+ *     cited lines of the step they stay with the sentence as a pointer
+ *     ("Model proposal, cites L24"), never as proof;
  *   - **Proposal — not in the program** — an organisational element the code
  *     cannot hold (roles and job titles, approval, override, escalation, dual
  *     control, policy) or a capability the engine shows to be absent (posting
@@ -47,7 +55,10 @@ export type SopBasis = 'reconstructed' | 'proposed' | 'not-in-program' | 'not-de
 export interface SopStatement {
   text: string;
   basis: SopBasis;
-  /** The lines that carry it — only for a reconstructed sentence. */
+  /**
+   * Reconstructed: the lines of the engine sentence it is. Model proposal: the
+   * lines of the step the model cited — a pointer, not proof. Otherwise empty.
+   */
   anchors: DocAnchor[];
   /** Why it has this basis, when it is not the plain one: the capability that is absent, the line that did not hold it. */
   reason: string | null;
@@ -69,14 +80,27 @@ export const ORGANISATIONAL_REASON =
 export const EXCEPTION_REASON =
   'A business fallback the program does not have: the code shows the message, not who handles it.';
 const NO_LINE_REASON = 'The model named no line of this step that holds it.';
+const NOT_ENGINE_REASON = 'The model\'s wording: the engine wrote no such sentence for this step, so the cited line is a pointer, not proof.';
+
+/** A sentence the engine wrote for a step, with its lines (`stepSentencesOf` in `lib/business-sop-prompt.ts`). */
+export interface SopSentence {
+  text: string;
+  anchors: DocAnchor[];
+}
+
+const lineWords = (anchors: readonly DocAnchor[]) => {
+  const lines = [...new Set(anchors.map((a) => (a.lineEnd > a.lineStart ? `L${a.lineStart}–${a.lineEnd}` : `L${a.lineStart}`)))];
+  return `${lines.slice(0, 3).join(', ')}${lines.length > 3 ? ' …' : ''}`;
+};
 const UNCHECKED_REASON = 'The program\'s capabilities were not recorded with this documentation, so this cannot be checked against the code.';
 
-/** "Reconstructed, L42" · "Model proposal" · "Proposal — not in the program". */
+/** "Reconstructed, L42" · "Model proposal" · "Model proposal, cites L42" · "Proposal — not in the program". */
 export function sopBasisText(s: Pick<SopStatement, 'basis' | 'anchors'>): string {
   const label = SOP_BASIS[s.basis].label;
-  if (s.basis !== 'reconstructed' || !s.anchors.length) return label;
-  const lines = [...new Set(s.anchors.map((a) => (a.lineEnd > a.lineStart ? `L${a.lineStart}–${a.lineEnd}` : `L${a.lineStart}`)))];
-  return `${label}, ${lines.slice(0, 3).join(', ')}${lines.length > 3 ? ' …' : ''}`;
+  if (!s.anchors.length) return label;
+  if (s.basis === 'reconstructed') return `${label}, ${lineWords(s.anchors)}`;
+  if (s.basis === 'proposed') return `${label}, cites ${lineWords(s.anchors)}`;
+  return label;
 }
 
 /** A sentence with its basis, for a file: "The list shows … (Reconstructed, L42)". */
@@ -91,7 +115,19 @@ export interface SopContext {
   facts: CapabilityFacts | null;
   /** The role names the proposal uses — a sentence that names one is organisational. */
   roles?: readonly string[];
+  /** The engine's sentences of the step (`SopSentence`). None: no claim is Reconstructed. */
+  stepSentences?: readonly SopSentence[];
 }
+
+/** A sentence folded for comparison: case, spaces, typographic quotes and dashes, the closing stop. */
+const fold = (t: string) => t
+  .replace(/[“”„"]/g, '"')
+  .replace(/[‘’‚']/g, "'")
+  .replace(/[–—]/g, '-')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .replace(/[.!?]+$/, '')
+  .toLowerCase();
 
 const clean = (value: unknown): string | null => {
   if (typeof value === 'number') return String(value);
@@ -133,9 +169,12 @@ export function judgeSentence(text: string, claimedCode: boolean, lines: readonl
   if (isOrganisational(text, ctx.roles ?? [])) return { text, basis: 'not-in-program', anchors: [], reason: ORGANISATIONAL_REASON, short: 'organisational' };
   if (!claimedCode) return { text, basis: 'proposed', anchors: [], reason: null };
   if (!ctx.facts && assertsCapability(text)) return { text, basis: 'proposed', anchors: [], reason: UNCHECKED_REASON };
+  const own = fold(text);
+  const engine = (ctx.stepSentences ?? []).find((s) => s.anchors.length > 0 && fold(s.text) === own);
+  if (engine) return { text, basis: 'reconstructed', anchors: engine.anchors.map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })), reason: null };
   const held = lines.filter((l) => within(l, ctx.stepLines));
   if (!held.length) return { text, basis: 'proposed', anchors: [], reason: NO_LINE_REASON };
-  return { text, basis: 'reconstructed', anchors: held.map((l) => ({ lineStart: l, lineEnd: l })), reason: null };
+  return { text, basis: 'proposed', anchors: held.map((l) => ({ lineStart: l, lineEnd: l })), reason: NOT_ENGINE_REASON };
 }
 
 /**
@@ -173,6 +212,26 @@ export function sopStatementsOf(
 /** The facts a stored layer carries (written with it since 3.0.10), when the caller has none of its own. */
 export function layerFacts(layer: unknown): CapabilityFacts | null {
   return layer && typeof layer === 'object' ? readCapabilityFacts((layer as Record<string, unknown>).facts) : null;
+}
+
+/**
+ * The engine's sentences a stored row carries (`stepSentences`, written by
+ * `enrichBusinessLayer`, which drops any the model wrote). A row stored without
+ * them has no claim Reconstructed — generating the layer again records them.
+ */
+export function rowSentences(row: Record<string, unknown> | undefined): SopSentence[] {
+  if (!row || !Array.isArray(row.stepSentences)) return [];
+  const out: SopSentence[] = [];
+  for (const s of row.stepSentences) {
+    if (!s || typeof s !== 'object') continue;
+    const { text, anchors } = s as { text?: unknown; anchors?: unknown };
+    if (typeof text !== 'string' || !Array.isArray(anchors)) continue;
+    const valid = anchors
+      .filter((a): a is DocAnchor => !!a && typeof a === 'object' && Number.isInteger((a as DocAnchor).lineStart) && Number.isInteger((a as DocAnchor).lineEnd))
+      .map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd }));
+    if (valid.length) out.push({ text, anchors: valid });
+  }
+  return out;
 }
 
 /** The step lines a stored row carries (`stepLines`, written with it since 3.0.10). */

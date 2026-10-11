@@ -167,13 +167,17 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
       if (!relevant || !isAbsent(presence[cap])) continue;
       doesNot.push({ text: presence[cap].absent, anchors: [], basis: 'reconstructed' });
     }
-    // A change to a table named only at run time could be a posting: not determined, never "does not post".
+    // A change to a table, or a call, named only at run time could be a posting: not determined, never "does not post".
     if (!presence.posting.determined) {
+      const writes = facts.dynamicWrites ?? [];
+      const calls = facts.dynamicCalls ?? [];
       limits.push({
-        text: facts.dynamicWrites
+        text: writes.length
           ? 'Whether it posts or changes data in SAP is not determined: it changes a table whose name the code sets only at run time.'
-          : 'Whether it posts or changes data in SAP is not determined: places in the code name their target only at run time, and this documentation was read before a change to such a table was told apart from other dynamic places.',
-        anchors: (facts.dynamicWrites ?? []).slice(0, 3).map(anchor),
+          : calls.length
+            ? 'Whether it posts or changes data in SAP is not determined: it calls a function module or routine whose name the code sets only at run time.'
+            : 'Whether it posts or changes data in SAP is not determined: places in the code name their target only at run time, and this documentation was read before a change to such a table was told apart from other dynamic places.',
+        anchors: [...writes, ...calls].sort((a, b) => a.line - b.line).slice(0, 3).map(anchor),
         basis: 'not-determined',
       });
     }

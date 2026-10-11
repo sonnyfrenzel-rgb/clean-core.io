@@ -61,6 +61,12 @@ export interface CapabilityFacts {
    * stored before it was recorded (QA review of 11e3bc7d90e8).
    */
   dynamicWrites?: FactObject[];
+  /**
+   * Calls whose target the code names only at run time (`CALL FUNCTION lv_fm`,
+   * `PERFORM (lv_form)`), by the expression as written — such a call could post.
+   * Absent in facts stored before it was recorded (QA review of 35b97d90c6e1).
+   */
+  dynamicCalls?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';
@@ -98,11 +104,16 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 export const isAbsent = (answer: CapabilityAnswer): boolean => !answer.present && answer.determined;
 
 /**
- * Database changes whose table is named only at run time. Facts stored before
- * these were recorded say only how many places are dynamic, so any such place
- * leaves a change open.
+ * Places that could change data although no table, commit or update task
+ * shows it: a database change whose table is named only at run time, and a
+ * call whose target is (a dynamic function module could be a posting BAPI —
+ * QA review of 35b97d90c6e1). Facts stored before both were recorded say only
+ * how many places are dynamic, so any such place leaves a change open.
  */
-const openWrites = (facts: CapabilityFacts): number => facts.dynamicWrites?.length ?? facts.dynamic;
+const openWrites = (facts: CapabilityFacts): number =>
+  facts.dynamicWrites !== undefined && facts.dynamicCalls !== undefined
+    ? facts.dynamicWrites.length + facts.dynamicCalls.length
+    : facts.dynamic;
 
 /** Per capability: does the source show it, and if not, the sentence that says so. */
 export function capabilityPresence(facts: CapabilityFacts): Record<Capability, CapabilityAnswer> {
@@ -240,5 +251,6 @@ export function readCapabilityFacts(value: unknown): CapabilityFacts | null {
   if (!objs(v.reads) || !objs(v.writes) || !objs(v.commits) || !objs(v.updateTask) || !objs(v.calls) || !objs(v.authority)) return null;
   if (typeof v.dynamic !== 'number') return null;
   if (v.dynamicWrites !== undefined && !objs(v.dynamicWrites)) return null;
+  if (v.dynamicCalls !== undefined && !objs(v.dynamicCalls)) return null;
   return value as CapabilityFacts;
 }

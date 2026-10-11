@@ -301,12 +301,13 @@ export function requirementsFileName(projectName: string, ext: 'md' | 'docx'): s
  * ==================================================================== */
 
 export type DocBlock =
-  /** `id`: an anchor a link in the same document points at (`#pd-rules`) — Markdown and HTML only. */
+  /** `id`: an anchor a link in the same document points at (`#pd-rules`); in Word a bookmark (`pd_rules`). */
   | { k: 'h'; level: 1 | 2 | 3 | 4 | 5; text: string; id?: string }
   /**
    * Links into the same document (owner 11.10.2026: clickable entry questions).
-   * `href` is an in-page anchor; `plain` is what a file without links prints after
-   * the arrow (Word); `tail` follows the link in every spelling.
+   * `href` is an in-page anchor; `plain` is the section in words, printed after
+   * the link in Word so a printed page still says where it leads; `tail`
+   * follows the link in every spelling.
    */
   | { k: 'links'; items: Array<{ text: string; href: string; plain: string; tail?: string }> }
   | { k: 'p'; text: string; strong?: boolean; em?: boolean }
@@ -434,18 +435,58 @@ export function richDocx(text: string): string {
 
 const HEADING_STYLE: Record<1 | 2 | 3 | 4 | 5, string> = { 1: 'Title', 2: 'Heading1', 3: 'Heading2', 4: 'Heading3', 5: 'Heading4' };
 
+/**
+ * A heading's anchor as a Word bookmark name: letters, digits and underscores,
+ * a letter first, at most 40 characters — `pd-data` → `pd_data`. Null when the
+ * id is not one our code writes or does not fit.
+ */
+export function docxBookmarkName(id: string | undefined): string | null {
+  if (!id || !SAFE_ID.test(id)) return null;
+  const name = id.replace(/-/g, '_');
+  return /^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(name) ? name : null;
+}
+
+/** An internal hyperlink to a bookmark of the same document — no relationship part needed. */
+function internalLink(bookmark: string, text: string): string {
+  return `<w:hyperlink w:anchor="${bookmark}" w:history="1"><w:r><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${x(text)}</w:t></w:r></w:hyperlink>`;
+}
+
 function blocksDocument(blocks: DocBlock[]): string {
   const b: string[] = [];
+  // The headings that carry an anchor become bookmarks; a link is written only to one of them.
+  const bookmarks = new Set<string>();
   for (const block of blocks) {
-    if (block.k === 'h') b.push(para(run(block.text), HEADING_STYLE[block.level]));
+    const name = block.k === 'h' ? docxBookmarkName(block.id) : null;
+    if (name) bookmarks.add(name);
+  }
+  const placed = new Set<string>();
+  let bookmarkId = 0;
+  for (const block of blocks) {
+    if (block.k === 'h') {
+      const name = docxBookmarkName(block.id);
+      if (name && !placed.has(name)) {
+        placed.add(name);
+        const id = bookmarkId++;
+        b.push(para(`<w:bookmarkStart w:id="${id}" w:name="${name}"/>${run(block.text)}<w:bookmarkEnd w:id="${id}"/>`, HEADING_STYLE[block.level]));
+      } else b.push(para(run(block.text), HEADING_STYLE[block.level]));
+    }
     else if (block.k === 'p') b.push(para(run(block.text, { bold: block.strong, italic: block.em })));
     else if (block.k === 'note') b.push(para(run(block.text, { italic: true })));
     else if (block.k === 'table') b.push(docxTable(block.head, block.rows, block.muted));
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
     else if (block.k === 'ol') block.items.forEach((t, i) => b.push(para(run(`${i + 1}. ${t}`))));
     else if (block.k === 'ul') block.items.forEach((t) => b.push(para(run(`•  ${t}`))));
-    // Word gets the section a link leads to in words: an internal hyperlink needs a bookmark on the heading.
-    else if (block.k === 'links') block.items.forEach((l) => b.push(para(run(`•  ${l.text} → ${l.plain}${l.tail ? ` — ${l.tail}` : ''}`))));
+    // An internal hyperlink to the heading's bookmark, and the section in words for print
+    // (QA review of 35b97d90c6e1); without a bookmark to lead to, the words alone.
+    else if (block.k === 'links') {
+      block.items.forEach((l) => {
+        const target = docxBookmarkName(l.href);
+        const tail = `${l.tail ? ` — ${l.tail}` : ''}`;
+        b.push(para(target && bookmarks.has(target)
+          ? run('•  ') + internalLink(target, l.text) + run(` → ${l.plain}${tail}`)
+          : run(`•  ${l.text} → ${l.plain}${tail}`)));
+      });
+    }
     else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
     else if (block.k === 'code') {
       for (const a of block.items) {

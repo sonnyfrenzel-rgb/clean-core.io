@@ -85,6 +85,13 @@ export function capabilityFactsOf(
   const dynamicWrites = tables.unresolved
     .filter((u) => u.access === 'write')
     .map((u) => ({ name: u.expression.toUpperCase(), line: u.line }));
+  // A call whose target is named at run time could be a posting BAPI: recorded
+  // so "no posting" is not said (QA review of 35b97d90c6e1).
+  const operand = (text: string, re: RegExp, fallback: string) => (re.exec(text)?.[1] ?? fallback).replace(/\.$/, '').toUpperCase();
+  const dynamicCalls = [
+    ...calls.functionModules.filter((f) => f.dynamic).map((f) => ({ name: operand(f.text, /\bCALL\s+FUNCTION\s+(\S+)/i, 'a module named at run time'), line: f.lineStart })),
+    ...calls.performs.filter((p) => p.dynamic).map((p) => ({ name: operand(p.text, /\bPERFORM\s+(\([^)]*\)|\S+)/i, 'a routine named at run time'), line: p.lineStart })),
+  ].sort((a, b) => a.line - b.line);
   return {
     version: CAPABILITY_FACTS_VERSION,
     reads,
@@ -95,5 +102,6 @@ export function capabilityFactsOf(
     authority,
     dynamic,
     dynamicWrites,
+    dynamicCalls,
   };
 }

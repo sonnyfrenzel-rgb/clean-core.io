@@ -11,7 +11,7 @@ import { businessStatementView, isBusinessKindStatement, statementKind } from '.
 import { absentClaims, capabilityPresence } from '../lib/documentation-capabilities';
 import { capabilityFactsOf } from '../lib/documentation-facts';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
-import { judgeSentence, sopStatementsOf } from '../lib/sop-provenance';
+import { judgeSentence, layerFacts, sopBasisText, sopStatementsOf } from '../lib/sop-provenance';
 import { sopSteps } from '../lib/business-summary';
 import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '../lib/business-sop-prompt';
 import { formatBusinessDocsToMarkdown } from '../lib/markdownFormatter';
@@ -101,6 +101,9 @@ function reviewedLayer(doc: ReturnType<typeof engineOf>) {
       {
         stepId: first.id,
         claims: [
+          // The engine's own sentence for the step, copied word for word — the one way to be Reconstructed.
+          { text: 'Open customer items with the entered company code are selected.', basis: 'code', lines: [first.anchor?.lineStart ?? 1] },
+          // The model's wording at a line of the step: the line shows a SELECT, not a worklist (QA review of 35b97d90c6e1).
           { text: 'The worklist shows each open item with its proposed action.', basis: 'code', lines: [first.anchor?.lineStart ?? 1] },
           { text: 'The figures are cross-checked against company ledger control totals.', basis: 'code', lines: [first.anchor?.lineStart ?? 1] },
           { text: 'Proposals can be overridden with the approval of the AR Lead.', basis: 'proposal', lines: [] },
@@ -248,9 +251,20 @@ test.describe('the business SOP: step names, provenance on every sentence, nothi
     expect(absentClaims('Activate the credit option for full credit exposure analysis.', facts).map((c) => c.capability)).toEqual(['credit-exposure']);
     expect(absentClaims('The open items are posted and cleared automatically.', facts).map((c) => c.capability)).toContain('posting');
     expect(absentClaims('Items are listed with their posting date.', facts)).toEqual([]);
-    const ctx = { stepLines: [{ lineStart: 1, lineEnd: 200 }], facts };
+    const engineSentence = { text: 'Open customer items with the entered company code are selected.', anchors: [{ lineStart: 24, lineEnd: 24 }] };
+    const ctx = { stepLines: [{ lineStart: 1, lineEnd: 200 }], facts, stepSentences: [engineSentence] };
     expect(judgeSentence('The figures are cross-checked against company ledger control totals.', true, [20], ctx).basis).toBe('not-in-program');
-    expect(judgeSentence('The worklist shows each open item.', true, [20], ctx).basis).toBe('reconstructed');
+    // Reconstructed only as the engine's own sentence of the step, with the engine's lines.
+    const copied = judgeSentence('open customer items with the entered company code are selected', true, [20], ctx);
+    expect(copied.basis).toBe('reconstructed');
+    expect(copied.anchors).toEqual([{ lineStart: 24, lineEnd: 24 }]);
+    // A cited line of the step does not make the model's wording Reconstructed (QA review of 35b97d90c6e1):
+    // it stays a Model proposal, the line kept as a pointer.
+    const worded = judgeSentence('The worklist shows each open item.', true, [20], ctx);
+    expect(worded.basis).toBe('proposed');
+    expect(worded.anchors).toEqual([{ lineStart: 20, lineEnd: 20 }]);
+    expect(sopBasisText(worded)).toBe('Model proposal, cites L20');
+    expect(judgeSentence('The worklist shows each open item.', true, [20], { ...ctx, stepSentences: [] }).basis).toBe('proposed');
     expect(judgeSentence('The worklist shows each open item.', true, [999], ctx).basis).toBe('proposed');
     expect(judgeSentence('The worklist shows each open item.', false, [20], ctx).basis).toBe('proposed');
     expect(judgeSentence('The AR Lead approves the override.', false, [], ctx).basis).toBe('not-in-program');
@@ -290,6 +304,59 @@ MODIFY (lv_table) FROM ls_row.
     expect(capabilityPresence(factsOf(FI_SOURCE)).posting.determined).toBe(true);
   });
 
+  test('a call to a function module named at run time makes posting not determined, never absent (QA review of 35b97d90c6e1)', () => {
+    const DYNAMIC_CALL = `REPORT zdyn_call.
+PARAMETERS p_fm TYPE rs38l_fnam DEFAULT 'BAPI_ACC_DOCUMENT_POST'.
+DATA lv_fm TYPE rs38l_fnam.
+lv_fm = p_fm.
+CALL FUNCTION lv_fm.
+`;
+    const facts = factsOf(DYNAMIC_CALL);
+    expect(facts.writes).toEqual([]);
+    expect(facts.commits).toEqual([]);
+    expect(facts.dynamicWrites).toEqual([]);
+    expect(facts.dynamicCalls).toEqual([{ name: 'LV_FM', line: 5 }]);
+    const presence = capabilityPresence(facts);
+    expect(presence.posting.present).toBe(false);
+    expect(presence.posting.determined).toBe(false);
+    expect(absentClaims('The documents are posted automatically.', facts)).toEqual([]);
+    const md = processDocumentationToMarkdown(engineOf(DYNAMIC_CALL, 'zdyn_call.abap'));
+    expect(md).not.toContain('It does not post or change data in SAP');
+    expect(md).toContain('it calls a function module or routine whose name the code sets only at run time');
+    expect(businessSopPrompt(engineOf(DYNAMIC_CALL, 'zdyn_call.abap'))).not.toContain('It does not post or change data in SAP');
+    // Facts stored with dynamic writes but before dynamic calls were recorded fall back to every dynamic place.
+    const { dynamicCalls: _dc, ...stored } = facts;
+    void _dc;
+    expect(capabilityPresence(stored).posting.determined).toBe(false);
+  });
+
+  test('what a later reader takes as the engine\'s is never the model\'s: facts, step lines and step sentences (QA review of 35b97d90c6e1)', () => {
+    const doc = engineOf(FI_SOURCE);
+    const forged = {
+      ...reviewedLayer(doc),
+      facts: { version: 1, reads: [], writes: [{ name: 'BKPF', line: 1 }], commits: [{ name: 'COMMIT WORK', line: 1 }], updateTask: [], calls: [], authority: [], dynamic: 0 },
+      sop_details: [{
+        stepId: 'Task_not_in_process',
+        claims: [{ text: 'The documents are posted to the ledger.', basis: 'code', lines: [3] }],
+        stepLines: [{ lineStart: 1, lineEnd: 999 }],
+        stepSentences: [{ text: 'The documents are posted to the ledger.', anchors: [{ lineStart: 3, lineEnd: 3 }] }],
+      }],
+    };
+    // Without engine facts the model's `facts` is not kept.
+    const withoutFacts = enrichBusinessLayer(forged, sopStepInfos(doc), null);
+    expect('facts' in withoutFacts).toBe(false);
+    expect(layerFacts(withoutFacts)).toBeNull();
+    // With them, only the engine's.
+    const withFacts = enrichBusinessLayer(forged, sopStepInfos(doc), doc.facts ?? null);
+    expect(withFacts.facts).toEqual(doc.facts);
+    // Step fields the model wrote on a row of a step the process does not have are dropped.
+    const row = (withFacts.sop_details as Array<Record<string, unknown>>)[0];
+    expect(row.stepLines).toBeUndefined();
+    expect(row.stepSentences).toBeUndefined();
+    const judged = sopSteps(withoutFacts, [], { facts: null });
+    expect(judged.flatMap((s) => s.statements).every((st) => st.basis !== 'reconstructed')).toBe(true);
+  });
+
   test('an unreadable stored SOP is never exported as the SOP, and legacy control rows read as model proposals (QA review of 11e3bc7d90e8)', () => {
     const raw = 'Sure! Here is the SOP: the AR Lead approves every posting.';
     const md = formatBusinessDocsToMarkdown(raw);
@@ -312,7 +379,11 @@ MODIFY (lv_table) FROM ls_row.
     expect(all.length).toBeGreaterThan(5);
     for (const st of all) expect(['reconstructed', 'proposed', 'not-in-program', 'not-determined', 'confirmed']).toContain(st.basis);
     const by = (text: string) => all.find((s) => s.text.startsWith(text))!;
-    expect(by('The worklist shows').basis).toBe('reconstructed');
+    expect(by('Open customer items with the entered company code').basis).toBe('reconstructed');
+    expect(by('Open customer items with the entered company code').anchors).toEqual([{ lineStart: 24, lineEnd: 24 }]);
+    // The model's wording at a line of the step is its proposal, the line a pointer (QA review of 35b97d90c6e1).
+    expect(by('The worklist shows').basis).toBe('proposed');
+    expect(by('The worklist shows').anchors).toEqual([{ lineStart: 24, lineEnd: 24 }]);
     expect(by('The figures are cross-checked').basis).toBe('not-in-program');
     expect(by('Proposals can be overridden').basis).toBe('not-in-program');
     expect(by('The amounts reconcile line by line').basis).not.toBe('reconstructed');
@@ -334,7 +405,7 @@ MODIFY (lv_table) FROM ls_row.
       for (const h of headings) expect(h).toMatch(/^\d+\. .+ \((?:L\d+|lines not determined)/);
       const sentences = md.slice(md.indexOf('## Steps'), md.indexOf('## Who is responsible')).split('\n').filter((l) => l.startsWith('- '));
       for (const line of sentences) {
-        expect(line, line).toMatch(/\((?:Reconstructed, L\d+|Model proposal|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);
+        expect(line, line).toMatch(/\((?:Reconstructed, L\d+|Model proposal(?:, cites L\d+)?|Proposal — not in the program(?:: [^)]+)?|Not determined)\)$|^- Not determined/);
       }
       expect(md).toContain('cross-checked against company ledger control totals. (Proposal — not in the program: no ledger reconciliation in the code)');
       expect(md).toContain('## Who is responsible (RACI) — Proposal — not in the program');
@@ -372,9 +443,23 @@ test.describe('the exports follow the reader order', () => {
     expect(md).toContain('<a id="pd-exceptions"></a>');
     expect(md).toContain('<a id="pd-outputs"></a>');
     expect(md).toContain('Proposal — not in the program: the code names no role');
-    // Word cannot link inside the file: it names the section instead.
+    // Word links inside the file too: a bookmark on the heading, an internal hyperlink to it,
+    // and the section in words after it for print (QA review of 35b97d90c6e1).
     const docx = blocksDocxParts(blocks)['word/document.xml'];
-    expect(docx).toContain('Why is an item missing? → 5. Systems and data');
+    expect(docx).toContain('<w:hyperlink w:anchor="pd_data" w:history="1">');
+    expect(docx).toMatch(/<w:hyperlink w:anchor="pd_data"[^>]*><w:r>(?:(?!<\/w:hyperlink>).)*Why is an item missing\?<\/w:t><\/w:r><\/w:hyperlink><w:r><w:t xml:space="preserve"> → 5\. Systems and data/);
+    expect(docx).toMatch(/<w:bookmarkStart w:id="\d+" w:name="pd_data"\/>/);
+    // Every internal hyperlink leads to a bookmark the file writes, and every bookmark name is valid in Word.
+    const marks = new Set([...docx.matchAll(/<w:bookmarkStart w:id="\d+" w:name="([^"]+)"\/>/g)].map((m) => m[1]));
+    for (const name of marks) expect(name).toMatch(/^[A-Za-z][A-Za-z0-9_]{0,39}$/);
+    const anchors = [...docx.matchAll(/<w:hyperlink w:anchor="([^"]+)"/g)].map((m) => m[1]);
+    expect(anchors.length).toBeGreaterThanOrEqual(4);
+    for (const a of anchors) expect(marks.has(a), `${a} has no bookmark`).toBe(true);
+    expect([...docx.matchAll(/<w:bookmarkStart /g)].length).toBe([...docx.matchAll(/<w:bookmarkEnd /g)].length);
+    // A link to a section the file does not write stays words, never a dangling hyperlink.
+    const orphan = blocksDocxParts([{ k: 'links', items: [{ text: 'Where?', href: 'pd-nowhere', plain: 'Nowhere' }] }])['word/document.xml'];
+    expect(orphan).not.toContain('<w:hyperlink');
+    expect(orphan).toContain('Where? → Nowhere');
   });
 
   test('Confluence: the business page first, the questions as links, every SOP sentence with its basis', async () => {

@@ -124,7 +124,7 @@ function StepAnchor({ step }: { step: SopStep }) {
 /**
  * The provenance of what the card says (owner 11.10.2026, external review
  * F-06): the outcome is the model's sentence, so the chip is that sentence's
- * basis — Reconstructed only where it cites a line of the step — not the
+ * basis — Reconstructed only where it is a sentence the engine wrote for the step — not the
  * step's. A step the code does not have is the model's.
  */
 function StepChip({ step }: { step: SopStep }) {
