@@ -971,3 +971,24 @@ START-OF-SELECTION.
     expect(readBatchInput(branches).map((c) => c.fields.map((f) => f.field))).toEqual([['VBAK-LIFSK'], ['VBAK-LIFSK']]);
   });
 });
+
+// QA review (ce470c191f7d): the destination scan looks a few statements ahead.
+// A row appended to one table and, beyond that window, unchanged to another
+// is both tables' row; the scan cannot see the second append, so the
+// destination is unknown and the row stays with both calls.
+test.describe('QA review — a row appended again beyond the scan window', () => {
+  test('stays with both calls', () => {
+    const filler = Array.from({ length: 12 }, (_, i) => `  lv_n = ${i}.`).join('\n');
+    const src = `REPORT zx.
+DATA: it_a TYPE STANDARD TABLE OF bdcdata, it_b TYPE STANDARD TABLE OF bdcdata, ls TYPE bdcdata, lv_n TYPE i.
+START-OF-SELECTION.
+  ls-fnam = 'EKET-EEIND'. ls-fval = '20260101'. APPEND ls TO it_a.
+${filler}
+  APPEND ls TO it_b.
+  CALL TRANSACTION 'ME22' USING it_a MODE 'N'.
+  CALL TRANSACTION 'VA02' USING it_b MODE 'N'.
+`;
+    expect(readBatchInput(src).map((c) => `${c.transaction}:${c.fields.map((f) => f.field).join(',')}`))
+      .toEqual(['ME22:EKET-EEIND', 'VA02:EKET-EEIND']);
+  });
+});

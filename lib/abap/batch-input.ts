@@ -311,12 +311,19 @@ export function readBatchInputFrom(statements: AbapStatement[]): BatchInputCall[
     const wa = workArea.toUpperCase();
     const tables = new Set<string>();
     const newRow = new RegExp(`^${wa.replace(/[^\w]/g, (c) => `\\${c}`)}-(?:FNAM|PROGRAM)\\s*=`, 'i');
-    for (let j = at + 1; j < Math.min(statements.length, at + 1 + ROW_WINDOW); j++) {
+    // The tables seen are all the row's tables only when the scan reached the
+    // row's end — a boundary, the next row, or the end of the source. A window
+    // that runs out first may hide a later append of the same row elsewhere
+    // (QA ce470c191f7d), so the destination is then unknown.
+    let closed = false;
+    for (let j = at + 1; j < at + 1 + ROW_WINDOW; j++) {
+      if (j >= statements.length) { closed = true; break; }
       const text = statements[j].text;
-      if (ROW_BOUNDARY.test(text) || newRow.test(text)) break;
+      if (ROW_BOUNDARY.test(text) || newRow.test(text)) { closed = true; break; }
       const append = appendOf(text);
       if (append && !append.lines && append.source.toUpperCase() === wa) tables.add(append.table);
     }
+    if (!closed && tables.size) return null;
     if (!tables.size && wa.startsWith('<')) {
       for (let j = at - 1; j >= Math.max(0, at - ROW_WINDOW); j--) {
         const text = statements[j].text;
