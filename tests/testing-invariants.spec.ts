@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { executeSandboxRun } from '../lib/test-sandbox/core';
 import { sandboxFilesFromStoredCode } from '../lib/test-sandbox/files';
 import { parseTapOutput } from '../lib/test-verdicts';
-import { INVARIANT_CASE_ID, detectEndpoints, invariantPlan, invariantSentence, withInvariants } from '../lib/testing-invariants';
+import { INVARIANT_CASE_ID, INVARIANT_RUNTIME_JS, detectEndpoints, invariantPlan, invariantSentence, withInvariants } from '../lib/testing-invariants';
 import { FIXED_SERVICE, REVIEWED_SERVICE, SELF_CONSISTENT_SUITE, packageOf } from './helpers/fi-worklist-fixture';
 
 /**
@@ -82,6 +82,63 @@ test.describe('the plan, read from the generated routes', () => {
     const none = withInvariants(SELF_CONSISTENT_SUITE, [{ id: 'TC_01' }], JSON.stringify([{ path: 'a.ts', content: 'export const x = 1;' }]));
     expect(none.suiteCode).toBe(SELF_CONSISTENT_SUITE);
     expect(none.cases).toEqual([{ id: 'TC_01' }]);
+  });
+});
+
+test.describe('QA review of 35b97d90c6e1', () => {
+  const listAndExport = JSON.stringify([
+    {
+      path: 'srv/service.ts',
+      content:
+        "import express from 'express';\nexport function make() {\n  const app = express();\n  app.get('/Items', (req, res) => res.json(req.query.kunnr));\n  app.get('/ExportFile', (req, res) => res.send(req.query.kunnr));\n  return app;\n}\n",
+    },
+  ]);
+
+  test('a list and an export without totals: the case names, steps and expects only the list and the export', () => {
+    const { cases, suiteCode, plan } = withInvariants(SELF_CONSISTENT_SUITE, [], listAndExport);
+    expect(plan.applicable).toBe(true);
+    const tc = cases.find((c) => c.id === INVARIANT_CASE_ID)!;
+    expect(JSON.stringify([tc.name, tc.description, tc.steps, tc.expectedResult])).not.toMatch(/totals/i);
+    expect(tc.name).toBe('One selection gives the same population and the same sums in list and export');
+    expect(tc.expectedResult).toBe('The same number of rows and the same sums in the list and the export.');
+    expect(tc.steps).toContain('Find which export column sums to a list field.');
+    expect(suiteCode).toContain(`${INVARIANT_CASE_ID}: one selection gives the same population and the same sums in list and export'`);
+    // All three roles: the full case keeps its wording.
+    const full = withInvariants(SELF_CONSISTENT_SUITE, [], packageOf(REVIEWED_SERVICE)).cases.find((c) => c.id === INVARIANT_CASE_ID)!;
+    expect(full.name).toBe('One selection gives the same population and the same sums in list, totals and export');
+    expect(full.expectedResult).toBe('The same number of rows and the same sums in the list, the totals and the export.');
+  });
+
+  test('the export CSV is read as RFC 4180 records: a line break inside a quoted field is no new row', async () => {
+    const run = new Function(`${INVARIANT_RUNTIME_JS}\nreturn __ccSharedSelectionInvariant;`)() as (
+      h: unknown,
+      app: unknown,
+      spec: unknown,
+    ) => Promise<{ problems?: string[]; skip?: string }>;
+    const rows = [
+      { kunnr: 'A', amount: 10 },
+      { kunnr: 'A', amount: 5 },
+      { kunnr: 'B', amount: 7 },
+    ];
+    const csv = (sel: Array<{ kunnr: string; amount: number }>) =>
+      'kunnr;amount;note\r\n' + sel.map((r, i) => `${r.kunnr};${r.amount};"line one\r\nline two; says ""hi"" ${i}"`).join('\r\n') + '\r\n';
+    const h = {
+      invoke: async (_app: unknown, _method: string, path: string, opts: { query?: Record<string, string>; body?: Record<string, string> }) => {
+        const sel = opts.query ?? opts.body ?? {};
+        const picked = sel.kunnr ? rows.filter((r) => r.kunnr === sel.kunnr) : rows;
+        return path === '/Items' ? { status: 200, json: picked } : { status: 200, text: csv(picked) };
+      },
+    };
+    const spec = {
+      endpoints: [
+        { role: 'list', method: 'GET', path: '/Items', send: 'query' },
+        { role: 'export', method: 'GET', path: '/ExportFile', send: 'query' },
+      ],
+      selection: ['kunnr'],
+    };
+    const result = await run(h, {}, spec);
+    expect(result.skip).toBeUndefined();
+    expect(result.problems).toEqual([]);
   });
 });
 

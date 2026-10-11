@@ -333,29 +333,44 @@ async function __ccSharedSelectionInvariant(h, app, spec) {
     }
     return out;
   };
+  // RFC 4180 records: a line break inside a quoted field is part of the field,
+  // not the end of a record ("" is a quote, CRLF or LF ends a record). Split on
+  // physical lines first and one quoted note with a line break becomes a
+  // phantom row (QA review of 35b97d90c6e1).
   const csvOf = (text) => {
-    const lines = String(text).split(/\r?\n/).filter((l) => l.trim() !== '');
-    if (lines.length === 0) return { header: [], rows: [] };
-    const header = lines[0];
-    const delim = [';', '\t', ','].map((d) => [d, header.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
-    const split = (line) => {
-      const cells = [];
-      let cur = '';
-      let quoted = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (quoted) {
-          if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-          else if (c === '"') quoted = false;
-          else cur += c;
-        } else if (c === '"') quoted = true;
-        else if (c === delim) { cells.push(cur); cur = ''; }
-        else cur += c;
-      }
+    const s = String(text);
+    let headEnd = s.length;
+    for (let i = 0, q = false; i < s.length; i++) {
+      if (s[i] === '"') q = !q;
+      else if (!q && s[i] === '\n') { headEnd = i; break; }
+    }
+    const head = s.slice(0, headEnd);
+    const delim = [';', '\t', ','].map((d) => [d, head.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const records = [];
+    let cells = [];
+    let cur = '';
+    let quoted = false;
+    const endRecord = () => {
       cells.push(cur);
-      return cells;
+      if (cells.length > 1 || cells[0].trim() !== '') records.push(cells);
+      cells = [];
+      cur = '';
     };
-    return { header: split(header), rows: lines.slice(1).map(split) };
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (quoted) {
+        if (c === '"' && s[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') quoted = false;
+        else cur += c;
+      } else if (c === '"') quoted = true;
+      else if (c === delim) { cells.push(cur); cur = ''; }
+      else if (c === '\r' && s[i + 1] === '\n') { endRecord(); i++; }
+      else if (c === '\n') endRecord();
+      else cur += c;
+    }
+    if (cur !== '' || cells.length > 0) endRecord();
+    if (records.length === 0) return { header: [], rows: [] };
+    return { header: records[0], rows: records.slice(1) };
   };
   const exportRows = (res) => {
     const rows = rowsOf(res.json);
@@ -461,6 +476,25 @@ async function __ccSharedSelectionInvariant(h, app, spec) {
 }
 `;
 
+/**
+ * The words of the case, from the roles the plan actually holds: a plan of a
+ * list and an export compares no totals, and its case must not say it does
+ * (QA review of 35b97d90c6e1).
+ */
+function invariantWords(plan: Extract<InvariantPlan, { applicable: true }>) {
+  const has = (role: EndpointRole) => plan.endpoints.some((e) => e.role === role);
+  const totals = has('totals');
+  const exp = has('export');
+  const and = (items: string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+  const pick = (all: Array<string | false>) => all.filter((x): x is string => typeof x === 'string');
+  return {
+    roles: and(pick(['list', totals && 'totals', exp && 'export'])),
+    calibrate: `Find ${and(pick([totals && 'which number of the totals answer is the row count and which is a sum', exp && 'which export column sums to a list field']))}.`,
+    expected: `The same number of rows and the same sums in ${and(pick(['the list', totals && 'the totals', exp && 'the export']))}.`,
+    builds: and(pick(['the list', totals && 'the totals', exp && 'the file'])),
+  };
+}
+
 /** The block appended to a generated suite, or null when the plan is not applicable. */
 export function invariantSuiteBlock(plan: InvariantPlan): string | null {
   if (!plan.applicable) return null;
@@ -474,16 +508,17 @@ export function invariantSuiteBlock(plan: InvariantPlan): string | null {
       : plan.app.name === 'default'
         ? 'mod.default'
         : `(mod.${plan.app.name} ?? mod.default?.${plan.app.name})`;
+  const words = invariantWords(plan);
   return `
 
 // ── ${INVARIANT_CASE_ID} — written by Clean-Core.io, not by the model ─────────────
-// One selection, one population: the list, the totals and the export answer for
+// One selection, one population: ${words.builds} answer for
 // the same selection with the same rows and the same sums (external review F-02).
 // Deterministic; the plan was read from the generated routes.
 import { test as __ccInvariantTest } from 'node:test';
 import { strict as __ccInvariantAssert } from 'node:assert';
 
-__ccInvariantTest('${INVARIANT_CASE_ID}: one selection gives the same population and the same sums in list, totals and export', async (t: any) => {
+__ccInvariantTest('${INVARIANT_CASE_ID}: one selection gives the same population and the same sums in ${words.roles}', async (t: any) => {
   const h = (globalThis as any).__ccRequestHarness;
   if (!h) {
     t.skip('this runner has no request harness for Express routes yet, so the invariant was not run');
@@ -503,20 +538,21 @@ ${INVARIANT_RUNTIME_JS}`;
 
 /** The case that stands for the invariant in the case list. */
 export function invariantTestCase(plan: Extract<InvariantPlan, { applicable: true }>): Record<string, unknown> {
+  const words = invariantWords(plan);
   return {
     id: INVARIANT_CASE_ID,
-    name: 'One selection gives the same population and the same sums in list, totals and export',
+    name: `One selection gives the same population and the same sums in ${words.roles}`,
     category: 'Invariant',
     priority: 'High',
     description:
-      'Written by Clean-Core.io from the generated routes, not by the testing model. The original fills one internal table from one selection and builds the list, the totals and the file from it; the target must answer one selection with one population.',
+      `Written by Clean-Core.io from the generated routes, not by the testing model. The original fills one internal table from one selection and builds ${words.builds} from it; the target must answer one selection with one population.`,
     steps: [
       'Call the list without a selection and pick a value of a selection field that narrows it.',
-      'Find which number of the totals answer is the row count and which is a sum, and which export column sums to it.',
+      words.calibrate,
       `Send the same selection to ${plan.endpoints.map((e) => e.path).join(', ')}.`,
       'Compare the row counts and sums.',
     ],
-    expectedResult: 'The same number of rows and the same sums in the list, the totals and the export.',
+    expectedResult: words.expected,
     invariant: true,
   };
 }

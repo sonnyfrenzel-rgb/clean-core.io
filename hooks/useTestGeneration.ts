@@ -100,7 +100,8 @@ export const useTestGeneration = (
 
       // 3.0.10 (owner 11.10.2026, external review F-01/F-05): the engine's
       // business rules of the signed source, with ids and lines, so the model
-      // writes at least one case per rule with the result the ORIGINAL gives.
+      // writes at least one case per listed rule (the first MAX_PROMPT_RULES)
+      // with the result it reads from the ORIGINAL.
       // Derived from the text alone — no model; without a signed source the
       // section says there is nothing to trace.
       let rulesForTrace: MaterialRule[] = [];

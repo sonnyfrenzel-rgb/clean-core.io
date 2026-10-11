@@ -54,9 +54,11 @@ review of a real FI case.
   or other code makes it no longer apply. A run that gave no result is recorded with its cause.
 - **The suite repair names the package's own import paths.** It used to tell the model "./app" for
   every route, so every repair of a package suite failed to build.
-- **Tests trace the business rules** (ADR-095): at least one case per rule, with the expected
-  result stated from the original ABAP; each case says unchanged, deliberately changed, defect or
-  not yet assessable. A shared-selection invariant checks that list, totals and export agree, and
+- **Tests trace the business rules** (ADR-095): the prompt asks for at least one case per rule (the
+  first 60; rules past them are named as not given to the model and count as not covered), with an
+  expected result the model states from the original ABAP, not verified; each case says passed
+  (expectation not verified), failed on a rule marked to change, defect or not yet assessable. A
+  shared-selection invariant checks that the list agrees with the totals and the export it finds, and
   a mutation probe says how many deliberate defects the suite catches.
 - **Code drafts** follow four rules (no demo values in logic, full-key lookups, one selection,
   posted values kept); hard-coded document numbers are flagged.

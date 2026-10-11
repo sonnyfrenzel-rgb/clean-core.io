@@ -46,7 +46,7 @@ test.beforeAll(async () => {
   ScenarioList = await load<List>('components/testing/ScenarioList.tsx', 'ScenarioList');
 });
 
-const COVERAGE: RuleCoverage = { covered: ['BR-007', 'BR-009'], missing: ['BR-004', 'BR-010'], mismatched: [], total: 4 };
+const COVERAGE: RuleCoverage = { covered: ['BR-007', 'BR-009'], missing: ['BR-004', 'BR-010'], notAsked: [], mismatched: [], total: 4 };
 const MUTATION: MutationProbeReport = mutationReport(
   [
     { id: 'M1', operator: 'ignore-request-param', file: 'srv/service.ts', line: 918, description: 'the request parameter kunnr is ignored (req.query.kunnr → undefined, 2 places)', outcome: 'survived' },
@@ -79,7 +79,8 @@ test('the card: rule coverage, old against new, the invariant with the gap read 
   expect(html).toContain('What the tests check against the original');
   expect(html).not.toContain('What the tests prove');
   expect(html).toContain('not a result of running the original');
-  expect(html).toContain('2 of 4 business rules of the original have a case with an expected result from the original · not covered: BR-004, BR-010');
+  // QA review of 35b97d90c6e1: the coverage line says the expectations are model-stated, not verified.
+  expect(html).toContain('2 of 4 business rules of the original have a traced case · the expected results are model-stated from the original, not verified · not covered: BR-004, BR-010');
   expect(html).toContain('Old against new: 1 unchanged · 1 defect · 1 not yet assessable');
   expect(html).toContain('data-test-evidence-invariant="applicable"');
   expect(html).toContain('the totals endpoint does not read kunnr; the export endpoint does not read kunnr, which the list reads');

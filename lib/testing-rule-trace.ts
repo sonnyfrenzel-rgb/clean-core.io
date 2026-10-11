@@ -1,7 +1,8 @@
 /**
- * Rule-traced test cases — every material business rule of the ORIGINAL ABAP
- * gets at least one case whose expected result is stated from the original,
- * and every case says which rule it checks, on which lines.
+ * Rule-traced test cases — the prompt asks for at least one case per material
+ * business rule of the ORIGINAL ABAP (the first `MAX_PROMPT_RULES` of them),
+ * with an expected result the model states from the original, and every case
+ * says which rule it checks, on which lines.
  *
  * Owner, 11.10.2026, after the external review of FI_Collection_Worklist
  * (F-01, F-02, F-05): the generated service gave a credit memo a hard-coded
@@ -288,8 +289,13 @@ export function checkRuleTrace(trace: RuleTrace, engine: OriginEngine): OriginCh
 export interface RuleCoverage {
   /** Material rules with at least one traced case whose trace is anchored (or not checkable). */
   covered: string[];
-  /** Material rules no case traces. */
+  /** Material rules the prompt listed that no case traces. */
   missing: string[];
+  /**
+   * Material rules past the first `MAX_PROMPT_RULES`: the prompt does not list
+   * them, so the model was never asked for a case. Never counted as covered.
+   */
+  notAsked: string[];
   /** Traced cases whose rule id or lines do not match the source. */
   mismatched: Array<{ caseId: string; ruleId: string; problem: string }>;
   total: number;
@@ -298,14 +304,17 @@ export interface RuleCoverage {
 /**
  * Which material rules the suite covers. A trace counts for its rule only when
  * the check does not refute it; without an engine the stated id counts, and
- * the sentence says the lines were not checked.
+ * the sentence says the lines were not checked. `rules` is in the order the
+ * prompt lists them (`materialRules`); the rules past the first
+ * `MAX_PROMPT_RULES` were not given to the model and count as not covered
+ * (QA review of 35b97d90c6e1).
  */
 export function ruleCoverage(
   rules: ReadonlyArray<{ id: string }>,
   cases: ReadonlyArray<Record<string, unknown>>,
   engine: OriginEngine | null,
 ): RuleCoverage {
-  const wanted = new Set(rules.map((r) => r.id));
+  const wanted = new Set(rules.slice(0, MAX_PROMPT_RULES).map((r) => r.id));
   const covered = new Set<string>();
   const mismatched: RuleCoverage['mismatched'] = [];
   for (const tc of cases) {
@@ -321,21 +330,34 @@ export function ruleCoverage(
     if (wanted.has(trace.ruleId)) covered.add(trace.ruleId);
   }
   const order = rules.map((r) => r.id);
+  const asked = order.slice(0, MAX_PROMPT_RULES);
   return {
-    covered: order.filter((id) => covered.has(id)),
-    missing: order.filter((id) => !covered.has(id)),
+    covered: asked.filter((id) => covered.has(id)),
+    missing: asked.filter((id) => !covered.has(id)),
+    notAsked: order.slice(MAX_PROMPT_RULES),
     mismatched,
     total: order.length,
   };
 }
 
-/** "21 of 29 business rules of the original have a case with an expected result from the original · not covered: BR-004, BR-005, … · 1 trace does not match the source". */
+/**
+ * "21 of 29 business rules of the original have a traced case · the expected results are model-stated from the original, not verified · not covered: BR-004, BR-005, … · 1 trace does not match the source".
+ * The expected result is the model's reading of the original — the same
+ * standing as the `passed-model-stated` assessment — so the sentence never
+ * says it was established from the original (QA review of 35b97d90c6e1).
+ */
 export function ruleCoverageSentence(c: RuleCoverage): string {
   if (c.total === 0) return 'The engine found no business rule in the original, so no case can be traced to one.';
-  const parts = [`${c.covered.length} of ${c.total} business rules of the original have a case with an expected result from the original`];
+  const parts = [`${c.covered.length} of ${c.total} business rules of the original have a traced case · the expected results are model-stated from the original, not verified`];
   if (c.missing.length > 0) {
     const shown = c.missing.slice(0, 8).join(', ');
     parts.push(`not covered: ${shown}${c.missing.length > 8 ? ` and ${c.missing.length - 8} more` : ''}`);
+  }
+  const notAsked = c.notAsked;
+  if (notAsked.length > 0) {
+    parts.push(
+      `${notAsked.length} ${notAsked.length === 1 ? 'rule' : 'rules'} past the first ${MAX_PROMPT_RULES} ${notAsked.length === 1 ? 'was' : 'were'} not given to the model, so not covered`,
+    );
   }
   if (c.mismatched.length > 0) parts.push(`${c.mismatched.length} ${c.mismatched.length === 1 ? 'trace does' : 'traces do'} not match the source`);
   return parts.join(' · ');
@@ -400,8 +422,8 @@ export function assessCase(input: {
   }
   if (invariant) {
     return verdict === 'Passed'
-      ? { value: 'unchanged', sentence: 'List, totals and export agree for one selection, as they do in the original, where all three come from one selection.' }
-      : { value: 'defect', sentence: 'List, totals and export disagree for one selection. The original builds all three from one selection, so this is a defect.' };
+      ? { value: 'unchanged', sentence: 'The list and the endpoints compared with it agree for one selection, as they do in the original, where all of them come from one selection.' }
+      : { value: 'defect', sentence: 'The list and an endpoint compared with it disagree for one selection. The original builds them from one selection, so this is a defect.' };
   }
   if (!trace) {
     return {

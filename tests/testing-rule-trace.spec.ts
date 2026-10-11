@@ -5,6 +5,7 @@ import {
   assessCase,
   assessmentSummary,
   countAssessments,
+  MAX_PROMPT_RULES,
   materialRules,
   materialTables,
   parseRuleTrace,
@@ -135,8 +136,32 @@ test.describe('rule coverage', () => {
 
   test('a rule counts as covered by a case whose trace the source confirms; a missing rule is named', () => {
     const c = ruleCoverage(rules, [traced('TC_01', 'BR-002', ['10'])], engine);
-    expect(c).toEqual({ covered: ['BR-002'], missing: ['BR-001'], mismatched: [], total: 2 });
-    expect(ruleCoverageSentence(c)).toBe('1 of 2 business rules of the original have a case with an expected result from the original · not covered: BR-001');
+    expect(c).toEqual({ covered: ['BR-002'], missing: ['BR-001'], notAsked: [], mismatched: [], total: 2 });
+    // QA review of 35b97d90c6e1: the expected result is the model's reading of
+    // the original, so the coverage line says so — as the per-case assessment does.
+    expect(ruleCoverageSentence(c)).toBe(
+      '1 of 2 business rules of the original have a traced case · the expected results are model-stated from the original, not verified · not covered: BR-001',
+    );
+    expect(ruleCoverageSentence(c)).not.toMatch(/with an expected result from the original/);
+  });
+
+  test('rules past the prompt limit were never asked for: not covered, and the line says they were not given to the model', () => {
+    const many = Array.from({ length: MAX_PROMPT_RULES + 3 }, (_, i) => ({ id: `BR-${String(i + 1).padStart(3, '0')}` }));
+    const past = many.slice(MAX_PROMPT_RULES).map((r) => r.id);
+    // A trace naming an unlisted rule does not make it covered: the model was not asked for it.
+    const cases = [...many.slice(0, MAX_PROMPT_RULES), { id: past[0] }].map((r, i) => withRuleTrace({ id: `TC_${i}`, ruleTrace: { ruleId: r.id, lines: ['10'], expectedFromOriginal: 'x' } }));
+    const c = ruleCoverage(many, cases, null);
+    expect(c.covered).toHaveLength(MAX_PROMPT_RULES);
+    expect(c.missing).toEqual([]);
+    expect(c.notAsked).toEqual(past);
+    expect(c.total).toBe(MAX_PROMPT_RULES + 3);
+    const sentence = ruleCoverageSentence(c);
+    expect(sentence).toContain(`${MAX_PROMPT_RULES} of ${MAX_PROMPT_RULES + 3} business rules`);
+    expect(sentence).toContain(`3 rules past the first ${MAX_PROMPT_RULES} were not given to the model, so not covered`);
+    // The prompt does not claim them either.
+    const prompt = ruleTracePromptSection(many.map((r) => ({ ...r, label: r.id, text: r.id, routine: null, ranges: [{ lineStart: 10, lineEnd: 10 }], quote: '', type: 'rule' as const })));
+    expect(prompt).toContain('(and 3 more rules, not listed');
+    expect(prompt).not.toContain(`${past[0]} (rule`);
   });
 
   test('a trace whose lines are not where the rule stands does not cover it and is reported', () => {
