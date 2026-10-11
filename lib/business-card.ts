@@ -37,7 +37,9 @@ import {
   humaniseField,
   plainContext,
   plainLabels,
+  ruleConditionText,
   ruleToSentence,
+  type RuleConditionText,
 } from './abap/plain-language';
 import { TABLE_TERMS_EN } from './abap/plain-glossary';
 import type { TableDependency } from './abap/table-dependencies';
@@ -62,6 +64,12 @@ export interface PlainWording {
   ruleSentence(rule: BusinessRule): string | null;
   /** The rule as a short phrase for the headline — "plant 1000". */
   rulePhrase(rule: BusinessRule): string | null;
+  /**
+   * The rule's condition in words without a length limit — a title and the
+   * whole condition (`ruleConditionText`). Null for a rule on a constant, which
+   * `rulePhrase` names, and where there is no wording at all.
+   */
+  ruleText?(rule: BusinessRule): RuleConditionText | null;
   /** The decision (a gateway node) as a question, and where each answer leads. */
   decision(nodeId: string): { question: string; outcomes: string[] } | null;
 }
@@ -71,6 +79,7 @@ export const NO_WORDING: PlainWording = {
   table: () => null,
   ruleSentence: () => null,
   rulePhrase: () => null,
+  ruleText: () => null,
   decision: () => null,
 };
 
@@ -110,7 +119,17 @@ export function plainWordingFor(source: string, skeleton: ProcessSkeleton): Plai
       const p = first(rule);
       if (constant) return meaningful(ruleToSentence({ constant }, ctx));
       if (!p) return null;
-      return meaningful(ruleToSentence({ condition: p.conditionText }, ctx));
+      // A condition too long for a label is still a sentence: the whole of it,
+      // in words, rather than the code (owner report 11.10.2026).
+      return meaningful(ruleToSentence({ condition: p.conditionText }, ctx))
+        ?? ruleConditionText(p.conditionText, ctx, p.lineStart).full;
+    },
+    ruleText: (rule) => {
+      const p = first(rule);
+      if (!p || constantOf(rule)) return null;
+      const text = ruleConditionText(conditionOf(rule, p.conditionText), ctx, p.lineStart);
+      // A bare value ("01", "K") is not a name: fewer than three letters is no wording.
+      return (text.title.match(/[A-Za-z]/g) ?? []).length >= 3 ? text : null;
     },
     rulePhrase: (rule) => {
       const constant = constantOf(rule);
@@ -140,6 +159,18 @@ export function plainWordingFor(source: string, skeleton: ProcessSkeleton): Plai
       return { question, outcomes: unique.every((o) => / → Done$/.test(o)) ? [] : unique };
     },
   };
+}
+
+/**
+ * The condition a rule stands for. A `WHEN` arm's rule is labelled
+ * `CASE gs_eban-knttp: 'K', 'F'` (`business-rule-set.ts`), and its condition
+ * text is only the values; as a condition it is the selector equal to one of them.
+ */
+function conditionOf(rule: BusinessRule, conditionText: string): string {
+  const when = /^CASE\s+(\S+):\s*(.+)$/.exec(rule.label);
+  if (!when) return conditionText;
+  const values = when[2].split(/,\s*/).filter(Boolean);
+  return values.map((v) => `${when[1]} = ${v}`).join(' OR ');
 }
 
 /* -------------------------------------------------------------------- model */

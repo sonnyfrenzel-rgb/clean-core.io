@@ -136,9 +136,20 @@ export const FIELD_TERMS_EN: Readonly<Record<string, PlainTerm>> = Object.freeze
   aedat: t('Change date'),
   dmbtr: { ...t('Amount in local currency', 'Amounts in local currency'), short: 'Local amount' },
   wrbtr: { ...t('Amount in document currency', 'Amounts in document currency'), short: 'Document amount' },
-  shkzg: t('Debit/credit indicator'),
+  shkzg: { ...t('Debit/credit indicator'), short: 'Debit/credit' },
 
   // --- further SAP standard fields seen in customer code -------------------
+  // Owner report 11.10.2026: the invoice reference of an FI line item (BSEG),
+  // after the short texts of data elements REBZG, REBZJ, REBZZ and KOART.
+  rebzg: t('Invoice reference'),
+  rebzj: { ...t('Fiscal year of the invoice reference', 'Fiscal years of the invoice reference'), short: 'Invoice fiscal year' },
+  rebzz: { ...t('Line item of the invoice reference', 'Line items of the invoice reference'), short: 'Invoice line item' },
+  koart: t('Account type'),
+  buzei: t('Line item'),
+  zuonr: t('Assignment number'),
+  kschl: t('Condition type'),
+  bstkd: { ...t('Customer purchase order number'), short: 'Customer PO number' },
+  knttp: { ...t('Account assignment category', 'Account assignment categories'), short: 'Account assignment' },
   frgkz: t('Release indicator'),
   frggr: t('Release group'),
   frgst: t('Release strategy', 'Release strategies'),
@@ -196,6 +207,20 @@ export const FIELD_TERMS_EN: Readonly<Record<string, PlainTerm>> = Object.freeze
   okcode: t('User command'),
   ok_code: t('User command'),
   fcode: t('Function code'),
+});
+
+/**
+ * The meaning of a fixed value of an SAP standard field, after the fixed
+ * values of its domain (ABAP Dictionary). Only fields whose values SAP defines
+ * once for every system are listed — a value a customer can configure (a
+ * document type, a posting key) is never named here, and a value not listed is
+ * shown as the code writes it. Keys: field as in `FIELD_TERMS_EN`, value upper case.
+ */
+export const FIELD_VALUE_TERMS_EN: Readonly<Record<string, Readonly<Record<string, string>>>> = Object.freeze({
+  // Domain SHKZG.
+  shkzg: Object.freeze({ S: 'debit', H: 'credit' }),
+  // Domain KOART.
+  koart: Object.freeze({ A: 'asset', D: 'customer', K: 'supplier', M: 'material', S: 'G/L account' }),
 });
 
 /** Database tables and read models → the business object behind them. */

@@ -87,14 +87,24 @@ export function editorRules(ruleSet: BusinessRuleSet, wording: PlainWording): Ed
     const raw = wording.rulePhrase(rule);
     const phrase = raw && (raw.match(/[A-Za-z]/g) ?? []).length >= 3 ? raw : null;
     const sentence = wording.ruleSentence(rule);
+    // A condition too long for a phrase still gets a name in words: the whole
+    // condition when it fits a line, else its gist, and the whole condition
+    // below it (owner report 11.10.2026: no rule title is the ABAP condition).
+    // One grammar for every rule on a condition, so a list does not mix a
+    // label's shortened words with a rule's whole ones; a rule on a constant
+    // keeps its phrase ("Plant 1000"). A condition the engine cannot read keeps
+    // a phrase it does have.
+    const read = wording.ruleText?.(rule) ?? null;
+    const text = read && (read.full !== null || !phrase) ? read : null;
     // Without a phrase the plain sentence is the name, and the code stands
     // beside it instead of the sentence a second time.
-    const title = phrase ? sentenceCase(phrase) : sentence ?? rule.label;
+    const title = text ? text.title : phrase ? sentenceCase(phrase) : sentence ?? rule.label;
+    const below = text ? text.full : phrase ? sentence : null;
     return {
       id: rule.id,
       title,
-      titleIsCode: !phrase && !sentence,
-      sentence: phrase && sentence !== title ? sentence : null,
+      titleIsCode: !phrase && !text && !sentence,
+      sentence: below && below !== title ? below : null,
       code: rule.label,
       anchors: [
         ...new Set(rule.sentences.flatMap((s) => s.anchors.map((a) => anchorLabel(a.lineStart, a.lineEnd)))),

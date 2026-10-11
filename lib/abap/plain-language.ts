@@ -3,6 +3,7 @@ import {
   ACRONYMS,
   EVENT_TERMS_EN,
   FIELD_TERMS_EN,
+  FIELD_VALUE_TERMS_EN,
   FUNCTION_TERMS_EN,
   ROUTINE_ABBREVIATIONS,
   STEM_ABBREVIATIONS,
@@ -827,6 +828,55 @@ interface Env {
   ctx: PlainContext;
   line?: number;
   short: boolean;
+  /**
+   * The wording of a business rule (`ruleConditionText`), not of a label: no
+   * length limit, a compound condition as a list, and `sy-subrc` named after
+   * the step that set it even where a label would say only "Failed".
+   */
+  rule?: boolean;
+}
+
+/**
+ * What a fixed value of an SAP standard field means (`FIELD_VALUE_TERMS_EN`):
+ * `ps_item-shkzg` and `'H'` → "credit". Null for any field or value not listed.
+ */
+function valueMeaning(left: string, value: string, ctx: PlainContext): string | null {
+  const lower = cleanIdentifier(left);
+  const selection = ctx.selections.get(lower);
+  const field = selection?.ref ? (selection.ref.split('-').pop() ?? '') : stemOf(lower);
+  const values = FIELD_VALUE_TERMS_EN[field.toLowerCase()];
+  return values ? (values[value.trim().toUpperCase()] ?? null) : null;
+}
+
+/** `ls_ref-kunnr` → "reference": the structure a component belongs to, in words; null for a plain variable. */
+function ownerWord(operand: string): string | null {
+  const parts = cleanIdentifier(operand).split(/->|=>|-|~/).filter(Boolean);
+  if (parts.length < 2) return null;
+  const owner = parts[parts.length - 2];
+  // A FORM parameter's `ps_`/`pt_`/`pv_` is a prefix too, here: `ps_item` is "item".
+  const stem = owner.replace(IDENTIFIER_PREFIX, '').replace(/^p[stvo]_/, '') || owner;
+  return lcFirst(humaniseStem(stem));
+}
+
+/** `sy-subrc` in a business rule: what the step before it did, in a sentence. */
+function ruleSubrcPhrase(setter: Setter, success: boolean): string {
+  switch (setter.kind) {
+    case 'select': {
+      if (tableTermOf(setter.table)) return subrcPhrase(setter, success, false);
+      return success ? 'The previous read found an entry' : 'The previous read found nothing';
+    }
+    case 'read-table':
+      return success ? 'The previous read found an entry' : 'The previous read found nothing';
+    case 'authority': return success ? 'The authorization check passed' : 'The authorization check failed';
+    case 'call': return success ? 'The previous call succeeded' : 'The previous call failed';
+    case 'open': return success ? 'The file was opened' : 'The file could not be opened';
+    case 'dataset': return success ? 'A line of the file was read' : 'The end of the file was reached';
+    case 'write': return success ? 'The previous database change succeeded' : 'The previous database change failed';
+    case 'loop': return success ? 'The previous loop found entries' : 'The previous loop found no entries';
+    case 'assign': return success ? 'The assignment succeeded' : 'The assignment failed';
+    case 'find': return success ? 'The search found a match' : 'The search found nothing';
+    default: return success ? 'The previous step succeeded' : 'The previous step failed';
+  }
 }
 
 interface AtomText {
@@ -871,6 +921,18 @@ function valueText(operand: string, env: Env): { text: string; literal: boolean 
 /** An operand that may be arithmetic or a call, as words. */
 function humaniseOperand(operand: string, ctx: PlainContext, short = false): string {
   const text = operand.trim();
+  // Offset and length — `gs_konv-kschl(1)`, `lv_text+2(3)` — are a part of
+  // the field, not a call.
+  const part = /^([\w<>~/-]+?)(?:\+(\d+))?\((\d+)\)$/.exec(text);
+  if (part) {
+    const field = lcFirst(fieldWord(part[1], ctx, short));
+    const offset = Number(part[2] ?? 0);
+    const length = Number(part[3]);
+    if (offset === 0) return length === 1 ? `First character of ${field}` : `First ${length} characters of ${field}`;
+    return length === 1
+      ? `Character ${offset + 1} of ${field}`
+      : `Characters ${offset + 1} to ${offset + length} of ${field}`;
+  }
   if (/\(/.test(text)) {
     const fn = /^([\w~>=-]+)\(/.exec(text)?.[1] ?? '';
     if (/^line_exists$/i.test(fn)) return 'Entry exists';
@@ -909,11 +971,13 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
       success = false;
     }
     if (success !== null) {
-      const phrase = subrcPhrase(setterBefore(env.ctx, env.line), success, env.short);
+      const setter = setterBefore(env.ctx, env.line);
+      const phrase = env.rule ? ruleSubrcPhrase(setter, success) : subrcPhrase(setter, success, env.short);
       return { key, subject: phrase, full: phrase, pred: lcFirst(phrase), arm: phrase };
     }
     const value = cleanIdentifier(c.right);
-    const phrase = c.op === '=' ? `Return code ${value}` : `Return code ${opWords(c.op, value)}`;
+    const code = env.rule ? 'Return code of the previous step' : 'Return code';
+    const phrase = c.op === '=' ? `${code} ${value}` : `${code} ${opWords(c.op, value)}`;
     return { key, subject: 'Return code', full: phrase, pred: lcFirst(phrase), arm: phrase };
   }
 
@@ -963,6 +1027,11 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
         inverted: empty,
       };
     }
+    if (env.rule) {
+      // In a rule's list "is empty"/"is filled" reads where "No …" would not.
+      const pred = empty ? 'is empty' : 'is filled';
+      return { key, subject, full: `${subject} ${pred}`, pred, arm: sentenceCase(pred), sharedPred: pred };
+    }
     return {
       key,
       subject,
@@ -1003,6 +1072,13 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
   }
 
   const value = valueText(c.right, env);
+  // A fixed value SAP defines for the field ('H' of the debit/credit
+  // indicator) carries its meaning; the value itself stays beside it.
+  // A label too long for it drops the meaning before it drops the condition.
+  const meaning = value.literal && (env.rule || !env.short) && /^['`]/.test(c.right.trim())
+    ? valueMeaning(left, value.text, env.ctx)
+    : null;
+  if (meaning) value.text = `${value.text} (${meaning})`;
   if (c.op === '=' && value.literal) {
     if (value.text === '0') {
       return { key, subject, full: `${subject} zero`, pred: 'zero', arm: 'Zero' };
@@ -1012,6 +1088,18 @@ function atomText(c: Extract<Cond, { k: 'cmp' }>, env: Env): AtomText {
   if (c.op === '<>' && value.literal) {
     const pred = value.text === '0' ? 'not zero' : `not ${value.text}`;
     return { key, subject, full: `${subject} ${pred}`, pred, arm: sentenceCase(pred), value: value.text };
+  }
+  // The same field on both sides — `ls_ref-kunnr <> ps_item-kunnr` — is
+  // told apart by the structures that hold it, not read as "customer number
+  // differs from customer number".
+  if (!value.literal && value.text.toLowerCase() === subject.toLowerCase()) {
+    const ownerLeft = ownerWord(left);
+    const ownerRight = ownerWord(c.right);
+    if (ownerLeft && ownerRight && ownerLeft !== ownerRight) {
+      const pred = opWords(c.op, `that of the ${ownerRight}`, false);
+      const named = `${subject} of the ${ownerLeft}`;
+      return { key, subject: named, full: `${named} ${pred}`, pred, arm: sentenceCase(pred) };
+    }
   }
   const pred = env.short && (c.op === 'CP' || c.op === 'NP') && value.literal
     ? `${c.op === 'NP' ? 'not ' : ''}${value.text}`
@@ -1031,12 +1119,19 @@ function opWords(op: CmpOp, value: string, literal = true): string {
     case 'NP': return `does not match ${value}`;
     case 'CS': return `contains ${value}`;
     case 'NS': return `does not contain ${value}`;
-    case 'CO': return `only contains ${value}`;
-    case 'CN': return `not only ${value}`;
+    // `CO '0123456789'` is the ABAP idiom for "digits only"; any other set is
+    // named as the characters it lists.
+    case 'CO': return literal && isDigitSet(value) ? 'contains only digits' : `only contains ${value}`;
+    case 'CN': return literal && isDigitSet(value) ? 'contains non-digits' : `contains characters other than ${value}`;
     case 'CA': return `contains any of ${value}`;
     case 'NA': return `contains none of ${value}`;
     default: return value;
   }
+}
+
+/** The ten digits and nothing else, in any order. A set with a blank allows blanks too and is not "digits". */
+function isDigitSet(value: string): boolean {
+  return /^\d{10}$/.test(value) && new Set(value).size === 10;
 }
 
 function joinList(items: string[], joiner: string): string {
@@ -1082,11 +1177,88 @@ function render(c: Cond, env: Env): Rendered {
       full = `${joinList(subjects, joiner)} ${atoms[0].sharedPred}`;
     }
   }
+  if (full === null && env.rule) full = ruleList(flat, joiner, env);
   if (full === null) {
     const parts = flat.map((p) => render(p, env).full);
     full = parts.map((p, i) => (i === 0 ? p : lcFirst(p))).join(` ${joiner} `);
   }
   return { full, question: `${full}?`, inverted: false };
+}
+
+/**
+ * The parts of a compound condition as one readable list, for a business rule:
+ * "A, b and c". A part on the same field as the one before it keeps only its
+ * predicate ("invoice reference given and not V"); a group inside the list is
+ * marked as one ("either … or …", "both … and …").
+ */
+function ruleList(flat: Cond[], joiner: 'and' | 'or', env: Env): string {
+  const items: string[] = [];
+  let previousKey: string | null = null;
+  for (const part of flat) {
+    if (part.k === 'cmp') {
+      const atom = atomText(part, env);
+      const same = previousKey !== null && atom.key === previousKey && atom.key !== 'sy-subrc';
+      items.push(same ? atom.pred : items.length === 0 ? atom.full : lcFirst(atom.full));
+      previousKey = atom.key;
+      continue;
+    }
+    const inner = lcFirst(render(part, env).full);
+    items.push(`${part.k === 'or' ? 'either' : 'both'} ${inner}`);
+    previousKey = null;
+  }
+  return sentenceCase(joinList(items, joiner));
+}
+
+/** A business rule's title is a line, not a label: longer than `MAX_LABEL`, still one line. */
+export const MAX_RULE_TITLE = 80;
+
+/** The wording of a business rule's condition (`ruleConditionText`). */
+export interface RuleConditionText {
+  /** A short name for the rule: the whole condition when it fits a line, else its first part and how many follow. */
+  title: string;
+  /** The whole condition in words, or null when it could not be read. */
+  full: string | null;
+}
+
+/** Said in place of a condition the engine cannot read — in words, never as the code. */
+export const UNREAD_CONDITION = 'A condition the engine could not put into words';
+
+/**
+ * A business rule's condition in words — deterministic, no model. Unlike a
+ * process-map label it has no length limit: every part of a compound
+ * condition is named, AND and OR as a list. `line` is the line of the
+ * condition, so `sy-subrc` is named after the statement that set it.
+ *
+ * `ps_item-shkzg = 'H' AND ps_item-rebzg IS NOT INITIAL AND ps_item-rebzg <> 'V'`
+ * → "Debit/credit indicator H (credit), invoice reference given and not V".
+ */
+export function ruleConditionText(condition: string, ctx?: PlainContext, line?: number): RuleConditionText {
+  try {
+    const c = contextOf(ctx);
+    const parsed = parseCondition(condition);
+    if (!parsed) return { title: UNREAD_CONDITION, full: null };
+    const full = sentenceCase(render(parsed, { ctx: c, line, short: false, rule: true }).full);
+    if (full.length <= MAX_RULE_TITLE) return { title: full, full };
+    const short = sentenceCase(render(parsed, { ctx: c, line, short: true, rule: true }).full);
+    if (short.length <= MAX_RULE_TITLE) return { title: short, full };
+    return { title: gistOf(parsed, { ctx: c, line, short: true, rule: true }) ?? fit(short, MAX_RULE_TITLE), full };
+  } catch {
+    return { title: UNREAD_CONDITION, full: null };
+  }
+}
+
+/** "Invoice reference contains non-digits, or 2 more conditions" — a compound condition too long for a title. */
+function gistOf(c: Cond, env: Env): string | null {
+  if (c.k === 'cmp') return null;
+  const flat: Cond[] = [];
+  for (const part of c.parts) {
+    if (part.k === c.k) flat.push(...part.parts);
+    else flat.push(part);
+  }
+  const first = sentenceCase(render(flat[0], env).full);
+  const more = flat.length - 1;
+  const gist = `${first}, ${c.k} ${more} more condition${more === 1 ? '' : 's'}`;
+  return gist.length <= MAX_RULE_TITLE ? gist : null;
 }
 
 /** The condition humanised token by token — the fallback for what does not parse. */
