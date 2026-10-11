@@ -118,6 +118,13 @@ export interface Project {
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
   cleanCoreScore?: number;
+  /**
+   * The engine version of the active run (`analyzerVersion`, inside its
+   * signature), hydrated from the run by `lib/project-loader.ts`. A screen that
+   * recomputes the signed score uses it to pick the rule the run was scored by
+   * (`lib/score-rule.ts`).
+   */
+  analyzerVersion?: string;
   highComplianceCharged?: boolean;
   charged?: boolean;
   transformationBypass?: boolean;

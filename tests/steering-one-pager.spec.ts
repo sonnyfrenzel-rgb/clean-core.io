@@ -32,6 +32,7 @@ import { ECONOMICS_RECORD_FORMAT, ECONOMICS_START_INPUTS, pricedOptions, seriali
 import { costAssumptionsRevision, type CostAssumptions } from '../lib/cost-assumptions';
 import { initialCostAssumptions } from '../components/tco/OptionComparison';
 import { signInViaLanding } from './helpers/sign-in';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 8.6 — the steering one-pager.
@@ -130,7 +131,7 @@ const CONTRACT_SOURCE = 'REPORT z_mm_report.\nDATA: lv_c TYPE i.\nSELECT COUNT(*
 
 function decisionFixture(): ProjectDecision {
   const evidence = buildAbapEvidence(CONTRACT_SOURCE, 'Z_TEST.abap', 'public');
-  const route = routeExtensibility(evidence, 'public');
+  const route = routeExtensibility(evidence, 'public', APP_VERSION);
   const contract = buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',

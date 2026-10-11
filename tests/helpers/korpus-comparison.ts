@@ -43,6 +43,7 @@ import {
   type CloudReadinessGrade,
   type ObjectUse,
 } from '../../lib/abap/abcd-classification';
+import { APP_VERSION } from '../../lib/version';
 
 /**
  * The bundle. `KORPUS_ROOT` can be overridden so the same comparison can run
@@ -424,7 +425,7 @@ export function readWithEngine(
     for (const finding of evidence.findings) {
       if (finding.objectName) objectNames.add(finding.objectName.toUpperCase());
     }
-    routeCount += routeExtensibility(evidence, deployment).checkpoints.length;
+    routeCount += routeExtensibility(evidence, deployment, APP_VERSION).checkpoints.length;
     const built = buildProcessSkeleton(source.code);
     const skeleton = mutate ? mutate(built, source.name) : built;
     return { file: source.name, evidence, facts, skeleton, statements: readStatements(source.code), tables };

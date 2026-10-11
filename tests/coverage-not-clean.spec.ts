@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Code nobody assessed is not code that came back clean.
@@ -52,7 +53,7 @@ const CLEAN = [
   '  ENDLOOP.',
 ].join('\n');
 
-const routeFor = (code: string) => routeExtensibility(buildAbapEvidence(code, 'spec.abap'), 'public');
+const routeFor = (code: string) => routeExtensibility(buildAbapEvidence(code, 'spec.abap'), 'public', APP_VERSION);
 
 test('an unassessed construct is reported as unassessed', () => {
   const evidence = buildAbapEvidence(UNASSESSED, 'unassessed.abap');

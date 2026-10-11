@@ -1,5 +1,6 @@
 import type { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
+import { scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 
 export interface DecisionCheckpoint {
@@ -152,9 +153,17 @@ export function routeDrivers(
   return ordered.filter((d): d is RouteDriver => d !== null);
 }
 
+/**
+ * `engineVersion` is the version the run is (or was) made with: `APP_VERSION`
+ * for a new run, the run's own `analyzerVersion` when a signed run is
+ * recomputed. It picks the score rule (`lib/score-rule.ts`) — a run signed
+ * before 3.0.9 is scored by the rule it was signed with. Null is read as such
+ * a run. There is no default, so no caller picks a rule silently.
+ */
 export function routeExtensibility(
   evidence: AbapEvidenceReport,
-  deploymentModel: 'public' | 'private'
+  deploymentModel: 'public' | 'private',
+  engineVersion: string | null,
 ): ExtensibilityRouteReport {
   const findings = evidence.findings;
   /**
@@ -207,7 +216,11 @@ export function routeExtensibility(
   // the score reads it too: one table, so the explanation cannot drift from the
   // number it explains. The floor of 5 is applied there as well — even the
   // worst legacy code retains some reusable structure.
-  score = scoreFromFindings(findings);
+  // In Private Edition from 3.0.9 a write to the program's own Z/Y tables costs
+  // nothing — the rationale below calls it no clean core violation, and the
+  // score now agrees (owner decision 11.10.2026, QA 3a31270a65a0).
+  const scoreRule = scoreRuleFor(deploymentModel, engineVersion);
+  score = scoreFromFindings(findings, scoreRule);
 
   // 2. Determine target route
   //

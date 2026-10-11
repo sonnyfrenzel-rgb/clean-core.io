@@ -9,6 +9,7 @@ import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { buildAnalysisPrompt } from '../lib/analysis-prompt';
 import fs from 'fs';
 import path from 'path';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * A narrative sentence either points at code or admits it does not.
@@ -201,7 +202,7 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     const anchorShaped = /\[\s*(?:[A-Z]{1,4}-[A-Za-z0-9_-]+|L\s*\d+(?:\s*[-–]\s*\d+)?)\s*\]/g;
     const report = buildAbapEvidence(PROGRAM, 'ZCREDIT_CHECK', 'private');
     const lines = PROGRAM.split('\n').length;
-    const prompt = buildAnalysisPrompt({ targetDeployment: 'private', evidenceReport: report, routeReport: routeExtensibility(report, 'private'), code: PROGRAM });
+    const prompt = buildAnalysisPrompt({ targetDeployment: 'private', evidenceReport: report, routeReport: routeExtensibility(report, 'private', APP_VERSION), code: PROGRAM });
     expect(prompt).not.toMatch(/\[F-id\]|F-\d{3}/);
     const offered = prompt.match(anchorShaped) || [];
     expect(offered.length, 'the prompt must show at least one citation example').toBeGreaterThan(0);
@@ -210,7 +211,7 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     }
 
     const empty = { ...report, findings: [] };
-    const emptyPrompt = buildAnalysisPrompt({ targetDeployment: 'public', evidenceReport: empty, routeReport: routeExtensibility(empty, 'public'), code: PROGRAM });
+    const emptyPrompt = buildAnalysisPrompt({ targetDeployment: 'public', evidenceReport: empty, routeReport: routeExtensibility(empty, 'public', APP_VERSION), code: PROGRAM });
     for (const example of emptyPrompt.match(anchorShaped) || []) {
       expect(example, 'a report without findings has no finding id to offer').toMatch(/^\[\s*L/);
       expect(anchorNarrative(`Example ${example}.`, [], lines).sentences[0].status, example).toBe('anchored');

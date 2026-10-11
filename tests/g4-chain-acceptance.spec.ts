@@ -72,6 +72,7 @@ import { routeExtensibility } from '../lib/abap/extensibility-router';
 import type { UsageReport } from '../lib/abap/usage-model';
 import type { ProjectDecision } from '../lib/project-decision';
 import type { Project } from '../lib/types';
+import { APP_VERSION } from '../lib/version';
 
 /* ------------------------------------------------------------ the corpus */
 
@@ -951,7 +952,7 @@ test.describe('G4 path 3 — retirement (CC-047: measured zero over 13 months, R
   /** The quadrant the Analyze stage's usage matrix computes (`UsageRiskMatrix` → `joinUsageWithEvidence`) from the stored import. */
   async function quadrant() {
     const { project, run } = await stored(projectId);
-    const route = routeExtensibility(buildAbapEvidence(source, 'source.abap', 'private'), 'private');
+    const route = routeExtensibility(buildAbapEvidence(source, 'source.abap', 'private'), 'private', APP_VERSION);
     const findings = (run?.evidenceReport ?? []) as Parameters<typeof joinUsageWithEvidence>[1]['findings'];
     const rows = joinUsageWithEvidence(project.usageReport as UsageReport, { findings }, route, () => false);
     return rows.find((r) => r.objectName === 'ZCC_REF_047')?.quadrant;

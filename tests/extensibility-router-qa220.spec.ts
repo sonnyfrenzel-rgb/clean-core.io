@@ -12,9 +12,10 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { APP_VERSION } from '../lib/version';
 
 const route = (code: string, deployment: 'public' | 'private' = 'private') =>
-  routeExtensibility(buildAbapEvidence(code, 'zcc_qa220.abap', deployment), deployment);
+  routeExtensibility(buildAbapEvidence(code, 'zcc_qa220.abap', deployment), deployment, APP_VERSION);
 
 const checkpoint = (report: ReturnType<typeof route>, name: string) =>
   report.checkpoints.find((c) => c.checkpointName.includes(name))!;

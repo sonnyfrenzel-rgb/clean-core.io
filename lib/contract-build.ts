@@ -1,6 +1,7 @@
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
+import { signedEngineVersionOf } from '@/lib/score-rule';
 import {
   buildArchitectureContract,
   targetRouteOf,
@@ -46,7 +47,9 @@ export interface ContractProjectState {
   s4Deployment?: unknown;
   /** The owner's declared target (release …) — Admin-written by `/api/runs/create`. */
   assessmentTarget?: unknown;
-  auditMetadata?: { inputFingerprint?: { fileName?: unknown } } | undefined;
+  auditMetadata?: { inputFingerprint?: { fileName?: unknown }; modelCard?: { engineVersion?: unknown } } | undefined;
+  /** The engine version of the active run, when the state is a hydrated project. */
+  analyzerVersion?: unknown;
   /** The architect's decision — server-only (`lib/project-commands.ts`). */
   targetArchitecture?: unknown;
   /** The reason the command route refuses to omit when the decision departs. */
@@ -136,7 +139,10 @@ function routeOfProject(state: ContractProjectState) {
   // so an unbound target cannot produce a *stronger* recommendation than a
   // bound one. It changes nothing downstream: with no `target:s4-deployment`
   // in the manifest the contract is blocked and nothing is generated anyway.
-  const route = routeExtensibility(evidence, deployment || 'private');
+  // The signed run's engine version picks the score rule; the contract reads
+  // only the route, which no score rule changes, but no caller picks a rule
+  // silently (lib/score-rule.ts).
+  const route = routeExtensibility(evidence, deployment || 'private', signedEngineVersionOf(state));
   return { source, deployment, evidence, route, recommended: targetRouteOf(route) };
 }
 

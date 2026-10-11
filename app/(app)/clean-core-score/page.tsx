@@ -14,6 +14,7 @@ import {
   SCORE_BANDS,
   SCORE_BANDS_SOURCE,
   SCORE_DEDUCTIONS,
+  SCORE_EDITION_RULE,
   SCORE_FLOOR,
   SCORE_NATURE,
   UNASSESSED_POINTS_CAP,
@@ -417,7 +418,12 @@ export default function CleanCoreScorePage() {
                 rows={SCORE_DEDUCTIONS.map((rule) => ({
                   key: rule.kind,
                   cells: {
-                    kind: <span className="font-semibold text-cc-ink">{rule.label}</span>,
+                    kind: (
+                      <span className="font-semibold text-cc-ink">
+                        {rule.label}
+                        {rule.kind === 'custom-table-write' ? ' — own Z/Y tables cost nothing in Private Edition' : ''}
+                      </span>
+                    ),
                     first: `−${rule.first}`,
                     more: `−${rule.additional}`,
                     cap: `−${rule.cap}`,
@@ -425,6 +431,9 @@ export default function CleanCoreScorePage() {
                 }))}
               />
             </div>
+            <p className={BODY} data-score-edition-rule="">
+              {SCORE_EDITION_RULE}
+            </p>
           </section>
 
           <section className="space-y-4">

@@ -50,6 +50,7 @@ import {
   RULE_UNMAPPED_STATE,
   type LevelGrader,
 } from '../lib/abap/level-rule-version';
+import { APP_VERSION } from '../lib/version';
 
 const evidence = (code: string, deployment: 'public' | 'private' = 'private') =>
   buildAbapEvidence(code, 'zcc_guard.abap', deployment);
@@ -58,7 +59,7 @@ const kinds = (code: string, deployment: 'public' | 'private' = 'private') =>
   evidence(code, deployment).findings.map((f) => f.kind);
 
 const route = (code: string, deployment: 'public' | 'private' = 'private') =>
-  routeExtensibility(evidence(code, deployment), deployment);
+  routeExtensibility(evidence(code, deployment), deployment, APP_VERSION);
 
 const architecture = (code: string) =>
   recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code)).architecture;
@@ -470,8 +471,8 @@ test.describe('an incomplete reading never raises the score', () => {
       ...report,
       coverage: { ...report.coverage, complete: true, gaps: [], unassessed: [] },
     };
-    const partial = routeExtensibility(report, 'private').cleanCoreScore;
-    const complete = routeExtensibility(asIfComplete, 'private').cleanCoreScore;
+    const partial = routeExtensibility(report, 'private', APP_VERSION).cleanCoreScore;
+    const complete = routeExtensibility(asIfComplete, 'private', APP_VERSION).cleanCoreScore;
 
     expect(partial, `knowing less about the file raised its score from ${complete} to ${partial}`).toBeLessThanOrEqual(
       complete,
@@ -484,7 +485,7 @@ test.describe('an incomplete reading never raises the score', () => {
       ['REPORT zcc_quiet.', 'OPEN DATASET lv_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.'].join('\n'),
     );
     expect(quiet.coverage.complete).toBe(false);
-    expect(routeExtensibility(quiet, 'private').cleanCoreScore).toBeLessThan(100);
+    expect(routeExtensibility(quiet, 'private', APP_VERSION).cleanCoreScore).toBeLessThan(100);
   });
 });
 

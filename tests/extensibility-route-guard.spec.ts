@@ -18,6 +18,7 @@ import { test, expect } from '@playwright/test';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
+import { APP_VERSION } from '../lib/version';
 
 /** A program whose only notable act is writing to its own Z-table. */
 const CUSTOM_WRITE_ONLY = [
@@ -29,7 +30,7 @@ const CUSTOM_WRITE_ONLY = [
 ].join('\n');
 
 function route(code: string, deployment: 'public' | 'private') {
-  return routeExtensibility(buildAbapEvidence(code, 'z_custom_persist.abap', deployment), deployment);
+  return routeExtensibility(buildAbapEvidence(code, 'z_custom_persist.abap', deployment), deployment, APP_VERSION);
 }
 
 test.describe('custom persistence is judged by deployment, not by the construct', () => {

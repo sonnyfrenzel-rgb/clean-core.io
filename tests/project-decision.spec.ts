@@ -41,6 +41,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { evidenceDigest } from '../lib/run-evidence-digest';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 8.4 — *"Decision: binds need, option, cost revision and contract;
@@ -66,7 +67,7 @@ WRITE lv_c.
 
 function contractFixture() {
   const evidence = buildAbapEvidence(SOURCE, 'Z_TEST.abap', 'public');
-  const route = routeExtensibility(evidence, 'public');
+  const route = routeExtensibility(evidence, 'public', APP_VERSION);
   return buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',

@@ -19,6 +19,7 @@ import type { ProjectDecision } from '../lib/project-decision';
 import type { StandardFit } from '../lib/standard-fit';
 import type { Project } from '../lib/types';
 import { steeringOnePager, steeringPrintTitle, STEERING_RISKS_MAX, type SteeringSource } from '../lib/steering-one-pager';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * The steering one-pager on paper — owner, 10.10.2026: *"In print the
@@ -63,7 +64,7 @@ const run = (): RunHistoryEntry => {
 function decisionFixture(): ProjectDecision {
   const src = 'REPORT z_mm_report.\nDATA: lv_c TYPE i.\nSELECT COUNT(*) FROM ekpo INTO lv_c.\nWRITE lv_c.\n';
   const evidence = buildAbapEvidence(src, 'Z_TEST.abap', 'public');
-  const route = routeExtensibility(evidence, 'public');
+  const route = routeExtensibility(evidence, 'public', APP_VERSION);
   const contract = buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',

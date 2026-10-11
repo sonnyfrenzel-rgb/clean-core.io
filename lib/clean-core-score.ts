@@ -22,7 +22,9 @@
  *   - 91–100: each of the heavy kinds (modification, enhancement, direct write
  *     to an SAP standard table, write to a custom table, batch input, native
  *     SQL) costs at least 10 points on its first occurrence, so none of them
- *     can be in what was read.
+ *     can be in what was read — except, in Private Edition from 3.0.9, a write
+ *     to the program's own Z/Y tables, which costs nothing (the edition rule
+ *     below).
  *   - 81–90: a modification of SAP code costs 30 and a direct write to an SAP
  *     standard table 20 on their own, so neither can be in what was read.
  *   - 60–80: 20 to 40 points were deducted — what one direct write to an SAP
@@ -35,8 +37,22 @@
  * A higher score is better. It is a grade for one piece of code, not a
  * compliance percentage, and not an SAP figure.
  *
+ * **The edition rule** (owner decision 11.10.2026, 3.0.9): in Private Edition a
+ * write to the program's own Z/Y tables costs nothing — it is on-stack
+ * developer extensibility, not a clean core violation. In Public Cloud it keeps
+ * its 12 points, and so does a write to a namespaced `/NS/` table in either
+ * edition. Which rule a run was scored by follows from its deployment and its
+ * engine version (`lib/score-rule.ts`): a run signed before 3.0.9 keeps the old
+ * rule, so every caller names the rule — there is no default. The band
+ * sentences above about "write to a custom table" therefore hold for Public
+ * Cloud and for namespaced tables; in Private Edition a score of 91–100 can
+ * include writes to the program's own Z/Y tables.
+ *
  * Pure: no React, no catalog, no I/O.
  */
+
+import { isOwnTableName, type ScoreRule } from './score-rule';
+export type { ScoreRule } from './score-rule';
 
 /** The kinds of finding that cost points, with the table's three numbers. */
 export interface ScoreDeductionRule {
@@ -82,16 +98,25 @@ export function deductionFor(rule: ScoreDeductionRule, count: number): number {
   return count <= 0 ? 0 : Math.min(rule.cap, rule.first + (count - 1) * rule.additional);
 }
 
-/** The minimum a finding needs to be counted: its kind and, for an enhancement, its object type. */
+/**
+ * The minimum a finding needs to be counted: its kind, for an enhancement its
+ * object type, and for a custom-table write the table's name.
+ */
 export interface ScoredFinding {
   kind: string;
   objectType?: string;
+  objectName?: string;
 }
 
-/** How many findings of a rule's kind count against the score. */
-export function countFor(rule: ScoreDeductionRule, findings: readonly ScoredFinding[]): number {
+/** A write to the program's own Z/Y table that the score rule lets go free. */
+export function isFreeUnder(scoreRule: ScoreRule, f: ScoredFinding): boolean {
+  return scoreRule === 'own-custom-writes-free' && f.kind === 'custom-table-write' && isOwnTableName(f.objectName);
+}
+
+/** How many findings of a rule's kind count against the score, under the score rule. */
+export function countFor(rule: ScoreDeductionRule, findings: readonly ScoredFinding[], scoreRule: ScoreRule): number {
   if (rule.kind === 'enhancement') return findings.filter((f) => f.kind === 'enhancement' && f.objectType !== 'BAdI').length;
-  return findings.filter((f) => f.kind === rule.kind).length;
+  return findings.filter((f) => f.kind === rule.kind && !isFreeUnder(scoreRule, f)).length;
 }
 
 export interface ScoreBreakdownLine {
@@ -109,6 +134,8 @@ export interface ScoreBreakdown {
   unassessedPoints: number;
   /** The floor of 5 lifted the result. */
   floored: boolean;
+  /** Writes to the program's own Z/Y tables that cost nothing under this rule (Private Edition from 3.0.9). */
+  freeOwnTableWrites: number;
   /** The score this breakdown arrives at — the router's formula, step by step. */
   score: number;
 }
@@ -118,11 +145,11 @@ export interface ScoreBreakdown {
  * calls `scoreFromFindings` below, so this and the signed score cannot differ
  * for the same findings and coverage.
  */
-export function scoreBreakdown(findings: readonly ScoredFinding[], unassessedKinds = 0): ScoreBreakdown {
+export function scoreBreakdown(findings: readonly ScoredFinding[], unassessedKinds: number, scoreRule: ScoreRule): ScoreBreakdown {
   const lines: ScoreBreakdownLine[] = [];
   let deducted = 0;
   for (const rule of SCORE_DEDUCTIONS) {
-    const count = countFor(rule, findings);
+    const count = countFor(rule, findings, scoreRule);
     const points = deductionFor(rule, count);
     deducted += points;
     if (points > 0) lines.push({ kind: rule.kind, label: rule.label, count, points });
@@ -137,13 +164,14 @@ export function scoreBreakdown(findings: readonly ScoredFinding[], unassessedKin
     unassessedKinds: kinds,
     unassessedPoints,
     floored: raw < SCORE_FLOOR || (kinds > 0 && base - unassessedPoints < SCORE_FLOOR),
+    freeOwnTableWrites: findings.filter((f) => isFreeUnder(scoreRule, f)).length,
     score,
   };
 }
 
 /** The score before the coverage step — what the router calls `score`. */
-export function scoreFromFindings(findings: readonly ScoredFinding[]): number {
-  return scoreBreakdown(findings, 0).score;
+export function scoreFromFindings(findings: readonly ScoredFinding[], scoreRule: ScoreRule): number {
+  return scoreBreakdown(findings, 0, scoreRule).score;
 }
 
 /** The coverage step — what the router applies when the reading was incomplete. */
@@ -202,8 +230,10 @@ export const SCORE_BANDS: readonly ScoreBand[] = Object.freeze([
     from: 91,
     to: 100,
     label: 'Close to clean core',
-    meaning: 'Nothing heavy in what was read — at most lighter constructs such as reads of SAP tables, classic screens or remote calls.',
-    because: 'Every heavy kind of construct costs at least 10 points on its first occurrence.',
+    meaning:
+      "Nothing heavy in what was read — at most lighter constructs such as reads of SAP tables, classic screens or remote calls, and in Private Edition writes to the program's own Z/Y tables.",
+    because:
+      "Every heavy kind of construct costs at least 10 points on its first occurrence — except a write to the program's own Z/Y tables in Private Edition, which costs nothing.",
   },
 ]);
 
@@ -246,12 +276,20 @@ export function scoreBandsProse(): string {
     .join(' ');
 }
 
+/**
+ * The edition rule in one sentence — the same wherever the deduction table is
+ * explained (owner decision 11.10.2026, `lib/score-rule.ts`).
+ */
+export const SCORE_EDITION_RULE =
+  "In Private Edition a write to the program's own Z/Y tables costs nothing — it is on-stack developer extensibility, not a clean core violation; in Public Cloud, and for a namespaced /NS/ table in either edition, it costs the points in the table. Runs signed before engine 3.0.9 keep the score they were signed with.";
+
 /** The deduction table in prose — for a text that explains how the score is computed. */
 export function scoreDeductionsProse(): string {
   const kinds = SCORE_DEDUCTIONS.map((r) => `${r.label.toLowerCase()} ${r.first} (at most ${r.cap})`).join(', ');
   return (
     `The score starts at 100 and takes points off per kind of construct found — the first finding of a kind costs most, each further one less, every kind is capped: ${kinds}. ` +
-    `It never goes below ${SCORE_FLOOR}, and each kind of construct the engine could not assess takes ${UNASSESSED_POINTS_PER_KIND} more (at most ${UNASSESSED_POINTS_CAP}).`
+    `It never goes below ${SCORE_FLOOR}, and each kind of construct the engine could not assess takes ${UNASSESSED_POINTS_PER_KIND} more (at most ${UNASSESSED_POINTS_CAP}). ` +
+    SCORE_EDITION_RULE
   );
 }
 

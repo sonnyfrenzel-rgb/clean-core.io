@@ -6,6 +6,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { findingsWorklist } from '@/lib/findings-worklist';
 import { AnalysisRunCancelled } from './analysis-run-basics';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
+import { APP_VERSION } from '@/lib/version';
 import {
   extractCodeInventory,
   extractDataCoupling,
@@ -159,7 +160,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
   //    the signature is over.
   move('evidence', 'running');
   const evidenceReport = buildAbapEvidence(legacyCode, fileName, deployment);
-  const routeReport = routeExtensibility(evidenceReport, deployment);
+  const routeReport = routeExtensibility(evidenceReport, deployment, APP_VERSION);
   const findingCount = evidenceReport.findings.length;
   // "Findings" as Analyze counts them, one per pattern and object; the
   // engine's entries are places in the code (owner decision 02.10.2026).

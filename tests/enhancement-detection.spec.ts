@@ -14,6 +14,7 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { APP_VERSION } from '../lib/version';
 
 const kinds = (code: string) => buildAbapEvidence(code, 'ZTEST', 'private').findings;
 const of = (code: string, kind: string) => kinds(code).filter((f) => f.kind === kind);
@@ -106,14 +107,14 @@ test.describe('routing and score react to the new evidence', () => {
       'ZMOD',
       'private',
     );
-    const route = routeExtensibility(evidence, 'private');
+    const route = routeExtensibility(evidence, 'private', APP_VERSION);
     expect(route.rationale).toContain('core modification');
     expect(route.cleanCoreScore).toBeLessThan(75);
   });
 
   test('BAdI usage alone does not tank the score', () => {
     const evidence = buildAbapEvidence(`GET BADI lo_handle.`, 'ZBADI', 'private');
-    const route = routeExtensibility(evidence, 'private');
+    const route = routeExtensibility(evidence, 'private', APP_VERSION);
     // Level B is acceptable: it must not be penalised like a modification.
     expect(route.cleanCoreScore).toBe(100);
   });

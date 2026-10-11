@@ -16,6 +16,7 @@ import { findingsOf } from '../lib/it-findings-build';
 import { buildProjectEvidence, buildRunEvidence } from '../lib/project-evidence-build';
 import { buildDemoWorkspace } from '../lib/demo-workspace';
 import type { ObjectUse } from '../lib/abap/abcd-classification';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Owner decision 30.09.2026 on roadmap 7.10 (target profile): **every display
@@ -125,7 +126,7 @@ test.describe('a PCE project gets the same grade in the core result and each der
     const built = contractOfProject(PCE_PROJECT, null);
     expect(built.ok).toBe(true);
     if (!built.ok) return;
-    const route = routeExtensibility(core, 'private');
+    const route = routeExtensibility(core, 'private', APP_VERSION);
     const expected = buildArchitectureContract({
       contractId: FIRST_CONTRACT_ID,
       runId: PCE_PROJECT.activeRunId,
@@ -144,7 +145,7 @@ test.describe('a PCE project gets the same grade in the core result and each der
       runId: PCE_PROJECT.activeRunId,
       inputManifest: null,
       evidence: publicEvidence,
-      route: routeExtensibility(publicEvidence, 'private'),
+      route: routeExtensibility(publicEvidence, 'private', APP_VERSION),
       deviation: null,
     });
     expect(fromDefault.fingerprint, 'the contract does not depend on the catalog at all — pick a better fixture').not.toBe(expected.fingerprint);

@@ -3,6 +3,8 @@ import path from 'path';
 import { countSourceLines } from '@/lib/source-lines';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility, type ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
+import { APP_VERSION } from '@/lib/version';
+import { scoreRuleFor, type ScoreRule } from '@/lib/score-rule';
 import {
   extractCodeInventory,
   extractDataCoupling,
@@ -448,6 +450,7 @@ function analyzeViewOf(
   rawSource: string,
   evidence: ReturnType<typeof buildAbapEvidence>,
   snapshot: string,
+  scoreRule: ScoreRule,
 ): Pick<DemoProject['analyze'], 'scoreBreakdown' | 'distinctFindings' | 'source' | 'levels' | 'processSteps' | 'worklist'> {
   const source = rawSource.replace(/\r\n/g, '\n');
   const rows = findingRows(evidence.findings);
@@ -467,7 +470,7 @@ function analyzeViewOf(
   }
   const coverage = evidence.coverage;
   return {
-    scoreBreakdown: scoreBreakdown(evidence.findings, coverage && !coverage.complete ? coverage.gaps.length : 0),
+    scoreBreakdown: scoreBreakdown(evidence.findings, coverage && !coverage.complete ? coverage.gaps.length : 0, scoreRule),
     distinctFindings: rows.length,
     source,
     levels,
@@ -494,9 +497,11 @@ export function buildDemoProject(): DemoProject {
   // assumes the Private Edition, and a run of it would read the PCE snapshot.
   const catalogSnapshot = catalogSnapshotKeyForProject({ s4Deployment: DEMO_DEPLOYMENT });
   const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
-  const route = routeExtensibility(evidence, DEMO_DEPLOYMENT);
+  // The demo is made by this engine, so by this engine's score rule — the
+  // breakdown below reads the same one, or the check after it refuses.
+  const route = routeExtensibility(evidence, DEMO_DEPLOYMENT, APP_VERSION);
   const { plan, unplanned } = planOf(evidence.findings, trackOfRoute(route.recommendedRoute));
-  const analyzeView = analyzeViewOf(source, evidence, catalogSnapshot);
+  const analyzeView = analyzeViewOf(source, evidence, catalogSnapshot, scoreRuleFor(DEMO_DEPLOYMENT, APP_VERSION));
   // The score the page explains is the score the router computed — by the same
   // table (`lib/clean-core-score.ts`). Should the two ever part, the demo would
   // explain a number it does not show; it is refused instead.

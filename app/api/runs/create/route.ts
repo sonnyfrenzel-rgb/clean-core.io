@@ -403,7 +403,9 @@ export async function POST(req: NextRequest) {
       // Roadmap 7.10 - the object states come from the snapshot the profile names.
       catalogSnapshot.registryKey,
     );
-    const extensibilityReport = routeExtensibility(evidenceReport, targetDeployment);
+    // Scored by this engine's rule; the run signs `analyzerVersion: APP_VERSION`
+    // below, which is how a recomputation later finds the same rule.
+    const extensibilityReport = routeExtensibility(evidenceReport, targetDeployment, APP_VERSION);
     const codeInventory = extractCodeInventory(legacyCode);
     const dataCoupling = extractDataCoupling(legacyCode);
     const complexityScore = computeComplexityScore(legacyCode);

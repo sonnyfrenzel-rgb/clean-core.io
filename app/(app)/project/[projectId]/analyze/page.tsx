@@ -116,6 +116,7 @@ import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER, withSuccessor } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
+import { scoreRuleFor, signedEngineVersionOf } from '@/lib/score-rule';
 import { readProcess } from '@/lib/first-look';
 import { catalogForReader } from '@/lib/messages/demo';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -399,7 +400,8 @@ export default function AnalyzePage() {
         deployment,
         targetProfile: assessmentTarget,
       });
-      const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private');
+      // A new run: scored by this engine's rule, as the server will score it.
+      const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private', APP_VERSION);
 
       // 2. Start Evidence Sweep animation
       setSweepCode(codeToAnalyze);
@@ -588,6 +590,10 @@ export default function AnalyzePage() {
                 extensibilityRoute: recommendedRoute, 
                 s4Deployment: deployment, 
                 cleanCoreScore,
+                // The rule the score above was computed with, so the breakdown
+                // and the route card recompute it with the same one until the
+                // page reloads the run's own `analyzerVersion`.
+                analyzerVersion: APP_VERSION,
                 charged: true,
                 transformationBypass: true,
                 worklist: initialWorklist,
@@ -777,9 +783,19 @@ export default function AnalyzePage() {
 
   // The score's deductions, recomputed from the findings on this page with the
   // router's own table; shown only beside a score they add up to.
+  // The rule is the signed run's: its deployment and engine version, so a run
+  // signed before 3.0.9 is explained by the rule it was scored by.
+  const scoreRule = scoreRuleFor(project?.s4Deployment === 'public' ? 'public' : 'private', signedEngineVersionOf(project));
   const scoreParts = useMemo(
-    () => (evidenceReport ? scoreBreakdown(evidenceReport.findings, evidenceReport.coverage && !evidenceReport.coverage.complete ? evidenceReport.coverage.gaps.length : 0) : null),
-    [evidenceReport],
+    () =>
+      evidenceReport
+        ? scoreBreakdown(
+            evidenceReport.findings,
+            evidenceReport.coverage && !evidenceReport.coverage.complete ? evidenceReport.coverage.gaps.length : 0,
+            scoreRule,
+          )
+        : null,
+    [evidenceReport, scoreRule],
   );
 
   // ── The Clean Core Score, as signed ──

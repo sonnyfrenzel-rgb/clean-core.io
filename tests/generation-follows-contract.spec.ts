@@ -16,6 +16,7 @@ import { INPUT_IDS, analysisRunInputs, buildInputManifest } from '../lib/input-m
 import { sha256Hex } from '../lib/artefact-digest';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 8.3 — *"Generation follows the contract; a deviation from the
@@ -56,7 +57,7 @@ function contractFor(
   deviation?: { chosen: 'in-app-rap' | 'side-by-side-cap'; reason: string } | null,
 ): ArchitectureContract {
   const evidence = buildAbapEvidence(SOURCE_OFF_STACK, 'z_mm_po_f01.abap', deployment || undefined);
-  const route = routeExtensibility(evidence, deployment || 'private');
+  const route = routeExtensibility(evidence, deployment || 'private', APP_VERSION);
   return buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',

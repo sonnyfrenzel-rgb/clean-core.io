@@ -25,6 +25,7 @@ import { PROVENANCE_VALUES } from '../lib/provenance';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeDrivers, routeExtensibility } from '../lib/abap/extensibility-router';
 import type { AbapEvidenceReport, EvidenceFinding } from '../lib/abap/evidence-model';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 8.2 — "architecture contract as a document: target context, runtime,
@@ -84,7 +85,7 @@ function contractFor(
   extra?: Partial<Parameters<typeof buildArchitectureContract>[0]>,
 ) {
   const evidence = buildAbapEvidence(source, 'Z_TEST.abap', deployment || undefined);
-  const route = routeExtensibility(evidence, deployment === 'private' ? 'private' : 'public');
+  const route = routeExtensibility(evidence, deployment === 'private' ? 'private' : 'public', APP_VERSION);
   return buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',
@@ -297,7 +298,7 @@ test.describe('8.2 — an absence of findings is not a cleared field', () => {
       runId: 'run-1',
       inputManifest: manifestFor('private'),
       evidence,
-      route: routeExtensibility(evidence, 'private'),
+      route: routeExtensibility(evidence, 'private', APP_VERSION),
     });
     const p = field(c, 'persistence');
     expect(p.statement).toBeNull();
@@ -312,7 +313,7 @@ test.describe('8.2 — an absence of findings is not a cleared field', () => {
       runId: 'run-1',
       inputManifest: manifestFor('private'),
       evidence,
-      route: routeExtensibility(evidence, 'private'),
+      route: routeExtensibility(evidence, 'private', APP_VERSION),
     });
     const p = field(c, 'persistence');
     expect(p.statement).toContain('No database write in the assessed source');
@@ -342,7 +343,7 @@ test.describe('8.3 — a deviation is recorded and applied', () => {
         runId: 'run-1',
         inputManifest: manifestFor('public'),
         evidence,
-        route: routeExtensibility(evidence, 'public'),
+        route: routeExtensibility(evidence, 'public', APP_VERSION),
         deviation: { chosen: 'in-app-rap', reason: '   ' },
       }),
     ).toThrow(/must carry a reason/);

@@ -2,6 +2,7 @@ import { callGeminiWithReceipt } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
+import { APP_VERSION } from '@/lib/version';
 import { previewRunEvidence } from '@/hooks/useProjectEvidence';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import type { AssessmentTarget } from '@/lib/assessment-target';
@@ -46,7 +47,8 @@ export async function writeStartNarrative(input: StartNarrativeInput): Promise<S
   const { projectId, source, fileName, deployment, targetProfile, signal } = input;
   const evidenceReport = await previewRunEvidence(projectId, { source, fileName, deployment, targetProfile });
   if (signal?.aborted) throw new DOMException('The wait for the narrative ended.', 'AbortError');
-  const routeReport = routeExtensibility(evidenceReport, deployment);
+  // The run about to be made, scored by this engine's rule.
+  const routeReport = routeExtensibility(evidenceReport, deployment, APP_VERSION);
   const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport, code: source });
   const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze', signal);
   const cleaned = generated.text.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();

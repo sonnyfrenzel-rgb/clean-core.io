@@ -11,6 +11,7 @@ import { scoreFromFindings } from '../lib/clean-core-score';
 import { readInputUse } from '../lib/abap/input-use';
 import { assessAuthority } from '../lib/abap/authority-assessment';
 import { readDataScope } from '../lib/abap/data-scope';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 3.0.7 — "Engine: what the ZMM_BESTELLUEBERSICHT review showed",
@@ -57,9 +58,9 @@ START-OF-SELECTION.
 
   test('navigation alone does not route side by side and costs the classic-screen points, not the BDC ones', () => {
     for (const deployment of ['private', 'public'] as const) {
-      const nav = routeExtensibility(buildAbapEvidence(navigation, 'znav.abap', deployment), deployment);
+      const nav = routeExtensibility(buildAbapEvidence(navigation, 'znav.abap', deployment), deployment, APP_VERSION);
       expect(nav.recommendedRoute, deployment).toMatch(/In-App/);
-      const bdc = routeExtensibility(buildAbapEvidence(batchInput, 'zbdc.abap', deployment), deployment);
+      const bdc = routeExtensibility(buildAbapEvidence(batchInput, 'zbdc.abap', deployment), deployment, APP_VERSION);
       expect(bdc.recommendedRoute, deployment).toMatch(/Side-by-Side/);
       expect(nav.cleanCoreScore, deployment).toBeGreaterThan(bdc.cleanCoreScore);
     }
@@ -501,7 +502,9 @@ START-OF-SELECTION.
     expect(facts?.hasOwnWriteAccess).toBe(false);
     // And it costs no points of its own: the score is the BDC's.
     const without = findings.filter((f) => f.kind !== 'batch-input');
-    expect(scoreFromFindings(findings)).toBe(scoreFromFindings(without));
+    for (const rule of ['custom-writes-charged', 'own-custom-writes-free'] as const) {
+      expect(scoreFromFindings(findings, rule), rule).toBe(scoreFromFindings(without, rule));
+    }
   });
 
   test('the skeleton carries the screens and fields on the transaction node; the sentence names the change', () => {

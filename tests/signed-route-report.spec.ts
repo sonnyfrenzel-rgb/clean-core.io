@@ -17,6 +17,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../lib/sap-naming';
 import { signedRecommendationOf, signedRouteReport, type SignedRouteProject } from '../lib/signed-route-report';
+import { APP_VERSION } from '../lib/version';
 
 const ROOT = path.resolve(__dirname, '..');
 const SHA_A = 'a'.repeat(64);
@@ -31,8 +32,8 @@ const PROGRAM = [
 ].join('\n');
 
 const evidence = buildAbapEvidence(PROGRAM, 'zcc_signed_route.abap', 'private');
-const privateRoute = routeExtensibility(evidence, 'private');
-const publicRoute = routeExtensibility(evidence, 'public');
+const privateRoute = routeExtensibility(evidence, 'private', APP_VERSION);
+const publicRoute = routeExtensibility(evidence, 'public', APP_VERSION);
 
 /** A project as the run signed it for `route`, with the source fingerprint `sha`. */
 function signedProject(route = privateRoute, sha: string | null = SHA_A, extra: Partial<SignedRouteProject> = {}): SignedRouteProject {

@@ -12,6 +12,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { signInViaLanding } from './helpers/sign-in';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap step 0.4 (`UX-E13-F01:R0`): no module shows an amount that no approved
@@ -41,7 +42,7 @@ const PROGRAM = "REPORT zcredit.\nSELECT SINGLE * FROM vbak INTO ls_order WHERE 
 test('the analysis prompt asks for no money', () => {
   // The prompt as the Analyze stage sends it, not a slice of the page source.
   const report = buildAbapEvidence(PROGRAM, 'ZCREDIT', 'private');
-  const src = buildAnalysisPrompt({ targetDeployment: 'private', evidenceReport: report, routeReport: routeExtensibility(report, 'private'), code: PROGRAM });
+  const src = buildAnalysisPrompt({ targetDeployment: 'private', evidenceReport: report, routeReport: routeExtensibility(report, 'private', APP_VERSION), code: PROGRAM });
   const start = src.indexOf('businessValueAnalysis: {');
   const block = src.slice(start, src.indexOf('};', start));
   expect(start).toBeGreaterThan(0);

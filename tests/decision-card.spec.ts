@@ -28,6 +28,7 @@ import { deriveProjectDecision } from '../lib/decision-facts';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Roadmap 8.4, second half — the "Open decision" card of the workspace
@@ -45,7 +46,7 @@ WRITE lv_c.
 
 function contractFixture() {
   const evidence = buildAbapEvidence(SOURCE, 'Z_TEST.abap', 'public');
-  const route = routeExtensibility(evidence, 'public');
+  const route = routeExtensibility(evidence, 'public', APP_VERSION);
   return buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',

@@ -18,6 +18,7 @@
 import type { AbapEvidenceReport } from './abap/evidence-model';
 import { routeExtensibility, type ExtensibilityRouteReport } from './abap/extensibility-router';
 import { IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from './sap-naming';
+import { signedEngineVersionOf } from './score-rule';
 import type { Project } from './types';
 
 /**
@@ -35,7 +36,10 @@ export function signedRecommendationOf(value: unknown): string | null {
 }
 
 /** The fields of the project the rule reads. */
-export type SignedRouteProject = Pick<Project, 's4Deployment' | 'originalRecommendation' | 'extensibilityRoute' | 'auditMetadata'>;
+export type SignedRouteProject = Pick<
+  Project,
+  's4Deployment' | 'originalRecommendation' | 'extensibilityRoute' | 'auditMetadata' | 'analyzerVersion'
+>;
 
 export interface SignedRouteReportInput {
   /** The evidence the server read for the signed run, or null while it is not there. */
@@ -55,7 +59,9 @@ export function signedRouteReport({
 }: SignedRouteReportInput): ExtensibilityRouteReport | null {
   if (!evidenceReport || !project) return null;
   const deployment = project.s4Deployment === 'public' ? 'public' : 'private';
-  const derived = routeExtensibility(evidenceReport, deployment);
+  // With the run's own engine version, so a run signed before 3.0.9 is scored
+  // by the rule it was signed with and still adds up (lib/score-rule.ts).
+  const derived = routeExtensibility(evidenceReport, deployment, signedEngineVersionOf(project));
   const recommended = signedRecommendationOf(project.originalRecommendation) ?? project.extensibilityRoute ?? null;
   // The evidence has to be of the source the run signed: a source changed
   // since can arrive at the same route and score with other drivers

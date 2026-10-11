@@ -15,6 +15,7 @@ import path from 'node:path';
 import { GoogleGenAI } from '@google/genai';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { APP_VERSION } from '../lib/version';
 
 const MODEL = process.argv[2] || 'gemini-3-flash-preview';
 const EXAMPLES_DIR = path.join(process.cwd(), 'public', 'starter-examples');
@@ -118,7 +119,7 @@ async function main() {
     let route = 'n/a';
     try {
       const evidence = buildAbapEvidence(code, file, 'public');
-      const rep: any = routeExtensibility(evidence, 'public');
+      const rep: any = routeExtensibility(evidence, 'public', APP_VERSION);
       route = rep.recommendedRoute;
       const isAbapCloud = !String(route).includes('BTP');
 

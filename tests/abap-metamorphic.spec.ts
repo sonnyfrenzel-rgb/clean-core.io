@@ -7,6 +7,7 @@ import { routeExtensibility, type ExtensibilityRouteReport } from '../lib/abap/e
 import { buildProcessFacts, type ProcessFacts } from '../lib/abap/process-facts';
 import type { DataCouplingEntry } from '../lib/types';
 import * as T from './helpers/abap-transforms';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * Metamorphic properties of the deterministic ABAP engine.
@@ -82,7 +83,7 @@ function readEverything(code: string, fileName: string): Reading {
     evidence,
     coupling: extractDataCoupling(code),
     complexity: computeComplexityScore(code),
-    route: routeExtensibility(evidence, 'private'),
+    route: routeExtensibility(evidence, 'private', APP_VERSION),
     facts: buildProcessFacts(code),
   };
 }

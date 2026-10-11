@@ -21,6 +21,7 @@ import { assessCoverage } from '../lib/abap/coverage';
 import { functionModuleCatalogAnswer } from '../lib/abap/catalog-service';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { deriveReviewTasks } from '../lib/abap/review-tasks';
+import { APP_VERSION } from '../lib/version';
 
 const program = (call: string) => `REPORT zcc_cat.\nCALL FUNCTION '${call}'.`;
 const gapsOf = (code: string) => buildAbapEvidence(code, 'zcc_cat.abap').coverage.unassessed.map((u) => u.gap);
@@ -38,7 +39,7 @@ test('a classicAPI function module is answered by the catalog, not left not dete
   // classic ABAP may call it: no finding
   expect(evidence.findings).toEqual([]);
   // and no "not assessed" deduction for it
-  expect(routeExtensibility(evidence, 'private').cleanCoreScore).toBe(100);
+  expect(routeExtensibility(evidence, 'private', APP_VERSION).cleanCoreScore).toBe(100);
 });
 
 test('a function module SAP lists as noAPI becomes a finding that cites the state, not a letter', () => {
@@ -75,6 +76,6 @@ test('an unread include is not answered with an upload this project does not off
   expect(task.task).not.toMatch(/Add the source of/);
   expect(task.task).toContain('ZCC_INC_RULES');
   expect(task.task).toContain('Add the includes');
-  const route = routeExtensibility(buildAbapEvidence(code, 'zcc_inc.abap'), 'private');
+  const route = routeExtensibility(buildAbapEvidence(code, 'zcc_inc.abap'), 'private', APP_VERSION);
   expect(route.rationale).not.toMatch(/Upload the include/);
 });

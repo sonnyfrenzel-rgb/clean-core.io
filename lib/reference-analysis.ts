@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
+import { APP_VERSION } from '@/lib/version';
 import { getMergedCatalogVersion, MERGED_TABLE_MAP } from '@/lib/abap/catalog-service';
 
 /**
@@ -130,7 +131,8 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
   const started = Date.now();
   const evidence = buildAbapEvidence(code, REFERENCE_FILE, 'private');
   const durationMs = Math.max(1, Date.now() - started);
-  const route = routeExtensibility(evidence, 'private');
+  // Produced now, by this engine — so by this engine's score rule.
+  const route = routeExtensibility(evidence, 'private', APP_VERSION);
 
   const counts = { resolved: 0, decision: 0, handedBack: 0 };
   const kinds = new Set<string>();

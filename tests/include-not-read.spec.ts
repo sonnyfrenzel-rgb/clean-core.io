@@ -5,6 +5,8 @@ import { assessCoverage, coverageCaveat } from '../lib/abap/coverage';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { scoreBand, scoreWithUnassessed, scoreFromFindings } from '../lib/clean-core-score';
+import { APP_VERSION } from '../lib/version';
+import { scoreRuleFor } from '../lib/score-rule';
 
 /**
  * G4-F2 — an include that was not uploaded is named, not read as clean.
@@ -30,7 +32,7 @@ const CC_021 = readFileSync(join(process.cwd(), 'tests', 'korpus', 'cases', 'CC-
 
 function read(code: string, deployment: 'public' | 'private' = 'private') {
   const evidence = buildAbapEvidence(code, 'source.abap', deployment);
-  return { evidence, route: routeExtensibility(evidence, deployment) };
+  return { evidence, route: routeExtensibility(evidence, deployment, APP_VERSION) };
 }
 
 test.describe('G4-F2 — an include whose source was not uploaded', () => {
@@ -48,7 +50,7 @@ test.describe('G4-F2 — an include whose source was not uploaded', () => {
     const { evidence, route } = read(CC_021);
     expect(evidence.findings).toHaveLength(0);
     // The convention, not a new rule: five points per kind not assessed.
-    expect(route.cleanCoreScore).toBe(scoreWithUnassessed(scoreFromFindings(evidence.findings), evidence.coverage.gaps.length));
+    expect(route.cleanCoreScore).toBe(scoreWithUnassessed(scoreFromFindings(evidence.findings, scoreRuleFor('private', APP_VERSION)), evidence.coverage.gaps.length));
     expect(route.cleanCoreScore).toBeLessThan(95);
     expect(scoreBand(route.cleanCoreScore).key).not.toBe('light');
   });

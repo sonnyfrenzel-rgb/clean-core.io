@@ -14,6 +14,8 @@ import { PHASES } from '../lib/workflow-steps';
 import { TERMS_VERSION } from '../lib/constants';
 import { scoreBreakdown, scoreBand } from '../lib/clean-core-score';
 import { findingRows } from '../lib/findings-view';
+import { APP_VERSION } from '../lib/version';
+import { scoreRuleFor } from '../lib/score-rule';
 
 /**
  * The demo project — roadmap step 0.10, `DESIGN.md` §6.1.2.
@@ -54,7 +56,7 @@ test.describe('the demo is a real run, not a story about one', () => {
 
     const source = read(path.posix.join('public', 'starter-examples', DEMO_SOURCE_FILE));
     const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, 'private');
-    const route = routeExtensibility(evidence, 'private');
+    const route = routeExtensibility(evidence, 'private', APP_VERSION);
 
     // Not a vacuous comparison: this example is the eighth starter example and a
     // 668-line program. An engine that suddenly finds nothing would satisfy an
@@ -73,8 +75,9 @@ test.describe('the demo is a real run, not a story about one', () => {
     // the page shows arrives at it — recomputed here the way the Analyze page
     // recomputes it, not read back from the demo.
     const gaps = evidence.coverage && !evidence.coverage.complete ? evidence.coverage.gaps.length : 0;
-    expect(scoreBreakdown(evidence.findings, gaps).score).toBe(route.cleanCoreScore);
-    expect(demo.analyze.scoreBreakdown).toEqual(scoreBreakdown(evidence.findings, gaps));
+    const rule = scoreRuleFor('private', APP_VERSION);
+    expect(scoreBreakdown(evidence.findings, gaps, rule).score).toBe(route.cleanCoreScore);
+    expect(demo.analyze.scoreBreakdown).toEqual(scoreBreakdown(evidence.findings, gaps, rule));
     // Two counts, two units: occurrences (one per line) and findings as the
     // Analyze stage lists them (one per pattern and object). This example has
     // patterns that repeat on one object, so the two differ — a demo that

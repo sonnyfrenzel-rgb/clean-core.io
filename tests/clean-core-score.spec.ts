@@ -14,6 +14,7 @@ import {
 } from '../lib/clean-core-score';
 import { groupRows, findingRows, processStepBands, accessUseOfKind } from '../lib/findings-view';
 import { readProcess } from '../lib/first-look';
+import { scoreRuleFor, isOwnTableName } from '../lib/score-rule';
 
 /**
  * The Clean Core Score explained on Analyze (owner, 01.10.2026) — the screen's
@@ -24,20 +25,23 @@ const ROOT = path.resolve(__dirname, '..');
 const EXAMPLES = path.join(ROOT, 'public/starter-examples');
 
 test.describe('one table for the score and its explanation', () => {
-  test('the breakdown adds up to the signed score on every starter example, both editions', () => {
+  test('the breakdown adds up to the signed score on every starter example, both editions, both score rules', () => {
     let compared = 0;
     for (const file of fs.readdirSync(EXAMPLES)) {
       const src = fs.readFileSync(path.join(EXAMPLES, file), 'utf8');
       for (const edition of ['public', 'private'] as const) {
         const evidence = buildAbapEvidence(src, file, edition);
-        const routed = routeExtensibility(evidence, edition);
         const gaps = evidence.coverage && !evidence.coverage.complete ? evidence.coverage.gaps.length : 0;
-        const b = scoreBreakdown(evidence.findings, gaps);
-        expect(b.score, `${file} ${edition}`).toBe(routed.cleanCoreScore);
-        compared++;
+        // A run before 3.0.9, one from 3.0.9, and one without an engine stamp.
+        for (const engine of ['v3.0.8', 'v3.0.9', null]) {
+          const routed = routeExtensibility(evidence, edition, engine);
+          const b = scoreBreakdown(evidence.findings, gaps, scoreRuleFor(edition, engine));
+          expect(b.score, `${file} ${edition} ${engine}`).toBe(routed.cleanCoreScore);
+          compared++;
+        }
       }
     }
-    expect(compared).toBeGreaterThan(10);
+    expect(compared).toBeGreaterThan(30);
   });
 
   // The proposal drew 28, from 100 − 72. Since G4-F2 (02.10.2026) the two
@@ -47,7 +51,16 @@ test.describe('one table for the score and its explanation', () => {
   test('the example the proposal drew: 23, from 100 − 77', () => {
     const src = fs.readFileSync(path.join(EXAMPLES, 'Z_MM_PO_APPROVAL.abap'), 'utf8');
     const evidence = buildAbapEvidence(src, 'Z_MM_PO_APPROVAL.abap', 'private');
-    const b = scoreBreakdown(evidence.findings, evidence.coverage?.gaps.length ?? 0);
+    // The rule the proposal drew under: every custom-table write charged.
+    const b = scoreBreakdown(evidence.findings, evidence.coverage?.gaps.length ?? 0, scoreRuleFor('private', 'v3.0.8'));
+    // From 3.0.9 its two writes to its own Z tables cost nothing in Private
+    // Edition: 14 points back, 37 from 100 − 63 — still far from clean core.
+    const since309 = scoreBreakdown(evidence.findings, evidence.coverage?.gaps.length ?? 0, scoreRuleFor('private', 'v3.0.9'));
+    expect(b.lines.find((l) => l.kind === 'custom-table-write')).toMatchObject({ count: 2, points: 14 });
+    expect(since309.lines.find((l) => l.kind === 'custom-table-write')).toBeUndefined();
+    expect(since309.freeOwnTableWrites).toBe(2);
+    expect(since309.score).toBe(37);
+    expect(scoreBand(since309.score).key).toBe('far');
     expect(evidence.coverage.gaps.map((g) => g.gap)).toContain('include-not-read');
     expect(b.score).toBe(23);
     expect(b.lines.reduce((n, l) => n + l.points, 0) + b.unassessedPoints).toBe(77);
@@ -56,7 +69,8 @@ test.describe('one table for the score and its explanation', () => {
 
   test('the router no longer carries its own copy of the numbers', () => {
     const router = fs.readFileSync(path.join(ROOT, 'lib/abap/extensibility-router.ts'), 'utf8');
-    expect(router).toContain('scoreFromFindings(findings)');
+    expect(router).toContain('scoreFromFindings(findings, scoreRule)');
+    expect(router).toContain('scoreRuleFor(deploymentModel, engineVersion)');
     expect(router).toContain('scoreWithUnassessed(score,');
     expect(router).not.toMatch(/deduct\(\w+\.length,\s*\d+/);
   });
@@ -77,18 +91,27 @@ test.describe('the bands say only what the table guarantees', () => {
     // The largest single kind costs no more than 40 — the 'far' band's reason.
     expect(Math.max(...SCORE_DEDUCTIONS.map((r) => r.cap))).toBe(40);
 
-    // Random combinations of up to three findings per kind, with and without unassessed kinds.
+    // Random combinations of up to three findings per kind, with and without
+    // unassessed kinds, under both score rules. A custom-table write is to an
+    // own Z/Y table or to a namespaced one, at random.
     let seed = 7;
     const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
     for (let n = 0; n < 4000; n++) {
+      const scoreRule = n % 2 === 0 ? 'custom-writes-charged' : 'own-custom-writes-free';
       const findings: ScoredFinding[] = [];
       for (const rule of SCORE_DEDUCTIONS) {
         const k = rnd() < 0.7 ? 0 : 1 + Math.floor(rnd() * 3);
-        for (let i = 0; i < k; i++) findings.push({ kind: rule.kind });
+        for (let i = 0; i < k; i++) {
+          findings.push(rule.kind === 'custom-table-write' ? { kind: rule.kind, objectName: rnd() < 0.5 ? 'ZORDERS' : '/ACME/ORDERS' } : { kind: rule.kind });
+        }
       }
       const gaps = rnd() < 0.5 ? 0 : 1 + Math.floor(rnd() * 7);
-      const b = scoreBreakdown(findings, gaps);
-      const kinds = new Set(findings.map((f) => f.kind));
+      const b = scoreBreakdown(findings, gaps, scoreRule);
+      // What the band sentences speak of: under the Private Edition rule from
+      // 3.0.9 a write to an own Z/Y table is not a heavy construct — it is free.
+      const charged = findings.filter((f) => !(scoreRule === 'own-custom-writes-free' && f.kind === 'custom-table-write' && isOwnTableName(f.objectName)));
+      const kinds = new Set(charged.map((f) => f.kind));
+      expect(b.freeOwnTableWrites).toBe(findings.length - charged.length);
       if (b.score >= 91) for (const h of heavy) expect(kinds.has(h), `${b.score} with ${h}`).toBe(false);
       if (b.score >= 81) {
         expect(kinds.has('modification')).toBe(false);

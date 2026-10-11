@@ -188,6 +188,14 @@ export default function CleanCoreScoreSection({
                     />
                   ) : null}
                 </ul>
+                {breakdown.freeOwnTableWrites > 0 ? (
+                  <p className="m-0 mt-3 cc-text-cell text-cc-ink-muted" data-score-free-own-writes={breakdown.freeOwnTableWrites}>
+                    {breakdown.freeOwnTableWrites === 1
+                      ? "1 write to the program's own Z/Y tables costs"
+                      : `${breakdown.freeOwnTableWrites} writes to the program's own Z/Y tables cost`}{' '}
+                    nothing: in Private Edition that is on-stack developer extensibility, not a clean core violation.
+                  </p>
+                ) : null}
                 <p className="m-0 mt-3 cc-text-meta text-cc-ink">
                   100 − {100 - score} = {score}
                   {breakdown.floored ? ' (the score never goes below 5)' : ''}

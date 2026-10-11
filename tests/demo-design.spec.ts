@@ -12,6 +12,7 @@ import { catalogSnapshotKeyForProject } from '../lib/abap/catalog-snapshots';
 import { targetRouteOf, type TargetRoute } from '../lib/architecture-contract';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
+import { APP_VERSION } from '../lib/version';
 
 /**
  * The demo's Design stage — the canvas-first tool of a real project, fed from
@@ -74,7 +75,7 @@ test.describe('what the demo Design stage is drawn from', () => {
     // The route: the engine's, recomputed here independently.
     const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, demo.deployment, catalog);
     expect(evidence.findings.length, 'the engine found almost nothing — the comparisons below would be vacuous').toBeGreaterThan(10);
-    const route = targetRouteOf(routeExtensibility(evidence, demo.deployment));
+    const route = targetRouteOf(routeExtensibility(evidence, demo.deployment, APP_VERSION));
     expect(data.contract, 'the demo built no contract').not.toBeNull();
     expect(data.contract!.route.recommended).toBe(route);
     expect(data.contract!.route.chosen).toBe(route);
