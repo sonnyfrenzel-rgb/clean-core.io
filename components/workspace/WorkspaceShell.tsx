@@ -490,10 +490,12 @@ export default function WorkspaceShell({
    * soon as the view is known, a link from a stage lands on a page still
    * loading — so the browser's own jump finds nothing and the reader stays at
    * the top. Wait for the map, bring it into view, and hold it there for five
-   * seconds while the blocks above it grow; a scroll, a wheel or a key by the
-   * reader ends it at once. Not until the page is still for a moment: the blocks
-   * above grow in steps (the first look, the result line), and a pause between
-   * two steps read as the end left the reader a screen above the map.
+   * seconds while the blocks above it grow; a wheel, a touch, a key or a
+   * pointer press by the reader ends it at once — the press covers a drag of
+   * the scrollbar, which sends no wheel (QA 341b71202202). Not until the page
+   * is still for a moment: the blocks above grow in steps (the first look, the
+   * result line), and a pause between two steps read as the end left the
+   * reader a screen above the map.
    */
   useEffect(() => {
     if (view !== 'business') return;
@@ -529,6 +531,7 @@ export default function WorkspaceShell({
     follow();
     window.addEventListener('hashchange', follow);
     window.addEventListener('wheel', end, { passive: true });
+    window.addEventListener('pointerdown', end, { passive: true });
     window.addEventListener('touchmove', end, { passive: true });
     window.addEventListener('keydown', end);
     return () => {
@@ -536,6 +539,7 @@ export default function WorkspaceShell({
       window.cancelAnimationFrame(frame);
       window.removeEventListener('hashchange', follow);
       window.removeEventListener('wheel', end);
+      window.removeEventListener('pointerdown', end);
       window.removeEventListener('touchmove', end);
       window.removeEventListener('keydown', end);
     };

@@ -577,6 +577,45 @@ test.describe('the Business view on screen', () => {
     expect(Math.max(...result.after), 'the follow pulled the page back to the map after the hash left it').toBe(0);
     expect(result.hash, 'the hash went back to the map').not.toBe(`#${BUSINESS_MAP_ID}`);
   });
+
+  /**
+   * QA 341b71202202: a drag of the scrollbar sends no wheel, no touch and no
+   * key, only a pointer press — and the follow, held for its whole five
+   * seconds, would pull the reader back to the map. Same probe as above: the
+   * follow is proven alive first (it pulls the page back three times), then a
+   * press on the page and a move to the top; no later frame may move it back.
+   */
+  test('a pointer press ends the map follow — a scrollbar drag is one (QA 341b71202202)', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await withoutTips(page);
+    await signInThroughForm(page, account);
+    await open(page, ids.po);
+    await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-workspace-process="ready"] [data-process-map-canvas]').first()).toBeVisible({ timeout: 90_000 });
+    const result = await page.evaluate(async (mapId) => {
+      const frame = () => new Promise<number>((resolve) => window.requestAnimationFrame(resolve));
+      window.location.hash = `#${mapId}`;
+      let pulledBack = 0;
+      for (let i = 0; i < 120 && pulledBack < 3; i++) {
+        window.scrollTo(0, 0);
+        await frame();
+        await frame();
+        if (window.scrollY > 0) pulledBack++;
+      }
+      document.documentElement.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      window.scrollTo(0, 0);
+      const after: number[] = [];
+      for (let i = 0; i < 40; i++) {
+        await frame();
+        after.push(window.scrollY);
+      }
+      return { pulledBack, after, hash: window.location.hash };
+    }, BUSINESS_MAP_ID);
+    expect(result.pulledBack, 'the follow was not running when the press came — the test would prove nothing').toBe(3);
+    expect(Math.max(...result.after), 'the follow pulled the page back to the map after a pointer press').toBe(0);
+    expect(result.hash, 'the press is not a navigation: the address stays on the map').toBe(`#${BUSINESS_MAP_ID}`);
+  });
 });
 
 test('the map follow stops as soon as the hash leaves the map (QA 6eaa3be7e7ad)', () => {
