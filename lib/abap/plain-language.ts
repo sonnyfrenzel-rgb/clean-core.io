@@ -1477,12 +1477,26 @@ function functionName(name: string, dynamic: boolean): string {
   return humaniseRoutine(upper.replace(/^[ZY]_/, '')) || upper;
 }
 
-/** Does a run of list output go to the printer — `NEW-PAGE PRINT ON` inside its lines? */
+/**
+ * Does a run of list output go to the printer? It does when `NEW-PAGE PRINT ON`
+ * stands inside its lines, or when one of its other statements comes while the
+ * last `NEW-PAGE PRINT ON|OFF` before it, in source order, switched printing
+ * on — a `WRITE` in a loop after `NEW-PAGE PRINT ON` prints too, and a lone
+ * `NEW-PAGE PRINT OFF` prints nothing (QA review of 11e3bc7d90e8).
+ */
 function printsList(node: SkeletonNode, ctx: PlainContext): boolean {
   const from = node.anchor?.lineStart;
   if (!from) return false;
   const to = Math.max(from, node.anchor?.lineEnd ?? from);
-  return ctx.statements.some((s) => s.line >= from && s.line <= to && /^NEW-PAGE\b[\s\S]*\bPRINT\s+ON\b/i.test(s.text));
+  let printing = false;
+  for (const s of ctx.statements) {
+    if (s.line > to) break;
+    const mode = /^NEW-PAGE\b[\s\S]*\bPRINT\s+(ON|OFF)\b/i.exec(s.text);
+    const on: boolean = mode ?mode[1].toUpperCase() === 'ON' : printing;
+    if (s.line >= from && on) return true;
+    if (mode) printing = on;
+  }
+  return false;
 }
 
 function readName(node: SkeletonNode): string {

@@ -139,3 +139,44 @@ test.describe('process steps say what they do for the business (owner, 11.10.202
     }
   });
 });
+
+/**
+ * QA review of 11e3bc7d90e8: a `WRITE` in a loop after `NEW-PAGE PRINT ON` is a
+ * step of its own whose lines hold no `PRINT ON`; it prints all the same. The
+ * print mode is the last `NEW-PAGE PRINT ON|OFF` before the step, in source order.
+ */
+test.describe('list output prints while NEW-PAGE PRINT ON is in force', () => {
+  const PRINTING = [
+    /*  1 */ 'REPORT zmm_print_mode.',
+    /*  2 */ 'DATA gt TYPE TABLE OF string.',
+    /*  3 */ 'DATA gs TYPE string.',
+    /*  4 */ 'START-OF-SELECTION.',
+    /*  5 */ '  NEW-PAGE PRINT ON.',
+    /*  6 */ '  LOOP AT gt INTO gs.',
+    /*  7 */ '    WRITE: / gs.',
+    /*  8 */ '  ENDLOOP.',
+    /*  9 */ '  NEW-PAGE PRINT OFF.',
+    /* 10 */ '  LOOP AT gt INTO gs.',
+    /* 11 */ '    WRITE: / gs.',
+    /* 12 */ '  ENDLOOP.',
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(PRINTING);
+  const labels = plainLabels(skeleton, PRINTING);
+  const at = (line: number) => {
+    const node = skeleton.nodes.find((n) => n.kind === 'output' && n.anchor?.lineStart === line);
+    if (!node) throw new Error(`no output node on line ${line}`);
+    return node.id;
+  };
+
+  test('PRINT ON before the WRITE step: the step prints the list', () => {
+    expect(labels.nodes.get(at(7))).toBe('Print the list');
+    expect(labels.technique(at(7))).toBe('WRITE (list output to the spool)');
+  });
+
+  test('PRINT OFF in between: the WRITE after it shows the list, and the switch itself prints nothing', () => {
+    expect(labels.nodes.get(at(11))).toBe('Show the result list');
+    expect(labels.technique(at(11))).toBe('WRITE (list output)');
+    expect(labels.nodes.get(at(9))).toBe('Show the result list');
+    expect(labels.nodes.get(at(5))).toBe('Print the list');
+  });
+});
