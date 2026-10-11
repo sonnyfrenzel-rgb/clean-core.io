@@ -397,7 +397,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     const runStep = page.locator('[data-testing-step="run"]');
     await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
     await expect(runStep.locator('[data-testing-run-unavailable]')).toContainText('ABAP Unit test classes run only inside an ABAP system');
-    await expect(runStep.getByRole('button')).toHaveCount(0);
+    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
+    // route where nothing runs, an impossible run is exactly what it concludes.
+    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
     // No result card appears from nowhere.
     await expect(page.locator('div.group', { has: page.locator('h4', { hasText: 'Extract Invoice Headers' }) })).toHaveCount(0);
     expect(runTestsRequests).toEqual([]);

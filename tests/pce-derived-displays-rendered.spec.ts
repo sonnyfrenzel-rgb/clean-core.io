@@ -52,7 +52,8 @@ function levelBlocks(findings: typeof core.findings): string[] {
     const g = gradeSapObjectUse(row.finding.objectName.trim().toUpperCase(), accessUseOfKind(row.finding.kind), coreKey).grade;
     dist.set(g, (dist.get(g) ?? 0) + 1);
   }
-  return (['A', 'B', 'C', 'D'] as const).filter((g) => dist.get(g)).map((g) => `${g} ${dist.get(g)}`);
+  // The hero's level facet names every letter, a zero included (ADR-093, F2): the chip, then its count.
+  return (['A', 'B', 'C', 'D'] as const).map((g) => `${g}${dist.get(g) ?? 0}`);
 }
 
 const fitObjects = (findings: typeof core.findings) => publicCloudFitLookupObjects(findings).map((o) => o.name).sort();

@@ -128,7 +128,8 @@ test.describe('the project evidence, read from the server', () => {
     gate.release();
     const answer = page.locator('[data-analysis-answer]');
     await expect(answer).toBeVisible({ timeout: 60000 });
-    await expect(answer.locator('h2')).toContainText(/findings? to review in this code/);
+    // Since ADR-093 the answer is the score hero: the signed figure, then the findings facet.
+    await expect(answer.locator('[data-analyze-score-value]')).toHaveText(/^\s*\d+\s*$/);
     await expect(page.locator('[data-analysis-findings] [data-findings-group]').first()).toBeVisible();
     await expect(page.locator('body')).not.toContainText('The evidence engine found nothing');
     await expect(page.getByText('Loading project data...')).toHaveCount(0);

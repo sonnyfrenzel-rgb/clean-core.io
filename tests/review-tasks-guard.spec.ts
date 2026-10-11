@@ -759,6 +759,8 @@ test.describe('the panel a reader actually meets', () => {
     // Open tasks are listed with everything else this analysis could not
     // determine — the side card "Not determined", the panel one action
     // deeper under the entry's "Details" (§2.11; one place since 02.10.2026).
+    // Since ADR-093 (wave 2) the list itself is folded under "What this analysis could not settle".
+    await page.locator('[data-not-determined-items] [data-cc-disclosure-trigger]').first().click({ timeout: 60000 });
     await page.locator('[data-not-determined-detail="check-tasks"] [data-cc-disclosure-trigger]').first().click({ timeout: 60000 });
 
     const panel = page.locator('[data-review-tasks]');

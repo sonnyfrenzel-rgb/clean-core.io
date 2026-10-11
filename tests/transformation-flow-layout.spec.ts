@@ -30,7 +30,9 @@ test('at 1440 no target label reaches the generated-files column', async ({ page
   await openDemoFlow(page);
   const svg = page.locator('[data-transformation-flow] svg');
   await expect(svg).toBeVisible();
-  await expect(svg).toContainText('Side-by-side on SAP BTP');
+  // The demo's longest target label since its batch input names ME21N and is graded on it
+  // (eea16c2f) — no kind of the demo goes to the project route any more.
+  await expect(svg).toContainText('Outside the project route');
   const rights = await svg.locator('[data-flow-target-label]').evaluateAll((els) =>
     els.map((el) => {
       const b = (el as SVGGraphicsElement).getBBox();
@@ -47,7 +49,7 @@ test('at 390 the flow is a list that fits the screen', async ({ page }) => {
   await openDemoFlow(page);
   const list = page.locator('[data-transformation-flow] ul[aria-label="Findings by kind and target"]');
   await expect(list).toBeVisible();
-  await expect(list).toContainText('Side-by-side on SAP BTP');
+  await expect(list).toContainText('Outside the project route');
   const overflow = await list.evaluate((ul) => {
     const box = ul.getBoundingClientRect();
     return Array.from(ul.querySelectorAll('span')).some((s) => {

@@ -78,8 +78,10 @@ export default function FindingsFocus({
         {picks.length} of {total} findings, picked by fixed rules.
       </p>
       {/* On a phone the picks stand side by side and swipe (ADR-093, the
-          mockup's phone frame); from M they are three columns. */}
-      <ol className="m-0 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+          mockup's phone frame); from M they are three columns. `relative` makes the
+          list the containing block of the cards' absolutely positioned sr-only text,
+          which otherwise escapes the scroll box and widens the page to ~650 px. */}
+      <ol className="relative m-0 flex list-none snap-x snap-mandatory gap-3 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
         {picks.map((pick) => {
           const { row, reason } = pick;
           const ef = row.finding;

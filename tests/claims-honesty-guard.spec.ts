@@ -293,7 +293,8 @@ test.describe('a signed-in account reading its own project', () => {
     // Panels, not chart segments: the object page's charts mark their own
     // "not determined" segments the same way (lib/chart-colors.ts), and those
     // are not this panel's statements.
-    const panels = page.locator('[data-not-determined]:not([data-chart-segment])');
+    // Inside the panel only: since ADR-093 the score hero above says "Not determined" for its own facet.
+    const panels = page.locator('[data-decision-matrix] [data-not-determined]:not([data-chart-segment])');
     await expect(panels.first()).toBeVisible({ timeout: 30000 });
     await expect(panels).toHaveCount(2);
 

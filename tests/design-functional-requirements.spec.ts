@@ -197,7 +197,7 @@ test.describe('a real project', () => {
     await openEngineReading(page);
     await expect(page.locator('[data-functional-requirements]')).toBeVisible({ timeout: 120_000 });
     const section = await derive(page);
-    await expect(section.locator('[data-fr-row]').filter({ hasText: 'Roll back changes' })).toHaveCount(1);
+    await expect(section.locator('[data-fr-row]').filter({ hasText: 'Discard the changes' })).toHaveCount(1);
     await expect(section.locator('[data-fr-row]').filter({ hasText: "'TA'" })).toHaveCount(1);
     // Each sentence wears the chip of where it came from (QA review of
     // 55b47b8a, e7757800247f): the model's wording "proposed", the engine's

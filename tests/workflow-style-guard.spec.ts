@@ -227,6 +227,11 @@ test.describe('every stage stays on the type scale', () => {
     const titlePx = parseFloat(role.match(/font-size:\s*([\d.]+)px/)![1]);
     const scale = [...TYPE_SCALE_PX] as number[];
     expect(scale).toContain(titlePx);
+    // The one exception DESIGN.md §1.2 names: Analyze's Clean Core Score at
+    // `cc-text-hero` (ADR-093) — once, on Analyze, at the utility's own sizes.
+    const heroRole = css.match(/@utility cc-text-hero\s*\{([\s\S]*?)\n\}/)![1];
+    const heroPx = [...heroRole.matchAll(/font-size:\s*([\d.]+)px/g)].map((m) => parseFloat(m[1]));
+    expect(heroPx.length).toBeGreaterThan(0);
 
     const found: string[] = [];
     let measured = 0;
@@ -235,7 +240,7 @@ test.describe('every stage stays on the type scale', () => {
       await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
       await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
       const r = await page.evaluate(
-        ({ scale, titlePx }) => {
+        ({ scale, titlePx, heroPx, stage }) => {
           const main = document.querySelector('main') ?? document.body;
           const hidden = (el: Element) => {
             const s = getComputedStyle(el);
@@ -245,6 +250,7 @@ test.describe('every stage stays on the type scale', () => {
           };
           const out: string[] = [];
           let texts = 0;
+          let heroes = 0;
           for (const el of Array.from(main.querySelectorAll('*'))) {
             const own = Array.from(el.childNodes)
               .filter((n) => n.nodeType === Node.TEXT_NODE)
@@ -258,7 +264,9 @@ test.describe('every stage stays on the type scale', () => {
             const px = parseFloat(s.fontSize);
             const weight = parseInt(s.fontWeight, 10) || 400;
             const what = `<${el.tagName.toLowerCase()} class="${(el.getAttribute('class') || '').slice(0, 60)}"> "${own.slice(0, 40)}"`;
-            if (!scale.includes(px)) out.push(`${px}px off the scale — ${what}`);
+            const hero = stage === 'analyze' && el.matches('[data-analyze-score-value]') && heroPx.includes(px);
+            if (hero) heroes += 1;
+            else if (!scale.includes(px)) out.push(`${px}px off the scale — ${what}`);
             if (weight > 800) out.push(`weight ${weight} — ${what}`);
           }
           for (const h of Array.from(main.querySelectorAll('h1, h2, h3, h4, h5, h6'))) {
@@ -267,9 +275,10 @@ test.describe('every stage stays on the type scale', () => {
             if (h.tagName === 'H1' && !h.closest('.cc-prose')) out.push(`a second page title — ${what}`);
             if (parseFloat(getComputedStyle(h).fontSize) > titlePx) out.push(`a heading larger than the title — ${what}`);
           }
+          if (heroes > 1) out.push(`${heroes} hero figures — the score is the one`);
           return { out, texts };
         },
-        { scale, titlePx },
+        { scale, titlePx, heroPx, stage },
       );
       measured += r.texts;
       for (const line of r.out) found.push(`${stage}: ${line}`);

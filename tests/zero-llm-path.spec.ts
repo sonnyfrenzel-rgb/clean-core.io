@@ -200,9 +200,9 @@ test('the Analyze stage says "not generated" and shows the evidence instead of a
   expect(text).toMatch(/Extensibility route/i);
   // The signed figures are on the screen as figures, not as a placeholder —
   // and as a grade out of 100, not a compliance percentage (DESIGN.md §6.1).
-  expect(text, 'the score is a grade, not a dash').toMatch(/Clean Core Score\s*\n\s*\d+ of 100/i);
+  expect(text, 'the score is a grade, not a dash').toMatch(/Clean Core Score[^\n]*\n\s*\d+\s*\n?\s*of 100/i);
   // A dash or a zero where a score belongs is exactly what V25-A12 forbids.
-  expect(text).not.toMatch(/Clean Core Score\s*\n\s*[—–-]\s*\n/i);
+  expect(text).not.toMatch(/Clean Core Score[^\n]*\n\s*[—–-]\s*\n/i);
 
   await setStages(request, { analyze: true });
 });

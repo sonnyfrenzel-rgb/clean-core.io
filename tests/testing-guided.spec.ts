@@ -188,7 +188,9 @@ test.describe('the Testing tool as one guided flow', () => {
       await expect(page.locator('[data-test-pipeline]')).toHaveCount(0);
       const runStep = page.locator('[data-testing-step="run"]');
       await expect(runStep).toHaveAttribute('data-step-state', 'waiting');
-      await expect(runStep.getByRole('button')).toHaveCount(0);
+      // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
+      // route where nothing runs, an impossible run is exactly what it concludes.
+      await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
       await expect(runStep).toContainText('After step 1');
 
       // No nested navigation: no tab list, no environment switch.
@@ -302,7 +304,9 @@ test.describe('the Testing tool as one guided flow', () => {
     await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
     await expect(runStep).toContainText('Not run here');
     await expect(runStep.locator('[data-testing-run-unavailable]')).toContainText(ABAP_UNIT_NOT_RUNNABLE);
-    await expect(runStep.getByRole('button')).toHaveCount(0);
+    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
+    // route where nothing runs, an impossible run is exactly what it concludes.
+    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Run .*against mocks/ })).toHaveCount(0);
     // No result appears from nowhere either.
     await expect(page.locator('[data-scenario-verdict="none"]')).toHaveCount(0);

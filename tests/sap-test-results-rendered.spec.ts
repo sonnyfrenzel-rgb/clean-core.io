@@ -98,7 +98,9 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     // Step 2 stays a step that cannot run here, with no button of its own.
     const runStep = page.locator('[data-testing-step="run"]');
     await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
-    await expect(runStep.getByRole('button')).toHaveCount(0);
+    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
+    // route where nothing runs, an impossible run is exactly what it concludes.
+    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
 
     const answered = page.waitForResponse((r) => r.url().includes('/test-results') && r.request().method() === 'POST');
     await card.locator('[data-sap-result-file]').setInputFiles({ name: 'aunit-result.xml', mimeType: 'application/xml', buffer: Buffer.from(JUNIT) });

@@ -159,7 +159,7 @@ export default function ExtensibilityDecisionMatrix({
   const proposed = checkpoints.length > 0 || comparative !== null;
 
   return (
-    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc mb-8 motion-safe:animate-in fade-in duration-700">
+    <div data-decision-matrix="" className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc mb-8 motion-safe:animate-in fade-in duration-700">
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
