@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { CODE_DRAFT_BUSINESS_RULES, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -344,6 +345,12 @@ export default function TransformationPage() {
 
 
   const [files, setFiles] = useState<ProjectFile[]>([]);
+  /**
+   * 3.0.10 (external review F-01) — document-number-shaped literals the
+   * generated logic compares against, read deterministically from the
+   * package on screen. A warning, not a refusal: the reader decides.
+   */
+  const literalFindings = useMemo(() => hardCodedLiteralFindings(files), [files]);
   const [selectedFilePath, setSelectedFilePath] = useState<string>('srv/service.ts');
   const [syncScroll, setSyncScroll] = useState(true);
 
@@ -714,7 +721,8 @@ export default function TransformationPage() {
         8. Ensure the code is robust with error handling and validation.
         9. Generate a complete Playwright test suite (playwright.config.ts and generated.spec.ts) to verify the API endpoints.
         10. CRITICAL: Export all main business logic functions and classes using ESM 'export' statements so they can be imported and tested by a separate test suite.
-        
+${CODE_DRAFT_BUSINESS_RULES}
+
         Return a JSON object with the following structure:
         {
           "files": [
@@ -1459,6 +1467,24 @@ export default function TransformationPage() {
                 Download draft (JSON)
               </CcButton>
             </span>
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {literalFindings.length > 0 && (
+        <div className="mb-6" data-hard-coded-literals={literalFindings.length}>
+          <CcMessageStrip state="warning" headline="Hard-coded values in the business logic">
+            <span className="block">
+              The generated code compares against fixed document or partner numbers. The original looks such values up per item; with a fixed value every item depends on one demo record. Regenerate, or correct it before the tests are written.
+            </span>
+            <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5">
+              {literalFindings.slice(0, 8).map((f) => (
+                <li key={`${f.file}:${f.line}:${f.literal}`} data-hard-coded-literal={f.literal} className="[overflow-wrap:anywhere]">
+                  <span className="font-cc-mono text-[12px]">{f.file}:{f.line}</span> — <span className="font-cc-mono text-[12px]">{f.context}</span>
+                  {f.demoValue ? ' — a document number of the code’s own demo data' : ''}
+                </li>
+              ))}
+            </ul>
           </CcMessageStrip>
         </div>
       )}

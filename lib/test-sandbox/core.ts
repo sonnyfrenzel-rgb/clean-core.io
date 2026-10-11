@@ -10,6 +10,7 @@ import { packageNameOf } from '../test-verdicts';
 import { netGuardSource, type LoopbackAllowance } from './net-guard';
 import { hashRunInputs, type FileHash } from './protocol';
 import type { SandboxFile } from './files';
+import { FAKED_PACKAGES } from './express-fake';
 
 /**
  * The execution core of the test sandbox — one copy, used in two places.
@@ -126,11 +127,23 @@ function namedImportBodies(src: string): string[] {
   return bodies;
 }
 
-export function buildStubModule(namedExports: string[]): string {
+export function buildStubModule(namedExports: string[], base: string = UNIVERSAL_STUB): string {
   const assigns = namedExports
     .map((n) => `try{module.exports[${JSON.stringify(n)}]=universal;}catch(e){}`)
     .join('\n');
-  return `${UNIVERSAL_STUB}\n${assigns}`;
+  return `${base}\n${assigns}`;
+}
+
+/**
+ * The module source per faked package (`./express-fake.ts`): the fake with the
+ * same named-import bindings the universal stub gets. A package not listed
+ * here gets the universal stub. The package is still reported as stubbed — a
+ * fake is not the package.
+ */
+export function buildFakeModules(namedExports: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [pkg, source] of Object.entries(FAKED_PACKAGES)) out[pkg] = buildStubModule(namedExports, source);
+  return out;
 }
 
 /** The slice of esbuild's plugin API this file uses. */
@@ -141,7 +154,7 @@ interface ResolveArgs {
 }
 interface PluginBuild {
   onResolve(opts: { filter: RegExp }, cb: (args: ResolveArgs) => unknown): void;
-  onLoad(opts: { filter: RegExp; namespace: string }, cb: () => unknown): void;
+  onLoad(opts: { filter: RegExp; namespace: string }, cb: (args: { path: string }) => unknown): void;
 }
 interface Esbuild {
   build(options: Record<string, unknown>): Promise<unknown>;
@@ -172,8 +185,11 @@ export function createSandboxResolvePlugin(opts: {
   testDir: string;
   stubModuleSource: string;
   stubbedPackages: Set<string>;
+  /** Packages that get a recording fake instead of the universal stub (`buildFakeModules`). Still named as stubbed. */
+  fakeModuleSources?: Record<string, string>;
 }) {
   const { testDir, stubModuleSource, stubbedPackages } = opts;
+  const fakes = opts.fakeModuleSources ?? {};
   const insideSandbox = (abs: string) =>
     abs === testDir || abs.startsWith(testDir + path.sep);
 
@@ -214,10 +230,11 @@ export function createSandboxResolvePlugin(opts: {
         return undefined; // inside sandbox → default resolver
       });
 
-      build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
-        contents: stubModuleSource,
-        loader: 'js',
-      }));
+      build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, (args) => {
+        // Only the package's own entry gets the fake; a deep import keeps the stub.
+        const fake = Object.prototype.hasOwnProperty.call(fakes, args.path) ? fakes[args.path] : null;
+        return { contents: fake ?? stubModuleSource, loader: 'js' };
+      });
     },
   };
 }
@@ -354,14 +371,15 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     }
     await fs.writeFile(testEntry, input.suiteCode);
 
-    const stubModuleSource = buildStubModule(collectNamedImports(sourceTexts));
+    const namedImports = collectNamedImports(sourceTexts);
+    const stubModuleSource = buildStubModule(namedImports);
 
     // ── 2) Bundle: relative/absolute inlined ONLY from inside the sandbox dir,
     //       bare npm packages stubbed, Node built-ins external ────────────────
     // One resolver plugin owns the whole import surface; each stubbed package is
     // named in the result (CR-14). See createSandboxResolvePlugin above.
     const stubbedPackages = new Set<string>();
-    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages });
+    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports) });
 
     const bundlePath = path.join(testDir, '__sandbox_bundle.cjs');
     try {

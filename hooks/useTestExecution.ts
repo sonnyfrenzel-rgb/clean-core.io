@@ -8,6 +8,7 @@ import { parseGeneratedPackage, replaceFileContent, repairTarget, suiteRepairImp
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
 import type { TestRunFailure } from '@/lib/testing-closure';
+import { isMutationProbeReport, probeBasis, type MutationProbeReport } from '@/lib/testing-mutation';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
@@ -31,6 +32,12 @@ export const useTestExecution = (projectId: string, project: Project | null, set
    * only the folded console, and the page showed a wall of "Not determined".
    */
   const [runError, setRunError] = useState<string | null>(null);
+  /** 3.0.10 — the mutation probe started after a passing run, or by the reader. */
+  const [probe, setProbe] = useState<{ state: 'idle' | 'running' | 'done' | 'error'; report: MutationProbeReport | null; error: string | null }>({
+    state: 'idle',
+    report: null,
+    error: null,
+  });
 
   const generateQAReport = (results: TestCase[], stubs: string[] = []) => {
     // "everything that did not pass, failed" stops being true the moment a status
@@ -445,6 +452,14 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         const executed = applyRunnerVerdicts(project?.testCases || [], reported, result.exitCode) as TestCase[];
         setProject((prev: Project | null) => (prev ? { ...prev, testCases: executed, testRunReceipt: receipt } : prev));
       }
+      // 3.0.10 (external review F-05): a recorded run of the whole suite that
+      // passed is probed with mutants right after — does the suite constrain
+      // anything? Started, not awaited: the run's own result is on the page
+      // already, and the probe reports into its own state.
+      if (result.receipt && !result.draftId) {
+        const caseIds = (project?.testCases || []).map((tc) => String(tc.id ?? '')).filter(Boolean);
+        if (probeBasis(result.receipt, caseIds).ok) void probeMutants();
+      }
       const stubs = Array.isArray(result.stubbedPackages) ? result.stubbedPackages : [];
       setStubbedPackages(stubs);
 
@@ -470,5 +485,41 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError };
+  /**
+   * 3.0.10 — the mutation probe of the recorded run (`/api/run-tests`,
+   * `mutationProbe: true`). The server runs the mutants and writes the report
+   * onto the receipt; this mirrors what it wrote, as the run above does.
+   */
+  const probeMutants = async (): Promise<MutationProbeReport | null> => {
+    setProbe({ state: 'running', report: null, error: null });
+    try {
+      const auth = getAuth();
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      const res = await fetch('/api/run-tests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({ projectId, mutationProbe: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const report = isMutationProbeReport(data?.mutation) ? data.mutation : null;
+      if (!res.ok || !report) {
+        setProbe({ state: 'error', report, error: typeof data?.error === 'string' && data.error ? data.error : `The probe answered ${res.status}.` });
+        return null;
+      }
+      if (setProject && data?.receipt) {
+        const receipt = data.receipt as TestRunReceipt;
+        setProject((prev: Project | null) => (prev ? { ...prev, testRunReceipt: receipt } : prev));
+      }
+      setProbe({ state: 'done', report, error: null });
+      return report;
+    } catch (err) {
+      setProbe({ state: 'error', report: null, error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
+  };
+
+  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants };
 };

@@ -88,6 +88,21 @@ export const TESTING_RESPONSE_SCHEMA = {
             },
             required: ['kind', 'lines'],
           },
+          // 3.0.10 (external review F-01/F-05): the business rule of the ORIGINAL
+          // the case checks, and the result the original gives — read by
+          // `lib/testing-rule-trace.ts`, which drops a malformed one with its reason.
+          ruleTrace: {
+            type: 'object',
+            properties: {
+              ruleId: STRING,
+              kind: { type: 'string', enum: ['rule', 'exception', 'edge'] },
+              lines: STRINGS,
+              quote: STRING,
+              originalBehaviour: STRING,
+              expectedFromOriginal: STRING,
+            },
+            required: ['ruleId', 'lines', 'expectedFromOriginal'],
+          },
         },
         required: ['id', 'name', 'category', 'description', 'priority'],
       },

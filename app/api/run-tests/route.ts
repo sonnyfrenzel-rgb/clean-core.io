@@ -6,14 +6,14 @@ import { isUrlSafe, readBoundedJson, ResponseLimitError } from '@/lib/url-valida
 import { assertRateLimit } from '@/lib/rate-limit';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, applyRunnerVerdicts } from '@/lib/test-verdicts';
-import { testRunSubject, sameTestRunInputs, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import { testRunSubject, sameTestRunInputs, coveringTestRunReceipt, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store';
 import type { RepairDraft } from '@/lib/repair-draft';
-import { executeSandboxRun } from '@/lib/test-sandbox/core';
+import { executeSandboxRun, type SandboxRunOutcome } from '@/lib/test-sandbox/core';
 import { sandboxFilesFromStoredCode, sandboxPatterns } from '@/lib/test-sandbox/files';
 import { hashRunInputs, MAX_RUN_INPUT_BYTES, MAX_RUN_PATTERNS, type RunnerProxy } from '@/lib/test-sandbox/protocol';
-import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor } from '@/lib/test-runner-client';
+import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor, type RunnerTarget } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
 import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability';
 import { registerCapability, revokeCapability } from '@/lib/s4-proxy-capability-store';
@@ -21,6 +21,9 @@ import { credentialHeaders } from '@/lib/s4-proxy';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from '@/lib/testing-closure';
+import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
+import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
+import type { SandboxFile } from '@/lib/test-sandbox/files';
 
 /**
  * POST /api/run-tests
@@ -29,6 +32,11 @@ import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from
  * and returns TAP results.
  *   IN : { projectId, selectedTestIds, s4Environment, draftId? }
  *   OUT: { output, error, exitCode, testResults, stubbedPackages, runner, receipt }
+ *
+ *   IN : { projectId, mutationProbe: true }   (3.0.10, external review F-05)
+ *   OUT: { mutation, receipt } - the suite run again against a few deterministic
+ *        mutants of the code (`lib/testing-mutation.ts`), recorded on the receipt
+ *        it probed. Only on a receipt of a passing run of the whole suite.
  *
  * WHERE IT RUNS (roadmap 8.9, CR-09 — "there or not at all"):
  *   Generated code is untrusted and does not execute in this service. It runs
@@ -321,6 +329,44 @@ export async function POST(req: Request) {
   const mode = s4Environment === 'live' ? 'live' : 'mock';
   const runnerConfig = readRunnerConfig();
   const target = resolveRunnerTarget(mode, runnerConfig);
+
+  // 3.0.10 - the mutation probe of the recorded run. Its own mode: it executes
+  // the stored code's mutants with the stored suite, records no failed run (a
+  // probe is not a run of the project's suite) and writes only onto the
+  // receipt it probed.
+  if (runRequest?.mutationProbe === true) {
+    if (draft || mode !== 'mock') {
+      return NextResponse.json(
+        { output: '', error: "The mutation probe runs on the project's own suite against mocks only.", exitCode: 1 },
+        { status: 400 },
+      );
+    }
+    if (target.kind === 'unavailable') {
+      return NextResponse.json({ output: '', error: target.reason, exitCode: 1 }, { status: target.status });
+    }
+    if (activeRuns >= MAX_CONCURRENT_RUNS) {
+      return NextResponse.json(
+        { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
+        { status: 429 },
+      );
+    }
+    activeRuns++;
+    try {
+      return await mutationProbeResponse({
+        projectId: sanitizedProjectId,
+        uid: decodedToken.uid,
+        projectData,
+        code,
+        testCode,
+        target,
+      });
+    } catch (probeErr) {
+      logger.error('run-tests: the mutation probe failed', { route: 'api/run-tests', projectId: sanitizedProjectId, error: errMessage(probeErr) });
+      return NextResponse.json({ output: '', error: 'Internal Server Error during the mutation probe.', exitCode: 1 }, { status: 500 });
+    } finally {
+      activeRuns--;
+    }
+  }
   // A run of the project's own suite against mocks; a draft or a live run is not recorded as the project's failure.
   const recordsFailure = !draft && mode === 'mock';
   if (target.kind === 'unavailable') {
@@ -433,7 +479,7 @@ export async function POST(req: Request) {
     } else {
       // Emulator build only (resolveRunnerTarget). Named in the response and
       // the receipt as `local-emulator`, never presented as the isolated runner.
-      const outcome = await executeSandboxRun({ files, suiteCode: testCode, patterns, allowUnsandboxed: true });
+      const outcome = await executeLocally(target, { files, suiteCode: testCode, patterns });
       if (outcome.kind === 'unavailable') {
         const runFailure = recordsFailure
           ? await recordRunFailure(sanitizedProjectId, decodedToken.uid, projectData, 'runner-unavailable', outcome.reason)
@@ -747,4 +793,106 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       }
     }
   }
+}
+
+/**
+ * The emulator build's local execution — the one place this route starts the
+ * execution core, for the project's run and for the mutants of a probe alike.
+ * Never with an isolated runner configured: "there or not at all".
+ */
+async function executeLocally(
+  target: RunnerTarget,
+  input: { files: SandboxFile[]; suiteCode: string; patterns: string[] },
+): Promise<SandboxRunOutcome> {
+  if (target.kind === 'isolated') throw new Error('An isolated runner is configured; nothing runs in the application service.');
+  if (target.kind === 'unavailable') return { kind: 'unavailable', reason: target.reason };
+  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true });
+}
+
+/**
+ * The mutation probe (3.0.10, owner 11.10.2026, external review F-05): would a
+ * wrong reference or a dropped filter turn a test red?
+ *
+ * Runs only on the receipt that covers the project as it stands, and only when
+ * that run passed in full (`probeBasis`). Each mutant is one ordinary run
+ * through the same executor and the same contract as the project's run - the
+ * runner needs nothing new for it. The report goes onto that receipt in a
+ * transaction that re-reads the project and writes only if the receipt and the
+ * run inputs are still the ones probed; otherwise nothing is written and the
+ * answer says why.
+ */
+async function mutationProbeResponse(input: {
+  projectId: string;
+  uid: string;
+  projectData: Record<string, unknown>;
+  code: string;
+  testCode: string;
+  target: { kind: 'isolated'; url: string } | { kind: 'local-emulator' };
+}): Promise<NextResponse> {
+  const { projectId, uid, projectData, code, testCode, target } = input;
+  const receipt = coveringTestRunReceipt(projectData);
+  const caseIds = (Array.isArray(projectData.testCases) ? projectData.testCases : [])
+    .map((t) => (t && typeof t === 'object' ? String((t as { id?: unknown }).id ?? '') : ''))
+    .filter(Boolean);
+  const basis = probeBasis(receipt, caseIds);
+  if (!basis.ok || !receipt) {
+    return NextResponse.json(
+      { output: '', error: basis.ok ? 'No recorded run to probe.' : basis.reason, exitCode: 1, code: 'no-probe-basis' },
+      { status: 409 },
+    );
+  }
+  if (receipt.mutation) {
+    return NextResponse.json({ output: '', error: '', exitCode: 0, mutation: receipt.mutation, receipt });
+  }
+
+  const execute = async (files: SandboxFile[]): Promise<MutantExecution> => {
+    if (target.kind === 'isolated') {
+      const call = await callIsolatedRunner(
+        target.url,
+        { files, suiteCode: testCode, patterns: [], mode: 'mock' },
+        { idToken: (audience) => fetchMetadataIdToken(audience), timeoutMs: MUTANT_CALL_TIMEOUT_MS },
+      );
+      if (!call.ok) return { kind: 'unavailable', reason: call.reason };
+      if (call.report.outcome === 'build-error') return { kind: 'build-error' };
+      const verdicts = parseTapOutput(call.report.stdout);
+      return { kind: 'ran', exitCode: call.report.exitCode, failedCases: verdicts.filter((v) => v.status === 'Failed').length };
+    }
+    const outcome = await executeLocally(target, { files, suiteCode: testCode, patterns: [] });
+    if (outcome.kind === 'unavailable') return { kind: 'unavailable', reason: outcome.reason };
+    if (outcome.kind === 'build-error') return { kind: 'build-error' };
+    const verdicts = parseTapOutput(outcome.stdout);
+    return { kind: 'ran', exitCode: outcome.exitCode, failedCases: verdicts.filter((v) => v.status === 'Failed').length };
+  };
+
+  const mutation = await runMutationProbe({ files: sandboxFilesFromStoredCode(code), execute });
+
+  const { db } = await getAdminDb();
+  const projectRef: DocumentReference = db.collection('projects').doc(projectId);
+  const moved = await db.runTransaction(async (tx: Transaction) => {
+    const fresh = await tx.get(projectRef);
+    if (!fresh.exists) return 'project-gone' as const;
+    const now = (fresh.data() || {}) as Record<string, unknown>;
+    if (now.userId !== uid) return 'project-gone' as const;
+    if (!sameTestRunInputs(projectData, now)) return 'project-changed' as const;
+    const current = coveringTestRunReceipt(now);
+    if (!current || current.executedAt !== receipt.executedAt || current.suiteDigest !== receipt.suiteDigest) return 'project-changed' as const;
+    tx.set(projectRef, { testRunReceipt: { ...current, mutation } }, { merge: true });
+    return null;
+  });
+  if (moved) {
+    return NextResponse.json(
+      {
+        output: '',
+        error:
+          moved === 'project-gone'
+            ? 'The project was deleted while the probe ran. Nothing was saved.'
+            : 'The project or its recorded run changed while the probe ran. Nothing was saved; run the tests again.',
+        code: moved,
+        exitCode: 1,
+        mutation,
+      },
+      { status: moved === 'project-gone' ? 404 : 409 },
+    );
+  }
+  return NextResponse.json({ output: '', error: '', exitCode: 0, mutation, receipt: { ...receipt, mutation } });
 }

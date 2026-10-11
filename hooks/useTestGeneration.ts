@@ -13,6 +13,8 @@ import {
 } from '@/app/(app)/project/[projectId]/testing/test-suite-schema';
 import { numberedSource, originPromptSection, withOriginCheck, type OriginEngine, type OriginFindingInput } from '@/lib/scenario-origin';
 import { ORIGIN_FAILED, originEngineFor, signedForOrigin } from './useScenarioOrigins';
+import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, type MaterialRule, type MaterialTable } from '@/lib/testing-rule-trace';
+import { withInvariants } from '@/lib/testing-invariants';
 
 /** What the testing stage asks the model for, in the retry and failure sentences. */
 const TEST_SUITE_NOUN = 'test suite';
@@ -96,6 +98,25 @@ export const useTestGeneration = (
       const legacyForPrompt = typeof project?.legacyCode === 'string' ? numberedSource(project.legacyCode) : '';
       const originAsk = originPromptSection(originEngine);
 
+      // 3.0.10 (owner 11.10.2026, external review F-01/F-05): the engine's
+      // business rules of the signed source, with ids and lines, so the model
+      // writes at least one case per rule with the result the ORIGINAL gives.
+      // Derived from the text alone — no model; without a signed source the
+      // section says there is nothing to trace.
+      let rulesForTrace: MaterialRule[] = [];
+      let tablesForTrace: MaterialTable[] = [];
+      if (signed) {
+        try {
+          const { deriveBusinessRules } = await import('@/lib/abap/business-rule-set');
+          const set = deriveBusinessRules(signed.source);
+          rulesForTrace = materialRules(set);
+          tablesForTrace = materialTables(set);
+        } catch (rulesErr) {
+          console.error('The business rules could not be read for the rule trace:', rulesErr);
+        }
+      }
+      const ruleAsk = ruleTracePromptSection(rulesForTrace, tablesForTrace);
+
       const prompt = isAbapCloud
         ? `Given the following context:
         Legacy Code (numbered lines):
@@ -105,7 +126,7 @@ ${legacyForPrompt}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
         
         Generate:
-        1. 10 simple, robust ABAP Unit test cases designed for Developer Extensibility.
+        1. ABAP Unit test cases designed for Developer Extensibility: at least one per business rule listed under RULE-TRACED TEST CASES (and at least 10 overall), each with its expected result from the ORIGINAL ABAP.
         2. A complete ABAP Unit test class definition and implementation verifying the behavior implementation class (e.g. \`BP_...\`) using \`cl_abap_unit_test\` and \`cl_aunit_assert\`.
         3. A list of areas that could not be fully unit-tested (e.g. real external service integrations, async queues, standard authority checks) and must be verified via "human-in-the-loop" testing.
         4. A coverageEstimate object with { percentage: number (0-100), explanation: string, missingCoverage: string }.
@@ -117,10 +138,11 @@ ${legacyForPrompt}
         - Use \`cl_abap_unit_test=>fail( ... )\` or \`cl_aunit_assert=>assert_equals( ... )\` or \`cl_aunit_assert=>assert_initial( ... )\` for assertion checking.
         
         Format the output as a JSON object with:
-        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom)
+        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom, ruleTrace)
         - testSuite: An object with the 'code' representing the complete ABAP Unit local test class code.
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
+        ${ruleAsk}
         ${originAsk}
         `
         : `Given the following context:
@@ -131,7 +153,7 @@ ${legacyForPrompt}
         ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
         
         Generate:
-        1. 10 simple, robust test cases that are guaranteed to run in a restricted Node.js sandbox.
+        1. Test cases that are guaranteed to run in a restricted Node.js sandbox: at least one per business rule listed under RULE-TRACED TEST CASES (and at least 10 overall), each asserting the result the ORIGINAL ABAP gives.
         2. A complete Node.js test suite using 'node:test' and 'node:assert'.
         3. A list of areas that could not be tested in the sandbox (e.g., real API calls, database connections, authentication flows) and must be verified via "human-in-the-loop" testing.
         4. A coverageEstimate object with { percentage: number (0-100), explanation: string, missingCoverage: string }.
@@ -161,10 +183,11 @@ ${legacyForPrompt}
         - NO NETWORK/DB: Tests must be 100% isolated.
         
         Format the output as a JSON object with:
-        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom)
+        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints, derivedFrom, ruleTrace)
         - testSuite: An object with the 'code' for 'test.ts'.
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
+        ${ruleAsk}
         ${originAsk}
         `;
       
@@ -234,13 +257,24 @@ ${legacyForPrompt}
 
       // A malformed `derivedFrom` is dropped and recorded as not stated; the
       // scenario itself is kept exactly as the model wrote it.
-      const generatedTestCases: TestCase[] = answer.testCases.map(
-        (tc) => withOriginCheck(tc, originEngine, noEngineReason) as unknown as TestCase,
+      //
+      // 3.0.10: the rule trace is validated first (and dropped with its reason
+      // when malformed), so a `derivedFrom` it supplies is checked like any other.
+      const tracedCases: Array<Record<string, unknown>> = answer.testCases.map(
+        (tc) => withOriginCheck(withRuleTrace(tc), originEngine, noEngineReason),
       );
       // Stored in exactly the keys of TestSuite and CoverageEstimate, typed:
       // firestore.rules accepts these two fields from the browser only in that
       // shape, and the model may answer with more.
-      const generatedTestSuite: TestSuite = storedTestSuite(answer.testSuite);
+      const modelSuite: TestSuite = storedTestSuite(answer.testSuite);
+      // 3.0.10 (external review F-02): the shared-selection invariant, written
+      // by the product from the generated routes — no model. Node.js route
+      // only; on the ABAP Unit route nothing here runs the suite.
+      const invariants = isAbapCloud
+        ? { suiteCode: modelSuite.code, cases: tracedCases }
+        : withInvariants(modelSuite.code, tracedCases, typeof project?.generatedCode === 'string' ? project.generatedCode : null);
+      const generatedTestCases: TestCase[] = invariants.cases as unknown as TestCase[];
+      const generatedTestSuite: TestSuite = storedTestSuite({ ...modelSuite, code: invariants.suiteCode });
       const coverageEstimate: CoverageEstimate = storedCoverageEstimate(answer.coverageEstimate);
       const manualTestingRequirements: ManualTestRequirement[] = answer.manualTestingRequirements || [];
       

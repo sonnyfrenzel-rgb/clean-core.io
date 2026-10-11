@@ -87,7 +87,8 @@ const DERIVED_FROM_KEYS = [
 ] as const;
 
 /** Keys the details show elsewhere, or that are not the scenario's content. */
-const NOT_A_FIELD = new Set(['id', 'name', 'status', 'message', 'derivedFromCheck', 'derivedFromDropped']);
+// `ruleTrace` and `invariant` (3.0.10) have their own block in the details.
+const NOT_A_FIELD = new Set(['id', 'name', 'status', 'message', 'derivedFromCheck', 'derivedFromDropped', 'ruleTrace', 'ruleTraceDropped', 'invariant']);
 
 /** Any stored value as text, or null when it says nothing. Objects become JSON, never `[object Object]`. */
 export function textOf(value: unknown): string | null {

@@ -4,6 +4,7 @@
  */
 
 import type { OriginCheck, ScenarioOrigin } from './scenario-origin';
+import type { RuleTrace } from './testing-rule-trace';
 
 export interface TestCase {
   id: string;
@@ -47,6 +48,16 @@ export interface TestCase {
   derivedFromCheck?: OriginCheck;
   /** Why a malformed statement of origin was dropped. */
   derivedFromDropped?: string;
+  /**
+   * 3.0.10 — the business rule of the ORIGINAL this case checks and the result
+   * the original gives for its data (`lib/testing-rule-trace.ts`). The model's
+   * statement, validated; absent when it named none.
+   */
+  ruleTrace?: RuleTrace;
+  /** Why a malformed rule trace was dropped. */
+  ruleTraceDropped?: string;
+  /** Set on the shared-selection invariant the product writes (`lib/testing-invariants.ts`), never by a model. */
+  invariant?: boolean;
 }
 
 export interface TestSuite {

@@ -1,4 +1,5 @@
 import { artefactDigest, sha256Hex } from './artefact-digest';
+import { isMutationProbeReport, type MutationProbeReport } from './testing-mutation';
 
 /**
  * The server's own record that a test suite ran — and over which artefacts.
@@ -151,6 +152,20 @@ export interface TestRunReceipt {
    * from before 8.9.
    */
   runner?: { kind: 'isolated' | 'local-emulator'; revision: string; filesDigest: string };
+  /**
+   * 3.0.10 (owner, 11.10.2026; external review F-05) — the mutation probe of
+   * this run: the suite ran again against a few deterministic mutants of the
+   * code it vouches for (`lib/testing-mutation.ts`), and this says how many it
+   * caught and which survived. Written by `/api/run-tests` in its
+   * `mutationProbe` mode onto the receipt it probed, in a transaction that
+   * checks the receipt and the project are still the ones probed — so it
+   * always describes this receipt's code and suite.
+   *
+   * Optional and additive like `draft` and `runner`: it adds a measurement and
+   * changes the meaning of no other claim, so the version stays 2. Absent
+   * means nobody probed the run.
+   */
+  mutation?: MutationProbeReport;
 }
 
 const VERDICTS: readonly string[] = ['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error'];
@@ -244,6 +259,7 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
         typeof (r.draft as { id?: unknown }).id === 'string' &&
         typeof (r.draft as { digest?: unknown }).digest === 'string')) &&
     (r.runner === undefined || isRunnerProvenance(r.runner)) &&
+    (r.mutation === undefined || isMutationProbeReport(r.mutation)) &&
     Array.isArray(r.verdicts) &&
     r.verdicts.every(
       (entry) =>

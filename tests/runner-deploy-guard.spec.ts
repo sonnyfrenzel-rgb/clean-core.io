@@ -138,6 +138,8 @@ test.describe('the runner image', () => {
       'lib/google-id-token.ts',
       'lib/sandbox-module-guard.ts',
       'lib/test-sandbox/core.ts',
+      // 3.0.10: the recording `express` fake the invariant tests run through — plain data, no app code.
+      'lib/test-sandbox/express-fake.ts',
       'lib/test-sandbox/files.ts',
       'lib/test-sandbox/net-guard.ts',
       'lib/test-sandbox/protocol.ts',

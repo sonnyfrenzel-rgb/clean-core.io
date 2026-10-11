@@ -29,6 +29,69 @@ import { scenarios } from './testing-summary';
 import { OriginChip, OriginDetails } from './ScenarioOrigin';
 import { countOrigins, originSummary, readScenarioOrigin, type OriginEngine, type OriginReading } from '@/lib/scenario-origin';
 import type { OutsideScenarioResult } from '@/lib/sap-test-results';
+import { CASE_ASSESSMENT_WORD, RULE_TRACE_DROPPED_KEY, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
+import { lineWord } from '@/lib/scenario-origin';
+
+/** The chip of a case's old-against-new assessment (3.0.10). */
+function AssessmentWord({ reading }: { reading: CaseAssessmentReading }) {
+  const state = reading.value === 'defect' ? 'error' : reading.value === 'unchanged' ? 'information' : 'neutral';
+  return (
+    <span data-scenario-assessment={reading.value}>
+      <CcStateText state={state} hollow={reading.value === 'not-assessable'} facet="Old vs new">
+        {CASE_ASSESSMENT_WORD[reading.value]}
+      </CcStateText>
+    </span>
+  );
+}
+
+/** The rule of the original a case checks, and the result the original gives (3.0.10). */
+function RuleTraceDetails({ tc, assessment }: { tc: ScenarioCase; assessment: CaseAssessmentReading | null }) {
+  const trace = ruleTraceOf(tc);
+  const dropped = typeof tc[RULE_TRACE_DROPPED_KEY] === 'string' ? (tc[RULE_TRACE_DROPPED_KEY] as string) : null;
+  const invariant = tc.invariant === true;
+  if (!trace && !dropped && !invariant && !assessment) return null;
+  return (
+    <div data-scenario-rule-trace={trace ? trace.ruleId : invariant ? 'invariant' : 'none'} className="min-w-0">
+      <h3 className={cn(LABEL, 'm-0 mb-2')}>Against the original</h3>
+      {trace ? (
+        <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
+          <div className="min-w-0">
+            <dt className={cn(LABEL, 'mb-1')}>Business rule</dt>
+            <dd className="m-0 cc-text-cell text-cc-ink">
+              <span className="font-cc-mono text-[12px] font-semibold">{trace.ruleId}</span> · {trace.kind === 'rule' ? 'the rule' : trace.kind === 'exception' ? 'an exception it names' : 'an edge of its condition'} · {trace.lines.map(lineWord).join(', ')}
+            </dd>
+          </div>
+          {trace.quote ? (
+            <div className="min-w-0">
+              <dt className={cn(LABEL, 'mb-1')}>In the original</dt>
+              <dd className="m-0 font-cc-mono text-[12px] text-cc-ink [overflow-wrap:anywhere]">{trace.quote}</dd>
+            </div>
+          ) : null}
+          <div className="min-w-0 md:col-span-2">
+            <dt className={cn(LABEL, 'mb-1')}>What the original does</dt>
+            <dd className="m-0 cc-text-cell text-cc-ink [overflow-wrap:anywhere]">{trace.originalBehaviour}</dd>
+          </div>
+          <div className="min-w-0 md:col-span-2">
+            <dt className={cn(LABEL, 'mb-1')}>Expected from the original</dt>
+            <dd data-scenario-expected-original="" className="m-0 cc-text-cell font-semibold text-cc-ink [overflow-wrap:anywhere]">
+              {trace.expectedFromOriginal}
+            </dd>
+          </div>
+        </dl>
+      ) : invariant ? (
+        <p className="m-0 cc-text-cell text-cc-ink">Written by Clean-Core.io from the generated routes, not by the testing model: the original builds list, totals and file from one selection.</p>
+      ) : (
+        <p className="m-0 cc-text-cell text-cc-ink-muted">{dropped ?? 'The case names no business rule of the original, so it does not say what the original does.'}</p>
+      )}
+      {assessment ? (
+        <p className="m-0 mt-2 flex flex-wrap items-center gap-2 cc-text-cell text-cc-ink">
+          <AssessmentWord reading={assessment} />
+          <span className="[overflow-wrap:anywhere]">{assessment.sentence}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 /** The engine a scenario's origin is checked against, or why there is none (`useScenarioOriginEngine`). */
 export interface ScenarioOriginContext {
@@ -160,11 +223,14 @@ export function ScenarioDetails({
   origin,
   sourceLines,
   outside,
+  assessment = null,
 }: {
   tc: ScenarioCase;
   isAbapCloud: boolean;
   test: ScenarioTest;
   where: ScopeReading;
+  /** 3.0.10 — unchanged / deliberately changed / defect / not yet assessable. */
+  assessment?: CaseAssessmentReading | null;
   /** Where the scenario says it comes from, and the check of it. */
   origin: OriginReading;
   /** The signed source the check read; its anchors open these lines. */
@@ -202,6 +268,8 @@ export function ScenarioDetails({
         ))}
         <OriginDetails reading={origin} legacy={derived} sourceLines={sourceLines} />
       </dl>
+
+      <RuleTraceDetails tc={tc} assessment={assessment} />
 
       <div data-scenario-test={test.kind} className="min-w-0">
         <h3 className={cn(LABEL, 'm-0 mb-2')}>{isAbapCloud ? 'Generated test — ABAP Unit method' : 'Generated test — node:test'}</h3>
@@ -281,6 +349,7 @@ export default function ScenarioList({
   onShowOutput,
   origin,
   outsideOf,
+  assessmentOf,
 }: {
   cases: ScenarioCase[];
   isAbapCloud: boolean;
@@ -299,6 +368,8 @@ export default function ScenarioList({
   origin: ScenarioOriginContext;
   /** ADR-075 — the result from the reader's SAP system for the scenario at this index, if any. */
   outsideOf?: (index: number) => ScenarioOutsideResult | null;
+  /** 3.0.10 — the old-against-new assessment of a scenario; absent on a route where nothing runs here. */
+  assessmentOf?: (tc: ScenarioCase) => CaseAssessmentReading | null;
 }) {
   const isPhone = useIsPhone();
   const [open, setOpen] = useState<Set<number>>(() => new Set());
@@ -363,6 +434,7 @@ export default function ScenarioList({
       origin={origins[i]}
       sourceLines={sourceLines}
       outside={isAbapCloud && outsideOf ? outsideOf(i) : null}
+      assessment={assessmentOf ? assessmentOf(cases[i]) : null}
     />
   );
 
@@ -475,6 +547,10 @@ export default function ScenarioList({
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 pl-6">
                     <ScopeWord scope={readings[i].where.scope} />
                     <OriginChip outcome={origins[i].check.outcome} />
+                    {assessmentOf ? (() => {
+                      const reading = assessmentOf(tc);
+                      return reading ? <AssessmentWord reading={reading} /> : null;
+                    })() : null}
                     {/* On the ABAP Cloud route, the result from the reader's own SAP
                         system (ADR-075); elsewhere the last verdict, from the
                         receipt or this session — never the status string stored on the case. */}

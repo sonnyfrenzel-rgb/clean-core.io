@@ -78,6 +78,13 @@ import ReplaceStoredBox from '@/components/ReplaceStoredBox';
 import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import { wt } from '@/lib/workspace-messages';
 import { targetEditionOf } from '@/lib/target-edition';
+import TestEvidenceCard from '@/components/testing/TestEvidenceCard';
+import { useMaterialRules } from '@/hooks/useMaterialRules';
+import { useProcessStates } from '@/hooks/useProcessStates';
+import { ruleEntries } from '@/lib/rules-editor';
+import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
+import { invariantPlan } from '@/lib/testing-invariants';
+import { probeBasis } from '@/lib/testing-mutation';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -277,7 +284,23 @@ export default function TestingSandboxPage() {
     () => (project && project.s4Environment === 'live' ? { ...project, s4Environment: 'mock' } : project),
     [project],
   );
-  const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError } = useTestExecution(projectId as string, runProject, setProject);
+  const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants } = useTestExecution(projectId as string, runProject, setProject);
+  /**
+   * 3.0.10 (owner 11.10.2026, external review F-01/F-02/F-05) — the material
+   * business rules of the signed source, the owner's decisions on them
+   * (keep / change deliberately / drop / clarify), and the shared-selection
+   * invariant read from the generated routes: what each case's "old against
+   * new" and the suite's rule coverage are read against.
+   */
+  const originSource = useMemo(() => signedForOrigin(project).signed?.source ?? null, [project]);
+  const materialRuleRead = useMaterialRules(originSource);
+  const { outcome: ruleStatesOutcome } = useProcessStates(projectId as string, !!originSource);
+  const ruleStates = useMemo(() => {
+    const entries = ruleEntries(ruleStatesOutcome && ruleStatesOutcome.ok ? ruleStatesOutcome.view : null);
+    return new Map(Object.entries(entries).map(([id, entry]) => [id, entry.state]));
+  }, [ruleStatesOutcome]);
+  const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
+  const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
   /**
    * ADR-075 — the full record of a result from the reader's own SAP system
@@ -1099,6 +1122,37 @@ export default function TestingSandboxPage() {
   const run = lastRun(project, testResults);
   /** ADR-094 — testing closed by the owner without a passing run. */
   const testsClosed = testingClosureReading(project).state === 'current';
+  /**
+   * 3.0.10 — per case: unchanged / deliberately changed / defect / not yet
+   * assessable, from the verdict of the last run (receipt or session) and the
+   * owner's decision on the traced rule. Default: not yet assessable.
+   */
+  const assessmentOf = (tc: ScenarioCase): CaseAssessmentReading =>
+    assessCase({
+      trace: ruleTraceOf(tc),
+      verdict: verdictOf(tc),
+      ruleState: (() => {
+        const trace = ruleTraceOf(tc);
+        return trace ? ruleStates.get(trace.ruleId) ?? null : null;
+      })(),
+      invariant: tc.invariant === true,
+    });
+  const coveringReceipt = coveringTestRunReceipt(project);
+  const caseIdsForProbe = testCases.map((tc) => String(tc.id ?? '')).filter(Boolean);
+  const probeBasisReading = probeBasis(coveringReceipt, caseIdsForProbe);
+  const evidence = {
+    coverage: materialRuleRead.rules
+      ? ruleCoverage(materialRuleRead.rules, testCases as unknown as Array<Record<string, unknown>>, originEngine.engine)
+      : null,
+    coverageNote: !originSource
+      ? 'No signed source is on this project, so the rules of the original cannot be read.'
+      : materialRuleRead.failed
+        ? 'The rules of the original could not be read from the signed source.'
+        : 'The rules of the original are being read from the signed source.',
+    assessments: testCases.length > 0 ? countAssessments(testCases.map((tc) => assessmentOf(tc as unknown as ScenarioCase).value)) : null,
+    mutation: coveringReceipt?.mutation ?? probe.report,
+    probeBasis: probeBasisReading.ok ? null : probeBasisReading.reason,
+  };
   /** Something to report on: scenarios, a suite that could not be read back, or a run. Until then the tool shows its first step, not a row of tiles saying None. */
   const hasTestingRecord = testCases.length > 0 || !!storedSuiteRejected || run.kind !== 'none';
   /**
@@ -1522,6 +1576,22 @@ export default function TestingSandboxPage() {
                 dashes under a disabled button. */}
             {run.kind !== 'none' ? <TestPipeline written={testCases.length} run={run} /> : null}
 
+            {/* 3.0.10 — rule coverage against the original, the shared-selection
+                invariant and the mutation probe (external review F-01/F-02/F-05). */}
+            {!isAbapCloud && testCases.length > 0 ? (
+              <TestEvidenceCard
+                coverage={evidence.coverage}
+                coverageNote={evidence.coverageNote}
+                assessments={evidence.assessments}
+                invariant={sharedSelection}
+                mutation={evidence.mutation}
+                probe={{ state: probe.state, error: probe.error }}
+                probeBasis={evidence.probeBasis}
+                canProbe={isOwner && !testRunBlocked(project)}
+                onProbe={() => void probeMutants()}
+              />
+            ) : null}
+
             {/* ADR-094 — a failed or impossible run can be concluded: closed by
                 the owner with a reason, "not verified", never passed. */}
             {project && testCases.length > 0 ? (
@@ -1758,6 +1828,7 @@ export default function TestingSandboxPage() {
                 projectName={project?.name}
                 origin={originEngine}
                 outsideOf={isAbapCloud ? outsideOf : undefined}
+                assessmentOf={isAbapCloud ? undefined : assessmentOf}
                 onShowOutput={testResults ? () => {
                   setShowConsole(true);
                   requestAnimationFrame(() => document.querySelector('[data-testing-console]')?.scrollIntoView({ block: 'start' }));
