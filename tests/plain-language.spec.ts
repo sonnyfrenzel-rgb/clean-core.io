@@ -94,7 +94,7 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(conditionToPhrase('p_rfc = abap_true', ctx)).toBe('Remote call selected');
     expect(conditionToPhrase('NOT ( p_rfc = abap_true )', ctx)).toBe('Remote call not selected');
     expect(conditionToQuestion('p_upd = abap_true AND p_bdc = abap_true', ctx).question)
-      .toBe('Update and batch input selected?');
+      .toBe('Update and simulated entry selected?');
     expect(conditionToQuestion('gv_rejected = abap_false').question).toBe('Not rejected?');
     expect(conditionToQuestion('gv_approved = abap_true').question).toBe('Approved?');
     expect(conditionToQuestion("gs_eban-frgkz = 'X'").question).toBe('Release indicator set?');
@@ -232,10 +232,10 @@ test.describe('plain-language wording — the owner\'s examples', () => {
       skeleton.nodes.find((n) => labels.technical(n.id) === text)?.id ?? '');
     expect(byTechnical('SELECT VBAK')).toBe('Read sales orders');
     expect(byTechnical('GUID_CREATE')).toBe('Create ID');
-    expect(byTechnical('GUI_DOWNLOAD')).toBe('Download file');
+    expect(byTechnical('GUI_DOWNLOAD')).toBe("Save a file to the user's PC");
     expect(byTechnical('SO_NEW_DOCUMENT_SEND_API1')).toBe('Send mail');
-    expect(byTechnical('REUSE_ALV_GRID_DISPLAY')).toBe('Show result list');
-    expect(byTechnical('VA02')).toBe('Change sales order');
+    expect(byTechnical('REUSE_ALV_GRID_DISPLAY')).toBe('Show the result list');
+    expect(byTechnical('VA02')).toBe('Change sales order (VA02) by simulated entry');
     expect(byTechnical('LOOP AT gt_orders')).toBe('For each order');
     expect(byTechnical('INSERT ZSD_ORD_RISK')).toBe('Create entry in ZSD_ORD_RISK');
     expect(byTechnical('INITIALIZATION')).toBe('Program starts');
@@ -247,11 +247,11 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(stepName(node('read', 'ZMM_X', { tables: ['ZMM_X'], single: true }))).toBe('Read ZMM_X');
     expect(stepName(node('write', 'GT_ITEMS', { operation: 'MODIFY' }))).toBe('Update items list');
     expect(stepName(node('service-task', 'BAPI_PO_CREATE1'))).toBe('Create purchase order');
-    expect(stepName(node('service-task', 'LV_FM', { dynamic: true }))).toBe('Call function (dynamic)');
+    expect(stepName(node('service-task', 'LV_FM', { dynamic: true }))).toBe('Run a step chosen at runtime');
     expect(stepName(node('transaction', 'ZXY1'))).toBe('Run transaction ZXY1');
-    expect(stepName(node('output', 'WRITE', { target: 'list' }))).toBe('Write list');
+    expect(stepName(node('output', 'WRITE', { target: 'list' }))).toBe('Show the result list');
     expect(stepName(node('user-task', 'MESSAGE', { message: 'I' }))).toBe('Show message');
-    expect(stepName(node('call-activity', 'ZREPORT'))).toBe('Run program ZREPORT');
+    expect(stepName(node('call-activity', 'ZREPORT'))).toBe('Start the report ZREPORT');
     expect(stepName(node('parallel-gateway', 'FORK'))).toBe('');
     expect(stepName(node('start', 'AT LINE-SELECTION', { origin: 'event' }))).toBe('Line selected');
     expect(stepName(node('error-boundary', 'CX_SY_ZERODIVIDE', { attachedTo: '' }))).toBe('Error caught');

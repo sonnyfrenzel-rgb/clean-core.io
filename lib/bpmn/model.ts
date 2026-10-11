@@ -110,6 +110,11 @@ export interface ExportNode {
   name: string;
   /** The token the skeleton read out of the source — always kept, for the Technical names view and the trace. */
   technicalName: string;
+  /**
+   * The SAP technique behind a plain name, in the statement's words (`CALL SCREEN 9000 (dynpro)`).
+   * Only with plain labels; the element's documentation says it under the name (owner, 11.10.2026).
+   */
+  technique?: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
   error: boolean;
@@ -564,6 +569,7 @@ class ModelBuilder {
         tag: tagOf(source),
         name: plain !== undefined && (plain || tagOf(source) === 'parallelGateway') ? plain : technicalName,
         technicalName,
+        ...(this.labels ? { technique: this.labels.technique(source.id) } : {}),
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
         incoming: [],

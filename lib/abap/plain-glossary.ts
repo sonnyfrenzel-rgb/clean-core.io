@@ -361,8 +361,8 @@ export const STEM_ABBREVIATIONS: Readonly<Record<string, string>> = Object.freez
   down: 'download',
   file: 'file',
   test: 'test run',
-  bdc: 'batch input',
-  alv: 'ALV list',
+  bdc: 'simulated entry',
+  alv: 'result list',
   rfc: 'remote call',
   bp: 'business partner',
   po: 'purchase order',
@@ -380,8 +380,8 @@ export const STEM_ABBREVIATIONS: Readonly<Record<string, string>> = Object.freez
   log: 'log entry',
   return: 'return message',
   dept: 'department',
-  fieldcat: 'field catalog',
-  fcat: 'field catalog',
+  fieldcat: 'list columns',
+  fcat: 'list columns',
 });
 
 /**
@@ -391,7 +391,7 @@ export const STEM_ABBREVIATIONS: Readonly<Record<string, string>> = Object.freez
 export const ROUTINE_ABBREVIATIONS: Readonly<Record<string, string>> = Object.freeze({
   bp: 'business partner',
   po: 'purchase order',
-  alv: 'ALV list',
+  alv: 'result list',
   bdc: 'batch input',
   rfc: 'remote',
   qty: 'quantity',
@@ -403,8 +403,8 @@ export const ROUTINE_ABBREVIATIONS: Readonly<Record<string, string>> = Object.fr
   desc: 'description',
   ref: 'reference',
   dept: 'department',
-  fieldcat: 'field catalog',
-  fcat: 'field catalog',
+  fieldcat: 'list columns',
+  fcat: 'list columns',
 });
 
 /** Words written in capitals wherever they appear. */
@@ -413,13 +413,20 @@ export const ACRONYMS: ReadonlySet<string> = new Set([
   'sap', 'sd', 'mm', 'fi', 'hr', 'pp', 'pm', 'qm', 'wm', 'url', 'xml', 'iban', 'vat', 'uuid',
 ]);
 
-/** Function modules a business reader knows by what they do. */
+/**
+ * Function modules a business reader knows by what they do.
+ *
+ * Owner, 11.10.2026: a step says what it does for the business, never which
+ * SAP technique does it — "Show the result list", not "ALV"; "Read a file from
+ * the user's PC", not "GUI_UPLOAD". The function module stays underneath, as
+ * the element's technical name and in its documentation, with its line.
+ */
 export const FUNCTION_TERMS_EN: Readonly<Record<string, string>> = Object.freeze({
   BAPI_PO_CREATE1: 'Create purchase order',
   BAPI_PO_CHANGE: 'Change purchase order',
   BAPI_PR_CREATE: 'Create purchase requisition',
-  BAPI_TRANSACTION_COMMIT: 'Commit changes',
-  BAPI_TRANSACTION_ROLLBACK: 'Roll back changes',
+  BAPI_TRANSACTION_COMMIT: 'Save the changes',
+  BAPI_TRANSACTION_ROLLBACK: 'Discard the changes',
   BAPI_SALESORDER_CREATEFROMDAT2: 'Create sales order',
   BAPI_SALESORDER_CHANGE: 'Change sales order',
   BAPI_GOODSMVT_CREATE: 'Post goods movement',
@@ -427,12 +434,23 @@ export const FUNCTION_TERMS_EN: Readonly<Record<string, string>> = Object.freeze
   BAPI_MATERIAL_SAVEDATA: 'Save material',
   BAPI_CUSTOMER_GETDETAIL2: 'Read customer',
   BAPI_BUPA_CENTRAL_GETDETAIL: 'Read business partner',
-  REUSE_ALV_GRID_DISPLAY: 'Show result list',
-  REUSE_ALV_LIST_DISPLAY: 'Show result list',
-  GUI_DOWNLOAD: 'Download file',
-  GUI_UPLOAD: 'Upload file',
+  DB_COMMIT: 'Save the changes',
+  REUSE_ALV_GRID_DISPLAY: 'Show the result list',
+  REUSE_ALV_GRID_DISPLAY_LVC: 'Show the result list',
+  REUSE_ALV_LIST_DISPLAY: 'Show the result list',
+  REUSE_ALV_HIERSEQ_LIST_DISPLAY: 'Show the result list',
+  REUSE_ALV_BLOCK_LIST_DISPLAY: 'Show the result list',
+  REUSE_ALV_POPUP_TO_SELECT: 'Ask the user to pick from a list',
+  REUSE_ALV_COMMENTARY_WRITE: 'Show the list header',
+  REUSE_ALV_FIELDCATALOG_MERGE: 'Define the list columns',
+  REUSE_ALV_EVENTS_GET: 'Prepare the result list',
+  GUI_DOWNLOAD: "Save a file to the user's PC",
+  GUI_UPLOAD: "Read a file from the user's PC",
+  WS_DOWNLOAD: "Save a file to the user's PC",
+  WS_UPLOAD: "Read a file from the user's PC",
   SO_NEW_DOCUMENT_SEND_API1: 'Send mail',
   SO_NEW_DOCUMENT_ATT_SEND_API1: 'Send mail',
+  SO_DOCUMENT_SEND_API1: 'Send mail',
   SAP_WAPI_CREATE_EVENT: 'Start workflow',
   SWE_EVENT_CREATE: 'Start workflow',
   GUID_CREATE: 'Create ID',
@@ -443,13 +461,13 @@ export const FUNCTION_TERMS_EN: Readonly<Record<string, string>> = Object.freeze
   POPUP_TO_DECIDE: 'Ask for a decision',
   POPUP_TO_INFORM: 'Show information',
   POPUP_GET_VALUES: 'Ask for values',
-  REUSE_ALV_FIELDCATALOG_MERGE: 'Build field catalog',
+  F4IF_INT_TABLE_VALUE_REQUEST: 'Offer a list of values to pick from',
   ENQUEUE_EMEBANE: 'Lock purchase requisition',
   DEQUEUE_EMEBANE: 'Unlock purchase requisition',
   NUMBER_GET_NEXT: 'Draw next number',
   JOB_OPEN: 'Open background job',
   JOB_CLOSE: 'Schedule background job',
-  MASTER_IDOC_DISTRIBUTE: 'Send IDoc',
+  MASTER_IDOC_DISTRIBUTE: 'Send data to partner systems',
   READ_TEXT: 'Read text',
   SAVE_TEXT: 'Save text',
 });
@@ -473,6 +491,18 @@ export const TRANSACTION_TERMS_EN: Readonly<Record<string, string>> = Object.fre
   XK02: 'Change supplier',
   BP: 'Maintain business partner',
   FB01: 'Post document',
+  FB02: 'Change accounting document',
+  FB03: 'Display accounting document',
+  FBL1N: 'Display supplier line items',
+  FBL3N: 'Display G/L account line items',
+  FBL5N: 'Display customer line items',
+  XD03: 'Display customer',
+  XK03: 'Display supplier',
+  ME53N: 'Display purchase requisition',
+  VL03N: 'Display outbound delivery',
+  VF02: 'Change billing document',
+  VF03: 'Display billing document',
+  MIR4: 'Display supplier invoice',
   VL01N: 'Create outbound delivery',
   VL02N: 'Change outbound delivery',
   VF01: 'Create billing document',
@@ -484,7 +514,7 @@ export const TRANSACTION_TERMS_EN: Readonly<Record<string, string>> = Object.fre
 export const EVENT_TERMS_EN: Readonly<Record<string, string>> = Object.freeze({
   'LOAD-OF-PROGRAM': 'Program loaded',
   INITIALIZATION: 'Program starts',
-  'AT SELECTION-SCREEN OUTPUT': 'Selection screen shown',
+  'AT SELECTION-SCREEN OUTPUT': 'Selection prepared for entry',
   'AT SELECTION-SCREEN': 'Selection entered',
   'START-OF-SELECTION': 'Run starts',
   'GET': 'Record read',
@@ -492,5 +522,5 @@ export const EVENT_TERMS_EN: Readonly<Record<string, string>> = Object.freeze({
   'TOP-OF-PAGE': 'Page header',
   'END-OF-PAGE': 'Page footer',
   'AT LINE-SELECTION': 'Line selected',
-  'AT USER-COMMAND': 'User command',
+  'AT USER-COMMAND': 'User chooses a function',
 });

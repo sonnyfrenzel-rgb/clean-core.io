@@ -90,8 +90,8 @@ test.describe('German names — the owner example', () => {
   test('the steps of the process overview read English, the German original in parentheses', () => {
     expect(humaniseRoutine('DATEN_LESEN')).toBe('Read data (Daten lesen)');
     expect(humaniseRoutine('DATEN_AUFBEREITEN')).toBe('Prepare data (Daten aufbereiten)');
-    expect(humaniseRoutine('FELDKATALOG_AUFBAUEN')).toBe('Build field catalog (Feldkatalog aufbauen)');
-    expect(humaniseRoutine('ALV_AUSGABE')).toBe('Output ALV list (ALV-Ausgabe)');
+    expect(humaniseRoutine('FELDKATALOG_AUFBAUEN')).toBe('Build list columns (Feldkatalog aufbauen)');
+    expect(humaniseRoutine('ALV_AUSGABE')).toBe('Output result list (ALV-Ausgabe)');
     expect(humaniseRoutine('STATUS_ERLEDIGT_SETZEN')).toBe('Set status to completed (Status erledigt setzen)');
     expect(humaniseRoutine('LIEFERDATUM_AENDERN')).toBe('Change delivery date (Lieferdatum ändern)');
     expect(humaniseRoutine('lieferdatum_aendern')).toBe('Change delivery date (Lieferdatum ändern)');
@@ -107,7 +107,7 @@ test.describe('German names — the owner example', () => {
     };
     expect(label('gateway', /gt_ausgabe/)).toBe('Any output lines?');
     expect(label('gateway', /^r_ucomm$/)).toBe('User command?');
-    expect(label('user-task', /^ALV_AUSGABE$/)).toBe('Output ALV list (ALV-Ausgabe)');
+    expect(label('user-task', /^ALV_AUSGABE$/)).toBe('Output result list (ALV-Ausgabe)');
     expect(label('user-task', /^LIEFERDATUM_AENDERN$/)).toBe('Change delivery date (Lieferdatum ändern)');
     expect(label('user-task', /^POPUP_GET_VALUES$/)).toBe('Ask for values');
     expect(label('end-error', /MESSAGE/)).toBe('Stop: no data found');

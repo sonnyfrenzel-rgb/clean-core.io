@@ -23,7 +23,7 @@
  *
  * German grammar handled: umlaut spellings (`ae`/`oe`/`ue`/`ss` and the real
  * letters), the verb at the end (`DATEN_LESEN` → "Read data"), a verbal noun at
- * the end (`ALV_AUSGABE` → "Output ALV list"), a state set by the verb
+ * the end (`ALV_AUSGABE` → "Output result list"), a state set by the verb
  * (`STATUS_ERLEDIGT_SETZEN` → "Set status to completed"), inflected adjectives
  * (`OFFENE_POSTEN` → "Open items") and compound nouns (`LIEFERDATUM` →
  * "Delivery date", `FELDKATALOG` → "Field catalog").
@@ -396,7 +396,7 @@ interface Token {
 }
 
 export interface WordSources {
-  /** Abbreviations of the caller's own (`alv` → "ALV list"). */
+  /** Abbreviations of the caller's own (`alv` → "result list"). */
   abbreviations?: Readonly<Record<string, string>>;
   /** Words written in capitals (`alv`, `sap`). */
   acronyms?: ReadonlySet<string>;

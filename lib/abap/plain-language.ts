@@ -449,7 +449,7 @@ function fieldWord(identifier: string, ctx: PlainContext | undefined, short: boo
 
 /**
  * A routine, function module or event name as words: `READ_REQUISITION` →
- * "Read requisition", `CHANGE_SALES_ORDER_BDC` → "Change sales order batch input".
+ * "Read requisition", `CHANGE_SALES_ORDER_BDC` → "Change sales order by simulated entry".
  */
 export function humaniseRoutine(name: string): string {
   return routineWords(name, true);
@@ -474,13 +474,37 @@ function routineWords(name: string, withOriginal: boolean): string {
     const german = translateGermanWords(words, 'routine', ROUTINE_SOURCES);
     if (isUntranslatable(german)) return String(name).trim().toUpperCase();
     if (german) {
-      return withOriginal ? `${german.english} (${german.original ?? String(name).trim().toUpperCase()})` : german.english;
+      const english = withoutTechnique(german.english);
+      return withOriginal ? `${english} (${german.original ?? String(name).trim().toUpperCase()})` : english;
     }
     const out = words.map((w) => (Object.prototype.hasOwnProperty.call(ROUTINE_ABBREVIATIONS, w) ? ROUTINE_ABBREVIATIONS[w] : wordCase(w)));
-    return sentenceCase(out.join(' '));
+    return sentenceCase(withoutTechnique(out.join(' ')));
   } catch {
     return String(name ?? '');
   }
+}
+
+/**
+ * A routine name says what the routine does in the words its developer chose —
+ * and those words often name the SAP technique instead (owner, 11.10.2026:
+ * "does a business consumer understand 'ALV list'?"). The technique words of a
+ * name are said in business words; nothing is added that the name does not say:
+ *
+ * - `batch input` (and `BDC`, through `ROUTINE_ABBREVIATIONS`) is the way the
+ *   step does its work, so it moves behind what is done — `CREATE_PO_BATCH_INPUT`
+ *   → "Create purchase order by simulated entry";
+ * - `field catalog` is what an ALV list calls its column definition → "list columns".
+ *
+ * `ALV` itself is "result list" in `ROUTINE_ABBREVIATIONS`. The name as the
+ * source writes it stays the element's technical name.
+ */
+function withoutTechnique(words: string): string {
+  let text = words.replace(/\bfield catalog\b/gi, 'list columns');
+  if (/\bbatch input\b/i.test(text)) {
+    const rest = text.replace(/\s*\bbatch input\b\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+    text = rest ? `${rest} by simulated entry` : 'simulated entry';
+  }
+  return text;
 }
 
 function humaniseLiteralValue(value: string): string {
@@ -513,6 +537,12 @@ function fit(label: string, max = MAX_LABEL): string {
   const space = cut.lastIndexOf(' ');
   if (space > room / 2) cut = cut.slice(0, space);
   return `${cut.replace(/[\s,:;–-]+$/, '')}…${question ? '?' : ''}`;
+}
+
+/** The first wording that fits a label whole; the last one, shortened, when none does. */
+function firstFitting(candidates: readonly string[]): string {
+  const whole = candidates.find((c) => c.replace(/\s+/g, ' ').trim().length <= MAX_LABEL);
+  return fit(whole ?? candidates[candidates.length - 1] ?? '');
 }
 
 /* ------------------------------------------------------------------ *
@@ -1423,10 +1453,36 @@ function eventName(label: string): string {
   return sentenceCase(upper.toLowerCase().replace(/-/g, ' '));
 }
 
+/**
+ * What a function module does, for a business reader (owner, 11.10.2026).
+ *
+ * A listed module says its business name (`plain-glossary.ts`). A module
+ * family SAP names by what it does says that and no more: every `REUSE_ALV_*`
+ * builds or shows an ALV list, every `ENQUEUE_*`/`DEQUEUE_*` sets or releases a
+ * lock, `F4IF_*` offers input help. A `BAPI_*` drops the word "BAPI" — it names
+ * the interface, not the work. Anything else is its humanised name, never a
+ * meaning the name does not carry; the module name stays the technical name.
+ */
 function functionName(name: string, dynamic: boolean): string {
-  if (dynamic) return 'Call function (dynamic)';
+  if (dynamic) return 'Run a step chosen at runtime';
   const upper = name.trim().toUpperCase();
-  return FUNCTION_TERMS_EN[upper] ?? (humaniseRoutine(upper.replace(/^[ZY]_/, '')) || upper);
+  const bare = upper.replace(/^\/[^/]+\//, '');
+  const known = FUNCTION_TERMS_EN[upper] ?? FUNCTION_TERMS_EN[bare];
+  if (known) return known;
+  if (/^REUSE_ALV_/.test(bare)) return /DISPLAY/.test(bare) ? 'Show the result list' : 'Prepare the result list';
+  if (/^ENQUEUE_/.test(bare)) return 'Lock data for editing';
+  if (/^DEQUEUE_/.test(bare)) return 'Release the lock';
+  if (/^F4IF_/.test(bare)) return 'Offer input help';
+  if (/^BAPI_./.test(bare)) return humaniseRoutine(bare.slice(5)) || upper;
+  return humaniseRoutine(upper.replace(/^[ZY]_/, '')) || upper;
+}
+
+/** Does a run of list output go to the printer — `NEW-PAGE PRINT ON` inside its lines? */
+function printsList(node: SkeletonNode, ctx: PlainContext): boolean {
+  const from = node.anchor?.lineStart;
+  if (!from) return false;
+  const to = Math.max(from, node.anchor?.lineEnd ?? from);
+  return ctx.statements.some((s) => s.line >= from && s.line <= to && /^NEW-PAGE\b[\s\S]*\bPRINT\s+ON\b/i.test(s.text));
 }
 
 function readName(node: SkeletonNode): string {
@@ -1467,6 +1523,11 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         if (node.detail?.subProcess === true) return 'Start';
         const origin = detailString(node, 'origin');
         if (origin && origin !== 'event' && origin !== 'implicit') return 'Start';
+        // A report with `PARAMETERS`/`SELECT-OPTIONS` runs on what someone
+        // entered on its selection screen: the start says so (owner, 11.10.2026).
+        if (/^START-OF-SELECTION$/i.test(node.label.trim()) && c.selections.size > 0) {
+          return 'Run starts with the entered selection';
+        }
         return fit(eventName(node.label));
       }
       case 'end':
@@ -1497,25 +1558,38 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         return fit(functionName(node.label, node.detail?.dynamic === true));
       case 'user-task': {
         if (detailString(node, 'message')) return 'Show message';
-        if (/^\d+$/.test(node.label)) return `Show screen ${node.label}`;
+        // `CALL SCREEN 9000`: a person enters data on a screen of the program.
+        if (/^\d+$/.test(node.label) || /^CALL\s+SCREEN\b/i.test(statementAt(c, line)?.text ?? '')) {
+          return fit(`Enter data on screen ${node.label.toUpperCase()}`);
+        }
         return fit(functionName(node.label, node.detail?.dynamic === true));
       }
       case 'output': {
         const target = detailString(node, 'target');
         const label = node.label.toUpperCase();
-        if (target === 'list') return 'Write list';
+        if (target === 'list') return printsList(node, c) ? 'Print the list' : 'Show the result list';
         if (target === 'file') {
-          if (label === 'OPEN') return 'Open file';
-          if (label === 'CLOSE') return 'Close file';
-          if (label === 'READ') return 'Read file';
-          if (label === 'DELETE') return 'Delete file';
-          return 'Write file';
+          // `… DATASET`: a file on the application server, not on the user's PC.
+          if (label === 'OPEN') return 'Open a file on the server';
+          if (label === 'CLOSE') return 'Close the file on the server';
+          if (label === 'READ') return 'Read a file on the server';
+          if (label === 'DELETE') return 'Delete a file on the server';
+          return 'Write a file on the server';
         }
         return fit(functionName(node.label, node.detail?.dynamic === true));
       }
       case 'transaction': {
-        if (node.detail?.dynamic === true) return 'Run transaction (dynamic)';
-        return fit(TRANSACTION_TERMS_EN[node.label.toUpperCase()] ?? `Run transaction ${node.label.toUpperCase()}`);
+        if (node.detail?.dynamic === true) return 'Run a transaction chosen at runtime';
+        const code = node.label.toUpperCase();
+        const known = TRANSACTION_TERMS_EN[code];
+        // `CALL TRANSACTION … USING`: the program types into the transaction's
+        // screens itself — batch input, a simulated entry.
+        if (node.detail?.batchInput === true) {
+          return firstFitting(known
+            ? [`${known} (${code}) by simulated entry`, `${known} by simulated entry`, `${known} (${code})`]
+            : [`Simulated entry in transaction ${code}`]);
+        }
+        return fit(known ? firstFitting([`${known} (${code})`, known]) : `Run transaction ${code}`);
       }
       case 'call-activity': {
         const text = statementAt(c, line)?.text ?? '';
@@ -1523,7 +1597,15 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
           const known = TRANSACTION_TERMS_EN[node.label.toUpperCase()];
           return fit(known ? `Go to: ${lcFirst(known)}` : `Go to transaction ${node.label.toUpperCase()}`);
         }
-        return fit(`Run program ${node.label.toUpperCase()}`);
+        // `SUBMIT`: another report runs — printed when it goes to the spool,
+        // in the background when it goes to a job.
+        if (node.detail?.dynamic === true) return 'Start a report chosen at runtime';
+        const report = node.label.toUpperCase();
+        if (/\bTO\s+SAP-SPOOL\b/i.test(text)) return firstFitting([`Print the report ${report}`]);
+        if (node.detail?.viaJob === true) {
+          return firstFitting([`Start the report ${report} in the background`, `Start the report ${report}`]);
+        }
+        return fit(`Start the report ${report}`);
       }
       case 'call-opaque': {
         if (/^PERFORM$/i.test(node.label)) return 'Call routine';
@@ -1675,6 +1757,14 @@ export interface PlainLabels {
   flow(edge: SkeletonEdge): string;
   /** The exact technical text the label was made from (for tooltips/documentation). */
   technical(nodeId: string): string;
+  /**
+   * The SAP technique a step's business label no longer names, in the
+   * statement's own words — `CALL SCREEN 9000`, `CALL TRANSACTION 'ME21N'
+   * USING … (batch input)`, `CALL FUNCTION 'GUI_UPLOAD'`. For the element's
+   * documentation, under the label (owner, 11.10.2026). '' when the step has
+   * no such technique — the documentation then keeps the technical name.
+   */
+  technique(nodeId: string): string;
 }
 
 function normalise(condition: string): string {
@@ -1705,6 +1795,51 @@ function technicalOf(node: SkeletonNode): string {
   return node.label;
 }
 
+/** See `PlainLabels.technique`. Only tokens of the statement and the SAP name of its technique; '' without one. */
+function techniqueOf(node: SkeletonNode, ctx: PlainContext): string {
+  const text = statementAt(ctx, node.anchor?.lineStart)?.text ?? '';
+  const name = node.label.toUpperCase();
+  const fm = /^CALL\s+FUNCTION\b/i.test(text);
+  switch (node.kind) {
+    case 'service-task':
+    case 'send-task':
+    case 'user-task':
+    case 'output': {
+      if (fm && !isCallSite(node)) {
+        const how = [
+          typeof node.detail?.destination === 'string' ? `DESTINATION ${node.detail.destination} (remote call)` : '',
+          node.detail?.inUpdateTask === true ? 'IN UPDATE TASK (runs when the changes are saved)' : '',
+          node.detail?.startingNewTask === true ? 'STARTING NEW TASK (runs in parallel)' : '',
+        ].filter(Boolean).join(' ');
+        const family = /^REUSE_ALV_/.test(name) ? ' (ALV list)' : /^BAPI_/.test(name) ? ' (BAPI)' : '';
+        return `CALL FUNCTION '${name}'${family}${how ? ` ${how}` : ''}`;
+      }
+      if (node.kind === 'user-task' && /^CALL\s+SCREEN\b/i.test(text)) return `CALL SCREEN ${name} (dynpro)`;
+      if (node.kind === 'output' && detailString(node, 'target') === 'list') {
+        return `${name} (list output${printsList(node, ctx) ? ' to the spool' : ''})`;
+      }
+      if (node.kind === 'output' && detailString(node, 'target') === 'file') return `${name} DATASET (application server file)`;
+      return '';
+    }
+    case 'transaction':
+      if (isCallSite(node)) return '';
+      return `CALL TRANSACTION '${name}'${node.detail?.batchInput === true ? ' USING … (batch input)' : ''}`;
+    case 'call-activity':
+      if (/^SUBMIT\b/i.test(text)) {
+        return `SUBMIT ${name}${node.detail?.returns === true ? ' AND RETURN' : ''}${node.detail?.viaJob === true ? ' VIA JOB' : ''}${/\bTO\s+SAP-SPOOL\b/i.test(text) ? ' TO SAP-SPOOL' : ''}`;
+      }
+      if (/^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) return `LEAVE TO TRANSACTION '${name}'`;
+      return '';
+    case 'start':
+      if (/^START-OF-SELECTION$/i.test(node.label.trim()) && ctx.selections.size > 0) {
+        return 'START-OF-SELECTION (after the selection screen)';
+      }
+      return '';
+    default:
+      return '';
+  }
+}
+
 /**
  * Every node of a skeleton gets a plain-language label (a parallel gateway
  * gets none, by BPMN convention), and every flow out of a decision gets the
@@ -1714,6 +1849,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
   const ctx = plainContext(source ?? '');
   const nodes = new Map<string, string>();
   const technical = new Map<string, string>();
+  const technique = new Map<string, string>();
   const byId = new Map<string, SkeletonNode>();
   const outs = new Map<string, SkeletonEdge[]>();
   const ins = new Map<string, SkeletonEdge[]>();
@@ -1912,6 +2048,11 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
     if (!label && node.kind !== 'parallel-gateway') label = humaniseRoutine(node.label) || 'Step';
     nodes.set(node.id, node.kind === 'parallel-gateway' ? '' : fit(label));
     technical.set(node.id, technicalOf(node));
+    try {
+      technique.set(node.id, techniqueOf(node, ctx));
+    } catch {
+      technique.set(node.id, '');
+    }
   }
 
   return {
@@ -1935,6 +2076,9 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string): PlainLa
     },
     technical(nodeId: string): string {
       return technical.get(nodeId) ?? '';
+    },
+    technique(nodeId: string): string {
+      return technique.get(nodeId) ?? '';
     },
   };
 }

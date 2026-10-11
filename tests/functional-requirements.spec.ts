@@ -126,7 +126,7 @@ test('the sales-order creator: hard-coded order values and the commit decision a
   const fixed = set.requirements.find((r) => r.basis.kind === 'fixed-values');
   expect(fixed?.statement).toContain("'TA'");
   const decision = set.requirements.find((r) => r.basis.kind === 'decision');
-  expect(decision?.statement).toMatch(/Commit changes[\s\S]*otherwise[\s\S]*Roll back changes/);
+  expect(decision?.statement).toMatch(/Save the changes[\s\S]*otherwise[\s\S]*Discard the changes/);
   expect(decision?.priority).toBe('must');
 });
 

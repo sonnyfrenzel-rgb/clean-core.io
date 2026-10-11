@@ -84,7 +84,7 @@ test.describe('the rules', () => {
   test('the engine context carries the process, the rules with their lines and what is not determined', () => {
     const text = engineDesignContext({ requirements: buildRequirementSet({ source: SOURCE }), contract: null, findings: [] });
     expect(text).toContain('BAPI_SALESORDER_CREATEFROMDAT2');
-    expect(text).toContain('Roll back changes');
+    expect(text).toContain('Discard the changes');
     expect(text).toMatch(/L86/);
     expect(text).toContain('notDetermined');
   });
