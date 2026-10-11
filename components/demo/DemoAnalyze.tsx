@@ -15,7 +15,7 @@ import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
-import { accessUseOfKind, findingRows, SEVERITY_ORDER } from '@/lib/findings-view';
+import { accessUseOfKind, findingRows, levelFacetCounts, SEVERITY_ORDER } from '@/lib/findings-view';
 import { routeDrivers } from '@/lib/abap/extensibility-router';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -77,19 +77,8 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
     }),
     [a.levels],
   );
-  const levelFacet = useMemo(() => {
-    const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0, Unknown: 0 };
-    let noObject = 0;
-    for (const r of rows) {
-      if (!r.finding.objectName) {
-        noObject++;
-        continue;
-      }
-      const g = levels.of(r.finding);
-      if (g) dist[g]++;
-    }
-    return { status: 'ready' as const, dist, noObject };
-  }, [rows, levels]);
+  // The real page's facet rule: statements and no-object findings are not Unknown.
+  const levelFacet = useMemo(() => ({ status: 'ready' as const, ...levelFacetCounts(rows, levels.of) }), [rows, levels]);
 
   const notAssessedItems = useMemo(
     () => (a.coverage?.gaps ?? []).map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),

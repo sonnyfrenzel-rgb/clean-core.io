@@ -77,7 +77,7 @@ export function CcCleanCoreLevelExplained({
  * it on hover, focus and tap like a level chip — never a letter, never the
  * "—" of a level that was looked up and not determined.
  */
-export function CcNoLevelExplained({ reason }: { reason: NoLevelReason }) {
+export function CcNoLevelExplained({ reason, count }: { reason: NoLevelReason; count?: number }) {
   return (
     <ExplainedMark
       wrapperData={{ 'data-cc-no-level': reason.kind }}
@@ -86,8 +86,12 @@ export function CcNoLevelExplained({ reason }: { reason: NoLevelReason }) {
       srSuffix={t('level.none')}
       wide={false}
       mark={
-        <span className="cc-text-meta font-medium text-cc-ink-muted underline decoration-dotted underline-offset-2">
-          {reason.label}
+        <span className="inline-flex items-center gap-1">
+          <span className="cc-text-meta font-medium text-cc-ink-muted underline decoration-dotted underline-offset-2">
+            {reason.label}
+          </span>
+          {/* A count, where the mark stands for several findings (the level facet). */}
+          {count !== undefined ? <span className="cc-text-meta text-cc-ink">{count}</span> : null}
         </span>
       }
     >

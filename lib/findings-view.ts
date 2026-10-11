@@ -559,6 +559,60 @@ export function noLevelReason(finding: Pick<EvidenceFinding, 'kind' | 'objectNam
   };
 }
 
+/**
+ * The same two reasons said for a count of findings — the level facet of the
+ * score hero (ADR-093), which counts them beside the letters rather than as
+ * "Unknown" (owner, 11.10.2026). Same label and title as the list's cells.
+ */
+export const NO_LEVEL_SUMMARY: Readonly<Record<NoLevelReason['kind'], NoLevelReason>> = {
+  statement: {
+    kind: 'statement',
+    label: 'Statement',
+    title: 'No level: a statement, not an SAP object',
+    detail:
+      `These findings are about ABAP statements themselves — ${Object.values(STATEMENT_OF_KIND).join(', ')}. A clean core level belongs to an SAP object that SAP's release or classification file lists, and a statement is not one — so they have no level, rather than an unknown one.`,
+  },
+  'no-object': {
+    kind: 'no-object',
+    label: 'No object',
+    title: 'No level: no SAP object named',
+    detail:
+      'The engine records no SAP object for these findings — the statement names none it can read (a name held in a variable, a literal value, a check the program does not make) — so there is nothing to look up in SAP\'s data.',
+  },
+};
+
+/** The level facet's counts: findings (rows) per level, and those without a level by reason. */
+export interface LevelFacetCounts {
+  /** `Unknown`: a named object SAP's data holds no answer for — never a finding without an object. */
+  dist: Record<CloudReadinessGrade, number>;
+  statements: number;
+  noObject: number;
+}
+
+/**
+ * Counts the rows for the level facet. `levelOf` is the page's lookup; a row
+ * it cannot answer yet is not counted under any level.
+ */
+export function levelFacetCounts(
+  rows: readonly FindingRow[],
+  levelOf: (finding: EvidenceFinding) => CloudReadinessGrade | null,
+): LevelFacetCounts {
+  const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0, Unknown: 0 };
+  let statements = 0;
+  let noObject = 0;
+  for (const r of rows) {
+    const reason = noLevelReason(r.finding);
+    if (reason) {
+      if (reason.kind === 'statement') statements++;
+      else noObject++;
+      continue;
+    }
+    const g = levelOf(r.finding);
+    if (g) dist[g]++;
+  }
+  return { dist, statements, noObject };
+}
+
 /** Other ways of grouping the list besides by kind. */
 export type GroupingKey = 'kind' | 'severity' | 'line';
 

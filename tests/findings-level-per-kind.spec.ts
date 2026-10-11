@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { buildAbapEvidence, type EvidenceFinding } from '../lib/abap/evidence-model';
 import { gradeSapObjectUse } from '../lib/abap/catalog-service';
 import type { CloudReadinessGrade } from '../lib/abap/abcd-classification';
-import { accessUseOfKind, findingRows, noLevelReason } from '../lib/findings-view';
+import { accessUseOfKind, findingRows, levelFacetCounts, noLevelReason } from '../lib/findings-view';
 
 /**
  * Every kind of finding names the SAP object it is graded on, or says it is a
@@ -118,6 +118,25 @@ test.describe('a finding without an SAP object says why it has no level', () => 
   });
 });
 
+test.describe('the level facet counts statements as statements, not as Unknown', () => {
+  test('levelFacetCounts: Unknown only for named objects; statements and no-object findings apart', () => {
+    const rows = findingRows(findings);
+    const counts = levelFacetCounts(rows, levelOf);
+    // AUTHORITY-CHECK and COMMIT WORK; SUBMIT (lv_prog) and the hard-coded
+    // file paths ('C:\temp\…', one row) name nothing.
+    expect(counts.statements).toBe(2);
+    expect(counts.noObject).toBe(2);
+    expect(rows.filter((r) => noLevelReason(r.finding)?.kind === 'no-object').map((r) => r.finding.kind).sort()).toEqual([
+      'hardcoded-value',
+      'submit',
+    ]);
+    // Every named object of this source is answered by SAP's data: no Unknown.
+    expect(counts.dist.Unknown).toBe(0);
+    const graded = counts.dist.A + counts.dist.B + counts.dist.C + counts.dist.D;
+    expect(graded + counts.dist.Unknown + counts.statements + counts.noObject).toBe(rows.length);
+  });
+});
+
 /* ------------------------------------------------------------- rendered */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -180,4 +199,54 @@ test('Findings by kind: every group shows a level letter or says "Statement", ne
   expect(html).toMatch(/data-cc-no-level-trigger="statement"[^>]*>|<button[^>]*data-cc-no-level-trigger="statement"/);
   expect(html).toContain('data-cc-no-level-explanation="statement"');
   expect(html).toContain('data-cc-no-level-trigger="no-object"');
+});
+
+test('the score hero\'s level facet: "Unknown 1" for the one unanswered object, "Statement 2" and "No object 1" beside it', async () => {
+  test.setTimeout(120 * 1000);
+  fs.mkdirSync(OUT, { recursive: true });
+  const outfile = path.join(OUT, `AnalysisAnswer-${process.pid}.cjs`);
+  await build({
+    entryPoints: [path.resolve(ROOT, 'components', 'analyze', 'AnalysisAnswer.tsx')],
+    outfile,
+    bundle: true,
+    format: 'cjs',
+    platform: 'node',
+    jsx: 'automatic',
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'lucide-react'],
+    alias: { '@': ROOT },
+    logLevel: 'silent',
+  });
+  const AnalysisAnswer = require(outfile).default as React.ComponentType<Record<string, unknown>>;
+  const html = renderToStaticMarkup(
+    React.createElement(AnalysisAnswer, {
+      score: null,
+      breakdown: null,
+      findings: [],
+      notAssessed: [],
+      edition: null,
+      engineVersion: null,
+      onExplainScore: () => {},
+      provenance: { run: null, engine: null, rules: null, fileName: null, lines: null, catalog: null },
+      severities: [],
+      findingCount: 9,
+      levels: { status: 'ready', dist: { A: 0, B: 3, C: 2, D: 0, Unknown: 1 }, statements: 2, noObject: 1 },
+      route: null,
+      routeChosenByReader: false,
+      decideHref: null,
+      questionsHref: null,
+      rerunHref: null,
+    }),
+  );
+  const text = (s: string) => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const facetAt = html.indexOf('data-level-bar');
+  const facet = text(html.slice(facetAt, html.indexOf('</dd>', facetAt)));
+  // Unknown is the named object SAP's data did not answer — not the statements.
+  expect(facet).toContain('Unknown 1');
+  expect(facet).toMatch(/Statement 2/);
+  expect(facet).toMatch(/No object 1/);
+  // Each explains itself like the list's cells, on hover, focus and tap.
+  expect(html).toContain('data-cc-no-level-trigger="statement"');
+  expect(html).toContain('data-cc-no-level-trigger="no-object"');
+  // The count line still accounts for every finding.
+  expect(text(html)).toContain('5 of 9 findings');
 });

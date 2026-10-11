@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcNoLevelExplained } from '@/components/cc/LevelExplained';
+import { NO_LEVEL_SUMMARY } from '@/lib/findings-view';
 import { severityChartMark } from '@/lib/chart-colors';
 import type { ScoreBreakdown } from '@/lib/clean-core-score';
 import { scoreRuleFor } from '@/lib/score-rule';
@@ -35,9 +37,11 @@ export interface SeverityPart {
 
 export interface LevelFacet {
   status: 'loading' | 'ready' | 'error';
-  /** Findings per level; `Unknown` is a finding the lookup could not grade. */
+  /** Findings per level; `Unknown` is a named object SAP's data holds no answer for. */
   dist: Record<CloudReadinessGrade, number>;
-  /** Findings that name no object, so there is nothing to look up. */
+  /** Findings about a statement (AUTHORITY-CHECK, COMMIT WORK …): no level, and not Unknown. */
+  statements: number;
+  /** Findings that name no object, so there is nothing to look up — not Unknown either. */
   noObject: number;
 }
 
@@ -182,7 +186,7 @@ export default function AnalysisAnswer({
               ? 'Looking up the catalog …'
               : levels.status === 'error'
                 ? 'The catalog lookup did not answer — no level is shown.'
-                : `${graded(levels)} of ${graded(levels) + levels.dist.Unknown + levels.noObject} findings · from SAP's catalog${
+                : `${graded(levels)} of ${graded(levels) + levels.dist.Unknown + levels.statements + levels.noObject} findings · from SAP's catalog${
                     edition ? `, read for ${editionName(edition)}` : ''
                   } · not signed`}
           </dd>
@@ -283,35 +287,53 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
   );
 }
 
-/** Every level letter with its count, and the findings without a level: `A 0 · B 2 · C 19 · D 2 · Unknown 4`. */
+/**
+ * Every level letter with its count, Unknown for the named objects SAP's data
+ * does not answer, then the findings that have no level at all, by reason and
+ * in the list's words: `A 0 · B 2 · C 19 · D 2 · Unknown 4 · Statement 2`
+ * (owner, 11.10.2026 — a statement is not an Unknown). The two reasons sit
+ * beside the bar, not inside it: they explain themselves on a tap, and a
+ * button cannot stand inside an image.
+ */
 function LevelChips({ levels }: { levels: LevelFacet }) {
   if (levels.status !== 'ready') {
     return <span className="cc-text-meta text-cc-ink-muted">—</span>;
   }
-  const unknown = levels.dist.Unknown + levels.noObject;
+  const unknown = levels.dist.Unknown;
+  const without = [
+    { reason: NO_LEVEL_SUMMARY.statement, n: levels.statements },
+    { reason: NO_LEVEL_SUMMARY['no-object'], n: levels.noObject },
+  ].filter((x) => x.n > 0);
   return (
-    <span
-      className="flex flex-wrap items-center gap-x-2 gap-y-1"
-      data-level-bar=""
-      aria-label={`Findings by clean core level — ${(['A', 'B', 'C', 'D'] as const).map((g) => `level ${g}: ${levels.dist[g]}`).join(', ')}, no level: ${unknown}.`}
-      role="img"
-    >
-      {(['A', 'B', 'C', 'D'] as const).map((g) => (
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span
+        className="flex flex-wrap items-center gap-x-2 gap-y-1"
+        data-level-bar=""
+        aria-label={`Findings by clean core level — ${(['A', 'B', 'C', 'D'] as const).map((g) => `level ${g}: ${levels.dist[g]}`).join(', ')}, not determined: ${unknown}.`}
+        role="img"
+      >
+        {(['A', 'B', 'C', 'D'] as const).map((g) => (
+          <span
+            key={g}
+            data-level-block={g}
+            className={cn('inline-flex items-center gap-1 cc-text-meta', levels.dist[g] === 0 ? 'text-cc-ink-muted' : 'text-cc-ink', levels.dist[g] === 0 && 'max-sm:hidden')}
+          >
+            <CcCleanCoreLevel value={g} />
+            {levels.dist[g]}
+          </span>
+        ))}
         <span
-          key={g}
-          data-level-block={g}
-          className={cn('inline-flex items-center gap-1 cc-text-meta', levels.dist[g] === 0 ? 'text-cc-ink-muted' : 'text-cc-ink', levels.dist[g] === 0 && 'max-sm:hidden')}
+          data-not-determined=""
+          className="inline-flex items-center rounded-[4px] border border-dashed border-cc-field-border px-2 cc-text-meta text-cc-ink-muted"
         >
-          <CcCleanCoreLevel value={g} />
-          {levels.dist[g]}
+          Unknown {unknown}
+        </span>
+      </span>
+      {without.map(({ reason, n }) => (
+        <span key={reason.kind} data-level-none={reason.kind} className="inline-flex items-center">
+          <CcNoLevelExplained reason={reason} count={n} />
         </span>
       ))}
-      <span
-        data-not-determined=""
-        className="inline-flex items-center rounded-[4px] border border-dashed border-cc-field-border px-2 cc-text-meta text-cc-ink-muted"
-      >
-        Unknown {unknown}
-      </span>
     </span>
   );
 }

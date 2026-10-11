@@ -108,7 +108,7 @@ import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
 import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
-import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
+import { accessUseOfKind, findingRows, levelFacetCounts, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
 import { scoreRuleFor, signedEngineVersionOf } from '@/lib/score-rule';
 import { readProcess } from '@/lib/first-look';
@@ -744,19 +744,12 @@ export default function AnalyzePage() {
     },
     [levelLookup],
   );
-  const levelFacet = useMemo(() => {
-    const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0, Unknown: 0 };
-    let noObject = 0;
-    for (const r of evidenceRows) {
-      if (!r.finding.objectName) {
-        noObject++;
-        continue;
-      }
-      const g = levelOf(r.finding);
-      if (g) dist[g]++;
-    }
-    return { status: levelLookup.status, dist, noObject };
-  }, [evidenceRows, levelOf, levelLookup.status]);
+  // Statements and findings without an object are counted as such, not as
+  // Unknown (owner, 11.10.2026) — the same reasons the list's cells give.
+  const levelFacet = useMemo(
+    () => ({ status: levelLookup.status, ...levelFacetCounts(evidenceRows, levelOf) }),
+    [evidenceRows, levelOf, levelLookup.status],
+  );
 
   // The process steps behind the program map: the routines the entry block
   // calls, read off the skeleton the Business view draws.
