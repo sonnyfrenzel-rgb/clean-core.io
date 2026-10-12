@@ -49,8 +49,14 @@ and a large program no longer freezes the page — after an external review of a
   even with word-for-word identical sentences; sentences that only describe ABAP mechanics stand in
   the technical appendix.
 - **The main path follows the order a run takes**, in the process documentation and in the business
-  SOP: alternatives before a shared step side by side, a check inside its branch, an optional step
-  marked as optional.
+  SOP: alternatives before a shared step side by side — a CASE without WHEN OTHERS reads as one
+  choice "or none of them" — a check inside its branch, an optional step marked as optional.
+- **A program whose changes run only on a user's command** is introduced by what it shows; the
+  changes follow as "on a user's command it can also …". A program that needs the user's front end
+  is not said to run as a background job. A header comment that names a table the code does not
+  write, or is in a language the check does not read, is not quoted.
+- **One rule count per document:** the rule statements say how they relate to the register's
+  business rules. A structure include stays in the technical appendix.
 - **An absence is only stated when the code rules it out.** While dynamic reads or calls are
   unresolved, the documentation no longer says the program does not reconcile against the ledger,
   send mail or ask for approval.
