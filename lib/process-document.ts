@@ -1,6 +1,7 @@
 import type { DocAnchor } from '@/lib/process-documentation';
 import type { DecisionTableView } from '@/lib/decision-tables';
 import type { CapabilityFacts } from '@/lib/documentation-capabilities';
+import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
 
 /**
  * The process description of the Documentation stage (owner 03.10.2026,
@@ -441,6 +442,12 @@ export interface ProcessDocument {
   note: string;
   /** The one-page summary: what it does, who starts it, the 3–5 points to know. */
   glance: PdGlance;
+  /**
+   * The engine facts the business summary is written from
+   * (`lib/program-summary-facts.ts`) — the business page renders the same
+   * slots as the Business view, Analyze and Management (owner, 12.10.2026).
+   */
+  programSummary?: ProgramSummaryFacts;
   purpose: {
     users: PdText;
     inScope: PdText[];

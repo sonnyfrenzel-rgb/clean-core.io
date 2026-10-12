@@ -1,5 +1,6 @@
 import type { ProvenanceValue } from '@/lib/provenance';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
+import { programSummary, readProgramSummaryFacts, type ProgramSummaryFacts } from '@/lib/program-summary-text';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
 import { readingPath, type PathItem } from '@/lib/process-documentation-path';
@@ -202,6 +203,15 @@ export interface ProcessDocumentation {
    * Absent in a documentation read before 3.0.10 — then *Not determined*.
    */
   facts?: CapabilityFacts;
+  /**
+   * What the program is for, as engine facts (`lib/program-summary-facts.ts`):
+   * the business objects, the selection screen's own texts, fixed lists, the
+   * outputs and whether it changes data. The business page opens with the
+   * summary written from them — the same one the Business view, Analyze and
+   * Management say (owner, 12.10.2026). Absent before 3.0.11: the page then
+   * keeps its older lines.
+   */
+  summary?: ProgramSummaryFacts;
 }
 
 /* ------------------------------------------------------------ the reader */
@@ -402,9 +412,12 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   const isGate = (s: DocStep) => /decision/i.test(s.kind);
   const isEvent = (s: DocStep) => /^(?:start|end)\b/i.test(s.kind);
   const topSteps = doc.steps.filter((s) => s.level === null && !isEvent(s) && !isGate(s));
+  const summaryFacts = readProgramSummaryFacts(doc.summary);
   const page = buildBusinessPage({
     program: doc.processName,
     facts,
+    // Owner 12.10.2026: the file opens with the same summary as the stage, not with its own counts.
+    ...(summaryFacts ? { inShort: programSummary(summaryFacts) } : {}),
     counts: {
       steps: doc.steps.filter((s) => !isEvent(s) && !isGate(s)).length,
       decisions: doc.steps.filter(isGate).length,

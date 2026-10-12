@@ -1,5 +1,6 @@
 import type { DocAnchor } from '@/lib/process-documentation';
 import { capabilityPresence, isAbsent, type Capability, type CapabilityFacts, type FactObject } from '@/lib/documentation-capabilities';
+import type { ProgramSummary } from '@/lib/program-summary-text';
 
 /**
  * The business page every documentation opens with (owner 11.10.2026, external
@@ -69,6 +70,14 @@ export interface BusinessPageInput {
   tableWord?: (name: string) => string | null;
   /** Recorded by the owner, when something is — the RACI the owner saved, with its date. */
   recorded?: { raci?: string | null } | null;
+  /**
+   * The program's business summary (`lib/program-summary-text.ts`) — the same
+   * slots the Business view, Analyze and Management say. When present, "What it
+   * does" is these sentences: purpose before counts (CO review F03-DOC, owner
+   * 12.10.2026); the counts of rules, decision points and stops stand in the
+   * chapters, not on this page.
+   */
+  inShort?: ProgramSummary | null;
 }
 
 /** The section headings of the page — one set for every rendering. */
@@ -165,12 +174,22 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
     if (does.length < 6 && text.trim()) does.push({ text, anchors, basis });
   };
 
-  const summary = (input.summary ?? []).slice(0, 2);
+  const summary = input.inShort ? [] : (input.summary ?? []).slice(0, 2);
   for (const s of summary) add(s.text, [...s.anchors]);
   // What the summary already says is not said twice.
   const said = summary.map((s) => s.text.toLowerCase()).join(' ');
 
-  if (facts) {
+  if (input.inShort) {
+    // One slot per line, in the order of the text model; the limits slot and
+    // the level are said below ("Limits of this reading", "Owner and approval").
+    // "It does not post" is said once, with its evidence, under "What it does not do".
+    const noChange = !!facts && isAbsent(capabilityPresence(facts).posting);
+    for (const line of input.inShort.lines) {
+      if (line.key === 'limits' || line.key === 'level') continue;
+      if (line.key === 'changes' && noChange) continue;
+      does.push({ text: line.text, anchors: line.anchors.map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })), basis: line.basis });
+    }
+  } else if (facts) {
     if (facts.reads.length && !/\breads?\b/.test(said)) {
       add(`It reads ${plural(facts.reads.length, 'table')} in SAP: ${namesPhrase(facts.reads, word)}.`, facts.reads.slice(0, 3).map(anchor));
     }
@@ -253,6 +272,9 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
       basis: 'not-determined',
     });
   }
+  for (const line of input.inShort?.lines ?? []) {
+    if (line.key === 'limits') limits.push({ text: line.text, anchors: [], basis: line.basis });
+  }
   limits.push({
     text: 'A line reference shows where a statement comes from in the code. It does not show that the business has confirmed it.',
     anchors: [],
@@ -268,13 +290,58 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
     approval: raci
       ? { text: `Business approval: Not recorded. The RACI is the owner's (${raci}); the rest is reconstructed from the code.`, anchors: [], basis: 'confirmed' }
       : { text: 'Business approval: Not recorded — reconstructed from the code, not confirmed by the business.', anchors: [], basis: 'not-determined' },
-    questions: [
+    questions: input.inShort ? answeredQuestions(input.inShort, counts) : [
       { question: 'Why is an item missing?', answer: 'Which rows each read takes, and the checks that skip a record.', target: 'data' },
       { question: 'Why is a value unknown?', answer: 'The rules that set each value, and what happens when none applies.', target: 'rules' },
       { question: 'Why is there no proposal or result?', answer: 'The cases that stop the run or skip a record, with the message the user sees.', target: 'exceptions' },
       { question: 'What changes in S/4HANA?', answer: 'What the program changes today; the move itself is decided in Design and Management, with the open questions.', target: 'changes' },
     ],
   };
+}
+
+/**
+ * The reader's questions with an answer on the page, not only a chapter
+ * reference (roadmap 3.0.11, "In short": *"Below it, the reader's questions
+ * answered on the page, not only linked"*). The answer says what the engine
+ * read — the selection, the rule and stop counts, what it changes — and the
+ * link leads to the lines.
+ */
+function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['counts']): EntryQuestion[] {
+  const slot = (key: string) => inShort.lines.find((l) => l.key === key)?.text ?? null;
+  const strip = (text: string | null) => (text ?? '').replace(/^It /, '').replace(/\.$/, '');
+  const purpose = slot('purpose') ?? '';
+  const selection = /selected by ([^.;]+)/.exec(purpose)?.[1] ?? null;
+  const reads = strip(slot('reads'));
+  const changes = strip(slot('changes'));
+  // No count here: the chapters count, and a second count of the same thing
+  // is the disagreement the CO review found (87 rules on one page, 36 in the file).
+  const cases = counts.exceptions > 0;
+  return [
+    {
+      question: 'Why is an item missing?',
+      answer: `${selection ? `It selects by ${selection}. ` : reads ? `It ${reads}. ` : ''}${cases ? 'The checks that skip a record are listed with their condition and line.' : 'No check that skips a record was found.'}`,
+      target: 'data',
+    },
+    {
+      question: 'Why is a value unknown?',
+      answer: counts.rules
+        ? 'The business rules fixed in the code set the values; each says when it applies, and what happens when none does.'
+        : 'No business rule was found that sets a value; the values come as the tables hold them.',
+      target: 'rules',
+    },
+    {
+      question: 'Why is there no proposal or result?',
+      answer: cases
+        ? 'The cases that end the run or skip a record, each with the message the user sees.'
+        : 'No case was found that ends the run early.',
+      target: 'exceptions',
+    },
+    {
+      question: 'What changes in S/4HANA?',
+      answer: `Today it ${changes || 'changes data as listed'}. The move itself is decided in Design and Management, with the open questions.`,
+      target: 'changes',
+    },
+  ];
 }
 
 /** One line with its basis as a file prints it: "… (Reconstructed, L42)". */

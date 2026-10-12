@@ -18,6 +18,7 @@ import {
 import { stripModelMarkdown } from '@/lib/model-text';
 import { countSourceLines } from '@/lib/source-lines';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
+import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 
 /**
  * The builder of the stage-4 document — roadmap 3.0.5, Weg C.
@@ -203,5 +204,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     disclaimer: PROCESS_DOCUMENTATION_DISCLAIMER,
     // Owner 11.10.2026: what the program can do, so the business page can say what it does not.
     facts: capabilityFactsOf(source, skeleton),
+    // Owner 12.10.2026: what the program is for, so every rendering opens with one summary.
+    summary: programSummaryFactsOf(source, { skeleton }),
   };
 }

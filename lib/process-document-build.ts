@@ -17,6 +17,9 @@ import { buildRequirementSet, type RequirementSet } from '@/lib/functional-requi
 import { buildNfrSet, type NfrSet, NFR_OWNER_LABEL } from '@/lib/non-functional-requirements';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
+import { programSummaryFactsOf } from '@/lib/program-summary-facts';
+import { businessInShort, programSummary, withoutCodes } from '@/lib/program-summary-text';
+import { checkPurposeProposal } from '@/lib/program-summary-check';
 import { NOT_DETERMINED_LABEL, commitWaitWords, rangeWords, stepEvidence, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 import { isEventTag, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { buildNavigation } from '@/lib/process-navigation';
@@ -364,6 +367,17 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       return [];
     }
   })();
+
+  // What the program is for — the one summary the Business view, Analyze,
+  // Management and every documentation rendering say (owner, 12.10.2026).
+  const summaryFacts = (() => {
+    try {
+      return programSummaryFactsOf(source, { calls, tables, skeleton, ruleSet: ruleSet ?? undefined });
+    } catch {
+      return null;
+    }
+  })();
+  const inShort = summaryFacts ? programSummary(summaryFacts) : null;
 
   const byId = new Map(map.elements.map((e) => [e.id, e]));
   const routines = routinesOf(calls);
@@ -1294,7 +1308,34 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       detail: data.map((d) => d.name).join(', '),
     });
   }
-  const glanceTrigger: PdText = {
+  if (inShort) {
+    // The glance says the shared summary in business words; the table codes
+    // stand in `detail`, never in the sentence (PdText). Owner 12.10.2026.
+    glanceSummary.length = 0;
+    // One entry per slot (two purpose sentences are one entry), at most three.
+    const slots = new Map<string, typeof inShort.lines>();
+    for (const line of businessInShort(inShort).filter((l) => l.key !== 'trigger')) {
+      slots.set(line.key, [...(slots.get(line.key) ?? []), line]);
+    }
+    for (const [key, lines] of [...slots].slice(0, 3)) {
+      const text = lines.map((l) => l.text).join(' ');
+      const codes = [...text.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).filter((c) => /^[A-Z][A-Z0-9_/]{2,}(?:,\s*[A-Z][A-Z0-9_/]{2,})*$/.test(c));
+      // The purpose names what it posts in words; the interfaces behind it stand in the detail.
+      const names = key === 'purpose' && summaryFacts ? [...summaryFacts.changes.actions.map((a) => a.name), ...codes] : codes;
+      const anchors = lines.flatMap((l) => l.anchors);
+      glanceSummary.push({
+        text: withoutCodes(text),
+        anchors: anchors.length ? distinctAnchors(anchors.map((a) => anchor(a.lineStart, a.lineEnd))) : [anchor(programLine)],
+        detail: names.length ? [...new Set(names)].join(', ') : null,
+      });
+    }
+  }
+  const inShortTrigger = inShort?.lines.find((l) => l.key === 'trigger') ?? null;
+  const glanceTrigger: PdText = inShortTrigger ? {
+    text: inShortTrigger.text,
+    anchors: start[0]?.anchors ?? [anchor(programLine)],
+    detail: inputs.length ? inputs.map((i) => i.name.toUpperCase()).join(', ') : null,
+  } : {
     text: kind === 'report'
       ? inputs.length
         ? `A user, from a selection screen with ${inputs.length} input${inputs.length === 1 ? '' : 's'}; it may also run as a background job.`
@@ -1422,7 +1463,12 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       const anchored = anchorNarrative(stripModelMarkdown(text), [], lines.length).sentences
         .filter((s) => s.status === 'anchored' && s.anchors.every((a) => a.kind === 'lines'))
         .slice(0, 3);
-      if (anchored.length) {
+      // Roadmap 3.0.11: a model's purpose is shown only when it does not
+      // contradict the engine's facts (posting, mail, approval, a business
+      // object the code does not read, money) — otherwise the engine's
+      // sentence stands alone.
+      const contradicts = summaryFacts ? !checkPurposeProposal(anchored.map((s) => s.text).join(' '), summaryFacts).ok : false;
+      if (anchored.length && !contradicts) {
         purposeProposal = {
           text: anchored.map((s) => s.text.trim()).join(' '),
           anchors: distinctAnchors(anchored.flatMap((s) => s.anchors.map((a) => anchor(a.lineStart, a.lineEnd)))),
@@ -1456,6 +1502,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     sourceSha256: engine.sourceSha256,
     note: PROCESS_DOCUMENT_NOTE,
     glance: { summary: glanceSummary, trigger: glanceTrigger, points },
+    ...(summaryFacts ? { programSummary: summaryFacts } : {}),
     purpose: { users, inScope, outOfScope, proposal: purposeProposal },
     trigger: { start, selection: inputs, data, inputUse },
     writes,

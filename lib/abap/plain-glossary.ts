@@ -330,6 +330,23 @@ export const TABLE_TERMS_EN: Readonly<Record<string, PlainTerm>> = Object.freeze
   t024: t('Purchasing group'),
   t024e: t('Purchasing organization'),
   csks_t: t('Cost center text'),
+  // --- controlling, asset accounting and receivables, for the business
+  //     summary of a program (owner, 12.10.2026: "the business objects behind
+  //     the tables") — SAP's short descriptions, shortened.
+  cskt: t('Cost center text'),
+  cskb: t('Cost element'),
+  cosp: same('Cost totals (external postings)'),
+  coss: same('Cost totals (internal postings)'),
+  coep: t('Controlling line item'),
+  cobk: t('Controlling document'),
+  tka01: t('Controlling area'),
+  tcurx: same('Currency decimals'),
+  anla: t('Fixed asset'),
+  anlz: same('Asset time-dependent data'),
+  anlc: same('Asset values'),
+  anep: t('Asset line item'),
+  knb5: same('Customer dunning data'),
+  knkk: same('Customer credit data'),
 });
 
 /**

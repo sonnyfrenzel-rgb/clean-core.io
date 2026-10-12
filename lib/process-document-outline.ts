@@ -4,6 +4,7 @@ import type { OpenQuestionGroup, OpenQuestions } from '@/lib/open-questions';
 import { wt } from '@/lib/workspace-messages';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPage, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { readCapabilityFacts } from '@/lib/documentation-capabilities';
+import { programSummary, readProgramSummaryFacts } from '@/lib/program-summary-text';
 import { DECISION_TABLE_HEAD, decisionRowWhen, decisionTableHitPolicy, decisionTableTaskName, type DecisionTableView } from '@/lib/decision-tables';
 import {
   EMPTY_SECTION,
@@ -637,6 +638,11 @@ export function documentOutline(doc: ProcessDocument, meta: PdOutlineMeta = {}):
   const business = buildBusinessPage({
     program: doc.program,
     summary: doc.glance.summary,
+    // Owner 12.10.2026: "In short" opens with the program's purpose, the same slots every view says.
+    inShort: (() => {
+      const facts = readProgramSummaryFacts(doc.programSummary);
+      return facts ? programSummary(facts) : null;
+    })(),
     facts: readCapabilityFacts(doc.facts),
     counts: { steps: steps.length, decisions: doc.overview.decisions, rules: doc.rules.length + tables.length, exceptions: doc.exceptions.length, inputs: t.selection.length },
     tableWord: (name) => tableWords.get(name.toUpperCase()) ?? null,

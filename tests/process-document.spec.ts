@@ -229,8 +229,9 @@ test.describe('Z_MM_PO_APPROVAL reads like a process description', () => {
     expect(body, `the body has ${body} words`).toBeLessThanOrEqual(1650);
     expect(wordCount(page), 'the business page is one page').toBeLessThanOrEqual(400);
     const summary = doc.glance.summary.map((s) => s.text).join(' ');
-    expect(summary).toContain('creates the purchase order');
-    expect(summary).toContain('the purchase requisition');
+    // Owner 12.10.2026: the glance is the shared business summary (`lib/program-summary-text.ts`).
+    expect(summary).toContain('Creates purchase orders');
+    expect(summary).toContain('purchase requisitions');
     expect(summary).not.toContain('BAPI_PO_CREATE1');
     // The program's names are kept — in the source column, not in the sentence.
     expect(doc.glance.summary[0].detail).toContain('BAPI_PO_CREATE1');

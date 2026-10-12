@@ -233,8 +233,10 @@ test.describe('the package documentation reads business first', () => {
   });
 
   test('a documentation stored before the facts were recorded says so instead of guessing', () => {
-    const { facts: _facts, ...old } = engineOf(FI_SOURCE);
+    // Before 3.0.10 neither the capability facts nor (before 3.0.11) the summary facts were stored.
+    const { facts: _facts, summary: _summary, ...old } = engineOf(FI_SOURCE);
     void _facts;
+    void _summary;
     const md = processDocumentationToMarkdown(old);
     expect(md).toContain('Not determined — this documentation was read before');
     expect(md).not.toContain('It does not post or change data in SAP');
