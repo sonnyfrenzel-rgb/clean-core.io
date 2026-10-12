@@ -71,6 +71,37 @@ export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
   ],
 };
 
+/**
+ * Roadmap 3.0.12, step E — what an engine-led package must contain. The
+ * engine writes these files itself (`lib/transformation/scaffold-node.ts`,
+ * `scaffold-rap.ts`), so the list is the scaffold's, not a prompt's: the
+ * ERP-side event publisher exists only where the design names a change SAP has
+ * no event for (design §6.2), and the RAP scaffold writes its service
+ * definition and binding in their abapGit forms. Every engine-led package
+ * carries its trace.
+ */
+export const ENGINE_LED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
+  abapCloud: [
+    { label: 'logic or behavior class (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
+    { label: 'CDS data definition (*.ddls.asddls)', match: 'extension', suffix: '.ddls.asddls' },
+    { label: 'behavior definition (*.bdef.asbdef)', match: 'extension', suffix: '.bdef.asbdef' },
+    { label: 'traceability (traceability.json)', match: 'name', name: 'traceability.json' },
+  ],
+  btp: [
+    { label: 'service implementation (*.ts)', match: 'extension', suffix: '.ts' },
+    { label: 'schema definition (*.cds)', match: 'extension', suffix: '.cds' },
+    { label: 'dependency manifest (package.json)', match: 'name', name: 'package.json' },
+    { label: 'container setup (Dockerfile)', match: 'name', name: 'Dockerfile' },
+    { label: 'traceability (traceability.json)', match: 'name', name: 'traceability.json' },
+  ],
+};
+
+/** What an engine-led package lacks, in reader's words. */
+export const missingEngineLedArtefacts = (generated: ProjectFile[], isAbapCloud: boolean): string[] =>
+  ENGINE_LED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
+    .filter((required) => !generated.some((f) => satisfies(required, f.path)))
+    .map((required) => required.label);
+
 /** The last segment of a path, however the model wrote the separators. */
 export const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? path;
 

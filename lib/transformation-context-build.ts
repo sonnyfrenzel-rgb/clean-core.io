@@ -64,6 +64,12 @@ export interface TransformationContextStamp {
   decision: string;
   /** Revision of the accepted requirements: who, and a digest of what was accepted (`none` when none is). */
   requirements: string;
+  /**
+   * The owner's answer per rule, as the scaffold applies it (roadmap 3.0.12,
+   * step E: DROP absent, CHANGE with the proposal, OPEN as the original).
+   * Covered by `rules` above; not a line of the token's canonical form.
+   */
+  decisions: Array<{ id: string; answer: ContextRule['answer']; note: string | null }>;
 }
 
 /** What `readRuleAnswers` found: the answers to apply, and on what they rest. */
@@ -375,6 +381,7 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
       rules: rulesStamp(rules),
       decision: decisionStamp(args.project),
       requirements: requirementsStamp(args.accepted ?? null),
+      decisions: rules.items.map((r) => ({ id: r.id, answer: r.answer, note: r.note })),
     },
   };
 }

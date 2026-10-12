@@ -1,5 +1,5 @@
 import { artefactDigest, sha256Hex, valueDigest } from './artefact-digest';
-import { missingArtefacts, usableTestSuite, type GeneratedTestSuite, type ProjectFile } from './transformation-artefacts';
+import { missingArtefacts, missingEngineLedArtefacts, usableTestSuite, type GeneratedTestSuite, type ProjectFile } from './transformation-artefacts';
 
 /**
  * Roadmap 3.0.11 — the generation is stored by the server, against the state
@@ -48,6 +48,11 @@ export interface GenerationContextState {
   decision: string;
   /** The requirements the owner accepted in the specification — who, and a digest of what. */
   requirements: string;
+  /**
+   * The owner's answer per rule, for the engine's scaffold (roadmap 3.0.12,
+   * step E). Covered by `rules`; not a line of the canonical form.
+   */
+  decisions?: Array<{ id: string; answer: 'keep' | 'change' | 'drop' | 'clarify' | null; note: string | null }>;
 }
 
 /** The project fields a generation is computed from or replaces. */
@@ -114,7 +119,7 @@ export function generationInputsOf(state: GenerationRevisionState): GenerationIn
     legacyCode: text(state.legacyCode),
     solutionDesign: text(state.solutionDesign),
     analysis: text(state.analysis),
-    context: state.context ? { ...state.context } : { ...NO_CONTEXT },
+    context: state.context ? { ...state.context, decisions: [...(state.context.decisions ?? [])] } : { ...NO_CONTEXT, decisions: [] },
   };
 }
 
@@ -181,6 +186,8 @@ export function checkGeneratedPackage(
   generatedCode: string,
   testSuite: unknown,
   isAbapCloud: boolean,
+  /** Roadmap 3.0.12, step E: an engine-led package is checked against the scaffold's own list. */
+  path: 'engine-led' | 'single-call' = 'single-call',
 ): { ok: true; testSuite: GeneratedTestSuite } | { ok: false; error: string } {
   let files: unknown;
   try {
@@ -191,7 +198,7 @@ export function checkGeneratedPackage(
   if (!Array.isArray(files) || files.length === 0 || !files.every(isUsableFile)) {
     return { ok: false, error: 'The generated package is not the file list this stage stores.' };
   }
-  const missing = missingArtefacts(files, isAbapCloud);
+  const missing = path === 'engine-led' ? missingEngineLedArtefacts(files, isAbapCloud) : missingArtefacts(files, isAbapCloud);
   if (missing.length > 0) {
     return { ok: false, error: `The generated package is incomplete. Missing: ${missing.join('; ')}.` };
   }

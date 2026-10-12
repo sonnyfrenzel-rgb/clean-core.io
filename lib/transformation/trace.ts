@@ -131,12 +131,20 @@ export function traceMarkdown(trace: Trace): string {
   if (unreachable.length) lines.push(`- Not carried over — never reached in the original: ${unreachable.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
   if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtures.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
+  const g = trace.generation;
+  if (g) {
+    lines.push(`- Generation: ${g.status === 'complete' ? 'complete' : 'partial'} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
+    for (const c of g.checks) lines.push(`- Check ${c.kind}: ${c.total} run, ${c.failed} failed.`);
+    for (const n of g.notRun) lines.push(`- Not run (${n.kind}): ${n.reason}`);
+    for (const n of g.notWritten) lines.push(`- Not written: ${n.unitId} — ${n.reason}`);
+    for (const f of g.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
+  }
   lines.push('');
   lines.push('| Unit | Function | ABAP lines | Rules | Guards | Body written by |');
   lines.push('|---|---|---|---|---|---|');
   for (const u of trace.units) {
     const rules = u.rules.map((r) => `${r.id} (${r.decision})`).join(', ') || '—';
-    lines.push(`| ${u.unitId} | \`${cell(u.fn)}\` (${cell(u.file)}) | ${rangeWords(u.abap) || '—'} | ${cell(rules)} | ${u.guards.join(', ') || '—'} | ${FILLED_WORD[u.filledBy]} |`);
+    lines.push(`| ${u.unitId} | \`${cell(u.fn)}\` (${cell(u.file)}) | ${rangeWords(u.abap) || '—'} | ${cell(rules)} | ${u.guards.join(', ') || '—'} | ${FILLED_WORD[u.filledBy]}${u.note ? ` — ${cell(u.note)}` : ''} |`);
   }
   lines.push('');
   return lines.join('\n');

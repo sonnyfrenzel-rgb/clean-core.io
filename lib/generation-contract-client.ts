@@ -86,11 +86,30 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
               rules: typeof g.inputs.context?.rules === 'string' ? g.inputs.context.rules : 'none',
               decision: typeof g.inputs.context?.decision === 'string' ? g.inputs.context.decision : 'none',
               requirements: typeof g.inputs.context?.requirements === 'string' ? g.inputs.context.requirements : 'none',
+              decisions: decisionsOf(g.inputs.context?.decisions),
             },
           },
         }
       : null;
   return { contract: json.contract ?? null, decision: json.decision, generation };
+}
+
+const ANSWERS = new Set(['keep', 'change', 'drop', 'clarify']);
+
+/** The owner's rule answers as the server read them — shape-checked, anything else dropped. */
+function decisionsOf(raw: unknown): NonNullable<GenerationInputs['context']['decisions']> {
+  if (!Array.isArray(raw)) return [];
+  const out: NonNullable<GenerationInputs['context']['decisions']> = [];
+  for (const r of raw.slice(0, 2_000)) {
+    if (!r || typeof r !== 'object' || typeof (r as { id?: unknown }).id !== 'string') continue;
+    const { id, answer, note } = r as { id: string; answer?: unknown; note?: unknown };
+    out.push({
+      id,
+      answer: typeof answer === 'string' && ANSWERS.has(answer) ? (answer as 'keep' | 'change' | 'drop' | 'clarify') : null,
+      note: typeof note === 'string' ? note : null,
+    });
+  }
+  return out;
 }
 
 /** What the server stored, as it stored it. */

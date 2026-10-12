@@ -763,12 +763,24 @@ export function workflowSteps(project: Project | null): RailStep[] {
 
   // Done, never proven: the detail says "not compiled or tested" and the colour
   // now says it too. This is the model's output with nothing checking it.
+  // Roadmap 3.0.12, step E (owner, 12.10.2026, Q4): an engine-led package with
+  // functions the model could not write is stored with the stubs and a
+  // finding — the phase reads partial, never done.
+  const engineRecord = (project as { generationBinding?: { path?: unknown; engine?: { status?: unknown; notWritten?: unknown; units?: unknown } | null } } | null)?.generationBinding;
+  const notWrittenCount = engineRecord?.path === 'engine-led' && Array.isArray(engineRecord.engine?.notWritten) ? engineRecord.engine.notWritten.length : 0;
+  const partialGeneration = engineRecord?.path === 'engine-led' && engineRecord.engine?.status === 'partial' && notWrittenCount > 0;
   const transformation = hasGenerated
-    ? phase('transformation', {
-        state: 'done',
-        badge: 'Generated',
-        detail: 'Target code generated — not compiled or tested.',
-      })
+    ? partialGeneration
+      ? phase('transformation', {
+          state: 'partial',
+          badge: 'Generated · partial',
+          detail: `Target code generated — ${notWrittenCount} of ${typeof engineRecord?.engine?.units === 'number' ? engineRecord.engine.units : 'its'} functions not written (left as stubs); not compiled or tested.`,
+        })
+      : phase('transformation', {
+          state: 'done',
+          badge: 'Generated',
+          detail: 'Target code generated — not compiled or tested.',
+        })
     : phase('transformation', { state: 'empty', badge: 'Not started', detail: 'No code generated yet.' });
 
   // Roadmap 3.0.5 — two forms can be on record. The engine's document is read

@@ -16,6 +16,7 @@ import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { generationRecordOf, traceMatchesRecord } from '@/lib/transformation/generation-record';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
 
@@ -281,7 +282,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       testSuite?: unknown;
       expectedContractFingerprint?: unknown;
       generationToken?: unknown;
+      /** Roadmap 3.0.12, step E: how the package was made — engine-led or the single call (`generation-record.ts`). */
+      generation?: unknown;
     };
+    const record = generationRecordOf(body.generation);
+    if (record && 'error' in record) {
+      return NextResponse.json({ error: record.error, code: 'bad-generation-record' }, { status: 400 });
+    }
     const code = typeof body.generatedCode === 'string' ? body.generatedCode : '';
     if (!code.trim()) {
       return NextResponse.json(
@@ -382,12 +389,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       );
     }
 
-    const checked = checkGeneratedPackage(code, body.testSuite, decision.isAbapCloud);
+    const checked = checkGeneratedPackage(code, body.testSuite, decision.isAbapCloud, record?.path ?? 'single-call');
     if (!checked.ok) {
       return NextResponse.json({ error: checked.error, code: 'package-incomplete' }, { status: 400 });
     }
+    if (record) {
+      const mismatch = traceMatchesRecord(JSON.parse(code) as Array<{ path: string; content: string }>, record);
+      if (mismatch) return NextResponse.json({ error: mismatch, code: 'package-incomplete' }, { status: 400 });
+    }
 
-    const binding = generationBinding(built.contract, { codeSha256: sha256Hex(code) });
+    // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
+    // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
+    // the server's, from the block this request just rebuilt; the rest is the
+    // page's report of a model-written package and stays `proposed`.
+    const binding = {
+      ...generationBinding(built.contract, { codeSha256: sha256Hex(code) }),
+      ...(record
+        ? {
+            path: record.path,
+            contextDigest: sha256Hex(platform.stamp.text),
+            fallbackReason: record.fallbackReason,
+            engine: record.engine,
+            scaffoldVersion: record.engine?.scaffoldVersion ?? null,
+            scaffoldDigest: record.engine?.scaffoldDigest ?? null,
+            basis: record.basis,
+            elapsedMs: record.elapsedMs,
+          }
+        : {}),
+    };
     const fields = {
       generatedCode: code,
       testSuite: checked.testSuite,

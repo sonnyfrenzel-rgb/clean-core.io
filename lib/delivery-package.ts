@@ -32,6 +32,7 @@
  * comes back into the ZIP.
  */
 
+import type { GenerationRecord } from './transformation/generation-record';
 import { sha256Hex } from './artefact-digest';
 import { formatTextDate } from './format';
 import { SCORE_FLOOR } from './clean-core-score';
@@ -238,6 +239,8 @@ export interface DeliveryFacts {
   documentationFromEngine: boolean;
   /** The "Reference patterns" section (`referencePatternsReadme`), passed through as it is. */
   referenceSection: string;
+  /** Roadmap 3.0.12, step E: how the stored package was made — absent or null for a package from before. */
+  generation?: (GenerationRecord & { contextDigest: string | null }) | null;
 }
 
 /* ------------------------------------------------------------ the collector */
@@ -1123,6 +1126,45 @@ export interface StatusInputs {
   lints?: readonly GeneratedCodeLintFinding[] | null;
 }
 
+/**
+ * Roadmap 3.0.12, step E (design §12.1, §16, §18): one line for the table —
+ * how the package was made — or null for a package from before 3.0.12.
+ */
+export function generationLine(g: DeliveryFacts['generation'] | null): string | null {
+  if (!g) return null;
+  if (g.path === 'single-call') {
+    return `In one model call${g.fallbackReason ? ` — the engine could not build a scaffold for this program (${g.fallbackReason})` : ''}. Functions are not anchored to ABAP lines.`;
+  }
+  const e = g.engine;
+  if (!e) return null;
+  return `Engine scaffold and model-written function bodies — ${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}${e.status === 'partial' ? '; partial' : ''}. See "How this code was built" and TRACE.md.`;
+}
+
+/** The "How this code was built" section of STATUS.md: counts, what is not written and why, the checks. */
+export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
+  if (!g) return [];
+  const lines: string[] = ['## How this code was built', ''];
+  if (g.path === 'single-call') {
+    lines.push(generationLine(g) ?? '', '');
+    return lines;
+  }
+  const e = g.engine;
+  if (!e) return [];
+  lines.push(
+    'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is a model proposal, never proven.',
+    '',
+    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${e.status}**.`,
+  );
+  for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
+  for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
+  for (const c of e.checks) lines.push(`- Check before saving — ${c.kind}: ${c.total} run, ${c.failed} failed.`);
+  for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);
+  for (const f of e.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
+  lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);
+  lines.push('- Every function, its ABAP lines, its rules and who wrote it: `TRACE.md` and `traceability.json`.', '');
+  return lines;
+}
+
 /** The "Code checks" section of STATUS.md: counts by severity, then every finding with its file and line. */
 export function codeChecksLines(lints: readonly GeneratedCodeLintFinding[]): string[] {
   const lines: string[] = ['## Code checks', ''];
@@ -1225,6 +1267,8 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   row('Data mode', dataMode(reading).sentence);
   row('Delivered implementation', implementationStatement(reading, facts));
   if (lints) row('Code checks', lints.length === 0 ? 'No finding.' : `${lintCountLine(lints)} — see "Code checks".`);
+  const built = generationLine(facts.generation ?? null);
+  if (built) row('How the code was built', built);
   row('Clean Core Score', scoreLine(facts.score));
   row('Production use', 'Blocked — review version, not approved for production.');
   lines.push('');
@@ -1289,6 +1333,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
 
+  lines.push(...howBuiltLines(facts.generation ?? null));
   if (lints) lines.push(...codeChecksLines(lints));
 
   lines.push('## Known limits', '');

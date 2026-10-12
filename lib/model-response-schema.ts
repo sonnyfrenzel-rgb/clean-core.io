@@ -155,6 +155,11 @@ export const TRANSFORMATION_FILL_SCHEMA = {
         properties: {
           unitId: STRING,
           body: STRING,
+          // The predicate bodies of the unit's guards (design §9.1), by guard id.
+          guards: {
+            type: 'array',
+            items: { type: 'object', properties: { id: STRING, body: STRING }, required: ['id', 'body'] },
+          },
           needs: STRINGS,
           // Optional: absent (or without a reason) reads as "not refused".
           refused: {

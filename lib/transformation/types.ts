@@ -409,6 +409,8 @@ export interface TraceUnit {
   filledBy: FilledBy;
   /** Check results per unit, set by Track C's verify (§13); null until then. */
   checks: { lint: number | null; cases: number | null; probes: number | null };
+  /** Why the body is a stub, or which check still fails on it (step E, §16.1); absent when neither. */
+  note?: string | null;
 }
 
 export interface Trace {
@@ -427,6 +429,19 @@ export interface Trace {
   notCarried: NotCarried[];
   openRules: string[];
   droppedRules: string[];
+  /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
+  generation?: {
+    status: 'complete' | 'partial';
+    units: number;
+    written: number;
+    repaired: number;
+    notWritten: Array<{ unitId: string; reason: string }>;
+    checks: Array<{ kind: string; total: number; failed: number }>;
+    notRun: Array<{ kind: string; reason: string }>;
+    scaffoldFindings: string[];
+    callsUsed: number;
+    rounds: number;
+  };
 }
 
 /** What Track C reports per region after the fills, for `traceOf`. */

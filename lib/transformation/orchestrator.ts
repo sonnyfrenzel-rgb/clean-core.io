@@ -46,6 +46,7 @@
 
 import { decideGenerationRepair, GENERATION_REPAIR_MAX_ROUNDS } from '../repair-draft';
 import { bundleFills, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
+
 import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types';
 
 /** One model call: the prompt in, the answer text out; must honour the signal. */
@@ -99,6 +100,8 @@ export interface UnitOutcome {
   reason: string | null;
   /** Check failures that remain on a kept body. */
   failures: string[];
+  /** The accepted predicate bodies of the unit's guards, by fill region (`U02.G0506`, design §9.1). */
+  predicates: Record<string, string>;
 }
 
 export type StopReason = 'passed' | 'round-limit' | 'budget' | 'no-progress' | 'lease' | 'cancelled';
@@ -187,6 +190,9 @@ interface UnitState {
   /** The unit is out of the loop: declined by the model or unusable twice. */
   final: boolean;
   failures: string[];
+  /** Accepted predicate bodies by region, and why a predicate of the unit is still a stub (a repair reason). */
+  predicates: Map<string, string>;
+  predicateGaps: string[];
 }
 
 export async function runGeneration(input: OrchestratorInput): Promise<GenerationRunResult> {
@@ -222,7 +228,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     ...input.units.filter((u) => !order.includes(u.unitId)),
   ];
   const states = new Map<string, UnitState>(
-    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, final: false, failures: [] }]),
+    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, final: false, failures: [], predicates: new Map(), predicateGaps: [] } as UnitState]),
   );
 
   let callsUsed = 0;
@@ -321,8 +327,22 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       st.body = answer.body;
       st.refusedBody = null;
       st.reason = null;
-      st.failures = [];
       st.filledBy = filledByRound(round);
+      // The guards' predicates (design §9.1): each a region of its own, checked like a body.
+      st.predicateGaps = [];
+      for (const g of unitById.get(answer.unitId)?.guards ?? []) {
+        if (!g.regionId) continue;
+        const given = answer.guards?.[g.id];
+        if (given === undefined) {
+          if (!st.predicates.has(g.regionId)) st.predicateGaps.push(`the predicate of ${g.id} (${g.helper}) was not written`);
+          continue;
+        }
+        const why = input.guardBody(g.regionId, given, answer.needs);
+        if (why) {
+          if (!st.predicates.has(g.regionId)) st.predicateGaps.push(`the predicate of ${g.id} was refused by the checks on fills: ${why}`);
+        } else st.predicates.set(g.regionId, given);
+      }
+      st.failures = st.predicateGaps.map((p) => `body guards: ${p}`);
       emit({ t: 'fill', unitId: answer.unitId, state: 'written', at: now() });
     }
     return unusable(parsed.missing, 'the answer did not include this function');
@@ -364,7 +384,13 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     // ── Checks and repair rounds (§13.2) ─────────────────────────────────
     let previousSignature: string | null = null;
     while (!cancelled()) {
-      const bodies = new Map([...states.values()].filter((s) => s.body !== null).map((s) => [s.unitId, s.body!] as const));
+      // Bodies by fill region: the unit's body under its id, its predicates under theirs.
+      const bodies = new Map<string, string>();
+      for (const s of states.values()) {
+        if (s.body === null) continue;
+        bodies.set(s.unitId, s.body);
+        for (const [region, p] of s.predicates) bodies.set(region, p);
+      }
       let outcome: VerifyOutcome;
       try {
         outcome = await input.verify(bodies, { round: rounds, signal: checks.signal });
@@ -377,7 +403,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       checksNotRun = outcome.notRun;
 
       // Failures back onto their units; a failure no written unit owns is ours.
-      for (const s of states.values()) if (s.body !== null) s.failures = [];
+      for (const s of states.values()) if (s.body !== null) s.failures = s.predicateGaps.map((p) => `body guards: ${p}`);
       scaffoldFindings.length = 0;
       for (const f of outcome.failures) {
         const st = f.unitId ? states.get(f.unitId) : undefined;
@@ -443,6 +469,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       filledBy: written ? st.filledBy : 'not-filled',
       reason: written ? null : st.reason,
       failures: written ? st.failures : [],
+      predicates: written ? Object.fromEntries(st.predicates) : {},
     };
   });
   if (stop === 'cancelled') emit({ t: 'failed', message: 'Cancelled — nothing was stored. Calls already sent were counted against this generation.' });

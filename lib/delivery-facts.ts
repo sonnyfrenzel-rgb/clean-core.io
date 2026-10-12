@@ -13,6 +13,7 @@
  * and hands it in; this module only reads.
  */
 
+import { storedGenerationRecord } from './transformation/generation-record';
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
 import { formatTextDate } from './format';
@@ -441,6 +442,8 @@ export function deliveryFactsOf(
     score: opts.score,
     documentationFromEngine: opts.documentationFromEngine,
     referenceSection: opts.referenceSection,
+    // Roadmap 3.0.12, step E: how the stored package was made (engine-led or one call).
+    generation: storedGenerationRecord(project.generationBinding),
   };
 }
 

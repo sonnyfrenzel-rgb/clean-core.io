@@ -81,7 +81,8 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     '- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.',
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
-    '- Answer with JSON only: { "units": [ { "unitId", "body", "needs": [], "refused": null } ] } — one entry per unit asked for.',
+    `- A guard listed with a "regionId" under a unit is a check of the original whose condition you write as well: its predicate body — statements that return ${track === 'node' ? 'true' : "abap_true"} exactly when the original's "condition" holds, reading only the parameters of its signature. Answer it under "guards": [ { "id": "G-0506", "body": "…" } ] of that unit; the engine calls it where the original checks.`,
+    '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [], "refused": null } ] } — one entry per unit asked for.',
     'CODE-DRAFT RULES (by number, unchanged):',
     fillRulesText(),
   ].join('\n');
@@ -239,6 +240,32 @@ export type FillAnswerCheck =
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** A guard id as the plan writes it: `G-0506`. */
+const GUARD_ID = /^G-\d{4,}$/;
+
+/**
+ * The predicate bodies of an answer (design §9.1: a guard's predicate is a fill
+ * region of its own, `U02.G0506`): the schema's list `[{ id, body }]`, or a map
+ * by guard id. Only string bodies under a well-formed guard id are taken; the
+ * splice checks each body like any other before it lands.
+ */
+export function guardBodiesOf(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  const take = (id: unknown, body: unknown) => {
+    if (typeof id !== 'string' || !GUARD_ID.test(id) || typeof body !== 'string' || !body.trim() || id in out) return;
+    out[id] = body;
+  };
+  if (Array.isArray(raw)) {
+    for (const g of raw.slice(0, 40)) if (isPlainObject(g)) take(g.id, g.body);
+  } else if (isPlainObject(raw)) {
+    for (const [id, body] of Object.entries(raw).slice(0, 40)) take(id, body);
+  }
+  return out;
+}
+
+/** The fill region of a guard's predicate: `U02` + `G-0506` → `U02.G0506` (`unit-plan.ts`). */
+export const predicateRegionOf = (unitId: string, guardId: string): string => `${unitId}.${guardId.replace('-', '')}`;
+
 /**
  * The model's answer to one fill call, checked before any body is used:
  * JSON with a `units` list; each entry names a unit that was asked for, once,
@@ -265,7 +292,8 @@ export function parseFillAnswer(text: string | null | undefined, askedFor: reado
     if (!refused && body.trim() === '') continue; // neither a body nor a reason: unanswered
     const needs = Array.isArray(raw.needs) ? raw.needs.filter((n): n is string => typeof n === 'string').slice(0, 20) : [];
     seen.add(raw.unitId);
-    units.push({ unitId: raw.unitId, body: refused ? '' : body, needs, refused });
+    const guards = refused ? {} : guardBodiesOf(raw.guards);
+    units.push({ unitId: raw.unitId, body: refused ? '' : body, ...(Object.keys(guards).length > 0 ? { guards } : {}), needs, refused });
   }
   return { ok: true, units, missing: askedFor.filter((id) => !seen.has(id)) };
 }
