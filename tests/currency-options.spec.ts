@@ -127,7 +127,9 @@ test.describe('the combobox, from its source', () => {
     expect(field).toContain('aria-autocomplete="list"');
     expect(field).toMatch(/aria-expanded=\{expanded\}/);
     expect(field).toMatch(/aria-controls=\{listId\}/);
-    expect(field).toMatch(/aria-activedescendant=\{activeMatch \? optionId\(activeMatch\.option\.code\) : undefined\}/);
+    // The active entry is a listed currency or "Other currency…" (owner, 12.10.2026).
+    expect(field).toMatch(/aria-activedescendant=\{activeId\}/);
+    expect(field).toMatch(/const activeId = activeMatch\s*\? optionId\(activeMatch\.option\.code\)/);
     expect(field).toContain('role="listbox"');
     expect(field).toContain('role="option"');
     expect(field).toMatch(/aria-selected=\{selected\}/);

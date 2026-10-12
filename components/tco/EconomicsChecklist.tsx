@@ -1,12 +1,20 @@
 'use client';
 
-import React, { useId, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from 'react';
+import React, { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { ArrowDown, Check, ChevronDown } from 'lucide-react';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcStateText, { CcStateDot } from '@/components/cc/StateText';
 import type { ChecklistRow, ChecklistStatus } from '@/lib/economics-checklist';
-import { currencyEntryProblem, currencyOption, matchCurrencies, readCurrencyEntry } from '@/lib/currency-options';
+import {
+  currencyEntryProblem,
+  currencyName,
+  currencyOption,
+  matchCurrencies,
+  readCurrencyEntry,
+  readOtherCurrency,
+} from '@/lib/currency-options';
+import CcButton from '@/components/cc/Button';
 import { RATES_HELP, readFigure, type FigureKind } from '@/lib/economics-help';
 import { cn } from '@/lib/utils';
 
@@ -264,6 +272,12 @@ export function FigureField({
  * Enter picks, Escape closes. A full ISO 4217 code states itself as typed, so
  * any other currency stays possible. Search text that is no code states
  * nothing: the page keeps the currency it had, and says so on leaving.
+ *
+ * The list ends in "Other currency…" (owner, 12.10.2026: "In Economics, also
+ * allow entering a new currency that is not in the list"): it opens a short
+ * input for an ISO 4217 code, so a currency outside the ten is a choice the
+ * field offers rather than something a reader has to guess is possible. A
+ * code the list already has selects that entry instead of standing twice.
  */
 export function CurrencyField({ currency, onChange }: { currency: string; onChange: (c: string) => void }) {
   const [text, setText] = useState(currency);
@@ -271,7 +285,22 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [left, setLeft] = useState(false);
+  const [other, setOther] = useState(false);
+  const [otherText, setOtherText] = useState('');
+  const [otherLeft, setOtherLeft] = useState(false);
+  const [listedNote, setListedNote] = useState('');
   const listId = useId();
+  const comboRef = useRef<HTMLInputElement>(null);
+  const otherRef = useRef<HTMLInputElement>(null);
+  const focusOther = useRef(false);
+
+  // Opening "Other currency" moves the focus into its input, once it exists.
+  useEffect(() => {
+    if (other && focusOther.current) {
+      focusOther.current = false;
+      otherRef.current?.focus();
+    }
+  }, [other]);
 
   // A currency from outside (loaded with the project): show it.
   if (currency !== seen) {
@@ -282,9 +311,18 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
   }
 
   const matches = matchCurrencies(text);
-  const expanded = open && matches.length > 0;
+  // "Other currency…" is always the last entry, so the list always has one.
+  const otherIndex = matches.length;
+  const entries = matches.length + 1;
+  const expanded = open;
   const optionId = (code: string) => `${listId}-${code}`;
-  const activeMatch = expanded && active >= 0 ? matches[active] : undefined;
+  const otherOptionId = `${listId}-other`;
+  const activeMatch = expanded && active >= 0 && active < otherIndex ? matches[active] : undefined;
+  const activeId = activeMatch
+    ? optionId(activeMatch.option.code)
+    : expanded && active === otherIndex
+      ? otherOptionId
+      : undefined;
 
   const state = (code: string) => {
     setSeen(code);
@@ -296,12 +334,54 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
     setOpen(false);
     setActive(-1);
   };
+  const chooseOther = () => {
+    setOpen(false);
+    setActive(-1);
+    setListedNote('');
+    setOtherLeft(false);
+    if (other) {
+      otherRef.current?.focus();
+    } else {
+      focusOther.current = true;
+      setOther(true);
+    }
+  };
+  const closeOther = () => {
+    setOther(false);
+    setOtherText('');
+    setOtherLeft(false);
+    comboRef.current?.focus();
+  };
+  const typeOther = (next: string) => {
+    setOtherText(next);
+    setListedNote('');
+    const read = readOtherCurrency(next);
+    if (read.kind === 'code') {
+      // Stated as soon as it is a code, like a code typed into the list field.
+      setText(read.code);
+      state(read.code);
+    } else if (read.kind === 'listed') {
+      // The list has it: select that entry rather than state it a second time.
+      pick(read.code);
+      setOther(false);
+      setOtherText('');
+      setOtherLeft(false);
+      setListedNote(`${read.code} is in the list — selected it there.`);
+      comboRef.current?.focus();
+    }
+  };
+  const otherRead = readOtherCurrency(otherText);
+  const otherMessage =
+    otherLeft && otherRead.kind === 'invalid'
+      ? { valueState: 'error' as const, message: `${otherRead.problem} ${currency ? `The page still uses ${currency}.` : 'No currency is stated yet.'}` }
+      : {};
   const type = (next: string) => {
     setText(next);
     setOpen(true);
     const entry = readCurrencyEntry(next);
     if (entry.kind === 'empty') state('');
     else if (entry.kind === 'code') state(entry.code);
+    setListedNote('');
     setActive(next.trim() && matchCurrencies(next).length > 0 ? 0 : -1);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -309,16 +389,18 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
       e.preventDefault();
       if (!open) {
         setOpen(true);
-        setActive(e.key === 'ArrowDown' ? 0 : matches.length - 1);
+        setActive(e.key === 'ArrowDown' ? 0 : entries - 1);
         return;
       }
-      if (matches.length === 0) return;
       const step = e.key === 'ArrowDown' ? 1 : -1;
-      setActive((i) => (i < 0 ? (step > 0 ? 0 : matches.length - 1) : (i + step + matches.length) % matches.length));
+      setActive((i) => (i < 0 ? (step > 0 ? 0 : entries - 1) : (i + step + entries) % entries));
     } else if (e.key === 'Enter') {
       if (activeMatch) {
         e.preventDefault();
         pick(activeMatch.option.code);
+      } else if (expanded && active === otherIndex) {
+        e.preventDefault();
+        chooseOther();
       }
     } else if (e.key === 'Escape') {
       if (open) {
@@ -332,10 +414,12 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
       setOpen(false);
     }
   };
-  const onBlur = () => {
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setOpen(false);
     setActive(-1);
-    setLeft(true);
+    // Moving on to "Other currency" is not leaving the question unanswered.
+    const toOther = otherRef.current !== null && e.relatedTarget === otherRef.current;
+    if (!toOther) setLeft(true);
     const entry = readCurrencyEntry(text);
     if (entry.kind === 'code') setText(entry.code);
   };
@@ -352,13 +436,22 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
             message: 'Yours to state — there is no default. Type a code, a currency or a country and pick it from the list.',
           }
         : {};
+  // A code outside the list is named from `Intl` where it knows it ("NOK — Norwegian Krone").
+  const customName = currency && !known ? currencyName(currency) : null;
+  const statedLine = known
+    ? `${known.code} — ${known.name} (${known.symbol})`
+    : customName
+      ? `${currency} — ${customName}`
+      : `${currency} — stated as typed`;
 
   return (
+    <div className="flex flex-col gap-3">
     <CcField label="Currency — no default" required help={RATES_HELP.currency} {...message}>
       {({ id, describedBy, ariaRequired, invalid, className }) => (
         <div className="flex max-w-[20rem] flex-col gap-1">
           <div className="relative">
             <input
+              ref={comboRef}
               id={id}
               type="text"
               role="combobox"
@@ -370,7 +463,7 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
               aria-autocomplete="list"
               aria-expanded={expanded}
               aria-controls={listId}
-              aria-activedescendant={activeMatch ? optionId(activeMatch.option.code) : undefined}
+              aria-activedescendant={activeId}
               aria-required={ariaRequired}
               aria-invalid={invalid || undefined}
               aria-describedby={describedBy}
@@ -420,21 +513,85 @@ export function CurrencyField({ currency, onChange }: { currency: string; onChan
                   </li>
                 );
               })}
+              <li
+                id={otherOptionId}
+                role="option"
+                // Selected while the stated currency is one from outside the list.
+                aria-selected={Boolean(currency) && !currencyOption(currency)}
+                data-economics-currency-option="other"
+                data-active={active === otherIndex ? 'true' : undefined}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={chooseOther}
+                onMouseEnter={() => setActive(otherIndex)}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded-cc-row border-t border-cc-line px-2 py-2 cc-text-cell font-semibold text-cc-ink pointer-coarse:min-h-11',
+                  active === otherIndex ? 'bg-cc-surface-muted' : '',
+                )}
+              >
+                Other currency…
+                <span className="font-normal text-cc-ink-muted">enter an ISO code</span>
+              </li>
             </ul>
           </div>
           {open && text.trim() && matches.length === 0 && readCurrencyEntry(text).kind === 'search' ? (
             <span className="cc-text-meta text-cc-ink-muted" data-economics-currency-none="">
-              No currency in the list matches “{text.trim()}”. Type its three-letter ISO 4217 code instead.
+              No currency in the list matches “{text.trim()}”. Type its three-letter ISO 4217 code, or choose “Other currency…”.
             </span>
           ) : null}
           {currency && !problem ? (
             <span className="cc-text-meta text-cc-ink-muted" data-economics-currency-stated={currency}>
-              {known ? `${known.code} — ${known.name} (${known.symbol})` : `${currency} — stated as typed`}
+              {statedLine}
             </span>
           ) : null}
+          <span className="cc-text-meta text-cc-ink-muted" role="status" data-economics-currency-listed-note="">
+            {listedNote}
+          </span>
         </div>
       )}
     </CcField>
+    {other ? (
+      <div data-economics-currency-other="">
+        <CcField label="Other currency" help="ISO code, e.g. NOK" {...otherMessage}>
+          {({ id, describedBy, invalid, className }) => (
+            <div className="flex max-w-[20rem] items-center gap-2">
+              <input
+                ref={otherRef}
+                id={id}
+                type="text"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={3}
+                value={otherText}
+                placeholder="NOK"
+                data-cost-field="currency-other"
+                aria-invalid={invalid || undefined}
+                aria-describedby={describedBy}
+                onChange={(e) => typeOther(e.target.value)}
+                onBlur={() => {
+                  setOtherLeft(true);
+                  if (otherRead.kind === 'code') setOtherText(otherRead.code);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setOtherLeft(true);
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeOther();
+                  }
+                }}
+                className={cn(className, 'w-24 font-cc-mono uppercase pointer-coarse:min-h-11')}
+              />
+              <CcButton onClick={closeOther} data-economics-currency-other-close="">
+                Back to the list
+              </CcButton>
+            </div>
+          )}
+        </CcField>
+      </div>
+    ) : null}
+    </div>
   );
 }
 

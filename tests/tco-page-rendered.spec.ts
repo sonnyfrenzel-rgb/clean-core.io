@@ -293,3 +293,50 @@ test('the printed page carries the entered cost figures, and an empty one as "No
   expect(formatAmount(DEV_RATE, CURRENCY), 'the expected amount names the currency').toContain(CURRENCY);
   await page.emulateMedia({ media: 'screen' });
 });
+
+// Owner, 12.10.2026: "In Economics, also allow entering a new currency that is
+// not in the list." Picked from the list's last entry, checked inline, and every
+// amount then names it; a code the list has selects that entry instead.
+test('a currency outside the list is entered under "Other currency…" and every amount names it', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openEconomics(page, SCORED);
+  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
+  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
+
+  const combo = page.locator('[data-cost-field="currency"]');
+  await revealEconomicsField(page, '[data-cost-field="currency"]');
+  await combo.click();
+  await page.locator('[data-economics-currency-option="other"]').click();
+  const other = page.locator('[data-cost-field="currency-other"]');
+  await expect(other, 'the input takes the focus').toBeFocused();
+
+  // Not a code: said inline once the reader leaves it, with the fix, and nothing stated.
+  await other.fill('kr');
+  await other.press('Tab');
+  await expect(page.locator('[data-economics-currency-other] [data-cc-value-state="error"]')).toContainText('exactly three letters A–Z');
+  await expect(combo).toHaveValue('');
+
+  await other.fill('nok');
+  await expect(combo).toHaveValue('NOK');
+  await expect(page.locator('[data-economics-currency-stated="NOK"]')).toContainText('Norwegian');
+  await expect(page.locator('[data-economics-currency-other] [data-cc-value-state="error"]')).toHaveCount(0);
+
+  await page.emulateMedia({ media: 'print' });
+  const footer = page.locator('[data-tco-print-inputs]');
+  await expect(footer).toContainText(`developer day rate ${formatAmount(DEV_RATE, 'NOK')}`);
+  await expect(footer).toContainText(`key-user day rate ${formatAmount(USER_RATE, 'NOK')}`);
+  await page.emulateMedia({ media: 'screen' });
+
+  // By keyboard: back to the list, the last entry is "Other currency…"; a listed code selects that entry.
+  await page.locator('[data-economics-currency-other-close]').click();
+  await expect(other).toHaveCount(0);
+  await expect(combo).toBeFocused();
+  await combo.press('ArrowUp');
+  await expect(page.locator('[data-economics-currency-option="other"]')).toHaveAttribute('data-active', 'true');
+  await combo.press('Enter');
+  await expect(other).toBeFocused();
+  await other.fill('eur');
+  await expect(combo).toHaveValue('EUR');
+  await expect(other).toHaveCount(0);
+  await expect(page.locator('[data-economics-currency-listed-note]')).toContainText('EUR is in the list');
+});

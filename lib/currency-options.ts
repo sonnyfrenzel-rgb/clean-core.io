@@ -4,7 +4,8 @@
  *
  * A list to pick from, never a default: the field starts empty, and a currency
  * is only stated when the reader picks one or types its code (ADR-035). Any
- * other ISO 4217 code can still be typed in full.
+ * other ISO 4217 code can still be typed in full, or entered under "Other
+ * currency…" (owner, 12.10.2026).
  *
  * Pure — no React, no browser — so the matching is tested on its own
  * (`tests/currency-options.spec.ts`).
@@ -82,6 +83,93 @@ export const ISO_4217_CODES: ReadonlySet<string> = new Set(
   ).split(' '),
 );
 
+/** Exactly three letters A–Z — the form of every ISO 4217 code. */
+export const ISO_CODE_FORM = /^[A-Z]{3}$/;
+
+let intlCodes: ReadonlySet<string> | null | undefined;
+
+/**
+ * The currency codes this runtime's `Intl` knows, or `null` where it cannot
+ * say (`Intl.supportedValuesOf` is missing, or throws). Read once.
+ */
+export function intlCurrencyCodes(): ReadonlySet<string> | null {
+  if (intlCodes !== undefined) return intlCodes;
+  try {
+    const supportedValuesOf = (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;
+    intlCodes = typeof supportedValuesOf === 'function' ? new Set(supportedValuesOf('currency')) : null;
+  } catch {
+    intlCodes = null;
+  }
+  return intlCodes;
+}
+
+/**
+ * Whether `code` (already upper-cased) is a currency code in circulation: in
+ * the list above, or one the runtime's `Intl` knows. Both, because each can be
+ * behind the other — a code introduced after this file was written is in a
+ * newer `Intl`, one introduced after the browser's ICU was built is here
+ * (owner, 12.10.2026).
+ */
+export function isCurrencyCode(code: string, intl: ReadonlySet<string> | null = intlCurrencyCodes()): boolean {
+  if (!ISO_CODE_FORM.test(code)) return false;
+  return ISO_4217_CODES.has(code) || (intl?.has(code) ?? false);
+}
+
+/**
+ * The English name of a currency code — "Norwegian Krone" for NOK — from the
+ * list, else from `Intl.DisplayNames`; `null` where neither has one. Never
+ * throws: a code `Intl` does not know is shown as its code.
+ */
+export function currencyName(code: string): string | null {
+  const listed = CURRENCY_OPTIONS.find((o) => o.code === code);
+  if (listed) return listed.name;
+  try {
+    const name = new Intl.DisplayNames(['en'], { type: 'currency' }).of(code);
+    return name && name !== code ? name : null;
+  } catch {
+    return null;
+  }
+}
+
+export type OtherCurrency =
+  /** Nothing typed yet. */
+  | { kind: 'empty' }
+  /** A code the list already has: that entry is selected rather than added again. */
+  | { kind: 'listed'; code: string }
+  /** A code outside the list that can be stated. */
+  | { kind: 'code'; code: string }
+  /** Not a code — what is wrong and how it becomes right, in one sentence. */
+  | { kind: 'invalid'; problem: string };
+
+/**
+ * What the "Other currency" input states (owner, 12.10.2026: "In Economics,
+ * also allow entering a new currency that is not in the list"). Exactly three
+ * letters A–Z, upper-cased as stored. Checked against the runtime's `Intl`
+ * where it can say; where it cannot, the three-letter form is enough — the
+ * reader chose "Other currency" and typed a code on purpose, so an old browser
+ * must not keep them from stating it. A code the list has selects that entry.
+ */
+export function readOtherCurrency(
+  text: string,
+  intl: ReadonlySet<string> | null = intlCurrencyCodes(),
+): OtherCurrency {
+  const t = text.trim();
+  if (!t) return { kind: 'empty' };
+  const upper = t.toUpperCase();
+  if (!ISO_CODE_FORM.test(upper)) {
+    return {
+      kind: 'invalid',
+      problem: `“${t}” is not a currency code. Enter exactly three letters A–Z, the ISO 4217 code, such as NOK.`,
+    };
+  }
+  if (CURRENCY_OPTIONS.some((o) => o.code === upper)) return { kind: 'listed', code: upper };
+  if (intl === null || isCurrencyCode(upper, intl)) return { kind: 'code', code: upper };
+  return {
+    kind: 'invalid',
+    problem: `“${upper}” is not an ISO 4217 currency code. Check the code, such as NOK for the Norwegian krone or CHF for the Swiss franc.`,
+  };
+}
+
 /** Lower case, accents and umlauts folded — "Österreich" and "osterreich" are one word. */
 function fold(text: string): string {
   return text
@@ -149,7 +237,7 @@ export function readCurrencyEntry(text: string): CurrencyEntry {
   const t = text.trim();
   if (!t) return { kind: 'empty' };
   const upper = t.toUpperCase();
-  if (/^[A-Z]{3}$/.test(upper) && ISO_4217_CODES.has(upper)) return { kind: 'code', code: upper };
+  if (isCurrencyCode(upper)) return { kind: 'code', code: upper };
   return { kind: 'search', text: t };
 }
 

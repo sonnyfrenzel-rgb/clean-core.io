@@ -184,6 +184,13 @@ function decimals(value: number, digits: number): string {
  * Money with its currency code: "EUR 12,345". Whole units from 1,000 up; below
  * that at most two decimals, so a day rate typed as 820.5 still reads as typed.
  * No currency, no amount — `null`, and the caller says *Not determined*.
+ *
+ * The number goes through `Intl.NumberFormat`, the currency is written as its
+ * code beside it rather than through `style: 'currency'`: that style throws a
+ * RangeError on anything that is not a well-formed code (a record stored as
+ * "€" before the list existed), so any code a reader enters under "Other
+ * currency" — NOK, or one `Intl` has never heard of — prints the same way and
+ * never throws (owner, 12.10.2026).
  */
 export function formatMoney(value: number | null | undefined, currency: string): string | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || !currency) return null;
