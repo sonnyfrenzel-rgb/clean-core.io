@@ -1,0 +1,394 @@
+/**
+ * The RAP / ABAP Cloud scaffold (design §6.3), in abapGit file layout.
+ *
+ *   - a table, the root view entity and its projection: one element per record
+ *     field, a packed field typed `abap.dec(2L−1, d)` from its declaration
+ *     (L bytes, d places);
+ *   - the behavior definition, `strict ( 2 )`, managed, with **one validation
+ *     per carried guard** (none for a guard of a dropped rule) and one
+ *     determination that runs the process on save;
+ *   - the behavior pool: every method frame engine-written; a validation reads
+ *     the instances and asks the guard's predicate in the logic class;
+ *   - the logic class `zcl_<name>_logic`: one method per unit and one
+ *     predicate per carried guard, each body between fill markers;
+ *   - the service definition and binding, an exception class for stubs, and
+ *     an ABAP Unit test class with one test method per engine case (exact
+ *     arithmetic written by the engine; the rest given/when/then with the
+ *     expected value, skipped until the logic exists).
+ *
+ * Deviation from the design table: the test class is the logic class's local
+ * test include (`zcl_<name>_logic.clas.testclasses.abap`) — an abapGit
+ * `.testclasses.abap` file belongs to a class, so a separate `ztc_` file
+ * would have no class to belong to.
+ *
+ * Pure and deterministic. No network, no model.
+ */
+
+import { deriveEngineCases, type EngineCaseDerivation } from '../testing-engine-cases';
+import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
+import { rangeWords, type EngineFacts } from './unit-plan';
+import { SCAFFOLD_VERSION, type ContractField, type PlanGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+
+export interface RapScaffoldOptions {
+  cases?: EngineCaseDerivation;
+}
+
+/** The short name every object of the package carries: ≤ 12 characters, so every name stays ≤ 30. */
+export function rapShortName(program: string | null): string {
+  const base = (program ?? 'program').toLowerCase().replace(/^\/[\w]+\//, '').replace(/^[zy]/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return (base || 'program').slice(0, 12).replace(/_+$/, '');
+}
+
+const abapField = (f: ContractField) => f.key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`).slice(0, 30);
+
+/** `abap.dec(2L−1, d)` for a packed field; the declared digits are 2L−1 already. */
+function cdsType(f: ContractField): string {
+  switch (f.kind) {
+    case 'packed':
+      return `abap.dec(${f.digits},${f.places})`;
+    case 'digits':
+      return `abap.numc(${f.digits ?? 10})`;
+    case 'integer':
+      return f.max === '9223372036854775807' ? 'abap.int8' : 'abap.int4';
+    case 'date':
+      return 'abap.dats';
+    case 'flag':
+      return 'abap_boolean';
+    default:
+      return 'abap.char(40)';
+  }
+}
+
+function abapType(f: ContractField): string {
+  switch (f.kind) {
+    case 'packed':
+      return `p LENGTH ${Math.ceil(((f.digits ?? 15) + 1) / 2)} DECIMALS ${f.places}`;
+    case 'digits':
+      return `n LENGTH ${f.digits ?? 10}`;
+    case 'integer':
+      return f.max === '9223372036854775807' ? 'int8' : 'i';
+    case 'date':
+      return 'd';
+    case 'flag':
+      return 'abap_bool';
+    case 'range':
+      return 'RANGE OF string';
+    default:
+      return 'string';
+  }
+}
+
+const validationName = (g: PlanGuard) => `val_${g.rule ? `${g.rule.replace('-', '_').toLowerCase()}_` : ''}${g.id.replace('-', '').toLowerCase()}`.slice(0, 30);
+const predicateName = (g: PlanGuard) => `when_${g.id.replace('-', '').toLowerCase()}`;
+
+function unitComment(u: Unit, plan: UnitPlan): string[] {
+  const rules = u.rules.map((id) => `${id} (${plan.rules.find((r) => r.id === id)?.decision ?? 'open'})`);
+  return [
+    `    "! ${u.title}. ABAP: ${rangeWords(u.abap.slice(0, 1))}${u.routine ? ` (${u.kind === 'method' ? 'METHOD' : 'FORM'} ${u.routine})` : ''}${u.folded.length ? `; folded: ${u.folded.join(', ')}` : ''}`,
+    `    "! Rules: ${rules.join(', ') || 'none'}. Guards: ${u.guards.join(', ') || 'none'}. Unit ${u.id}: frame by the engine, body a model proposal.`,
+  ];
+}
+
+/** The RAP scaffold of a plan — see the file comment. */
+export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: RapScaffoldOptions = {}): Scaffold {
+  const s = rapShortName(plan.program);
+  const cases = options.cases ?? deriveEngineCases(facts.source, facts.ruleSet.rules);
+  const table = `z${s}_rec`;
+  const root = `z${s}_r`;
+  const proj = `z${s}_c`;
+  const logic = `zcl_${s}_logic`;
+  const pool = `zbp_${s}_r`;
+  const cx = `zcx_${s}_nofill`;
+  const srvd = `z${s}_srvd`;
+  const srvb = `z${s}_srvb`;
+  const record = plan.fields.filter((f) => f.where === 'record');
+  const selection = plan.fields.filter((f) => f.where === 'selection');
+  const carried = plan.guards.filter((g) => g.carried);
+  const files: ScaffoldFile[] = [];
+  const available: Record<string, string[]> = {};
+  const head = `* Generated by Clean-Core.io (engine) for ${plan.program ?? 'the program'}; bodies between the fill markers are model proposals.`;
+
+  // ---- table, views
+  const tableFields = record.map((f) => `  ${abapField(f)} : ${cdsType(f)};`);
+  files.push({
+    path: `src/${table}.tabl.astabl`,
+    owner: 'engine',
+    content: [
+      `@EndUserText.label : 'Records of ${plan.program ?? 'the program'} (Clean-Core.io)'`,
+      '@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE',
+      '@AbapCatalog.tableCategory : #TRANSPARENT',
+      '@AbapCatalog.deliveryClass : #A',
+      '@AbapCatalog.dataMaintenance : #RESTRICTED',
+      `define table ${table} {`,
+      '  key client : abap.clnt not null;',
+      '  key rec_uuid : sysuuid_x16 not null;',
+      ...tableFields,
+      '  local_last_changed : abp_locinst_lastchange_tstmpl;',
+      '}',
+      '',
+    ].join('\n'),
+  });
+  const viewFields = record.map((f) => `      ${abapField(f)}, // ${f.original} ${f.declaration}, L${f.line}`);
+  files.push({
+    path: `src/${root}.ddls.asddls`,
+    owner: 'engine',
+    content: [
+      `@AccessControl.authorizationCheck: #NOT_REQUIRED`,
+      `@EndUserText.label: 'Root view of ${plan.program ?? 'the program'}'`,
+      `define root view entity ${root.toUpperCase()}`,
+      `  as select from ${table}`,
+      '{',
+      '  key rec_uuid as RecUuid,',
+      ...viewFields,
+      '      @Semantics.systemDateTime.localInstanceLastChangedAt: true',
+      '      local_last_changed',
+      '}',
+      '',
+    ].join('\n'),
+  });
+  files.push({
+    path: `src/${proj}.ddls.asddls`,
+    owner: 'engine',
+    content: [
+      `@AccessControl.authorizationCheck: #NOT_REQUIRED`,
+      `@EndUserText.label: 'Projection of ${plan.program ?? 'the program'}'`,
+      `define root view entity ${proj.toUpperCase()}`,
+      `  provider contract transactional_query`,
+      `  as projection on ${root.toUpperCase()}`,
+      '{',
+      '  key RecUuid,',
+      ...record.map((f) => `      ${abapField(f)},`),
+      '      local_last_changed',
+      '}',
+      '',
+    ].join('\n'),
+  });
+
+  // ---- behavior definition: one validation per carried guard
+  const recFieldList = record.map(abapField).join(', ') || 'local_last_changed';
+  files.push({
+    path: `src/${root}.bdef.asbdef`,
+    owner: 'engine',
+    content: [
+      `managed implementation in class ${pool} unique;`,
+      'strict ( 2 );',
+      '',
+      `define behavior for ${root.toUpperCase()} alias Rec`,
+      `persistent table ${table}`,
+      'lock master',
+      'authorization master ( instance )',
+      'etag master local_last_changed',
+      '{',
+      '  create;',
+      '  update;',
+      '  delete;',
+      '  field ( numbering : managed, readonly ) RecUuid;',
+      ...carried.map((g) => `  validation ${validationName(g)} on save { create; update; field ${recFieldList}; } // ${g.id} ${g.rule ?? ''} L${g.line}`),
+      `  determination run_process on save { create; update; }`,
+      '  mapping for ' + table + ' corresponding { RecUuid = rec_uuid; }',
+      '}',
+      '',
+    ].join('\n'),
+  });
+
+  // ---- logic class: one method per unit, one predicate per carried guard
+  const typeLines = [
+    '    TYPES:',
+    '      BEGIN OF ty_rec,',
+    ...(record.length ? record.map((f) => `        ${abapField(f)} TYPE ${abapType(f)},`) : ['        rec_uuid TYPE sysuuid_x16,']),
+    '      END OF ty_rec,',
+    '      tt_rec TYPE STANDARD TABLE OF ty_rec WITH EMPTY KEY,',
+    '      BEGIN OF ty_selection,',
+    ...(selection.length ? selection.map((f) => `        ${abapField(f)} TYPE ${abapType(f)},`) : ['        run TYPE abap_bool,']),
+    '      END OF ty_selection,',
+    '      BEGIN OF ty_state,',
+    '        records TYPE tt_rec,',
+    '        not_filled TYPE string_table,',
+    '      END OF ty_state.',
+  ];
+  const defs: string[] = [];
+  const impls: string[] = [];
+  const unitsWithBody = plan.units.filter((u) => !plan.units.some((p) => p.part?.parent === u.id));
+  for (const u of unitsWithBody) {
+    defs.push(...unitComment(u, plan));
+    defs.push(`    METHODS ${u.rapName} IMPORTING is_sel TYPE ty_selection CHANGING cs_st TYPE ty_state.`);
+    const anchor = `${u.rapName}|${u.abap.map((a) => `${a.lineStart}-${a.lineEnd}`).join(',')}|${u.rules.join(',')}|${u.guards.join(',')}`;
+    impls.push(`  METHOD ${u.rapName}.`);
+    impls.push(regionText('rap', u.id, anchor, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${u.id}' ).`));
+    impls.push('  ENDMETHOD.', '');
+    available[u.id] = [logic, 'me', ...u.callees.map((id) => plan.units.find((x) => x.id === id)?.rapName ?? id)];
+  }
+  for (const g of carried) {
+    defs.push(`    "! ${g.id} · ${g.rule ?? 'no rule'} (${g.decision}) · L${g.line}: ${g.condition.replace(/"/g, "'")}`);
+    defs.push(`    METHODS ${predicateName(g)} IMPORTING is_sel TYPE ty_selection is_rec TYPE ty_rec OPTIONAL RETURNING VALUE(rv_holds) TYPE abap_bool.`);
+    impls.push(`  METHOD ${predicateName(g)}.`);
+    impls.push(regionText('rap', g.regionId!, `${predicateName(g)}|${g.line}|${g.condition}`, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${g.regionId}' ).`));
+    impls.push('  ENDMETHOD.', '');
+    available[g.regionId!] = [logic, 'me'];
+  }
+  files.push({
+    path: `src/${logic}.clas.abap`,
+    owner: 'fill',
+    content: [
+      head,
+      `CLASS ${logic} DEFINITION PUBLIC FINAL CREATE PUBLIC.`,
+      '  PUBLIC SECTION.',
+      ...typeLines,
+      ...defs,
+      'ENDCLASS.',
+      '',
+      `CLASS ${logic} IMPLEMENTATION.`,
+      '',
+      ...impls,
+      'ENDCLASS.',
+      '',
+    ].join('\n'),
+  });
+
+  // ---- behavior pool: frames written by the engine; a validation asks the predicate
+  const poolDefs = [
+    `CLASS lhc_rec DEFINITION INHERITING FROM cl_abap_behavior_handler.`,
+    '  PRIVATE SECTION.',
+    '    METHODS get_instance_authorizations FOR INSTANCE AUTHORIZATION',
+    '      IMPORTING keys REQUEST requested_authorizations FOR Rec RESULT result.',
+    ...carried.map((g) => `    METHODS ${validationName(g)} FOR VALIDATE ON SAVE IMPORTING keys FOR Rec~${validationName(g)}.`),
+    '    METHODS run_process FOR DETERMINE ON SAVE IMPORTING keys FOR Rec~run_process.',
+    'ENDCLASS.',
+  ];
+  const poolImpls: string[] = ['CLASS lhc_rec IMPLEMENTATION.', '', '  METHOD get_instance_authorizations.', '  ENDMETHOD.', ''];
+  for (const g of carried) {
+    const effect = g.effect === 'check' ? 'NOT ' : '';
+    poolImpls.push(
+      `  METHOD ${validationName(g)}.`,
+      `    " ${g.id} ${g.rule ?? ''} L${g.line}: ${g.condition.replace(/"/g, "'")} → ${g.ending.replace(/"/g, "'")} (${g.effect})`,
+      `    READ ENTITIES OF ${root} IN LOCAL MODE ENTITY Rec ALL FIELDS WITH CORRESPONDING #( keys ) RESULT DATA(lt_rec).`,
+      `    DATA(lo_logic) = NEW ${logic}( ).`,
+      '    LOOP AT lt_rec INTO DATA(ls_rec).',
+      `      IF ${effect}lo_logic->${predicateName(g)}( is_sel = VALUE #( ) is_rec = CORRESPONDING #( ls_rec ) ) = abap_true.`,
+      '        APPEND VALUE #( %tky = ls_rec-%tky ) TO failed-rec.',
+      `        APPEND VALUE #( %tky = ls_rec-%tky %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error text = '${(g.rule ?? `L${g.line}`)}: ${g.condition.replace(/'/g, "''").slice(0, 60)}' ) ) TO reported-rec.`,
+      '      ENDIF.',
+      '    ENDLOOP.',
+      '  ENDMETHOD.',
+      '',
+    );
+  }
+  poolImpls.push(
+    '  METHOD run_process.',
+    `    READ ENTITIES OF ${root} IN LOCAL MODE ENTITY Rec ALL FIELDS WITH CORRESPONDING #( keys ) RESULT DATA(lt_rec).`,
+    `    DATA(ls_st) = VALUE ${logic}=>ty_state( records = CORRESPONDING #( lt_rec ) ).`,
+    `    NEW ${logic}( )->run_steps( EXPORTING is_sel = VALUE #( ) CHANGING cs_st = ls_st ).`,
+    '  ENDMETHOD.',
+    '',
+    'ENDCLASS.',
+  );
+  files.push({ path: `src/${pool}.clas.abap`, owner: 'engine', content: [head, `CLASS ${pool} DEFINITION PUBLIC ABSTRACT FINAL FOR BEHAVIOR OF ${root}.`, 'ENDCLASS.', '', `CLASS ${pool} IMPLEMENTATION.`, 'ENDCLASS.', ''].join('\n') });
+  files.push({ path: `src/${pool}.clas.locals_imp.abap`, owner: 'engine', content: [head, ...poolDefs, '', ...poolImpls, ''].join('\n') });
+
+  // ---- exception for stubs, service
+  files.push({
+    path: `src/${cx}.clas.abap`,
+    owner: 'engine',
+    content: [
+      head,
+      `CLASS ${cx} DEFINITION PUBLIC INHERITING FROM cx_no_check FINAL CREATE PUBLIC.`,
+      '  PUBLIC SECTION.',
+      '    "! The unit or guard the generation left as a stub.',
+      '    DATA unit TYPE string READ-ONLY.',
+      '    METHODS constructor IMPORTING unit TYPE string OPTIONAL previous LIKE previous OPTIONAL.',
+      'ENDCLASS.',
+      '',
+      `CLASS ${cx} IMPLEMENTATION.`,
+      '  METHOD constructor ##ADT_SUPPRESS_GENERATION.',
+      '    super->constructor( previous = previous ).',
+      '    me->unit = unit.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      '',
+    ].join('\n'),
+  });
+  files.push({ path: `src/${srvd}.srvd.srvdsrv`, owner: 'engine', content: [`@EndUserText.label: 'Service of ${plan.program ?? 'the program'}'`, `define service ${srvd.toUpperCase()} {`, `  expose ${proj.toUpperCase()} as Records;`, '}', ''].join('\n') });
+  files.push({
+    path: `src/${srvb}.srvb.xml`,
+    owner: 'engine',
+    content: [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      '<abapGit version="v1.0.0" serializer="LCL_OBJECT_SRVB" serializer_version="v1.0.0">',
+      ' <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">',
+      '  <asx:values>',
+      `   <SRVB><NAME>${srvb.toUpperCase()}</NAME><SERVICE_DEFINITION>${srvd.toUpperCase()}</SERVICE_DEFINITION><BINDING_TYPE>ODATA_V4_UI</BINDING_TYPE></SRVB>`,
+      '  </asx:values>',
+      ' </asx:abap>',
+      '</abapGit>',
+      '',
+    ].join('\n'),
+  });
+
+  // ---- ABAP Unit: one test method per engine case
+  const testDefs: string[] = [];
+  const testImpls: string[] = [];
+  const packedByName = new Map(plan.fields.filter((f) => f.kind === 'packed').map((f) => [f.original, f]));
+  for (const c of cases.cases) {
+    const m = c.id.toLowerCase();
+    testDefs.push(`    METHODS ${m} FOR TESTING.`);
+    testImpls.push(`  METHOD ${m}.`, `    " ${c.name.replace(/"/g, "'")}`);
+    let written = false;
+    let variable = 0;
+    for (const e of c.engineCase.examples) {
+      testImpls.push(`    " given/when: ${e.input.replace(/"/g, "'").slice(0, 200)}`, `    " then: ${e.expected.replace(/"/g, "'").slice(0, 200)}`);
+      const call = e.call;
+      if (call?.op === 'compute' && call.compute && call.expect.kind === 'equals') {
+        const f = packedByName.get(call.compute.field) ?? packedByName.get(call.compute.field.split('-').pop() ?? '');
+        if (!f) continue;
+        const type = abapType(f);
+        const name = `lv_value_${++variable}`;
+        testImpls.push(`    DATA ${name} TYPE ${type}.`);
+        testImpls.push(`    ${name} = '${call.compute.start}'.`);
+        for (const step of call.compute.steps) testImpls.push(`    ${name} = ${name} ${step.op} '${step.b}'.`);
+        testImpls.push(`    DATA ${name}_exp TYPE ${type}.`, `    ${name}_exp = '${call.expect.value}'.`);
+        testImpls.push(`    cl_abap_unit_assert=>assert_equals( act = ${name} exp = ${name}_exp ).`);
+        written = true;
+      }
+    }
+    if (!written) testImpls.push(`    cl_abap_unit_assert=>skip( msg = '${c.id}: runs through the call contract; the ABAP when-line follows the logic class' ).`);
+    testImpls.push('  ENDMETHOD.', '');
+  }
+  files.push({
+    path: `src/${logic}.clas.testclasses.abap`,
+    owner: 'engine',
+    content: [
+      head,
+      '"! Engine cases of the original (TC_ENG_*), derived by Clean-Core.io — not by a model.',
+      'CLASS ltc_engine_cases DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.',
+      '  PRIVATE SECTION.',
+      ...testDefs,
+      'ENDCLASS.',
+      '',
+      'CLASS ltc_engine_cases IMPLEMENTATION.',
+      '',
+      ...testImpls,
+      'ENDCLASS.',
+      '',
+    ].join('\n'),
+  });
+  files.push({
+    path: '.abapgit.xml',
+    owner: 'engine',
+    content: [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      '<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">',
+      ' <asx:values>',
+      '  <DATA>',
+      '   <MASTER_LANGUAGE>E</MASTER_LANGUAGE>',
+      '   <STARTING_FOLDER>/src/</STARTING_FOLDER>',
+      '   <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>',
+      '  </DATA>',
+      ' </asx:values>',
+      '</asx:abap>',
+      '',
+    ].join('\n'),
+  });
+
+  for (const file of files) file.content = defuseMarkers(file.content);
+  return { track: 'rap', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter: null, notCarried: plan.notCarried, available };
+}

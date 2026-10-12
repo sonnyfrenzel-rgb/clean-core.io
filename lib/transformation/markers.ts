@@ -1,0 +1,449 @@
+/**
+ * Fill markers, the body guards and the safe splice (design §9).
+ *
+ * Every place the model may write is a region between two marker lines the
+ * engine wrote:
+ *
+ *     // @cc-fill BEGIN U02 9f2c41d0          (TypeScript)
+ *     throw new NotImplementedFill('U02', 'validatePolicy');
+ *     // @cc-fill END U02
+ *
+ *     "! @cc-fill BEGIN U02 9f2c41d0           (ABAP)
+ *     RAISE EXCEPTION NEW zcx_…_not_filled( unit = 'U02' ).
+ *     "! @cc-fill END U02
+ *
+ * A region id is a unit (`U02`, the function body) or a unit and a guard
+ * (`U02.G0506`, the guard's predicate). The 8 hex characters are the first 8
+ * of the sha256 of the region's engine-owned anchor text (signature, guard
+ * calls, doc comment), so a marker copied elsewhere does not match.
+ *
+ * `spliceBodies` replaces only the text between the two marker lines — a
+ * text search, no AST — and then recomputes `scaffoldDigest` over every
+ * character outside the regions. A candidate whose digest differs from the
+ * scaffold's is refused: that proves the model changed no engine-owned
+ * character. A body that fails `bodyGuards` is not spliced; its stub stays.
+ *
+ * Pure and deterministic. No network, no model.
+ */
+
+import { sha256Hex } from '../artefact-digest';
+import { readBlocks } from '../abap/block-structure';
+import { readStatements } from '../abap/statement-reader';
+import { codeMask } from '../ts-source-scan';
+import {
+  BODY_MAX_CHARS,
+  BODY_SLICE_FACTOR,
+  type BodyGuardContext,
+  type BodyRefusal,
+  type FillRegion,
+  type RegionBody,
+  type Scaffold,
+  type ScaffoldFile,
+  type SpliceResult,
+} from './types';
+
+export const MARKER_TAG = '@cc-fill';
+
+const BEGIN = /^([ \t]*)(\/\/|"!)[ \t]*@cc-fill BEGIN ([A-Za-z0-9.]+) ([0-9a-f]{8})[ \t]*$/;
+const END = /^([ \t]*)(\/\/|"!)[ \t]*@cc-fill END ([A-Za-z0-9.]+)[ \t]*$/;
+
+/** First 8 hex characters of sha256 over a region's engine-owned anchor text. */
+export function regionHash(anchor: string): string {
+  return sha256Hex(anchor).slice(0, 8);
+}
+
+/** The two marker lines of a region, for a file of `track`. */
+export function markerLines(track: 'node' | 'rap', regionId: string, hash: string, indent: string): { begin: string; end: string } {
+  const c = track === 'node' ? '//' : '"!';
+  return { begin: `${indent}${c} ${MARKER_TAG} BEGIN ${regionId} ${hash}`, end: `${indent}${c} ${MARKER_TAG} END ${regionId}` };
+}
+
+/** A region written out: marker, stub indented, marker. */
+export function regionText(track: 'node' | 'rap', regionId: string, anchor: string, indent: string, stub: string): string {
+  const m = markerLines(track, regionId, regionHash(anchor), indent);
+  return [m.begin, ...stub.split('\n').map((l) => (l ? `${indent}${l}` : l)), m.end].join('\n');
+}
+
+/**
+ * Engine text that quotes the original (a condition, a comment, an owner's
+ * proposal) could carry the marker tag; on a line that is not a marker it is
+ * defused, so only the engine's own marker lines open a region.
+ */
+export function defuseMarkers(content: string): string {
+  if (!content.includes(MARKER_TAG)) return content;
+  return content
+    .split('\n')
+    .map((line) => (line.includes(MARKER_TAG) && !BEGIN.test(line) && !END.test(line) ? line.split(MARKER_TAG).join('@cc_fill') : line))
+    .join('\n');
+}
+
+interface RegionSpan extends FillRegion {
+  /** Index of the first character after the BEGIN line's newline. */
+  start: number;
+  /** Index of the first character of the END line. */
+  end: number;
+}
+
+/** Every region of one file, or the reason the markers are broken. */
+function regionsOf(file: ScaffoldFile): { regions: RegionSpan[]; error: string | null } {
+  const regions: RegionSpan[] = [];
+  const lines = file.content.split('\n');
+  let offset = 0;
+  let open: { id: string; hash: string; indent: string; start: number } | null = null;
+  for (const line of lines) {
+    const lineStart = offset;
+    offset += line.length + 1;
+    if (!line.includes(MARKER_TAG)) continue;
+    const b = BEGIN.exec(line);
+    const e = END.exec(line);
+    if (b) {
+      if (open) return { regions, error: `${file.path}: region ${b[3]} opens inside ${open.id}` };
+      open = { id: b[3], hash: b[4], indent: b[1], start: offset };
+      continue;
+    }
+    if (e) {
+      if (!open || open.id !== e[3]) return { regions, error: `${file.path}: END ${e[3]} without its BEGIN` };
+      const stub = file.content.slice(open.start, lineStart).replace(/\n$/, '');
+      regions.push({
+        regionId: open.id,
+        unitId: open.id.split('.')[0],
+        guard: open.id.includes('.') ? `G-${open.id.split('.')[1].replace(/^G/, '')}` : null,
+        file: file.path,
+        hash: open.hash,
+        indent: open.indent,
+        stub: stub
+          .split('\n')
+          .map((l) => (l.startsWith(open!.indent) ? l.slice(open!.indent.length) : l))
+          .join('\n'),
+        start: open.start,
+        end: lineStart,
+      });
+      open = null;
+      continue;
+    }
+    return { regions, error: `${file.path}: a line mentions ${MARKER_TAG} but is no marker` };
+  }
+  if (open) return { regions, error: `${file.path}: region ${open.id} is never closed` };
+  return { regions, error: null };
+}
+
+/** Every fill region of a file set, in file order. Throws when the markers are broken. */
+export function findRegions(files: readonly ScaffoldFile[]): FillRegion[] {
+  const out: FillRegion[] = [];
+  const seen = new Set<string>();
+  for (const f of files) {
+    const { regions, error } = regionsOf(f);
+    if (error) throw new Error(error);
+    for (const r of regions) {
+      if (seen.has(r.regionId)) throw new Error(`region ${r.regionId} appears twice`);
+      seen.add(r.regionId);
+      out.push({ regionId: r.regionId, unitId: r.unitId, guard: r.guard, file: r.file, hash: r.hash, indent: r.indent, stub: r.stub });
+    }
+  }
+  return out;
+}
+
+/** A file's text with every region's interior removed — the engine-owned characters. */
+function engineText(file: ScaffoldFile): string {
+  const { regions, error } = regionsOf(file);
+  if (error) throw new Error(error);
+  let out = '';
+  let at = 0;
+  for (const r of regions) {
+    out += file.content.slice(at, r.start);
+    at = r.end;
+  }
+  return out + file.content.slice(at);
+}
+
+/** sha256 over every engine-owned character of a file set (paths included, sorted by path). */
+export function scaffoldDigest(files: readonly ScaffoldFile[]): string {
+  const sorted = [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return sha256Hex(sorted.map((f) => `${f.path}\n${engineText(f)}`).join('\u0000'));
+}
+
+/* ------------------------------------------------------------ body guards */
+
+const TS_KEYWORDS = new Set([
+  'if', 'for', 'while', 'switch', 'catch', 'function', 'return', 'typeof', 'void', 'delete', 'await', 'yield', 'new', 'in', 'of',
+  'instanceof', 'do', 'else', 'case', 'throw', 'super', 'this', 'import', 'require',
+]);
+/** Plain callables a body may use without declaring them. */
+const TS_BUILTIN_CALLS = new Set(['String', 'Boolean', 'BigInt', 'Array', 'Object', 'Symbol', 'structuredClone']);
+/** Roots of member calls a body may use: built-in namespaces and the step's own parameters. */
+const TS_BUILTIN_ROOTS = new Set(['Math', 'JSON', 'Object', 'Array', 'String', 'BigInt', 'Date', 'Symbol', 'Number', 'sel', 'st', 'args', 'local', 'input', 'record', 'this']);
+/** Constructors a body may use with `new`. */
+const TS_NEW = new Set(['Map', 'Set', 'Error', 'Refusal', 'Array', 'Date']);
+/** Helpers a fill may name in `needs` beyond `available` (§9.2 rule 4). */
+export const NEEDS_ALLOWLIST: readonly string[] = ['dec.compare', 'dec.max', 'dec.min', 'dec.abs', 'dec.neg', 'dec.isZero', 'csv.table'];
+
+function refusal(code: BodyRefusal['code'], message: string): BodyRefusal {
+  return { code, message };
+}
+
+/** Names the body declares itself: `const x`, `let [a, b]`, `function f`, parameters of arrows are not tracked. */
+function declaredNames(body: string, mask: Uint8Array): Set<string> {
+  const out = new Set<string>();
+  const re = /\b(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) if (mask[m.index]) out.add(m[1]);
+  const destructure = /\b(?:const|let|var)\s*[[{]([^\]}=]*)[\]}]/g;
+  while ((m = destructure.exec(body)) !== null) {
+    if (!mask[m.index]) continue;
+    for (const part of m[1].split(',')) {
+      const name = part.split(':').pop()!.trim().replace(/^\.\.\./, '');
+      if (/^[A-Za-z_$][\w$]*$/.test(name)) out.add(name);
+    }
+  }
+  // Arrow and function parameters: `(a, b) =>`, `x =>`, `function f(a, b)`.
+  const arrow = /\(([^()]*)\)\s*(?::\s*[^=]+)?=>|([A-Za-z_$][\w$]*)\s*=>/g;
+  while ((m = arrow.exec(body)) !== null) {
+    if (!mask[m.index]) continue;
+    const list = m[1] ?? m[2] ?? '';
+    for (const part of list.split(',')) {
+      const name = part.split(/[:=]/)[0].trim().replace(/^\.\.\./, '');
+      if (/^[A-Za-z_$][\w$]*$/.test(name)) out.add(name);
+    }
+  }
+  const catchParam = /\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g;
+  while ((m = catchParam.exec(body)) !== null) if (mask[m.index]) out.add(m[1]);
+  return out;
+}
+
+function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
+  const out: BodyRefusal[] = [];
+  const probe = `${body}\n;`;
+  const mask = codeMask(probe);
+  // A quoted string ends on its own line; codeMask ends it at the line break, so check the closing quote here.
+  let openQuote = false;
+  for (let i = 0; i < body.length && !openQuote; i++) {
+    const c = body[i];
+    if ((c !== "'" && c !== '"') || mask[i] || (i > 0 && !mask[i - 1])) continue;
+    let j = i + 1;
+    while (j < body.length && body[j] !== c && body[j] !== '\n') j += body[j] === '\\' ? 2 : 1;
+    if (j >= body.length || body[j] !== c) openQuote = true;
+  }
+  if (!mask[probe.length - 1] || openQuote) out.push(refusal('unterminated', 'an unterminated string, template, regular expression or comment'));
+  const code = (re: RegExp) => {
+    const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : `${re.flags}g`);
+    const hits: RegExpExecArray[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = g.exec(body)) !== null) {
+      if (mask[m.index]) hits.push(m);
+      if (m[0].length === 0) g.lastIndex++;
+    }
+    return hits;
+  };
+  if (code(/\bimport\s*[\s({*'"]|\bexport\s|\brequire\s*\(/).length > 0) out.push(refusal('module-syntax', 'imports, exports and require() are engine-written'));
+
+  // Brackets, on code characters only; and top-level declarations (depth 0).
+  const stack: string[] = [];
+  const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
+  let unbalanced = false;
+  const depthAt = new Int32Array(body.length + 1);
+  for (let i = 0; i < body.length; i++) {
+    depthAt[i] = stack.length;
+    if (!mask[i]) continue;
+    const c = body[i];
+    if (pairs[c]) stack.push(pairs[c]);
+    else if (c === ')' || c === ']' || c === '}') {
+      if (stack.pop() !== c) unbalanced = true;
+    }
+  }
+  if (unbalanced || stack.length > 0) out.push(refusal('unbalanced', 'unbalanced (), [] or {}'));
+  const decl = code(/\b(?:function\s*\*?\s*[A-Za-z_$][\w$]*\s*\(|class\s+[A-Za-z_$]|interface\s+[A-Za-z_$]|enum\s+[A-Za-z_$]|namespace\s+[A-Za-z_$]|declare\s+|type\s+[A-Za-z_$][\w$]*\s*(?:<[^>]*>)?\s*=)/);
+  // A function or class expression (`const f = function g() {}`) is a value, not a declaration.
+  const isExpression = (at: number) => {
+    const before = body.slice(0, at).replace(/\s+$/, '');
+    return /[=(,:?!&|]$/.test(before) || /\breturn$/.test(before);
+  };
+  if (decl.some((m) => depthAt[m.index] === 0 && !isExpression(m.index))) out.push(refusal('declaration', 'a top-level function, class, interface or type declaration — the engine writes the declarations'));
+
+  const declared = declaredNames(body, mask);
+  const guardNames = new Set(ctx.guardCalls ?? []);
+  const shadow = [...declared].filter((n) => guardNames.has(n) || /^(?:guard|stop|skip)_/.test(n));
+  if (shadow.length > 0) out.push(refusal('guard-shadowed', `the body redeclares the guard ${shadow.join(', ')}`));
+  if (code(/\b(?:guard|stop|skip)_[\w$]*\s*=(?!=)/).length > 0) out.push(refusal('guard-shadowed', 'the body assigns to a guard function'));
+
+  if (code(/\b(?:Number|parseFloat|parseInt)\s*\(|\bNumber\s*\.\s*(?:parseFloat|parseInt)\s*\(/).length > 0) {
+    out.push(refusal('binary-number', 'Number(), parseFloat() or parseInt() — amounts and quantities go through dec.*, inputs through the input contract'));
+  }
+
+  // Calls: a plain call names something available, needed and allowed, declared here, or a built-in;
+  // a member call's root is a parameter, a declared name, an available namespace or a built-in namespace.
+  const available = new Set(ctx.available);
+  const allow = new Set(NEEDS_ALLOWLIST);
+  for (const n of ctx.needs ?? []) if (allow.has(n)) available.add(n);
+  const roots = new Set([...available].map((n) => n.split('.')[0]));
+  const foreign = new Set<string>();
+  const calls = /(^|[^.\w$])(new\s+)?([A-Za-z_$][\w$]*)((?:\s*\??\.\s*[A-Za-z_$][\w$]*)*)\s*(?:\?\.\s*)?\(/g;
+  for (let m = calls.exec(body); m !== null; m = calls.exec(body)) {
+    const at = m.index + m[1].length;
+    const isNew = Boolean(m[2]);
+    const root = m[3];
+    calls.lastIndex = at + (m[2]?.length ?? 0) + root.length;
+    if (!mask[at]) continue;
+    const chain = m[4].replace(/\s|\?/g, '');
+    if (TS_KEYWORDS.has(root) && !isNew) continue;
+    if (isNew) {
+      if (!TS_NEW.has(root) && !declared.has(root)) foreign.add(`new ${root}`);
+      continue;
+    }
+    if (!chain) {
+      if (declared.has(root) || available.has(root) || TS_BUILTIN_CALLS.has(root)) continue;
+      foreign.add(root);
+      continue;
+    }
+    const full = `${root}${chain}`;
+    if (declared.has(root) || TS_BUILTIN_ROOTS.has(root) || available.has(full) || roots.has(root)) continue;
+    foreign.add(full);
+  }
+  if (foreign.size > 0) out.push(refusal('foreign-call', `calls names that are neither available nor declared: ${[...foreign].slice(0, 8).join(', ')}`));
+  return out;
+}
+
+/** ABAP statements a fill body may not hold: declarations of the frame, calls out of the logic class. */
+const ABAP_FRAME = /^(METHOD|ENDMETHOD|CLASS|ENDCLASS|INTERFACE|ENDINTERFACE|FORM|ENDFORM|REPORT|PROGRAM|FUNCTION|ENDFUNCTION|MODULE|ENDMODULE)$/;
+const ABAP_FOREIGN = /^(?:CALL\s+FUNCTION|CALL\s+TRANSACTION|PERFORM|SUBMIT|EXEC\s+SQL|CALL\s+METHOD\s+\(|CALL\s+'|GENERATE|INSERT\s+REPORT|EDITOR-CALL)\b/i;
+const ABAP_ALLOWED_CLASS = /^(?:cl_abap_|cx_|xco_cp|me$|lcl_|lhc_|lsc_)/i;
+const OPENERS: Record<string, string> = { IF: 'ENDIF', CASE: 'ENDCASE', LOOP: 'ENDLOOP', DO: 'ENDDO', WHILE: 'ENDWHILE', TRY: 'ENDTRY' };
+
+function abapLiteralsClosed(body: string): boolean {
+  for (const raw of body.split('\n')) {
+    if (/^\*/.test(raw)) continue;
+    let q: string | null = null;
+    for (let i = 0; i < raw.length; i++) {
+      const c = raw[i];
+      if (q) {
+        if (c === q) {
+          if (raw[i + 1] === q) i++;
+          else q = null;
+        }
+        continue;
+      }
+      if (c === '"') break;
+      if (c === "'" || c === '`' || c === '|') q = c;
+    }
+    if (q) return false;
+  }
+  return true;
+}
+
+function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
+  const out: BodyRefusal[] = [];
+  if (!abapLiteralsClosed(body)) out.push(refusal('unterminated', 'an unterminated literal'));
+  const code = body.split('\n').filter((l) => !/^\s*\*/.test(l) && !/^\s*"/.test(l)).join('\n').trim();
+  if (code && !code.replace(/".*$/gm, '').trim().endsWith('.')) out.push(refusal('unterminated', 'the last statement has no period'));
+  const statements = readStatements(body);
+  if (statements.some((s) => ABAP_FRAME.test(s.keyword) || /\bDEFINITION\b/i.test(s.text) && s.keyword === 'CLASS')) {
+    out.push(refusal('declaration', 'METHOD, CLASS, FORM or another frame statement — the engine writes the frame'));
+  }
+  const blocks = readBlocks(statements);
+  const counts: Record<string, number> = {};
+  for (const s of statements) {
+    if (OPENERS[s.keyword]) counts[s.keyword] = (counts[s.keyword] ?? 0) + 1;
+    for (const [open, close] of Object.entries(OPENERS)) if (s.keyword === close) counts[open] = (counts[open] ?? 0) - 1;
+  }
+  if (blocks.unterminated.length > 0 || Object.values(counts).some((n) => n !== 0)) out.push(refusal('unbalanced', 'an IF, CASE, LOOP, DO, WHILE or TRY without its end, or an end without its opener'));
+  const foreign: string[] = [];
+  const available = new Set(ctx.available.map((n) => n.toLowerCase()));
+  for (const s of statements) {
+    if (ABAP_FOREIGN.test(s.text)) foreign.push(s.text.slice(0, 40));
+    for (const m of s.text.matchAll(/([\w/]+)=>/g)) {
+      const cls = m[1].toLowerCase();
+      if (!available.has(cls) && !ABAP_ALLOWED_CLASS.test(cls)) foreign.push(`${cls}=>`);
+    }
+  }
+  if (foreign.length > 0) out.push(refusal('foreign-call', `calls outside the logic class: ${[...new Set(foreign)].slice(0, 6).join(', ')}`));
+  if (statements.some((s) => /\bTYPE\s+f\b/i.test(s.text))) out.push(refusal('binary-number', 'TYPE f is binary floating point — amounts and quantities are packed'));
+  return out;
+}
+
+/**
+ * §9.2 — why a body may not be spliced, or `[]` when it may. Checked before
+ * the splice; a refused body goes to repair with these reasons.
+ */
+export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
+  const out: BodyRefusal[] = [];
+  if (body.includes(MARKER_TAG)) out.push(refusal('marker', `the body contains ${MARKER_TAG}`));
+  const limit = Math.min(BODY_MAX_CHARS, Math.max(BODY_SLICE_FACTOR * ctx.sliceChars, 0));
+  if (body.length > BODY_MAX_CHARS || body.length > BODY_SLICE_FACTOR * ctx.sliceChars) {
+    out.push(refusal('too-long', `${body.length} characters, more than ${limit} (4× the ABAP slice, at most ${BODY_MAX_CHARS})`));
+  }
+  out.push(...(ctx.track === 'node' ? nodeBodyGuards(body, ctx) : rapBodyGuards(body, ctx)));
+  return out;
+}
+
+/* ----------------------------------------------------------------- splice */
+
+/**
+ * Replace the answered regions' interiors and prove that nothing else
+ * changed. `guardContext(regionId)` supplies the body-guard context per region
+ * (null: the body is taken unchecked — for the engine's own tests only).
+ */
+export function spliceBodies(
+  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'>,
+  bodies: readonly RegionBody[],
+  guardContext: (regionId: string) => BodyGuardContext | null,
+): SpliceResult {
+  const regionFile = new Map<string, string>();
+  for (const f of scaffold.files) {
+    const { regions, error } = regionsOf(f);
+    if (error) return { ok: false, reason: `the scaffold's markers are broken: ${error}`, files: scaffold.files, applied: [], refused: [], digest: scaffold.digest };
+    for (const r of regions) regionFile.set(r.regionId, f.path);
+  }
+  const applied: string[] = [];
+  const refused: SpliceResult['refused'] = [];
+  const wanted = new Map<string, string>();
+  for (const b of bodies) {
+    if (!regionFile.has(b.regionId)) {
+      refused.push({ regionId: b.regionId, reasons: [refusal('marker', `no region ${b.regionId} in the scaffold`)] });
+      continue;
+    }
+    const ctx = guardContext(b.regionId);
+    const reasons = ctx ? bodyGuards(b.body, ctx) : b.body.includes(MARKER_TAG) ? [refusal('marker', `the body contains ${MARKER_TAG}`)] : [];
+    if (reasons.length > 0) {
+      refused.push({ regionId: b.regionId, reasons });
+      continue;
+    }
+    wanted.set(b.regionId, b.body);
+  }
+  const files = scaffold.files.map((f) => {
+    const { regions } = regionsOf(f);
+    const hits = regions.filter((r) => wanted.has(r.regionId));
+    if (hits.length === 0) return f;
+    let content = '';
+    let at = 0;
+    for (const r of hits) {
+      const body = wanted.get(r.regionId)!.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+      const indented = body
+        .split('\n')
+        .map((l) => (l.trim() ? `${r.indent}${l}` : ''))
+        .join('\n');
+      content += f.content.slice(at, r.start) + indented + '\n';
+      at = r.end;
+      applied.push(r.regionId);
+    }
+    content += f.content.slice(at);
+    return { ...f, content };
+  });
+  let digest: string;
+  try {
+    digest = scaffoldDigest(files);
+  } catch (err) {
+    return { ok: false, reason: `the candidate's markers are broken: ${(err as Error).message}`, files: scaffold.files, applied: [], refused, digest: scaffold.digest };
+  }
+  if (digest !== scaffold.digest) {
+    return { ok: false, reason: 'the candidate changes engine-written text (scaffold digest differs)', files: scaffold.files, applied: [], refused, digest };
+  }
+  return { ok: true, reason: null, files, applied, refused, digest };
+}
+
+/** Check a candidate file set against a scaffold's digest — for a package edited after generation (§18). */
+export function verifyScaffoldDigest(files: readonly ScaffoldFile[], digest: string): boolean {
+  try {
+    return scaffoldDigest(files) === digest;
+  } catch {
+    return false;
+  }
+}
