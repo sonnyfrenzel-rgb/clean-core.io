@@ -60,6 +60,20 @@ interface Pending {
 
 const PRIORITY: Record<ReadingJob['kind'], number> = { reading: 0, phone: 1, summary: 2 };
 
+/**
+ * A performance mark per job handed to the worker (`cc-reading-worker:reading`,
+ * `…:summary`, `…:phone`) — the cheap, observable proof that the job left this
+ * thread, read by `tests/process-map-worker-responsive.spec.ts`. A job that
+ * runs here, on the main thread, leaves no mark.
+ */
+function markPosted(kind: ReadingJob['kind']): void {
+  try {
+    if (typeof performance !== 'undefined' && typeof performance.mark === 'function') performance.mark(`cc-reading-worker:${kind}`);
+  } catch {
+    /* no user timing here */
+  }
+}
+
 export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
   const idleMs = deps.idleMs ?? 60_000;
   const cacheSize = deps.cacheSize ?? 8;
@@ -165,6 +179,7 @@ export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
           inflight = entry;
           try {
             w.postMessage({ id: entry.id, job: entry.job });
+            markPosted(entry.job.kind);
           } catch {
             // A job the worker cannot be sent is a worker that cannot be used:
             // it goes back to the front of the queue and runs here.

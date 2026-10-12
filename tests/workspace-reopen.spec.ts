@@ -56,9 +56,9 @@ interface ReopenWatch {
   emptyNextStep: number;
   /** Milliseconds the page spent showing that empty card, frozen frames included. */
   emptyMs: number;
-  /** When the next step first named something (open, running or none). */
+  /** When the next step first settled on an action ('open') or on nothing left ('none'). */
   nextAt: number | null;
-  /** When the first look left "Reading …". */
+  /** When the first look reached its end state ('end-state' / 'complete') or said it failed ('failed'). */
   firstLookAt: number | null;
   /** When the map was drawn. */
   mapAt: number | null;
@@ -95,10 +95,16 @@ async function watchReopen(page: Page) {
           w.__reopen.emptyNextStep += 1;
           wasEmpty = true;
         }
-        if (card.querySelector('[data-next-step-state]') && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
+        // Settled only: an action to take ('open') or nothing left ('none').
+        // The pending card carries no state, and 'running' is still under way.
+        const settled = card.querySelector('[data-next-step-state="open"], [data-next-step-state="none"]');
+        if (settled && (settled.textContent ?? '').trim() && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
       }
+      // Its end state or its failure — never 'waiting' or 'building'.
       const state = document.querySelector('[data-first-look]')?.getAttribute('data-first-look');
-      if (state && state !== 'waiting' && w.__reopen.firstLookAt === null) w.__reopen.firstLookAt = now;
+      if ((state === 'end-state' || state === 'complete' || state === 'failed') && w.__reopen.firstLookAt === null) {
+        w.__reopen.firstLookAt = now;
+      }
       if (document.querySelector('[data-workspace-process="ready"] [data-process-map]') && w.__reopen.mapAt === null) {
         w.__reopen.mapAt = now;
       }
@@ -161,9 +167,16 @@ test.describe('a project reopened far along its way', () => {
       }
 
       // The first look leaves "Reading …" and stands in its end state.
-      await expect(page.locator('[data-first-look="end-state"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
-      // The next step settles on an action.
-      await expect(page.locator('[data-workspace-shell="business"] [data-next-step] [data-next-step-state]').first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator('[data-first-look="end-state"], [data-first-look="complete"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
+      // The next step settles on an action: a label, the reason for it, and
+      // the control that starts it — not the pending sentence.
+      const nextStep = page.locator('[data-workspace-shell="business"] [data-next-step]');
+      const settled = nextStep.locator('[data-next-step-state="open"]');
+      await expect(settled).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator('[data-workspace-shell="business"] [data-next-step-pending]')).toHaveCount(0);
+      await expect(settled.locator('p').first()).toHaveText(/\S/);
+      await expect(settled.locator('[data-next-step-reason]')).toHaveText(/\S/);
+      await expect(nextStep.locator('a[href], button').first()).toBeVisible();
       // The map is drawn.
       await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 180_000 });
 
