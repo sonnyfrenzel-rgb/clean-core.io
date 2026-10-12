@@ -256,9 +256,12 @@ test.describe('a project reopened far along its way', () => {
     await page.waitForURL(new RegExp(`/project/${projectId}/${target}\\?`), { timeout: 90_000 });
   });
 
-  test('on a phone the head carries a "Tools" menu in the first screen — 390', async ({ page }) => {
+  test('on a phone the head carries a "Tools" menu in the first screen — 390', async ({ browser }) => {
     test.setTimeout(300_000);
-    await page.setViewportSize({ width: 390, height: 844 });
+    // A phone, not a narrow desktop window: the 44 px target is the coarse
+    // pointer's (CcButton's pointer-coarse:min-h-11), as on business-view-clarity.
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
     await withoutTips(page);
     await signInThroughForm(page, account);
     await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
@@ -287,5 +290,6 @@ test.describe('a project reopened far along its way', () => {
     await page.keyboard.press('Escape');
     await expect(panel).toHaveCount(0);
     await expect(button).toBeFocused();
+    await context.close();
   });
 });
