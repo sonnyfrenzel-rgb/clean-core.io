@@ -144,10 +144,10 @@ export type OtherCurrency =
 /**
  * What the "Other currency" input states (owner, 12.10.2026: "In Economics,
  * also allow entering a new currency that is not in the list"). Exactly three
- * letters A–Z, upper-cased as stored. Checked against the runtime's `Intl`
- * where it can say; where it cannot, the three-letter form is enough — the
- * reader chose "Other currency" and typed a code on purpose, so an old browser
- * must not keep them from stating it. A code the list has selects that entry.
+ * letters A–Z, upper-cased as stored. Checked against the ISO list above and
+ * the runtime's `Intl`; where `Intl` cannot say, only the ISO list counts — the
+ * three-letter form alone would state "QQQ" as a currency (QA 5ec8488a,
+ * c2cc1614def3). A code the list has selects that entry.
  */
 export function readOtherCurrency(
   text: string,
@@ -163,7 +163,7 @@ export function readOtherCurrency(
     };
   }
   if (CURRENCY_OPTIONS.some((o) => o.code === upper)) return { kind: 'listed', code: upper };
-  if (intl === null || isCurrencyCode(upper, intl)) return { kind: 'code', code: upper };
+  if (isCurrencyCode(upper, intl)) return { kind: 'code', code: upper };
   return {
     kind: 'invalid',
     problem: `“${upper}” is not an ISO 4217 currency code. Check the code, such as NOK for the Norwegian krone or CHF for the Swiss franc.`,

@@ -87,6 +87,7 @@ import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
+import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -172,24 +173,25 @@ Side-by-Side Extensibility on ${BTP_FIRST} using CAP (Node.js/TypeScript). S/4HA
 };
 
 /**
- * The seal the audit-pack route just wrote, read back from the server — or
- * `null` when it did not write one for this run. The route records the seal only
- * while the run it packed is still the active one (codex code-trust-07), and the
- * IT view reads the marker with the same run binding (`lib/it-sections.ts`).
+ * The seal the audit-pack route just wrote, read back from the server. The route
+ * records the seal only while the run it packed is still the active one (codex
+ * code-trust-07), and the IT view reads the marker with the same run binding
+ * (`lib/it-sections.ts`). A failed read is its own state, never "the run moved"
+ * (QA 1f314d94f6d1); the server's active run and the seal's time are checked in
+ * `auditPackSealState` (QA acb0eb4bfb45).
  */
 async function readSeal(
   projectId: string,
   runId: string | null,
-): Promise<{ auditPackExportedAt: string; auditPackExportedRunId: string } | null> {
+  downloadStartedAt: number,
+  previousExportedAt: string | null,
+): Promise<AuditPackSealState> {
   try {
     const snap = await getDocFromServer(doc(getDb(), 'projects', projectId));
-    const meta = (snap.data()?.auditMetadata ?? {}) as { auditPackExportedAt?: unknown; auditPackExportedRunId?: unknown };
-    if (typeof meta.auditPackExportedAt !== 'string' || !meta.auditPackExportedAt) return null;
-    if (runId && meta.auditPackExportedRunId !== runId) return null;
-    return { auditPackExportedAt: meta.auditPackExportedAt, auditPackExportedRunId: String(meta.auditPackExportedRunId ?? '') };
+    return auditPackSealState({ doc: snap.data() ?? null, readFailed: false, displayedRunId: runId, downloadStartedAt, previousExportedAt });
   } catch (err) {
     console.error('Reading the audit pack seal failed:', err);
-    return null;
+    return auditPackSealState({ doc: null, readFailed: true, displayedRunId: runId, downloadStartedAt, previousExportedAt });
   }
 }
 
@@ -269,10 +271,10 @@ export default function DeliveryPage() {
   const [bundleError, setBundleError] = useState<string | null>(null);
   const [auditPackBusy, setAuditPackBusy] = useState(false);
   const [auditPackError, setAuditPackError] = useState<string | null>(null);
-  // The pack left, but the server did not record it as sealed — the run it was
-  // made from is no longer the active one (owner, 12.10.2026: say so, do not
-  // leave "Never" standing without a reason).
-  const [sealNotRecorded, setSealNotRecorded] = useState(false);
+  // The pack left, but this download is not confirmed as its seal — the read
+  // failed, the run moved, or the seal predates it (owner, 12.10.2026: say so,
+  // do not leave "Never" standing without a reason; QA 1f314d94f6d1, acb0eb4bfb45).
+  const [sealNotice, setSealNotice] = useState<AuditPackSealState | null>(null);
   // A side action that finished — one toast at a time (§2.6).
   const [toast, setToast] = useState<string | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
@@ -587,7 +589,10 @@ export default function DeliveryPage() {
   const downloadAuditPack = async () => {
     if (!project || handoverBlocked) return;
     setAuditPackError(null);
+    setSealNotice(null);
     setAuditPackBusy(true);
+    const downloadStartedAt = Date.now();
+    const previousExportedAt = project.auditMetadata?.auditPackExportedAt ?? null;
     try {
       const idToken = await getAuth().currentUser?.getIdToken();
       if (!idToken) throw new Error('Not authenticated');
@@ -599,15 +604,13 @@ export default function DeliveryPage() {
       // sealed yet" until a manual reload (owner, 12.10.2026). Read back just
       // that marker — one document, no run re-hydration — so the chain, the
       // still-needed list and the next step move on at once.
-      const sealed = await readSeal(projectId as string, project.activeRunId ?? null);
-      if (sealed) {
-        setSealNotRecorded(false);
-        setProject((p) => (p ? { ...p, auditMetadata: { ...p.auditMetadata, ...sealed } as Project['auditMetadata'] } : p));
-        setToast('Audit pack downloaded and sealed');
-      } else {
-        setSealNotRecorded(true);
-        setToast('Audit pack downloaded');
+      const seal = await readSeal(projectId as string, project.activeRunId ?? null, downloadStartedAt, previousExportedAt);
+      if (seal.kind === 'sealed-now' || seal.kind === 'sealed-earlier') {
+        const { auditPackExportedAt, auditPackExportedRunId } = seal;
+        setProject((p) => (p ? { ...p, auditMetadata: { ...p.auditMetadata, auditPackExportedAt, auditPackExportedRunId } as Project['auditMetadata'] } : p));
       }
+      setSealNotice(seal.kind === 'sealed-now' ? null : seal);
+      setToast(seal.kind === 'sealed-now' ? 'Audit pack downloaded and sealed' : 'Audit pack downloaded');
     } catch (err: any) {
       console.error('Audit pack generation failed:', err);
       setAuditPackError(err?.message || 'Audit pack generation failed. Please try again.');
@@ -1282,10 +1285,24 @@ export default function DeliveryPage() {
                 </CcMessageStrip>
               </div>
             )}
-            {sealNotRecorded && (
+            {sealNotice?.kind === 'not-sealed' && (
               <div className="mt-3" data-audit-pack-seal-missing="">
                 <CcMessageStrip state="warning" headline="Downloaded, but not recorded as sealed." announce>
                   The server records the seal only while the run the pack was made from is the active one, and it no longer is. Reload the page and download the pack again.
+                </CcMessageStrip>
+              </div>
+            )}
+            {sealNotice?.kind === 'unconfirmed' && (
+              <div className="mt-3" data-audit-pack-seal-unconfirmed="">
+                <CcMessageStrip state="warning" headline="Downloaded, but the seal could not be confirmed just now." announce>
+                  The server could not be asked whether it recorded the seal. Reload the page to check.
+                </CcMessageStrip>
+              </div>
+            )}
+            {sealNotice?.kind === 'sealed-earlier' && (
+              <div className="mt-3" data-audit-pack-sealed-earlier="">
+                <CcMessageStrip state="information" headline="Downloaded. This download did not add a new seal." announce>
+                  The pack for this run was sealed earlier, on <CcDateText value={sealNotice.auditPackExportedAt} format="iso" />.
                 </CcMessageStrip>
               </div>
             )}

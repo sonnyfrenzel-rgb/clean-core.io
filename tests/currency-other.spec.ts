@@ -49,7 +49,7 @@ test.describe('what the "Other currency" input accepts', () => {
     }
   });
 
-  test('checked against Intl where it can say, the three-letter form where it cannot', () => {
+  test('checked against Intl and the ISO list; without Intl, the ISO list alone', () => {
     // Intl knows NOK: accepted. QQQ is neither in Intl nor in the ISO list: refused, with the fix.
     expect(readOtherCurrency('NOK', SOME_INTL)).toEqual({ kind: 'code', code: 'NOK' });
     const qqq = readOtherCurrency('qqq', SOME_INTL);
@@ -57,8 +57,13 @@ test.describe('what the "Other currency" input accepts', () => {
     if (qqq.kind === 'invalid') expect(qqq.problem).toMatch(/“QQQ” is not an ISO 4217 currency code\. Check the code/);
     // A code in the ISO list that this Intl lacks is still a code — each source can be behind the other.
     expect(readOtherCurrency('ZWG', new Set())).toEqual({ kind: 'code', code: 'ZWG' });
-    // No Intl to ask: the reader chose "Other currency" on purpose, three letters are enough.
-    expect(readOtherCurrency('qqq', null)).toEqual({ kind: 'code', code: 'QQQ' });
+    // No Intl to ask: only the ISO list counts, three letters alone are not a currency
+    // (QA 5ec8488a, c2cc1614def3).
+    expect(readOtherCurrency('nok', null)).toEqual({ kind: 'code', code: 'NOK' });
+    expect(readOtherCurrency('ZWG', null)).toEqual({ kind: 'code', code: 'ZWG' });
+    const noIntl = readOtherCurrency('qqq', null);
+    expect(noIntl.kind).toBe('invalid');
+    if (noIntl.kind === 'invalid') expect(noIntl.problem).toMatch(/“QQQ” is not an ISO 4217 currency code\. Check the code, such as NOK/);
     expect(readOtherCurrency('qq', null).kind).toBe('invalid');
   });
 

@@ -130,6 +130,16 @@ test.describe('the combobox, from its source', () => {
     // The active entry is a listed currency or "Other currency…" (owner, 12.10.2026).
     expect(field).toMatch(/aria-activedescendant=\{activeId\}/);
     expect(field).toMatch(/const activeId = activeMatch\s*\? optionId\(activeMatch\.option\.code\)/);
+    // The id it names is the id the active option carries — a listed currency's
+    // and "Other currency…"'s alike (QA 5ec8488a, c2cc1614def3: the assertion the
+    // "Other" change replaced named only the listed half).
+    expect(field).toMatch(/const activeId = activeMatch\s*\? optionId\(activeMatch\.option\.code\)\s*: expanded && active === otherIndex\s*\? otherOptionId\s*: undefined;/);
+    expect(field).toMatch(/const activeMatch = expanded && active >= 0 && active < otherIndex \? matches\[active\] : undefined;/);
+    expect(field).toMatch(/const otherIndex = matches\.length;/);
+    expect(field).toMatch(/id=\{optionId\(m\.option\.code\)\}\s*role="option"[\s\S]*?data-active=\{i === active \? 'true' : undefined\}/);
+    expect(field).toMatch(/id=\{otherOptionId\}\s*role="option"[\s\S]*?data-active=\{active === otherIndex \? 'true' : undefined\}/);
+    expect(field).toContain('const otherOptionId = `${listId}-other`;');
+    expect(field).toContain('const optionId = (code: string) => `${listId}-${code}`;');
     expect(field).toContain('role="listbox"');
     expect(field).toContain('role="option"');
     expect(field).toMatch(/aria-selected=\{selected\}/);
