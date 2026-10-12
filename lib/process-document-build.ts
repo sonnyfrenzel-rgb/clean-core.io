@@ -481,10 +481,14 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   // the one, `4b`, `4b.2` for the other (CO review F02, 12.10.2026). Only the
   // reference is shared — they carry no `choice`, because nobody chooses them.
   const programArm = new Map<string, { gateId: string; arm: number }>();
-  const markArms = (items: readonly PathItem[]) => {
+  const markArms = (items: readonly PathItem[], noneOfThem = false) => {
     for (const item of items) {
       if (item.kind !== 'choice') {
-        if ('items' in item) markArms(item.items);
+        // "One of these, or none of them": an optional that holds only a
+        // choice of its own decision (a `CASE` without `WHEN OTHERS`).
+        const wrapsChoice = item.kind === 'optional' && item.items.length === 1
+          && item.items[0].kind === 'choice' && item.items[0].split === item.split;
+        if ('items' in item) markArms(item.items, wrapsChoice);
         continue;
       }
       // Only the steps this description lists: an arm that holds nothing but
@@ -496,7 +500,20 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       const stepsOf = (inner: readonly PathItem[]): string[] => inner.flatMap((x) => (x.kind === 'step' ? (listed(x.step.id) ? [x.step.id] : [])
         : x.kind === 'choice' ? x.arms.flatMap((y) => stepsOf(y.items)) : stepsOf(x.items)));
       const arms = item.arms.map((a) => stepsOf(a.items));
-      if (item.parallel || choiceGates.has(item.split.id) || arms.filter((ids) => ids.length > 0).length < 2) {
+      // A reference has one level (`4a`, `4a.2`). Before the SD review the
+      // arms of a `CASE` without `WHEN OTHERS` were optional steps in
+      // sequence, and a decision inside one of them (`WHEN 'SAVE'` holding
+      // `IF p_upd_db … ELSE …`) had the letters. Grouping those arms into one
+      // choice must not take them away, or the inner alternatives would read
+      // as one arm's steps in sequence: such a choice leaves the letters to the
+      // inner one, as before (SD review, 12.10.2026). Choices of any other
+      // shape keep the rule they had.
+      const isProgramChoice = (x: PathItem): boolean => x.kind === 'choice' && !x.parallel && !choiceGates.has(x.split.id)
+        && x.arms.filter((y) => stepsOf(y.items).length > 0).length >= 2;
+      const holdsChoice = (inner: readonly PathItem[]): boolean => inner.some((x) => isProgramChoice(x)
+        || (x.kind === 'choice' ? x.arms.some((y) => holdsChoice(y.items)) : x.kind !== 'step' && holdsChoice(x.items)));
+      if (item.parallel || choiceGates.has(item.split.id) || arms.filter((ids) => ids.length > 0).length < 2
+        || (noneOfThem && item.arms.some((a) => holdsChoice(a.items)))) {
         for (const a of item.arms) markArms(a.items);
         continue;
       }

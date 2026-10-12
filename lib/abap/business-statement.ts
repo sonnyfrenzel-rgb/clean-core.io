@@ -2344,6 +2344,20 @@ function sentenceFor(
   }
 
   if (keyword === 'INCLUDE') {
+    // `INCLUDE STRUCTURE x` / `INCLUDE TYPE x` inside `BEGIN OF … END OF` is
+    // not a source include: it takes the components of a structure into the
+    // one being defined. It read "The report needs the include STRUCTURE",
+    // once per place since ADR-097, in the business reading. It is a structure
+    // definition — a technical sentence, kept in the technical appendix only
+    // (SD review, 12.10.2026).
+    const component = /^INCLUDE\s+(STRUCTURE|TYPE)\s+([A-Za-z0-9_/]+)/i.exec(text);
+    if (component) {
+      return {
+        anchors,
+        core: `The local structure contains the components of the ${component[1].toUpperCase() === 'TYPE' ? 'type' : 'structure'} ${component[2].toUpperCase()} (a component include).`,
+        tag: 'structure',
+      };
+    }
     const name = /^INCLUDE\s+([A-Za-z0-9_/]+)/i.exec(text);
     return {
       anchors,

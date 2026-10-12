@@ -176,6 +176,38 @@ function walkTopLevel(steps: readonly DocStep[]): { items: PathItem[]; order: st
         }
       }
 
+      // Alternatives that one arm skips together (SD review, 12.10.2026): a
+      // `CASE` without `WHEN OTHERS` — radio buttons, `CASE 'X'. WHEN r_alv. …
+      // WHEN r_dynp. … WHEN r_file. … ENDCASE.` — has a default arm that goes
+      // straight to the element after `ENDCASE`. Each `WHEN` arm reaches that
+      // element, so each was skipped by the default arm and read as its own
+      // optional step, one after the other: list, then screen, then file. When
+      // two or more arms are skipped by the same arm and none of them reaches
+      // another's first element, they are one choice of alternatives, and the
+      // skipping arm makes the whole choice optional ("or none of them").
+      if (arms.length > 2 && !/parallel/i.test(node.kind)) {
+        let skipper: Arm | undefined;
+        let group: Arm[] = [];
+        for (const b of arms) {
+          const skipped = arms.filter((a) => a !== b && reach(a.to, stop).has(b.to));
+          const independent = skipped.filter((a) => skipped.every((c) => c === a || !reach(a.to, stop).has(c.to)));
+          if (independent.length >= 2 && independent.length === skipped.length && independent.length > group.length) {
+            skipper = b;
+            group = independent;
+          }
+        }
+        if (skipper && group.length >= 2) {
+          const rest = arms.filter((a) => !group.includes(a));
+          const until = new Set([...stop, ...rest.map((a) => a.to)]);
+          const choiceArms = group.map((a) => ({ when: whenOf(a, arms), items: walk(a.to, until) }));
+          if (choiceArms.some((a) => hasStep(a.items))) {
+            const when = choiceArms.every((a) => a.when) ? choiceArms.map((a) => a.when).join(' OR ') : '';
+            items.push({ kind: 'optional', split: node, when, items: [{ kind: 'choice', split: node, parallel: false, arms: choiceArms }] });
+          }
+          arms = rest;
+        }
+      }
+
       // Optional segments: an arm that another arm's first element skips.
       while (arms.length > 1 && !/parallel/i.test(node.kind)) {
         const optional = arms.find((a) => arms.some((b) => b !== a && reach(a.to, stop).has(b.to)));

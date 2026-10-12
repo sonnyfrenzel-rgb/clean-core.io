@@ -471,6 +471,8 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   // ran after the result was shown (CO review F02, 12.10.2026).
   const when = (condition: string) => (condition ? `, only when \`${condition}\`` : '');
   const at = (split: DocStep) => (isGate(split) && split.anchor ? `, decided at ${shortLines([split.anchor])}` : '');
+  const optionalChoice = (item: PathItem): Extract<PathItem, { kind: 'choice' }> | null => (item.kind === 'optional'
+    && item.items.length === 1 && item.items[0].kind === 'choice' && item.items[0].split === item.split ? item.items[0] : null);
   const renderPath = (items: PathItem[], indent: string): void => {
     items.forEach((item, i) => {
       const marker = `${i + 1}. `;
@@ -478,11 +480,18 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
       const lone = 'items' in item && item.items.length === 1 && item.items[0].kind === 'step' ? item.items[0].step : null;
       if (item.kind === 'step') {
         out.push(`${indent}${marker}${stepLine(item.step)}`);
-      } else if (item.kind === 'choice') {
-        const head = item.parallel ? `These ${item.arms.length} paths run side by side${at(item.split)}:` : `One of ${item.arms.length} alternative paths${at(item.split)}:`;
+      } else if (item.kind === 'choice' || optionalChoice(item)) {
+        // An optional that holds only a choice of the same decision is one
+        // statement — "one of these, or none of them" — not an optional with
+        // a choice nested in it (SD review, 12.10.2026).
+        const choice = item.kind === 'choice' ? item : (optionalChoice(item) as Extract<PathItem, { kind: 'choice' }>);
+        const noneOfThem = item.kind === 'optional';
+        const head = choice.parallel
+          ? `These ${choice.arms.length} paths run side by side${at(choice.split)}:`
+          : `One of ${choice.arms.length} alternative paths${noneOfThem ? ', or none of them' : ''}${at(choice.split)}:`;
         out.push(`${indent}${marker}${head}`);
-        for (const arm of item.arms) {
-          const label = item.parallel ? (arm.when ? `When \`${arm.when}\`` : 'Always') : arm.when ? `When \`${arm.when}\`` : 'Otherwise';
+        for (const arm of choice.arms) {
+          const label = choice.parallel ? (arm.when ? `When \`${arm.when}\`` : 'Always') : arm.when ? `When \`${arm.when}\`` : 'Otherwise';
           out.push(`${inner}- **${label}:**${arm.items.length ? '' : ' no step on this path.'}`);
           renderPath(arm.items, `${inner}  `);
         }
@@ -522,7 +531,20 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     + `Not business statements, kept complete in [Appendix A.3](#${A.statements}): ${t.structure} structure definitions, ${t.assignment} field assignments, ${t.label} label texts and ${t.call} bare calls.`,
     '',
   );
-  out.push('### Rules', '');
+  // One story with "In short" (SD review, 12.10.2026): "In short" counts the
+  // rule register (`deriveBusinessRules` — 17 for the SD cockpit), this list
+  // groups the sentences in which the code states its conditions (11 there).
+  // Both are right and they count different things; the heading says which
+  // this list is, and the line under it names the register's count and where
+  // its rows stand, so a reader does not meet two rule counts unexplained.
+  out.push('### Rules as the code states them', '');
+  if (typeof summaryFacts?.rules === 'number' && (summaryFacts.rules > 0 || rules.length > 0)) {
+    const n = summaryFacts.rules;
+    out.push(n > 0
+      ? `The rule register holds ${n === 1 ? '1 business rule' : `${n} business rules`} — the number "In short" gives — one row each, with its state and test (in the delivery package: \`docs/rule-register.md\`). `
+        + `The ${rules.length === 1 ? 'entry' : `${rules.length} entries`} below ${rules.length === 1 ? 'is' : 'are'} the sentences in which the code states its conditions: one sentence can carry several rules, and near-identical sentences are folded into one.`
+      : 'The rule register holds no business rule; the entries below are conditions the code states, not rules a decision works on.', '');
+  }
   if (rules.length) for (const g of rules) out.push(`- ${groupLine(g)}`);
   else out.push('No condition in the code decides a value or a path.');
   out.push('', ...heading(3, A.exceptions, 'Exceptions'));
