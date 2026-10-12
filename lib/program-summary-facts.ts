@@ -257,6 +257,12 @@ function methodCallEdges(
 ): Set<string> {
   const called = new Set<string>();
   const defined = new Set(containers.filter((c) => c.kind === 'method').map((c) => c.name));
+  // A name two local classes both define cannot be told apart by name alone: such a method stays a
+  // root of the normal flow, so its changes are never reported as command-only (QA review of
+  // 0316b4e2, 895b0df96abb).
+  const seen = new Map<string, number>();
+  for (const c of containers) if (c.kind === 'method') seen.set(c.name, (seen.get(c.name) ?? 0) + 1);
+  const ambiguous = new Set([...seen].filter(([, n]) => n > 1).map(([name]) => name));
   if (!defined.size) return called;
   const handlers = new Set<string>();
   for (const s of statements) {
@@ -277,7 +283,7 @@ function methodCallEdges(
     const c = containerAt(containers, s.lineStart);
     const from = c ? keyOf(c.kind, c.name) : keyOf('program', null);
     for (const name of names) {
-      if (!defined.has(name) || ALWAYS_ROOT.has(name) || handlers.has(name)) continue;
+      if (!defined.has(name) || ambiguous.has(name) || ALWAYS_ROOT.has(name) || handlers.has(name)) continue;
       called.add(name);
       link(from, keyOf('method', name));
     }

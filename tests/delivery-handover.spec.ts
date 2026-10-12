@@ -383,7 +383,7 @@ test.describe('the next step and the still-needed list tell one story', () => {
     const download = src.slice(src.indexOf('const downloadAuditPack'), src.indexOf('if (loading ||'));
     expect(download).toContain('readSeal(');
     expect(download).toContain('setProject(');
-    expect(src).toContain('Downloading seals it.');
+    expect(src).toContain('Downloading seals it while this run is the active one; the page confirms the seal after the download.');
   });
 });
 

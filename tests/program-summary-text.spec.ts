@@ -561,6 +561,13 @@ START-OF-SELECTION.
     expect(writesOf(src.replace('  go_app->show( ).\n', '  go_app->show( ).\n  CALL METHOD go_app->block_items.\n'))).toEqual([['VBAP', false]]);
     // A dynamic method call anywhere: reachability is not known, the change counts as normal.
     expect(writesOf(src.replace('  go_app->show( ).\n', "  go_app->show( ).\n  CALL METHOD go_app->('SHOW').\n"))).toEqual([['VBAP', false]]);
+    // Two local classes define block_items: the name alone cannot say which one the handler
+    // calls, so the change counts as normal, never as command-only (QA review of 0316b4e2, 895b0df96abb).
+    const twin = src.replace(
+      'START-OF-SELECTION.',
+      `CLASS lcl_other DEFINITION.\n  PUBLIC SECTION.\n    METHODS block_items.\nENDCLASS.\nCLASS lcl_other IMPLEMENTATION.\n  METHOD block_items.\n    UPDATE vbak SET lifsk = '01' WHERE vbeln = '0000000001'.\n  ENDMETHOD.\nENDCLASS.\nSTART-OF-SELECTION.`,
+    );
+    expect(writesOf(twin).every(([, onCommand]) => onCommand === false)).toBe(true);
   });
 
   test('Management keeps what a command changes apart from what every run changes (8016d373c55f)', () => {

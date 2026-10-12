@@ -1308,7 +1308,7 @@ export default function DeliveryPage() {
             )}
             {/* What the reader does with it, in one line (owner, 12.10.2026: "does a user still have to do anything with it?"). */}
             <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted" data-audit-pack-use="">
-              Downloading seals it. Hand the ZIP to whoever needs proof; anyone can check it at{' '}
+              Downloading seals it while this run is the active one; the page confirms the seal after the download. Hand the ZIP to whoever needs proof; anyone can check it at{' '}
               <Link href="/verify-pack" className="text-cc-ink underline underline-offset-2 hover:text-cc-brand-deep">
                 Verify an audit pack
               </Link>

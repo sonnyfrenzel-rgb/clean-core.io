@@ -115,7 +115,7 @@ test('downloading the pack seals it on the page at once: chain, card, list and n
   await expect(next).not.toContainText('Nothing open');
   await expect(chainDelivery).toContainText('Audit pack not sealed yet.');
   await expect(card).toContainText('Never');
-  await expect(card).toContainText('Downloading seals it.');
+  await expect(card).toContainText('Downloading seals it while this run is the active one; the page confirms the seal after the download.');
 
   const download = page.waitForEvent('download');
   await next.locator('[data-handover-next-download]').click();
