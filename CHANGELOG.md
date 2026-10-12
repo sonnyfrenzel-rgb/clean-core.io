@@ -36,6 +36,12 @@ and a large program no longer freezes the page — after an external review of a
   distance to standard are already on the page. Old links lead to IT.
 - **One name for the score:** Clean Core Score everywhere; a score that was not computed says so
   instead of "0 / 100".
+- **Economics: any currency.** Besides the list, "Other currency…" takes an ISO code (e.g. NOK);
+  a code already in the list selects it there.
+- **Delivery tells one story.** Downloading the signed audit pack seals it, and the page shows the
+  seal at once — no reload. The next step is to download (seal) the pack while it is open, and
+  "hand the package to operations" only when nothing is left; a still-needed item made on this page
+  links to its section.
 
 ### Documentation and delivery
 
