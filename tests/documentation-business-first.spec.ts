@@ -157,10 +157,13 @@ test.describe('what counts as a business statement', () => {
     ]);
     expect(view.total).toBe(8);
     expect(view.technical).toEqual({ structure: 1, label: 0, assignment: 0, call: 1 });
-    expect(view.groups.map((g) => g.count)).toEqual([2, 2, 2]);
+    // p_grace and p_rest folded into one entry until the CO review (F01, 12.10.2026):
+    // a different field is a different condition, and a fold keeps the condition or does not fold.
+    expect(view.groups.map((g) => g.count)).toEqual([2, 2, 1, 1]);
     expect(view.groups[1].text).toBe('If the field p_keydt is greater than sy-datum, the error message "Future key dates are outside this report scope" is output.');
-    expect(view.groups[2].anchors.map((x) => x.lineStart)).toEqual([30, 31, 33, 34]);
-    expect(view.folded).toBe(3);
+    expect(view.groups[2].anchors.map((x) => x.lineStart)).toEqual([30, 31]);
+    expect(view.groups[3].anchors.map((x) => x.lineStart)).toEqual([33, 34]);
+    expect(view.folded).toBe(2);
   });
 
   test('rules that differ in a threshold, a literal or a constant stay separate entries (QA review of 11e3bc7d90e8)', () => {

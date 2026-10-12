@@ -159,32 +159,6 @@ function partOf(whole: string, part: string): boolean {
   return body.length > 8 && norm(whole).includes(body);
 }
 
-/**
- * The shape of a sentence: what is left once the program's variable names are
- * taken out. Two sentences of one shape say the same thing about different
- * fields — "If the field p_grace is less than 0 or … greater than 30, an error
- * message is output." and the same for p_rest with the same limits.
- *
- * Numbers, quoted texts and named constants (`c_yes`, `gc_limit`) stay: they
- * are the thresholds and values a business reader checks, and an entry shows
- * only its first sentence — "> 30" and "> 60" folded into one entry printed
- * one threshold for both (QA review of 11e3bc7d90e8).
- */
-const QUOTED = /“[^”]*”|"[^"]*"|'[^']*'/g;
-const CONSTANT = /^(?:[glm]?c|co)_/i;
-export function statementShape(text: string): string {
-  const unquoted = text.split(QUOTED);
-  const quoted = text.match(QUOTED) ?? [];
-  return unquoted
-    .map((part) => part
-      .replace(/\b[a-z][\w]*[_-][\w-]*\b/gi, (name) => (CONSTANT.test(name) ? name : '«f»'))
-      .replace(/\b(?:field|value|table) «f»/gi, '«f»'))
-    .reduce((out, part, i) => out + part + (quoted[i] ?? ''), '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
 function mergeAnchors(list: readonly KindAnchor[]): KindAnchor[] {
   const seen = new Set<string>();
   const out: KindAnchor[] = [];
@@ -217,7 +191,9 @@ export interface BusinessStatementView {
  *   3. a message sentence on a line of the preceding rule is quoted into it
  *      ("…, an error message is output." + "The error message “Y” is output."
  *      → "…, the error message “Y” is output.");
- *   4. sentences of one shape are one entry, with how many it stands for.
+ *
+ * Nothing folds across places: two sentences at different lines are two
+ * entries, however alike they read (CO review F01, 12.10.2026).
  *
  * Order: the order of the program, by the first sentence of each entry.
  */
@@ -254,26 +230,24 @@ export function businessStatementView(statements: readonly KindStatement[]): Bus
     }
     kept.push({ kind, text: s.text.replace(/\s+/g, ' ').trim(), anchors, own: anchors, count: 1, similar: [], grain: s.grain ?? 'statement' });
   }
-  // 4. one entry per shape, in program order.
-  const byShape = new Map<string, (typeof kept)[number]>();
-  const groups: StatementGroup[] = [];
-  for (const k of kept) {
-    // A message the user sees and an authorization object are what a reader looks for: never folded away.
-    const names = k.kind === 'exception' || k.kind === 'control'
-      ? `:${[...k.text.matchAll(/“[^”]*”|"[^"]*"|\b[A-Z][A-Z0-9_]{3,}\b/g)].map((m) => m[0]).join('|')}`
-      : '';
-    const shape = `${k.kind}:${statementShape(k.text)}${names}`;
-    const first = byShape.get(shape);
-    if (first) {
-      first.count += k.count;
-      first.similar.push(k.text, ...k.similar);
-      first.anchors = mergeAnchors([...first.anchors, ...k.anchors]);
-      folded += k.count;
-      continue;
-    }
-    byShape.set(shape, k);
-    groups.push(k);
-  }
+  // There is no fold across places (CO review F01, 12.10.2026). Until then a
+  // fourth step folded every sentence of one "shape" — the sentence with its
+  // names replaced by a placeholder — into one entry. The pattern caught far
+  // more than variable names: the status a rule sets (`SECONDARY_LOCK`,
+  // `CONFLICTING_DRIVER`), the routine it calls (`export_visible_csv`,
+  // `demo_text`) and the field it tests (`p_csv`, `p_demo`). The CO review of
+  // the 3.0.10 package found "SECONDARY_LOCK" carrying the lines of a driver
+  // conflict, "NEGATIVE_DRIVER" the lines of a below-plan variance, the CSV
+  // export the lines of a demo text lookup, a run status the lines of a row
+  // classification, and "zero plan, zero cost" the lines of "on plan".
+  // Owner's rule since: a fold keeps condition, action, entity, status and
+  // branch context unchanged, or it does not fold. Even a sentence identical
+  // in every word does not show that much — "If the field lv_index is 0, a row
+  // is added" stands at two places of the CO program, once for gt_cosp in the
+  // IF branch and once for gt_coss in the ELSE branch. Steps 2 and 3 stay:
+  // they fold only inside the lines of one rule, where branch and entity are
+  // that rule's own.
+  const groups: StatementGroup[] = kept;
   return {
     groups: groups.map((g) => ({ kind: g.kind, text: g.text, anchors: g.anchors, count: g.count, similar: g.similar })),
     technical,
