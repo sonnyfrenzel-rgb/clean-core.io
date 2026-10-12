@@ -186,6 +186,40 @@ test.describe('the PP and SD shapes', () => {
   });
 });
 
+test('record fields are what the original takes as input — computed components are results, never request fields', () => {
+  const pp = planOf(fixture('pp-shape')).plan;
+  const where = (plan: typeof pp, name: string) => plan.fields.find((f) => f.original === name)?.where ?? 'absent';
+  // GT_COMP is read from RESB: its quantities are input; STATUS is set by CHECK_COVERAGE — a result.
+  expect(['BDMNG', 'ENMNG', 'LABST', 'MATNR'].map((n) => where(pp, n))).toEqual(['record', 'record', 'record', 'record']);
+  expect(where(pp, 'STATUS')).toBe('absent');
+  const source = [
+    'REPORT zfx_records.',
+    'TYPES: BEGIN OF ty_in,',
+    '         vbeln TYPE vbeln_va,',
+    '         netwr TYPE p LENGTH 8 DECIMALS 2,',
+    '         calc_discount TYPE p LENGTH 8 DECIMALS 2,',
+    '       END OF ty_in.',
+    'TYPES: BEGIN OF ty_work,',
+    '         rem_num TYPE p LENGTH 16 DECIMALS 0,',
+    '       END OF ty_work.',
+    'DATA gt_in TYPE STANDARD TABLE OF ty_in WITH EMPTY KEY.',
+    'DATA gs_work TYPE ty_work.',
+    "PARAMETERS p_vkorg TYPE vkorg OBLIGATORY DEFAULT '1000'.",
+    'START-OF-SELECTION.',
+    '  SELECT vbeln, netwr FROM vbak WHERE vkorg = @p_vkorg INTO CORRESPONDING FIELDS OF TABLE @gt_in.',
+    '  LOOP AT gt_in ASSIGNING FIELD-SYMBOL(<ls_in>).',
+    '    <ls_in>-calc_discount = <ls_in>-netwr * 2 / 100.',
+    '    gs_work-rem_num = gs_work-rem_num + 1.',
+    '  ENDLOOP.',
+  ].join('\n');
+  const { plan } = planOf(source);
+  expect(where(plan, 'NETWR')).toBe('record');
+  expect(where(plan, 'VBELN')).toBe('record');
+  expect(plan.fields.find((f) => f.original === 'CALC_DISCOUNT')).toMatchObject({ where: 'internal', path: null, obligatory: false });
+  expect(plan.fields.find((f) => f.original === 'REM_NUM')).toMatchObject({ where: 'internal', path: null, obligatory: false });
+  expect(plan.missingBaseValues).toEqual(['NETWR']);
+});
+
 test('a guard names the same rule as the engine case on its line, on every fixture', () => {
   for (const source of [poDemo(), fixture('co-shape'), fixture('pp-shape'), fixture('sd-shape')]) {
     const { facts, plan } = planOf(source);

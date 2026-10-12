@@ -10,7 +10,7 @@
  */
 
 export * from './types';
-export { planUnits, readEngineFacts, readContractFields, fillGuardsOf, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
+export { planUnits, readEngineFacts, readContractFields, recordInputOf, fillGuardsOf, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
 export type { EngineFacts, PlanInput } from './unit-plan';
 export { sliceFor } from './abap-slice';
 export { MARKER_TAG, NEEDS_ALLOWLIST, bodyGuards, defuseMarkers, findRegions, markerLines, regionHash, regionText, scaffoldDigest, spliceBodies, verifyScaffoldDigest } from './markers';

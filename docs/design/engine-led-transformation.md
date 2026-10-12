@@ -444,7 +444,12 @@ A body is refused — and the unit goes to repair with that reason — when it:
 The call contract's base request takes each value from the original — the selection DEFAULT, the demo
 data, a fixed list in the code, a value that satisfies the original's checks — never a placeholder; an
 obligatory field with none is listed (`missingBaseValues`) and every engine case reads "Not run — no
-valid base value known for X" (`lib/transformation/base-values.ts`).
+valid base value known for X" (`lib/transformation/base-values.ts`). The request's record fields are only
+what the original takes as input — components of structures it fills from a database read, an upload or
+file read, a split input line, or its demo data; a component it computes afterwards (arithmetic, a
+function, a value the logic sets) is a result, never a request field (`recordInputOf`). Measured on
+12.10.2026, scaffold alone: CO 17 engine cases pass (2 fail where a check predicate is still a stub), SD 17,
+PP 12; the PO demo stays "Not run — no valid base value known for P_BANFN": the original gives no value.
 
 ### 9.3 Splice and integrity
 

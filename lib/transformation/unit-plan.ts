@@ -175,8 +175,9 @@ function selectionKey(name: string): string {
  * reading as `readFields` of the engine cases, so every field a case names has
  * a path or is internal on purpose.
  */
-export function readContractFields(facts: EngineFacts): ContractField[] {
+export function readContractFields(facts: EngineFacts, notCarried: readonly NotCarried[] = []): ContractField[] {
   const { statements, contract } = facts;
+  const inputData = recordInputOf(facts, notCarried);
   const keywordAt = new Map<number, string>();
   const componentLines = new Set<number>();
   // Structures: components by structure, so a structure that holds a packed component lends its other components to the record.
@@ -231,11 +232,10 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
     if (seen.has(name)) continue;
     seen.add(name);
     const input = inputByName.get(name);
-    const component = componentLines.has(d.line);
-    if (component) {
-      const s = structures.find((x) => x.components.some((c) => c.line === d.line));
-      if (s) packedComponentStructures.add(s.name);
-    }
+    // A record field is a component of a structure the original takes as input data, and not one it computes.
+    const owner = componentLines.has(d.line) ? structures.find((x) => x.components.some((c) => c.line === d.line)) : undefined;
+    const component = Boolean(owner && inputData.structures.has(owner.name) && !inputData.computed.has(name));
+    if (component && owner) packedComponentStructures.add(owner.name);
     const where: ContractField['where'] = input ? 'selection' : component ? 'record' : 'internal';
     const key = where === 'selection' ? uniqueKey(selectionKey(name)) : where === 'record' ? recordKey(name) : camelName(name);
     out.push({
@@ -283,7 +283,7 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
   for (const s of structures) {
     if (!packedComponentStructures.has(s.name)) continue;
     for (const c of s.components) {
-      if (seen.has(c.name)) continue;
+      if (seen.has(c.name) || inputData.computed.has(c.name)) continue;
       seen.add(c.name);
       const key = recordKey(c.name);
       out.push({
@@ -304,6 +304,102 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
     }
   }
   return out;
+}
+
+const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|ALSM_EXCEL_TO_INTERNAL_TABLE)\b/i;
+
+/**
+ * What the original takes as input data (coordinator, 12.10.2026): the
+ * structures it fills from a database read, an upload or file read, a SPLIT of
+ * an input line, or its demo-data routines — and, among their components, the
+ * ones it computes afterwards (assigned outside the demo data: `ls-calc_discount
+ * = …`, `ADD … TO ls-rem_num`). A computed component is a result, never a
+ * request field.
+ */
+export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string> } {
+  const { statements } = facts;
+  const fixtures = notCarried.filter((n) => n.reason === 'fixture');
+  const inFixture = (line: number) => fixtures.some((n) => line >= n.lineStart && line <= n.lineEnd);
+  const lower = (s: string) => s.toLowerCase();
+
+  // Types: table types to their line type, data objects to their type (a structure, or a table of one).
+  const tableOf = new Map<string, string>();
+  const typeOf = new Map<string, string>();
+  for (const st of statements) {
+    if (st.keyword !== 'TYPES' && st.keyword !== 'DATA' && st.keyword !== 'CLASS-DATA' && st.keyword !== 'STATICS') continue;
+    const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+    const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
+    if (begin) {
+      if (st.keyword !== 'TYPES') typeOf.set(lower(begin[1]), lower(begin[1]));
+      continue;
+    }
+    const m = /^([\w/]+)\s+TYPE\s+(?:(?:STANDARD|SORTED|HASHED|ANY)\s+)?(?:TABLE\s+OF\s+(?:REF\s+TO\s+)?)?([\w/]+)/i.exec(rest);
+    if (!m) continue;
+    if (st.keyword === 'TYPES') tableOf.set(lower(m[1]), lower(m[2]));
+    else typeOf.set(lower(m[1]), lower(m[2]));
+  }
+  const structureOf = (v: string): string | null => {
+    let t = typeOf.get(lower(v)) ?? null;
+    for (let i = 0; t && i < 4 && tableOf.has(t); i++) t = tableOf.get(t)!;
+    return t;
+  };
+
+  // Data objects the original fills from outside or from its demo data.
+  const inputVars = new Set<string>();
+  const base = (target: string) => lower(target.replace(/^@/, '').replace(/^DATA\(|\)$/gi, '').split('-')[0]);
+  for (const st of statements) {
+    const t = st.text;
+    if (st.keyword === 'SELECT') {
+      for (const m of t.matchAll(/\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?(@?(?:DATA\()?[\w/<>]+)/gi)) inputVars.add(base(m[1]));
+    } else if (st.keyword === 'READ' && /^READ\s+DATASET\b/i.test(t)) {
+      const m = /\bINTO\s+([\w/<>-]+)/i.exec(t);
+      if (m) inputVars.add(base(m[1]));
+    } else if (st.keyword === 'SPLIT') {
+      const m = /\bINTO\s+(TABLE\s+)?([\s\S]+?)(?:\s+IN\s+(?:CHARACTER|BYTE)\s+MODE)?\.?$/i.exec(t);
+      if (m) for (const target of m[2].split(/\s+/)) if (/^[\w/<>-]+$/.test(target)) inputVars.add(base(target));
+    } else if (UPLOAD_CALL.test(t)) {
+      for (const m of t.matchAll(/\b(?:data_tab|i_tab_converted_data|intern)\s*=\s*([\w/<>-]+)/gi)) inputVars.add(base(m[1]));
+    }
+    if (inFixture(st.lineStart)) {
+      const m = /^(?:APPEND|INSERT)\b[\s\S]*?\b(?:TO|INTO\s+TABLE|INTO)\s+([\w/<>-]+)\s*\.?$/i.exec(t);
+      if (m) inputVars.add(base(m[1]));
+    }
+  }
+  // A line of input data appended to a table makes the table input data too.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const st of statements) {
+      const m = /^(?:APPEND|INSERT)\s+([\w/<>-]+)\s+(?:TO|INTO\s+TABLE)\s+([\w/<>-]+)/i.exec(st.text);
+      if (m && inputVars.has(base(m[1])) && !inputVars.has(base(m[2]))) {
+        inputVars.add(base(m[2]));
+        changed = true;
+      }
+    }
+  }
+  const structures = new Set<string>();
+  for (const v of inputVars) {
+    const s = structureOf(v) ?? (typeOf.get(v) === v ? v : null);
+    if (s) structures.add(s);
+  }
+
+  // Components the original computes after the input is read (outside its demo data).
+  const computed = new Set<string>();
+  for (const st of statements) {
+    if (inFixture(st.lineStart) || st.keyword === 'SELECT' || st.keyword === 'SPLIT' || st.keyword === 'READ') continue;
+    const t = st.text.replace(/\.$/, '');
+    const assign = /^<?[\w/~]+>?((?:-[\w/~]+)+)\s*((?:[-+*/]|&&)?)=(?!=)\s*([\s\S]*)$/.exec(t);
+    if (assign) {
+      // Computed: arithmetic, a function, an operator-assignment, or a value set by the logic (a literal, a status).
+      // A plain copy of another field (`ls_drv-kostl = lv_kostl` after reading a line) is still input data.
+      const rhs = assign[3].trim();
+      const isComputed = Boolean(assign[2]) || /[+*/]|\s-\s|\*\*|\bDIV\b|\bMOD\b|[\w>]\(|&&|\|/i.test(rhs) || /^(?:'(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)$/i.test(rhs);
+      if (isComputed) computed.add(lower(assign[1].slice(assign[1].lastIndexOf('-') + 1)));
+      continue;
+    }
+    const writer = /^(?:ADD|SUBTRACT)\b.*\b(?:TO|FROM)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^(?:MULTIPLY|DIVIDE)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^COMPUTE\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t);
+    if (writer) computed.add(lower(writer[1].slice(writer[1].lastIndexOf('-') + 1)));
+  }
+  return { structures, computed };
 }
 
 /** The CSV delimiter a constant of the original declares (`gc_sep VALUE ';'`), else a comma. */
@@ -664,7 +760,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   }
 
   // ---- the request and its base values (from the original only; base-values.ts)
-  const fields = readContractFields(facts);
+  const fields = readContractFields(facts, notCarried);
   const missingBaseValues = assignBaseValues(fields, facts, notCarried);
 
   // ---- split above the hard budget (§7.2), then budgets from the slices
