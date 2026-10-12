@@ -68,17 +68,41 @@ const EN_WORDS = new Set(['the', 'and', 'of', 'to', 'for', 'with', 'is', 'are', 
 const DE_WORDS = new Set(['der', 'die', 'das', 'und', 'für', 'mit', 'auf', 'nicht', 'ist', 'sind', 'wird', 'werden', 'von', 'zu', 'im', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'eines', 'enthält', 'oder', 'aus', 'bei', 'nach', 'über']);
 const OTHER_WORDS = new Set(['le', 'la', 'les', 'et', 'pour', 'avec', 'est', 'une', 'el', 'los', 'las', 'para', 'con', 'y', 'il', 'di', 'che', 'het', 'een', 'voor', 'van', 'met', 'niet', 'uma', 'não', 'por', 'de', 'en', 'du', 'del', 'och', 'af', 'og', 'ett', 'av']);
 
-/** `en`, `de`, or `other` when the claim is in a language the check does not read. */
-export function claimLanguage(text: string): 'en' | 'de' | 'other' {
+/*
+ * Positive evidence besides function words (QA review of 5ec8488a, 39760557b864): a short
+ * claim has few function words or none, and the language used to default to English —
+ * "Contabiliza facturas." was read as English and quoted. A word counts for English when
+ * the glossary's business words hold it ("cost", "center", "order") or it has an English
+ * ending; for German, an umlaut or a German ending; for neither, a Romance ending.
+ */
+const EN_VOCAB: ReadonlySet<string> = new Set(
+  Object.values(TABLE_TERMS_EN)
+    .flatMap((term) => `${term.singular} ${term.plural}`.toLowerCase().match(/\p{L}+/gu) ?? [])
+    .filter((w) => w.length >= 4),
+);
+const EN_FORM = /^(?:th|wh)\p{L}+$|^\p{L}{2,}(?:ing|tions?|ments?|ness|ly|ed)$/u;
+const DE_FORM = /[äöüß]|^\p{L}{2,}(?:ungs?|ungen|keit|heit|lich|liche[nrs]?|isch|ische[nrs]?|schaft)$|sch/u;
+const OTHER_FORM = /^\p{L}{3,}(?:as|os|ción|ciones|zione|zioni|ção|ções|mente|iza|izar|izza|izzare)$/u;
+
+/**
+ * `en`, `de`, or `other` when the claim is in a language the check does not read — and
+ * `unknown` when it shows too little of any language to tell (QA review of 5ec8488a,
+ * 39760557b864). Only `en` and `de` are read; every other answer fails closed.
+ */
+export function claimLanguage(text: string): 'en' | 'de' | 'other' | 'unknown' {
   const t = String(text ?? '');
   // Another script, or letters with accents German does not use (é, ñ, ç, å …).
   if (/[^\p{Script=Latin}\P{L}]/u.test(t) || /[À-ÃÅ-ÖØ-ÛÝ-ßà-ãå-öø-ûý-ÿ]/.test(t.replace(/[ÄÖÜäöüß]/g, ''))) return 'other';
   const words = (t.toLowerCase().match(/\p{L}+/gu) ?? []);
-  const count = (set: Set<string>) => words.filter((w) => set.has(w)).length;
-  const en = count(EN_WORDS);
-  const de = count(DE_WORDS) + (/[äöüß]/i.test(t) ? 1 : 0);
-  const other = count(OTHER_WORDS);
-  if (other > en + de) return 'other';
+  if (!words.length) return 'unknown';
+  const score = (fn: (w: string) => boolean) => words.filter(fn).length;
+  const en = score((w) => EN_WORDS.has(w) || EN_VOCAB.has(w) || EN_FORM.test(w));
+  const de = score((w) => DE_WORDS.has(w) || DE_FORM.test(w));
+  const other = score((w) => OTHER_WORDS.has(w) || OTHER_FORM.test(w));
+  const best = Math.max(en, de);
+  if (other > 0 && other >= best) return 'other';
+  // Length-aware: one word of evidence for a claim of up to eight words, then one in eight.
+  if (best < Math.max(1, Math.ceil(words.length / 8))) return 'unknown';
   return de > en ? 'de' : 'en';
 }
 
@@ -191,7 +215,9 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   if (!t.trim()) return { ok: false, problems: ['empty'] };
 
   // Only a text in a language the check reads can pass it (SD review, 12.10.2026).
-  if (claimLanguage(t) === 'other') return { ok: false, problems: [UNREAD_LANGUAGE] };
+  // Fail closed: a claim not shown to be English or German is not read (QA review of 5ec8488a, 39760557b864).
+  const language = claimLanguage(t);
+  if (language !== 'en' && language !== 'de') return { ok: false, problems: [UNREAD_LANGUAGE] };
 
   const changes = facts.changes.state;
   // "It does not post" names posting without claiming it: the denial is set aside, and what is

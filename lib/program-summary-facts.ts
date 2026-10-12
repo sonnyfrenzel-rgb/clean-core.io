@@ -7,8 +7,8 @@ import { FUNCTION_TERMS_EN, TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/a
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { capabilityPresence } from '@/lib/documentation-capabilities';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
-import { readStatements } from '@/lib/abap/statement-reader';
-import { containerAt, readBlocks } from '@/lib/abap/block-structure';
+import { readStatements, type AbapStatement } from '@/lib/abap/statement-reader';
+import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
 import {
   PROGRAM_SUMMARY_FACTS_VERSION,
   type ProgramSummaryFacts,
@@ -237,6 +237,54 @@ export function headerClaimOf(source: string): ProgramSummaryFacts['headerClaim'
   return null;
 }
 
+const DYNAMIC_METHOD_CALL = /\bCALL\s+METHOD\s+(?:\(|[\w/~]+\s*(?:->|=>)\s*\()|(?:->|=>)\s*\(/i;
+const GLOBAL_CLASS = /^CLASS\s+[\w/]+\s+DEFINITION\s+PUBLIC\b|^CLASS-POOL\b/i;
+const ALWAYS_ROOT = new Set(['CONSTRUCTOR', 'CLASS_CONSTRUCTOR']);
+
+/**
+ * Links every statement's container to the methods of this program it calls by
+ * name — `CALL METHOD x`, `me->x( )`, `lo_obj->x( )`, `lcl=>x( )`, `x( )` — and
+ * returns the names of the methods so called (QA review of 5ec8488a,
+ * ac6c538bee0d). Empty, and nothing linked, where a call cannot be followed: a
+ * dynamic method call anywhere, or a global class whose methods other programs
+ * call. Constructors and event handlers run by themselves and are never returned.
+ */
+function methodCallEdges(
+  statements: AbapStatement[],
+  containers: Container[],
+  keyOf: (kind: string, name: string | null) => string,
+  link: (from: string, to: string) => void,
+): Set<string> {
+  const called = new Set<string>();
+  const defined = new Set(containers.filter((c) => c.kind === 'method').map((c) => c.name));
+  if (!defined.size) return called;
+  const handlers = new Set<string>();
+  for (const s of statements) {
+    if (GLOBAL_CLASS.test(s.text)) return called;
+    const code = s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`/g, "''");
+    if (DYNAMIC_METHOD_CALL.test(code)) return called;
+    const handler = /^(?:CLASS-)?METHODS\s+([\w/~]+)\s+FOR\s+EVENT\b/i.exec(s.text);
+    if (handler) handlers.add(handler[1].toUpperCase());
+  }
+  for (const s of statements) {
+    if (/^(?:CLASS-)?METHODS?\b/i.test(s.text)) continue;
+    const code = s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`/g, "''");
+    const names = new Set<string>();
+    for (const m of code.matchAll(/\bCALL\s+METHOD\s+(?:[\w/~]+\s*(?:->|=>)\s*)*([\w/~]+)/gi)) names.add(m[1].toUpperCase());
+    for (const m of code.matchAll(/(?:->|=>)\s*([\w/~]+)\(/g)) names.add(m[1].toUpperCase());
+    // A functional call of the class's own method; "x(3)" is an offset, not a call.
+    for (const m of code.matchAll(/(?<![\w/~>=-])([\w/~]+)\((?!\d+\))/g)) names.add(m[1].toUpperCase());
+    const c = containerAt(containers, s.lineStart);
+    const from = c ? keyOf(c.kind, c.name) : keyOf('program', null);
+    for (const name of names) {
+      if (!defined.has(name) || ALWAYS_ROOT.has(name) || handlers.has(name)) continue;
+      called.add(name);
+      link(from, keyOf('method', name));
+    }
+  }
+  return called;
+}
+
 /** Handler events of the ALV classes and controls that run on a user's click or function key. */
 const COMMAND_EVENTS = /^(?:ADDED_FUNCTION|USER_COMMAND|DOUBLE_CLICK|LINK_CLICK|HOTSPOT_CLICK|BUTTON_CLICK|FUNCTION_SELECTED|NODE_DOUBLE_CLICK|ITEM_DOUBLE_CLICK)$/;
 
@@ -254,10 +302,12 @@ const COMMAND_EVENTS = /^(?:ADDED_FUNCTION|USER_COMMAND|DOUBLE_CLICK|LINK_CLICK|
  *   - a handler method of a click or function event (`METHODS m FOR EVENT
  *     added_function OF cl_salv_events`, `double_click`, `hotspot_click` …);
  *
- * and every FORM reached only from those. A FORM the normal flow also reaches
- * (START-OF-SELECTION, a PBO module, a function module …) is not command-only.
- * Methods called from a handler are not followed — they count as the normal
- * flow, the side that says "changes" rather than hides it.
+ * and every FORM or method reached only from those. A FORM or method the normal
+ * flow also reaches (START-OF-SELECTION, a PBO module, a function module …) is
+ * not command-only. Method calls are followed only where they are certain
+ * (QA review of 5ec8488a, ac6c538bee0d): in a global class, or a program with a
+ * dynamic method call anywhere, every method counts as the normal flow — the
+ * side that says "changes" rather than hides it.
  */
 export function commandOnlyReader(source: string, calls: CallGraphReport): { onCommand: (line: number) => boolean; interactive: number | null } {
   const statements = readStatements(source);
@@ -278,14 +328,21 @@ export function commandOnlyReader(source: string, calls: CallGraphReport): { onC
   const commandCallback = (trigger: string, form: string) =>
     /\bI_CALLBACK_USER_COMMAND$/.test(trigger) || (/IT_EVENTS$/.test(trigger) && /USER_COMMAND|LINE_SELECTION|DOUBLE_CLICK/.test(form));
 
+  const next = new Map<string, string[]>();
+  const link = (from: string, to: string) => next.set(from, [...(next.get(from) ?? []), to]);
+  // Method calls are followed like PERFORMs (QA review of 5ec8488a, ac6c538bee0d).
+  const calledMethods = methodCallEdges(statements, containers, keyOf, link);
+
   const commandRoots = new Set<string>();
   const normalRoots = new Set<string>([keyOf('program', null)]);
   for (const c of containers) {
     if (isCommandContainer(c)) commandRoots.add(keyOf(c.kind, c.name));
+    // A method the program calls by name is classified by who calls it; one it never calls
+    // by name runs by itself — a constructor, an event handler, an interface method — or
+    // from outside, and stays a root of the normal flow.
+    else if (c.kind === 'method' && calledMethods.has(c.name)) continue;
     else if (c.kind !== 'form') normalRoots.add(keyOf(c.kind, c.name));
   }
-  const next = new Map<string, string[]>();
-  const link = (from: string, to: string) => next.set(from, [...(next.get(from) ?? []), to]);
   for (const e of calls.edges) link(keyOf(e.fromKind, e.from), keyOf('form', e.to));
   for (const e of calls.callbacks) {
     if (commandCallback(e.trigger, e.to)) commandRoots.add(keyOf('form', e.to));

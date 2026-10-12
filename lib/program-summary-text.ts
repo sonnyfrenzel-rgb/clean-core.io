@@ -609,6 +609,26 @@ export interface RuleStateTally {
   'changed-on-purpose': number;
 }
 
+/**
+ * What the normal flow changes, then what a user's command can also change —
+ * as the changes line says it (QA review of 5ec8488a, 8016d373c55f): the
+ * command-only changes were folded into the normal ones, so a change behind a
+ * button read as one the program makes on every run.
+ */
+function mixedFlowChanges(flow: ReturnType<typeof changesByFlow>): string {
+  const normal = joinAnd([
+    ...rankedActions(flow.actions).map((a) => actionPhrase(a.word)),
+    ...(flow.writes.length ? [`writes ${plural(flow.writes.length, 'table')} directly`] : []),
+  ]);
+  const onCommand = joinAnd([
+    ...rankedActions(flow.commandActions).map((a) => actionBasePhrase(a.word)),
+    ...(flow.commandWrites.length ? [`write ${plural(flow.commandWrites.length, 'table')} directly`] : []),
+  ]);
+  // Neither said (a change the engine sees but cannot name): no empty dash clause.
+  const said = normal || (onCommand ? 'changes data' : '');
+  return said ? ` — it ${said}${onCommand ? `; on a user's command it can also ${onCommand}` : ''} —` : ',';
+}
+
 export function managementInShort(
   summary: ProgramSummary,
   f: ProgramSummaryFacts,
@@ -622,7 +642,7 @@ export function managementInShort(
       // SD review, 12.10.2026: a cockpit that changes data only on a user's command.
       ? `it changes data in SAP only on a user's command — it can ${joinAnd([...rankedActions(flow.commandActions).map((a) => actionBasePhrase(a.word)), ...(flow.commandWrites.length ? [`write ${plural(flow.commandWrites.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
       : f.changes.state === 'changes'
-        ? `it changes data in SAP — it ${joinAnd([...rankedActions(f.changes.actions).map((a) => actionPhrase(a.word)), ...(f.writes.length ? [`writes ${plural(f.writes.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
+        ? `it changes data in SAP${mixedFlowChanges(flow)} so a replacement or a retirement has to take these changes over or stop them on purpose`
         : 'whether it changes data in SAP is not determined';
   // The rule register's states when they are known (owner 12.10.2026: "66
   // business rules … 66 still open", the counts of the delivery package);

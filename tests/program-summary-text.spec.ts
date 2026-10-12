@@ -516,3 +516,58 @@ test.describe("the author's claim in German, or in a language the check does not
     expect(noteOf(oneSentence)).toMatch(/^The header comment \(L2–3\) is not quoted here: it is longer than a statement of purpose/);
   });
 });
+
+test.describe('QA review of 5ec8488a: fail-closed language, method reachability, mixed flow in Management', () => {
+  test('a claim that shows no English or German is not read, short or long (39760557b864)', () => {
+    const facts = programSummaryFactsOf(CO_SHAPED);
+    for (const text of ['Contabiliza facturas.', 'Fattura clienti.', 'Contabiliza facturas de material.']) {
+      expect(checkPurposeProposal(text, facts).problems, text).toEqual(['is in a language the check does not read']);
+    }
+    // A model proposal is held the same way.
+    expect(purposeProposalOf(JSON.stringify({ asIsContext: 'Contabiliza facturas.' }), facts)).toBeNull();
+    // Short English and German claims still pass.
+    expect(checkPurposeProposal('Monthly cost-center review.', facts).ok).toBe(true);
+    expect(checkPurposeProposal('Kostenstellen-Auswertung.', facts).ok).toBe(true);
+  });
+
+  test('a helper method reached only from a command handler changes data only on command (ac6c538bee0d)', () => {
+    const src = `REPORT zsd_helper.
+TABLES vbak.
+SELECT-OPTIONS s_erdat FOR vbak-erdat.
+CLASS lcl_app DEFINITION.
+  PUBLIC SECTION.
+    METHODS on_added FOR EVENT added_function OF cl_salv_events.
+    METHODS block_items.
+    METHODS show.
+ENDCLASS.
+CLASS lcl_app IMPLEMENTATION.
+  METHOD on_added.
+    me->block_items( ).
+  ENDMETHOD.
+  METHOD block_items.
+    UPDATE vbap SET abgru = '01' WHERE vbeln = '0000000001'.
+  ENDMETHOD.
+  METHOD show.
+    SELECT * FROM vbak INTO TABLE @DATA(gt_head) WHERE erdat IN @s_erdat.
+  ENDMETHOD.
+ENDCLASS.
+START-OF-SELECTION.
+  DATA(go_app) = NEW lcl_app( ).
+  go_app->show( ).
+`;
+    const writesOf = (source: string) => programSummaryFactsOf(source).writes.map((w) => [w.name, w.onCommand ?? false]);
+    expect(writesOf(src)).toEqual([['VBAP', true]]);
+    // Called from the normal flow as well: an ordinary change.
+    expect(writesOf(src.replace('  go_app->show( ).\n', '  go_app->show( ).\n  CALL METHOD go_app->block_items.\n'))).toEqual([['VBAP', false]]);
+    // A dynamic method call anywhere: reachability is not known, the change counts as normal.
+    expect(writesOf(src.replace('  go_app->show( ).\n', "  go_app->show( ).\n  CALL METHOD go_app->('SHOW').\n"))).toEqual([['VBAP', false]]);
+  });
+
+  test('Management keeps what a command changes apart from what every run changes (8016d373c55f)', () => {
+    // The cockpit's batch input to VA02 now runs on every run; its PAI write to VBAP stays on command.
+    const { facts, summary } = summaryOf(SD_COCKPIT.replace("  CASE 'X'.", "  PERFORM change_orders.\n  CASE 'X'."));
+    expect(managementInShort(summary, facts, { level: false })).toContain(
+      "For the decision: it changes data in SAP — it changes sales orders; on a user's command it can also write 1 table directly —",
+    );
+  });
+});
