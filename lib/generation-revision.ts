@@ -33,8 +33,20 @@ import { missingArtefacts, usableTestSuite, type GeneratedTestSuite, type Projec
  * Pure: no Firestore, no `node:crypto` — the same function on both sides.
  */
 
-/** Bumped only when the canonical form below changes. */
-export const GENERATION_REVISION_VERSION = 2;
+/** Bumped only when the canonical form below changes. 3: the PLATFORM KNOWLEDGE block (roadmap 3.0.12). */
+export const GENERATION_REVISION_VERSION = 3;
+
+/**
+ * The PLATFORM KNOWLEDGE block of the prompt and the revisions it is read
+ * from (owner, 12.10.2026; roadmap 3.0.12; `lib/transformation-context-build.ts`).
+ * `rules` names the owner's rule answers, `decision` the decision record and
+ * the sign-off — a Keep turned into a Change in another tab moves the token.
+ */
+export interface GenerationContextState {
+  text: string;
+  rules: string;
+  decision: string;
+}
 
 /** The project fields a generation is computed from or replaces. */
 export interface GenerationRevisionState {
@@ -45,6 +57,8 @@ export interface GenerationRevisionState {
   /** Replaced by the same store as `generatedCode`, and regenerated on its own (codex code-trust-05). */
   testSuite?: unknown;
   generationBinding?: unknown;
+  /** The PLATFORM KNOWLEDGE block and its revisions; absent when none was built (version 3). */
+  context?: GenerationContextState | null;
 }
 
 /** The prompt inputs, exactly as the token covers them. */
@@ -52,7 +66,11 @@ export interface GenerationInputs {
   legacyCode: string;
   solutionDesign: string;
   analysis: string;
+  /** The PLATFORM KNOWLEDGE block with its revisions (roadmap 3.0.12). */
+  context: GenerationContextState;
 }
+
+const NO_CONTEXT: GenerationContextState = Object.freeze({ text: '', rules: 'none', decision: 'none' });
 
 /**
  * The state a generation is computed from: the project document with the
@@ -72,6 +90,7 @@ export interface GenerationInputs {
 export function generationStateOf(
   project: Record<string, unknown>,
   run: Record<string, unknown> | null,
+  context?: GenerationContextState | null,
 ): GenerationRevisionState {
   const analysis = run && Object.prototype.hasOwnProperty.call(run, 'analysis') ? run.analysis : project.analysis;
   return {
@@ -81,6 +100,7 @@ export function generationStateOf(
     generatedCode: project.generatedCode,
     testSuite: project.testSuite,
     generationBinding: project.generationBinding,
+    ...(context ? { context } : {}),
   };
 }
 
@@ -92,6 +112,7 @@ export function generationInputsOf(state: GenerationRevisionState): GenerationIn
     legacyCode: text(state.legacyCode),
     solutionDesign: text(state.solutionDesign),
     analysis: text(state.analysis),
+    context: state.context ? { ...state.context } : { ...NO_CONTEXT },
   };
 }
 
@@ -108,6 +129,11 @@ export function generationInputsOf(state: GenerationRevisionState): GenerationIn
  * - `suite` — the test suite the store replaces as well. It can be regenerated
  *   without touching the code, and a token that left it out let a late
  *   generation overwrite a newer suite (version 2).
+ * - `rules`, `decision`, `context` — the owner's rule answers, the decision
+ *   record with the sign-off, and the PLATFORM KNOWLEDGE block built from
+ *   them (version 3, roadmap 3.0.12). The revisions are compared beside the
+ *   block because the block is cut to a budget: an answer past the cut moves
+ *   `rules` even where the text stands still.
  */
 export function canonicalGenerationRevision(state: GenerationRevisionState, contractFingerprint: string): string {
   const binding = state.generationBinding as { codeSha256?: unknown } | null | undefined;
@@ -121,6 +147,9 @@ export function canonicalGenerationRevision(state: GenerationRevisionState, cont
     `stand=${artefactDigest('generatedCode', state.generatedCode) ?? 'none'}`,
     `suite=${valueDigest(state.testSuite) ?? 'none'}`,
     `bound=${bound}`,
+    `rules=${state.context?.rules ?? NO_CONTEXT.rules}`,
+    `decision=${state.context?.decision ?? NO_CONTEXT.decision}`,
+    `context=${digestOf(state.context?.text)}`,
   ].join('\n');
 }
 

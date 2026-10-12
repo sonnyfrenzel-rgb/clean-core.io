@@ -204,7 +204,8 @@ function api(request: APIRequestContext, account: Account) {
     decision: async (projectId: string) => request.get(`/api/projects/${projectId}/decision`, { headers: await headers() }),
     command: async (projectId: string, body: Record<string, unknown>) =>
       request.post(`/api/projects/${projectId}/commands`, { headers: await headers(), data: body }),
-    contract: async (projectId: string) => request.get(`/api/projects/${projectId}/contract`, { headers: await headers() }),
+    // `for=generation`: the token and the PLATFORM KNOWLEDGE block are answered to a generation only (3.0.12).
+    contract: async (projectId: string) => request.get(`/api/projects/${projectId}/contract?for=generation`, { headers: await headers() }),
     storeGeneration: async (projectId: string, body: Record<string, unknown>) =>
       request.post(`/api/projects/${projectId}/contract`, { headers: await headers(), data: body }),
     runTests: async (projectId: string) => request.post('/api/run-tests', { headers: await headers(), data: { projectId } }),

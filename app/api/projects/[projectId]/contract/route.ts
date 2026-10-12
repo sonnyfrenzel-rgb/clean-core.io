@@ -9,6 +9,11 @@ import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/g
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision, generationStateOf } from '@/lib/generation-revision';
+import { assembleTransformationContext, readRuleAnswers } from '@/lib/transformation-context-build';
+import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
+import type { ArchitectureContract } from '@/lib/architecture-contract';
+import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
+import type { Firestore } from 'firebase-admin/firestore';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -24,7 +29,11 @@ import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } fro
  *          blocked contract comes back as a refusal with the contract's own
  *          sentence. `generation` (roadmap 3.0.11) is the pre-generation token
  *          and the very inputs it covers — the prompt is built from these, not
- *          from what the page loaded earlier.
+ *          from what the page loaded earlier. Since 3.0.12 the inputs carry the
+ *          PLATFORM KNOWLEDGE block (`lib/transformation-context-build.ts`) and
+ *          `generation` is answered only to `?for=generation`: the IT rail and
+ *          the Design stage read this route for the contract alone and do not
+ *          pay for the rule reading.
  * `POST` → stores a generated stand: code, test suite, status and the binding
  *          to the contract it was computed against, in one transaction, only if
  *          the project is still where the token says it was.
@@ -64,6 +73,33 @@ const MAX_PACKAGE_CHARS = 1_000_000;
 // UTF-8, plus the suite beside it; nothing larger is read (QA slice review of
 // bd016957d13c, 44f03f652da7).
 const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
+
+/**
+ * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
+ * 3.0.12): the owner's rule answers (one read beside revision 1 of the
+ * process), the decision record, the summary facts and the catalog
+ * successors of the evidence this contract was just built on. GET and POST
+ * build it the same way, so the token compares the same block.
+ */
+async function platformContextOf(
+  db: Firestore,
+  projectId: string,
+  data: Record<string, unknown>,
+  built: { contract: ArchitectureContract; evidence: AbapEvidenceReport },
+  isAbapCloud: boolean,
+) {
+  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
+  const answers = await readRuleAnswers(db, projectId, source);
+  return assembleTransformationContext({
+    source,
+    project: data,
+    answers,
+    evidence: built.evidence,
+    contract: built.contract,
+    isAbapCloud,
+    catalogSnapshot: catalogSnapshotKeyForProject(data),
+  });
+}
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
 const GENERATION_BINDING_FIELD = 'generationBinding';
@@ -141,7 +177,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     const loaded = await loadProjectAndRun(projectId, auth.uid);
     // One answer for "not there" and "not yours".
     if (!loaded) return NextResponse.json({ error: 'No such project.' }, { status: 404 });
-    const { data, run } = loaded;
+    const { db, data, run } = loaded;
 
     const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
     if (Buffer.byteLength(source, 'utf8') > MAX_SOURCE_BYTES) {
@@ -167,16 +203,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       return NextResponse.json({ contract: null, decision: offTrackRefusal(built.decided || 'that decision') });
     }
     const decision = generationDirection(built.contract);
+    // Roadmap 3.0.11: only a generation that may run gets a token — and since
+    // 3.0.12 only a generation asks for one: the block is built for it alone.
+    if (!decision.ok || req.nextUrl.searchParams.get('for') !== 'generation') {
+      return NextResponse.json({ contract: built.contract, decision, generation: null });
+    }
+    const platform = await platformContextOf(db, projectId, data, built, decision.isAbapCloud);
     // The project with its run's narrative — the analysis lives in the run
-    // (`generationStateOf`), and the POST compares against the same state.
-    const state = generationStateOf(data, run);
+    // (`generationStateOf`) — and the PLATFORM KNOWLEDGE block with the
+    // revisions it was read from. The POST compares against the same state.
+    const state = generationStateOf(data, run, platform.stamp);
     return NextResponse.json({
       contract: built.contract,
       decision,
-      // Roadmap 3.0.11: only a generation that may run gets a token.
-      generation: decision.ok
-        ? { token: generationRevision(state, built.contract.fingerprint), inputs: generationInputsOf(state) }
-        : null,
+      generation: { token: generationRevision(state, built.contract.fingerprint), inputs: generationInputsOf(state) },
     });
   } catch (err: unknown) {
     logger.error('project contract read failed', {
@@ -323,12 +363,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     }
     // The contract can stand still while the design, the analysis or the stored
     // stand moves: the design is not part of it, and a second tab that stored
-    // first changes only the stand. The token covers all of them.
-    if (generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken) {
+    // first changes only the stand. Nor do the owner's rule answers or the
+    // decision record move it (3.0.12). The token covers all of them.
+    const platform = await platformContextOf(db, projectId, data, built, decision.isAbapCloud);
+    if (generationRevision(generationStateOf(data, run, platform.stamp), built.contract.fingerprint) !== generationToken) {
       return NextResponse.json(
         {
           error:
-            'The project changed after this generation started: the source, the analysis, the solution design or the stored code is no longer what the model was given. Generate again from the current state.',
+            'The project changed after this generation started: the source, the analysis, the solution design, a business rule decision, the decision record or the stored code is no longer what the model was given. Generate again from the current state.',
           code: 'generation-stale',
         },
         { status: 409 },
