@@ -85,6 +85,7 @@ import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
+import { packedDecimalFields } from '@/lib/generated-code-lints';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
@@ -569,7 +570,12 @@ export default function DeliveryPage() {
         referenceSection,
         documentationFromEngine: isEngineDocumentation(project.documentation),
       });
-      const finished = finishDeliveryPackage({ entries: bundle.entries, facts, layout: isModular ? 'package' : 'flat' });
+      const finished = finishDeliveryPackage({
+        entries: bundle.entries,
+        facts,
+        layout: isModular ? 'package' : 'flat',
+        decimalFields: packedDecimalFields(typeof project.legacyCode === 'string' ? project.legacyCode : ''),
+      });
 
       const zip = new JSZip();
       for (const f of finished.files) zip.file(f.path, f.content);

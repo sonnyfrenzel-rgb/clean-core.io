@@ -39,6 +39,7 @@ import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, typ
 import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
+import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
 
 /* ------------------------------------------------------------------ types */
 
@@ -1114,6 +1115,25 @@ export interface StatusInputs {
   reading: PackageReading;
   capabilities: Capability[];
   files: ManifestFile[];
+  /**
+   * The deterministic code checks over the package's code (`lib/generated-code-lints.ts`);
+   * `null` when the package holds no Node code to check.
+   */
+  lints?: readonly GeneratedCodeLintFinding[] | null;
+}
+
+/** The "Code checks" section of STATUS.md: counts by severity, then every finding with its file and line. */
+export function codeChecksLines(lints: readonly GeneratedCodeLintFinding[]): string[] {
+  const lines: string[] = ['## Code checks', ''];
+  lines.push(
+    `Deterministic checks of Clean-Core.io over the generated code — no model, no run: ${lints.length === 0 ? 'no finding.' : `${lints.length} finding${lints.length === 1 ? '' : 's'} (${lintCountLine(lints)}).`} A finding is a reason to look, not a proof; the checks read the files lexically and do not follow data through calls.`,
+  );
+  if (lints.length) {
+    lines.push('');
+    for (const f of lints) lines.push(`- **${f.severity}** \`${f.file}:${f.line}\` — ${f.message} _(${f.source})_`);
+  }
+  lines.push('');
+  return lines;
 }
 
 export function knownLimits(reading: PackageReading, facts: DeliveryFacts, capabilities: readonly Capability[]): string[] {
@@ -1185,7 +1205,7 @@ function auditPackLines(facts: DeliveryFacts): string[] {
 }
 
 export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string {
-  const { reading, capabilities, files } = inputs;
+  const { reading, capabilities, files, lints } = inputs;
   const s = facts.source;
   const lines: string[] = [];
   lines.push(`# ${facts.projectName} — status of this package`, '');
@@ -1203,6 +1223,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   row('Tests', `${TEST_STATUS_WORDS[facts.tests.status]} — ${facts.tests.sentence}`);
   row('Data mode', dataMode(reading).sentence);
   row('Delivered implementation', implementationStatement(reading, facts));
+  if (lints) row('Code checks', lints.length === 0 ? 'No finding.' : `${lintCountLine(lints)} — see "Code checks".`);
   row('Clean Core Score', scoreLine(facts.score));
   row('Production use', 'Blocked — review version, not approved for production.');
   lines.push('');
@@ -1266,6 +1287,8 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   const notable = files.filter((f) => f.status === 'stub' || f.status === 'proposed');
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
+
+  if (lints) lines.push(...codeChecksLines(lints));
 
   lines.push('## Known limits', '');
   for (const l of knownLimits(reading, facts, capabilities)) lines.push(`- ${l}`);
@@ -1470,6 +1493,8 @@ export interface FinishedPackage {
   reading: PackageReading;
   capabilities: Capability[];
   manifest: ManifestFile[];
+  /** The code checks STATUS.md lists; `null` when the package holds no Node code. */
+  lints: GeneratedCodeLintFinding[] | null;
 }
 
 /**
@@ -1482,6 +1507,8 @@ export function finishDeliveryPackage(input: {
   facts: DeliveryFacts;
   /** `package`: the model's multi-file package; `flat`: the single-source layout (src/app.ts). */
   layout: 'package' | 'flat';
+  /** Names the original declares as packed decimals (`packedDecimalFields`), for the decimal code check. */
+  decimalFields?: readonly string[];
 }): FinishedPackage {
   const { facts } = input;
   let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
@@ -1514,12 +1541,14 @@ export function finishDeliveryPackage(input: {
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
   const beforeStatus = [...entries, decision, register, registerCsv, readme].map(describeFile);
-  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus }), origin: 'engine' };
+  // The code checks read the package as it ships — the model's code with the normalised package.json.
+  const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
+  const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints }), origin: 'engine' };
   const listed = [...entries, decision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
 
   const files = [status, readme, manifest, decision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
-  return { files, reading, capabilities, manifest: listed };
+  return { files, reading, capabilities, manifest: listed, lints };
 }

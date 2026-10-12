@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { CODE_DRAFT_BUSINESS_RULES, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
+import { generatedCodeLints, lintCountLine, packedDecimalFields } from '@/lib/generated-code-lints';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -351,6 +352,16 @@ export default function TransformationPage() {
    * package on screen. A warning, not a refusal: the reader decides.
    */
   const literalFindings = useMemo(() => hardCodedLiteralFindings(files), [files]);
+  /**
+   * 3.0.12 — the deterministic code checks (number parsing, global state, run
+   * ids, decimals, CSV, start on import, claimed integrations, dependencies,
+   * ignored options), the same list STATUS.md carries in the delivery package.
+   */
+  const legacySource = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  const codeLintFindings = useMemo(
+    () => generatedCodeLints(files, { decimalFields: packedDecimalFields(legacySource) }),
+    [files, legacySource],
+  );
   const [selectedFilePath, setSelectedFilePath] = useState<string>('srv/service.ts');
   const [syncScroll, setSyncScroll] = useState(true);
 
@@ -1485,6 +1496,26 @@ ${CODE_DRAFT_BUSINESS_RULES}
                 </li>
               ))}
             </ul>
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {codeLintFindings.length > 0 && (
+        <div className="mb-6" data-code-checks={codeLintFindings.length}>
+          <CcMessageStrip state="warning" headline={`Code checks: ${lintCountLine(codeLintFindings)}`}>
+            <span className="block">
+              Deterministic checks of the generated code found patterns the reviews of earlier packages flagged. Regenerate, or correct them before the tests are written; the delivery package lists every one in STATUS.md.
+            </span>
+            <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5">
+              {codeLintFindings.slice(0, 8).map((f) => (
+                <li key={`${f.id}:${f.file}:${f.line}`} data-code-check={f.id} className="[overflow-wrap:anywhere]">
+                  <span className="font-cc-mono text-[12px]">{f.severity} · {f.file}:{f.line}</span> — {f.message}
+                </li>
+              ))}
+            </ul>
+            {codeLintFindings.length > 8 && (
+              <span className="mt-2 block">{codeLintFindings.length - 8} more in the delivery package’s STATUS.md.</span>
+            )}
           </CcMessageStrip>
         </div>
       )}

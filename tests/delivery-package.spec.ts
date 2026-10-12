@@ -422,6 +422,18 @@ export default app;
     expect(status).toContain('Justification given at the sign-off in Design: Customers outside the ERP need the list.');
     expect(status).toContain('- **Rebuild** (chosen)');
   });
+
+  test('3.0.12: STATUS.md carries the code checks — counts by severity and every finding with file and line', () => {
+    const pkg = finished(withFailure(fiProject()));
+    const status = pkg.file('STATUS.md')!;
+    expect(pkg.lints).not.toBeNull();
+    expect(status).toContain('## Code checks');
+    expect(status).toMatch(/\| Code checks \| (No finding\.|\d+ P0 · \d+ P1 · \d+ P2 — see "Code checks"\.) \|/);
+    for (const f of pkg.lints!) expect(status).toContain(`- **${f.severity}** \`${f.file}:${f.line}\` — ${f.message}`);
+    // The section sits between what is in the package and its known limits.
+    expect(status.indexOf('## Code checks')).toBeGreaterThan(status.indexOf('## What is in this package'));
+    expect(status.indexOf('## Code checks')).toBeLessThan(status.indexOf('## Known limits'));
+  });
 });
 
 /* =============================================== docs/decision.md: the score */
