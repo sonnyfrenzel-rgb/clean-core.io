@@ -17,6 +17,7 @@ import { anchorWords, ruleAnchor } from '@/lib/rule-anchor';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
   MAX_STATE_ENTRIES,
+  PROCESS_STATES_BODY_LIMITS,
   PROCESS_STATE_COLLECTION,
   PROCESS_STATE_FORMAT_VERSION,
   applyStateChoices,
@@ -29,6 +30,7 @@ import {
   type StateSubject,
 } from '@/lib/process-states';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 
 /**
  * Keep · Change deliberately · Drop · Clarify, per element and per rule —
@@ -468,12 +470,24 @@ export async function POST(
     const gate = await openProject(req, params, true);
     if (!gate.ok) return gate.response;
 
+    // Read under a bound, before the project is opened: never more than the
+    // largest request `checkStateChoices` accepts (PROCESS_STATES_BODY_LIMITS).
+    // A body that is not JSON reads as null and is answered by the check below.
+    let body: { choices?: unknown; baseRevision?: unknown } | null = null;
+    try {
+      body = await readBoundedJson(new Response(req.body, { headers: req.headers }), PROCESS_STATES_BODY_LIMITS);
+    } catch (bodyErr) {
+      if (bodyErr instanceof ResponseLimitError) {
+        return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+      }
+      body = null;
+    }
+
     const { db } = await getAdminDb();
     const opened = await open(db, gate);
     if (!opened.ok) return opened.response;
     const { subjects, stored } = opened;
 
-    const body = (await req.json().catch(() => null)) as { choices?: unknown; baseRevision?: unknown } | null;
     const checked = checkStateChoices(body?.choices, subjects.ids);
     if (!checked.ok) {
       return NextResponse.json(
