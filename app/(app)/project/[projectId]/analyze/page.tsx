@@ -926,8 +926,8 @@ export default function AnalyzePage() {
     if (!evidenceReport) return null;
     if (!routeReport) return 'differs' as const;
     const deployment = project?.s4Deployment === 'public' ? 'public' : 'private';
-    return { drivers: routeDrivers(evidenceReport, deployment), assumptions: routeReport.assumptions };
-  }, [evidenceReport, routeReport, project?.s4Deployment]);
+    return { drivers: routeDrivers(evidenceReport, deployment, signedEngineVersionOf(project)), assumptions: routeReport.assumptions };
+  }, [evidenceReport, routeReport, project]);
 
   /**
    * Why this run has no narrative — roadmap 1.2.

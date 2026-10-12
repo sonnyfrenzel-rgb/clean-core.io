@@ -107,6 +107,7 @@ export type FileKind =
   | 'decision-record'
   | 'rule-register'
   | 'rule-register-csv'
+  | 'cost-revision'
   | 'service-source'
   | 'source'
   | 'cds-schema'
@@ -165,10 +166,66 @@ export interface DecisionFacts {
   recommendation: { option: string; code: string | null; reasoning: string | null } | null;
   /** ADR-092: the cost revision the decision was priced on, in one or two sentences. */
   cost: string;
+  /**
+   * The cost revision the confirmed decision names, exported beside it
+   * (roadmap 3.0.12, CO review F17): `docs/cost-revision.md`. Null when no
+   * decision is confirmed or it recorded no cost basis (before 3.0.10).
+   */
+  costRevision: CostRevisionFacts | null;
   conditions: Array<{ text: string; status: string }>;
   bindings: Array<{ label: string; value: string }>;
   reversibility: string | null;
 }
+
+/**
+ * The cost revision a confirmed decision was priced on, read-only (roadmap
+ * 3.0.12, CO review F17): so a reader of the package can follow which
+ * revision priced the decision. The figures are the reader's own Economics
+ * inputs, copied only when the revision on record is the one Economics still
+ * holds — the product keeps one revision, and a later one is never passed off
+ * as the one the decision was priced on.
+ */
+export interface CostRevisionFacts {
+  /** The decision record it belongs to — "DEC-1 · revision 2". */
+  decision: string | null;
+  /** The revision's number, or null for figures saved before 3.0.10. */
+  sequence: number | null;
+  /** When that revision was first saved (ISO), or null. */
+  at: string | null;
+  /** "revision 3 (10 Oct 2026)". */
+  words: string;
+  /** No cost figures were stored when the decision was confirmed. */
+  noFigures: boolean;
+  /** The option the comparison named the cheapest on it, or null. */
+  cheapest: string | null;
+  /** Why it named none, in words, or null. */
+  noCheapest: string | null;
+  /** The inputs of that revision, or null when they are not kept (see `figuresNote`). */
+  figures: CostRevisionFigures | null;
+  /** Why the figures are or are not in the file. */
+  figuresNote: string;
+}
+
+export interface CostRevisionFigures {
+  currency: string;
+  devDayRate: number | null;
+  testDayRate: number | null;
+  horizonYears: number | null;
+  releasesPerYear: number | null;
+  cadenceConfirmed: boolean | null;
+  options: Array<{
+    label: string;
+    kind: string;
+    /** Days, development + test, low–high. */
+    oneOff: { low: { dev: number; test: number }; high: { dev: number; test: number } } | null;
+    perRelease: { dev: number; test: number } | null;
+    baselinePerYear: { dev: number; test: number } | null;
+    effortSource: string;
+  }>;
+}
+
+/** Where the cost revision sits in the package (roadmap 3.0.12, CO review F17). */
+export const COST_REVISION_PATH = 'docs/cost-revision.md';
 
 /** Where the rule register sits in the package (CO review F16, 12.10.2026). */
 export const RULE_REGISTER_PATH = 'docs/rule-register.md';
@@ -724,6 +781,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (p === 'docs/decision.md') return { kind: 'decision-record', status: 'implemented', note: null };
   if (p === RULE_REGISTER_PATH) return { kind: 'rule-register', status: 'implemented', note: null };
   if (p === RULE_REGISTER_CSV_PATH) return { kind: 'rule-register-csv', status: 'implemented', note: null };
+  if (p === COST_REVISION_PATH) return { kind: 'cost-revision', status: 'implemented', note: "The reader's own Economics figures, copied read-only — not a quote and not signed." };
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
@@ -950,6 +1008,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^docs\/decision\.md$/, () => 'The target decision as recorded, and how the Clean Core Score was derived.'],
   [/^docs\/rule-register\.md$/, () => 'Every business rule: current meaning, proposal, decision, evidence and revision.'],
   [/^docs\/rule-register\.csv$/, () => 'The same rule register as CSV (UTF-8, every field quoted) for a spreadsheet.'],
+  [/^docs\/cost-revision\.md$/, () => 'The cost revision the decision was priced on — its number, date and figures, read-only.'],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
   [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : 'TypeScript settings for `npm run build` (type-check only).')],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
@@ -1069,7 +1128,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
 
 /** STATUS, README, manifest, decision first; then the rest. */
 function order(path: string): number {
-  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
+  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
   const i = first.indexOf(path);
   return i === -1 ? first.length : i;
 }
@@ -1311,6 +1370,53 @@ const RULE_WORDS: Readonly<Record<ScoreRule, string>> = Object.freeze({
   'own-custom-writes-free': "writes to the program's own Z/Y tables cost nothing (Private Edition rule from engine 3.0.9)",
 });
 
+/** "12 dev + 4 test days". */
+const days = (d: { dev: number; test: number } | null): string => (d ? `${d.dev} dev + ${d.test} test days` : 'not stated');
+
+/**
+ * `docs/cost-revision.md` — the cost revision the confirmed decision was
+ * priced on, read-only (roadmap 3.0.12, CO review F17). Amounts are not
+ * computed here: the file carries the reader's own inputs, as entered, and the
+ * comparison's verdict as the decision recorded it.
+ */
+export function buildCostRevision(facts: DeliveryFacts): string {
+  const d = facts.decision;
+  const r = d.costRevision;
+  const lines: string[] = [];
+  lines.push(`# ${facts.projectName} — the cost revision the decision was priced on`, '');
+  lines.push("Written by Clean-Core.io from the records of the project, without a model. Read-only: the figures are the reader's own Economics inputs, not a quote, and not signed.", '');
+  if (!r) {
+    lines.push('No decision is confirmed with a recorded cost revision.');
+    return `${lines.join('\n').trimEnd()}\n`;
+  }
+  lines.push('## Which revision', '');
+  if (r.decision) lines.push(`- Decision record: ${r.decision} (see \`docs/decision.md\`)`);
+  lines.push(`- Cost revision: ${r.noFigures ? 'none — no cost figures were stored when the decision was confirmed' : r.words}`);
+  if (r.sequence !== null) lines.push(`- Revision number: ${r.sequence}`);
+  if (r.at) lines.push(`- Saved: ${day(r.at)} (${r.at})`);
+  if (!r.noFigures) {
+    lines.push(r.cheapest ? `- Cheapest option on it: "${r.cheapest}"` : `- Cheapest option on it: none named${r.noCheapest ? ` (${r.noCheapest})` : ''}`);
+  }
+  lines.push('');
+  lines.push('## Figures', '');
+  lines.push(r.figuresNote, '');
+  const f = r.figures;
+  if (f) {
+    lines.push(`- Currency: ${f.currency || 'not stated'}`);
+    lines.push(`- Day rate, development: ${f.devDayRate ?? 'not stated'}`);
+    lines.push(`- Day rate, test: ${f.testDayRate ?? 'not stated'}`);
+    lines.push(`- Observation period: ${f.horizonYears === null ? 'not stated' : plural(f.horizonYears, 'year')}`);
+    lines.push(`- Releases per year: ${f.releasesPerYear ?? 'not stated'}${f.cadenceConfirmed === false ? ' (proposal, not confirmed)' : ''}`);
+    lines.push('');
+    lines.push('| Option | Kind | One-off effort, low | One-off effort, high | Per release | Maintenance baseline per year | Effort source |', '|---|---|---|---|---|---|---|');
+    for (const o of f.options) {
+      lines.push(`| ${o.label.replace(/\|/g, '\\|')} | ${o.kind} | ${o.oneOff ? days(o.oneOff.low) : 'not stated'} | ${o.oneOff ? days(o.oneOff.high) : 'not stated'} | ${days(o.perRelease)} | ${o.baselinePerYear ? days(o.baselinePerYear) : '—'} | ${o.effortSource} |`);
+    }
+    lines.push('');
+  }
+  return `${lines.join('\n').trimEnd()}\n`;
+}
+
 export function buildDecisionRecord(facts: DeliveryFacts): string {
   const d = facts.decision;
   const lines: string[] = [];
@@ -1323,7 +1429,7 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
   if (d.option) lines.push(`- Option: ${d.option}${d.optionKey ? ` (${DECISION_OPTION_LABELS[d.optionKey]})` : ''}`);
   if (d.by) lines.push(`- By: ${d.by}`);
   if (d.at) lines.push(`- On: ${day(d.at)} (${d.at})`);
-  lines.push(`- Costs: ${d.cost}`);
+  lines.push(`- Costs: ${d.cost}${d.costRevision ? ` The revision itself: \`${COST_REVISION_PATH}\`.` : ''}`);
   if (d.reversibility) lines.push(`- Reversible: ${d.reversibility}`);
   lines.push('');
   lines.push('### Alternatives', '');
@@ -1467,6 +1573,14 @@ export function buildManifest(
       reasons: d.reasons,
       recommendation: d.recommendation,
       cost: d.cost,
+      costRevision: d.costRevision
+        ? {
+            file: COST_REVISION_PATH,
+            revision: d.costRevision.sequence,
+            at: d.costRevision.at,
+            figuresIncluded: d.costRevision.figures !== null,
+          }
+        : null,
       openConditions: d.conditions.filter((c) => c.status === 'open' || c.status === 'not determined').length,
     },
     // The rows are in docs/rule-register.md; the manifest carries the counts and points there.
@@ -1512,7 +1626,7 @@ export function finishDeliveryPackage(input: {
   decimalFields?: readonly string[];
 }): FinishedPackage {
   const { facts } = input;
-  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
+  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
@@ -1523,12 +1637,17 @@ export function finishDeliveryPackage(input: {
   const capabilities = packageCapabilities(reading, facts);
 
   const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
+  // The cost revision the decision names travels with it (CO review F17).
+  const costRevision: BundleEntry[] = facts.decision.costRevision
+    ? [{ path: COST_REVISION_PATH, content: buildCostRevision(facts), origin: 'engine' }]
+    : [];
   const register: BundleEntry = { path: RULE_REGISTER_PATH, content: buildRuleRegister(facts), origin: 'engine' };
   const registerCsv: BundleEntry = { path: RULE_REGISTER_CSV_PATH, content: ruleRegisterCsv(facts.rules), origin: 'engine' };
   // README names STATUS.md, manifest.json and itself, so it is written over the final list.
   const finalPaths: BundleEntry[] = [
     ...entries,
     decision,
+    ...costRevision,
     register,
     registerCsv,
     { path: 'STATUS.md', content: '', origin: 'engine' },
@@ -1541,15 +1660,15 @@ export function finishDeliveryPackage(input: {
     const c = classifyFile(e, reading, facts);
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
-  const beforeStatus = [...entries, decision, register, registerCsv, readme].map(describeFile);
+  const beforeStatus = [...entries, decision, ...costRevision, register, registerCsv, readme].map(describeFile);
   // The code checks read the package as it ships — the model's code with the normalised package.json.
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints }), origin: 'engine' };
-  const listed = [...entries, decision, register, registerCsv, readme, status]
+  const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
 
-  const files = [status, readme, manifest, decision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
+  const files = [status, readme, manifest, decision, ...costRevision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed, lints };
 }

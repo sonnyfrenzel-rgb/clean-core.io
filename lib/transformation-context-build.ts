@@ -32,6 +32,7 @@ import {
 } from '@/lib/transformation-context';
 import { readSpecRecord, SPEC_COLLECTION, SPEC_DOC, SPEC_NFR_CATEGORY_LABEL, type SpecRecord } from '@/lib/requirements-spec';
 import { richPlain } from '@/lib/rich-text';
+import { standardFitAssessed } from '@/lib/standard-fit-gate';
 
 /**
  * The server's half of the PLATFORM KNOWLEDGE block (owner, 12.10.2026;
@@ -270,6 +271,8 @@ function decisionOf(project: Record<string, unknown>, contract: ArchitectureCont
   }
   const signedOff =
     project.approvedByArchitect === true && typeof project.targetArchitecture === 'string' ? project.targetArchitecture : null;
+  // The same reading as the Transformation's warning tip (`lib/standard-fit-gate.ts`).
+  const standardFit = standardFitAssessed(project);
   return {
     route: {
       chosen: contract.route.chosen,
@@ -279,6 +282,7 @@ function decisionOf(project: Record<string, unknown>, contract: ArchitectureCont
     record,
     signedOff,
     reference: referenceLineOf(ROUTE_CODE[contract.route.chosen]),
+    standardFit: { assessed: standardFit.assessed, sentence: standardFit.sentence },
   };
 }
 

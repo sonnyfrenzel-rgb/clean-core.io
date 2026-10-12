@@ -104,6 +104,12 @@ export interface ContextDecision {
   signedOff: string | null;
   /** "SAP-documented pattern for this target: yes (RA0001 …)." — or null when no target is known. */
   reference: string | null;
+  /**
+   * Whether the SAP standard was weighed before this rebuild — `standardFitAssessed`
+   * (`lib/standard-fit-gate.ts`), the same reading as the Transformation's
+   * warning tip (roadmap 3.0.12). Absent where the caller does not read it.
+   */
+  standardFit?: { assessed: boolean; sentence: string } | null;
 }
 
 /** What the program does, from the business summary facts (ADR-098). */
@@ -333,6 +339,13 @@ function routeSection(input: TransformationContextInput): Draft {
     }
   } else {
     items.push('   Decision record: none stored — keep, rebuild, standard or retire is not decided on record.');
+  }
+  // The owner's rebuild rule, as a warning (12.10.2026): a draft written
+  // before the standard was weighed must not read as if it had ruled it out.
+  if (decision.standardFit && !decision.standardFit.assessed) {
+    head.push(`   Standard fit: NOT ASSESSED — ${oneLine(decision.standardFit.sentence, MAX_PROPOSAL)} Do not write that SAP standard was ruled out or does not cover this; say in STATUS that the rebuild was generated before the standard was weighed.`);
+  } else if (decision.standardFit) {
+    items.push(`   Standard fit: ${oneLine(decision.standardFit.sentence, MAX_PROPOSAL)}`);
   }
   if (decision.signedOff) items.push(`   Architecture signed off as: ${decision.signedOff}.`);
   if (decision.reference) items.push(`   ${decision.reference}`);

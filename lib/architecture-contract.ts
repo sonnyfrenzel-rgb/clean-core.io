@@ -103,6 +103,7 @@ import { referenceDigest, type InputManifest, type ManifestInput, INPUT_IDS } fr
 import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
 import { routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import { APP_VERSION } from './version';
 import {
   FINGERPRINTED_PLATFORM_NAME as FORMER_NAME,
   FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT,
@@ -592,6 +593,13 @@ export function buildArchitectureContract(args: {
    * 79759e45695d).
    */
   inputsDiffer?: ReadonlyArray<string>;
+  /**
+   * The engine version the run was made with, which picks the route rule
+   * (`routeDrivers`): before 3.0.12 a frontend file feature was a driver.
+   * Absent means the current engine (`APP_VERSION`) — a contract of a signed
+   * run passes the run's own (`lib/contract-build.ts`).
+   */
+  engineVersion?: string | null;
 }): ArchitectureContract {
   const { contractId, runId, evidence, route } = args;
   const manifest = args.inputManifest || null;
@@ -620,7 +628,7 @@ export function buildArchitectureContract(args: {
   // drivers at all — which is why this asks the manifest and not a parameter.
   const drivers: RouteDriver[] =
     deployment === 'public' || deployment === 'private'
-      ? routeDrivers(evidence, deployment)
+      ? routeDrivers(evidence, deployment, args.engineVersion === undefined ? APP_VERSION : args.engineVersion)
       : [];
 
   const fields: ContractField[] = [];

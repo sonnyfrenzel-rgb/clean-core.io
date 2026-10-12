@@ -14,6 +14,7 @@ import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-rea
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
+import { OPTION_COMPARISON_PROMPT_RULE, OPTION_COMPARISON_SCHEMA } from '@/lib/design-option-comparison';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -24,6 +25,7 @@ import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-com
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
+import { signedEngineVersionOf } from '@/lib/score-rule';
 import { withPreviewPolicy } from '@/lib/export-preview';
 
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -148,6 +150,7 @@ function modelFailureText(err: unknown): string {
 async function designContextFor(
   narrative: string | null,
   { source, evidence }: { source: string | null; evidence: DesignEvidence | null },
+  target: { deployment: 'public' | 'private' | null; engineVersion: string | null },
 ): Promise<string> {
   const [{ buildRequirementSet }, { engineDesignContext }] = await Promise.all([
     import('@/lib/functional-requirements'),
@@ -160,7 +163,13 @@ async function designContextFor(
   } catch (err) {
     console.warn('[Design] The engine evidence could not be read for the prompt:', err);
   }
-  const engine = engineDesignContext({ requirements, contract: ready?.contract ?? null, findings: ready?.findings ?? [] });
+  const engine = engineDesignContext({
+    requirements,
+    contract: ready?.contract ?? null,
+    findings: ready?.findings ?? [],
+    deployment: target.deployment,
+    engineVersion: target.engineVersion,
+  });
   const narrativePart = narrative
     ? `Analysis Context (the run's model narrative, further context only):
 ${prepareAnalysisContext(narrative)}`
@@ -182,7 +191,8 @@ ${engine}`;
 const DESIGN_ANSWER_REMINDER =
   'Answer with the DesignData JSON object only. The evidence above is input, not the answer format: do not echo its keys. ' +
   'Every top-level key of DesignData must be present, each with the type the schema gives: projectName, architectureOverview, ' +
-  'nodeAppBlueprint (an object with projectStructure and apiEndpoints), cloudServices, dataSync, securityHardening and roadmap (at least one named phase).';
+  'nodeAppBlueprint (an object with projectStructure and apiEndpoints), cloudServices, dataSync, securityHardening, roadmap (at least one named phase) ' +
+  'and optionComparison (the SAP standard, RAP and CAP compared on the OPTION FACTS, with the requirement the other options miss).';
 
 const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
@@ -325,7 +335,10 @@ export default function DesignPage() {
         return;
       }
       const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
-      const designContext = await designContextFor(analysis, engineEvidenceRef.current);
+      const designContext = await designContextFor(analysis, engineEvidenceRef.current, {
+        deployment: projData?.s4Deployment === 'public' ? 'public' : projData?.s4Deployment === 'private' ? 'private' : null,
+        engineVersion: signedEngineVersionOf(projData),
+      });
       const isAbapCloud = !isSideBySideRoute(route);
 
       const prompt = isAbapCloud 
@@ -362,11 +375,12 @@ interface DesignData {
     title: string; // Title of the phase (e.g. DDIC Setup, RAP Behavior Implementation, Service Exposure, Fiori Elements Integration)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
+${OPTION_COMPARISON_SCHEMA}
 }
 
 ${SAP_REFERENCE_PROMPT_RULES}
 
-OPTIONS: ${OPTION_COMPARISON_RULE}
+OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
 ${designContext}
 
@@ -411,11 +425,12 @@ interface DesignData {
     title: string; // Title of the phase (e.g. Foundation, CAP Service exposure, ${BTP} Event Integration, Production Hardening)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
+${OPTION_COMPARISON_SCHEMA}
 }
 
 ${SAP_REFERENCE_PROMPT_RULES}
 
-OPTIONS: ${OPTION_COMPARISON_RULE}
+OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
 ${designContext}
 
@@ -774,6 +789,8 @@ ${DESIGN_ANSWER_REMINDER}`;
       sapStandardApiMapping: (data.sapStandardApiMapping || []).filter(Boolean),
       securityHardening: (data.securityHardening || []).filter(Boolean),
       roadmap: (data.roadmap || []).filter(Boolean),
+      // Read for the reader by `readOptionComparison`, which refuses a circular reason.
+      optionComparison: data.optionComparison,
     };
   }, [design, project?.name]);
 
@@ -786,9 +803,10 @@ ${DESIGN_ANSWER_REMINDER}`;
             contract: designEvidence.contract,
             findings: designEvidence.findings,
             deployment: deploymentModel,
+            engineVersion: signedEngineVersionOf(project),
           })
         : null,
-    [designEvidence, deploymentModel],
+    [designEvidence, deploymentModel, project],
   );
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
 

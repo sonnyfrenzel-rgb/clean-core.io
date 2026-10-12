@@ -211,6 +211,7 @@ export function contractOfProject(
       route,
       deviation: deviation.deviation,
       inputsDiffer: inputsDifferingFromRun(inputManifest, source, deployment),
+      engineVersion: signedEngineVersionOf(state),
     }),
   };
 }

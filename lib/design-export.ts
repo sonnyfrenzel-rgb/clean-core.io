@@ -24,6 +24,12 @@ import { EXPORT_CSS } from '@/lib/export-style';
 import { SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture, type TargetArchitectureCode } from '@/lib/project-commands';
 import { getCloudServiceKey } from '@/lib/cloud-service-key';
+import {
+  COMPARED_OPTION_LABELS,
+  COMPARISON_ASPECTS,
+  COMPARISON_ASPECT_LABELS,
+  readOptionComparison,
+} from '@/lib/design-option-comparison';
 // SAP identifiers the model wrote, each followed by its check (external review F-03).
 import { annotateSapReferences as checked, catalogNoteForMapping } from '@/lib/sap-reference-check';
 import {
@@ -199,6 +205,35 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
         </tr>
       `).join('') || '';
 
+    // The options compared before the standard is ruled out (roadmap 3.0.12,
+    // F14) — the same reading as the page, a circular reason refused here too.
+    const comparison = readOptionComparison(data);
+    const optionSection = comparison.state === 'ready' ? `
+        <h2>Standard, RAP and CAP compared</h2>
+        <p>Model proposal on the engine's facts. Running cost is qualitative: amounts come only from approved cost assumptions in Economics.</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">Option</th>
+              ${COMPARISON_ASPECTS.map((a) => `<th>${esc(COMPARISON_ASPECT_LABELS[a])}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${comparison.options.map((o) => `
+            <tr>
+              <td class="strong">${esc(COMPARED_OPTION_LABELS[o.option])}${comparison.recommended === o.option ? ' (proposed)' : ''}</td>
+              ${COMPARISON_ASPECTS.map((a) => `<td class="muted">${esc(checked(o[a]))}</td>`).join('')}
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        ${comparison.missing.length ? `<p>Not compared by the model: ${esc(comparison.missing.map((m) => COMPARED_OPTION_LABELS[m]).join(', '))}.</p>` : ''}
+        ${comparison.reason
+          ? `<p><strong>Why ${esc(COMPARED_OPTION_LABELS[comparison.recommended])}:</strong> ${esc(checked(comparison.reason.text))}</p><p><strong>The requirement the other options miss:</strong> ${esc(checked(comparison.reason.requirement))}</p>`
+          : `<p><strong>The model's reason for ${esc(COMPARED_OPTION_LABELS[comparison.recommended])} is not shown:</strong> ${esc(comparison.refused ?? '')}</p>`}
+      ` : comparison.state === 'absent'
+        ? '<h2>Standard, RAP and CAP compared</h2><p>Not written in this design — it was written before the design compared the SAP standard, RAP and CAP.</p>'
+        : `<h2>Standard, RAP and CAP compared</h2><p>The model's comparison could not be read: ${esc(comparison.why)}</p>`;
+
     const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
         <h2>SAP Business Accelerator Hub Mappings</h2>
         <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.</p>
@@ -236,6 +271,8 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
               <h3>Architectural Approach</h3>
               <p>${esc(checked(data.architectureOverview?.approachDescription))}</p>
             </div>
+
+            ${optionSection}
 
             ${referenceSection}
 
