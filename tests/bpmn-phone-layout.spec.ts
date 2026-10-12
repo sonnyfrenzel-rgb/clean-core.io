@@ -134,7 +134,15 @@ test('only the read-only canvas draws the phone layout: no export, editor, draft
     'components/process-map/phone-layout.ts',
     'lib/bpmn/export.ts',
     'lib/bpmn/layout.ts',
+    // The reading worker draws it off the page's thread, asked only by phone-layout.ts (owner, 12.10.2026).
+    'lib/bpmn/reading-exports-client.ts',
+    'lib/bpmn/reading-exports-job.ts',
   ]);
+  const client = fs.readFileSync(path.join(ROOT, 'lib', 'bpmn', 'reading-exports-client.ts'), 'utf8');
+  expect(client.match(/phoneReadingXmlOffThread\(/g)?.length, 'one entry point, defined once').toBe(1);
+  const askers: string[] = [];
+  for (const user of users) if (fs.readFileSync(path.join(ROOT, user), 'utf8').includes('phoneReadingXmlOffThread')) askers.push(user);
+  expect(askers.sort()).toEqual(['components/process-map/phone-layout.ts', 'lib/bpmn/reading-exports-client.ts']);
   // The reading exports never pass the phone's options.
   const exporter = fs.readFileSync(path.join(ROOT, 'lib', 'bpmn', 'export.ts'), 'utf8');
   const reading = exporter.slice(exporter.indexOf('export function buildReadingExports'), exporter.indexOf('/** Columns per row of a level the phone'));

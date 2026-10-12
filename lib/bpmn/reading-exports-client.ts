@@ -1,5 +1,5 @@
 import type { ProcessSummary } from '../process-summary';
-import type { ReadingJob, ReadingRequest, ReadingResponse, ReadingResult } from './reading-exports-job';
+import type { PhoneView, ReadingJob, ReadingRequest, ReadingResponse, ReadingResult } from './reading-exports-job';
 import { readingExportsKey, type ReadingOptions } from './reading-key';
 
 /**
@@ -45,6 +45,7 @@ export interface ReadingRunnerDeps {
 export interface ReadingRunner {
   reading(source: string, options: ReadingOptions): Promise<ReadingResult>;
   summary(source: string, fileName: string, processName?: string): Promise<ProcessSummary | null>;
+  phone(source: string, options: ReadingOptions, view: PhoneView): Promise<string | null>;
   /** Stop the worker and forget every reading (tests; a tab that is closing). */
   dispose(): void;
 }
@@ -57,7 +58,7 @@ interface Pending {
   reject: (error: unknown) => void;
 }
 
-const PRIORITY: Record<ReadingJob['kind'], number> = { reading: 0, summary: 1 };
+const PRIORITY: Record<ReadingJob['kind'], number> = { reading: 0, phone: 1, summary: 2 };
 
 export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
   const idleMs = deps.idleMs ?? 60_000;
@@ -210,6 +211,11 @@ export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
       request(`reading:${readingExportsKey(source, options)}`, { kind: 'reading', source, options }) as Promise<ReadingResult>,
     summary: (source, fileName, processName) =>
       request(`summary:${JSON.stringify([fileName, processName || fileName, source])}`, { kind: 'summary', source, fileName, processName }) as Promise<ProcessSummary | null>,
+    phone: (source, options, view) =>
+      request(
+        `phone:${JSON.stringify([view.technical, Math.floor(view.fitWidth), readingExportsKey(source, options), view.readingXml])}`,
+        { kind: 'phone', source, options, view },
+      ) as Promise<string | null>,
     dispose: () => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = null;
@@ -250,4 +256,9 @@ export function readingExportsOffThread(source: string, options: ReadingOptions)
 /** `processSummaryOf`, off the main thread where the browser allows it. */
 export function processSummaryOffThread(source: string, fileName = 'source.abap', processName?: string): Promise<ProcessSummary | null> {
   return runner().summary(source, fileName, processName);
+}
+
+/** `buildPhoneReadingXml`, off the main thread where the browser allows it (owner, 12.10.2026: on a phone the CO map's narrower layout held the page for 15 s). */
+export function phoneReadingXmlOffThread(source: string, options: ReadingOptions, view: PhoneView): Promise<string | null> {
+  return runner().phone(source, options, view);
 }

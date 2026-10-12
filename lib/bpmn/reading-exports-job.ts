@@ -1,4 +1,4 @@
-import { buildReadingExports, type BpmnExport } from './export';
+import { buildPhoneReadingXml, buildReadingExports, type BpmnExport } from './export';
 import { processSummaryOf, type ProcessSummary } from '../process-summary';
 import type { ReadingOptions } from './reading-key';
 
@@ -15,7 +15,11 @@ import type { ReadingOptions } from './reading-key';
  */
 export type ReadingJob =
   | { kind: 'reading'; source: string; options: ReadingOptions }
-  | { kind: 'summary'; source: string; fileName: string; processName?: string };
+  | { kind: 'summary'; source: string; fileName: string; processName?: string }
+  | { kind: 'phone'; source: string; options: ReadingOptions; view: PhoneView };
+
+/** The phone's narrower layout of a reading map (`buildPhoneReadingXml`) — as long as the map's own. */
+export type PhoneView = { readingXml: string; technical: boolean; fitWidth: number };
 
 export interface ReadingRequest {
   id: number;
@@ -27,8 +31,9 @@ export type ReadingResponse = { id: number; result: unknown } | { id: number; er
 export type ReadingResult = { bpmn: BpmnExport; technical: BpmnExport };
 
 /** One job, run here. Throws what the reader throws. */
-export function runReadingJob(job: ReadingJob): ReadingResult | ProcessSummary | null {
+export function runReadingJob(job: ReadingJob): ReadingResult | ProcessSummary | string | null {
   if (job.kind === 'reading') return buildReadingExports(job.source, job.options);
+  if (job.kind === 'phone') return buildPhoneReadingXml(job.source, job.options, job.view);
   if (job.kind === 'summary') return processSummaryOf(job.source, job.fileName, job.processName);
   throw new Error(`Unknown reading job: ${(job as { kind?: unknown }).kind}`);
 }

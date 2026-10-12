@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { buildBpmnExportFromSource, buildReadingExports, READING_WRAP } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, buildPhoneReadingXml, buildReadingExports, READING_WRAP } from '../lib/bpmn/export';
 import { processSummaryOf } from '../lib/process-summary';
 import { handleReadingRequest, runReadingJob, type ReadingJob, type ReadingRequest, type ReadingResponse } from '../lib/bpmn/reading-exports-job';
 import { createReadingRunner, type ReadingWorkerLike } from '../lib/bpmn/reading-exports-client';
@@ -45,6 +45,20 @@ test.describe('the worker message handler', () => {
       expect(structuredClone((response as { result: unknown }).result)).toEqual(processSummaryOf(source, file));
     });
   }
+
+  test("the phone's narrower layout across the worker boundary is the one the page thread draws", () => {
+    // On a phone the CO map's narrower layout held the page for 15 s (owner, 12.10.2026).
+    const file = 'Z_MM_PO_APPROVAL.abap';
+    const source = example(file);
+    const options = { processName: file, sourceFileName: file };
+    const readingXml = buildReadingExports(source, options).bpmn.xml;
+    for (const view of [{ readingXml, technical: false, fitWidth: 390 }, { readingXml, technical: false, fitWidth: 100_000 }]) {
+      const response = handleReadingRequest({ id: 5, job: { kind: 'phone', source, options, view } });
+      expect(response).toEqual({ id: 5, result: buildPhoneReadingXml(source, options, view) });
+    }
+    // A narrow card gets a layout of its own; a card wider than every level gets none.
+    expect(typeof (handleReadingRequest({ id: 6, job: { kind: 'phone', source, options, view: { readingXml, technical: false, fitWidth: 390 } } }) as { result: unknown }).result).toBe('string');
+  });
 
   test('an empty source summarises to null, as on the page thread', () => {
     expect(handleReadingRequest({ id: 1, job: { kind: 'summary', source: '  ', fileName: 'x' } })).toEqual({ id: 1, result: null });

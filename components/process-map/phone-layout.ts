@@ -34,8 +34,9 @@ export function phoneLayout(input: {
     const kept = held.get(key);
     if (kept) return kept;
     const made = (async () => {
-      const { buildPhoneReadingXml } = await import('@/lib/bpmn/export');
-      return buildPhoneReadingXml(
+      // In the reading worker, as the map itself (owner, 12.10.2026: 15 s on the CO program on a phone).
+      const { phoneReadingXmlOffThread } = await import('@/lib/bpmn/reading-exports-client');
+      return phoneReadingXmlOffThread(
         input.source,
         { processName: input.processName, sourceFileName: input.fileName },
         { readingXml: input.readingXml, technical: input.technical, fitWidth: width },
