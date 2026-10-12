@@ -14,7 +14,8 @@
  *
  * No network, no model, no install. The package's npm scripts never run. Its
  * modules are imported only inside a sandboxed child process (see
- * lib/sandbox.mjs); when the sandbox cannot be made reliable on this Node the
+ * lib/sandbox.mjs), which only executes; the probes and their verdicts stay in
+ * this process. When the sandbox cannot be made reliable on this Node the
  * dynamic probes are reported as not runnable and only the static scan runs.
  *
  * Catalogue and adapter format: docs/failure-patterns/README.md.
@@ -22,7 +23,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { copyToTemp, decideExecution, removeTemp, runChild } from './lib/sandbox.mjs';
+import { PROBES } from './lib/probes.mjs';
+import { copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
 import { staticScan } from './lib/static-scan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -80,6 +82,46 @@ function outcome(pattern, status, evidence, extra = {}) {
   return { pattern, status, evidence, ...extra };
 }
 
+/** `{ notRunnable }` from a failed load answer, or null when every module loaded. */
+function loadFailure(answer) {
+  if (!answer || typeof answer !== 'object') return 'the executor sent no answer to the load request';
+  if (typeof answer.failure === 'string') return answer.failure;
+  if (typeof answer.transportError === 'string') return answer.transportError;
+  return null;
+}
+
+/**
+ * Run one probe through a fresh sandboxed executor. The probe itself runs here;
+ * the executor only loads the package and calls into it. Resolves to
+ * `{ result: { outcomes } | { imported } | { notRunnable }, events, timedOut, poisoned, exitCode, stderrTail, durationMs }`.
+ */
+async function runProbe({ type, root, flag, timeoutMs, nodeEnv, adapter, config }) {
+  const ex = startExecutor({ root, flag, timeoutMs, nodeEnv });
+  let result;
+  try {
+    const loaded = await ex.request('load', { modules: adapter.modules });
+    const failed = loadFailure(loaded);
+    if (failed) {
+      result = { notRunnable: failed };
+    } else if (type === 'import-side-effects') {
+      // Give a listener started from a microtask or a timer a moment to show itself.
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      result = { imported: Array.isArray(loaded.imported) ? loaded.imported.map(String) : [] };
+    } else {
+      result = { outcomes: await PROBES[type](config ?? {}, { request: ex.request }) };
+    }
+  } catch (err) {
+    const why = String(err && err.message ? err.message : err).split('\n')[0];
+    if (err && err.adapter) result = { notRunnable: `adapter mapping does not fit the package: ${why}` };
+    else if (err && err.transport) result = { notRunnable: why };
+    else result = { notRunnable: `probe could not run: ${why}` };
+  }
+  const end = await ex.close();
+  // Anything on the channel the harness did not ask for discards the whole run.
+  if (end.poisoned && !end.timedOut) result = { notRunnable: `the run was discarded: ${end.poisoned}` };
+  return { ...end, result };
+}
+
 function importOutcome(run, timeoutMs) {
   const listens = run.events.filter((e) => e.type === 'listen');
   const network = run.events.filter((e) => e.type === 'network');
@@ -101,7 +143,7 @@ function probeOutcomes(type, run, timeoutMs) {
   if (listens.length) extra.push(`note: listen(${listens.map((e) => e.port).join(', ')}) was called even with NODE_ENV=test`);
   if (run.timedOut) return patterns.map((p) => outcome(p, 'not-runnable', `the probe did not finish within ${timeoutMs} ms`));
   if (!run.result) return patterns.map((p) => outcome(p, 'not-runnable', `the child ended without a result (exit ${run.exitCode}${run.stderrTail ? `; ${run.stderrTail}` : ''})`));
-  if (run.result.notRunnable || run.result.error) return patterns.map((p) => outcome(p, 'not-runnable', run.result.notRunnable ?? run.result.error));
+  if (run.result.notRunnable) return patterns.map((p) => outcome(p, 'not-runnable', run.result.notRunnable));
   const byPattern = new Map(run.result.outcomes.map((o) => [o.pattern, o]));
   return patterns.map((p) => {
     const o = byPattern.get(p);
@@ -139,13 +181,15 @@ export async function runHarness(opts) {
           continue;
         }
         const isImport = type === 'import-side-effects';
-        const run = await runChild({
+        const run = await runProbe({
+          type,
           root,
           flag: decision.flag,
           timeoutMs: opts.timeout,
           // The import probe runs as CI runs `npm test`: NODE_ENV unset.
           nodeEnv: isImport ? undefined : 'test',
-          job: { probe: type, modules: adapter.modules, config: mapped },
+          adapter,
+          config: mapped,
         });
         probes.push({
           probe: type,
@@ -222,6 +266,10 @@ export function toMarkdown(report) {
   lines.push('');
   lines.push(`## Static scan (${report.static.files} source files, read only)`);
   lines.push('');
+  if (report.static.limits?.length) {
+    lines.push(`**Incomplete:** ${cell(report.static.limits.join('; '))} — the scan covers only the files it reached.`);
+    lines.push('');
+  }
   if (report.static.findings.length === 0) {
     lines.push('No static signals.');
   } else {

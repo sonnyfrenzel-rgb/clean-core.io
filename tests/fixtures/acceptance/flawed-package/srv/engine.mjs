@@ -1,7 +1,7 @@
 // Fixture for tests/acceptance-harness.spec.ts: a hand-written engine that
 // reproduces, on purpose, the failure patterns seen in generated packages
-// (docs/failure-patterns/catalogue.json). A deliberately flawed test fixture,
-// not product code: the harness spec expects these patterns to be found.
+// (docs/failure-patterns/catalogue.json). It is a deliberately flawed test
+// fixture, not product code: the harness spec expects every probe to fail on it.
 
 /** FP-PREC-02: binary float and Math.round instead of decimal rounding. */
 export function discountFor(amount, ratePercent) {

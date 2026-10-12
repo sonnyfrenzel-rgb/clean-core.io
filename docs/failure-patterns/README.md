@@ -191,7 +191,11 @@ have not been mapped. Until they are, those packages get the static scan only.
 ### Safety: what runs, and where
 
 A generated package is third-party code. The harness never imports it into its
-own process. Each probe runs in a separate `node` child with:
+own process. For each probe it starts a separate `node` child — the executor,
+`scripts/acceptance/child/executor.mjs` — which loads the package and calls into
+it when asked, and does nothing else: the probe itself, its expectations and its
+verdict stay in the harness process (`scripts/acceptance/lib/probes.mjs`). The
+child runs with:
 
 - the permission model on (`--permission`, or `--experimental-permission` on
   older Node): read access to a temporary copy of the package and to
@@ -207,8 +211,18 @@ own process. Each probe runs in a separate `node` child with:
   `USERNAME`),
   `NODE_ENV=test` (unset for the import probe, as CI runs `npm test`), and a hard
   timeout that kills the process;
-- a per-run nonce on the result line, taken out of the environment before the
-  package loads, so the package cannot print a forged verdict.
+- requests on its stdin and answers on a pipe of its own (file descriptor 3),
+  one answer per request, matched by a fresh id; its stdout is discarded and the
+  job is never in its environment.
+
+Code in the package shares the executor's process, so it can tamper with
+anything there, the answer pipe included. What it cannot do is write a verdict:
+verdicts are made in the harness process from the answers. A line on the pipe
+that the harness did not ask for — a forged answer, a second answer, anything
+that is not JSON — discards the whole run as `not-runnable`. A package that
+suppresses the real answer and sends its own has only chosen what its function
+answered, which it could have done by behaving that way.
+`tests/fixtures/acceptance/hostile-package/` tries all of it.
 
 Network is the gap. Node's permission model only covers network from v25 on.
 The harness self-tests whether a socket is refused under the permission flag;
@@ -230,12 +244,15 @@ types and checks — `lib/testing-engine-cases.ts`) against the call contract th
 generated code exports (`srv/engine-contract.*`: `CONTRACT`, `validate`,
 `simulate`, `getRun` — `lib/engine-call-contract.ts`, code-draft rule 24). No
 model-written assertion is involved: each example carries its input and the
-expected outcome in machine form, the child (`child/engine-cases-child.mjs`)
-calls the contract, and the parent judges (`child/engine-cases-core.mjs`). It
-uses this harness's sandbox (`runChild` with `entry: 'engine-cases-child.mjs'`)
-under the same execution rule; a package without the contract reads
-"Not run — the code does not export the call contract", and a field the
-contract marks as internal is "Not run" with that reason.
+expected outcome in machine form, the executor (`child/executor.mjs`) calls the
+contract and reports what it answered (`collectEngineCase`), and the harness
+process judges it (`judgeEngineCase`, both in `child/engine-cases-core.mjs`).
+It uses this harness's sandbox (`startExecutor`) under the same execution rule;
+a package without the contract reads "Not run — the code does not export the
+call contract", a field the contract marks as internal is "Not run" with that
+reason, and a case of which only some examples could run is "Not run" and says
+how much of it ran. `validate` and `simulate` refuse with `ok: false`; a throw
+from them is a crash and fails the example.
 
 ```bash
 node scripts/acceptance/engine-cases.mjs <unpacked-package-dir> [--cases file] [--out dir] [--timeout ms] [--trusted-fixture] [--static-only]
@@ -255,7 +272,9 @@ result (FP-RUN-01), `Math.round(...)/100` (FP-PREC-02), `parseInt`/`parseFloat`
 message naming an SAP API in a file with no outbound call (FP-CLAIM-01), SAP's
 own event namespace (FP-CLAIM-02), declared but unimported dependencies
 (FP-META-04). A static hit is counted next to the pattern as a suspect; it never
-changes a probe's verdict.
+changes a probe's verdict. The walk is bounded (depth, directory entries, source
+files, bytes read — `SCAN_LIMITS`); a scan that hit a bound says so in the
+report's `static.limits` and covers only the files it reached.
 
 ## How this relates to the other layers
 
@@ -281,7 +300,7 @@ shared vocabulary between them:
 
 1. Add the entry to `catalogue.json` with origin, probe, layers.
 2. Add it to the index table above.
-3. If it gets a harness probe: implement it in `scripts/acceptance/child/probes.mjs`,
+3. If it gets a harness probe: implement it in `scripts/acceptance/lib/probes.mjs`,
    register it in `PROBE_PATTERNS` in `scripts/acceptance/run.mjs`, map it in both
    fixture adapters, and make the flawed fixture exhibit it.
 

@@ -100,13 +100,19 @@ export function simulate(request) {
   const checked = validate(request);
   if (!checked.ok) return { ok: false, errors: checked.errors };
   const req = checked.normalized;
+  // validate keeps a missing value missing; a run cannot compute with it, so it refuses — never reads it as 0.
+  const missing = [
+    ...(req.amount === null ? ['amount'] : []),
+    ...req.receivers.flatMap((x, i) => [...(x.quota === null ? [`receivers[${i}].quota`] : []), ...(x.amount === null ? [`receivers[${i}].amount`] : [])]),
+  ];
+  if (missing.length > 0) return { ok: false, errors: missing.map((field) => ({ rule: 'missing', field, message: `${field} is missing` })) };
   if (req.receivers.length === 0) return { ok: false, errors: [{ rule: 'L18', field: 'receivers', message: 'no receivers' }] };
-  const quotaSum = req.receivers.reduce((s, x) => s + roundTo(x.quota ?? '0', 6), 0n);
+  const quotaSum = req.receivers.reduce((s, x) => s + roundTo(x.quota, 6), 0n);
   if (quotaSum > roundTo('100', 6)) return { ok: false, errors: [{ rule: 'BR-001', field: 'quota', message: 'quota over 100 %' }] };
   const lines = [];
   for (const rec of req.receivers) {
     if (rec.kostl === req.sender) continue; // L30: the sender is not its own receiver
-    const value = roundTo(req.amount ?? '0', 2) * roundTo(rec.quota ?? '0', 6);
+    const value = roundTo(req.amount, 2) * roundTo(rec.quota, 6);
     // amount (2 places) × quota (6 places) / 100 → back to 2 places, commercially
     const scaled = value; // 8 places
     const div = pow10(6) * 100n;

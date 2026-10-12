@@ -1,0 +1,19 @@
+{
+  "package": "acceptance-fixture-hostile",
+  "modules": {
+    "engine": "srv/engine.mjs"
+  },
+  "probes": {
+    "empty-selection": {
+      "call": { "module": "engine", "export": "select" },
+      "args": [{ "orgs": [] }],
+      "refused": { "path": "status", "notIn": ["OK"] }
+    },
+    "lenient-numeric": {
+      "call": { "module": "engine", "export": "parseYear" },
+      "args": ["$value"],
+      "valid": "2026",
+      "refused": { "path": "ok", "equals": false }
+    }
+  }
+}

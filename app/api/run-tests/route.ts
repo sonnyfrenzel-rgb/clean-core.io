@@ -25,7 +25,7 @@ import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
 import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
 import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
-import { mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
+import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
 
 /**
  * POST /api/run-tests
@@ -554,9 +554,13 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     const { stdout, stderr, exitCode } = execution;
 
     // 3.0.12 — the engine pass folded in: a case the call contract ran takes the
-    // contract's verdict; the model's test for it stays an extra check.
+    // contract's verdict; the model's test for it stays an extra check. The
+    // engine pass reports answers, not verdicts: they are judged here, against
+    // the cases this route planned (`engineVerdicts`).
     const engineMerge =
-      execution.engine && execution.engine.ran ? mergeEngineVerdicts(parseTapOutput(stdout), parseTapOutput(execution.engine.stdout)) : null;
+      execution.engine && execution.engine.ran && enginePlan
+        ? mergeEngineVerdicts(parseTapOutput(stdout), engineVerdicts(execution.engine.stdout, enginePlan.cases, enginePlan.patterns))
+        : null;
     const testResults = engineMerge ? engineMerge.results : parseTapOutput(stdout);
     const engineSummary = execution.engine
       ? execution.engine.ran
