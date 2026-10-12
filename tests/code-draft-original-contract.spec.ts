@@ -187,7 +187,10 @@ test.describe('the page puts the facts into the Node.js code-draft prompt', () =
 
   test('right after the rules, read from the source the generation uses', () => {
     expect(page).toContain('${CODE_DRAFT_BUSINESS_RULES}${originalFacts}');
-    expect(page).toContain('codeDraftFactsSection(readOriginalContract(legacyCode), materialRules(deriveBusinessRules(legacyCode)))');
+    // The generation screen (3.0.12) reads the contract once, for the prompt
+    // and for the facts it shows in the stage log.
+    expect(page).toContain('const original = readOriginalContract(legacyCode);');
+    expect(page).toContain('codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)))');
     expect(page).toContain("import('@/lib/abap/original-contract')");
     expect(page).toContain('originalFacts = codeDraftFactsSection(null);');
   });
