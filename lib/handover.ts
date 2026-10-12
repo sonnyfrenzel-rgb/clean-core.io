@@ -656,12 +656,37 @@ export function handoverTimeline(project: HandoverProject): TimelineEntry[] {
 export type NextStep =
   | { kind: 'blocked'; headline: string; reason: string }
   | { kind: 'open'; headline: string; reason: string; href: string; action: string }
+  /** Everything is on record but the pack: downloading it is what seals it. */
+  | { kind: 'seal'; headline: string; reason: string }
   | { kind: 'none'; headline: string; reason: string };
+
+/**
+ * What the next step says for a still-needed line that no phase check above
+ * caught — said as the thing to do, the line itself as the reason.
+ */
+const STILL_NEEDED_HEADLINE: Readonly<Record<string, string>> = Object.freeze({
+  source: 'Stage the source and run the analysis',
+  run: 'Run the analysis on the current source',
+  design: 'Confirm the target architecture',
+  transformation: 'Generate the target code',
+  documentation: 'Document the process',
+  tests: 'Run the test suite',
+  economics: 'Work out a cost scenario',
+  decision: 'Confirm the decision',
+});
 
 /**
  * The rule-based next step of the handover. Read off the same contract as the
  * stepper: what blocks, then the first phase whose own output is missing, then
- * a test run nobody recorded, then the decision.
+ * a test run nobody recorded, then the decision — and after those, whatever
+ * `handoverStillNeeded` still lists: what the pack carries, then the seal,
+ * then the cost scenario.
+ *
+ * The tail reads the still-needed list rather than deciding on its own
+ * (owner, 12.10.2026): the card said "Nothing open — hand the package to
+ * operations" while the list beside it still held the unsealed audit pack.
+ * One list, one story — "nothing open" only when that list is empty.
+ * `exportedAt` is when the pack was last sealed (`auditPackExportedAt`).
  */
 export function handoverNextStep(
   project: HandoverProject,
@@ -669,6 +694,7 @@ export function handoverNextStep(
   blockers: readonly string[],
   links: readonly HandoverLink[],
   projectId: string,
+  exportedAt: string | null = null,
 ): NextStep {
   const openLinks = links.filter((l) => l.state === 'open').length;
   const travels = openLinks === 0
@@ -724,10 +750,36 @@ export function handoverNextStep(
       action: 'Open the Management view',
     };
   }
+  const needed = handoverStillNeeded(project, links, { blockers, exportedAt });
+  const openLine = (n: StillNeeded): NextStep => {
+    const at = n.stage === 'management' ? null : phases.find((p) => p.key === n.stage) ?? null;
+    return {
+      kind: 'open',
+      headline: STILL_NEEDED_HEADLINE[n.key] ?? n.text,
+      reason: `Still needed: ${n.text.charAt(0).toLowerCase()}${n.text.slice(1)}. ${travels}`,
+      href: at ? `/project/${projectId}/${at.path}` : `/project/${projectId}?view=management`,
+      action: at ? `Open ${at.label}` : 'Open the Management view',
+    };
+  };
+  // What the pack carries comes before the seal, so the pack seals it. The cost
+  // scenario is never part of the signed pack (ADR-022), so it does not hold
+  // the seal back; it follows it, and "nothing open" waits for it as well.
+  const beforeSeal = needed.find((n) => n.key !== 'audit-pack' && n.key !== 'economics');
+  if (beforeSeal) return openLine(beforeSeal);
+  if (needed.some((n) => n.key === 'audit-pack')) {
+    return {
+      kind: 'seal',
+      headline: 'Download the signed audit pack — downloading seals it',
+      reason: `What the pack carries is on record; the server seals it against the signed run as you download it. ${travels}`,
+    };
+  }
+  const afterSeal = needed.find((n) => n.key !== 'audit-pack');
+  if (afterSeal) return openLine(afterSeal);
+  const sealedOn = isoOf(exportedAt);
   return {
     kind: 'none',
     headline: 'Nothing open — hand the package to operations',
-    reason: travels,
+    reason: `${sealedOn ? `Audit pack sealed on ${sealedOn.slice(0, 10)}. ` : ''}${travels}`,
   };
 }
 

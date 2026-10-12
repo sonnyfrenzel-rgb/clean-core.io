@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { readSpecSummary, specHandoverLine, specIsStale } from '@/lib/requirements-spec';
 import { sha256Hex } from '@/lib/artefact-digest';
-import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, getDocFromServer, query, where } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -171,6 +171,28 @@ Side-by-Side Extensibility on ${BTP_FIRST} using CAP (Node.js/TypeScript). S/4HA
   }
 };
 
+/**
+ * The seal the audit-pack route just wrote, read back from the server — or
+ * `null` when it did not write one for this run. The route records the seal only
+ * while the run it packed is still the active one (codex code-trust-07), and the
+ * IT view reads the marker with the same run binding (`lib/it-sections.ts`).
+ */
+async function readSeal(
+  projectId: string,
+  runId: string | null,
+): Promise<{ auditPackExportedAt: string; auditPackExportedRunId: string } | null> {
+  try {
+    const snap = await getDocFromServer(doc(getDb(), 'projects', projectId));
+    const meta = (snap.data()?.auditMetadata ?? {}) as { auditPackExportedAt?: unknown; auditPackExportedRunId?: unknown };
+    if (typeof meta.auditPackExportedAt !== 'string' || !meta.auditPackExportedAt) return null;
+    if (runId && meta.auditPackExportedRunId !== runId) return null;
+    return { auditPackExportedAt: meta.auditPackExportedAt, auditPackExportedRunId: String(meta.auditPackExportedRunId ?? '') };
+  } catch (err) {
+    console.error('Reading the audit pack seal failed:', err);
+    return null;
+  }
+}
+
 export default function DeliveryPage() {
   const { projectId } = useParams();
   const { profile } = useUserProfile();
@@ -247,6 +269,10 @@ export default function DeliveryPage() {
   const [bundleError, setBundleError] = useState<string | null>(null);
   const [auditPackBusy, setAuditPackBusy] = useState(false);
   const [auditPackError, setAuditPackError] = useState<string | null>(null);
+  // The pack left, but the server did not record it as sealed — the run it was
+  // made from is no longer the active one (owner, 12.10.2026: say so, do not
+  // leave "Never" standing without a reason).
+  const [sealNotRecorded, setSealNotRecorded] = useState(false);
   // A side action that finished — one toast at a time (§2.6).
   const [toast, setToast] = useState<string | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
@@ -568,7 +594,20 @@ export default function DeliveryPage() {
       const blob = await generateAuditPack(project, idToken);
       const fileName = (project.name || 'Project').replace(/\s+/g, '_');
       await saveAs(blob, `${fileName}_AuditPack.zip`);
-      setToast('Audit pack downloaded');
+      // The server writes the seal (`auditPackExportedAt`) while it builds the
+      // pack; the page loaded the project once and kept saying "Never" and "not
+      // sealed yet" until a manual reload (owner, 12.10.2026). Read back just
+      // that marker — one document, no run re-hydration — so the chain, the
+      // still-needed list and the next step move on at once.
+      const sealed = await readSeal(projectId as string, project.activeRunId ?? null);
+      if (sealed) {
+        setSealNotRecorded(false);
+        setProject((p) => (p ? { ...p, auditMetadata: { ...p.auditMetadata, ...sealed } as Project['auditMetadata'] } : p));
+        setToast('Audit pack downloaded and sealed');
+      } else {
+        setSealNotRecorded(true);
+        setToast('Audit pack downloaded');
+      }
     } catch (err: any) {
       console.error('Audit pack generation failed:', err);
       setAuditPackError(err?.message || 'Audit pack generation failed. Please try again.');
@@ -611,9 +650,10 @@ export default function DeliveryPage() {
   const confirmations = confirmationsOf(hp);
   const timeline = handoverTimeline(hp);
   const packChain = packEvidenceChain(hp);
-  const nextStep = handoverNextStep(hp, phases, blockers, chain, projectId as string);
   const exportedAt = project.auditMetadata?.auditPackExportedAt ?? null;
   const handoverState = { blockers, exportedAt: exportedAt ? String(exportedAt) : null };
+  // The same seal the still-needed list reads, so the card and the list tell one story (owner, 12.10.2026).
+  const nextStep = handoverNextStep(hp, phases, blockers, chain, projectId as string, handoverState.exportedAt);
   const groups = handoverGroups(hp, chain, handoverState);
   const stillNeeded = handoverStillNeeded(hp, chain, handoverState);
   // The Quality tile's line comes from the Testing stage's own record
@@ -649,8 +689,10 @@ export default function DeliveryPage() {
           ? // ADR-075: on the ABAP Cloud route the result is recorded there.
             `/project/${projectId}/testing#${hasScenarios ? 'testing-sap-result' : 'testing-write'}`
           : `/project/${projectId}/${stage}`;
+  // A line made on this page jumps to its section here; it used to read
+  // "Delivery ›", a link to the page the reader was on (owner, 12.10.2026).
   const neededWhere = (stage: StillNeeded['stage']) =>
-    stage === 'management' ? 'Management view' : PHASES.find((p) => p.key === stage)?.label ?? stage;
+    stage === 'management' ? 'Management view' : stage === 'delivery' ? 'On this page' : PHASES.find((p) => p.key === stage)?.label ?? stage;
 
   return (
     <StageFrame stage="delivery">
@@ -714,18 +756,20 @@ export default function DeliveryPage() {
                 <CcLinkButton href={nextStep.href} variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
                   {nextStep.action}
                 </CcLinkButton>
-              ) : nextStep.kind === 'none' ? (
+              ) : nextStep.kind === 'seal' || nextStep.kind === 'none' ? (
                 <>
                   <span className="cc-text-meta text-cc-ink-muted">
                     ZIP, {AUDIT_PACK_FILES.length} files · No model call
                   </span>
+                  {/* Sealed already: the pack can be fetched again, but it is no longer the step. */}
                   <CcButton
-                    variant="primary"
+                    variant={nextStep.kind === 'seal' ? 'primary' : 'ghost'}
                     onClick={downloadAuditPack}
                     busy={auditPackBusy}
+                    data-handover-next-download=""
                     icon={<Download size={16} aria-hidden="true" />}
                   >
-                    Download signed audit pack
+                    {nextStep.kind === 'seal' ? 'Download signed audit pack' : 'Download it again'}
                   </CcButton>
                 </>
               ) : undefined
@@ -918,7 +962,7 @@ export default function DeliveryPage() {
           <DeliverySection id="still-needed" title="What a real handover still needs" meta={String(stillNeeded.length)} data-handover-open="">
             <DeliveryStillNeeded
               empty="Nothing — every link of the chain has a record, and the audit pack is sealed."
-              items={stillNeeded.map((n) => ({ key: n.key, text: n.text, where: neededWhere(n.stage), href: neededHref(n.stage) }))}
+              items={stillNeeded.map((n) => ({ key: n.key, text: n.text, where: neededWhere(n.stage), href: neededHref(n.stage), here: n.stage === 'delivery' }))}
             />
           </DeliverySection>
 
@@ -1238,10 +1282,20 @@ export default function DeliveryPage() {
                 </CcMessageStrip>
               </div>
             )}
-            <p className="m-0 mt-3 cc-text-meta">
+            {sealNotRecorded && (
+              <div className="mt-3" data-audit-pack-seal-missing="">
+                <CcMessageStrip state="warning" headline="Downloaded, but not recorded as sealed." announce>
+                  The server records the seal only while the run the pack was made from is the active one, and it no longer is. Reload the page and download the pack again.
+                </CcMessageStrip>
+              </div>
+            )}
+            {/* What the reader does with it, in one line (owner, 12.10.2026: "does a user still have to do anything with it?"). */}
+            <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted" data-audit-pack-use="">
+              Downloading seals it. Hand the ZIP to whoever needs proof; anyone can check it at{' '}
               <Link href="/verify-pack" className="text-cc-ink underline underline-offset-2 hover:text-cc-brand-deep">
-                Verify an existing audit pack →
+                Verify an audit pack
               </Link>
+              .
             </p>
             <div className="mt-3">
               <CollapsibleAccordion

@@ -192,7 +192,10 @@ test.describe('the handover reads what is on record', () => {
 
     const current = buildHandoverChain(onRunA, workflowSteps(onRunA));
     expect(current.find((l) => l.key === 'decision')!.provenance).toBe('confirmed');
-    expect(handoverNextStep(onRunA, allDone(onRunA), [], current, 'p1').kind).toBe('none');
+    // Current: the next step has moved past the decision (to what the
+    // still-needed list holds next — owner, 12.10.2026), never back to it.
+    expect(handoverNextStep(onRunA, allDone(onRunA), [], current, 'p1').headline).not.toBe('Confirm the decision');
+    expect(handoverStillNeeded(onRunA, current, { blockers: [], exportedAt: null }).map((n) => n.key)).not.toContain('decision');
 
     const chain = buildHandoverChain(onRunB, workflowSteps(onRunB));
     const link = chain.find((l) => l.key === 'decision')!;
@@ -270,6 +273,117 @@ test.describe('the handover reads what is on record', () => {
     // The chain is built by the module and only drawn by the page.
     expect(src).toContain('buildHandoverChain(hp, phases)');
     expect(src).toContain('data-handover-audit-pack');
+  });
+});
+
+/*
+ * Owner report, 12.10.2026: the next-step card said "Nothing open — hand the
+ * package to operations" while "What a real handover still needs" beside it
+ * listed the unsealed audit pack, linked to the page he was on, and the page
+ * kept saying "Never" after he had downloaded the pack. The card now reads the
+ * still-needed list, so the two cannot disagree.
+ */
+test.describe('the next step and the still-needed list tell one story', () => {
+  const decision = buildProjectDecision({
+    summary: 'Build this object as Side-by-Side BTP (CAP), as the signed-off target architecture says.',
+    runId: 'run-0001', evidenceDigest: 'digest', contract: null, assumptions: null, comparison: null,
+    chosenOptionId: null, need: { revision: null, confirmedDrops: 0, undecided: null }, handedOver: false,
+    timeline: { draftedAt: '2026-09-17T09:00:00.000Z' },
+  });
+  const ready = project({
+    approvedByArchitect: true, targetArchitecture: 'cap', approvedBy: 'lead@example.com',
+    architectSignOffAt: '2026-09-16T09:00:00.000Z',
+    decision: { ...decision, status: 'confirmed', confirmation: { account: 'lead@example.com', at: '2026-09-17T10:00:00.000Z', selfDeclaration: SELF_DECLARATION } },
+  });
+  const phases = workflowSteps(ready).map((s) => ({ ...s, state: 'done' as const, done: true, proven: true }));
+  type Link = ReturnType<typeof buildHandoverChain>[number];
+  /** Every link on record the way a finished project has it; `change` opens or weakens one. */
+  const chainWith = (change: (l: Link) => Partial<Link> = () => ({})): Link[] =>
+    buildHandoverChain(ready, workflowSteps(ready)).map((l) => {
+      const done: Link = {
+        ...l,
+        state: 'on-record',
+        value: l.value ?? 'on record',
+        provenance: l.key === 'tests' ? 'demonstrated-mock' : l.key === 'economics' ? 'simulation' : l.key === 'run' || l.key === 'analysis' || l.key === 'source' ? 'proven' : 'confirmed',
+      };
+      return { ...done, ...change(done) };
+    });
+  const SEALED = '2026-10-12T09:30:00.000Z';
+  const story = (chain: Link[], exportedAt: string | null) => ({
+    next: handoverNextStep(ready, phases, [], chain, 'p1', exportedAt),
+    needed: handoverStillNeeded(ready, chain, { blockers: [], exportedAt }).map((n) => n.key),
+  });
+
+  test('everything on record but the pack: the next step is to download it, which seals it', () => {
+    const { next, needed } = story(chainWith(), null);
+    expect(needed).toEqual(['audit-pack']);
+    expect(next.kind).toBe('seal');
+    expect(next.headline).toMatch(/^Download the signed audit pack/);
+    expect(next.headline).not.toContain('Nothing open');
+  });
+
+  test('sealed: nothing is open, the list is empty, and the card names the date', () => {
+    const { next, needed } = story(chainWith(), SEALED);
+    expect(needed).toEqual([]);
+    expect(next.kind).toBe('none');
+    expect(next.headline).toBe('Nothing open — hand the package to operations');
+    expect(next.reason).toContain('Audit pack sealed on 2026-10-12');
+  });
+
+  test('what the pack carries comes before the seal; the cost scenario, never in the pack, after it', () => {
+    const docs = story(chainWith((l) => (l.key === 'documentation' ? { provenance: 'proposed' } : {})), null);
+    expect(docs.needed).toEqual(['documentation', 'audit-pack']);
+    expect(docs.next.kind).toBe('open');
+    if (docs.next.kind === 'open') {
+      expect(docs.next.headline).toBe('Document the process');
+      expect(docs.next.href).toBe('/project/p1/documentation');
+    }
+
+    const noCost = chainWith((l) => (l.key === 'economics' ? { state: 'open', value: null, provenance: 'not-determined' } : {}));
+    const before = story(noCost, null);
+    expect(before.needed).toEqual(['economics', 'audit-pack']);
+    expect(before.next.kind).toBe('seal');
+    const after = story(noCost, SEALED);
+    expect(after.needed).toEqual(['economics']);
+    expect(after.next.kind).toBe('open');
+    if (after.next.kind === 'open') {
+      expect(after.next.headline).toBe('Work out a cost scenario');
+      expect(after.next.href).toBe('/project/p1/tco');
+    }
+  });
+
+  test('"nothing open" exactly when the still-needed list is empty, over every single gap', () => {
+    const gaps: Array<[string, (l: Link) => Partial<Link>]> = [
+      ['none', () => ({})],
+      ['design', (l) => (l.key === 'design' ? { provenance: 'proposed' } : {})],
+      ['transformation', (l) => (l.key === 'transformation' ? { state: 'open', value: null } : {})],
+      ['documentation', (l) => (l.key === 'documentation' ? { state: 'stale' } : {})],
+      ['tests', (l) => (l.key === 'tests' ? { state: 'open', value: null } : {})],
+      ['economics', (l) => (l.key === 'economics' ? { state: 'stale' } : {})],
+    ];
+    for (const [name, change] of gaps) {
+      for (const exportedAt of [null, SEALED]) {
+        const { next, needed } = story(chainWith(change), exportedAt);
+        expect(next.kind === 'none', `${name}, sealed ${Boolean(exportedAt)}: card ${next.kind}, list ${needed.join(',')}`).toBe(needed.length === 0);
+        // The seal is asked for only while the list holds it, and only once nothing the pack carries is missing.
+        expect(next.kind === 'seal', `${name}, sealed ${Boolean(exportedAt)}`).toBe(
+          needed.includes('audit-pack') && needed.every((k) => k === 'audit-pack' || k === 'economics'),
+        );
+      }
+    }
+  });
+
+  test('the page: the card reads the seal the list reads, a line made here jumps down the page, and a download reads the seal back', () => {
+    const src = read(PAGE);
+    expect(src).toContain('handoverNextStep(hp, phases, blockers, chain, projectId as string, handoverState.exportedAt)');
+    // The still-needed line for Delivery is an anchor on this page, never a link to it.
+    expect(src).toMatch(/stage === 'delivery'\s*\n?\s*\? '#audit-pack'/);
+    expect(src).toContain("stage === 'delivery' ? 'On this page'");
+    // After the download the page reads the server's seal instead of waiting for a reload.
+    const download = src.slice(src.indexOf('const downloadAuditPack'), src.indexOf('if (loading ||'));
+    expect(download).toContain('readSeal(');
+    expect(download).toContain('setProject(');
+    expect(src).toContain('Downloading seals it.');
   });
 });
 

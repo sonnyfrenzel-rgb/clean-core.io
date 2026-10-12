@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, ChevronRight, ListChecks } from 'lucide-react';
+import { ArrowDown, ArrowRight, ChevronRight, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
@@ -226,6 +226,11 @@ export interface NeededItem {
   /** Where it is made, and the link there. `null` for a place that has no link (the demo's own stage). */
   where: string;
   href: string | null;
+  /**
+   * Made on the page being read: the link is an anchor to its section and
+   * points down, never a link to the same page (owner, 12.10.2026).
+   */
+  here?: boolean;
 }
 
 /** What a real handover still needs: a hollow mark, the line, the tool where it is made. */
@@ -250,7 +255,7 @@ export function DeliveryStillNeeded({ items, empty }: { items: NeededItem[]; emp
               className="inline-flex items-center gap-1 justify-self-end cc-text-meta text-cc-ink underline underline-offset-2 hover:text-cc-brand-deep"
             >
               {n.where}
-              <ChevronRight size={12} aria-hidden="true" />
+              {n.here ? <ArrowDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
             </Link>
           ) : (
             <span className="justify-self-end cc-text-meta text-cc-ink-muted">{n.where}</span>
