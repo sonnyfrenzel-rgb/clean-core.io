@@ -143,7 +143,7 @@ test('the GET hands out the token together with the inputs it covers', async ({ 
   const { context, ...prompt } = read.inputs;
   expect(prompt).toEqual({ legacyCode: PROGRAM, solutionDesign: 'Design v1', analysis: 'Analysis v1' });
   expect(context.text).toContain('PLATFORM KNOWLEDGE');
-  expect(Object.keys(context).sort()).toEqual(['decision', 'requirements', 'rules', 'text']);
+  expect(Object.keys(context).sort()).toEqual(['decision', 'decisions', 'requirements', 'rules', 'text']);
   // The token is the pure function over those inputs, the block included — the
   // browser cannot be handed one for a state it was not shown.
   expect(read.token).toBe(

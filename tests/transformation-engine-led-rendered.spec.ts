@@ -150,7 +150,7 @@ for (const width of [1280, 390] as const) {
     expect(b.path).toBe('engine-led');
     expect(b.contextDigest).toMatch(/^[0-9a-f]{64}$/);
     expect(b.engine!.units).toBe(trace.generation.units);
-    expect(b.engine!.checks.map((c) => c.kind)).toEqual(expect.arrayContaining(['guards', 'lint']));
+    expect(b.engine!.checks.map((c) => c.kind)).toEqual(expect.arrayContaining(['guards', 'lint', 'cases', 'probes']));
     expect((b.basis ?? []).length).toBe(6);
     console.log(`[step E] stored: ${b.engine!.written}/${b.engine!.units} written, ${b.engine!.callsUsed} model calls, checks ${JSON.stringify(b.engine!.checks)}, not run ${JSON.stringify(b.engine!.notRun)}, elapsedMs ${b.elapsedMs}`);
   });
@@ -205,7 +205,16 @@ test('a function the model declines stays a stub: the generation is partial, wit
 });
 
 test('a program the engine cannot scaffold runs the single call, with the note on the screen and on record', async ({ page }) => {
-  const SOURCE = "REPORT z_flat.\nPARAMETERS p_matnr TYPE matnr.\nSELECT SINGLE maktx FROM makt INTO @DATA(lv_text) WHERE matnr = @p_matnr.\nWRITE: / lv_text.\n";
+  // No routine and no event block: nothing to anchor a function to (the planner refuses).
+  const SOURCE = `REPORT z_flat.
+PARAMETERS p_ebeln TYPE ebeln OBLIGATORY.
+DATA lv_amount TYPE p LENGTH 8 DECIMALS 2.
+SELECT SINGLE netwr FROM ekko INTO lv_amount WHERE ebeln = p_ebeln.
+IF sy-subrc <> 0.
+  MESSAGE 'Purchase order not found' TYPE 'E'.
+ENDIF.
+WRITE: / 'Checked', p_ebeln, lv_amount.
+`;
   const account = await seed('tf-engine-fallback', SOURCE, 'Z_FLAT');
   await keyAvailable(page);
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -219,10 +228,25 @@ test('a program the engine cannot scaffold runs the single call, with the note o
     ],
     tests: { config: 'export default {};', spec: 'test("a", () => {});' },
   };
-  await page.route('**/api/gemini', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ text: JSON.stringify(PACKAGE) }) }));
-  const screen = await openAndGenerate(page, account);
-  await expect(screen).toHaveAttribute('data-generation-path', 'single-call', { timeout: 60_000 });
-  await expect(screen.locator('[data-generation-stage="facts"] [data-generation-stage-detail]')).toContainText('Generated in one model call');
+  // The contract decides the track; the stub answers in the shape the prompt asked for.
+  const RAP = {
+    files: [
+      { path: 'src/zcl_demo_rap_behavior.clas.abap', content: 'CLASS zcl_demo_rap_behavior DEFINITION. ENDCLASS.' },
+      { path: 'src/zcl_demo_rap_behavior.clas.xml', content: '<xml/>' },
+      { path: 'src/z_demo_rap_ddls.ddls.asddls', content: 'define view entity Z_DEMO as select from ekko { key ebeln }' },
+      { path: 'src/z_demo_rap_bdef.bdef.asbdef', content: 'managed;' },
+      { path: 'src/z_demo_rap_srvd.srvd.assrvd', content: 'define service Z_DEMO { }' },
+      { path: 'src/z_demo_rap_srvb.srvb.assrvb', content: '<srvb/>' },
+    ],
+    tests: { config: '', spec: 'CLASS ltc DEFINITION FOR TESTING. ENDCLASS.' },
+  };
+  await page.route('**/api/gemini', (route) => {
+    const prompt = String((route.request().postDataJSON() as { prompt?: string }).prompt ?? '');
+    const pkg = prompt.includes('SAP RAP') ? RAP : PACKAGE;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ text: JSON.stringify(pkg) }) });
+  });
+  // The answer comes back at once, so the screen is short-lived: the note is read on the result and the record.
+  await openAndGenerate(page, account);
   await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 120_000 });
   await expect(page.locator('[data-built-on="single-call"] [data-single-call-note]')).toContainText('the engine could not build a scaffold for this program');
   const stored = (await adminGetDoc('projects', account.projectId)) as Stored;

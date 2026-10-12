@@ -55,7 +55,7 @@ async function seedProject(id: string, uid: string) {
 }
 
 async function tokenOf(request: APIRequestContext, projectId: string): Promise<string> {
-  const res = await request.get(`/api/projects/${projectId}/contract`, { headers: headers(owner.token) });
+  const res = await request.get(`/api/projects/${projectId}/contract?for=generation`, { headers: headers(owner.token) });
   expect(res.status(), await res.text()).toBe(200);
   const body = await res.json();
   expect(body.generation?.token).toMatch(/^[0-9a-f]{64}$/);

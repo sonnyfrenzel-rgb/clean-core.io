@@ -165,7 +165,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
       1,
       bundleFills(fillUnits, { track: req.track, program: plan.program, context: req.contextText, unitsPerCall: plan.stats.unitsPerCall }).length,
     );
-    const rows: UnitRow[] = plan.units
+    // The functions in plan order, the main path last — it is filled last (§8.3) and the mockup lists it so.
+    const rows: UnitRow[] = [...plan.units.filter((u) => u.kind !== 'orchestrator'), ...plan.units.filter((u) => u.kind === 'orchestrator')]
       .filter((u) => regionIds.has(u.id))
       .map((u) => ({
         unitId: u.id,

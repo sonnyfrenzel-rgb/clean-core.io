@@ -1112,7 +1112,7 @@ async function verifyCandidateResponse(input: {
     else suiteStdout = outcome.stdout;
     if (enginePlan && !buildError) {
       const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
-      const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: [] });
+      const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns, engine: inputs.engine });
       if (pass.kind === 'ran') engineStdout = pass.stdout;
       else engineReason = pass.kind === 'build-error' ? `The engine pass did not compile: ${pass.message}` : pass.reason;
     }
