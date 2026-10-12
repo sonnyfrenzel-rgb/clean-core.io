@@ -2,6 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import {
   REPAIR_DRAFT_COLLECTION,
+  buildGenerationDraft,
   buildRepairDraft,
   decideAdoption,
   isIntactRepairDraft,
@@ -56,6 +57,23 @@ export async function proposeRepairDraft(
 ): Promise<ProposeOutcome> {
   const projectRef = db.collection('projects').doc(args.projectId);
   const body = (args.body && typeof args.body === 'object' ? args.body : {}) as Record<string, unknown>;
+  // 3.0.12 — a generation candidate: the whole package, for the runner's
+  // checks before it is stored. Only the owner's project; never a chain.
+  const target = body.target as { kind?: unknown } | undefined;
+  if (target && typeof target === 'object' && target.kind === 'generation') {
+    return db.runTransaction(async (tx): Promise<ProposeOutcome> => {
+      const snap = await tx.get(projectRef);
+      if (!snap.exists) return NOT_FOUND;
+      const project = (snap.data() || {}) as Record<string, unknown>;
+      if (project.userId !== args.uid) return NOT_FOUND;
+      const built = buildGenerationDraft(body, project, { uid: args.uid, now: args.now, projectId: args.projectId });
+      if (!built.ok) return { status: built.status, code: built.code, error: built.error };
+      const ref = draftsOf(db, args.projectId).doc();
+      const draft: RepairDraft = { ...built.draft, draftId: ref.id };
+      tx.create(ref, draft as unknown as Record<string, unknown>);
+      return { status: 200, draft };
+    });
+  }
   const parentDraftId = typeof body.parentDraftId === 'string' && body.parentDraftId ? body.parentDraftId : null;
   // Checked before the id forms any document path (SEC-2026-514).
   if (parentDraftId !== null && !isFirestoreId(parentDraftId)) {

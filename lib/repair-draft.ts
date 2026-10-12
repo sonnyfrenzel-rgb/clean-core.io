@@ -42,7 +42,19 @@ import { isTestRunReceipt, testRunSubject, type TestRunReceipt } from './test-re
  * specs call it directly.
  */
 
-export const REPAIR_DRAFT_VERSION = 1;
+/**
+ * 2 since 3.0.12 (the `generation` target). A draft's version is part of its
+ * digest, so a version-1 draft already on record stays intact and is read as
+ * what it is; new drafts are written as version 2.
+ */
+export const REPAIR_DRAFT_VERSION = 2;
+const READABLE_DRAFT_VERSIONS: readonly number[] = [1, 2];
+
+/**
+ * A generation candidate is one Firestore document as well (at most 1 MiB):
+ * its code and suite together stay under this, with room for the other fields.
+ */
+export const GENERATION_DRAFT_MAX_BYTES = 900 * 1024;
 
 /** Where drafts live. Not in `firestore.rules` — default deny, Admin SDK only. */
 export const REPAIR_DRAFT_COLLECTION = 'repairDrafts';
@@ -69,7 +81,16 @@ export interface RepairDraftParent {
 export type RepairDraftTarget =
   | { kind: 'package'; index: number; path: string }
   | { kind: 'module' }
-  | { kind: 'test' };
+  | { kind: 'test' }
+  /**
+   * 3.0.12 engine-led transformation (`docs/design/engine-led-transformation.md`
+   * §13.1): a whole generated package that is not stored yet, sent to the
+   * runner for its checks (`/api/run-tests` with `mode: 'verify'`). It has no
+   * parent stand — it descends from no stored code — and it is never adopted:
+   * a generation reaches the project only through the store of
+   * `/api/projects/{id}/contract`, against its generation token.
+   */
+  | { kind: 'generation' };
 
 export interface RepairDraft {
   v: number;
@@ -162,15 +183,19 @@ export function repairBaseDigests(project: { generatedCode?: unknown; testSuite?
   return candidateDigests(code, storedSuiteSource(project.testSuite));
 }
 
-export function computeDraftDigest(d: {
-  parent: RepairDraftParent;
-  parentDraftId: string | null;
-  codeDigest: string | null;
-  suiteDigest: string | null;
-}): string {
+export function computeDraftDigest(
+  d: {
+    parent: RepairDraftParent;
+    parentDraftId: string | null;
+    codeDigest: string | null;
+    suiteDigest: string | null;
+  },
+  /** The draft's own version — a stored version-1 draft is checked as version 1. */
+  version: number = REPAIR_DRAFT_VERSION,
+): string {
   return sha256Hex(
     JSON.stringify([
-      REPAIR_DRAFT_VERSION,
+      version,
       d.parent.runId,
       d.parent.codeDigest,
       d.parent.suiteDigest,
@@ -186,7 +211,9 @@ export function computeDraftDigest(d: {
 export function isIntactRepairDraft(value: unknown): value is RepairDraft {
   if (!isPlainObject(value)) return false;
   const d = value as Record<string, unknown>;
-  if (d.v !== REPAIR_DRAFT_VERSION) return false;
+  if (typeof d.v !== 'number' || !READABLE_DRAFT_VERSIONS.includes(d.v)) return false;
+  // A generation candidate exists only from version 2 on.
+  if (isPlainObject(d.target) && d.target.kind === 'generation' && d.v < 2) return false;
   if (typeof d.draftId !== 'string' || typeof d.projectId !== 'string') return false;
   if (typeof d.generatedCode !== 'string' || typeof d.suiteCode !== 'string') return false;
   if (typeof d.draftDigest !== 'string' || !isPlainObject(d.parent)) return false;
@@ -197,12 +224,15 @@ export function isIntactRepairDraft(value: unknown): value is RepairDraft {
   const now = candidateDigests(d.generatedCode, d.suiteCode);
   if (now.codeDigest !== d.codeDigest || now.suiteDigest !== d.suiteDigest) return false;
   return (
-    computeDraftDigest({
-      parent: parent as unknown as RepairDraftParent,
-      parentDraftId: d.parentDraftId as string | null,
-      codeDigest: now.codeDigest,
-      suiteDigest: now.suiteDigest,
-    }) === d.draftDigest
+    computeDraftDigest(
+      {
+        parent: parent as unknown as RepairDraftParent,
+        parentDraftId: d.parentDraftId as string | null,
+        codeDigest: now.codeDigest,
+        suiteDigest: now.suiteDigest,
+      },
+      d.v,
+    ) === d.draftDigest
   );
 }
 
@@ -237,6 +267,7 @@ function readTarget(value: unknown): RepairDraftTarget | null {
   if (!isPlainObject(value)) return null;
   if (value.kind === 'module') return { kind: 'module' };
   if (value.kind === 'test') return { kind: 'test' };
+  if (value.kind === 'generation') return { kind: 'generation' };
   if (
     value.kind === 'package' &&
     typeof value.index === 'number' &&
@@ -267,6 +298,9 @@ export function buildRepairDraft(
   if (!isPlainObject(body)) return refuse(400, 'malformed', 'A repair draft is an object.');
   const target = readTarget(body.target);
   if (!target) return refuse(400, 'malformed-target', 'target must be { kind: "package", index, path }, { kind: "module" } or { kind: "test" }.');
+  if (target.kind === 'generation') {
+    return refuse(400, 'malformed-target', 'A generation candidate is proposed whole (buildGenerationDraft), not as a repair of the stored code.');
+  }
   const content = body.content;
   if (typeof content !== 'string' || content.trim().length === 0) {
     return refuse(400, 'empty-repair', 'The repair is empty. Nothing was drafted.');
@@ -333,6 +367,129 @@ export function buildRepairDraft(
   };
 }
 
+/* -------------------------------------------------- generation candidates */
+
+/**
+ * Cuts a generation candidate (3.0.12): the whole package the engine-led
+ * transformation assembled — scaffold plus filled bodies — before it is
+ * stored, so the runner can check it (`/api/run-tests`, `mode: 'verify'`).
+ *
+ * Unlike a repair it is sent whole, because there is no stored stand it
+ * descends from; the runner still executes only what the server holds (this
+ * draft, by id). Its parent names the active run and no stand — the code,
+ * suite and case digests are null — and it can never be adopted
+ * (`decideAdoption`). Running it writes nothing onto the project.
+ */
+export function buildGenerationDraft(
+  body: unknown,
+  project: Record<string, unknown>,
+  actor: { uid: string; now: string; projectId: string },
+): { ok: true; draft: Omit<RepairDraft, 'draftId'> } | RepairDraftRefusal {
+  if (!isPlainObject(body)) return refuse(400, 'malformed', 'A generation candidate is an object.');
+  const code = body.generatedCode;
+  if (typeof code !== 'string' || code.trim().length === 0) {
+    return refuse(400, 'empty-candidate', 'The generation candidate holds no code. Nothing was drafted.');
+  }
+  if (!parseGeneratedPackage(code)) {
+    return refuse(400, 'not-a-package', 'A generation candidate is a multi-file package (a JSON list of { path, content }). Nothing was drafted.');
+  }
+  const suite = typeof body.suiteCode === 'string' ? body.suiteCode : '';
+  if (byteLength(code) + byteLength(suite) > GENERATION_DRAFT_MAX_BYTES) {
+    return refuse(413, 'too-large', 'The generation candidate is larger than one draft may hold. Nothing was drafted.');
+  }
+  const parent: RepairDraftParent = {
+    runId: projectRevision(project).runId,
+    codeDigest: null,
+    suiteDigest: null,
+    casesDigest: null,
+  };
+  const digests = candidateDigests(code, suite);
+  return {
+    ok: true,
+    draft: {
+      v: REPAIR_DRAFT_VERSION,
+      projectId: actor.projectId,
+      parent,
+      parentDraftId: null,
+      depth: 0,
+      target: { kind: 'generation' },
+      generatedCode: code,
+      suiteCode: suite,
+      codeDigest: digests.codeDigest,
+      suiteDigest: digests.suiteDigest,
+      draftDigest: computeDraftDigest({ parent, parentDraftId: null, ...digests }),
+      createdAt: actor.now,
+      createdBy: actor.uid,
+    },
+  };
+}
+
+/** The draft is a generation candidate (checked by `/api/run-tests` in verify mode only). */
+export function isGenerationDraft(draft: Pick<RepairDraft, 'target'>): boolean {
+  return draft.target?.kind === 'generation';
+}
+
+/* ------------------------------------------------- generation repair rounds */
+
+/**
+ * The repair loop of a generation (`docs/design/engine-led-transformation.md`
+ * §13.2), as a decision: after each check, either stop — and why — or send
+ * exactly the failing functions back, with their failure, for one more round.
+ *
+ * Stop rules, in this order:
+ *   1. `passed`      — nothing fails;
+ *   2. `no-progress` — the same functions fail with the same failures as before
+ *                      the last round (a round that fixed nothing);
+ *   3. `lease`       — the lease ended (expired, closed, refused);
+ *   4. `budget`      — no model call is left in the lease;
+ *   5. `round-limit` — two rounds are done.
+ * Failures in engine-written code never reach this decision (they are
+ * scaffold findings, §13.2 step 2); a unit the model declined or could not
+ * answer twice is not in `failing` (it stays a stub).
+ */
+export const GENERATION_REPAIR_MAX_ROUNDS = 2;
+export const GENERATION_REPAIR_FAILURE_MAX_CHARS = 2_000;
+
+export type GenerationRepairStop = 'passed' | 'no-progress' | 'lease' | 'budget' | 'round-limit';
+
+export type GenerationRepairDecision =
+  | { kind: 'stop'; reason: GenerationRepairStop; signature: string }
+  | { kind: 'repair'; round: 1 | 2; units: Array<{ unitId: string; failure: string }>; signature: string };
+
+/** One value for "these functions fail with these failures" — what "the same failures twice" compares. */
+export function failureSignature(failing: ReadonlyArray<{ unitId: string; failures: readonly string[] }>): string {
+  return failing
+    .map((f) => `${f.unitId}\u0000${[...f.failures].sort().join('\u0001')}`)
+    .sort()
+    .join('\u0002');
+}
+
+export function decideGenerationRepair(input: {
+  roundsDone: number;
+  failing: ReadonlyArray<{ unitId: string; failures: readonly string[] }>;
+  /** The signature before the last round, or null before round 1. */
+  previousSignature: string | null;
+  callsLeft: number;
+  leaseEnded: boolean;
+}): GenerationRepairDecision {
+  const signature = failureSignature(input.failing);
+  if (input.failing.length === 0) return { kind: 'stop', reason: 'passed', signature };
+  if (input.previousSignature !== null && signature === input.previousSignature) return { kind: 'stop', reason: 'no-progress', signature };
+  if (input.leaseEnded) return { kind: 'stop', reason: 'lease', signature };
+  if (input.callsLeft <= 0) return { kind: 'stop', reason: 'budget', signature };
+  if (input.roundsDone >= GENERATION_REPAIR_MAX_ROUNDS) return { kind: 'stop', reason: 'round-limit', signature };
+  const failure = (f: readonly string[]) => {
+    const text = f.join('\n');
+    return text.length > GENERATION_REPAIR_FAILURE_MAX_CHARS ? `${text.slice(0, GENERATION_REPAIR_FAILURE_MAX_CHARS - 1)}…` : text;
+  };
+  return {
+    kind: 'repair',
+    round: (input.roundsDone + 1) as 1 | 2,
+    units: input.failing.map((f) => ({ unitId: f.unitId, failure: failure(f.failures) })),
+    signature,
+  };
+}
+
 /* ------------------------------------------------------------------ adopt */
 
 export interface AdoptRepairBody {
@@ -378,6 +535,13 @@ export function decideAdoption(
   const draft = stored.draft;
   if (!isIntactRepairDraft(draft) || draft.draftId !== body.draftId) {
     return refuse(409, 'draft-unreadable', `Draft ${body.draftId} could not be read as an intact repair draft. Nothing was adopted.`);
+  }
+  if (draft.target.kind === 'generation') {
+    return refuse(
+      409,
+      'generation-not-adoptable',
+      `Draft ${draft.draftId} is a generation candidate checked before storing. A generation is stored with its generation token, never adopted; nothing was adopted.`,
+    );
   }
   if (draft.draftDigest !== body.expectedDraftDigest) {
     return refuse(409, 'draft-mismatch', `Draft ${draft.draftId} is not the draft you saw run. Nothing was adopted.`);
