@@ -10,6 +10,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.11] — 2026-10-12
+
+Every view opens with what the program is for, the documentation keeps rules apart that differ,
+and a large program no longer freezes the page — after an external review of a real CO case.
+
+### What everyone notices
+
+- **What the program is for comes first** (ADR-098). Business, Analyze, Documentation and
+  Management open with one shared summary built from what the engine reads: the business objects
+  behind the tables, the selection screen's own texts, the values fixed in the code, what it
+  produces, and whether it posts or changes data in SAP. Purpose, then what it changes, the result
+  and who starts it; reads, rules and limits one level down. A model's wording, or the program's
+  own headed header comment (*Author's claim*), stands first only when it contradicts none of those
+  facts; the engine's sentence stays underneath. Management adds what the decision has to cover,
+  with the open rules counted from the rule register.
+- **A large program no longer freezes the page.** The process map, its summary and the phone's
+  narrower layout are drawn in a background worker; the page stays usable and says it is drawing
+  the map until it arrives. A program's map is laid out once per page, not once per view.
+- **Reopening a project:** a one-line intro and the seven tools stand at the top of the Business
+  view (ADR-099; a "Tools" menu on a phone). "Next step" says it is working the step out instead of
+  standing empty, and "First insights" never stays on "Reading …".
+- **Standard fit moves to the IT view** (ADR-096). For a program without SAP catalog successors it
+  repeated "no catalog hit" once per rule group; the rules, the target's SAP pattern and the
+  distance to standard are already on the page. Old links lead to IT.
+- **One name for the score:** Clean Core Score everywhere; a score that was not computed says so
+  instead of "0 / 100".
+
+### Documentation and delivery
+
+- **Rules that differ are never folded** (ADR-097). Rules at different places stay separate entries,
+  even with word-for-word identical sentences; sentences that only describe ABAP mechanics stand in
+  the technical appendix.
+- **The main path follows the order a run takes**, in the process documentation and in the business
+  SOP: alternatives before a shared step side by side, a check inside its branch, an optional step
+  marked as optional.
+- **An absence is only stated when the code rules it out.** While dynamic reads or calls are
+  unresolved, the documentation no longer says the program does not reconcile against the ledger,
+  send mail or ask for approval.
+- **The limit line names the business object of each master data table** ("Cost center master
+  data (CSKS)"), not a generic "master and credit data".
+- **Scope items are checked against SAP's titles**, each with a public SAP Help source; a scope item
+  named for another area reads *mismatched*, not *not verified*.
+- **The delivery package's STATUS.md** tells five rule states apart — not detected, not read, open,
+  approved, changed on purpose — and no longer says the process was not reconstructed when it was.
+  A **rule register** (`docs/rule-register.md` and `.csv`) carries every rule from current meaning
+  to proposal, decision, implementation and test. The data mode is no longer guessed: it reads
+  "not recorded — supplied by the caller" unless a run recorded it.
+
+### Tests
+
+- Server-free specs for the rule fold, the main path, the shared summary and its fact check, the
+  rule register and its CSV, the master data wording, the scope-item check and the reading worker;
+  rendered specs for the reopened workspace, the Business tool bar and a responsive page while a
+  slow map is drawn.
+
 ## [v3.0.10] — 2026-10-11
 
 Analyze leads with the score and what moves it, a failed test run can be closed honestly, and the

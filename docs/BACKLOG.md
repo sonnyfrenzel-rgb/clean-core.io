@@ -3,6 +3,18 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 12.10.2026 — 3.0.11 released
+
+**Built (main on Sonny's go, 12.10.2026):** the v3.0.10 router patch live after a byte-identity proof on 793
+benchmark files; the CO review's own errors F01, F02, F03 (limit line), F10, F13, F16, F17 and the "In short"
+row — one business text model for Business, Analyze, Documentation and Management (ADR-098), rules at different
+places never folded (ADR-097), the rule register; the map, its summary and the phone layout in a Web Worker
+(the CO project froze the Documentation tool); the reopened workspace and a tool bar at the top of Business
+(ADR-099); Standard fit in IT (ADR-096); SEC-2026-790. CHANGELOG has the details.
+
+**Open:** F03's second half; the error-boundary handlers still stand at the end of the main path; a program
+decision whose condition sits only on its flows is not marked optional in the SOP; 3.0.12 next.
+
 ## Session 11.10.2026 (evening) — 3.0.10 released
 
 **Built (main on Sonny's go, 11.10.2026):** the 3.0.7 leftovers (Analyze score hero and declutter wave 2,
