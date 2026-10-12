@@ -86,7 +86,7 @@ import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAsses
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
 import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
-import { ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-suite';
+import { ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-contract-shape';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 

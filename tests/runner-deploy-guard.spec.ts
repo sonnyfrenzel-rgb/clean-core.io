@@ -138,7 +138,9 @@ test.describe('the runner image', () => {
       'lib/google-id-token.ts',
       'lib/sandbox-module-guard.ts',
       'lib/test-sandbox/core.ts',
-      // 3.0.12: the engine pass — the runtime (a generated string) and the suite derivation, no app code.
+      // 3.0.12: the engine pass — the contract's shape (import-free), the runtime (a generated string)
+      // and the suite derivation, no app code.
+      'lib/test-sandbox/engine-contract-shape.ts',
       'lib/test-sandbox/engine-runtime.ts',
       'lib/test-sandbox/engine-suite.ts',
       // 3.0.10: the recording `express` fake the invariant tests run through — plain data, no app code.

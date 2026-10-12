@@ -44,7 +44,9 @@
  * Pure: types and the sentences. No I/O.
  */
 
-export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, callContractPresence } from './test-sandbox/engine-suite';
+// From the import-free shape module, not from engine-suite: the Testing page
+// reads this module in the browser, and engine-suite needs node:crypto.
+export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, callContractPresence } from './test-sandbox/engine-contract-shape';
 
 /** A value a case puts into a request field. */
 export type CallValue =
