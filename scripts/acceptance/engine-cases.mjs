@@ -17,17 +17,19 @@
  * writes `engine-cases-report.json`: per case Passed, Failed or Not run, per
  * example the evidence.
  *
- * It executes through the acceptance harness's sandbox (`lib/sandbox.mjs`) and
- * under its rule: a package runs only when the platform denies the child
- * network access, or when the operator states it is a self-written fixture.
+ * It executes through the acceptance harness's sandbox (`lib/sandbox.mjs`): the
+ * sandboxed executor only calls the contract and reports its answers, and the
+ * verdicts are given in this process, which never imports the package. Same
+ * rule: a package runs only when the platform denies the child network access,
+ * or when the operator states it is a self-written fixture.
  * Otherwise every case reads Not run, with the reason. Never installs, never
  * runs npm scripts.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { copyToTemp, decideExecution, removeTemp, runChild } from './lib/sandbox.mjs';
-import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT } from './child/engine-cases-core.mjs';
+import { copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
+import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT, judgeEngineCase } from './child/engine-cases-core.mjs';
 
 export { NOT_RUN_NO_CONTRACT };
 
@@ -74,21 +76,37 @@ export async function runEngineCases(opts) {
   } else {
     const root = copyToTemp(pkg);
     try {
-      const job = { module: contractPath, cases: cases.map((c) => ({ id: c.id, examples: c.examples ?? [] })) };
-      const run = await runChild({ root, job, nodeEnv: 'test', timeoutMs: opts.timeout, flag: decision.flag, entry: 'engine-cases-child.mjs' });
+      // The executor collects the contract's answers in the sandbox; the verdicts are given here,
+      // by the same runtime's judge, against the cases this process read itself.
+      const ex = startExecutor({ root, nodeEnv: 'test', timeoutMs: opts.timeout, flag: decision.flag });
       report.sandbox.executed = true;
-      const result = run.result;
-      if (run.timedOut) report.cases = allNotRun(cases, `Not run — the package did not finish within ${opts.timeout} ms`);
-      else if (!result) report.cases = allNotRun(cases, `Not run — the child gave no result${run.stderrTail ? ` (${run.stderrTail})` : ''}`);
-      else if (result.notRunnable || result.error) report.cases = allNotRun(cases, `Not run — ${result.notRunnable ?? result.error}`);
+      const judged = [];
+      let stopped = null;
+      try {
+        const loaded = await ex.request('engine-load', { module: contractPath });
+        if (!loaded || typeof loaded !== 'object' || typeof loaded.failure === 'string' || loaded.transportError) {
+          stopped = String(loaded?.failure ?? loaded?.transportError ?? 'the executor did not load the contract module');
+        } else {
+          for (const c of cases) {
+            const kase = { id: c.id, examples: c.examples ?? [] };
+            const answer = await ex.request('engine-case', { kase });
+            if (!answer || typeof answer !== 'object' || !('collected' in answer)) {
+              stopped = String(answer?.transportError ?? 'the executor reported nothing for a case');
+              break;
+            }
+            const r = judgeEngineCase(kase, answer.collected);
+            judged.push({ id: c.id, name: c.name, status: r.status, ...(r.reason ? { reason: r.reason } : {}), examples: r.examples });
+          }
+        }
+      } catch (err) {
+        stopped = String(err && err.message ? err.message : err);
+      }
+      const end = await ex.close();
+      if (end.timedOut) report.cases = allNotRun(cases, `Not run — the package did not finish within ${opts.timeout} ms`);
+      else if (end.poisoned) report.cases = allNotRun(cases, `Not run — the run was discarded: ${end.poisoned}`);
+      else if (stopped) report.cases = allNotRun(cases, `Not run — ${stopped}${end.stderrTail ? ` (${end.stderrTail})` : ''}`);
       else {
-        // Judged inside the sandbox by the same runtime the isolated test runner executes.
-        const byId = new Map((result.cases ?? []).map((c) => [c.id, c]));
-        report.cases = cases.map((c) => {
-          const r = byId.get(c.id);
-          if (!r) return { id: c.id, name: c.name, status: 'Not run', reason: 'Not run — the child reported nothing for this case', examples: [] };
-          return { id: c.id, name: c.name, status: r.status, ...(r.reason ? { reason: r.reason } : {}), examples: r.examples ?? [] };
-        });
+        report.cases = judged;
         report.contract.present = !report.cases.some((c) => String(c.reason ?? '').startsWith(NOT_RUN_NO_CONTRACT));
       }
     } finally {

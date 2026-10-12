@@ -108,6 +108,44 @@ test.describe('failure-pattern catalogue', () => {
   });
 });
 
+test.describe('the static scan is bounded and says where it stopped (QA 8a482e2ae605)', () => {
+  let dir = '';
+  test.beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-scan-'));
+    // 8 levels deep, a source file on every level; 12 files side by side at the top
+    let deep = dir;
+    for (let i = 0; i < 8; i++) {
+      deep = path.join(deep, `d${i}`);
+      fs.mkdirSync(deep);
+      fs.writeFileSync(path.join(deep, `level${i}.mjs`), 'export const x = parseInt("1", 10);\n');
+    }
+    for (let i = 0; i < 12; i++) fs.writeFileSync(path.join(dir, `f${i}.mjs`), `export const v${i} = ${'1'.repeat(1000)};\n`);
+  });
+  test.afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  test('within the bounds it reads everything and reports no limit', async () => {
+    const { staticScan } = await import('../scripts/acceptance/lib/static-scan.mjs');
+    const r = staticScan(dir);
+    expect(r.files).toBe(20);
+    expect(r.limits).toEqual([]);
+  });
+
+  test('depth, file count, bytes and entries each stop the walk, and each is reported', async () => {
+    const { staticScan, SCAN_LIMITS } = await import('../scripts/acceptance/lib/static-scan.mjs');
+    expect(SCAN_LIMITS.maxDepth).toBeGreaterThan(0);
+    const depth = staticScan(dir, { maxDepth: 3 });
+    expect(depth.limits).toEqual(['directories deeper than 3 levels were not read']);
+    expect(depth.files).toBe(12 + 3);
+    const count = staticScan(dir, { maxFiles: 5 });
+    expect(count.files).toBe(5);
+    expect(count.limits).toContain('stopped at 5 source files');
+    const bytes = staticScan(dir, { maxBytes: 3_000 });
+    expect(bytes.limits.join(' ')).toMatch(/stopped after reading \d+ bytes \(limit 3000\)/);
+    const entries = staticScan(dir, { maxEntries: 4 });
+    expect(entries.limits).toEqual(['stopped after 4 directory entries']);
+  });
+});
+
 test.describe('acceptance harness on fixtures', () => {
   test.describe.configure({ timeout: 300_000 });
 
@@ -173,6 +211,29 @@ test.describe('acceptance harness on fixtures', () => {
     expect(report.patterns['FP-MEAN-05'].status).toBe('not-applicable');
     expect(evidence(report, 'FP-MEAN-05')).toContain('the package has no recalculation');
     expect(fs.existsSync(path.join(FIXTURES, 'unresolved-package', 'node_modules')), 'the harness installed something').toBe(false);
+  });
+
+  test('a package cannot forge its verdicts: stdout is not read, the job is not in its environment, a stray answer discards the run (QA e1478690996c)', () => {
+    // The hostile fixture prints fake result lines, looks for the job in its environment, rewrites
+    // whatever result line passes its stdout, and writes forged answers to file descriptors 3–5.
+    const { report } = runHarness('hostile-package', ['--trusted-fixture']);
+    expect(report.sandbox.executed, report.sandbox.reason).toBe(true);
+    // the probe it fails is judged in the harness process from what select() answered
+    expect(report.patterns['FP-GUARD-04'].status).toBe('fail');
+    expect(evidence(report, 'FP-GUARD-04')).toContain('answered as a success');
+    // the forged answer on the executor channel is caught: the whole run is discarded, never a pass
+    expect(report.patterns['FP-GUARD-03'].status).toBe('not-runnable');
+    expect(evidence(report, 'FP-GUARD-03')).toContain('the run was discarded: an answer on the executor channel that the harness did not ask for');
+    for (const [id, p] of Object.entries(report.patterns)) expect(p.evidence.join(' '), id).not.toContain('forged');
+  });
+
+  test('fixture comments describe the fixture; they do not instruct a reviewer (QA 930684d8dd4d)', () => {
+    const base = path.join(ROOT, 'tests', 'fixtures');
+    const files = (fs.readdirSync(base, { recursive: true }) as string[]).filter((rel) => /\.(m?js|ts)$/.test(rel));
+    expect(files.length).toBeGreaterThan(5);
+    for (const rel of files) {
+      expect(fs.readFileSync(path.join(base, rel), 'utf8'), rel).not.toMatch(/do not fix/i);
+    }
   });
 
   test('without --trusted-fixture a package runs only where the platform denies network', () => {

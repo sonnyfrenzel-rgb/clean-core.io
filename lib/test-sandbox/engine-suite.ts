@@ -12,8 +12,9 @@ import type { SandboxFile } from './files';
  * (`call`). They run against the call contract the generated code exports
  * (`srv/engine-contract.*`: CONTRACT, validate, simulate, getRun, compute), with
  * no model-written assertion: a second suite, written here, deterministically,
- * runs every case through the shared runtime (`./engine-runtime.ts`, generated
- * from `scripts/acceptance/child/engine-cases-core.mjs`).
+ * collects every case's answers through the shared runtime (`./engine-runtime.ts`,
+ * generated from `scripts/acceptance/child/engine-cases-core.mjs`), and the app
+ * judges them with the same runtime outside the run (`engineVerdicts`).
  *
  * The app and the runner build the same inputs from the same two values — the
  * cases JSON and the contract module path — so the app can check the runner's
@@ -44,28 +45,30 @@ const sha256Hex = (text: string) => createHash('sha256').update(text, 'utf8').di
 /**
  * The suite of the engine pass. It imports the contract module statically (so
  * the bundler includes it like any generated file), the runtime and the cases,
- * and writes one `node:test` test per case: Passed, Failed with the evidence,
- * or skipped with the reason it could not run.
+ * and writes one `node:test` test per case that only COLLECTS: it calls the
+ * contract and prints what it answered as one outcome line
+ * (`ENGINE_OUTCOME_MARKER` + `{ id, collected }`). It gives no verdict.
+ *
+ * The generated code runs in this same process and can print anything, a
+ * passing TAP line included — so nothing it prints is a verdict. The app judges
+ * the outcome lines against the cases it holds itself (`engineVerdicts` in
+ * `lib/engine-case-run.ts`), and a case reported more than once is not judged
+ * at all. What the code can still do is choose its answers, which is what is
+ * being tested.
  */
 export function engineSuiteCode(contractModule: string): string {
   const spec = `./${contractModule}`;
   return `// The engine pass — written by Clean-Core.io, not by a model (roadmap 3.0.12).
 import { test } from 'node:test';
 import * as contract from ${JSON.stringify(spec)};
-import { createEngineState, runEngineCase } from ${JSON.stringify(`./${ENGINE_RUNTIME_PATH}`)};
+import { ENGINE_OUTCOME_MARKER, collectEngineCase, createEngineState } from ${JSON.stringify(`./${ENGINE_RUNTIME_PATH}`)};
 import data from ${JSON.stringify(`./${ENGINE_CASES_PATH}`)};
 
 const state = createEngineState();
 for (const kase of (data as { cases: Array<{ id: string; name?: string; examples: unknown[] }> }).cases) {
-  test(\`\${kase.id}: ${ENGINE_CONTRACT_MARKER} \${String(kase.name ?? '').slice(0, 120)}\`, async (t: { skip(reason: string): void }) => {
-    const r = await runEngineCase(contract, kase, state);
-    if (r.status === 'Not run') {
-      t.skip(String(r.reason ?? 'not run'));
-      return;
-    }
-    if (r.status === 'Failed') {
-      throw new Error(r.examples.filter((e: { status: string }) => e.status === 'fail').map((e: { input: string; evidence: string }) => \`\${e.input}: \${e.evidence}\`).join(' | '));
-    }
+  test(\`\${kase.id}: ${ENGINE_CONTRACT_MARKER} \${String(kase.name ?? '').slice(0, 120)}\`, async () => {
+    const collected = await collectEngineCase(contract, kase, state);
+    process.stdout.write(\`\\n\${ENGINE_OUTCOME_MARKER}\${JSON.stringify({ id: kase.id, collected })}\\n\`);
   });
 }
 `;

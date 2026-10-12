@@ -1,7 +1,11 @@
 /**
  * The part of the harness that only reads. It never imports, requires or
- * evaluates anything from the package, so it is safe on any package, including
- * the ones the sandbox refuses to execute.
+ * evaluates anything from the package, never follows a symlink, and its walk is
+ * bounded — directory depth, directory entries, source files, bytes read — so a
+ * package the sandbox refuses to execute can still be scanned. When a bound is
+ * reached the scan stops there and says so in `limits`: the result then covers
+ * only the files it reached. It is not hardened beyond that (a regex over a
+ * hostile file costs what it costs).
  *
  * These are acceptance-time signals, labelled with the same pattern IDs as the
  * catalogue, and deliberately few: the product's generation-time lints
@@ -16,17 +20,57 @@ const SOURCE_EXT = new Set(['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs', '.abap
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage']);
 const MAX_FILE = 2_000_000;
 
-function walk(dir, base = dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isSymbolicLink()) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) walk(full, base, out);
-    } else if (SOURCE_EXT.has(path.extname(entry.name).toLowerCase())) {
-      out.push(path.relative(base, full).split(path.sep).join('/'));
+/** The bounds of one scan. A generated delivery package is far below every one of them. */
+export const SCAN_LIMITS = Object.freeze({
+  maxDepth: 12,
+  maxEntries: 50_000,
+  maxFiles: 2_000,
+  maxBytes: 40_000_000,
+});
+
+/**
+ * The source files under `base`, breadth first, within `limits`. Returns
+ * `{ files, limits: [text] }`; `limits` names every bound that cut the walk.
+ */
+function walk(base, limits) {
+  const files = [];
+  const hit = new Set();
+  let entries = 0;
+  const queue = [{ dir: base, depth: 0 }];
+  while (queue.length > 0) {
+    const { dir, depth } = queue.shift();
+    let handle;
+    try {
+      handle = fs.opendirSync(dir);
+    } catch {
+      continue;
+    }
+    try {
+      let entry;
+      while ((entry = handle.readSync()) !== null) {
+        if (++entries > limits.maxEntries) {
+          hit.add(`stopped after ${limits.maxEntries} directory entries`);
+          return { files, limits: [...hit] };
+        }
+        if (entry.isSymbolicLink()) continue;
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (SKIP_DIRS.has(entry.name)) continue;
+          if (depth + 1 > limits.maxDepth) hit.add(`directories deeper than ${limits.maxDepth} levels were not read`);
+          else queue.push({ dir: full, depth: depth + 1 });
+        } else if (SOURCE_EXT.has(path.extname(entry.name).toLowerCase())) {
+          if (files.length >= limits.maxFiles) {
+            hit.add(`stopped at ${limits.maxFiles} source files`);
+            return { files, limits: [...hit] };
+          }
+          files.push(path.relative(base, full).split(path.sep).join('/'));
+        }
+      }
+    } finally {
+      handle.closeSync();
     }
   }
-  return out;
+  return { files, limits: [...hit] };
 }
 
 function lineOf(text, index) {
@@ -117,14 +161,31 @@ function importedPackages(text) {
   return names;
 }
 
-/** Scan a package directory. Returns `[{ check, pattern, file, line, excerpt, note }]`. */
-export function staticScan(pkgDir) {
+/**
+ * Scan a package directory. Returns `{ files, findings: [{ check, pattern, file, line, excerpt, note }], limits }`;
+ * `limits` lists every bound that cut the scan (empty when it read everything).
+ * `bounds` overrides any of `SCAN_LIMITS`.
+ *
+ * @param {string} pkgDir
+ * @param {{ maxDepth?: number, maxEntries?: number, maxFiles?: number, maxBytes?: number }} [bounds]
+ */
+export function staticScan(pkgDir, bounds = {}) {
   const findings = [];
-  const files = walk(pkgDir);
+  const walked = walk(pkgDir, { ...SCAN_LIMITS, ...bounds });
+  const files = walked.files;
+  const limits = [...walked.limits];
+  const maxBytes = bounds.maxBytes ?? SCAN_LIMITS.maxBytes;
+  let bytes = 0;
   const imported = new Set();
   for (const rel of files) {
     const full = path.join(pkgDir, rel);
-    if (fs.statSync(full).size > MAX_FILE) continue;
+    const size = fs.statSync(full).size;
+    if (size > MAX_FILE) continue;
+    if (bytes + size > maxBytes) {
+      limits.push(`stopped after reading ${bytes} bytes (limit ${maxBytes})`);
+      break;
+    }
+    bytes += size;
     const text = fs.readFileSync(full, 'utf8');
     if (!rel.endsWith('.abap')) for (const name of importedPackages(text)) imported.add(name);
     for (const check of CHECKS) {
@@ -150,5 +211,5 @@ export function staticScan(pkgDir) {
       }
     }
   }
-  return { files: files.length, findings };
+  return { files: files.length, findings, limits };
 }
