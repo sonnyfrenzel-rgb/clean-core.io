@@ -78,6 +78,7 @@ import {
   firstLookOutcomes,
   firstLookOpenTitle,
   firstLookReading,
+  firstLookUnreadable,
   firstLookConfirmRules,
   firstLookOf,
 } from '@/lib/workspace-messages';
@@ -275,9 +276,18 @@ export default function FirstLook({
   onReviewRules,
   onSettled,
   questions = null,
+  onReadingFailed,
 }: {
   project: Project | null;
   projectId: string;
+  /**
+   * Told once when the source could not be read here (a stage threw). The page
+   * around this card waits for the reading before it builds the map and the
+   * next step, and must not wait for one that will never come (owner,
+   * 12.10.2026: a reopened project stood on "Reading …" with an empty
+   * "Next step" above it).
+   */
+  onReadingFailed?: () => void;
   /**
    * False on a second visit — *"A second visit has no build-up"* (§5.2).
    * The four calls still run in the same order; only the staged reveal is gone,
@@ -361,6 +371,20 @@ export default function FirstLook({
   /** The naming wait of its own (`NAMING_WAIT_MS`) is over — counts only when nothing animates. */
   const [namingWaited, setNamingWaited] = useState(false);
   const [rules, setRules] = useState<BusinessRuleSet | null>(null);
+  /**
+   * A stage that threw. Each stage runs after a paint, outside React's render,
+   * so a throw there used to leave its state `null` for good and the card on
+   * "Reading <file>." for as long as the page stood (owner, 12.10.2026). Now
+   * the card says the reading did not succeed, which is finite and true.
+   */
+  const [stageFailed, setStageFailed] = useState(false);
+  const guarded = useCallback((work: () => void) => {
+    try {
+      work();
+    } catch {
+      setStageFailed(true);
+    }
+  }, []);
 
   /**
    * Every stage above holds a reading of *one* source, and nothing in them says
@@ -386,20 +410,21 @@ export default function FirstLook({
     setNamingWaited(false);
     setRules(null);
     setSkipped(false);
+    setStageFailed(false);
   }
 
   /* ---- stage 1's work ---- */
   useEffect(() => {
     if (!hasSource) return;
-    return afterPaint(() => setAccess(readTableAccess(source)));
-  }, [source, hasSource]);
+    return afterPaint(() => guarded(() => setAccess(readTableAccess(source))));
+  }, [source, hasSource, guarded]);
   const tables = useMemo(() => (access ? tablesOf(access) : null), [access]);
 
   /* ---- stage 2's work, once stage 1 has been painted ---- */
   useEffect(() => {
     if (!hasSource || tables === null) return;
-    return afterPaint(() => setProcess(readProcess(source)));
-  }, [source, hasSource, tables]);
+    return afterPaint(() => guarded(() => setProcess(readProcess(source))));
+  }, [source, hasSource, tables, guarded]);
 
   /* ---- stage 3's work: the stored naming of roadmap 2.4, or none ---- */
   useEffect(() => {
@@ -421,8 +446,8 @@ export default function FirstLook({
   /* ---- stage 4's work ---- */
   useEffect(() => {
     if (!hasSource || !process) return;
-    return afterPaint(() => setRules(readRules(source, process)));
-  }, [source, hasSource, process]);
+    return afterPaint(() => guarded(() => setRules(readRules(source, process))));
+  }, [source, hasSource, process, guarded]);
 
   /**
    * "The model does not hold up the build-up" (mockup s0, DESIGN.md §5.2): the stored naming
@@ -460,35 +485,45 @@ export default function FirstLook({
     ];
   }, [hasSource, project, tables, process, named]);
 
-  const result = useMemo<Result | null>(() => {
-    if (!hasSource || !process || !named || !rules || !access) return null;
-    const traceability = traceabilityOf(named);
-    const open = notDetermined(project);
-    return {
-      processName: processNameOf(rules),
-      traceability,
-      decisions: decisionLines(process.skeleton),
-      ruleCount: rules.rules.length,
-      open,
-      card: buildBusinessCard({
-        skeleton: process.skeleton,
-        ruleSet: rules,
-        dependencies: access,
+  // The end state is put together from the four readings; a throw here used to
+  // take the whole page down, and is now the same "could not be read" as a
+  // stage that threw (owner, 12.10.2026).
+  const built = useMemo<{ result: Result | null; failed: boolean }>(() => {
+    if (!hasSource || !process || !named || !rules || !access) return { result: null, failed: false };
+    try {
+      const traceability = traceabilityOf(named);
+      const open = notDetermined(project);
+      const result: Result = {
+        processName: processNameOf(rules),
         traceability,
+        decisions: decisionLines(process.skeleton),
+        ruleCount: rules.rules.length,
         open,
-        wording: plainWordingFor(source, process.skeleton),
-        inputs: programInputsOf(process.facts, (name) => humaniseField(name, plainContext(source))),
-      }),
-      steps: stepStrip(process.skeleton, source),
-      story: processStory(
-        process.skeleton,
-        source,
-        new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
-      ),
-      changes: processChanges(process.skeleton, source),
-      inShort: inShortOf(source, process, rules, project?.analysis),
-    };
+        card: buildBusinessCard({
+          skeleton: process.skeleton,
+          ruleSet: rules,
+          dependencies: access,
+          traceability,
+          open,
+          wording: plainWordingFor(source, process.skeleton),
+          inputs: programInputsOf(process.facts, (name) => humaniseField(name, plainContext(source))),
+        }),
+        steps: stepStrip(process.skeleton, source),
+        story: processStory(
+          process.skeleton,
+          source,
+          new Map(named.nodes.filter((n) => n.businessName).map((n) => [n.id, n.businessName as string])),
+        ),
+        changes: processChanges(process.skeleton, source),
+        inShort: inShortOf(source, process, rules, project?.analysis),
+      };
+      return { result, failed: false };
+    } catch {
+      return { result: null, failed: true };
+    }
   }, [hasSource, source, process, named, rules, access, project]);
+  const result = built.result;
+  const failed = stageFailed || built.failed;
 
   const finalStage = useMemo<FirstLookStage | null>(
     () =>
@@ -498,7 +533,7 @@ export default function FirstLook({
     [result, rules],
   );
 
-  const complete = !hasSource || result !== null;
+  const complete = !hasSource || result !== null || failed;
 
   /**
    * The process the build-up drew, kept in the end state (owner, 02.10.2026:
@@ -520,6 +555,9 @@ export default function FirstLook({
       tables,
     });
   }, [process, rules, tables, onReading]);
+  useEffect(() => {
+    if (failed) onReadingFailed?.();
+  }, [failed, onReadingFailed]);
 
   const skip = useCallback(() => setSkipped(true), []);
 
@@ -671,6 +709,25 @@ export default function FirstLook({
    * slow engine says what it is reading rather than drawing a progress bar.
    */
   const endStateOnly = reduced || skipped || !buildUp;
+
+  // A reading that did not succeed says so and stops (owner, 12.10.2026) —
+  // never "Reading <file>." for as long as the page stands. The analysis is
+  // not this card's: it is the Analyze tool's, from the signed run.
+  if (failed) {
+    return (
+      <>
+        <section data-first-look="failed">
+          <CcCard title={wt('firstLook.title')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
+            {lead}
+            <p role="status" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
+              {firstLookUnreadable(sourceName)}
+            </p>
+          </CcCard>
+        </section>
+        {live}
+      </>
+    );
+  }
 
   if (!complete && endStateOnly) {
     // `level={2}`: in Business this card is the first thing under the

@@ -137,7 +137,12 @@ export default function WorkspaceHub({
       >
         <div className="min-w-0 flex-1 basis-72">
           <h3 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">{wt('hub.nextLabel')}</h3>
-          {step === null ? null : step.kind === 'none' ? (
+          {/* Said while it is worked out, never an empty row (owner, 12.10.2026). */}
+          {step === null ? (
+            <p role="status" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
+              {wt('nextStep.pending')}
+            </p>
+          ) : step.kind === 'none' ? (
             <p className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">{wt('hub.nothingOpen')}</p>
           ) : step.kind === 'rules' ? (
             <>

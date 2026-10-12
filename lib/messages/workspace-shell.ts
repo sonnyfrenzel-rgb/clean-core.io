@@ -89,6 +89,9 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // While the start run is with the server: the analysis is the step, and it is
   // already happening (owner, 09.10.2026).
   'nextStep.running': 'The analysis is running. This step is done once the run is signed — there is nothing to press.',
+  // While the reading of the rules that decide the step has not landed: said,
+  // never an empty card under the title (owner, 12.10.2026).
+  'nextStep.pending': 'Working out the next step from the rules in the code…',
 } as const;
 
 /** "3 of 7 have something on record" — the folded status row of the Business view. */

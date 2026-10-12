@@ -526,6 +526,14 @@ export function firstLookReading(sourceName: string): string {
   return `Reading ${sourceName}.`;
 }
 
+/**
+ * FirstLook — the reading did not succeed. Finite and true, instead of
+ * "Reading <file>." for as long as the page stands (owner, 12.10.2026).
+ */
+export function firstLookUnreadable(sourceName: string): string {
+  return `${sourceName} could not be read here. The analysis of the signed run is in the Analyze tool.`;
+}
+
 /** FirstLook — the stage being worked on during the build-up. */
 export function firstLookReadingNext(stageLabel: string, sourceName: string): string {
   return `${stageLabel} — reading ${sourceName}.`;

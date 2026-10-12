@@ -373,6 +373,16 @@ export default function WorkspaceShell({
     view !== 'business' && firstLookReading === null,
   );
   const reading = firstLookReading ?? ownReading;
+  /**
+   * The first look could not read the source (a stage threw). The next step
+   * waits for the reading, and must not wait for one that will not come
+   * (owner, 12.10.2026: a reopened project stood on "Reading …" under an empty
+   * "Next step"). Tied to the source it failed on, so a new source is read again.
+   */
+  const legacySource = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const onReadingFailed = useCallback(() => setFailedSource(legacySource), [legacySource]);
+  const readingFailed = failedSource !== null && failedSource === legacySource;
   /** From the first look's picture of the main line to the whole map, right under it. */
   const openMap = useCallback(() => {
     document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -632,11 +642,13 @@ export default function WorkspaceShell({
   }, [mapSummary, ruleStates, processCount]);
   const businessStep = useMemo(() => {
     if (view !== 'business') return null;
-    const ready = !hasSource || !project?.activeRunId || (reading !== null && ruleStates !== null);
+    // A reading that failed decides as "no rules known": the phase step, never
+    // a card left waiting (owner, 12.10.2026).
+    const ready = !hasSource || !project?.activeRunId || readingFailed || (reading !== null && ruleStates !== null);
     if (!ready) return null;
     const status = reading ? rulesStatus(ruleStates, reading.ruleSet.rules.map((r) => r.id)) : null;
     return businessNextStep({ point: nextStep, rules: status, owner });
-  }, [view, hasSource, project?.activeRunId, reading, ruleStates, nextStep, owner]);
+  }, [view, hasSource, project?.activeRunId, reading, readingFailed, ruleStates, nextStep, owner]);
 
   // A tip that points at nothing is a claim: "Select the decision" exists only
   // where the source has one, and that is not known before the reading lands.
@@ -907,6 +919,10 @@ export default function WorkspaceShell({
                 <h2 className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
                   {wt('nextStep.title')}
                 </h2>
+                {/* Said, never an empty card under the title (owner, 12.10.2026). */}
+                <p role="status" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
+                  {wt('nextStep.pending')}
+                </p>
               </div>
             )
           ) : (
@@ -1001,6 +1017,7 @@ export default function WorkspaceShell({
           projectId={projectId}
           buildUp={buildUp}
           onReading={onReading}
+          onReadingFailed={onReadingFailed}
           onOpenMap={view === 'business' ? openMap : undefined}
           map={mapState}
           narrative={startNarrative}
