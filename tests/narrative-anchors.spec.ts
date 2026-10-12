@@ -226,11 +226,13 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     // it belongs to (QA full review of 3131afa, 2878b5f8fae3). It is a parameter
     // of `handleAnalyze` now, and this pattern accepts either spelling so it
     // keeps testing "one prompt, built from this run" rather than a formatting
-    // choice.
+    // choice. Since 12.10.2026 it also carries the engine's program facts, read
+    // from the same code (roadmap 3.0.11, "In short").
     const analyzePage = fs.readFileSync(path.resolve(__dirname, '../app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
     expect(analyzePage).toMatch(
-      /const prompt = buildAnalysisPrompt\(\{ targetDeployment(?:: \w+)?, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze \}\);/,
+      /const prompt = buildAnalysisPrompt\(\{ targetDeployment(?:: \w+)?, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze(?:, programFacts)? \}\);/,
     );
+    expect(analyzePage).toContain('const programFacts = programFactsOrNull(codeToAnalyze);');
     expect(analyzePage.match(/buildAnalysisPrompt\(/g) || [], 'the page builds its prompt in exactly one place').toHaveLength(1);
   });
 

@@ -378,6 +378,9 @@ function readsLine(f: ProgramSummaryFacts): SummaryLine | null {
   const parts: string[] = [];
   if (named.words.length) parts.push(...named.words);
   const unnamed = main.filter((o) => !o.word);
+  // Named objects beyond the four shown are counted, never dropped.
+  const namedRest = named.rest - unnamed.length;
+  if (namedRest > 0) parts.push(plural(namedRest, 'more business object'));
   if (unnamed.length) parts.push(unnamed.length <= 3 ? `${unnamed.length === 1 ? 'table' : 'tables'} ${joinAnd(unnamed.map((u) => u.name))}` : plural(unnamed.length, 'further table'));
   if (settings.length) {
     const texts = settings.some((o) => o.kind === 'text');
@@ -437,7 +440,7 @@ function rulesLine(f: ProgramSummaryFacts): SummaryLine | null {
   }
   return {
     key: 'rules',
-    text: `${capital(plural(f.rules, 'business rule'))} ${f.rules === 1 ? 'is' : 'are'} fixed in the code — each can be kept, changed or dropped on purpose.`,
+    text: `${capital(plural(f.rules, 'business rule'))} ${f.rules === 1 ? 'is' : 'are'} fixed in the code.`,
     anchors: [],
     basis: 'reconstructed',
   };
@@ -519,7 +522,7 @@ export function businessInShortText(summary: ProgramSummary, options: { codes?: 
  * replacement must keep, change or drop on purpose, and the level. No money:
  * amounts arise only in Economics (ADR-022).
  */
-export function managementInShort(summary: ProgramSummary, f: ProgramSummaryFacts): string {
+export function managementInShort(summary: ProgramSummary, f: ProgramSummaryFacts, options: { level?: boolean } = {}): string {
   const purpose = summary.lines.find((l) => l.key === 'purpose')?.text ?? '';
   const changes = f.changes.state === 'none'
     ? 'it posts and changes nothing in SAP'
@@ -527,7 +530,7 @@ export function managementInShort(summary: ProgramSummary, f: ProgramSummaryFact
       ? `it changes data in SAP — it ${joinAnd([...rankedActions(f.changes.actions).map((a) => actionPhrase(a.word)), ...(f.writes.length ? [`writes ${plural(f.writes.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
       : 'whether it changes data in SAP is not determined';
   const rules = f.rules === null ? '' : f.rules === 0 ? '; no business rule fixed in its code was found' : `; ${plural(f.rules, 'business rule')} ${f.rules === 1 ? 'is' : 'are'} fixed in its code and must be kept, changed or dropped on purpose`;
-  return `${purpose} For the decision: ${changes}${rules}. ${summary.level.text}`;
+  return `${purpose} For the decision: ${changes}${rules}.${options.level === false ? '' : ` ${summary.level.text}`}`;
 }
 
 /* --------------------------------------------------------- stored facts */
@@ -546,7 +549,25 @@ export function readProgramSummaryFacts(value: unknown): ProgramSummaryFacts | n
 /* ---------------------------------------------------------------- guards */
 
 /** Words of the code a business reader cannot follow. In a business line they stand only inside parentheses or quotes. */
-const JARGON_WORDS = /\b(?:ABAP|FORM|PERFORM|SELECT|LOOP|ENDLOOP|internal table|field symbol|work area|structure component|sy-subrc|function module|BAPI|COMMIT WORK|update task|DESTINATION|RFC|ALV|subroutine|include|type pool|data element|domain|selection-screen)\b/i;
+// Keywords only in capitals ("select", "form" and "loop" are English words too); phrases in any case.
+const JARGON_KEYWORDS = /\b(?:ABAP|FORM|PERFORM|SELECT|LOOP|ENDLOOP|BAPIs?|COMMIT WORK|DESTINATION|RFC|ALV|sy-subrc|SY-SUBRC)\b/g;
+const JARGON_PHRASES = /\b(?:internal tables?|field symbols?|work areas?|structure components?|function modules?|update tasks?|subroutines?|type pools?|data elements?|selection-screen)\b/gi;
+
+function jargonWords(text: string): string[] {
+  return [...text.matchAll(JARGON_KEYWORDS), ...text.matchAll(JARGON_PHRASES)].map((m) => m[0]);
+}
+
+/**
+ * The ABAP words in a sentence ("field symbol", "subroutine", "function
+ * module" …) — a sentence built on them belongs to the technical appendix,
+ * not to a business reading (owner 12.10.2026; CO review: "A component of the
+ * structure is bound to the field symbol" eight times under "What it does
+ * along the way").
+ */
+export function abapWords(text: string): string[] {
+  const bare = text.replace(/"[^"]*"/g, ' ').replace(/“[^”]*”/g, ' ');
+  return jargonWords(bare);
+}
 
 /**
  * What in a business line is jargon: an ABAP word, or a code-shaped token (a
@@ -555,12 +576,12 @@ const JARGON_WORDS = /\b(?:ABAP|FORM|PERFORM|SELECT|LOOP|ENDLOOP|internal table|
  */
 export function businessJargon(text: string): string[] {
   const bare = text.replace(/\([^)]*\)/g, ' ').replace(/“[^”]*”/g, ' ').replace(/"[^"]*"/g, ' ');
-  const hits: string[] = [];
-  const word = JARGON_WORDS.exec(bare);
-  if (word) hits.push(word[0]);
+  const hits: string[] = [...jargonWords(bare)];
   const ALLOWED = new Set(['SAP', 'CSV', 'PC', 'IT', 'EUR', 'USD', 'G/L', 'S/4HANA', 'ERP', 'CO', 'FI', 'MM', 'SD', 'PDF', 'XML', 'BPMN', 'ID']);
   for (const m of bare.matchAll(/\b[A-Z][A-Z0-9_/]{2,}\b/g)) {
     if (!ALLOWED.has(m[0])) hits.push(m[0]);
   }
-  return hits;
+  // Internal names of the code: lv_total, gs_out-kostl, p_kokrs.
+  for (const m of bare.matchAll(/\b[a-z]{1,4}_[a-z0-9_]+(?:-[a-z0-9_]+)?\b/g)) hits.push(m[0]);
+  return [...new Set(hits)];
 }

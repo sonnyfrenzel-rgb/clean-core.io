@@ -220,6 +220,12 @@ export interface SteeringOnePager {
 export interface SteeringProcess {
   steps: number;
   decisions: number;
+  /**
+   * What the program is for and what the decision has to know from the code
+   * (`lib/program-summary-text.ts managementInShort`, owner 12.10.2026); the
+   * header then says this, not only the counts.
+   */
+  purpose?: string | null;
 }
 
 export interface SteeringSource {
@@ -331,7 +337,9 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
   const runDate = src.project?.activeRunId
     ? (src.history?.find((h) => h.runId === src.project?.activeRunId)?.createdAt ?? null)
     : null;
-  const purpose = src.process
+  const purpose = src.process?.purpose
+    ? `Reconstructed from the code: ${src.process.purpose}`
+    : src.process
     ? `Reconstructed from the code: a process of ${src.process.steps} step${src.process.steps === 1 ? '' : 's'} and ${src.process.decisions} decision point${src.process.decisions === 1 ? '' : 's'}.`
     : src.hasRun || src.mode === 'demo'
       ? notDeterminedWords('the process could not be reconstructed from the source')

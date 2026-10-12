@@ -1,4 +1,5 @@
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
+import { stripModelMarkdown } from '@/lib/model-text';
 import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
 
 /**
@@ -54,6 +55,33 @@ const WORD_TABLES: Array<{ re: RegExp; tables: Set<string> }> = (() => {
   }));
 })();
 
+/**
+ * The model's purpose of a program, from the Analyze narrative (`asIsContext`,
+ * else `summary`): its first two sentences, without citations and Markdown —
+ * or null when there is none or it fails the check. The caller shows it with
+ * the chip *Model proposal*, the engine's sentence underneath.
+ */
+export function purposeProposalOf(narrative: string | null | undefined, facts: ProgramSummaryFacts | null): string | null {
+  if (!narrative || !facts) return null;
+  let text = '';
+  try {
+    const parsed = JSON.parse(narrative) as { asIsContext?: unknown; summary?: unknown };
+    text = typeof parsed.asIsContext === 'string' && parsed.asIsContext.trim()
+      ? parsed.asIsContext
+      : typeof parsed.summary === 'string' ? parsed.summary : '';
+  } catch {
+    return null;
+  }
+  const clean = stripModelMarkdown(text)
+    .replace(/\s*\[(?:L\d+(?:\s*[-–]\s*L?\d+)?|[A-Z]{2,}-\d+)(?:\s*,\s*(?:L\d+(?:\s*[-–]\s*L?\d+)?|[A-Z]{2,}-\d+))*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const sentences = clean.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0).slice(0, 2);
+  const proposal = sentences.join(' ').trim();
+  if (!proposal || proposal.length > 600) return null;
+  return checkPurposeProposal(proposal, facts).ok ? proposal : null;
+}
+
 export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): PurposeCheck {
   const problems: string[] = [];
   const t = String(text ?? '');
@@ -89,8 +117,10 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
     if (TABLE_TERMS_EN[code.toLowerCase()]) problems.push(`names table ${code}, which the code does not read`);
   }
   const touched = new Set([...facts.reads, ...facts.writes].map((o) => o.name));
+  // A business object named in a denial ("No accounting documents are posted") is not claimed.
+  const affirmed = sentences.filter((s) => !DOES_NOT_POST.test(s)).join(' ');
   for (const { re, tables } of WORD_TABLES) {
-    const hit = re.exec(t);
+    const hit = re.exec(affirmed);
     if (!hit) continue;
     if (![...tables].some((name) => touched.has(name))) problems.push(`names “${hit[0]}”, which the code does not read`);
   }

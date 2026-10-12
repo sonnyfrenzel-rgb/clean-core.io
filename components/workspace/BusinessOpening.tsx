@@ -7,6 +7,8 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import ProgramInShort from './ProgramInShort';
+import type { SummaryLine } from '@/lib/program-summary-text';
 import type { ProcessStory, StoryChange } from '@/lib/process-story';
 import {
   bizMoreItems,
@@ -56,6 +58,7 @@ export default function BusinessOpening({
   questions,
   onDecideRules,
   details,
+  inShort = null,
 }: {
   /** The title: a proposed business name, or the program's name, or the sentence that there is none. */
   name: string;
@@ -76,6 +79,12 @@ export default function BusinessOpening({
   onDecideRules?: () => void;
   /** "How this was read": the code, the tables, the figures and the stages. */
   details: React.ReactNode;
+  /**
+   * What the program is for, before the steps (owner, 12.10.2026) — the
+   * shared summary (`lib/program-summary-text.ts`, `businessInShort`); null
+   * while it is not read.
+   */
+  inShort?: { lines: readonly SummaryLine[]; level: SummaryLine; proposal?: string | null } | null;
 }) {
   return (
     <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-5">
@@ -93,6 +102,11 @@ export default function BusinessOpening({
           <p className="m-0 font-cc-mono text-[12px] font-medium text-cc-ink-muted">{programName}</p>
         ) : null}
         {nameReason ? <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{nameReason}</p> : null}
+        {inShort ? (
+          <div className="mt-2">
+            <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal ?? null} />
+          </div>
+        ) : null}
         <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
           {wt('biz.storyLead')}
           {story.proposedNames ? <CcProvenanceChip value="proposed" note={wt('biz.storyNamesNote')} /> : null}

@@ -91,6 +91,19 @@ import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
+import ProgramInShort from '@/components/workspace/ProgramInShort';
+import { programSummaryFactsOf } from '@/lib/program-summary-facts';
+import { businessInShort, programSummary } from '@/lib/program-summary-text';
+import { purposeProposalOf } from '@/lib/program-summary-check';
+
+/** The engine's facts about what the program is for, or null when they cannot be read — the prompt then goes without them. */
+function programFactsOrNull(code: string) {
+  try {
+    return programSummaryFactsOf(code);
+  } catch {
+    return null;
+  }
+}
 import EvidenceFindingsTable, { AnalyzeAnchorBar, openSourceLine } from '@/components/analyze/EvidenceFindingsTable';
 import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
@@ -410,7 +423,9 @@ export default function AnalyzePage() {
       const findingCount = findingRows(evidenceReport.findings).length;
       setLoadingMessage(`Evidence scan complete — ${findingCount} ${findingCount === 1 ? 'finding' : 'findings'}.`);
 
-      const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
+      // Owner 12.10.2026: the model phrases the purpose from what the engine read (roadmap 3.0.11, "In short").
+  const programFacts = programFactsOrNull(codeToAnalyze);
+  const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze, programFacts });
 
       // 3. The narrative, if this account has a model for this stage.
       //
@@ -764,6 +779,25 @@ export default function AnalyzePage() {
       return [];
     }
   }, [legacyCode]);
+
+  // What the program is for, in short — the same summary the Business view
+  // opens with, before the score (owner, 12.10.2026: the business texts about
+  // what a Z program does must get clearly better, Analyze included).
+  const inShort = useMemo(() => {
+    if (!legacyCode) return null;
+    try {
+      const facts = programSummaryFactsOf(legacyCode);
+      const summary = programSummary(facts);
+      return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts) };
+    } catch {
+      return null;
+    }
+  }, [legacyCode, project?.analysis]);
+  const programInShort = inShort ? (
+    <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3">
+      <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} headingLevel={2} id="analyze-in-short-title" />
+    </div>
+  ) : null;
 
   // What the engine did not assess, by kind, with the line each kind begins at.
   const notAssessedItems = useMemo(
@@ -1181,6 +1215,7 @@ export default function AnalyzePage() {
       const evidenceRationale = project.recommendationJustification ? sapNamesForDisplay(project.recommendationJustification) : null;
       return (
         <div className="space-y-6 font-sans" data-evidence-only-report>
+          {programInShort}
           <AnalysisAnswer
             score={signedCleanCoreScore}
             route={evidenceRoute}
@@ -1273,6 +1308,7 @@ export default function AnalyzePage() {
 
       return (
         <div className="space-y-6 font-sans">
+          {programInShort}
           <AnalysisAnswer
             score={signedCleanCoreScore}
             route={shownRoute}
@@ -1392,6 +1428,7 @@ export default function AnalyzePage() {
     // score" panel that stood under it said the hero's figures a second time.
     return (
       <div className="space-y-6 font-sans">
+        {programInShort}
         <AnalysisAnswer
           score={signedCleanCoreScore}
           route={project.extensibilityRoute ?? null}

@@ -62,6 +62,10 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.moreAboutProcess': 'More about this process',
 
   // The business-first opening — components/workspace/BusinessOpening.tsx (owner, 03.10.2026).
+  // What the program is for, before the steps — components/workspace/ProgramInShort.tsx (owner, 12.10.2026).
+  'biz.inShortTitle': 'In short',
+  'biz.inShortProposalNote': 'purpose',
+  'biz.inShortEngine': 'Read from the code:',
   'biz.storyLead': 'What the program does, in the order of the code. Each step with the line it was read from.',
   'biz.storyNamesNote': 'names',
   'biz.storyNone': 'The steps of this program could not be read from the source. The map below shows what could be drawn.',

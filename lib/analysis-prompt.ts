@@ -3,6 +3,30 @@ import { anchorInstruction } from './abap/narrative-anchors';
 import type { ExtensibilityRouteReport } from './abap/extensibility-router';
 import { BTP, BTP_FIRST } from './sap-naming';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from './sap-reference-check';
+import { programSummary, type ProgramSummaryFacts } from './program-summary-text';
+
+/**
+ * What the engine read about the program's purpose, for the model — roadmap
+ * 3.0.11 "In short" (owner, 12.10.2026): where the purpose needs words the
+ * code does not hold, a model may phrase it from the engine's facts, and its
+ * wording is held against them (`lib/program-summary-check.ts`). So the facts
+ * go in as a block, and asIsContext must open from them.
+ */
+export function programFactsBlock(facts: ProgramSummaryFacts | null | undefined): string {
+  if (!facts) return '';
+  const summary = programSummary(facts);
+  const lines = [
+    'PROGRAM FACTS — what the deterministic engine read about this program. Ground truth for asIsContext and summary:',
+    ...summary.lines.map((l) => `- [${l.key}] ${l.text}`),
+    ...(facts.inputs.length
+      ? [`- [selection screen] ${facts.inputs.map((i) => `${i.name}: ${i.label}${i.labelFrom === 'screen' ? '' : ' (no screen text)'}`).join('; ')}`]
+      : []),
+    ...facts.fixedLists.slice(0, 3).map((l) => `- [fixed list in the code, L${l.lineStart}-${l.lineEnd}] ${l.item}: ${l.columns.join(' | ')} = ${l.rows.map((r) => r.join(' | ')).join(' ; ')}`),
+    ...(facts.screenTitles.length ? [`- [selection screen titles] ${facts.screenTitles.map((t) => t.text).join('; ')}`] : []),
+    `- [level] ${summary.level.text}`,
+  ];
+  return lines.join('\n');
+}
 
 /**
  * The prompt of the Analyze stage, assembled in one place so it can be tested as a whole.
@@ -17,11 +41,14 @@ export function buildAnalysisPrompt({
   evidenceReport,
   routeReport,
   code,
+  programFacts = null,
 }: {
   targetDeployment: string | null | undefined;
   evidenceReport: AbapEvidenceReport;
   routeReport: ExtensibilityRouteReport;
   code: string;
+  /** The engine's facts about what the program is for (`lib/program-summary-facts.ts`); absent: no block. */
+  programFacts?: ProgramSummaryFacts | null;
 }): string {
   return `You are analyzing a legacy SAP ABAP custom codebase for modernization. The customer has defined their target operating model as: SAP S/4HANA Cloud, ${targetDeployment === 'public' ? 'Public Edition (strict SaaS, zero modifications allowed)' : 'Private Edition / RISE (3-Tier Extensibility Model, allowing custom Tier 2 API wrappers)'}.
 Name SAP's platform for side-by-side extensions "${BTP_FIRST}" at its first mention and "${BTP}" after that; keep the names of SAP services exactly as SAP names them.
@@ -33,6 +60,8 @@ Analyze the legacy SAP ABAP code and the evidence findings to provide a highly p
 
 No field of this output states an amount of money — no cost, saving, price, budget or ROI in any currency. Nothing in this analysis rests on approved cost assumptions, and an amount you write is removed before anyone reads it.
 
+${programFactsBlock(programFacts)}
+
 ${anchorInstruction(evidenceReport.findings, code.split(/\r?\n/).length)}
 
 ${SAP_REFERENCE_PROMPT_RULES}
@@ -43,7 +72,7 @@ interface AnalysisData {
   projectTitle: string;
   cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${routeReport.cleanCoreScore}
   summary: string; // Plain english business executive summary. Every sentence that states something about THIS program must end with an anchor in one of the forms listed under CITATIONS above. General advice stays uncited.
-  asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code.
+  asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code. Open with two plain sentences for a business reader, built only from PROGRAM FACTS: what the program is for, who uses it, which business objects, what it produces, and what it does not do. You may give the business meaning of a code value only as a reading of it (e.g. "FAC, read as facilities"). Never name a business object or table PROGRAM FACTS do not list; never say it posts, sends mail or runs an approval when PROGRAM FACTS say it does not; no money, savings or accuracy claims.
   standardFit: {
     potential: 'High' | 'Medium' | 'Low'; // 'High' only when the rationale lists, capability by capability, the standard function that covers each one. Otherwise 'Medium' or 'Low'.
     targetStandardProcess: string; // The standard process in words. An app ID, scope item or communication scenario only under the SAP IDENTIFIERS rules above.

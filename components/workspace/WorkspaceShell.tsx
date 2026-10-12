@@ -411,7 +411,12 @@ export default function WorkspaceShell({
   const layers = useMemo(() => allLayers.filter((l) => BUSINESS_LAYERS.includes(l.key)), [allLayers]);
   // "Your process" in Management: one line in the decision's Need row, counted
   // as the map counts it (ADR-087) — the Need layer's own count, said once.
-  const processLine = useMemo(() => allLayers.find((l) => l.key === 'need')?.count ?? null, [allLayers]);
+  // Owner 12.10.2026: Management reads what the program is for and what the
+  // decision has to know from the code (`managementInShort`), then the counts.
+  const processLine = useMemo(() => {
+    const count = allLayers.find((l) => l.key === 'need')?.count ?? null;
+    return [mapSummary?.management ?? null, count].filter(Boolean).join(' — ') || null;
+  }, [allLayers, mapSummary]);
 
   const router = useRouter();
   /**

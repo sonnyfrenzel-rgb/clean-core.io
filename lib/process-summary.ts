@@ -1,6 +1,8 @@
 import { buildReadingExports } from './bpmn/export';
 import { buildProcessMapModel, processCounts } from './process-map';
 import { applyNaming, namingContextOf } from './process-naming';
+import { programSummaryFactsOf } from './program-summary-facts';
+import { managementInShort, programSummary } from './program-summary-text';
 
 /**
  * What the process map of a source holds, in four numbers — for every place
@@ -30,6 +32,12 @@ export interface ProcessSummary {
   shapes: number;
   /** Of those, the ones with a line anchor. */
   anchored: number;
+  /**
+   * What the program is for and what a keep / rebuild / retire decision has to
+   * know from the code (`managementInShort`, owner 12.10.2026) — Management
+   * says this instead of only counting steps. Null when it could not be read.
+   */
+  management: string | null;
 }
 
 export function processSummaryOf(source: string, fileName = 'source.abap'): ProcessSummary | null {
@@ -39,5 +47,12 @@ export function processSummaryOf(source: string, fileName = 'source.abap'): Proc
   const model = buildProcessMapModel({ bpmn, technical, named, fileName });
   const { steps, decisions } = processCounts(model.elements);
   if (steps === 0 && decisions === 0) return null;
-  return { steps, decisions, shapes: model.traceability.flowNodes, anchored: model.traceability.anchored };
+  let management: string | null = null;
+  try {
+    const facts = programSummaryFactsOf(source);
+    management = managementInShort(programSummary(facts), facts, { level: false });
+  } catch {
+    management = null;
+  }
+  return { steps, decisions, shapes: model.traceability.flowNodes, anchored: model.traceability.anchored, management };
 }

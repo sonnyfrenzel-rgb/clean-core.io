@@ -227,7 +227,8 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const actions: SummaryAction[] = [];
   const seenWords = new Set<string>();
   const addAction = (name: string, word: string | null, line: number, via: SummaryAction['via']) => {
-    if (!word || !CHANGING_VERB.test(word)) return;
+    // A technical object ("Create ID") is not a change a business reader asks about.
+    if (!word || !CHANGING_VERB.test(word) || /\b(?:ID|IDs|GUID|number|lock|log|spool)$/i.test(word)) return;
     const key = word.toLowerCase();
     if (seenWords.has(key)) return;
     seenWords.add(key);

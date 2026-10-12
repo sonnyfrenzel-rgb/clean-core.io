@@ -1,6 +1,6 @@
 import type { ProvenanceValue } from '@/lib/provenance';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
-import { programSummary, readProgramSummaryFacts, type ProgramSummaryFacts } from '@/lib/program-summary-text';
+import { abapWords, programSummary, readProgramSummaryFacts, type ProgramSummaryFacts } from '@/lib/program-summary-text';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
 import { readingPath, type PathItem } from '@/lib/process-documentation-path';
@@ -408,7 +408,10 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   const exceptions = byKind('exception');
   const dataStatements = byKind('data');
   const controls = byKind('control');
-  const along = byKind('step');
+  // Owner 12.10.2026: a sentence built on ABAP words ("bound to the field
+  // symbol", "the subroutines … are called") is not a business statement; the
+  // appendix keeps it with every other sentence the engine read.
+  const along = byKind('step').filter((g) => abapWords(g.text).length === 0);
   const isGate = (s: DocStep) => /decision/i.test(s.kind);
   const isEvent = (s: DocStep) => /^(?:start|end)\b/i.test(s.kind);
   const topSteps = doc.steps.filter((s) => s.level === null && !isEvent(s) && !isGate(s));

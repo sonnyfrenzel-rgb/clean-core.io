@@ -122,7 +122,7 @@ export default function SteeringOnePager({
         try {
           const m = await import('@/lib/process-summary');
           const s = m.processSummaryOf(signed.source, signed.fileName);
-          return s ? { steps: s.steps, decisions: s.decisions } : null;
+          return s ? { steps: s.steps, decisions: s.decisions, purpose: s.management } : null;
         } catch {
           return null;
         }
