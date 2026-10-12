@@ -1,12 +1,19 @@
 import type {Metadata} from 'next';
-import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import MotionPreference from '@/components/MotionPreference';
 import { SOCIAL_CARD } from '@/lib/page-metadata';
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900']
+// Inter is shipped with the app (SIL Open Font License 1.1, app/fonts/OFL.txt) instead of fetched
+// from Google at build time: Google now answers with one variable face (weight 300–900), which
+// next/font/google's loader fails to parse now and then — three failed builds on 12.10.2026. The
+// file is Google's own latin subset of Inter v20, the same glyphs and weights as before.
+const inter = localFont({
+  src: './fonts/inter-latin-variable.woff2',
+  weight: '300 900',
+  style: 'normal',
+  display: 'swap',
+  variable: '--font-inter',
 });
 
 export const revalidate = 300;
