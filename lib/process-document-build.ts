@@ -20,6 +20,7 @@ import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { NOT_DETERMINED_LABEL, commitWaitWords, rangeWords, stepEvidence, type DocAnchor, type ProcessDocumentation } from '@/lib/process-documentation';
 import { isEventTag, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { buildNavigation } from '@/lib/process-navigation';
+import { readingOrder, readingPath, type PathItem } from '@/lib/process-documentation-path';
 import { objectSites, sitesByElement, type ObjectSite } from '@/lib/process-overlays';
 import { selectionInputs, summaryOf, type HandbookObject } from '@/lib/process-handbook';
 import { stripModelMarkdown } from '@/lib/model-text';
@@ -397,7 +398,16 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   // The main path is the top level of the map. A program whose top level is
   // one routine (a report that hands everything to one FORM) would read as a
   // single step, so that routine's own steps are taken up one level instead.
-  let pathIds = [...nav.roots];
+  //
+  // In the order a run takes, not the order the map stores its elements in:
+  // that order draws one arm of a decision to the end of the process before
+  // the other, and the CO close simulation read as if the authorization check
+  // and the live read ran after the result was shown (CO review F02,
+  // 12.10.2026). The order is the package documentation's (`readingOrder`), so
+  // the two documents agree; an element it does not know keeps its place at
+  // the end, in the stored order.
+  const runRank = new Map(readingOrder(engine.steps).map((id, i) => [id, i]));
+  let pathIds = [...nav.roots].sort((a, b) => (runRank.get(a) ?? Number.MAX_SAFE_INTEGER) - (runRank.get(b) ?? Number.MAX_SAFE_INTEGER));
   for (let pass = 0; pass < 2; pass += 1) {
     const steps = pathIds.map((id) => byId.get(id)).filter((e): e is ProcessMapElement => !!e && !isEvent(e) && !isGateway(e));
     const opener = steps.find((e) => (nav.entries.get(e.id)?.children.length ?? 0) > 0);
@@ -451,6 +461,37 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
       }
     });
   }
+
+  // The arms of a decision the program takes (`IF p_demo = gc_x … ELSE …`)
+  // are alternatives too, and share one place on the path: `4a`, `4a.2` for
+  // the one, `4b`, `4b.2` for the other (CO review F02, 12.10.2026). Only the
+  // reference is shared — they carry no `choice`, because nobody chooses them.
+  const programArm = new Map<string, { gateId: string; arm: number }>();
+  const markArms = (items: readonly PathItem[]) => {
+    for (const item of items) {
+      if (item.kind !== 'choice') {
+        if ('items' in item) markArms(item.items);
+        continue;
+      }
+      // Only the steps this description lists: an arm that holds nothing but
+      // an event (`STOP` into END-OF-SELECTION) is no alternative here.
+      const listed = (id: string) => {
+        const element = byId.get(id);
+        return !!element && !isEvent(element) && element.technicalName.toUpperCase() !== 'WRITE';
+      };
+      const stepsOf = (inner: readonly PathItem[]): string[] => inner.flatMap((x) => (x.kind === 'step' ? (listed(x.step.id) ? [x.step.id] : [])
+        : x.kind === 'choice' ? x.arms.flatMap((y) => stepsOf(y.items)) : stepsOf(x.items)));
+      const arms = item.arms.map((a) => stepsOf(a.items));
+      if (item.parallel || choiceGates.has(item.split.id) || arms.filter((ids) => ids.length > 0).length < 2) {
+        for (const a of item.arms) markArms(a.items);
+        continue;
+      }
+      arms.forEach((ids, arm) => {
+        for (const id of ids) programArm.set(id, { gateId: item.split.id, arm });
+      });
+    }
+  };
+  markArms(readingPath(engine.steps));
 
   /* ------------------------------------------------ who acts (ADR-084) */
 
@@ -562,15 +603,16 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     }
     number += 1;
     const alternative = choiceOf.get(id) ?? null;
+    const arm = alternative ?? programArm.get(id) ?? null;
     let ref: string;
     let firstOfArm = false;
-    if (alternative) {
-      if (!slotOf.has(alternative.gateId)) slotOf.set(alternative.gateId, ++place);
-      const key = `${alternative.gateId}|${alternative.arm}`;
+    if (arm) {
+      if (!slotOf.has(arm.gateId)) slotOf.set(arm.gateId, ++place);
+      const key = `${arm.gateId}|${arm.arm}`;
       const nth = (armSteps.get(key) ?? 0) + 1;
       armSteps.set(key, nth);
       firstOfArm = nth === 1;
-      ref = `${slotOf.get(alternative.gateId)}${armLetter(alternative.arm)}${nth > 1 ? `.${nth}` : ''}`;
+      ref = `${slotOf.get(arm.gateId)}${armLetter(arm.arm)}${nth > 1 ? `.${nth}` : ''}`;
     } else {
       ref = String(++place);
     }

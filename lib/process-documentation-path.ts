@@ -57,8 +57,7 @@ interface Arm {
   when: string;
 }
 
-/** The main path of the top level, as nested items. */
-export function readingPath(steps: readonly DocStep[]): PathItem[] {
+function walkTopLevel(steps: readonly DocStep[]): { items: PathItem[]; order: string[] } {
   const top = steps.filter((s) => s.level === null);
   const byId = new Map(top.map((s) => [s.id, s]));
   const succ = (id: string): Arm[] => {
@@ -223,5 +222,23 @@ export function readingPath(steps: readonly DocStep[]): PathItem[] {
   for (const root of roots) out.push(...walk(root.id, new Set()));
   // A listed step no start reaches keeps its place in the document.
   for (const s of top) if (isListedStep(s) && !visited.has(s.id)) out.push(...walk(s.id, new Set()));
-  return out;
+  // Every top-level element in the order the walk met it — a decision before
+  // its arms, one arm complete before the next — and the rest in stored order.
+  const order = [...visited, ...top.map((s) => s.id).filter((id) => !visited.has(id))];
+  return { items: out, order };
+}
+
+/** The main path of the top level, as nested items. */
+export function readingPath(steps: readonly DocStep[]): PathItem[] {
+  return walkTopLevel(steps).items;
+}
+
+/**
+ * The ids of the top-level elements in the order a run meets them — the
+ * order of `readingPath`, with the decisions and events in their places. The
+ * business SOP orders its main path by it, so the two documents agree (CO
+ * review F02, 12.10.2026).
+ */
+export function readingOrder(steps: readonly DocStep[]): string[] {
+  return walkTopLevel(steps).order;
 }

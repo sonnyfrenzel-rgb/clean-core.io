@@ -427,13 +427,27 @@ export const stepName = (step: PdStep) => step.businessName ?? step.name;
  * Display order / Mark done / Change date" (roadmap 3.0.7).
  */
 export function pathLine(path: readonly PdPathEntry[]): string {
-  const parts: Array<{ slot: string; names: string[]; gateId: string | null }> = [];
+  const parts: Array<{ slot: string; names: string[]; gateId: string | null; arms?: Map<string, string[]> }> = [];
   for (const s of path.filter((e): e is PdStep => e.kind === 'step')) {
+    // The arms of a decision the program takes share one place, `4a` … `4b.3`,
+    // and carry no `choice`: each arm reads as its steps in turn, the arms as
+    // alternatives (CO review F02, 12.10.2026).
+    const programArm = s.choice ? null : /^(\d+)([a-z]+)(?:\.\d+)?$/.exec(stepRef(s));
+    if (programArm) {
+      const [, slot, letter] = programArm;
+      let part = parts.find((p) => p.arms && p.slot === slot);
+      if (!part) parts.push((part = { slot, names: [], gateId: null, arms: new Map() }));
+      const arm = part.arms as Map<string, string[]>;
+      arm.set(letter, [...(arm.get(letter) ?? []), stepName(s)]);
+      continue;
+    }
     const known = s.choice ? parts.find((p) => p.gateId === s.choice?.gateId) : undefined;
     if (known) known.names.push(stepName(s));
     else parts.push({ slot: s.choice ? stepRef(s).replace(/[a-z]+(?:\.\d+)?$/, '') : stepRef(s), names: [stepName(s)], gateId: s.choice?.gateId ?? null });
   }
-  return parts.map((p) => (p.gateId ? `${p.slot} one of ${p.names.join(' / ')}` : `${p.slot} ${p.names[0]}`)).join(' → ');
+  return parts.map((p) => (p.arms
+    ? `${p.slot} one of ${[...p.arms.values()].map((names) => names.join(', ')).join(' / ')}`
+    : p.gateId ? `${p.slot} one of ${p.names.join(' / ')}` : `${p.slot} ${p.names[0]}`)).join(' → ');
 }
 
 /* ---------------------------------------------------------------- ordering */

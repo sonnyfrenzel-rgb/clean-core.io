@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, buildReadingExports } from '../lib/bpmn/export';
+import { buildProcessDocument } from '../lib/process-document-build';
+import { stepRef, type PdGate, type PdStep } from '../lib/process-document';
+import { gateLine, pathLine } from '../lib/process-document-outline';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel } from '../lib/process-map';
 import { buildProcessDocumentation } from '../lib/process-documentation-build';
@@ -97,6 +100,49 @@ test.describe('CO review F02: the main path in the order a run takes it', () => 
     for (const step of doc.steps.filter((s) => s.level === null && isListedStep(s))) {
       expect(lines.filter((l) => l.includes(`**${docStepName(step)}**`)), docStepName(step)).toHaveLength(1);
     }
+  });
+});
+
+test.describe('CO review F02: the business SOP agrees with the package documentation', () => {
+  const source = read('tests', 'fixtures', 'f02-alternative-data-paths.abap');
+  const file = 'f02-alternative-data-paths.abap';
+  const { bpmn, technical } = buildReadingExports(source, { processName: file, sourceFileName: file });
+  const map = buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null, 'no-key'), fileName: file });
+  const sop = buildProcessDocument({ source, map });
+  const entries = sop.overview.path;
+  const steps = entries.filter((e): e is PdStep => e.kind === 'step');
+  const at = (name: string) => {
+    const i = entries.findIndex((e) => e.kind === 'step' && e.name === name);
+    expect(i, `"${name}" is not on the SOP's main path`).toBeGreaterThanOrEqual(0);
+    return i;
+  };
+  const refOf = (name: string) => stepRef(steps.find((s) => s.name === name) as PdStep);
+
+  test('demo and live data are alternatives of one place, before the shared calculation', () => {
+    const shared = at('Normalize totals');
+    for (const name of ['Load demo totals', 'Apply demo case', 'Authorize scope', 'Read live masters', 'Read live totals']) {
+      expect(at(name), `${name} stands after the shared calculation`).toBeLessThan(shared);
+    }
+    expect(['Load demo totals', 'Apply demo case'].map(refOf)).toEqual(['3a', '3a.2']);
+    expect(['Authorize scope', 'Read live masters', 'Read live totals'].map(refOf)).toEqual(['3b', '3b.2', '3b.3']);
+    expect(refOf('Normalize totals')).toBe('4');
+    // Nobody chooses a program's decision: no step is a user choice, and no actor says so.
+    for (const s of steps) {
+      expect(s.choice, s.name).toBeUndefined();
+      expect(s.actor?.basis ?? '').not.toMatch(/user chooses/i);
+    }
+    expect(pathLine(entries)).toContain(
+      '3 one of Load demo totals, Apply demo case / Authorize scope, Read live masters, Read live totals → 4 Normalize totals',
+    );
+  });
+
+  test('the decision on the export stands right before it, and the display after it', () => {
+    const exportAt = at('Export CSV');
+    const gate = entries[exportAt - 1];
+    expect(gate.kind).toBe('gate');
+    expect(gateLine(gate as PdGate)).toContain('continue with “Display result”');
+    expect(at('Build result')).toBeLessThan(exportAt);
+    expect(exportAt).toBeLessThan(at('Display result'));
   });
 });
 
