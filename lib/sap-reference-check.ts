@@ -1,4 +1,5 @@
 import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION } from './abap/sap-api-catalog';
+import { SAP_SCOPE_ITEMS } from './sap-scope-items';
 
 /**
  * SAP identifiers a model wrote, checked against SAP data this product holds —
@@ -35,6 +36,10 @@ import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION } from './abap/sap-api-catalog
  *      entry. No entry goes in without one.
  *   2. The released successors of `lib/abap/sap-api-catalog.ts` (APIs and CDS
  *      views; the technical name is the name).
+ *   3. SAP's scope-item titles in `lib/sap-scope-items.ts`, so a scope item the
+ *      model gives for another area (1EG for cost center accounting — SAP lists
+ *      it as Bank Integration with File Interface) reads `mismatch`, not
+ *      `unverified` (CO review F13, 12.10.2026).
  */
 
 export type SapIdKind =
@@ -103,6 +108,8 @@ export const CURATED_SAP_IDS: readonly KnownSapId[] = Object.freeze([
     caveat:
       'SAP distinguishes entry view and ledger view, and restricts this API to SAP Analytics Cloud in the public edition — not a general replacement for BSID, BSAD or BSEG',
   },
+  // SAP's scope-item titles, each with the public SAP page that states it (CO review F13, 12.10.2026).
+  ...SAP_SCOPE_ITEMS.map((s) => ({ id: s.id, kind: 'scope-item' as const, name: s.title, source: { ...s.source } })),
 ] as KnownSapId[]);
 
 const CATALOG_SOURCE: SapSource = {
