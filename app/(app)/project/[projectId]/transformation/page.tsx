@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useSyncExternalStore } from 'react';
 import { CODE_DRAFT_BUSINESS_RULES, codeDraftFactsSection, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -65,7 +65,30 @@ import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP } from '@/lib/sap-naming';
-import { GENERATION_PHASES, enterGenerationPhase, formatElapsed, generationProgressAt, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
+import { enterGenerationPhase, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
+// Roadmap 3.0.12 (owner 12.10.2026): the tips before a generation and the
+// screen while it runs, both from one model of what the generation builds on.
+import QualityTips from '@/components/transformation/QualityTips';
+import GenerationChain from '@/components/transformation/GenerationChain';
+import {
+  chainSlots,
+  enterStage,
+  finishStages,
+  generationStages,
+  pendingChecks,
+  qualityTips,
+  setCheck,
+  withChecks,
+  type ChainContract,
+  type ChainPurpose,
+  type ChainRules,
+  type GenerationCheckState,
+  type GenerationStageLog,
+} from '@/lib/transformation-chain';
+import { useProcessStates } from '@/hooks/useProcessStates';
+import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-states-client';
+import type { RuleRegister } from '@/lib/rule-register';
+import { rulesReadRefusal, tfFilesResult, tfLiteralsResult } from '@/lib/workspace-messages';
 
 /**
  * A file the workspace can show and the next stage can read. The model's answer
@@ -110,19 +133,39 @@ const WARNING_SIGN = String.fromCodePoint(0x26a0, 0xfe0f);
 const CROSS_MARK = String.fromCodePoint(0x274c);
 
 /**
- * A row of the generation log keeps the time it was written (roadmap 3.0.6,
- * left open by the 3.0.5 QA loop): it is stamped when it is added, not when the
- * log is drawn — drawing stamped every row with the second of the last render.
+ * The generation log is gone (roadmap 3.0.12): its rows — "Initializing
+ * transformation engine…", "Parsing legacy ABAP structures…" — were written
+ * before anything was parsed. The screen now lists what the generation builds
+ * on and the stages that actually run (`lib/transformation-chain.ts`); the
+ * one row that said something real, the second model call, is the model
+ * stage's detail.
  */
-interface GenerationLogRow {
-  at: number;
-  text: string;
+
+/**
+ * The rule register from what the process-states route answered. Without a
+ * stored process revision (`no-baseline`) nobody has answered a rule, so the
+ * rules are read from the source as Delivery reads them — after the browser is
+ * idle, and capped by the register's own byte limit. The module is imported on
+ * demand, so a page that never reads the rules does not download the reader.
+ */
+async function ruleRegisterOf(outcome: StatesReadOutcome, source: string): Promise<RuleRegister> {
+  const reg = await import('@/lib/rule-register');
+  if (outcome.ok) return reg.ruleRegisterFromView(outcome.view);
+  if (outcome.code === 'no-baseline') {
+    await new Promise<void>((resolve) => {
+      const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+      if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(() => resolve(), { timeout: 1500 });
+      else setTimeout(resolve, 0);
+    });
+    return reg.ruleRegisterFromSource(source);
+  }
+  return reg.ruleRegisterFromView(null, rulesReadRefusal(outcome.code));
 }
-const logRows = (...texts: string[]): GenerationLogRow[] => {
-  const at = Date.now();
-  return texts.map((text) => ({ at, text }));
-};
-const logTime = (at: number) => new Date(at).toLocaleTimeString('en', { hour12: false });
+
+/** The address the page is on, read in the browser only (as `StageHeader` reads it). */
+const noSubscription = () => () => {};
+const readSearch = () => window.location.search;
+const serverSearch = () => '';
 
 export default function TransformationPage() {
   const { projectId } = useParams();
@@ -139,9 +182,14 @@ export default function TransformationPage() {
    */
   const generationInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
-  /** Set by the load when the project has no code yet and could have some. */
-  const [awaitingAutoGeneration, setAwaitingAutoGeneration] = useState(false);
-  const autoGenerationStarted = useRef(false);
+  /**
+   * Roadmap 3.0.12 (owner 12.10.2026): the first generation is no longer
+   * started by opening the stage. The reader sees what would raise the
+   * quality of the code first — the open rules, the requirements, the target —
+   * and starts it with "Generate now", which is always there. A paid model
+   * call that begins on a page load gave nobody the chance to read the tips
+   * it was meant to follow, and said its cost only after it had begun (§2.8).
+   */
   /**
    * An invited reader reads the code; generating it is the owner's, and the
    * server refuses it for anyone else (ADR-083, decision-input audit item 4).
@@ -157,7 +205,16 @@ export default function TransformationPage() {
   }, [project]);
 
   const [transformedCode, setTransformedCode] = useState('');
-  const [transformationLog, setTransformationLog] = useState<GenerationLogRow[]>([]);
+  /** The stages of the running generation, as they begin and end (`lib/transformation-chain.ts`). */
+  const [stageLog, setStageLog] = useState<GenerationStageLog>({});
+  /**
+   * What the running generation has read so far — the contract, the rules and
+   * the program's purpose. A slot of the chain lights when its value is here;
+   * `undefined` before a generation, `'loading'` while it is being read.
+   */
+  const [chainContract, setChainContract] = useState<ChainContract | null | 'loading' | undefined>(undefined);
+  const [chainRules, setChainRules] = useState<ChainRules | null>(null);
+  const [chainPurpose, setChainPurpose] = useState<ChainPurpose | undefined>(undefined);
   const [error, setError] = useState('');
   /**
    * Codex architecture-02 — a generated package the server refused because the
@@ -181,13 +238,16 @@ export default function TransformationPage() {
    * stood there for the whole model call (owner report 06.10.2026).
    */
   const [generationPhase, setGenerationPhase] = useState<GenerationPhase | null>(null);
-  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   /** The clock the bar and the elapsed time are drawn against while a generation runs. */
   const [now, setNow] = useState(() => Date.now());
   const enterPhase = useCallback((key: GenerationPhaseKey) => {
     const at = Date.now();
     setGenerationPhase(prev => enterGenerationPhase(prev, key, at));
     setNow(at);
+  }, []);
+  /** One check of the answer, recorded as it is made. */
+  const recordCheck = useCallback((key: string, state: GenerationCheckState, result?: string) => {
+    setStageLog((log) => withChecks(log, setCheck(log.checks?.checks ?? pendingChecks(), key, state, result)));
   }, []);
   const [isProceeding, setIsProceeding] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -238,6 +298,44 @@ export default function TransformationPage() {
   const evidencePending = Boolean(project?.legacyCode) && projectEvidence.state === 'loading';
   /** The read failed: the findings-derived page is not drawn, and the strip says why. */
   const evidenceFailed = project?.legacyCode && projectEvidence.state === 'failed' ? projectEvidence.reason : null;
+
+  /**
+   * The rules' states, for the tips (roadmap 3.0.12) — the hook the Business
+   * view reads, read again every time this stage opens, so a reader who
+   * decided rules there and came back sees the new count, never the one this
+   * tab held before. Until the fresh read is in, the tip says "Reading…".
+   */
+  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const readerView = new URLSearchParams(search).get('view');
+  const readsRules = Boolean(isOwner && project?.legacyCode);
+  const { outcome: statesOutcome, reload: reloadStates } = useProcessStates(projectId as string, readsRules);
+  const [statesFresh, setStatesFresh] = useState(false);
+  const [ruleRegister, setRuleRegister] = useState<RuleRegister | null>(null);
+  useEffect(() => {
+    if (!readsRules) return;
+    let live = true;
+    void reloadStates().finally(() => {
+      if (live) setStatesFresh(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [readsRules, reloadStates]);
+  const legacySource = project?.legacyCode ?? '';
+  useEffect(() => {
+    if (!statesFresh || !statesOutcome) return;
+    let live = true;
+    void ruleRegisterOf(statesOutcome, legacySource)
+      .then((register) => {
+        if (live) setRuleRegister(register);
+      })
+      .catch(() => {
+        if (live) setRuleRegister({ state: 'not-read', reason: 'the rule reader could not walk the source.' });
+      });
+    return () => {
+      live = false;
+    };
+  }, [statesFresh, statesOutcome, legacySource]);
 
   const toggleSignOff = (findingId: string) => {
     setSignedOffIds(prev => {
@@ -584,12 +682,28 @@ export default function TransformationPage() {
     generationInFlight.current = true;
     setLoading(true);
     const startedAt = Date.now();
-    setGenerationStartedAt(startedAt);
     setGenerationPhase(enterGenerationPhase(null, 'contract', startedAt));
     setNow(startedAt);
     setError('');
     setUnsavedDraft(null);
-    
+    setStageLog(enterStage({}, 'contract', startedAt));
+    setChainContract('loading');
+    setChainRules({ state: 'loading' });
+    setChainPurpose({ state: 'loading' });
+    let failed = false;
+
+    // The rules, read again for the chain beside the contract — the one
+    // request this screen adds, in parallel. Its answer lights the rules slot
+    // whenever it comes; the generation does not wait for it.
+    const source = projectRef.current?.legacyCode ?? '';
+    void readProcessStatesOutcome(projectId as string)
+      .then((outcome) => ruleRegisterOf(outcome, source))
+      .then((register) => {
+        setChainRules({ state: 'ready', register });
+        setRuleRegister(register);
+      })
+      .catch(() => setChainRules({ state: 'ready', register: { state: 'not-read', reason: 'the rule reader could not walk the source.' } }));
+
     try {
       // Roadmap 8.3. The direction is the contract's `route.chosen`, which is
       // the recommendation unless a deviation was declared — and a deviation
@@ -597,9 +711,18 @@ export default function TransformationPage() {
       // without one). A blocked contract generates nothing and says why.
       const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
       if (!decision.ok) {
+        setChainContract(null);
         setContractRefusal(decision);
+        failed = true;
         return;
       }
+      setChainContract({
+        label: decision.label,
+        summary: contract?.summary ?? null,
+        contractId: contract?.contractId ?? null,
+        followsRecommendation: decision.followsRecommendation,
+        deviationReason: decision.deviation?.reason ?? null,
+      });
       if (!contract || !generation) {
         throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
       }
@@ -630,6 +753,7 @@ export default function TransformationPage() {
       // so the prompt names the guards, places and options to keep. The readers
       // are imported here, as the test generation does, so a reader who never
       // generates does not download them. Unreadable → the section says so.
+      setStageLog((log) => enterStage(log, 'facts', Date.now()));
       let originalFacts: string;
       try {
         const [{ deriveBusinessRules }, { materialRules }, { readOriginalContract }] = await Promise.all([
@@ -643,12 +767,28 @@ export default function TransformationPage() {
         originalFacts = codeDraftFactsSection(null);
       }
 
-      setTransformationLog(logRows(
-        'Initializing transformation engine...',
-        decision.sentence,
-        'Parsing legacy ABAP structures...',
-        isAbapCloud ? 'Mapping to RAP Developer Extensibility patterns...' : 'Mapping to CAP modular structures...'
-      ));
+      // What the program is for, as the engine reads it — the first slot of
+      // the chain. Read while the model writes (it is not part of the prompt,
+      // `PROMPT_READS.purpose`), so it never delays the model call; with the
+      // rules' size limit, and a source it cannot read says so.
+      setTimeout(() => {
+        void (async () => {
+          try {
+            if (new TextEncoder().encode(legacyCode).length > 256 * 1024) {
+              setChainPurpose({ state: 'unread', reason: 'The source is too large for the summary reader.' });
+              return;
+            }
+            const [{ programSummaryFactsOf }, { programSummary }] = await Promise.all([
+              import('@/lib/program-summary-facts'),
+              import('@/lib/program-summary-text'),
+            ]);
+            const purpose = programSummary(programSummaryFactsOf(legacyCode)).lines.find((l) => l.key === 'purpose') ?? null;
+            setChainPurpose({ state: 'ready', text: purpose?.text ?? null, anchors: purpose?.anchors ?? [] });
+          } catch {
+            setChainPurpose({ state: 'unread', reason: 'The summary reader could not walk the source.' });
+          }
+        })();
+      }, 250);
 
       const prompt = isAbapCloud
         ? `You are an elite SAP RAP & ABAP Cloud Developer. Transform the following legacy ABAP code into a modern, production-ready modular SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture based on the provided Solution Design and Business Analysis.
@@ -801,13 +941,12 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       let failure: UnusableAnswer = 'not-json';
       let attempts = 0;
       while (!result && attempts < MAX_ATTEMPTS) {
-        if (attempts > 0) {
-          const notice = retryNotice(failure);
-          setTransformationLog(prev => [...prev, ...logRows(notice)]);
-        }
+        const notice = attempts > 0 ? retryNotice(failure) : undefined;
         attempts++;
-        // A second call continues from where the bar stands; it does not restart it.
+        // A second call continues the same stage, with the reason said beside it.
         enterPhase('model');
+        const attempt = { n: attempts, of: MAX_ATTEMPTS };
+        setStageLog((log) => enterStage(log, 'model', Date.now(), notice ? { attempt, detail: notice } : { attempt }));
         let responseText: string;
         try {
           responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
@@ -826,6 +965,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       }
 
       enterPhase('checking');
+      setStageLog((log) => withChecks(enterStage(log, 'checks', Date.now()), pendingChecks()));
       const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };
       filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
 
@@ -848,32 +988,44 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       // (QA review of 33471220d6e9, d967e435917c). The previous artefact stays
       // and the stage reports a failed generation.
       if (filesArray.length === 0) {
+        recordCheck('files', 'failed');
         throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
+      recordCheck('files', 'passed', tfFilesResult(filesArray.length));
 
       // Nor is a package that answers one path twice (6d411bca538c).
       const repeated = duplicatePaths(filesArray);
       if (repeated.length > 0) {
+        recordCheck('paths', 'failed', repeated.join('; '));
         throw new Error(`The model returned more than one file for the same path: ${repeated.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
       }
+      recordCheck('paths', 'passed');
 
       // And one file is not a package. Every path the prompt enumerated has to
       // be answered, or this is a half-generation and gets reported as one
       // rather than stored as a finished transformation (b88c77b, 7976bced4c28).
       const missing = missingArtefacts(filesArray, isAbapCloud);
       if (missing.length > 0) {
+        recordCheck('artefacts', 'failed', missing.join('; '));
         throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
       }
+      recordCheck('artefacts', 'passed');
 
       // The test suite is part of the package the prompt asked for. It used to
       // default to two empty strings and the project was marked transformed
       // without one (QA full review of 81810c8, 183ed4edf700).
       const tests = usableTestSuite(parsed.tests, isAbapCloud);
       if (!tests) {
+        recordCheck('tests', 'failed');
         throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
+      recordCheck('tests', 'passed');
 
-      setTransformationLog(prev => [...prev, ...logRows('Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...')]);
+      // 3.0.10 (external review F-01): the same deterministic scan the page
+      // shows over the stored package, made here so the screen can say its
+      // result as a check. A warning, never a refusal — the reader decides.
+      const literals = hardCodedLiteralFindings(filesArray).length;
+      recordCheck('literals', literals === 0 ? 'passed' : 'warning', tfLiteralsResult(literals));
 
       // The server stores the stand — code, suite, status and the binding to
       // the contract it was computed against — in one transaction (roadmap
@@ -883,6 +1035,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       // call. A refusal means nothing was saved.
       const packaged = JSON.stringify(filesArray);
       enterPhase('storing');
+      setStageLog((log) => enterStage(log, 'storing', Date.now()));
       let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
       try {
         const answer = await storeGeneration(projectId as string, {
@@ -927,12 +1080,14 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       const hasMainFile = filesArray.some(f => f.path === mainPath);
       setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
     } catch (err) {
+      failed = true;
       console.error('Transformation Error:', err);
       setError(err instanceof Error && err.message.trim()
         ? err.message
         : 'The generation stopped with an unexpected error. Nothing was saved — try the generation again.');
     } finally {
       generationInFlight.current = false;
+      setStageLog((log) => finishStages(log, Date.now(), failed ? 'failed' : 'done'));
       setLoading(false);
       enterPhase('done');
     }
@@ -943,7 +1098,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // charged runs, and whichever answer wrote last became the artefact
     // (QA review of 33471220d6e9, e078d502e983). The ref is the second half:
     // a dependency is not the only way to be called twice.
-  }, [projectId, enterPhase]);
+  }, [projectId, enterPhase, recordCheck]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -969,17 +1124,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             setFiles(parsedFiles);
             const hasServiceTs = parsedFiles.some(f => f.path === 'srv/service.ts');
             setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (parsedFiles[0]?.path || ''));
-            setLoading(false);
-          } else if (generationPrerequisites(data, 'transformation').length === 0 && generationBlockers(data, 'transformation').length === 0) {
-            // Not from a design written for a previous source (E01-F01-US02).
-            // The page used to generate from whatever design was there.
-            // The inputs are read again by the generation itself, together
-            // with the token they are stored against (roadmap 3.0.11).
-            // Started by the effect below once the model switch has answered.
-            setAwaitingAutoGeneration(true);
-          } else {
-            setLoading(false);
           }
+          // No generation starts here (roadmap 3.0.12): the reader reads the
+          // tips first and starts it with "Generate now".
+          setLoading(false);
         } else {
           setError('This project was not found. Go back to your workspace and open it from there.');
           setLoading(false);
@@ -994,45 +1142,22 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   }, [projectId, generateTransformation]);
 
   /**
-   * The first generation of a project, started only when this stage may call a
-   * model. It used to start straight from the load, whatever the switch in
-   * Settings said or whether any key existed, and the reader got the proxy's
-   * refusal as a failed generation (QA full review of fc78767, 6f3dc15e6f7b).
-   * The hook is optimistic while it loads, so this waits for its answer; a
-   * stage that is off or keyless ends in the "not generated" state, which says
-   * which of the two it is (`autoGenerationBlocked` below — derived, so this
-   * effect writes no state of its own).
+   * The first generation used to start from this page's load (behind the model
+   * switch, QA full review of fc78767, 6f3dc15e6f7b). Since roadmap 3.0.12 it
+   * waits for "Generate now": the tips are what the reader reads first, and the
+   * cost line stands beside the button before the click (§2.8). The model
+   * switch still decides whether the button can be pressed (`canGenerate`).
    */
-  useEffect(() => {
-    if (!awaitingAutoGeneration || modelAvailability.loading || autoGenerationStarted.current) return;
-    if (!isOwner) return;
-    if (!modelAvailability.enabled('transformation')) return;
-    // Out of the effect body, as the load's call was (it ran after an await):
-    // the generation sets state before its first await. Cancelled with the
-    // effect, so a switch that changes in the same tick starts nothing.
-    const timer = setTimeout(() => {
-      autoGenerationStarted.current = true;
-      generateTransformation();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [awaitingAutoGeneration, modelAvailability, generateTransformation, isOwner]);
-  const autoGenerationBlocked =
-    awaitingAutoGeneration
-    && ((project !== null && !isOwner) || (!modelAvailability.loading && !modelAvailability.enabled('transformation')));
-  /** `loading`, except while waiting on a generation this stage may not start. */
-  const busy = loading && !autoGenerationBlocked;
+  const busy = loading;
 
-  // The clock ticks only while a generation is under way; the bar and the
-  // elapsed time are derived from it and from the step, never accumulated.
+  // The clock ticks only while a generation is under way; the elapsed times
+  // are derived from it and from the stages, never accumulated.
   const generating = loading && generationPhase !== null && generationPhase.key !== 'done';
   useEffect(() => {
     if (!generating) return;
     const interval = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(interval);
   }, [generating]);
-  const progress = generationProgressAt(generationPhase, now);
-  const elapsed = generationStartedAt === null ? null : formatElapsed(now - generationStartedAt);
-  const phaseLabel = generationPhase ? GENERATION_PHASES[generationPhase.key].label : 'Preparing';
 
   const phases = workflowSteps(project);
   const blockers = generationBlockers(project, 'transformation');
@@ -1089,7 +1214,54 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     );
   };
 
+  /** The one way a generation starts — the header's button and "Generate now" alike. */
+  const startGeneration = () => {
+    if (!canGenerate) return;
+    // A package on record is replaced: asked first (ADR-083).
+    if (files.length > 0) setReplaceCodeAsk(true);
+    else generateTransformation();
+  };
+  /** The tips stand where a generation could start now, or would once the model is on. */
+  const showTips = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0;
+
   const openSignOffs = findings.filter(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)).length;
+
+  /**
+   * What the generation builds on and what happens to the answer (roadmap
+   * 3.0.12) — the slots light as the running generation reads them, the
+   * stages follow the generation as it goes. Built here from what the page
+   * holds; nothing is computed for the screen alone.
+   */
+  const chainInputs = {
+    projectId: String(projectId),
+    project,
+    view: readerView,
+    evidence:
+      projectEvidence.state === 'ready'
+        ? { state: 'ready' as const, findings: projectEvidence.value.evidence.findings }
+        : projectEvidence.state === 'failed'
+          ? { state: 'failed' as const, reason: projectEvidence.reason }
+          : { state: 'loading' as const },
+    rules: chainRules ?? (ruleRegister ? { state: 'ready' as const, register: ruleRegister } : { state: 'loading' as const }),
+  };
+
+  if (generating) return (
+    <StageFrame stage="transformation">
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+        <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
+      </StageHeader>
+      {/* The generation, while it runs (roadmap 3.0.12). It was a progress
+          bar whose model step was an estimate, and a log whose rows were
+          written before anything they named had happened; it is what the
+          generation builds on, read as it goes, and the stages that run. */}
+      <GenerationChain
+        slots={chainSlots({ ...chainInputs, contract: chainContract, purpose: chainPurpose })}
+        stages={generationStages(stageLog)}
+        now={now}
+        phaseKey={generationPhase?.key ?? 'none'}
+      />
+    </StageFrame>
+  );
 
   if (busy && !transformedCode) return (
     <StageFrame stage="transformation">
@@ -1099,61 +1271,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             project (carried QA finding 7abe866543dd). */}
         <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
       </StageHeader>
-
-      {/* The generation, while it runs. It used to be a black console with a
-          pulsing chip icon under "AI Transformation Engine" (§3.1: no model
-          iconography, §1.1: no dark panels besides code). The progress, the
-          log and the placeholder for the code are what it showed, and they
-          stay. */}
-      <section
-        aria-busy="true"
-        aria-labelledby="transformation-progress-title"
-        className="mt-6 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
-      >
-        <div className="p-6 flex flex-col md:flex-row gap-8">
-          <div className="flex-1 min-w-0">
-            <h2 id="transformation-progress-title" className="cc-text-h2 text-cc-ink">Generating the transformation</h2>
-            <div className="mt-6 space-y-2">
-              <div
-                role="progressbar"
-                aria-label="Generation progress"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(progress)}
-                aria-valuetext={elapsed ? `${Math.round(progress)} percent, ${phaseLabel}, ${elapsed} elapsed` : `${Math.round(progress)} percent, ${phaseLabel}`}
-                data-generation-phase={generationPhase?.key ?? 'none'}
-                className="w-full h-2 bg-cc-line rounded-full overflow-hidden"
-              >
-                <div className="h-full bg-cc-ink transition-[width] duration-300 ease-linear" style={{ width: `${progress}%` }}></div>
-              </div>
-              <div className="flex justify-between gap-4 cc-text-meta font-cc-mono text-cc-ink-muted">
-                <span data-generation-phase-label>{phaseLabel} …</span>
-                <span data-generation-elapsed>{elapsed ?? ''}</span>
-              </div>
-              {generationPhase?.key === 'model' && (
-                <p className="cc-text-meta text-cc-ink-muted">
-                  The model returns the whole package in one answer, so the bar estimates this step rather than measuring it.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div
-            aria-label="Generation log"
-            className="w-full md:w-80 h-48 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] text-cc-ink-muted"
-          >
-            {transformationLog.map((log, i) => (
-              <div key={i} className="mb-1 flex gap-2" data-generation-log-row="">
-                <span className="shrink-0">[{logTime(log.at)}]</span>
-                <span className="text-cc-ink">{log.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="border-t border-cc-line p-6">
-          <CcSkeleton shape="text" label="transformed code" count={6} />
-        </div>
-      </section>
+      <div className="mt-6">
+        <CcSkeleton shape="text" label="the project" count={6} />
+      </div>
     </StageFrame>
   );
 
@@ -1347,12 +1467,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               // or in the stale notice — never in a hover title alone. An
               // enabled click always starts the generation, which ends in the
               // code, a contract refusal or the error strip.
-              onClick={() => {
-                if (!canGenerate) return;
-                // A package on record is replaced: asked first (ADR-083).
-                if (files.length > 0) setReplaceCodeAsk(true);
-                else generateTransformation();
-              }}
+              onClick={startGeneration}
               disabled={!canGenerate}
               aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
               data-generate-code=""
@@ -1430,6 +1545,18 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       )}
 
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
+
+      {/* Roadmap 3.0.12 — what would raise the quality of the code, before the
+          run; never blocking, one line when nothing is open. */}
+      {showTips ? (
+        <QualityTips
+          tips={qualityTips(chainInputs)}
+          canGenerate={canGenerate}
+          busy={busy}
+          regenerate={files.length > 0}
+          onGenerate={startGeneration}
+        />
+      ) : null}
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
         Code copied to clipboard
