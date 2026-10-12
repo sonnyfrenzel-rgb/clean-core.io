@@ -10,10 +10,14 @@ import {
   parseRunRequest,
   parseRunnerReport,
   verifyRunnerReport,
+  verifyEngineReport,
+  engineDigest,
   hashRunInputs,
   MAX_RUN_INPUT_BYTES,
+  RUNNER_PROTOCOL_VERSION,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
+import { engineRunInputs, ENGINE_CASES_PATH, ENGINE_RUNTIME_PATH } from '../lib/test-sandbox/engine-suite';
 import {
   resolveRunnerTarget,
   callIsolatedRunner,
@@ -260,5 +264,127 @@ test.describe('the runner revision is described as what it is', () => {
     expect(read('SECURITY.md')).not.toContain('refuses a report that does not match and writes the digest and the revision');
     expect(read('lib/test-sandbox/protocol.ts')).toContain('self-reported, shape-checked only');
     expect(read('lib/test-receipt.ts')).toContain('Self-reported');
+  });
+});
+
+/* ------------------------------------------------- protocol 2: the engine pass */
+
+test.describe('protocol 2: the engine pass (roadmap 3.0.12, owner 12.10.2026)', () => {
+  const CONTRACT_FILE = { path: 'srv/engine-contract.ts', content: 'export const CONTRACT = {};' };
+  const EFILES = [...FILES, CONTRACT_FILE];
+  const CASES = JSON.stringify({ format: 'clean-core.engine-cases/1', cases: [{ id: 'TC_ENG_01', name: 'x', examples: [] }] });
+  const ENGINE = { cases: CASES, contractModule: 'srv/engine-contract.ts', patterns: ['TC_ENG_01'] };
+  const engineRequest = (over: Record<string, unknown> = {}) => request({ files: EFILES, protocol: RUNNER_PROTOCOL_VERSION, engine: ENGINE, ...over });
+  const engineReportFor = (cases = CASES, contractModule = 'srv/engine-contract.ts'): RunnerReport => {
+    const inputs = engineRunInputs(EFILES, cases, contractModule);
+    const h = hashRunInputs(inputs.files, inputs.suiteCode);
+    return {
+      ...reportFor(EFILES),
+      protocol: RUNNER_PROTOCOL_VERSION,
+      engine: { outcome: 'ran', stdout: 'TAP', stderr: '', exitCode: 0, files: h.files, suiteSha256: h.suiteSha256, casesSha256: inputs.casesSha256, contractModule },
+    };
+  };
+
+  test('a version-1 request is unchanged; an engine pass needs protocol 2, a contract path among the files and a case list', () => {
+    expect(parseRunRequest(request(), { serviceMode: 'mock' }).ok).toBe(true);
+    const r = parseRunRequest(engineRequest(), { serviceMode: 'mock' });
+    expect(r.ok && r.value).toMatchObject({ protocol: 2, engine: ENGINE });
+    const refusals: Array<[Record<string, unknown>, number]> = [
+      [engineRequest({ protocol: undefined }), 400],
+      [engineRequest({ protocol: 1 }), 400],
+      [request({ protocol: 3 }), 400],
+      [engineRequest({ engine: { ...ENGINE, contractModule: 'srv/service.ts' } }), 400],
+      [engineRequest({ files: FILES }), 400], // the contract module is not among the files
+      [engineRequest({ engine: { ...ENGINE, cases: 'not json' } }), 400],
+      [engineRequest({ engine: { ...ENGINE, cases: '{}' } }), 400],
+      [engineRequest({ engine: { ...ENGINE, patterns: ['a|b'] } }), 400],
+      [engineRequest({ engine: { ...ENGINE, cases: JSON.stringify({ cases: [], pad: 'x'.repeat(600 * 1024) }) } }), 413],
+    ];
+    for (const [body, status] of refusals) {
+      const res = parseRunRequest(body, { serviceMode: 'mock' });
+      expect(res.ok, JSON.stringify(body).slice(0, 160)).toBe(false);
+      if (!res.ok) expect(res.status, JSON.stringify(body).slice(0, 160)).toBe(status);
+    }
+  });
+
+  test('both sides derive the same pass: the generated code, the runtime and the cases, and a suite nobody sends', () => {
+    const inputs = engineRunInputs(EFILES, CASES, 'srv/engine-contract.ts');
+    expect(inputs.files.map((f) => f.path)).toEqual(['srv/a.ts', 'app.ts', 'srv/engine-contract.ts', ENGINE_RUNTIME_PATH, ENGINE_CASES_PATH]);
+    expect(inputs.suiteCode).toContain('import * as contract from "./srv/engine-contract.ts";');
+    // a file posing as the runtime or the cases is replaced, never trusted
+    const posing = engineRunInputs([...EFILES, { path: ENGINE_RUNTIME_PATH, content: 'export const runEngineCase = () => ({ status: "Passed" });' }], CASES, 'srv/engine-contract.ts');
+    expect(posing.files.filter((f) => f.path === ENGINE_RUNTIME_PATH)).toHaveLength(1);
+    expect(posing.files.find((f) => f.path === ENGINE_RUNTIME_PATH)!.content).not.toContain('status: "Passed"');
+  });
+
+  test('the engine report is hash-bound like the run: other cases, files, suite or module are refused; an old runner is named', () => {
+    const sent = { files: EFILES, engine: ENGINE };
+    const ok = verifyEngineReport(sent, engineReportFor());
+    const inputs = engineRunInputs(EFILES, CASES, 'srv/engine-contract.ts');
+    const h = hashRunInputs(inputs.files, inputs.suiteCode);
+    expect(ok).toEqual({ ok: true, digest: engineDigest(h.files, h.suiteSha256, inputs.casesSha256) });
+    expect(verifyEngineReport(sent, engineReportFor(CASES.replace('TC_ENG_01', 'TC_ENG_02')))).toMatchObject({ ok: false, missing: false, reason: 'The runner reported different engine cases.' });
+    const report = engineReportFor();
+    expect(verifyEngineReport(sent, { ...report, engine: { ...report.engine!, suiteSha256: 'f'.repeat(64) } })).toMatchObject({ ok: false, reason: 'The runner reported a different engine suite.' });
+    expect(verifyEngineReport(sent, { ...report, engine: { ...report.engine!, files: report.engine!.files.slice(1) } })).toMatchObject({ ok: false, reason: 'The runner reported a different set of engine files.' });
+    expect(verifyEngineReport(sent, { ...report, engine: { ...report.engine!, contractModule: 'engine-contract.ts' } })).toMatchObject({ ok: false, reason: 'The runner reported a different contract module.' });
+    const { engine: _drop, ...older } = report;
+    void _drop;
+    expect(verifyEngineReport(sent, older)).toEqual({ ok: false, missing: true, reason: 'The runner did not run the engine cases (a runner revision before protocol 2).' });
+    // the shape is checked first
+    expect(parseRunnerReport(report)).not.toBeNull();
+    expect(parseRunnerReport({ ...report, engine: { ...report.engine!, casesSha256: 'x' } })).toBeNull();
+  });
+
+  test('the client sends protocol 2 with the engine pass and keeps the main run when the engine report does not hold', async () => {
+    let sentBody: Record<string, unknown> | null = null;
+    const fetchWith = (answer: RunnerReport) =>
+      (async (_url: string, init: RequestInit) => {
+        sentBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify(answer), { status: 200 });
+      }) as unknown as typeof fetch;
+    const input = { files: EFILES, suiteCode: SUITE, patterns: [], mode: 'mock' as const, engine: ENGINE };
+    const good = await callIsolatedRunner('https://r.example.run.app', input, { idToken: async () => 't', fetchImpl: fetchWith(engineReportFor()) });
+    expect(sentBody).toMatchObject({ protocol: 2, engine: ENGINE });
+    expect(good.ok && good.engine).toMatchObject({ ok: true });
+    const { engine: _e, ...older } = engineReportFor();
+    void _e;
+    const old = await callIsolatedRunner('https://r.example.run.app', input, { idToken: async () => 't', fetchImpl: fetchWith(older as RunnerReport) });
+    expect(old.ok).toBe(true);
+    expect(old.ok && old.engine).toEqual({ ok: false, reason: 'The runner did not run the engine cases (a runner revision before protocol 2).' });
+  });
+
+  test('the runner runs the pass through the same core with the same guards; the route records it only when verified', () => {
+    const server = fs.readFileSync(path.join(ROOT, 'runner/server.ts'), 'utf8');
+    expect(server).toContain('const inputs = engineRunInputs(run.files, run.engine.cases, run.engine.contractModule);');
+    const pass = server.slice(server.indexOf('const inputs = engineRunInputs('));
+    expect(pass.slice(0, 600)).toMatch(/executeSandboxRun\(\{\s+files: inputs\.files,\s+suiteCode: inputs\.suiteCode,\s+patterns: run\.engine\.patterns,\s+allowUnsandboxed: false,/);
+    expect(server).toContain('protocol: RUNNER_PROTOCOL_VERSION,');
+    const route = fs.readFileSync(path.join(ROOT, 'app/api/run-tests/route.ts'), 'utf8');
+    // the digest in the receipt is the verified one, from the isolated runner or the named local path
+    expect(route).toContain('call.engine?.ok && call.report.engine');
+    expect(route).toContain('{ engine: { digest: execution.engine.digest, contractModule: execution.engine.contractModule, viaContract: engineMerge?.viaContract ?? [] } }');
+    // the app never executes the pass itself outside the emulator path
+    expect(route).toMatch(/if \(enginePlan\) \{\r?\n\s+\/\/ The same derivation the runner makes[^\r\n]*\r?\n\s+const inputs = engineRunInputs\(files, enginePlan\.cases, enginePlan\.contractModule\);\r?\n\s+const pass = await executeLocally\(target,/);
+  });
+
+  test('a receipt may carry the engine pass; a malformed one is no receipt', () => {
+    const receipt: TestRunReceipt = {
+      v: TEST_RUN_RECEIPT_VERSION,
+      runId: 'run-1',
+      codeDigest: 'a'.repeat(64),
+      suiteDigest: 'b'.repeat(64),
+      casesDigest: 'c'.repeat(64),
+      environment: 'mock',
+      scope: { selected: null, cases: 1 },
+      stubs: [],
+      executedAt: '2026-10-12T10:00:00.000Z',
+      executedBy: 'uid',
+      exitCode: 0,
+      verdicts: [{ id: 'TC_ENG_01', status: 'Passed' }],
+    };
+    expect(isTestRunReceipt({ ...receipt, engine: { digest: 'd'.repeat(64), contractModule: 'srv/engine-contract.ts', viaContract: ['TC_ENG_01'] } })).toBe(true);
+    expect(isTestRunReceipt({ ...receipt, engine: { digest: 'short', contractModule: 'srv/engine-contract.ts', viaContract: [] } })).toBe(false);
+    expect(isTestRunReceipt({ ...receipt, engine: { digest: 'd'.repeat(64), contractModule: 'srv/engine-contract.ts', viaContract: [1] } })).toBe(false);
   });
 });

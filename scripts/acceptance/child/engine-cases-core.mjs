@@ -1,22 +1,28 @@
 /**
- * Engine cases through the call contract — building the requests and judging
- * the answers. Pure: no I/O, no package code. Used by the sandboxed child
- * (`engine-cases-child.mjs`, which builds and calls) and by the parent
- * (`../engine-cases.mjs`, which judges what the child reported).
+ * The engine-case runtime: runs engine cases against a package's call contract
+ * and judges the answers — no model-written assertion anywhere.
  *
- * The contract a generated package exports (`lib/engine-call-contract.ts`):
+ * ONE source, two places that execute it, both sandboxed:
+ *   - the isolated test runner (roadmap 8.9): the app sends this file as
+ *     `__cc_engine/runtime.mjs` beside the generated code, and the engine suite
+ *     (`lib/test-sandbox/engine-suite.ts`) imports it — hash-bound like every
+ *     file of a run. The app carries it as `ENGINE_RUNTIME_JS`
+ *     (`lib/test-sandbox/engine-runtime.ts`), generated from this file by
+ *     `node scripts/acceptance/sync-engine-runtime.mjs`;
+ *     `tests/engine-call-contract.spec.ts` fails when the two differ.
+ *   - the acceptance harness (`../engine-cases.mjs` → `engine-cases-child.mjs`).
  *
+ * The contract a generated package exports (`lib/engine-call-contract.ts`, code-draft rule 24):
  *   CONTRACT = { version: 1, baseRequest, fields: { ORIGINAL_NAME: 'request.path' | 'list[].key' | null } }
- *   validate(request) → { ok, errors: [{ field, rule, message }], normalized }
- *   simulate(request) → { ok, runId, records, errors }
- *   getRun(runId)     → the stored run ({ runId, … }) or null
+ *   validate(request)        → { ok, errors: [{ field, rule, message }], normalized }
+ *   simulate(request)        → { ok, runId, records, errors }
+ *   getRun(runId)            → the stored run ({ runId, … }) or null
+ *   compute(field, a, op, b) → the exact result as a decimal string at the field's places (op: + - * /)
  *
- * A call (`EngineCaseCall` in `lib/engine-call-contract.ts`):
- *   { op: 'validate' | 'simulate' | 'run-identity', mode?: 'request' | 'append' | 'empty',
- *     set: [{ field, to: { value } | { special } | { sameAs } | { differentFrom } }], expect: { kind, … } }
+ * Pure apart from calling the module it is handed. No imports.
  */
 
-/** Where the contract module may stand — the same list as `CALL_CONTRACT_PATHS` in lib/engine-call-contract.ts. */
+/** Where the contract module may stand, in the order they are tried. */
 export const CALL_CONTRACT_PATHS = [
   'srv/engine-contract.ts',
   'srv/engine-contract.mjs',
@@ -26,7 +32,11 @@ export const CALL_CONTRACT_PATHS = [
   'engine-contract.js',
 ];
 
-export const CONTRACT_EXPORTS = ['CONTRACT', 'validate', 'simulate', 'getRun'];
+export const CONTRACT_EXPORTS = ['CONTRACT', 'validate', 'simulate', 'getRun', 'compute'];
+
+export const NOT_RUN_NO_CONTRACT = 'Not run — the code does not export the call contract';
+
+const NOT_EXPRESSIBLE = "not expressible through the call contract — asserted by the model's test only";
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -45,7 +55,7 @@ export function resolveField(contract, name) {
   return { path: path.trim() };
 }
 
-/** `a.b` → ['a', 'b']; `list[].key` → { list: ['list'], key: ['key'] }. */
+/** `a.b` → { list: null, key: ['a', 'b'] }; `list[].key` → { list: ['list'], key: ['key'] }. */
 function splitPath(path) {
   const at = path.indexOf('[]');
   if (at === -1) return { list: null, key: path.split('.').filter(Boolean) };
@@ -134,7 +144,7 @@ export function buildRequest(contract, call) {
     }
   }
   if (call.mode === 'append' && !appended) {
-    // Nothing to change on the copy (a passing value "as in the base"): append the first record of the first list field.
+    // Nothing to change on the copy (a passing value "as in the base"): append a copy of the first record.
     const listPath = Object.values(contract.fields ?? {}).find((p) => typeof p === 'string' && p.includes('[]'));
     if (!listPath) return { notRunnable: 'the contract maps no record list to append to' };
     const list = getAt(request, splitPath(listPath).list);
@@ -165,9 +175,11 @@ const sameField = (errField, name, path) => {
 
 const isZero = (v) => v === 0 || (typeof v === 'string' && /^[-+]?0+(\.0+)?$/.test(v.trim()));
 
+const message = (err) => String(err && err.message ? err.message : err).split('\n')[0].slice(0, 200);
+
 /**
- * Judge one call's outcome as the child reported it:
- * `{ threw?, ok?, errors?, normalized?, records?, baseRecords?, ids?, readBack?, notRunnable?, path? }`.
+ * Judge one call's outcome:
+ * `{ threw?, ok?, errors?, normalized?, records?, baseRecords?, ids?, readBack?, value?, notRunnable?, path? }`.
  * Returns `{ status: 'pass' | 'fail' | 'not-runnable', evidence }`.
  */
 export function judge(call, out) {
@@ -229,6 +241,11 @@ export function judge(call, out) {
       if (out.readBack !== a) return { status: 'fail', evidence: `getRun(${a}) after the second run returned ${JSON.stringify(out.readBack ?? null)} — the first run was overwritten or lost` };
       return { status: 'pass', evidence: `two ids (${a}, ${b}); the first run is still readable as itself` };
     }
+    case 'equals': {
+      if (out.threw !== undefined) return { status: 'fail', evidence: `compute threw: ${out.threw}` };
+      const got = typeof out.value === 'string' ? out.value : JSON.stringify(out.value);
+      return got === e.value ? { status: 'pass', evidence: `exactly ${got}` } : { status: 'fail', evidence: `${got}, expected exactly ${e.value}` };
+    }
     default:
       return { status: 'not-runnable', evidence: `unknown expectation '${e.kind}'` };
   }
@@ -243,4 +260,114 @@ export function caseVerdict(examples) {
   if (examples.some((x) => x.status === 'pass')) return { status: 'Passed' };
   const reasons = [...new Set(examples.map((x) => x.evidence).filter(Boolean))];
   return { status: 'Not run', reason: reasons.length > 0 ? reasons.join('; ') : 'no example of this case can be expressed through the call contract' };
+}
+
+async function attempt(fn) {
+  try {
+    return { answer: await fn() };
+  } catch (err) {
+    return { threw: message(err) };
+  }
+}
+
+/** Per-module state: the positive control and the base record count, computed once. */
+export function createEngineState() {
+  return { control: undefined };
+}
+
+/**
+ * The positive control: the base request passes `validate` and `simulate`.
+ * Without it a "refused" verdict would prove nothing — the mapping, not the
+ * case, would be refused. `{ ok: true, baseRecords }` or `{ ok: false, reason }`.
+ */
+async function controlOf(mod, state) {
+  if (state.control) return state.control;
+  const missing = CONTRACT_EXPORTS.filter((name) => mod[name] === undefined);
+  if (missing.length > 0) return (state.control = { ok: false, reason: `${NOT_RUN_NO_CONTRACT} (it lacks ${missing.join(', ')})` });
+  const contract = mod.CONTRACT;
+  if (!isObject(contract) || !isObject(contract.baseRequest)) return (state.control = { ok: false, reason: 'the contract has no baseRequest' });
+  const v = await attempt(() => mod.validate(structuredClone(contract.baseRequest)));
+  if (v.threw !== undefined || v.answer?.ok !== true) {
+    return (state.control = { ok: false, reason: `the contract's baseRequest is not accepted by validate (${v.threw ?? JSON.stringify(errorsOf(v.answer))}) — the mapping does not fit the code` });
+  }
+  const s = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
+  if (s.threw !== undefined || s.answer?.ok === false) {
+    return (state.control = { ok: false, reason: `the contract's baseRequest is refused by simulate (${s.threw ?? JSON.stringify(errorsOf(s.answer))}) — the mapping does not fit the code` });
+  }
+  if (typeof s.answer?.records !== 'number') return (state.control = { ok: false, reason: 'simulate reports no record count (records) for the base request' });
+  return (state.control = { ok: true, baseRecords: s.answer.records });
+}
+
+/** Execute one call against the contract; the outcome `judge` reads. */
+async function execute(mod, call, baseRecords) {
+  const contract = mod.CONTRACT;
+  if (call.op === 'compute') {
+    const c = call.compute ?? {};
+    let acc = c.start;
+    try {
+      for (const step of c.steps ?? []) acc = await mod.compute(String(c.field), acc, step.op, step.b);
+    } catch (err) {
+      return { threw: message(err) };
+    }
+    return { value: typeof acc === 'number' && !Number.isFinite(acc) ? String(acc) : acc };
+  }
+  if (call.op === 'run-identity') {
+    const realNow = Date.now;
+    const fixed = realNow();
+    Date.now = () => fixed;
+    try {
+      const a = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
+      if (a.threw !== undefined) return { threw: a.threw };
+      const b = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
+      const idA = a.answer?.runId ?? null;
+      const read = idA ? await attempt(() => mod.getRun(idA)) : { answer: null };
+      return {
+        ids: [idA, b.answer?.runId ?? null].map((x) => (x === null || x === undefined ? null : String(x))),
+        readBack: read.answer && read.answer.runId !== undefined ? String(read.answer.runId) : null,
+      };
+    } finally {
+      Date.now = realNow;
+    }
+  }
+  const built = buildRequest(contract, call);
+  if (built.notRunnable) return { notRunnable: built.notRunnable };
+  const field = call.expect?.field;
+  const mapped = field ? resolveField(contract, field).path : null;
+  if (call.op === 'validate') {
+    const r = await attempt(() => mod.validate(built.request));
+    if (r.threw !== undefined) return { threw: r.threw, path: mapped };
+    const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer), path: mapped };
+    if (mapped && r.answer && isObject(r.answer.normalized)) {
+      const v = readField(r.answer.normalized, mapped);
+      if (v !== undefined) out.normalized = typeof v === 'number' && !Number.isFinite(v) ? String(v) : v;
+    }
+    return out;
+  }
+  const r = await attempt(() => mod.simulate(built.request));
+  if (r.threw !== undefined) return { threw: r.threw, path: mapped };
+  const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer), path: mapped };
+  if (typeof r.answer?.records === 'number') out.records = r.answer.records;
+  if (call.expect?.kind === 'records-delta') out.baseRecords = baseRecords;
+  return out;
+}
+
+/**
+ * Run one engine case (`{ id, examples: [{ input, expected, call? }] }`)
+ * against a loaded contract module. Returns
+ * `{ status: 'Passed' | 'Failed' | 'Not run', reason?, examples: [{ input, status, evidence }] }`.
+ */
+export async function runEngineCase(mod, kase, state = createEngineState()) {
+  const control = await controlOf(mod, state);
+  if (!control.ok) return { status: 'Not run', reason: control.reason, examples: [] };
+  const examples = [];
+  for (const e of kase.examples ?? []) {
+    if (!e.call) {
+      examples.push({ input: e.input, status: 'not-runnable', evidence: NOT_EXPRESSIBLE });
+      continue;
+    }
+    const out = await execute(mod, e.call, control.baseRecords);
+    examples.push({ input: e.input, ...judge(e.call, out) });
+  }
+  const verdict = caseVerdict(examples);
+  return { status: verdict.status, ...(verdict.reason ? { reason: verdict.reason } : {}), examples };
 }

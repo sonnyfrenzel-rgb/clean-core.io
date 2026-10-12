@@ -55,3 +55,10 @@ export function simulate(request) {
 export function getRun() {
   return latest;
 }
+
+export function compute(field, a, op, b) {
+  const x = parseFloat(a);
+  const y = parseFloat(b);
+  const r = op === '+' ? x + y : op === '-' ? x - y : op === '*' ? x * y : x / y;
+  return String(r);
+}

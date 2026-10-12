@@ -86,6 +86,7 @@ import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAsses
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
 import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
+import { ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-suite';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 
@@ -891,6 +892,15 @@ export default function TestingSandboxPage() {
    */
   const receiptVerdicts = new Map((coveringTestRunReceipt(project)?.verdicts ?? []).map((v) => [v.id, v.status as string]));
   const sessionVerdicts = new Map((testResults ?? []).map((r) => [String(r.id ?? ''), r.status as string | undefined]));
+  /**
+   * 3.0.12 — the cases whose verdict the call contract gave in the isolated
+   * runner (no model-written assertion): from the covering receipt, or for
+   * this session's run from the engine pass's test titles.
+   */
+  const viaContract = new Set<string>([
+    ...(coveringTestRunReceipt(project)?.engine?.viaContract ?? []),
+    ...(testResults ?? []).filter((r) => String((r as { name?: unknown }).name ?? '').includes(ENGINE_CONTRACT_MARKER)).map((r) => String(r.id ?? '')),
+  ]);
   const verdictOf = (tc: { id?: unknown }): string | null => {
     const id = String(tc.id ?? '');
     const v = run.kind === 'recorded' ? receiptVerdicts.get(id) : run.kind === 'session' ? sessionVerdicts.get(id) : undefined;
@@ -1153,9 +1163,9 @@ export default function TestingSandboxPage() {
         ? {
             ruleId: engineCase.trace.ruleId ?? null,
             expected: engineCase.examples.map((e) => `${e.input} → ${e.expected}`).join('; ').slice(0, 300),
-            // The verdicts on the project come from the suite the model wrote; a run through the
-            // call contract happens in the acceptance sandbox (scripts/acceptance/engine-cases.mjs).
-            via: 'model-assertion' as const,
+            // Through the call contract in the isolated runner (no model in the loop), or from the
+            // model's own test for the case — an extra check whose failure is not a confirmed defect.
+            via: viaContract.has(String(tc.id ?? '')) ? ('contract' as const) : ('model-assertion' as const),
           }
         : null,
     });

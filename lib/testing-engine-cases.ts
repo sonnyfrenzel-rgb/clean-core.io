@@ -374,14 +374,22 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
     return g ? `fits ${f.declaration} exactly (${value})${then(value)}` : `accepted; kept exactly as ${value}`;
   };
   const NAME = f.name.toUpperCase();
+  // A working variable is no part of a request: its places and bound are checked through
+  // `compute(field, value, '+', '0')` — the field's own decimal code — instead of `validate`.
+  const internal = !f.input && !f.component;
+  const asIs = (value: string): NonNullable<EngineCaseCall['compute']> => ({ field: NAME, start: value, steps: [{ op: '+', b: '0' }] });
   /** Accepted and held as `kept` — or, where a check on the field rejects `kept`, refused by that check. */
   const keptCall = (input: string, kept: string): EngineCaseCall => {
+    if (internal) return { op: 'compute', compute: asIs(input), set: [], expect: { kind: 'equals', value: kept } };
     const g = stoppedBy(kept);
     return g
       ? { op: 'simulate', set: [{ field: NAME, to: { value: input } }], expect: guardRefusal(g) }
       : { op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'accepted', field: NAME, normalized: kept } };
   };
-  const refusedCall = (input: string): EngineCaseCall => ({ op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'refused', field: NAME } });
+  const refusedCall = (input: string): EngineCaseCall =>
+    internal
+      ? { op: 'compute', compute: asIs(input), set: [], expect: { kind: 'refused' } }
+      : { op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'refused', field: NAME } };
   const D = f.digits ?? 15;
   const d = f.decimals;
   const name = fieldWord(f);
@@ -436,18 +444,25 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
     }),
   );
 
-  const arithmetic: EngineCaseExample[] = [];
+  // In machine form: `compute(field, a, op, b)` folded over the steps (code-draft rule 24).
+  type Step = { op: '+' | '-' | '*' | '/'; b: string };
+  const arith = (input: string, expected: string, start: string, steps: Step[]) => ({
+    input,
+    expected,
+    compute: { field: NAME, start, steps },
+  });
+  const arithmetic: Array<ReturnType<typeof arith>> = [];
   if (d > 0) {
     arithmetic.push(
-      { input: `${name} = 0.1 + 0.2`, expected: exactAt(['0.1', '0.2'], d, [1, 1]) },
-      { input: `${name} = 0.4 - 0.1`, expected: exactAt(['0.4', '0.1'], d, [1, -1]) },
-      { input: `${name} = 0.3 - 0.2`, expected: exactAt(['0.3', '0.2'], d, [1, -1]) },
-      { input: `${name} = 0.1 added ten times`, expected: exactAt(Array(10).fill('0.1'), d, Array(10).fill(1)) },
+      arith(`${name} = 0.1 + 0.2`, exactAt(['0.1', '0.2'], d, [1, 1]), '0.1', [{ op: '+', b: '0.2' }]),
+      arith(`${name} = 0.4 - 0.1`, exactAt(['0.4', '0.1'], d, [1, -1]), '0.4', [{ op: '-', b: '0.1' }]),
+      arith(`${name} = 0.3 - 0.2`, exactAt(['0.3', '0.2'], d, [1, -1]), '0.3', [{ op: '-', b: '0.2' }]),
+      arith(`${name} = 0.1 added ten times`, exactAt(Array(10).fill('0.1'), d, Array(10).fill(1)), '0.1', Array.from({ length: 9 }, () => ({ op: '+' as const, b: '0.1' }))),
     );
   }
   arithmetic.push(
-    { input: `${name} = 2 / 3`, expected: formatScaled(divRound(TWO * pow10(d), BigInt(3)), d) },
-    { input: `${name} = -2 / 3`, expected: formatScaled(divRound(-TWO * pow10(d), BigInt(3)), d) },
+    arith(`${name} = 2 / 3`, formatScaled(divRound(TWO * pow10(d), BigInt(3)), d), '2', [{ op: '/', b: '3' }]),
+    arith(`${name} = -2 / 3`, formatScaled(divRound(-TWO * pow10(d), BigInt(3)), d), '-2', [{ op: '/', b: '3' }]),
   );
   out.push(
     makeCase({
@@ -456,7 +471,11 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
       trace,
       name: `${name}: sums and quotients are exact at ${d} decimal places`,
       description: `${name} is ${where}. Packed arithmetic is decimal: 0.1 + 0.2 is 0.3, not 0.30000000000000004, and a quotient is rounded commercially to the field's ${d} places (a ratio of six places stays six). A comparison against a threshold then gives the original's answer — binary floating point changed a status at 0.3 kg (PP review).`,
-      examples: arithmetic.map((e) => ({ input: e.input, expected: `exactly ${e.expected}${then(e.expected)}` })),
+      examples: arithmetic.map((e) => ({
+        input: e.input,
+        expected: `exactly ${e.expected}${then(e.expected)}`,
+        call: { op: 'compute', compute: e.compute, set: [], expect: { kind: 'equals', value: e.expected } },
+      })),
     }),
   );
   return out;

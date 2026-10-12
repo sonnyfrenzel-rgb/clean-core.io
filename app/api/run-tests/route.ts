@@ -12,7 +12,7 @@ import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store'
 import type { RepairDraft } from '@/lib/repair-draft';
 import { executeSandboxRun, type SandboxRunOutcome } from '@/lib/test-sandbox/core';
 import { sandboxFilesFromStoredCode, sandboxPatterns } from '@/lib/test-sandbox/files';
-import { hashRunInputs, MAX_RUN_INPUT_BYTES, MAX_RUN_PATTERNS, type RunnerProxy } from '@/lib/test-sandbox/protocol';
+import { engineDigest, hashRunInputs, MAX_RUN_INPUT_BYTES, MAX_RUN_PATTERNS, type RunnerProxy } from '@/lib/test-sandbox/protocol';
 import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor, type RunnerTarget } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
 import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability';
@@ -24,6 +24,8 @@ import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from
 import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
 import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
 import type { SandboxFile } from '@/lib/test-sandbox/files';
+import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
+import { mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
 
 /**
  * POST /api/run-tests
@@ -88,6 +90,12 @@ interface Execution {
   exitCode: number;
   stubbedPackages: string[];
   runner: NonNullable<TestRunReceipt['runner']>;
+  /**
+   * 3.0.12 — the engine pass through the call contract: its TAP output and the
+   * digest of what ran (checked against what the app derived), or why its
+   * verdicts are not used. Absent when no engine pass was planned.
+   */
+  engine?: { ran: true; stdout: string; digest: string; contractModule: string } | { ran: false; reason: string };
 }
 
 /**
@@ -382,6 +390,16 @@ export async function POST(req: Request) {
 
   const files = sandboxFilesFromStoredCode(code);
   const patterns = sandboxPatterns(selectedTestIds);
+  // 3.0.12 (owner, 12.10.2026) — the engine cases run through the call contract
+  // in the same executor as the suite, never in this service. Planned from the
+  // stored cases and the generated files; a draft run plans it too, against
+  // the draft's code.
+  const enginePlanOutcome = planEngineRun(
+    (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
+    files,
+    Array.isArray(selectedTestIds) ? selectedTestIds.map((id: unknown) => String(id)) : null,
+  );
+  const enginePlan: EngineRunPlan | null = enginePlanOutcome.kind === 'planned' ? enginePlanOutcome.plan : null;
   if (patterns === null) {
     return NextResponse.json(
       { output: '', error: 'A selected test id holds characters the runner cannot filter on (letters, digits, "_", "." and "-" only).', exitCode: 1, testResults: [] },
@@ -456,7 +474,7 @@ export async function POST(req: Request) {
     if (target.kind === 'isolated') {
       const call = await callIsolatedRunner(
         target.url,
-        { files, suiteCode: testCode, patterns, mode, ...(proxy ? { proxy } : {}) },
+        { files, suiteCode: testCode, patterns, mode, ...(proxy ? { proxy } : {}), ...(enginePlan ? { engine: enginePlan } : {}) },
         { idToken: (audience) => fetchMetadataIdToken(audience) },
       );
       if (!call.ok) {
@@ -476,6 +494,16 @@ export async function POST(req: Request) {
         exitCode: call.report.exitCode,
         stubbedPackages: [...call.report.stubbedPackages].sort(),
         runner: { kind: 'isolated', revision: call.report.revision, filesDigest: call.filesDigest },
+        ...(enginePlan
+          ? {
+              engine:
+                call.engine?.ok && call.report.engine
+                  ? call.report.engine.outcome === 'build-error'
+                    ? { ran: false as const, reason: `The engine pass did not compile: ${call.report.engine.buildError ?? 'compilation failed'}` }
+                    : { ran: true as const, stdout: call.report.engine.stdout, digest: call.engine.digest, contractModule: enginePlan.contractModule }
+                  : { ran: false as const, reason: call.engine && !call.engine.ok ? call.engine.reason : 'The runner did not report the engine pass.' },
+            }
+          : {}),
       };
     } else {
       // Emulator build only (resolveRunnerTarget). Named in the response and
@@ -495,6 +523,16 @@ export async function POST(req: Request) {
         stubbedPackages: outcome.stubbedPackages,
         runner: { kind: 'local-emulator', revision: 'local-emulator', filesDigest: hashRunInputs(files, testCode).digest },
       };
+      if (enginePlan) {
+        // The same derivation the runner makes, through the same core, named local-emulator like the run.
+        const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
+        const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns });
+        const hashed = hashRunInputs(inputs.files, inputs.suiteCode);
+        execution.engine =
+          pass.kind === 'ran'
+            ? { ran: true, stdout: pass.stdout, digest: engineDigest(hashed.files, hashed.suiteSha256, inputs.casesSha256), contractModule: enginePlan.contractModule }
+            : { ran: false, reason: pass.kind === 'build-error' ? `The engine pass did not compile: ${pass.message}` : pass.reason };
+      }
     }
 
     const runnerInfo = { kind: execution.runner.kind, revision: execution.runner.revision };
@@ -515,7 +553,18 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     }
     const { stdout, stderr, exitCode } = execution;
 
-    const testResults = parseTapOutput(stdout);
+    // 3.0.12 — the engine pass folded in: a case the call contract ran takes the
+    // contract's verdict; the model's test for it stays an extra check.
+    const engineMerge =
+      execution.engine && execution.engine.ran ? mergeEngineVerdicts(parseTapOutput(stdout), parseTapOutput(execution.engine.stdout)) : null;
+    const testResults = engineMerge ? engineMerge.results : parseTapOutput(stdout);
+    const engineSummary = execution.engine
+      ? execution.engine.ran
+        ? { ran: true, viaContract: engineMerge?.viaContract ?? [] }
+        : { ran: false, reason: execution.engine.reason }
+      : enginePlanOutcome.kind === 'no-contract'
+        ? { ran: false, reason: `Not run — the code does not export the call contract (${enginePlanOutcome.reason})` }
+        : null;
 
     // ── 6) The verdicts and the receipt: what the server saw, the server writes ─
     //
@@ -624,6 +673,9 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
         .map((r) => ({ id: r.id, status: r.status as TestRunReceipt['verdicts'][number]['status'] })),
       ...(draft ? { draft: { id: draft.draftId, digest: draft.draftDigest } } : {}),
       runner: execution.runner,
+      ...(execution.engine && execution.engine.ran
+        ? { engine: { digest: execution.engine.digest, contractModule: execution.engine.contractModule, viaContract: engineMerge?.viaContract ?? [] } }
+        : {}),
     };
     let recorded = false;
     // A draft run is recorded on the draft and nowhere else: no verdicts and no
@@ -768,6 +820,7 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
       testResults,
       stubbedPackages: [...stubbedPackages].sort(),
       runner: runnerInfo,
+      ...(engineSummary ? { engine: engineSummary } : {}),
       receipt: recorded ? receipt : null,
     });
   } catch {

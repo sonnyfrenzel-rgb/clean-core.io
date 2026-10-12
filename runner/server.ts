@@ -4,9 +4,12 @@ import {
   parseRunRequest,
   MAX_RUN_REQUEST_BYTES,
   RUNNER_NETWORK_PROBES,
+  RUNNER_PROTOCOL_VERSION,
+  type RunnerEngineReport,
   type RunnerMode,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
+import { engineRunInputs } from '../lib/test-sandbox/engine-suite';
 import { startRelay } from './relay';
 
 /**
@@ -114,6 +117,28 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
     });
     if (outcome.kind === 'unavailable') return send(res, 500, { error: outcome.reason });
 
+    // 3.0.12 (protocol 2) — the engine pass: the engine cases against the call
+    // contract, through the same core and the same guards, as a second child.
+    // The runner derives its files and suite from the request (`engineRunInputs`);
+    // the app derives the same and compares the hashes.
+    let engine: RunnerEngineReport | undefined;
+    if (run.engine) {
+      const inputs = engineRunInputs(run.files, run.engine.cases, run.engine.contractModule);
+      const pass = await executeSandboxRun({
+        files: inputs.files,
+        suiteCode: inputs.suiteCode,
+        patterns: run.engine.patterns,
+        allowUnsandboxed: false,
+        extraEnv,
+        loopback: relay ? { host: '127.0.0.1', port: relay.port } : null,
+      });
+      if (pass.kind === 'unavailable') return send(res, 500, { error: pass.reason });
+      engine =
+        pass.kind === 'build-error'
+          ? { outcome: 'build-error', stdout: '', stderr: '', exitCode: 1, buildError: pass.message, files: pass.files, suiteSha256: pass.suiteSha256, casesSha256: inputs.casesSha256, contractModule: run.engine.contractModule }
+          : { outcome: 'ran', stdout: pass.stdout, stderr: pass.stderr, exitCode: pass.exitCode, files: pass.files, suiteSha256: pass.suiteSha256, casesSha256: inputs.casesSha256, contractModule: run.engine.contractModule };
+    }
+
     const report: RunnerReport =
       outcome.kind === 'build-error'
         ? {
@@ -127,6 +152,8 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
             suiteSha256: outcome.suiteSha256,
             revision: REVISION,
             mode: run.mode,
+            protocol: RUNNER_PROTOCOL_VERSION,
+            ...(engine ? { engine } : {}),
           }
         : {
             outcome: 'ran',
@@ -138,6 +165,8 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
             suiteSha256: outcome.suiteSha256,
             revision: REVISION,
             mode: run.mode,
+            protocol: RUNNER_PROTOCOL_VERSION,
+            ...(engine ? { engine } : {}),
           };
     return send(res, 200, report);
   } catch {

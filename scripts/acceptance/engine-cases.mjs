@@ -27,9 +27,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyToTemp, decideExecution, removeTemp, runChild } from './lib/sandbox.mjs';
-import { CALL_CONTRACT_PATHS, caseVerdict, judge } from './child/engine-cases-core.mjs';
+import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT } from './child/engine-cases-core.mjs';
 
-export const NOT_RUN_NO_CONTRACT = 'Not run — the code does not export the call contract';
+export { NOT_RUN_NO_CONTRACT };
 
 function parseArgs(argv) {
   const opts = { timeout: 20000, trustedFixture: false, staticOnly: false, cases: null, out: null, pkg: null };
@@ -74,27 +74,22 @@ export async function runEngineCases(opts) {
   } else {
     const root = copyToTemp(pkg);
     try {
-      const job = { module: contractPath, cases: cases.map((c) => ({ id: c.id, calls: (c.examples ?? []).map((e) => e.call ?? null) })) };
+      const job = { module: contractPath, cases: cases.map((c) => ({ id: c.id, examples: c.examples ?? [] })) };
       const run = await runChild({ root, job, nodeEnv: 'test', timeoutMs: opts.timeout, flag: decision.flag, entry: 'engine-cases-child.mjs' });
       report.sandbox.executed = true;
       const result = run.result;
       if (run.timedOut) report.cases = allNotRun(cases, `Not run — the package did not finish within ${opts.timeout} ms`);
       else if (!result) report.cases = allNotRun(cases, `Not run — the child gave no result${run.stderrTail ? ` (${run.stderrTail})` : ''}`);
-      else if (result.noContract) report.cases = allNotRun(cases, `${NOT_RUN_NO_CONTRACT}: ${result.noContract}`);
       else if (result.notRunnable || result.error) report.cases = allNotRun(cases, `Not run — ${result.notRunnable ?? result.error}`);
       else {
-        report.contract.present = true;
+        // Judged inside the sandbox by the same runtime the isolated test runner executes.
         const byId = new Map((result.cases ?? []).map((c) => [c.id, c]));
         report.cases = cases.map((c) => {
-          const outcomes = byId.get(c.id)?.examples ?? [];
-          const examples = (c.examples ?? []).map((e, i) =>
-            e.call
-              ? { input: e.input, ...judge(e.call, outcomes[i]) }
-              : { input: e.input, status: 'not-runnable', evidence: 'not expressible through the call contract — asserted by the model\'s test only' },
-          );
-          const verdict = caseVerdict(examples);
-          return { id: c.id, name: c.name, status: verdict.status, ...(verdict.reason ? { reason: verdict.reason } : {}), examples };
+          const r = byId.get(c.id);
+          if (!r) return { id: c.id, name: c.name, status: 'Not run', reason: 'Not run — the child reported nothing for this case', examples: [] };
+          return { id: c.id, name: c.name, status: r.status, ...(r.reason ? { reason: r.reason } : {}), examples: r.examples ?? [] };
         });
+        report.contract.present = !report.cases.some((c) => String(c.reason ?? '').startsWith(NOT_RUN_NO_CONTRACT));
       }
     } finally {
       removeTemp(root);

@@ -123,3 +123,45 @@ export function simulate(request) {
 export function getRun(runId) {
   return runs.get(runId) ?? null;
 }
+
+/** The declared decimal fields and their places — internal ones too (code-draft rule 24). */
+const PLACES = { P_AMOUNT: 2, AMOUNT: 2, QUOTA: 6, GV_TOTAL: 2, GV_QUOTA_SUM: 6 };
+const DIGITS = { P_AMOUNT: 15, AMOUNT: 15, QUOTA: 13, GV_TOTAL: 15, GV_QUOTA_SUM: 13 };
+
+function rational(text) {
+  const m = /^([-+]?)(\d+)(?:\.(\d+))?$/.exec(String(text).trim());
+  if (!m) throw new Error(`not a decimal: ${text}`);
+  const frac = m[3] ?? '';
+  const num = BigInt(m[2] + frac);
+  return { num: m[1] === '-' ? -num : num, den: pow10(frac.length) };
+}
+
+export function compute(field, a, op, b) {
+  const places = PLACES[String(field).toUpperCase()];
+  if (places === undefined) throw new Error(`no declared decimal field ${field}`);
+  const x = rational(a);
+  const y = rational(b);
+  let num;
+  let den;
+  if (op === '+' || op === '-') {
+    num = x.num * y.den + (op === '+' ? 1n : -1n) * y.num * x.den;
+    den = x.den * y.den;
+  } else if (op === '*') {
+    num = x.num * y.num;
+    den = x.den * y.den;
+  } else if (op === '/') {
+    if (y.num === 0n) throw new Error('division by zero');
+    num = x.num * y.den;
+    den = x.den * y.num;
+  } else throw new Error(`unknown operator ${op}`);
+  if (den < 0n) {
+    num = -num;
+    den = -den;
+  }
+  // round half away from zero to the field's places
+  const scaled = (num < 0n ? -num : num) * pow10(places);
+  let q = scaled / den;
+  if ((scaled % den) * 2n >= den) q += 1n;
+  if (q > pow10(DIGITS[String(field).toUpperCase()]) - 1n) throw new Error(`${field} overflows P(${DIGITS[String(field).toUpperCase()]},${places})`);
+  return format(num < 0n ? -q : q, places);
+}

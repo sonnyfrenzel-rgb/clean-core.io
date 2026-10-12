@@ -19,6 +19,7 @@
  *     export function validate(request) → { ok, errors: [{ field, rule, message }], normalized }
  *     export function simulate(request) → { ok, runId, records, errors }
  *     export function getRun(runId) → the stored run ({ runId, … }) or null
+ *     export function compute(field, a, op, b) → exact decimal string at the field's places
  *
  * - `validate` runs the one input validator every channel uses; `normalized` is
  *   the request as the target holds it, decimals as strings at their places.
@@ -30,23 +31,20 @@
  * - Field values arrive as strings, as a CSV or a form gives them; `null`,
  *   NaN and Infinity as themselves.
  *
- * The cases are run by `scripts/acceptance/engine-cases.mjs` in the acceptance
- * harness's sandbox (`scripts/acceptance/lib/sandbox.mjs`): a child process
- * with the permission model, the network guard, a minimal environment and a
- * hard timeout — and only where the harness allows executing a package at all.
+ * - `compute` applies + - * / to two decimal strings for a declared decimal
+ *   field (named as the original names it, internal ones included) and rounds
+ *   commercially to the field's places — the exact-arithmetic cases.
  *
- * Pure: types, the static presence check and the sentences. No I/O.
+ * In the product the cases run inside the isolated test runner, as a second
+ * pass beside the model's suite (`lib/test-sandbox/engine-suite.ts`, protocol
+ * version 2); for an unpacked package, `scripts/acceptance/engine-cases.mjs`
+ * runs them in the acceptance harness's sandbox. Both execute the same runtime
+ * (`scripts/acceptance/child/engine-cases-core.mjs`).
+ *
+ * Pure: types and the sentences. No I/O.
  */
 
-/** Where the contract module may stand, in the order they are tried. */
-export const CALL_CONTRACT_PATHS = [
-  'srv/engine-contract.ts',
-  'srv/engine-contract.mjs',
-  'srv/engine-contract.js',
-  'engine-contract.ts',
-  'engine-contract.mjs',
-  'engine-contract.js',
-] as const;
+export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, callContractPresence } from './test-sandbox/engine-suite';
 
 /** A value a case puts into a request field. */
 export type CallValue =
@@ -81,11 +79,15 @@ export type CallExpect =
   /** `simulate` answers ok with `records` = the base request's records + `delta`. */
   | { kind: 'records-delta'; delta: number }
   /** Two runs with a frozen clock: two ids, and the first run is still readable as itself. */
-  | { kind: 'distinct-runs' };
+  | { kind: 'distinct-runs' }
+  /** `compute` gives exactly this decimal string. */
+  | { kind: 'equals'; value: string };
 
 /** The machine form of one example. Firestore-safe: no nested arrays, no `undefined`. */
 export interface EngineCaseCall {
-  op: 'validate' | 'simulate' | 'run-identity';
+  op: 'validate' | 'simulate' | 'run-identity' | 'compute';
+  /** `compute`: fold `start` through `compute(field, acc, op, b)` for each step. */
+  compute?: { field: string; start: string; steps: Array<{ op: '+' | '-' | '*' | '/'; b: string }> };
   /**
    * `request` (default): the base request with `set` applied — a `list[].key`
    * field on every record. `append`: a copy of the list's first record, with
@@ -94,24 +96,6 @@ export interface EngineCaseCall {
   mode?: 'request' | 'append' | 'empty';
   set: CallSet[];
   expect: CallExpect;
-}
-
-/* ------------------------------------------------------- presence (static) */
-
-/** Does the generated code carry the call contract module, exporting the four names? Read, never run. */
-export function callContractPresence(files: ReadonlyArray<{ path: string; content: string }>): { present: boolean; path: string | null; missing: string[] } {
-  const norm = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '');
-  for (const candidate of CALL_CONTRACT_PATHS) {
-    const file = files.find((f) => norm(f.path) === candidate);
-    if (!file) continue;
-    const missing = ['CONTRACT', 'validate', 'simulate', 'getRun'].filter(
-      (name) =>
-        !new RegExp(`export\\s+(?:const|let|function|async\\s+function)\\s+${name}\\b`).test(file.content) &&
-        !new RegExp(`export\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`).test(file.content),
-    );
-    return { present: missing.length === 0, path: candidate, missing };
-  }
-  return { present: false, path: null, missing: ['CONTRACT', 'validate', 'simulate', 'getRun'] };
 }
 
 /** What an engine case reads when the code has no call contract to run it against. */
