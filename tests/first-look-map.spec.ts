@@ -91,9 +91,10 @@ test.describe('a new project: the first look ends on the full map', () => {
     await firstScreen(page);
 
     // Next step first (owner, 03.10.2026), the map directly under the answer,
-    // and the work area after it.
+    // and the work area after it. Business's one layer stands on its own, with no
+    // bar (ADR-096): its section is the last block.
     const order = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]', '[data-workspace-process-block]', '[data-workspace-status-tools]', 'nav[data-workspace-layers]'].map(
+      ['[data-next-step]', '[data-first-look]', '[data-workspace-process-block]', '[data-workspace-status-tools]', '[data-workspace-layer-section]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;

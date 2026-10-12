@@ -487,9 +487,10 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       { timeout: 30000 },
     );
     // A plain view switch starts the new view at its top and leaves the old
-    // view's place behind (owner 10.10.2026), so the layer is chosen again here.
+    // view's place behind (owner 10.10.2026). Business has one layer and no bar
+    // since ADR-096 (owner, 12.10.2026): its section stands there without a click.
     expect(new URL(page.url()).hash).toBe('');
-    await page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]').click();
+    await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
       timeout: 15000,
     });

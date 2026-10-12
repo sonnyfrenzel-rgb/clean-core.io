@@ -127,17 +127,13 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(process.locator('[data-process-map]')).toBeVisible();
     await expect(page.locator('[data-workspace-source-column]')).toBeVisible();
 
-    // The map is the anchor of the view under every layer, on the screen and
-    // not only in the source guard below (carried QA finding caa77476a0d2).
-    // Unconditional: without another layer to switch to, the check would pass
-    // without checking anything (QA finding dfec287c8150).
-    const other = page.locator('nav[data-workspace-layers] button[data-workspace-layer][data-layer-state="off"]').first();
-    await expect(other, 'no other layer to switch to — the check below would be vacuous').toBeVisible();
-    const layerKey = await other.getAttribute('data-workspace-layer');
-    await other.click();
-    await expect(
-      page.locator(`nav[data-workspace-layers] button[data-workspace-layer="${layerKey}"]`).first(),
-    ).toHaveAttribute('data-layer-state', 'on');
+    // The map is the anchor of the view beside its layer, on the screen and not
+    // only in the source guard below (carried QA finding caa77476a0d2). Since
+    // ADR-096 (owner, 12.10.2026) Business has one layer, Evidence & controls,
+    // and no bar: there is nothing to switch to, so the check is that the bar is
+    // gone, the one section is there, and the map stands with it.
+    await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-layer-section]')).toHaveAttribute('data-workspace-layer-section', 'evidence');
     await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
     // The order since 03.10.2026 (owner: "show more prominently what I as a

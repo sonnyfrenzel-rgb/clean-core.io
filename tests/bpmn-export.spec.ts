@@ -923,7 +923,12 @@ test('the documentation stage exports the skeleton of the signed run, not a mode
   const start = page.indexOf('const downloadBPMN');
   const handler = page.slice(start, page.indexOf('\n  };', start));
   expect(handler).toContain('saveAs(blob, bpmnFileName(');
-  expect(handler).toContain('buildBpmnExportFromSource(');
+  // The plain reading the map is drawn from, from the reading worker (owner, 12.10.2026) —
+  // byte-equal to buildBpmnExportFromSource with plain names and READING_WRAP
+  // (tests/reading-exports-worker.spec.ts), under the same process name as before.
+  expect(handler).toContain('readingExportsOffThread(signedSource.source');
+  expect(handler).toContain('processName: project?.name || signedSource.fileName');
+  expect(handler).toContain('bpmn: { xml }');
   expect(handler).toContain('signedSource');
   expect(handler).not.toMatch(/parsedDoc|parsedBusinessDoc|l3_flow|sop_details|raci/);
   // The source is only the run's while its digest is the one the run signed.
