@@ -8,7 +8,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
-import { generationRevision } from '../lib/generation-revision';
+import { generationRevision, type GenerationInputs } from '../lib/generation-revision';
 
 /**
  * Roadmap 3.0.11 — the generation is stored by the server, in one transaction,
@@ -72,7 +72,7 @@ async function readGeneration(request: APIRequestContext) {
   return {
     fingerprint: body.contract.fingerprint as string,
     token: body.generation.token as string,
-    inputs: body.generation.inputs as { legacyCode: string; solutionDesign: string; analysis: string },
+    inputs: body.generation.inputs as GenerationInputs,
   };
 }
 
@@ -138,11 +138,16 @@ test.beforeAll(async () => {
 
 test('the GET hands out the token together with the inputs it covers', async ({ request }) => {
   const read = await readGeneration(request);
-  expect(read.inputs).toEqual({ legacyCode: PROGRAM, solutionDesign: 'Design v1', analysis: 'Analysis v1' });
-  // The token is the pure function over those inputs — the browser cannot be
-  // handed one for a state it was not shown.
+  // Since 3.0.12 the inputs carry the PLATFORM KNOWLEDGE block with the
+  // revisions it was read from (`generationInputsOf`), built for this query.
+  const { context, ...prompt } = read.inputs;
+  expect(prompt).toEqual({ legacyCode: PROGRAM, solutionDesign: 'Design v1', analysis: 'Analysis v1' });
+  expect(context.text).toContain('PLATFORM KNOWLEDGE');
+  expect(Object.keys(context).sort()).toEqual(['decision', 'requirements', 'rules', 'text']);
+  // The token is the pure function over those inputs, the block included — the
+  // browser cannot be handed one for a state it was not shown.
   expect(read.token).toBe(
-    generationRevision({ legacyCode: PROGRAM, solutionDesign: 'Design v1', analysis: 'Analysis v1' }, read.fingerprint),
+    generationRevision({ legacyCode: PROGRAM, solutionDesign: 'Design v1', analysis: 'Analysis v1', context }, read.fingerprint),
   );
 });
 

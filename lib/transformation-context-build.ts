@@ -20,7 +20,7 @@ import { referencePatternLine, SAP_REFERENCE_ARCHITECTURES } from '@/lib/sap-ref
 import type { TargetArchitectureCode } from '@/lib/project-commands';
 import {
   buildTransformationContext,
-  decisionOptionOf,
+  recordedDecisionOf,
   type ContextDecision,
   type ContextObject,
   type ContextRule,
@@ -253,21 +253,8 @@ interface StoredDecision {
 }
 
 function decisionOf(project: Record<string, unknown>, contract: ArchitectureContract): ContextDecision {
-  const stored = (project.decision && typeof project.decision === 'object' ? project.decision : null) as StoredDecision | null;
-  let record: ContextDecision['record'] = null;
-  if (stored && typeof stored.decisionId === 'string' && typeof stored.revision === 'number') {
-    const bindings = Array.isArray(stored.bindings) ? (stored.bindings as Array<{ key?: unknown; revision?: unknown }>) : [];
-    const option = bindings.find((b) => b && b.key === 'option');
-    const optionText = option && typeof option.revision === 'string' ? option.revision : null;
-    record = {
-      id: stored.decisionId,
-      revision: stored.revision,
-      status: typeof stored.status === 'string' ? stored.status : 'draft',
-      summary: typeof stored.summary === 'string' ? stored.summary : '',
-      option: optionText,
-      optionKind: decisionOptionOf(optionText),
-    };
-  }
+  // One reading of the record, shared with Transformation's quality tips.
+  const record = recordedDecisionOf(project.decision);
   const signedOff =
     project.approvedByArchitect === true && typeof project.targetArchitecture === 'string' ? project.targetArchitecture : null;
   return {

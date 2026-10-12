@@ -160,6 +160,14 @@ for (const width of [1280, 390] as const) {
       await expect(page.locator('[data-quality-tip="target"]')).toContainText('Confirm the target in Design');
       await expect(page.locator('[data-quality-tip="decision"]')).toContainText('Record the decision');
       await expect(page.locator('[data-generate-now]')).toBeEnabled();
+      // Nothing on record weighs SAP standard: a warning above the tips, never a gate (owner, 12.10.2026).
+      const warning = page.locator('[data-decision-warning="standard-fit-open"]');
+      await expect(warning).toContainText('Standard fit is not assessed yet — SAP standard may already cover this.');
+      await expect(warning.locator('[data-cc-message-strip="warning"]')).toBeVisible();
+      await expect(warning.locator('[data-decision-warning-link]')).toHaveAttribute(
+        'href',
+        new RegExp(`/project/${account.projectId}\\?view=it&origin=transformation\\.tips#standard$`),
+      );
       await expect(page.locator('[data-generate-cost]')).toHaveText('No analysis run used · up to 2 model calls on the community key for this generation');
       // The chain: the phases before Transformation, never Economics.
       const chain = page.locator('[data-generation-chain="before"]');
@@ -176,6 +184,37 @@ for (const width of [1280, 390] as const) {
     });
   });
 }
+
+test('a decision on record against a rebuild is said above the tips; Generate now stays, nothing starts by itself', async ({ page }) => {
+  const account = await seed('tf-against-decision');
+  // A confirmed record whose option is retire, read as the PLATFORM KNOWLEDGE block reads it.
+  // (That no warning ever auto-starts is held server-free in tests/transformation-chain.spec.ts.)
+  await adminMergeDoc('projects', account.projectId, {
+    decision: {
+      decisionId: 'DEC-1',
+      revision: 1,
+      status: 'confirmed',
+      summary: 'Retire the program.',
+      bindings: [{ key: 'option', revision: 'retire · Retire' }],
+      confirmation: { account: 'a', at: new Date().toISOString() },
+    },
+  });
+  await keyAvailable(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await signInThroughForm(page, account);
+  await page.goto(`/project/${account.projectId}/transformation`);
+  const tips = page.locator('[data-quality-tips]');
+  await expect(tips).not.toHaveAttribute('data-quality-tips', 'reading', { timeout: 90_000 });
+  const warning = page.locator('[data-decision-warning="against-decision"]');
+  await expect(warning).toContainText('The decision on record is to retire this program — generating a rebuild goes against it.');
+  await expect(warning.locator('[data-decision-warning-link]')).toHaveAttribute(
+    'href',
+    new RegExp(`/project/${account.projectId}\\?view=management&origin=transformation\\.tips#decision-card$`),
+  );
+  await expect(page.locator('[data-generate-now]')).toBeEnabled();
+  await page.waitForTimeout(2000);
+  await expect(page.locator('[data-generation-screen]')).toHaveCount(0);
+});
 
 test('a tip leads to its place, the place leads back, and the counts are read again', async ({ page }) => {
   const account = await seed('tf-tips-roundtrip');

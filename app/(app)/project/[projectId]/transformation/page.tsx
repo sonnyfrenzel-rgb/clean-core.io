@@ -78,6 +78,7 @@ import {
   generationStages,
   pendingChecks,
   qualityTips,
+  decisionWarning,
   setCheck,
   withChecks,
   originalFactsLines,
@@ -1312,6 +1313,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   };
   const tips = qualityTips(chainInputs);
   const settled = tipsSettled(chainInputs);
+  /** Against the decision on record, or SAP standard not weighed yet — a warning, never a gate (owner, 12.10.2026). */
+  const warning = decisionWarning(chainInputs);
 
   /**
    * The first generation starts by itself only when no tip is open (owner,
@@ -1320,7 +1323,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * visit, never over a package on record, and only where the button could.
    */
   const autoStarted = useRef(false);
-  const nothingOpen = settled && tips.length === 0;
+  // Never by itself while the decision warning shows: the reader decides to generate against it.
+  const nothingOpen = settled && tips.length === 0 && warning === null;
   useEffect(() => {
     if (autoStarted.current || !nothingOpen || !canGenerate || files.length > 0 || modelAvailability.loading || loading) return;
     autoStarted.current = true;
@@ -1637,6 +1641,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       {showTips ? (
         <QualityTips
           tips={tips}
+          warning={warning}
           settled={settled}
           slots={chainSlots(chainInputs)}
           canGenerate={canGenerate}
