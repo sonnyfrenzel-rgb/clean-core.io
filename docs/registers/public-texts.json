@@ -3354,6 +3354,28 @@
       "measured": {
         "lines": 168
       }
+    },
+    {
+      "path": "docs/design/engine-led-transformation.md",
+      "kind": "plan",
+      "purpose": "Design of the engine-led transformation (3.0.12 extension, ADR-100): context pack, deterministic scaffold, step-wise fills, verify and repair, the generation screen and the quality tips, with the build plan in parallel tracks",
+      "audience": "Sonny, agents",
+      "saysToday": "Proposed 12.10.2026: the engine writes the package skeleton and the model fills one function body per routine; measured unit counts and prompt sizes on the CO, PP, SD and PO sources; four parallel build tracks.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Written for 3.0.12 against the current product; it is the build reference for the extension row in docs/ROADMAP.md.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md",
+        "docs/design/decisions.md"
+      ],
+      "measured": {
+        "lines": 858
+      }
     }
   ],
   "served": [
