@@ -325,6 +325,35 @@ export function coveringTestRunReceipt(project: {
 }
 
 /**
+ * The cases whose verdict the call contract gave, as the server reported them
+ * in a `/api/run-tests` answer (`engine: { ran: true, viaContract }`). Never
+ * inferred from a test title: a model-written suite can carry the call-contract
+ * marker in a test name, and the server alone knows which verdicts came from
+ * the engine pass (QA review of 2e6596ddbbc8, 0019c1b57d65).
+ */
+export function engineViaContractOf(engine: unknown): string[] {
+  if (!engine || typeof engine !== 'object' || Array.isArray(engine)) return [];
+  const e = engine as Record<string, unknown>;
+  if (e.ran !== true || !Array.isArray(e.viaContract)) return [];
+  return e.viaContract.filter((id): id is string => typeof id === 'string');
+}
+
+/**
+ * The call-contract cases of the run the page shows: the covering receipt's
+ * for a recorded run, the server's answer for this session's run, none
+ * otherwise.
+ */
+export function viaContractOfRun(
+  runKind: string,
+  receipt: TestRunReceipt | null,
+  sessionViaContract: readonly string[],
+): Set<string> {
+  if (runKind === 'recorded') return new Set(receipt?.engine?.viaContract ?? []);
+  if (runKind === 'session') return new Set(sessionViaContract);
+  return new Set();
+}
+
+/**
  * How many of `ids` an attributable execution reports as passed.
  *
  * Every id has to appear in the receipt with `Passed`. A case the runner never

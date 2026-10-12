@@ -54,12 +54,31 @@ test.describe('generation progress', () => {
     expect(formatElapsed(125_000)).toBe('2:05');
   });
 
-  test('the transformation page draws its bar from the steps, not from a timer', () => {
-    const src = readFileSync(join(__dirname, '..', 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
-    expect(src).toContain('generationProgressAt(generationPhase, now)');
+  // Roadmap 3.0.12 replaced the bar with the generation screen (the chain and
+  // its stages, `components/transformation/GenerationChain.tsx`). The rule the
+  // bar's test held stays: no progress a timer makes up. The screen shows
+  // measured time and the steps the work actually entered — no percentage, no
+  // estimate, and the clock only says how long, never how far.
+  test('the transformation page shows measured time and real steps, never progress a timer makes up', () => {
+    const raw = readFileSync(join(__dirname, '..', 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
+    const src = raw.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    // No estimated percentage and no bar.
     expect(src).not.toMatch(/setProgress\(/);
+    expect(src).not.toContain('generationProgressAt(');
+    expect(src).not.toContain('role="progressbar"');
+    // The one clock sets `now`, and nothing else; no timer enters a stage or a phase.
+    const intervals = [...src.matchAll(/setInterval\(([\s\S]{0,200}?)\)\s*;/g)].map((m) => m[1]);
+    expect(intervals).toEqual(['() => setNow(Date.now()), 250']);
+    for (const t of [...src.matchAll(/set(?:Timeout|Interval)\(([\s\S]{0,400}?)\},?\s*\d+\)/g)]) {
+      expect(t[1], 'a timer advances the generation').not.toMatch(/enterPhase|enterStage|setStageLog|setGenerationPhase/);
+    }
+    // The stages drawn are the ones the work entered, timed from their own start.
+    expect(src).toContain('stages={generationStages(stageLog)}');
     for (const key of ['contract', 'model', 'checking', 'storing', 'done']) {
       expect(src, `the page never enters "${key}"`).toMatch(new RegExp(`'${key}'`));
     }
+    const screen = readFileSync(join(__dirname, '..', 'components/transformation/GenerationChain.tsx'), 'utf8');
+    expect(screen).toContain('formatElapsed(now - startedAt)');
+    expect(screen).not.toContain('role="progressbar"');
   });
 });

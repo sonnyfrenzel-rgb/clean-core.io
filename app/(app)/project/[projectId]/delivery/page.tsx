@@ -86,6 +86,7 @@ import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-com
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
 import { ENGINE_CASES_FILE, engineCasesFile } from '@/lib/testing-engine-cases';
+import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
 import { packedDecimalFields } from '@/lib/generated-code-lints';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
@@ -512,8 +513,17 @@ export default function DeliveryPage() {
 
       // 3.0.12 — the boundary cases the engine derived from the original, as
       // data (input → expected outcome, traced), beside the suite that asserts them.
+      // `testCases` is client-written: only the cases the engine reproduces from
+      // the signed source ship, recomputed; the rest are named as unverified
+      // (QA review of 2e6596ddbbc8, 0297134b3b87).
       const engineCasesJson = Array.isArray(project.testCases)
-        ? engineCasesFile(project.testCases as unknown as Array<Record<string, unknown>>)
+        ? (() => {
+            const provenance = engineCaseProvenance(
+              project.testCases as unknown as Array<Record<string, unknown>>,
+              deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null),
+            );
+            return engineCasesFile(provenance.verified as unknown as Array<Record<string, unknown>>, provenance.unverified);
+          })()
         : null;
       if (engineCasesJson) bundle.file(ENGINE_CASES_FILE, engineCasesJson, 'engine');
 

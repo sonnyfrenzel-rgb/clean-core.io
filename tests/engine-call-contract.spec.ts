@@ -20,6 +20,7 @@ import { parseTapOutput } from '../lib/test-verdicts';
 import { mergeEngineVerdicts, planEngineRun } from '../lib/engine-case-run';
 import { CODE_DRAFT_BUSINESS_RULES } from '../lib/code-draft-rules';
 import { testFactsOf } from '../lib/delivery-facts';
+import { sha256Hex } from '../lib/artefact-digest';
 
 /**
  * Owner decisions of 12.10.2026 on the engine cases (roadmap 3.0.12):
@@ -142,7 +143,11 @@ test.describe('caps: 20 precision and 20 guard cases, prioritised, the rest coun
     expect(engineCasesNotCovered(WIDE)).toEqual({ precision: 16, guard: 8 });
     expect(r.limits.join(' ')).toContain('16 precision cases past the first 20 are not covered: gv_c, gv_d, gv_e, gv_f.');
     expect(r.limits.join(' ')).toMatch(/8 guard cases past the first 20 are not covered: the check at L\d+/);
-    const facts = testFactsOf({ testCases: r.cases, legacyCode: WIDE } as unknown as Parameters<typeof testFactsOf>[0], []);
+    // Counted from the signed source the stored cases reproduce from (QA review of 2e6596ddbbc8, 3ea38fd51acf).
+    const facts = testFactsOf(
+      { testCases: r.cases, legacyCode: WIDE, activeRunId: 'run-1', inputFingerprint: { sha256: sha256Hex(WIDE) } } as unknown as Parameters<typeof testFactsOf>[0],
+      [],
+    );
     expect(facts.detail).toContain('Engine cases past the caps (20 precision, 20 guard): 24 more not covered — 16 precision, 8 guard.');
   });
 });

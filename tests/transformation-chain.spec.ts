@@ -9,6 +9,7 @@ import {
   QUALITY_ANCHOR,
   QUALITY_ORIGIN,
   chainSlots,
+  decisionWarning,
   enterStage,
   finishStages,
   generationStages,
@@ -25,7 +26,7 @@ import {
 } from '../lib/transformation-chain';
 import { ORIGINS, originBackHref, originBackLabel } from '../lib/choice-addresses';
 import { PHASES } from '../lib/workflow-steps';
-import { buildTransformationContext } from '../lib/transformation-context';
+import { buildTransformationContext, recordedDecisionOf } from '../lib/transformation-context';
 import { tfCostLine, tfContextAnnouncement } from '../lib/messages/transformation';
 import type { RuleRegister, RuleRow } from '../lib/rule-register';
 import type { Project } from '../lib/types';
@@ -314,6 +315,68 @@ test.describe('the stages', () => {
   });
 });
 
+test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild gate)', () => {
+  const recorded = (option: string | null, status = 'confirmed') => ({
+    decisionId: 'DEC-7',
+    revision: 2,
+    status,
+    summary: 's',
+    bindings: option === null ? [] : [{ key: 'option', revision: option }],
+    confirmation: { account: 'a', at: '2026-10-11T10:00:00Z' },
+  });
+  const warn = (decision: unknown) => decisionWarning(inputs({ project: project(decision === undefined ? {} : { decision }) }));
+
+  test('a decision on record to retire, keep or move to standard: said plainly, with the way to the decision and back', () => {
+    expect(warn(recorded('retire · Retire the program'))).toEqual({
+      kind: 'against-decision',
+      option: 'retire',
+      recordId: 'DEC-7',
+      text: 'The decision on record is to retire this program — generating a rebuild goes against it.',
+      link: { label: 'Open the decision', href: '/project/p1?view=management&origin=transformation.tips#decision-card' },
+    });
+    expect(warn(recorded('do-nothing · Keep as is'))).toMatchObject({ kind: 'against-decision', option: 'keep' });
+    expect(warn(recorded('standard · Move to SAP standard'))).toMatchObject({ kind: 'against-decision', option: 'standard', text: 'The decision on record is to move to SAP standard — generating a rebuild goes against it.' });
+  });
+
+  test('a rebuild on record: no warning', () => {
+    expect(warn(recorded('rebuild · Rebuild side by side'))).toBeNull();
+  });
+
+  test('nothing on record that weighs SAP standard: the standard-fit warning, to IT #standard and back', () => {
+    const expected = {
+      kind: 'standard-fit-open',
+      text: 'Standard fit is not assessed yet — SAP standard may already cover this.',
+      link: { label: 'Check standard fit', href: '/project/p1?view=it&origin=transformation.tips#standard' },
+    };
+    expect(warn(undefined)).toEqual(expected);
+    expect(warn(recorded(null))).toEqual(expected);
+    // A withdrawn record decides nothing any more — the same as the prompt reads it.
+    expect(warn(recorded('retire · Retire', 'withdrawn'))).toEqual(expected);
+  });
+
+  test('the prompt and the tip read the record the same way', () => {
+    const decision = recorded('retire · Retire the program');
+    const block = buildTransformationContext({
+      track: 'node',
+      rules: { basis: 'source', revision: null, items: [] },
+      decision: { route: { chosen: 'side-by-side-cap', recommended: 'side-by-side-cap', deviationReason: null }, record: recordedDecisionOf(decision), signedOff: null, reference: null },
+      summary: { program: 'Z', purpose: [], reads: [], changes: 'none', changesInFlow: [], changesOnCommand: [], outputs: [], frontEnd: null },
+      objects: [],
+      nfr: null,
+      accepted: null,
+      dataMode: null,
+      originalFactsBelow: true,
+    }).text;
+    expect(block).toContain('THE DECISION ON RECORD IS TO RETIRE THIS PROGRAM');
+    expect(warn(decision)).toMatchObject({ kind: 'against-decision', option: 'retire' });
+    expect(recordedDecisionOf(decision)).toMatchObject({ id: 'DEC-7', optionKind: 'retire', status: 'confirmed' });
+  });
+
+  test('the origin brings the reader back to the tips', () => {
+    expect(ORIGINS[QUALITY_ORIGIN].anchor).toBe(QUALITY_ANCHOR);
+  });
+});
+
 test.describe('the page', () => {
   const PAGE = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
   const code = PAGE.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -321,7 +384,10 @@ test.describe('the page', () => {
   test('the load starts nothing; the first generation starts by itself only when no tip is open', () => {
     const load = code.slice(code.indexOf('const fetchProject = async'), code.indexOf('fetchProject();'));
     expect(load).not.toContain('generateTransformation(');
-    expect(code).toMatch(/const nothingOpen = settled && tips\.length === 0;/);
+    // Owner, 12.10.2026: never by itself while the decision warning shows.
+    expect(code).toMatch(/const warning = decisionWarning\(chainInputs\);/);
+    expect(code).toMatch(/const nothingOpen = settled && tips\.length === 0 && warning === null;/);
+    expect(code).toMatch(/<QualityTips[\s\S]*?warning=\{warning\}/);
     expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canGenerate \|\| files\.length > 0/);
     expect(code).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}/);
   });

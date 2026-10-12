@@ -24,10 +24,16 @@ test.describe('the fabricated sandbox test stays gone', () => {
   const transformation = () => read('app/(app)/project/[projectId]/transformation/page.tsx');
 
   test('stage 3 has no differential tester', () => {
-    const s = transformation();
-    const rendered = s.slice(s.indexOf('return ('));
+    // The whole page's code, comments taken out: the history comment that says
+    // what the tester did and why it went may name it. Slicing from the first
+    // `return (` stopped meaning "the markup" once an earlier function returned
+    // JSX (3.0.12), and then caught that comment instead of any code.
+    const code = transformation()
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
     for (const gone of ['Differential Sandbox Tester', 'ResultSet Equivalence', '243 rows', 'diffTestStatus', 'runDiffTest']) {
-      expect(rendered, `${gone} came back`).not.toContain(gone);
+      expect(code, `${gone} came back`).not.toContain(gone);
     }
   });
 
