@@ -223,6 +223,12 @@ test.describe('packed fields typed through a local type (coordinator, 12.10.2026
     expect(byName('lv_copy')).toMatchObject({ decimals: 3, via: 'ty_qty', line: 12 });
   });
 
+  test('the prompt facts name the type a field was resolved through', () => {
+    const facts = codeDraftFactsSection(readOriginalContract(src));
+    expect(facts).toContain('bdmng L6: TYPE p LENGTH 8 DECIMALS 3 (via ty_qty) → 3 places, |value| ≤ 999999999999.999');
+    expect(facts).toContain('ty_qty L2: TYPE p LENGTH 8 DECIMALS 3 → 3 places');
+  });
+
   test('DDIC types stay unguessed; a table of a packed type is no field', () => {
     expect(byName('wrbtr')).toBeUndefined();
     expect(byName('lv_menge')).toBeUndefined();
