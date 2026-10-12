@@ -1505,7 +1505,7 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-775 | info | P3 | 3.0.x security hardening - comment wording (with SEC-2026-771) | scheduled |
 | SEC-2026-778 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | scheduled |
 | SEC-2026-787 | info | P3 | 3.0.x security hardening - comment wording (with SEC-2026-771) | scheduled |
-| SEC-2026-790 | medium | P2 | 3.0.11 | fixed in 3.0.11 — confirmed by the next audit |
+| SEC-2026-790 | medium | P2 | 3.0.11 | fixed |
 | SEC-2026-803 | medium | P2 | 3.0.12 | scheduled |
 | SEC-2026-804 | low | P3 | 3.0.12 | scheduled |
 
