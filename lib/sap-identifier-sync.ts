@@ -25,20 +25,46 @@
  *     (`lib/sap-identifiers.ts`), checked by hand, until SAP grants permission.
  */
 
+import { scenarioIdsInContext, scenariosFromProse, scenariosFromTables } from './sap-docs-parse';
+
 export type SyncedSapIdKind = 'fiori-app' | 'scope-item' | 'communication-scenario' | 'api' | 'cds-view';
 export type SyncedProtocol = 'V2' | 'V4' | 'REST' | 'SOAP';
 
-/** One identifier from a source that delivers per-entry facts (none is allowed today; kept for one that is). */
+/**
+ * One identifier as a source states it. A field the source does not state is
+ * null (an empty list for `apiRefs`) — never derived, never guessed.
+ */
 export interface SyncedSapIdentifier {
   id: string;
   kind: SyncedSapIdKind;
+  /** SAP's title as the source writes it, or null when the source names the ID alone. */
   title: string | null;
-  protocol?: SyncedProtocol;
-  release?: string;
-  /** Key of the source in `sources`. */
-  source: string;
+  /** The product the source documents: "SAP S/4HANA Cloud", "SAP BTP ABAP Environment". */
+  product: string;
+  edition: string | null;
+  availableInRelease: string | null;
+  protocol: SyncedProtocol | null;
+  protocolVersion: string | null;
+  apiVersion: string | null;
+  /** APIs the source names beside this identifier (technical names). */
+  apiRefs: string[];
+  /** True only when the identifier's own text says it is deprecated; a deprecated service plan is not a deprecated scenario. */
+  deprecated: boolean | null;
+  source: { key: string; repo: string; path: string; url: string };
+  /** SPDX identifier of the source's licence, as its REUSE.toml or LICENSE states it. */
+  license: string;
+  /** Git commit the file was read at. */
+  sourceRevision: string;
+  observedAt: string;
+}
+
+/** A title a synced source gives that differs from the curated one: flagged, never overwritten. */
+export interface SapIdentifierConflict {
+  id: string;
+  curatedTitle: string;
+  syncedTitle: string;
+  product: string;
   url: string;
-  fetchedAt: string;
 }
 
 /** The name lists the sync keeps — each one from one public file. */
@@ -87,8 +113,25 @@ export interface SapIdentifierFile {
   /** Every source considered, synced or not, with the reason. */
   sources: SyncedSourceMeta[];
   lists: SapNameList[];
+  /** Per-document sources (SAP-docs): when each was last read completely, at which commit. */
+  documents: SapDocumentState[];
   entries: SyncedSapIdentifier[];
+  conflicts: SapIdentifierConflict[];
+  /** Attribution the licences of the synced sources require. */
+  notice: string[];
   summary: SapIdentifierSummary;
+}
+
+export interface SapDocumentState {
+  key: string;
+  repo: string;
+  path: string;
+  product: string;
+  license: string | null;
+  sourceRevision: string | null;
+  observedAt: string | null;
+  count: number;
+  status: 'fetched' | 'kept-previous' | 'not-synced';
 }
 
 export const EMPTY_SAP_IDENTIFIER_FILE: SapIdentifierFile = Object.freeze({
@@ -96,7 +139,10 @@ export const EMPTY_SAP_IDENTIFIER_FILE: SapIdentifierFile = Object.freeze({
   syncedAt: null,
   sources: [],
   lists: [],
+  documents: [],
   entries: [],
+  conflicts: [],
+  notice: [],
   summary: { byKind: {}, byRelease: {}, added: [], removed: [], addedCount: 0, removedCount: 0 },
 }) as SapIdentifierFile;
 
@@ -231,7 +277,7 @@ function allNames(file: Pick<SapIdentifierFile, 'lists' | 'entries'>): Map<strin
     const kind = l.key === 'bapi-classic' ? 'function-module' : 'cds-view';
     for (const n of l.names) out.set(`${kind}:${n}:${l.key}`, { kind, release: l.release });
   }
-  for (const e of file.entries) out.set(`${e.kind}:${e.id}:${e.source}`, { kind: e.kind, release: e.release ?? 'not stated' });
+  for (const e of file.entries) out.set(`${e.kind}:${e.id}:${e.source.key}`, { kind: e.kind, release: e.availableInRelease ?? `${e.product}, release not stated` });
   return out;
 }
 
@@ -261,14 +307,201 @@ export function summarize(before: Pick<SapIdentifierFile, 'lists' | 'entries'>, 
   };
 }
 
+/* ------------------------------------------------ SAP documentation on GitHub */
+
+/** Licences under which a document's facts may be stored and shown (with attribution where the licence asks). */
+export const OPEN_LICENSES = new Set(['CC-BY-4.0', 'Apache-2.0', 'MIT', 'CC0-1.0']);
+
+export interface SapDocumentSpec {
+  key: string;
+  /** Repository under github.com/SAP-docs. */
+  repo: string;
+  path: string;
+  /** The product the document is about — its context, not a claim of availability elsewhere. */
+  product: string;
+  edition: string | null;
+  /** How the facts are written there. */
+  read: 'scenarios' | 'ids-in-context';
+  /** For `ids-in-context`: the sentence must name the product. */
+  context?: RegExp;
+  /** The fewest entries a complete reading of this document has. */
+  minCount: number;
+}
+
+/**
+ * The pinned documents, each checked by hand on 12.10.2026: the repository's
+ * REUSE.toml states CC-BY-4.0 for `**` (btp-cloud-platform: "SPDX-License-Identifier
+ * = CC-BY-4.0", © SAP SE or an SAP affiliate company and contributors). The
+ * sync checks the licence again on every run and skips a document whose
+ * repository no longer states an open one.
+ */
+export const SAP_DOCS_SOURCES: readonly SapDocumentSpec[] = Object.freeze([
+  {
+    key: 'sapdocs-s4hc-service-plans',
+    repo: 'btp-cloud-platform',
+    path: 'docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md',
+    product: 'SAP S/4HANA Cloud',
+    edition: null,
+    read: 'scenarios',
+    minCount: 3,
+  },
+  {
+    key: 'sapdocs-s4hc-register-system',
+    repo: 'btp-cloud-platform',
+    path: 'docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md',
+    product: 'SAP S/4HANA Cloud',
+    edition: null,
+    read: 'ids-in-context',
+    context: /SAP S\/4HANA Cloud/,
+    minCount: 10,
+  },
+  {
+    key: 'sapdocs-btp-abap-managed-scenarios',
+    repo: 'btp-cloud-platform',
+    path: 'docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md',
+    product: 'SAP BTP ABAP Environment',
+    edition: null,
+    read: 'scenarios',
+    minCount: 20,
+  },
+] as SapDocumentSpec[]);
+
+export const sapDocsBlobUrl = (repo: string, revision: string, path: string) => `https://github.com/SAP-docs/${repo}/blob/${revision}/${path}`;
+
+/** The attribution CC BY 4.0 asks for, for one SAP-docs-derived fact. */
+export function sapDocsAttribution(url: string): string {
+  return `© SAP SE and contributors, CC BY 4.0 — source: ${url}; adapted (extracted ID and title)`;
+}
+
+export interface DocumentResult {
+  key: string;
+  /** Null when the fetch, the licence check or the parse failed. */
+  markdown: string | null;
+  license: string | null;
+  sourceRevision: string | null;
+  observedAt: string;
+}
+
+/** The entries one document states, each with its source, licence, revision and time. */
+export function entriesFromDocument(spec: SapDocumentSpec, result: DocumentResult): SyncedSapIdentifier[] | null {
+  if (result.markdown === null || !result.license || !OPEN_LICENSES.has(result.license) || !result.sourceRevision) return null;
+  const md = result.markdown;
+  const found =
+    spec.read === 'ids-in-context'
+      ? scenarioIdsInContext(md, spec.context ?? /./)
+      : [...scenariosFromTables(md), ...scenariosFromProse(md)];
+  const byId = new Map<string, (typeof found)[number]>();
+  for (const f of found) {
+    const prev = byId.get(f.id);
+    // The first title stands; a later mention adds API references, never a second title.
+    if (!prev) byId.set(f.id, { ...f, apiRefs: [...f.apiRefs] });
+    else prev.apiRefs = [...new Set([...prev.apiRefs, ...f.apiRefs])].sort();
+  }
+  const url = sapDocsBlobUrl(spec.repo, result.sourceRevision, spec.path);
+  return [...byId.values()]
+    .map((f) => ({
+      id: f.id,
+      kind: 'communication-scenario' as const,
+      title: f.title,
+      product: spec.product,
+      edition: spec.edition,
+      availableInRelease: null,
+      protocol: f.protocol,
+      protocolVersion: null,
+      apiVersion: null,
+      apiRefs: f.apiRefs,
+      deprecated: f.deprecated,
+      source: { key: spec.key, repo: `SAP-docs/${spec.repo}`, path: spec.path, url },
+      license: result.license!,
+      sourceRevision: result.sourceRevision!,
+      observedAt: result.observedAt,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** A document's entries for the new file: replaced only by a complete, licensed reading; otherwise the previous ones stand. */
+export function mergeDocument(
+  previous: SapIdentifierFile,
+  spec: SapDocumentSpec,
+  fresh: SyncedSapIdentifier[] | null,
+  result: DocumentResult,
+): { state: SapDocumentState; entries: SyncedSapIdentifier[]; replaced: boolean } {
+  const kept = previous.entries.filter((e) => e.source.key === spec.key);
+  const before = previous.documents.find((d) => d.key === spec.key);
+  if (fresh && fresh.length >= spec.minCount) {
+    return {
+      state: { key: spec.key, repo: `SAP-docs/${spec.repo}`, path: spec.path, product: spec.product, license: result.license, sourceRevision: result.sourceRevision, observedAt: result.observedAt, count: fresh.length, status: 'fetched' },
+      entries: fresh,
+      replaced: true,
+    };
+  }
+  return {
+    state: {
+      key: spec.key,
+      repo: `SAP-docs/${spec.repo}`,
+      path: spec.path,
+      product: spec.product,
+      license: before?.license ?? null,
+      sourceRevision: before?.sourceRevision ?? null,
+      observedAt: before?.observedAt ?? null,
+      count: kept.length,
+      status: kept.length ? 'kept-previous' : 'not-synced',
+    },
+    entries: kept,
+    replaced: false,
+  };
+}
+
+/** Titles a synced source gives that differ from the curated title of the same ID — flagged, not overwritten. */
+export function titleConflicts(
+  entries: SyncedSapIdentifier[],
+  curated: ReadonlyMap<string, string>,
+  agree: (a: string, b: string) => boolean,
+): SapIdentifierConflict[] {
+  const out: SapIdentifierConflict[] = [];
+  for (const e of entries) {
+    const mine = curated.get(e.id.toUpperCase());
+    if (!mine || !e.title || agree(e.title, mine)) continue;
+    out.push({ id: e.id, curatedTitle: mine, syncedTitle: e.title, product: e.product, url: e.source.url });
+  }
+  return out;
+}
+
+/** Plain title comparison for the conflict list: the same words, case and punctuation aside. */
+export function sameTitle(a: string, b: string): boolean {
+  const n = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return n(a) === n(b);
+}
+
+function noticeLines(file: Pick<SapIdentifierFile, 'lists' | 'documents'>): string[] {
+  const lines: string[] = [];
+  if (file.lists.some((l) => l.count > 0)) {
+    lines.push('SAP Cloudification Repository (https://github.com/SAP/abap-atc-cr-cv-s4hc), Apache License 2.0: names of released CDS views and classic BAPIs.');
+  }
+  for (const d of file.documents) {
+    if (!d.count || !d.sourceRevision) continue;
+    const spec = SAP_DOCS_SOURCES.find((s) => s.key === d.key);
+    if (!spec) continue;
+    lines.push(sapDocsAttribution(sapDocsBlobUrl(spec.repo, d.sourceRevision, spec.path)));
+  }
+  return lines;
+}
+
 /** The new file from the previous one and this run's results. */
 export function buildIdentifierFile(
   previous: SapIdentifierFile,
   results: ListResult[],
   syncedAt: string,
-): { file: SapIdentifierFile; replaced: SapNameListKey[]; kept: SapNameListKey[] } {
-  const replaced: SapNameListKey[] = [];
-  const kept: SapNameListKey[] = [];
+  options: {
+    /** This run's document readings; without them the previous documents stand. */
+    documents?: Array<{ spec: SapDocumentSpec; result: DocumentResult; entries: SyncedSapIdentifier[] | null }>;
+    /** Curated titles by upper-case ID, for the conflict list. */
+    curatedTitles?: ReadonlyMap<string, string>;
+    agree?: (a: string, b: string) => boolean;
+  } = {},
+): { file: SapIdentifierFile; replaced: string[]; kept: string[] } {
+  const replaced: string[] = [];
+  const kept: string[] = [];
   const lists: SapNameList[] = [];
   for (const spec of SAP_NAME_LIST_SPECS) {
     const result = results.find((r) => r.key === spec.key) ?? { key: spec.key, names: null, fetchedAt: syncedAt, sourceSha256: null };
@@ -276,14 +509,32 @@ export function buildIdentifierFile(
     lists.push(merged.list);
     (merged.replaced ? replaced : kept).push(spec.key);
   }
-  const next = { lists, entries: previous.entries };
+  let documents = previous.documents;
+  let entries = previous.entries;
+  if (options.documents) {
+    documents = [];
+    entries = [];
+    for (const spec of SAP_DOCS_SOURCES) {
+      const run = options.documents.find((d) => d.spec.key === spec.key);
+      const result = run?.result ?? { key: spec.key, markdown: null, license: null, sourceRevision: null, observedAt: syncedAt };
+      const merged = mergeDocument(previous, spec, run?.entries ?? null, result);
+      documents.push(merged.state);
+      entries.push(...merged.entries);
+      (merged.replaced ? replaced : kept).push(spec.key);
+    }
+  }
+  const conflicts = options.curatedTitles ? titleConflicts(entries, options.curatedTitles, options.agree ?? sameTitle) : previous.conflicts;
+  const next = { lists, entries };
   return {
     file: {
       format: 2,
       syncedAt,
       sources: [...SAP_IDENTIFIER_SOURCES],
       lists,
-      entries: previous.entries,
+      documents,
+      entries,
+      conflicts,
+      notice: noticeLines({ lists, documents }),
       summary: summarize(previous, next),
     },
     replaced,
@@ -296,14 +547,18 @@ export function comparable(file: SapIdentifierFile): string {
   return JSON.stringify({
     sources: file.sources,
     lists: file.lists.map((l) => ({ ...l, fetchedAt: null, status: null })),
-    entries: file.entries.map((e) => ({ ...e, fetchedAt: null })),
+    documents: file.documents.map((d) => ({ ...d, observedAt: null, status: null })),
+    entries: file.entries.map((e) => ({ ...e, observedAt: null })),
+    conflicts: file.conflicts,
   });
 }
 
-/** Reads a previous file of any format; an unknown one counts as empty. */
+/** Reads a previous file of any format; an unknown one counts as empty. Fields a file predates read as empty. */
 export function readIdentifierFile(raw: unknown): SapIdentifierFile {
   const f = raw as Partial<SapIdentifierFile> | null;
-  if (f && f.format === 2 && Array.isArray(f.lists) && Array.isArray(f.entries)) return f as SapIdentifierFile;
+  if (f && f.format === 2 && Array.isArray(f.lists) && Array.isArray(f.entries)) {
+    return { ...EMPTY_SAP_IDENTIFIER_FILE, ...f, documents: f.documents ?? [], conflicts: f.conflicts ?? [], notice: f.notice ?? [] } as SapIdentifierFile;
+  }
   return EMPTY_SAP_IDENTIFIER_FILE;
 }
 

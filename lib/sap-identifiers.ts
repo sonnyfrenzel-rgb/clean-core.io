@@ -32,6 +32,7 @@
 import {
   EMPTY_SAP_IDENTIFIER_FILE,
   readIdentifierFile,
+  sapDocsAttribution,
   type SapIdentifierFile,
   type SapNameList,
   type SapNameListKey,
@@ -71,6 +72,14 @@ export interface SapIdentifierEntry {
   source: { label: string; url: string };
   /** When the fact was read from the source. */
   checked: string;
+  /** The product the source documents, where it is not S/4HANA itself or not obvious (synced entries). */
+  product?: string;
+  /** The source names the ID without a title: a name found in a list, nothing more. */
+  listedOnly?: boolean;
+  /** The attribution the source's licence asks for (CC BY 4.0), shown wherever the entry is. */
+  attribution?: string;
+  /** A different title another SAP source gives (a conflict, flagged and never written over this one). */
+  otherTitle?: { title: string; product: string; source: { label: string; url: string }; attribution?: string };
 }
 
 export const SAP_IDENTIFIERS_CHECKED = '2026-10-12';
@@ -322,30 +331,53 @@ export function syncedSapIdentifiers(): SapIdentifierFile {
   return synced;
 }
 
-/** A synced entry as a curated-shaped one. */
+/** A synced entry as a curated-shaped one, carrying its product context and the attribution its licence asks for. */
 function fromSynced(e: SapIdentifierFile['entries'][number]): SapIdentifierEntry {
-  const label = synced.sources.find((s) => s.key === e.source)?.label ?? e.source;
+  const day = e.observedAt.slice(0, 10);
   return {
     id: e.id,
     kind: e.kind,
     title: e.title,
     ...(e.protocol ? { protocol: e.protocol } : {}),
-    ...(e.release ? { release: e.release } : {}),
-    source: { label: `${label}, synced ${e.fetchedAt.slice(0, 10)}`, url: e.url },
-    checked: e.fetchedAt.slice(0, 10),
+    ...(e.availableInRelease ? { release: e.availableInRelease } : {}),
+    product: e.product,
+    listedOnly: e.title === null,
+    source: { label: `SAP documentation on GitHub (${e.source.repo}), ${e.product}, read ${day}`, url: e.source.url },
+    attribution: e.license === 'CC-BY-4.0' ? sapDocsAttribution(e.source.url) : `${e.license} — source: ${e.source.url}`,
+    checked: day,
   };
 }
 
 let index: Map<string, SapIdentifierEntry> | null = null;
 
-/** Every identifier with a public source, by upper-case ID; the curated entry wins over a synced one. */
+/** S/4HANA context first: a scenario SAP documents for S/4HANA Cloud stands before the same ID documented for another product. */
+const productRank = (e: SapIdentifierFile['entries'][number]) => (/S\/4HANA/.test(e.product) ? 0 : 1) + (e.title ? 0 : 2);
+
+/**
+ * Every identifier with a public source, by upper-case ID. The curated entry
+ * wins where both exist (it is the more specific); a synced title that differs
+ * is kept beside it as a conflict, never written over it.
+ */
 export function sapIdentifierIndex(): ReadonlyMap<string, SapIdentifierEntry> {
   if (!index) {
     index = new Map<string, SapIdentifierEntry>();
-    for (const e of synced.entries) index.set(e.id.toUpperCase(), fromSynced(e));
-    for (const e of CURATED_SAP_IDENTIFIERS) index.set(e.id.toUpperCase(), e);
+    const synceds = [...synced.entries].sort((a, b) => productRank(b) - productRank(a));
+    for (const e of synceds) index.set(e.id.toUpperCase(), fromSynced(e));
+    for (const e of CURATED_SAP_IDENTIFIERS) {
+      const other = index.get(e.id.toUpperCase());
+      const conflict = synced.conflicts.find((c) => c.id.toUpperCase() === e.id.toUpperCase());
+      index.set(e.id.toUpperCase(), {
+        ...e,
+        ...(conflict && other ? { otherTitle: { title: conflict.syncedTitle, product: conflict.product, source: other.source, attribution: other.attribution } } : {}),
+      });
+    }
   }
   return index;
+}
+
+/** The attribution lines of the synced sources (CC BY 4.0 and the others), as the generated file states them. */
+export function syncedNotice(): string[] {
+  return synced.notice;
 }
 
 const list = (key: SapNameListKey): SapNameList | undefined => synced.lists.find((l) => l.key === key);
