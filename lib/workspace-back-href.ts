@@ -67,13 +67,20 @@ function backTo(workspace: string, search: string): string {
 /**
  * Where a layer address leads in a view that no longer has that layer: in IT
  * (ADR-086) every layer has a new home — Business, Management or IT's own
- * section — except the costs, whose home is the Economics tool itself; a way
- * back from a tool does not lead into a tool, so it returns to the IT view at
- * the control it left by. `null` where the view keeps its layers.
+ * section (*Standard fit* is one since ADR-096) — except the costs, whose
+ * home is the Economics tool itself; a way back from a tool does not lead
+ * into a tool, so it returns to the IT view at the control it left by. In
+ * Business, a layer whose content moved to IT goes there too. `null` where the
+ * view keeps its layers.
  */
 function layerHome(view: string | null, layer: LayerKey): { view: WorkspaceView; hash: string; label: string } | null {
-  if (view !== 'it' && view !== 'management') return null;
-  const home = (view === 'it' ? IT_LAYER_ELSEWHERE : MANAGEMENT_LAYER_ELSEWHERE)[layer];
+  // Business sends a layer whose content now lives in IT where IT sends it —
+  // *Standard fit* to IT's own section since ADR-096 (owner, 12.10.2026), and
+  // architecture and changes where ADR-086 put them — so the way back lands
+  // where the workspace would redirect anyway, without a second hop.
+  const business = view === 'business' && BUSINESS_LAYER_ELSEWHERE[layer] === 'it';
+  if (view !== 'it' && view !== 'management' && !business) return null;
+  const home = (view === 'management' ? MANAGEMENT_LAYER_ELSEWHERE : IT_LAYER_ELSEWHERE)[layer];
   // Costs from IT: its home is the Economics tool itself, and a way back from a
   // tool does not lead into a tool — it returns to the view's own tools.
   if (home.kind !== 'view') return null;

@@ -222,10 +222,11 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await open(page, empty);
     await expect(page.locator('[data-workspace-process="absent"][data-absence="no-source"]')).toHaveCount(1, { timeout: 60_000 });
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    // Need & process is not a section of Business (ADR-080): the bar opens on
-    // Standard fit, which says it is empty, and the map's absence stands above.
+    // Need & process is not a section of Business (ADR-080), nor Standard fit
+    // (ADR-096): its one section, Evidence & controls, says it is empty, and
+    // the map's absence stands above.
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-layer-absent="standard"]')).toBeVisible();
+    await expect(page.locator('[data-workspace-layer-absent="evidence"]')).toBeVisible();
     await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible();
     await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'analyze');
   });

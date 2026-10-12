@@ -442,7 +442,7 @@ export default function WorkspaceShell({
    * An old layer address in any view — `?view=business#costs`, `?view=it#evidence`,
    * `?view=management#changes`, from a bookmark, a mail or a stage's way back —
    * goes where that content lives now (`lib/layer-redirect.ts`): Business keeps
-   * two layers (ADR-080), IT has its own sections (ADR-086), Management none
+   * one layer (ADR-080, ADR-096), IT has its own sections (ADR-086), Management none
    * (ADR-087). `replace`, so Back does not bounce the reader into the redirect
    * again.
    *
@@ -671,9 +671,8 @@ export default function WorkspaceShell({
   // choice the bar opens on the first layer that has anything in it, and on a
   // project where nothing does, on the first layer, which then says it is empty.
   // Business opens on the map (ADR-080): the map and the rules card stand on
-  // the page itself, and its bar holds only Standard fit and Evidence &
-  // controls, so it opens on the first of them with content, as the other
-  // views do — never on a section Business does not show.
+  // the page itself, and its one section is Evidence & controls since
+  // Standard fit moved to IT (ADR-096) — never a section Business does not show.
   const currentLayer =
     (hashLayer && layers.some((l) => l.key === hashLayer) ? hashLayer : null) ??
     layers.find((l) => l.count !== null)?.key ??
@@ -839,7 +838,10 @@ export default function WorkspaceShell({
     // reader is in the section and lets go where the section ends.
     layerBar: (
       <div className="mt-5" data-workspace-layer-group="">
-        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+        {/* One layer left in Business since ADR-096 (owner, 12.10.2026): a bar
+            with one tab is a navigation to the only place there is, so the
+            section stands on its own — as Management has no bar (ADR-087). */}
+        {layers.length > 1 ? <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} /> : null}
         <div className="mt-2">
           <WorkspaceLayerSection
             layer={currentLayerSection}
@@ -1198,6 +1200,8 @@ export default function WorkspaceShell({
             signed={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
             trust={trust}
             elsewhere={itElsewhere}
+            // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
+            standardLayer={allLayers.find((l) => l.key === 'standard') ?? null}
             coach={(slot) => (
               <div className="cc-no-print">
                 <CoachMarkNote mark={currentMark} slot={slot} onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />

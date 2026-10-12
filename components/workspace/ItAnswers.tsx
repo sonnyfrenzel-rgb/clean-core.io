@@ -32,7 +32,7 @@ import {
 } from '@/lib/workspace-messages';
 import { itObjects, type ItObjectRow, type ItObjects } from '@/lib/it-objects';
 import { IT_ANCHORS, IT_SECTION_IDS, type ItSectionKey, type RunTrust } from '@/lib/it-sections';
-import type { WorkspaceView } from '@/lib/workspace-model';
+import type { WorkspaceLayer, WorkspaceView } from '@/lib/workspace-model';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import type { Loaded } from '@/lib/management-overview';
@@ -69,6 +69,7 @@ import {
 import { itOpening, itState, usesSummary } from '@/lib/it-state';
 import ItRail, { useContract } from './ItRail';
 import PageAnchorBar from '@/components/PageAnchorBar';
+import ItStandardFit from './ItStandardFit';
 import ItDependencyGraph, { objectKindWord, objectUseWord } from './ItDependencyGraph';
 import { openQuestionsLine, type OpenQuestions as OpenQuestionsModel } from '@/lib/open-questions';
 
@@ -120,6 +121,7 @@ export default function ItAnswers({
   coach,
   trust,
   elsewhere = null,
+  standardLayer = null,
 }: {
   projectId: string;
   /**
@@ -163,6 +165,12 @@ export default function ItAnswers({
     economicsHref: string;
     deliveryHref: string | null;
   } | null;
+  /**
+   * The *Standard fit* layer of the project (`workspaceLayers`), shown as IT's
+   * own section under the two columns since ADR-096 (owner, 12.10.2026: it
+   * leaves the Business view). `null` draws no section.
+   */
+  standardLayer?: WorkspaceLayer | null;
 }) {
   /**
    * The answer together with the project it answers for. A client navigation
@@ -451,6 +459,7 @@ export default function ItAnswers({
                   ? ''
                   : null,
             trust: trust !== 'demo' && trust.signed,
+            standard: standardLayer && standardLayer.rows.length > 0 ? String(standardLayer.total) : null,
           })}
         />
       ) : null}
@@ -710,6 +719,16 @@ export default function ItAnswers({
         </div>
       ) : null}
 
+      {/* Standard fit (ADR-096, owner 12.10.2026): full width under the two
+          columns — its table carries a side column of its own, which beside
+          IT's rail would leave the table no room. Last in the page's order, so
+          last in the anchor bar. */}
+      {showContent && standardLayer ? (
+        <div id={IT_SECTION_IDS.standard} data-it-standard="" className="mt-4 scroll-mt-28">
+          <ItStandardFit layer={standardLayer} project={project} projectId={projectId} live={!demo} />
+        </div>
+      ) : null}
+
       {/* One quiet row of links out (ADR-086): what IT does not answer, and
           where it is answered. */}
       {elsewhere ? <ElsewhereRow elsewhere={elsewhere} /> : null}
@@ -921,6 +940,7 @@ const ANCHOR_LABELS: Readonly<Record<(typeof IT_ANCHORS)[number], WorkspaceMessa
   questions: 'itv.anchorQuestions',
   route: 'itv.anchorRoute',
   trust: 'itv.anchorTrust',
+  standard: 'itv.anchorStandard',
 };
 
 /**
@@ -935,6 +955,8 @@ function anchorsOf(content: {
   questions: number | null | undefined;
   route: string | null;
   trust: boolean;
+  /** The capabilities' count, or `null` where Standard fit has nothing to read. */
+  standard: string | null;
 }): ItAnchor[] {
   const out: ItAnchor[] = [];
   for (const key of IT_ANCHORS) {
@@ -947,6 +969,7 @@ function anchorsOf(content: {
     }
     if (key === 'route' && content.route !== null) out.push({ key, label, count: content.route });
     if (key === 'trust' && content.trust) out.push({ key, label, count: wt('itv.anchorSigned') });
+    if (key === 'standard' && content.standard !== null) out.push({ key, label, count: content.standard });
   }
   return out;
 }
@@ -989,9 +1012,6 @@ function ElsewhereRow({
         <span>{wt('itv.elsewhereLabel')}</span>
         <button type="button" className={link} data-it-elsewhere-link="process" onClick={() => elsewhere.open('business', BUSINESS_MAP_ID)}>
           {wt('itv.elsewhereProcess')}
-        </button>
-        <button type="button" className={link} data-it-elsewhere-link="standard" onClick={() => elsewhere.open('business', 'standard')}>
-          {wt('itv.elsewhereStandard')}
         </button>
         <Link href={elsewhere.economicsHref} className={link} data-it-elsewhere-link="costs">
           {wt('itv.elsewhereCosts')}

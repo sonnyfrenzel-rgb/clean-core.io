@@ -110,7 +110,8 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
   test('Management has no layers: every old layer address has a home that is not an empty place (ADR-087)', () => {
     expect(MANAGEMENT_LAYER_ELSEWHERE).toEqual({
       need: { kind: 'view', view: 'business', hash: 'process-map' },
-      standard: { kind: 'view', view: 'business', hash: 'standard' },
+      // IT's own section since ADR-096 (owner, 12.10.2026).
+      standard: { kind: 'view', view: 'it', hash: 'standard' },
       costs: { kind: 'view', view: 'management', hash: 'decision-rests-on-cost' },
       architecture: { kind: 'view', view: 'it', hash: 'it-objects' },
       evidence: { kind: 'view', view: 'it', hash: 'it-trust' },
@@ -136,14 +137,18 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
 
   test('one answer for an old layer address in every view (3.0.7 follow-up)', () => {
     const run = { hasActiveRun: true };
-    // Business keeps two layers; the rest go to the map, Economics, IT and Management.
-    expect(layerRedirect('business', '#standard', run)).toBeNull();
+    // Business keeps one layer; the rest go to the map, Economics, IT and
+    // Management — Standard fit to IT, where it lives since ADR-096.
+    expect(layerRedirect('business', '#standard', run)).toEqual({ kind: 'view', view: 'it', hash: 'standard' });
     expect(layerRedirect('business', '#evidence', run)).toBeNull();
     expect(layerRedirect('business', '#need', run)).toEqual({ kind: 'view', view: 'business', hash: 'process-map' });
     expect(layerRedirect('business', '#costs', run)).toEqual({ kind: 'economics' });
     expect(layerRedirect('business', '#architecture', run)).toEqual({ kind: 'view', view: 'it', hash: 'it-objects' });
     expect(layerRedirect('business', '#changes', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
-    // IT: its own sections, Economics, Management.
+    // IT: its own sections, Economics, Management — and Standard fit, its
+    // own section, stays where it is (no redirect onto itself, ADR-096).
+    expect(layerRedirect('it', '#standard', run)).toBeNull();
+    expect(layerRedirect('management', '#standard', run)).toEqual({ kind: 'view', view: 'it', hash: 'standard' });
     expect(layerRedirect('it', '#evidence', run)).toEqual({ kind: 'view', view: 'it', hash: 'it-trust' });
     expect(layerRedirect('it', '#costs', run)).toEqual({ kind: 'economics' });
     expect(layerRedirect('it', '#changes', run)).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
@@ -399,48 +404,33 @@ test.describe('the layers on the screen', () => {
   test('an empty layer is a place: it names itself and says why it is empty', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Business: the one view with layers — Standard fit and Evidence &
-    // controls (ADR-080). IT has its own sections (ADR-086), Management none
-    // (ADR-087).
+    // Business: the one view with a layer — Evidence & controls (ADR-080,
+    // ADR-096: Standard fit is IT's). One layer is no bar: the section stands
+    // on its own. IT has its own sections (ADR-086), Management none (ADR-087).
     await page.goto(`/project/${BARE_ID}?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
 
-    // Nothing has been analysed, so every layer is empty — and the first of
-    // them stands open rather than the bar marking nothing.
+    // Nothing has been analysed, so the layer is empty — and it stands open,
+    // saying so, rather than leaving a blank.
     const section = page.locator('[data-workspace-layer-section]');
-    await expect(section, 'the anchor bar still leads nowhere').toBeVisible({ timeout: 30000 });
-    await expect(section).toHaveAttribute('data-workspace-layer-section', 'standard');
+    await expect(section, 'the layer leads nowhere').toBeVisible({ timeout: 30000 });
+    await expect(section).toHaveAttribute('data-workspace-layer-section', 'evidence');
     await expect(section).toHaveAttribute('data-layer-empty', 'yes');
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Standard fit');
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls');
     await expect(page.locator('[data-workspace-layer-absent-reason]')).toHaveText(
-      'No standard candidate carries an evidence level yet.',
+      'No signed run — every figure in this product derives from one.',
     );
     // An empty layer is empty in the vocabulary, not in prose (§4).
     await expect(section.locator('[data-provenance]')).toHaveAttribute('data-provenance', 'not-determined');
     // And it does not pretend to hold rows.
     await expect(page.locator('[data-workspace-layer-rows]')).toHaveCount(0);
+    // A bar with one tab is a navigation to the only place there is (ADR-096).
+    await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
 
-    // The other is a tab of the same bar since 03.10.2026 — the empty ones
-    // muted and marked "empty", no "More" (owner: "no recognisable menu") —
-    // and opening it is a real move: the section changes, and so does the
-    // address.
-    const evidence = page.locator('nav[data-workspace-layers] [data-workspace-layer="evidence"]');
-    await expect(evidence).toHaveAttribute('data-layer-empty', 'yes', { timeout: 15000 });
-    await evidence.click();
-
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', { timeout: 15000 });
-    await expect(page.locator('[data-workspace-layer-absent-reason]')).toHaveText(
-      'No signed run — every figure in this product derives from one.',
-    );
-    expect(new URL(page.url()).hash, 'the layer is not held in the address').toBe('#evidence');
-
-    // Held in the URL **and** the browser (roadmap 6.1/6.2, ADR-018): a reload
-    // arrives back in the same layer, and Back returns to the one before it.
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', { timeout: 60000 });
-
-    await page.goBack();
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Standard fit', { timeout: 30000 });
+    // Standard fit's old Business address goes to IT, where it lives now.
+    await page.goto(`/project/${BARE_ID}?view=business#standard`, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => new URL(page.url()).searchParams.get('view'), { timeout: 60000 }).toBe('it');
+    expect(new URL(page.url()).hash).toBe('#standard');
   });
 
   test('a layer with content shows it, with the line each row sits on', async ({ page }) => {
@@ -530,23 +520,18 @@ test.describe('the layers on the screen', () => {
   test('a view switch starts the new view at its top, and a layer switch keeps the view (ADR-018; owner 10.10.2026)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Evidence & controls: a section both views show (Business keeps three, owner 03.10.2026).
+    // Evidence & controls: Business's one layer (ADR-080, ADR-096).
     await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
       timeout: 30000,
     });
 
-    // The layer does not move the view: Business keeps its two layers
-    // (ADR-080); IT has its own sections (ADR-086), Management none (ADR-087).
-    await page.locator('nav[data-workspace-layers] [data-workspace-layer="standard"]').click();
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Standard fit', {
-      timeout: 15000,
-    });
-    expect(
-      new URL(page.url()).searchParams.get('view'),
-      'choosing a layer threw the reader back into another view',
-    ).toBe('business');
+    // The layer does not move the view: Business keeps one layer and, with
+    // one, no bar to switch with (ADR-096); IT has its own sections (ADR-086),
+    // Management none (ADR-087).
+    await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
+    expect(new URL(page.url()).searchParams.get('view'), 'the layer threw the reader into another view').toBe('business');
 
     // A plain view switch starts the new view at its top and carries no
     // fragment (owner 10.10.2026, replacing CR-14): the old view's place

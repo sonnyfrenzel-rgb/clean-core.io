@@ -61,7 +61,8 @@ export const DECISION_PLACE_IDS = Object.freeze({
   itOpenQuestions: 'not-determined',
   businessRules: 'business-rules',
   businessMap: 'process-map',
-  businessStandard: 'standard',
+  /** IT's *Standard fit* section — a Business layer until ADR-096 (owner, 12.10.2026). */
+  itStandardFit: 'standard',
   /** The options compared in Economics (`app/(app)/project/[projectId]/tco/page.tsx`). */
   economicsCompare: 'economics-compare',
 });
@@ -515,12 +516,13 @@ export function decisionPoint(c: DecisionCondition): DecisionPoint {
         };
       case 'standard-fit-not-assessed':
         // The router never assesses it, so the condition stays open; the
-        // Standard fit section is where a reader sees how much SAP covers.
+        // Standard fit section is where a reader sees how much SAP covers —
+        // in IT since ADR-096.
         return {
           ...base,
           kind: 'limit',
           line: 'Whether SAP standard already covers the need is still open.',
-          place: { kind: 'view', view: 'business', hash: DECISION_PLACE_IDS.businessStandard, action: 'Check standard fit' },
+          place: { kind: 'view', view: 'it', hash: DECISION_PLACE_IDS.itStandardFit, action: 'Check standard fit' },
         };
       default:
         break;

@@ -1,13 +1,14 @@
 import { layerFromHash, type WorkspaceView } from './workspace-model';
 import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from './business-layers';
-import { IT_LAYER_ELSEWHERE } from './it-sections';
+import { IT_LAYER_ELSEWHERE, IT_LAYERS } from './it-sections';
 import { MANAGEMENT_LAYER_ELSEWHERE } from './management-sections';
 
 /**
  * Where an old layer address goes — one answer for the three views.
  *
- * Business keeps two layers (ADR-080), IT has its own sections (ADR-086) and
- * Management none (ADR-087), yet `#costs`, `#evidence`, `#changes` still
+ * Business keeps one layer (ADR-080, ADR-096), IT has its own sections
+ * (ADR-086) — *Standard fit* among them since ADR-096 — and Management none
+ * (ADR-087), yet `#costs`, `#evidence`, `#changes` still
  * arrive from bookmarks, mails and the stages' way back. Each goes where that
  * content lives now: a place in the same view, a place in another view, or
  * the Economics tool. `null` when the address is not a layer, or one the view
@@ -30,11 +31,14 @@ export function layerRedirect(
     const elsewhere = BUSINESS_LAYER_ELSEWHERE[layer];
     if (elsewhere === 'map') return { kind: 'view', view: 'business', hash: BUSINESS_MAP_ID };
     if (elsewhere === 'economics') return { kind: 'economics' };
-    // Architecture and changes: where IT sends them since ADR-086 — IT's own
-    // objects section, and Management's decision.
+    // Architecture, changes and standard fit: where IT sends them — IT's own
+    // objects section, Management's decision (ADR-086), IT's own Standard fit
+    // (ADR-096).
     return IT_LAYER_ELSEWHERE[layer];
   }
-  if (view === 'it') return IT_LAYER_ELSEWHERE[layer];
+  // A layer IT shows itself stays where it is: sending `#standard` on to
+  // `#standard` would replace the address with itself on every render.
+  if (view === 'it') return IT_LAYERS.includes(layer) ? null : IT_LAYER_ELSEWHERE[layer];
   const home = MANAGEMENT_LAYER_ELSEWHERE[layer];
   // The Costs row stands in the decision, and without a signed run there is
   // no decision to show it in.

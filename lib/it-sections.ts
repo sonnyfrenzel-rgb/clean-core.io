@@ -10,14 +10,15 @@ import type { Project } from './types';
  * dependencies → Open questions** in the main column and **target profile
  * (with imports) → Route & contract → Run & trust** in the side column. The
  * anchor bar mirrors that order and jumps within the page; a section with
- * nothing in it has no anchor — never an "empty" chip. Business keeps two
- * layers (ADR-080); Management has none since ADR-087
+ * nothing in it has no anchor — never an "empty" chip. *Standard fit* is one
+ * of IT's sections since ADR-096, under the two columns. Business keeps one
+ * layer (ADR-080, ADR-096); Management has none since ADR-087
  * (`lib/management-sections.ts`).
  *
  * Like a layer, the place is held in the URL fragment and nowhere else: the
  * view is a lens, never stored on a project, run or pack.
  */
-export const IT_SECTIONS = ['findings', 'objects', 'questions', 'profile', 'route', 'trust'] as const;
+export const IT_SECTIONS = ['findings', 'objects', 'questions', 'profile', 'route', 'trust', 'standard'] as const;
 export type ItSectionKey = (typeof IT_SECTIONS)[number];
 
 /** The element id — and so the fragment — of each IT section. */
@@ -29,6 +30,10 @@ export const IT_SECTION_IDS: Readonly<Record<ItSectionKey, string>> = {
   profile: 'it-target-profile',
   route: 'it-route',
   trust: 'it-trust',
+  // Standard fit keeps the address it had as a Business layer (`#standard`),
+  // so bookmarks, mails and the stages' way back still name it (owner,
+  // 12.10.2026, ADR-096).
+  standard: 'standard',
 };
 
 /**
@@ -36,20 +41,32 @@ export const IT_SECTION_IDS: Readonly<Record<ItSectionKey, string>> = {
  * anchor of its own: it heads the side column directly beside the findings,
  * and five anchors are what the owner named.
  */
-export const IT_ANCHORS = ['findings', 'objects', 'questions', 'route', 'trust'] as const satisfies readonly ItSectionKey[];
+export const IT_ANCHORS = ['findings', 'objects', 'questions', 'route', 'trust', 'standard'] as const satisfies readonly ItSectionKey[];
+
+/**
+ * The layers IT shows as a section of its own — *Standard fit* since ADR-096
+ * (owner, 12.10.2026): for a Z program without catalog successors its rows
+ * were 26 identical "No catalog hit · E0 none · Not determined" lines, and its
+ * capabilities are rule conditions and rule ids — a technical reading, not a
+ * business one. It stands full width under IT's two columns, so its own table
+ * and side column keep their room, and its anchor comes last, in the page's
+ * order. Until roadmap 3.0.13 (F14) brings the real standard comparison.
+ */
+export const IT_LAYERS: readonly LayerKey[] = ['standard'];
 
 /**
  * Where a layer address lands when the reader is in IT — the IT view has no
  * layers any more, so an old link (`?view=it#need`, a bookmark, a mail, a
- * stage's way back) goes where that content lives now: the process and the
- * standard fit to Business, the costs to the Economics tool, the decision to
- * Management, architecture and evidence to IT's own sections.
+ * stage's way back) goes where that content lives now: the process to
+ * Business, the costs to the Economics tool, the decision to Management,
+ * architecture and evidence to IT's own sections. *Standard fit* is IT's own
+ * section since ADR-096 and keeps its address (`IT_LAYERS`).
  */
 export type LayerHome = { kind: 'view'; view: WorkspaceView; hash: string } | { kind: 'economics' };
 
 export const IT_LAYER_ELSEWHERE: Readonly<Record<LayerKey, LayerHome>> = {
   need: { kind: 'view', view: 'business', hash: BUSINESS_MAP_ID },
-  standard: { kind: 'view', view: 'business', hash: 'standard' },
+  standard: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.standard },
   costs: { kind: 'economics' },
   architecture: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.objects },
   evidence: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.trust },

@@ -281,19 +281,24 @@ From top to bottom:
    "empty" beside a decision with a timeline; `#changes` leads to that decision). Every layer is a tab, the filled
    ones first; an empty one stays a tab, muted and marked "empty", and says in its section what is missing — there
    is no "More" menu (owner, 03.10.2026: "no recognisable menu"; §2.11). **Only Business shows layers**, and of them
-   Standard fit and Evidence & controls only: its process is the map and the rules card on the page itself, and a
-   `#need` link there lands on the map (ADR-080). **Management has no layer bar and no anchor bar** (ADR-087): its
+   Evidence & controls only: its process is the map and the rules card on the page itself, and a `#need` link there
+   lands on the map (ADR-080). With one layer left it has **no bar**: the section stands under the map on its own — a
+   bar with one tab is a navigation to the only place there is (ADR-096). **Standard fit left Business** (owner,
+   12.10.2026, ADR-096): for a Z program without catalog successors its rows were identical non-statements ("No
+   catalog hit · E0 none · Not determined") and its capabilities rule conditions and rule ids; it is one of IT's own
+   sections until roadmap 3.0.13 (F14) brings the real standard comparison, and `?view=business#standard` (a
+   bookmark, a stage's way back) switches to IT `#standard` — the content lives there now. **Management has no layer bar and no anchor bar** (ADR-087): its
    page is the decision, the distance to SAP standard beside the readiness trend, one "Evidence" fold and one quiet
    row of links out (§2.11), shorter than an anchor bar would be worth. A layer address in Management goes where
-   that content lives now: Need & process and Standard fit to Business (`#process-map`, `#standard`), Architecture
+   that content lives now: Need & process to Business (`#process-map`), Standard fit to IT (`#standard`), Architecture
    and Evidence to IT (`#it-objects`, `#it-trust`), Costs to the Costs row of the decision (`#decision-rests-on-cost`;
    the Economics tool without a signed run), Changes to the decision (`#decision-card`). **IT has no layers** (ADR-086): its own anchor bar jumps within
    the page to IT's own sections, in the page's order — **Findings · Objects & dependencies · Open questions · Route ·
-   Run & trust** — each with what is in it (a count, the contract id and status, "signed"); a section with nothing in
+   Run & trust · Standard fit** (the last full width under the two columns, ADR-096) — each with what is in it (a count, the contract id and status, "signed"); a section with nothing in
    it has no anchor, never an "empty" chip, except Open questions, whose "none" is an answer. A layer address in IT
-   (`?view=it#need`, a stage's way back from before 3.0.7) goes where that content lives now: Need & process and
-   Standard fit to Business (`#process-map`, `#standard`), Costs to the Economics tool, Changes to Management's
-   decision (`#decision-card`), Architecture and Evidence to IT's own Objects & dependencies and Run & trust.
+   (`?view=it#need`, a stage's way back from before 3.0.7) goes where that content lives now: Need & process to
+   Business (`#process-map`), Costs to the Economics tool, Changes to Management's decision (`#decision-card`),
+   Architecture and Evidence to IT's own Objects & dependencies and Run & trust; `#standard` is IT's own section.
 5. **Content:** sections of the selected layer. **"Next step"** is a card (rule-based, roadmap step 6.5),
    not a bar — in Business in the header below the disclosure and *Not determined*, in Management and IT at the top of the content.
 6. **Footer only in edit mode** (process model, rules): `Save` (primary), `Discard` (ghost), the note
@@ -320,7 +325,7 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 | Element | Does | Does not | Start | Held in |
 |---|---|---|---|---|
 | **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
-| **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086); Management has none (ADR-087) | does not switch the view | Business: first of its layers with content; IT and Management: the answer at the top | URL fragment (`#standard`, `#it-objects`) |
+| **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086); Management has none (ADR-087) | does not switch the view | Business: its one layer, without a bar (ADR-096); IT and Management: the answer at the top | URL fragment (`#evidence`, `#it-objects`, `#standard`) |
 | **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks whether the tool has been used in this project, or is out of date (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
 
 **The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
@@ -461,8 +466,8 @@ For first-time users less is more — the depth stays, it just does not come fir
   and marked "empty", and says in its section what is missing — no "More" menu (owner, 03.10.2026). In IT there are no
   layers and no "empty" chip at all: its own anchor bar names only sections that hold something (ADR-086).
 - **One home per view.** A view shows the content that answers its question and links to the rest in one quiet row,
-  never a second copy: IT ends in "Process & rules → Business · Standard fit → Business · Costs → Economics · Decision
-  → Management", and shows neither the first look nor "Ask this case", which are Business's (ADR-086). Management
+  never a second copy: IT ends in "Process & rules → Business · Costs → Economics · Decision → Management" (Standard fit
+  is IT's own section since ADR-096), and shows neither the first look nor "Ask this case", which are Business's (ADR-086). Management
   ends in "Process & rules → Business · Objects & dependencies → IT · Costs → Economics · Evidence & audit pack →
   Delivery", and shows neither the layers nor the first look nor the rules editor; its process is one line in the
   decision's Need row (ADR-087).

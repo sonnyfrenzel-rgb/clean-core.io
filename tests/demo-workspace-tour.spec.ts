@@ -112,6 +112,10 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
       // Business has no Need & process (ADR-080): the map is its process, and
       // the bar opens on one of its own sections.
       await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
+      // Its one layer is Evidence & controls, without a bar of one tab;
+      // Standard fit is IT's own section (ADR-096).
+      await expect(page.locator('[data-workspace-layer-section="evidence"]')).toHaveCount(1);
+      await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
     } else if (view === 'management') {
       // Management shows only its own content (ADR-087): no layer bar, no
@@ -130,8 +134,9 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
       await expect(page.locator('[data-it-anchors]')).toBeVisible();
       await expect(page.locator('[data-it-anchor="objects"]')).toBeVisible();
       await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
-      await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(4);
+      await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(3);
       await expect(page.locator('[data-it-trust="demo"]')).toBeVisible();
+      await expect(page.locator('#standard[data-it-standard]')).toHaveCount(1);
     }
   }
   // IT shows the engine's findings without asking a route for them.

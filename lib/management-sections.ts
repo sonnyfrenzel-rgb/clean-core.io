@@ -32,14 +32,14 @@ export const MANAGEMENT_IDS = Object.freeze({
  * Where a layer address lands when the reader is in Management — the view has
  * no layers any more, so an old link (`?view=management#need`, a bookmark, a
  * mail, a stage's way back) goes where that content lives now: the process to
- * the Business map, the standard fit to Business, the costs to the Costs row
+ * the Business map, the standard fit to IT's own section (ADR-096), the costs to the Costs row
  * of the decision (the Economics tool where no decision can be shown),
  * architecture and evidence to IT's own sections, and the changes to the
  * decision card with its timeline.
  */
 export const MANAGEMENT_LAYER_ELSEWHERE: Readonly<Record<LayerKey, LayerHome>> = {
   need: { kind: 'view', view: 'business', hash: BUSINESS_MAP_ID },
-  standard: { kind: 'view', view: 'business', hash: 'standard' },
+  standard: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.standard },
   costs: { kind: 'view', view: 'management', hash: MANAGEMENT_IDS.costs },
   architecture: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.objects },
   evidence: { kind: 'view', view: 'it', hash: IT_SECTION_IDS.trust },

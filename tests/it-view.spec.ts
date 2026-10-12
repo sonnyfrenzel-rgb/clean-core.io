@@ -326,19 +326,22 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
     // Every address a layer link may carry, the retired `#changes` included (ADR-087).
     expect(Object.keys(IT_LAYER_ELSEWHERE).sort()).toEqual([...LAYER_ADDRESSES].sort());
     expect(IT_LAYER_ELSEWHERE.need).toEqual({ kind: 'view', view: 'business', hash: 'process-map' });
-    expect(IT_LAYER_ELSEWHERE.standard).toEqual({ kind: 'view', view: 'business', hash: 'standard' });
+    // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
+    expect(IT_LAYER_ELSEWHERE.standard).toEqual({ kind: 'view', view: 'it', hash: 'standard' });
     expect(IT_LAYER_ELSEWHERE.costs).toEqual({ kind: 'economics' });
     expect(IT_LAYER_ELSEWHERE.architecture).toEqual({ kind: 'view', view: 'it', hash: 'it-objects' });
     expect(IT_LAYER_ELSEWHERE.evidence).toEqual({ kind: 'view', view: 'it', hash: 'it-trust' });
     expect(IT_LAYER_ELSEWHERE.changes).toEqual({ kind: 'view', view: 'management', hash: 'decision-card' });
-    // Main column, then the side column — the order Sonny confirmed.
-    expect([...IT_ANCHORS]).toEqual(['findings', 'objects', 'questions', 'route', 'trust']);
+    // Main column, then the side column — the order Sonny confirmed — then
+    // Standard fit, full width under both (ADR-096).
+    expect([...IT_ANCHORS]).toEqual(['findings', 'objects', 'questions', 'route', 'trust', 'standard']);
     const answers = read('components/workspace/ItAnswers.tsx');
     const at = (needle: string) => answers.indexOf(needle);
     expect(at('id={IT_SECTION_IDS.findings}')).toBeGreaterThan(0);
     expect(at('<ObjectsCard')).toBeGreaterThan(at('id={IT_SECTION_IDS.findings}'));
     expect(at('id={IT_SECTION_IDS.questions}')).toBeGreaterThan(at('<ObjectsCard'));
     expect(at('<ItRail')).toBeGreaterThan(at('id={IT_SECTION_IDS.questions}'));
+    expect(at('id={IT_SECTION_IDS.standard}')).toBeGreaterThan(at('<ItRail'));
     const rail = read('components/workspace/ItRail.tsx');
     expect(rail.indexOf('id={IT_TARGET_PROFILE_ID}')).toBeLessThan(rail.indexOf('id={IT_SECTION_IDS.route}'));
     expect(rail.indexOf('id={IT_SECTION_IDS.route}')).toBeLessThan(rail.indexOf('id={IT_SECTION_IDS.trust}'));
@@ -444,7 +447,7 @@ test.describe('the IT view on a real project', () => {
     const readOrder = () => anchors.evaluateAll((els) => els.map((e) => e.getAttribute('data-it-anchor')));
     await expect.poll(readOrder, { timeout: 30000 }).toEqual(expect.arrayContaining(['findings', 'objects', 'questions']));
     const order = await readOrder();
-    const expected = ['findings', 'objects', 'questions', 'route', 'trust'].filter((k) => order.includes(k));
+    const expected = ['findings', 'objects', 'questions', 'route', 'trust', 'standard'].filter((k) => order.includes(k));
     expect(order).toEqual(expected);
     await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
     const bar = await page.locator('[data-it-anchors]').boundingBox();
@@ -453,8 +456,8 @@ test.describe('the IT view on a real project', () => {
     const findingsBox = await page.locator('#it-findings').boundingBox();
     const objectsBox = await page.locator('#it-objects').boundingBox();
     expect(findingsBox && objectsBox && notDetermined && findingsBox.y < objectsBox.y && objectsBox.y < notDetermined.y).toBe(true);
-    // One quiet row of links out.
-    await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(4);
+    // One quiet row of links out — Standard fit is no longer one: it is IT's own (ADR-096).
+    await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(3);
     await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings at \d+ places in the code · /);
 
     // Four figures under the answer, each with its coverage (v3.0.1: what the

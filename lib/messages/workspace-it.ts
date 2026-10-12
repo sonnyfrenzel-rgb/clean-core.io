@@ -63,6 +63,7 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.anchorQuestions': 'Open questions',
   'itv.anchorRoute': 'Route',
   'itv.anchorTrust': 'Run & trust',
+  'itv.anchorStandard': 'Standard fit',
   'itv.anchorNone': 'none',
   'itv.anchorSigned': 'signed',
 
@@ -111,7 +112,6 @@ export const WORKSPACE_IT_MESSAGES = {
 
   'itv.elsewhereLabel': 'Answered in the other views',
   'itv.elsewhereProcess': 'Process & rules → Business',
-  'itv.elsewhereStandard': 'Standard fit → Business',
   'itv.elsewhereCosts': 'Costs → Economics',
   'itv.elsewhereDecision': 'Decision → Management',
 

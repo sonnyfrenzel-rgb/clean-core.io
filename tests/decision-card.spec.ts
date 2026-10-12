@@ -961,7 +961,8 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(point('successor-unverified', 'BAPI_X').place).toMatchObject({ view: 'it', hash: 'it-findings' });
     expect(point('standard-fit-not-assessed', null)).toMatchObject({
       kind: 'limit',
-      place: { kind: 'view', view: 'business', hash: 'standard', action: 'Check standard fit' },
+      // IT's own Standard fit section since ADR-096 (owner, 12.10.2026).
+      place: { kind: 'view', view: 'it', hash: 'standard', action: 'Check standard fit' },
     });
     for (const code of ['catalog-not-edition-specific', 'modification-unreset', 'coverage-incomplete', 'no-successor-published', 'successor-unverified', 'standard-fit-not-assessed']) {
       const p = point(code, 'X');
@@ -973,6 +974,7 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(DECISION_PLACE_IDS.itTargetProfile).toBe(IT_SECTION_IDS.profile);
     expect(DECISION_PLACE_IDS.itFindings).toBe(IT_SECTION_IDS.findings);
     expect(DECISION_PLACE_IDS.itOpenQuestions).toBe(IT_SECTION_IDS.questions);
+    expect(DECISION_PLACE_IDS.itStandardFit).toBe(IT_SECTION_IDS.standard);
     expect(DECISION_PLACE_IDS.businessMap).toBe(BUSINESS_MAP_ID);
     const economics = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
     expect(economics).toContain(`id="${DECISION_PLACE_IDS.economicsCompare}"`);

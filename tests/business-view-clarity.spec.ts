@@ -173,9 +173,10 @@ test.describe('deciding on the rules, as pure functions', () => {
 });
 
 test.describe('the sections Business shows, and the walk-through order', () => {
-  test('Business keeps Standard fit and Evidence & controls; Need & process leads to its map (ADR-080)', () => {
-    expect([...BUSINESS_LAYERS]).toEqual(['standard', 'evidence']);
+  test('Business keeps Evidence & controls; Need & process leads to its map (ADR-080), Standard fit to IT (ADR-096)', () => {
+    expect([...BUSINESS_LAYERS]).toEqual(['evidence']);
     expect(BUSINESS_LAYER_ELSEWHERE.need).toBe('map');
+    expect(BUSINESS_LAYER_ELSEWHERE.standard).toBe('it');
     expect(BUSINESS_MAP_ID).toBe('process-map');
   });
 
@@ -379,43 +380,27 @@ test.describe('the Business view on screen', () => {
     await expect(ask.locator('[data-ask-code-question]')).toHaveText(ABAP_TOKENS);
   });
 
-  test('the section bar is a named tab list without Costs and Architecture, sticky, moved by arrow keys', async ({ page }) => {
+  test('Business has one section and no bar of one tab; Standard fit lives in IT (ADR-096)', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await withoutTips(page);
     await signInThroughForm(page, account);
     await open(page, ids.po);
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
-    const tabs = page.getByRole('tablist', { name: 'Sections of this process' });
-    await expect(tabs).toBeVisible();
-    await expect(tabs.locator('[data-workspace-layer="costs"]')).toHaveCount(0);
-    await expect(tabs.locator('[data-workspace-layer="architecture"]')).toHaveCount(0);
-    await expect(tabs.locator('[data-workspace-layer="need"]')).toHaveCount(0);
-    // It opens on Standard fit, the first of its sections with content (ADR-080).
-    const standard = tabs.getByRole('tab', { name: /Standard fit/ });
-    await expect(standard).toHaveAttribute('aria-selected', 'true');
-    await standard.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(tabs.getByRole('tab', { name: /Evidence & controls/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(tabs.getByRole('tab', { name: /Evidence & controls/ })).toBeFocused();
-    await page.keyboard.press('ArrowLeft');
-    await expect(standard).toHaveAttribute('aria-selected', 'true');
+    // Evidence & controls stands under the map on its own: a bar with one tab
+    // is a navigation to the only place there is (owner, 12.10.2026).
+    await expect(page.locator('[data-workspace-layer-section="evidence"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('tablist', { name: 'Sections of this process' })).toHaveCount(0);
+    for (const gone of ['standard', 'costs', 'architecture', 'need']) {
+      await expect(page.locator(`[data-workspace-layer-section="${gone}"]`)).toHaveCount(0);
+    }
 
-    // Sticky: scrolled into the section, the bar stays under the shell bar.
-    // Only once the section is taller than the screen: Standard fit reads its table
-    // after the tab is chosen, and scrolled while it is still 85 px tall the
-    // page sits at its own end, the wheel moves nothing, and the bar is measured
-    // in the flow (240 px on CI) instead of stuck.
-    await expect
-      .poll(() => page.locator('[data-workspace-layer-section]').evaluate((el) => el.getBoundingClientRect().height - window.innerHeight), {
-        timeout: 60_000,
-      })
-      .toBeGreaterThan(0);
-    await page.locator('[data-workspace-layer-section]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
-    await page.mouse.wheel(0, 300);
-    const top = await page.locator('nav[data-workspace-layers]').evaluate((el) => el.getBoundingClientRect().top);
-    expect(top).toBeGreaterThanOrEqual(40);
-    expect(top).toBeLessThanOrEqual(80);
+    // Standard fit's old Business address (a bookmark) goes to IT, where the
+    // section lives now — no request, the route sends it on.
+    await page.goto(`/project/${ids.po}?view=business#standard`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL((url) => url.searchParams.get('view') === 'it' && url.hash === '#standard', { timeout: 60_000 });
+    await expect(page.locator('#standard[data-it-standard]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-it-anchor="standard"]')).toBeVisible();
 
     // A link into a section Business no longer shows lands where it lives now.
     await page.goto(`/project/${ids.po}?view=business#costs`, { waitUntil: 'domcontentloaded' });

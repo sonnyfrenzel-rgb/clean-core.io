@@ -18,7 +18,7 @@ import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
  * the section's heading back into view, under the bars, not behind them.
  *
  * Walked at a desktop and a phone width on a project whose run the route
- * signed, so the map, the rules and the Standard fit table are the real ones.
+ * signed, so the map, the rules and the evidence are the real ones.
  */
 
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000';
@@ -37,7 +37,8 @@ async function idToken(email: string, password: string): Promise<string> {
 async function headingPlace(page: Page, key: string) {
   return page.evaluate((k) => {
     const heading = document.getElementById(`layer-title-${k}`)!.getBoundingClientRect();
-    const bar = document.querySelector('[data-workspace-layers]')!.getBoundingClientRect();
+    // Business has no layer bar since ADR-096: the shell bar is what covers the top.
+    const bar = document.querySelector('[data-workspace-layers]')?.getBoundingClientRect() ?? { bottom: 0 };
     return { top: heading.top, bottom: heading.bottom, barBottom: bar.bottom, viewport: window.innerHeight };
   }, key);
 }
@@ -86,26 +87,25 @@ test.describe('"Back to top of section" (owner 06.10.2026)', () => {
       await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
       await expect(page.locator('[data-workspace-layers] [data-workspace-layer="need"]')).toHaveCount(0);
 
-      // Standard fit: the table of the signed source is taller than the screen — the link stands.
-      await page.locator('[data-workspace-layers] [data-workspace-layer="standard"]').click();
-      const fit = page.locator('[data-workspace-layer-section="standard"]');
-      await expect(fit.locator('[data-standard-fit=""]')).toBeVisible({ timeout: 90_000 });
-      const top = fit.locator('[data-workspace-layer-top]');
-      await expect(top, 'the Standard fit table is long enough to need the way back').toBeVisible({ timeout: 30_000 });
-
-      await top.scrollIntoViewIfNeeded();
-      const before = await headingPlace(page, 'standard');
-      expect(inView(before), `the heading is already in view before the click: ${JSON.stringify(before)}`).toBe(false);
-
-      const urlBefore = page.url();
-      const historyBefore = await page.evaluate(() => history.length);
-      await top.click();
-      await expect
-        .poll(async () => inView(await headingPlace(page, 'standard')), { timeout: 10_000 })
-        .toBe(true);
-      // No second history entry: the fragment is the selected section already.
-      expect(page.url()).toBe(urlBefore);
-      expect(await page.evaluate(() => history.length)).toBe(historyBefore);
+      // Evidence & controls, Business's one section since Standard fit moved
+      // to IT (ADR-096), is a few rows tall: no link that cannot move. The
+      // long section this spec clicked through was Standard fit; with it in
+      // IT, no Business section on this project is taller than the screen, so
+      // the click half has no section to walk (owner, 12.10.2026).
+      const evidence = page.locator('[data-workspace-layer-section="evidence"]');
+      await expect(evidence).toBeVisible({ timeout: 60_000 });
+      const tall = await evidence.evaluate((el) => {
+        const offset = parseFloat(window.getComputedStyle(el).scrollMarginTop) || 0;
+        return el.getBoundingClientRect().height > window.innerHeight - offset;
+      });
+      await expect(evidence.locator('[data-workspace-layer-top]')).toHaveCount(tall ? 1 : 0);
+      if (tall) {
+        const before = await headingPlace(page, 'evidence');
+        await evidence.locator('[data-workspace-layer-top]').scrollIntoViewIfNeeded();
+        await evidence.locator('[data-workspace-layer-top]').click();
+        await expect.poll(async () => inView(await headingPlace(page, 'evidence')), { timeout: 10_000 }).toBe(true);
+        expect(before).toBeTruthy();
+      }
     });
   }
 });

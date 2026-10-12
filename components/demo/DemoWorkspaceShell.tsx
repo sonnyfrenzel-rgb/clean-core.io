@@ -18,7 +18,7 @@ import OpenQuestions from '@/components/workspace/OpenQuestions';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
 import { BUSINESS_LAYERS, BUSINESS_MAP_ID } from '@/lib/business-layers';
-import { IT_LAYER_ELSEWHERE, scrollToWhenThere } from '@/lib/it-sections';
+import { IT_LAYER_ELSEWHERE, IT_LAYERS, scrollToWhenThere } from '@/lib/it-sections';
 import { replaceHashInPlace } from '@/lib/layer-redirect';
 import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
 import { plainWordingFor } from '@/lib/business-card';
@@ -278,7 +278,8 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   // content lives now, as in the workspace (`IT_LAYER_ELSEWHERE`).
   useEffect(() => {
     const layer = layerFromHash(window.location.hash);
-    if (view !== 'it' || layer === null) return;
+    // Standard fit is IT's own section since ADR-096: its address stays.
+    if (view !== 'it' || layer === null || IT_LAYERS.includes(layer)) return;
     const home = IT_LAYER_ELSEWHERE[layer];
     if (home.kind === 'economics') {
       router.replace(demoEconomics);
@@ -554,13 +555,16 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const shownLayer: LayerKey = viewLayers.some((l) => l.key === currentLayer)
     ? currentLayer
     : view === 'business'
-      ? (viewLayers.find((l) => l.count !== null)?.key ?? viewLayers[0]?.key ?? 'standard')
+      ? (viewLayers.find((l) => l.count !== null)?.key ?? viewLayers[0]?.key ?? 'evidence')
       : 'need';
-  const layerBar = (
-    <div className="mt-5">
-      <WorkspaceLayerBar layers={viewLayers} current={shownLayer} onSelect={selectLayer} />
-    </div>
-  );
+  // One layer left in Business since ADR-096 (owner, 12.10.2026): no bar
+  // with one tab, as in the workspace — the section stands on its own.
+  const layerBar =
+    viewLayers.length > 1 ? (
+      <div className="mt-5">
+        <WorkspaceLayerBar layers={viewLayers} current={shownLayer} onSelect={selectLayer} />
+      </div>
+    ) : null;
   const layerSection =
     shownLayer === 'need' ? null : (
       <div className="mt-5 max-w-3xl">
@@ -843,6 +847,8 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               signed="demo"
               trust="demo"
               elsewhere={itElsewhere}
+              // Standard fit is IT's own section since ADR-096, as in the workspace.
+              standardLayer={layers.find((l) => l.key === 'standard') ?? null}
             />
           </Place>
         </>

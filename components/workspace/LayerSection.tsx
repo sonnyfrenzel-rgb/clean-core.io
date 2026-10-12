@@ -12,7 +12,6 @@ import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import type { Project } from '@/lib/types';
 import BusinessRulesEditor from './BusinessRulesEditor';
-import StandardFitTable from './StandardFitTable';
 import UsageRecords from './UsageRecords';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { wt, layerSectionShowing } from '@/lib/workspace-messages';
@@ -65,8 +64,9 @@ export default function WorkspaceLayerSection({
   /**
    * The project, its id and the first look's reading of its source. With them,
    * *Need & process* shows the business rules and their one editing mode
-   * (mockup `s2`) and *Standard fit* its table (`s3`); without them both fall
-   * back to the plain rows, as every other layer does.
+   * (mockup `s2`); without them it falls back to the plain rows, as every
+   * other layer does. *Standard fit* and its table (`s3`) are an IT section
+   * since ADR-096 (owner, 12.10.2026) — `ItStandardFit`, not a layer here.
    */
   project?: Project | null;
   projectId?: string;
@@ -75,7 +75,6 @@ export default function WorkspaceLayerSection({
   const empty = layer.rows.length === 0;
   const need = layer.key === 'need';
   const withRules = need && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
-  const withFit = layer.key === 'standard' && !empty && projectId !== '';
   // The process row is the map's summary, rendered on its own below; the
   // rules are shown by the editor; the usage records by their own card, in
   // full (ADR-080) — the layer's rows are cut at five, and the usage records
@@ -149,11 +148,7 @@ export default function WorkspaceLayerSection({
         </div>
       ) : null}
       {need && !empty ? <UsageRecords project={project} className="mt-2" /> : null}
-      {withFit ? (
-        <div className="mt-2" data-workspace-layer-fit="">
-          <StandardFitTable project={project} projectId={projectId} />
-        </div>
-      ) : empty ? (
+      {empty ? (
         // Not a blank area and not a spinner: the reason, in the same words the
         // bar uses under "More", so a reader who arrives here from either
         // direction reads one sentence rather than two versions of it.
