@@ -822,7 +822,7 @@ leases per hour is `transformation_lease_windows/{uid}` beside `projects/{id}/tr
 (both default-deny, no rules change); a leased call names `lease: { projectId, leaseId }` and
 `responseShape: 'transformation-fill'` in the `/api/gemini` body. The probe pass is
 `lib/test-sandbox/probe-suite.ts` with the probes as `probe-runtime.ts`, generated from
-`scripts/acceptance/child/probes.mjs` by `scripts/transformation/sync-probe-runtime.mjs` (the harness
+`scripts/acceptance/lib/probes.mjs` by `scripts/transformation/sync-probe-runtime.mjs` (the harness
 file is read, not edited). The stop rules of §13.2 are `decideGenerationRepair` in `lib/repair-draft.ts`.
 The fills carry code-draft rules 11–15, 17, 19, 21 and 23; 16, 18, 20, 22 and 24 are engine-written in
 the scaffold.

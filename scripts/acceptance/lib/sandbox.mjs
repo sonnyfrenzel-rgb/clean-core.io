@@ -12,7 +12,10 @@
  *     the process;
  *   - nothing to decide: the child only executes (`child/executor.mjs`), and
  *     every verdict is made in this process from what it answered
- *     (`startExecutor`).
+ *     (`startExecutor`);
+ *   - inside the child, the package's code runs in a SES compartment after
+ *     `lockdown()`, apart from the channel and the collector (`bundleModules`,
+ *     `createConfinement` in `child/engine-cases-core.mjs`).
  *
  * Network is the gap. Node only gained a network permission in v25; on older
  * versions the permission model leaves sockets open and the only barrier is the
@@ -24,9 +27,11 @@
 import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { createRequire, isBuiltin } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { CONFINED_MODULES } from '../child/engine-cases-core.mjs';
 
 export const CHILD_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'child');
 const EVENT = '@@CC-ACC-EVENT ';
@@ -125,36 +130,120 @@ export class TransportError extends Error {
   }
 }
 
+/** SES (`ses/dist/ses.cjs`, Apache-2.0), which the executor loads before anything else. */
+export function sesFile() {
+  return createRequire(import.meta.url).resolve('ses');
+}
+
+/**
+ * The package's modules as one CommonJS bundle for the executor's compartment
+ * (`createConfinement` in `child/engine-cases-core.mjs`), built here with
+ * esbuild — which parses and never executes. `modules` maps a name to a path
+ * inside `root`; the bundle exports each module's namespace under `names[name]`.
+ * Relative imports must stay inside `root`. A Node module the compartment does
+ * not provide, or an npm package (the harness never installs one), makes the
+ * package not runnable here, named with the module that imports it.
+ * Resolves to `{ bundle, names } | { failure }`.
+ */
+export async function bundleModules(root, modules) {
+  let esbuild;
+  try {
+    esbuild = await import('esbuild');
+  } catch {
+    return { failure: 'esbuild is not installed, so the package cannot be prepared for the confined executor' };
+  }
+  const entries = Object.entries(modules ?? {});
+  const names = {};
+  const byFile = new Map();
+  const lines = entries.map(([name, rel], i) => {
+    names[name] = `m${i}`;
+    byFile.set(path.resolve(root, String(rel)), name);
+    return `export * as m${i} from ${JSON.stringify(`./${String(rel).replace(/\\/g, '/')}`)};`;
+  });
+  const refused = [];
+  const inside = (abs) => abs === root || abs.startsWith(root + path.sep);
+  const plugin = {
+    name: 'cc-acceptance-resolve',
+    setup(build) {
+      build.onResolve({ filter: /.*/ }, (args) => {
+        if (args.kind === 'entry-point') return undefined;
+        const p = args.path;
+        const importer = byFile.get(args.importer) ?? (args.importer ? path.relative(root, args.importer).replace(/\\/g, '/') : 'entry');
+        if (p.startsWith('node:') || isBuiltin(p)) {
+          const bare = p.startsWith('node:') ? p.slice(5) : p;
+          if (!CONFINED_MODULES.includes(bare)) refused.push(`module '${importer}' imports '${p}', which the confined executor does not provide (it provides ${CONFINED_MODULES.join(', ')})`);
+          return { path: p, external: true };
+        }
+        if (!p.startsWith('.') && !path.isAbsolute(p)) {
+          refused.push(`not runnable without its dependencies: module '${importer}' imports '${p}', which is not installed (the harness never installs dependencies)`);
+          return { path: p, external: true };
+        }
+        const base = path.resolve(args.resolveDir || root, p);
+        if (!inside(base)) return { errors: [{ text: `an import leaves the package (${p})` }] };
+        const ts = base.replace(/\.js$/, '.ts');
+        if (ts !== base && !fs.existsSync(base) && fs.existsSync(ts)) return { path: ts };
+        return undefined;
+      });
+    },
+  };
+  let result;
+  try {
+    result = await esbuild.build({
+      stdin: { contents: lines.join('\n'), resolveDir: root, sourcefile: '__cc_entry.mjs', loader: 'js' },
+      bundle: true,
+      write: false,
+      format: 'cjs',
+      platform: 'node',
+      target: 'node22',
+      logLevel: 'silent',
+      legalComments: 'none',
+      absWorkingDir: root,
+      resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
+      loader: { '.ts': 'ts', '.tsx': 'tsx' },
+      tsconfigRaw: { compilerOptions: { experimentalDecorators: true } },
+      plugins: [plugin],
+    });
+  } catch (err) {
+    const first = err && Array.isArray(err.errors) && err.errors[0] ? err.errors[0].text : String(err && err.message ? err.message : err);
+    return { failure: `the package's modules cannot be bundled: ${String(first).split('\n')[0].slice(0, 300)}` };
+  }
+  if (refused.length > 0) return { failure: refused[0] };
+  return { bundle: result.outputFiles[0].text, names };
+}
+
 /**
  * Start the sandboxed executor (`child/executor.mjs`) for one package copy.
  *
  * The harness process is the controller: it holds the probes, the engine-case
  * judge and every expectation, and never imports the package. The executor only
- * loads the package's modules and calls what it is asked to call. Requests go
+ * loads the package's bundle and calls what it is asked to call. Requests go
  * to its stdin, one JSON line each; each answer comes back as one JSON line
  * `{ id, answer }` on a pipe of its own (file descriptor 3). Its stdout is
  * discarded, and the job is never in its environment.
  *
- * The package runs in the executor's process, so it can write to that pipe
- * too. It cannot write a verdict there — verdicts are made here, from answers —
- * and the channel is held to one answer per open request: a line that is not
- * JSON, carries another id, arrives while nothing is asked, or overruns the
- * size limit poisons the run, and `close()` reports it so the caller discards
- * every result of this executor as not runnable. A package that swallows the
- * real answer and sends its own has only chosen what its function answered.
+ * The package runs inside the executor's process but in a locked-down SES
+ * compartment, from which neither the pipe nor stdout, stderr or the collector
+ * can be reached (QA 1021a63b7b6c). The channel is still held to one answer per
+ * open request, as a second wall: a line that is not JSON, carries another id,
+ * arrives while nothing is asked, or overruns the size limit poisons the run,
+ * and `close()` reports it so the caller discards every result of this
+ * executor as not runnable.
  *
  * `request(op, payload)` resolves to the answer or rejects with a
  * `TransportError`; `close()` resolves to
  * `{ poisoned, timedOut, exitCode, events, stderrTail, durationMs }` and never rejects.
  */
 export function startExecutor({ root, nodeEnv, timeoutMs, flag }) {
+  const ses = sesFile();
   const args = [
     flag,
     `--allow-fs-read=${root}`,
     `--allow-fs-read=${CHILD_DIR}`,
+    `--allow-fs-read=${ses}`,
     '--import',
     pathToFileURL(path.join(CHILD_DIR, 'net-guard.mjs')).href,
     path.join(CHILD_DIR, 'executor.mjs'),
+    ses,
   ];
   const env = minimalEnv({});
   if (nodeEnv !== undefined) env.NODE_ENV = nodeEnv;

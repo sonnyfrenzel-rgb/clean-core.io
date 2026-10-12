@@ -18,14 +18,14 @@ import path from 'node:path';
 
 const SOURCE_EXT = new Set(['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs', '.abap']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage']);
-const MAX_FILE = 2_000_000;
-
 /** The bounds of one scan. A generated delivery package is far below every one of them. */
 export const SCAN_LIMITS = Object.freeze({
   maxDepth: 12,
   maxEntries: 50_000,
   maxFiles: 2_000,
   maxBytes: 40_000_000,
+  /** One file larger than this is not read — package.json included — and is named in `limits` (QA 63cc65e43cba). */
+  maxFileBytes: 2_000_000,
 });
 
 /**
@@ -167,7 +167,7 @@ function importedPackages(text) {
  * `bounds` overrides any of `SCAN_LIMITS`.
  *
  * @param {string} pkgDir
- * @param {{ maxDepth?: number, maxEntries?: number, maxFiles?: number, maxBytes?: number }} [bounds]
+ * @param {{ maxDepth?: number, maxEntries?: number, maxFiles?: number, maxBytes?: number, maxFileBytes?: number }} [bounds]
  */
 export function staticScan(pkgDir, bounds = {}) {
   const findings = [];
@@ -175,12 +175,17 @@ export function staticScan(pkgDir, bounds = {}) {
   const files = walked.files;
   const limits = [...walked.limits];
   const maxBytes = bounds.maxBytes ?? SCAN_LIMITS.maxBytes;
+  const maxFile = bounds.maxFileBytes ?? SCAN_LIMITS.maxFileBytes;
   let bytes = 0;
   const imported = new Set();
+  const oversized = [];
   for (const rel of files) {
     const full = path.join(pkgDir, rel);
     const size = fs.statSync(full).size;
-    if (size > MAX_FILE) continue;
+    if (size > maxFile) {
+      oversized.push(rel);
+      continue;
+    }
     if (bytes + size > maxBytes) {
       limits.push(`stopped after reading ${bytes} bytes (limit ${maxBytes})`);
       break;
@@ -195,8 +200,16 @@ export function staticScan(pkgDir, bounds = {}) {
       }
     }
   }
+  // A file past the per-file bound is named, so the result never reads as complete.
+  if (oversized.length > 0) {
+    limits.push(`skipped ${oversized.length} file(s) larger than ${maxFile} bytes: ${oversized.slice(0, 5).join(', ')}${oversized.length > 5 ? ', …' : ''}`);
+  }
   const pkgJson = path.join(pkgDir, 'package.json');
-  if (fs.existsSync(pkgJson)) {
+  // package.json is held to the same per-file bound before it is read and parsed.
+  const pkgJsonSize = fs.existsSync(pkgJson) ? fs.statSync(pkgJson).size : -1;
+  if (pkgJsonSize > maxFile) {
+    limits.push(`package.json is larger than ${maxFile} bytes and was not read`);
+  } else if (pkgJsonSize >= 0) {
     let pkg = null;
     try {
       pkg = JSON.parse(fs.readFileSync(pkgJson, 'utf8'));

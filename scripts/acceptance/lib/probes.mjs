@@ -76,7 +76,9 @@ function callAnswer(answer) {
   if (!answer || typeof answer !== 'object') throw Object.assign(new Error('the executor sent no answer'), { transport: true });
   if (typeof answer.transportError === 'string') throw Object.assign(new Error(answer.transportError), { transport: true });
   if (typeof answer.adapter === 'string') throw adapterError(answer.adapter);
-  if (answer.threw === true) return { threw: true, error: String(answer.error ?? '').slice(0, 300) };
+  // The confinement refused something the package asked for (a module, a global, the network): not the package's answer.
+  if (typeof answer.sandbox === 'string') throw Object.assign(new Error(answer.sandbox), { transport: true });
+  if (answer.threw === true) return { threw: true, error: String(answer.error ?? '').slice(0, 300), crash: answer.crash === true };
   if (answer.threw === false) return { threw: false, value: answer.value };
   throw Object.assign(new Error('the executor sent an answer of an unknown shape'), { transport: true });
 }
@@ -89,7 +91,7 @@ function callAnswer(answer) {
 function makeCaller(ctx) {
   return async function call(spec, args) {
     const r = callAnswer(await ctx.request('call', { spec, args }));
-    if (r.threw) throw Object.assign(new Error(r.error), { packageThrew: true });
+    if (r.threw) throw Object.assign(new Error(r.error), { packageThrew: true, crash: r.crash });
     return r.value;
   };
 }
@@ -109,12 +111,23 @@ async function attempt(call, spec, args) {
     return { threw: false, value: await call(spec, args) };
   } catch (err) {
     if (!err || !err.packageThrew) throw err;
-    return { threw: true, error: err.message };
+    return { threw: true, error: err.message, crash: err.crash === true };
   }
 }
 
+/**
+ * Did the package refuse? An answer matching the adapter's refusal condition,
+ * or an `Error` it threw to say no. A crash — a TypeError, ReferenceError or
+ * SyntaxError JavaScript threw by itself — is never a refusal.
+ */
 function refused(res, matcher) {
-  return res.threw || matches(res.value, matcher);
+  if (res.threw) return !res.crash;
+  return matches(res.value, matcher);
+}
+
+/** Refused with a structured answer only: the adapter's refusal condition, never an exception (QA 612ac86f6c4c). */
+function refusedStructured(res, matcher) {
+  return !res.threw && matches(res.value, matcher);
 }
 
 // ------------------------------------------------- exact decimal reference
@@ -284,29 +297,40 @@ async function emptySelection(cfg, ctx) {
     status: ok ? 'pass' : 'fail',
     evidence: ok
       ? (res.threw ? `refused: ${res.error}` : `answered with a non-success state: ${short(getPath(res.value, cfg.refused?.path))}`)
-      : `an empty selection was answered as a success: ${short(res.value)}`,
+      : res.threw
+        ? `an empty selection crashed instead of being refused: ${res.error}`
+        : `an empty selection was answered as a success: ${short(res.value)}`,
   }];
 }
 
-/** FP-GUARD-03. Malformed numbers are refused, never coerced. */
+/**
+ * FP-GUARD-03. Malformed numbers are refused, never coerced. A refusal is the
+ * adapter's structured refusal answer; an exception for a malformed value is a
+ * failure of the probe, not a refusal (QA 612ac86f6c4c).
+ */
 async function lenientNumeric(cfg, ctx) {
   const call = makeCaller(ctx);
   const control = await attempt(call, cfg.call, fill(cfg.args, { value: cfg.valid }));
-  if (refused(control, cfg.refused)) {
+  if (control.threw || refusedStructured(control, cfg.refused)) {
     throw adapterError(`the valid control value ${short(cfg.valid)} is refused (${control.threw ? control.error : short(control.value)})`);
   }
   const invalid = Array.isArray(cfg.invalid) ? cfg.invalid : ['2026x', 'abc', '1.9', 'NaN', 'Infinity', '', null];
   const accepted = [];
+  const threw = [];
   for (const value of invalid) {
     const res = await attempt(call, cfg.call, fill(cfg.args, { value }));
-    if (!refused(res, cfg.refused)) accepted.push(value);
+    if (res.threw) threw.push([value, res.error]);
+    else if (!refusedStructured(res, cfg.refused)) accepted.push(value);
   }
+  const problems = [];
+  if (accepted.length) problems.push(`accepted malformed input ${short(accepted)} for a numeric field`);
+  if (threw.length) problems.push(`threw instead of refusing malformed input ${short(threw.map(([v]) => v))} (first: ${short(threw[0][1])})`);
   return [{
     pattern: 'FP-GUARD-03',
-    status: accepted.length === 0 ? 'pass' : 'fail',
-    evidence: accepted.length === 0
+    status: problems.length === 0 ? 'pass' : 'fail',
+    evidence: problems.length === 0
       ? `valid ${short(cfg.valid)} accepted; ${invalid.length} malformed values refused`
-      : `accepted malformed input ${short(accepted)} for a numeric field`,
+      : problems.join('; '),
   }];
 }
 
@@ -464,7 +488,7 @@ async function negativeWrite(cfg, ctx) {
   const call = makeCaller(ctx);
   if (cfg.validValue !== undefined) {
     const control = await attempt(call, cfg.call, fill(cfg.args, { value: cfg.validValue }));
-    if (refused(control, cfg.refused)) throw adapterError(`the valid control write ${short(cfg.validValue)} is refused`);
+    if (control.threw || refused(control, cfg.refused)) throw adapterError(`the valid control write ${short(cfg.validValue)} is refused`);
   }
   const value = typeof cfg.value === 'number' ? cfg.value : -99999;
   const res = await attempt(call, cfg.call, fill(cfg.args, { value }));

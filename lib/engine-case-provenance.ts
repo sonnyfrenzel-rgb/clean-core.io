@@ -17,12 +17,27 @@ import { deriveEngineCases, engineCaseOf, type EngineCaseDerivation, type Engine
  * The same derivation gives the cases the caps left out. The count is only
  * said when it belongs to the cases on record: every stored engine case
  * reproduced, and the test phase not stale. Otherwise the reason is said.
+ *
+ * `VerifiedEngineCase` is the only input `engineCasesFile` and `planEngineRun`
+ * take (QA e04537f4bb66, 0297134b3b87): a type no other module can produce
+ * without a cast, because its brand is a symbol declared here and never
+ * exported. `tests/qa-56bd195-harness.spec.ts` holds every other file to
+ * having no such cast.
  */
 
+declare const VERIFIED_ENGINE_CASE: unique symbol;
+
+/** An engine case recomputed from the signed source — produced by `engineCaseProvenance` alone. */
+export type VerifiedEngineCase = EngineTestCase & { readonly [VERIFIED_ENGINE_CASE]: true };
+
 export interface EngineCaseProvenance {
-  /** The recomputed cases whose stored twin matches, by id, in stored order. */
-  verified: EngineTestCase[];
-  /** Ids stored as engine cases that the derivation from the signed source does not reproduce. */
+  /** The recomputed cases whose stored twin matches, by id, in stored order; each id once. */
+  verified: VerifiedEngineCase[];
+  /**
+   * Ids stored as engine cases that the derivation from the signed source does
+   * not reproduce — and ids stored more than once (QA 663172392dc6): one
+   * derivation yields each id once, so a second copy is not its output.
+   */
   unverified: string[];
   /** Cases past the caps for the source the stored cases were derived from; null when that cannot be shown. */
   notCovered: { precision: number; guard: number } | null;
@@ -58,15 +73,24 @@ export function engineCaseProvenance(
   testsStale = false,
 ): EngineCaseProvenance {
   const derived = new Map((derivation?.cases ?? []).map((c) => [c.id, c]));
-  const verified: EngineTestCase[] = [];
+  const verified: VerifiedEngineCase[] = [];
   const unverified: string[] = [];
+  // How often each id is stored as an engine case: a duplicated id is no output of one derivation.
+  const copies = new Map<string, number>();
+  for (const tc of stored) {
+    if (engineCaseOf(tc)) copies.set(String(tc.id ?? ''), (copies.get(String(tc.id ?? '')) ?? 0) + 1);
+  }
   for (const tc of stored) {
     const data = engineCaseOf(tc);
     if (!data) continue;
     const id = String(tc.id ?? '');
+    if ((copies.get(id) ?? 0) > 1) {
+      if (!unverified.includes(id)) unverified.push(id);
+      continue;
+    }
     const twin = derived.get(id);
     const twinData = twin ? engineCaseOf(twin as unknown as Record<string, unknown>) : null;
-    if (twin && twinData && canonical(twinData) === canonical(data)) verified.push(twin);
+    if (twin && twinData && canonical(twinData) === canonical(data)) verified.push(twin as VerifiedEngineCase);
     else unverified.push(id);
   }
   let notCovered: EngineCaseProvenance['notCovered'] = null;

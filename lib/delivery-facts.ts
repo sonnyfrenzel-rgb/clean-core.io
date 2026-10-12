@@ -245,11 +245,13 @@ export function testFactsOf(project: HandoverProject, phases: readonly RailStep[
   // cases came from and the test phase is not stale — otherwise the reason is said.
   const testsStale = phases.find((p) => p.key === 'testing')?.state === 'stale';
   const provenance = engineCaseProvenance(list, deriveEngineCasesOf(signedSourceOf(project)?.source ?? null), testsStale);
+  // Each verified id counts once; every other stored engine entry — a duplicate copy included (QA 663172392dc6) — counts as not derived.
   const verifiedIds = new Set(provenance.verified.map((c) => c.id));
   const counted = countEngineCases(list.filter((tc) => !engineCaseOf(tc) || verifiedIds.has(String(tc.id ?? ''))));
+  const notDerived = list.filter((tc) => engineCaseOf(tc) && !verifiedIds.has(String(tc.id ?? ''))).length;
   const detail = [
     ...facts.detail,
-    `Scenarios: ${engineCaseCountsSentence({ ...counted, model: counted.model + provenance.unverified.length })}.`,
+    `Scenarios: ${engineCaseCountsSentence({ ...counted, model: counted.model + notDerived })}.`,
   ];
   if (provenance.unverified.length > 0) {
     detail.push(

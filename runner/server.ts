@@ -129,6 +129,8 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
         suiteCode: inputs.suiteCode,
         patterns: run.engine.patterns,
         allowUnsandboxed: false,
+        // The contract runs in a SES compartment under the driver, never as a peer of the outcome writer.
+        engine: inputs.engine,
         extraEnv,
         loopback: relay ? { host: '127.0.0.1', port: relay.port } : null,
       });

@@ -202,7 +202,7 @@ const readPackage = (dir: string) => {
 
 test.describe('the probe pass the runner executes', () => {
   test('the probes the runner gets are the acceptance harness\'s probes, word for word', () => {
-    const source = fs.readFileSync(path.join(ROOT, 'scripts', 'acceptance', 'child', 'probes.mjs'), 'utf8').replace(/\r\n/g, '\n');
+    const source = fs.readFileSync(path.join(ROOT, 'scripts', 'acceptance', 'lib', 'probes.mjs'), 'utf8').replace(/\r\n/g, '\n');
     expect(PROBE_RUNTIME_JS, 'run node scripts/transformation/sync-probe-runtime.mjs').toBe(source);
     expect(PROBE_RUNTIME_JS).not.toMatch(/^import /m);
   });
@@ -316,8 +316,12 @@ test.describe('verify mode of /api/run-tests', () => {
   });
 
   test('the cases come from the project\'s source on the server, and nothing is written', () => {
-    expect(fn).toContain('deriveEngineCases(source, deriveBusinessRules(source).rules)');
-    expect(fn).toContain("typeof projectData.legacyCode === 'string'");
+    // QA round 3: planned from the signed source through the provenance brand, as a recorded run is.
+    expect(fn).toContain('deriveEngineCasesOf(signedSource)');
+    expect(fn).toContain('engineCaseProvenance(');
+    expect(fn).toContain('planEngineRun(verified, files, null)');
+    expect(fn).toContain('engineVerdicts(engineStdout');
+    expect(fn).toContain('signedSourceOf(projectData');
     for (const write of ['recordDraftExecution(', 'recordRunFailure(', 'runTransaction(', 'tx.set(', '.set(', '.update(']) {
       expect(fn, `verify mode writes: ${write}`).not.toContain(write);
     }

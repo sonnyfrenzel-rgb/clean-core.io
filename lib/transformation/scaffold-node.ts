@@ -25,6 +25,8 @@
  */
 
 import { sha256Hex } from '../artefact-digest';
+// The cases the scaffold writes are branded the one way a case is: recomputed and matched (QA round 3).
+import { engineCaseProvenance } from '../engine-case-provenance';
 import { ENGINE_RUNTIME_JS } from '../test-sandbox/engine-runtime';
 import { deriveEngineCases, ENGINE_CASES_FILE, engineCasesFile, type EngineCaseDerivation } from '../testing-engine-cases';
 import { acceptanceAdapter, contractModel } from './call-contract';
@@ -1139,7 +1141,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'db/schema.cds', content: schemaCds(plan, facts), owner: 'engine' });
   files.push({
     path: ENGINE_CASES_FILE,
-    content: engineCasesFile(cases.cases as unknown as Array<Record<string, unknown>>) ?? `${JSON.stringify({ format: 'clean-core.engine-cases/1', cases: [] }, null, 2)}\n`,
+    content: engineCasesFile(engineCaseProvenance(cases.cases as unknown as Array<Record<string, unknown>>, cases).verified) ?? `${JSON.stringify({ format: 'clean-core.engine-cases/1', cases: [] }, null, 2)}\n`,
     owner: 'engine',
   });
   files.push({ path: 'test/engine-runtime.mjs', content: ENGINE_RUNTIME_JS, owner: 'engine' });

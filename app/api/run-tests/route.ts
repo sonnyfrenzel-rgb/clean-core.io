@@ -27,11 +27,11 @@ import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
 import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
 import { isGenerationDraft } from '@/lib/repair-draft';
-import { callContractPresence, ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-suite';
 import { probeRunInputs, PROBE_TEST_PREFIX } from '@/lib/test-sandbox/probe-suite';
-import { deriveEngineCases, engineCasesFile, ENGINE_CASE_PREFIX } from '@/lib/testing-engine-cases';
 import { NOT_RUN_NO_CONTRACT } from '@/lib/engine-call-contract';
 import { MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
+import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
+import { signedSourceOf, type HandoverProject } from '@/lib/handover';
 
 /**
  * POST /api/run-tests
@@ -439,10 +439,14 @@ export async function POST(req: Request) {
   const patterns = sandboxPatterns(selectedTestIds);
   // 3.0.12 (owner, 12.10.2026) — the engine cases run through the call contract
   // in the same executor as the suite, never in this service. Planned from the
-  // stored cases and the generated files; a draft run plans it too, against
-  // the draft's code.
+  // stored cases the engine reproduces from the signed source — recomputed, never
+  // the client-written entries (QA e04537f4bb66, 0297134b3b87) — and the
+  // generated files; a draft run plans it too, against the draft's code.
   const enginePlanOutcome = planEngineRun(
-    (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
+    engineCaseProvenance(
+      (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
+      deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null),
+    ).verified,
     files,
     Array.isArray(selectedTestIds) ? selectedTestIds.map((id: unknown) => String(id)) : null,
   );
@@ -573,7 +577,7 @@ export async function POST(req: Request) {
       if (enginePlan) {
         // The same derivation the runner makes, through the same core, named local-emulator like the run.
         const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
-        const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns });
+        const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns, engine: inputs.engine });
         const hashed = hashRunInputs(inputs.files, inputs.suiteCode);
         execution.engine =
           pass.kind === 'ran'
@@ -907,11 +911,11 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
  */
 async function executeLocally(
   target: RunnerTarget,
-  input: { files: SandboxFile[]; suiteCode: string; patterns: string[] },
+  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string } },
 ): Promise<SandboxRunOutcome> {
   if (target.kind === 'isolated') throw new Error('An isolated runner is configured; nothing runs in the application service.');
   if (target.kind === 'unavailable') return { kind: 'unavailable', reason: target.reason };
-  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true });
+  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true, ...(input.engine ? { engine: input.engine } : {}) });
 }
 
 /**
@@ -1030,30 +1034,30 @@ async function verifyCandidateResponse(input: {
 
   const files = sandboxFilesFromStoredCode(draft.generatedCode);
 
-  // The engine cases of the project's source, and the call contract they run through.
+  // The engine cases of the signed source, planned exactly as a recorded run
+  // plans them (QA round 3): recomputed from the signed source, branded by
+  // `engineCaseProvenance`, and only those verified cases go into the plan —
+  // never cases taken from the candidate or the request.
   let engineNotRun: string | null = null;
-  let casesJson: string | null = null;
   let caseInfo: Array<{ id: string; ruleId: string | null }> = [];
-  const source = typeof projectData.legacyCode === 'string' ? projectData.legacyCode : '';
-  if (!source.trim()) engineNotRun = 'Engine cases not run: the project holds no source to derive them from.';
-  else if (Buffer.byteLength(source, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) engineNotRun = 'Engine cases not run: the source is larger than the engine derives cases from in one request.';
+  let enginePlan: EngineRunPlan | null = null;
+  const signedSource = signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null;
+  if (!signedSource || !signedSource.trim()) engineNotRun = 'Engine cases not run: the project holds no signed source to derive them from.';
+  else if (Buffer.byteLength(signedSource, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) engineNotRun = 'Engine cases not run: the source is larger than the engine derives cases from in one request.';
   else {
-    try {
-      const { deriveBusinessRules } = await import('@/lib/abap/business-rule-set');
-      const cases = deriveEngineCases(source, deriveBusinessRules(source).rules).cases;
-      casesJson = engineCasesFile(cases as unknown as Array<Record<string, unknown>>);
-      caseInfo = cases.map((c) => ({ id: c.id, ruleId: c.engineCase.trace.ruleId ?? null }));
-      if (!casesJson) engineNotRun = 'Engine cases not run: the engine derives no case from this source.';
-    } catch (deriveErr) {
-      logger.error('run-tests: engine cases could not be derived for a verify run', { route: 'api/run-tests', projectId, error: errMessage(deriveErr) });
+    const derivation = deriveEngineCasesOf(signedSource);
+    if (!derivation) {
+      logger.error('run-tests: engine cases could not be derived for a verify run', { route: 'api/run-tests', projectId });
       engineNotRun = 'Engine cases not run: they could not be derived from the source.';
+    } else {
+      const verified = engineCaseProvenance(derivation.cases as unknown as Array<Record<string, unknown>>, derivation).verified;
+      caseInfo = verified.map((c) => ({ id: c.id, ruleId: c.engineCase.trace.ruleId ?? null }));
+      const planned = planEngineRun(verified, files, null);
+      if (planned.kind === 'planned') enginePlan = planned.plan;
+      else if (planned.kind === 'no-contract') engineNotRun = `${NOT_RUN_NO_CONTRACT} (${planned.reason})`;
+      else engineNotRun = 'Engine cases not run: the engine derives no case from this source.';
     }
   }
-  const presence = callContractPresence(files);
-  if (!engineNotRun && !presence.present) {
-    engineNotRun = `${NOT_RUN_NO_CONTRACT} (${presence.path ? `${presence.path} lacks ${presence.missing.join(', ')}` : 'no srv/engine-contract module'})`;
-  }
-  const enginePlan = !engineNotRun && casesJson && presence.path ? { cases: casesJson, contractModule: presence.path, patterns: [] as string[] } : null;
 
   const probe = probeRunInputs(files);
   const runFiles = probe.ok ? probe.files : files;
@@ -1119,11 +1123,11 @@ async function verifyCandidateResponse(input: {
         .filter((r) => r.id.startsWith(PROBE_TEST_PREFIX))
         .map((r) => ({ id: r.id, status: r.status, message: r.message }))
     : [];
+  // Judged here from the outcome lines against the cases this route planned
+  // (`engineVerdicts`), as a recorded run is — never from TAP the code printed.
   const engineResults =
-    engineStdout !== null
-      ? parseTapOutput(engineStdout)
-          .filter((r) => r.id.toUpperCase().startsWith(ENGINE_CASE_PREFIX) && r.name.includes(ENGINE_CONTRACT_MARKER))
-          .map((r) => ({ id: r.id, status: r.status, message: r.message }))
+    engineStdout !== null && enginePlan
+      ? engineVerdicts(engineStdout, enginePlan.cases, enginePlan.patterns).map((r) => ({ id: r.id, status: r.status, message: r.message }))
       : [];
   return NextResponse.json({
     mode: 'verify',

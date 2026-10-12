@@ -6,7 +6,7 @@ import type { SandboxFile } from './files';
  * (`docs/design/engine-led-transformation.md` §13.1, Track C2; roadmap 3.0.12).
  *
  * The failure-pattern probes of the acceptance harness
- * (`scripts/acceptance/child/probes.mjs`) judge a package against patterns the
+ * (`scripts/acceptance/lib/probes.mjs`) judge a package against patterns the
  * external reviews found — commercial rounding, exact decimal quantities,
  * colliding run ids, an accepted empty selection, lenient number parsing, CSV
  * escaping, a display filter that leaks into totals, an additive recalculation,
@@ -141,12 +141,68 @@ const load = async (name) => {
   if (!Object.prototype.hasOwnProperty.call(MODULES, name)) throw Object.assign(new Error('adapter names no module ' + name), { adapter: true });
   return MODULES[name];
 };
+// The probes ask for calls through \`ctx.request\` (QA round 3: the harness's
+// executor protocol — call, call-many, clock). Answered here, in the run's own
+// process, in the shapes the harness executor answers them.
+const instances = new Map();
+const realNow = Date.now;
+const invoke = async (spec, args) => {
+  if (!spec || !spec.module || !spec.export) throw Object.assign(new Error('callable needs module and export'), { adapter: true });
+  const mod = await load(spec.module);
+  const exported = mod[spec.export] ?? (mod.default && mod.default[spec.export]);
+  if (exported === undefined) throw Object.assign(new Error("module '" + spec.module + "' exports no '" + spec.export + "'"), { adapter: true });
+  let target = exported;
+  let self;
+  if (spec.construct || spec.factory) {
+    const key = spec.module + '|' + spec.export + '|' + (spec.construct ? 'new' : 'call') + '|' + JSON.stringify(spec.construct ?? spec.factory);
+    if (!instances.has(key)) {
+      const ctorArgs = Array.isArray(spec.construct ?? spec.factory) ? (spec.construct ?? spec.factory) : [];
+      instances.set(key, spec.construct ? new exported(...ctorArgs) : await exported(...ctorArgs));
+    }
+    self = instances.get(key);
+    target = self;
+  }
+  if (spec.method) {
+    const owner = self ?? exported;
+    if (typeof owner[spec.method] !== 'function') throw Object.assign(new Error("'" + spec.export + "' has no method '" + spec.method + "'"), { adapter: true });
+    return await owner[spec.method](...args);
+  }
+  if (typeof target !== 'function') throw Object.assign(new Error("'" + spec.export + "' is not callable"), { adapter: true });
+  return await target(...args);
+};
+const callOne = async (spec, args) => {
+  try {
+    return { threw: false, value: await invoke(spec, Array.isArray(args) ? args : []) };
+  } catch (err) {
+    if (err && err.adapter) return { adapter: String(err.message) };
+    return { threw: true, error: String(err && err.message ? err.message : err).split('\\n')[0] };
+  }
+};
+const request = async (kind, payload) => {
+  if (kind === 'call') return callOne(payload.spec, payload.args);
+  if (kind === 'call-many') {
+    const results = [];
+    for (const args of payload.argsList) results.push(await callOne(payload.spec, args));
+    return { results };
+  }
+  if (kind === 'clock') {
+    const c = payload.clock;
+    if (!c) Date.now = realNow;
+    else if (c.kind === 'frozen') Date.now = () => c.at;
+    else if (c.kind === 'tick') {
+      let t = c.start;
+      Date.now = () => (t += c.step);
+    }
+    return { ok: true };
+  }
+  return { transportError: 'unknown request ' + kind };
+};
 
 for (const name of ${JSON.stringify(run)}) {
   test(${JSON.stringify(PROBE_TEST_PREFIX)} + name + ': failure-pattern probe ' + name + ' ${PROBE_MARKER}', async (t) => {
     let outcomes;
     try {
-      outcomes = await PROBES[name](CONFIG[name], { load });
+      outcomes = await PROBES[name](CONFIG[name], { load, request });
     } catch (err) {
       const why = String(err && err.message ? err.message : err).split('\\n')[0];
       t.skip((err && err.adapter ? 'not runnable: adapter mapping does not fit the package: ' : 'not runnable: ') + why);

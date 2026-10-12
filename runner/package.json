@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "The isolated test runner of Clean-Core.io (roadmap 8.9). Its own package so the image carries esbuild and nothing else of the app's dependency tree.",
+  "description": "The isolated test runner of Clean-Core.io (roadmap 8.9). Its own package so the image carries esbuild and SES (the engine pass's compartment) and nothing else of the app's dependency tree.",
   "engines": {
     "node": ">=22.8"
   },
   "dependencies": {
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.1",
+    "ses": "2.3.0"
   }
 }

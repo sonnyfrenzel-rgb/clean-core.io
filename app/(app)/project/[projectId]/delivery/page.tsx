@@ -522,7 +522,7 @@ export default function DeliveryPage() {
               project.testCases as unknown as Array<Record<string, unknown>>,
               deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null),
             );
-            return engineCasesFile(provenance.verified as unknown as Array<Record<string, unknown>>, provenance.unverified);
+            return engineCasesFile(provenance.verified, provenance.unverified);
           })()
         : null;
       if (engineCasesJson) bundle.file(ENGINE_CASES_FILE, engineCasesJson, 'engine');

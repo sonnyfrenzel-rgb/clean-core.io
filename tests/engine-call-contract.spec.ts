@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import {
   MAX_GUARD_CASES,
@@ -20,6 +21,7 @@ import { parseTapOutput } from '../lib/test-verdicts';
 import { engineVerdicts, mergeEngineVerdicts, planEngineRun } from '../lib/engine-case-run';
 import { ENGINE_OUTCOME_MARKER, collectEngineCase, judgeEngineCase, runEngineCase } from '../scripts/acceptance/child/engine-cases-core.mjs';
 import { CODE_DRAFT_BUSINESS_RULES } from '../lib/code-draft-rules';
+import { deriveEngineCasesOf, engineCaseProvenance } from '../lib/engine-case-provenance';
 import { testFactsOf } from '../lib/delivery-facts';
 import { sha256Hex } from '../lib/artefact-digest';
 
@@ -98,6 +100,8 @@ const WIDE = [
 ].join('\n');
 
 const derive = (src: string) => deriveEngineCases(src, deriveBusinessRules(src).rules);
+/** The engine cases of a source as engineCaseProvenance hands them out: the only way to a VerifiedEngineCase. */
+const verifiedOf = (src: string) => engineCaseProvenance(derive(src).cases as unknown as Array<Record<string, unknown>>, deriveEngineCasesOf(src)).verified;
 
 function runRunner(pkg: string, casesFile: string, extra: string[] = []) {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-spec-'));
@@ -358,7 +362,7 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
   test.beforeAll(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-cases-'));
     casesFile = path.join(dir, 'engine-cases.json');
-    fs.writeFileSync(casesFile, engineCasesFile(derive(CO).cases as unknown as Array<Record<string, unknown>>)!);
+    fs.writeFileSync(casesFile, engineCasesFile(verifiedOf(CO))!);
   });
   test.afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
@@ -401,14 +405,36 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
     for (const e of nulls) expect(e.evidence, e.input).toMatch(/; simulate refuses the request/);
   });
 
-  test('a package that tries to print its way past its failures gets its own verdicts — the harness reads no stdout (QA e1478690996c)', () => {
+  test('a package that tries to rewrite the executor\'s answer channel gets its own verdicts (QA e1478690996c, 1021a63b7b6c)', () => {
     const r = runRunner('hostile', casesFile, ['--trusted-fixture']);
     expect(r.sandbox).toMatchObject({ executed: true });
-    // it rewrites every "Failed" it sees on stdout into "Passed"; the verdicts are given in the harness process
+    // Its stdout, socket, Object.prototype, JSON and Function-constructor rewrites would make these two pass
+    // (tests below show they work unconfined); in the executor's compartment none of them lands.
     expect(status(r, byKind('run-identity')[0]).status).toBe('Failed');
+    expect(status(r, byKind('run-identity')[0]).examples[0].evidence).toMatch(/^two runs in the same millisecond got the same id RUN-\d+$/);
     expect(status(r, byKind('contract-empty-request')[0]).status).toBe('Failed');
     expect(status(r, byKind('precision-overflow', (c) => c.engineCase.trace.field === 'quota')[0]).status).toBe('Failed');
-    expect(JSON.stringify(r.cases)).not.toContain('forged');
+    expect(r.cases.map((c) => c.id).sort()).toEqual(derive(CO).cases.map((c) => c.id).sort());
+    expect(JSON.stringify(r.cases)).not.toContain('RUN-A');
+  });
+
+  test('a contract that imports what the compartment does not provide is Not run, with the reason', () => {
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-fs-'));
+    try {
+      fs.mkdirSync(path.join(pkg, 'srv'));
+      fs.writeFileSync(path.join(pkg, 'srv', 'engine-contract.mjs'), "import fs from 'node:fs';\nexport const CONTRACT = { version: 1, baseRequest: {}, fields: {} };\nexport const validate = () => ({ ok: true, errors: [] });\nexport const simulate = () => ({ ok: true, records: 0, errors: [] });\nexport const getRun = () => null;\nexport const compute = () => fs.readFileSync('x', 'utf8');\n");
+      const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-fs-out-'));
+      try {
+        execFileSync(process.execPath, [RUNNER, pkg, '--cases', casesFile, '--out', out, '--timeout', '15000', '--trusted-fixture'], { cwd: ROOT, stdio: 'ignore', timeout: 120_000 });
+        const r = JSON.parse(fs.readFileSync(path.join(out, 'engine-cases-report.json'), 'utf8')) as ReturnType<typeof runRunner>;
+        expect(r.summary.passed + r.summary.failed).toBe(0);
+        for (const c of r.cases) expect(c.reason).toBe("Not run — module 'contract' imports 'node:fs', which the confined executor does not provide (it provides crypto, url, http, https, net)");
+      } finally {
+        fs.rmSync(out, { recursive: true, force: true });
+      }
+    } finally {
+      fs.rmSync(pkg, { recursive: true, force: true });
+    }
   });
 
   test('a package with the reviews\' defects fails them — without a single model-written assertion', () => {
@@ -461,7 +487,8 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
 test.describe('the engine pass runs through the execution core the isolated runner uses', () => {
   // The core is the same code the runner bundles (lib/test-sandbox/core.ts). Here it runs in this
   // process's child with `allowUnsandboxed` — the emulator path; in a deployment only the runner runs it.
-  const cases = derive(CO).cases as unknown as Array<Record<string, unknown>>;
+  // The cases as the route plans them: recomputed from the signed source (QA e04537f4bb66).
+  const cases = verifiedOf(CO);
   const filesOf = (fixture: string) => [
     { path: 'srv/engine-contract.mjs', content: fs.readFileSync(path.join(FIXTURES, fixture, 'srv', 'engine-contract.mjs'), 'utf8') },
   ];
@@ -471,7 +498,7 @@ test.describe('the engine pass runs through the execution core the isolated runn
     if (plan.kind !== 'planned') throw new Error('no plan');
     const inputs = engineRunInputs(filesOf(fixture), plan.plan.cases, plan.plan.contractModule);
     expect(inputs.files.map((f) => f.path).sort()).toEqual(['__cc_engine/cases.json', '__cc_engine/runtime.mjs', 'srv/engine-contract.mjs']);
-    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true });
+    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true, engine: inputs.engine });
     if (out.kind !== 'ran') throw new Error(`the engine pass did not run: ${JSON.stringify(out).slice(0, 300)}`);
     // judged here, as the route judges it — never read from the run's TAP
     return { stdout: out.stdout, results: engineVerdicts(out.stdout, plan.plan.cases, []) };
@@ -493,18 +520,62 @@ test.describe('the engine pass runs through the execution core the isolated runn
     expect(skipped.find((r) => partial.includes(r.id))!.message).toContain('ran in part — 1 of 2 examples passed');
   });
 
-  test('code that rewrites its TAP and prints outcome lines of its own does not pass: the outcome lines are judged here (QA e1478690996c)', async () => {
+  test('code that rewrites the outcome lines it shares a process with does not pass: it runs in a SES compartment (QA b1b316b2322a, 342adaac5625)', async () => {
     test.setTimeout(120_000);
     const { stdout, results } = await run('hostile');
     const identity = derive(CO).cases.find((c) => c.engineCase.kind === 'run-identity')!.id;
     const empty = derive(CO).cases.find((c) => c.engineCase.kind === 'contract-empty-request')!.id;
-    // the attack works on the TAP: read as before, the clock-based run id "passes"
-    expect(parseTapOutput(stdout).find((r) => r.id === identity)?.status).toBe('Passed');
-    // judged from the outcome lines it fails, and the case it printed a passing line for is not judged at all
+    // Exactly one genuine outcome line per case — the forgery keeps one line per id, so only its content could tell.
+    const outcomeIds = stdout.split('\n').filter((l) => l.startsWith(ENGINE_OUTCOME_MARKER)).map((l) => JSON.parse(l.slice(ENGINE_OUTCOME_MARKER.length)).id);
+    expect(outcomeIds.sort()).toEqual(derive(CO).cases.map((c) => c.id).sort());
+    expect(stdout).not.toContain('RUN-A');
+    // judged from the genuine lines: the clock-based run id and the empty request fail
     expect(results.find((r) => r.id === identity)?.status).toBe('Failed');
-    expect(results.find((r) => r.id === empty)).toMatchObject({ status: 'Skipped' });
-    expect(results.find((r) => r.id === empty)?.message).toContain('reported this case 2 times');
+    expect(results.find((r) => r.id === empty)?.status).toBe('Failed');
     expect(results.filter((r) => r.status === 'Passed').map((r) => r.id)).not.toContain(empty);
+    // the TAP of a node:test runner is gone from the pass: there is nothing for a forger to rewrite into a verdict
+    expect(parseTapOutput(stdout)).toEqual([]);
+  });
+
+  test('the same hostile contract, imported unconfined, does rewrite stdout and every socket — the attack the compartment stops', () => {
+    // Unconfined, as the engine pass ran before this fix: the module is imported beside the outcome writer.
+    const contract = pathToFileURL(path.join(FIXTURES, 'hostile', 'srv', 'engine-contract.mjs')).href;
+    const genuine = `${ENGINE_OUTCOME_MARKER}${JSON.stringify({ id: 'TC_ENG_X', collected: { control: {}, examples: [{ ok: true, errors: [], records: 0 }] } })}`;
+    const script = `const m = await import(${JSON.stringify(contract)}); process.stderr.write(JSON.stringify(m.ESCAPE_ATTEMPTS) + '\\n'); process.stdout.write(${JSON.stringify(`${genuine}\n`)});`;
+    const res = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: ROOT, encoding: 'utf8', timeout: 30_000 });
+    const attempts = JSON.parse(res.stderr.trim().split('\n').pop()!) as string[];
+    for (const done of ['stdout: done', 'socket: done', 'Object.prototype: done', 'JSON.stringify: done', 'Function constructor: done']) expect(attempts).toContain(done);
+    // the genuine line left the process rewritten: the empty request now reads as refused
+    expect(res.stdout).toContain('"examples":[{"ok":false,"errors":[],"ids":["RUN-A","RUN-B"],"readBack":"RUN-A"}]');
+    expect(res.stdout).not.toContain('"records":0');
+  });
+
+  test('in the compartment every one of those attempts fails, and Object.keys stays the real one', () => {
+    const res = spawnSync(process.execPath, [path.join(ROOT, 'tests', 'fixtures', 'acceptance', 'confined-attempts.mjs'), path.join(FIXTURES, 'hostile'), 'srv/engine-contract.mjs'], { cwd: ROOT, encoding: 'utf8', timeout: 60_000 });
+    expect(res.status, res.stderr).toBe(0);
+    const { attempts, keysIntact } = JSON.parse(res.stdout) as { attempts: string[]; keysIntact: string };
+    expect(attempts).toHaveLength(9);
+    for (const a of attempts) expect(a, a).not.toMatch(/: done$/);
+    expect(attempts.find((a) => a.startsWith('Function constructor'))).toContain('Function.prototype.constructor is not a valid constructor');
+    expect(attempts.find((a) => a.startsWith('socket'))).toMatch(/not extensible|read only|frozen/);
+    expect(attempts.find((a) => a.startsWith('Object.prototype'))).toMatch(/not extensible/);
+    expect(keysIntact).toBe('status');
+  });
+
+  test('a contract that needs a module the compartment does not provide is Not run with the reason, never a pass', async () => {
+    test.setTimeout(120_000);
+    const files = [{ path: 'srv/engine-contract.mjs', content: "import fs from 'node:fs';\nexport const CONTRACT = { version: 1, baseRequest: {}, fields: {} };\nexport const validate = () => ({ ok: true, errors: [] });\nexport const simulate = () => ({ ok: true, records: 0, errors: [] });\nexport const getRun = () => null;\nexport const compute = () => fs.readFileSync('x', 'utf8');\n" }];
+    const plan = planEngineRun(cases, files, null);
+    if (plan.kind !== 'planned') throw new Error('no plan');
+    const inputs = engineRunInputs(files, plan.plan.cases, plan.plan.contractModule);
+    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true, engine: inputs.engine });
+    if (out.kind !== 'ran') throw new Error(`the engine pass did not run: ${JSON.stringify(out).slice(0, 300)}`);
+    const results = engineVerdicts(out.stdout, plan.plan.cases, []);
+    expect(results.length).toBe(cases.length);
+    for (const r of results) {
+      expect(r.status).toBe('Skipped');
+      expect(r.message).toContain("the call contract cannot run in the confined sandbox: the code imports 'node:fs', which the confined sandbox does not provide");
+    }
   });
 
   test('the judge reads only outcome lines, once per case, for the cases the app planned', () => {
@@ -547,7 +618,7 @@ test.describe('the engine pass runs through the execution core the isolated runn
   });
 
   test('planning: nothing without engine cases or outside the selection; "no contract" when the code lacks it', () => {
-    expect(planEngineRun([{ id: 'TC_01' }], filesOf('sound'), null)).toEqual({ kind: 'none' });
+    expect(planEngineRun([], filesOf('sound'), null)).toEqual({ kind: 'none' });
     expect(planEngineRun(cases, filesOf('sound'), ['TC_01'])).toEqual({ kind: 'none' });
     const some = planEngineRun(cases, filesOf('sound'), ['TC_01', 'TC_ENG_02']);
     expect(some.kind === 'planned' && some.plan.patterns).toEqual(['TC_ENG_02']);
