@@ -380,7 +380,7 @@ function readsLine(f: ProgramSummaryFacts): SummaryLine | null {
   const unnamed = main.filter((o) => !o.word);
   // Named objects beyond the four shown are counted, never dropped.
   const namedRest = named.rest - unnamed.length;
-  if (namedRest > 0) parts.push(plural(namedRest, 'more business object'));
+  if (namedRest > 0) parts.push(plural(namedRest, 'more table'));
   if (unnamed.length) parts.push(unnamed.length <= 3 ? `${unnamed.length === 1 ? 'table' : 'tables'} ${joinAnd(unnamed.map((u) => u.name))}` : plural(unnamed.length, 'further table'));
   if (settings.length) {
     const texts = settings.some((o) => o.kind === 'text');
