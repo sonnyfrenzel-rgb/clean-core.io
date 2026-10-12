@@ -1,3 +1,5 @@
+import { containsAmount } from '@/lib/money-honesty';
+import { FINGERPRINTED_PLATFORM_SHORT } from '@/lib/sap-naming';
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { stripModelMarkdown } from '@/lib/model-text';
 import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
@@ -37,7 +39,7 @@ const APPROVAL = /\b(?:approval workflow|approves?|sign-?off|four[- ]eyes|releas
 const MONEY = /(?:[$€£]\s?\d|\b\d[\d.,]*\s?(?:EUR|USD|GBP|CHF|k€|million|bn)\b|\bsav(?:e|es|ing|ings)\b|\bROI\b|\bcost reduction\b|\b\d+\s?% (?:faster|cheaper|accura\w*|less)\b|\baccuracy\b)/i;
 
 const CODE = /\b[A-Z][A-Z0-9_]{3,15}\b/g;
-const ALLOWED_CODES = new Set(['SAP', 'ABAP', 'CSV', 'S/4HANA', 'HANA', 'BAPI', 'IDOC', 'ERP', 'BTP', 'RAP', 'CAP', 'FIORI', 'EXCEL', 'PDF', 'HTML', 'JSON', 'XML']);
+const ALLOWED_CODES = new Set(['SAP', 'ABAP', 'CSV', 'S/4HANA', 'HANA', 'BAPI', 'IDOC', 'ERP', FINGERPRINTED_PLATFORM_SHORT, 'RAP', 'CAP', 'FIORI', 'EXCEL', 'PDF', 'HTML', 'JSON', 'XML']);
 
 /** Glossary words as a reader writes them ("cost center", "purchase order"), each with the tables behind it. */
 const WORD_TABLES: Array<{ re: RegExp; tables: Set<string> }> = (() => {
@@ -132,7 +134,9 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   if (APPROVAL.test(t) && !facts.changes.actions.some((a) => /^(?:Release|Start)\b/.test(a.word))) {
     problems.push('claims an approval; the code runs none');
   }
-  if (MONEY.test(t)) problems.push('states money, savings or accuracy');
+  // Any amount the money guard knows — "USD 40,000" puts the code before the number (CI of fb74afe8,
+  // tests/money-honesty-guard.spec.ts).
+  if (MONEY.test(t) || containsAmount(t)) problems.push('states money, savings or accuracy');
 
   const known = new Set([
     ...facts.reads.map((o) => o.name),
