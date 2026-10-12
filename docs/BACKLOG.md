@@ -12,7 +12,7 @@ places never folded (ADR-097), the rule register; the map, its summary and the p
 (the CO project froze the Documentation tool); the reopened workspace and a tool bar at the top of Business
 (ADR-099); Standard fit in IT (ADR-096); SEC-2026-790. CHANGELOG has the details.
 
-**Open:** the Cloud Run build fails now and then in `next/font` fetching Google Fonts (`TypeError … reading '1'`, twice on 12.10.2026; a rerun passes) — ship the fonts with `next/font/local`; F03's second half; the error-boundary handlers still stand at the end of the main path; a program
+**Open:** the Cloud Run build fails now and then in `next/font` fetching Google Fonts (`TypeError … reading '1'`, twice on 12.10.2026; a rerun passes) — fixed in v3.0.11: Inter ships with the app (`app/fonts`); F03's second half; the error-boundary handlers still stand at the end of the main path; a program
 decision whose condition sits only on its flows is not marked optional in the SOP; 3.0.12 next.
 
 ## Session 11.10.2026 (evening) — 3.0.10 released
