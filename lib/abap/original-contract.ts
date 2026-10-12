@@ -38,6 +38,12 @@ export interface DeclaredDecimal {
   digits: number;
   /** The largest value the type holds, as a decimal string (the smallest is its negative). */
   max: string;
+  /**
+   * Set when the field is typed through a local type or another field of this
+   * source (`qty TYPE ty_qty`, `lv_b LIKE lv_a`): the name it was resolved
+   * through. Absent for a field that says `TYPE p` itself.
+   */
+  via?: string;
 }
 
 export type SelectionInputKind = 'parameter' | 'select-option';
@@ -98,6 +104,32 @@ function decimalOf(statement: AbapStatement): DeclaredDecimal | null {
   const digits = 2 * length - 1;
   const decimals = Math.min(Number(decimalsWord?.[1] ?? 0), digits);
   return { name: m[1], line: statement.lineStart, length, decimals, digits, max: packedMax(digits, decimals) };
+}
+
+/**
+ * A field typed through a packed type this source declares before it:
+ * `TYPES ty_qty TYPE p LENGTH 8 DECIMALS 3.` and then `qty TYPE ty_qty` (also
+ * inside BEGIN OF … END OF, which the statement reader hands over chain-expanded),
+ * an alias of an alias (`TYPES ty_b TYPE ty_a.`), or `LIKE` a field whose type
+ * is known. A DDIC type (`TYPE wrbtr`, `menge_d`) is not in `known` and stays
+ * unguessed; a table of a packed type is a table, not a field.
+ */
+const ALIASING = /^(?:DATA|TYPES|STATICS|CLASS-DATA|CONSTANTS|PARAMETERS)\s*:?\s*([\w/]+(?:-[\w/]+)*)\s+(TYPE|LIKE)\s+([\w/]+(?:-[\w/]+)*)(?:\s+(?:VALUE|READ-ONLY|OBLIGATORY|DEFAULT)\b.*)?$/i;
+
+function aliasOf(statement: AbapStatement, known: ReadonlyMap<string, DeclaredDecimal>): DeclaredDecimal | null {
+  const m = ALIASING.exec(statement.text.replace(/\.$/, ''));
+  if (!m) return null;
+  const target = known.get(m[3].toLowerCase());
+  if (!target) return null;
+  return {
+    name: m[1],
+    line: statement.lineStart,
+    length: target.length,
+    decimals: target.decimals,
+    digits: target.digits,
+    max: target.max,
+    via: target.via ?? target.name,
+  };
 }
 
 function inputOf(statement: AbapStatement): SelectionInput | null {
@@ -185,10 +217,15 @@ export function readOriginalContract(source: string): OriginalContract {
   const statements = readStatements(source);
   const decimals: DeclaredDecimal[] = [];
   const inputs: SelectionInput[] = [];
+  // Packed types and fields declared so far, by name: what a later `TYPE x` / `LIKE x` resolves through.
+  const known = new Map<string, DeclaredDecimal>();
   for (const statement of statements) {
     if (statement.nativeSql) continue;
-    const d = decimalOf(statement);
-    if (d) decimals.push(d);
+    const d = decimalOf(statement) ?? aliasOf(statement, known);
+    if (d) {
+      decimals.push(d);
+      known.set(d.name.toLowerCase(), d);
+    }
     const i = inputOf(statement);
     if (i) inputs.push(i);
   }
