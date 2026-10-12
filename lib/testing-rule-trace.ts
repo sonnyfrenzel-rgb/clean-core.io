@@ -370,12 +370,24 @@ export function ruleCoverageSentence(c: RuleCoverage): string {
  * only), passed against a model-stated expectation, failed on a rule the owner
  * marked to change (not determined), defect, not yet assessable.
  */
-export type CaseAssessment = 'unchanged' | 'passed-model-stated' | 'failed-rule-changing' | 'defect' | 'not-assessable';
+export type CaseAssessment =
+  | 'unchanged'
+  | 'passed-model-stated'
+  | 'failed-rule-changing'
+  /**
+   * 3.0.12 (owner, 12.10.2026) — an engine case that failed in the model's
+   * suite: the expectation is the engine's, the assertion the model's, so it is
+   * red but not a confirmed defect until somebody reviews the assertion.
+   */
+  | 'failed-assertion-model-written'
+  | 'defect'
+  | 'not-assessable';
 
 export const CASE_ASSESSMENT_WORD: Record<CaseAssessment, string> = {
   unchanged: 'Unchanged',
   'passed-model-stated': 'Passed · expectation not verified',
   'failed-rule-changing': 'Failed · rule marked to change',
+  'failed-assertion-model-written': 'Failed · assertion model-written',
   defect: 'Defect',
   'not-assessable': 'Not yet assessable',
 };
@@ -412,8 +424,24 @@ export function assessCase(input: {
   ruleState?: ElementState | null;
   /** A deterministic invariant case (`lib/testing-invariants.ts`). */
   invariant?: boolean;
+  /**
+   * 3.0.12 — an engine case (`lib/testing-engine-cases.ts`): its expectation
+   * is derived by Clean-Core.io from the original's declaration or check, the
+   * assertion code is the model's. `ruleId` names the business rule a guard
+   * case breaks, so the owner's decision on it is read.
+   */
+  engine?: {
+    ruleId: string | null;
+    expected: string;
+    /**
+     * How the verdict came about: through the call contract (no model in the
+     * loop — a failure is a defect), or from the model's test in the suite (a
+     * failure is red, but not confirmed until the assertion is reviewed).
+     */
+    via: 'contract' | 'model-assertion';
+  } | null;
 }): CaseAssessmentReading {
-  const { trace, verdict, ruleState, invariant } = input;
+  const { trace, verdict, ruleState, invariant, engine } = input;
   if (!verdict || verdict === 'Not run') {
     return { value: 'not-assessable', sentence: 'No run of this case is on record yet, so old and new have not been compared.' };
   }
@@ -424,6 +452,27 @@ export function assessCase(input: {
     return verdict === 'Passed'
       ? { value: 'unchanged', sentence: 'The list and the endpoints compared with it agree for one selection, as they do in the original, where all of them come from one selection.' }
       : { value: 'defect', sentence: 'The list and an endpoint compared with it disagree for one selection. The original builds them from one selection, so this is a defect.' };
+  }
+  if (engine) {
+    const basis = `The expected result (${engine.expected}) was derived by Clean-Core.io from the original's declaration or check, without a model; the assertion in the suite was written by the testing model and is not checked against it.`;
+    if (verdict === 'Passed') {
+      return engine.via === 'contract'
+        ? { value: 'unchanged', sentence: `The case passed through the call contract, without a model-written assertion: the target gives what the original's declaration or check gives (${engine.expected}).` }
+        : { value: 'passed-model-stated', sentence: `The case passed. ${basis}` };
+    }
+    if (engine.ruleId && (ruleState === 'change' || ruleState === 'drop')) {
+      return {
+        value: 'failed-rule-changing',
+        sentence: `The case failed, and ${engine.ruleId} is marked "${ruleState === 'change' ? 'change deliberately' : 'drop'}". Whether this failure is that decided change or a defect elsewhere is not determined — compare the failure with the decision.`,
+      };
+    }
+    if (engine.via === 'model-assertion') {
+      return {
+        value: 'failed-assertion-model-written',
+        sentence: `The case failed in the suite. The expectation is the engine's (${engine.expected}); the assertion was written by the testing model and is not reviewed, so this is not a confirmed defect — check the assertion, or run the case through the call contract.`,
+      };
+    }
+    return { value: 'defect', sentence: `The target differs from what the original's declaration or check gives, run through the call contract without a model-written assertion (${engine.expected}).` };
   }
   if (!trace) {
     return {
@@ -460,16 +509,18 @@ export interface AssessmentCounts {
   unchanged: number;
   passedModelStated: number;
   failedRuleChanging: number;
+  failedAssertionModelWritten: number;
   defect: number;
   notAssessable: number;
 }
 
 export function countAssessments(values: readonly CaseAssessment[]): AssessmentCounts {
-  const c: AssessmentCounts = { unchanged: 0, passedModelStated: 0, failedRuleChanging: 0, defect: 0, notAssessable: 0 };
+  const c: AssessmentCounts = { unchanged: 0, passedModelStated: 0, failedRuleChanging: 0, failedAssertionModelWritten: 0, defect: 0, notAssessable: 0 };
   for (const v of values) {
     if (v === 'unchanged') c.unchanged++;
     else if (v === 'passed-model-stated') c.passedModelStated++;
     else if (v === 'failed-rule-changing') c.failedRuleChanging++;
+    else if (v === 'failed-assertion-model-written') c.failedAssertionModelWritten++;
     else if (v === 'defect') c.defect++;
     else c.notAssessable++;
   }
@@ -482,6 +533,7 @@ export function assessmentSummary(c: AssessmentCounts): string {
   parts.push(`${c.unchanged} unchanged`);
   if (c.passedModelStated > 0) parts.push(`${c.passedModelStated} passed, expectation model-stated, not verified`);
   if (c.failedRuleChanging > 0) parts.push(`${c.failedRuleChanging} failed on a rule marked to change, not determined`);
+  if (c.failedAssertionModelWritten > 0) parts.push(`${c.failedAssertionModelWritten} failed with a model-written assertion, not confirmed`);
   parts.push(`${c.defect} ${c.defect === 1 ? 'defect' : 'defects'}`);
   parts.push(`${c.notAssessable} not yet assessable`);
   return `Old against new: ${parts.join(' · ')}`;

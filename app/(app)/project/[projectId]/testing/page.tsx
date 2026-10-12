@@ -84,6 +84,10 @@ import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
+import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
+import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
+import { ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-suite';
+import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 
 const renderSafeValue = (val: any): string => {
@@ -301,6 +305,8 @@ export default function TestingSandboxPage() {
   }, [ruleStatesOutcome]);
   const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
   const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
+  /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
+  const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
   /**
    * ADR-075 — the full record of a result from the reader's own SAP system
@@ -886,6 +892,15 @@ export default function TestingSandboxPage() {
    */
   const receiptVerdicts = new Map((coveringTestRunReceipt(project)?.verdicts ?? []).map((v) => [v.id, v.status as string]));
   const sessionVerdicts = new Map((testResults ?? []).map((r) => [String(r.id ?? ''), r.status as string | undefined]));
+  /**
+   * 3.0.12 — the cases whose verdict the call contract gave in the isolated
+   * runner (no model-written assertion): from the covering receipt, or for
+   * this session's run from the engine pass's test titles.
+   */
+  const viaContract = new Set<string>([
+    ...(coveringTestRunReceipt(project)?.engine?.viaContract ?? []),
+    ...(testResults ?? []).filter((r) => String((r as { name?: unknown }).name ?? '').includes(ENGINE_CONTRACT_MARKER)).map((r) => String(r.id ?? '')),
+  ]);
   const verdictOf = (tc: { id?: unknown }): string | null => {
     const id = String(tc.id ?? '');
     const v = run.kind === 'recorded' ? receiptVerdicts.get(id) : run.kind === 'session' ? sessionVerdicts.get(id) : undefined;
@@ -1128,16 +1143,33 @@ export default function TestingSandboxPage() {
    * assessable, from the verdict of the last run (receipt or session) and the
    * owner's decision on the traced rule. Default: not yet assessable.
    */
-  const assessmentOf = (tc: ScenarioCase): CaseAssessmentReading =>
-    assessCase({
+  const assessmentOf = (tc: ScenarioCase): CaseAssessmentReading => {
+    // 3.0.12 — an engine case: its expectation is the engine's, from the original's declaration or check.
+    const engineCase = engineCaseOf(tc);
+    const ruleId = ruleTraceOf(tc)?.ruleId ?? engineCase?.trace.ruleId ?? null;
+    const verdict = verdictOf(tc);
+    if (engineCase && (!verdict || verdict === 'Not run') && !callContract.present) {
+      return {
+        value: 'not-assessable',
+        sentence: `${NOT_RUN_NO_CONTRACT}${callContract.path ? ` (${callContract.path} lacks ${callContract.missing.join(', ')})` : ''}, and the suite has no verdict for it.`,
+      };
+    }
+    return assessCase({
       trace: ruleTraceOf(tc),
       verdict: verdictOf(tc),
-      ruleState: (() => {
-        const trace = ruleTraceOf(tc);
-        return trace ? ruleStates.get(trace.ruleId) ?? null : null;
-      })(),
+      ruleState: ruleId ? ruleStates.get(ruleId) ?? null : null,
       invariant: tc.invariant === true,
+      engine: engineCase
+        ? {
+            ruleId: engineCase.trace.ruleId ?? null,
+            expected: engineCase.examples.map((e) => `${e.input} → ${e.expected}`).join('; ').slice(0, 300),
+            // Through the call contract in the isolated runner (no model in the loop), or from the
+            // model's own test for the case — an extra check whose failure is not a confirmed defect.
+            via: viaContract.has(String(tc.id ?? '')) ? ('contract' as const) : ('model-assertion' as const),
+          }
+        : null,
     });
+  };
   const coveringReceipt = coveringTestRunReceipt(project);
   const caseIdsForProbe = testCases.map((tc) => String(tc.id ?? '')).filter(Boolean);
   const probeBasisReading = probeBasis(coveringReceipt, caseIdsForProbe);
@@ -1151,6 +1183,8 @@ export default function TestingSandboxPage() {
         ? 'The rules of the original could not be read from the signed source.'
         : 'The rules of the original are being read from the signed source.',
     assessments: testCases.length > 0 ? countAssessments(testCases.map((tc) => assessmentOf(tc as unknown as ScenarioCase).value)) : null,
+    /** 3.0.12 — engine cases and model cases, counted apart. */
+    caseOrigins: testCases.length > 0 ? countEngineCases(testCases as unknown as Array<Record<string, unknown>>) : null,
     mutation: coveringReceipt?.mutation ?? probe.report,
     probeBasis: probeBasisReading.ok ? null : probeBasisReading.reason,
   };
@@ -1584,6 +1618,7 @@ export default function TestingSandboxPage() {
                 coverage={evidence.coverage}
                 coverageNote={evidence.coverageNote}
                 assessments={evidence.assessments}
+                caseOrigins={evidence.caseOrigins}
                 invariant={sharedSelection}
                 mutation={evidence.mutation}
                 probe={{ state: probe.state, error: probe.error }}

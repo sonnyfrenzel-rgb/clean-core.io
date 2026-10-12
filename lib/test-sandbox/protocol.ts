@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { normalizeSandboxPath, MAX_SANDBOX_PATH, SANDBOX_PATTERN_ID, type SandboxFile } from './files';
+import { CALL_CONTRACT_PATHS, MAX_ENGINE_CASES_BYTES, engineRunInputs } from './engine-suite';
 
 /**
  * The wire contract between the app and the isolated test runner (roadmap 8.9).
@@ -19,6 +20,15 @@ import { normalizeSandboxPath, MAX_SANDBOX_PATH, SANDBOX_PATTERN_ID, type Sandbo
 
 export type RunnerMode = 'mock' | 'live';
 
+/**
+ * The wire version. 1 is everything before 3.0.12 (no `protocol` field). 2 adds
+ * the engine pass: a request may carry `engine` (the engine cases and the call
+ * contract module), and the report then carries `engine` with its own hashes
+ * and output. A request with `engine` must say `protocol: 2`; a runner that
+ * does not know 2 refuses it rather than silently running half of it.
+ */
+export const RUNNER_PROTOCOL_VERSION = 2;
+
 /** Combined size of all file contents plus the suite. Same ceiling the route always had. */
 export const MAX_RUN_INPUT_BYTES = 2 * 1024 * 1024;
 /** The raw request body, JSON overhead included. */
@@ -34,10 +44,33 @@ export interface RunnerProxy {
 }
 
 export interface RunRequest {
+  /** 2 when `engine` is present; absent from a version-1 app. */
+  protocol?: number;
   files: SandboxFile[];
   suite: { code: string; patterns: string[] };
   mode: RunnerMode;
   proxy?: RunnerProxy;
+  /**
+   * 3.0.12 — the engine pass: the engine cases (`test/engine-cases.json` text)
+   * and the path of the call contract module among `files`. The runner derives
+   * the pass's files and suite from them (`engineRunInputs`); `patterns` are
+   * the engine case ids to run, empty for all.
+   */
+  engine?: { cases: string; contractModule: string; patterns: string[] };
+}
+
+/** The engine pass as the runner reports it — hashed like the main run. */
+export interface RunnerEngineReport {
+  outcome: 'ran' | 'build-error';
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  buildError?: string;
+  /** SHA-256 of every file of the pass (generated code, runtime, cases), sorted by path. */
+  files: FileHash[];
+  suiteSha256: string;
+  casesSha256: string;
+  contractModule: string;
 }
 
 export interface FileHash {
@@ -62,6 +95,10 @@ export interface RunnerReport {
    */
   revision: string;
   mode: RunnerMode;
+  /** 2 from 3.0.12 on; absent from an older runner. */
+  protocol?: number;
+  /** The engine pass, when the request asked for one. */
+  engine?: RunnerEngineReport;
 }
 
 export function sha256Hex(text: string): string {
@@ -168,7 +205,43 @@ export function parseRunRequest(body: unknown, opts: { serviceMode: RunnerMode; 
     return fail(400, 'A mock run takes no proxy.');
   }
 
-  return { ok: true, value: { files, suite: { code: suite.code, patterns }, mode, ...(proxy ? { proxy } : {}) } };
+  let engine: RunRequest['engine'];
+  if (b.engine !== undefined) {
+    if (b.protocol !== RUNNER_PROTOCOL_VERSION) return fail(400, `An engine pass needs protocol ${RUNNER_PROTOCOL_VERSION}.`);
+    const e = b.engine as { cases?: unknown; contractModule?: unknown; patterns?: unknown } | null;
+    if (!e || typeof e !== 'object' || typeof e.cases !== 'string' || typeof e.contractModule !== 'string') return fail(400, 'engine needs cases and contractModule.');
+    if (Buffer.byteLength(e.cases, 'utf8') > MAX_ENGINE_CASES_BYTES) return fail(413, 'The engine cases exceed the allowed size.');
+    try {
+      const parsedCases = JSON.parse(e.cases) as { cases?: unknown };
+      if (!parsedCases || !Array.isArray(parsedCases.cases)) return fail(400, 'engine.cases holds no case list.');
+    } catch {
+      return fail(400, 'engine.cases is not JSON.');
+    }
+    if (!(CALL_CONTRACT_PATHS as readonly string[]).includes(e.contractModule)) return fail(400, 'engine.contractModule is not a call contract path.');
+    if (!seen.has(e.contractModule)) return fail(400, 'engine.contractModule is not among the files.');
+    const rawEnginePatterns = e.patterns === undefined ? [] : e.patterns;
+    if (!Array.isArray(rawEnginePatterns) || rawEnginePatterns.length > MAX_RUN_PATTERNS) return fail(400, 'engine.patterns must be a short array.');
+    const enginePatterns: string[] = [];
+    for (const p of rawEnginePatterns) {
+      if (typeof p !== 'string' || !SANDBOX_PATTERN_ID.test(p)) return fail(400, 'A test pattern may hold word characters, "." and "-" only.');
+      enginePatterns.push(p);
+    }
+    engine = { cases: e.cases, contractModule: e.contractModule, patterns: enginePatterns };
+  } else if (b.protocol !== undefined && b.protocol !== 1 && b.protocol !== RUNNER_PROTOCOL_VERSION) {
+    return fail(400, `Unknown protocol ${String(b.protocol)}.`);
+  }
+
+  return {
+    ok: true,
+    value: {
+      ...(engine ? { protocol: RUNNER_PROTOCOL_VERSION } : {}),
+      files,
+      suite: { code: suite.code, patterns },
+      mode,
+      ...(proxy ? { proxy } : {}),
+      ...(engine ? { engine } : {}),
+    },
+  };
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -194,8 +267,62 @@ export function parseRunnerReport(value: unknown): RunnerReport | null {
     typeof r.revision === 'string' &&
     r.revision.length > 0 &&
     r.revision.length <= 200 &&
-    (r.mode === 'mock' || r.mode === 'live');
+    (r.mode === 'mock' || r.mode === 'live') &&
+    (r.protocol === undefined || typeof r.protocol === 'number') &&
+    (r.engine === undefined || isEngineReport(r.engine));
   return ok ? (r as unknown as RunnerReport) : null;
+}
+
+function isEngineReport(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const e = value as Record<string, unknown>;
+  return (
+    (e.outcome === 'ran' || e.outcome === 'build-error') &&
+    typeof e.stdout === 'string' &&
+    typeof e.stderr === 'string' &&
+    typeof e.exitCode === 'number' &&
+    (e.buildError === undefined || typeof e.buildError === 'string') &&
+    Array.isArray(e.files) &&
+    e.files.every((f) => !!f && typeof f === 'object' && typeof (f as FileHash).path === 'string' && HEX64.test(String((f as FileHash).sha256))) &&
+    typeof e.suiteSha256 === 'string' &&
+    HEX64.test(e.suiteSha256) &&
+    typeof e.casesSha256 === 'string' &&
+    HEX64.test(e.casesSha256) &&
+    typeof e.contractModule === 'string'
+  );
+}
+
+/**
+ * Does the runner's engine report describe the engine pass the app asked for?
+ * The app derives the pass's files and suite itself (`engineRunInputs`) and
+ * compares every hash, like `verifyRunnerReport` does for the main run.
+ * `{ ok: true, digest }` names what ran; `missing` when the runner sent no
+ * engine report at all (a runner revision older than protocol 2).
+ */
+export function verifyEngineReport(
+  sent: { files: SandboxFile[]; engine: { cases: string; contractModule: string } },
+  report: RunnerReport,
+): { ok: true; digest: string } | { ok: false; missing: boolean; reason: string } {
+  const e = report.engine;
+  if (!e) return { ok: false, missing: true, reason: 'The runner did not run the engine cases (a runner revision before protocol 2).' };
+  const inputs = engineRunInputs(sent.files, sent.engine.cases, sent.engine.contractModule);
+  const expected = hashRunInputs(inputs.files, inputs.suiteCode);
+  if (e.contractModule !== sent.engine.contractModule) return { ok: false, missing: false, reason: 'The runner reported a different contract module.' };
+  if (e.casesSha256 !== inputs.casesSha256) return { ok: false, missing: false, reason: 'The runner reported different engine cases.' };
+  if (e.suiteSha256 !== expected.suiteSha256) return { ok: false, missing: false, reason: 'The runner reported a different engine suite.' };
+  const reported = [...e.files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  if (reported.length !== expected.files.length) return { ok: false, missing: false, reason: 'The runner reported a different set of engine files.' };
+  for (let i = 0; i < reported.length; i++) {
+    if (reported[i].path !== expected.files[i].path || reported[i].sha256 !== expected.files[i].sha256) {
+      return { ok: false, missing: false, reason: 'The runner reported an engine file the app did not derive.' };
+    }
+  }
+  return { ok: true, digest: engineDigest(expected.files, expected.suiteSha256, inputs.casesSha256) };
+}
+
+/** One digest over the engine pass: its file hashes, its suite and its cases. */
+export function engineDigest(files: FileHash[], suiteSha256: string, casesSha256: string): string {
+  return sha256Hex(JSON.stringify({ files, suite: suiteSha256, cases: casesSha256 }));
 }
 
 /**

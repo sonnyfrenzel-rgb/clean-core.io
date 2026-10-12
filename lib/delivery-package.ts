@@ -954,6 +954,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
   [/^\.github\/workflows\/ci\.yml$/, (r) => `GitHub Actions: install and build${r.testFiles.length ? ', then test,' : ''} on Node.js ${PACKAGE_NODE_MAJOR} — not run by Clean-Core.io.`],
   [/^playwright\.config\./, () => 'Playwright configuration naming the suite file.'],
+  [/^test\/engine-cases\.json$/, () => 'Boundary cases Clean-Core.io derived from the original without a model (declared types, checks, input contract, run identity): input and expected outcome (also in machine form for the call contract srv/engine-contract), traced to a rule id or a declared field and line.'],
   [/^erp-triggers\/.+\.abap$/i, () => 'ABAP event publisher sketch — not bound to a BAdI or standard event, not compiled in SAP.'],
   [/^\.abapgit\.xml$/, () => 'abapGit repository settings (language, starting folder, folder logic).'],
   [/^abaplint\.json$/, () => 'abaplint rules for the sources under src/.'],

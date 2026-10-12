@@ -6,6 +6,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcStateText from '@/components/cc/StateText';
 import { assessmentSummary, ruleCoverageSentence, type AssessmentCounts, type RuleCoverage } from '@/lib/testing-rule-trace';
 import type { InvariantPlan } from '@/lib/testing-invariants';
+import { engineCaseCountsSentence, type EngineCaseCounts } from '@/lib/testing-engine-cases';
 import { operatorWord, type MutationProbeReport } from '@/lib/testing-mutation';
 
 /**
@@ -31,6 +32,7 @@ export default function TestEvidenceCard({
   coverage,
   coverageNote,
   assessments,
+  caseOrigins = null,
   invariant,
   mutation,
   probe,
@@ -42,6 +44,8 @@ export default function TestEvidenceCard({
   coverage: RuleCoverage | null;
   coverageNote: string;
   assessments: AssessmentCounts | null;
+  /** 3.0.12 — cases written by the model and cases derived by the engine, counted apart. */
+  caseOrigins?: EngineCaseCounts | null;
   invariant: InvariantPlan;
   /** The probe on the covering receipt, or this session's. */
   mutation: MutationProbeReport | null;
@@ -70,6 +74,11 @@ export default function TestEvidenceCard({
             {assessments ? (
               <span data-test-evidence-assessments="" className="block mt-1 text-cc-ink">
                 {assessmentSummary(assessments)}
+              </span>
+            ) : null}
+            {caseOrigins ? (
+              <span data-test-evidence-case-origins={caseOrigins.engine} className="block mt-1 text-cc-ink">
+                {engineCaseCountsSentence(caseOrigins)}
               </span>
             ) : null}
           </dd>

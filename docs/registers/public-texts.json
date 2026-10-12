@@ -3373,6 +3373,28 @@
       "measured": {
         "lines": 94
       }
+    },
+    {
+      "path": "docs/failure-patterns/README.md",
+      "kind": "docs",
+      "purpose": "Failure-pattern library and acceptance harness: catalogue format, pattern index, probes, adapters, sandbox rules",
+      "audience": "Developers, agents",
+      "saysToday": "42 failure patterns seeded from the FI, CO, PP and SD reviews of v3.0.10, the probes of scripts/acceptance/run.mjs and how the harness relates to the code-draft rules, the generated-code lints and the case derivation.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Written for 3.0.12 against the current product; the spec tests/acceptance-harness.spec.ts keeps its index in step with the catalogue.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/acceptance/run.mjs",
+        "tests/acceptance-harness.spec.ts"
+      ],
+      "measured": {
+        "lines": 266
+      }
     }
   ],
   "served": [

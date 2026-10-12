@@ -15,6 +15,7 @@ import { numberedSource, originPromptSection, withOriginCheck, type OriginEngine
 import { ORIGIN_FAILED, originEngineFor, signedForOrigin } from './useScenarioOrigins';
 import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, type MaterialRule, type MaterialTable } from '@/lib/testing-rule-trace';
 import { withInvariants } from '@/lib/testing-invariants';
+import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
 
 /** What the testing stage asks the model for, in the retry and failure sentences. */
 const TEST_SUITE_NOUN = 'test suite';
@@ -106,17 +107,27 @@ export const useTestGeneration = (
       // section says there is nothing to trace.
       let rulesForTrace: MaterialRule[] = [];
       let tablesForTrace: MaterialTable[] = [];
+      // 3.0.12 (CO/PP/SD reviews): boundary cases derived by the engine from
+      // the original's declared types and checks — written by the product, not
+      // the model; the model only writes the test code under their ids.
+      let engineCases: EngineTestCase[] = [];
       if (signed) {
         try {
           const { deriveBusinessRules } = await import('@/lib/abap/business-rule-set');
           const set = deriveBusinessRules(signed.source);
           rulesForTrace = materialRules(set);
           tablesForTrace = materialTables(set);
+          try {
+            engineCases = deriveEngineCases(signed.source, set.rules).cases;
+          } catch (engineCaseErr) {
+            console.error('The engine cases could not be derived from the signed source:', engineCaseErr);
+          }
         } catch (rulesErr) {
           console.error('The business rules could not be read for the rule trace:', rulesErr);
         }
       }
       const ruleAsk = ruleTracePromptSection(rulesForTrace, tablesForTrace);
+      const engineAsk = engineCasePromptSection(engineCases, isAbapCloud ? 'abap-unit' : 'node');
 
       const prompt = isAbapCloud
         ? `Given the following context:
@@ -144,6 +155,7 @@ ${legacyForPrompt}
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
         ${ruleAsk}
+        ${engineAsk}
         ${originAsk}
         `
         : `Given the following context:
@@ -189,6 +201,7 @@ ${legacyForPrompt}
         - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
         ${ruleAsk}
+        ${engineAsk}
         ${originAsk}
         `;
       
@@ -261,8 +274,16 @@ ${legacyForPrompt}
       //
       // 3.0.10: the rule trace is validated first (and dropped with its reason
       // when malformed), so a `derivedFrom` it supplies is checked like any other.
-      const tracedCases: Array<Record<string, unknown>> = answer.testCases.map(
+      const modelCases: Array<Record<string, unknown>> = answer.testCases.map(
         (tc) => withOriginCheck(withRuleTrace(tc), originEngine, noEngineReason),
+      );
+      // 3.0.12: the engine cases join the list as the product wrote them — a
+      // model case under an engine id is dropped — and a guard case's rule is
+      // checked against the signed source like any other origin (the other
+      // engine cases carry their declaration line in their own trace).
+      const tracedCases: Array<Record<string, unknown>> = withEngineCases(
+        modelCases,
+        engineCases.map((c) => (c.derivedFrom ? (withOriginCheck(c as unknown as Record<string, unknown>, originEngine, noEngineReason) as unknown as EngineTestCase) : c)),
       );
       // Stored in exactly the keys of TestSuite and CoverageEstimate, typed:
       // firestore.rules accepts these two fields from the browser only in that

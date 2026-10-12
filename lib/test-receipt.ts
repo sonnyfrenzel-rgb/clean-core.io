@@ -166,6 +166,19 @@ export interface TestRunReceipt {
    * means nobody probed the run.
    */
   mutation?: MutationProbeReport;
+  /**
+   * 3.0.12 (owner, 12.10.2026) — the engine pass of this run: the engine cases
+   * ran through the call contract inside the same executor, with no
+   * model-written assertion (`lib/engine-run.ts`). `digest` names what ran —
+   * the hashes of the generated code, the runtime, the cases and the derived
+   * suite, checked against what the app derived before this receipt was
+   * written (`verifyEngineReport`). `viaContract` lists the cases whose verdict
+   * in `verdicts` is the contract's.
+   *
+   * Optional and additive like `runner` and `mutation`: the version stays 2.
+   * Absent means no engine pass ran.
+   */
+  engine?: { digest: string; contractModule: string; viaContract: string[] };
 }
 
 const VERDICTS: readonly string[] = ['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error'];
@@ -236,6 +249,18 @@ function isRunnerProvenance(value: unknown): boolean {
   );
 }
 
+function isEngineProvenance(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const e = value as Record<string, unknown>;
+  return (
+    typeof e.digest === 'string' &&
+    /^[0-9a-f]{64}$/.test(e.digest) &&
+    typeof e.contractModule === 'string' &&
+    Array.isArray(e.viaContract) &&
+    e.viaContract.every((id) => typeof id === 'string')
+  );
+}
+
 /** Shape check only — it says nothing about whether the receipt still fits the project. */
 export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -260,6 +285,7 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
         typeof (r.draft as { digest?: unknown }).digest === 'string')) &&
     (r.runner === undefined || isRunnerProvenance(r.runner)) &&
     (r.mutation === undefined || isMutationProbeReport(r.mutation)) &&
+    (r.engine === undefined || isEngineProvenance(r.engine)) &&
     Array.isArray(r.verdicts) &&
     r.verdicts.every(
       (entry) =>

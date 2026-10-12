@@ -1,7 +1,9 @@
 import type { SandboxFile } from './test-sandbox/files';
 import {
   parseRunnerReport,
+  verifyEngineReport,
   verifyRunnerReport,
+  RUNNER_PROTOCOL_VERSION,
   type RunnerMode,
   type RunnerProxy,
   type RunnerReport,
@@ -119,7 +121,17 @@ export function describeFetchFailure(err: unknown): { code: string | null; messa
 }
 
 export type RunnerCallResult =
-  | { ok: true; report: RunnerReport; filesDigest: string }
+  | {
+      ok: true;
+      report: RunnerReport;
+      filesDigest: string;
+      /**
+       * 3.0.12 — the engine pass, when one was asked for: its digest when the
+       * report's hashes are the ones the app derived, or why its verdicts are
+       * not used. The main run's result stands either way.
+       */
+      engine?: { ok: true; digest: string } | { ok: false; reason: string };
+    }
   | { ok: false; status: number; reason: string };
 
 /**
@@ -132,7 +144,15 @@ export type RunnerCallResult =
  */
 export async function callIsolatedRunner(
   url: string,
-  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; mode: RunnerMode; proxy?: RunnerProxy },
+  input: {
+    files: SandboxFile[];
+    suiteCode: string;
+    patterns: string[];
+    mode: RunnerMode;
+    proxy?: RunnerProxy;
+    /** 3.0.12 — the engine pass (protocol 2). */
+    engine?: { cases: string; contractModule: string; patterns: string[] };
+  },
   deps: {
     idToken(audience: string): Promise<string>;
     fetchImpl?: typeof fetch;
@@ -144,6 +164,7 @@ export async function callIsolatedRunner(
     suite: { code: input.suiteCode, patterns: input.patterns },
     mode: input.mode,
     ...(input.proxy ? { proxy: input.proxy } : {}),
+    ...(input.engine ? { protocol: RUNNER_PROTOCOL_VERSION, engine: input.engine } : {}),
   };
   let token: string;
   try {
@@ -188,5 +209,12 @@ export async function callIsolatedRunner(
   if (!report) return { ok: false, status: 502, reason: 'The test runner answered with something that is not a run report.' };
   const check = verifyRunnerReport({ files: input.files, suiteCode: input.suiteCode, mode: input.mode }, report);
   if (!check.ok) return { ok: false, status: 502, reason: `${check.reason} Nothing was recorded from this run.` };
-  return { ok: true, report, filesDigest: check.digest };
+  if (!input.engine) return { ok: true, report, filesDigest: check.digest };
+  const engineCheck = verifyEngineReport({ files: input.files, engine: input.engine }, report);
+  return {
+    ok: true,
+    report,
+    filesDigest: check.digest,
+    engine: engineCheck.ok ? { ok: true, digest: engineCheck.digest } : { ok: false, reason: engineCheck.reason },
+  };
 }
