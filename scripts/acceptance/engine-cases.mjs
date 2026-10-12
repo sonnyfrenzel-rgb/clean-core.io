@@ -18,8 +18,9 @@
  * example the evidence.
  *
  * It executes through the acceptance harness's sandbox (`lib/sandbox.mjs`): the
- * sandboxed executor only calls the contract and reports its answers, and the
- * verdicts are given in this process, which never imports the package. Same
+ * sandboxed executor runs the contract in a locked-down SES compartment, only
+ * calls it and reports its answers, and the verdicts are given in this
+ * process, which never imports the package. Same
  * rule: a package runs only when the platform denies the child network access,
  * or when the operator states it is a self-written fixture.
  * Otherwise every case reads Not run, with the reason. Never installs, never
@@ -28,7 +29,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
+import { bundleModules, copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
 import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT, judgeEngineCase } from './child/engine-cases-core.mjs';
 
 export { NOT_RUN_NO_CONTRACT };
@@ -78,14 +79,16 @@ export async function runEngineCases(opts) {
     try {
       // The executor collects the contract's answers in the sandbox; the verdicts are given here,
       // by the same runtime's judge, against the cases this process read itself.
+      // The contract module and what it imports, bundled here; evaluated only in the executor's compartment.
+      const prepared = await bundleModules(root, { contract: contractPath });
       const ex = startExecutor({ root, nodeEnv: 'test', timeoutMs: opts.timeout, flag: decision.flag });
       report.sandbox.executed = true;
       const judged = [];
       let stopped = null;
       try {
-        const loaded = await ex.request('engine-load', { module: contractPath });
-        if (!loaded || typeof loaded !== 'object' || typeof loaded.failure === 'string' || loaded.transportError) {
-          stopped = String(loaded?.failure ?? loaded?.transportError ?? 'the executor did not load the contract module');
+        const loaded = prepared.failure !== undefined ? { failure: prepared.failure } : await ex.request('engine-load', { bundle: prepared.bundle, key: prepared.names.contract });
+        if (!loaded || typeof loaded !== 'object' || loaded.failure !== undefined || loaded.transportError !== undefined) {
+          stopped = String(loaded?.failure ?? loaded?.transportError ?? 'the executor did not load the contract module') || 'the contract module failed to load without saying why';
         } else {
           for (const c of cases) {
             const kase = { id: c.id, examples: c.examples ?? [] };

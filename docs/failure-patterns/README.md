@@ -213,16 +213,28 @@ child runs with:
   timeout that kills the process;
 - requests on its stdin and answers on a pipe of its own (file descriptor 3),
   one answer per request, matched by a fresh id; its stdout is discarded and the
-  job is never in its environment.
+  job is never in its environment;
+- the package itself in a SES compartment (Hardened JavaScript, the `ses`
+  package): the harness bundles the mapped modules with esbuild, the executor
+  calls `lockdown()` — every JavaScript intrinsic frozen — before any of the
+  package exists in the process, and evaluates the bundle in a `Compartment`
+  whose global object has no `process`, no Node module but hardened stand-ins
+  (`crypto.randomUUID`, `url` string conversions, and `http`/`https`/`net`
+  servers whose `listen` binds nothing and is reported), no-op `console`, a
+  clock the harness sets, and an inert `Function` constructor
+  (`createConfinement` in `child/engine-cases-core.mjs`).
 
-Code in the package shares the executor's process, so it can tamper with
-anything there, the answer pipe included. What it cannot do is write a verdict:
-verdicts are made in the harness process from the answers. A line on the pipe
-that the harness did not ask for — a forged answer, a second answer, anything
-that is not JSON — discards the whole run as `not-runnable`. A package that
-suppresses the real answer and sends its own has only chosen what its function
-answered, which it could have done by behaving that way.
-`tests/fixtures/acceptance/hostile-package/` tries all of it.
+The answer pipe, stdout, stderr and the collector live outside the compartment,
+and nothing inside it leads back to them, so the package can no longer rewrite
+an answer on its way out — not through `process.stdout`, a socket prototype,
+`Object.prototype`, `JSON` or a Function constructor
+(`tests/fixtures/acceptance/hostile-package/` and
+`tests/fixtures/engine-cases/hostile/` try each of these; unconfined they work,
+in the compartment none does). Verdicts are made in the harness process from the
+answers, and a line on the pipe the harness did not ask for still discards the
+whole run as `not-runnable`. A package that needs a Node module or global the
+compartment does not provide — `fs`, `Buffer`, an npm package — is
+`not-runnable` with that reason, never a pass.
 
 Network is the gap. Node's permission model only covers network from v25 on.
 The harness self-tests whether a socket is refused under the permission flag;
@@ -235,6 +247,10 @@ static scan alone. A package whose imports cannot be resolved is reported as
 "not runnable without its dependencies"; the harness never installs anything.
 
 The harness detects; it does not prove against a package written to defeat it.
+What the compartment does not stop: a package that answers differently when it
+recognises a probe's input (it sees its arguments), one that spins or exhausts
+memory (the timeout and the process end it, as `not-runnable`), and a flaw in
+SES or V8 itself.
 
 ### Engine cases through the call contract
 

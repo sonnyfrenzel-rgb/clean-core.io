@@ -13,9 +13,9 @@
  *        [--static-only]        never execute, only scan
  *
  * No network, no model, no install. The package's npm scripts never run. Its
- * modules are imported only inside a sandboxed child process (see
- * lib/sandbox.mjs), which only executes; the probes and their verdicts stay in
- * this process. When the sandbox cannot be made reliable on this Node the
+ * modules are bundled here and evaluated only inside a sandboxed child process,
+ * in a locked-down SES compartment (see lib/sandbox.mjs), which only executes;
+ * the probes and their verdicts stay in this process. When the sandbox cannot be made reliable on this Node the
  * dynamic probes are reported as not runnable and only the static scan runs.
  *
  * Catalogue and adapter format: docs/failure-patterns/README.md.
@@ -24,7 +24,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PROBES } from './lib/probes.mjs';
-import { copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
+import { loadFailure } from './lib/load-answer.mjs';
+import { bundleModules, copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
 import { staticScan } from './lib/static-scan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -82,31 +83,27 @@ function outcome(pattern, status, evidence, extra = {}) {
   return { pattern, status, evidence, ...extra };
 }
 
-/** `{ notRunnable }` from a failed load answer, or null when every module loaded. */
-function loadFailure(answer) {
-  if (!answer || typeof answer !== 'object') return 'the executor sent no answer to the load request';
-  if (typeof answer.failure === 'string') return answer.failure;
-  if (typeof answer.transportError === 'string') return answer.transportError;
-  return null;
-}
+const NOT_EXECUTED = { events: [], timedOut: false, poisoned: null, exitCode: null, stderrTail: '', durationMs: 0 };
 
 /**
  * Run one probe through a fresh sandboxed executor. The probe itself runs here;
- * the executor only loads the package and calls into it. Resolves to
+ * the executor only loads the package's bundle (`prepared`, from `bundleModules`)
+ * and calls into it. Resolves to
  * `{ result: { outcomes } | { imported } | { notRunnable }, events, timedOut, poisoned, exitCode, stderrTail, durationMs }`.
  */
-async function runProbe({ type, root, flag, timeoutMs, nodeEnv, adapter, config }) {
+async function runProbe({ type, root, flag, timeoutMs, nodeEnv, prepared, config }) {
+  if (prepared.failure !== undefined) return { ...NOT_EXECUTED, result: { notRunnable: prepared.failure } };
   const ex = startExecutor({ root, flag, timeoutMs, nodeEnv });
   let result;
   try {
-    const loaded = await ex.request('load', { modules: adapter.modules });
-    const failed = loadFailure(loaded);
-    if (failed) {
+    const loaded = await ex.request('load', { bundle: prepared.bundle, names: prepared.names });
+    const failed = loadFailure(loaded, Object.keys(prepared.names));
+    if (failed !== null) {
       result = { notRunnable: failed };
     } else if (type === 'import-side-effects') {
       // Give a listener started from a microtask or a timer a moment to show itself.
       await new Promise((resolve) => setTimeout(resolve, 150));
-      result = { imported: Array.isArray(loaded.imported) ? loaded.imported.map(String) : [] };
+      result = { imported: loaded.imported.map(String) };
     } else {
       result = { outcomes: await PROBES[type](config ?? {}, { request: ex.request }) };
     }
@@ -170,6 +167,8 @@ export async function runHarness(opts) {
   } else {
     const root = copyToTemp(opts.pkg);
     try {
+      // One bundle of the mapped modules for every probe: built here, evaluated only in the executor's compartment.
+      const prepared = await bundleModules(root, adapter.modules);
       for (const type of types) {
         const mapped = type === 'import-side-effects' ? {} : adapter.probes?.[type];
         if (mapped === undefined || mapped === null) {
@@ -188,7 +187,7 @@ export async function runHarness(opts) {
           timeoutMs: opts.timeout,
           // The import probe runs as CI runs `npm test`: NODE_ENV unset.
           nodeEnv: isImport ? undefined : 'test',
-          adapter,
+          prepared,
           config: mapped,
         });
         probes.push({

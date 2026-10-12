@@ -51,6 +51,7 @@ import type { BusinessRule } from './abap/business-rule-set';
 import { readOriginalContract, type OriginalContract } from './abap/original-contract';
 import { readStatements } from './abap/statement-reader';
 import type { CallExpect, CallValue, EngineCaseCall } from './engine-call-contract';
+import type { VerifiedEngineCase } from './engine-case-provenance';
 
 /* ------------------------------------------------------------------ types */
 
@@ -1167,16 +1168,19 @@ ${lines.join('\n')}
 export const ENGINE_CASES_FILE = 'test/engine-cases.json';
 
 /**
- * `unverified` (the delivery export): ids stored as engine cases that the
- * derivation from the signed source does not reproduce
- * (`lib/engine-case-provenance.ts`). They are named, not shipped as cases, and
- * not labelled as derived by Clean-Core.io. The delivery passes only the
- * recomputed cases in `cases`.
+ * `cases` are the cases recomputed from the signed source and nothing else:
+ * `VerifiedEngineCase` comes only out of `engineCaseProvenance`
+ * (`lib/engine-case-provenance.ts`), so a client-written entry with the engine
+ * markers cannot be passed here, and the note "Derived by Clean-Core.io" is
+ * true of every case under it (QA e04537f4bb66, 0297134b3b87).
+ * `unverified`: ids stored as engine cases that the derivation does not
+ * reproduce. They are named, not shipped as cases, and not labelled as derived
+ * by Clean-Core.io.
  */
-export function engineCasesFile(cases: ReadonlyArray<Record<string, unknown>>, unverified: readonly string[] = []): string | null {
+export function engineCasesFile(cases: readonly VerifiedEngineCase[], unverified: readonly string[] = []): string | null {
   const engine = cases
-    .map((tc) => ({ tc, data: engineCaseOf(tc) }))
-    .filter((x): x is { tc: Record<string, unknown>; data: EngineCaseData } => x.data !== null);
+    .map((tc) => ({ tc, data: engineCaseOf(tc as unknown as Record<string, unknown>) }))
+    .filter((x): x is { tc: VerifiedEngineCase; data: EngineCaseData } => x.data !== null);
   if (engine.length === 0 && unverified.length === 0) return null;
   return `${JSON.stringify(
     {

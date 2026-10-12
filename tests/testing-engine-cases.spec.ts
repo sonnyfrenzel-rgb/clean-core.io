@@ -20,6 +20,7 @@ import { CASE_ASSESSMENT_WORD, assessCase, assessmentSummary, countAssessments }
 import { testFactsOf } from '../lib/delivery-facts';
 import { createDeliveryBundle } from '../lib/delivery-package';
 import { sha256Hex } from '../lib/artefact-digest';
+import { deriveEngineCasesOf, engineCaseProvenance } from '../lib/engine-case-provenance';
 
 /**
  * Roadmap 3.0.12, part C — boundary cases the engine derives from the
@@ -393,20 +394,20 @@ test.describe('the generated suite carries the engine cases', () => {
 
   test('the export file holds the engine cases as data, the model cases not at all', () => {
     const merged = withEngineCases(model, engine) as Array<Record<string, unknown>>;
-    const text = engineCasesFile(merged)!;
+    const text = engineCasesFile(engineCaseProvenance(merged, deriveEngineCasesOf(CO)).verified)!;
     const file = JSON.parse(text);
     expect(file.format).toBe('clean-core.engine-cases/1');
     expect(file.cases.map((c: { id: string }) => c.id)).toEqual(engine.map((c) => c.id));
     const quota = file.cases.find((c: { kind: string; trace: { field?: string } }) => c.kind === 'precision-max' && c.trace.field === 'quota');
     expect(quota.examples[0]).toMatchObject({ input: 'QUOTA = 9999999.999999', expected: 'accepted; kept exactly as 9999999.999999' });
     expect(quota.trace.lines).toEqual([{ start: 4, end: 4 }]);
-    expect(engineCasesFile(model)).toBeNull();
+    expect(engineCasesFile(engineCaseProvenance(model, deriveEngineCasesOf(CO)).verified)).toBeNull();
   });
 
   test('the delivery package ships test/engine-cases.json as an engine file and STATUS counts the cases apart', () => {
     const merged = withEngineCases(model, engine) as Array<Record<string, unknown>>;
     const bundle = createDeliveryBundle();
-    bundle.file(ENGINE_CASES_FILE, engineCasesFile(merged)!, 'engine');
+    bundle.file(ENGINE_CASES_FILE, engineCasesFile(engineCaseProvenance(merged, deriveEngineCasesOf(CO)).verified)!, 'engine');
     expect(bundle.entries.find((e) => e.path === 'test/engine-cases.json')?.origin).toBe('engine');
 
     // The cases count as derived by Clean-Core.io only against the signed

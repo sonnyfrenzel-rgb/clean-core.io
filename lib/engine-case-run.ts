@@ -1,6 +1,7 @@
 import type { SandboxFile } from './test-sandbox/files';
 import { ENGINE_CONTRACT_MARKER, callContractPresence } from './test-sandbox/engine-suite';
-import { ENGINE_CASE_PREFIX, engineCaseOf, engineCasesFile } from './testing-engine-cases';
+import { ENGINE_CASE_PREFIX, engineCasesFile } from './testing-engine-cases';
+import type { VerifiedEngineCase } from './engine-case-provenance';
 import type { TestRunResult } from './test-verdicts';
 // The judge half of the one engine-case runtime (its source; the runner gets the same text as ENGINE_RUNTIME_JS).
 import { ENGINE_OUTCOME_MARKER, judgeEngineCase } from '../scripts/acceptance/child/engine-cases-core.mjs';
@@ -36,13 +37,18 @@ export type EnginePlanOutcome =
   /** Engine cases exist, but the generated code does not export the call contract. */
   | { kind: 'no-contract'; reason: string };
 
-/** What the engine pass of this run is, from the stored cases, the generated files and the selection. */
+/**
+ * What the engine pass of this run is, from the engine cases recomputed from
+ * the signed source (`engineCaseProvenance(...).verified` — never the stored,
+ * client-written list: QA e04537f4bb66, 0297134b3b87), the generated files and
+ * the selection.
+ */
 export function planEngineRun(
-  storedCases: ReadonlyArray<Record<string, unknown>>,
+  verified: readonly VerifiedEngineCase[],
   files: readonly SandboxFile[],
   selected: readonly string[] | null,
 ): EnginePlanOutcome {
-  const engineIds = storedCases.filter((c) => engineCaseOf(c)).map((c) => String(c.id ?? ''));
+  const engineIds = verified.map((c) => String(c.id ?? ''));
   if (engineIds.length === 0) return { kind: 'none' };
   const wanted = selected === null ? [] : engineIds.filter((id) => selected.includes(id));
   if (selected !== null && wanted.length === 0) return { kind: 'none' };
@@ -53,7 +59,7 @@ export function planEngineRun(
       reason: presence.path ? `${presence.path} lacks ${presence.missing.join(', ')}` : 'no srv/engine-contract module',
     };
   }
-  const cases = engineCasesFile(storedCases.filter((c) => engineIds.includes(String(c.id ?? ''))));
+  const cases = engineCasesFile(verified);
   if (!cases) return { kind: 'none' };
   return { kind: 'planned', plan: { cases, contractModule: presence.path!, patterns: wanted } };
 }

@@ -218,7 +218,7 @@ test.describe('0297134b3b87 — a client-written case with origin engine is not 
     const stored = [...forgedExpectation, invented];
     const p = engineCaseProvenance(stored, deriveEngineCasesOf(NARROW));
     expect(p.unverified).toEqual([engine[0].id, 'TC_ENG_99']);
-    const file = JSON.parse(engineCasesFile(p.verified as unknown as Array<Record<string, unknown>>, p.unverified)!);
+    const file = JSON.parse(engineCasesFile(p.verified, p.unverified)!);
     expect(file.cases.map((c: { id: string }) => c.id)).toEqual(engine.slice(1).map((c) => c.id));
     expect(JSON.stringify(file.cases)).not.toContain('whatever the client wants');
     expect(file.unverified.ids).toEqual([engine[0].id, 'TC_ENG_99']);
@@ -235,7 +235,8 @@ test.describe('0297134b3b87 — a client-written case with origin engine is not 
     const page = read('app/(app)/project/[projectId]/delivery/page.tsx');
     expect(page).toContain('engineCaseProvenance(');
     expect(page).toContain('deriveEngineCasesOf(signedSourceOf(project as HandoverProject)?.source ?? null)');
-    expect(page).toContain('engineCasesFile(provenance.verified as unknown as Array<Record<string, unknown>>, provenance.unverified)');
+    // QA e04537f4bb66: no cast any more — engineCasesFile takes only VerifiedEngineCase, which the provenance alone produces.
+    expect(page).toContain('engineCasesFile(provenance.verified, provenance.unverified)');
     expect(page).not.toContain('engineCasesFile(project.testCases');
   });
 
