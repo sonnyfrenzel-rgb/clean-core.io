@@ -42,6 +42,8 @@ export interface SummaryObject {
   line: number;
   /** `setting` — customizing or organisational settings (T001, TKA01, TCURX); `text` — a text table; `custom` — a Z/Y table. */
   kind: 'business' | 'setting' | 'text' | 'custom';
+  /** A write reached only from a user's command — a PAI module, a list callback, `AT USER-COMMAND` (SD review, 12.10.2026). */
+  onCommand?: boolean;
 }
 
 export interface SummaryAction {
@@ -51,6 +53,8 @@ export interface SummaryAction {
   word: string;
   line: number;
   via: 'interface' | 'function' | 'transaction' | 'simulated-entry';
+  /** Reached only from a user's command (SD review, 12.10.2026). */
+  onCommand?: boolean;
 }
 
 export interface SummaryInput {
@@ -98,7 +102,16 @@ export interface ProgramSummaryFacts {
     serverOut: number | null;
     print: number | null;
     mail: number | null;
+    /** `CALL SCREEN` — the result shown on a screen of its own. Absent in facts stored before it was read. */
+    screen?: number | null;
   };
+  /**
+   * The first statement that needs a user's front end — a screen, commands on a
+   * list, a file on the user's PC, a GUI control — so the program runs in a
+   * user's session, not as a background job (SD review, 12.10.2026). Absent in
+   * facts stored before it was read.
+   */
+  frontEnd?: number | null;
   inputs: SummaryInput[];
   screenTitles: Array<{ text: string; line: number }>;
   fixedLists: SummaryFixedList[];
@@ -156,6 +169,32 @@ export function actionPhrase(word: string): string {
   // "Save the changes", "Post document": an article or a plural stays as written.
   const object = /^(?:the|a|an)$/i.test(rest[0]) ? rest.join(' ') : [...rest.slice(0, -1), many].join(' ');
   return `${lcFirst(third)} ${object.toLowerCase()}`;
+}
+
+/** "Change sales order" → "change sales orders" — the form after "can" (SD review, 12.10.2026). */
+export function actionBasePhrase(word: string): string {
+  const [verb] = word.trim().split(/\s+/);
+  const third = actionPhrase(word);
+  return `${verb.toLowerCase()}${third.slice(third.indexOf(' ') < 0 ? third.length : third.indexOf(' '))}`;
+}
+
+/** The changes the normal flow makes, and those only a user's command makes (SD review, 12.10.2026). */
+function changesByFlow(f: ProgramSummaryFacts): {
+  actions: SummaryAction[];
+  writes: SummaryObject[];
+  commandActions: SummaryAction[];
+  commandWrites: SummaryObject[];
+  /** Every change it makes runs only on a user's command: it is a display program first. */
+  onCommandOnly: boolean;
+} {
+  const actions = f.changes.actions.filter((a) => !a.onCommand);
+  const writes = f.writes.filter((w) => !w.onCommand);
+  const commandActions = f.changes.actions.filter((a) => a.onCommand);
+  const commandWrites = f.writes.filter((w) => w.onCommand);
+  const onCommandOnly = f.changes.state === 'changes'
+    && !actions.length && !writes.length
+    && commandActions.length + commandWrites.length > 0;
+  return { actions, writes, commandActions, commandWrites, onCommandOnly };
 }
 
 /** A business object as a reader names it, with its code: "cost centers (CSKS)". */
@@ -281,8 +320,13 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
   const selection = selectionWords(f.inputs);
   const selected = selection.length ? `, selected by ${joinAnd(selection)}` : '';
 
-  if (f.changes.state === 'changes' && f.changes.actions.length) {
-    const acts = rankedActions(f.changes.actions).slice(0, 3);
+  const flow = changesByFlow(f);
+  // The tables it reads are named as what it reads — never as the source of what
+  // it changes: "changes sales orders from sales order items (VBAP)" presented a
+  // read table as the origin of a different object, which the code does not show
+  // (SD review, 12.10.2026). Only a file is a source the code shows.
+  if (f.changes.state === 'changes' && flow.actions.length) {
+    const acts = rankedActions(flow.actions).slice(0, 3);
     // A file on the application server is what an interface program posts from;
     // otherwise the business objects it reads (other than the ones it creates),
     // and an upload from the PC only when it reads nothing else.
@@ -290,7 +334,7 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     const from = f.outputs.serverIn
       ? ' from the lines of a file on the application server'
       : sources.length
-        ? ` from ${joinAnd(sources)}`
+        ? `, reading ${joinAnd(sources)}`
         : f.outputs.fileIn
           ? ' from a file the user uploads'
           : '';
@@ -301,9 +345,9 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       basis: 'reconstructed',
     };
   }
-  if (f.changes.state === 'changes') {
-    const changed = objectWords(f.writes.filter((o) => o.kind !== 'custom'), 2);
-    const custom = f.writes.filter((o) => o.kind === 'custom');
+  if (f.changes.state === 'changes' && !flow.onCommandOnly) {
+    const changed = objectWords(flow.writes.filter((o) => o.kind !== 'custom'), 2);
+    const custom = flow.writes.filter((o) => o.kind === 'custom');
     const parts = [
       changed.words.length ? `changes ${joinAnd(changed.words)}` : '',
       custom.length ? `records entries in ${custom.length === 1 ? `a custom table (${custom[0].name})` : `${countWord(custom.length)} custom tables (${custom.map((c) => c.name).join(', ')})`}` : '',
@@ -311,8 +355,8 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
     const source = objectWords(business.filter((o) => !f.writes.some((w) => w.name === o.name)), 2).words;
     return {
       key: 'purpose',
-      text: `${capital(parts.length ? joinAnd(parts) : 'changes data')} in SAP${source.length ? `, from ${joinAnd(source)}` : ''}${selected}.`,
-      anchors: f.writes.slice(0, 3).map((w) => ({ lineStart: w.line, lineEnd: w.line })),
+      text: `${capital(parts.length ? joinAnd(parts) : 'changes data')} in SAP${source.length ? `, reading ${joinAnd(source)}` : ''}${selected}.`,
+      anchors: flow.writes.slice(0, 3).map((w) => ({ lineStart: w.line, lineEnd: w.line })),
       basis: 'reconstructed',
     };
   }
@@ -324,17 +368,27 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
       : null;
   const noun = f.kind === 'function' ? 'function' : f.kind === 'class' ? 'class' : 'report';
   const readOnly = f.changes.state === 'none' ? 'read-only ' : '';
+  // A program whose every change waits for a user's command is a display program
+  // first — a cockpit: what it shows is its purpose, the changes follow in their
+  // own slot (SD review, 12.10.2026).
+  const shown = flow.onCommandOnly ? shownAs(f) : '';
   const text = what
-    ? `A ${readOnly}${noun} on ${what}${selected}.`
+    ? `A ${readOnly}${noun} on ${what}${selected}${shown}.`
     : f.inputs.length || f.outputs.list
-      ? `A ${readOnly}${noun} that reads no table by name${selected}.`
+      ? `A ${readOnly}${noun} that reads no table by name${selected}${shown}.`
       : `A ${readOnly}${noun}; the code names no table it reads.`;
   return {
     key: 'purpose',
     text,
-    anchors: anchorsOf(business.slice(0, 3).map((o) => o.line)),
+    anchors: anchorsOf([...business.slice(0, 3).map((o) => o.line), ...(shown ? [f.outputs.list, f.outputs.screen] : [])]),
     basis: 'reconstructed',
   };
+}
+
+/** ", shown as a list or on a screen" — how a display program shows what it reads; empty when the code shows neither. */
+function shownAs(f: ProgramSummaryFacts): string {
+  const ways = [f.outputs.list ? 'as a list' : '', f.outputs.screen ? 'on a screen' : ''].filter(Boolean);
+  return ways.length ? `, shown ${ways.join(' or ')}` : '';
 }
 
 function changesLine(f: ProgramSummaryFacts): SummaryLine {
@@ -357,21 +411,33 @@ function changesLine(f: ProgramSummaryFacts): SummaryLine {
       basis: 'reconstructed',
     };
   }
-  const acts = rankedActions(f.changes.actions).map((a) => `${actionPhrase(a.word)} (${a.name}${a.via === 'simulated-entry' ? ', by simulated entry' : ''})`);
-  const standard = f.writes.filter((w) => w.kind !== 'custom').map(objectName);
-  const custom = f.writes.filter((w) => w.kind === 'custom');
-  const writes = [
-    ...standard.slice(0, 3),
-    ...(standard.length > 3 ? [plural(standard.length - 3, 'more table')] : []),
-    ...(custom.length ? [`${custom.length === 1 ? 'a custom table' : `${countWord(custom.length)} custom tables`} (${custom.map((c) => c.name).join(', ')})`] : []),
-  ];
-  const parts = [
-    acts.length ? joinAnd(acts) : '',
-    writes.length ? `changes ${joinAnd(writes)}` : '',
-  ].filter(Boolean);
+  const flow = changesByFlow(f);
+  const partsOf = (actions: readonly SummaryAction[], written: readonly SummaryObject[], base: boolean): string[] => {
+    const phrase = base ? actionBasePhrase : actionPhrase;
+    const acts = rankedActions(actions).map((a) => `${phrase(a.word)} (${a.name}${a.via === 'simulated-entry' ? ', by simulated entry' : ''})`);
+    const standard = written.filter((w) => w.kind !== 'custom').map(objectName);
+    const custom = written.filter((w) => w.kind === 'custom');
+    const writes = [
+      ...standard.slice(0, 3),
+      ...(standard.length > 3 ? [plural(standard.length - 3, 'more table')] : []),
+      ...(custom.length ? [`${custom.length === 1 ? 'a custom table' : `${countWord(custom.length)} custom tables`} (${custom.map((c) => c.name).join(', ')})`] : []),
+    ];
+    return [
+      acts.length ? joinAnd(acts) : '',
+      writes.length ? `${base ? 'change' : 'changes'} ${joinAnd(writes)}` : '',
+    ].filter(Boolean);
+  };
+  const parts = partsOf(flow.actions, flow.writes, false);
+  // What only a user's command changes is said as such: "On a user's command it
+  // can also change …" (SD review, 12.10.2026).
+  const onCommand = partsOf(flow.commandActions, flow.commandWrites, true);
+  const commandText = onCommand.length ? `on a user's command it can also ${joinAnd(onCommand)} in SAP` : '';
+  const text = flow.onCommandOnly
+    ? `${capital(commandText)}.`
+    : `It ${parts.length ? joinAnd(parts) : 'changes data'} in SAP${commandText ? `; ${commandText}` : ''}.`;
   return {
     key: 'changes',
-    text: `It ${parts.length ? joinAnd(parts) : 'changes data'} in SAP.`,
+    text,
     anchors: anchorsOf([...f.changes.actions.map((a) => a.line), ...f.writes.map((w) => w.line)].slice(0, 4)),
     basis: 'reconstructed',
   };
@@ -413,6 +479,10 @@ function resultLine(f: ProgramSummaryFacts): SummaryLine | null {
     o.mail ? 'send it by mail' : '',
   ].filter(Boolean);
   const anchors = [o.list, o.fileOut, o.serverOut, o.print, o.mail].filter((l): l is number => !!l).flatMap(anchorOf);
+  // A display program's purpose already says it shows a list (SD review, 12.10.2026).
+  if (o.list && changesByFlow(f).onCommandOnly) {
+    return also.length ? { key: 'result', text: `It can ${joinAnd(also).replace(/\bit\b/, 'the list')}.`, anchors, basis: 'reconstructed' } : null;
+  }
   if (o.list) {
     return { key: 'result', text: `The result is a list on screen${also.length ? `; it can also ${joinAnd(also)}` : ''}.`, anchors, basis: 'reconstructed' };
   }
@@ -429,12 +499,16 @@ function triggerLine(f: ProgramSummaryFacts): SummaryLine {
   if (f.kind === 'unknown') return { key: 'trigger', text: 'The code does not show what starts it.', anchors: [], basis: 'not-determined' };
   // The selection itself is said in the purpose ("selected by …"); here the
   // inputs are counted, so the line stays one short sentence (≤ 20 words).
+  // A screen, the user's commands on a list or a file on the user's PC need the
+  // user's front end: such a program is not said to run as a background job
+  // (SD review, 12.10.2026).
+  const how = f.frontEnd ? "; it runs in the user's session" : ', or it runs as a background job';
   return {
     key: 'trigger',
     text: f.inputs.length
-      ? `A user starts it from a selection screen with ${plural(f.inputs.length, 'input')}, or it runs as a background job.`
-      : 'A user starts it without a selection screen, or it runs as a background job.',
-    anchors: anchorOf(f.inputs[0]?.line),
+      ? `A user starts it from a selection screen with ${plural(f.inputs.length, 'input')}${how}.`
+      : `A user starts it without a selection screen${how}.`,
+    anchors: anchorsOf([f.inputs[0]?.line, f.frontEnd]),
     basis: 'reconstructed',
   };
 }
@@ -541,11 +615,15 @@ export function managementInShort(
   options: { level?: boolean; rules?: RuleStateTally | null } = {},
 ): string {
   const purpose = summary.lines.find((l) => l.key === 'purpose')?.text ?? '';
+  const flow = changesByFlow(f);
   const changes = f.changes.state === 'none'
     ? 'it posts and changes nothing in SAP'
-    : f.changes.state === 'changes'
-      ? `it changes data in SAP — it ${joinAnd([...rankedActions(f.changes.actions).map((a) => actionPhrase(a.word)), ...(f.writes.length ? [`writes ${plural(f.writes.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
-      : 'whether it changes data in SAP is not determined';
+    : f.changes.state === 'changes' && flow.onCommandOnly
+      // SD review, 12.10.2026: a cockpit that changes data only on a user's command.
+      ? `it changes data in SAP only on a user's command — it can ${joinAnd([...rankedActions(flow.commandActions).map((a) => actionBasePhrase(a.word)), ...(flow.commandWrites.length ? [`write ${plural(flow.commandWrites.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
+      : f.changes.state === 'changes'
+        ? `it changes data in SAP — it ${joinAnd([...rankedActions(f.changes.actions).map((a) => actionPhrase(a.word)), ...(f.writes.length ? [`writes ${plural(f.writes.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
+        : 'whether it changes data in SAP is not determined';
   // The rule register's states when they are known (owner 12.10.2026: "66
   // business rules … 66 still open", the counts of the delivery package);
   // without them, the count from the code and what a decision has to do.

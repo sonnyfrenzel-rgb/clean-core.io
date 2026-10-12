@@ -115,13 +115,15 @@ test.describe('the slots, in order, from engine facts only', () => {
     const { summary } = summaryOf(DEMO);
     expect(summary.lines.map((l) => l.key)).toEqual(['purpose', 'changes', 'reads', 'result', 'trigger', 'rules', 'limits']);
     expect(slot(summary, 'purpose')[0]).toBe(
-      'Creates purchase orders and starts workflows in SAP from purchase requisitions (EBAN) and suppliers (LFA1), selected by purchase requisition number.',
+      // What it reads is named as read, not as the source of what it creates (SD review, 12.10.2026).
+      'Creates purchase orders and starts workflows in SAP, reading purchase requisitions (EBAN) and suppliers (LFA1), selected by purchase requisition number.',
     );
     expect(slot(summary, 'changes')[0]).toBe(
       'It creates purchase orders (BAPI_PO_CREATE1) and starts workflows (SAP_WAPI_CREATE_EVENT) and changes purchase requisitions (EBAN) and two custom tables (ZMM_PO_APPR, ZMM_PO_ATTACH) in SAP.',
     );
     expect(slot(summary, 'result')[0]).toBe('The result is a list on screen.');
-    expect(slot(summary, 'trigger')[0]).toBe('A user starts it from a selection screen with 4 inputs, or it runs as a background job.');
+    // It uploads a file from the user's PC: it needs the user's front end (SD review, 12.10.2026).
+    expect(slot(summary, 'trigger')[0]).toBe("A user starts it from a selection screen with 4 inputs; it runs in the user's session.");
     expect(slot(summary, 'rules')[0]).toMatch(/^\d+ business rules are fixed in the code\.$/);
     expect(summary.level.text).toBe(LEVEL_RECONSTRUCTED);
     // No decision-point count on this level (CO review F03-DOC).
@@ -322,5 +324,195 @@ ${CO_SHAPED}`).headerClaim).toBeNull();
 ${CO_SHAPED}`);
     if (injected.headerClaim) expect(programFactsBlock(injected)).toContain(`untrusted] ${JSON.stringify(injected.headerClaim.text)}`);
     expect(programFactsBlock(null)).toBe('');
+  });
+});
+
+/**
+ * SD review, 12.10.2026: a display cockpit — selection, then a list, a screen or
+ * a file — whose two changes run only on a user's command (a PAI module and the
+ * ALV's user-command callback) opened with "Changes sales orders in SAP from
+ * sales order items (VBAP) and customers (KNA1)", and "or it runs as a
+ * background job" although it calls a screen and downloads to the user's PC.
+ * Written here, smaller than the reviewed program, with the same shape.
+ */
+const SD_COCKPIT = `REPORT zsd_order_cockpit.
+TABLES vbak.
+DATA: gt_orders TYPE STANDARD TABLE OF vbap,
+      gt_bdcdata TYPE STANDARD TABLE OF bdcdata,
+      gv_okcode TYPE sy-ucomm.
+SELECT-OPTIONS s_erdat FOR vbak-erdat OBLIGATORY.
+PARAMETERS: r_alv RADIOBUTTON GROUP rg1 DEFAULT 'X',
+            r_dynp RADIOBUTTON GROUP rg1,
+            r_file RADIOBUTTON GROUP rg1.
+
+START-OF-SELECTION.
+  SELECT * FROM vbak INTO TABLE @DATA(gt_head) WHERE erdat IN @s_erdat.
+  SELECT * FROM vbap INTO TABLE gt_orders FOR ALL ENTRIES IN gt_head WHERE vbeln = gt_head-vbeln.
+  SELECT * FROM kna1 INTO TABLE @DATA(gt_kna1) FOR ALL ENTRIES IN gt_head WHERE kunnr = gt_head-kunnr.
+
+END-OF-SELECTION.
+  CASE 'X'.
+    WHEN r_alv.
+      PERFORM show_alv.
+    WHEN r_dynp.
+      CALL SCREEN 0100.
+    WHEN r_file.
+      PERFORM download.
+  ENDCASE.
+
+MODULE user_command_0100 INPUT.
+  CASE gv_okcode.
+    WHEN 'SAVE'.
+      PERFORM update_items.
+  ENDCASE.
+ENDMODULE.
+
+FORM show_alv.
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program      = sy-repid
+      i_callback_user_command = 'ALV_USER_COMMAND'
+    TABLES
+      t_outtab                = gt_orders.
+ENDFORM.
+
+FORM alv_user_command USING r_ucomm LIKE sy-ucomm rs_selfield TYPE slis_selfield.
+  CASE r_ucomm.
+    WHEN 'UPDATE'.
+      PERFORM change_orders.
+  ENDCASE.
+ENDFORM.
+
+FORM update_items.
+  UPDATE vbap SET netwr = 0 WHERE vbeln = '0000000001'.
+  COMMIT WORK.
+ENDFORM.
+
+FORM change_orders.
+  CALL TRANSACTION 'VA02' USING gt_bdcdata MODE 'N'.
+ENDFORM.
+
+FORM download.
+  CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      filename = 'C:/temp/orders.csv'
+    TABLES
+      data_tab = gt_orders.
+ENDFORM.
+`;
+
+test.describe('a display cockpit whose changes wait for a user (SD review, 12.10.2026)', () => {
+  test('changes reached only from a PAI module or a list callback are marked, and the purpose is the display', () => {
+    const { facts, summary } = summaryOf(SD_COCKPIT);
+    expect(facts.changes.state).toBe('changes');
+    expect(facts.changes.actions.map((a) => [a.name, a.onCommand])).toEqual([['VA02', true]]);
+    expect(facts.writes.map((w) => [w.name, w.onCommand])).toEqual([['VBAP', true]]);
+    expect(facts.outputs.screen).toBeGreaterThan(0);
+    expect(facts.frontEnd).toBeGreaterThan(0);
+    expect(slot(summary, 'purpose')[0]).toBe(
+      'A report on sales orders (VBAK), sales order items (VBAP) and customers (KNA1), selected by creation date, shown as a list or on a screen.',
+    );
+    expect(slot(summary, 'changes')[0]).toBe(
+      "On a user's command it can also change sales orders (VA02, by simulated entry) and change sales order items (VBAP) in SAP.",
+    );
+    expect(slot(summary, 'trigger')[0]).toBe("A user starts it from a selection screen with 4 inputs; it runs in the user's session.");
+    const short = businessInShortText(summary, { codes: false });
+    expect(short).toBe(
+      "A report on sales orders, sales order items and customers, selected by creation date, shown as a list or on a screen. On a user's command it can also change sales orders and change sales order items in SAP. It can save the list as a file on the user's PC. A user starts it from a selection screen with 4 inputs; it runs in the user's session.",
+    );
+    expect(short).not.toMatch(/background job|^Changes/);
+    for (const l of businessInShort(summary, { codes: false })) expect(businessJargon(l.text), l.text).toEqual([]);
+    expect(managementInShort(summary, facts, { level: false })).toContain(
+      "For the decision: it changes data in SAP only on a user's command — it can change sales orders and write 1 table directly —",
+    );
+  });
+
+  test('AT USER-COMMAND counts as a command; a change the normal flow also reaches does not', () => {
+    const listCommand = `REPORT zsd_list.
+TABLES vbak.
+SELECT-OPTIONS s_erdat FOR vbak-erdat.
+START-OF-SELECTION.
+  SELECT * FROM vbak INTO TABLE @DATA(gt_head) WHERE erdat IN @s_erdat.
+  LOOP AT gt_head INTO DATA(gs_head).
+    WRITE: / gs_head-vbeln.
+  ENDLOOP.
+AT USER-COMMAND.
+  PERFORM block_items.
+FORM block_items.
+  UPDATE vbap SET abgru = '01' WHERE vbeln = gs_head-vbeln.
+ENDFORM.
+`;
+    const onList = summaryOf(listCommand);
+    expect(onList.facts.writes.map((w) => w.onCommand)).toEqual([true]);
+    expect(slot(onList.summary, 'purpose')[0]).toBe('A report on sales orders (VBAK), selected by creation date, shown as a list.');
+    expect(slot(onList.summary, 'changes')[0]).toBe("On a user's command it can also change sales order items (VBAP) in SAP.");
+    // The same routine performed from START-OF-SELECTION as well: an ordinary change.
+    const both = summaryOf(listCommand.replace('  ENDLOOP.\n', '  ENDLOOP.\n  PERFORM block_items.\n'));
+    expect(both.facts.writes.map((w) => w.onCommand ?? false)).toEqual([false]);
+    expect(slot(both.summary, 'purpose')[0]).toBe('Changes sales order items (VBAP) in SAP, reading sales orders (VBAK), selected by creation date.');
+  });
+
+  test('a read table is never named as the source of what the program changes', () => {
+    // "Changes sales orders in SAP from sales order items (VBAP)" read VBAP as the origin of the
+    // sales orders; the code shows only that it reads it.
+    const { summary } = summaryOf(SD_COCKPIT.replace("  CASE 'X'.", "  PERFORM change_orders.\n  CASE 'X'."));
+    const purpose = slot(summary, 'purpose')[0];
+    expect(purpose).toBe('Changes sales orders in SAP, reading sales order items (VBAP) and customers (KNA1), selected by creation date.');
+    expect(purpose).not.toMatch(/ from /);
+  });
+});
+
+test.describe("the author's claim in German, or in a language the check does not read (SD review, 12.10.2026)", () => {
+  const withHeader = (lines: string[], body: string) =>
+    `*&---------------------------------------------------------------------*\n${lines.map((l) => `*& ${l}`).join('\n')}\n*&---------------------------------------------------------------------*\n${body}`;
+  const co = (lines: string[]) => programSummaryFactsOf(withHeader(lines, CO_SHAPED));
+  const sd = (lines: string[]) => programSummaryFactsOf(withHeader(lines, SD_COCKPIT));
+  const noteOf = (claim: ReturnType<typeof authorClaimOf>) => (claim && claim.state === 'contradicted' ? claim.note : '');
+
+  test('a table named as changed must be one the code writes — by its code, in any language', () => {
+    const claim = authorClaimOf(sd(['Zweck: Vertriebs-Cockpit für Aufträge.', '  - Direkte DB-Manipulationen auf Standardtabellen (VBAK, VBAP)']));
+    expect(claim?.state).toBe('contradicted');
+    expect(noteOf(claim)).toBe('The header comment (L2–3) is not quoted here: it names VBAK as changed; the code does not write VBAK.');
+    // Naming the table it writes is no contradiction.
+    expect(authorClaimOf(sd(['Zweck: Vertriebs-Cockpit für Aufträge; ändert die Positionen (VBAP).']))?.state).toBe('shown');
+    expect(checkPurposeProposal('It reads the order headers and updates VBAK.', programSummaryFactsOf(SD_COCKPIT)).problems).toContain(
+      'names VBAK as changed; the code does not write VBAK',
+    );
+  });
+
+  test('posting, denial, mail, approval and savings are read in German too', () => {
+    const problemsOf = (text: string, facts = programSummaryFactsOf(CO_SHAPED)) => checkPurposeProposal(text, facts).problems;
+    expect(problemsOf('Das Programm verbucht die Umlage auf die Kostenstellen.')).toContain('claims a posting or a data change; the code changes no data');
+    expect(problemsOf('Ändert die Planwerte der Kostenstellen.')).toContain('claims a posting or a data change; the code changes no data');
+    expect(problemsOf('Der Report bucht nicht und ändert keine Daten.')).toEqual([]);
+    expect(problemsOf('Es werden keine Buchungen erzeugt.')).toEqual([]);
+    expect(problemsOf('Das Programm bucht nicht.', programSummaryFactsOf(BM028))).toContain('says it does not post or change data; the code changes data');
+    expect(problemsOf('Er benachrichtigt jeden Kostenstellenverantwortlichen.')).toContain('claims correspondence; the code sends none');
+    expect(problemsOf('Er schickt jedem Verantwortlichen eine E-Mail.')).toContain('claims correspondence; the code sends none');
+    expect(problemsOf('Die Freigabe erfolgt im Vier-Augen-Prinzip.')).toContain('claims an approval; the code runs none');
+    expect(problemsOf('Spart 30 % Aufwand im Monatsabschluss.')).toContain('states money, savings or accuracy');
+    expect(problemsOf('Einsparung von 2.000 € pro Monat.')).toContain('states money, savings or accuracy');
+    // A German header the facts contradict is not quoted, with its reason.
+    const posted = authorClaimOf(co(['ZWECK', 'Verbucht die Umlage der Shared-Service-Kosten.']));
+    expect(posted?.state).toBe('contradicted');
+    expect(posted && posted.state === 'contradicted' ? posted.problems : []).toContain('claims a posting or a data change; the code changes no data');
+  });
+
+  test('a claim in another language is not quoted, with one line that says so', () => {
+    const claim = authorClaimOf(co(['DESCRIPTION', 'Le programme compare les centres de coûts avec le plan et ne comptabilise rien.']));
+    expect(claim?.state).toBe('contradicted');
+    expect(noteOf(claim)).toBe('The header comment (L2–3) is in a language the check does not read; it is not quoted.');
+    expect(checkPurposeProposal('Het programma boekt de facturen van de leveranciers.', programSummaryFactsOf(CO_SHAPED)).ok).toBe(false);
+  });
+
+  test('a long claim is quoted by its first sentence, or not at all', () => {
+    const first = 'Monthly cost-center close review of plan versus actual.';
+    const rest = Array.from({ length: 8 }, (_, i) => `Step ${i + 1} compares the plan version with the actual totals for one more period range.`);
+    const long = authorClaimOf(co(['BUSINESS PURPOSE', first, ...rest]));
+    expect(long?.state).toBe('shown');
+    expect(long && long.state === 'shown' ? long.text : '').toBe(first);
+    const oneSentence = authorClaimOf(co(['BUSINESS PURPOSE', `Review ${'of plan versus actual cost-center totals '.repeat(9)}for the close.`]));
+    expect(oneSentence?.state).toBe('contradicted');
+    expect(noteOf(oneSentence)).toMatch(/^The header comment \(L2–3\) is not quoted here: it is longer than a statement of purpose/);
   });
 });

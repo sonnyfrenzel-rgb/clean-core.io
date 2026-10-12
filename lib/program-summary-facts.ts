@@ -7,6 +7,8 @@ import { FUNCTION_TERMS_EN, TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/a
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { capabilityPresence } from '@/lib/documentation-capabilities';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
+import { readStatements } from '@/lib/abap/statement-reader';
+import { containerAt, readBlocks } from '@/lib/abap/block-structure';
 import {
   PROGRAM_SUMMARY_FACTS_VERSION,
   type ProgramSummaryFacts,
@@ -235,6 +237,88 @@ export function headerClaimOf(source: string): ProgramSummaryFacts['headerClaim'
   return null;
 }
 
+/** Handler events of the ALV classes and controls that run on a user's click or function key. */
+const COMMAND_EVENTS = /^(?:ADDED_FUNCTION|USER_COMMAND|DOUBLE_CLICK|LINK_CLICK|HOTSPOT_CLICK|BUTTON_CLICK|FUNCTION_SELECTED|NODE_DOUBLE_CLICK|ITEM_DOUBLE_CLICK)$/;
+
+/**
+ * The lines that run only on a user's command (SD review, 12.10.2026): a
+ * display cockpit whose two changes sit behind "Save" in a PAI module and
+ * behind a button of its list was summed up as "Changes sales orders in SAP",
+ * because every write and every posting call counted the same wherever it
+ * stood. What runs only on a command is now told apart:
+ *
+ *   - a PAI module (`MODULE … INPUT`) — it runs when the user acts on a screen;
+ *   - the list events `AT USER-COMMAND`, `AT LINE-SELECTION`, `AT PFnn`;
+ *   - a FORM the ALV calls back for the user's command (`I_CALLBACK_USER_COMMAND`,
+ *     or a `USER_COMMAND` FORM in the event table);
+ *   - a handler method of a click or function event (`METHODS m FOR EVENT
+ *     added_function OF cl_salv_events`, `double_click`, `hotspot_click` …);
+ *
+ * and every FORM reached only from those. A FORM the normal flow also reaches
+ * (START-OF-SELECTION, a PBO module, a function module …) is not command-only.
+ * Methods called from a handler are not followed — they count as the normal
+ * flow, the side that says "changes" rather than hides it.
+ */
+export function commandOnlyReader(source: string, calls: CallGraphReport): { onCommand: (line: number) => boolean; interactive: number | null } {
+  const statements = readStatements(source);
+  const { containers } = readBlocks(statements);
+  const paiModules = new Set<string>();
+  const handlerMethods = new Set<string>();
+  for (const s of statements) {
+    const pai = /^MODULE\s+([\w/]+)\s+INPUT\b/i.exec(s.text);
+    if (pai) paiModules.add(pai[1].toUpperCase());
+    const handler = /^(?:CLASS-)?METHODS\s+([\w/~]+)\s+FOR\s+EVENT\s+([\w/]+)\s+OF\b/i.exec(s.text);
+    if (handler && COMMAND_EVENTS.test(handler[2].toUpperCase())) handlerMethods.add(handler[1].toUpperCase());
+  }
+  const keyOf = (kind: string, name: string | null) => `${kind}:${name ?? ''}`;
+  const isCommandContainer = (c: { kind: string; name: string }) =>
+    (c.kind === 'module' && paiModules.has(c.name))
+    || (c.kind === 'event' && /^AT (?:USER-COMMAND|LINE-SELECTION|PF\d+)$/.test(c.name))
+    || (c.kind === 'method' && handlerMethods.has(c.name));
+  const commandCallback = (trigger: string, form: string) =>
+    /\bI_CALLBACK_USER_COMMAND$/.test(trigger) || (/IT_EVENTS$/.test(trigger) && /USER_COMMAND|LINE_SELECTION|DOUBLE_CLICK/.test(form));
+
+  const commandRoots = new Set<string>();
+  const normalRoots = new Set<string>([keyOf('program', null)]);
+  for (const c of containers) {
+    if (isCommandContainer(c)) commandRoots.add(keyOf(c.kind, c.name));
+    else if (c.kind !== 'form') normalRoots.add(keyOf(c.kind, c.name));
+  }
+  const next = new Map<string, string[]>();
+  const link = (from: string, to: string) => next.set(from, [...(next.get(from) ?? []), to]);
+  for (const e of calls.edges) link(keyOf(e.fromKind, e.from), keyOf('form', e.to));
+  for (const e of calls.callbacks) {
+    if (commandCallback(e.trigger, e.to)) commandRoots.add(keyOf('form', e.to));
+    else link(keyOf(e.fromKind, e.from), keyOf('form', e.to));
+  }
+  const reach = (roots: Set<string>): Set<string> => {
+    const seen = new Set<string>(roots);
+    const queue = [...roots];
+    while (queue.length) {
+      for (const to of next.get(queue.pop() as string) ?? []) {
+        if (!seen.has(to)) {
+          seen.add(to);
+          queue.push(to);
+        }
+      }
+    }
+    return seen;
+  };
+  const normal = reach(normalRoots);
+  const command = reach(commandRoots);
+  const onCommand = (line: number): boolean => {
+    const c = containerAt(containers, line);
+    const key = c ? keyOf(c.kind, c.name) : keyOf('program', null);
+    return command.has(key) && !normal.has(key);
+  };
+  // Where the user's commands are taken — the first such routine, or the call that registers it.
+  const interactive = [
+    ...containers.filter(isCommandContainer).map((c) => c.lineStart),
+    ...calls.callbacks.filter((e) => commandCallback(e.trigger, e.to)).map((e) => e.lineStart),
+  ].sort((a, b) => a - b)[0] ?? null;
+  return { onCommand, interactive };
+}
+
 export interface ProgramSummaryReaders {
   skeleton?: Pick<ProcessSkeleton, 'luw'>;
   calls?: CallGraphReport;
@@ -270,8 +354,17 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
         : ctx.selections.size > 0 ? 'report' : 'unknown';
   const program = ruleSet?.program ?? (head ? head[2].toUpperCase() : null);
 
+  const command = commandOnlyReader(text, calls);
   const reads = capability.reads.map((r) => objectOf(r.name, r.line));
-  const writes = capability.writes.map((w) => objectOf(w.name, w.line));
+  // A write that runs only on a user's command is marked (SD review, 12.10.2026).
+  // A table written anywhere in the normal flow is not command-only, whichever write came first.
+  const writtenInFlow = new Set([
+    ...tables.dependencies.filter((d) => d.access === 'write').map((d) => ({ name: d.table, line: d.line })),
+    ...calls.databaseWrites.map((d) => ({ name: d.table, line: d.lineStart })),
+  ].filter((w) => !command.onCommand(w.line)).map((w) => w.name.toUpperCase()));
+  const writes = capability.writes.map((w) => (
+    command.onCommand(w.line) && !writtenInFlow.has(w.name.toUpperCase()) ? { ...objectOf(w.name, w.line), onCommand: true } : objectOf(w.name, w.line)
+  ));
 
   // What it changes in SAP, in business verbs: the posting calls and the
   // transactions it runs with data, each once by its word.
@@ -281,9 +374,18 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     // A technical object ("Create ID") is not a change a business reader asks about.
     if (!word || !CHANGING_VERB.test(word) || /\b(?:ID|IDs|GUID|number|lock|log|spool)$/i.test(word)) return;
     const key = word.toLowerCase();
-    if (seenWords.has(key)) return;
+    const onCommand = command.onCommand(line);
+    const earlier = actions.findIndex((a) => a.word.toLowerCase() === key);
+    // The same change reached once from the normal flow is not command-only.
+    if (seenWords.has(key)) {
+      if (earlier >= 0 && actions[earlier].onCommand && !onCommand) {
+        const a = actions[earlier];
+        actions[earlier] = { name: a.name, word: a.word, line: a.line, via: a.via };
+      }
+      return;
+    }
     seenWords.add(key);
-    actions.push({ name, word, line, via });
+    actions.push(onCommand ? { name, word, line, via, onCommand: true } : { name, word, line, via });
   };
   for (const f of calls.functionModules) {
     if (!f.name) continue;
@@ -329,7 +431,18 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       serverOut: statementLine(/^OPEN\s+DATASET\b.*\bFOR\s+(?:OUTPUT|APPENDING)\b/i),
       print: firstCall(PRINT_CALLS) ?? statementLine(/^NEW-PAGE\s+PRINT\s+ON\b/i),
       mail: firstCall(MAIL_CALLS) ?? classLine(/\bCL_BCS\b/i),
+      screen: statementLine(/^CALL\s+SCREEN\b/i),
     },
+    // What needs a user's front end — a screen, the user's commands on a list,
+    // a file on the user's PC, a control on the GUI: such a program cannot run as
+    // a background job (SD review, 12.10.2026).
+    frontEnd: [
+      statementLine(/^CALL\s+SCREEN\b/i),
+      command.interactive,
+      firstCall(FILE_DOWNLOAD) ?? classLine(/CL_GUI_FRONTEND_SERVICES\s*=>\s*GUI_DOWNLOAD/i),
+      firstCall(FILE_UPLOAD) ?? classLine(/CL_GUI_FRONTEND_SERVICES\s*=>\s*GUI_UPLOAD/i),
+      classLine(/\bCL_GUI_(?:ALV_GRID|CUSTOM_CONTAINER|DOCKING_CONTAINER|DIALOGBOX_CONTAINER)\b/i),
+    ].filter((l): l is number => !!l).sort((a, b) => a - b)[0] ?? null,
     inputs: inputsOf(ctx, texts.fields),
     screenTitles: texts.titles,
     fixedLists: fixedListsOf(calls, ctx),
