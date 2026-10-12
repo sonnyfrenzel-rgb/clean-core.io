@@ -902,7 +902,7 @@ export function implementationStatement(reading: PackageReading, facts: Delivery
   const capRunning = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
   const what = capRunning ? 'CAP service' : reading.express.length ? 'Express service' : 'Node.js code';
   // CO review F10: no SAP client says where the data does not come from, not that it is synthetic.
-  const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on data its caller supplies';
+  const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on data whose source is not recorded';
   const delivered = `delivered implementation: ${what} ${data}`;
   return capArchitectureProposed(reading, facts) && !capRunning
     ? `CAP architecture proposed; ${delivered}.`
@@ -933,7 +933,7 @@ export function dataMode(reading: PackageReading): { mode: DataMode; sentence: s
       }
     : {
         mode: 'not-recorded',
-        sentence: 'Not recorded — supplied by the caller. No source file calls an SAP system, and no run recorded where the data came from: synthetic, an extract or anything else the caller hands in.',
+        sentence: 'Not recorded. No source file calls an SAP system, and no run recorded where the data came from: the code may build its own sample data or take what its caller hands in, and this package does not say which (PP review, 12.10.2026).',
       };
 }
 

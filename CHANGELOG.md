@@ -56,7 +56,8 @@ and a large program no longer freezes the page — after an external review of a
   approved, changed on purpose — and no longer says the process was not reconstructed when it was.
   A **rule register** (`docs/rule-register.md` and `.csv`) carries every rule from current meaning
   to proposal, decision, implementation and test. The data mode is no longer guessed: it reads
-  "not recorded — supplied by the caller" unless a run recorded it.
+  "not recorded" unless a run recorded it — neither "synthetic" nor "supplied by the caller", since
+  a generated service may build its own sample data.
 
 ### Tests
 

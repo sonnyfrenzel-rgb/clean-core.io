@@ -282,8 +282,8 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
     expect(status).toContain('0 of 12 rules decided, 12 open');
     expect(status).toMatch(/\| Tests \| Failed — 10 scenarios generated\. The last run on 11 Oct 2026 gave no result \(3 attempts in a row\)/);
     expect(status).toContain("test.ts:162:27: ERROR");
-    expect(status).toContain('Not recorded — supplied by the caller.');
-    expect(status).toContain('CAP architecture proposed; delivered implementation: Express service on data its caller supplies.');
+    expect(status).toContain('| Data mode | Not recorded. ');
+    expect(status).toContain('CAP architecture proposed; delivered implementation: Express service on data whose source is not recorded.');
     expect(status).toContain('Open — no decision on record. The engine recommends Side-by-Side');
     expect(status).toContain('Production use | Blocked');
     // Next steps in the review's order: tests, rules, decision.
@@ -688,10 +688,13 @@ test.describe('CO review F16: the rules have five states, and the package carrie
 });
 
 test.describe('CO review F10: the data mode is not inferred from a missing SAP call', () => {
-  test('without a recorded run the data mode reads "not recorded — supplied by the caller", never "synthetic"', () => {
+  test('without a recorded run the data mode reads "not recorded", never "synthetic" or "supplied by the caller"', () => {
     const pkg = finished(withFailure(fiProject()));
     const status = pkg.file('STATUS.md')!;
-    expect(status).toMatch(/\| Data mode \| Not recorded — supplied by the caller\. /);
+    expect(status).toMatch(/\| Data mode \| Not recorded\. /);
+    // Neither guessed way: a PP service built its own sample whatever the caller sent (PP review, 12.10.2026).
+    expect(status.split("
+").find((l) => l.startsWith("| Data mode |")) ?? "").not.toMatch(/supplied by the caller|synthetic/i);
     expect(status).not.toMatch(/synthetic\/mock/i);
     expect(status).not.toContain('on synthetic data');
     expect(pkg.file('README.md')!).not.toMatch(/synthetic\/mock/i);

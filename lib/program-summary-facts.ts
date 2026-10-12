@@ -184,7 +184,10 @@ function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi')
   return word ?? null;
 }
 
-const CLAIM_HEADING = /^(BUSINESS\s+PURPOSE|BUSINESS\s+SCOPE|PURPOSE|DESCRIPTION|ZWECK|BESCHREIBUNG|FUNKTION|VERWENDUNG)\b\s*:?\s*(.*)$/;
+// In any case — "*& Business purpose: …" counts as much as "BUSINESS PURPOSE" (PP review of
+// 12.10.2026) — but only as a heading: followed by a colon, or alone on its line, so an ordinary
+// comment such as "Purpose of this block …" is never taken for the author's claim.
+const CLAIM_HEADING = /^(business\s+purpose|business\s+scope|purpose|description|zweck|beschreibung|funktion|verwendung)(?:\s*:\s*(.*)|\s*)$/i;
 const DECOR = /^[-=*&_#\s]*$/;
 const OTHER_HEADING = /^[A-Z][A-Z0-9 ()/&-]{3,}:?$/;
 

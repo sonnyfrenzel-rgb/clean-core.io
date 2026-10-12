@@ -283,6 +283,13 @@ test.describe('a model may phrase the purpose — checked against the facts', ()
     );
     // Only a headed section is a claim: a banner or a change log is not.
     expect(programSummaryFactsOf(CO_SHAPED).headerClaim).toBeNull();
+    // A heading in any case, with its text after the colon (PP review, 12.10.2026: "*& Business purpose: …").
+    const mixed = programSummaryFactsOf(`*& Business purpose: simulate a non-posting review of cost-center totals.
+${CO_SHAPED}`);
+    expect(mixed.headerClaim?.text).toBe('simulate a non-posting review of cost-center totals.');
+    // An ordinary comment that starts with the word is not a heading.
+    expect(programSummaryFactsOf(`* Purpose of this block is to read the plan totals.
+${CO_SHAPED}`).headerClaim).toBeNull();
     expect(programSummaryFactsOf(BM028).headerClaim).toBeNull();
     // Documentation shows the shown claim first, tagged.
     const map = mapOf(header('*& Non-posting review of cost centers and cost totals.'), 'zco.abap');
