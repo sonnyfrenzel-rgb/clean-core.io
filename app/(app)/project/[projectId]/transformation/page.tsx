@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { CODE_DRAFT_BUSINESS_RULES, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
+import { CODE_DRAFT_BUSINESS_RULES, codeDraftFactsSection, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -625,6 +625,24 @@ export default function TransformationPage() {
       setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
       const isAbapCloud = decision.isAbapCloud;
 
+      // Roadmap 3.0.12 (CO/FI/PP/SD reviews): the original's checks, packed
+      // decimals and selection inputs, read from the source without a model,
+      // so the prompt names the guards, places and options to keep. The readers
+      // are imported here, as the test generation does, so a reader who never
+      // generates does not download them. Unreadable → the section says so.
+      let originalFacts: string;
+      try {
+        const [{ deriveBusinessRules }, { materialRules }, { readOriginalContract }] = await Promise.all([
+          import('@/lib/abap/business-rule-set'),
+          import('@/lib/testing-rule-trace'),
+          import('@/lib/abap/original-contract'),
+        ]);
+        originalFacts = codeDraftFactsSection(readOriginalContract(legacyCode), materialRules(deriveBusinessRules(legacyCode)));
+      } catch (factsErr) {
+        console.error('The original\'s checks and declarations could not be read for the code draft:', factsErr);
+        originalFacts = codeDraftFactsSection(null);
+      }
+
       setTransformationLog(logRows(
         'Initializing transformation engine...',
         decision.sentence,
@@ -713,7 +731,7 @@ export default function TransformationPage() {
            - db/schema.cds: SAP CAP schema definition OR TypeORM entities mapping legacy database tables
            - package.json: Application dependencies, metadata, and scripts
            - Dockerfile: Multi-stage container setup for production
-           - erp-triggers/zcl_core_event_publisher.clas.abap: CRITICAL! S/4HANA-side event trigger: a clean ABAP Cloud class (or BAdI implementation) that intercepts transactional updates in the core ERP database and publishes the event payload asynchronously to the SAP Event Mesh/REST endpoint on ${BTP}.
+           - erp-triggers/zcl_core_event_publisher.clas.abap: S/4HANA-side event trigger: a clean ABAP Cloud class (or BAdI implementation) that publishes the event payload asynchronously to the SAP Event Mesh/REST endpoint on ${BTP} — ONLY where SAP has no standard business event for the change (otherwise omit this file and name the standard event in srv/service.ts), with a topic in the customer's own namespace, never sap.s4.* (rule 23).
         4. Use modern patterns (async/await, dependency injection, structured logging).
         5. CRITICAL FOR SANDBOX: Use standard Node.js built-ins (like 'fetch', 'console') where possible. If you must use external libraries, restrict yourself strictly to: express, pino, pino-pretty, typeorm, @sap-cloud-sdk/http-client, @sap/xssec, and passport. Do NOT use any other external npm modules.
         6. CRITICAL: Do NOT import specific strategies like 'XS720Strategy' from '@sap/xssec' if they are not standard exports. Use standard passport-jwt or mock the authentication middleware entirely.
@@ -721,7 +739,7 @@ export default function TransformationPage() {
         8. Ensure the code is robust with error handling and validation.
         9. Generate a complete Playwright test suite (playwright.config.ts and generated.spec.ts) to verify the API endpoints.
         10. CRITICAL: Export all main business logic functions and classes using ESM 'export' statements so they can be imported and tested by a separate test suite.
-${CODE_DRAFT_BUSINESS_RULES}
+${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
         Return a JSON object with the following structure:
         {
@@ -744,7 +762,7 @@ ${CODE_DRAFT_BUSINESS_RULES}
             },
             {
               "path": "erp-triggers/zcl_core_event_publisher.clas.abap",
-              "content": "/* Clean S/4HANA Core event trigger publisher class in ABAP Cloud syntax */"
+              "content": "/* Event trigger publisher class in ABAP Cloud syntax — only when no standard event exists */"
             }
           ],
           "tests": {

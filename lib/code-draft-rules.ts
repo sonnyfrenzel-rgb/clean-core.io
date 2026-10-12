@@ -21,11 +21,21 @@
  * Transformation warning, and more strongly when the same literal is a value of
  * the code's own demo data.
  *
+ * Rules 15–23 (roadmap 3.0.12; CO/FI/PP/SD reviews): the generated packages of
+ * four external reviews dropped the original's guards, accepted "2026x" as a
+ * year, computed packed quantities in binary floating point, kept a global
+ * "latest result", ignored options, started a server on import and named
+ * in-memory stores after SAP APIs. The rules say what to keep; the FACTS
+ * section (`codeDraftFactsSection`) says which checks, places and inputs this
+ * source has — read by `lib/abap/original-contract.ts` and the engine's
+ * control rules, never by a model.
+ *
  * Pure, no network, no model.
  */
 
 import { sandboxFilesFromStoredCode, type SandboxFile } from './test-sandbox/files';
 import { codeMask, lineAt } from './ts-source-scan';
+import type { Guard, OriginalContract } from './abap/original-contract';
 
 /** The rules section of the Node.js code-draft prompt (numbered on from the stage's own list). */
 export const CODE_DRAFT_BUSINESS_RULES = `
@@ -33,7 +43,98 @@ export const CODE_DRAFT_BUSINESS_RULES = `
         12. REFERENCE LOOKUPS USE THE FULL KEY AND THE IDENTITY: when an item refers to another document (invoice reference, clearing document, predecessor), look it up per item with the complete key the original uses (company code, document number, fiscal year, line item — and the customer or vendor it must belong to, and its account type), and keep the original's behaviour when the reference is missing or belongs to someone else.
         13. ONE SELECTION FOR EVERY ENDPOINT: every endpoint that answers for the same selection (a list, its totals, its export or file, an audit record) MUST read the selection through ONE shared, validated selection function and pass the same selection object on. No endpoint may drop, rename or re-default a filter that another endpoint of the same selection applies.
         14. KEEP POSTED VALUES, DO NOT INVENT MISSING ONES: keep the item's own posted values (amounts, payment terms, baseline date, due date). Where the original leaves a value unknown (for example, no baseline date → due date unknown), the target leaves it unknown too and reports it — never fill it from another item, a default or today's date.
+        15. GUARDS FIRST: every check of the original that refuses, stops or skips input (listed under FACTS OF THE ORIGINAL with its rule id or line — e.g. a duplicate receiver, the sender as its own receiver, quotas over 100 %, an unknown segment, no receivers, a status precondition) is carried over and run on the whole input BEFORE any calculation. A refusal names the rule id or line ("BR-002, L42"). Never compute on input the original refuses.
+        16. ONE INPUT CONTRACT FOR EVERY CHANNEL: CSV, JSON and query input pass the SAME validator: required context fields (e.g. controlling area, fiscal year), unique keys, complete rows, strictly parsed finite numbers (refuse "2026x", "1.9" for an integer, "", NaN, Infinity — never parseInt/parseFloat/Number() alone), the upper bound of the declared type, real calendar dates (20260230 is refused); null or missing is not 0. An empty request or empty selection is refused or reported as empty — never a successful simulation.
+        17. PRECISION AS DECLARED: a packed decimal (TYPE p … DECIMALS n) is computed exactly — BigInt scaled by 10^n or decimal strings, never binary floating point, and no new dependency for it. Each field keeps its places (a ratio of 6 places stays 6); round commercially (half away from zero) for negative and positive values alike, only where the original rounds.
+        18. RUN BINDING: no module-level "latest result" or other mutable global state. Every result and export is bound to an immutable, collision-free run id (crypto.randomUUID(), never Date.now()) carrying the selection, the source revision and the rule revision; a stored run is never overwritten, and every export names its run.
+        19. EVERY OPTION HONOURED OR REFUSED: each selection input and option of the original (filters, flags such as includeCredit, display filters) is implemented, or refused with a clear error — never accepted and ignored. Keep compute, display and export scope apart: display attributes (ALV colours, column widths, icons) are not part of the API contract.
+        20. OUTPUT GUARDS KEPT: CSV follows RFC 4180 (quote fields holding a comma, quote or line break; double inner quotes) and neutralises formulas (a cell starting with =, +, -, @, tab or CR gets a leading apostrophe).
+        21. NOT FOUND IS NOT EMPTY, EMPTY IS NOT ZERO: keep "record not found" apart from "found but empty", and 0 apart from "no value" (a credit limit of 0 is a limit). Date arithmetic in UTC; every amount carries its currency and precision.
+        22. NO SERVER ON IMPORT: export an app factory (createApp()) and listen only in a separate entry point, so importing the module for a test never opens a port.
+        23. HONEST NAMES: never name a class, function, message, log line or comment after an SAP API, OData call, event or integration the code does not perform (an in-memory store is not an "S4HanaAdapter"; no "updated via OData PATCH" without that call). An event publisher only where SAP has no standard business event for the change, never in SAP's namespace (no sap.s4.* topics or types). package.json declares exactly the dependencies the code imports.
 `;
+
+/** Most checks the facts section lists; the rest are counted. Keeps the prompt within its budget. */
+export const MAX_FACT_GUARDS = 40;
+/** Most packed decimals and most selection inputs the facts section lists each. */
+export const MAX_FACT_FIELDS = 30;
+
+/** A control rule of the engine, as `materialRules` hands it over (roadmap 3.0.12). */
+export interface FactRule {
+  id: string;
+  type: 'rule' | 'control';
+  label: string;
+  ranges: ReadonlyArray<{ lineStart: number; lineEnd: number }>;
+}
+
+const EFFECT_WORD: Record<Guard['effect'], string> = {
+  'error-message': 'refuses with an error message',
+  return: 'returns',
+  exit: 'exits',
+  continue: 'skips the item',
+  check: 'skips or leaves when false',
+  leave: 'leaves',
+  stop: 'stops',
+  raise: 'raises',
+};
+
+/**
+ * The FACTS OF THE ORIGINAL section of the code-draft prompt (roadmap 3.0.12;
+ * CO/FI/PP/SD reviews): the checks that refuse, stop or skip — with the
+ * engine's rule id where a control rule stands on the line — the packed
+ * decimals with places and bounds, and the selection inputs. Read from the
+ * legacy source without a model; rules 15–19 say what to do with them.
+ *
+ * `null` for the contract when the source could not be read: the section then
+ * says so instead of claiming there is nothing to keep.
+ */
+export function codeDraftFactsSection(contract: OriginalContract | null, rules: readonly FactRule[] = []): string {
+  if (!contract) {
+    return `
+        FACTS OF THE ORIGINAL: the engine could not read the legacy source's checks and declarations. Read them from the source yourself and keep them (rules 15–19).
+`;
+  }
+  const controls = rules.filter((r) => r.type === 'control');
+  const ruleAt = (line: number) => controls.find((r) => r.ranges.some((x) => x.lineStart <= line && line <= x.lineEnd));
+  const named = new Set<string>();
+  const guardLines = contract.guards.map((g) => {
+    const rule = ruleAt(g.line);
+    if (rule) named.add(rule.id);
+    const where = g.endingLine !== g.line ? `L${g.line}-${g.endingLine}` : `L${g.line}`;
+    return `${rule ? `${rule.id} ` : ''}${where}: ${g.effect === 'check' ? 'CHECK' : 'IF'} ${g.condition} → ${EFFECT_WORD[g.effect]}${g.effect === 'check' ? '' : ` (${g.ending})`}`;
+  });
+  for (const r of controls) {
+    if (named.has(r.id)) continue;
+    const first = r.ranges[0];
+    guardLines.push(`${r.id}${first ? ` L${first.lineStart}` : ''}: ${r.label.replace(/\s+/g, ' ').slice(0, 160)} → ends the flow`);
+  }
+  const list = (items: string[], max: number, none: string) =>
+    items.length === 0
+      ? `          (${none})`
+      : [...items.slice(0, max).map((s) => `          ${s}`), ...(items.length > max ? [`          (and ${items.length - max} more in the source — keep them too)`] : [])].join('\n');
+
+  const decimals = contract.decimals.map((d) =>
+    `${d.name} L${d.line}: TYPE p LENGTH ${d.length} DECIMALS ${d.decimals} → ${d.decimals} places, |value| ≤ ${d.max}`);
+  const inputs = contract.inputs.map((i) => {
+    const parts = [
+      i.kind === 'select-option' ? `select-option FOR ${i.type ?? '?'}` : `parameter${i.type ? ` TYPE ${i.type}` : ''}`,
+      i.flag ? (i.flag === 'checkbox' ? 'checkbox' : 'radio button') : null,
+      i.obligatory ? 'required' : null,
+      i.defaultValue ? `default ${i.defaultValue}` : null,
+      ...i.restrictions,
+    ].filter(Boolean);
+    return `${i.name} L${i.line}: ${parts.join(', ')}`;
+  });
+  return `
+        FACTS OF THE ORIGINAL (read from the legacy source by the engine, no model — keep every one):
+        Checks that refuse, stop or skip (rule 15 — keep each, before any calculation, and cite its id or line):
+${list(guardLines, MAX_FACT_GUARDS, 'none found in the source')}
+        Packed decimals as declared (rule 17 — exact decimal arithmetic with these places; beyond the bound is refused, rule 16):
+${list(decimals, MAX_FACT_FIELDS, 'none declared in the source; DDIC-typed fields keep the places of their DDIC type')}
+        Selection inputs (rules 16 and 19 — each honoured or refused; required ones are part of the input contract):
+${list(inputs, MAX_FACT_FIELDS, 'none declared in the source')}
+`;
+}
 
 export interface LiteralFinding {
   file: string;
