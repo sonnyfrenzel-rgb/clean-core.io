@@ -157,6 +157,12 @@ test('the Transformation stage generates from it instead of saying the inputs ar
   const modelAsked = page.waitForRequest((r) => r.url().includes('/api/gemini'), { timeout: 120000 }).then(() => true, () => false);
   await page.goto(`/project/${PROJECT_ID}/transformation`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 90000 });
+  // Roadmap 3.0.12: with a tip open the generation waits for "Generate now";
+  // with none open it starts by itself. Either way it must reach the model.
+  const button = page.locator('[data-generate-now]');
+  const running = page.locator('[data-generation-screen]');
+  await expect(button.or(running).first()).toBeVisible({ timeout: 90000 });
+  if ((await running.count()) === 0 && (await button.isEnabled())) await button.click();
 
   expect(await modelAsked, 'the stage never reached the model call — it stopped before generating').toBe(true);
   await expect(page.getByText(STRIP)).toHaveCount(0);

@@ -321,11 +321,11 @@ function analyzeSlot(inputs: ChainInputs): ChainSlot {
   if (ev.state === 'loading') return { ...shell, state: 'loading', facts: [], warn: null };
   const score = typeof project?.cleanCoreScore === 'number' ? `Clean Core Score ${project.cleanCoreScore}` : 'Clean Core Score not on record';
   if (ev.state === 'failed') {
-    return { ...shell, state: 'unread', facts: [fact('score', score, 'proven', PROMPT_READS.analysis)], warn: null };
+    return { ...shell, state: 'unread', facts: [fact('score', score, 'reconstructed', PROMPT_READS.analysis)], warn: null };
   }
   const successors = successorCount(ev.findings);
   const facts = [
-    fact('score', `${score} · ${plural(ev.findings.length, 'finding')}`, 'proven', PROMPT_READS.analysis),
+    fact('score', `${score} · ${plural(ev.findings.length, 'finding')}`, 'reconstructed', PROMPT_READS.analysis),
     fact('successors', `${plural(successors, 'released SAP successor')} for the objects it uses`, 'imported', PROMPT_READS.successors),
   ];
   const s = staleness(project);
@@ -598,7 +598,7 @@ export const GENERATION_STAGE_ORDER = ['facts', 'model', 'checks', 'storing'] as
 export type GenerationStageKey = (typeof GENERATION_STAGE_ORDER)[number];
 
 export type GenerationStageState = 'pending' | 'active' | 'done' | 'failed';
-export type GenerationCheckState = 'pending' | 'passed' | 'warning' | 'failed';
+export type GenerationCheckState = 'pending' | 'met' | 'warning' | 'failed';
 
 export interface GenerationCheck {
   key: string;

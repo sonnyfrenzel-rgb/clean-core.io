@@ -123,7 +123,7 @@ test.describe('the chain', () => {
     expect(by('first-insights').facts.map((f) => [f.text, f.provenance])).toEqual([['What it is for: Approves purchase orders above the limit.', 'reconstructed']]);
     // Analyze: the signed score with the findings, then the distinct successors (case folded) from SAP's catalog.
     expect(by('analyze').facts.map((f) => [f.text, f.provenance])).toEqual([
-      ['Clean Core Score 62 · 4 findings', 'proven'],
+      ['Clean Core Score 62 · 4 findings', 'reconstructed'],
       ['2 released SAP successors for the objects it uses', 'imported'],
     ]);
     expect(by('analyze').when).toBe('signed run 12 Oct 2026');
@@ -304,13 +304,13 @@ test.describe('the stages', () => {
     log = enterStage(log, 'model', 9000, { attempt: { n: 2, of: 2 }, detail: 'Retrying once' });
     expect(generationStages(log)[1]).toMatchObject({ startedAt: 2000, attempt: { n: 2, of: 2 }, detail: 'Retrying once', provenance: 'proposed' });
     log = withChecks(enterStage(log, 'checks', 10_000), pendingChecks());
-    log = withChecks(log, setCheck(log.checks!.checks!, 'files', 'passed', '5 files'));
+    log = withChecks(log, setCheck(log.checks!.checks!, 'files', 'met', '5 files'));
     log = withChecks(log, setCheck(log.checks!.checks!, 'paths', 'failed', 'srv/a.ts'));
     log = finishStages(log, 10_500, 'failed');
     const stages = generationStages(log);
     expect(stages.find((s) => s.key === 'checks')!.state).toBe('failed');
     expect(stages.find((s) => s.key === 'storing')!.state).toBe('pending');
-    expect(stages.find((s) => s.key === 'checks')!.checks!.map((c) => c.state)).toEqual(['passed', 'failed', 'pending', 'pending', 'pending']);
+    expect(stages.find((s) => s.key === 'checks')!.checks!.map((c) => c.state)).toEqual(['met', 'failed', 'pending', 'pending', 'pending']);
   });
 });
 

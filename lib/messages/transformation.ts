@@ -108,7 +108,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.check.tests': 'The test suite is there',
   'transformation.check.literals': 'Hard-coded document or partner numbers in the logic',
   'transformation.checkState.pending': 'not checked yet',
-  'transformation.checkState.passed': 'passed',
+  'transformation.checkState.met': 'met',
   'transformation.checkState.warning': 'warning',
   'transformation.checkState.failed': 'failed',
 } as const;

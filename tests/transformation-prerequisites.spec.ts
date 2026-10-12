@@ -183,7 +183,7 @@ test('a generation that fails says so in the error strip, with Try again', async
   // The contract allows the generation (stubbed: the fixture's run has no
   // input manifest), and the model proxy refuses — the thrown error has to
   // reach the screen.
-  await page.route(/\/api\/projects\/[^/]+\/contract$/, (route) =>
+  await page.route(/\/api\/projects\/[^/]+\/contract(\?.*)?$/, (route) =>
     route.request().method() === 'GET'
       ? route.fulfill({
           status: 200,
@@ -191,7 +191,7 @@ test('a generation that fails says so in the error strip, with Try again', async
           body: JSON.stringify({
             contract: { fingerprint: 'f'.repeat(64) },
             decision: { ok: true, track: 'side-by-side-btp', isAbapCloud: false, sentence: 'Side-by-side, as the contract says.' },
-            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '' } },
+            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '', context: { text: '', rules: 'none', decision: 'none', requirements: 'none' } } },
           }),
         })
       : route.continue(),
@@ -233,7 +233,7 @@ test.describe('the model answer, read', () => {
   /** The contract allows the generation; the store is captured and answered as the server would. */
   async function stubContract(page: Page): Promise<{ stores: string[] }> {
     const stores: string[] = [];
-    await page.route(/\/api\/projects\/[^/]+\/contract$/, async (route) => {
+    await page.route(/\/api\/projects\/[^/]+\/contract(\?.*)?$/, async (route) => {
       if (route.request().method() === 'GET') {
         return route.fulfill({
           status: 200,
@@ -241,7 +241,7 @@ test.describe('the model answer, read', () => {
           body: JSON.stringify({
             contract: { fingerprint: 'f'.repeat(64) },
             decision: { ok: true, track: 'side-by-side-btp', isAbapCloud: false, sentence: 'Side-by-side, as the contract says.' },
-            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '' } },
+            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '', context: { text: '', rules: 'none', decision: 'none', requirements: 'none' } } },
           }),
         });
       }

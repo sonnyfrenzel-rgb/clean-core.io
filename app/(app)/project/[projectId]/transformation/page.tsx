@@ -1048,7 +1048,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         recordCheck('files', 'failed');
         throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
-      recordCheck('files', 'passed', tfFilesResult(filesArray.length));
+      recordCheck('files', 'met', tfFilesResult(filesArray.length));
 
       // Nor is a package that answers one path twice (6d411bca538c).
       const repeated = duplicatePaths(filesArray);
@@ -1056,7 +1056,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         recordCheck('paths', 'failed', repeated.join('; '));
         throw new Error(`The model returned more than one file for the same path: ${repeated.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
       }
-      recordCheck('paths', 'passed');
+      recordCheck('paths', 'met');
 
       // And one file is not a package. Every path the prompt enumerated has to
       // be answered, or this is a half-generation and gets reported as one
@@ -1066,7 +1066,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         recordCheck('artefacts', 'failed', missing.join('; '));
         throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
       }
-      recordCheck('artefacts', 'passed');
+      recordCheck('artefacts', 'met');
 
       // The test suite is part of the package the prompt asked for. It used to
       // default to two empty strings and the project was marked transformed
@@ -1076,13 +1076,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         recordCheck('tests', 'failed');
         throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
-      recordCheck('tests', 'passed');
+      recordCheck('tests', 'met');
 
       // 3.0.10 (external review F-01): the same deterministic scan the page
       // shows over the stored package, made here so the screen can say its
       // result as a check. A warning, never a refusal — the reader decides.
       const literals = hardCodedLiteralFindings(filesArray).length;
-      recordCheck('literals', literals === 0 ? 'passed' : 'warning', tfLiteralsResult(literals));
+      recordCheck('literals', literals === 0 ? 'met' : 'warning', tfLiteralsResult(literals));
 
       // The server stores the stand — code, suite, status and the binding to
       // the contract it was computed against — in one transaction (roadmap

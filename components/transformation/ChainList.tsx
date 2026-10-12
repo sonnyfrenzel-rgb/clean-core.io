@@ -109,7 +109,11 @@ function SlotBody({ slot, mode, lit }: { slot: ChainSlot; mode: 'before' | 'run'
               : wt('transformation.state.willBeUsed')
       : !lit || slot.state === 'loading'
         ? wt('transformation.state.loading')
-        : attention
+        : slot.state === 'missing'
+          ? wt('transformation.state.missing')
+          : slot.state === 'unread'
+            ? wt('transformation.state.unread')
+            : attention
           ? wt('transformation.state.inContextAttention')
           : wt('transformation.state.inContext');
   const showFacts = lit && slot.state !== 'loading';
@@ -224,10 +228,10 @@ function CheckRow({ check }: { check: GenerationCheck }) {
         aria-hidden={true}
         className={cn(
           'mt-0.5 shrink-0',
-          check.state === 'failed' ? 'text-cc-error' : check.state === 'warning' ? 'text-cc-warning' : check.state === 'passed' ? 'text-cc-ink' : 'text-cc-ink-muted',
+          check.state === 'failed' ? 'text-cc-error' : check.state === 'warning' ? 'text-cc-warning' : check.state === 'met' ? 'text-cc-ink' : 'text-cc-ink-muted',
         )}
       >
-        {check.state === 'passed' ? <Check size={14} /> : check.state === 'failed' ? <X size={14} /> : check.state === 'warning' ? <AlertTriangle size={14} /> : <MoreHorizontal size={14} />}
+        {check.state === 'met' ? <Check size={14} /> : check.state === 'failed' ? <X size={14} /> : check.state === 'warning' ? <AlertTriangle size={14} /> : <MoreHorizontal size={14} />}
       </span>
       <span className={cn('min-w-0 [overflow-wrap:anywhere]', check.state === 'pending' ? 'text-cc-ink-muted' : 'text-cc-ink')}>
         {check.label}
