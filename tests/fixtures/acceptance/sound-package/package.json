@@ -1,0 +1,6 @@
+{
+  "name": "acceptance-fixture-sound",
+  "private": true,
+  "type": "module",
+  "description": "Fixture for tests/acceptance-harness.spec.ts; never installed or published."
+}

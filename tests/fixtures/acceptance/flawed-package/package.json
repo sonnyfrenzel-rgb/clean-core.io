@@ -1,0 +1,9 @@
+{
+  "name": "acceptance-fixture-flawed",
+  "private": true,
+  "type": "module",
+  "description": "Fixture for tests/acceptance-harness.spec.ts; never installed or published. The dependency below is declared on purpose and never imported (FP-META-04).",
+  "dependencies": {
+    "typeorm": "0.3.20"
+  }
+}

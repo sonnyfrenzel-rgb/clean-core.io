@@ -1,0 +1,72 @@
+{
+  "package": "acceptance-fixture-sound",
+  "modules": {
+    "engine": "srv/engine.mjs",
+    "app": "srv/app.mjs"
+  },
+  "probes": {
+    "rounding-commercial": {
+      "call": { "module": "engine", "export": "discountFor" },
+      "args": ["$amount", "$rate"],
+      "result": "discount",
+      "ratePercent": "90",
+      "places": 2,
+      "signed": true,
+      "maxAmount": "200.00"
+    },
+    "decimal-quantity": {
+      "call": { "module": "engine", "export": "coverage" },
+      "args": [{ "required": "$required", "withdrawn": "$withdrawn", "available": "$available" }],
+      "result": "",
+      "covered": { "path": "status", "equals": "COVERED" }
+    },
+    "run-id-collision": {
+      "create": { "module": "engine", "export": "RunStore", "construct": [], "method": "simulate" },
+      "argsA": [{ "amounts": [1, 2] }],
+      "argsB": [{ "amounts": [30, 40] }],
+      "id": "runId",
+      "get": { "module": "engine", "export": "RunStore", "construct": [], "method": "get", "args": ["$id"] },
+      "compare": { "create": "result", "get": "" }
+    },
+    "empty-selection": {
+      "call": { "module": "engine", "export": "select" },
+      "args": [{ "orgs": [] }],
+      "refused": { "path": "status", "notIn": ["OK"] }
+    },
+    "lenient-numeric": {
+      "call": { "module": "engine", "export": "parseYear" },
+      "args": ["$value"],
+      "valid": "2026",
+      "refused": { "path": "ok", "equals": false }
+    },
+    "csv-escaping": {
+      "call": { "module": "engine", "export": "toCsv" },
+      "args": ["$rows"],
+      "rowTemplate": { "order": "4711", "material": "$quoteText", "text": "$newlineText", "note": "$formulaText" },
+      "delimiter": ";"
+    },
+    "display-filter": {
+      "call": { "module": "engine", "export": "listItems" },
+      "argsAll": [{}],
+      "argsFiltered": [{ "customer": "C1" }],
+      "items": "items",
+      "match": { "field": "customer", "value": "C1" },
+      "totals": { "path": "total", "field": "amount" },
+      "export": { "call": { "module": "engine", "export": "exportItems" }, "args": [{ "customer": "C1" }], "delimiter": ";" }
+    },
+    "recalc-additive": {
+      "call": { "module": "engine", "export": "recalculate" },
+      "args": ["$rows"],
+      "rowTemplate": { "order": "4711", "amount": 1000, "discount": "$existing" },
+      "value": "0.discount",
+      "existing": 125,
+      "increment": 10
+    },
+    "negative-write": {
+      "call": { "module": "engine", "export": "InMemorySalesOrders", "construct": [], "method": "setNetValue" },
+      "args": ["4711", "$value"],
+      "refused": { "path": "success", "falsy": true },
+      "validValue": 950
+    }
+  }
+}

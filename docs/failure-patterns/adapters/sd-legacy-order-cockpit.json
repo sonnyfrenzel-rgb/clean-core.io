@@ -1,0 +1,52 @@
+{
+  "package": "SD legacy order cockpit (v3.0.10 delivery package)",
+  "status": "Written from the exported names of the package and the probe description of the SD review; never executed. The package's service imports its web framework at module level, so without installed dependencies every probe reports 'not runnable', and on Node < 25 the harness does not execute third-party packages at all.",
+  "modules": {
+    "service": "srv/service.ts"
+  },
+  "probes": {
+    "rounding-commercial": {
+      "call": { "module": "service", "export": "calculateEnrichment" },
+      "args": ["$amount", "$rate"],
+      "result": "calc_discount",
+      "ratePercent": "5",
+      "places": 2,
+      "signed": false,
+      "maxAmount": "2000.00"
+    },
+    "recalc-additive": {
+      "call": { "module": "service", "export": "recalculateDiscounts" },
+      "args": ["$rows", 12.5],
+      "rowTemplate": { "vbeln": "1", "posnr": "10", "vkorg": "1000", "kunnr": "1", "matnr": "M", "zmeng": 1, "netwr": 1000, "calc_discount": "$existing", "status_flag": "N", "row_color": "C510" },
+      "value": "0.calc_discount",
+      "existing": 125,
+      "increment": 10
+    },
+    "negative-write": {
+      "call": {
+        "module": "service",
+        "export": "S4HanaSalesOrderAdapter",
+        "construct": [[{ "vbeln": "1", "posnr": "10", "vkorg": "1000", "kunnr": "1", "matnr": "M", "zmeng": 1, "netwr": 1000, "calc_discount": 50, "status_flag": "N", "row_color": "C510" }]],
+        "method": "patchOrderItemNetValue"
+      },
+      "args": ["1", "10", "$value"],
+      "refused": { "path": "success", "falsy": true }
+    },
+    "empty-selection": {
+      "note": "The original defaults the creation date to the last 30 days; an empty selection that keeps no date bound reads everything. Refused here means: rejected, or a date bound was applied.",
+      "call": { "module": "service", "export": "parseAndValidateSelection" },
+      "args": [{}],
+      "refused": { "path": "erdatFrom", "exists": true }
+    },
+    "csv-escaping": {
+      "call": { "module": "service", "export": "generateCsvStream" },
+      "args": ["$rows"],
+      "rowTemplate": { "vbeln": "1", "posnr": "10", "erdat": "20261012", "kunnr": "1", "name1": "$newlineText", "matnr": "$quoteText", "netwr": 1000, "calc_discount": 50, "status_flag": "$formulaText" },
+      "delimiter": ";"
+    },
+    "decimal-quantity": { "notApplicable": "no quantity arithmetic in the package" },
+    "run-id-collision": { "notApplicable": "the package keeps no runs" },
+    "lenient-numeric": { "notApplicable": "numeric parsing happens inside the HTTP handlers, which the harness does not call" },
+    "display-filter": { "notApplicable": "filtering happens inside the HTTP handlers, which the harness does not call" }
+  }
+}
