@@ -168,7 +168,7 @@ for (const width of [1280, 390] as const) {
         'href',
         new RegExp(`/project/${account.projectId}\\?view=it&origin=transformation\\.tips#standard$`),
       );
-      await expect(page.locator('[data-generate-cost]')).toHaveText('No analysis run used · up to 2 model calls on the community key for this generation');
+      await expect(page.locator('[data-generate-cost]')).toHaveText('No analysis run used · up to 48 model calls on the community key for this generation');
       // The chain: the phases before Transformation, never Economics.
       const chain = page.locator('[data-generation-chain="before"]');
       await expect(chain.locator('[data-chain-phase]')).toHaveText(['Analyze phase', 'Design phase']);
@@ -283,8 +283,13 @@ for (const width of [1280, 390] as const) {
     await expect(page.getByLabel('Generation log')).toHaveCount(0);
     await expect(screen).not.toContainText('Economics');
     await expect(screen).not.toContainText('%');
-    // Stages that are not built are not drawn.
-    await expect(screen).not.toContainText(/scaffold|Model fills|Repairs/i);
+    // A program with no routine and no event block has nothing to anchor a
+    // function to: the single call runs, and the screen says why (3.0.12, step E, §16.2).
+    await expect(screen).toHaveAttribute('data-generation-path', 'single-call');
+    await expect(screen.locator('[data-generation-stage="facts"] [data-generation-stage-detail]')).toContainText(
+      'Generated in one model call — the engine could not build a scaffold for this program',
+    );
+    await expect(screen).not.toContainText(/Model fills|Repairs/);
     await noSideScroll(page);
     await page.waitForTimeout(600);
     await shot(page, `running-${width}`);

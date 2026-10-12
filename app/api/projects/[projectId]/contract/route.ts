@@ -9,11 +9,7 @@ import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/g
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision, generationStateOf } from '@/lib/generation-revision';
-import { assembleTransformationContext, readAcceptedRequirements, readRuleAnswers } from '@/lib/transformation-context-build';
-import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
-import type { ArchitectureContract } from '@/lib/architecture-contract';
-import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
-import type { Firestore } from 'firebase-admin/firestore';
+import { platformContextOf } from '@/lib/transformation-context-build';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { generationRecordOf, traceMatchesRecord } from '@/lib/transformation/generation-record';
@@ -74,38 +70,6 @@ const MAX_PACKAGE_CHARS = 1_000_000;
 // UTF-8, plus the suite beside it; nothing larger is read (QA slice review of
 // bd016957d13c, 44f03f652da7).
 const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
-
-/**
- * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
- * 3.0.12): the owner's rule answers (one read beside revision 1 of the
- * process), the requirements accepted in the specification, the decision
- * record, the summary facts and the catalog
- * successors of the evidence this contract was just built on. GET and POST
- * build it the same way, so the token compares the same block.
- */
-async function platformContextOf(
-  db: Firestore,
-  projectId: string,
-  data: Record<string, unknown>,
-  built: { contract: ArchitectureContract; evidence: AbapEvidenceReport },
-  isAbapCloud: boolean,
-) {
-  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
-  const [answers, accepted] = await Promise.all([
-    readRuleAnswers(db, projectId, source),
-    readAcceptedRequirements(db, projectId),
-  ]);
-  return assembleTransformationContext({
-    source,
-    project: data,
-    answers,
-    accepted,
-    evidence: built.evidence,
-    contract: built.contract,
-    isAbapCloud,
-    catalogSnapshot: catalogSnapshotKeyForProject(data),
-  });
-}
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
 const GENERATION_BINDING_FIELD = 'generationBinding';

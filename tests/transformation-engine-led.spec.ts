@@ -9,6 +9,9 @@ import { geminiTestStubFillText, GEMINI_TEST_STUB_DECLINE } from '../lib/gemini-
 import { parseFillAnswer } from '../lib/transformation/fill-prompt';
 import { verifyScaffoldDigest } from '../lib/transformation/markers';
 import { poDemo, fixture } from './helpers/transformation-scaffold';
+import { generationRecordOf, storedGenerationRecord, traceMatchesRecord, type GenerationRecord } from '../lib/transformation/generation-record';
+import { generationLine, howBuiltLines } from '../lib/delivery-package';
+import { workflowSteps } from '../lib/workflow-steps';
 
 /**
  * Roadmap 3.0.12, step E (server-free): the engine-led generation end to end
@@ -159,6 +162,40 @@ test.describe('the engine-led generation, server-free', () => {
     const prep = prepared(poDemo(), 'rap');
     expect(prep.scaffold.track).toBe('rap');
     expect(prep.fillUnits.length).toBeGreaterThan(0);
+  });
+});
+
+test.describe('STATUS.md says how the code was built (step E)', () => {
+  test('engine-led: counts, the stubs with their reasons, the checks; the single call: its note; before 3.0.12: nothing', async () => {
+    const prep = prepared(poDemo());
+    const result = await generate(prep);
+    const pkg = assembleEngineLed(prep, result, { checks: [{ kind: 'lint', total: 2, failed: 2 }], budget: 22 });
+    const record = generationRecordOf({ path: 'engine-led', engine: { ...pkg.summary, notWritten: [{ unitId: 'U07', title: 'Upload attachment', reason: 'the model declined: no file API' }], status: 'partial' }, basis: [] });
+    expect(record && !('error' in record)).toBe(true);
+    const g = { ...(record as GenerationRecord), contextDigest: null };
+    expect(generationLine(g)).toContain(`of ${pkg.summary.units} functions written`);
+    const lines = howBuiltLines(g).join('\n');
+    expect(lines).toContain('## How this code was built');
+    expect(lines).toContain('Not written: `U07` Upload attachment — the model declined: no file API');
+    expect(lines).toContain('lint: 2 run, 2 failed');
+    expect(lines).toContain('**partial**');
+    const single = generationRecordOf({ path: 'single-call', fallbackReason: 'The source holds no routine.' }) as GenerationRecord;
+    expect(howBuiltLines({ ...single, contextDigest: null }).join('\n')).toContain('In one model call — the engine could not build a scaffold for this program (The source holds no routine.)');
+    expect(howBuiltLines(null)).toEqual([]);
+    expect(storedGenerationRecord({ contractId: 'AC-1' })).toBeNull();
+    // A record that names no scaffold digests is refused at the store.
+    expect(generationRecordOf({ path: 'engine-led', engine: { units: 3 } })).toMatchObject({ error: expect.any(String) });
+    // The package's own trace must name the scaffold the record names.
+    expect(traceMatchesRecord(pkg.files, record as GenerationRecord)).toBeNull();
+    expect(traceMatchesRecord(pkg.files.filter((f) => f.path !== 'traceability.json'), record as GenerationRecord)).toMatch(/no traceability\.json/);
+  });
+
+  test('the Transformation phase reads partial when functions stayed stubs (Q4)', () => {
+    const base = { legacyCode: 'REPORT z.', generatedCode: JSON.stringify([{ path: 'srv/a.ts', content: 'x' }]), status: 'transformed', solutionDesign: 'd', activeRunId: 'r' };
+    const stub = { path: 'engine-led', engine: { status: 'partial', units: 20, notWritten: [{ unitId: 'U07' }] } };
+    const t = workflowSteps({ ...base, generationBinding: stub } as never).find((p) => p.key === 'transformation')!;
+    expect(t.state === 'partial' || t.state === 'stale').toBe(true);
+    if (t.state === 'partial') expect(t.detail).toContain('1 of 20 functions not written');
   });
 });
 

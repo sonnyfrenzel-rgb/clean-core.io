@@ -188,7 +188,7 @@ test.describe('the lease route', () => {
       'assertAccountActive(decodedToken.uid',
       "modelStageEnabled(profile.exists",
       'data.userId !== decodedToken.uid',
-      'generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken',
+      'generationRevision(generationStateOf(data, run, platform.stamp), built.contract.fingerprint) !== generationToken',
     ]) {
       expect(at(gate), `${gate} runs after the lease is issued`).toBeLessThan(issued);
     }

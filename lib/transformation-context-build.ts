@@ -2,6 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import { gradeSapObject } from '@/lib/abap/catalog-service';
+import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import { sha256Hex } from '@/lib/artefact-digest';
@@ -384,4 +385,37 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
       decisions: rules.items.map((r) => ({ id: r.id, answer: r.answer, note: r.note })),
     },
   };
+}
+
+/**
+ * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
+ * 3.0.12): the owner's rule answers (one read beside revision 1 of the
+ * process), the requirements accepted in the specification, the decision
+ * record, the summary facts and the catalog
+ * successors of the evidence this contract was just built on. GET and POST
+ * build it the same way, so the token compares the same block — and the
+ * lease route (step E) checks the token against the same block.
+ */
+export async function platformContextOf(
+  db: Firestore,
+  projectId: string,
+  data: Record<string, unknown>,
+  built: { contract: ArchitectureContract; evidence: AbapEvidenceReport },
+  isAbapCloud: boolean,
+) {
+  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
+  const [answers, accepted] = await Promise.all([
+    readRuleAnswers(db, projectId, source),
+    readAcceptedRequirements(db, projectId),
+  ]);
+  return assembleTransformationContext({
+    source,
+    project: data,
+    answers,
+    accepted,
+    evidence: built.evidence,
+    contract: built.contract,
+    isAbapCloud,
+    catalogSnapshot: catalogSnapshotKeyForProject(data),
+  });
 }

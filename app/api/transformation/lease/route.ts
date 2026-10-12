@@ -14,6 +14,7 @@ import { modelStageEnabled, MODEL_STAGE_LABELS, STAGE_DISABLED_CODE } from '@/li
 import { contractOfProject, MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { generationDirection } from '@/lib/generation-direction';
 import { generationRevision, generationStateOf } from '@/lib/generation-revision';
+import { platformContextOf } from '@/lib/transformation-context-build';
 import type { InputManifest } from '@/lib/input-manifest';
 import { LEASE_MAX_PLANNED_CALLS, leaseView } from '@/lib/transformation/lease';
 import { issueLease, voidLease } from '@/lib/transformation/lease-store';
@@ -146,7 +147,10 @@ export async function POST(req: NextRequest) {
     if (!decision.ok) {
       return NextResponse.json({ error: decision.sentence, code: decision.code }, { status: 409 });
     }
-    if (generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken) {
+    // The token covers the PLATFORM KNOWLEDGE block (3.0.12): built here as the
+    // contract route builds it, or every lease would read as stale.
+    const platform = await platformContextOf(db, projectId, data, built, decision.isAbapCloud);
+    if (generationRevision(generationStateOf(data, run, platform.stamp), built.contract.fingerprint) !== generationToken) {
       return NextResponse.json(
         {
           error: 'The project changed after this generation was prepared. Reload the page and generate from the current state.',
