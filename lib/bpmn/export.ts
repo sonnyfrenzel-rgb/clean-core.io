@@ -14,6 +14,7 @@ import {
   type ExportNode,
 } from './model';
 import { el, serialize, textEl, type XmlElement } from './xml';
+import { readingExportsKey } from './reading-key';
 
 /**
  * BPMN 2.0 XML out of the process skeleton — roadmap 2.6.
@@ -229,7 +230,7 @@ export function buildReadingExports(
   // large program takes seconds: the map, the process summary and every tool of
   // the workspace ask for it again (owner, 11.10.2026 — a 2,000-line program
   // froze each page it opened). The last few are kept; callers only read them.
-  const key = JSON.stringify([options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source]);
+  const key = readingExportsKey(source, options);
   const hit = readingCache.get(key);
   if (hit) return hit;
   const skeleton = buildProcessSkeleton(source);

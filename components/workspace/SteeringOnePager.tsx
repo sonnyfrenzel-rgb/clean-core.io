@@ -120,8 +120,9 @@ export default function SteeringOnePager({
         const signed = signedSourceOf(project);
         if (!signed) return null;
         try {
-          const m = await import('@/lib/process-summary');
-          const s = m.processSummaryOf(signed.source, signed.fileName);
+          // Off this thread (owner, 12.10.2026: the CO project froze the Documentation tool).
+          const m = await import('@/lib/bpmn/reading-exports-client');
+          const s = await m.processSummaryOffThread(signed.source, signed.fileName);
           if (!s) return null;
           // Owner 12.10.2026: the purpose with the rule register's open count, as the delivery package says it.
           let purpose = s.management;

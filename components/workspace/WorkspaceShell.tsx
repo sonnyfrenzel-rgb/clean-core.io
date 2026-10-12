@@ -389,16 +389,17 @@ export default function WorkspaceShell({
   useEffect(() => {
     if (!signed) return;
     let cancelled = false;
-    void import('@/lib/process-summary').then((m) => {
-      if (cancelled) return;
-      let summary: ProcessSummary | null = null;
-      try {
-        summary = m.processSummaryOf(signed.source, signed.fileName);
-      } catch {
-        summary = null;
-      }
-      setProcessSummary({ source: signed.source, summary });
-    });
+    // Counted in the reading worker, off this thread (owner, 12.10.2026: the
+    // CO project froze the Documentation tool). Until it answers the layers
+    // count what is stored, as they did while the reader was being loaded; a
+    // failure reads as no summary, as a throw did before.
+    void import('@/lib/bpmn/reading-exports-client')
+      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName))
+      .catch((): ProcessSummary | null => null)
+      .then((summary) => {
+        if (cancelled) return;
+        setProcessSummary({ source: signed.source, summary });
+      });
     return () => {
       cancelled = true;
     };

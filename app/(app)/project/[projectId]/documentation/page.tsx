@@ -1004,14 +1004,18 @@ export default function DocumentationPage() {
 
   const downloadBPMN = async () => {
     if (!signedSource) return;
-    // Loaded on the click: the reader of this stage pays for the ABAP reader
-    // only when they ask for the file.
-    const { buildBpmnExportFromSource, bpmnFileName, READING_WRAP } = await import('@/lib/bpmn/export');
-    const { xml } = buildBpmnExportFromSource(signedSource.source, {
+    // The plain reading the map on this page is drawn from — byte-equal to
+    // building it with plain names and READING_WRAP (tests/bpmn-phone-layout.spec.ts),
+    // and already drawn in the reading worker, so the click neither waits for a
+    // second layout nor freezes the page for one (owner, 12.10.2026: the CO
+    // project froze the Documentation tool).
+    const [{ readingExportsOffThread }, { bpmnFileName }] = await Promise.all([
+      import('@/lib/bpmn/reading-exports-client'),
+      import('@/lib/bpmn/export'),
+    ]);
+    const { bpmn: { xml } } = await readingExportsOffThread(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
-      names: 'plain',
-      wrap: READING_WRAP,
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));

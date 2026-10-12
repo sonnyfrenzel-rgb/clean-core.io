@@ -111,6 +111,14 @@ export function buildReportOnlyPolicy({ nonce, nodeEnv, useEmulatorFlag }: Repor
     `default-src 'self'`,
     scriptSrc,
     `script-src-attr 'none'`,
+    // The reading worker (`lib/bpmn/reading-exports.worker.ts`, owner
+    // 12.10.2026: the CO project froze the Documentation tool) is a same-origin
+    // webpack chunk under /_next/static. Without this a worker falls back to
+    // script-src, where 'strict-dynamic' discards 'self' and a Worker URL
+    // carries no nonce — every map would be reported as a violation, and
+    // blocked the day this policy is enforced. 'self' only: webpack emits a
+    // file, never a blob: worker.
+    `worker-src 'self'`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,

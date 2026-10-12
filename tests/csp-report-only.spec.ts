@@ -87,6 +87,31 @@ test.describe('CSP report-only — source', () => {
     expect(directive(policy, 'report-to')).toBe('');
   });
 
+  test('the reading worker is allowed by both policies, from this origin only (owner, 12.10.2026)', () => {
+    // The map is drawn in a same-origin webpack worker chunk
+    // (lib/bpmn/reading-exports.worker.ts). The report-only policy names it,
+    // because 'strict-dynamic' in its script-src would otherwise discard 'self'
+    // for a Worker URL that carries no nonce.
+    for (const nonce of ['N', undefined]) {
+      const policy = buildReportOnlyPolicy({ nonce, nodeEnv: 'production', useEmulatorFlag: undefined });
+      expect(directive(policy, 'worker-src')).toBe("worker-src 'self'");
+    }
+    // The enforced policy has no worker-src and no child-src, so a worker falls
+    // back to its script-src: 'self' there, and no 'strict-dynamic' to discard it.
+    const middleware = read('middleware.ts');
+    const enforced = middleware.slice(middleware.indexOf('const csp = ['), middleware.indexOf("].join('; ');"));
+    const config = read('next.config.mjs');
+    const enforcedCopy = config.slice(config.indexOf('function enforcedCsp('), config.indexOf("].join('; ');"));
+    for (const policy of [enforced, enforcedCopy]) {
+      expect(policy).toContain("`script-src 'self' ");
+      expect(policy).not.toMatch(/worker-src|child-src|'strict-dynamic'/);
+    }
+    // The worker is started from a file URL webpack bundles, never from a blob.
+    const start = read('lib/bpmn/reading-exports-worker-start.ts');
+    expect(start).toContain("new Worker(new URL('./reading-exports.worker.ts', import.meta.url))");
+    expect(start).not.toMatch(/blob:|createObjectURL/);
+  });
+
   test('a static page gets no nonce, and every other directive is the strict one', () => {
     const withNonce = buildReportOnlyPolicy({ nonce: 'N', nodeEnv: 'production', useEmulatorFlag: undefined });
     const without = buildReportOnlyPolicy({ nodeEnv: 'production', useEmulatorFlag: undefined });

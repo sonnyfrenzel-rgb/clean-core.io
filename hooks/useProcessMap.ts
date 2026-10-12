@@ -154,13 +154,23 @@ export function useProcessMap(
     let cancelled = false;
 
     const build = async () => {
-      const [naming, exporter, mapper, client] = await Promise.all([
+      const [naming, reader, mapper, client] = await Promise.all([
         import('@/lib/process-naming'),
-        import('@/lib/bpmn/export'),
+        import('@/lib/bpmn/reading-exports-client'),
         import('@/lib/process-map'),
         import('@/lib/process-naming-client'),
       ]);
       if (cancelled) return;
+
+      // Plain names for the reader, the technical file beside it for the
+      // "Technical names" switch — the same skeleton, the same anchors. Asked
+      // for first and drawn in the reading worker, off this thread: laying out
+      // a 2,000-line program takes seconds, and on the page's thread that was
+      // Chrome's "Page not responding" (owner, 12.10.2026: the CO project froze
+      // the Documentation tool). Until it answers the map is `loading`.
+      const reading = reader.readingExportsOffThread(source, { processName: processName || fileName, sourceFileName: fileName });
+      // Not left unhandled while the naming is fetched; awaited below.
+      reading.catch(() => undefined);
 
       const context = naming.namingContextOf(source);
       const record = await client.fetchProcessNaming(projectId);
@@ -173,9 +183,8 @@ export function useProcessMap(
           availabilityKnown ? { known: true, keyAvailable, stages: { naming: namingStageOn } } : null,
         ),
       );
-      // Plain names for the reader, the technical file beside it for the
-      // "Technical names" switch — the same skeleton, the same anchors.
-      const { bpmn, technical } = exporter.buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName });
+      const { bpmn, technical } = await reading;
+      if (cancelled) return;
       const model = mapper.buildProcessMapModel({ bpmn, technical, named, fileName });
       if (cancelled) return;
 
