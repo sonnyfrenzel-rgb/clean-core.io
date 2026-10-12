@@ -40,7 +40,16 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 // The required-artefact table and its matcher live in lib/ so a spec can run the
 // real gate instead of a copy of it (QA review of 9e408888bfec, 3c05340dc39b).
-import { holdsStoredPackage, missingArtefacts, usableTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
+import { holdsStoredPackage, missingArtefacts, usableTestSuite, type GeneratedTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
+// Roadmap 3.0.12, step E — the engine-led generation. Only types and the
+// light pieces are imported here; the engine, the scaffold and the
+// orchestrator are loaded when a generation starts.
+import type { GenerationLease, LeaseRequestError } from '@/lib/transformation/lease-client';
+import type { UnitRow } from '@/lib/transformation/engine-led';
+import type { GenerationEvent } from '@/lib/transformation/types';
+import { storedGenerationRecord } from '@/lib/transformation/generation-record';
+import { abapLines, fileGroups, traceOfFiles, unitsOfFile } from '@/lib/transformation/trace-view';
+import BuiltOnCard from '@/components/transformation/BuiltOnCard';
 import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
@@ -77,6 +86,12 @@ import {
   finishStages,
   generationStages,
   pendingChecks,
+  pendingEngineChecks,
+  scaffoldFactsLines,
+  unitBoard,
+  type BoardEvent,
+  type ChainSlot,
+  type GenerationPathKey,
   qualityTips,
   decisionWarning,
   setCheck,
@@ -96,7 +111,23 @@ import { getAuth } from '@/lib/firebase';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-states-client';
 import type { RuleRegister } from '@/lib/rule-register';
-import { rulesReadRefusal, tfFilesResult, tfLiteralsResult } from '@/lib/workspace-messages';
+import { rulesReadRefusal, tfFilesResult, tfFillsNote, tfLiteralsResult, tfSingleCallNote } from '@/lib/workspace-messages';
+
+/**
+ * An authenticated JSON POST that honours the generation's cancel — the
+ * runner checks' transport (`runnerOverHttp`, `lib/transformation/verify.ts`).
+ */
+async function postJson(url: string, body: unknown, signal: AbortSignal): Promise<{ status: number; body: Record<string, unknown> | null }> {
+  const token = await getAuth().currentUser?.getIdToken();
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(body),
+    signal,
+  });
+  const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  return { status: res.status, body: json };
+}
 
 /**
  * A file the workspace can show and the next stage can read. The model's answer
@@ -533,7 +564,11 @@ export default function TransformationPage() {
     () => generatedCodeLints(files, { decimalFields: packedDecimalFields(legacySource) }),
     [files, legacySource],
   );
+  /** The engine-led package's own trace, or null (the single call, a package from before 3.0.12). */
+  const packageTrace = useMemo(() => traceOfFiles(files), [files]);
   const [selectedFilePath, setSelectedFilePath] = useState<string>('srv/service.ts');
+  /** The functions of the selected file, for the anchor row above the code (design §12.1). */
+  const selectedUnits = packageTrace ? unitsOfFile(packageTrace, selectedFilePath) : [];
   const [syncScroll, setSyncScroll] = useState(true);
 
   const legacyScrollRef = useRef<HTMLDivElement>(null);
@@ -667,6 +702,29 @@ export default function TransformationPage() {
   };
 
   const renderFileTree = () => {
+    // Roadmap 3.0.12, step E (design §12.1): an engine-led package is grouped
+    // by what the reader looks for — the steps in process order under their
+    // names, the engine-written frame, the tests, what to read first.
+    if (packageTrace) {
+      return (
+        <div className="space-y-4" data-file-tree="trace">
+          {fileGroups(files, packageTrace).map((g) => (
+            <div key={g.key} className="space-y-1" data-file-group={g.key}>
+              <div className="flex items-center gap-2 px-2 py-1 cc-text-label text-cc-ink-muted">
+                <Folder size={12} aria-hidden="true" className="shrink-0" />
+                <span>{g.label}</span>
+              </div>
+              <div className="pl-2 space-y-1 border-l border-cc-line ml-3">
+                {g.files.map((f) => {
+                  const file = files.find((x) => x.path === f.path);
+                  return file ? renderFileButton(file, f.label) : null;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
     const structure: { [folder: string]: ProjectFile[] } = {};
     const rootFiles: ProjectFile[] = [];
     
@@ -761,102 +819,48 @@ export default function TransformationPage() {
   const isAbapCloud = contractTrack ? contractTrack.isAbapCloud : isAbapCloudTrack(project?.extensibilityRoute);
   const track = trackCopy(isAbapCloud);
 
-  const generateTransformation = useCallback(async () => {
-    if (generationInFlight.current) return;
-    generationInFlight.current = true;
-    setLoading(true);
-    const startedAt = Date.now();
-    setGenerationPhase(enterGenerationPhase(null, 'contract', startedAt));
-    setNow(startedAt);
-    setError('');
-    setUnsavedDraft(null);
-    setStageLog({});
-    setChainLit(false);
-    setChainRules({ state: 'loading' });
-    setRunStartedAt(startedAt);
-    let failed = false;
-
-    // The rules, read again for the chain beside the contract — the one
-    // request this screen adds, in parallel. Its answer lights the rules slot
-    // whenever it comes; the generation does not wait for it.
-    const source = projectRef.current?.legacyCode ?? '';
-    void readProcessStatesOutcome(projectId as string)
-      .then((outcome) => ruleRegisterOf(outcome, source))
-      .then((register) => {
-        setChainRules({ state: 'ready', register });
-        setRuleRegister(register);
-      })
-      .catch(() => setChainRules({ state: 'ready', register: { state: 'not-read', reason: 'the rule reader could not walk the source.' } }));
-
+  /**
+   * The single call — today's generation, kept as the fallback of the
+   * engine-led path (roadmap 3.0.12, design §16.2): when no scaffold can be
+   * built, or the lease is refused for another reason than the reader's own
+   * limit. It keeps today's metering (one proxy call, counted against the
+   * account's hourly limit) and says on the screen, above the result and in
+   * STATUS.md why it ran. Its prompt, retry and checks are unchanged.
+   */
+  const runSingleCall = useCallback(async (args: {
+    legacyCode: string;
+    design: string;
+    businessAnalysis: string;
+    platformKnowledge: string;
+    isAbapCloud: boolean;
+    fallbackReason: string | null;
+    signal: AbortSignal;
+    store: (files: ProjectFile[], tests: GeneratedTestSuite, record: unknown) => Promise<void>;
+    basis: () => unknown[];
+    startedAt: number;
+  }) => {
+    const { legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal } = args;
+    // Roadmap 3.0.12 (CO/FI/PP/SD reviews): the original's checks, packed
+    // decimals and selection inputs, read from the source without a model,
+    // so the prompt names the guards, places and options to keep. The readers
+    // are imported here, as the test generation does, so a reader who never
+    // generates does not download them. Unreadable → the section says so.
+    setStageLog((log) => enterStage(log, 'facts', Date.now(), { detail: tfSingleCallNote(fallbackReason) }));
+    let originalFacts: string;
     try {
-      // Roadmap 8.3. The direction is the contract's `route.chosen`, which is
-      // the recommendation unless a deviation was declared — and a deviation
-      // reaches it only with a reason (`lib/architecture-contract.ts` throws
-      // without one). A blocked contract generates nothing and says why.
-      const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
-      if (!decision.ok) {
-        setContractRefusal(decision);
-        failed = true;
-        return;
-      }
-      if (!contract || !generation) {
-        throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
-      }
-      // The contract this stand is generated from. The stand below is stored
-      // only if the server's contract is still this one when the model is done.
-      const generatedAgainst = contract.fingerprint;
-      // Roadmap 3.0.11: the state the prompt is built from, read now rather
-      // than when the page loaded — and the token that names it. The server
-      // stores the answer only if the project is still at this token, so a
-      // design replaced in another tab, or a generation another tab stored
-      // first, turns this one into a refusal instead of an overwrite.
-      const generationToken = generation.token;
-      const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
-      // Roadmap 3.0.12 (owner, 12.10.2026): what the platform already knows —
-      // the owner's rule decisions, the decision record and route, what the
-      // program does, the catalog successors, NFRs and data mode — built by the
-      // server inside the token (`lib/transformation-context-build.ts`). No
-      // engine pass and no map build here.
-      const platformKnowledge = generation.inputs.context.text;
-      // The chain lights here: its slots are what this block was built from.
-      // The purpose is the block's own sentence, so the screen says what the
-      // prompt says (`purposeFromContext`).
-      const purposeInBlock = purposeFromContext(platformKnowledge);
-      if (purposeInBlock) setPurpose({ state: 'ready', text: purposeInBlock });
-      setChainLit(true);
-      // The narrative is not required: the design is written from it
-      // and carries it, and an engine-only run has none. It used to be, and a
-      // project with a design but an engine-only run could never generate.
-      const businessAnalysis = analysis.trim()
-        || 'No model narrative — the signed run holds the engine\'s evidence only. Take the business intent from the Solution Design below.';
-      if (!legacyCode.trim() || !design.trim()) {
-        throw new Error('The source or the solution design is no longer on this project, so there is nothing to generate from. Nothing was generated — reload the stage to see what is on record.');
-      }
-      setContractRefusal(null);
-      setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
-      const isAbapCloud = decision.isAbapCloud;
-
-      // Roadmap 3.0.12 (CO/FI/PP/SD reviews): the original's checks, packed
-      // decimals and selection inputs, read from the source without a model,
-      // so the prompt names the guards, places and options to keep. The readers
-      // are imported here, as the test generation does, so a reader who never
-      // generates does not download them. Unreadable → the section says so.
-      setStageLog((log) => enterStage(log, 'facts', Date.now()));
-      let originalFacts: string;
-      try {
-        const [{ deriveBusinessRules }, { materialRules }, { readOriginalContract }] = await Promise.all([
-          import('@/lib/abap/business-rule-set'),
-          import('@/lib/testing-rule-trace'),
-          import('@/lib/abap/original-contract'),
-        ]);
-        const original = readOriginalContract(legacyCode);
-        originalFacts = codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)));
-        setStageLog((log) => withFacts(log, 'facts', originalFactsLines(original)));
-      } catch (factsErr) {
-        console.error('The original\'s checks and declarations could not be read for the code draft:', factsErr);
-        originalFacts = codeDraftFactsSection(null);
-        setStageLog((log) => withFacts(log, 'facts', originalFactsLines(null)));
-      }
+      const [{ deriveBusinessRules }, { materialRules }, { readOriginalContract }] = await Promise.all([
+        import('@/lib/abap/business-rule-set'),
+        import('@/lib/testing-rule-trace'),
+        import('@/lib/abap/original-contract'),
+      ]);
+      const original = readOriginalContract(legacyCode);
+      originalFacts = codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)));
+      setStageLog((log) => withFacts(log, 'facts', originalFactsLines(original)));
+    } catch (factsErr) {
+      console.error('The original\'s checks and declarations could not be read for the code draft:', factsErr);
+      originalFacts = codeDraftFactsSection(null);
+      setStageLog((log) => withFacts(log, 'facts', originalFactsLines(null)));
+    }
 
       const prompt = isAbapCloud
         ? `You are an elite SAP RAP & ABAP Cloud Developer. Transform the following legacy ABAP code into a modern, production-ready modular SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture based on the provided Solution Design and Business Analysis.
@@ -977,181 +981,461 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         The event publisher is conditional and therefore not in the structure above: add a files entry with "path": "erp-triggers/zcl_core_event_publisher.clas.abap" (the publisher class in ABAP Cloud syntax) ONLY when SAP has no standard business event for the change. When a standard event exists, the files list has no erp-triggers entry at all and srv/service.ts names the standard event.
         No conversational text.`;
 
-      console.log('Transforming code for project:', projectRef.current?.name);
+    let filesArray: ProjectFile[] = [];
 
-      let filesArray: ProjectFile[] = [];
-
-      // An answer that is not the agreed JSON is a failed *generation*, not a
-      // file. This used to end in a catch that wrapped the raw text as
-      // `srv/service.ts`: a refusal, a quota notice or any stretch of prose
-      // then passed the "at least one file" gate below and was stored with
-      // `status: 'transformed'`, so the reader got a green stage whose source
-      // code was the sentence in which the model declined the work (QA full
-      // review of b88c77b, 55cf6c0ed62a). It is reported the same way an empty
-      // answer is, a few lines down — nothing is saved, the previous artefact
-      // stands.
-      //
-      // Owner report 03.10.2026: a complete answer for Z_MM_PO_APPROVAL failed
-      // here on the first try and passed on the second. The model had written
-      // the ABAP escape `\{` into a JSON string (`lib/model-json.ts` holds the
-      // evidence). The request now carries the stage's schema
-      // (`lib/model-response-schema.ts`), the parse tolerates the spelling
-      // slips it can read without guessing, and an answer that is still
-      // unusable — not JSON, or cut off — gets one automatic second call before
-      // the reader sees an error. Each call is its own proxy request, counted
-      // against the account's rate limit like any other; the log says when the
-      // second one is made. Nothing is stored from a failed attempt.
-      const MAX_ATTEMPTS = 2;
-      let result: Record<string, unknown> | null = null;
-      let failure: UnusableAnswer = 'not-json';
-      let attempts = 0;
-      while (!result && attempts < MAX_ATTEMPTS) {
-        const notice = attempts > 0 ? retryNotice(failure) : undefined;
-        attempts++;
-        // A second call continues the same stage, with the reason said beside it.
-        enterPhase('model');
-        const attempt = { n: attempts, of: MAX_ATTEMPTS };
-        setStageLog((log) => enterStage(log, 'model', Date.now(), notice ? { attempt, detail: notice } : { attempt }));
-        let responseText: string;
-        try {
-          responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
-        } catch (callErr) {
-          const unusable = unusableFromModelError(callErr);
-          if (!unusable) throw callErr;
-          failure = unusable;
-          continue;
-        }
-        const read = parseModelJsonObject(responseText);
-        if (read.ok) result = read.value;
-        else failure = read.reason;
-      }
-      if (!result) {
-        throw new Error(unusableAnswerMessage(failure, attempts));
-      }
-
-      enterPhase('checking');
-      setStageLog((log) => withChecks(enterStage(log, 'checks', Date.now()), pendingChecks()));
-      const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };
-      filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
-
-      // The single-blob answer goes through the same gate as the list: it
-      // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
-      // the project as a finished transformation (QA review of 146ac2e1a724,
-      // 9712d15149c9).
-      if (filesArray.length === 0) {
-        const single = {
-          path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
-          content: parsed.code,
-        };
-        if (isUsableFile(single)) filesArray.push(single);
-      }
-
-      // Nothing usable came back. This used to be written anyway: an empty
-      // file list, an empty test suite and `status: 'transformed'` — on a
-      // first run the later stages saw a transformed project with no code, and
-      // on a rerun the empty answer replaced the code that was already there
-      // (QA review of 33471220d6e9, d967e435917c). The previous artefact stays
-      // and the stage reports a failed generation.
-      if (filesArray.length === 0) {
-        recordCheck('files', 'failed');
-        throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
-      }
-      recordCheck('files', 'met', tfFilesResult(filesArray.length));
-
-      // Nor is a package that answers one path twice (6d411bca538c).
-      const repeated = duplicatePaths(filesArray);
-      if (repeated.length > 0) {
-        recordCheck('paths', 'failed', repeated.join('; '));
-        throw new Error(`The model returned more than one file for the same path: ${repeated.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
-      }
-      recordCheck('paths', 'met');
-
-      // And one file is not a package. Every path the prompt enumerated has to
-      // be answered, or this is a half-generation and gets reported as one
-      // rather than stored as a finished transformation (b88c77b, 7976bced4c28).
-      const missing = missingArtefacts(filesArray, isAbapCloud);
-      if (missing.length > 0) {
-        recordCheck('artefacts', 'failed', missing.join('; '));
-        throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
-      }
-      recordCheck('artefacts', 'met');
-
-      // The test suite is part of the package the prompt asked for. It used to
-      // default to two empty strings and the project was marked transformed
-      // without one (QA full review of 81810c8, 183ed4edf700).
-      const tests = usableTestSuite(parsed.tests, isAbapCloud);
-      if (!tests) {
-        recordCheck('tests', 'failed');
-        throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
-      }
-      recordCheck('tests', 'met');
-
-      // 3.0.10 (external review F-01): the same deterministic scan the page
-      // shows over the stored package, made here so the screen can say its
-      // result as a check. A warning, never a refusal — the reader decides.
-      const literals = hardCodedLiteralFindings(filesArray).length;
-      recordCheck('literals', literals === 0 ? 'met' : 'warning', tfLiteralsResult(literals));
-
-      // The server stores the stand — code, suite, status and the binding to
-      // the contract it was computed against — in one transaction (roadmap
-      // 8.3, 3.0.11). It rebuilds the contract and writes its own fingerprint,
-      // so the binding cannot name a contract that was never derived; and it
-      // writes only if the project is still at the token read before the model
-      // call. A refusal means nothing was saved.
-      const packaged = JSON.stringify(filesArray);
-      enterPhase('storing');
-      setStageLog((log) => enterStage(log, 'storing', Date.now()));
-      let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
+    // An answer that is not the agreed JSON is a failed *generation*, not a
+    // file. This used to end in a catch that wrapped the raw text as
+    // `srv/service.ts`: a refusal, a quota notice or any stretch of prose
+    // then passed the "at least one file" gate below and was stored with
+    // `status: 'transformed'`, so the reader got a green stage whose source
+    // code was the sentence in which the model declined the work (QA full
+    // review of b88c77b, 55cf6c0ed62a). It is reported the same way an empty
+    // answer is, a few lines down — nothing is saved, the previous artefact
+    // stands.
+    //
+    // Owner report 03.10.2026: a complete answer for Z_MM_PO_APPROVAL failed
+    // here on the first try and passed on the second. The model had written
+    // the ABAP escape `\{` into a JSON string (`lib/model-json.ts` holds the
+    // evidence). The request now carries the stage's schema
+    // (`lib/model-response-schema.ts`), the parse tolerates the spelling
+    // slips it can read without guessing, and an answer that is still
+    // unusable — not JSON, or cut off — gets one automatic second call before
+    // the reader sees an error. Each call is its own proxy request, counted
+    // against the account's rate limit like any other; the log says when the
+    // second one is made. Nothing is stored from a failed attempt.
+    const MAX_ATTEMPTS = 2;
+    let result: Record<string, unknown> | null = null;
+    let failure: UnusableAnswer = 'not-json';
+    let attempts = 0;
+    while (!result && attempts < MAX_ATTEMPTS) {
+      const notice = attempts > 0 ? retryNotice(failure) : undefined;
+      attempts++;
+      // A second call continues the same stage, with the reason said beside it.
+      enterPhase('model');
+      const attempt = { n: attempts, of: MAX_ATTEMPTS };
+      setStageLog((log) => enterStage(log, 'model', Date.now(), notice ? { attempt, detail: notice } : { attempt }));
+      let responseText: string;
       try {
-        const answer = await storeGeneration(projectId as string, {
-          generatedCode: packaged,
-          testSuite: tests,
-          expectedContractFingerprint: generatedAgainst,
-          generationToken,
+        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation', signal);
+      } catch (callErr) {
+        if (signal.aborted) throw callErr;
+        const unusable = unusableFromModelError(callErr);
+        if (!unusable) throw callErr;
+        failure = unusable;
+        continue;
+      }
+      const read = parseModelJsonObject(responseText);
+      if (read.ok) result = read.value;
+      else failure = read.reason;
+    }
+    if (!result) {
+      throw new Error(unusableAnswerMessage(failure, attempts));
+    }
+
+    enterPhase('checking');
+    setStageLog((log) => withChecks(enterStage(log, 'checks', Date.now()), pendingChecks()));
+    const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };
+    filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
+
+    // The single-blob answer goes through the same gate as the list: it
+    // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
+    // the project as a finished transformation (QA review of 146ac2e1a724,
+    // 9712d15149c9).
+    if (filesArray.length === 0) {
+      const single = {
+        path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
+        content: parsed.code,
+      };
+      if (isUsableFile(single)) filesArray.push(single);
+    }
+
+    // Nothing usable came back. This used to be written anyway: an empty
+    // file list, an empty test suite and `status: 'transformed'` — on a
+    // first run the later stages saw a transformed project with no code, and
+    // on a rerun the empty answer replaced the code that was already there
+    // (QA review of 33471220d6e9, d967e435917c). The previous artefact stays
+    // and the stage reports a failed generation.
+    if (filesArray.length === 0) {
+      recordCheck('files', 'failed');
+      throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
+    }
+    recordCheck('files', 'met', tfFilesResult(filesArray.length));
+
+    // Nor is a package that answers one path twice (6d411bca538c).
+    const repeated = duplicatePaths(filesArray);
+    if (repeated.length > 0) {
+      recordCheck('paths', 'failed', repeated.join('; '));
+      throw new Error(`The model returned more than one file for the same path: ${repeated.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
+    }
+    recordCheck('paths', 'met');
+
+    // And one file is not a package. Every path the prompt enumerated has to
+    // be answered, or this is a half-generation and gets reported as one
+    // rather than stored as a finished transformation (b88c77b, 7976bced4c28).
+    const missing = missingArtefacts(filesArray, isAbapCloud);
+    if (missing.length > 0) {
+      recordCheck('artefacts', 'failed', missing.join('; '));
+      throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
+    }
+    recordCheck('artefacts', 'met');
+
+    // The test suite is part of the package the prompt asked for. It used to
+    // default to two empty strings and the project was marked transformed
+    // without one (QA full review of 81810c8, 183ed4edf700).
+    const tests = usableTestSuite(parsed.tests, isAbapCloud);
+    if (!tests) {
+      recordCheck('tests', 'failed');
+      throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
+    }
+    recordCheck('tests', 'met');
+
+    // 3.0.10 (external review F-01): the same deterministic scan the page
+    // shows over the stored package, made here so the screen can say its
+    // result as a check. A warning, never a refusal — the reader decides.
+    const literals = hardCodedLiteralFindings(filesArray).length;
+    recordCheck('literals', literals === 0 ? 'met' : 'warning', tfLiteralsResult(literals));
+
+    // The server stores the stand — code, suite, status and the binding to
+    // the contract it was computed against — in one transaction (roadmap
+    // 8.3, 3.0.11). It rebuilds the contract and writes its own fingerprint,
+    // so the binding cannot name a contract that was never derived; and it
+    // writes only if the project is still at the token read before the model
+    // call. A refusal means nothing was saved. The record says it was the
+    // single call, and why (§16.2).
+    enterPhase('storing');
+    setStageLog((log) => enterStage(log, 'storing', Date.now()));
+    await args.store(filesArray, tests, {
+      path: 'single-call',
+      fallbackReason,
+      basis: args.basis(),
+      elapsedMs: Date.now() - args.startedAt,
+    });
+    const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
+    const hasMainFile = filesArray.some(f => f.path === mainPath);
+    setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
+  }, [enterPhase, recordCheck]);
+
+  /**
+   * Roadmap 3.0.12, step E — *Cancel* really aborts. One controller per
+   * generation, handed to the scaffold worker, the orchestrator (and through it
+   * every leased model call, which the proxy aborts on the provider), the
+   * runner checks and the single call. Nothing is stored after it.
+   */
+  const abortRef = useRef<AbortController | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelledNote, setCancelledNote] = useState(false);
+  const cancelGeneration = useCallback(() => {
+    setCancelling(true);
+    abortRef.current?.abort();
+  }, []);
+  /** Which path the running generation is on — the engine-led one, or the single call it fell back to. */
+  const [genPath, setGenPath] = useState<GenerationPathKey>('engine-led');
+  /** The functions of the running generation (plan order) and the events that move them (§15.2). */
+  const [unitRows, setUnitRows] = useState<UnitRow[] | null>(null);
+  const [boardEvents, setBoardEvents] = useState<BoardEvent[]>([]);
+  const [boardFinal, setBoardFinal] = useState<Array<{ unitId: string; state: 'written' | 'not-written'; reason: string | null }> | null>(null);
+  /** The chain as the page reads it, for the Built-on snapshot the store records (§15.4). */
+  const slotsRef = useRef<ChainSlot[]>([]);
+
+  const generateTransformation = useCallback(async () => {
+    if (generationInFlight.current) return;
+    generationInFlight.current = true;
+    setLoading(true);
+    const startedAt = Date.now();
+    setGenerationPhase(enterGenerationPhase(null, 'contract', startedAt));
+    setNow(startedAt);
+    setError('');
+    setUnsavedDraft(null);
+    setStageLog({});
+    setChainLit(false);
+    setChainRules({ state: 'loading' });
+    setRunStartedAt(startedAt);
+    setCancelledNote(false);
+    setCancelling(false);
+    setGenPath('engine-led');
+    setUnitRows(null);
+    setBoardEvents([]);
+    setBoardFinal(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let failed = false;
+
+    // The rules, read again for the chain beside the contract — the one
+    // request this screen adds, in parallel. Its answer lights the rules slot
+    // whenever it comes; the generation does not wait for it.
+    const source = projectRef.current?.legacyCode ?? '';
+    void readProcessStatesOutcome(projectId as string)
+      .then((outcome) => ruleRegisterOf(outcome, source))
+      .then((register) => {
+        setChainRules({ state: 'ready', register });
+        setRuleRegister(register);
+      })
+      .catch(() => setChainRules({ state: 'ready', register: { state: 'not-read', reason: 'the rule reader could not walk the source.' } }));
+
+    /** What the generation built on, as the screen shows it now — stored with the package (§15.4). */
+    const basisNow = () =>
+      slotsRef.current.map((s) => ({
+        key: s.key,
+        title: s.title,
+        when: s.when ?? '',
+        facts: s.facts.slice(0, 4).map((f) => f.text),
+        attention: s.warn !== null || s.state !== 'ready',
+      }));
+
+    try {
+      // Roadmap 8.3. The direction is the contract's `route.chosen`, which is
+      // the recommendation unless a deviation was declared — and a deviation
+      // reaches it only with a reason (`lib/architecture-contract.ts` throws
+      // without one). A blocked contract generates nothing and says why.
+      const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
+      if (!decision.ok) {
+        setContractRefusal(decision);
+        failed = true;
+        return;
+      }
+      if (!contract || !generation) {
+        throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
+      }
+      // The contract this stand is generated from. The stand below is stored
+      // only if the server's contract is still this one when the model is done.
+      const generatedAgainst = contract.fingerprint;
+      // Roadmap 3.0.11: the state the prompt is built from, read now rather
+      // than when the page loaded — and the token that names it. The server
+      // stores the answer only if the project is still at this token, so a
+      // design replaced in another tab, or a generation another tab stored
+      // first, turns this one into a refusal instead of an overwrite.
+      const generationToken = generation.token;
+      const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
+      // Roadmap 3.0.12 (owner, 12.10.2026): what the platform already knows —
+      // the owner's rule decisions, the decision record and route, what the
+      // program does, the catalog successors, NFRs and data mode — built by the
+      // server inside the token (`lib/transformation-context-build.ts`). No
+      // engine pass and no map build here.
+      const platformKnowledge = generation.inputs.context.text;
+      // The chain lights here: its slots are what this block was built from.
+      // The purpose is the block's own sentence, so the screen says what the
+      // prompt says (`purposeFromContext`).
+      const purposeInBlock = purposeFromContext(platformKnowledge);
+      if (purposeInBlock) setPurpose({ state: 'ready', text: purposeInBlock });
+      setChainLit(true);
+      // The narrative is not required: the design is written from it
+      // and carries it, and an engine-only run has none. It used to be, and a
+      // project with a design but an engine-only run could never generate.
+      const businessAnalysis = analysis.trim()
+        || 'No model narrative — the signed run holds the engine\'s evidence only. Take the business intent from the Solution Design below.';
+      if (!legacyCode.trim() || !design.trim()) {
+        throw new Error('The source or the solution design is no longer on this project, so there is nothing to generate from. Nothing was generated — reload the stage to see what is on record.');
+      }
+      setContractRefusal(null);
+      setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
+      const isAbapCloud = decision.isAbapCloud;
+
+      /** The server's store, with the lost-answer reread (3.0.11) — both paths store through it. */
+      const store = async (filesArray: ProjectFile[], tests: GeneratedTestSuite, record: unknown) => {
+        const packaged = JSON.stringify(filesArray);
+        let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
+        try {
+          const answer = await storeGeneration(projectId as string, {
+            generatedCode: packaged,
+            testSuite: tests,
+            expectedContractFingerprint: generatedAgainst,
+            generationToken,
+            generation: record,
+          });
+          if (!answer.ok && answer.code === PROJECT_TOO_LARGE_CODE) {
+            // The one refusal where the package itself is fine: kept on screen
+            // as an unsaved draft rather than thrown away with the error. The
+            // server's sentence already says that nothing was saved.
+            setFiles(filesArray);
+            setSelectedFilePath(filesArray[0]?.path || '');
+            setUnsavedDraft(packaged);
+            throw new Error(answer.error);
+          }
+          if (!answer.ok) {
+            throw new Error(`${answer.error} Nothing was saved — the previous version is untouched.`);
+          }
+          stored = answer.fields;
+        } catch (err) {
+          if (!(err instanceof CommandAnswerLostError)) throw err;
+          // The transaction may have committed without the answer reaching us.
+          // Read the project again instead of claiming either outcome.
+          const reread = await loadProjectAndHydrate(projectId as string).catch(() => null);
+          // All of it, not the code alone (`holdsStoredPackage`, 546d27f6f092).
+          if (!reread || !holdsStoredPackage(reread, packaged, tests)) {
+            throw new Error(`${err.message} The project does not hold this package now — reload the stage to see which version is stored before generating again.`);
+          }
+          stored = { generatedCode: packaged, testSuite: reread.testSuite, status: String(reread.status ?? ''), generationBinding: (reread as { generationBinding?: unknown }).generationBinding };
+        }
+        setFiles(filesArray);
+        // The stepper, the blockers and the verification rail all read `project`
+        // (`lib/workflow-steps.ts`); without this they went on describing the
+        // state before the generation until something else reloaded the page
+        // (QA review of 33471220d6e9, ce37b706107d). From what the server
+        // stored, not from what this tab hoped it wrote.
+        setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
+      };
+
+      // ── Roadmap 3.0.12, step E: the engine-led path (design §4) ─────────
+      // 1. The unit plan and the scaffold, off the page's thread — never the
+      //    BPMN map. A program the engine cannot scaffold falls back below.
+      let fallbackReason: string | null = null;
+      setStageLog((log) => enterStage(log, 'scaffold', Date.now()));
+      // Loaded here, as the facts readers are: a reader who never generates
+      // never downloads the engine, the scaffold or the orchestrator (§6.1).
+      const [
+        { prepareScaffold },
+        { requestGenerationLease, leasedFillModel },
+        { runGeneration },
+        { createRunnerVerifier, runnerOverHttp },
+        { guardBodyOf, candidateFiles, assembleEngineLed },
+        { sha256Hex },
+      ] = await Promise.all([
+        import('@/lib/transformation/scaffold-client'),
+        import('@/lib/transformation/lease-client'),
+        import('@/lib/transformation/orchestrator'),
+        import('@/lib/transformation/verify'),
+        import('@/lib/transformation/engine-led'),
+        import('@/lib/artefact-digest'),
+      ]);
+      const prep = await prepareScaffold(
+        {
+          source: legacyCode,
+          track: isAbapCloud ? 'rap' : 'node',
+          program: projectRef.current?.name ?? null,
+          decisions: generation.inputs.context.decisions ?? [],
+          contextText: platformKnowledge,
+        },
+        controller.signal,
+      );
+      let lease: GenerationLease | null = null;
+      if (!prep.ok) {
+        fallbackReason = prep.reason;
+      } else {
+        setStageLog((log) => withFacts(log, 'scaffold', scaffoldFactsLines(prep.facts)));
+        setUnitRows(prep.rows);
+        // 2. One lease for the whole generation: one unit of the hourly model
+        //    limit, at most 48 calls under it (owner, Q1). The user's own
+        //    limit is said as such; any other refusal falls back to the single
+        //    call, which keeps today's metering.
+        try {
+          lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, 40));
+        } catch (leaseErr) {
+          const e = leaseErr as LeaseRequestError;
+          if (e.status === 429 || e.code === 'lease-hourly-limit' || e.code === 'model-hourly-limit') {
+            throw new Error(`${e.message} Nothing was generated.`);
+          }
+          if (e.code === 'generation-stale') throw new Error(`${e.message} Nothing was generated — generate again from the current state.`);
+          fallbackReason = `the generation could not be prepared: ${e.message || 'the lease was refused'}`;
+        }
+      }
+      if (controller.signal.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+
+      if (prep.ok && lease && fallbackReason === null) {
+        const leaseNow = lease;
+        // 3. The fills, up to four at a time, then the checks and at most two
+        //    repair rounds for the failing functions only (§8, §13).
+        enterPhase('model');
+        setStageLog((log) => enterStage(log, 'fills', Date.now(), { note: tfFillsNote(leaseNow.budget) }));
+        const checkSummaries = new Map<string, { kind: 'guards' | 'lint' | 'cases' | 'probes'; total: number; failed: number }>();
+        const onEvent = (e: GenerationEvent) => {
+          if (e.t === 'fill') setBoardEvents((prev) => [...prev, { t: 'fill', unitId: e.unitId, state: e.state }]);
+          if (e.t === 'repair') {
+            setBoardEvents((prev) => [...prev, { t: 'repair', round: e.round, unitIds: e.unitIds, state: e.state }]);
+            const at = Date.now();
+            if (e.state === 'start') {
+              setStageLog((log) => withFacts(enterStage(log, 'repairs', at), 'repairs', [`Round ${e.round}: ${e.unitIds.length === 1 ? '1 function goes' : `${e.unitIds.length} functions go`} back to the model with its failing check`]));
+            } else {
+              setStageLog((log) => withFacts(enterStage(log, 'checks', at), 'repairs', [...(log.repairs?.facts ?? []), `Round ${e.round}: ${e.fixed ?? 0} rewritten`]));
+            }
+          }
+          if (e.t === 'check') {
+            checkSummaries.set(e.kind, { kind: e.kind, total: e.total, failed: e.failed });
+            const at = Date.now();
+            const result =
+              e.kind === 'guards'
+                ? `${e.total} bodies, ${e.failed} refused`
+                : e.kind === 'lint'
+                  ? `${e.total === 0 ? 'no finding' : `${e.total} finding${e.total === 1 ? '' : 's'}`}`
+                  : `${e.total} run, ${e.failed} failed`;
+            setStageLog((log) => {
+              const base = log.checks?.state === 'active' ? log : withChecks(enterStage(log, 'checks', at), log.checks?.checks ?? pendingEngineChecks());
+              return withChecks(base, setCheck(base.checks?.checks ?? pendingEngineChecks(), e.kind, e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed', result));
+            });
+            if (e.kind === 'guards') enterPhase('checking');
+          }
+        };
+        const verify = createRunnerVerifier({
+          candidate: (bodies) => candidateFiles(prep, bodies),
+          units: prep.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id) })),
+          lint: (candidate) =>
+            generatedCodeLints(candidate, { decimalFields: packedDecimalFields(legacyCode) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
+          runOnRunner: runnerOverHttp(projectId as string, postJson),
         });
-        if (!answer.ok && answer.code === PROJECT_TOO_LARGE_CODE) {
-          // The one refusal where the package itself is fine: kept on screen
-          // as an unsaved draft rather than thrown away with the error. The
-          // server's sentence already says that nothing was saved.
-          setFiles(filesArray);
-          setSelectedFilePath(filesArray[0]?.path || '');
-          setUnsavedDraft(packaged);
-          throw new Error(answer.error);
+        const result = await runGeneration({
+          units: prep.fillUnits,
+          plan: prep.plan.units,
+          bundleOptions: { track: prep.scaffold.track, program: prep.plan.program, context: platformKnowledge },
+          model: leasedFillModel(leaseNow),
+          guardBody: guardBodyOf(prep),
+          verify,
+          budget: Math.max(0, leaseNow.budget - leaseNow.used),
+          maxInFlight: leaseNow.maxInFlight,
+          signal: controller.signal,
+          onEvent,
+        });
+        setBoardFinal(result.units.map((u) => ({ unitId: u.unitId, state: u.state, reason: u.reason })));
+        if (result.status === 'cancelled') throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+        const writtenCount = result.units.filter((u) => u.state === 'written').length;
+        setStageLog((log) =>
+          withFacts(log, 'fills', [
+            `${writtenCount} of ${result.units.length} functions written${writtenCount < result.units.length ? `; ${result.units.length - writtenCount} left as stubs` : ''}`,
+            `${result.callsUsed} of ${leaseNow.budget} model calls used`,
+          ]),
+        );
+        for (const n of result.checksNotRun) {
+          if (n.kind === 'lint') continue;
+          setStageLog((log) => withChecks(log, setCheck(log.checks?.checks ?? pendingEngineChecks(), n.kind, 'warning', n.reason)));
         }
-        if (!answer.ok) {
-          throw new Error(`${answer.error} Nothing was saved — the previous version is untouched.`);
-        }
-        stored = answer.fields;
-      } catch (err) {
-        if (!(err instanceof CommandAnswerLostError)) throw err;
-        // The transaction may have committed without the answer reaching us.
-        // Read the project again instead of claiming either outcome.
-        const reread = await loadProjectAndHydrate(projectId as string).catch(() => null);
-        // All of it, not the code alone (`holdsStoredPackage`, 546d27f6f092).
-        if (!reread || !holdsStoredPackage(reread, packaged, tests)) {
-          throw new Error(`${err.message} The project does not hold this package now — reload the stage to see which version is stored before generating again.`);
-        }
-        stored = { generatedCode: packaged, testSuite: reread.testSuite, status: String(reread.status ?? '') };
+
+        // 4. The package: the final splice (refused if an engine character
+        //    moved), the trace, the suite — and the store, as today.
+        const pkg = assembleEngineLed(prep, result, {
+          contextDigest: sha256Hex(platformKnowledge),
+          runId: projectRef.current?.activeRunId ?? null,
+          checks: [...checkSummaries.values()],
+          budget: leaseNow.budget,
+        });
+        enterPhase('storing');
+        setStageLog((log) => enterStage(log, 'storing', Date.now()));
+        await store(pkg.files, pkg.suite, {
+          path: 'engine-led',
+          engine: pkg.summary,
+          basis: basisNow(),
+          elapsedMs: Date.now() - startedAt,
+        });
+        const first = pkg.files.find((f) => f.path === prep.fillUnits[0]?.function.file) ?? pkg.files.find((f) => f.path === 'TRACE.md');
+        setSelectedFilePath(first?.path ?? pkg.files[0]?.path ?? '');
+        return;
       }
 
-      setFiles(filesArray);
-      // The stepper, the blockers and the verification rail all read `project`
-      // (`lib/workflow-steps.ts`); without this they went on describing the
-      // state before the generation until something else reloaded the page
-      // (QA review of 33471220d6e9, ce37b706107d). From what the server
-      // stored, not from what this tab hoped it wrote.
-      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-      const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
-      const hasMainFile = filesArray.some(f => f.path === mainPath);
-      setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
+      // ── The fallback: today's single call, with a visible note (§16.2) ──
+      setGenPath('single-call');
+      await runSingleCall({ legacyCode, design, businessAnalysis, platformKnowledge, isAbapCloud, fallbackReason, signal: controller.signal, store, basis: basisNow, startedAt });
     } catch (err) {
       failed = true;
-      console.error('Transformation Error:', err);
-      setError(err instanceof Error && err.message.trim()
-        ? err.message
-        : 'The generation stopped with an unexpected error. Nothing was saved — try the generation again.');
+      if (controller.signal.aborted || (err as { name?: string } | null)?.name === 'AbortError') {
+        // Cancelled by the reader: nothing was stored, and that is not an error.
+        setCancelledNote(true);
+      } else {
+        console.error('Transformation Error:', err);
+        setError(err instanceof Error && err.message.trim()
+          ? err.message
+          : 'The generation stopped with an unexpected error. Nothing was saved — try the generation again.');
+      }
     } finally {
       generationInFlight.current = false;
+      abortRef.current = null;
+      setCancelling(false);
       setStageLog((log) => finishStages(log, Date.now(), failed ? 'failed' : 'done'));
       setLoading(false);
       enterPhase('done');
@@ -1163,7 +1447,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     // charged runs, and whichever answer wrote last became the artefact
     // (QA review of 33471220d6e9, e078d502e983). The ref is the second half:
     // a dependency is not the only way to be called twice.
-  }, [projectId, enterPhase, recordCheck]);
+  }, [projectId, enterPhase, runSingleCall]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -1188,7 +1472,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             const parsedFiles = parseGeneratedCode(data.generatedCode);
             setFiles(parsedFiles);
             const hasServiceTs = parsedFiles.some(f => f.path === 'srv/service.ts');
-            setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (parsedFiles[0]?.path || ''));
+            // An engine-led package opens on its first step (3.0.12, step E).
+            const firstStep = parsedFiles.find(f => f.path.startsWith('srv/steps/'));
+            setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (firstStep?.path || parsedFiles[0]?.path || ''));
           }
           // No generation starts here (roadmap 3.0.12): the reader reads the
           // tips first and starts it with "Generate now".
@@ -1315,6 +1601,15 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   const settled = tipsSettled(chainInputs);
   /** Against the decision on record, or SAP standard not weighed yet — a warning, never a gate (owner, 12.10.2026). */
   const warning = decisionWarning(chainInputs);
+  const currentSlots = chainSlots(chainInputs);
+  useEffect(() => {
+    slotsRef.current = currentSlots;
+  });
+  /** The functions of the running engine-led generation, from its events (§15.2). */
+  const board = unitRows ? unitBoard(unitRows, boardEvents, boardFinal ?? undefined) : null;
+  /** How the stored package was made — read from its binding (§15.4, §18). */
+  const storedBinding = (project as { generationBinding?: { generatedAt?: string } } | null)?.generationBinding;
+  const storedRecord = storedGenerationRecord(storedBinding);
 
   /**
    * The first generation starts by itself only when no tip is open (owner,
@@ -1343,12 +1638,15 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           generation builds on, read as it goes, and the stages that run. */}
       <GenerationChain
         program={project?.name}
-        slots={chainSlots(chainInputs)}
+        slots={currentSlots}
         lit={chainLit}
-        stages={generationStages(stageLog)}
+        stages={generationStages(stageLog, genPath)}
         startedAt={runStartedAt}
         now={now}
         phaseKey={generationPhase?.key ?? 'none'}
+        units={board}
+        onCancel={cancelGeneration}
+        cancelling={cancelling}
       />
     </StageFrame>
   );
@@ -1432,6 +1730,25 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
                 proposal", §4), with the pen, not a sparkle (§3.1). */}
             {files.length > 0 && <CcProvenanceChip value="proposed" />}
           </div>
+          {/* Roadmap 3.0.12, step E (design §12.1): a step's anchor — its ABAP
+              lines, its rules with the owner's decision, and who wrote what:
+              the frame is the engine's, the body a model proposal, a body
+              nobody wrote is not determined. */}
+          {selectedUnits.map((u) => (
+            <div key={u.unitId} data-unit-anchor={u.unitId} className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+              <span className="font-cc-mono font-semibold text-cc-ink">{u.unitId}</span>
+              <span className="font-cc-mono text-cc-ink">{abapLines(u)}</span>
+              {u.rules.map((r) => (
+                <CcTag key={r.id}>{`${r.id} · ${r.decision}`}</CcTag>
+              ))}
+              <CcProvenanceChip value="reconstructed" note="signature and guards" />
+              {u.filledBy === 'not-filled' ? (
+                <CcProvenanceChip value="not-determined" note={u.note ? `not written — ${u.note}` : 'not written'} />
+              ) : u.filledBy === 'engine' ? null : (
+                <CcProvenanceChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : 'repair round 2'}`} />
+              )}
+            </div>
+          ))}
           <div className="h-[640px] flex flex-col md:flex-row overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface">
             {/* File Explorer Sidebar */}
             <nav aria-label="Project files" className="w-full md:w-56 border-b md:border-b-0 md:border-r border-cc-line bg-cc-surface-muted overflow-y-auto flex flex-col shrink-0 h-40 md:h-auto">
@@ -1695,6 +2012,15 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         </div>
       )}
 
+      {/* Roadmap 3.0.12, step E: a cancelled generation stored nothing, and says so — not as an error. */}
+      {cancelledNote && (
+        <div className="mb-6" data-generation-cancelled="">
+          <CcMessageStrip state="information" announce>
+            {wt('transformation.cancelled')}
+          </CcMessageStrip>
+        </div>
+      )}
+
       {unsavedDraft && (
         <div className="mb-6" data-unsaved-draft>
           <CcMessageStrip state="warning" headline="Unsaved draft — this package is not stored on the project.">
@@ -1754,6 +2080,12 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       {/* Without the engine's findings every facet below would count none —
           "0 findings" for a program that has them. The strip says the read
           failed, and only the source and the package beside it are drawn. */}
+      {/* Roadmap 3.0.12, step E (design §15.4, §18): what the stored package
+          was built on, from its binding, above the unchanged result view. */}
+      {files.length > 0 && !unsavedDraft && typeof project?.generatedCode === 'string' && project.generatedCode ? (
+        <BuiltOnCard record={storedRecord} generatedAt={storedBinding?.generatedAt ?? null} currentSlots={currentSlots} />
+      ) : null}
+
       {evidenceFailed ? (
         <div className="mb-6 flex flex-col gap-6" data-transformation-evidence-failed="">
           <CcMessageStrip state="error" announce>

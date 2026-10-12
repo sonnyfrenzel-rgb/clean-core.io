@@ -416,7 +416,7 @@ test('a changed rule decision or decision record changes the generation token', 
 
   // The inputs hand the page the block the token covers.
   expect(generationInputsOf(generationStateOf(project, null, keep.stamp)).context).toEqual(keep.stamp);
-  expect(generationInputsOf(generationStateOf(project, null)).context).toEqual({ text: '', rules: 'none', decision: 'none', requirements: 'none' });
+  expect(generationInputsOf(generationStateOf(project, null)).context).toEqual({ text: '', rules: 'none', decision: 'none', requirements: 'none', decisions: [] });
 });
 
 /* ------------------------------------------------------------ wiring guards */

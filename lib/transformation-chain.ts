@@ -41,6 +41,7 @@ import { stageHref } from '@/lib/workspace-back-href';
 import { formatTextDate } from '@/lib/format';
 import { TRANSFORMATION_MESSAGES as M } from '@/lib/messages/transformation';
 import { decisionRecordIsLive, recordedDecisionOf } from '@/lib/transformation-context';
+import { LEASE_MAX_CALLS } from '@/lib/transformation/lease';
 
 /* ------------------------------------------------------------ prompt seam */
 
@@ -70,8 +71,13 @@ export const QUALITY_ORIGIN: OriginKey = 'transformation.tips';
 /** The id of the tips on the Transformation page — the origin's anchor. */
 export const QUALITY_ANCHOR = 'transformation-tips';
 
-/** The most model calls today's generation makes: one, and one retry of an unusable answer. */
-export const GENERATION_MAX_MODEL_CALLS = 2;
+/**
+ * The most model calls one generation can make: the lease's ceiling (design
+ * §11; owner, Q1 — one unit of the hourly limit, at most 48 calls under it).
+ * The lease itself is bought for the plan's own count once the scaffold is
+ * written (`leaseBudget`), and the fills stage says that number.
+ */
+export const GENERATION_MAX_MODEL_CALLS = LEASE_MAX_CALLS;
 
 /* ------------------------------------------------------------- the inputs */
 
@@ -641,13 +647,25 @@ export function tipsSettled(inputs: Pick<ChainInputs, 'rules' | 'spec'>): boolea
 /* ------------------------------------------------------------- the stages */
 
 /**
- * The generation's own steps after the chain, in the order they happen — the
- * ones that exist today, and only those. A later step is one more key here.
- * The contract and the PLATFORM KNOWLEDGE block are read first; that read is
- * what lights the chain, so it is not a step of its own.
+ * The generation's own steps after the chain, in the order they happen (roadmap
+ * 3.0.12, step E; design §15.2): the engine scaffold, the model's fills (up to
+ * four at a time), the checks before saving, the repairs (only when a check
+ * failed) and the store. The contract and the PLATFORM KNOWLEDGE block are read
+ * first; that read is what lights the chain, so it is not a step of its own.
+ *
+ * When no scaffold can be built the single call runs (§16.2) and the screen
+ * shows its own steps instead (`SINGLE_CALL_STAGE_ORDER`).
  */
-export const GENERATION_STAGE_ORDER = ['facts', 'model', 'checks', 'storing'] as const;
-export type GenerationStageKey = (typeof GENERATION_STAGE_ORDER)[number];
+export const GENERATION_STAGE_ORDER = ['scaffold', 'fills', 'checks', 'repairs', 'storing'] as const;
+export const SINGLE_CALL_STAGE_ORDER = ['facts', 'model', 'checks', 'storing'] as const;
+export type GenerationStageKey = (typeof GENERATION_STAGE_ORDER)[number] | (typeof SINGLE_CALL_STAGE_ORDER)[number];
+export type GenerationPathKey = 'engine-led' | 'single-call';
+const ALL_STAGES: readonly GenerationStageKey[] = ['facts', 'scaffold', 'model', 'fills', 'checks', 'repairs', 'storing'];
+
+/** The steps of a path, in order. */
+export function stageOrderOf(path: GenerationPathKey): readonly GenerationStageKey[] {
+  return path === 'engine-led' ? GENERATION_STAGE_ORDER : SINGLE_CALL_STAGE_ORDER;
+}
 
 export type GenerationStageState = 'pending' | 'active' | 'done' | 'failed';
 export type GenerationCheckState = 'pending' | 'met' | 'warning' | 'failed';
@@ -666,11 +684,13 @@ export interface GenerationStageRecord {
   endedAt: number | null;
   /** Which call of the model this is, when there is more than one. */
   attempt?: { n: number; of: number };
-  /** What the stage established — "14 checks that refuse, stop or skip …". */
+  /** What the stage established — "20 functions, each anchored to its ABAP lines …". */
   facts?: string[];
   /** What the reader should know while it runs — "Retrying once …". Shown, never announced. */
   detail?: string;
   checks?: GenerationCheck[];
+  /** The stage's own note when it is known only at run time ("up to 4 at a time · up to 22 model calls"). */
+  note?: string;
 }
 
 export type GenerationStageLog = Partial<Record<GenerationStageKey, GenerationStageRecord>>;
@@ -684,6 +704,9 @@ export interface GenerationStage extends GenerationStageRecord {
 }
 
 const STAGE_META: Record<GenerationStageKey, { label: string; note: string; provenance: ProvenanceValue }> = {
+  scaffold: { label: M['transformation.stage.scaffold'], note: M['transformation.stage.scaffoldNote'], provenance: 'reconstructed' },
+  fills: { label: M['transformation.stage.fills'], note: M['transformation.stage.fillsNote'], provenance: 'proposed' },
+  repairs: { label: M['transformation.stage.repairs'], note: M['transformation.stage.repairsNote'], provenance: 'proposed' },
   facts: { label: M['transformation.stage.facts'], note: M['transformation.stage.factsNote'], provenance: 'reconstructed' },
   model: { label: M['transformation.stage.model'], note: M['transformation.stage.modelNote'], provenance: 'proposed' },
   checks: { label: M['transformation.stage.checks'], note: M['transformation.stage.checksNote'], provenance: 'reconstructed' },
@@ -693,7 +716,7 @@ const STAGE_META: Record<GenerationStageKey, { label: string; note: string; prov
 /** Enter `key` at `at`: the stage that was running is done, every later one stays pending. */
 export function enterStage(log: GenerationStageLog, key: GenerationStageKey, at: number, extra: Partial<GenerationStageRecord> = {}): GenerationStageLog {
   const next: GenerationStageLog = { ...log };
-  for (const k of GENERATION_STAGE_ORDER) {
+  for (const k of ALL_STAGES) {
     const r = next[k];
     if (r?.state === 'active' && k !== key) next[k] = { ...r, state: 'done', endedAt: at };
   }
@@ -708,31 +731,42 @@ export function withFacts(log: GenerationStageLog, key: GenerationStageKey, fact
   return { ...log, [key]: { ...r, facts } };
 }
 
+/** Set a stage's run-time note. */
+export function withNote(log: GenerationStageLog, key: GenerationStageKey, note: string): GenerationStageLog {
+  const r = log[key] ?? { state: 'pending' as const, startedAt: null, endedAt: null };
+  return { ...log, [key]: { ...r, note } };
+}
+
 /** End the generation: the running stage is done — or failed, when the generation stopped. */
 export function finishStages(log: GenerationStageLog, at: number, outcome: 'done' | 'failed'): GenerationStageLog {
   const next: GenerationStageLog = { ...log };
-  for (const k of GENERATION_STAGE_ORDER) {
+  for (const k of ALL_STAGES) {
     const r = next[k];
     if (r?.state === 'active') next[k] = { ...r, state: outcome, endedAt: at };
   }
   return next;
 }
 
-/** Record the checks of the answer as they are made. */
+/** Record the checks as they are made. */
 export function withChecks(log: GenerationStageLog, checks: GenerationCheck[]): GenerationStageLog {
   const r = log.checks ?? { state: 'pending' as const, startedAt: null, endedAt: null };
   return { ...log, checks: { ...r, checks } };
 }
 
-/** The stages to draw, in order, from the log. */
-export function generationStages(log: GenerationStageLog): GenerationStage[] {
-  return GENERATION_STAGE_ORDER.map((key) => {
-    const r = log[key] ?? { state: 'pending' as const, startedAt: null, endedAt: null };
-    return { key, ...STAGE_META[key], ...r };
-  });
+/**
+ * The stages to draw, in order, from the log. The repairs step is drawn only
+ * once one ran — "only when needed" (§15.2), never a promise of one.
+ */
+export function generationStages(log: GenerationStageLog, path: GenerationPathKey = 'engine-led'): GenerationStage[] {
+  return stageOrderOf(path)
+    .filter((key) => key !== 'repairs' || log.repairs !== undefined)
+    .map((key) => {
+      const r = log[key] ?? { state: 'pending' as const, startedAt: null, endedAt: null };
+      return { key, ...STAGE_META[key], ...r, note: r.note ?? STAGE_META[key].note };
+    });
 }
 
-/** The checks the page makes on an answer, before any of them ran. */
+/** The checks the page makes on a single-call answer, before any of them ran. */
 export function pendingChecks(): GenerationCheck[] {
   return [
     { key: 'files', label: M['transformation.check.files'], state: 'pending' },
@@ -743,9 +777,119 @@ export function pendingChecks(): GenerationCheck[] {
   ];
 }
 
+/** The checks of an engine-led candidate (design §13.1), before any of them ran. */
+export function pendingEngineChecks(): GenerationCheck[] {
+  return [
+    { key: 'guards', label: M['transformation.check.guards'], state: 'pending' },
+    { key: 'lint', label: M['transformation.check.lint'], state: 'pending' },
+    { key: 'cases', label: M['transformation.check.cases'], state: 'pending' },
+    { key: 'probes', label: M['transformation.check.probes'], state: 'pending' },
+  ];
+}
+
 /** One check set to its result. */
 export function setCheck(checks: GenerationCheck[], key: string, state: GenerationCheckState, result?: string): GenerationCheck[] {
   return checks.map((c) => (c.key === key ? { ...c, state, ...(result !== undefined ? { result } : {}) } : c));
+}
+
+/** The scaffold stage's lines — what the engine wrote, with this program's own numbers (§15.2). */
+export function scaffoldFactsLines(f: { units: number; guards: number; decimals: number; inputs: number; cases: number; fixtures: number; dropped: number }): string[] {
+  const out = [
+    `${plural(f.units, 'function')}, each anchored to its ABAP lines`,
+    `${plural(f.guards, 'guard')} carried over with their rule ids`,
+    `${plural(f.decimals, 'packed decimal field')} with exact places and bounds`,
+    `${plural(f.inputs, 'selection input')} — one input contract for CSV and JSON`,
+    `${plural(f.cases, 'test case')} derived from the original`,
+  ];
+  const kept = [f.fixtures > 0 ? `${plural(f.fixtures, 'demo-data routine')} kept as fixtures` : '', f.dropped > 0 ? `${plural(f.dropped, 'dropped rule')} left out` : ''].filter(Boolean);
+  if (kept.length > 0) out.push(kept.join(', '));
+  return out;
+}
+
+/* ------------------------------------------------------------ the functions */
+
+/** One function on the work panel (§15.2): the unit, its anchor, its state. */
+export interface UnitBoardRow {
+  unitId: string;
+  title: string;
+  lines: string;
+  rules: string[];
+  state: 'waiting' | 'writing' | 'written' | 'repair' | 'repaired' | 'not-written';
+  /** "writing…", "written", "repair round 1…", "repaired (round 1)", "not written — …". */
+  word: string;
+}
+
+export interface UnitBoard {
+  rows: UnitBoardRow[];
+  total: number;
+  written: number;
+  writing: number;
+  notWritten: number;
+}
+
+/** The generation events the panel reads (`GenerationEvent`, design §15.5) — only the ones it needs. */
+export type BoardEvent =
+  | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable' }
+  | { t: 'repair'; round: 1 | 2; unitIds: string[]; state: 'start' | 'done' };
+
+/**
+ * The work panel from the plan's rows and the generation's events, in order.
+ * Counters come from the events only — nothing is estimated (§15.3).
+ */
+export function unitBoard(
+  rows: ReadonlyArray<{ unitId: string; title: string; lines: string; rules: string[] }>,
+  events: readonly BoardEvent[],
+  final?: ReadonlyArray<{ unitId: string; state: 'written' | 'not-written'; reason: string | null }>,
+): UnitBoard {
+  const state = new Map<string, UnitBoardRow['state']>(rows.map((r) => [r.unitId, 'waiting']));
+  const word = new Map<string, string>(rows.map((r) => [r.unitId, M['transformation.unit.waiting']]));
+  let round = 0;
+  for (const e of events) {
+    if (e.t === 'repair') {
+      if (e.state === 'start') {
+        round = e.round;
+        for (const id of e.unitIds) {
+          if (!state.has(id)) continue;
+          state.set(id, 'repair');
+          word.set(id, `repair round ${e.round}…`);
+        }
+      } else {
+        for (const id of e.unitIds) {
+          if (state.get(id) !== 'repair') continue;
+          state.set(id, 'written');
+          word.set(id, `not changed in round ${e.round}`);
+        }
+        round = 0;
+      }
+      continue;
+    }
+    if (!state.has(e.unitId)) continue;
+    if (e.state === 'writing') {
+      if (round === 0) {
+        state.set(e.unitId, 'writing');
+        word.set(e.unitId, M['transformation.unit.writing']);
+      }
+    } else if (e.state === 'written') {
+      state.set(e.unitId, round > 0 ? 'repaired' : 'written');
+      word.set(e.unitId, round > 0 ? `repaired (round ${round})` : M['transformation.unit.written']);
+    } else if (round === 0) {
+      state.set(e.unitId, e.state === 'refused' ? 'not-written' : 'waiting');
+      word.set(e.unitId, e.state === 'refused' ? M['transformation.unit.refused'] : M['transformation.unit.again']);
+    }
+  }
+  for (const f of final ?? []) {
+    if (f.state !== 'not-written' || !state.has(f.unitId)) continue;
+    state.set(f.unitId, 'not-written');
+    word.set(f.unitId, `not written — ${f.reason ?? 'no answer'}`);
+  }
+  const out = rows.map((r) => ({ ...r, state: state.get(r.unitId)!, word: word.get(r.unitId)! }));
+  return {
+    rows: out,
+    total: out.length,
+    written: out.filter((r) => r.state === 'written' || r.state === 'repaired' || r.state === 'repair').length,
+    writing: out.filter((r) => r.state === 'writing').length,
+    notWritten: out.filter((r) => r.state === 'not-written').length,
+  };
 }
 
 /** What the engine read of the original for the prompt — the facts stage's lines. */

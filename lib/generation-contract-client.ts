@@ -140,6 +140,8 @@ export async function storeGeneration(
     expectedContractFingerprint: string;
     /** `fetchGenerationDecision().generation.token`. */
     generationToken: string;
+    /** Roadmap 3.0.12, step E: how the package was made (`lib/transformation/generation-record.ts`). */
+    generation?: unknown;
   },
 ): Promise<{ ok: true; fields: StoredGeneration } | { ok: false; error: string; code?: string }> {
   let res: Response;

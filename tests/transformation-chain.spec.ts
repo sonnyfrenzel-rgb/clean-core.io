@@ -5,6 +5,9 @@ import {
   CHAIN_PHASES,
   CHAIN_SLOTS,
   GENERATION_STAGE_ORDER,
+  SINGLE_CALL_STAGE_ORDER,
+  scaffoldFactsLines,
+  unitBoard,
   PROMPT_READS,
   QUALITY_ANCHOR,
   QUALITY_ORIGIN,
@@ -286,29 +289,67 @@ test.describe('the tips', () => {
 });
 
 test.describe('the stages', () => {
-  test('are the steps that exist today, and only those', () => {
-    expect(GENERATION_STAGE_ORDER).toEqual(['facts', 'model', 'checks', 'storing']);
+  test('are the engine-led steps as data — the repairs only once one ran; the single call keeps its own (step E)', () => {
+    expect(GENERATION_STAGE_ORDER).toEqual(['scaffold', 'fills', 'checks', 'repairs', 'storing']);
+    expect(SINGLE_CALL_STAGE_ORDER).toEqual(['facts', 'model', 'checks', 'storing']);
+    expect(generationStages({}).map((s) => s.key)).toEqual(['scaffold', 'fills', 'checks', 'storing']);
     expect(generationStages({}).every((s) => s.state === 'pending')).toBe(true);
+    let log = enterStage({}, 'scaffold', 1000);
+    log = withFacts(log, 'scaffold', scaffoldFactsLines({ units: 20, guards: 15, decimals: 1, inputs: 4, cases: 26, fixtures: 0, dropped: 0 }));
+    log = enterStage(log, 'fills', 1200, { note: 'up to 4 at a time · up to 22 model calls under this generation’s lease' });
+    log = enterStage(log, 'checks', 9000);
+    log = enterStage(log, 'repairs', 9500);
+    const stages = generationStages(log);
+    expect(stages.map((s) => s.key)).toEqual(['scaffold', 'fills', 'checks', 'repairs', 'storing']);
+    expect(stages.map((s) => s.state)).toEqual(['done', 'done', 'done', 'active', 'pending']);
+    expect(stages[0].facts?.[0]).toBe('20 functions, each anchored to its ABAP lines');
+    expect(stages[1].note).toContain('22 model calls');
+    expect(stages[1].provenance).toBe('proposed');
+    expect(stages[0].provenance).toBe('reconstructed');
   });
 
-  test('advance in order: entering one ends the one before; a failure stops the running one', () => {
+  test('the work panel counts only what the events say (step E)', () => {
+    const rows = [
+      { unitId: 'U01', title: 'Read', lines: 'L10–20', rules: [] },
+      { unitId: 'U02', title: 'Check', lines: 'L30–40', rules: ['BR-001'] },
+      { unitId: 'U00', title: 'Run', lines: 'main path', rules: [] },
+    ];
+    let board = unitBoard(rows, []);
+    expect(board).toMatchObject({ total: 3, written: 0, writing: 0 });
+    board = unitBoard(rows, [
+      { t: 'fill', unitId: 'U01', state: 'writing' },
+      { t: 'fill', unitId: 'U02', state: 'writing' },
+      { t: 'fill', unitId: 'U01', state: 'written' },
+      { t: 'fill', unitId: 'U02', state: 'refused' },
+      { t: 'repair', round: 1, unitIds: ['U01'], state: 'start' },
+      { t: 'fill', unitId: 'U01', state: 'writing' },
+      { t: 'fill', unitId: 'U01', state: 'written' },
+      { t: 'repair', round: 1, unitIds: ['U01'], state: 'done' },
+    ], [{ unitId: 'U02', state: 'not-written', reason: 'the model declined: no slice' }]);
+    expect(board.rows.map((r) => r.state)).toEqual(['repaired', 'not-written', 'waiting']);
+    expect(board.rows[0].word).toBe('repaired (round 1)');
+    expect(board.rows[1].word).toBe('not written — the model declined: no slice');
+    expect(board).toMatchObject({ written: 1, notWritten: 1 });
+  });
+
+  test('the single call advances in order: entering one ends the one before; a failure stops the running one', () => {
     let log = enterStage({}, 'facts', 1000);
     log = withFacts(log, 'facts', originalFactsLines({ guards: [1, 2, 3], decimals: [1], inputs: [1, 2] }));
     log = enterStage(log, 'model', 2000, { attempt: { n: 1, of: 2 } });
-    expect(generationStages(log).map((s) => s.state)).toEqual(['done', 'active', 'pending', 'pending']);
-    expect(generationStages(log)[0].facts).toEqual([
+    expect(generationStages(log, 'single-call').map((s) => s.state)).toEqual(['done', 'active', 'pending', 'pending']);
+    expect(generationStages(log, 'single-call')[0].facts).toEqual([
       '3 checks that refuse, stop or skip — kept with their lines',
       '1 packed decimal field with exact places and bounds',
       '2 selection inputs — each honoured or refused',
     ]);
     // A second model call continues the same stage from its first start.
     log = enterStage(log, 'model', 9000, { attempt: { n: 2, of: 2 }, detail: 'Retrying once' });
-    expect(generationStages(log)[1]).toMatchObject({ startedAt: 2000, attempt: { n: 2, of: 2 }, detail: 'Retrying once', provenance: 'proposed' });
+    expect(generationStages(log, 'single-call')[1]).toMatchObject({ startedAt: 2000, attempt: { n: 2, of: 2 }, detail: 'Retrying once', provenance: 'proposed' });
     log = withChecks(enterStage(log, 'checks', 10_000), pendingChecks());
     log = withChecks(log, setCheck(log.checks!.checks!, 'files', 'met', '5 files'));
     log = withChecks(log, setCheck(log.checks!.checks!, 'paths', 'failed', 'srv/a.ts'));
     log = finishStages(log, 10_500, 'failed');
-    const stages = generationStages(log);
+    const stages = generationStages(log, 'single-call');
     expect(stages.find((s) => s.key === 'checks')!.state).toBe('failed');
     expect(stages.find((s) => s.key === 'storing')!.state).toBe('pending');
     expect(stages.find((s) => s.key === 'checks')!.checks!.map((c) => c.state)).toEqual(['met', 'failed', 'pending', 'pending', 'pending']);
