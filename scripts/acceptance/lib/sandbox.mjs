@@ -31,7 +31,7 @@ import { createRequire, isBuiltin } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { CONFINED_MODULES } from '../child/engine-cases-core.mjs';
+import { CONFINED_MODULES } from './confined-modules.mjs';
 
 export const CHILD_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'child');
 const EVENT = '@@CC-ACC-EVENT ';
@@ -101,14 +101,23 @@ export function minimalEnv(extra) {
   return { ...env, ...extra };
 }
 
-/** Copy a package into a fresh temp directory: no symlinks, no `.git`. */
-export function copyToTemp(pkgDir) {
+/**
+ * Copy a package into a fresh temp directory: no symlinks (a junction is one
+ * too), no `.git`. Each skipped link is pushed to `skipped`, relative to the
+ * package, so the report can say the copy is not the whole package
+ * (QA 7011113eda41). `bundleModules` checks real paths as a second wall.
+ */
+export function copyToTemp(pkgDir, skipped = []) {
   const tmp = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'cc-acc-')));
   fs.cpSync(pkgDir, tmp, {
     recursive: true,
     filter: (src) => {
       if (path.basename(src) === '.git') return false;
-      return !fs.lstatSync(src).isSymbolicLink();
+      if (fs.lstatSync(src).isSymbolicLink()) {
+        skipped.push(path.relative(pkgDir, src).replace(/\\/g, '/'));
+        return false;
+      }
+      return true;
     },
   });
   return tmp;
@@ -143,9 +152,24 @@ export function sesFile() {
  * Relative imports must stay inside `root`. A Node module the compartment does
  * not provide, or an npm package (the harness never installs one), makes the
  * package not runnable here, named with the module that imports it.
- * Resolves to `{ bundle, names } | { failure }`.
+ *
+ * Every file esbuild reads must lie inside `root` by its real path — a symlink
+ * or junction that leads out is refused, whatever path led to it
+ * (QA 7011113eda41) — and outside `reserved` (paths relative to `root` the
+ * package may not import: the engine cases with their expectations,
+ * QA 592fd4f81e78). Resolves to `{ bundle, names } | { failure }`.
  */
-export async function bundleModules(root, modules) {
+export async function bundleModules(rootDir, modules, { reserved = [] } = {}) {
+  const root = fs.realpathSync.native(rootDir);
+  const real = (abs) => {
+    try {
+      return fs.realpathSync.native(abs);
+    } catch {
+      return abs;
+    }
+  };
+  const reservedAbs = reserved.map((r) => path.resolve(root, r));
+  const isReserved = (abs) => reservedAbs.some((r) => abs === r || abs.startsWith(r + path.sep));
   let esbuild;
   try {
     esbuild = await import('esbuild');
@@ -168,7 +192,7 @@ export async function bundleModules(root, modules) {
       build.onResolve({ filter: /.*/ }, (args) => {
         if (args.kind === 'entry-point') return undefined;
         const p = args.path;
-        const importer = byFile.get(args.importer) ?? (args.importer ? path.relative(root, args.importer).replace(/\\/g, '/') : 'entry');
+        const importer = byFile.get(args.importer) ?? byFile.get(real(args.importer || '')) ?? (args.importer ? path.relative(root, args.importer).replace(/\\/g, '/') : 'entry');
         if (p.startsWith('node:') || isBuiltin(p)) {
           const bare = p.startsWith('node:') ? p.slice(5) : p;
           if (!CONFINED_MODULES.includes(bare)) refused.push(`module '${importer}' imports '${p}', which the confined executor does not provide (it provides ${CONFINED_MODULES.join(', ')})`);
@@ -179,9 +203,17 @@ export async function bundleModules(root, modules) {
           return { path: p, external: true };
         }
         const base = path.resolve(args.resolveDir || root, p);
-        if (!inside(base)) return { errors: [{ text: `an import leaves the package (${p})` }] };
+        if (!inside(base) || !inside(real(base))) return { errors: [{ text: `an import leaves the package (${p})` }] };
+        if (isReserved(base) || isReserved(real(base))) return { errors: [{ text: `an import of a file the harness reserves (${p})` }] };
         const ts = base.replace(/\.js$/, '.ts');
         if (ts !== base && !fs.existsSync(base) && fs.existsSync(ts)) return { path: ts };
+        return undefined;
+      });
+      // The last gate, whatever path the resolver arrived at (an index file, a package.json `main`, a link).
+      build.onLoad({ filter: /.*/, namespace: 'file' }, (args) => {
+        const target = real(args.path);
+        if (!inside(target)) return { errors: [{ text: `a file outside the package (${path.basename(args.path)})` }] };
+        if (isReserved(args.path) || isReserved(target)) return { errors: [{ text: `a file the harness reserves (${path.basename(args.path)})` }] };
         return undefined;
       });
     },

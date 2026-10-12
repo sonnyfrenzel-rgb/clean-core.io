@@ -39,6 +39,10 @@ export interface EngineCaseProvenance {
    * derivation yields each id once, so a second copy is not its output.
    */
   unverified: string[];
+  /** How many stored engine entries are not verified — every copy of a duplicated id counted (QA 796fe8bcbadd). */
+  unverifiedEntries: number;
+  /** Ids stored more than once, with how often: `[id, copies]`, in stored order. */
+  duplicates: Array<[string, number]>;
   /** Cases past the caps for the source the stored cases were derived from; null when that cannot be shown. */
   notCovered: { precision: number; guard: number } | null;
   /** Why `notCovered` is null, in words; null when it is not. */
@@ -75,6 +79,7 @@ export function engineCaseProvenance(
   const derived = new Map((derivation?.cases ?? []).map((c) => [c.id, c]));
   const verified: VerifiedEngineCase[] = [];
   const unverified: string[] = [];
+  let unverifiedEntries = 0;
   // How often each id is stored as an engine case: a duplicated id is no output of one derivation.
   const copies = new Map<string, number>();
   for (const tc of stored) {
@@ -85,21 +90,26 @@ export function engineCaseProvenance(
     if (!data) continue;
     const id = String(tc.id ?? '');
     if ((copies.get(id) ?? 0) > 1) {
+      unverifiedEntries++;
       if (!unverified.includes(id)) unverified.push(id);
       continue;
     }
     const twin = derived.get(id);
     const twinData = twin ? engineCaseOf(twin as unknown as Record<string, unknown>) : null;
     if (twin && twinData && canonical(twinData) === canonical(data)) verified.push(twin as VerifiedEngineCase);
-    else unverified.push(id);
+    else {
+      unverifiedEntries++;
+      unverified.push(id);
+    }
   }
+  const duplicates = [...copies.entries()].filter(([, n]) => n > 1);
   let notCovered: EngineCaseProvenance['notCovered'] = null;
   let notCoveredReason: string | null = null;
   if (testsStale) notCoveredReason = 'the scenarios on record were built for a previous source';
   else if (!derivation) notCoveredReason = 'there is no signed source to count them from';
   else if (unverified.length > 0) notCoveredReason = 'the engine cases on record do not match the signed source';
   else notCovered = derivation.notCovered;
-  return { verified, unverified, notCovered, notCoveredReason };
+  return { verified, unverified, unverifiedEntries, duplicates, notCovered, notCoveredReason };
 }
 
 /** "Engine cases past the caps: not counted — the scenarios on record were built for a previous source." */

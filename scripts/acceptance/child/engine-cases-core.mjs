@@ -804,12 +804,20 @@ export function createConfinement(host) {
   });
 
   const hostGlobals = new Set(HOST_ONLY_GLOBALS);
+  const missingGlobal = (name) => `the code uses the global '${name}', which the confined sandbox does not provide`;
+  /**
+   * The sandbox's reason for an error, or null when it is the package's own.
+   * Inside a compartment an unknown global reads as undefined rather than
+   * throwing, so each host-only global is installed as a getter that throws a
+   * refusal (QA 9eac38e0e0b6); a ReferenceError is still recognised by its name
+   * and message, never by `instanceof` across compartments.
+   */
   const notRunnable = (err) => {
     try {
       if (err && (typeof err === 'object' || typeof err === 'function') && refusals.has(err)) return String(err.message);
-      if (err instanceof ReferenceError) {
+      if (err && typeof err === 'object' && String(err.name) === 'ReferenceError') {
         const m = /^([A-Za-z_$][\w$]*) is not defined$/.exec(String(err.message));
-        if (m && hostGlobals.has(m[1])) return `the code uses the global '${m[1]}', which the confined sandbox does not provide`;
+        if (m && hostGlobals.has(m[1])) return missingGlobal(m[1]);
       }
     } catch {
       // an error object that cannot even be read is the package's own failure
@@ -894,6 +902,17 @@ export function createConfinement(host) {
       });
       // `global` is the compartment's own global object, as `globalThis` is.
       compartment.globalThis.global = compartment.globalThis;
+      // A host-only global is not silently undefined: reading it is the sandbox's refusal, and the case is Not run.
+      for (const name of HOST_ONLY_GLOBALS) {
+        if (['require', 'module', 'exports', '__dirname', '__filename'].includes(name)) continue;
+        Object.defineProperty(compartment.globalThis, name, {
+          get() {
+            throw refuse(missingGlobal(name));
+          },
+          configurable: false,
+          enumerable: false,
+        });
+      }
       const module = { exports: {} };
       let factory;
       try {

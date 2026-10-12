@@ -75,12 +75,21 @@ export async function runEngineCases(opts) {
   } else if (!decision.execute) {
     report.cases = allNotRun(cases, `Not run — ${decision.reason}`);
   } else {
-    const root = copyToTemp(pkg);
+    const skipped = [];
+    const root = copyToTemp(pkg, skipped);
+    if (skipped.length > 0) report.sandbox.skippedSymlinks = skipped;
     try {
       // The executor collects the contract's answers in the sandbox; the verdicts are given here,
       // by the same runtime's judge, against the cases this process read itself.
+      // The cases — inputs and expectations — are never part of what the contract can import
+      // (QA 592fd4f81e78): the package's own copy (test/engine-cases.json, or the --cases file when it
+      // lies inside the package) is removed from the run copy and reserved in the bundler.
+      const inPackage = path.relative(pkg, casesFile);
+      const reserved = ['test/engine-cases.json'];
+      if (!inPackage.startsWith('..') && !path.isAbsolute(inPackage)) reserved.push(inPackage);
+      for (const rel of reserved) fs.rmSync(path.join(root, rel), { force: true });
       // The contract module and what it imports, bundled here; evaluated only in the executor's compartment.
-      const prepared = await bundleModules(root, { contract: contractPath });
+      const prepared = await bundleModules(root, { contract: contractPath }, { reserved });
       const ex = startExecutor({ root, nodeEnv: 'test', timeoutMs: opts.timeout, flag: decision.flag });
       report.sandbox.executed = true;
       const judged = [];

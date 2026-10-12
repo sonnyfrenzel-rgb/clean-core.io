@@ -56,7 +56,12 @@ test.describe('663172392dc6 — a duplicated engine case is no second derivation
     const list = [...stored(), stored()[0]];
     const text = testFactsOf({ testCases: list, ...signed } as unknown as Parameters<typeof testFactsOf>[0], []).detail.join('\n');
     expect(text).toContain(`2 cases written by the testing model · ${derived.cases.length - 1} derived by Clean-Core.io from the original`);
-    expect(text).toContain(`1 stored as engine case is not reproduced from the signed source and counted as not derived by Clean-Core.io: ${derived.cases[0].id}.`);
+    // QA 796fe8bcbadd: the sentence counts the two stored entries the line above moved, and names the duplicate as one
+    expect(text).toContain(
+      `2 stored as engine cases are not reproduced from the signed source and counted as not derived by Clean-Core.io: ${derived.cases[0].id} (stored 2 times; one derivation yields each id once).`,
+    );
+    const p = engineCaseProvenance(list, derived);
+    expect([p.unverified, p.unverifiedEntries, p.duplicates]).toEqual([[derived.cases[0].id], 2, [[derived.cases[0].id, 2]]]);
     // without the duplicate every case counts as derived
     const clean = testFactsOf({ testCases: stored(), ...signed } as unknown as Parameters<typeof testFactsOf>[0], []).detail.join('\n');
     expect(clean).toContain(`0 cases written by the testing model · ${derived.cases.length} derived by Clean-Core.io from the original`);
