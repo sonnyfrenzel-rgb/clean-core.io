@@ -85,6 +85,8 @@ import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
+import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
+import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 
 const renderSafeValue = (val: any): string => {
@@ -302,6 +304,8 @@ export default function TestingSandboxPage() {
   }, [ruleStatesOutcome]);
   const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
   const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
+  /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
+  const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
   /**
    * ADR-075 — the full record of a result from the reader's own SAP system
@@ -1133,13 +1137,26 @@ export default function TestingSandboxPage() {
     // 3.0.12 — an engine case: its expectation is the engine's, from the original's declaration or check.
     const engineCase = engineCaseOf(tc);
     const ruleId = ruleTraceOf(tc)?.ruleId ?? engineCase?.trace.ruleId ?? null;
+    const verdict = verdictOf(tc);
+    if (engineCase && (!verdict || verdict === 'Not run') && !callContract.present) {
+      return {
+        value: 'not-assessable',
+        sentence: `${NOT_RUN_NO_CONTRACT}${callContract.path ? ` (${callContract.path} lacks ${callContract.missing.join(', ')})` : ''}, and the suite has no verdict for it.`,
+      };
+    }
     return assessCase({
       trace: ruleTraceOf(tc),
       verdict: verdictOf(tc),
       ruleState: ruleId ? ruleStates.get(ruleId) ?? null : null,
       invariant: tc.invariant === true,
       engine: engineCase
-        ? { ruleId: engineCase.trace.ruleId ?? null, expected: engineCase.examples.map((e) => `${e.input} → ${e.expected}`).join('; ').slice(0, 300) }
+        ? {
+            ruleId: engineCase.trace.ruleId ?? null,
+            expected: engineCase.examples.map((e) => `${e.input} → ${e.expected}`).join('; ').slice(0, 300),
+            // The verdicts on the project come from the suite the model wrote; a run through the
+            // call contract happens in the acceptance sandbox (scripts/acceptance/engine-cases.mjs).
+            via: 'model-assertion' as const,
+          }
         : null,
     });
   };

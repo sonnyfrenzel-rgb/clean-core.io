@@ -50,6 +50,7 @@
 import type { BusinessRule } from './abap/business-rule-set';
 import { readOriginalContract, type OriginalContract } from './abap/original-contract';
 import { readStatements } from './abap/statement-reader';
+import type { CallExpect, CallValue, EngineCaseCall } from './engine-call-contract';
 
 /* ------------------------------------------------------------------ types */
 
@@ -96,6 +97,13 @@ export interface EngineCaseTrace {
 export interface EngineCaseExample {
   input: string;
   expected: string;
+  /**
+   * The same example in machine form, run through the call contract
+   * (`lib/engine-call-contract.ts`) without a model-written assertion. Absent
+   * where the contract cannot express it (exact arithmetic, a value with no
+   * machine form): the model's test is then the only assertion.
+   */
+  call?: EngineCaseCall;
 }
 
 export interface EngineCaseData {
@@ -126,14 +134,20 @@ export interface EngineCaseDerivation {
   cases: EngineTestCase[];
   /** What was left out and why — said, never silent. */
   limits: string[];
+  /** Cases past the caps, counted for STATUS ("n more not covered"). */
+  notCovered: { precision: number; guard: number };
 }
 
 /* ---------------------------------------------------------------- limits */
 
-/** At most this many packed fields get precision cases (inputs first, then source order). */
-export const MAX_PRECISION_FIELDS = 10;
-/** At most this many guards get the two guard cases. */
-export const MAX_GUARDS = 20;
+/**
+ * At most this many precision cases (four per packed field: selection inputs
+ * first, then record components, then working variables) and this many guard cases (two per check: checks
+ * with a business-rule id first, then source order). Owner, 12.10.2026: the
+ * rest is counted in STATUS as not covered.
+ */
+export const MAX_PRECISION_CASES = 20;
+export const MAX_GUARD_CASES = 20;
 /** At most this many fields are listed in one contract case. */
 const MAX_CONTRACT_FIELDS = 8;
 
@@ -359,6 +373,15 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
     const g = stoppedBy(value);
     return g ? `fits ${f.declaration} exactly (${value})${then(value)}` : `accepted; kept exactly as ${value}`;
   };
+  const NAME = f.name.toUpperCase();
+  /** Accepted and held as `kept` — or, where a check on the field rejects `kept`, refused by that check. */
+  const keptCall = (input: string, kept: string): EngineCaseCall => {
+    const g = stoppedBy(kept);
+    return g
+      ? { op: 'simulate', set: [{ field: NAME, to: { value: input } }], expect: guardRefusal(g) }
+      : { op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'accepted', field: NAME, normalized: kept } };
+  };
+  const refusedCall = (input: string): EngineCaseCall => ({ op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'refused', field: NAME } });
   const D = f.digits ?? 15;
   const d = f.decimals;
   const name = fieldWord(f);
@@ -379,8 +402,8 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
       name: `${name}: the largest value ${decl} holds is kept exactly`,
       description: `${name} is ${where}: ${D} digits, ${d} of them after the point. The largest value it holds is accepted and kept to the last place.`,
       examples: [
-        { input: `${name} = ${max}`, expected: fits(max) },
-        { input: `${name} = -${max}`, expected: fits(`-${max}`) },
+        { input: `${name} = ${max}`, expected: fits(max), call: keptCall(max, max) },
+        { input: `${name} = -${max}`, expected: fits(`-${max}`), call: keptCall(`-${max}`, `-${max}`) },
       ],
     }),
   );
@@ -392,8 +415,8 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
       name: `${name}: one unit of the last place over the maximum is refused`,
       description: `${name} is ${where}. ${over} is ${max} + ${ulp} and does not fit: the original raises an overflow (CX_SY_CONVERSION_OVERFLOW on assignment, CX_SY_ARITHMETIC_OVERFLOW in a calculation) instead of going on with a wrong value. The target must refuse it — never wrap, truncate or keep it as a binary float.`,
       examples: [
-        { input: `${name} = ${over}`, expected: `refused as too large for ${decl}; nothing is computed or stored with it` },
-        { input: `${name} = -${over}`, expected: `refused as too large for ${decl}; nothing is computed or stored with it` },
+        { input: `${name} = ${over}`, expected: `refused as too large for ${decl}; nothing is computed or stored with it`, call: refusedCall(over) },
+        { input: `${name} = -${over}`, expected: `refused as too large for ${decl}; nothing is computed or stored with it`, call: refusedCall(`-${over}`) },
       ],
     }),
   );
@@ -401,14 +424,7 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
   const half = `0.${'0'.repeat(d)}5`;
   const below = `0.${'0'.repeat(d)}4`;
   const tie = d === 0 ? '2.5' : `1.${'0'.repeat(d)}5`;
-  const rounding: EngineCaseExample[] = [
-    { input: `${name} = ${half}`, expected: roundCommercial(half, d) },
-    { input: `${name} = -${half}`, expected: roundCommercial(`-${half}`, d) },
-    { input: `${name} = ${below}`, expected: roundCommercial(below, d) },
-    { input: `${name} = -${below}`, expected: roundCommercial(`-${below}`, d) },
-    { input: `${name} = ${tie}`, expected: roundCommercial(tie, d) },
-    { input: `${name} = -${tie}`, expected: roundCommercial(`-${tie}`, d) },
-  ];
+  const rounding = [half, `-${half}`, below, `-${below}`, tie, `-${tie}`].map((v) => ({ v, input: `${name} = ${v}`, expected: roundCommercial(v, d) }));
   out.push(
     makeCase({
       kind: 'precision-rounding',
@@ -416,7 +432,7 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
       trace,
       name: `${name}: a value with ${d + 1} decimal places is rounded commercially, both signs`,
       description: `${name} is ${where}. ABAP rounds a value with more places than the field holds commercially — half away from zero, the same for negative values — when it is assigned or computed into the field. Banker's rounding, truncation, and Number.prototype.toFixed on a binary float (1.005 → "1.00") all differ from it.`,
-      examples: rounding.map((e) => ({ input: e.input, expected: `kept as ${e.expected}${then(e.expected)}` })),
+      examples: rounding.map((e) => ({ input: e.input, expected: `kept as ${e.expected}${then(e.expected)}`, call: keptCall(e.v, e.expected) })),
     }),
   );
 
@@ -470,6 +486,10 @@ interface GuardCase {
   breaking: string;
   passing: string;
   numeric: boolean;
+  /** The breaking value in machine form, or null when it has none ("a value for which … holds"). */
+  breakingCall: CallValue | null;
+  /** The passing value in machine form; `base` — as in the contract's base request, which passes every check. */
+  passingCall: CallValue | 'base';
 }
 
 const OPS: Readonly<Record<string, string>> = Object.freeze({
@@ -561,6 +581,8 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
     let breaking = `a value for which "${cond}" ${rejectsWhen === 'holds' ? 'holds' : 'does not hold'}`;
     let passing = `a value for which "${cond}" ${rejectsWhen === 'holds' ? 'does not hold' : 'holds'}`;
     let numeric = false;
+    let breakingCall: CallValue | null = null;
+    let passingCall: CallValue | 'base' = 'base';
     const initial = cond.match(/^([\w/~-]+)\s+IS\s+(NOT\s+)?INITIAL$/i);
     const cmp = cond.match(/^([\w/~-]+)\s*(>=|<=|<>|=|>|<|\bGE\b|\bLE\b|\bNE\b|\bEQ\b|\bGT\b|\bLT\b)\s*('(?:[^']|'')*'|[\w/~.-]+)$/i);
     if (initial) {
@@ -570,6 +592,8 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
       const emptyRejects = (rejectsWhen === 'holds') === isInitialHolds;
       breaking = emptyRejects ? 'empty (initial: no rows, blank, or 0)' : 'filled (not initial)';
       passing = emptyRejects ? 'filled (not initial)' : 'empty (initial)';
+      if (emptyRejects) breakingCall = { special: 'empty' };
+      else passingCall = { special: 'empty' };
     } else if (cmp) {
       subject = cmp[1];
       operator = OPS[cmp[2].toUpperCase()] ?? cmp[2];
@@ -588,6 +612,18 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
       breaking = rejectsWhen === 'holds' ? b.holdsValue : b.failsValue;
       passing = rejectsWhen === 'holds' ? b.failsValue : b.holdsValue;
       numeric = b.numeric;
+      const holdsCall: CallValue | null = b.numeric
+        ? { value: b.holdsValue }
+        : operandIsField
+          ? operator === '=' ? { sameAs: operand.toUpperCase() } : operator === '<>' ? { differentFrom: operand.toUpperCase() } : null
+          : operator === '=' ? { value: operand } : null;
+      const failsCall: CallValue | null = b.numeric
+        ? { value: b.failsValue }
+        : operandIsField
+          ? operator === '=' ? { differentFrom: operand.toUpperCase() } : operator === '<>' ? { sameAs: operand.toUpperCase() } : null
+          : operator === '<>' ? { value: operand } : null;
+      breakingCall = rejectsWhen === 'holds' ? holdsCall : failsCall;
+      passingCall = (rejectsWhen === 'holds' ? failsCall : holdsCall) ?? 'base';
     }
     return {
       ruleId: rule?.id ?? null,
@@ -604,8 +640,29 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
       breaking,
       passing,
       numeric,
+      breakingCall,
+      passingCall,
     };
   });
+}
+
+function notRefusedBy(g: GuardCase): CallExpect {
+  const expect: CallExpect = { kind: 'not-refused-by', rule: g.ruleId ?? `L${g.line}` };
+  if (g.subject) expect.field = g.subject.toUpperCase();
+  return expect;
+}
+
+/** What a refusal by this check looks like through the call contract. */
+function guardRefusal(g: GuardCase, others: readonly GuardCase[] = []): CallExpect {
+  const expect: CallExpect = { kind: 'refused', rule: g.ruleId ?? `L${g.line}` };
+  if (g.subject) expect.field = g.subject.toUpperCase();
+  const notRules = others.map((o) => o.ruleId).filter((id): id is string => !!id && id !== g.ruleId);
+  if (notRules.length > 0) expect.notRules = notRules;
+  return expect;
+}
+
+function guardSet(g: GuardCase, value: CallValue | 'base'): EngineCaseCall['set'] {
+  return value === 'base' || !g.subject ? [] : [{ field: g.subject.toUpperCase(), to: value }];
 }
 
 const guardName = (g: GuardCase) => g.ruleId ?? `the check at L${g.line}`;
@@ -647,6 +704,9 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
       ? ` The breaking value also breaks ${clash.map(guardName).join(', ')} on the same field, so the field alone cannot isolate ${id}: the outcome must still name ${id}, which the original checks at L${g.line}.`
       : '';
   const unruled = g.ruleId ? '' : ' The engine\'s business rules hold no rule for this check (its condition names no value written in the code), so it is traced by its line.';
+  const breakSet = g.breakingCall ? guardSet(g, g.breakingCall) : null;
+  const passSet = guardSet(g, g.passingCall);
+  const withCall = (example: EngineCaseExample, call: EngineCaseCall | null): EngineCaseExample => (call ? { ...example, call } : example);
   const negative = makeCase({
     kind: 'guard-breaks-one',
     family: 'guard',
@@ -655,10 +715,17 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
     name: `${id}: input that breaks only "${g.condition}" is ${outcomeWord(g)}`,
     description: `The original's check at L${g.line} (${g.condition}) ${how} when its condition ${g.rejectsWhen === 'holds' ? 'holds' : 'does not hold'}. The input breaks exactly this check and no other, so a ${outcomeWord(g)} outcome can only come from it — a negative case must fail for its own reason (PP review TC_01).${clashNote}${unruled}`,
     examples: [
-      {
-        input: `${guardInputWord(g, g.breaking)}; ${othersWord}`,
-        expected: `${outcomeWord(g)} by ${id} — and by no other check; the outcome names this check's condition (${g.condition})`,
-      },
+      withCall(
+        {
+          input: `${guardInputWord(g, g.breaking)}; ${othersWord}`,
+          expected: `${outcomeWord(g)} by ${id} — and by no other check; the outcome names this check's condition (${g.condition})`,
+        },
+        !breakSet
+          ? null
+          : g.outcome === 'skips'
+            ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 } }
+            : { op: 'simulate', set: breakSet, expect: guardRefusal(g, all) },
+      ),
     ],
   });
   const subjectWord = g.subject ? g.subject.toUpperCase() : 'the checked value';
@@ -672,10 +739,20 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
           name: `${id}: the record it excludes changes the result`,
           description: `The check at L${g.line} (${g.condition}) excludes a record. Two records identical except for ${subjectWord}: if the exclusion is lost, the result differs — so the exclusion is necessary to the outcome, not incidental (PP review TC_10).${unruled}`,
           examples: [
-            {
-              input: `record A: ${guardInputWord(g, g.passing)}; record B: identical to A except ${guardInputWord(g, g.breaking)}; ${othersWord}`,
-              expected: `only A is in the result: 1 record, sums of A alone. With B included the count would be 2 — the case fails if the exclusion is lost`,
-            },
+            withCall(
+              {
+                input: `record A appended to a request that passes every check: ${guardInputWord(g, g.passing)}; ${othersWord}`,
+                expected: 'A is in the result: one record more than without it',
+              },
+              breakSet ? { op: 'simulate', mode: 'append', set: passSet, expect: { kind: 'records-delta', delta: 1 } } : null,
+            ),
+            withCall(
+              {
+                input: `record B appended instead: identical to A except ${guardInputWord(g, g.breaking)}`,
+                expected: 'B is excluded: no record more than without it. With B included the count would be one higher — the case fails if the exclusion is lost',
+              },
+              breakSet ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 } } : null,
+            ),
           ],
         })
       : makeCase({
@@ -686,8 +763,14 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
           name: `${id}: the refusal comes from the checked value alone`,
           description: `The check at L${g.line} (${g.condition}) refuses the input. The same input with only ${subjectWord} moved to the other side of the condition must pass it — so the refused value is what the refusal depends on (PP review TC_10).${unruled}`,
           examples: [
-            { input: `request R1: ${guardInputWord(g, g.breaking)}; ${othersWord}`, expected: `refused by ${id}` },
-            { input: `request R2: R1 with ${guardInputWord(g, g.passing)} only`, expected: `not refused by ${id}: processing goes past L${g.line}` },
+            withCall(
+              { input: `request R1: ${guardInputWord(g, g.breaking)}; ${othersWord}`, expected: `refused by ${id}` },
+              breakSet ? { op: 'simulate', set: breakSet, expect: guardRefusal(g) } : null,
+            ),
+            withCall(
+              { input: `request R2: R1 with ${guardInputWord(g, g.passing)} only`, expected: `not refused by ${id}: processing goes past L${g.line}` },
+              breakSet ? { op: 'simulate', set: passSet, expect: { ...notRefusedBy(g) } } : null,
+            ),
           ],
         });
   return [negative, exclusion];
@@ -712,7 +795,7 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
           ? `The original refuses to run without ${obligatory.map(fieldWord).join(', ')} (OBLIGATORY, L${obligatory.map((f) => f.line).join(', L')}). An empty request must be refused with a message that names what is missing — never answered as a successful run with zero rows or zero totals (CO review F05/F08).`
           : 'An empty request — no parameters, no records — must be refused with a message that names what is missing, never answered as a successful run with zero rows or zero totals (CO review F05/F08). The original declares no mandatory input, so this is the input contract of the target, not a line of the original.',
       examples: [
-        { input: 'empty JSON body {}', expected: 'refused; the message names the missing input; no result and no run is recorded as successful' },
+        { input: 'empty JSON body {}', expected: 'refused; the message names the missing input; no result and no run is recorded as successful', call: { op: 'simulate', mode: 'empty', set: [], expect: { kind: 'not-success' } } },
         { input: 'CSV with only a header line', expected: 'refused the same way as the empty JSON body' },
       ],
     }),
@@ -723,14 +806,21 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
     const examples: EngineCaseExample[] = [];
     for (const f of ints) {
       const n = fieldWord(f);
+      const refuse = (to: CallValue): EngineCaseCall => ({ op: 'validate', set: [{ field: n, to }], expect: { kind: 'refused', field: n } });
       examples.push(
-        { input: `${n} = "2026x"`, expected: `refused; the message names ${n} — never read as 2026` },
-        { input: `${n} = "1.9"`, expected: 'refused — never read as 1 or 2' },
-        { input: `${n} = NaN`, expected: 'refused' },
-        { input: `${n} = Infinity`, expected: 'refused' },
+        { input: `${n} = "2026x"`, expected: `refused; the message names ${n} — never read as 2026`, call: refuse({ value: '2026x' }) },
+        { input: `${n} = "1.9"`, expected: 'refused — never read as 1 or 2', call: refuse({ value: '1.9' }) },
+        { input: `${n} = NaN`, expected: 'refused', call: refuse({ special: 'NaN' }) },
+        { input: `${n} = Infinity`, expected: 'refused', call: refuse({ special: 'Infinity' }) },
       );
-      if (f.kind === 'digits' && f.digits) examples.push({ input: `${n} = ${'9'.repeat(f.digits + 1)}`, expected: `refused: more than ${f.digits} digits` });
-      if (f.kind === 'integer' && f.max) examples.push({ input: `${n} = ${(BigInt(f.max) + ONE).toString()}`, expected: `refused: above ${f.max}, the largest value of the declared type` });
+      if (f.kind === 'digits' && f.digits) {
+        const v = '9'.repeat(f.digits + 1);
+        examples.push({ input: `${n} = ${v}`, expected: `refused: more than ${f.digits} digits`, call: refuse({ value: v }) });
+      }
+      if (f.kind === 'integer' && f.max) {
+        const v = (BigInt(f.max) + ONE).toString();
+        examples.push({ input: `${n} = ${v}`, expected: `refused: above ${f.max}, the largest value of the declared type`, call: refuse({ value: v }) });
+      }
     }
     out.push(
       makeCase({
@@ -751,11 +841,12 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
     const examples: EngineCaseExample[] = [];
     for (const f of packed) {
       const n = fieldWord(f);
+      const refuse = (to: CallValue): EngineCaseCall => ({ op: 'validate', set: [{ field: n, to }], expect: { kind: 'refused', field: n } });
       examples.push(
-        { input: `${n} = NaN`, expected: `refused; the message names ${n}` },
-        { input: `${n} = Infinity`, expected: 'refused' },
-        { input: `${n} = -Infinity`, expected: 'refused' },
-        { input: `${n} = "12.5x"`, expected: 'refused — never read as 12.5' },
+        { input: `${n} = NaN`, expected: `refused; the message names ${n}`, call: refuse({ special: 'NaN' }) },
+        { input: `${n} = Infinity`, expected: 'refused', call: refuse({ special: 'Infinity' }) },
+        { input: `${n} = -Infinity`, expected: 'refused', call: refuse({ special: '-Infinity' }) },
+        { input: `${n} = "12.5x"`, expected: 'refused — never read as 12.5', call: refuse({ value: '12.5x' }) },
       );
     }
     out.push(
@@ -775,11 +866,13 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
     const examples: EngineCaseExample[] = [];
     for (const f of dates) {
       const n = fieldWord(f);
+      const date = (value: string, expect: CallExpect): EngineCaseCall => ({ op: 'validate', set: [{ field: n, to: { value } }], expect });
+      const refused: CallExpect = { kind: 'refused', field: n };
       examples.push(
-        { input: `${n} = 20260230`, expected: 'refused: 30 February does not exist — never rolled over to 2 March' },
-        { input: `${n} = 20261301`, expected: 'refused: there is no month 13' },
-        { input: `${n} = 2026-02-30`, expected: 'refused' },
-        { input: `${n} = 20240229`, expected: 'accepted: 29 February 2024 exists (leap year)' },
+        { input: `${n} = 20260230`, expected: 'refused: 30 February does not exist — never rolled over to 2 March', call: date('20260230', refused) },
+        { input: `${n} = 20261301`, expected: 'refused: there is no month 13', call: date('20261301', refused) },
+        { input: `${n} = 2026-02-30`, expected: 'refused', call: date('2026-02-30', refused) },
+        { input: `${n} = 20240229`, expected: 'accepted: 29 February 2024 exists (leap year)', call: date('20240229', { kind: 'accepted', field: n }) },
       );
     }
     out.push(
@@ -803,8 +896,13 @@ function contractCases(fields: readonly Field[]): Array<Omit<EngineTestCase, 'id
         {
           input: `${n} missing (null)`,
           expected: f.obligatory ? `refused as missing — ${n} is OBLIGATORY in the original` : 'reported as missing — never computed as 0',
+          call: {
+            op: 'validate',
+            set: [{ field: n, to: { value: null } }],
+            expect: f.obligatory ? { kind: 'refused', field: n } : { kind: 'not-zero', field: n },
+          },
         },
-        { input: `${n} = 0`, expected: 'accepted as the value zero — not as missing' },
+        { input: `${n} = 0`, expected: 'accepted as the value zero — not as missing', call: { op: 'validate', set: [{ field: n, to: { value: '0' } }], expect: { kind: 'zero', field: n } } },
       );
     }
     out.push(
@@ -834,10 +932,13 @@ function runIdentityCase(): Omit<EngineTestCase, 'id'> {
       {
         input: 'two runs with the same input, started with the clock fixed to the same millisecond',
         expected: 'two different run ids',
+        // The same call checks both examples: two ids, and the first run read back by its own id after the second.
+        call: { op: 'run-identity', set: [], expect: { kind: 'distinct-runs' } },
       },
       {
         input: 'read each run\'s result and export by its own id after both have finished',
         expected: 'each returns its own run\'s result, unchanged; neither was overwritten by the other',
+        call: { op: 'run-identity', set: [], expect: { kind: 'distinct-runs' } },
       },
     ],
   });
@@ -888,31 +989,54 @@ export function deriveEngineCases(source: string, rules: readonly BusinessRule[]
   const guards = readGuardCases(source, contract, rules, fields);
   const drafted: Array<Omit<EngineTestCase, 'id'>> = [];
 
-  const shownGuards = guards.slice(0, MAX_GUARDS);
-  if (guards.length > shownGuards.length) {
-    limits.push(`${guards.length - shownGuards.length} guards past the first ${MAX_GUARDS} have no engine case: ${guards.slice(MAX_GUARDS).map(guardName).join(', ')}.`);
+  // Guards: checks with a business-rule id first, then source order; two cases each, up to the cap.
+  const guardOrder = [...guards.filter((g) => g.ruleId), ...guards.filter((g) => !g.ruleId)];
+  const guardBudget = Math.floor(MAX_GUARD_CASES / 2);
+  const chosenGuards = new Set(guardOrder.slice(0, guardBudget));
+  const droppedGuards = guardOrder.slice(guardBudget);
+  if (droppedGuards.length > 0) {
+    limits.push(`${droppedGuards.length * 2} guard cases past the first ${MAX_GUARD_CASES} are not covered: ${droppedGuards.map(guardName).join(', ')}.`);
   }
-  for (const g of shownGuards) drafted.push(...guardCases(g, guards));
+  // Emitted in source order, so the ids follow the program.
+  for (const g of guards) if (chosenGuards.has(g)) drafted.push(...guardCases(g, guards));
 
+  // Precision: selection inputs first, then record components (both reach the target as data and run
+  // through the call contract), then working variables; source order within each; four cases per field.
   const packed = fields.filter((f) => f.kind === 'packed');
-  const ordered = [...packed.filter((f) => f.input), ...packed.filter((f) => !f.input)];
-  const shownPacked = ordered.slice(0, MAX_PRECISION_FIELDS);
-  if (ordered.length > shownPacked.length) {
+  const ordered = [...packed.filter((f) => f.input), ...packed.filter((f) => !f.input && f.component), ...packed.filter((f) => !f.input && !f.component)];
+  const precisionDrafted = ordered.flatMap((f) => precisionCases(f, guards, fields).map((c) => ({ c, f })));
+  const shownPrecision = precisionDrafted.slice(0, MAX_PRECISION_CASES);
+  const droppedPrecision = precisionDrafted.slice(MAX_PRECISION_CASES);
+  if (droppedPrecision.length > 0) {
     limits.push(
-      `${ordered.length - shownPacked.length} packed fields past the first ${MAX_PRECISION_FIELDS} have no precision case: ${ordered
-        .slice(MAX_PRECISION_FIELDS)
-        .map((f) => f.name)
-        .join(', ')}.`,
+      `${droppedPrecision.length} precision cases past the first ${MAX_PRECISION_CASES} are not covered: ${[...new Set(droppedPrecision.map((x) => x.f.name))].join(', ')}.`,
     );
   }
-  for (const f of shownPacked) drafted.push(...precisionCases(f, guards, fields));
+  drafted.push(...shownPrecision.map((x) => x.c));
 
   drafted.push(...contractCases(fields));
   drafted.push(runIdentityCase());
 
   const width = Math.max(2, String(drafted.length).length);
   const cases = drafted.map((c, i) => ({ id: `${ENGINE_CASE_PREFIX}${String(i + 1).padStart(width, '0')}`, ...c }));
-  return { cases, limits };
+  return { cases, limits, notCovered: { precision: droppedPrecision.length, guard: droppedGuards.length * 2 } };
+}
+
+/**
+ * How many engine cases the caps left out for this source — counted from the
+ * source alone (the caps do not depend on the rule ids), for STATUS.
+ */
+export function engineCasesNotCovered(source: string): { precision: number; guard: number } {
+  try {
+    return deriveEngineCases(source, []).notCovered;
+  } catch {
+    return { precision: 0, guard: 0 };
+  }
+}
+
+/** "Engine cases past the caps (20 precision, 20 guard): 8 more not covered — 4 precision, 4 guard." */
+export function engineCasesNotCoveredSentence(left: { precision: number; guard: number }): string {
+  return `Engine cases past the caps (${MAX_PRECISION_CASES} precision, ${MAX_GUARD_CASES} guard): ${left.precision + left.guard} more not covered — ${left.precision} precision, ${left.guard} guard.`;
 }
 
 /* ------------------------------------------------------ reading stored cases */
@@ -928,9 +1052,13 @@ export function engineCaseOf(tc: Record<string, unknown> | null | undefined): En
   if (!tc || tc.origin !== 'engine' || !isPlainObject(tc.engineCase)) return null;
   const e = tc.engineCase;
   if (typeof e.kind !== 'string' || !FAMILIES.includes(e.family as EngineCaseFamily) || !isPlainObject(e.trace) || !Array.isArray(e.examples)) return null;
-  const examples = e.examples.filter(
-    (x): x is EngineCaseExample => isPlainObject(x) && typeof x.input === 'string' && typeof x.expected === 'string',
-  );
+  const examples = e.examples
+    .filter((x): x is EngineCaseExample => isPlainObject(x) && typeof x.input === 'string' && typeof x.expected === 'string')
+    .map((x) => {
+      const out: EngineCaseExample = { input: x.input, expected: x.expected };
+      if (isPlainObject(x.call) && typeof x.call.op === 'string' && Array.isArray(x.call.set) && isPlainObject(x.call.expect)) out.call = x.call as unknown as EngineCaseCall;
+      return out;
+    });
   const t = e.trace;
   const lines = Array.isArray(t.lines)
     ? t.lines.filter((l): l is { start: number; end: number } => isPlainObject(l) && Number.isInteger(l.start) && Number.isInteger(l.end))
@@ -1005,7 +1133,7 @@ export function engineCasePromptSection(cases: readonly EngineTestCase[], route:
       `  ${c.id} — ${c.name}\n` + c.engineCase.examples.map((e) => `      input: ${e.input}\n      expected: ${e.expected}`).join('\n'),
   );
   return `
-        ENGINE CASES (CRITICAL — fixed by Clean-Core.io from the ORIGINAL's declared types and guards; do not change them):
+        ENGINE CASES (fixed by Clean-Core.io from the ORIGINAL's declared types and guards; do not change them). The product runs them itself through the call contract (srv/engine-contract); your tests for them are an extra check:
         - Write exactly one test per case below, titled with its id first: ${title}. Assert EVERY example with the literal expected value given.
         - The field names are the ORIGINAL's; map each to the generated code's own name for it. Use exact decimal comparison on strings or scaled integers — never compare binary floats.
         - If the generated code has no way to express a case's input (no such field, no such channel), the test must skip with the reason (t.skip('…') / a skipped ABAP Unit method) — never pass without asserting.

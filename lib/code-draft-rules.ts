@@ -21,6 +21,10 @@
  * Transformation warning, and more strongly when the same literal is a value of
  * the code's own demo data.
  *
+ * Rule 24 (owner, 12.10.2026): the call contract (`lib/engine-call-contract.ts`)
+ * the engine cases run against without a model-written assertion
+ * (`scripts/acceptance/engine-cases.mjs`).
+ *
  * Rules 15–23 (roadmap 3.0.12; CO/FI/PP/SD reviews): the generated packages of
  * four external reviews dropped the original's guards, accepted "2026x" as a
  * year, computed packed quantities in binary floating point, kept a global
@@ -52,6 +56,7 @@ export const CODE_DRAFT_BUSINESS_RULES = `
         21. NOT FOUND IS NOT EMPTY, EMPTY IS NOT ZERO: keep "record not found" apart from "found but empty", and 0 apart from "no value" (a credit limit of 0 is a limit). Date arithmetic in UTC; every amount carries its currency and precision.
         22. NO SERVER ON IMPORT: export an app factory (createApp()) and listen only in a separate entry point, so importing the module for a test never opens a port.
         23. HONEST NAMES: never name a class, function, message, log line or comment after an SAP API, OData call, event or integration the code does not perform (an in-memory store is not an "S4HanaAdapter"; no "updated via OData PATCH" without that call). An event publisher only where SAP has no standard business event for the change, never in SAP's namespace (no sap.s4.* topics or types). package.json declares exactly the dependencies the code imports.
+        24. CALL CONTRACT: also write srv/engine-contract.ts (no server, no I/O on import) exporting CONTRACT = { version: 1, baseRequest: <a request every check passes, still valid with a copy of its first record appended>, fields: { '<ORIGINAL field as in FACTS, e.g. P_GJAHR, QUOTA>': '<request path, e.g. fiscalYear, receivers[].quota>' or null if internal } }, validate(request) → { ok, errors: [{ field, rule, message }], normalized } (decimals as strings at their places), simulate(request) → { ok, runId, records, errors } (records = input records in the result; a refusal names the rule id or line) and getRun(runId). They call the real validator, checks and engine; values arrive as strings.
 `;
 
 /** Most checks the facts section lists; the rest are counted. Keeps the prompt within its budget. */

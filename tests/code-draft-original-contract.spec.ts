@@ -20,7 +20,7 @@ const factsOf = (source: string) => codeDraftFactsSection(readOriginalContract(s
 test.describe('the rules the prompt carries (15–23)', () => {
   test('each rule is there, numbered on from 14', () => {
     const numbers = [...CODE_DRAFT_BUSINESS_RULES.matchAll(/^\s+(\d+)\. /gm)].map((m) => Number(m[1]));
-    expect(numbers).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
+    expect(numbers).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
   });
 
   test('guards first, with the rule id, for the CO guards the review lost', () => {

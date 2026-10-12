@@ -222,6 +222,29 @@ static scan alone. A package whose imports cannot be resolved is reported as
 
 The harness detects; it does not prove against a package written to defeat it.
 
+### Engine cases through the call contract
+
+`scripts/acceptance/engine-cases.mjs` runs the engine cases of a package
+(`test/engine-cases.json`, derived by Clean-Core.io from the original's declared
+types and checks — `lib/testing-engine-cases.ts`) against the call contract the
+generated code exports (`srv/engine-contract.*`: `CONTRACT`, `validate`,
+`simulate`, `getRun` — `lib/engine-call-contract.ts`, code-draft rule 24). No
+model-written assertion is involved: each example carries its input and the
+expected outcome in machine form, the child (`child/engine-cases-child.mjs`)
+calls the contract, and the parent judges (`child/engine-cases-core.mjs`). It
+uses this harness's sandbox (`runChild` with `entry: 'engine-cases-child.mjs'`)
+under the same execution rule; a package without the contract reads
+"Not run — the code does not export the call contract", and a field the
+contract marks as internal is "Not run" with that reason.
+
+```bash
+node scripts/acceptance/engine-cases.mjs <unpacked-package-dir> [--cases file] [--out dir] [--timeout ms] [--trusted-fixture] [--static-only]
+```
+
+The spec is `tests/engine-call-contract.spec.ts`, on the fixtures under
+`tests/fixtures/engine-cases/` (one package that keeps the contract, one with
+the reviews' defects, one without the contract).
+
 ### Static scan
 
 Always runs, reads files only, never evaluates them. It reports a few textual

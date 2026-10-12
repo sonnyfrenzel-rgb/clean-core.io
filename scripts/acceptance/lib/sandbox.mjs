@@ -115,8 +115,10 @@ export function removeTemp(dir) {
 /**
  * Run one probe job in a sandboxed child. Resolves to
  * `{ result, events, timedOut, exitCode, durationMs }`; never rejects.
+ * `entry` is the child script in `child/` (default `probe-child.mjs`; the
+ * engine cases use `engine-cases-child.mjs`) — same flags, same guard.
  */
-export function runChild({ root, job, nodeEnv, timeoutMs, flag }) {
+export function runChild({ root, job, nodeEnv, timeoutMs, flag, entry = 'probe-child.mjs' }) {
   const nonce = crypto.randomBytes(12).toString('hex');
   const args = [
     flag,
@@ -124,7 +126,7 @@ export function runChild({ root, job, nodeEnv, timeoutMs, flag }) {
     `--allow-fs-read=${CHILD_DIR}`,
     '--import',
     pathToFileURL(path.join(CHILD_DIR, 'net-guard.mjs')).href,
-    path.join(CHILD_DIR, 'probe-child.mjs'),
+    path.join(CHILD_DIR, path.basename(entry)),
   ];
   const env = minimalEnv({ CC_ACC_JOB: JSON.stringify({ ...job, root, nonce }) });
   if (nodeEnv !== undefined) env.NODE_ENV = nodeEnv;

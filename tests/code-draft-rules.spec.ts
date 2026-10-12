@@ -63,11 +63,11 @@ test.describe('the hard-coded-literal lint', () => {
 });
 
 test.describe('the prompt rules', () => {
-  // 3.0.10 added rules 11–14; 3.0.12 adds 15–23 (guards, input contract,
+  // 3.0.10 added rules 11–14; 3.0.12 adds 15–24 (guards, input contract,
   // precision, run binding, options, output guards, empty vs zero, no server on
   // import, honest names), pinned in code-draft-original-contract.spec.ts.
-  test('thirteen rules, the first four: no demo values in logic, full-key lookups, one selection, posted values kept', () => {
-    expect([...CODE_DRAFT_BUSINESS_RULES.matchAll(/^\s+(\d+)\. [A-Z]/gm)]).toHaveLength(13);
+  test('fourteen rules, the first four: no demo values in logic, full-key lookups, one selection, posted values kept', () => {
+    expect([...CODE_DRAFT_BUSINESS_RULES.matchAll(/^\s+(\d+)\. [A-Z]/gm)]).toHaveLength(14);
     expect(CODE_DRAFT_BUSINESS_RULES).toContain("items.find(i => i.belnr === '1900000001') is forbidden");
     expect(CODE_DRAFT_BUSINESS_RULES).toContain('complete key the original uses (company code, document number, fiscal year, line item — and the customer or vendor it must belong to');
     expect(CODE_DRAFT_BUSINESS_RULES).toContain('ONE shared, validated selection function');

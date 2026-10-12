@@ -1,0 +1,310 @@
+import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { deriveBusinessRules } from '../lib/abap/business-rule-set';
+import {
+  MAX_GUARD_CASES,
+  MAX_PRECISION_CASES,
+  deriveEngineCases,
+  engineCasesFile,
+  engineCasesNotCovered,
+  type EngineTestCase,
+} from '../lib/testing-engine-cases';
+import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT, callContractPresence } from '../lib/engine-call-contract';
+import { CODE_DRAFT_BUSINESS_RULES } from '../lib/code-draft-rules';
+import { testFactsOf } from '../lib/delivery-facts';
+
+/**
+ * Owner decisions of 12.10.2026 on the engine cases (roadmap 3.0.12):
+ *   1. the generated code exports a fixed call contract (`srv/engine-contract.*`:
+ *      CONTRACT, validate, simulate, getRun) and the engine cases run against it
+ *      without a model-written assertion — in the acceptance harness's sandbox;
+ *   2. (assessment, in testing-engine-cases.spec.ts);
+ *   3. caps: 20 precision + 20 guard cases, prioritised; the rest counted in STATUS.
+ *
+ * Server-free. The packages the runner executes are hand-written fixtures under
+ * tests/fixtures/engine-cases/ (ours, hence `--trusted-fixture`); a generated
+ * package never gets that flag, and one test shows what happens without it.
+ */
+
+const ROOT = path.join(__dirname, '..');
+const RUNNER = path.join(ROOT, 'scripts', 'acceptance', 'engine-cases.mjs');
+const FIXTURES = path.join(ROOT, 'tests', 'fixtures', 'engine-cases');
+
+/** The CO-shaped allocation of testing-engine-cases.spec.ts. */
+const CO = `REPORT zco_allocation.
+TYPES: BEGIN OF ty_receiver,
+         kostl TYPE kostl,
+         quota TYPE p LENGTH 7 DECIMALS 6,
+         amount TYPE p LENGTH 8 DECIMALS 2,
+       END OF ty_receiver.
+DATA: gt_receivers TYPE STANDARD TABLE OF ty_receiver,
+      gs_receiver  TYPE ty_receiver,
+      gv_total     TYPE p LENGTH 8 DECIMALS 2,
+      gv_quota_sum TYPE p LENGTH 7 DECIMALS 6,
+      gv_count     TYPE i.
+PARAMETERS: p_kokrs TYPE kokrs OBLIGATORY,
+            p_gjahr TYPE gjahr,
+            p_sender TYPE kostl,
+            p_amount TYPE p LENGTH 8 DECIMALS 2.
+
+START-OF-SELECTION.
+  IF gt_receivers IS INITIAL.
+    MESSAGE e001(zco) WITH 'No receivers'.
+    RETURN.
+  ENDIF.
+  LOOP AT gt_receivers INTO gs_receiver.
+    gv_quota_sum = gv_quota_sum + gs_receiver-quota.
+  ENDLOOP.
+  IF gv_quota_sum > 100.
+    MESSAGE e002(zco) WITH 'Quota over 100 %'.
+    RETURN.
+  ENDIF.
+  LOOP AT gt_receivers INTO gs_receiver.
+    CHECK gs_receiver-kostl <> p_sender.
+    gs_receiver-amount = p_amount * gs_receiver-quota / 100.
+    gv_total = gv_total + gs_receiver-amount.
+    gv_count = gv_count + 1.
+  ENDLOOP.
+  WRITE: / gv_total, gv_count.
+`;
+
+/** A wide program: 9 packed fields (3 of them inputs) and 14 checks (8 with a value in the code). */
+const WIDE = [
+  'REPORT zwide.',
+  'DATA: gv_a TYPE p LENGTH 8 DECIMALS 2,',
+  '      gv_b TYPE p LENGTH 8 DECIMALS 2,',
+  '      gv_c TYPE p LENGTH 8 DECIMALS 2,',
+  '      gv_d TYPE p LENGTH 8 DECIMALS 2,',
+  '      gv_e TYPE p LENGTH 8 DECIMALS 2,',
+  '      gv_f TYPE p LENGTH 8 DECIMALS 2,',
+  '      gt_tab TYPE STANDARD TABLE OF i.',
+  'PARAMETERS: p_x TYPE p LENGTH 8 DECIMALS 2,',
+  '            p_y TYPE p LENGTH 8 DECIMALS 2,',
+  '            p_z TYPE p LENGTH 8 DECIMALS 2.',
+  'START-OF-SELECTION.',
+  ...Array.from({ length: 6 }, (_, i) => [`  IF gt_tab IS INITIAL.`, `    MESSAGE e00${i}(zw).`, '    RETURN.', '  ENDIF.']).flat(),
+  ...Array.from({ length: 8 }, (_, i) => [`  IF p_x > ${100 + i}.`, `    MESSAGE e01${i}(zw).`, '    RETURN.', '  ENDIF.']).flat(),
+  '  gv_a = p_x + p_y + p_z.',
+].join('\n');
+
+const derive = (src: string) => deriveEngineCases(src, deriveBusinessRules(src).rules);
+
+function runRunner(pkg: string, casesFile: string, extra: string[] = []) {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-spec-'));
+  try {
+    execFileSync(process.execPath, [RUNNER, path.join(FIXTURES, pkg), '--cases', casesFile, '--out', out, '--timeout', '15000', ...extra], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      timeout: 120_000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return JSON.parse(fs.readFileSync(path.join(out, 'engine-cases-report.json'), 'utf8')) as {
+      contract: { path: string | null; present: boolean };
+      sandbox: { executed: boolean; mode: string; reason: string };
+      summary: { passed: number; failed: number; notRun: number };
+      cases: Array<{ id: string; status: string; reason?: string; examples: Array<{ input: string; status: string; evidence: string }> }>;
+    };
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+}
+
+/* ------------------------------------------------------------------ caps */
+
+test.describe('caps: 20 precision and 20 guard cases, prioritised, the rest counted', () => {
+  const r = derive(WIDE);
+  const guards = r.cases.filter((c) => c.engineCase.family === 'guard');
+  const precision = r.cases.filter((c) => c.engineCase.family === 'precision');
+
+  test('at most 20 of each; checks with a business-rule id and selection inputs first', () => {
+    expect(MAX_PRECISION_CASES).toBe(20);
+    expect(MAX_GUARD_CASES).toBe(20);
+    expect(guards).toHaveLength(20);
+    expect(precision).toHaveLength(20);
+    // 8 checks carry a value in the code (BR ids): all 8 are in, then 2 of the 6 without
+    const withId = guards.filter((c) => c.engineCase.trace.ruleId);
+    expect(withId).toHaveLength(16);
+    expect(new Set(withId.map((c) => c.engineCase.trace.ruleId)).size).toBe(8);
+    // the three selection inputs come first, then two working variables
+    expect([...new Set(precision.map((c) => c.engineCase.trace.field))]).toEqual(['p_x', 'p_y', 'p_z', 'gv_a', 'gv_b']);
+  });
+
+  test('the rest is counted, said in the limits and in STATUS', () => {
+    expect(r.notCovered).toEqual({ precision: 16, guard: 8 });
+    expect(engineCasesNotCovered(WIDE)).toEqual({ precision: 16, guard: 8 });
+    expect(r.limits.join(' ')).toContain('16 precision cases past the first 20 are not covered: gv_c, gv_d, gv_e, gv_f.');
+    expect(r.limits.join(' ')).toMatch(/8 guard cases past the first 20 are not covered: the check at L\d+/);
+    const facts = testFactsOf({ testCases: r.cases, legacyCode: WIDE } as unknown as Parameters<typeof testFactsOf>[0], []);
+    expect(facts.detail).toContain('Engine cases past the caps (20 precision, 20 guard): 24 more not covered — 16 precision, 8 guard.');
+  });
+});
+
+/* ---------------------------------------------------- calls on the cases */
+
+test.describe('every runnable example carries its machine form', () => {
+  const cases = derive(CO).cases;
+  const find = (kind: string, pred: (c: EngineTestCase) => boolean = () => true) => cases.find((c) => c.engineCase.kind === kind && pred(c))!;
+
+  test('guards: a refusal names its rule or line and no other rule; a skip is measured by the record count', () => {
+    const noReceivers = find('guard-breaks-one', (c) => c.engineCase.trace.lines[0].start === 18);
+    expect(noReceivers.engineCase.examples[0].call).toEqual({
+      op: 'simulate',
+      set: [{ field: 'GT_RECEIVERS', to: { special: 'empty' } }],
+      expect: { kind: 'refused', rule: 'L18', field: 'GT_RECEIVERS', notRules: ['BR-001'] },
+    });
+    const sender = find('guard-breaks-one', (c) => c.engineCase.trace.lines[0].start === 30);
+    expect(sender.engineCase.examples[0].call).toEqual({
+      op: 'simulate',
+      mode: 'append',
+      set: [{ field: 'GS_RECEIVER-KOSTL', to: { sameAs: 'P_SENDER' } }],
+      expect: { kind: 'records-delta', delta: 0 },
+    });
+    const quotaR2 = find('guard-exclusion-necessary', (c) => c.engineCase.trace.ruleId === 'BR-001');
+    expect(quotaR2.engineCase.examples[1].call).toEqual({
+      op: 'simulate',
+      set: [{ field: 'GV_QUOTA_SUM', to: { value: '100.000000' } }],
+      expect: { kind: 'not-refused-by', rule: 'BR-001', field: 'GV_QUOTA_SUM' },
+    });
+  });
+
+  test('precision and contract: values as strings, exact normalized values, refusals naming the field', () => {
+    const rounding = find('precision-rounding', (c) => c.engineCase.trace.field === 'p_amount');
+    expect(rounding.engineCase.examples[1].call).toEqual({
+      op: 'validate',
+      set: [{ field: 'P_AMOUNT', to: { value: '-0.005' } }],
+      expect: { kind: 'accepted', field: 'P_AMOUNT', normalized: '-0.01' },
+    });
+    const overflow = find('precision-overflow', (c) => c.engineCase.trace.field === 'quota');
+    expect(overflow.engineCase.examples[0].call).toEqual({ op: 'validate', set: [{ field: 'QUOTA', to: { value: '10000000.000000' } }], expect: { kind: 'refused', field: 'QUOTA' } });
+    // exact arithmetic has no machine form through the contract: the model's test is the only assertion there
+    expect(find('precision-exact-arithmetic').engineCase.examples.every((e) => e.call === undefined)).toBe(true);
+    expect(find('contract-empty-request').engineCase.examples[0].call).toEqual({ op: 'simulate', mode: 'empty', set: [], expect: { kind: 'not-success' } });
+    expect(find('contract-integer').engineCase.examples[2].call).toEqual({ op: 'validate', set: [{ field: 'P_GJAHR', to: { special: 'NaN' } }], expect: { kind: 'refused', field: 'P_GJAHR' } });
+    expect(find('contract-null-not-zero').engineCase.examples.find((e) => e.input === 'P_AMOUNT missing (null)')?.call?.expect).toEqual({ kind: 'not-zero', field: 'P_AMOUNT' });
+    expect(find('run-identity').engineCase.examples.map((e) => e.call)).toEqual([
+      { op: 'run-identity', set: [], expect: { kind: 'distinct-runs' } },
+      { op: 'run-identity', set: [], expect: { kind: 'distinct-runs' } },
+    ]);
+  });
+});
+
+/* ------------------------------------------------- the contract and rule 24 */
+
+test.describe('the call contract', () => {
+  test('rule 24 asks for it in the code-draft prompt, within the size budget', () => {
+    const r = CODE_DRAFT_BUSINESS_RULES;
+    expect(r).toContain('24. CALL CONTRACT: also write srv/engine-contract.ts (no server, no I/O on import)');
+    for (const part of ['CONTRACT = { version: 1, baseRequest', 'still valid with a copy of its first record appended', 'validate(request) → { ok, errors: [{ field, rule, message }], normalized }', 'simulate(request) → { ok, runId, records, errors }', 'getRun(runId)', 'decimals as strings at their places']) {
+      expect(r).toContain(part);
+    }
+    expect(r.length).toBeLessThan(6_000);
+  });
+
+  test('presence is read from the generated files, never by running them', () => {
+    const contract = fs.readFileSync(path.join(FIXTURES, 'sound', 'srv', 'engine-contract.mjs'), 'utf8');
+    expect(callContractPresence([{ path: 'srv/engine-contract.mjs', content: contract }])).toEqual({ present: true, path: 'srv/engine-contract.mjs', missing: [] });
+    expect(callContractPresence([{ path: './srv/engine-contract.ts', content: 'export const CONTRACT = {};\nexport function validate() {}\nexport function simulate() {}' }])).toEqual({
+      present: false,
+      path: 'srv/engine-contract.ts',
+      missing: ['getRun'],
+    });
+    expect(callContractPresence([{ path: 'srv/service.ts', content: 'export function validate() {}' }]).present).toBe(false);
+    expect(NOT_RUN_NO_CONTRACT).toBe('Not run — the code does not export the call contract');
+  });
+
+  test('the runner and the product agree on where the contract stands and what is said without it', () => {
+    const core = fs.readFileSync(path.join(ROOT, 'scripts', 'acceptance', 'child', 'engine-cases-core.mjs'), 'utf8');
+    const list = core.match(/export const CALL_CONTRACT_PATHS = \[([\s\S]*?)\];/)![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
+    expect(list).toEqual([...CALL_CONTRACT_PATHS]);
+    expect(fs.readFileSync(RUNNER, 'utf8')).toContain(`export const NOT_RUN_NO_CONTRACT = '${NOT_RUN_NO_CONTRACT}';`);
+  });
+});
+
+/* ----------------------------------------------------------- the runner */
+
+test.describe('the runner executes engine cases in the harness sandbox', () => {
+  let casesFile = '';
+  let dir = '';
+  test.beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-cases-'));
+    casesFile = path.join(dir, 'engine-cases.json');
+    fs.writeFileSync(casesFile, engineCasesFile(derive(CO).cases as unknown as Array<Record<string, unknown>>)!);
+  });
+  test.afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  const status = (r: ReturnType<typeof runRunner>, id: string) => r.cases.find((c) => c.id === id)!;
+  const byKind = (kind: string, pred: (c: EngineTestCase) => boolean = () => true) => derive(CO).cases.filter((c) => c.engineCase.kind === kind && pred(c)).map((c) => c.id);
+
+  test('a package that keeps the contract passes every case it can express; the rest say why they did not run', () => {
+    const r = runRunner('sound', casesFile, ['--trusted-fixture']);
+    expect(r.sandbox).toMatchObject({ executed: true });
+    expect(r.contract).toEqual({ path: 'srv/engine-contract.mjs', present: true });
+    expect(r.summary.failed).toBe(0);
+    for (const id of [
+      ...byKind('guard-breaks-one', (c) => !c.engineCase.trace.ruleId),
+      ...byKind('guard-exclusion-necessary', (c) => !c.engineCase.trace.ruleId),
+      ...byKind('precision-max', (c) => ['p_amount', 'quota', 'amount'].includes(c.engineCase.trace.field!)),
+      ...byKind('precision-overflow', (c) => ['p_amount', 'quota', 'amount'].includes(c.engineCase.trace.field!)),
+      ...byKind('precision-rounding', (c) => ['p_amount', 'quota', 'amount'].includes(c.engineCase.trace.field!)),
+      ...byKind('contract-empty-request'),
+      ...byKind('contract-integer'),
+      ...byKind('contract-non-finite'),
+      ...byKind('contract-null-not-zero'),
+      ...byKind('run-identity'),
+    ]) {
+      expect(status(r, id).status, id).toBe('Passed');
+    }
+    // BR-001 reads the quota sum, which is internal to the original: not part of a request
+    for (const id of byKind('guard-breaks-one', (c) => c.engineCase.trace.ruleId === 'BR-001')) {
+      expect(status(r, id)).toMatchObject({ status: 'Not run', reason: 'the contract marks GV_QUOTA_SUM as internal (not part of a request)' });
+    }
+    for (const id of byKind('precision-exact-arithmetic')) {
+      expect(status(r, id).reason).toBe("not expressible through the call contract — asserted by the model's test only");
+    }
+  });
+
+  test('a package with the reviews\' defects fails them — without a single model-written assertion', () => {
+    const r = runRunner('flawed', casesFile, ['--trusted-fixture']);
+    expect(r.contract.present).toBe(true);
+    const failed = (id: string) => {
+      const c = status(r, id);
+      expect(c.status, id).toBe('Failed');
+      return c.examples.filter((e) => e.status === 'fail').map((e) => e.evidence);
+    };
+    // no receivers accepted; the sender kept as its own receiver
+    expect(failed(byKind('guard-breaks-one', (c) => c.engineCase.trace.lines[0].start === 18)[0])).toEqual(['accepted, expected refused (ok: true; errors: [])']);
+    expect(failed(byKind('guard-breaks-one', (c) => c.engineCase.trace.lines[0].start === 30)[0])).toEqual(['3 records, expected 2 (base 2)']);
+    // Math.round on a binary float: -0.005 → 0, 1.005 → 1
+    const rounding = failed(byKind('precision-rounding', (c) => c.engineCase.trace.field === 'p_amount')[0]);
+    expect(rounding).toContain('accepted and held as 0, expected exactly -0.01');
+    expect(rounding).toContain('accepted and held as 1, expected exactly 1.01');
+    // no bound; parseInt("2026x") === 2026; the empty request a success; a clock-based run id
+    expect(failed(byKind('precision-overflow', (c) => c.engineCase.trace.field === 'quota')[0])[0]).toBe('accepted, expected refused (ok: true; errors: [])');
+    expect(failed(byKind('contract-integer')[0])).toHaveLength(5);
+    expect(failed(byKind('contract-empty-request')[0])).toEqual(['an empty request was answered ok: true (records: 0)']);
+    expect(failed(byKind('run-identity')[0])[0]).toMatch(/^two runs in the same millisecond got the same id RUN-\d+$/);
+  });
+
+  test('code without the call contract: every case reads "Not run — the code does not export the call contract"', () => {
+    const r = runRunner('no-contract', casesFile, ['--trusted-fixture']);
+    expect(r.contract).toEqual({ path: null, present: false });
+    expect(r.summary).toEqual({ passed: 0, failed: 0, notRun: r.cases.length });
+    for (const c of r.cases) expect(c.reason).toMatch(/^Not run — the code does not export the call contract \(none of srv\/engine-contract\.ts/);
+  });
+
+  test('a generated package is not executed where the platform cannot deny network access', () => {
+    const r = runRunner('sound', casesFile);
+    if (r.sandbox.mode === 'permission-model-with-network-denied') {
+      // Node >= 25: the platform itself refuses sockets, so the package may run on the runner's own judgement.
+      expect(r.sandbox.executed).toBe(true);
+      return;
+    }
+    expect(r.sandbox.executed).toBe(false);
+    expect(r.summary.notRun).toBe(r.cases.length);
+    for (const c of r.cases) expect(c.reason).toBe(`Not run — ${r.sandbox.reason}`);
+    expect(r.sandbox.reason).toContain('third-party packages are not executed');
+  });
+});

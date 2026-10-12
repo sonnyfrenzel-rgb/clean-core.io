@@ -16,7 +16,7 @@ import {
   withEngineCases,
   type EngineTestCase,
 } from '../lib/testing-engine-cases';
-import { assessCase } from '../lib/testing-rule-trace';
+import { CASE_ASSESSMENT_WORD, assessCase, assessmentSummary, countAssessments } from '../lib/testing-rule-trace';
 import { testFactsOf } from '../lib/delivery-facts';
 import { createDeliveryBundle } from '../lib/delivery-package';
 
@@ -222,7 +222,10 @@ test.describe('CO-shaped allocation (P DECIMALS 2 and 6)', () => {
 
     // TC_10: the excluded record is necessary to the result
     const exclusion = byKind(cases, 'guard-exclusion-necessary').find((c) => c.engineCase.trace.lines[0].start === 30)!;
-    expect(exclusion.engineCase.examples[0].expected).toContain('With B included the count would be 2');
+    expect(exclusion.engineCase.examples.map((e) => e.expected)).toEqual([
+      'A is in the result: one record more than without it',
+      'B is excluded: no record more than without it. With B included the count would be one higher — the case fails if the exclusion is lost',
+    ]);
     const refusal = byKind(cases, 'guard-exclusion-necessary').find((c) => c.engineCase.trace.ruleId === 'BR-001')!;
     expect(refusal.engineCase.examples.map((e) => e.input)).toEqual([
       expect.stringMatching(/^request R1: GV_QUOTA_SUM = 100\.000001;/),
@@ -304,7 +307,13 @@ test.describe('PP-shaped quantities (P LENGTH 8 DECIMALS 3)', () => {
     expect(bound.engineCase.examples[0].input).toBe('GS_COMP-BDMNG = 99999.001; every other guard satisfied: BR-001 (GS_COMP-WERKS = 1000)');
     expect(bound.name).toMatch(/is skipped$/);
     const exclusion = byKind(cases, 'guard-exclusion-necessary').find((c) => c.engineCase.trace.ruleId === 'BR-002')!;
-    expect(exclusion.engineCase.examples[0].input).toMatch(/^record A: GS_COMP-BDMNG = 99999\.000; record B: identical to A except GS_COMP-BDMNG = 99999\.001;/);
+    expect(exclusion.engineCase.examples[0].input).toMatch(/^record A appended to a request that passes every check: GS_COMP-BDMNG = 99999\.000;/);
+    expect(exclusion.engineCase.examples[1].input).toBe('record B appended instead: identical to A except GS_COMP-BDMNG = 99999.001');
+    // in machine form: A appended (+1 record), B appended (skipped, +0)
+    expect(exclusion.engineCase.examples.map((e) => e.call)).toEqual([
+      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.000' } }], expect: { kind: 'records-delta', delta: 1 } },
+      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.001' } }], expect: { kind: 'records-delta', delta: 0 } },
+    ]);
   });
 
   test('an invalid date is refused', () => {
@@ -328,7 +337,7 @@ test.describe('SD-shaped discount', () => {
     expect(negative.engineCase.trace.ruleId).toBeUndefined();
     expect(negative.engineCase.examples[0].input).toBe('P_RATE = -0.01; every other guard satisfied: BR-001 (P_RATE = 30.00)');
     const r2 = byKind(cases, 'guard-exclusion-necessary').find((c) => c.engineCase.trace.ruleId === 'BR-001')!;
-    expect(r2.engineCase.examples[1]).toEqual({ input: 'request R2: R1 with P_RATE = 30.00 only', expected: 'not refused by BR-001: processing goes past L11' });
+    expect(r2.engineCase.examples[1]).toMatchObject({ input: 'request R2: R1 with P_RATE = 30.00 only', expected: 'not refused by BR-001: processing goes past L11' });
   });
 
   test('a value that fits the declaration but breaks a check is expected to be refused by that check', () => {
@@ -388,7 +397,7 @@ test.describe('the generated suite carries the engine cases', () => {
     expect(file.format).toBe('clean-core.engine-cases/1');
     expect(file.cases.map((c: { id: string }) => c.id)).toEqual(engine.map((c) => c.id));
     const quota = file.cases.find((c: { kind: string; trace: { field?: string } }) => c.kind === 'precision-max' && c.trace.field === 'quota');
-    expect(quota.examples[0]).toEqual({ input: 'QUOTA = 9999999.999999', expected: 'accepted; kept exactly as 9999999.999999' });
+    expect(quota.examples[0]).toMatchObject({ input: 'QUOTA = 9999999.999999', expected: 'accepted; kept exactly as 9999999.999999' });
     expect(quota.trace.lines).toEqual([{ start: 4, end: 4 }]);
     expect(engineCasesFile(model)).toBeNull();
   });
@@ -417,19 +426,31 @@ test.describe('the generated suite carries the engine cases', () => {
 /* ------------------------------------------------------------ assessment */
 
 test.describe('old against new for an engine case', () => {
-  const engine = { ruleId: 'BR-001', expected: 'GV_QUOTA_SUM = 100.000001 → refused by BR-001' };
+  const viaModel = { ruleId: 'BR-001', expected: 'GV_QUOTA_SUM = 100.000001 → refused by BR-001', via: 'model-assertion' as const };
+  const viaContract = { ...viaModel, via: 'contract' as const };
 
-  test('a pass is never "unchanged": the assertion is the model\'s', () => {
-    const r = assessCase({ trace: null, verdict: 'Passed', engine });
-    expect(r.value).toBe('passed-model-stated');
-    expect(r.sentence).toContain('derived by Clean-Core.io from the original');
-    expect(r.sentence).toContain('not checked against it');
+  test('through the suite the model wrote: a pass is never "unchanged", a failure is red but not a confirmed defect', () => {
+    const passed = assessCase({ trace: null, verdict: 'Passed', engine: viaModel });
+    expect(passed.value).toBe('passed-model-stated');
+    expect(passed.sentence).toContain('not checked against it');
+    const failed = assessCase({ trace: null, verdict: 'Failed', engine: viaModel });
+    expect(failed.value).toBe('failed-assertion-model-written');
+    expect(CASE_ASSESSMENT_WORD[failed.value]).toBe('Failed · assertion model-written');
+    expect(failed.sentence).toContain('not a confirmed defect');
+    const counts = countAssessments([failed.value, 'defect']);
+    expect(counts.failedAssertionModelWritten).toBe(1);
+    expect(counts.defect).toBe(1);
+    expect(assessmentSummary(counts)).toContain('1 failed with a model-written assertion, not confirmed');
   });
 
-  test('a failure is a defect, unless the owner marked the guard\'s rule to change', () => {
-    expect(assessCase({ trace: null, verdict: 'Failed', engine }).value).toBe('defect');
-    expect(assessCase({ trace: null, verdict: 'Failed', engine, ruleState: 'change' }).value).toBe('failed-rule-changing');
-    expect(assessCase({ trace: null, verdict: 'Failed', engine: { ruleId: null, expected: 'x' }, ruleState: 'change' }).value).toBe('defect');
-    expect(assessCase({ trace: null, verdict: 'Not run', engine }).value).toBe('not-assessable');
+  test('through the call contract: a failure is a defect, a pass is unchanged', () => {
+    expect(assessCase({ trace: null, verdict: 'Failed', engine: viaContract }).value).toBe('defect');
+    expect(assessCase({ trace: null, verdict: 'Passed', engine: viaContract }).value).toBe('unchanged');
+  });
+
+  test('a rule the owner marked to change, and no run', () => {
+    expect(assessCase({ trace: null, verdict: 'Failed', engine: viaContract, ruleState: 'change' }).value).toBe('failed-rule-changing');
+    expect(assessCase({ trace: null, verdict: 'Failed', engine: { ...viaContract, ruleId: null }, ruleState: 'change' }).value).toBe('defect');
+    expect(assessCase({ trace: null, verdict: 'Not run', engine: viaModel }).value).toBe('not-assessable');
   });
 });

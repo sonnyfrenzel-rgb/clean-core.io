@@ -35,7 +35,8 @@ import { ENGINE_CASE_FAMILY_WORD, engineCaseOf } from '@/lib/testing-engine-case
 
 /** The chip of a case's old-against-new assessment (3.0.10). */
 function AssessmentWord({ reading }: { reading: CaseAssessmentReading }) {
-  const state = reading.value === 'defect' ? 'error' : reading.value === 'unchanged' ? 'information' : 'neutral';
+  // A failure with a model-written assertion is red too (owner, 12.10.2026) — only not counted as a confirmed defect.
+  const state = reading.value === 'defect' || reading.value === 'failed-assertion-model-written' ? 'error' : reading.value === 'unchanged' ? 'information' : 'neutral';
   return (
     <span data-scenario-assessment={reading.value}>
       <CcStateText state={state} hollow={reading.value === 'not-assessable'} facet="Old vs new">
