@@ -2,6 +2,7 @@ import type { ProvenanceValue } from '@/lib/provenance';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
+import { readingPath, type PathItem } from '@/lib/process-documentation-path';
 
 /**
  * The process documentation of stage 4 — roadmap 3.0.5, Weg C (Sonny, 24.09.2026).
@@ -435,18 +436,58 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
 
   /* ---------------------------------------------------------- 1. the process */
   out.push(...heading(2, A.process, PROCESS_DOCUMENTATION_SECTIONS[1].title));
-  out.push(`${doc.overview} The main path, in the order of the program; every step with its lines. Provenance: Reconstructed. Business names from the naming stage are a Model proposal.`, '');
+  out.push(`${doc.overview} The main path, in the order a run takes it: alternative paths stand side by side, a step that runs only under a condition is marked optional; every step with its lines. Provenance: Reconstructed. Business names from the naming stage are a Model proposal.`, '');
   // A step says what it does only with a sentence of its own — a rule stands under the rules, and a sentence is said once.
   const said = new Set<string>();
-  topSteps.forEach((step, i) => {
+  const stepLine = (step: DocStep, note = ''): string => {
     const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
     const kind = sentence ? statementKind(sentence.text) : null;
     const own = !!sentence && (kind === 'step' || kind === 'data') && !said.has(sentence.id);
     if (own) said.add(sentence.id);
     const does = own ? ` — ${sentence.text}` : '';
     const proposal = step.businessName ? ' (name: Model proposal)' : '';
-    out.push(`${i + 1}. **${docStepName(step)}**${proposal}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`);
-  });
+    return `**${docStepName(step)}**${proposal}${note}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
+  };
+  // The order a run takes, not the order the map stores its elements in: that
+  // order draws one branch of a decision to the end before the other, and the
+  // CO close simulation read as if the authorization check and the live read
+  // ran after the result was shown (CO review F02, 12.10.2026).
+  const when = (condition: string) => (condition ? `, only when \`${condition}\`` : '');
+  const at = (split: DocStep) => (isGate(split) && split.anchor ? `, decided at ${shortLines([split.anchor])}` : '');
+  const renderPath = (items: PathItem[], indent: string): void => {
+    items.forEach((item, i) => {
+      const marker = `${i + 1}. `;
+      const inner = `${indent}${' '.repeat(marker.length)}`;
+      const lone = 'items' in item && item.items.length === 1 && item.items[0].kind === 'step' ? item.items[0].step : null;
+      if (item.kind === 'step') {
+        out.push(`${indent}${marker}${stepLine(item.step)}`);
+      } else if (item.kind === 'choice') {
+        const head = item.parallel ? `These ${item.arms.length} paths run side by side${at(item.split)}:` : `One of ${item.arms.length} alternative paths${at(item.split)}:`;
+        out.push(`${indent}${marker}${head}`);
+        for (const arm of item.arms) {
+          const label = item.parallel ? (arm.when ? `When \`${arm.when}\`` : 'Always') : arm.when ? `When \`${arm.when}\`` : 'Otherwise';
+          out.push(`${inner}- **${label}:**${arm.items.length ? '' : ' no step on this path.'}`);
+          renderPath(arm.items, `${inner}  `);
+        }
+      } else if (lone && item.kind === 'optional') {
+        out.push(`${indent}${marker}${stepLine(lone, ` — optional${when(item.when)}`)}`);
+      } else if (lone && item.kind === 'exit') {
+        out.push(`${indent}${marker}${stepLine(lone, ` — ${item.when ? `only when \`${item.when}\`` : 'otherwise'}, and then the run ends`)}`);
+      } else {
+        const head = item.kind === 'optional'
+          ? `Optional${when(item.when)}${at(item.split)}:`
+          : item.kind === 'exit'
+            ? `${item.when ? `Only when \`${item.when}\`` : 'Otherwise'}${at(item.split)}, and then the run ends:`
+            : item.when
+              ? `Repeated while \`${item.when}\`${at(item.split)}:`
+              : `Repeated for each pass of \`${item.split.technicalName}\`${item.split.anchor ? ` (${shortLines([item.split.anchor])})` : ''}:`;
+        out.push(`${indent}${marker}${head}`);
+        renderPath(item.items, inner);
+      }
+    });
+  };
+  const path = readingPath(doc.steps);
+  renderPath(path, '');
   if (topSteps.length === 0) out.push('No step stands on the top level of the process.');
   out.push('');
   if (along.length) {
