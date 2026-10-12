@@ -28,7 +28,7 @@ interface RoutingRationaleProps {
 
 /**
  * "Why This Routing" panel — binds the Design decision back to Analyze evidence.
- * Shows the route badge, compliance score, deployment target, and the top
+ * Shows the route badge, Clean Core Score, deployment target, and the top
  * deterministic findings that drove the routing decision.
  */
 export default function RoutingRationale({

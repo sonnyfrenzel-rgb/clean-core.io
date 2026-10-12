@@ -10,6 +10,7 @@ import {
   scoreWithBand,
 } from '../lib/clean-core-score';
 import { buildBoardDeck } from '../lib/board-deck';
+import { formatAnalysisToMarkdown } from '../lib/markdownFormatter';
 
 /**
  * Clean-Core.io's score bands are the official reading of a Clean Core Score
@@ -142,6 +143,33 @@ test.describe('one source for the score bands', () => {
     for (const rel of SURFACES) {
       expect(read(rel), `${rel} does not read lib/clean-core-score.ts`).toMatch(/from ['"](?:@\/lib|\.\.?(?:\/\.\.)*)?\/?(?:lib\/)?clean-core-score['"]/);
     }
+  });
+});
+
+test.describe('one name for the score', () => {
+  // The business analysis export headed the score by another name while the
+  // decision record said it is no compliance percentage (CO review F17,
+  // 12.10.2026). One name everywhere: the Clean Core Score.
+  const OTHER_NAME = /\bcompliance[ _-]?score/i;
+
+  test('no file of the app calls it a compliance score', () => {
+    const offenders = [...FILES, MODULE].filter((rel) => OTHER_NAME.test(read(rel)));
+    expect(offenders).toEqual([]);
+  });
+
+  test('the business analysis export names it the Clean Core Score', () => {
+    const md = formatAnalysisToMarkdown(JSON.stringify({ projectTitle: 'X', cleanCoreScore: 78, summary: 'S' }));
+    expect(md).toContain('**Clean Core Score:** `78 / 100` (a grade, not a compliance percentage)');
+    expect(md).not.toMatch(OTHER_NAME);
+  });
+
+  test('a missing score reads as not computed, never 0; a real 0 stays 0', () => {
+    for (const cleanCoreScore of [undefined, null, '', 'n/a']) {
+      const md = formatAnalysisToMarkdown(JSON.stringify({ projectTitle: 'X', cleanCoreScore, summary: 'S' }));
+      expect(md, String(cleanCoreScore)).toContain('**Clean Core Score:** not computed');
+      expect(md, String(cleanCoreScore)).not.toMatch(/`0 \/ 100`/);
+    }
+    expect(formatAnalysisToMarkdown(JSON.stringify({ cleanCoreScore: 0, summary: 'S' }))).toContain('`0 / 100`');
   });
 });
 

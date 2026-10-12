@@ -31,8 +31,13 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     if (!data) return withoutUnapprovedMoney(rawJson);
 
     let md = `# Business Analysis Report: ${data.projectTitle || 'ABAP Modernization'}\n\n`;
-    md += `## Clean Core Compliance Baseline\n`;
-    md += `**Compliance Score:** \`${data.cleanCoreScore || 0} / 100\`\n\n`;
+    // One name for the score everywhere: the Clean Core Score, a grade, never named after compliance (CO review F17, 12.10.2026).
+    md += `## Clean Core Score\n`;
+    // A missing score is not computed, never 0 (CO review F17, 12.10.2026).
+    const score = typeof data.cleanCoreScore === 'number' && Number.isFinite(data.cleanCoreScore) ? data.cleanCoreScore : null;
+    md += score === null
+      ? `**Clean Core Score:** not computed\n\n`
+      : `**Clean Core Score:** \`${score} / 100\` (a grade, not a compliance percentage)\n\n`;
     md += `> **Executive Summary:** ${checked(data.summary || '')}\n\n`;
 
     md += `## As-Is Process & Legacy Context\n`;
