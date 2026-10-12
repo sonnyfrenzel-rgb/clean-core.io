@@ -99,8 +99,57 @@ function namesPhrase(list: readonly FactObject[], word: (name: string) => string
   return joinAnd(shown);
 }
 
-/** Tables whose content is master or credit data — read as it is stored when the program runs. */
-const MASTER_DATA = /^(?:KNA1|KNB1|KNB5|KNKK|KNVV|KNVP|LFA1|LFB1|LFM1|MARA|MARC|MARD|MBEW|MAKT|T001|ADRC|BUT000|UKMBP_CMS_SGM|CSKS|SKA1|SKB1)$/;
+/**
+ * Tables whose content is master data (or the credit data kept beside it) —
+ * read as it is stored when the program runs — by the business object each
+ * one holds. The limit line names that object, so a cost center report reads
+ * "cost center master data (CSKS)", never a generic "master and credit data";
+ * "credit" is said only for a table that holds credit data (CO review F03,
+ * 12.10.2026).
+ */
+export const MASTER_DATA_OBJECT: Readonly<Record<string, string>> = Object.freeze({
+  KNA1: 'customer master data',
+  KNB1: 'customer master data',
+  KNVV: 'customer master data',
+  KNVP: 'customer partner data',
+  KNB5: 'customer dunning data',
+  KNKK: 'customer credit data',
+  UKMBP_CMS_SGM: 'business partner credit data',
+  LFA1: 'supplier master data',
+  LFB1: 'supplier master data',
+  LFM1: 'supplier master data',
+  MARA: 'material master data',
+  MARC: 'material master data',
+  MAKT: 'material master data',
+  MBEW: 'material valuation data',
+  MARD: 'storage location stock',
+  T001: 'company code settings',
+  ADRC: 'address data',
+  BUT000: 'business partner master data',
+  CSKS: 'cost center master data',
+  SKA1: 'G/L account master data',
+  SKB1: 'G/L account master data',
+});
+
+/** "Cost center master data (CSKS) is read …" — one phrase per business object, its tables in brackets. */
+export function masterDataLimit(names: readonly string[]): string | null {
+  const groups = new Map<string, string[]>();
+  for (const raw of names) {
+    const name = raw.toUpperCase();
+    const label = MASTER_DATA_OBJECT[name];
+    if (!label) continue;
+    const list = groups.get(label) ?? [];
+    if (!list.includes(name)) list.push(name);
+    groups.set(label, list);
+  }
+  if (!groups.size) return null;
+  const phrases = [...groups].slice(0, 4).map(([label, tables]) => `${label} (${tables.join(', ')})`);
+  if (groups.size > 4) phrases.push(`${groups.size - 4} more`);
+  const text = joinAnd(phrases);
+  const one = groups.size === 1;
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)} ${one ? 'is' : 'are'} read as ${one ? 'it is' : 'they are'} stored when it runs, not as ${one ? 'it was' : 'they were'} on an earlier date.`;
+}
+
 /** Tables of financial accounting: where a reader asks about ledgers and credit. */
 const FI_TABLES = /^(?:BKPF|BSEG|BSID|BSAD|BSIK|BSAK|BSIS|BSAS|ACDOCA|KNKK|KNB1|KNB5|LFB1|FAGL\w*|GLT0|T001|T014)$/;
 
@@ -181,10 +230,11 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
         basis: 'not-determined',
       });
     }
-    const master = facts.reads.filter((r) => MASTER_DATA.test(r.name));
-    if (master.length) {
+    const master = facts.reads.filter((r) => MASTER_DATA_OBJECT[r.name.toUpperCase()]);
+    const masterText = masterDataLimit(master.map((m) => m.name));
+    if (masterText) {
       limits.push({
-        text: `Master and credit data (${master.slice(0, 4).map((m) => m.name).join(', ')}${master.length > 4 ? ' …' : ''}) are read as they are stored when it runs, not as they were on an earlier date.`,
+        text: masterText,
         anchors: master.slice(0, 3).map(anchor),
         basis: 'reconstructed',
       });
