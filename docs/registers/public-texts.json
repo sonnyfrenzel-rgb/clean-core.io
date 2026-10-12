@@ -3354,6 +3354,25 @@
       "measured": {
         "lines": 168
       }
+    },
+    {
+      "path": "app/fonts/OFL.txt",
+      "kind": "legal",
+      "purpose": "SIL Open Font License 1.1 of the Inter font shipped in app/fonts",
+      "audience": "public, legal",
+      "saysToday": "License text of the Inter font.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Legal text; required with the font file.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "measured": {
+        "lines": 94
+      }
     }
   ],
   "served": [
