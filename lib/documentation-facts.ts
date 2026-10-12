@@ -88,8 +88,22 @@ export function capabilityFactsOf(
   // A call whose target is named at run time could be a posting BAPI: recorded
   // so "no posting" is not said (QA review of 35b97d90c6e1).
   const operand = (text: string, re: RegExp, fallback: string) => (re.exec(text)?.[1] ?? fallback).replace(/\.$/, '').toUpperCase();
-  const dynamicCalls = [
-    ...calls.functionModules.filter((f) => f.dynamic).map((f) => ({ name: operand(f.text, /\bCALL\s+FUNCTION\s+(\S+)/i, 'a module named at run time'), line: f.lineStart })),
+  // A read whose table is named at run time could be any table — a ledger
+  // table too — so it is recorded and keeps "no ledger table is read" from
+  // being said. The values the source shows for it are kept as possible
+  // targets, apart from `reads` (never the target, R26).
+  const dynamicReads = tables.unresolved
+    .filter((u) => u.access === 'read')
+    .map((u) => ({ name: u.expression.toUpperCase(), line: u.line }));
+  const possibleReads = first(tables.dependencies
+    .filter((d) => d.possibleTargetOf && d.access === 'read' && d.route !== 'type-reference' && d.route !== 'program-global')
+    .map((d) => ({ name: d.table, line: d.line })));
+  const dynamicCalls: Array<FactObject & { destination?: string }> = [
+    ...calls.functionModules.filter((f) => f.dynamic).map((f) => ({
+      name: operand(f.text, /\bCALL\s+FUNCTION\s+(\S+)/i, 'a module named at run time'),
+      line: f.lineStart,
+      ...(f.destination ? { destination: f.destination } : {}),
+    })),
     ...calls.performs.filter((p) => p.dynamic).map((p) => ({ name: operand(p.text, /\bPERFORM\s+(\([^)]*\)|\S+)/i, 'a routine named at run time'), line: p.lineStart })),
   ].sort((a, b) => a.line - b.line);
   return {
@@ -103,5 +117,7 @@ export function capabilityFactsOf(
     dynamic,
     dynamicWrites,
     dynamicCalls,
+    dynamicReads,
+    possibleReads,
   };
 }

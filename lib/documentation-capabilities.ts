@@ -66,7 +66,21 @@ export interface CapabilityFacts {
    * `PERFORM (lv_form)`), by the expression as written — such a call could post.
    * Absent in facts stored before it was recorded (QA review of 35b97d90c6e1).
    */
-  dynamicCalls?: FactObject[];
+  dynamicCalls?: Array<FactObject & { destination?: string }>;
+  /**
+   * Reads whose table the code names only at run time (`SELECT … FROM
+   * (lv_tab)`), by the expression as written. Such a read could be any table,
+   * so it keeps every "no … table is read" from being said. Absent in facts
+   * stored before it was recorded; those say only how many places are dynamic.
+   */
+  dynamicReads?: FactObject[];
+  /**
+   * Values the source shows for a run-time table name of a read
+   * (`DATA lv_tab … VALUE 'ACDOCA'`) — possible targets, never the target
+   * (R26), so they are kept apart from `reads`. A possible target that is a
+   * ledger or credit table means the program may read it.
+   */
+  possibleReads?: FactObject[];
 }
 
 export type Capability = 'posting' | 'ledger' | 'credit-exposure' | 'approval' | 'mail' | 'audit-log' | 'remote';
@@ -75,8 +89,8 @@ export interface CapabilityAnswer {
   present: boolean;
   /**
    * False when the source does not let the engine say: the capability is not
-   * shown, but a change to a table named only at run time could be it. Such a
-   * capability is "not determined", never absent.
+   * shown, but a table read, a change or a call named only at run time could
+   * be it. Such a capability is "not determined", never absent.
    */
   determined: boolean;
   /** The lines that show it, when present. */
@@ -115,21 +129,53 @@ const openWrites = (facts: CapabilityFacts): number =>
     ? facts.dynamicWrites.length + facts.dynamicCalls.length
     : facts.dynamic;
 
-/** Per capability: does the source show it, and if not, the sentence that says so. */
+/**
+ * Reads whose table is named only at run time: "no ledger table is read" holds
+ * only when every read names its table. Facts stored before these were
+ * recorded say only how many places are dynamic, so any such place leaves a
+ * read open.
+ */
+const openReads = (facts: CapabilityFacts): number =>
+  facts.dynamicReads !== undefined ? facts.dynamicReads.length : facts.dynamic;
+
+/**
+ * Calls whose target is named only at run time: "no workflow, send or ledger
+ * function is called" holds only when every call names its target.
+ */
+const openCalls = (facts: CapabilityFacts): number =>
+  facts.dynamicCalls !== undefined ? facts.dynamicCalls.length : facts.dynamic;
+
+/**
+ * Per capability: does the source show it, and if not, the sentence that says
+ * so. A capability is only "determined" absent when the analysis can exclude
+ * it — when nothing named at run time (a table read, a call, a change) could
+ * be it. Otherwise it is not determined, and no absence is said.
+ */
 export function capabilityPresence(facts: CapabilityFacts): Record<Capability, CapabilityAnswer> {
   const call = (re: RegExp) => facts.calls.filter((c) => re.test(c.name.toUpperCase()));
+  const readOf = (re: RegExp) => [
+    ...facts.reads.filter((r) => re.test(r.name.toUpperCase())),
+    ...(facts.possibleReads ?? []).filter((r) => re.test(r.name.toUpperCase())),
+  ];
   const postingCalls = facts.calls.filter((c) =>
     (c.kind === 'bapi' && /(?:CREATE|CHANGE|POST|SAVE|UPDATE|DELETE|CANCEL|REVERSE|CLEAR)/.test(c.name.toUpperCase()))
     || /^(?:POSTING_INTERFACE_|FI_DOCUMENT_POST|AC_DOCUMENT_POST|BAPI_ACC_)/.test(c.name.toUpperCase()));
   const transactions = facts.calls.filter((c) => c.kind === 'transaction');
   const postingEvidence = [...facts.writes, ...facts.commits, ...facts.updateTask, ...postingCalls];
-  const ledger = [...facts.reads.filter((r) => LEDGER_TABLES.test(r.name.toUpperCase())), ...call(LEDGER_CALLS)];
-  const exposure = [...facts.reads.filter((r) => EXPOSURE_TABLES.test(r.name.toUpperCase())), ...call(EXPOSURE_CALLS)];
+  const ledger = [...readOf(LEDGER_TABLES), ...call(LEDGER_CALLS)];
+  const exposure = [...readOf(EXPOSURE_TABLES), ...call(EXPOSURE_CALLS)];
   const approval = call(APPROVAL_CALLS);
   const mail = call(MAIL_CALLS);
   const log = call(LOG_CALLS);
-  const remote = facts.calls.filter((c) => !!c.destination);
+  // A DESTINATION is written in the statement, so a call named at run time
+  // still shows whether it goes to another system.
+  const remote = [
+    ...facts.calls.filter((c) => !!c.destination),
+    ...(facts.dynamicCalls ?? []).filter((c) => !!c.destination),
+  ].sort((a, b) => a.line - b.line);
   const writesOpen = openWrites(facts) > 0;
+  const callsOpen = openCalls(facts) > 0;
+  const readsOpen = openReads(facts) > 0;
   return {
     posting: {
       short: 'no posting in the code',
@@ -143,28 +189,28 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
     ledger: {
       short: 'no ledger reconciliation in the code',
       present: ledger.length > 0,
-      determined: true,
+      determined: ledger.length > 0 || !(readsOpen || callsOpen),
       evidence: ledger,
       absent: 'It does not reconcile against the general ledger: no ledger table (GLT0, FAGLFLEXT, ACDOCA, BSIS …) is read and no ledger balance is called. Totals it checks are its own arithmetic.',
     },
     'credit-exposure': {
       short: 'no credit exposure in the code',
       present: exposure.length > 0,
-      determined: true,
+      determined: exposure.length > 0 || !(readsOpen || callsOpen),
       evidence: exposure,
       absent: 'It computes no credit exposure: no credit-management total (S066, S067, UKM …) is read and no exposure function is called.',
     },
     approval: {
       short: 'no approval workflow in the code',
       present: approval.length > 0,
-      determined: true,
+      determined: approval.length > 0 || !callsOpen,
       evidence: approval,
       absent: 'It has no approval, release or override workflow: no workflow or release function is called.',
     },
     mail: {
       short: 'no correspondence in the code',
       present: mail.length > 0,
-      determined: true,
+      determined: mail.length > 0 || !callsOpen,
       evidence: mail,
       absent: 'It sends no e-mail, letter or other correspondence: no send function is called.',
     },
@@ -252,5 +298,7 @@ export function readCapabilityFacts(value: unknown): CapabilityFacts | null {
   if (typeof v.dynamic !== 'number') return null;
   if (v.dynamicWrites !== undefined && !objs(v.dynamicWrites)) return null;
   if (v.dynamicCalls !== undefined && !objs(v.dynamicCalls)) return null;
+  if (v.dynamicReads !== undefined && !objs(v.dynamicReads)) return null;
+  if (v.possibleReads !== undefined && !objs(v.possibleReads)) return null;
   return value as CapabilityFacts;
 }
