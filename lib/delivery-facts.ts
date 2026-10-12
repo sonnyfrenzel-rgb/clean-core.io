@@ -13,6 +13,7 @@
  * and hands it in; this module only reads.
  */
 
+import { countEngineCases, engineCaseCountsSentence } from './testing-engine-cases';
 import { formatTextDate } from './format';
 import { sha256Hex } from './artefact-digest';
 import { countSourceLines } from './source-lines';
@@ -228,6 +229,16 @@ export function ruleFactsFromSource(source: string, tests?: RuleTestInput): Rule
  * nothing. Never "passed" without a receipt.
  */
 export function testFactsOf(project: HandoverProject, phases: readonly RailStep[]): TestFacts {
+  const facts = testFactsWithoutOrigins(project, phases);
+  // 3.0.12 — STATUS.md says how many cases the engine derived from the
+  // original and how many the model wrote, counted apart.
+  const list = Array.isArray(project.testCases) ? (project.testCases as unknown as Array<Record<string, unknown>>) : [];
+  if (list.length === 0) return facts;
+  const origins = countEngineCases(list);
+  return { ...facts, detail: [...facts.detail, `Scenarios: ${engineCaseCountsSentence(origins)}.`] };
+}
+
+function testFactsWithoutOrigins(project: HandoverProject, phases: readonly RailStep[]): TestFacts {
   const cases = Array.isArray(project.testCases) ? project.testCases.length : 0;
   const suite = typeof (project.testSuite as { code?: unknown } | undefined)?.code === 'string';
   const testing = phases.find((p) => p.key === 'testing');

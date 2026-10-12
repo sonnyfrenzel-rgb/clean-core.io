@@ -85,6 +85,7 @@ import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
+import { ENGINE_CASES_FILE, engineCasesFile } from '@/lib/testing-engine-cases';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
@@ -507,6 +508,13 @@ export default function DeliveryPage() {
           bundle.file(testPath, project.testSuite.code, 'generated');
         }
       }
+
+      // 3.0.12 — the boundary cases the engine derived from the original, as
+      // data (input → expected outcome, traced), beside the suite that asserts them.
+      const engineCasesJson = Array.isArray(project.testCases)
+        ? engineCasesFile(project.testCases as unknown as Array<Record<string, unknown>>)
+        : null;
+      if (engineCasesJson) bundle.file(ENGINE_CASES_FILE, engineCasesJson, 'engine');
 
       // Documentation formatted into corporate markdown specifications
       const docs = bundle.folder("docs");

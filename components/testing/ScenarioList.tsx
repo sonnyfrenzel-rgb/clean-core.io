@@ -31,6 +31,7 @@ import { countOrigins, originSummary, readScenarioOrigin, type OriginEngine, typ
 import type { OutsideScenarioResult } from '@/lib/sap-test-results';
 import { CASE_ASSESSMENT_WORD, RULE_TRACE_DROPPED_KEY, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { lineWord } from '@/lib/scenario-origin';
+import { ENGINE_CASE_FAMILY_WORD, engineCaseOf } from '@/lib/testing-engine-cases';
 
 /** The chip of a case's old-against-new assessment (3.0.10). */
 function AssessmentWord({ reading }: { reading: CaseAssessmentReading }) {
@@ -49,9 +50,10 @@ function RuleTraceDetails({ tc, assessment }: { tc: ScenarioCase; assessment: Ca
   const trace = ruleTraceOf(tc);
   const dropped = typeof tc[RULE_TRACE_DROPPED_KEY] === 'string' ? (tc[RULE_TRACE_DROPPED_KEY] as string) : null;
   const invariant = tc.invariant === true;
-  if (!trace && !dropped && !invariant && !assessment) return null;
+  const engine = engineCaseOf(tc);
+  if (!trace && !dropped && !invariant && !engine && !assessment) return null;
   return (
-    <div data-scenario-rule-trace={trace ? trace.ruleId : invariant ? 'invariant' : 'none'} className="min-w-0">
+    <div data-scenario-rule-trace={trace ? trace.ruleId : invariant ? 'invariant' : engine ? 'engine' : 'none'} className="min-w-0">
       <h3 className={cn(LABEL, 'm-0 mb-2')}>Against the original</h3>
       {trace ? (
         <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
@@ -78,6 +80,25 @@ function RuleTraceDetails({ tc, assessment }: { tc: ScenarioCase; assessment: Ca
             </dd>
           </div>
         </dl>
+      ) : engine ? (
+        <div data-scenario-engine-case={engine.kind} className="min-w-0">
+          <p className="m-0 cc-text-cell text-cc-ink">
+            Derived by Clean-Core.io from the original, not by the testing model ({ENGINE_CASE_FAMILY_WORD[engine.family]}):{' '}
+            {engine.trace.ruleId ? <span className="font-cc-mono text-[12px] font-semibold">{engine.trace.ruleId}</span> : null}
+            {engine.trace.ruleId && engine.trace.field ? ' · ' : null}
+            {engine.trace.field ? <span className="font-cc-mono text-[12px]">{engine.trace.field}</span> : null}
+            {engine.trace.declaration ? ` · ${engine.trace.declaration}` : null}
+            {engine.trace.lines.length > 0 ? ` · ${engine.trace.lines.map(lineWord).join(', ')}` : ' · no line of the original: the target’s own contract'}
+          </p>
+          {engine.trace.quote ? <p className="m-0 mt-1 font-cc-mono text-[12px] text-cc-ink [overflow-wrap:anywhere]">{engine.trace.quote}</p> : null}
+          <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5 cc-text-cell text-cc-ink">
+            {engine.examples.map((e, i) => (
+              <li key={i} className="[overflow-wrap:anywhere]">
+                <span className="font-cc-mono text-[12px]">{e.input}</span> → <span data-engine-expected="" className="font-semibold">{e.expected}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : invariant ? (
         <p className="m-0 cc-text-cell text-cc-ink">Written by Clean-Core.io from the generated routes, not by the testing model: the original builds list, totals and file from one selection.</p>
       ) : (

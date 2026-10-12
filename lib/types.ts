@@ -58,6 +58,14 @@ export interface TestCase {
   ruleTraceDropped?: string;
   /** Set on the shared-selection invariant the product writes (`lib/testing-invariants.ts`), never by a model. */
   invariant?: boolean;
+  /**
+   * 3.0.12 — `engine` on a boundary case Clean-Core.io derived from the
+   * original's declared types and guards (`lib/testing-engine-cases.ts`); absent
+   * on a case the testing model wrote.
+   */
+  origin?: 'engine';
+  /** The engine case's data: kind, trace (rule id or declared field and line), examples (input → expected). */
+  engineCase?: import('./testing-engine-cases').EngineCaseData;
 }
 
 export interface TestSuite {

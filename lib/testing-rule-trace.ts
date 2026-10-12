@@ -412,8 +412,15 @@ export function assessCase(input: {
   ruleState?: ElementState | null;
   /** A deterministic invariant case (`lib/testing-invariants.ts`). */
   invariant?: boolean;
+  /**
+   * 3.0.12 — an engine case (`lib/testing-engine-cases.ts`): its expectation
+   * is derived by Clean-Core.io from the original's declaration or check, the
+   * assertion code is the model's. `ruleId` names the business rule a guard
+   * case breaks, so the owner's decision on it is read.
+   */
+  engine?: { ruleId: string | null; expected: string } | null;
 }): CaseAssessmentReading {
-  const { trace, verdict, ruleState, invariant } = input;
+  const { trace, verdict, ruleState, invariant, engine } = input;
   if (!verdict || verdict === 'Not run') {
     return { value: 'not-assessable', sentence: 'No run of this case is on record yet, so old and new have not been compared.' };
   }
@@ -424,6 +431,17 @@ export function assessCase(input: {
     return verdict === 'Passed'
       ? { value: 'unchanged', sentence: 'The list and the endpoints compared with it agree for one selection, as they do in the original, where all of them come from one selection.' }
       : { value: 'defect', sentence: 'The list and an endpoint compared with it disagree for one selection. The original builds them from one selection, so this is a defect.' };
+  }
+  if (engine) {
+    const basis = `The expected result (${engine.expected}) was derived by Clean-Core.io from the original's declaration or check, without a model; the assertion in the suite was written by the testing model and is not checked against it.`;
+    if (verdict === 'Passed') return { value: 'passed-model-stated', sentence: `The case passed. ${basis}` };
+    if (engine.ruleId && (ruleState === 'change' || ruleState === 'drop')) {
+      return {
+        value: 'failed-rule-changing',
+        sentence: `The case failed, and ${engine.ruleId} is marked "${ruleState === 'change' ? 'change deliberately' : 'drop'}". Whether this failure is that decided change or a defect elsewhere is not determined — compare the failure with the decision.`,
+      };
+    }
+    return { value: 'defect', sentence: `The target differs from what the original's declaration or check gives. ${basis}` };
   }
   if (!trace) {
     return {

@@ -84,6 +84,7 @@ import { useProcessStates } from '@/hooks/useProcessStates';
 import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
+import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
 import { probeBasis } from '@/lib/testing-mutation';
 
 const renderSafeValue = (val: any): string => {
@@ -1128,16 +1129,20 @@ export default function TestingSandboxPage() {
    * assessable, from the verdict of the last run (receipt or session) and the
    * owner's decision on the traced rule. Default: not yet assessable.
    */
-  const assessmentOf = (tc: ScenarioCase): CaseAssessmentReading =>
-    assessCase({
+  const assessmentOf = (tc: ScenarioCase): CaseAssessmentReading => {
+    // 3.0.12 — an engine case: its expectation is the engine's, from the original's declaration or check.
+    const engineCase = engineCaseOf(tc);
+    const ruleId = ruleTraceOf(tc)?.ruleId ?? engineCase?.trace.ruleId ?? null;
+    return assessCase({
       trace: ruleTraceOf(tc),
       verdict: verdictOf(tc),
-      ruleState: (() => {
-        const trace = ruleTraceOf(tc);
-        return trace ? ruleStates.get(trace.ruleId) ?? null : null;
-      })(),
+      ruleState: ruleId ? ruleStates.get(ruleId) ?? null : null,
       invariant: tc.invariant === true,
+      engine: engineCase
+        ? { ruleId: engineCase.trace.ruleId ?? null, expected: engineCase.examples.map((e) => `${e.input} → ${e.expected}`).join('; ').slice(0, 300) }
+        : null,
     });
+  };
   const coveringReceipt = coveringTestRunReceipt(project);
   const caseIdsForProbe = testCases.map((tc) => String(tc.id ?? '')).filter(Boolean);
   const probeBasisReading = probeBasis(coveringReceipt, caseIdsForProbe);
@@ -1151,6 +1156,8 @@ export default function TestingSandboxPage() {
         ? 'The rules of the original could not be read from the signed source.'
         : 'The rules of the original are being read from the signed source.',
     assessments: testCases.length > 0 ? countAssessments(testCases.map((tc) => assessmentOf(tc as unknown as ScenarioCase).value)) : null,
+    /** 3.0.12 — engine cases and model cases, counted apart. */
+    caseOrigins: testCases.length > 0 ? countEngineCases(testCases as unknown as Array<Record<string, unknown>>) : null,
     mutation: coveringReceipt?.mutation ?? probe.report,
     probeBasis: probeBasisReading.ok ? null : probeBasisReading.reason,
   };
@@ -1584,6 +1591,7 @@ export default function TestingSandboxPage() {
                 coverage={evidence.coverage}
                 coverageNote={evidence.coverageNote}
                 assessments={evidence.assessments}
+                caseOrigins={evidence.caseOrigins}
                 invariant={sharedSelection}
                 mutation={evidence.mutation}
                 probe={{ state: probe.state, error: probe.error }}
