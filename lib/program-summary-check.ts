@@ -1,5 +1,5 @@
 import { containsAmount } from '@/lib/money-honesty';
-import { FINGERPRINTED_PLATFORM_SHORT } from '@/lib/sap-naming';
+import { BTP } from '@/lib/sap-naming';
 import { TABLE_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { stripModelMarkdown } from '@/lib/model-text';
 import type { ProgramSummaryFacts } from '@/lib/program-summary-text';
@@ -39,7 +39,8 @@ const APPROVAL = /\b(?:approval workflow|approves?|sign-?off|four[- ]eyes|releas
 const MONEY = /(?:[$€£]\s?\d|\b\d[\d.,]*\s?(?:EUR|USD|GBP|CHF|k€|million|bn)\b|\bsav(?:e|es|ing|ings)\b|\bROI\b|\bcost reduction\b|\b\d+\s?% (?:faster|cheaper|accura\w*|less)\b|\baccuracy\b)/i;
 
 const CODE = /\b[A-Z][A-Z0-9_]{3,15}\b/g;
-const ALLOWED_CODES = new Set(['SAP', 'ABAP', 'CSV', 'S/4HANA', 'HANA', 'BAPI', 'IDOC', 'ERP', FINGERPRINTED_PLATFORM_SHORT, 'RAP', 'CAP', 'FIORI', 'EXCEL', 'PDF', 'HTML', 'JSON', 'XML']);
+// The platform's short name as a model writes it, taken from its full name in lib/sap-naming.ts.
+const ALLOWED_CODES = new Set(['SAP', 'ABAP', 'CSV', 'S/4HANA', 'HANA', 'BAPI', 'IDOC', 'ERP', BTP.replace(/^SAP /, ''), 'RAP', 'CAP', 'FIORI', 'EXCEL', 'PDF', 'HTML', 'JSON', 'XML']);
 
 /** Glossary words as a reader writes them ("cost center", "purchase order"), each with the tables behind it. */
 const WORD_TABLES: Array<{ re: RegExp; tables: Set<string> }> = (() => {

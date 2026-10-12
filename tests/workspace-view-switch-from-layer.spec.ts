@@ -36,7 +36,8 @@ test('from a Business layer, Management opens and stays', async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, account);
-  for (const layer of ['standard', 'evidence']) {
+  // Business has one layer since ADR-096; #standard leads to IT (tests/standard-fit-in-it.spec.ts).
+  for (const layer of ['evidence']) {
     await page.goto(`/project/${account.projectId}?view=business#${layer}`, { waitUntil: 'domcontentloaded' });
     await expect(shell(page)).toHaveAttribute('data-workspace-shell', 'business', { timeout: 90_000 });
     await page.waitForTimeout(1500);
