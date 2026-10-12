@@ -966,10 +966,6 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             {
               "path": "Dockerfile",
               "content": "/* Multi-stage Docker containerization setup */"
-            },
-            {
-              "path": "erp-triggers/zcl_core_event_publisher.clas.abap",
-              "content": "/* Event trigger publisher class in ABAP Cloud syntax — only when no standard event exists */"
             }
           ],
           "tests": {
@@ -977,6 +973,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             "spec": "/* generated.spec.ts content */"
           }
         }
+        The event publisher is conditional and therefore not in the structure above: add a files entry with "path": "erp-triggers/zcl_core_event_publisher.clas.abap" (the publisher class in ABAP Cloud syntax) ONLY when SAP has no standard business event for the change. When a standard event exists, the files list has no erp-triggers entry at all and srv/service.ts names the standard event.
         No conversational text.`;
 
       console.log('Transforming code for project:', projectRef.current?.name);

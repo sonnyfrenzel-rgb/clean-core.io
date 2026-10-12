@@ -27,7 +27,12 @@ test.describe('the rules the prompt carries (15–23)', () => {
     const r = CODE_DRAFT_BUSINESS_RULES;
     expect(r).toContain('15. GUARDS FIRST');
     for (const g of ['a duplicate receiver', 'the sender as its own receiver', 'quotas over 100 %', 'an unknown segment', 'no receivers', 'a status precondition']) expect(r).toContain(g);
-    expect(r).toContain('BEFORE any calculation');
+    // QA review of 2e6596ddbbc8 (4e9d1315469d): raw-input checks first; a
+    // check on a derived value (the CO sum of quotas) keeps the original's
+    // order and scope, and may compute what it needs.
+    expect(r).toContain('Checks on the raw input run on the whole input BEFORE any business calculation');
+    expect(r).toContain("a check on a derived value (e.g. the sum of quotas) keeps the original's order and scope, and computing the values it needs first is allowed");
+    expect(r).not.toContain('run on the whole input BEFORE any calculation');
     expect(r).toContain('A refusal names the rule id or line');
   });
 

@@ -6,7 +6,7 @@ import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseGeneratedPackage, replaceFileContent, repairTarget, suiteRepairImportHint } from '@/lib/generated-package';
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
-import type { TestRunReceipt } from '@/lib/test-receipt';
+import { engineViaContractOf, type TestRunReceipt } from '@/lib/test-receipt';
 import type { TestRunFailure } from '@/lib/testing-closure';
 import { isMutationProbeReport, probeBasis, type MutationProbeReport } from '@/lib/testing-mutation';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
@@ -16,6 +16,8 @@ import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability'
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<TestCase[] | null>(null);
+  /** 3.0.12 — the cases the call contract decided in this session's run, as the server said. */
+  const [engineViaContract, setEngineViaContract] = useState<string[]>([]);
   const [sandboxOutput, setSandboxOutput] = useState<string>('');
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   /**
@@ -145,7 +147,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null; runFailure?: TestRunFailure };
+  type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; engine?: unknown; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null; runFailure?: TestRunFailure };
 
   /** POST to the repair-draft route (roadmap 8.7). Returns the parsed body and whether it was accepted. */
   const repairDraftCall = async (body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: any }> => {
@@ -370,6 +372,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     setIsRunning(true);
     setSandboxOutput('Starting test execution environment...\n');
     setTestResults(null);
+    setEngineViaContract([]);
     setStubbedPackages([]);
     setAiExplanation(null);
     setRunError(null);
@@ -424,6 +427,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       const reported = Array.isArray(result.testResults) ? result.testResults : [];
       const results = applyRunnerVerdicts(selectedTestCases, reported, result.exitCode) as TestCase[];
       setTestResults(results);
+      setEngineViaContract(engineViaContractOf(result.engine));
 
       // A run in which no scenario got a verdict says why, on the page. Each
       // case already carries its own "Not run" message; this is the one
@@ -521,5 +525,5 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants };
+  return { isRunning, testResults, engineViaContract, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants };
 };

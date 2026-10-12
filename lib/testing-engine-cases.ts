@@ -1166,11 +1166,18 @@ ${lines.join('\n')}
 /** The engine cases as the delivery package ships them: `test/engine-cases.json`. */
 export const ENGINE_CASES_FILE = 'test/engine-cases.json';
 
-export function engineCasesFile(cases: ReadonlyArray<Record<string, unknown>>): string | null {
+/**
+ * `unverified` (the delivery export): ids stored as engine cases that the
+ * derivation from the signed source does not reproduce
+ * (`lib/engine-case-provenance.ts`). They are named, not shipped as cases, and
+ * not labelled as derived by Clean-Core.io. The delivery passes only the
+ * recomputed cases in `cases`.
+ */
+export function engineCasesFile(cases: ReadonlyArray<Record<string, unknown>>, unverified: readonly string[] = []): string | null {
   const engine = cases
     .map((tc) => ({ tc, data: engineCaseOf(tc) }))
     .filter((x): x is { tc: Record<string, unknown>; data: EngineCaseData } => x.data !== null);
-  if (engine.length === 0) return null;
+  if (engine.length === 0 && unverified.length === 0) return null;
   return `${JSON.stringify(
     {
       format: 'clean-core.engine-cases/1',
@@ -1183,6 +1190,14 @@ export function engineCasesFile(cases: ReadonlyArray<Record<string, unknown>>): 
         trace: data.trace,
         examples: data.examples,
       })),
+      ...(unverified.length > 0
+        ? {
+            unverified: {
+              note: 'Stored as engine cases on the project, but not reproduced from the signed original source by Clean-Core.io. Not derived by Clean-Core.io as far as this export can show; not listed under cases.',
+              ids: [...unverified],
+            },
+          }
+        : {}),
     },
     null,
     2,
