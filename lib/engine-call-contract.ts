@@ -44,7 +44,7 @@
  * Pure: types and the sentences. No I/O.
  */
 
-export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, callContractPresence } from './test-sandbox/engine-suite';
+export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, callContractPresence } from './test-sandbox/engine-contract-shape';
 
 /** A value a case puts into a request field. */
 export type CallValue =

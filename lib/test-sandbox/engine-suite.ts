@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { ENGINE_CONTRACT_MARKER } from './engine-contract-shape';
 import { ENGINE_RUNTIME_JS } from './engine-runtime';
 import type { SandboxFile } from './files';
 
@@ -25,45 +26,20 @@ import type { SandboxFile } from './files';
  * `lib/test-sandbox/` as a whole.
  */
 
-/** Where the contract module may stand, in the order they are tried. Same list as the runtime's. */
-export const CALL_CONTRACT_PATHS = [
-  'srv/engine-contract.ts',
-  'srv/engine-contract.mjs',
-  'srv/engine-contract.js',
-  'engine-contract.ts',
-  'engine-contract.mjs',
-  'engine-contract.js',
-] as const;
-
-export const CALL_CONTRACT_EXPORTS = ['CONTRACT', 'validate', 'simulate', 'getRun', 'compute'] as const;
+/**
+ * The contract's shape lives in `./engine-contract-shape.ts`, without imports,
+ * so the browser bundle can read it; it is re-exported here unchanged.
+ */
+export { CALL_CONTRACT_PATHS, CALL_CONTRACT_EXPORTS, ENGINE_CONTRACT_MARKER, callContractPresence } from './engine-contract-shape';
 
 /** The two files the engine pass adds to the generated code. */
 export const ENGINE_RUNTIME_PATH = '__cc_engine/runtime.mjs';
 export const ENGINE_CASES_PATH = '__cc_engine/cases.json';
 
-/** The marker in every engine test title — how a verdict is known to come from the call contract. */
-export const ENGINE_CONTRACT_MARKER = '[call contract]';
-
 /** Largest cases JSON a run may carry. */
 export const MAX_ENGINE_CASES_BYTES = 512 * 1024;
 
 const sha256Hex = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
-
-/** Does the generated code carry the call contract module, exporting the five names? Read, never run. */
-export function callContractPresence(files: ReadonlyArray<{ path: string; content: string }>): { present: boolean; path: string | null; missing: string[] } {
-  const norm = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '');
-  for (const candidate of CALL_CONTRACT_PATHS) {
-    const file = files.find((f) => norm(f.path) === candidate);
-    if (!file) continue;
-    const missing = CALL_CONTRACT_EXPORTS.filter(
-      (name) =>
-        !new RegExp(`export\\s+(?:const|let|function|async\\s+function)\\s+${name}\\b`).test(file.content) &&
-        !new RegExp(`export\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`).test(file.content),
-    );
-    return { present: missing.length === 0, path: candidate, missing };
-  }
-  return { present: false, path: null, missing: [...CALL_CONTRACT_EXPORTS] };
-}
 
 /**
  * The suite of the engine pass. It imports the contract module statically (so
