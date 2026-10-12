@@ -1,0 +1,692 @@
+{
+  "version": 1,
+  "updated": "2026-10-12",
+  "about": "Known failure patterns of generated delivery packages, seeded from four external reviews of v3.0.10 packages (FI, CO, PP, SD). Each pattern is described in our own words; origin IDs refer to the numbering of the respective review document. See README.md.",
+  "classes": {
+    "identifiers": "SAP identifiers (apps, scope items, communication scenarios, APIs, views) named wrongly, too confidently, or without release and protocol.",
+    "file-detector-architecture": "The target architecture is argued from a GUI file feature or chosen without a gate, and the documents of one package disagree about it.",
+    "lost-guards": "A check the original performs before it calculates or writes is missing in the generated code, or only one input channel performs it.",
+    "precision": "Numbers, quantities, ratios and dates lose the precision, rounding mode or calendar semantics the original declares.",
+    "run-identity": "Results and exports are not bound to one immutable run, so one run can be read as, or overwritten by, another.",
+    "compute-vs-display-scope": "What is calculated, what is shown, what is totalled and what is exported drift apart, or an option is silently ignored.",
+    "contradicting-metadata": "Status, counts, revisions, file inventories and dependencies of one package contradict each other.",
+    "main-path-meaning": "The business meaning is changed: rules with different meaning are merged, the main path is reordered, a write that changes nothing reads as a change.",
+    "claimed-integration": "Code, messages, comments or documents claim an integration, standard object or requirement that the package does not have.",
+    "label-only-tests": "Tests carry rule labels they do not exercise, confirm the implementation against itself, or pass only in an environment other than the one CI uses."
+  },
+  "layers": {
+    "engine": "Deterministic ABAP evidence engine, catalog and router (lib/abap/).",
+    "prompt": "Code-draft and documentation rules handed to the model.",
+    "lint": "Deterministic checks over generated source and documents.",
+    "cases": "Test cases derived from the original's rules, guards and declared types.",
+    "harness": "This acceptance harness: generic probes run against an unpacked package."
+  },
+  "patterns": [
+    {
+      "id": "FP-ID-01",
+      "class": "identifiers",
+      "title": "A wrong SAP identifier is presented as the standard fit",
+      "description": "An app ID, scope item or communication scenario is attached to the process although SAP files it under an unrelated topic. A warning that the ID is unverified lowers confidence but does not make the mapping useful; the wrong ID still steers the decision narrative.",
+      "origin": [
+        { "case": "FI", "ids": ["F-03"] },
+        { "case": "CO", "ids": ["F12"] },
+        { "case": "PP", "ids": ["F10"] },
+        { "case": "SD", "ids": ["CC-R31"] }
+      ],
+      "probe": {
+        "input": "Every SAP app ID, scope item and communication scenario named anywhere in the package.",
+        "expected": "Each resolves in the release-stamped catalog with a title that matches the claimed use; a name-only hit is labelled 'name found in the catalog', never 'verified'; an unresolved ID is left out of the decision narrative or marked as a proposal."
+      },
+      "layers": ["engine", "prompt", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-ID-02",
+      "class": "identifiers",
+      "title": "Known standard objects reported as unverified against a stale catalog",
+      "description": "Released CDS views, transactions and APIs that plainly exist are marked as not verified, and the catalog stamp is months old. The noise costs trust and hides the identifiers that really are wrong.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R29", "CC-R30"] },
+        { "case": "PP", "ids": ["F10"] }
+      ],
+      "probe": {
+        "input": "A package that names released views and APIs of the target release.",
+        "expected": "They resolve as found; the catalog revision and date are printed in STATUS; a catalog older than the agreed refresh window is reported as stale."
+      },
+      "layers": ["engine"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-ID-03",
+      "class": "identifiers",
+      "title": "An API or view is mapped by name, not by protocol, release and field meaning",
+      "description": "A candidate API is named with the wrong protocol version, a generic view stands in for a context-specific one, or a field is mapped as writable although the standard derives it. A catalog hit on the name says nothing about whether the field can be read or changed the way the design assumes.",
+      "origin": [
+        { "case": "PP", "ids": ["F10"] },
+        { "case": "SD", "ids": ["CC-R22"] },
+        { "case": "FI", "ids": ["F-03"] }
+      ],
+      "probe": {
+        "input": "The API mapping table of the solution design.",
+        "expected": "Each row carries protocol, release and, for every mapped field, readable/updatable from the API metadata; a field the standard derives is never mapped as a PATCH target."
+      },
+      "layers": ["engine", "prompt"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-ARCH-01",
+      "class": "file-detector-architecture",
+      "title": "The route is forced by a GUI file feature",
+      "description": "The rationale for a side-by-side rebuild rests on the program's frontend file call, and a download is even argued as an upload requirement. File transfer to a browser is not exclusive to any one programming model, so the argument decides nothing.",
+      "origin": [
+        { "case": "CO", "ids": ["F13"] },
+        { "case": "PP", "ids": ["F11"] },
+        { "case": "SD", "ids": ["CC-R12"] },
+        { "case": "FI", "ids": ["F-09"] }
+      ],
+      "probe": {
+        "input": "The same source with the GUI file call removed.",
+        "expected": "The route and its rationale stay the same; a GUI file finding is reported as a UI modernisation need, never as the reason for the target architecture; the rationale names downloads as downloads."
+      },
+      "layers": ["engine"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-ARCH-02",
+      "class": "file-detector-architecture",
+      "title": "Documents of one package recommend different architectures",
+      "description": "The business analysis recommends a hybrid or in-app approach while the solution design and the generated code implement a pure side-by-side service, and nothing records why the alternative was dropped.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R13"] },
+        { "case": "PP", "ids": ["F11"] },
+        { "case": "FI", "ids": ["F-04", "F-09"] }
+      ],
+      "probe": {
+        "input": "Business analysis, solution design, decision record and generated code of one package.",
+        "expected": "One recommended route across all documents, or the decision record names the route chosen, the alternatives dropped and the reason."
+      },
+      "layers": ["lint", "prompt"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-ARCH-03",
+      "class": "file-detector-architecture",
+      "title": "Rebuild code is generated without a gate",
+      "description": "The most expensive option produces code while standard coverage is unassessed and none of the core rules is decided, so the generated rebuild pre-empts the business decision it should follow.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R15", "CC-R03"] },
+        { "case": "FI", "ids": ["F-09"] }
+      ],
+      "probe": {
+        "input": "A project with standard fit unassessed and zero decided core rules.",
+        "expected": "No rebuild code is generated unless the owner overrides the gate with a reason, and the package carries that override."
+      },
+      "layers": ["engine"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-GUARD-01",
+      "class": "lost-guards",
+      "title": "The original's policy guards are not carried over",
+      "description": "The original validates its configuration before any calculation: no duplicate membership, no sender as receiver, quotas within bounds, known segments, at least one receiver. The generated interface accepts the configuration from the caller and calculates anyway, so totals still reconcile while the distribution is wrong.",
+      "origin": [
+        { "case": "CO", "ids": ["F03", "E03", "E04", "E05"] }
+      ],
+      "probe": {
+        "input": "A configuration with a duplicated receiver, a quota above 100 percent, or a sender listed as its own receiver.",
+        "expected": "Refused before calculation with a named error; valid reference scenarios unchanged."
+      },
+      "layers": ["engine", "prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-GUARD-02",
+      "class": "lost-guards",
+      "title": "Input channels validate different contracts",
+      "description": "The file upload checks context such as controlling area and year, while the JSON path accepts the same record from a foreign context; duplicates are resolved by whichever row comes first. Every channel must end in the same validated structure.",
+      "origin": [
+        { "case": "CO", "ids": ["F04", "E06", "E07", "E08", "E09"] },
+        { "case": "PP", "ids": ["F02"] }
+      ],
+      "probe": {
+        "input": "The same foreign-context or duplicated record sent through every input channel.",
+        "expected": "Every channel refuses it with the same contract error; order of duplicates never changes a result."
+      },
+      "layers": ["prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-GUARD-03",
+      "class": "lost-guards",
+      "title": "Lenient numeric and date input is accepted",
+      "description": "Integer parsing accepts a trailing suffix, a non-numeric threshold becomes NaN and silently disables a comparison, a fraction is truncated, values beyond the original's bounds and impossible calendar dates pass. A type declaration is not a runtime check.",
+      "origin": [
+        { "case": "CO", "ids": ["F07", "E11", "E12"] },
+        { "case": "PP", "ids": ["F02"] },
+        { "case": "FI", "ids": ["section 5: date inputs"] }
+      ],
+      "probe": {
+        "input": "A numeric field given '2026x', 'abc', '1.9', 'NaN', 'Infinity', an empty string or null; plus a valid control value.",
+        "expected": "The valid control is accepted; every malformed value is refused, never coerced."
+      },
+      "layers": ["prompt", "lint", "harness"],
+      "harnessProbe": "lenient-numeric"
+    },
+    {
+      "id": "FP-GUARD-04",
+      "class": "lost-guards",
+      "title": "An empty or incomplete request is reported as success",
+      "description": "A request without segments, master data or balances returns a successful simulation with zero totals and no issues, and a request without selection reads everything. Missing input structure must stay distinguishable from a legitimate empty result.",
+      "origin": [
+        { "case": "CO", "ids": ["F07", "E10"] },
+        { "case": "SD", "ids": ["CC-R19"] }
+      ],
+      "probe": {
+        "input": "A call with an empty selection or an empty input structure.",
+        "expected": "Refused, or returned with an explicit non-success state; never a success status with zero totals and never a silent full read."
+      },
+      "layers": ["prompt", "cases", "harness"],
+      "harnessProbe": "empty-selection"
+    },
+    {
+      "id": "FP-GUARD-05",
+      "class": "lost-guards",
+      "title": "A write path loses the original's preconditions",
+      "description": "The generated write endpoint accepts any value, including a negative amount, without the status precondition and authorisation the original enforced, and reports success. Where the original's write was effectively a no-op behind an authority check, the generated code creates a new and dangerous capability.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R16"] }
+      ],
+      "probe": {
+        "input": "A write of a negative amount (for example -99999) through the generated write function.",
+        "expected": "Refused; a valid control write is accepted only when the original's preconditions hold."
+      },
+      "layers": ["prompt", "cases", "harness"],
+      "harnessProbe": "negative-write"
+    },
+    {
+      "id": "FP-GUARD-06",
+      "class": "lost-guards",
+      "title": "Missing, empty and zero collapse into one state",
+      "description": "Record not found, record found but field empty, and an explicit zero are different business states in the original (master data review, no dunning procedure, credit limit 0). The generated model merges them, so a zero limit prints as blank and a missing master record looks like an empty one.",
+      "origin": [
+        { "case": "FI", "ids": ["section 5: customer master, dunning data, credit limit 0"] },
+        { "case": "PP", "ids": ["F02"] }
+      ],
+      "probe": {
+        "input": "One item each with: master record missing, master record present with empty field, field explicitly zero.",
+        "expected": "Three distinguishable states in result and export."
+      },
+      "layers": ["prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-PREC-01",
+      "class": "precision",
+      "title": "Packed quantities computed in binary floating point",
+      "description": "Quantities the original holds as packed decimals with three places are subtracted and summed as binary floats, then compared strictly. A residue such as 0.30000000000000004 turns a covered requirement into a shortage and changes availability for every later order. Very large exact values also exceed safe integer precision when scaled.",
+      "origin": [
+        { "case": "PP", "ids": ["F01", "E01", "E02", "E05", "E06", "E07"] }
+      ],
+      "probe": {
+        "input": "Requirement 0.400, withdrawn 0.100, available 0.300 (and 0.800 / 0.100 / 0.700), with the control 0.300 / 0 / 0.300.",
+        "expected": "All three are fully covered."
+      },
+      "layers": ["engine", "prompt", "lint", "harness"],
+      "harnessProbe": "decimal-quantity"
+    },
+    {
+      "id": "FP-PREC-02",
+      "class": "precision",
+      "title": "Rounding mode differs from the original's commercial rounding",
+      "description": "The original rounds into a packed field with two places, half away from zero for both signs. The generated code multiplies a binary float and uses Math.round, which differs at values like 0.70 x 5 percent (0.03 instead of 0.04) and at negative half cents (-1.15 x 90 percent gives -1.03 instead of -1.04).",
+      "origin": [
+        { "case": "CO", "ids": ["F05", "E01"] },
+        { "case": "SD", "ids": ["CC-R18"] }
+      ],
+      "probe": {
+        "input": "Every amount from 0.01 to 1000.00 (and the negatives where the field is signed) times the configured percentage.",
+        "expected": "Each result equals exact decimal rounding half away from zero at the field's places."
+      },
+      "layers": ["engine", "prompt", "lint", "harness"],
+      "harnessProbe": "rounding-commercial"
+    },
+    {
+      "id": "FP-PREC-03",
+      "class": "precision",
+      "title": "A ratio loses declared places and a threshold flips",
+      "description": "A ratio the original declares with six places is rounded to four, and a threshold that is representable in the original classifies the same row differently. Display rounding is harmless; rounding inside the comparison is a business change.",
+      "origin": [
+        { "case": "CO", "ids": ["F06", "E02"] }
+      ],
+      "probe": {
+        "input": "Plan 9000.00, actual 13400.00 against a threshold of 48.888895 percent.",
+        "expected": "The same classification as the original's six-place comparison."
+      },
+      "layers": ["engine", "lint", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-PREC-04",
+      "class": "precision",
+      "title": "Date arithmetic in local time",
+      "description": "Adding days with a local-time setter and serialising in UTC loses a day at the switch to summer time in a European time zone.",
+      "origin": [
+        { "case": "FI", "ids": ["section 5: summer time"] }
+      ],
+      "probe": {
+        "input": "2026-03-28 plus two days in a Europe/Berlin runtime.",
+        "expected": "2026-03-30."
+      },
+      "layers": ["lint", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-PREC-05",
+      "class": "precision",
+      "title": "Amounts without a currency and precision contract",
+      "description": "The output hard-codes one currency while the original reads it from the organisational unit, and amounts travel as plain numbers with fixed formatting. Without a currency and precision contract the totals cannot be reconciled to the source.",
+      "origin": [
+        { "case": "CO", "ids": ["F09", "E15"] },
+        { "case": "FI", "ids": ["section 5: amounts and currencies"] }
+      ],
+      "probe": {
+        "input": "A run in a controlling area whose currency is not the hard-coded one.",
+        "expected": "Results and exports carry the actual currency; no literal currency in the engine."
+      },
+      "layers": ["prompt", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-RUN-01",
+      "class": "run-identity",
+      "title": "One global latest result instead of a run id",
+      "description": "The repository keeps a single latest result; retrieval and export read it regardless of which run was asked for. Two scenarios in two browser tabs are enough for run A's export to contain run B.",
+      "origin": [
+        { "case": "CO", "ids": ["F08", "E13"] }
+      ],
+      "probe": {
+        "input": "Run A, then run B with different input, then retrieve A by its id.",
+        "expected": "Retrieval returns A unchanged, or an explicit error; never B."
+      },
+      "layers": ["prompt", "lint", "harness"],
+      "harnessProbe": "run-id-collision"
+    },
+    {
+      "id": "FP-RUN-02",
+      "class": "run-identity",
+      "title": "Clock-based run ids collide and overwrite",
+      "description": "Run ids are built from the millisecond clock. Two runs in the same millisecond get the same key and the second silently replaces the first in the store.",
+      "origin": [
+        { "case": "PP", "ids": ["F03"] }
+      ],
+      "probe": {
+        "input": "Two runs with different input while the clock is frozen, and 200 runs in a tight loop.",
+        "expected": "All ids are distinct and no stored run is replaced."
+      },
+      "layers": ["prompt", "lint", "harness"],
+      "harnessProbe": "run-id-collision"
+    },
+    {
+      "id": "FP-RUN-03",
+      "class": "run-identity",
+      "title": "Results and exports carry an architecture label instead of provenance",
+      "description": "The response and CSV carry no run id, source revision, extract id or rule revision; a constant such as SIDE_BY_SIDE describes an architecture, not where the numbers came from. The absence of a live call is not proof that data is synthetic.",
+      "origin": [
+        { "case": "CO", "ids": ["F10", "E18"] },
+        { "case": "FI", "ids": ["F-10"] }
+      ],
+      "probe": {
+        "input": "One run and its export.",
+        "expected": "Both carry run id, input snapshot, rule revision, selection and data mode, identical between result and export."
+      },
+      "layers": ["prompt", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-SCOPE-01",
+      "class": "compute-vs-display-scope",
+      "title": "A display filter is ignored or applied unevenly",
+      "description": "The filter is parsed but not applied, or it narrows the list while totals and export still cover everything. Keeping the full calculation universe is right; showing, totalling and exporting different populations for one selection is not.",
+      "origin": [
+        { "case": "PP", "ids": ["F07"] },
+        { "case": "FI", "ids": ["F-02"] }
+      ],
+      "probe": {
+        "input": "The same call without and with a display filter that matches a subset.",
+        "expected": "The filtered list contains only matching items, totals and export cover the same items; or the filter is refused explicitly."
+      },
+      "layers": ["prompt", "cases", "harness"],
+      "harnessProbe": "display-filter"
+    },
+    {
+      "id": "FP-SCOPE-02",
+      "class": "compute-vs-display-scope",
+      "title": "A classification depends on what else was selected",
+      "description": "A hard-coded reference document replaces the original's identity check, so a credit note borrows a foreign invoice's due date only while that other customer is in the selection. The total stays right while the ageing buckets shift.",
+      "origin": [
+        { "case": "FI", "ids": ["F-01"] }
+      ],
+      "probe": {
+        "input": "Classify one item with a selection containing only its customer, then with other customers added.",
+        "expected": "The item's classification is identical in both selections (credit note 1900000018 stays UNKNOWN)."
+      },
+      "layers": ["prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-SCOPE-03",
+      "class": "compute-vs-display-scope",
+      "title": "An option the original honours is silently ignored",
+      "description": "An option is declared in the request model but has no effect, while the original changes its output when the option is off.",
+      "origin": [
+        { "case": "FI", "ids": ["section 5: credit option"] }
+      ],
+      "probe": {
+        "input": "The same call with the option on and off.",
+        "expected": "The output differs as the original's does, or the option is refused."
+      },
+      "layers": ["prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-SCOPE-04",
+      "class": "compute-vs-display-scope",
+      "title": "Selection ranges collapse to single values and defaults are lost",
+      "description": "Range, pattern and exclusion selections become single values, an organisational unit is silently fixed, and the original's default period is dropped.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R19"] }
+      ],
+      "probe": {
+        "input": "A selection with a range, an exclusion and no explicit date.",
+        "expected": "Ranges and exclusions are honoured or refused; the original's default applies."
+      },
+      "layers": ["prompt", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-META-01",
+      "class": "contradicting-metadata",
+      "title": "Counts and states disagree across the package",
+      "description": "One document counts a number of business rules, another a different number, a third a number of statements, with no mapping; a status says the process was not read while a reconstructed process document sits next to it.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R09"] },
+        { "case": "PP", "ids": ["F12"] },
+        { "case": "CO", "ids": ["F15"] }
+      ],
+      "probe": {
+        "input": "Every count and state statement in STATUS, manifest, decision record and documentation.",
+        "expected": "One source per count; distinct states (not found, read, open, approved) are named distinctly."
+      },
+      "layers": ["lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-META-02",
+      "class": "contradicting-metadata",
+      "title": "README and design describe files and scripts the package lacks",
+      "description": "The README names a service model file and a dev script that do not exist, the build script needs a missing tsconfig, and the test script calls a runner the tests do not use.",
+      "origin": [
+        { "case": "FI", "ids": ["F-04", "F-05"] }
+      ],
+      "probe": {
+        "input": "Every file and script the README and design name.",
+        "expected": "Each exists in the package inventory and scripts."
+      },
+      "layers": ["lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-META-03",
+      "class": "contradicting-metadata",
+      "title": "Revisions and hand-over events are not kept apart",
+      "description": "A cost statement on one revision sits next to a decision binding that names no cost assumptions, and an export states that no hand-over package exists. Exported, handed over and deployed are different events with their own revision.",
+      "origin": [
+        { "case": "PP", "ids": ["F12"] },
+        { "case": "CO", "ids": ["F16"] }
+      ],
+      "probe": {
+        "input": "The decision record and STATUS of an exported package.",
+        "expected": "One cost statement per export with its revision; the export itself counts as handed over."
+      },
+      "layers": ["engine", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-META-04",
+      "class": "contradicting-metadata",
+      "title": "Dependencies do not follow the import graph",
+      "description": "Declared dependencies are never imported, and some do not fit the chosen programming model at all.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R23"] },
+        { "case": "FI", "ids": ["F-04"] }
+      ],
+      "probe": {
+        "input": "package.json and every import in the generated source.",
+        "expected": "Every declared dependency is imported somewhere; every imported package is declared."
+      },
+      "layers": ["lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-01",
+      "class": "main-path-meaning",
+      "title": "Rules with different meaning are merged into one sentence",
+      "description": "A readable summary folds statements that look alike but differ in condition, effect or status, so one sentence carries evidence for another rule (a lock and a conflict, a negative driver and a below-plan variance, a partial scope and a conditional receipt).",
+      "origin": [
+        { "case": "CO", "ids": ["F01"] },
+        { "case": "PP", "ids": ["F04"] }
+      ],
+      "probe": {
+        "input": "Each folded rule and all source lines it cites.",
+        "expected": "All cited lines carry the same condition, action, status and entity; otherwise the rules stay separate."
+      },
+      "layers": ["engine", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-02",
+      "class": "main-path-meaning",
+      "title": "The main path is listed in the wrong order",
+      "description": "Steps announced in program order put alternative data paths and the authorisation check after the output, and an optional export appears as a mandatory step.",
+      "origin": [
+        { "case": "CO", "ids": ["F02"] },
+        { "case": "PP", "ids": ["F05"] }
+      ],
+      "probe": {
+        "input": "A program with two alternative data acquisition paths ahead of a shared calculation.",
+        "expected": "The alternatives appear as a choice before the calculation; optional steps are marked optional."
+      },
+      "layers": ["engine", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-03",
+      "class": "main-path-meaning",
+      "title": "Template text that does not fit the process",
+      "description": "Generic phrases such as 'master and credit data' appear for processes that read no credit data, and sentences repeat.",
+      "origin": [
+        { "case": "CO", "ids": ["F03-DOC"] },
+        { "case": "PP", "ids": ["F05"] },
+        { "case": "SD", "ids": ["CC-R09"] }
+      ],
+      "probe": {
+        "input": "A process that reads material master data only.",
+        "expected": "No credit wording; template sentences appear only with a matching finding."
+      },
+      "layers": ["engine", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-04",
+      "class": "main-path-meaning",
+      "title": "A write that changes nothing is described as a change",
+      "description": "A database update writes back a value unchanged since it was read, and a batch input opens and saves a transaction without filling a field. Both read as changes in the documentation and push the decision towards a rebuild instead of retire or standard.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R01", "CC-R02", "CC-R03"] }
+      ],
+      "probe": {
+        "input": "An UPDATE whose source field is unassigned since the read, and a batch input with key fields and OK codes only.",
+        "expected": "Both are reported as no-op writes and feed the decision."
+      },
+      "layers": ["engine"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-05",
+      "class": "main-path-meaning",
+      "title": "A recalculation recomputes instead of adding",
+      "description": "The original adds a surcharge to the value already on the row; the generated recalculation recomputes the base from a default rate and then adds, discarding the existing value (125 + 10 becomes 60).",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R17", "CC-R07"] }
+      ],
+      "probe": {
+        "input": "A row whose derived value is already set (125) and a recalculation that adds a fixed surcharge (10).",
+        "expected": "The result is the existing value plus the surcharge (135)."
+      },
+      "layers": ["engine", "cases", "harness"],
+      "harnessProbe": "recalc-additive"
+    },
+    {
+      "id": "FP-MEAN-06",
+      "class": "main-path-meaning",
+      "title": "A return code read after an unrelated statement",
+      "description": "A status check refers to the loop, not to the single read before it, so a missing master record silently keeps the previous record's name. The engine reports neither the defect nor the rule.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R04"] }
+      ],
+      "probe": {
+        "input": "SELECT SINGLE followed by another statement and then IF sy-subrc.",
+        "expected": "Flagged, and the documentation states what the code really does."
+      },
+      "layers": ["engine", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-MEAN-07",
+      "class": "main-path-meaning",
+      "title": "Field meaning taken from the name, not the dictionary",
+      "description": "A target quantity is published as order quantity, and a read that overwrites an already filled text field is not recorded as a rule needing a decision.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R05", "CC-R06"] }
+      ],
+      "probe": {
+        "input": "A program reading a contract target quantity and overwriting an item text from the material master.",
+        "expected": "The model names the field by its dictionary meaning; the overwrite is a rule to decide."
+      },
+      "layers": ["engine"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-CLAIM-01",
+      "class": "claimed-integration",
+      "title": "An in-memory adapter claims a standard API call",
+      "description": "A class named after the SAP system holds an array in memory but answers with a success message that names a standard OData API. Anyone who sees only logs or responses is misled, and the honest status page is contradicted by the code.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R24"] },
+        { "case": "FI", "ids": ["F-04"] }
+      ],
+      "probe": {
+        "input": "Class names, success messages and comments in the generated source.",
+        "expected": "No name, message or comment claims an API, event or log the code does not call; a mock is named as a mock."
+      },
+      "layers": ["prompt", "lint", "harness"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-CLAIM-02",
+      "class": "claimed-integration",
+      "title": "An event publisher in SAP's namespace with a swallowed failure",
+      "description": "A generated publisher emits under SAP's own event namespace for an event the standard already provides, claims to log failures while it only builds a message, and declares an exception it can never raise. It is also presented as a released BAdI or as CloudEvents conformant without the required attributes.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R25"] },
+        { "case": "FI", "ids": ["F-08"] }
+      ],
+      "probe": {
+        "input": "Any generated event publisher.",
+        "expected": "Only where no standard event exists, in the customer namespace, with real logging or no logging claim."
+      },
+      "layers": ["prompt", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-CLAIM-03",
+      "class": "claimed-integration",
+      "title": "Requirements and controls invented in the design",
+      "description": "The solution design or business procedure asserts requirements (high-frequency recalculation, asynchronous export, ledger reconciliation, approval overrides, a RACI) that neither the code nor a business source supports.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R14", "CC-R33"] },
+        { "case": "FI", "ids": ["F-06"] }
+      ],
+      "probe": {
+        "input": "Every requirement and control statement in design and procedure documents.",
+        "expected": "Each cites code or a business source, or is marked as a proposal."
+      },
+      "layers": ["prompt", "lint"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-TEST-01",
+      "class": "label-only-tests",
+      "title": "A test's rule label does not match what it checks",
+      "description": "A test labelled with an authority-check rule only parses a number; a navigation test patches with an empty document number. The rule mapping is a label, not coverage.",
+      "origin": [
+        { "case": "SD", "ids": ["CC-R28"] }
+      ],
+      "probe": {
+        "input": "Each test and the rule it names.",
+        "expected": "The test's input and assertion touch the condition or effect of that rule."
+      },
+      "layers": ["lint", "cases"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-TEST-02",
+      "class": "label-only-tests",
+      "title": "Tests confirm the implementation against itself",
+      "description": "All supplied assertions pass while the known business deviations remain, because expectations come from the same interpretation as the code (internal sum consistency, mock adapter behaviour) instead of independent reference values.",
+      "origin": [
+        { "case": "FI", "ids": ["F-05"] },
+        { "case": "SD", "ids": ["CC-R27"] },
+        { "case": "PP", "ids": ["F06"] }
+      ],
+      "probe": {
+        "input": "The supplied tests run against a mutant that reintroduces a known deviation.",
+        "expected": "At least one test fails; the original's demo cases are present or STATUS names the reduced scope."
+      },
+      "layers": ["cases", "harness"],
+      "harnessProbe": null
+    },
+    {
+      "id": "FP-TEST-03",
+      "class": "label-only-tests",
+      "title": "Importing the module starts a server",
+      "description": "The service listens on import unless NODE_ENV is 'test', which neither the test script nor CI sets. Tests are green only in a harness that sets the variable or mocks the web framework; the unchanged CI command hangs.",
+      "origin": [
+        { "case": "CO", "ids": ["F11", "E16"] },
+        { "case": "PP", "ids": ["F09"] },
+        { "case": "SD", "ids": ["CC-R26"] }
+      ],
+      "probe": {
+        "input": "Import every engine and app module with NODE_ENV unset.",
+        "expected": "The import completes without opening a listener; the server starts only from a separate bootstrap."
+      },
+      "layers": ["prompt", "lint", "harness"],
+      "harnessProbe": "import-side-effects"
+    },
+    {
+      "id": "FP-GUARD-07",
+      "class": "lost-guards",
+      "title": "The original's CSV escaping and formula guard are lost",
+      "description": "The original doubles embedded quotes and neutralises leading formula characters. The generated serializer wraps fields in quotes without escaping, so a text containing a quote and a separator adds a column, and '=1+1' reaches the spreadsheet as a formula.",
+      "origin": [
+        { "case": "PP", "ids": ["F08"] }
+      ],
+      "probe": {
+        "input": "Rows whose text fields contain a quote with a separator, a line break, and a leading '='.",
+        "expected": "Every record keeps the header's field count, texts round-trip, and the formula cell is neutralised."
+      },
+      "layers": ["prompt", "lint", "cases", "harness"],
+      "harnessProbe": "csv-escaping"
+    }
+  ]
+}

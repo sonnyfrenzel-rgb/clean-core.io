@@ -1,0 +1,14 @@
+{
+  "package": "acceptance-fixture-unresolved",
+  "modules": {
+    "service": "srv/service.mjs"
+  },
+  "probes": {
+    "empty-selection": {
+      "call": { "module": "service", "export": "createApp" },
+      "args": [],
+      "refused": { "path": "status", "notIn": ["OK"] }
+    },
+    "recalc-additive": { "notApplicable": "the package has no recalculation" }
+  }
+}

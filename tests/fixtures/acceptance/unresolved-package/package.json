@@ -1,0 +1,9 @@
+{
+  "name": "acceptance-fixture-unresolved",
+  "private": true,
+  "type": "module",
+  "description": "Fixture for tests/acceptance-harness.spec.ts; never installed or published.",
+  "dependencies": {
+    "express": "4.21.2"
+  }
+}
