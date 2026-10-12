@@ -85,12 +85,16 @@ import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
-import { deliveryFactsOf, ruleFactsOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
+import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 
-/** Why the business rules' states are not in the package — the codes the process-states route answers with. */
+/**
+ * Why the business rules' states are not in the package — the codes the
+ * process-states route answers with. `no-baseline` is not among them: it means
+ * nobody has opened the process yet, so the rules are read from the source and
+ * are all open (`ruleFactsFromSource`, CO review F16, 12.10.2026).
+ */
 const RULES_UNREAD: Partial<Record<StatesReadRefusal, string>> = {
-  'no-baseline': 'the process has not been reconstructed from a signed run yet.',
   'no-source': 'the project holds no source.',
   'source-moved': 'the source changed since the signed run.',
   'source-too-large': 'the source is too large for the rule reader.',
@@ -383,7 +387,7 @@ export default function DeliveryPage() {
       const isModular = source.kind === 'package';
 
       // The files are collected first and written into the archive at the end:
-      // README.md, STATUS.md, docs/decision.md and manifest.json are written
+      // README.md, STATUS.md, docs/decision.md, docs/rule-register.md and manifest.json are written
       // from the files that are actually there (owner, 11.10.2026; external
       // review F-04, F-05, F-08, F-09, F-10) — `lib/delivery-package.ts`.
       const bundle = createDeliveryBundle();
@@ -522,9 +526,12 @@ export default function DeliveryPage() {
         readProcessStatesOutcome(projectId as string),
         readScoreEvidence(projectId as string),
       ]);
+      const ruleTests = ruleTestInputOf(project as HandoverProject);
       const rules = statesRead.ok
-        ? ruleFactsOf(statesRead.view)
-        : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.');
+        ? ruleFactsOf(statesRead.view, undefined, ruleTests)
+        : statesRead.code === 'no-baseline'
+          ? ruleFactsFromSource(typeof project.legacyCode === 'string' ? project.legacyCode : '', ruleTests)
+          : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.');
       const facts = deliveryFactsOf(project as HandoverProject, {
         phases,
         rules,

@@ -17,6 +17,7 @@ import {
   type BundleEntry,
   type DeliveryFacts,
 } from '../lib/delivery-package';
+import * as deliveryFacts from '../lib/delivery-facts';
 import { deliveryFactsOf, recordedCostSentence, ruleFactsOf, scoreFactsOf, type ScoreEvidence } from '../lib/delivery-facts';
 
 /**
@@ -270,7 +271,7 @@ test.describe('README.md is written from the files in the archive', () => {
 /* ===================================================== STATUS.md and manifest */
 
 test.describe('STATUS.md and manifest.json say what is decided, tested and only proposed', () => {
-  test('the FI shape: open rules, failed run with its cause, synthetic data, CAP proposed, review version', () => {
+  test('the FI shape: open rules, failed run with its cause, data mode not recorded, CAP proposed, review version', () => {
     const p = withFailure(fiProject());
     const pkg = finished(p);
     const status = pkg.file('STATUS.md')!;
@@ -281,8 +282,8 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
     expect(status).toContain('0 of 12 rules decided, 12 open');
     expect(status).toMatch(/\| Tests \| Failed — 10 scenarios generated\. The last run on 11 Oct 2026 gave no result \(3 attempts in a row\)/);
     expect(status).toContain("test.ts:162:27: ERROR");
-    expect(status).toContain('Synthetic/mock data only — no source file calls an SAP system.');
-    expect(status).toContain('CAP architecture proposed; delivered implementation: Express service on synthetic data.');
+    expect(status).toContain('Not recorded — supplied by the caller.');
+    expect(status).toContain('CAP architecture proposed; delivered implementation: Express service on data its caller supplies.');
     expect(status).toContain('Open — no decision on record. The engine recommends Side-by-Side');
     expect(status).toContain('Production use | Blocked');
     // Next steps in the review's order: tests, rules, decision.
@@ -297,7 +298,7 @@ test.describe('STATUS.md and manifest.json say what is decided, tested and only 
     const pkg = finished(withFailure(fiProject()));
     const manifest = JSON.parse(pkg.file('manifest.json')!);
     expect(manifest.approval).toBe('review-version-not-approved-for-production');
-    expect(manifest.dataMode).toBe('synthetic');
+    expect(manifest.dataMode).toBe('not-recorded');
     const file = (p: string) => manifest.files.find((f: { path: string }) => f.path === p);
     expect(file('db/schema.cds').status).toBe('proposed');
     expect(file('srv/service.ts').status).toBe('implemented');
@@ -579,5 +580,121 @@ test.describe('the pages build the package through the module', () => {
       const src = read(rel);
       expect(src, `${rel} calls a model`).not.toMatch(/callGemini|\/api\/gemini|openrouter/i);
     }
+  });
+});
+
+/* ====================================== CO review F16 and F10 (12.10.2026) */
+
+/** A source the engine reads one business rule from (BR-001, `lv_amount > 1000`, lines 5–6). */
+const RULE_SOURCE = `REPORT zco_alloc.
+PARAMETERS p_share TYPE p DECIMALS 2 DEFAULT '0.90'.
+DATA lv_amount TYPE p DECIMALS 2.
+SELECT SINGLE amount FROM zco_pool INTO @lv_amount WHERE pool = 'FAC'.
+IF lv_amount > 1000.
+  lv_amount = lv_amount * '0.90'.
+ENDIF.
+WRITE / lv_amount.
+`;
+
+const REGISTER = 'docs/rule-register.md';
+
+type FromSource = (source: string, tests?: unknown) => DeliveryFacts['rules'];
+/** Read through the namespace, so that without the fix this is an assertion failure and not a compile error. */
+const fromSource = (source: string): DeliveryFacts['rules'] => {
+  const fn = (deliveryFacts as unknown as { ruleFactsFromSource?: FromSource }).ruleFactsFromSource;
+  expect(typeof fn, 'lib/delivery-facts.ts reads the rules from the source when no process revision exists').toBe('function');
+  return fn!(source);
+};
+
+/** Five rules: one each of Keep, Change deliberately, Drop, Clarify — and one nobody answered. */
+const ANSWERED: ProcessStateView = {
+  formatVersion: 1,
+  revision: 3,
+  baselineRevision: 1,
+  subjects: ['BR-001', 'BR-002', 'BR-003', 'BR-004', 'BR-005'].map((id, i) => ({
+    subject: id,
+    kind: 'rule' as const,
+    label: `cond_${i + 1} > ${i + 1}`,
+    detail: `Current meaning of ${id}.`,
+    anchor: `line ${10 * (i + 1)}`,
+  })),
+  entries: [
+    { subject: 'BR-001', kind: 'rule', state: 'keep', note: null, account: { uid: 'u1', name: 'Controller A' }, confirmedAt: '2026-10-11T10:00:00.000Z', revision: 1 },
+    { subject: 'BR-002', kind: 'rule', state: 'change', note: 'Facilities share 85 % from 2027.', account: { uid: 'u1', name: 'Controller A' }, confirmedAt: '2026-10-11T10:05:00.000Z', revision: 2 },
+    { subject: 'BR-003', kind: 'rule', state: 'drop', note: 'Plant 7 closed.', account: { uid: 'u2', name: 'Controller B' }, confirmedAt: '2026-10-11T10:10:00.000Z', revision: 3 },
+    { subject: 'BR-004', kind: 'rule', state: 'clarify', note: 'Negative balances: who decides?', account: { uid: 'u2', name: 'Controller B' }, confirmedAt: '2026-10-11T10:15:00.000Z', revision: 3 },
+  ],
+  links: [],
+};
+
+test.describe('CO review F16: the rules have five states, and the package carries a rule register', () => {
+  test('a process with no stored revision is read from the source — never "Not read — not reconstructed"', () => {
+    const p = withFailure(fiProject({ legacyCode: RULE_SOURCE }));
+    const pkg = finished(p, factsOf(p, fromSource(RULE_SOURCE)));
+    const status = pkg.file('STATUS.md')!;
+    expect(status).not.toContain('Not read');
+    expect(status).not.toContain('has not been reconstructed');
+    expect(status).toContain('| Business rules | 0 of 1 rule decided, 1 open. Read from the source by the engine; nobody has answered a rule yet. Each rule is in `docs/rule-register.md`. |');
+    expect(status).toContain('Open: 1 · Approved: 0 · Changed on purpose: 0');
+    const register = pkg.file(REGISTER)!;
+    expect(register).toMatch(/\| BR-001 `lv_amount > 1000` \| Open \| .*lv_amount > 1000.* \| None — the current meaning is the working assumption\. \| None on record — open\. \|/);
+    expect(register).toContain('Source, line 5 · line 6');
+  });
+
+  test('"not detected" and "not read" are different words for different facts', () => {
+    const p = withFailure(fiProject());
+    const none = finished(p, factsOf(p, fromSource('REPORT zempty.\nWRITE / 1.\n'))).file('STATUS.md')!;
+    expect(none).toContain('| Business rules | Not detected — the engine read the source and found no business rule in it. |');
+    const unread = finished(p, factsOf(p, ruleFactsOf(null, 'the source changed since the signed run.'))).file('STATUS.md')!;
+    expect(unread).toContain('| Business rules | Not read — the source changed since the signed run. |');
+  });
+
+  test('the register has a row per rule: current meaning, proposal, decision, implementation, test, evidence, revision', () => {
+    const cases = [
+      { id: 'TC_01', name: 'Traced', category: 'Unit', ruleTrace: { ruleId: 'BR-002', kind: 'rule', lines: ['20'], expectedFromOriginal: 'share 90 %' } },
+      ...CASES.slice(1),
+    ];
+    const p = withReceipt(fiProject({ testCases: cases } as unknown as Partial<Project>), 'Passed');
+    const testsOf = (deliveryFacts as unknown as { ruleTestInputOf?: (p: HandoverProject) => unknown }).ruleTestInputOf;
+    expect(typeof testsOf, 'lib/delivery-facts.ts reads the traced test cases for the register').toBe('function');
+    const withTests = ruleFactsOf as unknown as (v: ProcessStateView, r: string | undefined, t: unknown) => DeliveryFacts['rules'];
+    const pkg = finished(p, factsOf(p, withTests(ANSWERED, undefined, testsOf!(p))));
+    const register = pkg.file(REGISTER);
+    expect(register, 'the package carries docs/rule-register.md').not.toBeNull();
+    expect(register!).toContain('| Rule | State | Current meaning | Proposal | Decision | Implementation | Test | Evidence | Revision |');
+    // The five states, each with its own word.
+    for (const word of ['Not detected', 'Not read', 'Open', 'Approved', 'Changed on purpose']) expect(register!).toContain(`- **${word}** — `);
+    const row = (id: string) => register!.split('\n').find((l) => l.startsWith(`| ${id} `))!;
+    expect(row('BR-001')).toContain('| Approved | Current meaning of BR-001. | None on record. | Keep — by Controller A on 11 Oct 2026 |');
+    expect(row('BR-001')).toContain('| Confirmation revision 1 |');
+    expect(row('BR-002')).toContain('| Changed on purpose | Current meaning of BR-002. | Facilities share 85 % from 2027. | Change deliberately — by Controller A');
+    expect(row('BR-002')).toContain('TC_01 (passed) — expected result model-stated from the original, not an independent test.');
+    expect(row('BR-002')).toContain('Not traced — no record ties the delivered code to this rule.');
+    expect(row('BR-003')).toContain('| Changed on purpose |');
+    expect(row('BR-003')).toContain('Plant 7 closed.');
+    expect(row('BR-004')).toContain('| Open |');
+    expect(row('BR-004')).toContain('Clarify (a question — still open)');
+    expect(row('BR-005')).toContain('| Open | Current meaning of BR-005. | None — the current meaning is the working assumption. | None on record — open. |');
+    expect(row('BR-005')).toContain('| Source, line 50 | — |');
+
+    // STATUS.md counts the same states; manifest.json lists the file with its hash and the counts.
+    expect(pkg.file('STATUS.md')!).toContain('Open: 2 · Approved: 1 · Changed on purpose: 2');
+    const manifest = JSON.parse(pkg.file('manifest.json')!);
+    const listed = manifest.files.find((f: { path: string }) => f.path === REGISTER);
+    expect(listed).toMatchObject({ kind: 'rule-register', status: 'implemented', origin: 'engine', sha256: sha256Hex(register!) });
+    expect(manifest.businessRules).toMatchObject({ state: 'read', basis: 'confirmations', total: 5, register: REGISTER, states: { open: 2, approved: 1, 'changed-on-purpose': 2 } });
+    expect(filesSection(pkg.file('README.md')!)).toContain(REGISTER);
+  });
+});
+
+test.describe('CO review F10: the data mode is not inferred from a missing SAP call', () => {
+  test('without a recorded run the data mode reads "not recorded — supplied by the caller", never "synthetic"', () => {
+    const pkg = finished(withFailure(fiProject()));
+    const status = pkg.file('STATUS.md')!;
+    expect(status).toMatch(/\| Data mode \| Not recorded — supplied by the caller\. /);
+    expect(status).not.toMatch(/synthetic\/mock/i);
+    expect(status).not.toContain('on synthetic data');
+    expect(pkg.file('README.md')!).not.toMatch(/synthetic\/mock/i);
+    expect(JSON.parse(pkg.file('manifest.json')!).dataMode).toBe('not-recorded');
   });
 });

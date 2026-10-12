@@ -22,7 +22,10 @@
  *     dependencies, the presence of a service model, the imports — and never
  *     claim more than that;
  *   - docs/decision.md carries the decision record and the Clean Core Score's
- *     deduction table, so "75/100" can be checked line by line.
+ *     deduction table, so "75/100" can be checked line by line;
+ *   - docs/rule-register.md lists every business rule with its current
+ *     meaning, proposal, decision, evidence and revision (CO review F16,
+ *     12.10.2026).
  *
  * Pure: no React, no Firestore, no I/O. The page hands in what the project
  * holds (`DeliveryFacts`, built by `lib/delivery-facts.ts`) and writes what
@@ -35,6 +38,7 @@ import { SCORE_FLOOR } from './clean-core-score';
 import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, type DecisionOption } from './decision-options';
 import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
+import { RULE_STATE_WORDS, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 
 /* ------------------------------------------------------------------ types */
 
@@ -100,6 +104,7 @@ export type FileKind =
   | 'readme'
   | 'manifest'
   | 'decision-record'
+  | 'rule-register'
   | 'service-source'
   | 'source'
   | 'cds-schema'
@@ -163,9 +168,15 @@ export interface DecisionFacts {
   reversibility: string | null;
 }
 
-export type RuleFacts =
-  | { state: 'read'; total: number; keep: number; change: number; drop: number; clarify: number; undecided: number }
-  | { state: 'unread'; reason: string };
+/** Where the rule register sits in the package (CO review F16, 12.10.2026). */
+export const RULE_REGISTER_PATH = 'docs/rule-register.md';
+
+/**
+ * The business rules as the package states them — the rule register of
+ * `lib/rule-register.ts`, five states kept apart (CO review F16, 12.10.2026).
+ */
+export type RuleFacts = RuleRegister;
+export type { RuleRow, RuleState } from './rule-register';
 
 export type TestStatus = 'passed' | 'failed' | 'incomplete' | 'closed-not-verified' | 'not-run' | 'stale';
 
@@ -706,6 +717,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (p === 'README.md') return { kind: 'readme', status: 'implemented', note: null };
   if (p === 'manifest.json') return { kind: 'manifest', status: 'implemented', note: null };
   if (p === 'docs/decision.md') return { kind: 'decision-record', status: 'implemented', note: null };
+  if (p === RULE_REGISTER_PATH) return { kind: 'rule-register', status: 'implemented', note: null };
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
@@ -884,24 +896,40 @@ export function implementationStatement(reading: PackageReading, facts: Delivery
   if (reading.kind !== 'node') return 'Delivered implementation: none — the package holds documents only.';
   const capRunning = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
   const what = capRunning ? 'CAP service' : reading.express.length ? 'Express service' : 'Node.js code';
-  const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on synthetic data';
+  // CO review F10: no SAP client says where the data does not come from, not that it is synthetic.
+  const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on data its caller supplies';
   const delivered = `delivered implementation: ${what} ${data}`;
   return capArchitectureProposed(reading, facts) && !capRunning
     ? `CAP architecture proposed; ${delivered}.`
     : `${delivered.charAt(0).toUpperCase()}${delivered.slice(1)}.`;
 }
 
-/** Data mode: synthetic unless a source uses an SAP client — and even then never "live", because nothing verified it. */
-export function dataMode(reading: PackageReading): { mode: 'synthetic' | 'sap-client-unverified' | 'not-applicable'; sentence: string } {
+/**
+ * Data mode — what is recorded about where the service's data comes from.
+ *
+ * It used to read "Synthetic/mock data only" whenever no source file called an
+ * SAP system (CO review F10, 12.10.2026). That was an inference: the generated
+ * engine takes whatever normalised data its caller hands in, and a real
+ * offline extract is as possible as a demo set. No run records a data mode
+ * today, so the package says it is not recorded instead of guessing. An SAP
+ * client in the code is said as such — and never as "live", because nothing
+ * verified a connection.
+ */
+export type DataMode = 'not-recorded' | 'sap-client-unverified' | 'not-applicable';
+
+export function dataMode(reading: PackageReading): { mode: DataMode; sentence: string } {
   if (reading.kind !== 'node') {
     return { mode: 'not-applicable', sentence: 'Not applicable — the package runs inside an SAP system once imported; it has not been.' };
   }
   return reading.sapClient.length
     ? {
         mode: 'sap-client-unverified',
-        sentence: `An SAP client is used in ${reading.sapClient.join(', ')}; no connection to a live system has been verified. Treat every result as coming from test data.`,
+        sentence: `An SAP client is used in ${reading.sapClient.join(', ')}; no connection to a live system has been verified, and no run recorded where the data came from.`,
       }
-    : { mode: 'synthetic', sentence: 'Synthetic/mock data only — no source file calls an SAP system.' };
+    : {
+        mode: 'not-recorded',
+        sentence: 'Not recorded — supplied by the caller. No source file calls an SAP system, and no run recorded where the data came from: synthetic, an extract or anything else the caller hands in.',
+      };
 }
 
 /* ------------------------------------------------------------- the texts */
@@ -914,6 +942,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^README\.md$/, () => 'This file.'],
   [/^manifest\.json$/, () => 'Every file with its kind, status (implemented, stub, proposed, missing) and SHA-256; source, run and decision identifiers.'],
   [/^docs\/decision\.md$/, () => 'The target decision as recorded, and how the Clean Core Score was derived.'],
+  [/^docs\/rule-register\.md$/, () => 'Every business rule: current meaning, proposal, decision, evidence and revision.'],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
   [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : 'TypeScript settings for `npm run build` (type-check only).')],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
@@ -1032,7 +1061,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
 
 /** STATUS, README, manifest, decision first; then the rest. */
 function order(path: string): number {
-  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md'];
+  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH];
   const i = first.indexOf(path);
   return i === -1 ? first.length : i;
 }
@@ -1059,12 +1088,15 @@ function decisionLine(d: DecisionFacts): string {
   }
 }
 
+/** CO review F16: one sentence per state, and "not read" only when nothing could be read. */
 function rulesLine(r: RuleFacts): string {
-  if (r.state === 'unread') return `Not read — ${r.reason}`;
-  if (r.total === 0) return 'No business rules were read from the source.';
-  const decided = r.keep + r.change + r.drop;
-  const open = r.undecided + r.clarify;
-  return `${decided} of ${plural(r.total, 'rule')} decided, ${open} open${r.clarify ? ` (${r.clarify} marked "clarify")` : ''}.`;
+  if (r.state !== 'read') return `${RULE_STATE_WORDS[r.state]} — ${r.reason}`;
+  const k = r.counts;
+  const decided = k.keep + k.change + k.drop;
+  const open = k.undecided + k.clarify;
+  const counts = `${decided} of ${plural(r.rows.length, 'rule')} decided, ${open} open${k.clarify ? ` (${k.clarify} marked "clarify")` : ''}.`;
+  const basis = r.basis === 'source' ? ' Read from the source by the engine; nobody has answered a rule yet.' : '';
+  return `${counts}${basis} Each rule is in \`${RULE_REGISTER_PATH}\`.`;
 }
 
 function scoreLine(s: ScoreFacts): string {
@@ -1111,9 +1143,9 @@ export function nextSteps(reading: PackageReading, facts: DeliveryFacts, capabil
   } else if (t.status === 'closed-not-verified') {
     out.push('Run the suite where it can run; until then testing stays closed, not verified.');
   }
-  if (facts.rules.state === 'read' && facts.rules.undecided + facts.rules.clarify > 0) {
-    out.push(`Decide the ${plural(facts.rules.undecided + facts.rules.clarify, 'open business rule')} — keep, change deliberately or drop — in the Business view.`);
-  } else if (facts.rules.state === 'unread') {
+  if (facts.rules.state === 'read' && facts.rules.counts.undecided + facts.rules.counts.clarify > 0) {
+    out.push(`Decide the ${plural(facts.rules.counts.undecided + facts.rules.counts.clarify, 'open business rule')} — keep, change deliberately or drop — in the Business view; each is in \`${RULE_REGISTER_PATH}\`.`);
+  } else if (facts.rules.state === 'not-read') {
     out.push('Check the business rules in the Business view — their state could not be read into this package.');
   }
   const d = facts.decision;
@@ -1131,8 +1163,8 @@ export function nextSteps(reading: PackageReading, facts: DeliveryFacts, capabil
   if (reading.publisher.length) {
     out.push('Decide whether the process needs eventing at all; if it does, bind the publisher to a released event or BAdI and test it end to end in SAP.');
   }
-  if (reading.kind === 'node' && dataMode(reading).mode === 'synthetic') {
-    out.push('Bind a real data source only after the steps above; until then the package runs on synthetic data.');
+  if (reading.kind === 'node' && dataMode(reading).mode === 'not-recorded') {
+    out.push('Record where the data comes from (synthetic, an extract, a live system) with every run, and bind a live SAP source only after the steps above.');
   }
   if (reading.kind === 'node' && !reading.lockfile) out.push('Commit a package-lock.json, so CI and the container install pinned versions.');
   return out;
@@ -1200,9 +1232,11 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
 
   lines.push('## Business rules', '');
   lines.push(rulesLine(facts.rules));
-  if (facts.rules.state === 'read' && facts.rules.total > 0) {
-    const r = facts.rules;
-    lines.push('', `Keep: ${r.keep} · Change deliberately: ${r.change} · Drop: ${r.drop} · Clarify: ${r.clarify} · Undecided: ${r.undecided}`);
+  if (facts.rules.state === 'read') {
+    const k = facts.rules.counts;
+    const c = ruleStateCounts(facts.rules.rows);
+    lines.push('', `${RULE_STATE_WORDS.open}: ${c.open} · ${RULE_STATE_WORDS.approved}: ${c.approved} · ${RULE_STATE_WORDS['changed-on-purpose']}: ${c['changed-on-purpose']}`);
+    lines.push('', `Keep: ${k.keep} · Change deliberately: ${k.change} · Drop: ${k.drop} · Clarify: ${k.clarify} · Undecided: ${k.undecided}`);
   }
   lines.push('');
 
@@ -1331,12 +1365,39 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
   return `${lines.join('\n').trimEnd()}\n`;
 }
 
+/* ---------------------------------------------------- docs/rule-register.md */
+
+/**
+ * The rule register (CO review F16, 12.10.2026): every business rule with its
+ * current meaning, proposal, decision, implementation, test, evidence and
+ * revision — the rows of `lib/rule-register.ts`. STATUS.md counts the rules;
+ * this file lets a reader check each one. Always written, with "not read" or
+ * "not detected" when there is no row, so its absence never has to be read.
+ */
+export function buildRuleRegister(facts: DeliveryFacts): string {
+  const lines: string[] = [];
+  lines.push(`# ${facts.projectName} — business rule register`, '');
+  lines.push(
+    'Written by Clean-Core.io from the records of the project, without a model. Not signed — the signed record is the audit pack. Every answer is a self-declaration of the signed-in account that gave it, not part of the signed run.',
+    '',
+  );
+  lines.push(...ruleRegisterMarkdown(facts.rules));
+  if (facts.rules.state === 'read') lines.push('', 'The lines refer to the source whose SHA-256 is in `STATUS.md`.');
+  return `${lines.join('\n').trimEnd()}\n`;
+}
+
 /* ------------------------------------------------------------ manifest.json */
 
 const bytesOf = (text: string) => new TextEncoder().encode(text).length;
 
 export const DELIVERY_MANIFEST_FORMAT = 'clean-core-delivery-manifest';
 export const DELIVERY_MANIFEST_VERSION = 1;
+
+/** The rule counts for the manifest; the rows themselves are in the register. */
+function manifestRules(r: RuleFacts) {
+  if (r.state !== 'read') return { ...r, register: RULE_REGISTER_PATH };
+  return { state: r.state, basis: r.basis, total: r.rows.length, ...r.counts, states: ruleStateCounts(r.rows), register: RULE_REGISTER_PATH };
+}
 
 export function buildManifest(
   facts: DeliveryFacts,
@@ -1376,7 +1437,8 @@ export function buildManifest(
       cost: d.cost,
       openConditions: d.conditions.filter((c) => c.status === 'open' || c.status === 'not determined').length,
     },
-    businessRules: facts.rules,
+    // The rows are in docs/rule-register.md; the manifest carries the counts and points there.
+    businessRules: manifestRules(facts.rules),
     tests: { status: facts.tests.status, scenarios: facts.tests.scenarios, sentence: facts.tests.sentence, detail: facts.tests.detail },
     score: {
       signed: facts.score.signed,
@@ -1414,7 +1476,7 @@ export function finishDeliveryPackage(input: {
   layout: 'package' | 'flat';
 }): FinishedPackage {
   const { facts } = input;
-  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md'].includes(e.path));
+  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
@@ -1425,10 +1487,12 @@ export function finishDeliveryPackage(input: {
   const capabilities = packageCapabilities(reading, facts);
 
   const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
+  const register: BundleEntry = { path: RULE_REGISTER_PATH, content: buildRuleRegister(facts), origin: 'engine' };
   // README names STATUS.md, manifest.json and itself, so it is written over the final list.
   const finalPaths: BundleEntry[] = [
     ...entries,
     decision,
+    register,
     { path: 'STATUS.md', content: '', origin: 'engine' },
     { path: 'README.md', content: '', origin: 'engine' },
     { path: 'manifest.json', content: '', origin: 'engine' },
@@ -1439,13 +1503,13 @@ export function finishDeliveryPackage(input: {
     const c = classifyFile(e, reading, facts);
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
-  const beforeStatus = [...entries, decision, readme].map(describeFile);
+  const beforeStatus = [...entries, decision, register, readme].map(describeFile);
   const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus }), origin: 'engine' };
-  const listed = [...entries, decision, readme, status]
+  const listed = [...entries, decision, register, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
 
-  const files = [status, readme, manifest, decision, ...entries].map((e) => ({ path: e.path, content: e.content }));
+  const files = [status, readme, manifest, decision, register, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed };
 }

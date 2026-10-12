@@ -12,7 +12,8 @@ import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { kindWord, parseBpmn } from '@/lib/process-map';
-import { deriveBusinessRules, rulesForElement, type BusinessRule } from '@/lib/abap/business-rule-set';
+import { deriveBusinessRules, rulesForElement } from '@/lib/abap/business-rule-set';
+import { anchorWords, ruleAnchor } from '@/lib/rule-anchor';
 import { PROCESS_REVISION_COLLECTION, isProcessRevisionRecord } from '@/lib/process-revisions';
 import {
   MAX_STATE_ENTRIES,
@@ -270,35 +271,6 @@ async function latestStates(db: AdminDb, projectId: string): Promise<StoredState
 /* ------------------------------------------------------------------ *
  * The subjects: the elements of the as-is process and the rules of its source.
  * ------------------------------------------------------------------ */
-
-/** "line 5", "lines 5 to 9", or null — the wording `lib/process-map.ts` uses. */
-function anchorWords(start: number | null, end: number | null): string | null {
-  if (start === null) return null;
-  if (end === null || end === start) return `line ${start}`;
-  return `lines ${start} to ${end}`;
-}
-
-/**
- * Every place a rule stands, and not a range from the first to the last.
- *
- * `BusinessRule` carries no line range on purpose — a rule copied into fourteen
- * routines stands at fourteen places, and one range over them would claim the
- * nine hundred lines in between. So the anchor line names the places, up to six
- * of them, and says how many more there are rather than dropping them silently.
- */
-function ruleAnchor(rule: BusinessRule): string | null {
-  const seen = new Set<string>();
-  for (const sentence of rule.sentences) {
-    for (const anchor of sentence.anchors) {
-      const words = anchorWords(anchor.lineStart, anchor.lineEnd);
-      if (words) seen.add(words);
-    }
-  }
-  const places = [...seen];
-  if (places.length === 0) return null;
-  const shown = places.slice(0, 6).join(' · ');
-  return places.length > 6 ? `${shown} · ${places.length - 6} more places` : shown;
-}
 
 interface Subjects {
   subjects: StateSubject[];

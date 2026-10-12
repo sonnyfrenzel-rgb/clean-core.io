@@ -30,7 +30,8 @@ import { costRevisionWords, type DecisionCostBasis, type NoCheapestCode } from '
 import { optionOfArchitecture } from './decision-options';
 import { sapNamesForDisplay } from './sap-naming';
 import { recommendedArchitecture } from './project-commands';
-import { readProcessStates, subjectIdsOf, type ProcessStateView } from './process-states';
+import type { ProcessStateView } from './process-states';
+import { ruleRegisterFromSource, ruleRegisterFromView, type RuleTestInput } from './rule-register';
 import { testEvidence, type RailStep } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import { closureSentence, failureSentence, testingClosureReading, testRunFailureReading } from './testing-closure';
@@ -178,20 +179,44 @@ function isoString(value: unknown): string | null {
 
 /* ---------------------------------------------------------- business rules */
 
-/** The confirmed states of the business rules, as the Business view counts them; `reason` when they could not be read. */
-export function ruleFactsOf(view: ProcessStateView | null, reason = 'the confirmed process states could not be read.'): RuleFacts {
-  if (!view) return { state: 'unread', reason };
-  const { rules } = subjectIdsOf(view.subjects);
-  const counts = readProcessStates(view.entries, { elements: [], rules }).counts;
-  return {
-    state: 'read',
-    total: rules.length,
-    keep: counts.keep,
-    change: counts.change,
-    drop: counts.drop,
-    clarify: counts.clarify,
-    undecided: counts.undecided,
-  };
+/**
+ * What the register needs from the tests: the cases (their rule traces) and
+ * the covering run's verdicts — only a receipt-backed run gives a verdict.
+ */
+export function ruleTestInputOf(project: HandoverProject): RuleTestInput {
+  const cases = Array.isArray(project.testCases) ? (project.testCases as unknown as Array<Record<string, unknown>>) : [];
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const verdicts = receipt ? Object.fromEntries(receipt.verdicts.map((v) => [v.id, v.status])) : null;
+  return { cases, verdicts };
+}
+
+/**
+ * The business rules with what has been answered for each, as the Business view
+ * counts them; `reason` when they could not be read. A view with no rule in it
+ * is "not detected", not "0 of 0 decided" (CO review F16, 12.10.2026).
+ */
+export function ruleFactsOf(
+  view: ProcessStateView | null,
+  reason = 'the confirmed process states could not be read.',
+  tests?: RuleTestInput,
+): RuleFacts {
+  return ruleRegisterFromView(view, reason, tests);
+}
+
+/**
+ * The business rules of a project whose process has no stored revision yet
+ * (the process-states route answers `no-baseline`).
+ *
+ * That answer used to reach STATUS.md as "Not read — the process has not been
+ * reconstructed from a signed run yet", in a package whose
+ * `docs/process-documentation.md` the engine had reconstructed from the same
+ * source (CO review F16, 12.10.2026). Revision 1 is written the first time
+ * somebody opens the process in the Business view; its absence means nobody
+ * has answered a rule. So the rules are read from the source and every one is
+ * open. A download writes nothing.
+ */
+export function ruleFactsFromSource(source: string, tests?: RuleTestInput): RuleFacts {
+  return ruleRegisterFromSource(source, tests);
 }
 
 /* ------------------------------------------------------------------ tests */
