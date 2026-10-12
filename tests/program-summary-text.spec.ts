@@ -567,7 +567,8 @@ START-OF-SELECTION.
       'START-OF-SELECTION.',
       `CLASS lcl_other DEFINITION.\n  PUBLIC SECTION.\n    METHODS block_items.\nENDCLASS.\nCLASS lcl_other IMPLEMENTATION.\n  METHOD block_items.\n    UPDATE vbak SET lifsk = '01' WHERE vbeln = '0000000001'.\n  ENDMETHOD.\nENDCLASS.\nSTART-OF-SELECTION.`,
     );
-    expect(writesOf(twin).every(([, onCommand]) => onCommand === false)).toBe(true);
+    // Both writes are there, and neither is command-only (QA review of 4117e8ab, 13592bd1786c).
+    expect(writesOf(twin).sort()).toEqual([['VBAK', false], ['VBAP', false]]);
   });
 
   test('Management keeps what a command changes apart from what every run changes (8016d373c55f)', () => {

@@ -1308,7 +1308,11 @@ export default function DeliveryPage() {
             )}
             {/* What the reader does with it, in one line (owner, 12.10.2026: "does a user still have to do anything with it?"). */}
             <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted" data-audit-pack-use="">
-              Downloading seals it while this run is the active one; the page confirms the seal after the download. Hand the ZIP to whoever needs proof; anyone can check it at{' '}
+              {/* Said by state, never as a promise about this download (QA reviews of 0316b4e2 and 4117e8ab, 7531ad62f7a4, 5193ba3183e3). */}
+              {exportedAt
+                ? 'This run is sealed; a new download is the same signed record. '
+                : 'The first download of this run seals it. '}
+              Hand the ZIP to whoever needs proof; anyone can check it at{' '}
               <Link href="/verify-pack" className="text-cc-ink underline underline-offset-2 hover:text-cc-brand-deep">
                 Verify an audit pack
               </Link>
