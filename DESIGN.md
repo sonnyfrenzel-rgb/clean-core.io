@@ -261,7 +261,11 @@ From top to bottom:
    an icon, a provenance chip carries only the nine values from `lib/provenance.ts`.
 3. **Toolbar:** the seven stages as tools (Analyze … Delivery), left-aligned; on the right export and
    sharing. From breakpoint L open side by side in every view; below L open in IT and a "Tools" menu in
-   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). Each tool says whether it has
+   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). **In Business the header carries
+   the bar in compact form** (ADR-099): one row above "Next step" — the seven tools with their marks and the
+   "Next" tag, and the legend — with one fixed line under the title, "Your project's workspace: the process from
+   the code, and the seven tools."; below L the same "Tools" menu. The full bar, with the hint line and "What the
+   tools do", stays in the work area under the map (ADR-072, §5.5). Each tool says whether it has
    something of its own on record in this project: a small green check where the tool's own output is on record and
    current (Analyze: a signed run, never a staged source — `toolOnRecord`, amended 03.10.2026), an amber dot
    where it is out of date (inputs changed since), nothing where nothing is on record. A legend in text ("used ·
@@ -461,7 +465,8 @@ For first-time users less is more — the depth stays, it just does not come fir
 - **Metadata on demand.** The mono meta line (project ID, manifest, revision, source state, engine, rules, catalog)
   stands behind "Details" in every view, IT included (04.10.2026); one click selects a value whole for copying.
 - **Tools by view.** From breakpoint L the toolbar is open in every view (ADR-060); below L it is open in IT and
-  a "Tools" menu in Business and Management.
+  a "Tools" menu in Business and Management. In Business it stands twice by design (ADR-099): compact in the
+  header, so a returning reader reaches every tool in the first screen, and in full in the work area under the map.
 - **Layers with content first.** The anchor bar shows the layers with content first; an empty layer stays a tab, muted
   and marked "empty", and says in its section what is missing — no "More" menu (owner, 03.10.2026). In IT there are no
   layers and no "empty" chip at all: its own anchor bar names only sections that hold something (ADR-086).
@@ -708,7 +713,7 @@ and the end state never waits for a model — the map's place says what is still
 - **Head of the content:** process name, plain-language sentence, reveal line, the open questions in one line (§5.1, ADR-081).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
 - **The process stays in sight** (ADR-059, ADR-072): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map. IT and Management show no first look (ADR-086, ADR-087): the process is Business's, and they link to it.
-- **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
+- **The work area under the map** (ADR-072): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it. Since ADR-099 the header also carries the tools in one compact row above "Next step", for the reader who comes back to a project and needs one tool again.
 - **The way back** (ADR-072): "← My workspace" above the title of the object page, at every width.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
 - **"Open questions" instead of a side column "Not determined"** (ADR-081): one list per project, grouped by the
@@ -1199,6 +1204,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.13 | 12.10.2026 | Re-entry in Business (ADR-099, owner 12.10.2026, amending ADR-072): one fixed line under the title says what the page is, and a compact tool bar — the same tools, marks and "Next" tag, with the legend — stands in the header above "Next step"; below L the "Tools" menu. The full bar stays in the work area under the map: §2.3 item 3, §2.11, §5.5 |
 | 1.8.12 | 11.10.2026 | Analyze: the Clean Core Score is the hero, and declutter wave 2 (ADR-093, owner approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`): the score with its band, scale, edition rule, the other edition's figure and its provenance beside the deduction table that sums to the signed score; one row of four facets; the "On this page" bar under the hero without a score anchor; one "Add evidence" and one "Export" menu; complexity/criticality meters and the inventory tables leave Analyze (display only); the hero figure joins the type scale: §1.2, §1.8, §2.3 |
 | 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |
 | 1.8.10 | 10.10.2026 | The Management view shows only its own content (ADR-087, owner 10.10.2026, amending ADR-018, ADR-069 and ADR-080): no layer bar and no anchor bar; the decision, the distance to SAP standard with the readiness trend beside it, one Evidence fold that always starts closed, one row of links out; the four foundations and the open conditions one list; each fact once; layer addresses in Management go where the content lives now; Changes & commitments is no layer (§2.3 item 4, the navigation table, §2.11, §5.5, §5.6). The steering one-pager prints as one A4 landscape sheet without browser header or footer (ADR-088, §7.1) |

@@ -4,6 +4,7 @@ import path from 'path';
 import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
+import { workflowSteps } from '../lib/workflow-steps';
 
 /**
  * A project reopened far along its way — owner, 12.10.2026 (translated):
@@ -195,4 +196,96 @@ test.describe('a project reopened far along its way', () => {
       }
     });
   }
+
+  /**
+   * Re-entry (ADR-099, Sonny 12.10.2026): one fixed line under the title says
+   * what the page is, and the seven tools stand in one compact row above
+   * "Next step" — open from breakpoint L, a "Tools" menu below it.
+   */
+  test('a returning reader finds the intro line and the seven tools in the first screen — 1440', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await withoutTips(page);
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+
+    await expect(page.locator('[data-workspace-intro]')).toHaveText(
+      'Your project’s workspace: the process from the code, and the seven tools.',
+    );
+
+    const bar = page.locator('[data-workspace-head-tools="open"]');
+    await expect(bar).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-workspace-head-tools="menu"]'), 'a menu beside the open bar at L').toBeHidden();
+    const box = await bar.boundingBox();
+    expect(box, 'the head tool bar has a box').not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0), 'the head tool bar ends above the fold').toBeLessThanOrEqual(900);
+
+    // Above "Next step", in the DOM and on the screen.
+    const nextStep = page.locator('[data-workspace-shell="business"] [data-coach-target="next-step"]');
+    await expect(nextStep).toBeVisible({ timeout: 60_000 });
+    const nextBox = await nextStep.boundingBox();
+    expect(box?.y ?? 0, 'the tool bar stands above Next step').toBeLessThan(nextBox?.y ?? 0);
+
+    // The seven tools, the same marks and exactly one "Next" tag — read from the
+    // phase contract, as on the full bar in the work area.
+    const links = bar.locator('a[data-workspace-tool]');
+    await expect(links).toHaveCount(7);
+    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveCount(1);
+    await expect(bar.locator('[data-tools-legend="head"]')).toBeVisible();
+    const keys = workflowSteps(null).map((s) => s.key);
+    for (const key of keys) {
+      await expect(bar.locator(`a[data-workspace-tool="${key}"]`)).toHaveAttribute(
+        'href',
+        new RegExp(`^/project/${projectId}/${key}\\?view=business&from=workspace-head-tools`),
+      );
+    }
+    // The full bar's state per tool agrees with the head bar's.
+    const head = await links.evaluateAll((els) => els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}`));
+    const full = await page
+      .locator('[data-workspace-tools="open"] a[data-workspace-tool]')
+      .evaluateAll((els) => els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}`));
+    expect(head).toEqual(full);
+
+    // Keyboard: the first tool takes the focus and Enter opens its stage.
+    const first = links.first();
+    await first.focus();
+    await expect(first).toBeFocused();
+    const target = await first.getAttribute('data-workspace-tool');
+    await page.keyboard.press('Enter');
+    await page.waitForURL(new RegExp(`/project/${projectId}/${target}\\?`), { timeout: 90_000 });
+  });
+
+  test('on a phone the head carries a "Tools" menu in the first screen — 390', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await withoutTips(page);
+    await signInThroughForm(page, account);
+    await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="business"]')).toBeVisible({ timeout: 90_000 });
+
+    await expect(page.locator('[data-workspace-intro]')).toBeVisible();
+    await expect(page.locator('[data-workspace-head-tools="open"]'), 'the open bar on a phone').toBeHidden();
+    const button = page.locator('[data-workspace-head-tools="menu"] button[aria-expanded]');
+    await expect(button).toBeVisible({ timeout: 60_000 });
+    const box = await button.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0), 'the Tools button ends above the fold').toBeLessThanOrEqual(844);
+    expect(box?.height ?? 0, 'a 44 px target').toBeGreaterThanOrEqual(44);
+
+    // Keyboard: Enter opens the panel, the seven tools are in it, Escape closes
+    // it and hands the focus back to the button.
+    await button.focus();
+    await page.keyboard.press('Enter');
+    const panel = page.locator('[data-workspace-head-tools-panel]');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
+    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(1);
+    await expect(panel.locator('a[data-workspace-tool="testing"]')).toHaveAttribute(
+      'href',
+      new RegExp(`^/project/${projectId}/testing\\?view=business&from=workspace-head-tools`),
+    );
+    await page.keyboard.press('Escape');
+    await expect(panel).toHaveCount(0);
+    await expect(button).toBeFocused();
+  });
 });

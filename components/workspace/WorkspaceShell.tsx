@@ -1156,6 +1156,15 @@ export default function WorkspaceShell({
                 </CcButton>
               </span>
             </div>
+            {/* What this page is, in one fixed line, for a reader who comes back
+                to a project (ADR-099, owner 12.10.2026: "there is no real intro
+                of what this is"). Business only: IT and Management open with
+                their own answer. */}
+            {view === 'business' ? (
+              <p data-workspace-intro="" className="m-0 mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
+                {wt('page.workspaceIntro')}
+              </p>
+            ) : null}
             {metaVisible && (
               <div className="mt-2">
                 <WorkspaceMetaLine entries={meta} />
@@ -1206,6 +1215,16 @@ export default function WorkspaceShell({
         </div>
 
         {view !== 'business' ? statusAndTools : null}
+        {/* Business: the seven tools in one compact row above "Next step"
+            (ADR-099, owner 12.10.2026: "you don't get quickly to the tools if
+            you need something again"). The same component, marks and "Next"
+            tag as the full bar, which stays in the work area under the map
+            (ADR-072); a "Tools" menu below breakpoint L (§2.3). */}
+        {view === 'business' ? (
+          <div id={WORKSPACE_RETURN.headTools} data-workspace-head-toolbar="" className="cc-no-print mt-3 scroll-mt-20">
+            <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={false} compact />
+          </div>
+        ) : null}
       </section>
 
       {/* Keyed, so a view switch reorders these blocks instead of remounting

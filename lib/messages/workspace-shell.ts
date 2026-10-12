@@ -17,6 +17,8 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.metaNoRun': 'No signed run yet — source, engine, rules and catalog are recorded with the first analysis.',
   'page.view': 'View',
   'page.aboutThisView': 'About this view',
+  // One fixed line under the title of the Business view (ADR-099, owner 12.10.2026).
+  'page.workspaceIntro': 'Your project’s workspace: the process from the code, and the seven tools.',
   'page.projectStatus': 'Project status',
   'page.nothingOnRecord': 'Nothing on record yet for any of the seven',
   'page.showProjectStatus': 'Show project status',

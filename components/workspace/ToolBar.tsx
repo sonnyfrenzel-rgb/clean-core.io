@@ -161,10 +161,10 @@ export function ResultReadyTag() {
  * of the phone menu. All three entries always, so the legend does not change
  * shape with the project.
  */
-function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
+function ToolsLegend({ inMenu, place }: { inMenu?: boolean; place?: 'head' }) {
   return (
     <p
-      data-tools-legend={inMenu ? 'menu' : 'bar'}
+      data-tools-legend={inMenu ? 'menu' : place ?? 'bar'}
       className={cn(
         'flex items-center gap-3 text-[11px] leading-4 text-cc-ink-muted',
         inMenu && 'border-b border-cc-line pb-2',
@@ -227,8 +227,16 @@ function ToolsNav({
   current?: PhaseKey;
   /** Open from M up (the workspace's IT view); otherwise only from L up. */
   open: boolean;
-  surface: 'workspace' | 'stage';
+  /**
+   * `workspace-head` — the compact bar in the Business header (ADR-099): the
+   * same links, marks and "Next" tag in one row with the legend, without the
+   * hint line and "What the tools do", which stay with the full bar in the
+   * work area under the map. Its own data hooks, so the two bars on one page
+   * are never mistaken for each other.
+   */
+  surface: 'workspace' | 'workspace-head' | 'stage';
 }) {
+  const compact = surface === 'workspace-head';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -332,7 +340,11 @@ function ToolsNav({
   const barHidden = open ? 'max-[600px]:hidden' : 'max-[1024px]:hidden';
   const menuHidden = open ? 'min-[601px]:hidden' : 'min-[1025px]:hidden';
   const hook = (value: 'open' | 'menu') =>
-    surface === 'workspace' ? { 'data-workspace-tools': value } : { 'data-stage-tools': value };
+    surface === 'workspace'
+      ? { 'data-workspace-tools': value }
+      : surface === 'workspace-head'
+        ? { 'data-workspace-head-tools': value }
+        : { 'data-stage-tools': value };
 
   return (
     <>
@@ -345,8 +357,12 @@ function ToolsNav({
           {wt('tools.label')}
         </span>
         {barItems}
+        {/* Compact (ADR-099): the legend in the same row, so no mark rests on
+            colour alone; the hint and the guide stay with the full bar. */}
+        {compact ? <ToolsLegend place="head" /> : null}
         {/* One line under the tools: the next one and what it does, what the
             marks mean, and the one way to read what every tool does. */}
+        {compact ? null : (
         <div className="flex basis-full flex-wrap items-center gap-x-4 gap-y-1">
           <p data-tools-hint="bar" className="m-0 min-w-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
             {hint}
@@ -356,6 +372,7 @@ function ToolsNav({
             {guidePanel}
           </InfoPopover>
         </div>
+        )}
       </nav>
       <div ref={menuRef} {...hook('menu')} className={cn('relative cc-no-print', menuHidden)}>
         <CcButton
@@ -370,7 +387,7 @@ function ToolsNav({
         {menuOpen && (
           <div
             id={panelId}
-            data-workspace-tools-panel=""
+            {...(compact ? { 'data-workspace-head-tools-panel': '' } : { 'data-workspace-tools-panel': '' })}
             className="absolute left-0 z-20 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
           >
             <ToolsLegend inMenu />
@@ -396,6 +413,7 @@ export default function WorkspaceToolBar({
   projectId,
   view,
   open,
+  compact = false,
 }: {
   tools: WorkspaceTool[];
   projectId: string;
@@ -403,6 +421,11 @@ export default function WorkspaceToolBar({
   view: WorkspaceView;
   /** IT lays them out from M up; Business and Management only from L up. */
   open: boolean;
+  /**
+   * The compact bar in the Business header (ADR-099, owner 12.10.2026): the
+   * way back from a stage it opened returns to it, not to the work area.
+   */
+  compact?: boolean;
 }) {
   // The layer the reader is in travels with the link, so the way back returns to it.
   const layer = useWorkspaceLayer();
@@ -410,9 +433,9 @@ export default function WorkspaceToolBar({
     <ToolsNav
       tools={tools}
       open={open}
-      surface="workspace"
+      surface={compact ? 'workspace-head' : 'workspace'}
       readKey={projectId}
-      link={{ base: `/project/${projectId}`, view, from: WORKSPACE_RETURN.tools, layer }}
+      link={{ base: `/project/${projectId}`, view, from: compact ? WORKSPACE_RETURN.headTools : WORKSPACE_RETURN.tools, layer }}
     />
   );
 }

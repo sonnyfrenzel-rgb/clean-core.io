@@ -150,6 +150,8 @@ export function originLink(base: string, search: string): StageOriginLink | null
  */
 export const WORKSPACE_RETURN = {
   tools: 'workspace-tools',
+  // The compact tool bar in the Business header (ADR-099).
+  headTools: 'workspace-head-tools',
   nextStep: 'next-step',
   status: 'workspace-status',
 } as const;
