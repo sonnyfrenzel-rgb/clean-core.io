@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformation generation mockup</title>
+<!--
+  Mockup for the owner's approval — docs/design/engine-led-transformation.md §14–§15, ADR-101 (proposed).
+  Self-contained: no external fonts, scripts or images. System font stands in for Inter.
+  Example project: ZCO_CC_CLOSE_SIMULATION. Rule, guard, decimal, input, routine and line figures are the
+  engine's measurement of 12.10.2026; the decisions, requirements, score, findings and dates are illustrative.
+-->
+<style>
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;
+  --cc-line:#e5e7eb;--cc-field-border:#6b7280;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-focus:#1d4ed8;
+  --ok-fg:#047857;--ok-bg:#ecfdf5;--ok-bd:#a7f3d0;
+  --warn-fg:#92400e;--warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-mark:#d97706;--warn-line:#b45309;
+  --err-fg:#b91c1c;--err-bg:#fef2f2;
+  --info-fg:#1d4ed8;--info-bg:#eff6ff;--info-bd:#bfdbfe;
+  --neu-fg:#4b5563;--neu-bg:#f9fafb;--neu-bd:#e5e7eb;
+  --code-bg:#030712;--code-ink:#e5e7eb;--code-muted:#9ca3af;--code-name:#93c5fd;--code-kw:#c4b5fd;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --t:200ms;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cc-page);color:var(--cc-ink);font:500 14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-reduced-motion: reduce){:root{--t:0ms}}
+body.reduced{--t:0ms}
+a{color:var(--info-fg);text-decoration:underline;text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+.mock-bar{background:#0b1c30;color:#fff;padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;font-weight:600}
+.mock-bar .seg{display:inline-flex;border:1px solid #9ca3af;border-radius:8px;overflow:hidden}
+.mock-bar .seg button{background:transparent;color:#fff;border:0;padding:4px 12px;font:inherit;cursor:pointer}
+.mock-bar .seg button[aria-pressed=true]{background:#fff;color:#0b1c30}
+.mock-bar label{display:inline-flex;gap:4px;align-items:center}
+.mock-bar .note{opacity:.85;font-weight:500}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 16px 48px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:4px 0 4px}
+h2{font-size:15px;font-weight:700;margin:0}
+h3{font-size:14px;font-weight:700;margin:0}
+.lead{color:var(--cc-ink-muted);margin:0 0 24px}
+.card{background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:12px;box-shadow:0 1px 2px rgb(0 0 0/.04);padding:16px}
+.card+.card{margin-top:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--cc-ink-muted)}
+.small{font-size:13px}
+.meta{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.mono{font-family:var(--mono);font-size:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);color:#fff;border:1px solid var(--cc-brand-strong)}
+.btn.primary:hover{background:var(--cc-brand-deep)}
+.btn.ghost{background:#fff;color:var(--cc-ink-muted);border:1px solid var(--cc-field-border)}
+.btn.compact{height:32px;padding:0 12px;font-size:13px}
+/* provenance chips, DESIGN.md §4: word + icon, shape says how firm */
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600;white-space:nowrap;line-height:1.4}
+.chip svg{width:12px;height:12px}
+.chip.reconstructed{color:var(--info-fg);background:#fff;border:1px solid var(--info-fg)}
+.chip.imported{color:var(--info-fg);background:#fff;border:1px solid var(--info-fg)}
+.chip.confirmed{color:var(--info-fg);background:var(--info-bg);border:1px solid var(--info-bd)}
+.chip.proposed{color:var(--warn-fg);background:#fff;border:1px dashed var(--warn-line)}
+.chip.stale{color:var(--warn-fg);background:var(--warn-bg);border:1px solid var(--warn-bd)}
+.chip.notdet{color:var(--neu-fg);background:#fff;border:1px solid var(--neu-fg)}
+.chip.proven{color:var(--ok-fg);background:var(--ok-bg);border:1px solid var(--ok-bd)}
+.idt{display:inline-flex;align-items:center;border-radius:4px;padding:0 6px;font:600 12px/1.6 var(--mono);background:var(--cc-surface-muted);border:1px solid var(--cc-line);color:var(--cc-ink)}
+.caption{display:flex;gap:8px;align-items:flex-start;background:var(--info-bg);border:1px solid var(--info-bd);color:var(--cc-ink);border-radius:8px;padding:8px 12px;margin:12px 0 0;font-size:13px}
+.caption svg{flex:none;color:var(--info-fg);margin-top:2px}
+/* tips */
+.tips{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.tip{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;border:1px solid var(--cc-line);border-radius:8px;padding:12px;background:var(--cc-surface)}
+.tip .n{min-width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-weight:800;background:var(--warn-bg);color:var(--warn-fg);border:1px solid var(--warn-bd);font-variant-numeric:tabular-nums}
+.tip .what{font-size:13px;color:var(--cc-ink-muted);margin-top:2px}
+.tip .what b{color:var(--cc-ink);font-weight:600}
+.tip a{white-space:nowrap;font-weight:600;font-size:13px}
+.tips-done{display:none;border:1px solid var(--cc-line);border-radius:8px;padding:8px 12px;margin-top:12px;font-size:13px}
+.cost{font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-top:8px}
+/* layout */
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;margin-top:16px}
+@media (max-width:1023px){.grid{grid-template-columns:1fr}}
+/* chain */
+.chain{list-style:none;margin:12px 0 0;padding:0;position:relative}
+.phase{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin:12px 0 4px 40px}
+.slot{position:relative;display:grid;grid-template-columns:28px 1fr;gap:12px;padding:0 0 12px}
+.slot .dot{width:28px;height:28px;border-radius:999px;border:2px solid var(--neu-bd);background:#fff;display:grid;place-items:center;color:var(--neu-fg);transition:border-color var(--t),background var(--t),color var(--t);z-index:1}
+.slot .dot svg{width:14px;height:14px}
+.slot::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--neu-bd)}
+.slot::after{content:"";position:absolute;left:13px;top:28px;width:2px;height:0;background:var(--info-fg);transition:height 250ms}
+body.reduced .slot::after{transition:none}
+@media (prefers-reduced-motion: reduce){.slot::after{transition:none}}
+.slot.flowed::after{height:calc(100% - 28px)}
+.slot:last-child::before,.slot:last-child::after{display:none}
+.slot .body{border:1px solid var(--cc-line);border-radius:8px;padding:8px 12px;background:var(--cc-surface);transition:border-color var(--t),background var(--t)}
+.slot .head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.slot .tool{font-weight:700;font-size:14px}
+.slot .when{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.slot .state{margin-left:auto;font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.slot .facts{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px;font-size:13px}
+.slot .facts li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.slot .facts .f{flex:1 1 220px}
+.slot .warnline{margin-top:6px;font-size:13px;color:var(--warn-fg);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.slot .warnline svg{flex:none;width:14px;height:14px;align-self:center}
+.slot[data-s=waiting] .facts,.slot[data-s=waiting] .warnline{opacity:.45}
+.slot[data-s=loading] .dot{border-color:var(--info-fg);color:var(--info-fg)}
+.slot[data-s=loaded] .dot{border-color:var(--info-fg);background:var(--info-bg);color:var(--info-fg)}
+.slot[data-s=attention] .dot{border-color:var(--warn-mark);background:var(--warn-bg);color:var(--warn-fg)}
+.slot[data-s=attention] .body{border-color:var(--warn-bd)}
+.slot[data-s=active] .dot{border-color:var(--cc-ink);background:var(--cc-ink);color:#fff}
+.slot[data-s=active] .body{border-color:var(--cc-ink)}
+.slot[data-s=done] .dot{border-color:var(--cc-ink);background:#fff;color:var(--cc-ink)}
+.sep{height:1px;background:var(--cc-line);margin:4px 0 12px 40px}
+/* work panel */
+.counter{font-size:13px;font-weight:600}
+.counter b{font-size:15px;font-variant-numeric:tabular-nums}
+.meter{display:flex;gap:2px;margin:8px 0 12px;flex-wrap:wrap}
+.meter i{flex:1 0 8px;height:8px;border-radius:2px;background:var(--neu-bd);transition:background var(--t)}
+.meter i.w{background:var(--info-bd)}
+.meter i.d{background:var(--cc-ink)}
+.meter i.r{background:var(--warn-mark)}
+.units{list-style:none;margin:0;padding:0;border-top:1px solid var(--cc-line);max-height:520px;overflow:auto}
+.unit{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:baseline;padding:6px 4px;border-bottom:1px solid var(--cc-line);font-size:13px}
+.unit .id{font:600 12px var(--mono);color:var(--cc-ink-muted)}
+.unit .t{min-width:0}
+.unit .t .nm{font-weight:600}
+.unit .t .an{font:12px var(--mono);color:var(--cc-ink-muted)}
+.unit .st{font-size:12px;font-weight:600;color:var(--cc-ink-muted);white-space:nowrap}
+.unit[data-s=writing] .st{color:var(--info-fg)}
+.unit[data-s=written] .st{color:var(--cc-ink)}
+.unit[data-s=repair] .st{color:var(--warn-fg)}
+.unit[data-s=repaired] .st{color:var(--cc-ink)}
+.showall{display:none}
+@media (max-width:639px){
+  .units .unit:nth-child(n+7){display:none}
+  .units.open .unit{display:grid}
+  .showall{display:inline-flex;margin-top:8px}
+  /* phones: only the active slot and slots that need attention show their facts */
+  #chain-run .slot:not([data-s=active]):not([data-s=attention]) .facts{display:none}
+  .slot .state{margin-left:0;width:100%}
+  .tip{grid-template-columns:auto 1fr}
+  .tip a{grid-column:2}
+}
+.checks{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:4px;font-size:13px}
+.checks li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hdr{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hdr .el{font:600 13px var(--mono);color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+.hdr .sp{flex:1}
+/* done */
+.tree{font:12px var(--mono);list-style:none;margin:0;padding:0}
+.tree li{padding:2px 0}
+.tree .grp{font:600 12px system-ui,sans-serif;color:var(--cc-ink-muted);margin-top:8px}
+.tree .sel{background:var(--cc-ink);color:#fff;border-radius:4px;padding:2px 6px}
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:12px;font:12px/1.6 var(--mono);overflow:auto;white-space:pre}
+.code .c{color:var(--code-muted)}.code .k{color:var(--code-kw)}.code .n{color:var(--code-name)}
+.code .fill{display:block;border-left:3px solid var(--code-name);background:rgb(59 130 246/.18);margin:0 -12px;padding:0 9px}
+.done-grid{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px}
+.done-grid>*{min-width:0}
+@media (max-width:767px){.done-grid{grid-template-columns:minmax(0,1fr)}}
+.builton{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:12px}
+.builton .b{border:1px solid var(--cc-line);border-radius:8px;padding:8px 12px;font-size:13px}
+.builton .b .tool{font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.view{display:none}.view.on{display:block}
+.strip{border:1px solid var(--warn-bd);background:var(--warn-bg);color:var(--cc-ink);border-radius:8px;padding:8px 12px;font-size:13px;margin-top:12px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M12 12l3 3-3 3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h0"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h0"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h0"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></symbol>
+</svg>
+
+<div class="mock-bar" role="region" aria-label="Mockup controls (not part of the product)">
+  <span>MOCKUP — not product UI</span>
+  <span class="seg" role="group" aria-label="State">
+    <button type="button" data-view="before" aria-pressed="true">1 · Before the run</button>
+    <button type="button" data-view="running" aria-pressed="false">2 · Running</button>
+    <button type="button" data-view="done" aria-pressed="false">3 · Done</button>
+  </span>
+  <button type="button" class="btn compact ghost" id="replay" style="height:28px">Replay the run</button>
+  <label><input type="checkbox" id="reduce"> Reduced motion</label>
+  <span class="note">The run plays about 6× faster than real time. Resize below 640 px for the phone layout.</span>
+</div>
+
+<main class="wrap">
+  <div class="eyebrow">Tool 3 of 7 · Transformation</div>
+  <h1>Transformation</h1>
+  <p class="lead">Side-by-side (CAP) · Node.js (TypeScript) · ZCO_CC_CLOSE_SIMULATION · 2,027 lines</p>
+
+  <div class="sr" aria-live="polite" id="live"></div>
+
+  <!-- ========================= 1 · BEFORE THE RUN ========================= -->
+  <section class="view on" id="v-before" aria-labelledby="tips-title">
+    <div class="card" id="transformation-tips">
+      <div class="hdr">
+        <h2 id="tips-title">Before the run: raise the quality</h2>
+        <span class="meta">optional · 4 things you can still do</span>
+      </div>
+      <p class="small muted" style="margin:4px 0 0">Each of these changes what the generation uses. You come back here afterwards, with the counts updated.</p>
+      <ol class="tips">
+        <li class="tip">
+          <span class="n">62</span>
+          <div><b>Decide the 62 open rules</b> — each decided rule is implemented exactly as you chose (keep, change or drop) instead of copied as-is.
+            <div class="what"><b>In the code:</b> a dropped rule has no guard and its lines are left out; a changed rule carries your wording; every function names the decision.</div></div>
+          <a href="#" data-tip>Decide in the Business view</a>
+        </li>
+        <li class="tip">
+          <span class="n">9</span>
+          <div><b>Accept the 9 proposed requirements</b> — accepted ones are named on the functions that implement them.
+            <div class="what"><b>In the code:</b> requirement ids on the functions; STATUS.md lists what is not accepted.</div></div>
+          <a href="#" data-tip>Review in Design</a>
+        </li>
+        <li class="tip">
+          <span class="n">2</span>
+          <div><b>Accept the 2 proposed non-functional requirements</b> — they set limits the generated code enforces.
+            <div class="what"><b>In the code:</b> upper bounds, time limits and logging in the input contract and the app factory.</div></div>
+          <a href="#" data-tip>Review in Design</a>
+        </li>
+        <li class="tip">
+          <span class="n">1</span>
+          <div><b>Bring the design up to date</b> — the code is then built on the analysis you have now.
+            <div class="what"><b>In the code:</b> the route, components and requirements every function is written against.</div></div>
+          <a href="#" data-tip>Open Design</a>
+        </li>
+      </ol>
+      <div class="tips-done" id="tips-done">Everything the generation uses is decided and current.</div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn primary" type="button" id="go">Generate now</button>
+        <span class="small muted">Generating now is fine — open rules are implemented as the original has them and marked open.</span>
+      </div>
+      <div class="cost">No analysis run used · up to 48 model calls on the community key for this generation</div>
+    </div>
+
+    <div class="card">
+      <h2>What this generation will use</h2>
+      <p class="small muted" style="margin:4px 0 0">From the tools before Transformation, in workflow order.</p>
+      <ol class="chain" id="chain-before"></ol>
+    </div>
+  </section>
+
+  <!-- ========================= 2 · RUNNING ========================= -->
+  <section class="view" id="v-running" aria-labelledby="run-title">
+    <div class="card">
+      <div class="hdr">
+        <h2 id="run-title">Writing the code for ZCO_CC_CLOSE_SIMULATION</h2>
+        <span class="el" id="elapsed" aria-label="Elapsed time">0:00</span>
+        <span class="sp"></span>
+        <button type="button" class="btn compact ghost" id="cancel">Cancel</button>
+      </div>
+      <p class="caption"><svg width="16" height="16"><use href="#i-info"/></svg><span>Written from what the platform already knows about this program — not from the code alone.</span></p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2>What it builds on</h2>
+        <ol class="chain" id="chain-run"></ol>
+      </div>
+      <div class="card" aria-labelledby="work-title">
+        <h2 id="work-title">Functions</h2>
+        <div class="counter" id="counter" style="margin-top:8px">Waiting for the scaffold</div>
+        <div class="meter" id="meter" aria-hidden="true"></div>
+        <ol class="units" id="units"></ol>
+        <button type="button" class="btn compact ghost showall" id="showall">Show all functions</button>
+        <h3 style="margin-top:16px">Checks</h3>
+        <ul class="checks" id="checks"><li class="muted">After the last function is written.</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= 3 · DONE ========================= -->
+  <section class="view" id="v-done" aria-labelledby="built-title">
+    <div class="card">
+      <div class="hdr"><h2 id="built-title">Built on</h2><span class="meta">generated 12 Oct 2026, 14:32 · 1:24</span></div>
+      <div class="builton" id="builton"></div>
+      <div class="strip">1 of 35 functions not written: <span class="idt">U27</span> Write the detail list — the model declined: the list layout depends on the ALV field catalog, which the design does not carry over. It is listed in STATUS.md.</div>
+    </div>
+    <div class="card">
+      <div class="done-grid">
+        <ul class="tree" aria-label="Package files">
+          <li class="grp">Engine-written</li>
+          <li>srv/lib/decimal.ts</li><li>srv/lib/input-contract.ts</li><li>srv/lib/guards.ts</li><li>srv/lib/run-store.ts</li><li>srv/lib/csv.ts</li><li>srv/app.ts · srv/server.ts</li>
+          <li class="grp">Steps, in process order</li>
+          <li>01 Load the allocation policy</li><li><span class="sel">02 Validate the policy</span></li><li>03 Read the controlling area</li><li>… 32 more</li>
+          <li class="grp">Tests</li><li>test/engine-cases.json</li><li>acceptance-adapter.json</li>
+          <li class="grp">Read first</li><li>STATUS.md · traceability.json</li>
+        </ul>
+        <div>
+          <div class="row" style="margin-bottom:8px">
+            <span class="idt">L500–L540</span>
+            <a href="#" class="small">FORM VALIDATE_POLICY in the source</a>
+            <span class="idt">BR-009</span><span class="idt">BR-010</span><span class="idt">BR-011</span>
+            <span class="chip reconstructed"><svg><use href="#i-gear"/></svg>Reconstructed</span><span class="meta">signature and guards</span>
+            <span class="chip proposed"><svg><use href="#i-pen"/></svg>Model proposal</span><span class="meta">body</span>
+            <span class="meta">checks passed</span>
+          </div>
+<div class="code" tabindex="0" aria-label="srv/steps/02-validate-policy.ts"><span class="c">/**
+ * Validate the allocation policy.
+ * ABAP: ZCO_CC_CLOSE_SIMULATION L500–L540 (FORM VALIDATE_POLICY)
+ * Rules: BR-009 (keep), BR-010 (change — your wording below), BR-011 (open)
+ * Guards: G-0506 → guard_BR_009_G0506
+ */</span>
+<span class="k">export function</span> <span class="n">validatePolicy</span>(sel: Selection, st: RunState): StepResult {
+  <span class="k">const</span> g0506 = <span class="n">guard_BR_009_G0506</span>(sel, st);
+  <span class="k">if</span> (g0506) <span class="k">return</span> g0506;
+<span class="fill"><span class="c">  // @cc-fill BEGIN U02 9f2c41d0</span>
+  <span class="k">for</span> (<span class="k">const</span> receiver <span class="k">of</span> st.policy.receivers) {
+    <span class="k">if</span> (st.policy.senders.has(receiver.costCenter)) {
+      <span class="k">return</span> refuse(<span class="n">'BR-010'</span>, <span class="n">'A sender cannot be its own receiver.'</span>);
+    }
+  }
+  <span class="k">const</span> total = dec.sum(st.policy.receivers.map((r) =&gt; r.quota));
+  <span class="k">if</span> (dec.gt(total, dec.of(<span class="n">'100.0000'</span>, 4))) <span class="k">return</span> refuse(<span class="n">'BR-011'</span>, <span class="n">'Quotas exceed 100 %.'</span>);
+  <span class="k">return</span> { ok: <span class="k">true</span> };
+<span class="c">  // @cc-fill END U02</span></span>
+}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  // ---- data (figures marked * are engine measurements of 12.10.2026; the rest illustrative) ----
+  var CHIP = {
+    reconstructed: ['Reconstructed', 'i-gear'], confirmed: ['Confirmed', 'i-person'], proposed: ['Model proposal', 'i-pen'],
+    imported: ['Imported', 'i-file'], stale: ['Stale', 'i-clock'], notdet: ['Not determined', 'i-q']
+  };
+  function chip(k) { return '<span class="chip ' + k + '"><svg aria-hidden="true"><use href="#' + CHIP[k][1] + '"/></svg>' + CHIP[k][0] + '</span>'; }
+  // Slots: phases before Transformation (PHASES of lib/workflow-steps.ts), then the generation's own stages.
+  var SLOTS = [
+    { phase: 'Analyze', key: 'first-insights', tool: 'First insights', when: 'run of 11 Oct 2026', link: 'Open the workspace',
+      facts: [['What it is for: simulates the period-end cost-centre allocation and shows the result before posting', 'reconstructed'],
+              ['6 "In short" facts', 'reconstructed']] },
+    { phase: 'Analyze', key: 'analyze', tool: 'Analyze', when: 'signed run 11 Oct 2026', link: 'Open Analyze',
+      facts: [['Clean Core Score 37 · 12 findings', 'reconstructed'], ['7 released SAP successors for the objects it reads', 'imported'], ['Level A–D of 19 SAP objects', 'imported']] },
+    { phase: 'Analyze', key: 'business-rules', tool: 'Business rules', when: 'need revision 3', link: 'Open the rules', attention: true,
+      facts: [['66 rules* — 4 decided by you: 2 keep, 1 change, 1 drop', 'confirmed'], ['62 open — implemented as the original and marked open', 'notdet']],
+      warn: '62 rules have no decision yet.', fix: 'Decide in the Business view' },
+    { phase: 'Design', key: 'design', tool: 'Design', when: 'saved 11 Oct 2026, 09:12', link: 'Open Design', attention: true,
+      warn: 'Written before the latest run (11 Oct 2026, 16:05).', fix: 'Update it in Design',
+      facts: [['Target: Side-by-side (CAP) — reason: the program uploads files and runs a long simulation outside the posting LUW', 'proposed'], ['5 components · reference architecture named', 'proposed'], ['4 non-functional requirements — 2 accepted', 'confirmed']] },
+    { phase: 'Design', key: 'requirements', tool: 'Requirements', when: 'revision 2', link: 'Open the requirements', attention: true,
+      facts: [['23 functional requirements — 14 accepted, 9 proposed', 'confirmed']], warn: '9 requirements are still proposals.', fix: 'Review in Design' },
+    { phase: 'Design', key: 'decision-record', tool: 'Decision record', when: 'confirmed 11 Oct 2026', link: 'Open the decision',
+      facts: [['Rebuild — on the signed run of 11 Oct', 'confirmed']] },
+    { phase: 'gen', key: 'scaffold', tool: 'Engine scaffold', when: 'no model', facts: [
+      ['35 functions*, each anchored to its ABAP lines', 'reconstructed'], ['72 guards* carried over with their rule ids', 'reconstructed'],
+      ['7 packed decimal fields* with exact places and bounds', 'reconstructed'], ['16 selection inputs* — one input contract for CSV and JSON', 'reconstructed'],
+      ['31 test cases derived from the original', 'reconstructed'], ['8 demo-data routines* kept as fixtures, 1 dropped rule left out', 'reconstructed']] },
+    { phase: 'gen', key: 'fills', tool: 'Model fills', when: 'up to 4 at a time', facts: [['Function bodies only — the engine’s code above stays untouched', 'proposed']] },
+    { phase: 'gen', key: 'checks', tool: 'Checks', when: 'before saving', facts: [['Lints, engine cases and failure-pattern probes', 'reconstructed']] },
+    { phase: 'gen', key: 'store', tool: 'Saved to the project', when: '', facts: [['Package, STATUS.md and traceability.json', 'reconstructed']] }
+  ];
+  // Fill units: CO routines with their line ranges and rule ids* (helpers folded, demo routines excluded); names illustrative.
+  var UNITS = [
+    ['LOAD_LOCAL_POLICY', 'Load the allocation policy', 462, 498, ''], ['VALIDATE_POLICY', 'Validate the policy', 500, 540, 'BR-009 BR-010 BR-011'],
+    ['READ_AREA', 'Read the controlling area', 542, 563, 'BR-012 BR-013'], ['BUILD_PERIODS', 'Build the periods', 565, 585, ''],
+    ['AUTHORIZE_SCOPE', 'Check authorization for the scope', 587, 609, ''], ['READ_LIVE_MASTERS', 'Read cost-centre masters', 611, 624, ''],
+    ['MAP_SCOPE_OBJECTS', 'Map scope objects', 626, 645, ''], ['READ_LIVE_TOTALS', 'Read actual totals', 647, 669, ''],
+    ['MASTER_AT_PERIOD', 'Find the master valid in a period', 671, 706, ''], ['ISSUE', 'Record an issue', 708, 720, ''],
+    ['NORMALIZE_TOTALS', 'Normalise totals', 727, 738, ''], ['CONSUME_TOTAL', 'Consume a total', 740, 806, 'BR-002 BR-017'],
+    ['UPLOAD_DRIVERS', 'Upload allocation drivers', 813, 912, 'BR-018 … BR-025'], ['GET_DRIVER', 'Find a driver', 914, 953, 'BR-026'],
+    ['SIMULATE_ALL_PERIODS', 'Simulate every period', 958, 969, ''], ['SIMULATE_SEGMENT', 'Simulate a segment', 971, 1088, 'BR-027 BR-028'],
+    ['ALLOCATE_CENTS', 'Allocate the remaining cents', 1097, 1170, 'BR-029 BR-030'], ['BUILD_RESULT', 'Build the result', 1175, 1239, 'BR-031'],
+    ['CLASSIFY_VARIANCE', 'Classify the variance', 1241, 1269, ''], ['ADD_SUMMARY', 'Add to the summary', 1271, 1279, ''],
+    ['RECONCILE_WHOLE_SCOPE', 'Reconcile the whole scope', 1281, 1298, ''], ['BUILD_VISIBLE_RESULT', 'Build the visible result', 1300, 1314, ''],
+    ['WRITE_HEADER', 'Write the list header', 1320, 1337, ''], ['WRITE_SEGMENTS', 'Write the segments', 1339, 1358, ''],
+    ['WRITE_ISSUES', 'Write the issues', 1360, 1371, ''], ['DISPLAY_RESULT', 'Display the result', 1373, 1395, ''],
+    ['WRITE_DETAIL_LIST', 'Write the detail list', 1397, 1415, ''], ['BUILD_FIELD_CATALOG', 'Build the field catalog', 1430, 1452, ''],
+    ['CSV_TEXT', 'Format a CSV text cell', 1454, 1465, ''], ['CSV_NUMBER', 'Format a CSV number cell', 1467, 1483, ''],
+    ['EXPORT_VISIBLE_CSV', 'Export the visible result as CSV', 1493, 1569, 'BR-033'], ['REPAIR_QA', 'Repair QA drivers', 1874, 1884, 'BR-036 BR-049 BR-050'],
+    ['REPAIR_ENG', 'Repair engineering drivers', 1886, 1893, ''], ['CHANGE_FAC_DRIVER', 'Change the facility driver', 1895, 1904, ''],
+    ['(main path)', 'Run the process in order', 1, 420, 'orchestrator']
+  ];
+  var DECLINED = 26, REPAIR = [11, 16];
+
+  // ---- rendering ----
+  function slotHTML(s, mode) {
+    var facts = s.facts.map(function (f) { return '<li><span class="f">' + f[0] + '</span>' + chip(f[1]) + '</li>'; }).join('');
+    var link = s.link ? ' · <a href="#" class="small">' + s.link + (mode === 'run' ? ' <span class="sr">(opens in a new tab)</span>↗' : '') + '</a>' : '';
+    var warn = s.warn ? '<div class="warnline"><svg aria-hidden="true"><use href="#i-warn"/></svg>' + s.warn + ' <a href="#">' + s.fix + '</a></div>' : '';
+    return '<div class="dot" aria-hidden="true"><svg><use href="#i-dots"/></svg></div>' +
+      '<div class="body"><div class="head"><span class="tool">' + s.tool + '</span><span class="when">' + s.when + link + '</span><span class="state" data-st></span></div>' +
+      '<ul class="facts">' + facts + '</ul>' + warn + '</div>';
+  }
+  function buildChain(el, mode) {
+    el.innerHTML = '';
+    var last = null;
+    SLOTS.forEach(function (s, i) {
+      if (mode === 'before' && s.phase === 'gen') return;
+      if (s.phase !== last) {
+        var p = document.createElement('li');
+        if (s.phase === 'gen') { p.className = 'sep'; p.setAttribute('aria-hidden', 'true'); }
+        else { p.className = 'phase'; p.textContent = s.phase + ' phase'; }
+        el.appendChild(p); last = s.phase;
+      }
+      var li = document.createElement('li');
+      li.className = 'slot'; li.dataset.k = s.key; li.dataset.s = mode === 'before' ? (s.attention ? 'attention' : 'loaded') : 'waiting';
+      li.innerHTML = slotHTML(s, mode);
+      if (mode === 'before') setSlot(li, s.attention ? 'attention' : 'loaded', s.attention ? 'Will be used — can be better' : 'Will be used');
+      el.appendChild(li);
+    });
+  }
+  var ICON = { waiting: 'i-dots', loading: 'i-dots', loaded: 'i-check', attention: 'i-warn', active: 'i-dots', done: 'i-check' };
+  var WORD = { waiting: 'Waiting', loading: 'Loading…', loaded: 'In the context', attention: 'In the context — needs attention', active: 'Running', done: 'Done' };
+  function setSlot(li, st, word) {
+    li.dataset.s = st;
+    li.querySelector('.dot use').setAttribute('href', '#' + ICON[st]);
+    li.querySelector('[data-st]').textContent = word || WORD[st];
+  }
+  buildChain(document.getElementById('chain-before'), 'before');
+
+  // Built-on summary (done view)
+  document.getElementById('builton').innerHTML = SLOTS.filter(function (s) { return s.phase !== 'gen'; }).map(function (s) {
+    var st = s.key === 'business-rules' ? ' ' + chip('stale') + '<div class="meta">1 more rule decided since</div>' : '';
+    return '<div class="b"><div class="tool">' + s.tool + '</div><div class="meta">' + s.when + '</div><div>' + s.facts[0][0] + '</div>' + st + '</div>';
+  }).join('');
+
+  // ---- views ----
+  var buttons = document.querySelectorAll('.mock-bar [data-view]');
+  function show(v) {
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === v)); });
+    ['before', 'running', 'done'].forEach(function (k) { document.getElementById('v-' + k).classList.toggle('on', k === v); });
+    if (v === 'running') play(); else stop();
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.view); }); });
+  document.getElementById('go').addEventListener('click', function () { show('running'); });
+  document.getElementById('replay').addEventListener('click', function () { show('running'); });
+  document.getElementById('cancel').addEventListener('click', function () { stop(); say('Cancelled. Nothing was saved; calls already sent finish on the server and count against this generation.'); });
+  document.getElementById('reduce').addEventListener('change', function (e) { document.body.classList.toggle('reduced', e.target.checked); });
+  document.getElementById('showall').addEventListener('click', function () { document.getElementById('units').classList.add('open'); this.style.display = 'none'; });
+  document.querySelectorAll('[data-tip]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); alert('Opens the exact place with "Back to Transformation · Before the run". The counts here are read again on return.'); }); });
+
+  // ---- the run (a timeline; real time would be ~6x slower) ----
+  var timers = [], tick = null, t0 = 0;
+  function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+  function stop() { timers.forEach(clearTimeout); timers = []; clearInterval(tick); }
+  var live = document.getElementById('live'), lastSaid = 0;
+  function say(text) { // one announcement per phase change, never counters
+    live.textContent = ''; setTimeout(function () { live.textContent = text; }, 50);
+  }
+  function play() {
+    stop();
+    var chain = document.getElementById('chain-run'); buildChain(chain, 'run');
+    var units = document.getElementById('units'), meter = document.getElementById('meter'), checks = document.getElementById('checks');
+    var counter = document.getElementById('counter');
+    units.innerHTML = ''; meter.innerHTML = ''; checks.innerHTML = '<li class="muted">After the last function is written.</li>';
+    counter.textContent = 'Waiting for the scaffold';
+    t0 = Date.now(); var el = document.getElementById('elapsed');
+    tick = setInterval(function () { var s = Math.floor((Date.now() - t0) * 6 / 1000); el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 250);
+    var slotEls = {}; chain.querySelectorAll('.slot').forEach(function (li) { slotEls[li.dataset.k] = li; });
+    var ctxKeys = ['first-insights', 'analyze', 'business-rules', 'design', 'requirements', 'decision-record'];
+    var t = 300;
+    ctxKeys.forEach(function (k, i) {
+      var s = SLOTS.filter(function (x) { return x.key === k; })[0];
+      at(t, function () { setSlot(slotEls[k], 'loading'); });
+      at(t + 350, function () { setSlot(slotEls[k], s.attention ? 'attention' : 'loaded'); slotEls[k].classList.add('flowed'); });
+      t += 450;
+    });
+    at(t, function () { say('Context loaded: 6 sources, 3 need attention.'); setSlot(slotEls.scaffold, 'active', 'Writing the scaffold…'); });
+    t += 900;
+    at(t, function () {
+      setSlot(slotEls.scaffold, 'done', 'Done · 4.0 s'); slotEls.scaffold.classList.add('flowed');
+      say('Scaffold written: 35 functions, each anchored to its ABAP lines.');
+      UNITS.forEach(function (u, i) {
+        var li = document.createElement('li'); li.className = 'unit'; li.dataset.s = 'waiting';
+        li.innerHTML = '<span class="id">U' + String(i + 1).padStart(2, '0') + '</span><span class="t"><span class="nm">' + u[1] + '</span> <span class="an">' +
+          (u[4] === 'orchestrator' ? 'main path · engine order' : 'L' + u[2] + '–' + u[3] + (u[4] ? ' · ' + u[4] : '')) + '</span></span><span class="st">waiting</span>';
+        units.appendChild(li);
+        var m = document.createElement('i'); meter.appendChild(m);
+      });
+      counter.innerHTML = '<b>0</b> of 35 functions written';
+      setSlot(slotEls.fills, 'active', 'Running');
+    });
+    t += 300;
+    // 9 calls of up to 4 units, 4 in flight, leaves first; orchestrator last
+    var order = UNITS.map(function (_, i) { return i; });
+    var calls = []; for (var i = 0; i < order.length - 1; i += 4) calls.push(order.slice(i, Math.min(i + 4, order.length - 1)));
+    calls.push([order.length - 1]);
+    var written = 0;
+    function setUnit(i, st, word) {
+      var li = units.children[i]; if (!li) return; li.dataset.s = st; li.querySelector('.st').textContent = word;
+      meter.children[i].className = st === 'written' || st === 'repaired' ? 'd' : st === 'writing' ? 'w' : st === 'repair' ? 'r' : '';
+    }
+    var slotsFree = [t, t, t, t];
+    calls.forEach(function (c, ci) {
+      slotsFree.sort(function (a, b) { return a - b; });
+      var start = slotsFree[0], dur = 1500 + (ci % 3) * 350;
+      slotsFree[0] = start + dur;
+      at(start, function () { c.forEach(function (i) { setUnit(i, 'writing', 'writing…'); }); });
+      at(start + dur, function () {
+        c.forEach(function (i) {
+          if (i === DECLINED) { setUnit(i, 'notwritten', 'not written — declined'); return; }
+          setUnit(i, 'written', 'written'); written++;
+        });
+        counter.innerHTML = '<b>' + written + '</b> of 35 functions written';
+      });
+    });
+    var fillsEnd = Math.max.apply(null, slotsFree);
+    at(fillsEnd + 50, function () {
+      setSlot(slotEls.fills, 'done', '34 of 35 written'); slotEls.fills.classList.add('flowed');
+      say('34 of 35 functions written; 1 left as a stub.');
+      setSlot(slotEls.checks, 'active', 'Running');
+      checks.innerHTML = '';
+    });
+    var ck = [
+      ['Body guards: 34 bodies, none touched engine code', 'reconstructed'],
+      ['29 lint checks, 0 open', 'reconstructed'],
+      ['31 engine cases run — 2 failed (U12, U17)', 'reconstructed'],
+      ['10 failure-pattern probes — 8 passed, 2 not applicable to this program', 'reconstructed']
+    ];
+    ck.forEach(function (c, i) { at(fillsEnd + 400 + i * 500, function () { var li = document.createElement('li'); li.innerHTML = '<span>' + c[0] + '</span>' + chip(c[1]); checks.appendChild(li); }); });
+    var rep = fillsEnd + 400 + ck.length * 500 + 200;
+    at(rep, function () {
+      say('Checks: 29 lint checks, 0 open; 31 engine cases, 2 failed. Repair round 1.');
+      setSlot(slotEls.checks, 'attention', '2 to repair');
+      REPAIR.forEach(function (i) { setUnit(i, 'repair', 'repair round 1…'); });
+      var li = document.createElement('li'); li.innerHTML = '<span>Repair round 1: only the 2 failing functions go back, with the failing case</span>' + chip('proposed'); checks.appendChild(li);
+    });
+    at(rep + 1700, function () {
+      REPAIR.forEach(function (i) { setUnit(i, 'repaired', 'repaired (round 1)'); });
+      var li = document.createElement('li'); li.innerHTML = '<span>31 engine cases run — all passed after round 1</span>' + chip('reconstructed'); checks.appendChild(li);
+      setSlot(slotEls.checks, 'done', 'Done'); slotEls.checks.classList.add('flowed');
+      say('Repair round 1: 2 functions rewritten; checks passed.');
+      setSlot(slotEls.store, 'active', 'Saving…');
+    });
+    at(rep + 2300, function () { setSlot(slotEls.store, 'done', 'Saved'); say('Saved. 34 of 35 functions written, 1 left as a stub — see STATUS.md.'); clearInterval(tick); });
+  }
+})();
+</script>
+</body>
+</html>
