@@ -46,7 +46,7 @@ export const NAVIGATION_MESSAGES = {
   'nav.place.evidenceChain': 'Evidence chain',
   'nav.place.whatToDecide': 'What to decide',
   'nav.place.requirements': 'Requirements',
-  'nav.place.qualityTips': 'Raise the quality',
+  'nav.place.qualityTips': 'Before the run',
   // The places a choice is made at — what an address leads to.
   'nav.choice.designTargetSignoff': 'Sign off the target architecture',
   'nav.choice.managementOptions': 'Choose an option',

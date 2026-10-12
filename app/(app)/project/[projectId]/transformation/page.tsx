@@ -79,12 +79,18 @@ import {
   qualityTips,
   setCheck,
   withChecks,
-  type ChainContract,
+  originalFactsLines,
+  purposeFromContext,
+  specOfRecord,
+  tipsSettled,
+  withFacts,
   type ChainPurpose,
   type ChainRules,
+  type ChainSpecRead,
   type GenerationCheckState,
   type GenerationStageLog,
 } from '@/lib/transformation-chain';
+import { getAuth } from '@/lib/firebase';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { readProcessStatesOutcome, type StatesReadOutcome } from '@/lib/process-states-client';
 import type { RuleRegister } from '@/lib/rule-register';
@@ -208,13 +214,18 @@ export default function TransformationPage() {
   /** The stages of the running generation, as they begin and end (`lib/transformation-chain.ts`). */
   const [stageLog, setStageLog] = useState<GenerationStageLog>({});
   /**
-   * What the running generation has read so far — the contract, the rules and
-   * the program's purpose. A slot of the chain lights when its value is here;
-   * `undefined` before a generation, `'loading'` while it is being read.
+   * The chain while a generation runs: its slots light once the contract has
+   * answered with the PLATFORM KNOWLEDGE block they go into (`chainLit`); the
+   * rules are read again beside it (`chainRules`, `null` outside a run), and
+   * the time since the click is the header's clock (`runStartedAt`).
    */
-  const [chainContract, setChainContract] = useState<ChainContract | null | 'loading' | undefined>(undefined);
+  const [chainLit, setChainLit] = useState(false);
   const [chainRules, setChainRules] = useState<ChainRules | null>(null);
-  const [chainPurpose, setChainPurpose] = useState<ChainPurpose | undefined>(undefined);
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
+  /** What the program is for (First insights) — read before the run, then taken from the block the prompt carries. */
+  const [purpose, setPurpose] = useState<ChainPurpose>({ state: 'loading' });
+  /** The requirements specification, counted by kind (ADR-078) — read on every visit. */
+  const [specRead, setSpecRead] = useState<ChainSpecRead>({ state: 'loading' });
   const [error, setError] = useState('');
   /**
    * Codex architecture-02 — a generated package the server refused because the
@@ -311,17 +322,78 @@ export default function TransformationPage() {
   const { outcome: statesOutcome, reload: reloadStates } = useProcessStates(projectId as string, readsRules);
   const [statesFresh, setStatesFresh] = useState(false);
   const [ruleRegister, setRuleRegister] = useState<RuleRegister | null>(null);
+  /**
+   * The counts of the tips, read again on every visit and whenever the tab
+   * comes back into view (design §14.2): the rule states and the requirements
+   * specification. Both are the sources the PLATFORM KNOWLEDGE block reads.
+   */
+  const refreshTips = useCallback(async () => {
+    const readSpec = async (): Promise<ChainSpecRead> => {
+      try {
+        const token = await getAuth().currentUser?.getIdToken();
+        const res = await fetch(`/api/projects/${encodeURIComponent(String(projectId))}/requirements-spec`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return { state: 'unread' };
+        const body = (await res.json().catch(() => null)) as { record?: unknown } | null;
+        return { state: 'ready', spec: specOfRecord(body?.record ?? null, projectRef.current) };
+      } catch {
+        return { state: 'unread' };
+      }
+    };
+    const [, spec] = await Promise.all([reloadStates(), readSpec()]);
+    setSpecRead(spec);
+    setStatesFresh(true);
+  }, [projectId, reloadStates]);
   useEffect(() => {
     if (!readsRules) return;
     let live = true;
-    void reloadStates().finally(() => {
+    void refreshTips().catch(() => {
       if (live) setStatesFresh(true);
     });
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshTips();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       live = false;
+      document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [readsRules, reloadStates]);
+  }, [readsRules, refreshTips]);
   const legacySource = project?.legacyCode ?? '';
+  /**
+   * What the program is for, before the run — the same reading Analyze opens
+   * with ("In short"), done once the browser is idle and only for a source the
+   * readers accept. During a generation the sentence of the PLATFORM KNOWLEDGE
+   * block replaces it.
+   */
+  useEffect(() => {
+    if (!readsRules || !legacySource) return;
+    let live = true;
+    const run = async () => {
+      try {
+        if (new TextEncoder().encode(legacySource).length > 256 * 1024) {
+          if (live) setPurpose({ state: 'unread', reason: 'The source is too large for the summary reader.' });
+          return;
+        }
+        const [{ programSummaryFactsOf }, { programSummary }] = await Promise.all([
+          import('@/lib/program-summary-facts'),
+          import('@/lib/program-summary-text'),
+        ]);
+        const lines = programSummary(programSummaryFactsOf(legacySource)).lines.filter((l) => l.key === 'purpose').map((l) => l.text);
+        if (live) setPurpose({ state: 'ready', text: lines.length ? lines.join(' ') : null });
+      } catch {
+        if (live) setPurpose({ state: 'unread', reason: 'The summary reader could not walk the source.' });
+      }
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (h: number) => void };
+    const handle = typeof w.requestIdleCallback === 'function' ? w.requestIdleCallback(() => void run(), { timeout: 2000 }) : window.setTimeout(() => void run(), 200);
+    return () => {
+      live = false;
+      if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+    };
+  }, [readsRules, legacySource]);
   useEffect(() => {
     if (!statesFresh || !statesOutcome) return;
     let live = true;
@@ -686,10 +758,10 @@ export default function TransformationPage() {
     setNow(startedAt);
     setError('');
     setUnsavedDraft(null);
-    setStageLog(enterStage({}, 'contract', startedAt));
-    setChainContract('loading');
+    setStageLog({});
+    setChainLit(false);
     setChainRules({ state: 'loading' });
-    setChainPurpose({ state: 'loading' });
+    setRunStartedAt(startedAt);
     let failed = false;
 
     // The rules, read again for the chain beside the contract — the one
@@ -711,18 +783,10 @@ export default function TransformationPage() {
       // without one). A blocked contract generates nothing and says why.
       const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
       if (!decision.ok) {
-        setChainContract(null);
         setContractRefusal(decision);
         failed = true;
         return;
       }
-      setChainContract({
-        label: decision.label,
-        summary: contract?.summary ?? null,
-        contractId: contract?.contractId ?? null,
-        followsRecommendation: decision.followsRecommendation,
-        deviationReason: decision.deviation?.reason ?? null,
-      });
       if (!contract || !generation) {
         throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
       }
@@ -742,6 +806,12 @@ export default function TransformationPage() {
       // server inside the token (`lib/transformation-context-build.ts`). No
       // engine pass and no map build here.
       const platformKnowledge = generation.inputs.context.text;
+      // The chain lights here: its slots are what this block was built from.
+      // The purpose is the block's own sentence, so the screen says what the
+      // prompt says (`purposeFromContext`).
+      const purposeInBlock = purposeFromContext(platformKnowledge);
+      if (purposeInBlock) setPurpose({ state: 'ready', text: purposeInBlock });
+      setChainLit(true);
       // The narrative is not required: the design is written from it
       // and carries it, and an engine-only run has none. It used to be, and a
       // project with a design but an engine-only run could never generate.
@@ -767,34 +837,15 @@ export default function TransformationPage() {
           import('@/lib/testing-rule-trace'),
           import('@/lib/abap/original-contract'),
         ]);
-        originalFacts = codeDraftFactsSection(readOriginalContract(legacyCode), materialRules(deriveBusinessRules(legacyCode)));
+        const original = readOriginalContract(legacyCode);
+        originalFacts = codeDraftFactsSection(original, materialRules(deriveBusinessRules(legacyCode)));
+        setStageLog((log) => withFacts(log, 'facts', originalFactsLines(original)));
       } catch (factsErr) {
         console.error('The original\'s checks and declarations could not be read for the code draft:', factsErr);
         originalFacts = codeDraftFactsSection(null);
+        setStageLog((log) => withFacts(log, 'facts', originalFactsLines(null)));
       }
 
-      // What the program is for, as the engine reads it — the first slot of
-      // the chain. Read while the model writes (it is not part of the prompt,
-      // `PROMPT_READS.purpose`), so it never delays the model call; with the
-      // rules' size limit, and a source it cannot read says so.
-      setTimeout(() => {
-        void (async () => {
-          try {
-            if (new TextEncoder().encode(legacyCode).length > 256 * 1024) {
-              setChainPurpose({ state: 'unread', reason: 'The source is too large for the summary reader.' });
-              return;
-            }
-            const [{ programSummaryFactsOf }, { programSummary }] = await Promise.all([
-              import('@/lib/program-summary-facts'),
-              import('@/lib/program-summary-text'),
-            ]);
-            const purpose = programSummary(programSummaryFactsOf(legacyCode)).lines.find((l) => l.key === 'purpose') ?? null;
-            setChainPurpose({ state: 'ready', text: purpose?.text ?? null, anchors: purpose?.anchors ?? [] });
-          } catch {
-            setChainPurpose({ state: 'unread', reason: 'The summary reader could not walk the source.' });
-          }
-        })();
-      }, 250);
 
       const prompt = isAbapCloud
         ? `You are an elite SAP RAP & ABAP Cloud Developer. Transform the following legacy ABAP code into a modern, production-ready modular SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture based on the provided Solution Design and Business Analysis.
@@ -1249,7 +1300,26 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           ? { state: 'failed' as const, reason: projectEvidence.reason }
           : { state: 'loading' as const },
     rules: chainRules ?? (ruleRegister ? { state: 'ready' as const, register: ruleRegister } : { state: 'loading' as const }),
+    spec: specRead,
+    purpose,
   };
+  const tips = qualityTips(chainInputs);
+  const settled = tipsSettled(chainInputs);
+
+  /**
+   * The first generation starts by itself only when no tip is open (owner,
+   * 12.10.2026; design §14.4): with every count read and nothing that would
+   * change what the generation uses, there is nothing to read first. Once per
+   * visit, never over a package on record, and only where the button could.
+   */
+  const autoStarted = useRef(false);
+  const nothingOpen = settled && tips.length === 0;
+  useEffect(() => {
+    if (autoStarted.current || !nothingOpen || !canGenerate || files.length > 0 || modelAvailability.loading || loading) return;
+    autoStarted.current = true;
+    const timer = setTimeout(() => generateTransformation(), 0);
+    return () => clearTimeout(timer);
+  }, [nothingOpen, canGenerate, files.length, modelAvailability.loading, loading, generateTransformation]);
 
   if (generating) return (
     <StageFrame stage="transformation">
@@ -1261,8 +1331,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           written before anything they named had happened; it is what the
           generation builds on, read as it goes, and the stages that run. */}
       <GenerationChain
-        slots={chainSlots({ ...chainInputs, contract: chainContract, purpose: chainPurpose })}
+        program={project?.name}
+        slots={chainSlots(chainInputs)}
+        lit={chainLit}
         stages={generationStages(stageLog)}
+        startedAt={runStartedAt}
         now={now}
         phaseKey={generationPhase?.key ?? 'none'}
       />
@@ -1556,10 +1629,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           run; never blocking, one line when nothing is open. */}
       {showTips ? (
         <QualityTips
-          tips={qualityTips(chainInputs)}
+          tips={tips}
+          settled={settled}
+          slots={chainSlots(chainInputs)}
           canGenerate={canGenerate}
           busy={busy}
           regenerate={files.length > 0}
+          keySource={modelAvailability.keySource}
           onGenerate={startGeneration}
         />
       ) : null}
