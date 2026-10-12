@@ -848,8 +848,8 @@ time median of three runs per source ≤ the Step 0 baseline median on CO, PP, S
 - **Q1 Lease limits:** one generation = one unit of the hourly model limit, with at most 48 internal
   calls under its lease; at most 3 generations per hour per account.
 - **Q2 Demo-data routines:** fixtures — the scaffold writes a fixture loader; no model fill.
-- **Q3 Open rules:** no separate answer recorded; the recommendation below stands with the approved
-  design (implement as the original, mark open).
+- **Q3 Open rules:** owner, 12.10.2026 — implemented as the original and marked open, never dropped;
+  listed in the context with condition and line, cut first after NFR proposals, the cut stated.
 - **Q4 A unit the model cannot write:** stays a stub with a finding; the generation's phase is
   `partial`.
 - **Q5 First open of Transformation:** the generation starts by itself only when no quality tip is
