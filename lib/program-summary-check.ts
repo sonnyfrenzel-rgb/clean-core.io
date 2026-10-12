@@ -149,8 +149,11 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
     if (TABLE_TERMS_EN[code.toLowerCase()]) problems.push(`names table ${code}, which the code does not read`);
   }
   const touched = new Set([...facts.reads, ...facts.writes].map((o) => o.name));
-  // A business object named in a denial ("No accounting documents are posted") is not claimed.
-  const affirmed = sentences.filter((s) => !DOES_NOT_POST.test(s)).join(' ');
+  // A business object named in a denial ("No accounting documents are posted") is not claimed —
+  // but only the denying clause is set aside: "It does not post, but reads customer master
+  // data" still claims the customer master (QA review of fb74afe8, 59320e766df2).
+  const clauses = sentences.flatMap((s) => s.split(/[,;:]\s*|\s+(?:but|while|whereas|and then|however)\s+/i));
+  const affirmed = clauses.filter((c) => !DOES_NOT_POST.test(c)).join(' ');
   for (const { re, tables } of WORD_TABLES) {
     const hit = re.exec(affirmed);
     if (!hit) continue;
