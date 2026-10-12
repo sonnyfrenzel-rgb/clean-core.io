@@ -38,7 +38,7 @@ import { SCORE_FLOOR } from './clean-core-score';
 import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, type DecisionOption } from './decision-options';
 import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
-import { RULE_STATE_WORDS, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
+import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 
 /* ------------------------------------------------------------------ types */
 
@@ -105,6 +105,7 @@ export type FileKind =
   | 'manifest'
   | 'decision-record'
   | 'rule-register'
+  | 'rule-register-csv'
   | 'service-source'
   | 'source'
   | 'cds-schema'
@@ -170,6 +171,9 @@ export interface DecisionFacts {
 
 /** Where the rule register sits in the package (CO review F16, 12.10.2026). */
 export const RULE_REGISTER_PATH = 'docs/rule-register.md';
+
+/** The same register as CSV, for a spreadsheet (owner, 12.10.2026). */
+export const RULE_REGISTER_CSV_PATH = 'docs/rule-register.csv';
 
 /**
  * The business rules as the package states them — the rule register of
@@ -718,6 +722,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (p === 'manifest.json') return { kind: 'manifest', status: 'implemented', note: null };
   if (p === 'docs/decision.md') return { kind: 'decision-record', status: 'implemented', note: null };
   if (p === RULE_REGISTER_PATH) return { kind: 'rule-register', status: 'implemented', note: null };
+  if (p === RULE_REGISTER_CSV_PATH) return { kind: 'rule-register-csv', status: 'implemented', note: null };
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
@@ -943,6 +948,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^manifest\.json$/, () => 'Every file with its kind, status (implemented, stub, proposed, missing) and SHA-256; source, run and decision identifiers.'],
   [/^docs\/decision\.md$/, () => 'The target decision as recorded, and how the Clean Core Score was derived.'],
   [/^docs\/rule-register\.md$/, () => 'Every business rule: current meaning, proposal, decision, evidence and revision.'],
+  [/^docs\/rule-register\.csv$/, () => 'The same rule register as CSV (UTF-8, every field quoted) for a spreadsheet.'],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
   [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : 'TypeScript settings for `npm run build` (type-check only).')],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
@@ -1061,7 +1067,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
 
 /** STATUS, README, manifest, decision first; then the rest. */
 function order(path: string): number {
-  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH];
+  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
   const i = first.indexOf(path);
   return i === -1 ? first.length : i;
 }
@@ -1383,6 +1389,7 @@ export function buildRuleRegister(facts: DeliveryFacts): string {
   );
   lines.push(...ruleRegisterMarkdown(facts.rules));
   if (facts.rules.state === 'read') lines.push('', 'The lines refer to the source whose SHA-256 is in `STATUS.md`.');
+  lines.push('', `The same rows, as CSV for a spreadsheet: \`${RULE_REGISTER_CSV_PATH}\`.`);
   return `${lines.join('\n').trimEnd()}\n`;
 }
 
@@ -1395,8 +1402,9 @@ export const DELIVERY_MANIFEST_VERSION = 1;
 
 /** The rule counts for the manifest; the rows themselves are in the register. */
 function manifestRules(r: RuleFacts) {
-  if (r.state !== 'read') return { ...r, register: RULE_REGISTER_PATH };
-  return { state: r.state, basis: r.basis, total: r.rows.length, ...r.counts, states: ruleStateCounts(r.rows), register: RULE_REGISTER_PATH };
+  const files = { register: RULE_REGISTER_PATH, registerCsv: RULE_REGISTER_CSV_PATH };
+  if (r.state !== 'read') return { ...r, ...files };
+  return { state: r.state, basis: r.basis, total: r.rows.length, ...r.counts, states: ruleStateCounts(r.rows), ...files };
 }
 
 export function buildManifest(
@@ -1476,7 +1484,7 @@ export function finishDeliveryPackage(input: {
   layout: 'package' | 'flat';
 }): FinishedPackage {
   const { facts } = input;
-  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH].includes(e.path));
+  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
@@ -1488,11 +1496,13 @@ export function finishDeliveryPackage(input: {
 
   const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
   const register: BundleEntry = { path: RULE_REGISTER_PATH, content: buildRuleRegister(facts), origin: 'engine' };
+  const registerCsv: BundleEntry = { path: RULE_REGISTER_CSV_PATH, content: ruleRegisterCsv(facts.rules), origin: 'engine' };
   // README names STATUS.md, manifest.json and itself, so it is written over the final list.
   const finalPaths: BundleEntry[] = [
     ...entries,
     decision,
     register,
+    registerCsv,
     { path: 'STATUS.md', content: '', origin: 'engine' },
     { path: 'README.md', content: '', origin: 'engine' },
     { path: 'manifest.json', content: '', origin: 'engine' },
@@ -1503,13 +1513,13 @@ export function finishDeliveryPackage(input: {
     const c = classifyFile(e, reading, facts);
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
-  const beforeStatus = [...entries, decision, register, readme].map(describeFile);
+  const beforeStatus = [...entries, decision, register, registerCsv, readme].map(describeFile);
   const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus }), origin: 'engine' };
-  const listed = [...entries, decision, register, readme, status]
+  const listed = [...entries, decision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
 
-  const files = [status, readme, manifest, decision, register, ...entries].map((e) => ({ path: e.path, content: e.content }));
+  const files = [status, readme, manifest, decision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed };
 }

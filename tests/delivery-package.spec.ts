@@ -698,3 +698,74 @@ test.describe('CO review F10: the data mode is not inferred from a missing SAP c
     expect(JSON.parse(pkg.file('manifest.json')!).dataMode).toBe('not-recorded');
   });
 });
+
+/** RFC 4180, read strictly: quoted fields, doubled quotes, CRLF between records. Throws on anything else. */
+function parseCsv(text: string): string[][] {
+  const records: string[][] = [];
+  let i = 0;
+  while (i < text.length) {
+    const record: string[] = [];
+    for (;;) {
+      if (text[i] !== '"') throw new Error(`unquoted field at ${i}`);
+      i++;
+      let field = '';
+      for (;;) {
+        if (i >= text.length) throw new Error('unterminated field');
+        if (text[i] === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          i++;
+          break;
+        }
+        field += text[i++];
+      }
+      record.push(field);
+      if (text[i] === ',') { i++; continue; }
+      if (text.startsWith('\r\n', i)) { i += 2; break; }
+      throw new Error(`expected , or CRLF at ${i}`);
+    }
+    records.push(record);
+  }
+  return records;
+}
+
+test.describe('the rule register also ships as CSV (owner, 12.10.2026)', () => {
+  const CSV = 'docs/rule-register.csv';
+  const NASTY = 'Share "FAC", 85 %; from 2027\nsecond line, with a comma';
+
+  test('same rows and columns as the Markdown table; comma, quote and newline stay inside their field', () => {
+    const view: ProcessStateView = {
+      ...ANSWERED,
+      entries: ANSWERED.entries.map((e) => (e.subject === 'BR-002' ? { ...e, note: NASTY } : e)),
+      subjects: ANSWERED.subjects.map((s) => (s.subject === 'BR-005' ? { ...s, detail: '=HYPERLINK("x")' } : s)),
+    };
+    const p = withFailure(fiProject());
+    const pkg = finished(p, factsOf(p, ruleFactsOf(view)));
+    const csv = pkg.file(CSV);
+    expect(csv, 'the package carries docs/rule-register.csv').not.toBeNull();
+    const records = parseCsv(csv!);
+    expect(records[0]).toEqual(['Rule', 'State', 'Current meaning', 'Proposal', 'Decision', 'Implementation', 'Test', 'Evidence', 'Revision']);
+    expect(records).toHaveLength(6);
+    for (const r of records) expect(r).toHaveLength(9);
+    const md = pkg.file(REGISTER)!;
+    expect(md).toContain(`| ${records[0].join(' | ')} |`);
+    expect(md.split('\n').filter((l) => /^\| BR-\d{3} /.test(l))).toHaveLength(records.length - 1);
+    const row = (id: string) => records.find((r) => r[0].startsWith(`${id} `))!;
+    expect(row('BR-002')[3]).toBe(NASTY);
+    expect(row('BR-002')[1]).toBe('Changed on purpose');
+    expect(row('BR-003')[1]).toBe('Changed on purpose'); // Drop stays "changed on purpose" (owner, 12.10.2026)
+    expect(row('BR-001')).toEqual(['BR-001 cond_1 > 1', 'Approved', 'Current meaning of BR-001.', 'None on record.', 'Keep — by Controller A on 11 Oct 2026', 'Not traced — no record ties the delivered code to this rule.', 'None — no test case traces this rule.', 'Source, line 10', 'Confirmation revision 1']);
+    // A value a spreadsheet would evaluate is defused, as in the audit pack's findings CSV.
+    expect(row('BR-005')[2]).toBe(`'=HYPERLINK("x")`);
+
+    const manifest = JSON.parse(pkg.file('manifest.json')!);
+    expect(manifest.files.find((f: { path: string }) => f.path === CSV)).toMatchObject({ kind: 'rule-register-csv', origin: 'engine', sha256: sha256Hex(csv!) });
+    expect(manifest.businessRules.registerCsv).toBe(CSV);
+    expect(filesSection(pkg.file('README.md')!)).toContain(CSV);
+  });
+
+  test('a register with no rows is the header alone, still valid CSV', () => {
+    const p = withFailure(fiProject());
+    const csv = finished(p, factsOf(p, ruleFactsOf(null, 'the source changed since the signed run.'))).file(CSV)!;
+    expect(parseCsv(csv)).toEqual([['Rule', 'State', 'Current meaning', 'Proposal', 'Decision', 'Implementation', 'Test', 'Evidence', 'Revision']]);
+  });
+});

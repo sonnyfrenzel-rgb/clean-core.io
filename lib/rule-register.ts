@@ -286,10 +286,7 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
   );
   const c = ruleStateCounts(register.rows);
   lines.push(`${RULE_STATE_WORDS.open}: ${c.open} · ${RULE_STATE_WORDS.approved}: ${c.approved} · ${RULE_STATE_WORDS['changed-on-purpose']}: ${c['changed-on-purpose']}`, '');
-  lines.push(
-    '| Rule | State | Current meaning | Proposal | Decision | Implementation | Test | Evidence | Revision |',
-    '|---|---|---|---|---|---|---|---|---|',
-  );
+  lines.push(`| ${RULE_REGISTER_COLUMNS.join(' | ')} |`, `|${RULE_REGISTER_COLUMNS.map(() => '---').join('|')}|`);
   for (const row of register.rows) {
     const w = ruleRowWords(row);
     lines.push(
@@ -297,4 +294,61 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
     );
   }
   return lines;
+}
+
+/* --------------------------------------------------------------------- CSV */
+
+/** The columns of the register, in order — the Markdown table and the CSV share them. */
+export const RULE_REGISTER_COLUMNS = Object.freeze([
+  'Rule',
+  'State',
+  'Current meaning',
+  'Proposal',
+  'Decision',
+  'Implementation',
+  'Test',
+  'Evidence',
+  'Revision',
+] as const);
+
+/**
+ * One CSV field (RFC 4180): always quoted, inner quotes doubled, so a comma,
+ * a semicolon (the delimiter a German spreadsheet assumes), a quote or a line
+ * break inside a rule's meaning or an account's note can never split or shift
+ * a row (owner, 12.10.2026: the package has had CSV-delimiter findings
+ * before). A value a spreadsheet would evaluate (leading =, +, -, @, tab or
+ * CR) is prefixed with a single quote — the audit pack's `03-findings.csv`
+ * guard, since notes are typed by accounts and meanings quote ABAP.
+ */
+export function ruleCsvField(value: string): string {
+  const s = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+/**
+ * The register as CSV (CO review F16; owner, 12.10.2026): the same rows and
+ * columns as the Markdown table, UTF-8, CRLF between records as RFC 4180
+ * says. Line breaks inside a field are kept, inside its quotes. A register
+ * with no rows (not read, not detected) is the header alone — the reason is
+ * in the Markdown file and in STATUS.md.
+ */
+export function ruleRegisterCsv(register: RuleRegister): string {
+  const records: string[][] = [[...RULE_REGISTER_COLUMNS]];
+  if (register.state === 'read') {
+    for (const row of register.rows) {
+      const w = ruleRowWords(row);
+      records.push([
+        `${row.id} ${row.label}`,
+        RULE_STATE_WORDS[row.state],
+        row.meaning,
+        w.proposal,
+        w.decision,
+        w.implementation,
+        w.test,
+        w.evidence,
+        w.revision,
+      ]);
+    }
+  }
+  return `${records.map((r) => r.map(ruleCsvField).join(',')).join('\r\n')}\r\n`;
 }
