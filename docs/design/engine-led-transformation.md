@@ -640,7 +640,7 @@ handles late-rendered targets.
 Today the first generation starts by itself when the stage is opened and nothing blocks it
 (`setAwaitingAutoGeneration`). With tips, the proposal (Q5) is: **auto-start only when no tip is
 open**; otherwise the page shows the tips and *Generate now*. Nothing here blocks: where the decision
-on record is retire or move to standard, or standard fit is unassessed, the tips open with a
+on record is retire or move to SAP standard, or standard fit is unassessed, the tips open with a
 highlighted warning that says what that means and links to the decision — *Generate now* stays
 available (owner, 12.10.2026: no rebuild gate). The prompt's context keeps its loud warning, so code
 generated against the decision says so in its first comment.
