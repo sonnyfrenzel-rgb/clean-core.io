@@ -9,6 +9,7 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import ProgramInShort from './ProgramInShort';
 import type { SummaryLine } from '@/lib/program-summary-text';
+import type { AuthorClaim } from '@/lib/program-summary-check';
 import type { ProcessStory, StoryChange } from '@/lib/process-story';
 import {
   bizMoreItems,
@@ -84,7 +85,7 @@ export default function BusinessOpening({
    * shared summary (`lib/program-summary-text.ts`, `businessInShort`); null
    * while it is not read.
    */
-  inShort?: { lines: readonly SummaryLine[]; level: SummaryLine; proposal?: string | null } | null;
+  inShort?: { lines: readonly SummaryLine[]; level: SummaryLine; proposal?: string | null; authorClaim?: AuthorClaim | null } | null;
 }) {
   return (
     <div data-first-look-result="" data-first-look-business="" className="flex flex-col gap-5">
@@ -104,7 +105,7 @@ export default function BusinessOpening({
         {nameReason ? <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{nameReason}</p> : null}
         {inShort ? (
           <div className="mt-2">
-            <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal ?? null} />
+            <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal ?? null} authorClaim={inShort.authorClaim ?? null} />
           </div>
         ) : null}
         <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">

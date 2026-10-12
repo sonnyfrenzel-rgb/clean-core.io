@@ -22,7 +22,7 @@ import BusinessOpening, { type OpeningRule } from './BusinessOpening';
 import { processChanges, processStory, type ProcessStory, type StoryChange } from '@/lib/process-story';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary, type SummaryLine } from '@/lib/program-summary-text';
-import { purposeProposalOf } from '@/lib/program-summary-check';
+import { authorClaimOf, purposeProposalOf, type AuthorClaim } from '@/lib/program-summary-check';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import {
   BUILD_UP_BUDGET,
@@ -245,7 +245,7 @@ interface Result {
   /** What the program creates and changes, in the map's plain words. */
   changes: { changes: StoryChange[]; more: number };
   /** What the program is for, in short (owner, 12.10.2026) — null when it could not be read. */
-  inShort: { lines: SummaryLine[]; level: SummaryLine; proposal: string | null } | null;
+  inShort: { lines: SummaryLine[]; level: SummaryLine; proposal: string | null; authorClaim: AuthorClaim | null } | null;
 }
 
 /** "In short" for the Business opening: the shared summary without table codes, and a checked model purpose where one is stored. */
@@ -253,7 +253,7 @@ function inShortOf(source: string, process: ProcessReading, rules: BusinessRuleS
   try {
     const facts = programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules });
     const summary = programSummary(facts);
-    return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts) };
+    return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(narrative, facts), authorClaim: authorClaimOf(facts) };
   } catch {
     return null;
   }

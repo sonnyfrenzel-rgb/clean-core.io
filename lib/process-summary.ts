@@ -2,7 +2,7 @@ import { buildReadingExports } from './bpmn/export';
 import { buildProcessMapModel, processCounts } from './process-map';
 import { applyNaming, namingContextOf } from './process-naming';
 import { programSummaryFactsOf } from './program-summary-facts';
-import { managementInShort, programSummary } from './program-summary-text';
+import { managementInShort, programSummary, type ProgramSummaryFacts } from './program-summary-text';
 
 /**
  * What the process map of a source holds, in four numbers — for every place
@@ -38,6 +38,8 @@ export interface ProcessSummary {
    * says this instead of only counting steps. Null when it could not be read.
    */
   management: string | null;
+  /** The facts behind it, so a view that knows the rule register's states can say them too. */
+  summaryFacts: ProgramSummaryFacts | null;
 }
 
 export function processSummaryOf(source: string, fileName = 'source.abap'): ProcessSummary | null {
@@ -48,11 +50,12 @@ export function processSummaryOf(source: string, fileName = 'source.abap'): Proc
   const { steps, decisions } = processCounts(model.elements);
   if (steps === 0 && decisions === 0) return null;
   let management: string | null = null;
+  let summaryFacts: ProgramSummaryFacts | null = null;
   try {
-    const facts = programSummaryFactsOf(source);
-    management = managementInShort(programSummary(facts), facts, { level: false });
+    summaryFacts = programSummaryFactsOf(source);
+    management = managementInShort(programSummary(summaryFacts), summaryFacts, { level: false });
   } catch {
     management = null;
   }
-  return { steps, decisions, shapes: model.traceability.flowNodes, anchored: model.traceability.anchored, management };
+  return { steps, decisions, shapes: model.traceability.flowNodes, anchored: model.traceability.anchored, management, summaryFacts };
 }

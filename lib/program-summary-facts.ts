@@ -184,6 +184,54 @@ function sentenceWordOf(name: string, kind: 'function' | 'transaction' | 'bapi')
   return word ?? null;
 }
 
+const CLAIM_HEADING = /^(BUSINESS\s+PURPOSE|BUSINESS\s+SCOPE|PURPOSE|DESCRIPTION|ZWECK|BESCHREIBUNG|FUNKTION|VERWENDUNG)\b\s*:?\s*(.*)$/;
+const DECOR = /^[-=*&_#\s]*$/;
+const OTHER_HEADING = /^[A-Z][A-Z0-9 ()/&-]{3,}:?$/;
+
+/**
+ * What the program's author wrote it is for, in its header comment — a
+ * section headed BUSINESS PURPOSE, BUSINESS SCOPE, PURPOSE, DESCRIPTION (or
+ * ZWECK, BESCHREIBUNG …) in capitals (owner, 12.10.2026: "use the program's
+ * header comments as a source, shown as Author's claim, checked against
+ * engine facts exactly like a model proposal"). Quoted verbatim, as code is;
+ * null when the header has no such section. Only headed sections count: a
+ * banner line or a change log is not a statement of purpose.
+ */
+export function headerClaimOf(source: string): ProgramSummaryFacts['headerClaim'] {
+  const lines = String(source ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const limit = Math.min(lines.length, 150);
+  const contentOf = (raw: string): string | null => {
+    const m = /^\s*(?:\*&?|")(.*)$/.exec(raw);
+    return m ? m[1].replace(/\*+\s*$/, '').trim() : null;
+  };
+  for (let i = 0; i < limit; i++) {
+    const content = contentOf(lines[i]);
+    if (content === null) continue;
+    const head = CLAIM_HEADING.exec(content);
+    if (!head) continue;
+    const parts: string[] = head[2] ? [head[2]] : [];
+    let end = i + 1;
+    for (let j = i + 1; j < limit; j++) {
+      const c = contentOf(lines[j]);
+      if (c === null || DECOR.test(c) || OTHER_HEADING.test(c)) break;
+      parts.push(c);
+      end = j + 1;
+    }
+    // Bullets become sentences: "- Read-only: no FI posting" → "Read-only: no FI posting."
+    const sentences: string[] = [];
+    for (const p of parts) {
+      const bullet = /^[-•]\s+(.*)$/.exec(p);
+      if (bullet) sentences.push(bullet[1].replace(/([^.!?])$/, '$1.'));
+      else if (sentences.length && !/[.!?:]$/.test(sentences[sentences.length - 1])) sentences[sentences.length - 1] += ` ${p}`;
+      else sentences.push(p);
+    }
+    const text = sentences.join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length < 12) continue;
+    return { heading: head[1].replace(/\s+/g, ' '), text: text.length > 700 ? `${text.slice(0, 697).replace(/\s+\S*$/, '')} …` : text, lineStart: i + 1, lineEnd: end };
+  }
+  return null;
+}
+
 export interface ProgramSummaryReaders {
   skeleton?: Pick<ProcessSkeleton, 'luw'>;
   calls?: CallGraphReport;
@@ -283,6 +331,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
     screenTitles: texts.titles,
     fixedLists: fixedListsOf(calls, ctx),
     rules: ruleCount,
+    headerClaim: headerClaimOf(text),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };
 }

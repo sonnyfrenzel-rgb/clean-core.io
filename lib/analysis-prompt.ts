@@ -23,6 +23,9 @@ export function programFactsBlock(facts: ProgramSummaryFacts | null | undefined)
       : []),
     ...facts.fixedLists.slice(0, 3).map((l) => `- [fixed list in the code, L${l.lineStart}-${l.lineEnd}] ${l.item}: ${l.columns.join(' | ')} = ${l.rows.map((r) => r.join(' | ')).join(' ; ')}`),
     ...(facts.screenTitles.length ? [`- [selection screen titles] ${facts.screenTitles.map((t) => t.text).join('; ')}`] : []),
+    ...(facts.headerClaim
+      ? [`- [author's claim, header comment L${facts.headerClaim.lineStart}-${facts.headerClaim.lineEnd}, not the engine's reading] ${facts.headerClaim.text}`]
+      : []),
     `- [level] ${summary.level.text}`,
   ];
   return lines.join('\n');

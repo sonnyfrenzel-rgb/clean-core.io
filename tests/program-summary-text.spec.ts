@@ -11,7 +11,8 @@ import {
   programSummary,
   withoutCodes,
 } from '../lib/program-summary-text';
-import { checkPurposeProposal, purposeProposalOf } from '../lib/program-summary-check';
+import { authorClaimOf, checkPurposeProposal, purposeProposalOf } from '../lib/program-summary-check';
+import { ruleTallyOf } from '../lib/management-rule-tally';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
@@ -253,6 +254,43 @@ test.describe('a model may phrase the purpose — checked against the facts', ()
     expect(purposeProposalOf(JSON.stringify({ asIsContext: 'It posts allocation documents [L40].' }), co)).toBeNull();
     expect(purposeProposalOf('not json', co)).toBeNull();
     expect(purposeProposalOf(narrative, null)).toBeNull();
+  });
+
+  test("the header comment is the author's claim: quoted when the facts agree, not quoted when they contradict", () => {
+    const header = (body: string) => `*&---------------------------------------------------------------------*\n*& BUSINESS PURPOSE\n${body}\n*&\n*& IMPORTANT BOUNDARIES\n*& - Synthetic example.\n*&---------------------------------------------------------------------*\n${CO_SHAPED}`;
+    const agree = programSummaryFactsOf(header('*& Monthly cost-center close review: plan versus actual, followed by a\n*& non-posting simulation of shared-service cost allocations.\n*& This report cannot post.'));
+    expect(agree.headerClaim).toEqual({
+      heading: 'BUSINESS PURPOSE',
+      text: 'Monthly cost-center close review: plan versus actual, followed by a non-posting simulation of shared-service cost allocations. This report cannot post.',
+      lineStart: 2,
+      lineEnd: 5,
+    });
+    expect(authorClaimOf(agree)?.state).toBe('shown');
+
+    const contradict = authorClaimOf(programSummaryFactsOf(header('*& Posts the allocation to the cost centers and mails each manager.')));
+    expect(contradict?.state).toBe('contradicted');
+    // The safer choice: the claim is not quoted; one line says why, with its lines.
+    expect(contradict && contradict.state === 'contradicted' ? contradict.note : '').toBe(
+      'The header comment (L2–3) is not quoted here: it claims a posting or a data change; the code changes no data; claims correspondence; the code sends none.',
+    );
+    // Only a headed section is a claim: a banner or a change log is not.
+    expect(programSummaryFactsOf(CO_SHAPED).headerClaim).toBeNull();
+    expect(programSummaryFactsOf(BM028).headerClaim).toBeNull();
+    // Documentation shows the shown claim first, tagged.
+    const map = mapOf(header('*& Non-posting review of cost centers and cost totals.'), 'zco.abap');
+    const page = documentOutline(buildProcessDocument({ source: header('*& Non-posting review of cost centers and cost totals.'), map }), {}).business;
+    expect(page.does[0]).toMatchObject({ basis: 'author-claim', text: 'Business purpose, as the header comment states it: “Non-posting review of cost centers and cost totals.”' });
+  });
+
+  test('Management counts the open rules as the rule register does', () => {
+    const { facts, summary } = summaryOf(CO_SHAPED);
+    const source = programSummaryFactsOf(DEMO);
+    expect(ruleTallyOf({ ok: false, code: 'no-baseline', status: 404 }, source.rules)).toEqual({ total: source.rules, open: source.rules, approved: 0, 'changed-on-purpose': 0 });
+    expect(ruleTallyOf(null, 12)).toBeNull();
+    expect(managementInShort(summary, facts, { level: false, rules: { total: 66, open: 60, approved: 4, 'changed-on-purpose': 2 } })).toContain(
+      'For the decision: it posts and changes nothing in SAP; 66 business rules are fixed in its code — 60 still open, 4 approved and 2 changed on purpose.',
+    );
+    expect(managementInShort(summary, facts, { level: false, rules: { total: 66, open: 66, approved: 0, 'changed-on-purpose': 0 } })).toMatch(/66 business rules are fixed in its code — 66 still open\.$/);
   });
 
   test('the Analyze prompt carries the facts and asks for the purpose from them', () => {

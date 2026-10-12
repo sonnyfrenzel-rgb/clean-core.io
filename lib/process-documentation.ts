@@ -1,5 +1,6 @@
 import type { ProvenanceValue } from '@/lib/provenance';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
+import { authorClaimOf } from '@/lib/program-summary-check';
 import { abapWords, programSummary, readProgramSummaryFacts, type ProgramSummaryFacts } from '@/lib/program-summary-text';
 import { BUSINESS_PAGE, buildBusinessPage, businessPageLineText, type BusinessPageTarget } from '@/lib/documentation-business-page';
 import { businessStatementView, statementKind, type StatementGroup } from '@/lib/abap/business-statement-kind';
@@ -420,7 +421,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     program: doc.processName,
     facts,
     // Owner 12.10.2026: the file opens with the same summary as the stage, not with its own counts.
-    ...(summaryFacts ? { inShort: programSummary(summaryFacts) } : {}),
+    ...(summaryFacts ? { inShort: programSummary(summaryFacts), authorClaim: authorClaimOf(summaryFacts) } : {}),
     counts: {
       steps: doc.steps.filter((s) => !isEvent(s) && !isGate(s)).length,
       decisions: doc.steps.filter(isGate).length,

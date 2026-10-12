@@ -57,6 +57,8 @@ import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
 import { useSourceReading } from '@/hooks/useSourceReading';
 import { rulesStatus } from '@/lib/rules-editor';
 import { useProcessStates } from '@/hooks/useProcessStates';
+import { ruleTallyOf } from '@/lib/management-rule-tally';
+import { managementInShort, programSummary } from '@/lib/program-summary-text';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
   VIEW_ABOUT,
@@ -413,10 +415,7 @@ export default function WorkspaceShell({
   // as the map counts it (ADR-087) — the Need layer's own count, said once.
   // Owner 12.10.2026: Management reads what the program is for and what the
   // decision has to know from the code (`managementInShort`), then the counts.
-  const processLine = useMemo(() => {
-    const count = allLayers.find((l) => l.key === 'need')?.count ?? null;
-    return [mapSummary?.management ?? null, count].filter(Boolean).join(' — ') || null;
-  }, [allLayers, mapSummary]);
+  const processCount = useMemo(() => allLayers.find((l) => l.key === 'need')?.count ?? null, [allLayers]);
 
   const router = useRouter();
   /**
@@ -617,7 +616,19 @@ export default function WorkspaceShell({
    */
   const owner = useIsOwner(project);
   const hasSource = typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0;
-  const { outcome: ruleStates } = useProcessStates(projectId, view === 'business' && hasSource);
+  const { outcome: ruleStates } = useProcessStates(projectId, (view === 'business' || view === 'management') && hasSource);
+  // Management's Need row (owner 12.10.2026): what the program is for, what the
+  // decision has to know from the code, and how many of its rules are still
+  // open in the rule register — the counts the delivery package says — then
+  // the map's counts.
+  const processLine = useMemo(() => {
+    const facts = mapSummary?.summaryFacts ?? null;
+    const tally = facts ? ruleTallyOf(ruleStates, facts.rules) : null;
+    const management = facts
+      ? managementInShort(programSummary(facts), facts, { level: false, rules: tally })
+      : mapSummary?.management ?? null;
+    return [management, processCount].filter(Boolean).join(' — ') || null;
+  }, [mapSummary, ruleStates, processCount]);
   const businessStep = useMemo(() => {
     if (view !== 'business') return null;
     const ready = !hasSource || !project?.activeRunId || (reading !== null && ruleStates !== null);

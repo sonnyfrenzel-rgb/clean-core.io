@@ -94,7 +94,7 @@ import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import ProgramInShort from '@/components/workspace/ProgramInShort';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { businessInShort, programSummary } from '@/lib/program-summary-text';
-import { purposeProposalOf } from '@/lib/program-summary-check';
+import { authorClaimOf, purposeProposalOf } from '@/lib/program-summary-check';
 
 /** The engine's facts about what the program is for, or null when they cannot be read — the prompt then goes without them. */
 function programFactsOrNull(code: string) {
@@ -788,14 +788,14 @@ export default function AnalyzePage() {
     try {
       const facts = programSummaryFactsOf(legacyCode);
       const summary = programSummary(facts);
-      return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts) };
+      return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts), authorClaim: authorClaimOf(facts) };
     } catch {
       return null;
     }
   }, [legacyCode, project?.analysis]);
   const programInShort = inShort ? (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3">
-      <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} headingLevel={2} id="analyze-in-short-title" />
+      <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} authorClaim={inShort.authorClaim} headingLevel={2} id="analyze-in-short-title" />
     </div>
   ) : null;
 

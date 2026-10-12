@@ -25,6 +25,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcStateText from '@/components/cc/StateText';
 import CcTable, { type CcTableColumn } from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
+import { AUTHOR_CLAIM_LABEL } from '@/lib/program-summary-check';
 import PageAnchorBar, { type PageAnchor } from '@/components/PageAnchorBar';
 import type { DocAnchor } from '@/lib/process-documentation';
 import {
@@ -559,7 +560,7 @@ function BusinessPageCard({ outline }: { outline: PdOutline }) {
         <li key={i} data-business-page-line={line.basis} className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 cc-text-cell text-cc-ink">
           <span className="min-w-0">{line.text}</span>
           <Anchors anchors={line.anchors} max={2} />
-          {line.basis === 'reconstructed' ? null : <CcProvenanceChip value={line.basis} />}
+          {line.basis === 'reconstructed' ? null : line.basis === 'author-claim' ? <CcTag>{AUTHOR_CLAIM_LABEL}</CcTag> : <CcProvenanceChip value={line.basis} />}
         </li>
       ))}
     </ul>

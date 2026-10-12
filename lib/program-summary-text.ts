@@ -105,6 +105,12 @@ export interface ProgramSummaryFacts {
   /** Business rules fixed in the code (the rule set the Business view counts); null when not read. */
   rules: number | null;
   authority: string[];
+  /**
+   * The header comment's own statement of purpose (BUSINESS PURPOSE, SCOPE …),
+   * verbatim — the author's claim, not the engine's reading (owner,
+   * 12.10.2026). Absent in facts stored before it was read.
+   */
+  headerClaim?: { heading: string; text: string; lineStart: number; lineEnd: number } | null;
 }
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
@@ -522,14 +528,41 @@ export function businessInShortText(summary: ProgramSummary, options: { codes?: 
  * replacement must keep, change or drop on purpose, and the level. No money:
  * amounts arise only in Economics (ADR-022).
  */
-export function managementInShort(summary: ProgramSummary, f: ProgramSummaryFacts, options: { level?: boolean } = {}): string {
+export interface RuleStateTally {
+  total: number;
+  open: number;
+  approved: number;
+  'changed-on-purpose': number;
+}
+
+export function managementInShort(
+  summary: ProgramSummary,
+  f: ProgramSummaryFacts,
+  options: { level?: boolean; rules?: RuleStateTally | null } = {},
+): string {
   const purpose = summary.lines.find((l) => l.key === 'purpose')?.text ?? '';
   const changes = f.changes.state === 'none'
     ? 'it posts and changes nothing in SAP'
     : f.changes.state === 'changes'
       ? `it changes data in SAP — it ${joinAnd([...rankedActions(f.changes.actions).map((a) => actionPhrase(a.word)), ...(f.writes.length ? [`writes ${plural(f.writes.length, 'table')} directly`] : [])])} — so a replacement or a retirement has to take these changes over or stop them on purpose`
       : 'whether it changes data in SAP is not determined';
-  const rules = f.rules === null ? '' : f.rules === 0 ? '; no business rule fixed in its code was found' : `; ${plural(f.rules, 'business rule')} ${f.rules === 1 ? 'is' : 'are'} fixed in its code and must be kept, changed or dropped on purpose`;
+  // The rule register's states when they are known (owner 12.10.2026: "66
+  // business rules … 66 still open", the counts of the delivery package);
+  // without them, the count from the code and what a decision has to do.
+  const t = options.rules ?? null;
+  const rules = t
+    ? t.total === 0
+      ? '; no business rule fixed in its code was found'
+      : `; ${plural(t.total, 'business rule')} ${t.total === 1 ? 'is' : 'are'} fixed in its code — ${joinAnd([
+          `${t.open} still open`,
+          ...(t.approved ? [`${t.approved} approved`] : []),
+          ...(t['changed-on-purpose'] ? [`${t['changed-on-purpose']} changed on purpose`] : []),
+        ])}`
+    : f.rules === null
+      ? ''
+      : f.rules === 0
+        ? '; no business rule fixed in its code was found'
+        : `; ${plural(f.rules, 'business rule')} ${f.rules === 1 ? 'is' : 'are'} fixed in its code and must be kept, changed or dropped on purpose`;
   return `${purpose} For the decision: ${changes}${rules}.${options.level === false ? '' : ` ${summary.level.text}`}`;
 }
 

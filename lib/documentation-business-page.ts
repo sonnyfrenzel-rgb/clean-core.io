@@ -1,6 +1,7 @@
 import type { DocAnchor } from '@/lib/process-documentation';
 import { capabilityPresence, isAbsent, type Capability, type CapabilityFacts, type FactObject } from '@/lib/documentation-capabilities';
 import type { ProgramSummary } from '@/lib/program-summary-text';
+import type { AuthorClaim } from '@/lib/program-summary-check';
 
 /**
  * The business page every documentation opens with (owner 11.10.2026, external
@@ -26,7 +27,8 @@ import type { ProgramSummary } from '@/lib/program-summary-text';
  * Pure and engine-free.
  */
 
-export type BusinessPageBasis = 'reconstructed' | 'not-determined' | 'confirmed';
+/** `author-claim`: the program's header comment, quoted — the author's word, not the engine's reading (owner, 12.10.2026). */
+export type BusinessPageBasis = 'reconstructed' | 'not-determined' | 'confirmed' | 'author-claim';
 
 export interface BusinessPageLine {
   text: string;
@@ -78,6 +80,12 @@ export interface BusinessPageInput {
    * chapters, not on this page.
    */
   inShort?: ProgramSummary | null;
+  /**
+   * The header comment's statement of purpose, checked against the facts
+   * (`authorClaimOf`): quoted first under "What it does" when it passes, a
+   * limit line when the facts contradict it (owner, 12.10.2026).
+   */
+  authorClaim?: AuthorClaim | null;
 }
 
 /** The section headings of the page — one set for every rendering. */
@@ -179,6 +187,10 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
   // What the summary already says is not said twice.
   const said = summary.map((s) => s.text.toLowerCase()).join(' ');
 
+  if (input.authorClaim?.state === 'shown') {
+    const c = input.authorClaim;
+    does.push({ text: `${c.heading.charAt(0)}${c.heading.slice(1).toLowerCase()}, as the header comment states it: “${c.text}”`, anchors: [{ lineStart: c.lineStart, lineEnd: c.lineEnd }], basis: 'author-claim' });
+  }
   if (input.inShort) {
     // One slot per line, in the order of the text model; the limits slot and
     // the level are said below ("Limits of this reading", "Owner and approval").
@@ -272,6 +284,9 @@ export function buildBusinessPage(input: BusinessPageInput): BusinessPage {
       basis: 'not-determined',
     });
   }
+  if (input.authorClaim?.state === 'contradicted') {
+    limits.push({ text: input.authorClaim.note, anchors: [{ lineStart: input.authorClaim.lineStart, lineEnd: input.authorClaim.lineEnd }], basis: 'not-determined' });
+  }
   for (const line of input.inShort?.lines ?? []) {
     if (line.key === 'limits') limits.push({ text: line.text, anchors: [], basis: line.basis });
   }
@@ -346,7 +361,7 @@ function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['c
 
 /** One line with its basis as a file prints it: "… (Reconstructed, L42)". */
 export function businessPageLineText(line: BusinessPageLine): string {
-  const basis = line.basis === 'reconstructed' ? 'Reconstructed' : line.basis === 'confirmed' ? 'Confirmed' : 'Not determined';
+  const basis = line.basis === 'reconstructed' ? 'Reconstructed' : line.basis === 'confirmed' ? 'Confirmed' : line.basis === 'author-claim' ? "Author's claim" : 'Not determined';
   const lines = line.anchors.map((a) => (a.lineEnd > a.lineStart ? `L${a.lineStart}–${a.lineEnd}` : `L${a.lineStart}`));
   const already = line.basis === 'not-determined' && /^(?:[^.]*: )?Not determined\b/.test(line.text);
   if (already && !lines.length) return line.text;

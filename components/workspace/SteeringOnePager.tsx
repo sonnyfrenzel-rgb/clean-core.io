@@ -122,7 +122,23 @@ export default function SteeringOnePager({
         try {
           const m = await import('@/lib/process-summary');
           const s = m.processSummaryOf(signed.source, signed.fileName);
-          return s ? { steps: s.steps, decisions: s.decisions, purpose: s.management } : null;
+          if (!s) return null;
+          // Owner 12.10.2026: the purpose with the rule register's open count, as the delivery package says it.
+          let purpose = s.management;
+          if (s.summaryFacts) {
+            try {
+              const [client, tally, text] = await Promise.all([
+                import('@/lib/process-states-client'),
+                import('@/lib/management-rule-tally'),
+                import('@/lib/program-summary-text'),
+              ]);
+              const rules = tally.ruleTallyOf(await client.readProcessStatesOutcome(projectId), s.summaryFacts.rules);
+              purpose = text.managementInShort(text.programSummary(s.summaryFacts), s.summaryFacts, { level: false, rules });
+            } catch {
+              purpose = s.management;
+            }
+          }
+          return { steps: s.steps, decisions: s.decisions, purpose };
         } catch {
           return null;
         }

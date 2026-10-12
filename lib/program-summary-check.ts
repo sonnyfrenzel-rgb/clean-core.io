@@ -29,9 +29,10 @@ export interface PurposeCheck {
   problems: string[];
 }
 
-const POSTS = /\b(?:posts?|posted|posting(?! (?:date|period|key|keys))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
+// "posted items" describes the data it reads, not a posting it makes.
+const POSTS = /\b(?:posts?|posted(?! (?:items?|documents?|amounts?|entries|data|values?|balances?|lines?|costs?))|posting(?! (?:date|period|key|keys))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
 const DOES_NOT_POST = /\b(?:does not|doesn't|do not|never|cannot|can't|no longer) (?:post|change|update|book)\b|\bread-only\b|\bnon-posting\b|\bno (?:[\w-]+ ){0,3}(?:are |is )?(?:posted|booked|changed)\b|\bwithout posting\b/i;
-const MAIL = /\b(?:e-?mails?|sends? (?:a |an |the )?(?:letter|reminder|notice|notification|correspondence|message))\b/i;
+const MAIL = /\b(?:(?:e-?)?mail(?:s|ed|ing)?|sends? (?:a |an |the )?(?:letter|reminder|notice|notification|correspondence|message))\b/i;
 const APPROVAL = /\b(?:approval workflow|approves?|sign-?off|four[- ]eyes|release strategy)\b/i;
 const MONEY = /(?:[$€£]\s?\d|\b\d[\d.,]*\s?(?:EUR|USD|GBP|CHF|k€|million|bn)\b|\bsav(?:e|es|ing|ings)\b|\bROI\b|\bcost reduction\b|\b\d+\s?% (?:faster|cheaper|accura\w*|less)\b|\baccuracy\b)/i;
 
@@ -80,6 +81,37 @@ export function purposeProposalOf(narrative: string | null | undefined, facts: P
   const proposal = sentences.join(' ').trim();
   if (!proposal || proposal.length > 600) return null;
   return checkPurposeProposal(proposal, facts).ok ? proposal : null;
+}
+
+/** The tag beside a quoted header comment — a tag, not one of the nine provenance values (DESIGN.md §4). */
+export const AUTHOR_CLAIM_LABEL = "Author's claim";
+
+export type AuthorClaim =
+  | { state: 'shown'; heading: string; text: string; lineStart: number; lineEnd: number }
+  | { state: 'contradicted'; heading: string; problems: string[]; lineStart: number; lineEnd: number; note: string };
+
+/**
+ * The header comment's statement of purpose as an *Author's claim* (owner,
+ * 12.10.2026), held to the same check as a model proposal. A claim the facts
+ * contradict is **not shown** — the safer of the two choices the owner left
+ * open: a reader who skims would take the quoted sentence for the program's
+ * behaviour even under a warning. What stands instead is one line that the
+ * header says something the code does not show, and what, with its lines.
+ */
+export function authorClaimOf(facts: ProgramSummaryFacts | null): AuthorClaim | null {
+  const claim = facts?.headerClaim;
+  if (!facts || !claim) return null;
+  const check = checkPurposeProposal(claim.text, facts);
+  if (check.ok) return { state: 'shown', ...claim };
+  const range = claim.lineEnd > claim.lineStart ? `L${claim.lineStart}–${claim.lineEnd}` : `L${claim.lineStart}`;
+  return {
+    state: 'contradicted',
+    heading: claim.heading,
+    problems: check.problems,
+    lineStart: claim.lineStart,
+    lineEnd: claim.lineEnd,
+    note: `The header comment (${range}) is not quoted here: it ${check.problems.join('; ')}.`,
+  };
 }
 
 export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): PurposeCheck {
