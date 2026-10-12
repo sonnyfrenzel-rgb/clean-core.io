@@ -693,8 +693,7 @@ test.describe('CO review F10: the data mode is not inferred from a missing SAP c
     const status = pkg.file('STATUS.md')!;
     expect(status).toMatch(/\| Data mode \| Not recorded\. /);
     // Neither guessed way: a PP service built its own sample whatever the caller sent (PP review, 12.10.2026).
-    expect(status.split("
-").find((l) => l.startsWith("| Data mode |")) ?? "").not.toMatch(/supplied by the caller|synthetic/i);
+    expect(status.match(/^\| Data mode \|.*$/m)?.[0] ?? '').not.toMatch(/supplied by the caller|synthetic/i);
     expect(status).not.toMatch(/synthetic\/mock/i);
     expect(status).not.toContain('on synthetic data');
     expect(pkg.file('README.md')!).not.toMatch(/synthetic\/mock/i);
