@@ -153,10 +153,11 @@ const openCalls = (facts: CapabilityFacts): number =>
  */
 export function capabilityPresence(facts: CapabilityFacts): Record<Capability, CapabilityAnswer> {
   const call = (re: RegExp) => facts.calls.filter((c) => re.test(c.name.toUpperCase()));
-  const readOf = (re: RegExp) => [
-    ...facts.reads.filter((r) => re.test(r.name.toUpperCase())),
-    ...(facts.possibleReads ?? []).filter((r) => re.test(r.name.toUpperCase())),
-  ];
+  const readOf = (re: RegExp) => facts.reads.filter((r) => re.test(r.name.toUpperCase()));
+  // A table named at run time may be one of these, never surely is: it keeps the
+  // capability undetermined and stands as evidence of why, but never makes it
+  // present (QA review of fb74afe8, ca3c7082a47b).
+  const mayReadOf = (re: RegExp) => (facts.possibleReads ?? []).filter((r) => re.test(r.name.toUpperCase()));
   const postingCalls = facts.calls.filter((c) =>
     (c.kind === 'bapi' && /(?:CREATE|CHANGE|POST|SAVE|UPDATE|DELETE|CANCEL|REVERSE|CLEAR)/.test(c.name.toUpperCase()))
     || /^(?:POSTING_INTERFACE_|FI_DOCUMENT_POST|AC_DOCUMENT_POST|BAPI_ACC_)/.test(c.name.toUpperCase()));
@@ -190,14 +191,14 @@ export function capabilityPresence(facts: CapabilityFacts): Record<Capability, C
       short: 'no ledger reconciliation in the code',
       present: ledger.length > 0,
       determined: ledger.length > 0 || !(readsOpen || callsOpen),
-      evidence: ledger,
+      evidence: [...ledger, ...mayReadOf(LEDGER_TABLES)],
       absent: 'It does not reconcile against the general ledger: no ledger table (GLT0, FAGLFLEXT, ACDOCA, BSIS …) is read and no ledger balance is called. Totals it checks are its own arithmetic.',
     },
     'credit-exposure': {
       short: 'no credit exposure in the code',
       present: exposure.length > 0,
       determined: exposure.length > 0 || !(readsOpen || callsOpen),
-      evidence: exposure,
+      evidence: [...exposure, ...mayReadOf(EXPOSURE_TABLES)],
       absent: 'It computes no credit exposure: no credit-management total (S066, S067, UKM …) is read and no exposure function is called.',
     },
     approval: {

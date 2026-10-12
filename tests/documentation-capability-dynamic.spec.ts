@@ -9,8 +9,9 @@ import { sopFactsBlock } from '../lib/business-sop-prompt';
  * it. A read whose table, or a call whose function, the code names only at
  * run time could be a ledger table, a credit total, a workflow or a send
  * function — so the capability is not determined, and no absence sentence is
- * written. A possible target the source shows for such a read counts as the
- * program possibly doing it. Server-free.
+ * written. A possible target the source shows for such a read is evidence of
+ * why it is undetermined, never proof that the program does it (QA review of
+ * fb74afe8, ca3c7082a47b). Server-free.
  */
 
 const factsOf = (source: string) => capabilityFactsOf(source, buildProcessSkeleton(source));
@@ -64,12 +65,15 @@ test.describe('a capability is undetermined while run-time names are unresolved'
     expect(capabilityPresence(stored).ledger.determined).toBe(false);
   });
 
-  test('a run-time table whose possible target is ACDOCA counts the ledger as present', () => {
+  test('a run-time table whose possible target is ACDOCA leaves the ledger undetermined, with ACDOCA as its evidence', () => {
     const facts = factsOf(POSSIBLE_LEDGER);
     expect(facts.reads.map((r) => r.name)).not.toContain('ACDOCA');
     expect(facts.possibleReads?.map((r) => r.name)).toContain('ACDOCA');
     const ledger = capabilityPresence(facts).ledger;
-    expect(ledger.present).toBe(true);
+    // It may read ACDOCA, or another table: neither present nor absent.
+    expect(ledger.present).toBe(false);
+    expect(ledger.determined).toBe(false);
+    expect(isAbsent(ledger)).toBe(false);
     expect(ledger.evidence.map((e) => e.name)).toContain('ACDOCA');
     expect(absentClaims('The totals are reconciled against the general ledger.', facts)).toEqual([]);
   });
