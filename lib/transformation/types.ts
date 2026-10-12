@@ -106,6 +106,24 @@ export interface PlanGuard {
   helper: string;
   /** The fill region of the predicate: `U02.G0506`. */
   regionId: string | null;
+  /**
+   * `raw` — reads only the request (inputs, constants, input records): checked before any calculation.
+   * `derived` — reads a value computed before it: the body must call the guard at the original's position
+   * (rule 15, QA finding 4e9d1315469d; see guard-basis.ts).
+   */
+  basis: 'raw' | 'derived';
+  /** Why derived, or null. */
+  basisReason: string | null;
+  /** The computed values a derived guard takes (its `values` argument). */
+  operands: Array<{ name: string; key: string }>;
+  /** Literals the condition compares against, and its operator when simple — for the inline check. */
+  literals: string[];
+  op: string | null;
+  /**
+   * Who calls the guard: `entry` — the stub, before the fill marker; `selection` — `checkSelection`, before any
+   * step; `body` — the model's body, at the original's position (derived checks, skipping checks); `none` — not carried.
+   */
+  placement: 'entry' | 'selection' | 'body' | 'none';
 }
 
 /* ---------------------------------------------------------------- units */
@@ -145,6 +163,8 @@ export interface Unit {
   guards: string[];
   /** Guard ids the stub calls before the fill marker (refusing guards of the routine). */
   guardCalls: string[];
+  /** Guard ids the body must call at the original's position (placement `body`); `bodyGuards` refuses a body without them. */
+  bodyCalls: string[];
   /** Unit ids this unit may call. */
   callees: string[];
   /** FORM parameters, in order. */
@@ -185,6 +205,12 @@ export interface ContractField {
   line: number;
   /** `P(15,2)`, `TYPE gjahr`. */
   declaration: string;
+  /**
+   * The value the call contract's base request carries, and where it comes from — in this order: the selection
+   * screen's DEFAULT (or INITIALIZATION), the original's demo data, a fixed list in the code, a value that satisfies
+   * the original's checks on the field. Null: none known (an obligatory field is then listed as needing a value).
+   */
+  base: { value: string | boolean | string[]; source: 'default' | 'demo' | 'fixed-list' | 'guard' | 'kind' } | null;
 }
 
 export interface UnitPlan {
@@ -199,6 +225,8 @@ export interface UnitPlan {
   inputs: SelectionInput[];
   /** The request the input contract validates (selection and record fields, internal decimals). */
   fields: ContractField[];
+  /** Obligatory fields the original gives no valid value for (base-values.ts): the base request cannot carry them. */
+  missingBaseValues: string[];
   /** CSV delimiter the original declares (`;`), else `,`. */
   csvDelimiter: string;
   notCarried: NotCarried[];
@@ -283,6 +311,18 @@ export interface BodyGuardContext {
   sliceChars: number;
   /** Guard wrappers the stub calls before the marker; a body may not shadow them. */
   guardCalls?: readonly string[];
+  /** Guards the body must call (placement `body`); a body that skips one, or writes its condition inline, is refused. */
+  required?: readonly RequiredGuard[];
+}
+
+/** A guard a fill body must call at the original's position. */
+export interface RequiredGuard {
+  id: string;
+  /** The function the body calls: `guard_BR_004_G0066` (Node) / `when_g0066` (RAP). */
+  helper: string;
+  line: number;
+  op: string | null;
+  literals: string[];
 }
 
 export type BodyRefusalCode =
@@ -294,7 +334,9 @@ export type BodyRefusalCode =
   | 'guard-shadowed'
   | 'foreign-call'
   | 'too-long'
-  | 'binary-number';
+  | 'binary-number'
+  | 'guard-missing'
+  | 'guard-inlined';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;
@@ -340,6 +382,8 @@ export interface Scaffold {
   notCarried: NotCarried[];
   /** What a fill may call, per region (helpers, callees, guard wrappers) — the `available` of the prompt (§8.2). */
   available: Record<string, string[]>;
+  /** The guards each body region must call (placement `body`); `spliceBodies` applies them. */
+  required: Record<string, RequiredGuard[]>;
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */
@@ -401,12 +445,38 @@ export interface FillOutcome {
 export interface FillRequestUnit {
   unitId: string;
   function: { name: string; file: string; signature: string; returns: string };
-  abap: { ranges: AbapRange[]; text: string; declarations: string; callSites: AbapSlice['callSites'] };
-  rules: Array<{ id: string; decision: RuleDecision; text: string; proposal?: string }>;
-  /** Guards whose predicate this unit writes (`regionId`), and those the stub already calls. */
-  guards: Array<{ id: string; rule: string | null; helper: string; condition: string; effect: GuardEffect; regionId: string | null; calledByStub: boolean }>;
+  /** `text` is the slice with original line numbers ("0500 FORM validate_policy."); declarations and call sites as `sliceFor` cuts them. */
+  abap: { ranges: AbapRange[]; text: string; declarations?: string; callSites?: AbapSlice['callSites'] };
+  /** DROP rules are never listed (§6.4). */
+  rules: Array<{ id: string; decision: Exclude<RuleDecision, 'drop'>; text: string; proposal?: string }>;
+  /**
+   * The unit's guards. `placement`: `entry` — the stub calls it before the marker; `body` — the body must call it at
+   * the original's line, handing in `values` (derived checks; `bodyGuards` refuses a body without the call or with
+   * the condition inline); `selection` — run before any step. `regionId` is the predicate the unit writes.
+   */
+  guards: Array<{
+    id: string;
+    rule: string | null;
+    helper: string;
+    condition: string;
+    effect: string;
+    line?: number;
+    regionId?: string | null;
+    placement?: PlanGuard['placement'];
+    basis?: PlanGuard['basis'];
+    values?: string[];
+  }>;
   facts: { decimals: Array<{ name: string; digits: number; decimals: number; type: string }> };
   available: { helpers: string[]; callees: string[] };
+}
+
+/** A repair round's addition to a unit (§13.2 step 3). */
+export interface FillRepair {
+  unitId: string;
+  round: 1 | 2;
+  /** ≤ 2,000 characters. */
+  failure: string;
+  previousBody: string | null;
 }
 
 export interface FillRequest {
@@ -416,17 +486,17 @@ export interface FillRequest {
   context: string;
   rules: string;
   units: FillRequestUnit[];
-  repair: null | { unitId: string; round: 1 | 2; failure: string; previousBody: string };
+  repair: FillRepair[] | null;
 }
 
 export interface FillAnswerUnit {
   unitId: string;
-  /** Statements only — the body of the unit's function. */
+  /** Statements only — the body of the unit's function (region `unitId`). */
   body: string;
-  /** Predicate bodies by guard id (`G-0506`): statements returning a boolean. */
+  /** Predicate bodies by guard id (`G-0506` → region `U02.G0506`): statements returning whether the original's condition holds. */
   guards?: Record<string, string>;
   needs: string[];
-  refused: null | { reason: string };
+  refused: { reason: string } | null;
 }
 
 export interface FillAnswer {

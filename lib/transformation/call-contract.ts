@@ -28,69 +28,36 @@ export interface ContractModel {
   version: 1;
   baseRequest: Record<string, unknown>;
   fields: Record<string, string | null>;
+  /** Obligatory fields with no valid base value known from the original — the base request lacks them. */
+  missingBaseValues: string[];
 }
 
-const unquote = (v: string | null): string | null => {
-  if (v === null) return null;
-  const m = /^'((?:[^']|'')*)'$/.exec(v.trim());
-  return m ? m[1].replace(/''/g, "'") : null;
-};
-
-function onePacked(f: ContractField): string {
-  const whole = (f.digits ?? 15) - f.places;
-  if (whole >= 1) return f.places > 0 ? `1.${'0'.repeat(f.places)}` : '1';
-  return `0.${'0'.repeat(Math.max(0, f.places - 1))}1`;
-}
-
-/** A value every input check of the contract accepts, from the original's DEFAULT where it is a usable literal. */
+/**
+ * The value the base request carries for a field: the one the planner read from the original
+ * (`ContractField.base`, base-values.ts) — undefined when there is none.
+ */
 export function baseValueOf(f: ContractField): unknown {
-  const literal = unquote(f.defaultValue);
-  switch (f.kind) {
-    case 'packed': {
-      const d = literal ?? (f.defaultValue && /^[-+]?\d+(\.\d+)?$/.test(f.defaultValue) ? f.defaultValue : null);
-      return d && /^[-+]?\d+(\.\d+)?$/.test(d) && d.replace(/^[-+]/, '').split('.')[0].replace(/^0+/, '').length <= (f.digits ?? 15) - f.places ? d : onePacked(f);
-    }
-    case 'integer': {
-      const d = literal ?? f.defaultValue;
-      return d && /^\d{1,9}$/.test(d) ? d : '1';
-    }
-    case 'digits': {
-      const n = f.digits ?? 4;
-      const d = literal ?? f.defaultValue;
-      if (d && /^\d+$/.test(d) && d.length <= n) return d.padStart(n, '0');
-      if (n === 4) return '2026';
-      return '1'.padStart(n, '0');
-    }
-    case 'date': {
-      const d = literal ?? f.defaultValue;
-      return d && /^\d{8}$/.test(d) ? d : '20260115';
-    }
-    case 'flag':
-      return /^'?X'?$/i.test(f.defaultValue ?? '');
-    case 'range':
-      return [];
-    case 'text':
-    default:
-      return literal !== null && literal !== '' ? literal : '1000';
-  }
+  return f.base ? f.base.value : undefined;
 }
 
 /** True when the contract has a record list. */
 export const hasRecords = (plan: Pick<UnitPlan, 'fields'>) => plan.fields.some((f) => f.where === 'record');
 
 /** The `CONTRACT` of `srv/engine-contract.ts`. */
-export function contractModel(plan: Pick<UnitPlan, 'fields'>): ContractModel {
+export function contractModel(plan: Pick<UnitPlan, 'fields'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>): ContractModel {
   const baseRequest: Record<string, unknown> = {};
   const record: Record<string, unknown> = {};
   const fields: Record<string, string | null> = {};
   for (const f of plan.fields) {
     fields[f.original] = f.path;
-    if (f.where === 'selection') baseRequest[f.key] = baseValueOf(f);
-    else if (f.where === 'record') record[f.key] = baseValueOf(f);
+    const value = baseValueOf(f);
+    if (value === undefined) continue;
+    if (f.where === 'selection') baseRequest[f.key] = value;
+    else if (f.where === 'record') record[f.key] = value;
   }
   if (hasRecords(plan)) baseRequest.records = [record];
   if (Object.keys(baseRequest).length === 0) baseRequest.run = true;
-  return { version: 1, baseRequest, fields };
+  return { version: 1, baseRequest, fields, missingBaseValues: [...(plan.missingBaseValues ?? [])] };
 }
 
 export interface AdapterOptions {
@@ -102,7 +69,7 @@ export interface AdapterOptions {
 
 /** The field the lenient-numeric probe sets: an obligatory whole number first, then a record decimal, then an obligatory decimal input. */
 function numericProbeField(plan: Pick<UnitPlan, 'fields'>): ContractField | null {
-  const fs = plan.fields;
+  const fs = plan.fields.filter((f) => f.base !== null);
   return (
     fs.find((f) => f.where === 'selection' && f.obligatory && (f.kind === 'digits' || f.kind === 'integer')) ??
     fs.find((f) => f.where === 'record' && f.kind === 'packed') ??
@@ -112,7 +79,7 @@ function numericProbeField(plan: Pick<UnitPlan, 'fields'>): ContractField | null
 }
 
 /** `acceptance-adapter.json` for a Node scaffold. */
-export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'>, options: AdapterOptions): AcceptanceAdapter {
+export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>, options: AdapterOptions): AcceptanceAdapter {
   const contract = contractModel(plan);
   const probes: Record<string, unknown> = {};
   probes['rounding-commercial'] = {
@@ -130,15 +97,26 @@ export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'>, o
     result: '',
     covered: { path: 'status', equals: 'COVERED' },
   };
-  const variant = structuredClone(contract.baseRequest);
-  probes['run-id-collision'] = {
-    create: { module: 'contract', export: 'simulate' },
-    argsA: [contract.baseRequest],
-    argsB: [variant],
-    id: 'runId',
-    get: { module: 'contract', export: 'getRun', args: ['$id'] },
-    compare: { create: 'runId', get: 'runId' },
-  };
+  // Through the call contract when the base request is complete; when the original gives no valid value for
+  // an obligatory field, through the run store itself — the code that makes the ids is the engine's either way.
+  probes['run-id-collision'] =
+    contract.missingBaseValues.length === 0
+      ? {
+          create: { module: 'contract', export: 'simulate' },
+          argsA: [contract.baseRequest],
+          argsB: [structuredClone(contract.baseRequest)],
+          id: 'runId',
+          get: { module: 'contract', export: 'getRun', args: ['$id'] },
+          compare: { create: 'runId', get: 'runId' },
+        }
+      : {
+          create: { module: 'runStore', export: 'createRunStore', factory: [], method: 'create' },
+          argsA: [{ selection: { probe: 'A' }, sourceRevision: 'probe', ruleRevision: 'probe', contextDigest: null, complete: false, notFilled: [], records: 0, result: { probe: 'A' } }],
+          argsB: [{ selection: { probe: 'B' }, sourceRevision: 'probe', ruleRevision: 'probe', contextDigest: null, complete: false, notFilled: [], records: 0, result: { probe: 'B' } }],
+          id: 'runId',
+          get: { module: 'runStore', export: 'createRunStore', factory: [], method: 'get', args: ['$id'] },
+          compare: { create: 'result', get: 'result' },
+        };
   probes['empty-selection'] = {
     call: { module: 'contract', export: 'simulate' },
     args: [{}],

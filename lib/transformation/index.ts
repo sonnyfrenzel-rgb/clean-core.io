@@ -10,11 +10,14 @@
  */
 
 export * from './types';
-export { planUnits, readEngineFacts, readContractFields, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
+export { planUnits, readEngineFacts, readContractFields, fillGuardsOf, planDigest, rangeWords, camelName, pascalName, guardIdOf, ruleIdOnLine, csvDelimiterOf } from './unit-plan';
 export type { EngineFacts, PlanInput } from './unit-plan';
 export { sliceFor } from './abap-slice';
 export { MARKER_TAG, NEEDS_ALLOWLIST, bodyGuards, defuseMarkers, findRegions, markerLines, regionHash, regionText, scaffoldDigest, spliceBodies, verifyScaffoldDigest } from './markers';
-export { buildNodeScaffold, ruleRevisionOf, NODE_HELPERS, SCAFFOLD_NODE_MAJOR } from './scaffold-node';
+export { buildNodeScaffold, requiredGuardsOf, ruleRevisionOf, NODE_HELPERS, SCAFFOLD_NODE_MAJOR } from './scaffold-node';
+export { assignBaseValues, fitsKind } from './base-values';
+export { guardBasisReader, operandsOf } from './guard-basis';
+export type { GuardBasis, GuardOperand } from './guard-basis';
 export type { NodeScaffoldOptions } from './scaffold-node';
 export { buildRapScaffold } from './scaffold-rap';
 export type { RapScaffoldOptions } from './scaffold-rap';

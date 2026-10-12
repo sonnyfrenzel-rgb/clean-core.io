@@ -31,7 +31,7 @@ import { acceptanceAdapter, contractModel } from './call-contract';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
-import { SCAFFOLD_VERSION, type ContractField, type PlanGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
+import { SCAFFOLD_VERSION, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
 export const SCAFFOLD_NODE_MAJOR = 22;
@@ -375,6 +375,26 @@ function subjectPath(plan: UnitPlan, subject: string | null): string | null {
 }
 
 const predicateName = (g: PlanGuard) => `when_${g.id.replace('-', '')}`;
+/** The `values` type of a derived guard (`G0066Values`), or null for a raw one. */
+const guardValuesType = (g: PlanGuard) => (g.basis === 'derived' && g.operands.length > 0 ? `${g.id.replace('-', '')}Values` : null);
+
+/** "guard_BR_004_G0066 (L66, values { lvSum }); skip_G0074 (L74)". */
+function bodyCallWords(u: Unit, plan: UnitPlan): string {
+  return u.bodyCalls
+    .map((id) => {
+      const g = plan.guards.find((x) => x.id === id)!;
+      return `${g.helper} (L${g.line}${g.operands.length ? `, values { ${g.operands.map((o) => o.key).join(', ')} }` : ''})`;
+    })
+    .join('; ');
+}
+
+/** The guards a body region must call, for `spliceBodies` (placement `body`). */
+export function requiredGuardsOf(u: Unit, plan: UnitPlan, track: 'node' | 'rap'): RequiredGuard[] {
+  return u.bodyCalls.map((id) => {
+    const g = plan.guards.find((x) => x.id === id)!;
+    return { id, helper: track === 'node' ? g.helper : `when_${g.id.replace('-', '').toLowerCase()}`, line: g.line, op: g.op, literals: g.literals };
+  });
+}
 
 function guardDoc(g: PlanGuard, plan: UnitPlan): string {
   const rule = g.rule ? `${g.rule} (${g.decision})` : 'no business rule — traced by its line';
@@ -384,6 +404,9 @@ function guardDoc(g: PlanGuard, plan: UnitPlan): string {
     ` * ${g.id} · ${rule} · L${g.line}: ${g.condition.replace(/\*\//g, '* /')}`,
     ` * The original: ${g.ending.replace(/\*\//g, '* /')} (L${g.endingLine}, ${g.effect}).${g.decision === 'open' ? ' Open — kept as the original until decided.' : ''}`,
     ...(proposal ? [` * Owner's proposal (change): ${proposal.replace(/\*\//g, '* /').replace(/\s+/g, ' ').slice(0, 400)}`] : []),
+    g.placement === 'body'
+      ? ` * ${g.basis === 'derived' ? `Derived (${(g.basisReason ?? '').replace(/\*\//g, '* /')})` : 'Skips one record'}: the body calls ${g.helper} where the original checks, at L${g.line}${g.operands.length ? `, handing in ${g.operands.map((o) => o.key).join(', ')}` : ''}.`
+      : ` * Raw input: checked ${g.placement === 'selection' ? 'with the selection, before any step' : "at the step's entry, before any calculation"}.`,
     ' */',
   ].join('\n');
 }
@@ -418,9 +441,21 @@ function guardsFile(plan: UnitPlan): Built {
   out.push('    throw err;');
   out.push('  }');
   out.push('}');
+  out.push('');
+  out.push('/** A computed value a derived check reads, as the step computed it. */');
+  out.push('export type GuardValue = string | number | boolean | null;');
   for (const g of carried) {
     const pred = predicateName(g);
-    const sig = `export function ${pred}(sel: Selection, st: RunState, record: Rec | null): boolean`;
+    const valuesType = guardValuesType(g);
+    if (valuesType) {
+      out.push('');
+      out.push(`/** The values ${g.helper} reads, computed by the step before L${g.line}. */`);
+      out.push(`export interface ${valuesType} {\n${g.operands.map((o) => `  /** ${o.name} */\n  ${o.key}: GuardValue;`).join('\n')}\n}`);
+    }
+    const valuesParam = valuesType ? `, values: ${valuesType}` : '';
+    const valuesArg = valuesType ? ', values' : '';
+    const recordParam = valuesType ? 'record: Rec | null' : 'record: Rec | null = null';
+    const sig = `export function ${pred}(sel: Selection, st: RunState, record: Rec | null${valuesParam}): boolean`;
     const doc = guardDoc(g, plan);
     out.push('');
     out.push(doc);
@@ -429,24 +464,24 @@ function guardsFile(plan: UnitPlan): Built {
     out.push('}');
     regions.push({ regionId: g.regionId!, available: ['dec.parse', 'dec.must', 'dec.compare', 'dec.isZero', 'dec.round', 'dec.add', 'dec.sub', 'dec.mul', 'dec.div', 'dec.fits'] });
     // The wrapper: what the original does when the condition holds (IF) or fails (CHECK).
-    const refuseWhen = g.effect === 'check' ? `!${pred}(sel, st, record)` : `${pred}(sel, st, record)`;
+    const refuseWhen = g.effect === 'check' ? `!${pred}(sel, st, record${valuesArg})` : `${pred}(sel, st, record${valuesArg})`;
     const ruleWord = g.rule ?? `L${g.line}`;
     const message = `${ruleWord}, L${g.line}: ${g.condition}${g.effect === 'check' ? ' does not hold' : ''} — ${g.ending}`;
     const field = subjectPath(plan, g.subject);
     if (g.outcome === 'refuses') {
       out.push(`/** Refuses the input as the original does at L${g.line}. */`);
-      out.push(`export function ${g.helper}(sel: Selection, st: RunState, record: Rec | null = null): Refusal | null {`);
+      out.push(`export function ${g.helper}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): Refusal | null {`);
       out.push(`  return ${refuseWhen} ? new Refusal([{ field: ${field ? q(field) : 'null'}, rule: ${q(ruleWord)}, message: ${q(message.slice(0, 300))} }]) : null;`);
       out.push('}');
     } else {
       const verb = g.outcome === 'skips' ? 'Skips the record' : 'Ends the step early';
       out.push(`/** ${verb} as the original does at L${g.line} (${g.ending}). */`);
-      out.push(`export function ${g.helper}(sel: Selection, st: RunState, record: Rec | null = null): boolean {`);
+      out.push(`export function ${g.helper}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): boolean {`);
       out.push(`  return ${refuseWhen};`);
       out.push('}');
     }
   }
-  const selectionChecks = carried.filter((g) => g.place === 'selection-screen' && g.outcome === 'refuses');
+  const selectionChecks = carried.filter((g) => g.placement === 'selection' && g.outcome === 'refuses');
   out.push('');
   out.push("/** The selection-screen checks (AT SELECTION-SCREEN), before any step runs. */");
   out.push('export function checkSelection(sel: Selection, st: RunState): Refusal | null {');
@@ -492,6 +527,7 @@ function unitDoc(u: Unit, plan: UnitPlan): string {
     ` * ABAP: ${program} ${rangeWords(u.abap.slice(0, 1))} (${routine})${u.folded.length ? `; folded: ${u.folded.join(', ')} (${rangeWords(u.abap.slice(1))})` : ''}`,
     ` * Rules: ${rules.length ? rules.join(', ') : 'none'}`,
     ` * Guards: ${guards.length ? guards.join(', ') : 'none'}`,
+    ...(u.bodyCalls.length > 0 ? [` * The body calls, where the original checks: ${bodyCallWords(u, plan)}`] : []),
     ` * Unit ${u.id}: the frame is written by Clean-Core.io (engine); the body between the markers is a model proposal.`,
     ' */',
   ].join('\n');
@@ -834,12 +870,29 @@ function engineContractFile(plan: UnitPlan): string {
     '',
     'const store = createRunStore<Selection, RunResult>();',
     '',
+    '/** Obligatory fields the original gives no valid value for: a request without them cannot be the base of a case. */',
+    `const MISSING_BASE: ReadonlyArray<{ original: string; path: string }> = ${JSON.stringify(plan.fields.filter((f) => plan.missingBaseValues.includes(f.original) && f.path).map((f) => ({ original: f.original, path: f.path })))};`,
+    '',
+    'function requireBaseValues(request: unknown): void {',
+    '  const r = (request ?? {}) as Record<string, unknown>;',
+    '  if (Object.keys(r).length === 0) return;',
+    '  const first = Array.isArray(r.records) ? (r.records[0] as Record<string, unknown> | undefined) : undefined;',
+    '  const absent = MISSING_BASE.filter((m) => {',
+    "    const key = m.path.slice(m.path.lastIndexOf('.') + 1);",
+    '    const holder = m.path.startsWith("records[].") ? first : r;',
+    '    return !holder || holder[key] === undefined || holder[key] === null;',
+    '  });',
+    "  if (absent.length > 0) throw new Error('Not run — no valid base value known for ' + absent.map((m) => m.original).join(', '));",
+    '}',
+    '',
     'export function validate(request: unknown): { ok: boolean; errors: InputError[]; normalized: Request | null } {',
+    '  requireBaseValues(request);',
     '  const v = validateRequest(request);',
     '  return { ok: v.ok, errors: v.errors, normalized: v.normalized };',
     '}',
     '',
     'export function simulate(request: unknown): { ok: boolean; runId: string | null; records: number; errors: InputError[]; complete: boolean; notFilled: string[] } {',
+    '  requireBaseValues(request);',
     '  const a = simulateRequest(request, store);',
     '  return { ok: a.ok, runId: a.runId, records: a.records, errors: a.errors, complete: a.complete, notFilled: a.notFilled };',
     '}',
@@ -1109,5 +1162,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   // traceability.json and TRACE.md are not part of the scaffold: they say who filled each function, so they
   // are written after the fills (`withTrace`, trace.ts) and stay outside the digest.
   for (const file of files) file.content = defuseMarkers(file.content);
-  return { track: 'node', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter, notCarried: plan.notCarried, available };
+  const required: Record<string, RequiredGuard[]> = {};
+  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node');
+  return { track: 'node', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter, notCarried: plan.notCarried, available, required };
 }

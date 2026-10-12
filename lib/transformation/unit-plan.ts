@@ -36,6 +36,11 @@ import { readGuardsFrom, readOriginalContract, type OriginalContract } from '../
 import { readStatements, type AbapStatement } from '../abap/statement-reader';
 import { materialRules, type MaterialRule } from '../testing-rule-trace';
 import { sliceFor } from './abap-slice';
+import { assignBaseValues } from './base-values';
+import { guardBasisReader } from './guard-basis';
+import { camelName, kebab, pascalName, rapNameOf, titleOf } from './naming';
+
+export { camelName, pascalName };
 import {
   DENSE_UNITS,
   FOLD_MAX_LINES,
@@ -48,6 +53,7 @@ import {
   SOFT_SLICE_LINES,
   type AbapRange,
   type ContractField,
+  type FillRequestUnit,
   type NotCarried,
   type PlanGuard,
   type PlanRule,
@@ -86,45 +92,6 @@ export function readEngineFacts(source: string): EngineFacts {
 /* --------------------------------------------------------------- naming */
 
 const DEMO_NAME = /DEMO|FIXTURE|TESTDATA|SAMPLE/i;
-
-const RESERVED = new Set(
-  'break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield let static implements interface package private protected public await async of arguments eval undefined NaN Infinity'.split(' '),
-);
-
-function words(name: string): string[] {
-  return name
-    .replace(/^\/[\w]+\//, '')
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .map((w) => w.toLowerCase());
-}
-
-export function camelName(name: string): string {
-  const w = words(name);
-  if (w.length === 0) return 'step';
-  let out = w[0] + w.slice(1).map((x) => x[0].toUpperCase() + x.slice(1)).join('');
-  if (!/^[a-z_$]/i.test(out)) out = `n${out}`;
-  if (RESERVED.has(out)) out = `${out}Step`;
-  return out;
-}
-
-export function pascalName(name: string): string {
-  const c = camelName(name);
-  return c[0].toUpperCase() + c.slice(1);
-}
-
-const kebab = (name: string) => words(name).join('-') || 'step';
-
-function titleOf(name: string): string {
-  const w = words(name);
-  if (w.length === 0) return 'Step';
-  const s = w.join(' ');
-  return s[0].toUpperCase() + s.slice(1);
-}
-
-function rapNameOf(name: string): string {
-  return (words(name).join('_') || 'step').slice(0, 30);
-}
 
 /** `G-0506` — four digits, more when the line needs them. */
 export const guardIdOf = (line: number) => `G-${String(line).padStart(4, '0')}`;
@@ -284,6 +251,7 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
       defaultValue: input?.defaultValue ?? null,
       line: d.line,
       declaration: `P(${d.digits},${d.decimals})`,
+      base: null,
     });
   }
   // Selection inputs: parameters, flags and select-options.
@@ -308,6 +276,7 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
       defaultValue: i.defaultValue,
       line: i.line,
       declaration: i.type ? `${i.kind === 'select-option' ? 'FOR' : 'TYPE'} ${i.type.toLowerCase()}` : 'type not stated',
+      base: null,
     });
   }
   // The other components of a structure that holds a packed record field: optional text on the record.
@@ -330,6 +299,7 @@ export function readContractFields(facts: EngineFacts): ContractField[] {
         defaultValue: null,
         line: c.line,
         declaration: c.type ? `TYPE ${c.type}` : 'type not stated',
+        base: null,
       });
     }
   }
@@ -498,6 +468,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     rules: [],
     guards: [],
     guardCalls: [],
+    bodyCalls: [],
     callees: [],
     parameters: [],
     signature: 'export function runSteps(sel: Selection, st: RunState): StepResult',
@@ -527,6 +498,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       rules: [],
       guards: [],
       guardCalls: [],
+      bodyCalls: [],
       callees: [],
       parameters: r.parameters.map((p) => ({ name: p.name, direction: p.direction })),
       signature: `export function ${fn}(sel: Selection, st: RunState${argsType}): StepResult`,
@@ -619,6 +591,8 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- guards
   const inLoop = loopLines(statements);
+  const constants = statements.filter((st) => st.keyword === 'CONSTANTS').map((st) => /^CONSTANTSs*:?s*([w/]+)/i.exec(st.text)?.[1] ?? '').filter(Boolean);
+  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants);
   const guards: PlanGuard[] = readGuardsFrom(statements).map((g) => {
     const rule = ruleIdOnLine(ruleSet.rules, g.line);
     const d = rule ? decision(rule) : 'keep';
@@ -646,6 +620,15 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
         place = 'orchestrator';
       }
     }
+    const basis = basisReader.basisOf(g.line, g.condition);
+    const placement: PlanGuard['placement'] =
+      place === 'not-carried'
+        ? 'none'
+        : basis.basis === 'derived' || outcome === 'skips'
+          ? 'body'
+          : place === 'selection-screen'
+            ? 'selection'
+            : 'entry';
     return {
       id: guardIdOf(g.line),
       line: g.line,
@@ -662,16 +645,27 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       unitId: unit?.id ?? null,
       helper: helperName,
       regionId: unit ? `${unit.id}.${tag}` : null,
+      basis: basis.basis,
+      basisReason: basis.reason,
+      operands: basis.operands,
+      literals: basis.literals,
+      op: basis.op,
+      placement,
     };
   });
   for (const g of guards) {
     if (!g.carried || !g.unitId) continue;
     const u = units.find((x) => x.id === g.unitId)!;
     u.guards.push(g.id);
-    // The stub calls refusing and stopping guards of its own routine before the fill marker (§9.1); the
-    // selection-screen guards run in `checkSelection`, before any step.
-    if (g.outcome !== 'skips' && g.place !== 'selection-screen') u.guardCalls.push(g.id);
+    // Raw checks: the stub calls them before the fill marker (§9.1), the selection-screen ones run in
+    // `checkSelection` before any step. Derived and skipping checks: the body calls them where the original does.
+    if (g.placement === 'entry') u.guardCalls.push(g.id);
+    else if (g.placement === 'body') u.bodyCalls.push(g.id);
   }
+
+  // ---- the request and its base values (from the original only; base-values.ts)
+  const fields = readContractFields(facts);
+  const missingBaseValues = assignBaseValues(fields, facts, notCarried);
 
   // ---- split above the hard budget (§7.2), then budgets from the slices
   const plan: UnitPlan = {
@@ -683,7 +677,8 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     guards,
     decimals: contract.decimals,
     inputs: contract.inputs,
-    fields: readContractFields(facts),
+    fields,
+    missingBaseValues,
     csvDelimiter: csvDelimiterOf(statements),
     notCarried: notCarried.sort((a, b) => a.lineStart - b.lineStart),
     folded,
@@ -779,6 +774,7 @@ function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
         return g.line >= c.lineStart && g.line <= c.lineEnd;
       }),
       guardCalls: [],
+      bodyCalls: [],
       callees: u.callees,
       signature: `export function ${u.fn}Part${i + 1}(sel: Selection, st: RunState, local: Record<string, unknown>): StepResult`,
       part: { index: i + 1, of: cuts.length, parent: u.id },
@@ -788,7 +784,9 @@ function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
       const g = plan.guards.find((x) => x.id === id)!;
       g.unitId = p.id;
       g.regionId = `${p.id}.${id.replace('-', '')}`;
+      if (g.placement === 'body') p.bodyCalls.push(id);
     }
+    u.bodyCalls = u.bodyCalls.filter((id) => !parts.some((p) => p.bodyCalls.includes(id)));
     u.guards = u.guards.filter((id) => !parts.some((p) => p.guards.includes(id)));
     out.push(...parts);
   }
@@ -800,10 +798,10 @@ export function planDigest(plan: Pick<UnitPlan, 'version' | 'sourceSha256' | 'un
   const canonical = JSON.stringify({
     v: plan.version,
     s: plan.sourceSha256,
-    u: plan.units.map((u) => [u.id, u.kind, u.fn, u.abap.map((a) => [a.lineStart, a.lineEnd]), u.rules, u.guards, u.guardCalls, u.callees]),
+    u: plan.units.map((u) => [u.id, u.kind, u.fn, u.abap.map((a) => [a.lineStart, a.lineEnd]), u.rules, u.guards, u.guardCalls, u.bodyCalls, u.callees]),
     r: plan.rules.map((r) => [r.id, r.decision, r.proposal ?? '', r.unitId ?? '']),
-    g: plan.guards.map((g) => [g.id, g.rule ?? '', g.carried, g.unitId ?? '', g.outcome]),
-    f: plan.fields.map((f) => [f.original, f.path ?? '', f.kind, f.digits ?? '', f.places, f.obligatory]),
+    g: plan.guards.map((g) => [g.id, g.rule ?? '', g.carried, g.unitId ?? '', g.outcome, g.placement, g.operands.map((o) => o.key)]),
+    f: plan.fields.map((f) => [f.original, f.path ?? '', f.kind, f.digits ?? '', f.places, f.obligatory, JSON.stringify(f.base?.value ?? null)]),
   });
   return sha256Hex(canonical);
 }
@@ -811,4 +809,30 @@ export function planDigest(plan: Pick<UnitPlan, 'version' | 'sourceSha256' | 'un
 /** The ABAP range list of a set of units as `L500–L540` words. */
 export function rangeWords(ranges: readonly AbapRange[]): string {
   return ranges.map((r) => (r.lineStart === r.lineEnd ? `L${r.lineStart}` : `L${r.lineStart}–L${r.lineEnd}`)).join(', ');
+}
+
+/**
+ * The guards of one unit as a fill request lists them (§8.2): where each is
+ * called — at the entry by the stub, in the body at the original's line, or
+ * with the selection — its predicate region, and the values a derived one
+ * takes. Track C's fill prompt says from this where a body must call a guard.
+ */
+export function fillGuardsOf(plan: Pick<UnitPlan, 'guards' | 'units'>, unitId: string): FillRequestUnit['guards'] {
+  const unit = plan.units.find((u) => u.id === unitId);
+  if (!unit) return [];
+  return unit.guards.map((id) => {
+    const g = plan.guards.find((x) => x.id === id)!;
+    return {
+      id: g.id,
+      rule: g.rule,
+      helper: g.helper,
+      condition: g.condition,
+      effect: g.effect,
+      line: g.line,
+      regionId: g.regionId,
+      placement: g.placement,
+      basis: g.basis,
+      values: g.operands.map((o) => o.key),
+    };
+  });
 }

@@ -359,6 +359,53 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   return out;
 }
 
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+/** Literals too common to say a body re-implements a check (`sy-subrc <> 0`, a flag `'X'`). */
+const TRIVIAL_LITERALS = new Set(['', ' ', '0', '1', 'X', 'x']);
+const JS_OP: Record<string, string> = { '>': '>(?!=)', '>=': '>=', '<': '<(?!=)', '<=': '<=', '=': '===?', '<>': '!==?' };
+const ABAP_OP: Record<string, string> = { '>': '(?:>(?!=)|\\bGT\\b)', '>=': '(?:>=|\\bGE\\b)', '<': '(?:<(?![=>])|\\bLT\\b)', '<=': '(?:<=|\\bLE\\b)', '=': '(?:=|\\bEQ\\b)', '<>': '(?:<>|\\bNE\\b)' };
+
+/**
+ * Derived checks keep the original's position (rule 15, QA finding
+ * 4e9d1315469d): the body must call each required guard, and may not write
+ * the guard's comparison itself instead.
+ */
+function requiredGuardRefusals(body: string, ctx: BodyGuardContext): BodyRefusal[] {
+  const required = ctx.required ?? [];
+  if (required.length === 0) return [];
+  const code =
+    ctx.track === 'node'
+      ? body.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ')
+      : body
+          .split('\n')
+          .filter((l) => !/^\s*\*/.test(l))
+          .map((l) => l.replace(/"[^']*$/, ''))
+          .join('\n');
+  const flags = ctx.track === 'rap' ? 'i' : '';
+  const out: BodyRefusal[] = [];
+  const missing = required.filter((g) => !new RegExp(`(?:^|[^\\w$])${escapeRe(g.helper)}\\s*\\(`, flags).test(code));
+  if (missing.length > 0) {
+    out.push(refusal('guard-missing', `the body does not call ${missing.map((g) => `${g.helper} (the original checks at L${g.line})`).join(', ')} — a check on a computed value is called where the original makes it`));
+  }
+  const inlined: string[] = [];
+  for (const g of required) {
+    const ops = g.op ? [g.op] : Object.keys(JS_OP);
+    for (const lit of g.literals) {
+      if (TRIVIAL_LITERALS.has(lit)) continue;
+      const l = escapeRe(lit);
+      const opPatterns = ops.map((o) => (ctx.track === 'node' ? JS_OP[o] : ABAP_OP[o])).filter(Boolean);
+      const compare = new RegExp(`(?:${opPatterns.join('|')})\\s*['"\`]?${l}['"\`]?(?![\\w.])`, flags);
+      const viaDec = ctx.track === 'node' ? new RegExp(`compare\\([^()]*['"\`]${l}['"\`]`) : null;
+      if (compare.test(code) || (viaDec && viaDec.test(code))) {
+        inlined.push(`${g.helper} (${lit})`);
+        break;
+      }
+    }
+  }
+  if (inlined.length > 0) out.push(refusal('guard-inlined', `the body writes the condition of ${inlined.join(', ')} itself — call the guard instead`));
+  return out;
+}
+
 /**
  * §9.2 — why a body may not be spliced, or `[]` when it may. Checked before
  * the splice; a refused body goes to repair with these reasons.
@@ -371,6 +418,7 @@ export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     out.push(refusal('too-long', `${body.length} characters, more than ${limit} (4× the ABAP slice, at most ${BODY_MAX_CHARS})`));
   }
   out.push(...(ctx.track === 'node' ? nodeBodyGuards(body, ctx) : rapBodyGuards(body, ctx)));
+  out.push(...requiredGuardRefusals(body, ctx));
   return out;
 }
 
@@ -382,7 +430,7 @@ export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
  * (null: the body is taken unchecked — for the engine's own tests only).
  */
 export function spliceBodies(
-  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'>,
+  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'> & { required?: Scaffold['required'] },
   bodies: readonly RegionBody[],
   guardContext: (regionId: string) => BodyGuardContext | null,
 ): SpliceResult {
@@ -400,7 +448,9 @@ export function spliceBodies(
       refused.push({ regionId: b.regionId, reasons: [refusal('marker', `no region ${b.regionId} in the scaffold`)] });
       continue;
     }
-    const ctx = guardContext(b.regionId);
+    const given = guardContext(b.regionId);
+    // The guards this region must call come from the scaffold, whatever the caller passes (rule 15).
+    const ctx = given ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])] } : null;
     const reasons = ctx ? bodyGuards(b.body, ctx) : b.body.includes(MARKER_TAG) ? [refusal('marker', `the body contains ${MARKER_TAG}`)] : [];
     if (reasons.length > 0) {
       refused.push({ regionId: b.regionId, reasons });

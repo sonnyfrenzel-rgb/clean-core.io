@@ -425,12 +425,26 @@ A body is refused — and the unit goes to repair with that reason — when it:
    `codeMask` from `lib/ts-source-scan.ts` (strings and comments masked first), for ABAP on the
    statement reader;
 3. removes a guard call: every `guard_*` the stub has before the marker is engine text and cannot be
-   touched; a body that *re-implements* a guard condition inline is a lint finding, not a refusal;
+   touched; a body that *re-implements* the condition of a guard it must call is refused (rule 7);
 4. calls a name that is neither in `available` nor in `needs` ∩ allowlist;
 5. is longer than 4× its ABAP slice or 16,000 characters;
 6. uses `Number(`, `parseFloat(`, `parseInt(` or arithmetic operators on a `Dec` value (lint
    `lenient number parsing` / `binary decimals` from `lib/generated-code-lints.ts`, raised to a
-   refusal inside fills).
+   refusal inside fills);
+7. does not call a guard its unit must call in the body, or writes that guard's comparison itself
+   (`guard-missing`, `guard-inlined`). Rule 15 as fixed by QA finding 4e9d1315469d: a check on **raw**
+   input (selection inputs, constants, input records) runs before any calculation — at the step's entry or
+   with the selection; a check on a **derived** value (a variable written earlier in the routine, a global
+   written by another step, a system field such as `sy-subrc`) keeps the original's order: the engine
+   writes the guard function with a `values` argument for the computed operands, and the body calls it at
+   the original's line (`Unit.bodyCalls`, `Scaffold.required`, `fillGuardsOf`;
+   `lib/transformation/guard-basis.ts`). A derived check is no RAP validation; the logic method calls its
+   predicate.
+
+The call contract's base request takes each value from the original — the selection DEFAULT, the demo
+data, a fixed list in the code, a value that satisfies the original's checks — never a placeholder; an
+obligatory field with none is listed (`missingBaseValues`) and every engine case reads "Not run — no
+valid base value known for X" (`lib/transformation/base-values.ts`).
 
 ### 9.3 Splice and integrity
 
@@ -457,7 +471,7 @@ and PP review programs (outside the repository) and the PO starter example.
 | Routines: all / reachable / unreachable | 49 / 49 / 0 | 33 / 33 / 0 | 14 / 14 / 0 | 35 / 22 / 13 |
 | Routine size p50 / p90 / max (lines) | 18 / 74 / 118 | 26 / 73 / 881 | 22 / 35 / 63 | 16 / 23 / 57 |
 | Folded helpers / demo routines | 6 / 8 (15,455 ch.) | 6 / 2 (29,703 ch.) | 3 / 0 | 3 / 0 |
-| **Fill units** | **35** | **25** | **11** | **19** |
+| **Fill units** | **35** (built: **34**, see below) | **25** | **11** | **19** |
 | Units over the soft budget | 0 | 1 (151 lines) | 0 | 0 |
 | Guards inside units / at program level | 58 / 14 | 47 / 9 | 6 / 1 | 12 / 5 |
 | Engine time: documentation / rules+contract+graph | 3.98 s / 0.13 s | 1.16 s / 0.15 s | 1.15 s / 0.03 s | 0.25 s / 0.03 s |
@@ -467,6 +481,14 @@ and PP review programs (outside the repository) and the PO starter example.
 | Fill calls at ≤ 4 units per call | 9 | 7 | 3 | 5 |
 | Total input over all fill calls (context sent once per call) | ≈ 112 k | ≈ 91 k | ≈ 31 k | ≈ 46 k |
 | **Largest single prompt** | ≤ 14 k (today ≥ 95 k) | ≤ 14 k (today ≥ 98 k) | ≤ 14 k | ≤ 14 k |
+
+**Built plan (Track B, `scripts/transformation/measure.ts`, 12.10.2026): CO 34, PP 25, SD 11, PO 19 fill
+units**, each plus the orchestrator. CO has one unit fewer than measured above: `CHANGE_FAC_DRIVER` is
+reached only from the demo routine `APPLY_DEMO_CASE`, so §7.1 rule 6 makes it a fixture (owner, 12.10.2026:
+a routine reached only from demo routines is demo data); the measurement script had classified demo
+routines by name alone. With declarations and call sites in the slice, the per-unit prompt estimate is
+larger (CO p50 6,344 / max 13,575); a unit too large to share a 14,000-character call goes out alone — the
+cap and the cut rules stay.
 
 Observations that shaped the design:
 

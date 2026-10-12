@@ -52,7 +52,7 @@ test('every fill region has two marker lines with the hash of its engine-written
 
 test('the splice replaces only the region; every engine-written character stays, and the digest proves it', () => {
   const s = nodeScaffold();
-  const body = 'for (const r of st.records) {\n  if (dec.compare(r.quota, \'0\') < 0) return new Refusal([{ field: \'records[].quota\', rule: \'L60\', message: \'negative\' }]);\n}';
+  const body = 'for (const r of st.records) {\n  if (dec.compare(r.quota, \'0\') < 0) return new Refusal([{ field: \'records[].quota\', rule: \'L60\', message: \'negative\' }]);\n}\nconst g = guard_BR_004_G0066(sel, st, null, { lvSum: \'0.00\' });\nif (g) return g;';
   const result = spliceBodies(s, [{ regionId: 'U02', body }], ctxFor(s));
   expect(result.reason).toBeNull();
   expect(result.ok).toBe(true);
@@ -95,7 +95,7 @@ test('a refused body keeps its stub; an accepted one next to it is spliced', () 
     s,
     [
       { regionId: 'U01', body: "const n = parseInt('12', 10);\nst.local.n = n;" },
-      { regionId: 'U03', body: 'st.local.allocated = true;' },
+      { regionId: 'U03', body: 'st.records = st.records.filter((r) => !skip_G0074(sel, st, r));\nst.local.allocated = true;' },
     ],
     ctxFor(s),
   );
@@ -136,6 +136,28 @@ test('body guards: each rule of §9.2 refuses (Node)', () => {
   expect(codes("st.local.m = other.thing('1');", { ...ctx, needs: ['other.thing'] })).toContain('foreign-call');
 });
 
+test('a check on a computed value must be called by the body, at its place — not skipped, not written inline (rule 15)', () => {
+  const s = nodeScaffold();
+  expect(s.required.U02).toEqual([{ id: 'G-0066', helper: 'guard_BR_004_G0066', line: 66, op: '>', literals: ['100'] }]);
+  const ctx = (id: string): BodyGuardContext => ({ track: 'node', available: s.available[id] ?? [], sliceChars: 2_000 });
+  const sum = "let sum = '0.00';\nfor (const r of st.records) sum = dec.add(sum, r.quota, 2);\n";
+  const missing = spliceBodies(s, [{ regionId: 'U02', body: `${sum}st.local.sum = sum;` }], ctx);
+  expect(missing.refused[0].reasons.map((r) => r.code)).toEqual(['guard-missing']);
+  expect(missing.refused[0].reasons[0].message).toContain('guard_BR_004_G0066 (the original checks at L66)');
+  const inline = spliceBodies(s, [{ regionId: 'U02', body: `${sum}if (dec.compare(sum, '100') > 0) return new Refusal([]);\nconst g = guard_BR_004_G0066(sel, st, null, { lvSum: sum });\nif (g) return g;` }], ctx);
+  expect(inline.refused[0].reasons.map((r) => r.code)).toEqual(['guard-inlined']);
+  const good = spliceBodies(s, [{ regionId: 'U02', body: `${sum}const g = guard_BR_004_G0066(sel, st, null, { lvSum: sum });\nif (g) return g;` }], ctx);
+  expect(good.refused).toEqual([]);
+  expect(good.applied).toEqual(['U02']);
+  // The predicate reads the value the body hands in.
+  const guards = s.files.find((f) => f.path === 'srv/lib/guards.ts')!.content;
+  expect(guards).toContain('export interface G0066Values {');
+  expect(guards).toContain('export function when_G0066(sel: Selection, st: RunState, record: Rec | null, values: G0066Values): boolean');
+  expect(guards).toContain('export function guard_BR_004_G0066(sel: Selection, st: RunState, record: Rec | null, values: G0066Values): Refusal | null');
+  expect(guards).toContain('Derived (lv_sum is written at L64 in VALIDATE_POLICY): the body calls guard_BR_004_G0066 where the original checks, at L66, handing in lvSum.');
+  expect(s.files.find((f) => f.path === s.units[2].file)!.content).toContain(' * The body calls, where the original checks: guard_BR_004_G0066 (L66, values { lvSum })');
+});
+
 test('body guards: ABAP bodies (RAP)', () => {
   const ctx: BodyGuardContext = { track: 'rap', available: ['zcl_x_logic'], sliceChars: 500 };
   const codes = (body: string) => bodyGuards(body, ctx).map((r) => r.code);
@@ -157,7 +179,7 @@ test('RAP regions use ABAP comment markers and splice the same way', () => {
   expect(region.stub).toMatch(/^RAISE EXCEPTION NEW zcx_fx_co_alloc_nofill\( unit = 'U02' \)\.$/);
   const file = s.files.find((f) => f.path === region.file)!;
   expect(file.content).toContain(`"! @cc-fill BEGIN U02 ${region.hash}`);
-  const r = spliceBodies(s, [{ regionId: 'U02', body: "IF is_sel-sender IS INITIAL.\n  RETURN.\nENDIF." }], (id) => ({ track: 'rap', available: s.available[id] ?? [], sliceChars: 2_000 }));
+  const r = spliceBodies(s, [{ regionId: 'U02', body: "IF is_sel-sender IS INITIAL.\n  RETURN.\nENDIF.\nIF me->when_g0066( is_sel = is_sel iv_lv_sum = `0` ) = abap_true.\n  RETURN.\nENDIF." }], (id) => ({ track: 'rap', available: s.available[id] ?? [], sliceChars: 2_000 }));
   expect(r.ok).toBe(true);
   expect(r.applied).toEqual(['U02']);
 });

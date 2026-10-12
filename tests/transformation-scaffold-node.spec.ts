@@ -293,8 +293,26 @@ test('the probes are not vacuous: a scaffold with float rounding and no formula 
   }
 });
 
+test('no valid base value known: every engine case reads Not run and names the field — nothing fails for a guessed value', () => {
+  for (const [source, fields] of [[poDemo(), 'P_BANFN'], [fixture('sd-shape'), 'NETWR, P_VKORG']] as const) {
+    const { dir, plan } = nodePackage(source);
+    try {
+      expect(plan.missingBaseValues.join(', ')).toBe(fields);
+      const report = runEngineCases(dir);
+      expect(report.summary.passed + report.summary.failed).toBe(0);
+      for (const c of report.cases) expect(c.reason, c.id).toContain(`no valid base value known for ${fields}`);
+      // The run ids are still probed — on the run store itself.
+      const harness = runHarness(dir);
+      expect(harness.patterns['FP-RUN-02'].status).toBe('pass');
+      expect(harness.patterns['FP-RUN-01'].status).toBe('pass');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
 test('the engine cases through the contract: every case the scaffold alone answers passes', () => {
-  for (const source of [fixture('co-shape'), poDemo(), fixture('sd-shape')]) {
+  for (const source of [fixture('co-shape'), fixture('pp-shape').replace('PARAMETERS p_werks TYPE werks_d OBLIGATORY.', "PARAMETERS p_werks TYPE werks_d OBLIGATORY DEFAULT '1000'.")]) {
     const { facts } = planOf(source);
     const { dir } = nodePackage(source);
     try {

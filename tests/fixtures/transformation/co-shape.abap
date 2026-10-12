@@ -115,6 +115,7 @@ FORM load_demo_receivers.
   PERFORM add_demo_line USING 'C100' '40.00' '1000.00'.
   PERFORM add_demo_line USING 'C200' '60.00' '1000.00'.
   PERFORM set_demo_year.
+  p_sender = 'C900'.
 ENDFORM.
 
 FORM add_demo_line USING iv_kostl TYPE clike iv_quota TYPE clike iv_amount TYPE clike.

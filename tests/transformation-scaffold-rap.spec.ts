@@ -60,9 +60,15 @@ test('packed record fields are abap.dec(2L−1, d) from their declaration', () =
   expect(file(scaffold, 'r.ddls.asddls')).toContain('define root view entity ZFX_CO_ALLOC_R');
 });
 
-test('one validation per carried guard — none for a guard of a dropped rule', () => {
+test('one validation per carried raw check that refuses — none for a dropped rule, none for a check on a computed value', () => {
   const open = rap(fixture('co-shape'));
-  const carried = open.plan.guards.filter((g) => g.carried);
+  // Derived and skipping checks are no validation: the logic method calls their predicate where the original checks.
+  const carried = open.plan.guards.filter((g) => g.carried && g.placement !== 'body' && g.outcome === 'refuses');
+  expect(carried.map((g) => g.id)).toEqual(['G-0029', 'G-0054', 'G-0058', 'G-0061']);
+  const logic = file(open.scaffold, '_logic.clas.abap');
+  expect(logic).toContain('METHODS when_g0066 IMPORTING is_sel TYPE ty_selection is_rec TYPE ty_rec OPTIONAL iv_lv_sum TYPE string OPTIONAL RETURNING VALUE(rv_holds) TYPE abap_bool.');
+  expect(logic).toContain('"! The body calls, where the original checks: when_g0066( ) (L66).');
+  expect(open.scaffold.required.U02).toEqual([{ id: 'G-0066', helper: 'when_g0066', line: 66, op: '>', literals: ['100'] }]);
   const bdef = file(open.scaffold, '.bdef.asbdef');
   const validations = bdef.match(/^\s+validation \w+ on save/gm) ?? [];
   expect(validations).toHaveLength(carried.length);

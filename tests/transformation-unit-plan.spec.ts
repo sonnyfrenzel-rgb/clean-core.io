@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { deriveEngineCases } from '../lib/testing-engine-cases';
-import { PlanRefusal, planUnits } from '../lib/transformation';
+import { PlanRefusal, fillGuardsOf, planUnits } from '../lib/transformation';
 import { fixture, planOf, poDemo } from './helpers/transformation-scaffold';
 
 /**
@@ -78,12 +78,51 @@ test.describe('the CO shape', () => {
     expect(plan.units[0].guardCalls).not.toContain('G-0029');
     const validate = plan.units.find((u) => u.routine === 'VALIDATE_POLICY')!;
     expect(validate.guards).toEqual(['G-0054', 'G-0058', 'G-0061', 'G-0066']);
-    expect(validate.guardCalls).toEqual(validate.guards);
+    // Raw checks (the records and the selection) at the entry; the check on the computed sum where the original makes it.
+    expect(validate.guardCalls).toEqual(['G-0054', 'G-0058', 'G-0061']);
+    expect(validate.bodyCalls).toEqual(['G-0066']);
     // CHECK inside a loop skips a record: a helper of the body, not called before the marker.
     const skip = plan.guards.find((g) => g.condition.startsWith('<ls_rcv>-quota > 0'))!;
     expect(skip.outcome).toBe('skips');
     expect(skip.helper).toMatch(/^skip_/);
     expect(plan.units.find((u) => u.routine === 'ALLOCATE')!.guardCalls).toEqual([]);
+  });
+
+  test('raw checks run first; a check on a computed value keeps its place and takes the computed values (QA 4e9d1315469d)', () => {
+    const g = (line: number) => plan.guards.find((x) => x.line === line)!;
+    expect(g(29)).toMatchObject({ basis: 'raw', placement: 'selection' });
+    expect(g(58)).toMatchObject({ basis: 'raw', placement: 'entry', operands: [] }); // ls_rcv-kostl = p_sender: input record and selection
+    expect(g(61)).toMatchObject({ basis: 'raw', placement: 'entry', op: '>', literals: ['100'] });
+    expect(g(66)).toMatchObject({ basis: 'derived', placement: 'body', operands: [{ name: 'lv_sum', key: 'lvSum' }], op: '>', literals: ['100'] });
+    expect(g(66).basisReason).toBe('lv_sum is written at L64 in VALIDATE_POLICY');
+    expect(g(47)).toMatchObject({ basis: 'derived', placement: 'body', operands: [{ name: 'sy-subrc', key: 'sySubrc' }] });
+    expect(g(74)).toMatchObject({ basis: 'raw', placement: 'body', outcome: 'skips' });
+    expect(plan.units.find((u) => u.routine === 'READ_RECEIVERS')!).toMatchObject({ guardCalls: [], bodyCalls: ['G-0047'] });
+    expect(plan.units.find((u) => u.routine === 'ALLOCATE')!.bodyCalls).toEqual(['G-0074']);
+    const listed = fillGuardsOf(plan, 'U02');
+    expect(listed.map((x) => [x.id, x.placement, x.regionId, x.values])).toEqual([
+      ['G-0054', 'entry', 'U02.G0054', []],
+      ['G-0058', 'entry', 'U02.G0058', []],
+      ['G-0061', 'entry', 'U02.G0061', []],
+      ['G-0066', 'body', 'U02.G0066', ['lvSum']],
+    ]);
+  });
+
+  test('base values come from the original: DEFAULT, demo data, checks — never a placeholder', () => {
+    const base = Object.fromEntries(plan.fields.filter((f) => f.where !== 'internal').map((f) => [f.original, f.base]));
+    expect(base.P_KOKRS).toEqual({ value: 'A100', source: 'default' });
+    expect(base.P_DEMO).toEqual({ value: true, source: 'default' });
+    expect(base.P_SENDER).toEqual({ value: 'C900', source: 'demo' }); // set by LOAD_DEMO_RECEIVERS
+    expect(base.QUOTA).toEqual({ value: '40.00', source: 'demo' }); // handed to ADD_DEMO_LINE, put into the record
+    expect(base.AMOUNT).toEqual({ value: '1000.00', source: 'demo' });
+    expect(base.KOSTL).toEqual({ value: 'C100', source: 'demo' });
+    expect(base.P_GJAHR).toEqual({ value: '1900', source: 'guard' }); // passes "p_gjahr < '1900' OR p_gjahr > '2199'"
+    expect(plan.missingBaseValues).toEqual([]);
+    // No source: the obligatory fields are listed, never filled with a guess.
+    const sd = planOf(fixture('sd-shape')).plan;
+    expect(sd.missingBaseValues).toEqual(['NETWR', 'P_VKORG']);
+    expect(sd.fields.find((f) => f.original === 'P_DISCNT')!.base).toEqual({ value: '2.50', source: 'default' });
+    expect(sd.fields.find((f) => f.original === 'P_FROM')!.base).toBeNull();
   });
 
   test('the request: obligatory selection, packed record fields with their bounds, working decimals internal', () => {
