@@ -101,18 +101,20 @@ test('the contract route hands the generation the analysis of the signed run', a
   expect(project.analysis, 'runs/create no longer moves the narrative off the project — revisit this spec').toBeUndefined();
   expect(typeof run.analysis === 'string' && run.analysis.length > 0, 'the run carries no narrative').toBe(true);
 
-  const res = await request.get(`/api/projects/${PROJECT_ID}/contract`, { headers: headers() });
+  const res = await request.get(`/api/projects/${PROJECT_ID}/contract?for=generation`, { headers: headers() });
   expect(res.status(), await res.text()).toBe(200);
   const body = await res.json();
   expect(body.decision?.ok, JSON.stringify(body.decision)).toBe(true);
   expect(body.generation.inputs.legacyCode).toBe(SOURCE);
   expect(body.generation.inputs.solutionDesign).toBe(DESIGN);
   expect(body.generation.inputs.analysis, 'the generation was handed an empty analysis').toBe(run.analysis);
-  expect(body.generation.token).toBe(generationRevision(generationStateOf(project, run), body.contract.fingerprint));
+  // The token also covers the PLATFORM KNOWLEDGE block and its revisions (3.0.12).
+  expect(body.generation.inputs.context.text).toContain('PLATFORM KNOWLEDGE');
+  expect(body.generation.token).toBe(generationRevision(generationStateOf(project, run, body.generation.inputs.context), body.contract.fingerprint));
 });
 
 test('a stand generated from those inputs is stored against the same token', async ({ request }) => {
-  const read = await (await request.get(`/api/projects/${PROJECT_ID}/contract`, { headers: headers() })).json();
+  const read = await (await request.get(`/api/projects/${PROJECT_ID}/contract?for=generation`, { headers: headers() })).json();
   const paths = ['srv/service.ts', 'db/schema.cds', 'package.json', 'Dockerfile', 'src/zcl_x.clas.abap', 'src/zcl_x.clas.xml', 'src/z_x.ddls.asddls', 'src/z_x.bdef.asbdef', 'src/z_x.srvd.assrvd', 'src/z_x.srvb.assrvb'];
   const res = await request.post(`/api/projects/${PROJECT_ID}/contract`, {
     headers: headers(),

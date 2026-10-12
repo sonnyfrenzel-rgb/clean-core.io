@@ -47,7 +47,9 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
   });
   let res: Response;
   try {
-    res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract`, {
+    // `for=generation`: only a generation is answered with a token and the
+    // PLATFORM KNOWLEDGE block (roadmap 3.0.12).
+    res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract?for=generation`, {
       headers: await authHeader(),
     });
   } catch {
@@ -79,6 +81,12 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
             legacyCode: typeof g.inputs.legacyCode === 'string' ? g.inputs.legacyCode : '',
             solutionDesign: typeof g.inputs.solutionDesign === 'string' ? g.inputs.solutionDesign : '',
             analysis: typeof g.inputs.analysis === 'string' ? g.inputs.analysis : '',
+            context: {
+              text: typeof g.inputs.context?.text === 'string' ? g.inputs.context.text : '',
+              rules: typeof g.inputs.context?.rules === 'string' ? g.inputs.context.rules : 'none',
+              decision: typeof g.inputs.context?.decision === 'string' ? g.inputs.context.decision : 'none',
+              requirements: typeof g.inputs.context?.requirements === 'string' ? g.inputs.context.requirements : 'none',
+            },
           },
         }
       : null;

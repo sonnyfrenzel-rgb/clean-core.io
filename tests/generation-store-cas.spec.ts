@@ -63,7 +63,8 @@ function packageNamed(tag: string): string {
 const suite = (tag: string) => ({ config: `config ${tag}`, spec: `spec ${tag}` });
 
 async function readGeneration(request: APIRequestContext) {
-  const res = await request.get(path, { headers: headers() });
+  // `for=generation`: only a generation is answered with a token (3.0.12).
+  const res = await request.get(`${path}?for=generation`, { headers: headers() });
   expect(res.status(), await res.text()).toBe(200);
   const body = await res.json();
   expect(body.decision?.ok, JSON.stringify(body.decision)).toBe(true);

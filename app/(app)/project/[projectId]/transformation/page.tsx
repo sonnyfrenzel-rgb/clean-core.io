@@ -736,6 +736,12 @@ export default function TransformationPage() {
       // first, turns this one into a refusal instead of an overwrite.
       const generationToken = generation.token;
       const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
+      // Roadmap 3.0.12 (owner, 12.10.2026): what the platform already knows —
+      // the owner's rule decisions, the decision record and route, what the
+      // program does, the catalog successors, NFRs and data mode — built by the
+      // server inside the token (`lib/transformation-context-build.ts`). No
+      // engine pass and no map build here.
+      const platformKnowledge = generation.inputs.context.text;
       // The narrative is not required: the design is written from it
       // and carries it, and an engine-only run has none. It used to be, and a
       // project with a design but an engine-only run could never generate.
@@ -801,7 +807,7 @@ export default function TransformationPage() {
         
         Solution Design:
         ${design}
-        
+${platformKnowledge}
         Requirements:
         1. Write clean, cloud-ready ABAP Cloud RAP syntax. Replace obsolete database access patterns with released APIs and MODIFY ENTITIES operations.
         2. Follow standard released object restrictions (No direct SELECT on BSEG/KNA1; use released CDS views instead).
@@ -862,7 +868,7 @@ export default function TransformationPage() {
         
         Solution Design:
         ${design}
-        
+${platformKnowledge}
         Requirements:
         1. Use TypeScript with ES Modules (ESM).
         2. Follow Clean Architecture and modular structure principles.
