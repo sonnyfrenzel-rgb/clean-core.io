@@ -5,10 +5,17 @@ import {
   buildTransformationContext,
   decisionOptionOf,
   TRANSFORMATION_CONTEXT_BUDGET,
+  type AcceptedRequirements,
   type ContextRule,
   type TransformationContextInput,
 } from '../lib/transformation-context';
-import { assembleTransformationContext, REVISION_COLLECTION, type RuleAnswers } from '../lib/transformation-context-build';
+import {
+  acceptedRequirementsOf,
+  assembleTransformationContext,
+  REVISION_COLLECTION,
+  type RuleAnswers,
+} from '../lib/transformation-context-build';
+import type { SpecRecord } from '../lib/requirements-spec';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 import { contractOfProject } from '../lib/contract-build';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
@@ -70,6 +77,7 @@ const baseInput = (over: Partial<TransformationContextInput> = {}): Transformati
     { object: 'COSP', level: 'C', successor: null, successorType: null, confidence: null },
   ],
   nfr: null,
+  accepted: null,
   dataMode: null,
   originalFactsBelow: true,
   ...over,
@@ -189,6 +197,54 @@ test('what the program does, the successors, NFRs and data mode are said as reco
   expect(quiet).toContain('Non-functional requirements: not recorded.');
 });
 
+/* ------------------------------------------------- accepted requirements */
+
+const ACCEPTED: AcceptedRequirements = {
+  by: 'owner@example.com',
+  at: '2026-10-12T09:30:00.000Z',
+  revision: 7,
+  items: [
+    { id: 'FR-001', kind: 'functional', category: null, title: 'Refuse amounts over the limit', statement: 'The system shall refuse an item whose amount exceeds the limit.', target: '', method: '' },
+    { id: 'NFR-03', kind: 'non-functional', category: 'Audit trail & compliance', title: 'Who changed what', statement: 'The system shall record who changed a result and when.', target: 'Every change recorded', method: 'Audit log review' },
+  ],
+};
+
+test('accepted requirements replace the model\'s proposals, labelled with who accepted them and when', () => {
+  const nfr = [{ topic: 'Monitoring', text: 'A model proposal about dashboards.' }];
+  const proposed = buildTransformationContext(baseInput({ nfr })).text;
+  expect(proposed).toContain('proposed with the design by a model, not confirmed');
+  expect(proposed).toContain('Monitoring: A model proposal about dashboards.');
+
+  const accepted = buildTransformationContext(baseInput({ nfr, accepted: ACCEPTED })).text;
+  expect(accepted).toContain('E. ACCEPTED REQUIREMENTS AND DATA:');
+  expect(accepted).toContain('Requirements accepted by owner@example.com on 2026-10-12 (requirements specification revision 7)');
+  expect(accepted).toContain('FR-001 ACCEPTED (functional) · Refuse amounts over the limit — The system shall refuse an item whose amount exceeds the limit.');
+  expect(accepted).toContain('NFR-03 ACCEPTED (non-functional, Audit trail & compliance) · Who changed what — The system shall record who changed a result and when. Target: Every change recorded (measured by Audit log review).');
+  expect(accepted).not.toContain('A model proposal about dashboards');
+  expect(accepted).not.toContain('proposed with the design by a model');
+});
+
+test('the accepted requirements are read from the stored specification, status accepted only', () => {
+  const req = (id: string, status: string, kind: 'functional' | 'non-functional' = 'functional') => ({
+    id, kind, category: kind === 'non-functional' ? 'audit' : null, title: `Title ${id}`, statement: `The system shall do **${id}**.`,
+    rationale: '', acceptance: [], priority: 'must', status, origin: 'engine', target: kind === 'non-functional' ? 'all' : '', method: '', note: '',
+    source: { lines: [], rules: [], steps: [], engineRef: null, evidence: '' }, decisionIds: [],
+  });
+  const record = {
+    formatVersion: 1, derivedFrom: 'x', revision: 5, savedAt: '2026-10-11T08:00:00.000Z', savedBy: 'owner@example.com', history: [],
+    spec: { requirements: [req('FR-001', 'accepted'), req('FR-002', 'draft'), req('FR-003', 'rejected'), req('NFR-01', 'accepted', 'non-functional')] },
+  } as unknown as SpecRecord;
+  const read = acceptedRequirementsOf(record)!;
+  expect(read.by).toBe('owner@example.com');
+  expect(read.at).toBe('2026-10-11T08:00:00.000Z');
+  expect(read.revision).toBe(5);
+  expect(read.items.map((r) => r.id)).toEqual(['FR-001', 'NFR-01']);
+  expect(read.items[0].statement).not.toContain('**');
+  expect(read.items[1].category).toBeTruthy();
+  expect(acceptedRequirementsOf({ ...record, spec: { requirements: [req('FR-002', 'draft')] } } as unknown as SpecRecord)).toBeNull();
+  expect(acceptedRequirementsOf(null)).toBeNull();
+});
+
 /* --------------------------------------------------------------- budget */
 
 test('the budget cuts the lowest priority first, open rules before decided ones, and says so', () => {
@@ -228,6 +284,27 @@ test('the budget cuts the lowest priority first, open rules before decided ones,
   expect(d.text.length).toBeLessThanOrEqual(1_500);
   expect(d.text).toMatch(/of them decided — see the rule register; never implement a rule against its decision|cut at 1500 characters/);
   expect(TRANSFORMATION_CONTEXT_BUDGET).toBe(8_000);
+});
+
+test('accepted requirements are cut after the engine\'s readings, unlike the model\'s proposals', () => {
+  const many = Array.from({ length: 40 }, (_, i) => rule(`BR-${String(i + 1).padStart(3, '0')}`, null, null, 100 + i));
+  const input = baseInput({ rules: { basis: 'confirmations', revision: 2, items: many }, accepted: ACCEPTED });
+  const full = buildTransformationContext(input, 100_000);
+  // Open rules go first; the accepted requirements stay.
+  const a = buildTransformationContext(input, full.text.length - 300);
+  expect(a.budget.cut).toEqual(['decisions']);
+  expect(a.text).toContain('FR-001 ACCEPTED');
+  expect(a.text).toContain('NFR-03 ACCEPTED');
+  // Once an accepted requirement is cut, the successors and the summary are gone already.
+  for (let limit = full.text.length; limit > 1_200; limit -= 50) {
+    const t = buildTransformationContext(input, limit).text;
+    if (!t.includes('NFR-03 ACCEPTED')) {
+      expect(t).not.toContain('I_SALESDOCUMENT');
+      expect(t).not.toContain('A read-only report on sales orders');
+      expect(t).toMatch(/more accepted requirements? — see the requirements specification in Design; implement them too|cut at \d+ characters/);
+      break;
+    }
+  }
 });
 
 /* ---------------------------------------------- the server half and the token */
@@ -312,6 +389,24 @@ test('a changed rule decision or decision record changes the generation token', 
   const sameText = { ...keep.stamp, rules: `${keep.stamp.rules}-other` };
   expect(generationRevision(generationStateOf(project, null, sameText), keep.built.contract.fingerprint)).not.toBe(tokenOf(keep));
 
+  // Accepting a requirement in the specification moves the token too.
+  const withAccepted = { ...keep.stamp, requirements: 'abc' };
+  expect(generationRevision(generationStateOf(project, null, withAccepted), keep.built.contract.fingerprint)).not.toBe(tokenOf(keep));
+  const acceptedStamp = (accepted: AcceptedRequirements | null) => {
+    const built = contractOfProject({ legacyCode: SOURCE, s4Deployment: 'private', activeRunId: 'run-1' }, null);
+    if (!built.ok) throw new Error('no contract');
+    return assembleTransformationContext({
+      source: SOURCE, project, answers: { basis: 'source', revision: null, entries: [] }, evidence: built.evidence,
+      contract: built.contract, isAbapCloud: false, grade: () => 'D', accepted,
+    }).stamp;
+  };
+  const none = acceptedStamp(null);
+  const one = acceptedStamp({ ...ACCEPTED, items: ACCEPTED.items.slice(0, 1) });
+  const two = acceptedStamp(ACCEPTED);
+  expect(none.requirements).toBe('none');
+  expect(one.requirements).not.toBe(two.requirements);
+  expect(one.text).toContain('FR-001 ACCEPTED');
+
   const recorded = { ...project, decision: { decisionId: 'DEC-1', revision: 1, status: 'confirmed', summary: 'Rebuild.', fingerprint: 'f1', bindings: [] } };
   const withRecord = assembled({ basis: 'confirmations', revision: 2, entries: [answer(ids[0], 'keep', 2)] }, recorded);
   expect(tokenOf(withRecord, recorded)).not.toBe(tokenOf(keep));
@@ -321,7 +416,7 @@ test('a changed rule decision or decision record changes the generation token', 
 
   // The inputs hand the page the block the token covers.
   expect(generationInputsOf(generationStateOf(project, null, keep.stamp)).context).toEqual(keep.stamp);
-  expect(generationInputsOf(generationStateOf(project, null)).context).toEqual({ text: '', rules: 'none', decision: 'none' });
+  expect(generationInputsOf(generationStateOf(project, null)).context).toEqual({ text: '', rules: 'none', decision: 'none', requirements: 'none' });
 });
 
 /* ------------------------------------------------------------ wiring guards */

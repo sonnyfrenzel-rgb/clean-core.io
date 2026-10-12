@@ -27,13 +27,18 @@ import {
   type ContextRules,
   type ContextSummary,
   type TransformationContext,
+  type AcceptedRequirement,
+  type AcceptedRequirements,
 } from '@/lib/transformation-context';
+import { readSpecRecord, SPEC_COLLECTION, SPEC_DOC, SPEC_NFR_CATEGORY_LABEL, type SpecRecord } from '@/lib/requirements-spec';
+import { richPlain } from '@/lib/rich-text';
 
 /**
  * The server's half of the PLATFORM KNOWLEDGE block (owner, 12.10.2026;
  * roadmap 3.0.12): what the contract route already holds — the project, the
  * engine's evidence of the contract it just built — plus the owner's rule
- * answers, read in one query beside revision 1 of the process.
+ * answers, read in one query beside revision 1 of the process, and the
+ * requirements the owner accepted in the specification (one more read).
  *
  * **Speed.** Nothing here builds the BPMN map: the rules come from
  * `deriveBusinessRules` (the rule register's own reader, bounded by
@@ -57,6 +62,8 @@ export interface TransformationContextStamp {
   rules: string;
   /** Revision of the decision: the stored record and the architecture sign-off. */
   decision: string;
+  /** Revision of the accepted requirements: who, and a digest of what was accepted (`none` when none is). */
+  requirements: string;
 }
 
 /** What `readRuleAnswers` found: the answers to apply, and on what they rest. */
@@ -107,6 +114,35 @@ export async function readRuleAnswers(db: Firestore, projectId: string, source: 
       .map((e) => ({ ...(e as Record<string, unknown>), confirmedAt: isoOf((e as Record<string, unknown>).confirmedAt) }))
       .filter(isStateEntry) as StateEntry[],
   };
+}
+
+/**
+ * The requirements the owner accepted in the requirements specification
+ * (ADR-078; owner, 12.10.2026: once accepted requirements exist they replace
+ * the model's proposals in the block). `null` when no specification is
+ * stored or none of its requirements is accepted.
+ */
+export function acceptedRequirementsOf(record: SpecRecord | null): AcceptedRequirements | null {
+  if (!record) return null;
+  const items: AcceptedRequirement[] = record.spec.requirements
+    .filter((r) => r.status === 'accepted')
+    .map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      category: r.category ? SPEC_NFR_CATEGORY_LABEL[r.category] : null,
+      title: r.title,
+      statement: richPlain(r.statement),
+      target: r.target,
+      method: r.method,
+    }));
+  if (items.length === 0) return null;
+  return { by: record.savedBy, at: record.savedAt, revision: record.revision, items };
+}
+
+/** The stored specification's accepted requirements — one document read. */
+export async function readAcceptedRequirements(db: Firestore, projectId: string): Promise<AcceptedRequirements | null> {
+  const snap = await db.collection('projects').doc(projectId).collection(SPEC_COLLECTION).doc(SPEC_DOC).get();
+  return snap.exists ? acceptedRequirementsOf(readSpecRecord(snap.data())) : null;
 }
 
 /* ------------------------------------------------------------------ pieces */
@@ -273,6 +309,15 @@ function decisionStamp(project: Record<string, unknown>): string {
   ).slice(0, 16);
 }
 
+/**
+ * The digest of what was accepted and by whom — not the specification's
+ * revision, which moves with every saved keystroke of an unrelated field.
+ */
+function requirementsStamp(accepted: AcceptedRequirements | null): string {
+  if (!accepted) return 'none';
+  return sha256Hex(JSON.stringify([accepted.by, accepted.items.map((r) => [r.id, r.title, r.statement, r.target, r.method])])).slice(0, 16);
+}
+
 /** The digest of the rule answers the block applies. */
 function rulesStamp(rules: ContextRules): string {
   const applied = rules.items.map((r) => [r.id, r.answer, r.note]);
@@ -288,6 +333,8 @@ export interface AssembleArgs {
   isAbapCloud: boolean;
   /** The project's catalog snapshot key, for the level lookup. */
   catalogSnapshot?: string;
+  /** The owner's accepted requirements (`readAcceptedRequirements`), or null. */
+  accepted?: AcceptedRequirements | null;
   /** Override for tests: the level of an object, or null. */
   grade?: (name: string) => string | null;
 }
@@ -329,12 +376,18 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
     summary,
     objects: contextObjectsOf(args.evidence, grade),
     nfr: nfrOf(args.project),
+    accepted: args.accepted ?? null,
     // No run records a data mode today (`lib/delivery-package.ts`, dataMode).
     dataMode: null,
     originalFactsBelow: !args.isAbapCloud,
   });
   return {
     context,
-    stamp: { text: context.text, rules: rulesStamp(rules), decision: decisionStamp(args.project) },
+    stamp: {
+      text: context.text,
+      rules: rulesStamp(rules),
+      decision: decisionStamp(args.project),
+      requirements: requirementsStamp(args.accepted ?? null),
+    },
   };
 }

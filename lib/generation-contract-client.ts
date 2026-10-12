@@ -85,6 +85,7 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
               text: typeof g.inputs.context?.text === 'string' ? g.inputs.context.text : '',
               rules: typeof g.inputs.context?.rules === 'string' ? g.inputs.context.rules : 'none',
               decision: typeof g.inputs.context?.decision === 'string' ? g.inputs.context.decision : 'none',
+              requirements: typeof g.inputs.context?.requirements === 'string' ? g.inputs.context.requirements : 'none',
             },
           },
         }

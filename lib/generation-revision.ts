@@ -46,6 +46,8 @@ export interface GenerationContextState {
   text: string;
   rules: string;
   decision: string;
+  /** The requirements the owner accepted in the specification — who, and a digest of what. */
+  requirements: string;
 }
 
 /** The project fields a generation is computed from or replaces. */
@@ -70,7 +72,7 @@ export interface GenerationInputs {
   context: GenerationContextState;
 }
 
-const NO_CONTEXT: GenerationContextState = Object.freeze({ text: '', rules: 'none', decision: 'none' });
+const NO_CONTEXT: GenerationContextState = Object.freeze({ text: '', rules: 'none', decision: 'none', requirements: 'none' });
 
 /**
  * The state a generation is computed from: the project document with the
@@ -129,9 +131,10 @@ export function generationInputsOf(state: GenerationRevisionState): GenerationIn
  * - `suite` — the test suite the store replaces as well. It can be regenerated
  *   without touching the code, and a token that left it out let a late
  *   generation overwrite a newer suite (version 2).
- * - `rules`, `decision`, `context` — the owner's rule answers, the decision
- *   record with the sign-off, and the PLATFORM KNOWLEDGE block built from
- *   them (version 3, roadmap 3.0.12). The revisions are compared beside the
+ * - `rules`, `decision`, `requirements`, `context` — the owner's rule
+ *   answers, the decision record with the sign-off, the requirements accepted
+ *   in the specification, and the PLATFORM KNOWLEDGE block built from them
+ *   (version 3, roadmap 3.0.12). The revisions are compared beside the
  *   block because the block is cut to a budget: an answer past the cut moves
  *   `rules` even where the text stands still.
  */
@@ -149,6 +152,7 @@ export function canonicalGenerationRevision(state: GenerationRevisionState, cont
     `bound=${bound}`,
     `rules=${state.context?.rules ?? NO_CONTEXT.rules}`,
     `decision=${state.context?.decision ?? NO_CONTEXT.decision}`,
+    `requirements=${state.context?.requirements ?? NO_CONTEXT.requirements}`,
     `context=${digestOf(state.context?.text)}`,
   ].join('\n');
 }

@@ -17,7 +17,8 @@
  *   2. the decision record and the route, loudly when the record builds nothing;
  *   3. what the program does (the business summary facts, ADR-098);
  *   4. the SAP objects with the released successors the catalog names;
- *   5. non-functional requirements and the data mode, as recorded;
+ *   5. the requirements the owner accepted (else the model's NFR proposals)
+ *      and the data mode, as recorded;
  *   6. a pointer to the FACTS OF THE ORIGINAL section (not repeated here).
  *
  * **Budget.** A hard character budget for the whole block. When the block is
@@ -142,10 +143,44 @@ export interface TransformationContextInput {
   objects: ContextObject[];
   /** The model-written NFR texts stored with the design, by topic label, or null when none. */
   nfr: Array<{ topic: string; text: string }> | null;
+  /**
+   * The requirements the owner accepted in the requirements specification
+   * (Design → Requirements, ADR-078), or null when none is accepted. When
+   * present they replace the model's NFR proposals (owner, 12.10.2026).
+   */
+  accepted: AcceptedRequirements | null;
   /** The data mode as recorded, or null — no run records one today. */
   dataMode: string | null;
   /** Whether the prompt carries the FACTS OF THE ORIGINAL section after this block. */
   originalFactsBelow: boolean;
+}
+
+/** One requirement with status `accepted` in the stored specification. */
+export interface AcceptedRequirement {
+  /** `FR-001`, `NFR-05`, `FR-P01`. */
+  id: string;
+  kind: 'functional' | 'non-functional';
+  /** Non-functional: the category's label. */
+  category: string | null;
+  title: string;
+  /** "The system shall …", as plain text. */
+  statement: string;
+  /** Non-functional: the measurable target and how it is measured. */
+  target: string;
+  method: string;
+}
+
+export interface AcceptedRequirements {
+  /**
+   * The account that saved the specification. The specification is the
+   * owner's alone to write (`requirements-spec` route), and it carries no
+   * per-requirement acceptance stamp, so the saving account is who accepted.
+   */
+  by: string;
+  /** When the specification revision that holds the acceptances was saved, ISO 8601. */
+  at: string;
+  revision: number;
+  items: AcceptedRequirement[];
 }
 
 export type ContextSectionKey = 'decisions' | 'route' | 'program' | 'objects' | 'requirements' | 'original';
@@ -350,21 +385,45 @@ function objectsSection(input: TransformationContextInput): Draft {
   return { key: 'objects', head, items, rest: (n) => `   (${plural(n, 'more line')} — see Findings in the IT view)` };
 }
 
+/** An accepted requirement's line — the budget tells it from a model proposal by this shape. */
+const isAcceptedLine = (line: string) => /^\s*(?:FR|NFR)-\S+ ACCEPTED /.test(line);
+
 function requirementsSection(input: TransformationContextInput): Draft {
-  const head = ['E. NON-FUNCTIONAL REQUIREMENTS AND DATA:'];
+  const accepted = input.accepted && input.accepted.items.length > 0 ? input.accepted : null;
+  const head = [accepted ? 'E. ACCEPTED REQUIREMENTS AND DATA:' : 'E. NON-FUNCTIONAL REQUIREMENTS AND DATA:'];
   const items: string[] = [];
   head.push(
     input.dataMode
       ? `   Data mode: ${oneLine(input.dataMode, 200)}`
       : '   Data mode: not recorded — no run says where the data comes from. Take the data the caller hands in; do not claim or invent a live SAP connection.',
   );
-  if (!input.nfr || input.nfr.length === 0) {
+  if (accepted) {
+    // Owner, 12.10.2026: accepted requirements replace the model's proposals.
+    head.push(
+      `   Requirements accepted by ${oneLine(accepted.by, 120)} on ${accepted.at.slice(0, 10)} (requirements specification revision ${accepted.revision}) — implement each; they replace the model's NFR proposals:`,
+    );
+    for (const r of accepted.items) {
+      const kind = r.kind === 'functional' ? 'functional' : `non-functional${r.category ? `, ${r.category}` : ''}`;
+      const target = r.kind === 'non-functional' && r.target.trim()
+        ? ` Target: ${oneLine(r.target, 120)}${r.method.trim() ? ` (measured by ${oneLine(r.method, 80)})` : ''}.`
+        : '';
+      items.push(`   ${r.id} ACCEPTED (${kind}) · ${oneLine(r.title, 80)} — ${oneLine(r.statement, MAX_NFR)}${target}`);
+    }
+  } else if (!input.nfr || input.nfr.length === 0) {
     head.push('   Non-functional requirements: not recorded.');
   } else {
     head.push('   Non-functional requirements (proposed with the design by a model, not confirmed — honour them where the code can):');
     for (const n of input.nfr) items.push(`   ${n.topic}: ${oneLine(n.text, MAX_NFR)}`);
   }
-  return { key: 'requirements', head, items, rest: (n) => `   (${plural(n, 'more topic')} — see the requirements in Design)` };
+  return {
+    key: 'requirements',
+    head,
+    items,
+    rest: (n) =>
+      accepted
+        ? `   (${plural(n, 'more accepted requirement')} — see the requirements specification in Design; implement them too)`
+        : `   (${plural(n, 'more topic')} — see the requirements in Design)`,
+  };
 }
 
 function originalSection(input: TransformationContextInput): Draft {
@@ -384,7 +443,7 @@ const isOpenRuleLine = (line: string) => /^\s*BR-\S+ OPEN /.test(line);
 
 /**
  * Lowest priority first — the order the budget cuts in. The open rules go
- * right after the NFR topics, before the successors, what the program does
+ * right after the model's NFR proposals, before the successors, what the program does
  * and the route: an OPEN line says "do as the
  * original does", which the legacy code in the prompt already says, while a
  * decided rule and the facts below say what the code cannot. Measured on the
@@ -392,10 +451,13 @@ const isOpenRuleLine = (line: string) => /^\s*BR-\S+ OPEN /.test(line);
  * crowded out the route, the summary and the successors entirely.
  */
 const CUT_ORDER: ReadonlyArray<{ key: ContextSectionKey; only?: (item: string) => boolean }> = [
-  { key: 'requirements' },
+  { key: 'requirements', only: (item) => !isAcceptedLine(item) },
   { key: 'decisions', only: isOpenRuleLine },
   { key: 'objects' },
   { key: 'program' },
+  // Accepted requirements are the owner's word, like a decided rule: they go
+  // after the engine's readings and before the route.
+  { key: 'requirements' },
   { key: 'route' },
   { key: 'decisions' },
 ];

@@ -9,7 +9,7 @@ import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/g
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision, generationStateOf } from '@/lib/generation-revision';
-import { assembleTransformationContext, readRuleAnswers } from '@/lib/transformation-context-build';
+import { assembleTransformationContext, readAcceptedRequirements, readRuleAnswers } from '@/lib/transformation-context-build';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
@@ -77,7 +77,8 @@ const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
 /**
  * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
  * 3.0.12): the owner's rule answers (one read beside revision 1 of the
- * process), the decision record, the summary facts and the catalog
+ * process), the requirements accepted in the specification, the decision
+ * record, the summary facts and the catalog
  * successors of the evidence this contract was just built on. GET and POST
  * build it the same way, so the token compares the same block.
  */
@@ -89,11 +90,15 @@ async function platformContextOf(
   isAbapCloud: boolean,
 ) {
   const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
-  const answers = await readRuleAnswers(db, projectId, source);
+  const [answers, accepted] = await Promise.all([
+    readRuleAnswers(db, projectId, source),
+    readAcceptedRequirements(db, projectId),
+  ]);
   return assembleTransformationContext({
     source,
     project: data,
     answers,
+    accepted,
     evidence: built.evidence,
     contract: built.contract,
     isAbapCloud,
@@ -370,7 +375,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json(
         {
           error:
-            'The project changed after this generation started: the source, the analysis, the solution design, a business rule decision, the decision record or the stored code is no longer what the model was given. Generate again from the current state.',
+            'The project changed after this generation started: the source, the analysis, the solution design, a business rule decision, the decision record, an accepted requirement or the stored code is no longer what the model was given. Generate again from the current state.',
           code: 'generation-stale',
         },
         { status: 409 },
