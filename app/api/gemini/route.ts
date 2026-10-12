@@ -31,7 +31,10 @@ import {
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { resolveRequestedModel } from '@/lib/gemini-model-choice';
-import { responseSchemaForStage } from '@/lib/model-response-schema';
+import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
+import { isFirestoreId } from '@/lib/firestore-id';
+import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
+import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -61,6 +64,16 @@ import { responseSchemaForStage } from '@/lib/model-response-schema';
  * gone, `assertRateLimit` below is the primary cost guard on the shared community
  * Gemini key — one full project journey is ~7 calls (plus up to 5 for test
  * self-healing), so 20/h leaves headroom while still bounding abuse.
+ *
+ * 3.0.12 — the generation lease. An engine-led Transformation makes up to 48
+ * small calls per generation; it buys a lease at `/api/transformation/lease`
+ * for one unit of the same 20/h, and each of its calls names the lease as
+ * `lease: { projectId, leaseId }`. Such a call skips the hourly counter and is
+ * counted against the lease instead (budget, 4 in flight, 15 minutes, this
+ * account only — `lib/transformation/lease.ts`); an invalid, closed, expired
+ * or used-up lease is refused with a code before the provider is asked. Every
+ * other gate below applies to a leased call unchanged, and a call without a
+ * lease behaves exactly as before.
  */
 
 // Cache the default instance so we don't create a new one per request.
@@ -149,20 +162,26 @@ async function callWithRetry<T>(
   fn: () => Promise<T>,
   retries = MAX_RETRIES,
   delay = INITIAL_DELAY,
+  /** A leased call's request signal: once the caller has gone, nothing is retried. */
+  signal?: AbortSignal,
 ): Promise<T> {
   try {
     return await fn();
   } catch (error: unknown) {
+    // The caller has gone: nothing is asked again for nobody.
+    if (signal?.aborted) throw error;
     const message = error instanceof Error ? error.message : String(error);
     if (retries > 0 && isTransientModelError(message)) {
       await new Promise((resolve) => setTimeout(resolve, delay));
-      return callWithRetry(fn, retries - 1, delay * 2);
+      return callWithRetry(fn, retries - 1, delay * 2, signal);
     }
     throw error;
   }
 }
 
 export async function POST(request: NextRequest) {
+  // The generation lease whose in-flight slot this call holds, given back in `finally`.
+  let heldLease: LeaseReference | null = null;
   try {
     // Server-side auth gate via Admin SDK
     const decodedToken = await verifyRequestAuth(request);
@@ -173,9 +192,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Read once, here: whether the call names a generation lease decides which
+    // budget it is counted against (roadmap 3.0.12, `lib/transformation/lease.ts`).
+    const body = await request.json();
+    const lease = leaseReferenceOf(body, isFirestoreId);
+    if (lease && 'ok' in lease) {
+      return NextResponse.json({ error: lease.error, code: lease.code }, { status: lease.status });
+    }
+
     try {
-      // Skip rate limiting for admin users
-      if (!decodedToken.admin) {
+      if (lease) {
+        // A call under a generation lease is counted against the lease — the
+        // generation paid one unit of the hourly limit for it at
+        // /api/transformation/lease — and not against the hourly counter. The
+        // lease must be this account's, open, unexpired, with calls and an
+        // in-flight slot left; judged here before any other work, and counted
+        // in a transaction right before the provider call below.
+        const { db } = await getAdminDb();
+        const peek = await peekLease(db, lease, { uid: decodedToken.uid, now: Date.now() });
+        if (!peek.ok) {
+          return NextResponse.json({ error: peek.error, code: peek.code }, { status: peek.status });
+        }
+      } else if (!decodedToken.admin) {
+        // Skip rate limiting for admin users
         // Keyed on the account alone. The key used to carry the client address
         // as well, which makes the ceiling per account *and* address: the same
         // account reaching the shared community key through a second address got
@@ -219,18 +258,20 @@ export async function POST(request: NextRequest) {
       throw gateErr;
     }
 
-    const body = await request.json();
     const {
       prompt,
       model: requestedModel,
       jsonResponse = false,
       stage,
-    } = body as {
+      responseShape,
+    } = (body ?? {}) as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
       /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
       stage?: string;
+      /** An answer shape within the stage (`lib/model-response-schema.ts`): the fill calls of 3.0.12. */
+      responseShape?: unknown;
     };
     // The product default, named or omitted, is this deployment's product
     // model — so `GEMINI_MODEL` reaches the callers that name the constant.
@@ -261,6 +302,19 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // A lease is bought for the Transformation stage and spends on nothing else.
+    if (lease && stage !== 'transformation') {
+      return NextResponse.json(
+        { error: 'A generation lease pays only for calls of the Transformation stage.', code: LEASE_CODES.stage },
+        { status: 400 },
+      );
+    }
+    // An answer shape belongs to one stage; named under another, it is refused.
+    if (responseShape !== undefined && (!isResponseShape(responseShape) || RESPONSE_SHAPE_STAGE[responseShape] !== stage)) {
+      return NextResponse.json({ error: 'Unknown answer shape for this stage.' }, { status: 400 });
+    }
+    const shape = isResponseShape(responseShape) ? responseShape : undefined;
 
     if (!prompt) {
       return NextResponse.json(
@@ -350,9 +404,25 @@ export async function POST(request: NextRequest) {
 
     // No quota reservation here — metering happens once per analysis run in
     // /api/runs/create. See the module header.
-    const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage) : undefined;
+    //
+    // A leased call is counted now, after every gate and right before the
+    // provider is asked: `used` and `inFlight` go up in one transaction that
+    // re-checks the budget (48) and the in-flight cap (4). The slot is given
+    // back in `finally` below, whatever the call does; the call itself stays
+    // counted. A leased call also ends with its request: when the browser
+    // cancels the generation, the provider call is aborted and not retried.
+    if (lease) {
+      const { db } = await getAdminDb();
+      const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now() });
+      if (!counted.ok) {
+        return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
+      }
+      heldLease = lease;
+    }
+    const abortSignal = lease ? request.signal : undefined;
+    const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
     const answer: ModelAnswer = stubbed
-      ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER))
+      ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : await callWithRetry(async () => {
           const result = await ai!.models.generateContent({
             model,
@@ -361,15 +431,21 @@ export async function POST(request: NextRequest) {
             // the provider decodes against it rather than taking JSON mode as
             // a suggestion (`lib/model-response-schema.ts`, 03.10.2026).
             config: jsonResponse
-              ? { responseMimeType: 'application/json', ...(responseSchema ? { responseJsonSchema: responseSchema } : {}) }
-              : undefined,
+              ? {
+                  responseMimeType: 'application/json',
+                  ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
+                  ...(abortSignal ? { abortSignal } : {}),
+                }
+              : abortSignal
+                ? { abortSignal }
+                : undefined,
           });
           return {
             text: result.text,
             finishReason: result.candidates?.[0]?.finishReason ?? null,
             blockReason: result.promptFeedback?.blockReason ?? null,
           };
-        });
+        }, undefined, undefined, abortSignal);
 
     // Roadmap 3.0.13 (a) — only a finished answer is a result. The SDK's `text`
     // is whatever text the candidate carries, including an answer cut off at the
@@ -452,5 +528,15 @@ export async function POST(request: NextRequest) {
       { error: 'The AI request could not be completed. Please try again.' },
       { status: 500 },
     );
+  } finally {
+    if (heldLease) {
+      try {
+        const { db } = await getAdminDb();
+        await releaseLeaseCall(db, heldLease);
+      } catch (releaseErr: unknown) {
+        // The slot frees itself when the lease expires (15 minutes); said loudly.
+        logger.error('gemini lease slot could not be released', { route: 'api/gemini', error: providerErrorShape(releaseErr) });
+      }
+    }
   }
 }

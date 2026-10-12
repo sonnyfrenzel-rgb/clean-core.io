@@ -2,6 +2,8 @@ import { getAuth } from '@/lib/firebase';
 import type { ModelStage } from '@/lib/model-stages';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import type { LeaseReference } from '@/lib/transformation/lease';
+import type { ResponseShape } from '@/lib/model-response-schema';
 
 /**
  * Client-side Gemini helper.
@@ -36,6 +38,14 @@ export class GeminiCallError extends Error {
   }
 }
 
+/** 3.0.12 — what a fill call of the engine-led transformation adds to a call. */
+export interface CallOptions {
+  /** The generation lease the call is counted against (`/api/transformation/lease`). */
+  lease?: LeaseReference;
+  /** The answer shape within the stage (`lib/model-response-schema.ts`). */
+  responseShape?: ResponseShape;
+}
+
 export interface GeminiResult {
   text: string;
   /**
@@ -67,8 +77,13 @@ export async function callGeminiWithReceipt(
    * route below runs to completion on the server whatever this browser does,
    * and every screen that offers a cancel has to say so (`CANCEL_REACH` in
    * `lib/analysis-run.ts`).
+   *
+   * A call under a generation lease (`options.lease`, roadmap 3.0.12) is the
+   * exception: the route aborts its provider call when this request goes, so
+   * cancelling an engine-led generation really stops the calls in flight.
    */
   signal?: AbortSignal,
+  options?: CallOptions,
 ): Promise<GeminiResult> {
   let idToken: string | undefined;
 
@@ -93,6 +108,8 @@ export async function callGeminiWithReceipt(
       model: modelName,
       jsonResponse,
       ...(stage ? { stage } : {}),
+      ...(options?.responseShape ? { responseShape: options.responseShape } : {}),
+      ...(options?.lease ? { lease: { projectId: options.lease.projectId, leaseId: options.lease.leaseId } } : {}),
       // No `userId` and no `idToken` in the body. The route has never read
       // either — `app/api/gemini/route.ts:106` derives the identity from
       // `verifyRequestAuth(request)` and the handler destructures only the four
@@ -125,6 +142,7 @@ export async function callGemini(
   jsonResponse: boolean = false,
   stage?: ModelStage,
   signal?: AbortSignal,
+  options?: CallOptions,
 ): Promise<string> {
-  return (await callGeminiWithReceipt(prompt, modelName, jsonResponse, stage, signal)).text;
+  return (await callGeminiWithReceipt(prompt, modelName, jsonResponse, stage, signal, options)).text;
 }

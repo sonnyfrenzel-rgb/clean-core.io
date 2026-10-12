@@ -137,8 +137,58 @@ export const TESTING_RESPONSE_SCHEMA = {
   required: ['testCases', 'testSuite', 'manualTestingRequirements', 'coverageEstimate'],
 } as const;
 
+/**
+ * 3.0.12 engine-led transformation (`docs/design/engine-led-transformation.md`
+ * §8.2): one fill call answers with the bodies of the functions it was asked
+ * for — `{ units: [{ unitId, body, needs, refused }] }`. `refused` is null or
+ * `{ reason }` (the model may decline a unit rather than guess);
+ * `lib/transformation/fill-prompt.ts` (`parseFillAnswer`) validates every
+ * answer before a body is spliced.
+ */
+export const TRANSFORMATION_FILL_SCHEMA = {
+  type: 'object',
+  properties: {
+    units: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          unitId: STRING,
+          body: STRING,
+          needs: STRINGS,
+          // Optional: absent (or without a reason) reads as "not refused".
+          refused: {
+            type: 'object',
+            properties: { reason: STRING },
+          },
+        },
+        required: ['unitId', 'body'],
+      },
+    },
+  },
+  required: ['units'],
+} as const;
+
+/**
+ * An answer shape within a stage. The fill calls belong to the
+ * `transformation` stage — its switch and its receipt — but answer in a shape
+ * of their own; the request names it beside the stage.
+ */
+export const RESPONSE_SHAPES = ['transformation-fill'] as const;
+export type ResponseShape = (typeof RESPONSE_SHAPES)[number];
+
+export function isResponseShape(value: unknown): value is ResponseShape {
+  return typeof value === 'string' && (RESPONSE_SHAPES as readonly string[]).includes(value);
+}
+
+/** The stage each shape belongs to: a shape is only valid under its own stage. */
+export const RESPONSE_SHAPE_STAGE: Record<ResponseShape, ModelStage> = {
+  'transformation-fill': 'transformation',
+};
+
 /** The schema for a stage's JSON answer, or `undefined` where the stage has none. */
-export function responseSchemaForStage(stage: ModelStage | undefined): object | undefined {
+export function responseSchemaForStage(stage: ModelStage | undefined, shape?: ResponseShape): object | undefined {
+  if (shape === 'transformation-fill' && stage === 'transformation') return TRANSFORMATION_FILL_SCHEMA;
   if (stage === 'transformation') return TRANSFORMATION_RESPONSE_SCHEMA;
   if (stage === 'testing') return TESTING_RESPONSE_SCHEMA;
   return undefined;
