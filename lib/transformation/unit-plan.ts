@@ -1,0 +1,934 @@
+/**
+ * The unit plan of the engine-led transformation (design §7): which functions
+ * the generated package has, which ABAP lines each one stands for, which rules
+ * and guards it carries, and what is not carried over and why.
+ *
+ *   - **A unit is a reachable routine** (`FORM`, or a `METHOD` of a local
+ *     class), not a process step (§7.1 rule 1; measured: every top-level step
+ *     is anchored at its one-line call site).
+ *   - **Event blocks** (`START-OF-SELECTION`, `AT SELECTION-SCREEN`, …) and
+ *     dialog modules become **one orchestrator unit**, `U00` (rule 2).
+ *   - **Tiny helpers fold** into their caller's slice: under 12 lines, no
+ *     material rule, no guard, no database write, exactly one caller (rule 3).
+ *     The same test as the design's measurement (`scripts/transformation/measure.ts`).
+ *   - **Unreachable routines** get no unit (rule 5).
+ *   - **Demo-data routines are fixtures** (rule 6, owner 12.10.2026): named
+ *     as demo, fixture, test or sample data, or reached only from such a
+ *     routine. They are not model-filled; the scaffold writes a fixture loader.
+ *   - **Rule decisions** (§6.4): a DROP rule's guards are not carried and its
+ *     lines are masked in every slice; CHANGE carries the owner's proposal;
+ *     OPEN (no answer, or `clarify`) is carried as KEEP and marked open.
+ *
+ * The rule-id of a guard is read the way the engine cases read it
+ * (`lib/testing-engine-cases.ts`, `ruleOnLine`), so a guard case and the guard
+ * function name the same rule; `tests/transformation-unit-plan.spec.ts` holds
+ * the two in step.
+ *
+ * Pure and deterministic: no network, no model, no BPMN map. Runs in a Web
+ * Worker or on the server (design §4: the page loads it with `import()`).
+ */
+
+import { sha256Hex } from '../artefact-digest';
+import { deriveBusinessRules, type BusinessRule, type BusinessRuleSet } from '../abap/business-rule-set';
+import { readCallGraphFrom, type CallGraphReport, type FormDefinition } from '../abap/call-graph';
+import { containerAt, readBlocks, type BlockStructure, type Container } from '../abap/block-structure';
+import { readGuardsFrom, readOriginalContract, type OriginalContract } from '../abap/original-contract';
+import { readStatements, type AbapStatement } from '../abap/statement-reader';
+import { materialRules, type MaterialRule } from '../testing-rule-trace';
+import { sliceFor } from './abap-slice';
+import { assignBaseValues } from './base-values';
+import { guardBasisReader } from './guard-basis';
+import { camelName, kebab, pascalName, rapNameOf, titleOf } from './naming';
+
+export { camelName, pascalName };
+import {
+  DENSE_UNITS,
+  FOLD_MAX_LINES,
+  HARD_SLICE_CHARS,
+  HARD_SLICE_LINES,
+  MAX_UNITS_REFUSE,
+  PLAN_VERSION,
+  PlanRefusal,
+  SOFT_SLICE_CHARS,
+  SOFT_SLICE_LINES,
+  type AbapRange,
+  type ContractField,
+  type FillRequestUnit,
+  type NotCarried,
+  type PlanGuard,
+  type PlanRule,
+  type RuleDecision,
+  type RuleDecisionInput,
+  type Unit,
+  type UnitKind,
+  type UnitPlan,
+} from './types';
+
+/* ------------------------------------------------------------ the facts */
+
+/** Everything the planner, the slicer and the scaffolds read from one source — read once. */
+export interface EngineFacts {
+  /** The source with line breaks normalised to `\n`. */
+  source: string;
+  lines: string[];
+  statements: AbapStatement[];
+  blocks: BlockStructure;
+  graph: CallGraphReport;
+  contract: OriginalContract;
+  ruleSet: BusinessRuleSet;
+  material: MaterialRule[];
+}
+
+export function readEngineFacts(source: string): EngineFacts {
+  const text = source.replace(/\r\n?/g, '\n');
+  const statements = readStatements(text);
+  const blocks = readBlocks(statements);
+  const graph = readCallGraphFrom(statements, blocks);
+  const contract = readOriginalContract(text);
+  const ruleSet = deriveBusinessRules(text);
+  return { source: text, lines: text.split('\n'), statements, blocks, graph, contract, ruleSet, material: materialRules(ruleSet) };
+}
+
+/* --------------------------------------------------------------- naming */
+
+const DEMO_NAME = /DEMO|FIXTURE|TESTDATA|SAMPLE/i;
+
+/** `G-0506` — four digits, more when the line needs them. */
+export const guardIdOf = (line: number) => `G-${String(line).padStart(4, '0')}`;
+const guardTag = (line: number) => `G${String(line).padStart(4, '0')}`;
+
+/* ------------------------------------------------------------ decisions */
+
+function decisionOf(answer: RuleDecisionInput['answer'] | undefined): RuleDecision {
+  if (answer === 'keep' || answer === 'change' || answer === 'drop') return answer;
+  return 'open';
+}
+
+/* --------------------------------------------------------------- guards */
+
+/**
+ * The engine rule on a guard's line — the mapping of `ruleOnLine` in
+ * `lib/testing-engine-cases.ts` (not exported there; kept identical, and the
+ * spec compares the two on every fixture).
+ */
+export function ruleIdOnLine(rules: readonly BusinessRule[], line: number): string | null {
+  for (const rule of rules) {
+    if (rule.parameters.some((p) => p.operator.toUpperCase() !== 'VALUE' && p.lineStart <= line && line <= p.lineEnd)) return rule.id;
+    if (rule.typeBasis.some((b) => b.anchors.some((a) => a.lineStart <= line && line <= a.lineEnd))) return rule.id;
+  }
+  return null;
+}
+
+/** Lines inside a loop (LOOP, DO, WHILE, SELECT … ENDSELECT) — the engine cases' reading. */
+function loopLines(statements: readonly AbapStatement[]): Set<number> {
+  const out = new Set<number>();
+  let depth = 0;
+  for (const st of statements) {
+    const kw = st.keyword;
+    if (kw === 'ENDLOOP' || kw === 'ENDDO' || kw === 'ENDWHILE' || kw === 'ENDSELECT') depth = Math.max(0, depth - 1);
+    if (depth > 0) for (let l = st.lineStart; l <= st.lineEnd; l++) out.add(l);
+    if (kw === 'LOOP' || kw === 'DO' || kw === 'WHILE' || (kw === 'SELECT' && !/\bSINGLE\b|\bINTO\s+TABLE\b|\bAPPENDING\s+TABLE\b/i.test(st.text))) depth++;
+  }
+  return out;
+}
+
+function subjectOf(condition: string): string | null {
+  const c = condition.trim();
+  const initial = c.match(/^([\w/~-]+)\s+IS\s+(NOT\s+)?INITIAL$/i);
+  if (initial) return initial[1].toLowerCase();
+  const cmp = c.match(/^([\w/~-]+)\s*(>=|<=|<>|=|>|<|\bGE\b|\bLE\b|\bNE\b|\bEQ\b|\bGT\b|\bLT\b)\s*('(?:[^']|'')*'|[\w/~.-]+)$/i);
+  return cmp ? cmp[1].toLowerCase() : null;
+}
+
+/* --------------------------------------------------------------- fields */
+
+/** Built-in types and DDIC elements with a fixed domain — the engine cases' `INPUT_TYPE_KIND`, kept identical. */
+const INPUT_TYPE_KIND: Readonly<Record<string, { kind: ContractField['kind']; digits?: number; max?: string }>> = {
+  I: { kind: 'integer', max: '2147483647' },
+  INT4: { kind: 'integer', max: '2147483647' },
+  INT8: { kind: 'integer', max: '9223372036854775807' },
+  INT2: { kind: 'integer', max: '32767' },
+  S: { kind: 'integer', max: '32767' },
+  INT1: { kind: 'integer', max: '255' },
+  B: { kind: 'integer', max: '255' },
+  GJAHR: { kind: 'digits', digits: 4 },
+  MONAT: { kind: 'digits', digits: 2 },
+  POPER: { kind: 'digits', digits: 3 },
+  POSNR: { kind: 'digits', digits: 6 },
+  D: { kind: 'date' },
+  DATS: { kind: 'date' },
+  DATUM: { kind: 'date' },
+  SYDATUM: { kind: 'date' },
+  BUDAT: { kind: 'date' },
+  BLDAT: { kind: 'date' },
+  ERDAT: { kind: 'date' },
+};
+
+function selectionKey(name: string): string {
+  return camelName(name.replace(/^(?:p|pa|s|so)_/i, ''));
+}
+
+/**
+ * The request the input contract validates: selection inputs, the packed
+ * components of the program's structures as record fields, and the working
+ * decimals as internal (no request path; `compute` reaches them). The same
+ * reading as `readFields` of the engine cases, so every field a case names has
+ * a path or is internal on purpose.
+ */
+export function readContractFields(facts: EngineFacts, notCarried: readonly NotCarried[] = []): ContractField[] {
+  const { statements, contract } = facts;
+  const inputData = recordInputOf(facts, notCarried);
+  const keywordAt = new Map<number, string>();
+  const componentLines = new Set<number>();
+  // Structures: components by structure, so a structure that holds a packed component lends its other components to the record.
+  const structures: Array<{ name: string; components: Array<{ name: string; line: number; type: string | null }> }> = [];
+  const stack: Array<(typeof structures)[number]> = [];
+  for (const st of statements) {
+    if (!keywordAt.has(st.lineStart)) keywordAt.set(st.lineStart, st.keyword);
+    const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+    const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
+    if (begin) {
+      const s = { name: begin[1].toLowerCase(), components: [] };
+      structures.push(s);
+      stack.push(s);
+      continue;
+    }
+    if (/^END\s+OF\b/i.test(rest)) {
+      stack.pop();
+      continue;
+    }
+    if (stack.length > 0 && (st.keyword === 'TYPES' || st.keyword === 'DATA')) {
+      componentLines.add(st.lineStart);
+      const m = /^([\w/]+)(?:\(\d+\))?\s+(?:TYPE|LIKE)\s+([\w/-]+)/i.exec(rest);
+      if (m) stack[stack.length - 1].components.push({ name: m[1].toLowerCase(), line: st.lineStart, type: m[2].toLowerCase() });
+    }
+  }
+  const inputByName = new Map(contract.inputs.filter((i) => i.kind === 'parameter' && !i.flag).map((i) => [i.name.toLowerCase(), i]));
+  const out: ContractField[] = [];
+  const seen = new Set<string>();
+  const usedKeys = new Set<string>();
+  const uniqueKey = (base: string) => {
+    let k = base;
+    let n = 2;
+    while (usedKeys.has(k)) k = `${base}${n++}`;
+    usedKeys.add(k);
+    return k;
+  };
+  const recordKeys = new Set<string>();
+  const recordKey = (name: string) => {
+    let k = camelName(name);
+    let n = 2;
+    while (recordKeys.has(k)) k = `${camelName(name)}${n++}`;
+    recordKeys.add(k);
+    return k;
+  };
+  usedKeys.add('records');
+
+  // Packed decimals (constants excluded), as the engine cases read them.
+  const packedComponentStructures = new Set<string>();
+  for (const d of contract.decimals) {
+    if (keywordAt.get(d.line) === 'CONSTANTS') continue;
+    const name = d.name.toLowerCase();
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const input = inputByName.get(name);
+    // A record field is a component of a structure the original takes as input data, and not one it computes.
+    const owner = componentLines.has(d.line) ? structures.find((x) => x.components.some((c) => c.line === d.line)) : undefined;
+    const component = Boolean(owner && inputData.structures.has(owner.name) && !inputData.computed.has(name));
+    if (component && owner) packedComponentStructures.add(owner.name);
+    const where: ContractField['where'] = input ? 'selection' : component ? 'record' : 'internal';
+    const key = where === 'selection' ? uniqueKey(selectionKey(name)) : where === 'record' ? recordKey(name) : camelName(name);
+    out.push({
+      original: name.toUpperCase(),
+      path: where === 'selection' ? key : where === 'record' ? `records[].${key}` : null,
+      key,
+      where,
+      kind: 'packed',
+      digits: d.digits,
+      places: d.decimals,
+      max: d.max,
+      obligatory: input?.obligatory ?? where === 'record',
+      defaultValue: input?.defaultValue ?? null,
+      line: d.line,
+      declaration: `P(${d.digits},${d.decimals})`,
+      base: null,
+    });
+  }
+  // Selection inputs: parameters, flags and select-options.
+  for (const i of contract.inputs) {
+    const name = i.name.toLowerCase();
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const typeName = (i.type ?? '').toUpperCase();
+    const known = i.kind === 'parameter' && !i.flag ? INPUT_TYPE_KIND[typeName] : undefined;
+    const kind: ContractField['kind'] = i.kind === 'select-option' ? 'range' : i.flag ? 'flag' : known?.kind ?? 'text';
+    const key = uniqueKey(selectionKey(name));
+    out.push({
+      original: name.toUpperCase(),
+      path: key,
+      key,
+      where: 'selection',
+      kind,
+      digits: known?.digits ?? null,
+      places: 0,
+      max: known?.max ?? null,
+      obligatory: i.obligatory,
+      defaultValue: i.defaultValue,
+      line: i.line,
+      declaration: i.type ? `${i.kind === 'select-option' ? 'FOR' : 'TYPE'} ${i.type.toLowerCase()}` : 'type not stated',
+      base: null,
+    });
+  }
+  // The other components of a structure that holds a packed record field: optional text on the record.
+  for (const s of structures) {
+    if (!packedComponentStructures.has(s.name)) continue;
+    for (const c of s.components) {
+      if (seen.has(c.name) || inputData.computed.has(c.name)) continue;
+      seen.add(c.name);
+      const key = recordKey(c.name);
+      out.push({
+        original: c.name.toUpperCase(),
+        path: `records[].${key}`,
+        key,
+        where: 'record',
+        kind: 'text',
+        digits: null,
+        places: 0,
+        max: null,
+        obligatory: false,
+        defaultValue: null,
+        line: c.line,
+        declaration: c.type ? `TYPE ${c.type}` : 'type not stated',
+        base: null,
+      });
+    }
+  }
+  return out;
+}
+
+const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|ALSM_EXCEL_TO_INTERNAL_TABLE)\b/i;
+
+/**
+ * What the original takes as input data (coordinator, 12.10.2026): the
+ * structures it fills from a database read, an upload or file read, a SPLIT of
+ * an input line, or its demo-data routines — and, among their components, the
+ * ones it computes afterwards (assigned outside the demo data: `ls-calc_discount
+ * = …`, `ADD … TO ls-rem_num`). A computed component is a result, never a
+ * request field.
+ */
+export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string> } {
+  const { statements } = facts;
+  const fixtures = notCarried.filter((n) => n.reason === 'fixture');
+  const inFixture = (line: number) => fixtures.some((n) => line >= n.lineStart && line <= n.lineEnd);
+  const lower = (s: string) => s.toLowerCase();
+
+  // Types: table types to their line type, data objects to their type (a structure, or a table of one).
+  const tableOf = new Map<string, string>();
+  const typeOf = new Map<string, string>();
+  for (const st of statements) {
+    if (st.keyword !== 'TYPES' && st.keyword !== 'DATA' && st.keyword !== 'CLASS-DATA' && st.keyword !== 'STATICS') continue;
+    const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+    const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
+    if (begin) {
+      if (st.keyword !== 'TYPES') typeOf.set(lower(begin[1]), lower(begin[1]));
+      continue;
+    }
+    const m = /^([\w/]+)\s+TYPE\s+(?:(?:STANDARD|SORTED|HASHED|ANY)\s+)?(?:TABLE\s+OF\s+(?:REF\s+TO\s+)?)?([\w/]+)/i.exec(rest);
+    if (!m) continue;
+    if (st.keyword === 'TYPES') tableOf.set(lower(m[1]), lower(m[2]));
+    else typeOf.set(lower(m[1]), lower(m[2]));
+  }
+  const structureOf = (v: string): string | null => {
+    let t = typeOf.get(lower(v)) ?? null;
+    for (let i = 0; t && i < 4 && tableOf.has(t); i++) t = tableOf.get(t)!;
+    return t;
+  };
+
+  // Data objects the original fills from outside or from its demo data.
+  const inputVars = new Set<string>();
+  const base = (target: string) => lower(target.replace(/^@/, '').replace(/^DATA\(|\)$/gi, '').split('-')[0]);
+  for (const st of statements) {
+    const t = st.text;
+    if (st.keyword === 'SELECT') {
+      for (const m of t.matchAll(/\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?(@?(?:DATA\()?[\w/<>]+)/gi)) inputVars.add(base(m[1]));
+    } else if (st.keyword === 'READ' && /^READ\s+DATASET\b/i.test(t)) {
+      const m = /\bINTO\s+([\w/<>-]+)/i.exec(t);
+      if (m) inputVars.add(base(m[1]));
+    } else if (st.keyword === 'SPLIT') {
+      const m = /\bINTO\s+(TABLE\s+)?([\s\S]+?)(?:\s+IN\s+(?:CHARACTER|BYTE)\s+MODE)?\.?$/i.exec(t);
+      if (m) for (const target of m[2].split(/\s+/)) if (/^[\w/<>-]+$/.test(target)) inputVars.add(base(target));
+    } else if (UPLOAD_CALL.test(t)) {
+      for (const m of t.matchAll(/\b(?:data_tab|i_tab_converted_data|intern)\s*=\s*([\w/<>-]+)/gi)) inputVars.add(base(m[1]));
+    }
+    if (inFixture(st.lineStart)) {
+      const m = /^(?:APPEND|INSERT)\b[\s\S]*?\b(?:TO|INTO\s+TABLE|INTO)\s+([\w/<>-]+)\s*\.?$/i.exec(t);
+      if (m) inputVars.add(base(m[1]));
+    }
+  }
+  // A line of input data appended to a table makes the table input data too.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const st of statements) {
+      const m = /^(?:APPEND|INSERT)\s+([\w/<>-]+)\s+(?:TO|INTO\s+TABLE)\s+([\w/<>-]+)/i.exec(st.text);
+      if (m && inputVars.has(base(m[1])) && !inputVars.has(base(m[2]))) {
+        inputVars.add(base(m[2]));
+        changed = true;
+      }
+    }
+  }
+  const structures = new Set<string>();
+  for (const v of inputVars) {
+    const s = structureOf(v) ?? (typeOf.get(v) === v ? v : null);
+    if (s) structures.add(s);
+  }
+
+  // Components the original computes after the input is read (outside its demo data).
+  const computed = new Set<string>();
+  for (const st of statements) {
+    if (inFixture(st.lineStart) || st.keyword === 'SELECT' || st.keyword === 'SPLIT' || st.keyword === 'READ') continue;
+    const t = st.text.replace(/\.$/, '');
+    const assign = /^<?[\w/~]+>?((?:-[\w/~]+)+)\s*((?:[-+*/]|&&)?)=(?!=)\s*([\s\S]*)$/.exec(t);
+    if (assign) {
+      // Computed: arithmetic, a function, an operator-assignment, or a value set by the logic (a literal, a status).
+      // A plain copy of another field (`ls_drv-kostl = lv_kostl` after reading a line) is still input data.
+      const rhs = assign[3].trim();
+      const isComputed = Boolean(assign[2]) || /[+*/]|\s-\s|\*\*|\bDIV\b|\bMOD\b|[\w>]\(|&&|\|/i.test(rhs) || /^(?:'(?:[^']|'')*'|`[^`]*`|-?\d+(?:\.\d+)?|abap_true|abap_false|space)$/i.test(rhs);
+      if (isComputed) computed.add(lower(assign[1].slice(assign[1].lastIndexOf('-') + 1)));
+      continue;
+    }
+    const writer = /^(?:ADD|SUBTRACT)\b.*\b(?:TO|FROM)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^(?:MULTIPLY|DIVIDE)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^COMPUTE\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t);
+    if (writer) computed.add(lower(writer[1].slice(writer[1].lastIndexOf('-') + 1)));
+  }
+  return { structures, computed };
+}
+
+/** The CSV delimiter a constant of the original declares (`gc_sep VALUE ';'`), else a comma. */
+export function csvDelimiterOf(statements: readonly AbapStatement[]): string {
+  for (const st of statements) {
+    if (st.keyword !== 'CONSTANTS') continue;
+    const m = /^CONSTANTS\s*:?\s*([\w/]+)\b.*\bVALUE\s+'(.)'/i.exec(st.text);
+    if (m && /SEP|DELIM|TRENN/i.test(m[1]) && /^[;,|\t]$/.test(m[2])) return m[2];
+    const tab = /^CONSTANTS\s*:?\s*([\w/]+)\b.*\bVALUE\s+cl_abap_char_utilities=>horizontal_tab/i.exec(st.text);
+    if (tab && /SEP|DELIM|TRENN/i.test(tab[1])) return '\t';
+  }
+  return ',';
+}
+
+/* ----------------------------------------------------------------- plan */
+
+export interface PlanInput {
+  /** The rule decisions on record — `TransformationContextInput.rules.items` (Track A). */
+  decisions?: readonly RuleDecisionInput[];
+  /** Fallback when the source names no program. */
+  program?: string | null;
+}
+
+interface Routine {
+  name: string;
+  kind: 'form' | 'method';
+  lineStart: number;
+  lineEnd: number;
+  parameters: FormDefinition['parameters'];
+  /** For a method: the local class. */
+  owner: string | null;
+}
+
+const EVENT_FOR_SELECTION = /^(AT SELECTION-SCREEN|INITIALIZATION)/i;
+
+/** One unit per reachable routine, the orchestrator, the rules and guards placed — see the file comment. */
+export function planUnits(source: string, input: PlanInput = {}, given?: EngineFacts): UnitPlan {
+  const facts = given ?? readEngineFacts(source);
+  const { lines, statements, blocks, graph, contract, ruleSet, material } = facts;
+  const program = ruleSet.program ?? input.program ?? null;
+  const decisions = new Map((input.decisions ?? []).map((d) => [d.id, d]));
+  const decision = (id: string | null): RuleDecision => (id ? decisionOf(decisions.get(id)?.answer) : 'keep');
+
+  // ---- routines: FORMs, then methods of local classes (in source order)
+  const routines: Routine[] = graph.forms.map((f) => ({ name: f.name, kind: 'form', lineStart: f.lineStart, lineEnd: f.lineEnd, parameters: f.parameters, owner: null }));
+  const classes = blocks.containers.filter((c) => c.kind === 'class');
+  for (const c of blocks.containers) {
+    if (c.kind !== 'method') continue;
+    const owner = classes.find((k) => k.lineStart <= c.lineStart && c.lineEnd <= k.lineEnd)?.name ?? null;
+    routines.push({ name: c.name, kind: 'method', lineStart: c.lineStart, lineEnd: c.lineEnd, parameters: [], owner });
+  }
+  if (routines.length === 0 && !blocks.containers.some((c) => c.kind === 'event')) {
+    throw new PlanRefusal('no-routine', 'The source holds no routine and no event block — nothing to anchor a function to.');
+  }
+  const byName = new Map(routines.map((r) => [r.name, r]));
+  const unreachable = new Set(graph.unreachable);
+
+  // ---- callers (PERFORM edges; '(program)' for event blocks and program level), as the measurement counts them
+  const callers = new Map<string, Set<string>>();
+  for (const e of graph.edges) {
+    if (!callers.has(e.to)) callers.set(e.to, new Set());
+    callers.get(e.to)!.add(e.from ?? '(program)');
+  }
+  const within = (line: number, r: { lineStart: number; lineEnd: number }) => line >= r.lineStart && line <= r.lineEnd;
+  const rulesIn = (r: Routine) => material.filter((m) => (m.routine ?? '').toUpperCase() === r.name).length;
+  const guardsIn = (r: Routine) => contract.guards.filter((g) => within(g.line, r)).length;
+  const writesIn = (r: Routine) => graph.databaseWrites.filter((w) => within(w.lineStart, r)).length;
+
+  const reachable = routines.filter((r) => r.kind === 'method' || !unreachable.has(r.name));
+  const helper = new Set<string>();
+  const fixture = new Set<string>();
+  for (const r of reachable) {
+    if (r.kind !== 'form') continue;
+    const span = r.lineEnd - r.lineStart + 1;
+    const nCallers = callers.get(r.name)?.size ?? 0;
+    // Demo data first: a small demo routine is still demo data, not a helper of its caller.
+    if (DEMO_NAME.test(r.name)) fixture.add(r.name);
+    else if (span < FOLD_MAX_LINES && rulesIn(r) === 0 && guardsIn(r) === 0 && writesIn(r) === 0 && nCallers === 1) helper.add(r.name);
+  }
+  // Reached only from demo-data routines: also a fixture (§7.1 rule 6).
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const r of reachable) {
+      if (r.kind !== 'form' || helper.has(r.name) || fixture.has(r.name)) continue;
+      const from = callers.get(r.name);
+      if (!from || from.size === 0 || graph.callbacks.some((c) => c.to === r.name)) continue;
+      if ([...from].every((c) => fixture.has(c))) {
+        fixture.add(r.name);
+        changed = true;
+      }
+    }
+  }
+
+  // ---- reading order: depth-first from the event blocks and program level, call sites in source order
+  const outgoing = new Map<string, string[]>();
+  const rootCalls: Array<{ line: number; to: string }> = [];
+  for (const e of [...graph.edges].sort((a, b) => a.lineStart - b.lineStart)) {
+    if (e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module') rootCalls.push({ line: e.lineStart, to: e.to });
+    else {
+      if (!outgoing.has(e.from)) outgoing.set(e.from, []);
+      outgoing.get(e.from)!.push(e.to);
+    }
+  }
+  for (const cb of [...graph.callbacks].sort((a, b) => a.lineStart - b.lineStart)) {
+    if (cb.from === null || cb.fromKind !== 'form') rootCalls.push({ line: cb.lineStart, to: cb.to });
+    else {
+      if (!outgoing.has(cb.from)) outgoing.set(cb.from, []);
+      outgoing.get(cb.from)!.push(cb.to);
+    }
+  }
+  rootCalls.sort((a, b) => a.line - b.line);
+  const order: string[] = [];
+  const visited = new Set<string>();
+  const visit = (name: string) => {
+    if (visited.has(name) || !byName.has(name)) return;
+    visited.add(name);
+    order.push(name);
+    for (const next of outgoing.get(name) ?? []) visit(next);
+  };
+  for (const c of rootCalls) visit(c.to);
+  for (const r of [...reachable].sort((a, b) => a.lineStart - b.lineStart)) visit(r.name);
+
+  // ---- folding: a helper goes into its single caller; chains resolve to the first non-folded host
+  const hostOf = (name: string, depth = 0): string | null => {
+    if (!helper.has(name)) return name;
+    if (depth > 64) return null;
+    const from = [...(callers.get(name) ?? [])][0];
+    if (!from || from === '(program)') return '(program)';
+    const r = byName.get(from);
+    if (!r) return '(program)'; // called from an event block or module: the orchestrator
+    return hostOf(from, depth + 1);
+  };
+
+  // ---- units
+  const units: Unit[] = [];
+  const unitOfRoutine = new Map<string, Unit>();
+  const folded: Array<{ routine: string; into: string }> = [];
+  const notCarried: NotCarried[] = [];
+  const usedFns = new Set<string>(['runSteps', 'runProcess', 'checkSelection']);
+  const uniqueFn = (base: string) => {
+    let f = base;
+    let n = 2;
+    while (usedFns.has(f)) f = `${base}${n++}`;
+    usedFns.add(f);
+    return f;
+  };
+
+  const orchestrator: Unit = {
+    id: 'U00',
+    kind: 'orchestrator',
+    fn: 'runSteps',
+    rapName: 'run_steps',
+    file: 'srv/process.ts',
+    title: 'Run the process steps in the original order',
+    stepId: null,
+    routine: null,
+    abap: blocks.containers
+      .filter((c) => c.kind === 'event' || c.kind === 'module')
+      .sort((a, b) => a.lineStart - b.lineStart)
+      .map((c) => ({ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: c.name })),
+    folded: [],
+    rules: [],
+    guards: [],
+    guardCalls: [],
+    bodyCalls: [],
+    callees: [],
+    parameters: [],
+    signature: 'export function runSteps(sel: Selection, st: RunState): StepResult',
+    budget: { lines: 0, chars: 0 },
+    overSoftBudget: false,
+    part: null,
+  };
+  units.push(orchestrator);
+
+  let n = 0;
+  const nextId = () => `U${String(++n).padStart(2, '0')}`;
+  const routineUnit = (r: Routine, kind: UnitKind): Unit => {
+    const id = nextId();
+    const fn = uniqueFn(camelName(r.owner ? `${r.owner}_${r.name}` : r.name));
+    const argsType = r.parameters.length > 0 ? `, args: ${fn[0].toUpperCase()}${fn.slice(1)}Args` : '';
+    return {
+      id,
+      kind,
+      fn,
+      rapName: rapNameOf(r.name),
+      file: `srv/steps/${id.slice(1)}-${kebab(r.name)}.ts`,
+      title: titleOf(r.name),
+      stepId: null,
+      routine: r.name,
+      abap: [{ lineStart: r.lineStart, lineEnd: r.lineEnd, routine: r.name }],
+      folded: [],
+      rules: [],
+      guards: [],
+      guardCalls: [],
+      bodyCalls: [],
+      callees: [],
+      parameters: r.parameters.map((p) => ({ name: p.name, direction: p.direction })),
+      signature: `export function ${fn}(sel: Selection, st: RunState${argsType}): StepResult`,
+      budget: { lines: 0, chars: 0 },
+      overSoftBudget: false,
+      part: null,
+    };
+  };
+
+  for (const name of order) {
+    const r = byName.get(name)!;
+    if (helper.has(name) || fixture.has(name)) continue;
+    const unit = routineUnit(r, r.kind === 'method' ? 'method' : 'routine');
+    units.push(unit);
+    unitOfRoutine.set(name, unit);
+  }
+  for (const r of routines) {
+    if (r.kind === 'form' && unreachable.has(r.name)) notCarried.push({ routine: r.name, reason: 'unreachable', lineStart: r.lineStart, lineEnd: r.lineEnd });
+    else if (fixture.has(r.name)) notCarried.push({ routine: r.name, reason: 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
+  }
+  for (const name of order) {
+    if (!helper.has(name)) continue;
+    const r = byName.get(name)!;
+    const host = hostOf(name);
+    const into = host === '(program)' || host === null ? orchestrator : unitOfRoutine.get(host) ?? null;
+    if (!into) {
+      // The host is a fixture: the helper goes with it.
+      notCarried.push({ routine: name, reason: 'fixture', lineStart: r.lineStart, lineEnd: r.lineEnd });
+      continue;
+    }
+    into.folded.push(name);
+    into.abap.push({ lineStart: r.lineStart, lineEnd: r.lineEnd, routine: name });
+    folded.push({ routine: name, into: into.id });
+  }
+  const unitOf = (routine: string | null): Unit | null => {
+    if (!routine) return null;
+    const direct = unitOfRoutine.get(routine);
+    if (direct) return direct;
+    const f = folded.find((x) => x.routine === routine);
+    return f ? units.find((u) => u.id === f.into) ?? null : null;
+  };
+
+  // ---- callees: the units a unit's lines (own and folded) perform
+  for (const u of units) {
+    const names = u.kind === 'orchestrator' ? null : new Set([u.routine!, ...u.folded]);
+    const targets: string[] = [];
+    for (const e of graph.edges) {
+      const fromHere = names ? e.from !== null && names.has(e.from) : e.from === null || e.fromKind === 'event' || e.fromKind === 'program' || e.fromKind === 'module' || (e.from !== null && u.folded.includes(e.from));
+      if (!fromHere) continue;
+      const callee = unitOf(e.to);
+      if (callee && callee.id !== u.id && !targets.includes(callee.id)) targets.push(callee.id);
+    }
+    for (const cb of graph.callbacks) {
+      const fromHere = names ? cb.from !== null && names.has(cb.from) : cb.from === null || cb.fromKind !== 'form' || u.folded.includes(cb.from);
+      if (!fromHere) continue;
+      const callee = unitOf(cb.to);
+      if (callee && callee.id !== u.id && !targets.includes(callee.id)) targets.push(callee.id);
+    }
+    u.callees = targets;
+  }
+
+  // ---- rules
+  const containerOf = (line: number): Container | null => containerAt(blocks.containers, line);
+  const rules: PlanRule[] = material.map((m) => {
+    const d = decision(m.id);
+    const firstLine = m.ranges[0]?.lineStart ?? null;
+    const c = firstLine !== null ? containerOf(firstLine) : null;
+    let unit: Unit | null = null;
+    const routine = m.routine ? m.routine.toUpperCase() : null;
+    if (routine && byName.has(routine)) unit = unitOf(routine);
+    else if (c && (c.kind === 'event' || c.kind === 'module')) unit = EVENT_FOR_SELECTION.test(c.name) ? null : orchestrator;
+    else if (!routine) unit = orchestrator;
+    return {
+      id: m.id,
+      type: m.type,
+      decision: d,
+      proposal: d === 'change' ? decisions.get(m.id)?.note ?? null : null,
+      label: m.label,
+      text: m.text,
+      routine,
+      ranges: m.ranges,
+      unitId: d === 'drop' ? null : unit?.id ?? null,
+    };
+  });
+  for (const r of rules) {
+    if (!r.unitId) continue;
+    const u = units.find((x) => x.id === r.unitId);
+    if (u && !u.rules.includes(r.id)) u.rules.push(r.id);
+  }
+
+  // ---- guards
+  const inLoop = loopLines(statements);
+  const constants = statements.filter((st) => st.keyword === 'CONSTANTS').map((st) => /^CONSTANTSs*:?s*([w/]+)/i.exec(st.text)?.[1] ?? '').filter(Boolean);
+  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants);
+  const guards: PlanGuard[] = readGuardsFrom(statements).map((g) => {
+    const rule = ruleIdOnLine(ruleSet.rules, g.line);
+    const d = rule ? decision(rule) : 'keep';
+    const c = containerOf(g.line);
+    const tag = guardTag(g.line);
+    const outcome: PlanGuard['outcome'] =
+      g.effect === 'continue' || (g.effect === 'check' && inLoop.has(g.line))
+        ? 'skips'
+        : g.effect === 'return' || g.effect === 'exit'
+          ? 'stops'
+          : 'refuses';
+    const prefix = outcome === 'skips' ? 'skip' : outcome === 'stops' ? 'stop' : 'guard';
+    const helperName = `${prefix}_${rule ? `${rule.replace(/-/g, '_')}_` : ''}${tag}`;
+    let place: PlanGuard['place'] = 'not-carried';
+    let unit: Unit | null = null;
+    if (d !== 'drop') {
+      if (c && (c.kind === 'form' || c.kind === 'method')) {
+        unit = unitOf(c.name);
+        if (unit) place = unit.kind === 'orchestrator' ? 'orchestrator' : 'unit';
+      } else if (c && c.kind === 'event' && EVENT_FOR_SELECTION.test(c.name)) {
+        unit = orchestrator;
+        place = 'selection-screen';
+      } else {
+        unit = orchestrator;
+        place = 'orchestrator';
+      }
+    }
+    const basis = basisReader.basisOf(g.line, g.condition);
+    const placement: PlanGuard['placement'] =
+      place === 'not-carried'
+        ? 'none'
+        : basis.basis === 'derived' || outcome === 'skips'
+          ? 'body'
+          : place === 'selection-screen'
+            ? 'selection'
+            : 'entry';
+    return {
+      id: guardIdOf(g.line),
+      line: g.line,
+      endingLine: g.endingLine,
+      condition: g.condition,
+      effect: g.effect,
+      ending: g.ending,
+      rule,
+      decision: d,
+      carried: place !== 'not-carried',
+      outcome,
+      subject: subjectOf(g.condition),
+      place,
+      unitId: unit?.id ?? null,
+      helper: helperName,
+      regionId: unit ? `${unit.id}.${tag}` : null,
+      basis: basis.basis,
+      basisReason: basis.reason,
+      operands: basis.operands,
+      literals: basis.literals,
+      op: basis.op,
+      placement,
+    };
+  });
+  for (const g of guards) {
+    if (!g.carried || !g.unitId) continue;
+    const u = units.find((x) => x.id === g.unitId)!;
+    u.guards.push(g.id);
+    // Raw checks: the stub calls them before the fill marker (§9.1), the selection-screen ones run in
+    // `checkSelection` before any step. Derived and skipping checks: the body calls them where the original does.
+    if (g.placement === 'entry') u.guardCalls.push(g.id);
+    else if (g.placement === 'body') u.bodyCalls.push(g.id);
+  }
+
+  // ---- the request and its base values (from the original only; base-values.ts)
+  const fields = readContractFields(facts, notCarried);
+  const missingBaseValues = assignBaseValues(fields, facts, notCarried);
+
+  // ---- split above the hard budget (§7.2), then budgets from the slices
+  const plan: UnitPlan = {
+    version: PLAN_VERSION,
+    program,
+    sourceSha256: sha256Hex(facts.source),
+    units,
+    rules,
+    guards,
+    decimals: contract.decimals,
+    inputs: contract.inputs,
+    fields,
+    missingBaseValues,
+    csvDelimiter: csvDelimiterOf(statements),
+    notCarried: notCarried.sort((a, b) => a.lineStart - b.lineStart),
+    folded,
+    stats: {
+      routines: routines.length,
+      reachable: reachable.length,
+      unreachable: routines.filter((r) => r.kind === 'form' && unreachable.has(r.name)).length,
+      folded: folded.length,
+      fixtures: notCarried.filter((x) => x.reason === 'fixture').length,
+      routineUnits: 0,
+      units: 0,
+      overSoftBudget: [],
+      split: [],
+      guards: { total: guards.length, inUnits: 0, programLevel: 0, notCarried: 0 },
+      rules: { keep: 0, change: 0, drop: 0, open: 0 },
+      unitsPerCall: 4,
+    },
+    digest: '',
+  };
+  splitOversized(plan, facts);
+  for (const u of plan.units) {
+    const slice = sliceFor(u, plan, facts);
+    u.budget = { lines: slice.lines, chars: slice.chars };
+    const own = u.abap[0];
+    const ownLines = own ? own.lineEnd - own.lineStart + 1 : 0;
+    const ownChars = own ? lines.slice(own.lineStart - 1, own.lineEnd).join('\n').length : 0;
+    u.overSoftBudget = u.kind !== 'orchestrator' && (ownLines > SOFT_SLICE_LINES || ownChars > SOFT_SLICE_CHARS);
+  }
+  const routineUnits = plan.units.filter((u) => u.kind === 'routine' || u.kind === 'method');
+  if (plan.units.length > MAX_UNITS_REFUSE) {
+    throw new PlanRefusal('too-many-units', `The program needs ${plan.units.length} functions; above ${MAX_UNITS_REFUSE} the engine does not scaffold it.`);
+  }
+  plan.stats.routineUnits = routineUnits.length;
+  plan.stats.units = plan.units.length;
+  plan.stats.overSoftBudget = plan.units.filter((u) => u.overSoftBudget).map((u) => u.routine ?? u.fn);
+  plan.stats.guards = {
+    total: guards.length,
+    inUnits: guards.filter((g) => g.place === 'unit').length,
+    programLevel: guards.filter((g) => g.place === 'orchestrator' || g.place === 'selection-screen').length,
+    notCarried: guards.filter((g) => !g.carried).length,
+  };
+  for (const r of rules) plan.stats.rules[r.decision]++;
+  plan.stats.unitsPerCall = plan.units.length > DENSE_UNITS ? 6 : 4;
+  plan.digest = planDigest(plan);
+  return plan;
+}
+
+/**
+ * §7.2: a routine above the hard budget is split at its top-level statements
+ * into `<fn>Part1…n`; the parent keeps its signature and calls the parts in
+ * order (engine-written), sharing the run state.
+ */
+function splitOversized(plan: UnitPlan, facts: EngineFacts): void {
+  const out: Unit[] = [];
+  for (const u of plan.units) {
+    out.push(u);
+    if (u.kind !== 'routine' && u.kind !== 'method') continue;
+    const own = u.abap[0];
+    const ownLines = own.lineEnd - own.lineStart + 1;
+    const ownChars = facts.lines.slice(own.lineStart - 1, own.lineEnd).join('\n').length;
+    if (ownLines <= HARD_SLICE_LINES && ownChars <= HARD_SLICE_CHARS) continue;
+    // Top-level statements of the routine: only the routine's own block encloses them.
+    const tops = facts.statements
+      .map((s, i) => ({ s, depth: facts.blocks.enclosing[i]?.length ?? 0 }))
+      .filter(({ s, depth }) => s.lineStart > own.lineStart && s.lineEnd < own.lineEnd && depth === 1);
+    const cuts: Array<{ lineStart: number; lineEnd: number }> = [];
+    let start = own.lineStart + 1;
+    let chars = 0;
+    for (const { s } of tops) {
+      const len = facts.lines.slice(s.lineStart - 1, s.lineEnd).join('\n').length;
+      if (s.lineEnd - start + 1 > HARD_SLICE_LINES - 20 || chars + len > HARD_SLICE_CHARS - 1_000) {
+        if (s.lineStart - 1 >= start) cuts.push({ lineStart: start, lineEnd: s.lineStart - 1 });
+        start = s.lineStart;
+        chars = 0;
+      }
+      chars += len;
+    }
+    if (own.lineEnd - 1 >= start) cuts.push({ lineStart: start, lineEnd: own.lineEnd - 1 });
+    if (cuts.length < 2) continue;
+    plan.stats.split.push(u.routine ?? u.fn);
+    const parts = cuts.map((c, i): Unit => ({
+      ...u,
+      id: `${u.id}P${i + 1}`,
+      fn: `${u.fn}Part${i + 1}`,
+      rapName: `${u.rapName.slice(0, 24)}_part${i + 1}`,
+      file: u.file.replace(/\.ts$/, `-part${i + 1}.ts`),
+      title: `${u.title} (part ${i + 1} of ${cuts.length})`,
+      abap: [{ lineStart: c.lineStart, lineEnd: c.lineEnd, routine: u.routine ?? u.fn }],
+      folded: [],
+      rules: u.rules.filter((id) => plan.rules.find((r) => r.id === id)?.ranges.some((rg) => rg.lineStart >= c.lineStart && rg.lineStart <= c.lineEnd)),
+      guards: u.guards.filter((id) => {
+        const g = plan.guards.find((x) => x.id === id)!;
+        return g.line >= c.lineStart && g.line <= c.lineEnd;
+      }),
+      guardCalls: [],
+      bodyCalls: [],
+      callees: u.callees,
+      signature: `export function ${u.fn}Part${i + 1}(sel: Selection, st: RunState, local: Record<string, unknown>): StepResult`,
+      part: { index: i + 1, of: cuts.length, parent: u.id },
+    }));
+    // Guard predicates of a part are filled by that part.
+    for (const p of parts) for (const id of p.guards) {
+      const g = plan.guards.find((x) => x.id === id)!;
+      g.unitId = p.id;
+      g.regionId = `${p.id}.${id.replace('-', '')}`;
+      if (g.placement === 'body') p.bodyCalls.push(id);
+    }
+    u.bodyCalls = u.bodyCalls.filter((id) => !parts.some((p) => p.bodyCalls.includes(id)));
+    u.guards = u.guards.filter((id) => !parts.some((p) => p.guards.includes(id)));
+    out.push(...parts);
+  }
+  plan.units = out;
+}
+
+/** sha256 over the plan's canonical form: what the scaffold is built from. */
+export function planDigest(plan: Pick<UnitPlan, 'version' | 'sourceSha256' | 'units' | 'rules' | 'guards' | 'fields'>): string {
+  const canonical = JSON.stringify({
+    v: plan.version,
+    s: plan.sourceSha256,
+    u: plan.units.map((u) => [u.id, u.kind, u.fn, u.abap.map((a) => [a.lineStart, a.lineEnd]), u.rules, u.guards, u.guardCalls, u.bodyCalls, u.callees]),
+    r: plan.rules.map((r) => [r.id, r.decision, r.proposal ?? '', r.unitId ?? '']),
+    g: plan.guards.map((g) => [g.id, g.rule ?? '', g.carried, g.unitId ?? '', g.outcome, g.placement, g.operands.map((o) => o.key)]),
+    f: plan.fields.map((f) => [f.original, f.path ?? '', f.kind, f.digits ?? '', f.places, f.obligatory, JSON.stringify(f.base?.value ?? null)]),
+  });
+  return sha256Hex(canonical);
+}
+
+/** The ABAP range list of a set of units as `L500–L540` words. */
+export function rangeWords(ranges: readonly AbapRange[]): string {
+  return ranges.map((r) => (r.lineStart === r.lineEnd ? `L${r.lineStart}` : `L${r.lineStart}–L${r.lineEnd}`)).join(', ');
+}
+
+/**
+ * The guards of one unit as a fill request lists them (§8.2): where each is
+ * called — at the entry by the stub, in the body at the original's line, or
+ * with the selection — its predicate region, and the values a derived one
+ * takes. Track C's fill prompt says from this where a body must call a guard.
+ */
+export function fillGuardsOf(plan: Pick<UnitPlan, 'guards' | 'units'>, unitId: string): FillRequestUnit['guards'] {
+  const unit = plan.units.find((u) => u.id === unitId);
+  if (!unit) return [];
+  return unit.guards.map((id) => {
+    const g = plan.guards.find((x) => x.id === id)!;
+    return {
+      id: g.id,
+      rule: g.rule,
+      helper: g.helper,
+      condition: g.condition,
+      effect: g.effect,
+      line: g.line,
+      regionId: g.regionId,
+      placement: g.placement,
+      basis: g.basis,
+      values: g.operands.map((o) => o.key),
+    };
+  });
+}

@@ -200,3 +200,52 @@ test.describe('the page puts the facts into the Node.js code-draft prompt', () =
     expect(page).toContain('originalFacts = codeDraftFactsSection(null);');
   });
 });
+
+test.describe('packed fields typed through a local type (coordinator, 12.10.2026)', () => {
+  const src = [
+    'REPORT z.',
+    'TYPES ty_qty TYPE p LENGTH 8 DECIMALS 3.',
+    'TYPES ty_qty2 TYPE ty_qty.',
+    'TYPES: BEGIN OF ty_comp,',
+    '         matnr TYPE matnr,',
+    '         bdmng TYPE ty_qty,',
+    '         labst TYPE ty_qty2,',
+    '         wrbtr TYPE wrbtr,',
+    '       END OF ty_comp.',
+    'TYPES ty_comp_tab TYPE STANDARD TABLE OF ty_comp WITH EMPTY KEY.',
+    'DATA: lv_open TYPE ty_qty,',
+    '      lv_copy LIKE lv_open,',
+    '      gt_qty TYPE STANDARD TABLE OF ty_qty WITH EMPTY KEY.',
+    'DATA lv_menge TYPE menge_d.',
+  ].join('\n');
+  const decimals = readOriginalContract(src).decimals;
+  const byName = (n: string) => decimals.find((d) => d.name === n);
+
+  test('an alias, an alias of an alias, a structure component and LIKE resolve to the declared places', () => {
+    expect(byName('ty_qty')).toMatchObject({ length: 8, decimals: 3, digits: 15, max: '999999999999.999' });
+    expect(byName('ty_qty')!.via).toBeUndefined();
+    expect(byName('ty_qty2')).toMatchObject({ decimals: 3, digits: 15, via: 'ty_qty', line: 3 });
+    expect(byName('bdmng')).toMatchObject({ decimals: 3, digits: 15, via: 'ty_qty', line: 6 });
+    expect(byName('labst')).toMatchObject({ decimals: 3, via: 'ty_qty', line: 7 });
+    expect(byName('lv_open')).toMatchObject({ decimals: 3, via: 'ty_qty', line: 11 });
+    expect(byName('lv_copy')).toMatchObject({ decimals: 3, via: 'ty_qty', line: 12 });
+  });
+
+  test('the prompt facts name the type a field was resolved through', () => {
+    const facts = codeDraftFactsSection(readOriginalContract(src));
+    expect(facts).toContain('bdmng L6: TYPE p LENGTH 8 DECIMALS 3 (via ty_qty) → 3 places, |value| ≤ 999999999999.999');
+    expect(facts).toContain('ty_qty L2: TYPE p LENGTH 8 DECIMALS 3 → 3 places');
+  });
+
+  test('DDIC types stay unguessed; a table of a packed type is no field', () => {
+    expect(byName('wrbtr')).toBeUndefined();
+    expect(byName('lv_menge')).toBeUndefined();
+    expect(byName('gt_qty')).toBeUndefined();
+    expect(byName('ty_comp_tab')).toBeUndefined();
+  });
+
+  test('a chained DATA statement is still read declaration by declaration', () => {
+    const chained = readOriginalContract('REPORT z.\nDATA: a TYPE p LENGTH 5 DECIMALS 2,\n      b TYPE p LENGTH 3 DECIMALS 1.').decimals;
+    expect(chained.map((d) => [d.name, d.line, d.decimals])).toEqual([['a', 2, 2], ['b', 3, 1]]);
+  });
+});

@@ -119,7 +119,7 @@ export function codeDraftFactsSection(contract: OriginalContract | null, rules: 
       : [...items.slice(0, max).map((s) => `          ${s}`), ...(items.length > max ? [`          (and ${items.length - max} more in the source — keep them too)`] : [])].join('\n');
 
   const decimals = contract.decimals.map((d) =>
-    `${d.name} L${d.line}: TYPE p LENGTH ${d.length} DECIMALS ${d.decimals} → ${d.decimals} places, |value| ≤ ${d.max}`);
+    `${d.name} L${d.line}: TYPE p LENGTH ${d.length} DECIMALS ${d.decimals}${d.via ? ` (via ${d.via})` : ''} → ${d.decimals} places, |value| ≤ ${d.max}`);
   const inputs = contract.inputs.map((i) => {
     const parts = [
       i.kind === 'select-option' ? `select-option FOR ${i.type ?? '?'}` : `parameter${i.type ? ` TYPE ${i.type}` : ''}`,
