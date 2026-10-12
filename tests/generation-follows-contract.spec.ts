@@ -370,11 +370,13 @@ test('the store compares the token, then writes all four fields in the transacti
   // The state is the project with its run's narrative (`generationStateOf`):
   // the analysis lives in the run, and the project document alone handed the
   // generation an empty one (tests/generation-reads-run-analysis.spec.ts).
-  expect(get).toContain('const state = generationStateOf(data, run);');
+  // Since 3.0.12 with the PLATFORM KNOWLEDGE block and its revisions
+  // (tests/transformation-context.spec.ts).
+  expect(get).toContain('const state = generationStateOf(data, run, platform.stamp);');
   expect(get).toContain('generationRevision(state, built.contract.fingerprint)');
   expect(get).toContain('generationInputsOf(state)');
   const post = route.slice(route.indexOf('export async function POST'));
-  const token = post.indexOf('generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken');
+  const token = post.indexOf('generationRevision(generationStateOf(data, run, platform.stamp), built.contract.fingerprint) !== generationToken');
   expect(token, 'the POST does not compare the token').toBeGreaterThan(-1);
   expect(post).toContain("code: 'generation-stale'");
   expect(post).toContain("code: 'no-generation-token'");
