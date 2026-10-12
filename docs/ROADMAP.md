@@ -1503,6 +1503,9 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-775 | info | P3 | 3.0.x security hardening - comment wording (with SEC-2026-771) | scheduled |
 | SEC-2026-778 | medium | P2 | 3.0.x security hardening - next rules deploy (Sonny's go) | scheduled |
 | SEC-2026-787 | info | P3 | 3.0.x security hardening - comment wording (with SEC-2026-771) | scheduled |
+| SEC-2026-790 | medium | P2 | 3.0.11 | scheduled |
+
+**Audit of v3.0.10 (`8cb8975`), 12.10.2026: 0 critical, 0 high, 2 medium, 4 low, 6 info — all 150 candidates verified, delta of 219 files, $0.90.** SEC-2026-790 (P2) goes to 3.0.11; eleven refuted (SEC-2026-791 and -792 as -165/-539, -793 as -415, -797 and -798 as -623, -794, -795, -796, -799, -800 and -801 against the code and its tests). The reasons are in the sealed register.
 
 **Audit of v3.0.9 (`f574a22`), 11.10.2026: 0 critical, 0 high, 4 medium, 6 low, 4 info — all 85 candidates verified, delta of 122 files, $0.56.** SEC-2026-778 (P2) goes to 3.0.x security hardening with the next rules deploy, SEC-2026-787 (P3) to the comment wording with SEC-2026-771; twelve refuted (SEC-2026-777 and -785 as -746, -780 as -543, -782 as -628, -784 as -634, -786 and -789 as -767, -776, -779, -781, -783 and -788 against the code and its tests). The reasons are in the sealed register.
 
