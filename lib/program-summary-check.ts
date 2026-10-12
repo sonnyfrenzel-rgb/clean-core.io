@@ -123,9 +123,10 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   if (!t.trim()) return { ok: false, problems: ['empty'] };
 
   const changes = facts.changes.state;
-  // Sentence by sentence: "It does not post" names posting without claiming it.
-  const sentences = t.split(/(?<=[.!?])\s+/);
-  if (changes === 'none' && sentences.some((s) => POSTS.test(s) && !DOES_NOT_POST.test(s))) {
+  // "It does not post" names posting without claiming it: the denial is set aside, and what is
+  // left is checked — "It does not change data and posts documents" still claims a posting.
+  const undenied = t.replace(new RegExp(DOES_NOT_POST.source, 'gi'), ' ');
+  if (changes === 'none' && POSTS.test(undenied)) {
     problems.push('claims a posting or a data change; the code changes no data');
   }
   if (changes === 'changes' && DOES_NOT_POST.test(t)) {
@@ -155,10 +156,11 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   }
   const touched = new Set([...facts.reads, ...facts.writes].map((o) => o.name));
   // A business object named in a denial ("No accounting documents are posted") is not claimed —
-  // but only the denying clause is set aside: "It does not post, but reads customer master
-  // data" still claims the customer master (QA review of fb74afe8, 59320e766df2).
-  const clauses = sentences.flatMap((s) => s.split(/[,;:]\s*|\s+(?:but|while|whereas|and then|however)\s+/i));
-  const affirmed = clauses.filter((c) => !DOES_NOT_POST.test(c)).join(' ');
+  // but only the denial itself is set aside, whatever joins it to the rest: "It does not post,
+  // but reads …" and "It does not post and reads …" still claim what they read (QA reviews of
+  // fb74afe8 and 82616b80, 59320e766df2, 68a0ef78392d). A denial that names its object outside the
+  // matched words is checked too: on the safe side, the engine's own sentence is shown instead.
+  const affirmed = undenied;
   for (const { re, tables } of WORD_TABLES) {
     const hit = re.exec(affirmed);
     if (!hit) continue;

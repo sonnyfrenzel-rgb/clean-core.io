@@ -242,6 +242,10 @@ test.describe('a model may phrase the purpose — checked against the facts', ()
     const mixed = checkPurposeProposal('It does not post, but reads sales orders.', co);
     expect(mixed.ok).toBe(false);
     expect(mixed.problems.some((p) => /sales order/i.test(p))).toBe(true);
+    // Joined by a plain "and" too (QA review of 82616b80, 68a0ef78392d).
+    expect(checkPurposeProposal('It does not post and reads sales orders.', co).ok).toBe(false);
+    expect(checkPurposeProposal('It never changes data and reads sales orders', co).ok).toBe(false);
+    expect(checkPurposeProposal('It does not change data and posts the allocation.', co).problems).toContain('claims a posting or a data change; the code changes no data');
     expect(checkPurposeProposal('It posts the allocation as a controlling document.', co).problems).toContain('claims a posting or a data change; the code changes no data');
     expect(checkPurposeProposal('It sends an e-mail to each cost center manager.', co).ok).toBe(false);
     expect(checkPurposeProposal('It compares cost centers with purchase orders from EKKO.', co).problems.length).toBeGreaterThan(0);
