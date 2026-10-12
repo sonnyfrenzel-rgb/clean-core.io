@@ -20,6 +20,22 @@ test('a flow that has a way gets the straight one', () => {
   expect(route).toEqual([{ x: 100, y: 100 }, { x: 400, y: 100 }]);
 });
 
+test('a flow whose only way is a long detour still gets it after the reachability check', () => {
+  // A wall from y=60 to the bottom edge: the way runs up and over it, and the
+  // search passes REACHABILITY_AFTER long before it finds it (210,777 pops,
+  // measured 12.10.2026). The expected route is the one the router drew before
+  // the check existed (fd64889e) — the check may end a search, never change one.
+  const router = new Router(LINES, LINES, [{ x: 2950, y: 60, width: 100, height: 6000 }]);
+  const route = router.route({ id: 'f', from: [port(100, 5000, 'right')], to: [port(5900, 5000, 'left')] });
+  expect(route).toEqual([
+    { x: 100, y: 5000 },
+    { x: 2940, y: 5000 },
+    { x: 2940, y: 60 },
+    { x: 5900, y: 60 },
+    { x: 5900, y: 5000 },
+  ]);
+});
+
 test('a flow whose target lies inside a shape gets null, and gets it fast on a large grid', () => {
   // The target point (3000, 3000) is inside a shape: no leg into it is passable.
   const router = new Router(LINES, LINES, [{ x: 2900, y: 2900, width: 200, height: 200 }]);
