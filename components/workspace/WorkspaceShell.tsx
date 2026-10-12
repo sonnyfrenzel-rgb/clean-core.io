@@ -394,7 +394,7 @@ export default function WorkspaceShell({
     // count what is stored, as they did while the reader was being loaded; a
     // failure reads as no summary, as a throw did before.
     void import('@/lib/bpmn/reading-exports-client')
-      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName))
+      .then((m) => m.processSummaryOffThread(signed.source, signed.fileName, project?.name || ''))
       .catch((): ProcessSummary | null => null)
       .then((summary) => {
         if (cancelled) return;
@@ -403,7 +403,7 @@ export default function WorkspaceShell({
     return () => {
       cancelled = true;
     };
-  }, [signed]);
+  }, [signed, project?.name]);
   const mapSummary = signed && processSummary?.source === signed.source ? processSummary.summary : null;
 
   // The layers count the process, the rules and the capabilities of that

@@ -15,7 +15,7 @@ import type { ReadingOptions } from './reading-key';
  */
 export type ReadingJob =
   | { kind: 'reading'; source: string; options: ReadingOptions }
-  | { kind: 'summary'; source: string; fileName: string };
+  | { kind: 'summary'; source: string; fileName: string; processName?: string };
 
 export interface ReadingRequest {
   id: number;
@@ -29,7 +29,7 @@ export type ReadingResult = { bpmn: BpmnExport; technical: BpmnExport };
 /** One job, run here. Throws what the reader throws. */
 export function runReadingJob(job: ReadingJob): ReadingResult | ProcessSummary | null {
   if (job.kind === 'reading') return buildReadingExports(job.source, job.options);
-  if (job.kind === 'summary') return processSummaryOf(job.source, job.fileName);
+  if (job.kind === 'summary') return processSummaryOf(job.source, job.fileName, job.processName);
   throw new Error(`Unknown reading job: ${(job as { kind?: unknown }).kind}`);
 }
 

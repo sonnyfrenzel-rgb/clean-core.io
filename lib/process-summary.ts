@@ -42,9 +42,15 @@ export interface ProcessSummary {
   summaryFacts: ProgramSummaryFacts | null;
 }
 
-export function processSummaryOf(source: string, fileName = 'source.abap'): ProcessSummary | null {
+/**
+ * `processName` is the map's pool name: pass the one the process map uses (the
+ * project's name) and the reading is the map's own cached one, not a second
+ * layout of the same source (owner, 12.10.2026: a 2,000-line program took
+ * 20 s per reading). It changes no count.
+ */
+export function processSummaryOf(source: string, fileName = 'source.abap', processName = fileName): ProcessSummary | null {
   if (!source.trim()) return null;
-  const { bpmn, technical } = buildReadingExports(source, { processName: fileName, sourceFileName: fileName });
+  const { bpmn, technical } = buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName });
   const named = applyNaming(namingContextOf(source), null);
   const model = buildProcessMapModel({ bpmn, technical, named, fileName });
   const { steps, decisions } = processCounts(model.elements);

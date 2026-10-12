@@ -44,7 +44,7 @@ export interface ReadingRunnerDeps {
 
 export interface ReadingRunner {
   reading(source: string, options: ReadingOptions): Promise<ReadingResult>;
-  summary(source: string, fileName: string): Promise<ProcessSummary | null>;
+  summary(source: string, fileName: string, processName?: string): Promise<ProcessSummary | null>;
   /** Stop the worker and forget every reading (tests; a tab that is closing). */
   dispose(): void;
 }
@@ -208,8 +208,8 @@ export function createReadingRunner(deps: ReadingRunnerDeps): ReadingRunner {
   return {
     reading: (source, options) =>
       request(`reading:${readingExportsKey(source, options)}`, { kind: 'reading', source, options }) as Promise<ReadingResult>,
-    summary: (source, fileName) =>
-      request(`summary:${JSON.stringify([fileName, source])}`, { kind: 'summary', source, fileName }) as Promise<ProcessSummary | null>,
+    summary: (source, fileName, processName) =>
+      request(`summary:${JSON.stringify([fileName, processName || fileName, source])}`, { kind: 'summary', source, fileName, processName }) as Promise<ProcessSummary | null>,
     dispose: () => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = null;
@@ -248,6 +248,6 @@ export function readingExportsOffThread(source: string, options: ReadingOptions)
 }
 
 /** `processSummaryOf`, off the main thread where the browser allows it. */
-export function processSummaryOffThread(source: string, fileName = 'source.abap'): Promise<ProcessSummary | null> {
-  return runner().summary(source, fileName);
+export function processSummaryOffThread(source: string, fileName = 'source.abap', processName?: string): Promise<ProcessSummary | null> {
+  return runner().summary(source, fileName, processName);
 }
