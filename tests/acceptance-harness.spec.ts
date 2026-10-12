@@ -199,7 +199,27 @@ test.describe('probe and load answers: only a structured answer counts', () => {
     const crash = { request: async () => ({ threw: true, error: 'x is not a function', crash: true }) };
     const [o] = await PROBES['empty-selection']({ call: { module: 'engine', export: 'select' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } }, crash);
     expect(o.status).toBe('fail');
-    expect(o.evidence).toBe('an empty selection crashed instead of being refused: x is not a function');
+    expect(o.evidence).toBe('an empty selection threw instead of being refused with a structured answer: x is not a function');
+  });
+
+  test('a thrown Error is no refusal unless the adapter documents refusal by throwing (QA d9df190f3850)', async () => {
+    const { PROBES } = await import('../scripts/acceptance/lib/probes.mjs');
+    const unavailable = { request: async () => ({ threw: true, error: 'database unavailable', crash: false }) };
+    const cfg = { call: { module: 'engine', export: 'select' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } };
+    const [o] = await PROBES['empty-selection'](cfg, unavailable);
+    expect(o).toEqual({ pattern: 'FP-GUARD-04', status: 'fail', evidence: 'an empty selection threw instead of being refused with a structured answer: database unavailable' });
+    // documented in the adapter: this package refuses by throwing
+    expect((await PROBES['empty-selection']({ ...cfg, refused: { ...cfg.refused, throws: true } }, unavailable))[0].status).toBe('pass');
+    // a crash stays a crash even then
+    const crash = { request: async () => ({ threw: true, error: 'x is not a function', crash: true }) };
+    expect((await PROBES['empty-selection']({ ...cfg, refused: { ...cfg.refused, throws: true } }, crash))[0].status).toBe('fail');
+    // display-filter: a throwing filtered call fails, it is not "refused explicitly"
+    const df = {
+      call: { module: 'engine', export: 'list' }, argsAll: [{}], argsFiltered: [{ customer: 'C1' }], items: 'items', match: { field: 'customer', value: 'C1' },
+    };
+    let n = 0;
+    const dfExec = { request: async () => (n++ === 0 ? { threw: false, value: { items: [{ customer: 'C1' }, { customer: 'C2' }] } } : { threw: true, error: 'database unavailable', crash: false }) };
+    expect((await PROBES['display-filter'](df, dfExec))[0]).toMatchObject({ status: 'fail' });
   });
 
   test('an empty failure is still a failure, and a success must name every module (QA 7752de789154)', async () => {

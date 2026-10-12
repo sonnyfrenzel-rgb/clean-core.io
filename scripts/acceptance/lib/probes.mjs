@@ -116,12 +116,14 @@ async function attempt(call, spec, args) {
 }
 
 /**
- * Did the package refuse? An answer matching the adapter's refusal condition,
- * or an `Error` it threw to say no. A crash — a TypeError, ReferenceError or
- * SyntaxError JavaScript threw by itself — is never a refusal.
+ * Did the package refuse? An answer matching the adapter's refusal condition.
+ * A thrown `Error` proves only that the call threw — "database unavailable"
+ * is no refusal (QA d9df190f3850) — unless the adapter documents that this
+ * package refuses by throwing (`refused.throws: true`); even then a crash (a
+ * TypeError, ReferenceError or SyntaxError JavaScript threw by itself) is not.
  */
 function refused(res, matcher) {
-  if (res.threw) return !res.crash;
+  if (res.threw) return !res.crash && matcher?.throws === true;
   return matches(res.value, matcher);
 }
 
@@ -298,7 +300,7 @@ async function emptySelection(cfg, ctx) {
     evidence: ok
       ? (res.threw ? `refused: ${res.error}` : `answered with a non-success state: ${short(getPath(res.value, cfg.refused?.path))}`)
       : res.threw
-        ? `an empty selection crashed instead of being refused: ${res.error}`
+        ? `an empty selection threw instead of being refused with a structured answer: ${res.error}`
         : `an empty selection was answered as a success: ${short(res.value)}`,
   }];
 }
@@ -433,6 +435,9 @@ async function displayFilter(cfg, ctx) {
   const filtered = await attempt(call, cfg.call, fill(cfg.argsFiltered, {}));
   if (refused(filtered, cfg.refused)) {
     return [{ pattern: 'FP-SCOPE-01', status: 'pass', evidence: `the filter is refused explicitly${filtered.threw ? `: ${filtered.error}` : ''}` }];
+  }
+  if (filtered.threw) {
+    return [{ pattern: 'FP-SCOPE-01', status: 'fail', evidence: `the filtered call threw instead of answering or refusing with a structured answer: ${filtered.error}` }];
   }
   const itemsAll = getPath(all, cfg.items);
   const itemsF = getPath(filtered.value, cfg.items);

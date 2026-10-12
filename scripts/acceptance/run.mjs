@@ -159,13 +159,15 @@ export async function runHarness(opts) {
   const scan = staticScan(opts.pkg);
 
   const probes = [];
+  /** Links in the package the copy left out (QA 7011113eda41): named, so the report never reads as the whole package. */
+  const skippedSymlinks = [];
   const types = Object.keys(PROBE_PATTERNS);
   if (!adapter) {
     for (const type of types) probes.push({ probe: type, outcomes: PROBE_PATTERNS[type].map((p) => outcome(p, 'not-runnable', 'no adapter maps this package')) });
   } else if (!decision.execute) {
     for (const type of types) probes.push({ probe: type, outcomes: PROBE_PATTERNS[type].map((p) => outcome(p, 'not-runnable', `not executed: ${decision.reason}`)) });
   } else {
-    const root = copyToTemp(opts.pkg);
+    const root = copyToTemp(opts.pkg, skippedSymlinks);
     try {
       // One bundle of the mapped modules for every probe: built here, evaluated only in the executor's compartment.
       const prepared = await bundleModules(root, adapter.modules);
@@ -234,7 +236,7 @@ export async function runHarness(opts) {
   return {
     harness: { name: 'clean-core acceptance harness', catalogueVersion: catalogue.version, node: process.version, generatedAt: new Date().toISOString() },
     package: { name: pkgName, path: opts.pkg, adapter: adapterFile },
-    sandbox: { executed: Boolean(adapter) && decision.execute, mode: adapter ? decision.mode : 'not-executed', reason: adapter ? decision.reason : 'no adapter', permissionFlag: decision.flag, timeoutMs: opts.timeout },
+    sandbox: { executed: Boolean(adapter) && decision.execute, mode: adapter ? decision.mode : 'not-executed', reason: adapter ? decision.reason : 'no adapter', permissionFlag: decision.flag, timeoutMs: opts.timeout, ...(skippedSymlinks.length ? { skippedSymlinks } : {}) },
     summary,
     patterns,
     probes,

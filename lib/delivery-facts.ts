@@ -248,14 +248,18 @@ export function testFactsOf(project: HandoverProject, phases: readonly RailStep[
   // Each verified id counts once; every other stored engine entry — a duplicate copy included (QA 663172392dc6) — counts as not derived.
   const verifiedIds = new Set(provenance.verified.map((c) => c.id));
   const counted = countEngineCases(list.filter((tc) => !engineCaseOf(tc) || verifiedIds.has(String(tc.id ?? ''))));
-  const notDerived = list.filter((tc) => engineCaseOf(tc) && !verifiedIds.has(String(tc.id ?? ''))).length;
+  const notDerived = provenance.unverifiedEntries;
   const detail = [
     ...facts.detail,
     `Scenarios: ${engineCaseCountsSentence({ ...counted, model: counted.model + notDerived })}.`,
   ];
-  if (provenance.unverified.length > 0) {
+  // The sentence counts stored entries, the same number the line above moves to the model side,
+  // and says of a duplicated id that it is one (QA 796fe8bcbadd).
+  if (notDerived > 0) {
+    const copiesOf = new Map(provenance.duplicates);
+    const named = provenance.unverified.map((id) => (copiesOf.has(id) ? `${id} (stored ${copiesOf.get(id)} times; one derivation yields each id once)` : id));
     detail.push(
-      `${provenance.unverified.length} stored as engine ${provenance.unverified.length === 1 ? 'case is' : 'cases are'} not reproduced from the signed source and counted as not derived by Clean-Core.io: ${provenance.unverified.join(', ')}.`,
+      `${notDerived} stored as engine ${notDerived === 1 ? 'case is' : 'cases are'} not reproduced from the signed source and counted as not derived by Clean-Core.io: ${named.join(', ')}.`,
     );
   }
   // Owner, 12.10.2026: the engine cases are capped (20 precision, 20 guard); the rest is counted here.

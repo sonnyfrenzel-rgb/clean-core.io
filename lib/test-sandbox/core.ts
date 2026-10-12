@@ -11,7 +11,7 @@ import { netGuardSource, type LoopbackAllowance } from './net-guard';
 import { hashRunInputs, type FileHash } from './protocol';
 import type { SandboxFile } from './files';
 import { FAKED_PACKAGES } from './express-fake';
-import { ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_SES_PATH } from './engine-suite';
+import { ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_SES_PATH } from './engine-suite';
 
 /**
  * The execution core of the test sandbox — one copy, used in two places.
@@ -188,11 +188,28 @@ export function createSandboxResolvePlugin(opts: {
   stubbedPackages: Set<string>;
   /** Packages that get a recording fake instead of the universal stub (`buildFakeModules`). Still named as stubbed. */
   fakeModuleSources?: Record<string, string>;
+  /**
+   * Paths inside `testDir` the bundled code may not import — a directory
+   * covers everything below it. The engine pass refuses its own files here
+   * (`__cc_engine/`: the runtime and the cases with their expectations), so a
+   * contract cannot read what it is judged against (QA 592fd4f81e78).
+   */
+  reserved?: string[];
 }) {
   const { testDir, stubModuleSource, stubbedPackages } = opts;
   const fakes = opts.fakeModuleSources ?? {};
+  const reserved = (opts.reserved ?? []).map((r) => path.resolve(r));
   const insideSandbox = (abs: string) =>
     abs === testDir || abs.startsWith(testDir + path.sep);
+  const isReserved = (abs: string) => reserved.some((r) => abs === r || abs.startsWith(r + path.sep));
+  /** The path with every symlink resolved, or the path itself when it does not exist (yet). */
+  const real = (abs: string) => {
+    try {
+      return fssync.realpathSync.native(abs);
+    } catch {
+      return abs;
+    }
+  };
 
   return {
     name: 'cc-sandbox-resolve',
@@ -219,8 +236,13 @@ export function createSandboxResolvePlugin(opts: {
         // A fixed error text is returned on rejection so the checked path is
         // never echoed back to the caller.
         const base = path.resolve(args.resolveDir || testDir, p);
-        if (!insideSandbox(base)) {
+        if (!insideSandbox(base) || !insideSandbox(real(base))) {
           return { errors: [{ text: 'Path outside sandbox rejected.' }] };
+        }
+        // Every candidate the default resolver could pick for this import (extensions, index files)
+        // lies below `base` or beside it with an extension: refuse a reserved one before it is read.
+        if (reserved.length > 0 && (isReserved(base) || reserved.some((r) => r.startsWith(base) && /^[.\\/]/.test(r.slice(base.length))))) {
+          return { errors: [{ text: 'This import is reserved for Clean-Core.io and not available to the code under test.' }] };
         }
 
         // Inside the sandbox: mirror tsx/Node resolution "./x.js → ./x.ts".
@@ -229,6 +251,17 @@ export function createSandboxResolvePlugin(opts: {
           return { path: tsCandidate };
         }
         return undefined; // inside sandbox → default resolver
+      });
+
+      // The last gate, whatever path the resolver arrived at (a package.json `main`, an index file, a
+      // symlink): the file read must lie inside the run directory and outside the reserved paths.
+      build.onLoad({ filter: /.*/, namespace: 'file' }, (args) => {
+        const target = real(args.path);
+        if (!insideSandbox(target)) return { errors: [{ text: 'Path outside sandbox rejected.' }] };
+        if (isReserved(args.path) || isReserved(target)) {
+          return { errors: [{ text: 'This import is reserved for Clean-Core.io and not available to the code under test.' }] };
+        }
+        return undefined;
       });
 
       build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, (args) => {
@@ -407,7 +440,10 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     // One resolver plugin owns the whole import surface; each stubbed package is
     // named in the result (CR-14). See createSandboxResolvePlugin above.
     const stubbedPackages = new Set<string>();
-    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports) });
+    // The engine pass's own files — the runtime, the cases with their expectations, the driver — are
+    // never part of the contract's bundle (QA 592fd4f81e78).
+    const reserved = enginePass ? [path.join(testDir, path.dirname(ENGINE_CASES_PATH)), testEntry] : [];
+    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports), reserved });
 
     const bundlePath = path.join(testDir, enginePass ? ENGINE_CONTRACT_BUNDLE_PATH : '__sandbox_bundle.cjs');
     const entryPoint = enginePass ? path.resolve(testDir, enginePass.contractModule) : testEntry;

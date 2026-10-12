@@ -65,7 +65,7 @@
     "negative-write": {
       "call": { "module": "engine", "export": "InMemorySalesOrders", "construct": [], "method": "setNetValue" },
       "args": ["4711", "$value"],
-      "refused": { "path": "success", "falsy": true },
+      "refused": { "path": "success", "falsy": true, "throws": true },
       "validValue": 950
     }
   }

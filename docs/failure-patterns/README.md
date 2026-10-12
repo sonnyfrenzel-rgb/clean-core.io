@@ -176,7 +176,11 @@ file given with `--adapter`.
   instances are shared within one probe), `factory: [args]` or `method`.
 - `$name` placeholders in `args` and `rowTemplate` are filled by the probe.
 - A matcher is `{ path, equals | in | notIn | truthy | falsy | gt | lt | exists }`;
-  a call that throws always counts as refused.
+  a refusal is a structured answer that matches it. A call that throws is not a
+  refusal — it only threw — unless the adapter documents that the package
+  refuses by throwing, with `"throws": true` in the matcher; even then a
+  TypeError, ReferenceError or SyntaxError is a crash, not a refusal.
+  `lenient-numeric` never accepts a throw as a refusal.
 - The fixture adapters under `tests/fixtures/acceptance/*/acceptance-adapter.json`
   map every probe and are the reference for each probe's keys.
 
