@@ -1,5 +1,5 @@
 import { tokenize } from './declaration-parser';
-import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
+import { SAP_API_CATALOG_VERSION, successorInContext } from './sap-api-catalog';
 import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates, functionModuleCatalogAnswer, isSapDatabaseTable } from './catalog-service';
 import { readBatchInput, writesOf, type BatchInputCall, type BatchInputWrite } from './batch-input';
 import { assessAuthority } from './authority-assessment';
@@ -302,6 +302,20 @@ export function buildAbapEvidence(
   }
   const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
 
+  // Some successors depend on what else the program reads: AUFK beside AFKO,
+  // AFPO or RESB is a production order, not an internal order (PP review,
+  // 12.10.2026; `successorInContext`). A context successor is our curated
+  // mapping, labelled as such, never SAP's catalog answer.
+  const tablesHere = new Set(
+    dependencies.dependencies.filter((d) => d.access !== 'reference' && !d.possibleTargetOf).map((d) => d.table),
+  );
+  const successorOf = (table: string): (typeof STANDARD_TABLE_MAP)[string] | undefined => {
+    const base = STANDARD_TABLE_MAP[table];
+    if (!base) return undefined;
+    const inContext = successorInContext(table, tablesHere);
+    return inContext ? { view: inContext.entry.view, type: inContext.entry.type, confidence: 'curated' } : base;
+  };
+
   // Roadmap 3.0.7 — batch input read field by field (`batch-input.ts`). The
   // screen fields a call fills name the table it changes where their structure
   // is a database table SAP lists; the dialog structures of the transaction
@@ -380,7 +394,7 @@ export function buildAbapEvidence(
   // the session queues the change rather than that it is made (QA review of
   // d939fb5b056b, 11d2bd848df5).
   const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string, queued = false) => {
-    const entry = STANDARD_TABLE_MAP[write.table];
+    const entry = successorOf(write.table);
     // Anchored where the table is named — the statement that fills the first
     // of its fields — so the anchor carries what the finding claims; the call
     // is in the detail. The statement's first line, as every finding here: a
@@ -515,9 +529,9 @@ export function buildAbapEvidence(
           recommendation: `REPLACE IMMEDIATELY with official SAP released APIs (OData APIs, BAPIs) or RAP actions. Do NOT perform direct writes in S/4HANA.`,
           targetOptions: ['Developer Extensibility / RAP', 'Integration Suite'],
           sapReplacement: hasReplacement ? {
-            objectName: STANDARD_TABLE_MAP[table].view,
-            objectType: STANDARD_TABLE_MAP[table].type,
-            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
+            objectName: successorOf(table)!.view,
+            objectType: successorOf(table)!.type,
+            ...replacementProvenance(successorOf(table)),
           } : undefined
         });
       } else {
@@ -537,9 +551,9 @@ export function buildAbapEvidence(
           recommendation: `Replace with released CDS views (e.g. I_ views) or official APIs.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility'],
           sapReplacement: hasReplacement ? {
-            objectName: STANDARD_TABLE_MAP[table].view,
-            objectType: STANDARD_TABLE_MAP[table].type,
-            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
+            objectName: successorOf(table)!.view,
+            objectType: successorOf(table)!.type,
+            ...replacementProvenance(successorOf(table)),
           } : undefined // never guess a successor name: `I_${table}` invented objects that do not exist
         });
       }
@@ -639,13 +653,13 @@ export function buildAbapEvidence(
         // Where the filled fields name the table, the successor SAP lists for
         // it is the domain-specific one, and the sentence names it (3.0.7).
         recommendation: successor
-          ? `Replace this screen automation with the released SAP API for ${tablePhrase(successor)}: SAP names ${STANDARD_TABLE_MAP[successor].view} as the successor of ${successor}. Change the data through that API or the RAP business object behind it, not through the screens.`
+          ? `Replace this screen automation with the released SAP API for ${tablePhrase(successor)}: SAP names ${successorOf(successor)!.view} as the successor of ${successor}. Change the data through that API or the RAP business object behind it, not through the screens.`
           : `Replace this screen automation with the released SAP API for the same business object, or wrap it in an OData service via RAP.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite'],
         sapReplacement: successor ? {
-          objectName: STANDARD_TABLE_MAP[successor].view,
-          objectType: STANDARD_TABLE_MAP[successor].type,
-          ...replacementProvenance(STANDARD_TABLE_MAP[successor]),
+          objectName: successorOf(successor)!.view,
+          objectType: successorOf(successor)!.type,
+          ...replacementProvenance(successorOf(successor)),
         } : undefined,
       });
       for (const write of writes) addBatchInputWrite(write, tcode, stmt.line, text);

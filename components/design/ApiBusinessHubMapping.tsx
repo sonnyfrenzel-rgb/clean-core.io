@@ -75,7 +75,7 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping, levels = 
           </div>
           {/* External review F-03: the model's IDs were printed as SAP's. Each one is checked now. */}
           <p className="cc-text-cell text-cc-ink-muted mt-1">
-            <GlossaryTerm termKey="Released Interface" className="text-cc-ink-muted">Released SAP APIs</GlossaryTerm> the model proposes in place of direct database access. Each identifier is checked against SAP data this product holds; a verified ID is SAP&apos;s, not proof that it covers this use.
+            <GlossaryTerm termKey="Released Interface" className="text-cc-ink-muted">Released SAP APIs</GlossaryTerm> the model proposes in place of direct database access. Each identifier is checked against SAP data this product holds; a verified ID is SAP&apos;s, not proof that it covers this use, and &ldquo;name found in catalog&rdquo; means the name is in a list and nothing more.
           </p>
         </div>
         <span className="shrink-0 self-start sm:self-auto">

@@ -201,7 +201,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
 
     const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
         <h2>SAP Business Accelerator Hub Mappings</h2>
-        <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.</p>
+        <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use, and “name found in catalog” means the name is in a list and nothing more.</p>
         <table>
           <thead>
             <tr>

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import { callGemini } from '@/lib/gemini';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import type { Project } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -402,6 +403,8 @@ export default function DeliveryPage() {
       // Loaded on the click that builds the bundle, not with the stage
       // (~28 kB gzip of the stage's first JavaScript, docs/perf/REPORT.md).
       const { default: JSZip } = await import('jszip');
+      // SAP's synced name lists, so the package's identifier marks read them too (3.0.12).
+      await loadSapNameLists();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
       // The entry names of a generated package come from the model, and the
@@ -519,8 +522,9 @@ export default function DeliveryPage() {
 
       // Documentation formatted into corporate markdown specifications
       const docs = bundle.folder("docs");
-      if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
-      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
+      // The model's raw line references are held against the engine's anchors of the source (3.0.12).
+      if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis, { code: project.legacyCode }));
+      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode }));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
       if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
       docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));

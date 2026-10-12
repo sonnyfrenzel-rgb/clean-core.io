@@ -185,7 +185,7 @@ test.describe('the marks travel into the text a reader gets', () => {
     const md = formatDesignToMarkdown(JSON.stringify(design));
     expect(md).toContain("SAP_COM_0093 [name does not match SAP's");
     expect(md).toContain('API_BUSINESS_PARTNER [verified');
-    expect(md).toContain('SAP_COM_0002 [not verified — check before use]');
+    expect(md).toContain('SAP_COM_0002 [not verified — SAP lists SAP_COM_0002 as “Finance - Posting Integration”');
     expect(md).toContain('SAP restriction:');
     expect(md).toContain('names I_OperationalAcctgDocItem (CDS View) as the successor of BSID');
     expect(md).toContain('## SAP identifiers named in this document');

@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -682,6 +683,8 @@ ${DESIGN_ANSWER_REMINDER}`;
    */
   const exportToConfluence = async (viewOnly = false) => {
     const currentProject = projectRef.current;
+    // SAP's synced name lists, so the export's identifier marks read them too (3.0.12).
+    await loadSapNameLists();
     const htmlContent = currentProject ? buildDesignExportHtml(currentProject) : null;
     if (!currentProject || htmlContent === null) {
       console.warn("No solution design found");

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { anchorNarrative } from '@/lib/abap/narrative-anchors';
+import { anchorNarrative, engineLineAnchors } from '@/lib/abap/narrative-anchors';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import CcAnchor from '@/components/cc/Anchor';
 import CcWhyPopover from '@/components/cc/WhyPopover';
@@ -26,16 +26,23 @@ export default function AnchoredNarrative({
   text,
   findings,
   totalLines,
+  code,
   className = '',
 }: {
   text: string;
   findings: EvidenceFinding[];
   totalLines: number;
+  /** The analysed source: a raw line range is then held against the engine's anchors, not the length alone (3.0.12). */
+  code?: string | null;
   className?: string;
 }) {
+  const engine = useMemo(
+    () => (code ? engineLineAnchors(code, findings.map((f) => ({ lineStart: f.lineStart, lineEnd: f.lineEnd ?? f.lineStart }))) : undefined),
+    [code, findings],
+  );
   const result = useMemo(
-    () => anchorNarrative(text, findings, totalLines),
-    [text, findings, totalLines],
+    () => anchorNarrative(text, findings, totalLines, engine),
+    [text, findings, totalLines, engine],
   );
 
   if (!text) return null;
