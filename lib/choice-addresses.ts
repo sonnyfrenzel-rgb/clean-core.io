@@ -239,6 +239,7 @@ export const STATIC_ORIGIN_KEYS = [
   'analyze.decide',
   'documentation.questions',
   'design.requirements-entry',
+  'transformation.tips',
 ] as const;
 
 /**
@@ -299,6 +300,8 @@ export const ORIGINS: Readonly<Record<OriginKey, OriginAddress>> = Object.freeze
   'analyze.decide': o(TOOL('analyze'), 'analyze-decide', 'nav.place.whatToDecide'),
   'documentation.questions': o(TOOL('documentation'), 'documentation-questions', 'nav.place.openQuestions'),
   'design.requirements-entry': o(TOOL('design'), 'requirements', 'nav.place.requirements'),
+  // The tips before a generation (roadmap 3.0.12): every tip leads to its place and back to the tips.
+  'transformation.tips': o(TOOL('transformation'), 'transformation-tips', 'nav.place.qualityTips'),
   ...(Object.fromEntries(
     CHAIN_LINKS.map((k) => [`delivery.chain.${k}`, o(TOOL('delivery'), `evidence-chain-${k}`, 'nav.place.evidenceChain')]),
   ) as Record<`delivery.chain.${ChainLinkKey}`, OriginAddress>),

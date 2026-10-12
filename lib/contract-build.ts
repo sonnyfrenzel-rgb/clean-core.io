@@ -1,4 +1,4 @@
-import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { buildAbapEvidence, type AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { signedEngineVersionOf } from '@/lib/score-rule';
@@ -167,7 +167,16 @@ export function recommendationOfProject(state: ContractProjectState): TargetArch
 }
 
 export type ContractBuild =
-  | { ok: true; contract: ArchitectureContract }
+  | {
+      ok: true;
+      contract: ArchitectureContract;
+      /**
+       * The engine pass the contract was built on — handed on so the
+       * Transformation's PLATFORM KNOWLEDGE block (roadmap 3.0.12) reads the
+       * catalog successors without a second pass over the source.
+       */
+      evidence: AbapEvidenceReport;
+    }
   | { ok: false; code: 'no-source' | 'off-track'; decided?: TargetArchitectureCode };
 
 /**
@@ -193,6 +202,7 @@ export function contractOfProject(
 
   return {
     ok: true,
+    evidence,
     contract: buildArchitectureContract({
       contractId,
       runId: typeof state.activeRunId === 'string' ? state.activeRunId : '',

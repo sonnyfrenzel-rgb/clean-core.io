@@ -87,6 +87,18 @@ async function openStage(page: Page, account: SeededProject) {
   await expect(page.locator('[data-generate-code]')).toBeVisible({ timeout: 60_000 });
 }
 
+/**
+ * Start the generation the way the owner does since roadmap 3.0.12: with the
+ * stage's button — unless no tip was open and the stage started it on its own.
+ */
+async function generate(page: Page) {
+  const button = page.locator('[data-generate-code]');
+  const running = page.locator('[data-generation-screen], [data-transformation-error], [data-transformation-answer="generated"]');
+  await expect(button.or(running).first()).toBeVisible({ timeout: 90_000 });
+  if ((await running.count()) > 0) return;
+  if (await button.isEnabled()) await button.click();
+}
+
 /** The reason is on the page as text — not a title attribute — and its one action is there. */
 async function expectReason(page: Page, id: string, words: RegExp, action: RegExp, href: RegExp) {
   const reason = page.locator(`[data-generation-prerequisite="${id}"]`);
@@ -146,22 +158,23 @@ test('a design without a narrative is enough: the click starts or says why — n
   await signInThroughForm(page, account);
   await page.goto(`/project/${account.projectId}/transformation`);
   await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
-  // A design is on record, so nothing is missing: the first generation starts
-  // on its own and ends in a visible answer — a contract refusal or the error.
-  const answer = page.locator('[data-contract-refusal], [data-transformation-error]');
-  await expect(answer.first()).toBeVisible({ timeout: 90_000 });
-  await expect(answer.first()).not.toHaveText(/^\s*$/);
+  // A design is on record and nothing is open... or tips are: either way the
+  // stage answers before any click — the tips, or a generation it started
+  // because no tip was open (roadmap 3.0.12, owner 12.10.2026).
+  await expect(page.locator('[data-quality-tips], [data-generation-screen], [data-contract-refusal], [data-transformation-error]').first()).toBeVisible({ timeout: 90_000 });
   await expect(page.locator('[data-generation-prerequisite]')).toHaveCount(0);
-  await shot(page, 'click-answer-1280');
+  const answer = page.locator('[data-contract-refusal], [data-transformation-error]');
 
-  // The enabled button, clicked: it asks the server again (the generation
-  // started) and the stage answers again — nothing silent.
+  // The enabled button, clicked: it asks the server (the generation started)
+  // and the stage answers — a contract refusal or the error, nothing silent.
   const button = page.locator('[data-generate-code]');
-  await expect(button).toBeEnabled();
+  await expect(button).toBeEnabled({ timeout: 90_000 });
   const asked = page.waitForRequest((r) => /\/api\/projects\/[^/]+\/contract$/.test(new URL(r.url()).pathname), { timeout: 30_000 });
   await button.click();
   await asked;
   await expect(answer.first()).toBeVisible({ timeout: 60_000 });
+  await expect(answer.first()).not.toHaveText(/^\s*$/);
+  await shot(page, 'click-answer-1280');
 });
 
 test('a generation that fails says so in the error strip, with Try again', async ({ page }) => {
@@ -170,7 +183,7 @@ test('a generation that fails says so in the error strip, with Try again', async
   // The contract allows the generation (stubbed: the fixture's run has no
   // input manifest), and the model proxy refuses — the thrown error has to
   // reach the screen.
-  await page.route(/\/api\/projects\/[^/]+\/contract$/, (route) =>
+  await page.route(/\/api\/projects\/[^/]+\/contract(\?.*)?$/, (route) =>
     route.request().method() === 'GET'
       ? route.fulfill({
           status: 200,
@@ -178,7 +191,7 @@ test('a generation that fails says so in the error strip, with Try again', async
           body: JSON.stringify({
             contract: { fingerprint: 'f'.repeat(64) },
             decision: { ok: true, track: 'side-by-side-btp', isAbapCloud: false, sentence: 'Side-by-side, as the contract says.' },
-            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '' } },
+            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '', context: { text: '', rules: 'none', decision: 'none', requirements: 'none' } } },
           }),
         })
       : route.continue(),
@@ -189,6 +202,7 @@ test('a generation that fails says so in the error strip, with Try again', async
   await page.setViewportSize({ width: 390, height: 844 });
   await signInThroughForm(page, account);
   await page.goto(`/project/${account.projectId}/transformation`);
+  await generate(page);
   const strip = page.locator('[data-transformation-error]');
   await expect(strip).toBeVisible({ timeout: 90_000 });
   await expect(strip).not.toHaveText(/^\s*$/);
@@ -219,7 +233,7 @@ test.describe('the model answer, read', () => {
   /** The contract allows the generation; the store is captured and answered as the server would. */
   async function stubContract(page: Page): Promise<{ stores: string[] }> {
     const stores: string[] = [];
-    await page.route(/\/api\/projects\/[^/]+\/contract$/, async (route) => {
+    await page.route(/\/api\/projects\/[^/]+\/contract(\?.*)?$/, async (route) => {
       if (route.request().method() === 'GET') {
         return route.fulfill({
           status: 200,
@@ -227,7 +241,7 @@ test.describe('the model answer, read', () => {
           body: JSON.stringify({
             contract: { fingerprint: 'f'.repeat(64) },
             decision: { ok: true, track: 'side-by-side-btp', isAbapCloud: false, sentence: 'Side-by-side, as the contract says.' },
-            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '' } },
+            generation: { token: 't', inputs: { legacyCode: SOURCE, solutionDesign: DESIGN, analysis: '', context: { text: '', rules: 'none', decision: 'none', requirements: 'none' } } },
           }),
         });
       }
@@ -281,8 +295,9 @@ test.describe('the model answer, read', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${account.projectId}/transformation`);
+    await generate(page);
     // The second call is held until the log has said it is being made.
-    await expect(page.getByLabel('Generation log')).toContainText(/Retrying once — a second model call/, { timeout: 90_000 });
+    await expect(page.locator('[data-generation-stage="model"]')).toContainText(/Retrying once — a second model call/, { timeout: 90_000 });
     await expect.poll(() => calls.n, { timeout: 10_000 }).toBe(2);
     release();
     await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 60_000 });
@@ -306,6 +321,7 @@ test.describe('the model answer, read', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${account.projectId}/transformation`);
+    await generate(page);
     await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 90_000 });
     await expect(page.locator('[data-transformation-error]')).toHaveCount(0);
     expect(calls.n).toBe(1);
@@ -324,6 +340,7 @@ test.describe('the model answer, read', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${account.projectId}/transformation`);
+    await generate(page);
     const strip = page.locator('[data-transformation-error]');
     await expect(strip).toBeVisible({ timeout: 90_000 });
     await expect(strip).toContainText("The answer was cut off at the model's length limit");
@@ -340,6 +357,7 @@ test.describe('the model answer, read', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${account.projectId}/transformation`);
+    await generate(page);
     const strip = page.locator('[data-transformation-error]');
     await expect(strip).toBeVisible({ timeout: 90_000 });
     await expect(strip).toContainText('The model returned prose instead of the JSON package');

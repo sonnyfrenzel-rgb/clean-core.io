@@ -3,9 +3,11 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
+import ChoiceBackLink from '@/components/ChoiceBackLink';
+import { originLink } from '@/lib/workspace-back-href';
 import CcButton from '@/components/cc/Button';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -261,6 +263,9 @@ export default function WorkspaceShell({
   const [decisionRevision, setDecisionRevision] = useState(0);
   const onDecisionChanged = useCallback(() => setDecisionRevision((n) => n + 1), []);
   const aboutId = useId();
+  // Where "Back to <origin>" leads, when the address carries one of the closed list.
+  const searchParams = useSearchParams();
+  const originBack = originLink(`/project/${encodeURIComponent(projectId)}`, searchParams?.toString() ?? '');
 
   /**
    * The layer lives in the URL fragment and nowhere else (ADR-018, roadmap
@@ -1116,6 +1121,10 @@ export default function WorkspaceShell({
             {wt('nav.allProjects')}
           </span>
         </Link>
+        {/* The way back to the place that asked for a choice made here
+            (`?origin=`, `lib/choice-addresses.ts`) — the rules decided from
+            the Transformation tool's tips return there (roadmap 3.0.12). */}
+        {originBack ? <ChoiceBackLink href={originBack.href} label={originBack.label} /> : null}
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           {/* A basis, not only `flex-1`: with a zero basis the title never
               wraps below the view switch and, on a phone, runs under it. */}

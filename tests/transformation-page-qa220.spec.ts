@@ -68,29 +68,25 @@ test('6d411bca538c · the page refuses a package with a repeated path before sto
   expect(src.slice(gate, gate + 400)).toContain('throw new Error(');
 });
 
-test('6f3dc15e6f7b · generation waits for the model switch and respects it', () => {
+test('6f3dc15e6f7b · no generation starts without the click, and the click respects the model switch', () => {
   const src = code();
   const load = src.slice(src.indexOf('const fetchProject = async'), src.indexOf('fetchProject();'));
   expect(load.length).toBeGreaterThan(0);
-  // The load no longer starts a generation on its own.
+  // The load starts no generation (roadmap 3.0.12: the tips come first, and
+  // "Generate now" starts it — the finding was a model call nobody asked for).
   expect(load).not.toContain('generateTransformation()');
-  expect(load).toContain('setAwaitingAutoGeneration(true)');
-  // The effect that does waits for the hook's answer and asks it.
-  const effect = src.slice(src.indexOf('if (!awaitingAutoGeneration'));
-  expect(effect).toMatch(/^if \(!awaitingAutoGeneration \|\| modelAvailability\.loading \|\| autoGenerationStarted\.current\) return;/);
-  expect(effect.slice(0, 400)).toMatch(
-    /if \(!modelAvailability\.enabled\('transformation'\)\) return;\s*const timer = setTimeout\(\(\) => \{\s*autoGenerationStarted\.current = true;\s*generateTransformation\(\);/,
-  );
+  expect(src).not.toMatch(/autoGeneration|awaitingAutoGeneration/);
   // A stage it may not start shows the "not generated" state, not a spinner.
-  expect(src).toContain('const busy = loading && !autoGenerationBlocked;');
+  expect(src).toContain('const busy = loading;');
   expect(src).toMatch(/files\.length === 0 && !busy \?/);
   // And the button cannot be pressed while the stage is off or keyless.
   // Since v3.0.1 one condition holds every reason, and each is said on the page
   // (tests/transformation-prerequisites.spec.ts).
   // Since 10.10.2026 (ADR-083) an invited reader is one of those reasons, said by the shared sentence.
   expect(src).toMatch(/const canGenerate = project !== null && isOwner && prerequisites\.length === 0 && blockers\.length === 0 && modelOff === null;/);
-  expect(src).toMatch(/if \(!isOwner\) return;\s*if \(!modelAvailability\.enabled\('transformation'\)\) return;/);
   expect(src).toMatch(/disabled=\{!canGenerate\}/);
+  // Both ways to start it — the header and "Generate now" — go through the one guard.
+  expect(src).toMatch(/const startGeneration = \(\) => \{\s*if \(!canGenerate\) return;/);
 });
 
 test('c1c94b3caae4 · there is no "proceed" that could look recommended without a package', () => {
