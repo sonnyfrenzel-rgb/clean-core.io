@@ -92,17 +92,48 @@ export interface SecurityReviewOptions {
 /**
  * True when a statement decides on sy-subrc: a condition that branches on it
  * (`IF`, `ELSEIF`, `CHECK`, `CASE`, `ASSERT`), or a conditional expression that
- * reads it and raises (`COND`/`SWITCH … THROW`). A statement that only mentions
- * sy-subrc — `WRITE sy-subrc.`, `lv_rc = sy-subrc.` — decides nothing, and
- * neither does a value kept for a later statement: anything in between can
- * overwrite what is read there.
+ * reads it and raises (`COND`/`SWITCH … THROW`), or an assignment whose value
+ * is decided on it: a `COND`/`SWITCH` or a boolean function (`xsdbool`,
+ * `boolc`, `boolx`) that compares sy-subrc, assigned to a variable, a
+ * parameter or a RAP result field — `rv_ok = xsdbool( sy-subrc = 0 ).`,
+ * `lv_auth = COND #( WHEN sy-subrc = 0 THEN … ).`, the standard pattern of a
+ * RAP authorization method. A statement that only mentions sy-subrc —
+ * `WRITE sy-subrc.`, `lv_rc = sy-subrc.`, a `MESSAGE`, a string template —
+ * decides nothing: a plain copy is a value kept for a later statement, and
+ * anything in between can overwrite what is read there.
  */
 export function decidesOnSubrc(statement: AbapStatement | undefined): boolean {
   if (statement === undefined) return false;
   const code = maskLiterals(statement.text).trim();
   if (!/\bSY-SUBRC\b/i.test(code)) return false;
   if (/^(?:IF|ELSEIF|CHECK|CASE|ASSERT)\b/i.test(code)) return true;
-  return /\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code);
+  if (/\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code)) return true;
+  return assignsDecisionOnSubrc(code);
+}
+
+const COMPARISON = String.raw`(?:<>|<=|>=|=|<|>|\b(?:EQ|NE|LT|GT|LE|GE)\b)`;
+/** sy-subrc as an operand of a comparison: `sy-subrc = 0`, `0 <> sy-subrc`, `sy-subrc IS INITIAL`. */
+const SUBRC_COMPARED = new RegExp(
+  String.raw`\bSY-SUBRC\s*(?:${COMPARISON}|\bIS\s+(?:NOT\s+)?INITIAL\b)|${COMPARISON}\s*SY-SUBRC\b`,
+  'i',
+);
+
+/**
+ * `target = <expression>` where the expression is a `COND`/`SWITCH` or a
+ * boolean function deciding on sy-subrc. Only the part from the first such
+ * expression on is searched for the comparison, so the assignment's own `=`
+ * never counts: `lv_rc = sy-subrc.` is a copy, not a decision.
+ */
+function assignsDecisionOnSubrc(code: string): boolean {
+  const assignment = /^(?:DATA\(\s*[\w/]+\s*\)|[\w/<>~%-]+(?:->[\w~%-]+)?)\s*=\s*([\s\S]+)$/i.exec(code);
+  if (!assignment) return false;
+  const value = assignment[1];
+  const start = value.search(/\b(?:COND|SWITCH|XSDBOOL|BOOLC|BOOLX)\b/i);
+  if (start < 0) return false;
+  const decision = value.slice(start);
+  // `SWITCH #( sy-subrc WHEN 0 THEN … )`: sy-subrc is the operand every WHEN compares.
+  if (/^SWITCH\s+[\w#/~]*\s*\(\s*SY-SUBRC\b/i.test(decision)) return true;
+  return SUBRC_COMPARED.test(decision);
 }
 
 /** What engine 3.0.12 counted as reading sy-subrc: any mention of it. */

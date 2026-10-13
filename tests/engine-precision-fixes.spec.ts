@@ -134,8 +134,32 @@ test.describe('a statement that only mentions sy-subrc does not count as evaluat
     }
   });
 
+  test('after an AUTHORITY-CHECK, a value decided on sy-subrc and assigned clears the task', () => {
+    for (const after of [
+      // An is_authorized method returning the decision.
+      'rv_ok = xsdbool( sy-subrc = 0 ).',
+      'DATA(ok) = xsdbool( sy-subrc = 0 ).',
+      'ev_ok = boolc( sy-subrc IS INITIAL ).',
+      "lv_bit = boolx( bool = 0 <> sy-subrc bit = 1 ).",
+      // The RAP global-authorization pattern.
+      'lv_auth = COND #( WHEN sy-subrc = 0 THEN if_abap_behv=>auth-allowed\n ELSE if_abap_behv=>auth-unauthorized ).',
+      'result-%create = COND #( WHEN sy-subrc EQ 0 THEN if_abap_behv=>auth-allowed ELSE if_abap_behv=>auth-unauthorized ).',
+      'lv_auth = SWITCH #( sy-subrc WHEN 0 THEN if_abap_behv=>auth-allowed ELSE if_abap_behv=>auth-unauthorized ).',
+    ]) {
+      expect(authTasks(after, true), after).toBe(0);
+    }
+  });
+
   test('after an AUTHORITY-CHECK, a statement that only mentions sy-subrc keeps the task', () => {
-    for (const after of ['WRITE sy-subrc.', 'lv_rc = sy-subrc.', "MESSAGE |rc { sy-subrc }| TYPE 'S'.", 'DATA(ok) = xsdbool( sy-subrc = 0 ).']) {
+    for (const after of [
+      'WRITE sy-subrc.',
+      'lv_rc = sy-subrc.',
+      "MESSAGE |rc { sy-subrc }| TYPE 'S'.",
+      'lv_text = |rc { sy-subrc }|.',
+      'lo_log->add( sy-subrc ).',
+      'lv_flag = xsdbool( lv_x = 1 ) + sy-subrc.',
+      'lv_rc = COND #( WHEN lv_x = 1 THEN sy-subrc ).',
+    ]) {
       expect(authTasks(after, true), after).toBe(1);
     }
     // What v3.0.12 signed: any mention counted.
@@ -152,6 +176,22 @@ test.describe('a statement that only mentions sy-subrc does not count as evaluat
     expect(fileTasks('lv_rc = sy-subrc.')).toBe(1);
     expect(fileTasks('IF sy-subrc <> 0. RETURN. ENDIF.')).toBe(0);
     expect(fileTasks('CHECK sy-subrc = 0.')).toBe(0);
+    expect(fileTasks('DATA(lv_ok) = xsdbool( sy-subrc = 0 ).')).toBe(0);
+  });
+
+  test('the benchmark shapes: an is_authorized method and a RAP global authorization read the result', () => {
+    const isAuthorized = ['CLASS zcl_reader IMPLEMENTATION.', '  METHOD is_authorized.',
+      "    AUTHORITY-CHECK OBJECT 'P_ORGIN'", "      ID 'INFTY' FIELD '2001'", "      ID 'SUBTY' DUMMY", "      ID 'AUTHC' FIELD 'R'.",
+      '    rv_ok = xsdbool( sy-subrc = 0 ).', '  ENDMETHOD.', 'ENDCLASS.', ''].join('\n');
+    const globalAuth = ['CLASS lhc_x IMPLEMENTATION.', '  METHOD get_global_authorizations.',
+      "    AUTHORITY-CHECK OBJECT 'M_MSEG_BWA'", "      ID 'ACTVT' FIELD '01'", "      ID 'BWART' FIELD '311'.",
+      '    lv_auth = COND #( WHEN sy-subrc = 0 THEN if_abap_behv=>auth-allowed',
+      '                                        ELSE if_abap_behv=>auth-unauthorized ).',
+      '    IF requested_authorizations-%create = if_abap_behv=>mk-on.', '      result-%create = lv_auth.', '    ENDIF.',
+      '  ENDMETHOD.', 'ENDCLASS.', ''].join('\n');
+    for (const src of [isAuthorized, globalAuth]) {
+      expect(readSecurityReviewTasks(src, { precisionFixes: true }).filter((t) => t.kind === 'authority-result-not-evaluated')).toEqual([]);
+    }
   });
 
   test('buildAbapEvidence passes the gate', () => {
