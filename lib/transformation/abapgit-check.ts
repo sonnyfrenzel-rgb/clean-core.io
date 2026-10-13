@@ -1,6 +1,7 @@
 /**
  * The abapGit half of the formats check of the RAP track (roadmap 3.0.12,
- * importable package): every `<name>.<type>.xml` metadata file, and the
+ * abapGit package; passes abapGit's serializer structure and SAP's file-format
+ * checks, not import-verified in an SAP system): every `<name>.<type>.xml` metadata file, and the
  * repository settings `.abapgit.xml`, held against the structure abapGit's
  * serializer writes and its deserializer reads — and every object source
  * against the presence of its metadata file, without which abapGit does not

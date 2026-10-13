@@ -28,7 +28,11 @@ const ENTRIES: Record<string, string> = {
   RouteCard: path.resolve(ROOT, 'components', 'analyze', 'RouteCard.tsx'),
   ExtensibilityDecisionMatrix: path.resolve(ROOT, 'components', 'analyze', 'ExtensibilityDecisionMatrix.tsx'),
   CloudServiceIntegrations: path.resolve(ROOT, 'components', 'design', 'CloudServiceIntegrations.tsx'),
+  SapIdMark: path.resolve(ROOT, 'components', 'SapIdentifierCheck.tsx'),
 };
+
+/** The export a test renders, when it is not the module's default. */
+const NAMED: Record<string, string> = { SapIdMark: 'SapIdMark' };
 
 test.beforeAll(async () => {
   test.setTimeout(180 * 1000);
@@ -46,7 +50,7 @@ test.beforeAll(async () => {
       alias: { '@': ROOT },
       logLevel: 'silent',
     });
-    loaded[name] = require(outfile).default as Component;
+    loaded[name] = require(outfile)[NAMED[name] ?? 'default'] as Component;
   }
 });
 
@@ -130,5 +134,70 @@ test.describe('Design', () => {
     expect(html).toContain('SAP KBA 3696098');
     expect(html).toContain(`href="${KBA_3696098}"`);
     expect(html).toContain('not verified — check before use');
+  });
+});
+
+test.describe('SAP documentation on GitHub (CC BY 4.0)', () => {
+  // QA bdf1b45234a6: the inline mark is where the fact stands, so the
+  // attribution CC BY asks for — document, commit, licence — stands there too,
+  // not only in the grouped list's sources note.
+  const SHA = '0123456789abcdef0123456789abcdef01234567';
+  const URL = `https://github.com/SAP-docs/sap-btp-fixture/blob/${SHA}/docs/integration.md`;
+  const OTHER = `https://github.com/SAP-docs/s4hana-fixture/blob/${'f'.repeat(40)}/docs/other.md`;
+  const attribution = (url: string) => `© SAP SE and contributors, CC BY 4.0 — source: ${url}; adapted (extracted ID and title)`;
+  const check = {
+    id: 'SAP_COM_0009',
+    kind: 'communication-scenario',
+    status: 'verified',
+    modelName: 'Product Integration',
+    sapName: 'Product Integration',
+    source: { label: 'SAP documentation on GitHub (SAP-docs/sap-btp-fixture), read 2026-10-13', url: URL },
+    caveat: null,
+    mismatchOn: null,
+    modelProtocol: null,
+    sapProtocol: null,
+    modelRelease: null,
+    sapRelease: null,
+    sapTitle: null,
+    sapDocs: true,
+    product: 'SAP S/4HANA Cloud',
+    attribution: attribution(URL),
+    index: 0,
+    length: 12,
+  };
+
+  test('an attributed mark shows its document, commit and licence in the text', () => {
+    const html = render('SapIdMark', { check });
+    expect(html).toContain('data-sap-id-citation=""');
+    expect(html).toContain('SAP-docs/sap-btp-fixture/docs/integration.md@01234567');
+    expect(html).toContain(`href="${URL}"`);
+    expect(html).toContain('href="https://creativecommons.org/licenses/by/4.0/"');
+    expect(html).toContain('CC BY 4.0</a>');
+    // The full attribution is the mark's title as well.
+    expect(html).toContain(`title="${attribution(URL)}"`);
+  });
+
+  test('a differing title from another SAP-docs document is cited with its own document and commit', () => {
+    const html = render('SapIdMark', {
+      check: {
+        ...check,
+        attribution: undefined,
+        sapDocs: undefined,
+        source: { label: 'SAP Business Accelerator Hub', url: 'https://api.sap.com/' },
+        otherTitle: { title: 'Other', product: 'SAP S/4HANA', source: { label: 'SAP documentation on GitHub', url: OTHER }, attribution: attribution(OTHER) },
+      },
+    });
+    expect(html).toContain('SAP-docs/s4hana-fixture/docs/other.md@ffffffff');
+    expect(html).toContain('href="https://api.sap.com/"');
+    expect(html.match(/data-sap-id-citation/g)).toHaveLength(1);
+  });
+
+  test('a mark without an attributed source carries no citation', () => {
+    const html = render('SapIdMark', {
+      check: { ...check, attribution: undefined, sapDocs: undefined, source: { label: 'SAP KBA 3696098', url: KBA_3696098 } },
+    });
+    expect(html).not.toContain('data-sap-id-citation');
+    expect(html).not.toContain('title=');
+    expect(html).toContain(`href="${KBA_3696098}"`);
   });
 });

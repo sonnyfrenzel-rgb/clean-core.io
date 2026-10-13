@@ -842,6 +842,40 @@ function attributionsOf(c: SapIdCheck): string[] {
   return [c.attribution, c.otherTitle?.attribution].filter((a): a is string => !!a);
 }
 
+/**
+ * "SAP-docs/<repo>/<path>@<commit, 8 characters>" for an address of SAP's
+ * documentation on GitHub read at a commit; null for any other address.
+ */
+export function sapDocsSourceShort(url: string | null | undefined): string | null {
+  const m = /^https:\/\/github\.com\/SAP-docs\/([^/]+)\/blob\/([0-9a-f]{7,40})\/(.+)$/i.exec(url ?? '');
+  return m ? `SAP-docs/${m[1]}/${m[3]}@${m[2].slice(0, 8)}` : null;
+}
+
+/** One attributed source behind a check: its document at its commit, the licence, and the full attribution. */
+export interface SapIdCitation {
+  url: string | null;
+  /** The document and commit in short (`sapDocsSourceShort`), else null. */
+  short: string | null;
+  ccBy: boolean;
+  attribution: string;
+}
+
+/**
+ * The attributed sources behind one check — its own and that of a differing
+ * title — for an inline mark: CC BY 4.0 asks for the source wherever the fact
+ * stands, not only in a list further down (QA bdf1b45234a6).
+ */
+export function sapIdCitations(c: SapIdCheck): SapIdCitation[] {
+  const out: SapIdCitation[] = [];
+  const add = (attribution: string | null | undefined, url: string | null | undefined) => {
+    if (!attribution) return;
+    out.push({ url: url ?? null, short: sapDocsSourceShort(url), ccBy: /CC BY 4\.0/.test(attribution), attribution });
+  };
+  add(c.attribution, c.source?.url);
+  add(c.otherTitle?.attribution, c.otherTitle?.source.url);
+  return out;
+}
+
 /** The heading and lead of the attribution section, the same in markdown and HTML. */
 export const SAP_DOCS_ATTRIBUTION_HEADING = 'Attribution';
 export const SAP_DOCS_ATTRIBUTION_LEAD =

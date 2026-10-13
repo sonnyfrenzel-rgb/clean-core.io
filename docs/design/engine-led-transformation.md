@@ -249,7 +249,7 @@ in the customer namespace and the body is a fill unit of its own.
 | `src/z<name>_srvd.srvd.srvdsrv`, `src/z<name>_srvb.srvb.xml` | service definition / binding (OData V4 UI), in abapGit's file names |
 | `src/ztc_<name>.clas.testclasses.abap` | ABAP Unit class: one `FOR TESTING` method per engine case with given/when/then comments and the expected value from the case; the *when* line (the call into the logic class) is engine-written when the case maps to a logic method by the call contract, otherwise a fill unit of kind `event` with the case as input |
 | `.abapgit.xml` | as delivery writes it today (not model-written) |
-| `src/<name>.<type>.xml`, `src/package.devc.xml` | since scaffold version 3 (3.0.12, importable package): abapGit's metadata file for every object, in the structure abapGit's serializer writes; the table is `src/z<name>_rec.tabl.xml` only (abapGit has no source form of a table; name ≤ 16 characters); the service definition's source is `.srvd.srvdsrv` (abapGit's extension) |
+| `src/<name>.<type>.xml`, `src/package.devc.xml` | since scaffold version 3 (3.0.12, abapGit package): abapGit's metadata file for every object, in the structure abapGit's serializer writes — the package passes abapGit's serializer structure and SAP's file-format checks; it is not import-verified in an SAP system; the table is `src/z<name>_rec.tabl.xml` only (abapGit has no source form of a table; name ≤ 16 characters); the service definition's source is `.srvd.srvdsrv` (abapGit's extension) |
 
 Format per type (evidence, 13.10.2026): abapGit is the import route a customer has today — the
 open-source abapGit on S/4HANA on-premise and SAP Cloud ERP Private, the abapGit SAP ships for
