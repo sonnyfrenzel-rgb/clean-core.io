@@ -71,6 +71,13 @@ export interface SecurityReviewOptions {
    * missing client handling as `EXEC SQL`.
    */
   adbcLines?: readonly number[];
+  /**
+   * From engine 3.0.13 (`PRECISION_FIXES_FROM`, set by `buildAbapEvidence`): a
+   * file-name validation covers a path only when its failure stops the
+   * program — see `validationStops` below. Off, any earlier call counts, as
+   * runs of v3.0.12 signed it.
+   */
+  validationOutcomeRead?: boolean;
 }
 
 export function readSecurityReviewTasks(source: string, options: SecurityReviewOptions = {}): SecurityReviewTask[] {
@@ -180,8 +187,21 @@ export function readSecurityReviewTasksFrom(
   // name again between the call and the access: what is opened then is not
   // what was validated (QA c38f8043). Order is the order of the source, not of
   // execution.
+  //
+  // From 3.0.13 the call also has to stop the program when it fails (QA review
+  // of 5a559787, 7e158fe18264). Without EXCEPTIONS a failing module raises an
+  // exception nobody handles, and the program ends there. With EXCEPTIONS the
+  // failure only sets sy-subrc, and the statement right after the call has to
+  // read it — the rule of `authority-result-not-evaluated` above. A call whose
+  // sy-subrc nobody reads validated nothing.
   const isFileNameCheck = (s: AbapStatement) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text);
-  const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s)
+  const validationStops = (index: number): boolean => {
+    if (!options.validationOutcomeRead) return true;
+    if (!/\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text))) return true;
+    const next = statements[index + 1];
+    return next !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(next.text));
+  };
+  const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationStops(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
     : []);
   const writtenAt = statements.map((s) => (isFileNameCheck(s) ? new Set<string>() : writtenNames(s.text)));

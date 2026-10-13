@@ -7,7 +7,8 @@ import { APP_VERSION } from '@/lib/version';
  *
  * Every engine change that alters what a run signs is gated on the engine
  * version (`GUIDELINE_CHECKS_FROM`, `ON_STACK_CONSTRUCTS_FROM`,
- * `GUI_FILE_NO_ROUTE_DRIVER_FROM`, `OWN_TABLE_WRITES_FREE_FROM`), so a run
+ * `GUI_FILE_NO_ROUTE_DRIVER_FROM`, `OWN_TABLE_WRITES_FREE_FROM`,
+ * `PRECISION_FIXES_FROM`), so a run
  * signed by an older engine re-renders exactly what it signed. Whatever
  * rebuilds the evidence or the route of an existing project therefore passes
  * the version this returns:
