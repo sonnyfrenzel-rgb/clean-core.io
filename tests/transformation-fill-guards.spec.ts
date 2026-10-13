@@ -156,3 +156,48 @@ test('E: LOOP, ASSIGNING, READ TABLE and SELECT fill a work area; a row of the i
   const customer = at("lv_kunnr = 'BLOCKED'");
   expect([customer.basis, customer.placement, customer.operands.map((o) => o.key)]).toEqual(['derived', 'body', ['lvKunnr']]);
 });
+
+/**
+ * F (A/B 13.10.2026): U10, U02, U14 and a U01 predicate were refused for Number() on whole numbers
+ * (`priority`, `bps`, `caseStep`, date digits). The refusal is right — a TYPE i record component reaches a
+ * body as unvalidated text, and `Number('1x')` is NaN, which passes `priority < 1 || priority > 99` — but
+ * neither the header nor the refusal said what to write instead, and the header's "on a decimal value"
+ * read as permission for whole numbers.
+ */
+test('F: Number() stays refused on whole numbers too, and the refusal names what to write instead', () => {
+  const prep = prepared();
+  const guard = guardBodyOf(prep);
+  const u = unitOf(prep, 'checkConservation');
+  const refused = guard(u.id, "if (Number(args.cvCode.value) > 99) return;", []);
+  expect(refused).toContain('whole numbers (TYPE i) included');
+  expect(refused).toContain('a text that is no number becomes NaN, which passes every range check');
+  expect(refused).toContain("dec.compare(a, b) (< 0, === 0, > 0; exact, throws on a text that is no number), e.g. dec.compare(text ?? '0', '99') > 0");
+  expect(refused).toContain('dec.add / dec.sub / dec.mul / dec.div(a, b, places)');
+  expect(refused).toContain('check digits with /^\\d+$/.test(text)');
+  expect(refused).toContain('new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`');
+  // What the refusal says to write passes the same guards (in the predicate, which has no guard of its own to call).
+  const g = guardOf(prep, u.id);
+  const instead = [
+    "const text = String(values.lvQty ?? '');",
+    'if (!/^\\d+$/.test(text)) return false;',
+    'const y = text.slice(0, 4); const m = text.slice(4, 6); const d = text.slice(6, 8);',
+    'if (new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) !== `${y}-${m}-${d}`) return false;',
+    "return dec.compare(text, '99') > 0 && !dec.isZero(dec.add(text, '1', 0));",
+  ].join('\n');
+  expect(guard(g.regionId!, instead, [])).toBeNull();
+  // The date check it names is safe on a text that is no date: toJSON is null there, where toISOString throws.
+  const isDate = (y: string, m: string, d: string) => new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`;
+  expect([isDate('2024', '02', '29'), isDate('2026', '02', '30'), isDate('2026', '13', '01'), isDate('20a6', '01', '01')]).toEqual([true, false, false, false]);
+  // A predicate is held to the same rule.
+  expect(guard(g.regionId!, 'return Number(values.lvQty) > Number(values.lsParentQty);', [])).toContain('whole numbers (TYPE i) included');
+});
+
+test('F: the Node header says numbers arrive as text, forbids Number() on any value and names the helpers', () => {
+  const node = fillInstructionHeader('node');
+  expect(node).toContain('- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.');
+  expect(node).toContain('- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.');
+  // The old line ("… on a decimal value") read as permission for Number() on a whole number.
+  expect(node).not.toContain('never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value');
+  // RAP has no Number(): its line is unchanged.
+  expect(fillInstructionHeader('rap')).toContain('- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.');
+});

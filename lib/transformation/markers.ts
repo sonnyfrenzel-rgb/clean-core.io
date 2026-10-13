@@ -174,6 +174,19 @@ const TS_BUILTIN_CALLS = new Set(['String', 'Boolean', 'BigInt', 'Array', 'Objec
 const TS_BUILTIN_ROOTS = new Set(['Math', 'JSON', 'Object', 'Array', 'String', 'BigInt', 'Date', 'Symbol', 'Number', 'sel', 'st', 'args', 'local', 'input', 'record', 'this']);
 /** Constructors a body may use with `new`. */
 const TS_NEW = new Set(['Map', 'Set', 'Error', 'Refusal', 'Array', 'Date']);
+/**
+ * §9.2 rule 6, as the refusal says it (defect F, A/B 13.10.2026). Not narrowed to packed values on
+ * purpose: a TYPE i component of a record reaches a body as unvalidated text (the input contract carries
+ * it as `text`), and `Number('1x')` is NaN, which passes every range comparison — U10's `priority < 1 ||
+ * priority > 99` let it through. `dec.compare` is exact on whole numbers too and throws on a text that is no
+ * number. The message names what to write instead, so a repair round can follow it.
+ */
+export const BINARY_NUMBER_MESSAGE =
+  'Number(), parseFloat() or parseInt() — never in a body, whole numbers (TYPE i) included: a packed value loses digits, and a text that is no number becomes NaN, which passes every range check. ' +
+  'Instead: compare a number given as text with dec.compare(a, b) (< 0, === 0, > 0; exact, throws on a text that is no number), e.g. dec.compare(text ?? \'0\', \'99\') > 0; ' +
+  'compute with dec.add / dec.sub / dec.mul / dec.div(a, b, places); test zero with dec.isZero(a); check digits with /^\\d+$/.test(text); ' +
+  'check a calendar date with new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}` (toJSON is null for no date; toISOString throws)';
+
 /** Helpers a fill may name in `needs` beyond `available` (§9.2 rule 4). */
 export const NEEDS_ALLOWLIST: readonly string[] = ['dec.compare', 'dec.max', 'dec.min', 'dec.abs', 'dec.neg', 'dec.isZero', 'csv.table'];
 
@@ -266,7 +279,7 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   if (code(/\b(?:guard|stop|skip)_[\w$]*\s*=(?!=)/).length > 0) out.push(refusal('guard-shadowed', 'the body assigns to a guard function'));
 
   if (code(/\b(?:Number|parseFloat|parseInt)\s*\(|\bNumber\s*\.\s*(?:parseFloat|parseInt)\s*\(/).length > 0) {
-    out.push(refusal('binary-number', 'Number(), parseFloat() or parseInt() — amounts and quantities go through dec.*, inputs through the input contract'));
+    out.push(refusal('binary-number', BINARY_NUMBER_MESSAGE));
   }
 
   // Calls: a plain call names something available, needed and allowed, declared here, or a built-in;

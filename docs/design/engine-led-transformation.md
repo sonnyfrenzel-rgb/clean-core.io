@@ -439,9 +439,14 @@ A body is refused — and the unit goes to repair with that reason — when it:
    touched; a body that *re-implements* the condition of a guard it must call is refused (rule 7);
 4. calls a name that is neither in `available` nor in `needs` ∩ allowlist;
 5. is longer than 4× its ABAP slice or 16,000 characters;
-6. uses `Number(`, `parseFloat(`, `parseInt(` or arithmetic operators on a `Dec` value (lint
+6. uses `Number(`, `parseFloat(`, `parseInt(` on any value, or arithmetic operators on a `Dec` value (lint
    `lenient number parsing` / `binary decimals` from `lib/generated-code-lints.ts`, raised to a
-   refusal inside fills);
+   refusal inside fills). Whole numbers included, on purpose (defect F, A/B 13.10.2026): a TYPE i
+   component of a record reaches a body as unvalidated text, and `Number('1x')` is NaN, which passes
+   every range check (U10's `priority < 1 || priority > 99`). The header says numbers arrive as text and
+   names the helpers; the refusal names what to write instead — `dec.compare(a, b)`, `dec.add/sub/mul/div`,
+   `dec.isZero`, `/^\d+$/.test(x)`, and a date check through `new Date(…).toJSON()` (null for no date,
+   where `toISOString` throws) — so a repair round can follow it (`BINARY_NUMBER_MESSAGE`);
 7. does not call a guard its unit must call in the body, or writes that guard's comparison itself
    (`guard-missing`, `guard-inlined`). Rule 15 as fixed by QA finding 4e9d1315469d: a check on **raw**
    input (selection inputs, constants, input records) runs before any calculation — at the step's entry or

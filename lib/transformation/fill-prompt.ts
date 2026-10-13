@@ -117,7 +117,13 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
     ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : []),
     ...fillGuardLines(track),
-    '- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.',
+    ...(track === 'node'
+      ? [
+          // Defect F (A/B 13.10.2026): "on a decimal value" read as permission for Number() on a TYPE i field.
+          '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
+          '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
+        ]
+      : ['- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.']),
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
     '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [] } ] } — one entry per unit asked for; "refused" only on a unit you refuse.',
