@@ -20,7 +20,10 @@ function canvasOf(source: string, deployment: 'public' | 'private', engine?: str
   // and the canvas the current engine, as before.
   const built = contractOfProject({ legacyCode: source, s4Deployment: deployment, activeRunId: 'run-1', ...(engine ? { analyzerVersion: engine } : {}) }, null);
   if (!built.ok) throw new Error('no contract');
-  const { rows } = findingsOf(source, 'main.abap', deployment);
+  // The rows of the same engine as the contract, so a historical canvas is one
+  // a signed run of that engine could have produced (QA review of
+  // 03501b79fb3d, 9a7c580bcd54).
+  const { rows } = findingsOf(source, 'main.abap', deployment, undefined, engine);
   return { contract: built.contract, rows, model: architectureCanvasModel({ contract: built.contract, findings: rows, deployment, ...(engine ? { engineVersion: engine } : {}) }) };
 }
 

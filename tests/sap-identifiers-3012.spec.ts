@@ -432,6 +432,12 @@ test.describe('AUFK is mapped by what else the program reads (PP review)', () =>
   test('the context rule', () => {
     expect(successorInContext('AUFK', ['AUFK', 'AFKO'])?.entry.view).toBe('I_ManufacturingOrder');
     expect(successorInContext('AUFK', ['AUFK'])).toBeNull();
+    // A reservation alone is no production order: RESB is just as much a
+    // maintenance order's component (QA review of 03501b79fb3d, e6a7787ff3d0).
+    expect(successorInContext('AUFK', ['AUFK', 'RESB'])).toBeNull();
+    for (const header of ['AFKO', 'AFPO', 'AFVC', 'AFRU']) {
+      expect(successorInContext('AUFK', ['AUFK', 'RESB', header])?.entry.view, header).toBe('I_ManufacturingOrder');
+    }
     expect(successorInContext('RESB', ['RESB'])?.entry.view).toBe('I_ReservationDocumentItem');
     expect(successorInContext('RESB', ['RESB', 'AFKO'])).toBeNull();
   });
@@ -452,6 +458,9 @@ test.describe('AUFK is mapped by what else the program reads (PP review)', () =>
     expect(successor(CO_PROGRAM, 'AUFK')?.objectName).toBe('I_InternalOrder');
     // RESB beside the production order tables stays the order component.
     expect(successor(PP_PROGRAM, 'RESB')?.objectName).toBe('I_ProductionOrderComponent');
+    // AUFK beside RESB and no production order table: the internal order stays.
+    const PM_COMPONENTS = PP_PROGRAM.split('\n').filter((l) => !/afko/i.test(l)).join('\n');
+    expect(successor(PM_COMPONENTS, 'AUFK')?.objectName).toBe('I_InternalOrder');
   });
 });
 

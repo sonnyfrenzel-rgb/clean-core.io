@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { createHash } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { catalogSnapshotKeyForProject } from '../lib/abap/catalog-snapshots';
@@ -125,6 +128,63 @@ test('a run signed before the stamp existed gets the oldest engine, not this one
 test('a run about to be made is read by this engine', () => {
   const built = buildRunEvidence(projectOf(OLD), { source: SOURCE, fileName: FILE, deployment: 'private' });
   expect(JSON.stringify(built.evidence)).toBe(JSON.stringify(buildAbapEvidence(SOURCE, FILE, 'private', built.catalog.registryKey, APP_VERSION)));
+});
+
+/**
+ * The tests above take the current engine called with the old version as their
+ * oracle, so a change that leaks past the gate moves the expectation with it
+ * (QA review of 03501b79fb3d, af7fd81f9cc2). This one does not: the digests in
+ * `tests/fixtures/engine-v3.0.11-frozen.json` are what the deployed v3.0.11
+ * engine itself answered — evidence and route — for the 300 benchmark programs
+ * and five probes, in both editions. Without the gates of 3.0.12 on the GUI
+ * file finding and the AUFK context successor, 30 of them differ.
+ */
+test.describe('a run signed by v3.0.11, against what that engine answered', () => {
+  const frozen = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/engine-v3.0.11-frozen.json'), 'utf8')) as {
+    probes: Record<string, string>;
+    digests: Record<string, string>;
+  };
+  const digest = (evidence: unknown, route: unknown) => createHash('sha256').update(JSON.stringify({ evidence, route })).digest('hex');
+  const answer = (code: string, file: string, deployment: 'private' | 'public', snapshot?: string) => {
+    const evidence = buildAbapEvidence(code, file, deployment, snapshot, OLD);
+    return digest(evidence, routeExtensibility(evidence, deployment, OLD));
+  };
+
+  test('every benchmark program and probe, both editions, byte for byte', () => {
+    test.setTimeout(180_000);
+    const casesDir = path.join(__dirname, 'prozess-benchmark/cases');
+    const moved: string[] = [];
+    let compared = 0;
+    for (const [key, expected] of Object.entries(frozen.digests)) {
+      const [scope, name, deployment] = key.startsWith('probe:') ? key.split(':') : ['case', ...key.split(':')];
+      let code: string;
+      let file: string;
+      if (scope === 'probe') {
+        code = frozen.probes[name];
+        file = `${name}.abap`;
+      } else {
+        const abap = fs.readdirSync(path.join(casesDir, name)).filter((n) => n.endsWith('.abap')).sort();
+        code = abap.map((f) => fs.readFileSync(path.join(casesDir, name, f), 'utf8')).join('\n');
+        file = abap[0];
+      }
+      compared++;
+      if (answer(code, file, deployment as 'private' | 'public') !== expected) moved.push(key);
+    }
+    expect(compared).toBe(610);
+    expect(moved).toEqual([]);
+  });
+
+  test('the builders rebuild the old run to that answer', () => {
+    const code = frozen.probes['gui-download-and-authority'];
+    const project = { ...projectOf(OLD), legacyCode: code, auditMetadata: { inputFingerprint: { fileName: 'gui-download-and-authority.abap' }, modelCard: { engineVersion: OLD } } };
+    const expected = frozen.digests['probe:gui-download-and-authority:private'];
+    const built = buildProjectEvidence(project, code);
+    expect(digest(built.evidence, routeExtensibility(built.evidence, 'private', OLD))).toBe(expected);
+    const contract = contractOfProject(project as never, null);
+    expect(contract.ok).toBe(true);
+    if (!contract.ok) return;
+    expect(digest(contract.evidence, routeExtensibility(contract.evidence, 'private', OLD))).toBe(expected);
+  });
 });
 
 /**

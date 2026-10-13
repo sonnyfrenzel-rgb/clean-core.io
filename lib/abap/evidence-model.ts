@@ -369,7 +369,7 @@ export function buildAbapEvidence(
   const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
 
   // Some successors depend on what else the program reads: AUFK beside AFKO,
-  // AFPO or RESB is a production order, not an internal order (PP review,
+  // AFPO, AFVC or AFRU is a production order, not an internal order (PP review,
   // 12.10.2026; `successorInContext`). A context successor is our curated
   // mapping, labelled as such, never SAP's catalog answer.
   const tablesHere = new Set(
@@ -378,7 +378,9 @@ export function buildAbapEvidence(
   const successorOf = (table: string): (typeof STANDARD_TABLE_MAP)[string] | undefined => {
     const base = STANDARD_TABLE_MAP[table];
     if (!base) return undefined;
-    const inContext = successorInContext(table, tablesHere);
+    // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): a run of an earlier engine keeps
+    // the plain catalog successor it signed (QA review of 03501b79fb3d).
+    const inContext = guideline ? successorInContext(table, tablesHere) : null;
     return inContext ? { view: inContext.entry.view, type: inContext.entry.type, confidence: 'curated' } : base;
   };
 
@@ -874,8 +876,32 @@ export function buildAbapEvidence(
     // said apart: a download is a list export, an upload a file the target
     // has to take — neither forces a side-by-side split on its own
     // (`GUI_FILE_NO_ROUTE_DRIVER_FROM` in the router).
-    const guiModule = calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)');
-    if (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
+    //
+    // All of that from 3.0.12 (`GUIDELINE_CHECKS_FROM`): the WS_ forms, the
+    // direction and the on-stack remedy. A run of an earlier engine keeps the
+    // finding it signed — GUI_ modules only, one sentence for both directions
+    // (QA review of 03501b79fb3d, 5d3dbc1afb60 / 11a08254990d).
+    if (!guideline) {
+      const legacyGuiModule = calledModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)');
+      if (legacyGuiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
+        addFinding({
+          kind: 'gui-download',
+          title: 'Legacy Frontend File Upload/Download',
+          severity: 'Medium',
+          confidence: 'High',
+          objectName: legacyGuiModule ?? 'CL_GUI_FRONTEND_SERVICES',
+          objectType: legacyGuiModule ? 'Function Module' : 'Class',
+          lineStart: stmt.line,
+          snippet: text,
+          technicalDetail: `Usage of GUI_DOWNLOAD, GUI_UPLOAD, or cl_gui_frontend_services to interact with the local client file system.`,
+          cleanCoreImpact: 'Frontend services require SAP GUI connection and client-side integration. Web browsers block direct local file system access for security.',
+          recommendation: `Replace with modern UI5 file upload elements, or persist files in SAP Document Management service / Cloud Storage.`,
+          targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+        });
+      }
+    }
+    const guiModule = guideline ? calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)') : null;
+    if (guideline && (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText))) {
       const direction = guiModule
         ? (/UPLOAD/.test(guiModule) ? 'upload' : 'download')
         : /\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText)
@@ -897,13 +923,11 @@ export function buildAbapEvidence(
           : direction === 'download'
             ? 'Writes a file to the user\'s PC through the SAP GUI frontend services (GUI_DOWNLOAD, WS_DOWNLOAD or cl_gui_frontend_services).'
             : `Usage of GUI_DOWNLOAD, GUI_UPLOAD, WS_DOWNLOAD, WS_UPLOAD or cl_gui_frontend_services to interact with the local client file system.`,
-        // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): SAP Note 3578329 — level B
-        // through a listed classic API; WS_DOWNLOAD / WS_UPLOAD are not listed.
-        cleanCoreImpact: guideline
-          ? (listedClassicApi(guiModule ?? 'CL_GUI_FRONTEND_SERVICES')
-            ? `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. SAP lists ${guiModule ?? 'CL_GUI_FRONTEND_SERVICES'} as a classic API, and SAP Note 3578329 counts SAP GUI technology used through classic APIs as clean core level B: the transfer may stay while the users work in SAP GUI.`
-            : `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. ${guiModule} is not on SAP's list of classic APIs (GUI_UPLOAD, GUI_DOWNLOAD and CL_GUI_FRONTEND_SERVICES are), so it is not level B under SAP Note 3578329.`)
-          : 'Frontend services require SAP GUI connection and client-side integration. Web browsers block direct local file system access for security.',
+        // SAP Note 3578329 — level B through a listed classic API;
+        // WS_DOWNLOAD / WS_UPLOAD are not listed.
+        cleanCoreImpact: listedClassicApi(guiModule ?? 'CL_GUI_FRONTEND_SERVICES')
+          ? `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. SAP lists ${guiModule ?? 'CL_GUI_FRONTEND_SERVICES'} as a classic API, and SAP Note 3578329 counts SAP GUI technology used through classic APIs as clean core level B: the transfer may stay while the users work in SAP GUI.`
+          : `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. ${guiModule} is not on SAP's list of classic APIs (GUI_UPLOAD, GUI_DOWNLOAD and CL_GUI_FRONTEND_SERVICES are), so it is not level B under SAP Note 3578329.`,
         recommendation: direction === 'download'
           ? 'Replace the download with the export of a Fiori Elements list report backed by a RAP service — on-stack; no separate runtime is needed for it.'
           : direction === 'upload'

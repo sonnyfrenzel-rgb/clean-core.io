@@ -74,6 +74,14 @@ const KIND_LABELS: Record<string, string> = {
   'business-rule': 'business rules',
   enhancement: 'enhancement technologies',
   modification: 'core modifications',
+  // The kinds of 3.0.12 (`GUIDELINE_CHECKS_FROM`); no run of an earlier
+  // engine has them, so no signed sentence moves.
+  'security-review': 'security review tasks',
+  'sap-code-copy': 'possible copies of SAP code',
+  bopf: 'BOPF business objects',
+  'gateway-classic-service': 'classic SAP Gateway (SEGW) services',
+  'ddic-cds-view': 'DDIC-based CDS views',
+  'parallel-processing': 'parallel processing with asynchronous RFC',
 };
 
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
@@ -543,6 +551,13 @@ export function routeExtensibility(
     // From 3.0.12 native SQL, BDC and a local RFC are rework on-stack too
     // (`ON_STACK_CONSTRUCTS_FROM`).
     ...(legacyRule ? [] : ['native-sql', 'bdc']),
+    // So are the classic constructs the engine reports from 3.0.12 on —
+    // parallel processing through asynchronous RFC, BOPF, a SEGW service and a
+    // DDIC-based CDS view: each finding says ABAP Cloud does not offer it, so
+    // none may leave the In-App track "Highly Compatible" (QA review of
+    // 03501b79fb3d, 62bd4e9b8079 / 6946241ed28c). Runs of an earlier engine
+    // have no such findings; the gate keeps their rule word for word anyway.
+    ...(legacyRule ? [] : ['parallel-processing', 'bopf', 'gateway-classic-service', 'ddic-cds-view']),
     ...(localRfc.length > 0 ? ['rfc-call'] : []),
   ]);
   const reworkKinds = [...new Set([
