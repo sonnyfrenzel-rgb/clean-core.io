@@ -12,8 +12,9 @@ import { checkPhrase } from '../lib/transformation/check-words';
 import { fixture, planOf, poDemo, ROOT } from './helpers/transformation-scaffold';
 
 /**
- * The RAP package a customer imports with abapGit (roadmap 3.0.12, importable
- * package, 13.10.2026): every object carries the metadata file abapGit's
+ * The RAP package laid out for an abapGit import (roadmap 3.0.12, abapGit
+ * package, 13.10.2026). It passes abapGit's serializer structure and SAP's
+ * file-format checks; it is not import-verified in an SAP system: every object carries the metadata file abapGit's
  * serializer writes (`<name>.<type>.xml`), the repository settings are there,
  * the table is abapGit's XML, and the formats check and abaplint read them.
  * The XML structure is held against abapGit's serializer output as SAP's own
@@ -159,7 +160,7 @@ test("the metadata files have the elements of abapGit's serializer output", () =
   }
 });
 
-test('the formats check fails what abapGit would refuse or not import', () => {
+test("the formats check fails what abapGit's reader and deserializers, as their source reads, would refuse", () => {
   const scaffold = scaffoldOf(fixture('co-shape'));
   const replace = (suffix: string, edit: (s: string) => string) => scaffold.files.map((f) => (f.path.endsWith(suffix) ? { ...f, content: edit(f.content) } : f));
   const failed = (files: ReadonlyArray<{ path: string; content: string }>) => packageFormatsCheck(files, schemas).filter((r) => r.status === 'failed');
@@ -299,4 +300,43 @@ test.describe('the single-call RAP delivery: every class metadata file is one ab
     expect(page.match(/singleCallRapClassFiles\('(behavior|test)'/g)).toEqual(["singleCallRapClassFiles('behavior'", "singleCallRapClassFiles('test'"]);
     expect(page).toContain('deliverableClassXml(file.path, file.content)');
   });
+});
+
+test('no text calls the package importable: it passes the format checks, no SAP system imported it (QA 8e68e2512c04)', () => {
+  // Owner fact, 13.10.2026: a test import into an SAP system is not possible here.
+  // So every claim says what was checked — abapGit's serializer structure and SAP's
+  // file formats — and never that the package imports. Built from pieces so this
+  // test does not find itself.
+  const claims = [
+    new RegExp('import' + 'able package', 'i'),
+    new RegExp('imports? (?:the|this) package with abap' + 'Git', 'i'),
+    new RegExp('laid out to import with abap' + 'Git', 'i'),
+    new RegExp('import as' + '-is', 'i'),
+  ];
+  const roots = ['lib', 'app', 'components', 'docs', 'tests'];
+  const files: string[] = ['CHANGELOG.md'];
+  const walk = (rel: string) => {
+    for (const d of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+      const r = `${rel}/${d.name}`;
+      if (d.isDirectory()) {
+        if (r === 'docs/archiv' || d.name === 'generated' || d.name === 'node_modules') continue;
+        walk(r);
+      } else if (/\.(?:tsx?|mjs|md|json)$/.test(d.name)) files.push(r);
+    }
+  };
+  roots.forEach(walk);
+  const hits = files.flatMap((rel) => {
+    // A finding register row quotes the finding as it was raised; it is history, not a claim.
+    const text = fs
+      .readFileSync(path.join(ROOT, rel), 'utf8')
+      .split(/\r?\n/)
+      .filter((line) => !/^\| [0-9a-f]{12} \|/.test(line))
+      .join(' ');
+    return claims.filter((re) => re.test(text)).map((re) => `${rel}: ${re.source}`);
+  });
+  expect(hits).toEqual([]);
+  // The honest sentences stay where a reader sees them.
+  const changelog = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8');
+  expect(changelog).toMatch(/they have not\s+been import-verified in an SAP system\./);
+  expect(fs.readFileSync(path.join(ROOT, 'lib', 'delivery-package.ts'), 'utf8')).toContain('nobody imported this package into an SAP system');
 });

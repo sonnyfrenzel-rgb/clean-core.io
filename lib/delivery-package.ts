@@ -831,7 +831,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   }
   if (/\.clas\.abap$/i.test(p) && /test/i.test(p)) return { kind: 'test-suite', status: 'implemented', note: 'ABAP Unit class — runs only inside an SAP system.' };
   if (/\.(abap|asddls|asbdef|asdcls|srvdsrv|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
-  // A table is its abapGit XML: abapGit has no source form of a table (3.0.12, importable package).
+  // A table is its abapGit XML: abapGit has no source form of a table (3.0.12, abapGit package).
   if (/^src\/.+\.tabl\.xml$/i.test(p)) {
     return { kind: 'abap-object', status: 'implemented', note: abapGitXmlHolds(p, e.content) ? "Table definition in abapGit's serializer format (structure checked) — not imported into or activated in an SAP system." : "Table definition — not in the structure abapGit's serializer writes; not imported into an SAP system." };
   }

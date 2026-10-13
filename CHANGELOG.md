@@ -107,7 +107,7 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
 - **abaplint under ABAP Cloud syntax** runs on the server when a package is stored, with 21 rules
   from Clean ABAP adopted (54 considered); the delivered `abaplint.json` is the same configuration.
 - **abapGit metadata files:** every object gets its abapGit XML, the package its `.abapgit.xml`
-  and `package.devc.xml`, so the package is laid out to import with abapGit; the single-call RAP
+  and `package.devc.xml`, so the package is laid out in the structure abapGit's serializer writes; the single-call RAP
   path writes the same class files. The files are format-checked against abapGit's serializers (as
   abapGit wrote them in SAP's own samples) and against SAP's ABAP file formats — **they have not
   been import-verified in an SAP system.**

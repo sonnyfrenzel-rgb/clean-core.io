@@ -54,14 +54,15 @@
  * `where false` (the sample shows `where true`). abaplint has neither SAP's
  * definitions nor a parser for access controls; activation in ADT is the check.
  *
- * Since scaffold version 3 (3.0.12, importable package): **every object carries
+ * Since scaffold version 3 (3.0.12, abapGit package): **every object carries
  * abapGit's metadata file** (`<name>.<type>.xml`, `abapgit-files.ts`), the
  * table is abapGit's `.tabl.xml` (abapGit has no source form of a table; the
  * `.tabl.astabl` written before was neither abapGit's nor SAP's ABAP file
  * format), the root folder carries `package.devc.xml`, and `.abapgit.xml` is the
- * one the delivery writes. A customer imports the package with abapGit; the
- * formats check (`abapgit-check.ts`) holds every metadata file against the
- * structure abapGit's serializer writes. abapGit, not AFF JSON: abapGit reads AFF
+ * one the delivery writes. The package is meant for an import with abapGit; it
+ * passes abapGit's serializer structure and SAP's file-format checks and is not
+ * import-verified in an SAP system. The formats check (`abapgit-check.ts`)
+ * holds every metadata file against the structure abapGit's serializer writes. abapGit, not AFF JSON: abapGit reads AFF
  * for none of the types written here (INTF only behind an experimental switch) —
  * the evidence is in `abapgit-files.ts`.
  *

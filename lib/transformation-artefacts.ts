@@ -83,7 +83,7 @@ export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
 export const ENGINE_LED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
   abapCloud: [
     { label: 'logic or behavior class (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
-    // 3.0.12, importable package: abapGit creates no object without its metadata file.
+    // 3.0.12, abapGit package: abapGit creates no object without its metadata file.
     { label: 'class metadata for abapGit (*.clas.xml)', match: 'extension', suffix: '.clas.xml' },
     { label: 'CDS data definition (*.ddls.asddls)', match: 'extension', suffix: '.ddls.asddls' },
     { label: 'behavior definition (*.bdef.asbdef)', match: 'extension', suffix: '.bdef.asbdef' },

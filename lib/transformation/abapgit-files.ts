@@ -1,7 +1,9 @@
 /**
  * The abapGit metadata files of the RAP package (roadmap 3.0.12, owner 13.10.2026):
  * one `<name>.<type>.xml` per object and the repository settings `.abapgit.xml`,
- * so a customer can import the package with abapGit as it is.
+ * laid out for an import with abapGit. The package passes abapGit's serializer
+ * structure and SAP's file-format checks; it is not import-verified in an SAP
+ * system (no test import into one is possible here).
  *
  * Why abapGit XML and not SAP's ABAP file formats (AFF JSON): abapGit reads AFF
  * only for the object types its AFF registry lists

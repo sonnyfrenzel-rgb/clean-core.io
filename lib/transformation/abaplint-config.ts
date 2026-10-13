@@ -46,7 +46,7 @@ export const ABAPLINT_RULES = {
   obsolete_statement: true,
   check_subrc: true,
   /**
-   * The abapGit metadata files (3.0.12, importable package): well-formed XML, a class's or interface's
+   * The abapGit metadata files (3.0.12, abapGit package): well-formed XML, a class's or interface's
    * name and description against its source, a transparent table with delivery class and size category.
    */
   xml_consistency: true,

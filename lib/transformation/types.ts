@@ -22,7 +22,7 @@ export const PLAN_VERSION = 1;
  * 2 (3.0.12, DSAG ABAP guide review): the RAP scaffold checks authorization (`#CHECK`, access controls, handlers
  * that deny until filled), carries an access layer, ABAP Doc on every public method and, where the original runs in
  * the background, an Application Job. The Node scaffold's text is unchanged.
- * 3 (3.0.12, importable package): the RAP scaffold writes abapGit's metadata file for every object
+ * 3 (3.0.12, abapGit package): the RAP scaffold writes abapGit's metadata file for every object
  * (`abapgit-files.ts`), the table as abapGit XML instead of `.tabl.astabl`, the root package's
  * `package.devc.xml`, and a transparent table name within 16 characters. The Node scaffold's text is unchanged.
  */
