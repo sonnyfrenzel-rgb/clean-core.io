@@ -47,8 +47,10 @@ test.describe('A/B/C/D readiness derivation', () => {
   });
 
   test('gradeFromInventory maps type + criticality, Unknown on missing criticality', () => {
-    expect(gradeFromInventory({ type: 'Dynpro' })).toBe('D');
-    expect(gradeFromInventory({ type: 'Screen' })).toBe('D');
+    // SAP Note 3578329 (owner, 13.10.2026): classic Dynpro / SAP GUI is Level B, not D.
+    expect(gradeFromInventory({ type: 'Dynpro' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Screen' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Dynpro', criticality: 'High' })).toBe('C');
     expect(gradeFromInventory({ type: 'Class', criticality: 'High' })).toBe('C');
     expect(gradeFromInventory({ type: 'Class', criticality: 'Low' })).toBe('B');
     expect(gradeFromInventory({ type: 'Class', criticality: 'Medium' })).toBe('B');

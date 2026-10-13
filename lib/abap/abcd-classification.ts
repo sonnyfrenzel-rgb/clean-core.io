@@ -140,10 +140,16 @@ export function gradeFromCoupling(c: { accessType?: string; riskLevel?: string; 
 /** Grade a custom code object from its criticality and type. */
 export function gradeFromInventory(item: { criticality?: string; type?: string }): CloudReadinessGrade {
   const t = (item.type || '').toLowerCase();
-  if (t.includes('dynpro') || t.includes('screen')) return 'D';
+  // A classic Dynpro / SAP GUI screen is Level B, not D: SAP Note 3578329 counts
+  // SAP GUI, Dynpro and ALV grid used through documented classic APIs as
+  // "leverage classic APIs" (owner, 13.10.2026), and SAP's classification file
+  // lists the GUI classes it builds on (CL_GUI_ALV_GRID, CL_SALV_TABLE,
+  // CL_GUI_*_CONTAINER) as classicAPI. An estimate stays at most B; a high
+  // criticality still reads C, and only a catalog lookup can say otherwise.
+  const screen = t.includes('dynpro') || t.includes('screen');
   // F-05: Unknown when the criticality signal is missing (no silent Medium default).
   const crit = item.criticality;
-  if (crit !== 'High' && crit !== 'Medium' && crit !== 'Low') return 'Unknown';
+  if (crit !== 'High' && crit !== 'Medium' && crit !== 'Low') return screen ? 'B' : 'Unknown';
   if (crit === 'High') return 'C';
   // Low and Medium criticality: B, never A — a criticality estimate has no
   // released (C1) object behind it, and level A means exactly that.
