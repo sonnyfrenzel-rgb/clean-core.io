@@ -417,8 +417,17 @@ async function csvEscaping(cfg, ctx) {
   const fields = records.flat();
   if (!fields.includes(quoteText)) problems.push(`the text ${short(quoteText)} does not survive as one field`);
   if (!fields.some((f) => f.replace(/\r\n/g, '\n') === newlineText)) problems.push('a text with a line break does not survive as one field');
+  // The one neutralised form a spreadsheet reads as text: the cell prefixed with
+  // a single quote, as `lib/csv-formula.ts` and the generated package's
+  // `neutralise` write it. Anything else ending in the formula — a leading `+`,
+  // a tab, a space — still starts like a formula.
+  const neutralised = `'${formulaText}`;
+  const carriers = fields.filter((f) => f.endsWith(formulaText));
   if (fields.includes(formulaText)) problems.push(`the cell ${short(formulaText)} reaches the file un-neutralised`);
-  else if (!fields.some((f) => f.endsWith(formulaText))) problems.push('the formula text is missing from the output entirely');
+  else if (carriers.length === 0) problems.push('the formula text is missing from the output entirely');
+  else if (!carriers.every((f) => f === neutralised)) {
+    problems.push(`the cell ${short(formulaText)} reaches the file as ${short(carriers.find((f) => f !== neutralised))}, not as the neutralised ${short(neutralised)}`);
+  }
   return [{
     pattern: 'FP-GUARD-07',
     status: problems.length === 0 ? 'pass' : 'fail',

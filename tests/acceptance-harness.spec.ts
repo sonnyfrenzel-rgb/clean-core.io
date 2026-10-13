@@ -223,6 +223,33 @@ test.describe('probe and load answers: only a structured answer counts', () => {
     expect((await PROBES['display-filter'](df, dfExec))[0]).toMatchObject({ status: 'fail' });
   });
 
+  test('csv-escaping: only the single-quote prefix counts as a neutralised formula cell (SEC-2026-816)', async () => {
+    const { PROBES } = await import('../scripts/acceptance/lib/probes.mjs');
+    const cfg = { call: { module: 'engine', export: 'toCsv' }, args: ['$rows'], rowTemplate: ['$quoteText', '$newlineText', '$formulaText'] };
+    /** A serializer that quotes every cell per RFC 4180 and writes the formula cell through `formula`. */
+    const serializer = (formula: (cell: string) => string) => ({
+      request: async (op: string, payload: { args?: unknown[] }) => {
+        expect(op).toBe('call');
+        const rows = payload.args?.[0] as string[][];
+        const text = rows.map((r) => r.map((c) => `"${(c === '=1+1' ? formula(c) : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        return { threw: false, value: text };
+      },
+    });
+    expect((await PROBES['csv-escaping'](cfg, serializer((c) => `'${c}`)))[0]).toMatchObject({ pattern: 'FP-GUARD-07', status: 'pass' });
+    for (const [label, formula] of [
+      ['a leading plus', (c: string) => `+${c}`],
+      ['a leading tab', (c: string) => `\t${c}`],
+      ['a leading space', (c: string) => ` ${c}`],
+      ['a leading at sign', (c: string) => `@${c}`],
+    ] as const) {
+      const [o] = await PROBES['csv-escaping'](cfg, serializer(formula));
+      expect(o.status, label).toBe('fail');
+      expect(o.evidence, label).toContain("not as the neutralised \"'=1+1\"");
+    }
+    const [plain] = await PROBES['csv-escaping'](cfg, serializer((c) => c));
+    expect(plain.evidence).toContain('un-neutralised');
+  });
+
   test('an empty failure is still a failure, and a success must name every module (QA 7752de789154)', async () => {
     const { loadFailure } = await import('../scripts/acceptance/lib/load-answer.mjs');
     // run.mjs decides a probe's load by this function, and by nothing else
