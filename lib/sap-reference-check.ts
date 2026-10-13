@@ -1,5 +1,6 @@
 import { SAP_API_CATALOG, SAP_API_CATALOG_STAMP, SAP_API_CATALOG_VERSION } from './abap/sap-api-catalog';
 import { SAP_SCOPE_ITEMS } from './sap-scope-items';
+import { CURATED_SCENARIO_LIST, CURATED_SCOPE_ITEM_LIST } from './sap-curated-lists';
 import {
   SAP_IDENTIFIERS_CHECKED,
   SAP_RELEASED_LIST_URL,
@@ -85,8 +86,11 @@ export type SapIdStatus = 'verified' | 'mismatch' | 'catalog' | 'unverified';
 /** What a mismatch is about. */
 export type SapIdMismatch = 'name' | 'protocol' | 'release';
 
-/** Where the data for an ID comes from: a public SAP page, SAP's released-object list, or our own catalog. */
-type KnownOrigin = 'public' | 'released-list' | 'product-catalog';
+/**
+ * Where the data for an ID comes from: a public SAP page, SAP's released-object
+ * list, a hand-curated list (`lib/sap-curated-lists.ts`), or our own catalog.
+ */
+type KnownOrigin = 'public' | 'released-list' | 'curated-list' | 'product-catalog';
 
 export interface SapSource {
   /** Short, for an inline mark: "SAP KBA 3409472". */
@@ -205,6 +209,20 @@ function knownTables(): KnownTables {
       origin: inSapList ? 'released-list' : 'product-catalog',
     });
   }
+  // The hand-curated lists: over our own catalog, under every SAP page.
+  for (const list of [CURATED_SCOPE_ITEM_LIST, CURATED_SCENARIO_LIST]) {
+    const kind: SapIdKind = list === CURATED_SCOPE_ITEM_LIST ? 'scope-item' : 'communication-scenario';
+    for (const e of list.entries) {
+      map.set(e.id.toUpperCase(), {
+        id: e.id,
+        kind,
+        name: e.title,
+        source: { label: list.label, url: null },
+        ...(e.deprecated ? { caveat: 'the list marks it deprecated' } : {}),
+        origin: 'curated-list',
+      });
+    }
+  }
   for (const e of sapIdentifierIndex().values()) {
     const technical = TECHNICAL_KINDS.has(e.kind);
     map.set(e.id.toUpperCase(), {
@@ -258,6 +276,8 @@ export interface SapIdCheck {
   sapRelease: string | null;
   /** SAP's title of an API, CDS view or function module, shown beside it. */
   sapTitle: string | null;
+  /** The ID and its name come from a hand-curated list, not a SAP page (`lib/sap-curated-lists.ts`). */
+  curatedList?: true;
   /** Where in the text: the first occurrence. */
   index: number;
   length: number;
@@ -313,7 +333,7 @@ function rawHits(text: string): RawHit[] {
     }
   };
 
-  add(/\bSAP_COM_\d{4}\b/g, 'communication-scenario');
+  add(/\bSAP_COM_[0-9][0-9A-Z]{3}\b/g, 'communication-scenario');
   add(/\bAPI_[A-Z0-9_]*[A-Z0-9]\b/g, 'api');
   add(/\bA_[A-Z][A-Za-z0-9]+\b/g, 'api');
   add(/\bI_[A-Z][A-Za-z0-9]+\b/g, 'cds-view');
@@ -383,7 +403,7 @@ function trimGeneric(words: string[]): string[] {
 }
 
 const CAP_WORD = /^[A-Z][A-Za-z0-9/-]*[A-Za-z0-9]?$/;
-const ID_LIKE = /^(?:SAP_COM_\d{4}|API_\w+|A_\w+|I_\w+|F\d{3,5}[A-Z]?|[0-9A-Z]{2,3})$/;
+const ID_LIKE = /^(?:SAP_COM_[0-9][0-9A-Z]{3}|API_\w+|A_\w+|I_\w+|F\d{3,5}[A-Z]?|[0-9A-Z]{2,3})$/;
 
 /** A run of capitalised words (connectors allowed between them), read forwards. */
 function titleRunForward(s: string): string | null {
@@ -564,12 +584,19 @@ function classify(text: string, hit: RawHit): SapIdCheck {
     modelRelease,
     sapRelease: known?.release ?? null,
     sapTitle: known?.title ?? null,
+    ...(known?.origin === 'curated-list' ? { curatedList: true as const } : {}),
     index: hit.index,
     length: hit.length,
   };
   if (!known) return { ...base, status: 'unverified' };
   // A name in a list — SAP's released objects or our own catalog — is only that.
   if (known.origin === 'released-list' || known.origin === 'product-catalog') return { ...base, status: 'catalog' };
+  // A hand-curated list holds the name, not a page: a name it contradicts is a
+  // mismatch, anything else is a name found in a list — never "verified".
+  if (known.origin === 'curated-list') {
+    if (modelName && known.name && !namesAgree(modelName, known.name)) return { ...base, status: 'mismatch', mismatchOn: 'name' };
+    return { ...base, status: 'catalog' };
+  }
   // What the source states and the model contradicts: the protocol, then the release.
   if (modelProtocol && known.protocol && modelProtocol !== known.protocol) {
     return { ...base, status: 'mismatch', mismatchOn: 'protocol' };
@@ -637,6 +664,8 @@ const MISMATCH_WORD: Readonly<Record<SapIdMismatch, string>> = Object.freeze({
 
 /** The state in words, a mismatch said by what it is about. */
 export function sapIdStateWord(check: SapIdCheck): string {
+  if (check.curatedList && check.status === 'mismatch') return 'name does not match the curated list';
+  if (check.curatedList && check.status === 'catalog') return 'name found in curated list';
   return check.status === 'mismatch' && check.mismatchOn ? MISMATCH_WORD[check.mismatchOn] : SAP_ID_STATUS_WORD[check.status];
 }
 
@@ -657,6 +686,9 @@ export function sapIdMark(check: SapIdCheck): string {
       ? `verified: SAP lists ${check.id} — ${facts}, ${src}${caveat}`
       : `verified: ${check.id} is in ${src}${caveat}`;
   }
+  if (check.status === 'catalog' && check.curatedList) {
+    return `name found in curated list: ${check.id} is “${check.sapName}” in the ${src} — not checked against a SAP page; check before use${caveat}`;
+  }
   if (check.status === 'catalog') {
     return check.source?.url
       ? `name found in catalog: ${check.id} is in ${src} — the name only, not checked against a page that describes it${caveat}`
@@ -669,6 +701,7 @@ export function sapIdMark(check: SapIdCheck): string {
     if (check.mismatchOn === 'release') {
       return `release does not match SAP's (the text names release ${check.modelRelease}; SAP: ${check.id}${check.sapName ? ` “${check.sapName}”` : ''} — ${check.sapRelease ?? 'another release'}, ${src})${caveat}`;
     }
+    if (check.curatedList) return `name does not match the curated list (the ${src} gives ${check.id} as “${check.sapName}”)${caveat}`;
     return `name does not match SAP's (SAP: ${check.id} is “${check.sapName}”, ${src})${caveat}`;
   }
   return check.sapName
