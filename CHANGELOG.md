@@ -126,9 +126,9 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
   ABAP cheat sheets and the flight reference scenario (Apache-2.0), Clean ABAP (CC BY 3.0) and
   SAP's ABAP file formats (MIT). The sync stores commits, headings and hashes, no prose; every
   citation is registered as adopted, adopted with correction or not adopted, and a changed adopted
-  section stops for review. All six are named on `/licenses`; `NOTICE` and
-  `THIRD-PARTY-NOTICES.md` carry the DSAG guideline and the four SAP GitHub sources, and SAP-docs
-  material carries its attribution wherever it is shown and in every export.
+  section stops for review. All six are named on `/licenses`, in `NOTICE` and in
+  `THIRD-PARTY-NOTICES.md`, and SAP-docs material carries its attribution wherever it is shown and
+  in every export.
 
 ### Naming
 
@@ -143,6 +143,9 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
 
 ### Fixed in the release run
 
+- **CSV exports:** the audit pack's findings and the rule register neutralise a spreadsheet formula
+  also when it follows leading spaces, through one shared guard (SEC-2026-803). The process-state
+  confirmation reads its request body under a size bound (SEC-2026-804).
 - **abaplint loads from `node_modules` on the server.** Bundled, it registered its handlers twice
   and every generation store answered 500 on a production build.
 - **Test races:** specs that bundle a component write into their own process's folder, so
