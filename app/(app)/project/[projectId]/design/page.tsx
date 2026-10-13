@@ -60,6 +60,8 @@ import CcButton from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
+import ConceptSuccessors from '@/components/ConceptSuccessors';
+import { conceptSuccessorsOf } from '@/lib/concept-successors';
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
@@ -1338,6 +1340,13 @@ ${DESIGN_ANSWER_REMINDER}`;
           view={view}
         />
       </div>
+
+      {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
+      {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (
+        <div className="mb-12">
+          <ConceptSuccessors source={project.legacyCode} place="design" />
+        </div>
+      ) : null}
 
       <div className="mb-12">
         <RequirementsEntryCard
