@@ -5,6 +5,7 @@ import { transformationFigures } from '../lib/transformation-view';
 import { RICH_LEGACY, seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
 import DEMO_RELEASE from '../lib/demo-release.json';
+import { buildDemoProject } from '../lib/demo-project';
 
 /**
  * One count under one word on a real project's Transformation page — owner
@@ -63,9 +64,14 @@ test('the seeded project counts findings as Analyze does and names the places in
 test('the demo says 25 findings wherever it counts findings, and never 31', async ({ page }) => {
   test.setTimeout(240_000);
   const { distinctFindings, findings: places } = DEMO_RELEASE.figures;
+  // A review task (3.0.12: security review, no target) is a finding without a
+  // target route: the plan counts only the findings that have one.
+  const demo = buildDemoProject();
+  const withTarget = findingRows(demo.analyze.findings).filter((r) => (r.finding.targetOptions ?? []).length > 0).length;
+  expect(withTarget).toBeLessThanOrEqual(distinctFindings);
   await page.goto('/demo/transformation', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-transformation-object-page]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(`${distinctFindings} findings with a target route`)).toBeVisible();
+  await expect(page.getByText(`${withTarget} findings with a target route`)).toBeVisible();
   await expect(page.locator('body')).not.toContainText(`${places} findings`);
 
   await page.goto('/demo/delivery', { waitUntil: 'domcontentloaded' });

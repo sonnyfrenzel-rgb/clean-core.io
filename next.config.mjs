@@ -195,7 +195,10 @@ const nextConfig = {
     // F-07: Lint errors must block deployment (was: ignoreDuringBuilds: true)
     ignoreDuringBuilds: false,
   },
-  serverExternalPackages: ['esbuild', 'undici'],
+  // @abaplint/core registers its statement handlers on load; bundled by webpack it
+  // was evaluated twice and threw "syntax.ts duplicate statement syntax handler" on
+  // every generation store (found in the 3.0.12 production-build run).
+  serverExternalPackages: ['esbuild', 'undici', '@abaplint/core'],
   transpilePackages: ['firebase-admin', 'jwks-rsa', 'jose'],
   experimental: {
   },
