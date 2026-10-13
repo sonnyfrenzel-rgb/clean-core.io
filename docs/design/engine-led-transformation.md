@@ -843,6 +843,27 @@ import only). Before pushing a moved/renamed module, `grep -rl <file> tests/` (C
 | **F — Acceptance** | agent + Sonny (real key on dev) | regenerate CO, PP, SD, PO demo (and FI where its source is available) on dev; run the harness with the scaffold's adapters plus the reviews' probe sets (CO E01–E18 + 25 scenarios, PP E01–E08/A01–A14 + 26 scenarios, SD probes, FI checks); time three runs each against the Step 0 baseline; results into CHANGELOG |
 | **G — Owner look** | Sonny | the generation screen on his CO project before release (look at the pictures) |
 
+**Step E as built (`feat/3.0.12-integration-e`, 13.10.2026).** `generateTransformation` runs the
+engine-led path: the preparation (unit plan, slices, scaffold) in a worker, a lease from
+`/api/transformation/lease` checked against the same PLATFORM KNOWLEDGE block the contract route
+reads (`platformContextOf` in `lib/transformation-context-build.ts`), the orchestrator's fills and
+checks, the assembly with the trace, and the store with the generation record in the binding (path,
+basis, engine cases, probes, lints, `contextDigest`). The verify mode of `/api/run-tests` runs the
+engine pass and the probe pass confined, locally as on the runner (protocol 3). The PO demo generates
+on the stub in 11–15 s. Where E differs from the table above:
+
+- **The single call stays in `page.tsx`** as `runSingleCall`, the fallback when no scaffold can be
+  built. About twenty source guards read its prompt in the page; moving it to
+  `lib/transformation/single-call.ts` would move all of them for no change in behaviour.
+- **The phase does not go stale on a changed context digest.** The Built-on card marks every tool whose
+  state differs from the generation's basis *Stale*, but `staleness()` in `lib/workflow-steps.ts` is pure
+  over the project document, and the basis compares against data the page loads (the rule register,
+  the requirements). Bringing that into the phase is a later step, not 3.0.12.
+- **The decision warning** reads `standardFitAssessed` (`lib/standard-fit-gate.ts`, merged from
+  `feat/3.0.12-standard`): a solution design that weighed the standard against RAP and CAP ends the
+  standard-fit warning, as the PLATFORM KNOWLEDGE block already says. A decision record against a
+  rebuild still warns.
+
 ## 18. Migration of stored drafts
 
 - Packages stored before this change keep their binding (v2, no `path`) and are shown as today. The
