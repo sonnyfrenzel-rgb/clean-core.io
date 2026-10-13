@@ -24,6 +24,7 @@ import {
   type ClosureBasis,
 } from './testing-closure';
 import { isAbapUnitRoute } from './test-runnability';
+import { storedContextDigest } from './transformation/generation-record';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -374,6 +375,15 @@ export interface Staleness {
   /** The standing architect sign-off was given for a previous source. */
   signOff: boolean;
   /**
+   * Roadmap 3.0.13, item 3: the stored generation was built on a PLATFORM
+   * KNOWLEDGE block (rule decisions, decision record, accepted requirements,
+   * NFRs) that is no longer the one the server builds now — the binding's
+   * `contextDigest` against `_contextDigest`, which the loader reads from the
+   * server. False when either is unknown: a package from before 3.0.12 names
+   * no digest, a bare project document (the dashboard) carries no current one.
+   */
+  context: boolean;
+  /**
    * Roadmap 7.10 - what moved: the source, or (same source) the target
    * profile. `'profile'` when the change record says so (`reason: 'profile'`)
    * or the project's profile no longer matches the run's. Only the wording
@@ -409,7 +419,7 @@ export interface Staleness {
  */
 export function staleness(project: Project | null): Staleness {
   const none: Staleness = {
-    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, basis: 'source', unverifiedInputs: [],
+    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, context: false, basis: 'source', unverifiedInputs: [],
   };
   if (!project) return none;
 
@@ -468,9 +478,21 @@ export function staleness(project: Project | null): Staleness {
     tests: sourceChanged || unchangedSince('testCases'),
     docs: sourceChanged || unchangedSince('documentation'),
     signOff: ((sourceChanged || profileMoved) && project.approvedByArchitect === true) || signOffUnchanged,
+    context: contextMoved(project),
     basis: !sourceChanged && (profileMoved || record?.reason === 'profile') ? 'profile' : 'source',
     unverifiedInputs: unverified,
   };
+}
+
+/**
+ * The stored generation's context digest against the one the server builds now
+ * (`Staleness.context`). Both have to be known; the digest is the server's on
+ * both sides — written into the binding by the store, read by the loader.
+ */
+function contextMoved(project: Project): boolean {
+  const built = storedContextDigest(project);
+  const now = project._contextDigest;
+  return typeof built === 'string' && typeof now === 'string' && built !== now;
 }
 
 /**
@@ -1112,7 +1134,12 @@ export function workflowSteps(project: Project | null): RailStep[] {
         : design,
     hasGenerated && s.code
       ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)
-      : transformation,
+      : hasGenerated && s.context
+        ? stale(
+            transformation,
+            'Generated before a rule decision, the decision record or an accepted requirement changed — regenerate it to build on what is decided now.',
+          )
+        : transformation,
     hasDocs && s.docs ? stale(documentation, `Written for ${prevBasis} — regenerate it.`) : documentation,
     tests.total > 0 && s.tests ? stale(testing, `Test cases written for ${prevBasis} — regenerate the suite.`) : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)

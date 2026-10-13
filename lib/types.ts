@@ -231,6 +231,14 @@ export interface Project {
   // failed read is not "nothing stored", and the stage does not save over it.
   _economics?: import('./economics-record').EconomicsRecord | null;
   _economicsLoadFailed?: boolean;
+
+  // In-memory only (never persisted): the digest of the PLATFORM KNOWLEDGE
+  // block as the server would build it now, read by loadProjectAndHydrate
+  // through `/api/projects/{id}/contract?for=context` when a stored generation
+  // names the digest it was built on (roadmap 3.0.13). `null` when the read
+  // failed; absent when nobody read it (a bare project document, the
+  // dashboard) — then the Transformation phase cannot be shown stale for it.
+  _contextDigest?: string | null;
 }
 
 /**

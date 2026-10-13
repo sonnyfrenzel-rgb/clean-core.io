@@ -7,7 +7,7 @@ import { formatElapsed } from '@/lib/generation-progress';
 import { formatTextDate } from '@/lib/format';
 import { tfBuiltOnMeta, tfNotWritten, tfSingleCallNote, wt } from '@/lib/workspace-messages';
 import type { ChainSlot } from '@/lib/transformation-chain';
-import type { BasisSlot, GenerationRecord } from '@/lib/transformation/generation-record';
+import { basisSlotChanged, type BasisSlot, type GenerationRecord } from '@/lib/transformation/generation-record';
 import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from '@/lib/transformation/check-words';
 
 /**
@@ -95,12 +95,9 @@ export default function BuiltOnCard({
   );
 }
 
-/** A tool whose words today differ from what the generation read then. */
+/** A tool whose words today differ from what the generation read then — its date or any of its facts (`basisSlotChanged`). */
 function isStale(b: BasisSlot, now: readonly ChainSlot[]): boolean {
-  const current = now.find((s) => s.key === b.key);
-  if (!current || current.state === 'loading' || current.state === 'unread') return false;
-  if ((current.when ?? '') !== b.when) return true;
-  return (current.facts[0]?.text ?? '') !== (b.facts[0] ?? '');
+  return basisSlotChanged(b, now);
 }
 
 function checksSentence(e: NonNullable<GenerationRecord['engine']>): string {

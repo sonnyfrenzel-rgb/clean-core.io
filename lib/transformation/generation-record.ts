@@ -174,3 +174,37 @@ export function storedGenerationRecord(binding: unknown): (GenerationRecord & { 
   if (!rec || 'error' in rec) return null;
   return { ...rec, contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
 }
+
+/**
+ * The context digest a stored generation was built on (`generationBinding.contextDigest` of a project, or of
+ * the fields a store answered with), or null — a package from before 3.0.12 carries none and is never made
+ * stale by it (design §18). Roadmap 3.0.13, item 3.
+ */
+export function storedContextDigest(project: unknown): string | null {
+  const binding = (project as { generationBinding?: { path?: unknown; contextDigest?: unknown } } | null)?.generationBinding;
+  if (!binding || typeof binding !== 'object' || (binding.path !== 'engine-led' && binding.path !== 'single-call')) return null;
+  return typeof binding.contextDigest === 'string' && binding.contextDigest ? binding.contextDigest : null;
+}
+
+/** A Built-on slot as the page reads it now — the shape `isStale` compares (`ChainSlot` of lib/transformation-chain.ts). */
+export interface CurrentSlot {
+  key: string;
+  state: string;
+  when: string | null;
+  facts: ReadonlyArray<{ text: string }>;
+}
+
+/**
+ * Does a tool read differently now than when the generation read it? Its `when` or **any** of its facts —
+ * compared in the form the record stores them (at most four facts, each capped as `basisOf` caps it), so a
+ * fact cut short in the record is not taken for a change (QA caa5712913ad: only the first fact was compared,
+ * and "2 gaps" turning into "3 gaps" in the second fact went unseen). A slot still loading or not read is
+ * never stale: nothing is known yet.
+ */
+export function basisSlotChanged(b: BasisSlot, now: readonly CurrentSlot[]): boolean {
+  const current = now.find((s) => s.key === b.key);
+  if (!current || current.state === 'loading' || current.state === 'unread') return false;
+  if (str(current.when ?? '', 120) !== b.when) return true;
+  const facts = current.facts.slice(0, 4).map((f) => str(f.text, 300));
+  return facts.length !== b.facts.length || facts.some((f, i) => f !== b.facts[i]);
+}

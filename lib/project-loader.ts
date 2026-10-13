@@ -5,6 +5,7 @@ import { getDb } from './firebase';
 import { Project } from './types';
 import { isProjectOwner } from './project-readers';
 import { readEconomicsRecord, type EconomicsRecord } from './economics-record';
+import { storedContextDigest } from './transformation/generation-record';
 
 /**
  * The project document with its active run spread over it.
@@ -158,6 +159,46 @@ export function withEconomics(project: Project, read: EconomicsRead): Project {
     : { ...project, _economics: null, _economicsLoadFailed: true };
 }
 
+/**
+ * The digest of the PLATFORM KNOWLEDGE block as the server would build it now
+ * (roadmap 3.0.13, item 3) — `GET /api/projects/{id}/contract?for=context`.
+ * `null` when it could not be read: a refused or unreadable answer, a project
+ * the contract route derives nothing for. Never thrown: the phase then simply
+ * cannot be shown stale, which is what it read before.
+ */
+export async function readCurrentContextDigest(projectId: string): Promise<string | null> {
+  try {
+    const auth = getAuth();
+    await auth.authStateReady();
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) return null;
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract?for=context`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json().catch(() => null)) as { contextDigest?: unknown } | null;
+    return typeof body?.contextDigest === 'string' && /^[0-9a-f]{64}$/.test(body.contextDigest) ? body.contextDigest : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The project with the context digest read now — in memory only, never persisted. */
+export function withContextDigest(project: Project, digest: string | null | undefined): Project {
+  return digest === undefined ? project : { ...project, _contextDigest: digest };
+}
+
+/**
+ * The project after the server stored a generation: its fields, and the context
+ * digest the server just wrote into the binding as the current one — it built
+ * that block from the state it stored against, so the phase reads current
+ * without another read.
+ */
+export function withStoredGeneration<T extends Record<string, unknown>>(project: T, stored: Record<string, unknown>): T {
+  const digest = storedContextDigest(stored);
+  return { ...project, ...stored, ...(digest ? { _contextDigest: digest } : {}) };
+}
+
 export async function loadProjectAndHydrate(projectId: string): Promise<Project | null> {
   const db = getDb();
   const docRef = doc(db, 'projects', projectId);
@@ -174,6 +215,9 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
 
     const data = docSnap.data() as Project;
     const owner = isProjectOwner(data, viewerUid);
+    // Roadmap 3.0.13, item 3: only a project with a generation that names its
+    // context asks the server for the context now; alongside the run read.
+    const context = storedContextDigest(data) ? readCurrentContextDigest(projectId) : null;
 
     // Read only, in whatever form the document was stored (roadmap 3.0.2).
     // Nothing below writes to the project or its runs: a project without
@@ -212,7 +256,7 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
     // read of its own, which would load the source code twice (`lib/shell-context.ts`).
     announceShellProject(projectId, data.name);
 
-    return withEconomics(hydrateProject(docSnap.id, data, run), await economics);
+    return withContextDigest(withEconomics(hydrateProject(docSnap.id, data, run), await economics), context ? await context : undefined);
   }
   return null;
 }

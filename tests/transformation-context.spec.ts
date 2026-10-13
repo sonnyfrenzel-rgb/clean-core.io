@@ -434,7 +434,13 @@ test('both prompts carry the block, after the existing inputs, from the token\'s
   // The client asks for it, and the route builds it only for a generation, in GET and POST alike.
   expect(read('lib/generation-contract-client.ts')).toContain('/contract?for=generation');
   const route = read('app/api/projects/[projectId]/contract/route.ts');
-  expect(route).toContain("req.nextUrl.searchParams.get('for') !== 'generation'");
+  expect(route).toContain("const purpose = req.nextUrl.searchParams.get('for');");
+  expect(route).toContain("if (!decision.ok || purpose !== 'generation') {");
+  // Since 3.0.13 the block is also built for `?for=context` — and only its digest leaves the route
+  // (tests/transformation-context-stale.spec.ts holds that branch).
+  const contextBranch = route.slice(route.indexOf("if (purpose === 'context') {"), route.indexOf("if (!decision.ok || purpose !== 'generation') {"));
+  expect(contextBranch).toContain('return NextResponse.json({ contextDigest: sha256Hex(platform.stamp.text) });');
+  expect(contextBranch).not.toContain('generationInputsOf');
   const get = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'));
   const post = route.slice(route.indexOf('export async function POST'));
   for (const half of [get, post]) expect(half).toContain('await platformContextOf(db, projectId, data, built, decision.isAbapCloud)');
