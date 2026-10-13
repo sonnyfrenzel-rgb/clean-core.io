@@ -39,6 +39,9 @@ import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
 import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
 import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@/lib/attempt-limit';
+import { LEASED_PROMPT_MAX_CHARS } from '@/lib/transformation/fill-prompt';
+import { modelUsageLog } from '@/lib/model-usage-log';
+import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -73,7 +76,7 @@ import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@
  * small calls per generation; it buys a lease at `/api/transformation/lease`
  * for one unit of the same 20/h, and each of its calls names the lease as
  * `lease: { projectId, leaseId }`. Such a call skips the hourly counter and is
- * counted against the lease instead (budget, 4 in flight, 15 minutes, this
+ * counted against the lease instead (budget, 4 in flight, its time `leaseTtlMs`, this
  * account only — `lib/transformation/lease.ts`); an invalid, closed, expired
  * or used-up lease is refused with a code before the provider is asked. Every
  * other gate below applies to a leased call unchanged, and a call without a
@@ -200,6 +203,10 @@ async function callWithRetry<T>(
 export async function POST(request: NextRequest) {
   // The generation lease whose in-flight slot this call holds, given back in `finally`.
   let heldLease: LeaseReference | null = null;
+  // The deadline of the model call (`lib/model-deadline.ts`), counted from the
+  // request's arrival, so the route answers before Cloud Run ends it at 300 s.
+  const arrivedAt = Date.now();
+  let deadline: ModelDeadline | null = null;
   try {
     // Server-side auth gate via Admin SDK
     const decodedToken = await verifyRequestAuth(request);
@@ -266,6 +273,19 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: `The prompt must be a single string of 1 to ${MAX_PROMPT_LENGTH.toLocaleString()} characters.` },
             { status: 400 },
+          );
+        }
+        // A leased call is a fill call, and a fill prompt is small (design §2
+        // goal 4): the general 250,000 would let a lease spend its calls on
+        // prompts eighteen times the size the design promises (QA finding
+        // 804d0920fff4). Refused before the lease is read.
+        if (leased.prompt.length > LEASED_PROMPT_MAX_CHARS) {
+          return NextResponse.json(
+            {
+              error: `A call under a generation lease carries at most ${LEASED_PROMPT_MAX_CHARS.toLocaleString()} characters; this one has ${leased.prompt.length.toLocaleString()}.`,
+              code: LEASE_CODES.promptTooLarge,
+            },
+            { status: 413 },
           );
         }
         const { db } = await getAdminDb();
@@ -491,10 +511,16 @@ export async function POST(request: NextRequest) {
       heldLease = lease;
     }
     const abortSignal = lease ? request.signal : undefined;
+    // Every call, leased or not, is stopped at the deadline: the whole
+    // exchange, retries and backoff included, ends while Cloud Run still holds
+    // the request, and the provider call is aborted rather than left running.
+    deadline = modelDeadline(Math.max(1_000, MODEL_CALL_DEADLINE_MS - (Date.now() - arrivedAt)), abortSignal);
+    const callSignal = deadline.signal;
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : await callWithRetry(async () => {
+          const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
             model,
             contents: prompt,
@@ -505,18 +531,26 @@ export async function POST(request: NextRequest) {
               ? {
                   responseMimeType: 'application/json',
                   ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
-                  ...(abortSignal ? { abortSignal } : {}),
+                  abortSignal: callSignal,
                 }
-              : abortSignal
-                ? { abortSignal }
-                : undefined,
+              : { abortSignal: callSignal },
           });
+          // Where the time of a call went (input, output, thinking): counts
+          // only, never the prompt or the answer (`lib/model-usage-log.ts`).
+          logger.info('gemini usage', modelUsageLog({
+            usage: result.usageMetadata,
+            model,
+            stage: stage ?? null,
+            responseShape: shape ?? null,
+            leased: lease !== null,
+            durationMs: Date.now() - attemptAt,
+          }));
           return {
             text: result.text,
             finishReason: result.candidates?.[0]?.finishReason ?? null,
             blockReason: result.promptFeedback?.blockReason ?? null,
           };
-        }, undefined, undefined, abortSignal);
+        }, undefined, undefined, callSignal);
 
     // Roadmap 3.0.13 (a) — only a finished answer is a result. The SDK's `text`
     // is whatever text the candidate carries, including an answer cut off at the
@@ -575,6 +609,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ text, receipt });
   } catch (error: unknown) {
+    // The deadline ended the call: said as such, with a code, before Cloud Run
+    // would have answered 504 with no body (13.10.2026). Not retried here: the
+    // same prompt would run into the same wait.
+    if (deadline?.timedOut()) {
+      logger.warn('gemini call deadline', { route: 'api/gemini', deadlineMs: MODEL_CALL_DEADLINE_MS, leased: heldLease !== null });
+      return NextResponse.json({ error: modelTimeoutMessage(), code: MODEL_TIMEOUT_CODE }, { status: 504 });
+    }
     const message = error instanceof Error ? error.message : String(error);
     // Not the message: a provider error can carry the refused prompt back, and
     // the log would then hold the customer's source (providerErrorShape).
@@ -600,12 +641,13 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   } finally {
+    deadline?.clear();
     if (heldLease) {
       try {
         const { db } = await getAdminDb();
         await releaseLeaseCall(db, heldLease);
       } catch (releaseErr: unknown) {
-        // The slot frees itself when the lease expires (15 minutes); said loudly.
+        // The slot frees itself when the lease expires (`leaseTtlMs`); said loudly.
         logger.error('gemini lease slot could not be released', { route: 'api/gemini', error: providerErrorShape(releaseErr) });
       }
     }

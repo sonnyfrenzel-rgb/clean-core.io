@@ -551,7 +551,7 @@ So the calls of one generation run under a **lease**:
   model stage `transformation` enabled, the generation token is current; charges **one** unit of
   `gemini:<uid>`; limits leases to **3 per hour per account** (`transformation-lease:<uid>`); writes
   `projects/{id}/transformation_leases/{leaseId}` with `{ uid, budget: min(48, plannedCalls × 2 + 8),
-  used: 0, inFlight: 0, expiresAt: now + 15 min }`; one open lease per project.
+  used: 0, inFlight: 0, expiresAt: now + leaseTtlMs(budget) }` (15 min at least, 60 at most: every call of the budget, 4 at a time, each allowed the route's 270 s deadline; since 13.10.2026, when a flat 15 min ended a 29-call generation after 25 calls); one open lease per project.
 - `/api/gemini` accepts an optional `leaseId`. With a valid lease (same uid, not expired, `used <
   budget`, `inFlight < 4`), it skips the per-call limiter and increments `used`/`inFlight` in a
   transaction, decrementing `inFlight` when done. Without one it behaves exactly as today. The prompt

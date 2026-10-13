@@ -37,6 +37,16 @@ import type { FillAnswerUnit, FillRepair, FillRequest, FillRequestUnit } from '.
 
 /** No fill prompt is longer than this (design §2 goal 4, §7.2). */
 export const FILL_PROMPT_MAX_CHARS = 14_000;
+/**
+ * The most characters `/api/gemini` takes for a call under a generation lease
+ * (QA finding 804d0920fff4: a leased call used to accept the route's general
+ * 250,000). Twice the fill budget: `bundleFills` keeps a prompt within 14,000
+ * by cutting context and ABAP, but what it cannot cut — signature, rules,
+ * guards, declarations — can carry one unit over (measured 14,947 on a
+ * 1,848-line program, 13.10.2026). The orchestrator never sends a prompt above
+ * this; the route refuses one before the lease is read.
+ */
+export const LEASED_PROMPT_MAX_CHARS = FILL_PROMPT_MAX_CHARS * 2;
 /** The context pack's share of one prompt (§5). */
 export const FILL_CONTEXT_MAX_CHARS = 3_000;
 /** Units per call (§8.3). */

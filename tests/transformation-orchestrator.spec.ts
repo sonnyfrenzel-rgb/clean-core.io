@@ -9,6 +9,7 @@ import {
   type VerifyOutcome,
 } from '../lib/transformation/orchestrator';
 import type { FillRequest, FillRequestUnit, GenerationEvent } from '../lib/transformation/types';
+import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 import {
   GENERATION_REPAIR_MAX_ROUNDS,
   decideGenerationRepair,
@@ -422,5 +423,47 @@ test.describe('events', () => {
       'repair:done',
       'check:lint',
     ]);
+  });
+});
+
+test.describe('a prompt the route would refuse is never sent (QA finding 804d0920fff4)', () => {
+  test('a unit whose prompt stays above the leased cap after every cut is not written, with the reason, and costs no call', async () => {
+    // Rules are never cut, so this unit's prompt stays above 28,000 characters.
+    const huge: FillRequestUnit = { ...unit(2), rules: [{ id: 'BR-002', decision: 'keep', text: 'r'.repeat(LEASED_PROMPT_MAX_CHARS + 1_000) }] };
+    const sent: string[] = [];
+    const result = await runGeneration(
+      base({
+        units: [unit(1), huge, unit(3)],
+        model: async (prompt) => {
+          sent.push(prompt);
+          return answer(prompt);
+        },
+      }),
+    );
+    expect(sent.length).toBeGreaterThan(0);
+    expect(sent.every((p) => p.length <= LEASED_PROMPT_MAX_CHARS)).toBe(true);
+    expect(sent.some((p) => p.includes('"U02"'))).toBe(false);
+    const u02 = result.units.find((u) => u.unitId === 'U02')!;
+    expect(u02.state).toBe('not-written');
+    expect(u02.reason).toMatch(/^not written — its prompt has [\d,]+ characters, more than the 28,000 a fill call may carry$/);
+    expect(result.units.filter((u) => u.state === 'written').map((u) => u.unitId).sort()).toEqual(['U01', 'U03']);
+    expect(result.status).toBe('partial');
+  });
+
+  test('the cap is the one the route enforces, and a smaller one is honoured', async () => {
+    expect(LEASED_PROMPT_MAX_CHARS).toBe(FILL_PROMPT_MAX_CHARS * 2);
+    let calls = 0;
+    const result = await runGeneration(
+      base({
+        maxPromptChars: 100,
+        model: async (p) => {
+          calls++;
+          return answer(p);
+        },
+      }),
+    );
+    expect(calls).toBe(0);
+    expect(result.callsUsed).toBe(0);
+    expect(result.units.every((u) => u.state === 'not-written' && /more than the 100 a fill call may carry/.test(u.reason ?? ''))).toBe(true);
   });
 });
