@@ -188,6 +188,49 @@ test.describe('a run signed by v3.0.11, against what that engine answered', () =
 });
 
 /**
+ * The same oracle one release on: `tests/fixtures/engine-v3.0.12-frozen.json`
+ * holds what the v3.0.12 engine answered (dev at 5a559787, before any 3.0.13
+ * engine change) for the benchmark programs, the five probes above and three
+ * probes of the 3.0.13 changes (`PRECISION_FIXES_FROM`): RFC destinations
+ * spelled like 'NONE', an outbound RFC beside a standard-table write, and a
+ * file-name validation whose result nobody reads. A 3.0.13 change that leaks
+ * past its gate moves one of these digests.
+ */
+test.describe('a run signed by v3.0.12, against what that engine answered', () => {
+  const V3012 = 'v3.0.12';
+  const frozen = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/engine-v3.0.12-frozen.json'), 'utf8')) as {
+    probes: Record<string, string>;
+    digests: Record<string, string>;
+  };
+  const digest = (evidence: unknown, route: unknown) => createHash('sha256').update(JSON.stringify({ evidence, route })).digest('hex');
+
+  test('every benchmark program and probe, both editions, byte for byte', () => {
+    test.setTimeout(180_000);
+    const casesDir = path.join(__dirname, 'prozess-benchmark/cases');
+    const moved: string[] = [];
+    let compared = 0;
+    for (const [key, expected] of Object.entries(frozen.digests)) {
+      const [scope, name, deployment] = key.startsWith('probe:') ? key.split(':') : ['case', ...key.split(':')];
+      let code: string;
+      let file: string;
+      if (scope === 'probe') {
+        code = frozen.probes[name];
+        file = `${name}.abap`;
+      } else {
+        const abap = fs.readdirSync(path.join(casesDir, name)).filter((n) => n.endsWith('.abap')).sort();
+        code = abap.map((f) => fs.readFileSync(path.join(casesDir, name, f), 'utf8')).join('\n');
+        file = abap[0];
+      }
+      compared++;
+      const evidence = buildAbapEvidence(code, file, deployment as 'private' | 'public', undefined, V3012);
+      if (digest(evidence, routeExtensibility(evidence, deployment as 'private' | 'public', V3012)) !== expected) moved.push(key);
+    }
+    expect(compared).toBe(616);
+    expect(moved).toEqual([]);
+  });
+});
+
+/**
  * SAP's product names (owner decision 13.10.2026): from 3.0.12 the engine says
  * "SAP Cloud ERP Private" and "SAP S/4HANA Cloud Public Edition"; a run signed
  * by v3.0.11 keeps "Private Edition", "Private Cloud" and "Public Cloud", byte
