@@ -142,19 +142,30 @@ test.describe('code that cites the guide cites an adopted section', () => {
     "export const DSAG_GUIDELINE_COMMENT_PREFIX = '// DSAG ABAP guideline: ';",
     ' * implements a row cites it as `// DSAG ABAP guideline: <file> § <heading>`',
   ];
+  /**
+   * Every occurrence of the prefix on a line is read, each up to the next one,
+   * and a convention line is exempt only as the whole line, exactly — a
+   * citation appended to it is read like any other (QA review of 5a559787,
+   * b2e60db1f363).
+   */
   function citationProblems(file: string, text: string): string[] {
     const prefix = DSAG_GUIDELINE_COMMENT_PREFIX.trim();
+    const conventionFile = file.replace(/\\/g, '/') === 'lib/dsag-citations.ts';
     const problems: string[] = [];
     text.split(/\r?\n/).forEach((line, i) => {
-      const at = line.indexOf(prefix);
-      if (at < 0) return;
-      const m = /\/\/ DSAG ABAP guideline: (\S+\.md) § (.+?)\s*$/.exec(line.slice(at));
-      if (!m) {
-        const convention = file.replace(/\\/g, '/') === 'lib/dsag-citations.ts' && CONVENTION_LINES.some((c) => line.startsWith(c));
-        if (!convention) problems.push(`${file}:${i + 1} malformed citation: ${line.trim().slice(0, 120)}`);
-        return;
-      }
-      if (!adopted.has(dsagGuidelineComment(m[1], m[2]))) problems.push(`${file}:${i + 1} ${m[1]} § ${m[2]}`);
+      if (line.indexOf(prefix) < 0) return;
+      if (conventionFile && CONVENTION_LINES.includes(line.trimEnd())) return;
+      const starts: number[] = [];
+      for (let at = line.indexOf(prefix); at >= 0; at = line.indexOf(prefix, at + prefix.length)) starts.push(at);
+      starts.forEach((at, k) => {
+        const segment = line.slice(at, starts[k + 1] ?? line.length);
+        const m = /^\/\/ DSAG ABAP guideline: (\S+\.md) § (.+?)\s*$/.exec(segment);
+        if (!m) {
+          problems.push(`${file}:${i + 1} malformed citation: ${segment.trim().slice(0, 120)}`);
+          return;
+        }
+        if (!adopted.has(dsagGuidelineComment(m[1], m[2]))) problems.push(`${file}:${i + 1} ${m[1]} § ${m[2]}`);
+      });
     });
     return problems;
   }
@@ -166,6 +177,18 @@ test.describe('code that cites the guide cites an adopted section', () => {
     expect(citationProblems('lib/x.ts', `    // DSAG ABAP guideline: ${cited.heading}`)).toHaveLength(1);
     expect(citationProblems('lib/x.ts', CONVENTION_LINES[0])).toHaveLength(1);
     expect(citationProblems('lib/dsag-citations.ts', CONVENTION_LINES.join('\n'))).toEqual([]);
+  });
+
+  test('the convention lines are exempt only as themselves, and every citation on a line is read (QA 5a559787: b2e60db1f363)', () => {
+    const cited = DSAG_CITATIONS.find((c) => c.status !== 'not-adopted')!.sections[0];
+    const good = dsagGuidelineComment(cited.file, cited.heading);
+    // A malformed citation appended to an exempt line is no longer hidden by it.
+    const appended = citationProblems('lib/dsag-citations.ts', `${CONVENTION_LINES[0]} // DSAG ABAP guideline: nothing here`);
+    expect(appended.some((p) => p.includes('malformed citation: // DSAG ABAP guideline: nothing here'))).toBe(true);
+    // Two on one line: the second is read, whether the first is good or not.
+    expect(citationProblems('lib/x.ts', `    ${good} ${good}`)).toEqual([]);
+    expect(citationProblems('lib/x.ts', `    ${good} // DSAG ABAP guideline: ${cited.file}`)).toHaveLength(1);
+    expect(citationProblems('lib/x.ts', `    ${good} // DSAG ABAP guideline: nope.md § Not adopted`)).toHaveLength(1);
   });
 
   test('every "// DSAG ABAP guideline:" comment names a section a row adopts', () => {
