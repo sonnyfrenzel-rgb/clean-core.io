@@ -24,6 +24,7 @@
  * model.
  */
 
+import type { AbapStatement } from '../abap/statement-reader';
 import { sha256Hex } from '../artefact-digest';
 // The cases the scaffold writes are branded the one way a case is: recomputed and matched (QA round 3).
 import { engineCaseProvenance } from '../engine-case-provenance';
@@ -390,11 +391,28 @@ function bodyCallWords(u: Unit, plan: UnitPlan): string {
     .join('; ');
 }
 
-/** The guards a body region must call, for `spliceBodies` (placement `body`). */
-export function requiredGuardsOf(u: Unit, plan: UnitPlan, track: 'node' | 'rap'): RequiredGuard[] {
+/** Does an ABAP statement's text use this literal (`'SHIP'`, `100`)? */
+function usesLiteral(text: string, literal: string): boolean {
+  if (/^-?\d+(?:\.\d+)?$/.test(literal)) return new RegExp(`(?<![\\w.'-])${literal.replace(/[.-]/g, '\\$&')}(?![\\w.])`).test(text);
+  return text.includes(`'${literal.replace(/'/g, "''")}'`);
+}
+
+/**
+ * The guards a body region must call, for `spliceBodies` (placement `body`).
+ * `literals` are what `bodyGuards` reads as the guard's condition written
+ * inline. A literal the unit's own code also uses outside any check — `WHEN
+ * 'SHIP'` before `IF ls_parent-kind = 'SHIP' AND lv_qty > …` — is part of the
+ * routine a faithful body translates, not evidence of an inlined check, and is
+ * left out (A/B 13.10.2026, U16: every faithful body was refused). Other
+ * checks' statements do not count: each is a guard of its own.
+ */
+export function requiredGuardsOf(u: Unit, plan: UnitPlan, track: 'node' | 'rap', statements: readonly AbapStatement[] = []): RequiredGuard[] {
+  const guardLines = new Set(plan.guards.map((g) => g.line));
+  const own = statements.filter((s) => !guardLines.has(s.lineStart) && u.abap.some((r) => s.lineStart >= r.lineStart && s.lineStart <= r.lineEnd));
   return u.bodyCalls.map((id) => {
     const g = plan.guards.find((x) => x.id === id)!;
-    return { id, helper: track === 'node' ? g.helper : `when_${g.id.replace('-', '').toLowerCase()}`, line: g.line, op: g.op, literals: g.literals };
+    const literals = g.literals.filter((lit) => !own.some((s) => usesLiteral(s.text, lit)));
+    return { id, helper: track === 'node' ? g.helper : `when_${g.id.replace('-', '').toLowerCase()}`, line: g.line, op: g.op, literals };
   });
 }
 
@@ -1237,6 +1255,6 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   // are written after the fills (`withTrace`, trace.ts) and stay outside the digest.
   for (const file of files) file.content = defuseMarkers(file.content);
   const required: Record<string, RequiredGuard[]> = {};
-  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node');
+  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node', facts.statements);
   return { track: 'node', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter, notCarried: plan.notCarried, available, required };
 }

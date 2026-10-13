@@ -274,7 +274,7 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const available = new Set(ctx.available);
   const allow = new Set(NEEDS_ALLOWLIST);
   for (const n of ctx.needs ?? []) if (allow.has(n)) available.add(n);
-  const roots = new Set([...available].map((n) => n.split('.')[0]));
+  const roots = new Set([...[...available].map((n) => n.split('.')[0]), ...(ctx.params ?? [])]);
   const foreign = new Set<string>();
   const calls = /(^|[^.\w$])(new\s+)?([A-Za-z_$][\w$]*)((?:\s*\??\.\s*[A-Za-z_$][\w$]*)*)\s*(?:\?\.\s*)?\(/g;
   for (let m = calls.exec(body); m !== null; m = calls.exec(body)) {
@@ -299,6 +299,23 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     foreign.add(full);
   }
   if (foreign.size > 0) out.push(refusal('foreign-call', `calls names that are neither available nor declared: ${[...foreign].slice(0, 8).join(', ')}`));
+
+  // Fields: a parameter typed by a closed interface of the scaffold has no other property (`type-shapes.ts`).
+  const unknown = new Set<string>();
+  for (const [param, fields] of Object.entries(ctx.shapes ?? {})) {
+    if (declared.has(param)) continue;
+    const known = new Set(fields);
+    for (const m of code(new RegExp(`(?:^|[^.\\w$])${param.replace(/\$/g, '\\$')}\\s*\\??\\.\\s*([A-Za-z_$][\\w$]*)`))) {
+      const at = m.index + m[0].length - m[1].length;
+      if (mask[at] && !known.has(m[1])) unknown.add(`${param}.${m[1]}`);
+    }
+  }
+  if (unknown.size > 0) {
+    const has = Object.entries(ctx.shapes ?? {})
+      .filter(([p]) => [...unknown].some((u) => u.startsWith(`${p}.`)))
+      .map(([p, f]) => `${p}: ${f.slice(0, 30).join(', ') || 'no fields'}`);
+    out.push(refusal('unknown-field', `reads fields its parameters' types do not have: ${[...unknown].slice(0, 8).join(', ')} (they have — ${has.join('; ')})`));
+  }
   return out;
 }
 

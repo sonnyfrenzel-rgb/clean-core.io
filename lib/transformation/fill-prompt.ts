@@ -76,6 +76,32 @@ export function fillRulesText(track: 'node' | 'rap' = 'node'): string {
   return (track === 'rap' ? FILL_RULE_NUMBERS_RAP : FILL_RULE_NUMBERS).map((n) => byNumber.get(n)).filter((l): l is string => !!l).join('\n');
 }
 
+/**
+ * How a body calls the unit's guards and how a predicate reads its inputs.
+ * The request lists each guard by name, placement and the keys of its
+ * `values`, but not the signatures the scaffold writes for them
+ * (`scaffold-node.ts` `guardsFile`, `scaffold-rap.ts`): without these lines
+ * the model guessed argument lists (`when_G0877(parent, lvQty)`) and predicate
+ * parameters (`lvCode`, `pCase`) that do not exist, and the body guards
+ * refused the answer (A/B 13.10.2026, units U16 and U01).
+ */
+export function fillGuardLines(track: 'node' | 'rap'): string[] {
+  if (track === 'node') {
+    return [
+      '- Guards: helper and predicate take (sel, st, record, values) — record: the row the condition reads, or null; values: { the keys under "values" }, left out when none.',
+      '- placement "entry"/"selection": the stub calls it already; never again.',
+      '- placement "body": call the helper where the original checks ("line"), never its condition: guard_… returns Refusal | null (`const r = guard_G0345(sel, st, null, { lvCode }); if (r) return r;`); stop_…/skip_… return true where the original ends the step/skips the record.',
+      '- A guard with a "regionId": write its predicate when_<id without "-">(sel, st, record, values): boolean, true exactly when "condition" holds, reading only sel, st, record, values.<key>, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+    ];
+  }
+  return [
+    '- Guards: predicate methods when_<id lower case, without "-">( is_sel = … is_rec = … iv_… = … ) RETURNING rv_holds — is_rec: the row the condition reads (optional); one iv_ per key under "values" in snake case (lvQty: iv_lv_qty).',
+    '- placement "entry"/"selection": the engine calls it already; never again.',
+    '- placement "body": call it where the original checks ("line"), never its condition: IF when_g0345( is_sel = is_sel iv_lv_code = lv_code ) = abap_true. … ENDIF.',
+    '- A guard with a "regionId": write its predicate body, rv_holds = abap_true exactly when "condition" holds, reading only is_sel, is_rec and its iv_ parameters, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+  ];
+}
+
 /** The fixed instruction header (§8.2). */
 export function fillInstructionHeader(track: 'node' | 'rap'): string {
   const lang = track === 'node' ? 'TypeScript' : 'ABAP Cloud';
@@ -89,12 +115,12 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     'Rules for every body:',
     `- Do not write ${forbidden}, and never the text "@cc-fill".`,
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
-    '- Keep every guard call the stub already makes; never re-implement a guard condition inline.',
+    ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : []),
+    ...fillGuardLines(track),
     '- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.',
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
-    `- A guard listed with a "regionId" under a unit is a check of the original whose condition you write as well: its predicate body — statements that return ${track === 'node' ? 'true' : "abap_true"} exactly when the original's "condition" holds, reading only the parameters of its signature. Answer it under "guards": [ { "id": "G-0506", "body": "…" } ] of that unit; the engine calls it where the original checks.`,
-    '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [], "refused": null } ] } — one entry per unit asked for.',
+    '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [] } ] } — one entry per unit asked for; "refused" only on a unit you refuse.',
     'CODE-DRAFT RULES (by number, unchanged):',
     fillRulesText(track),
   ].join('\n');
@@ -299,6 +325,12 @@ export const predicateRegionOf = (unitId: string, guardId: string): string => `$
  * with a string body (may be empty only when refused), `needs` as strings and
  * `refused` null or `{ reason }`. Units asked for and not answered come back
  * as `missing`; entries for units not asked for are dropped.
+ *
+ * `refused`: the schema types it as an object, so a model cannot answer null;
+ * absent, or without a non-blank reason, it reads as not refused. A reason the
+ * model writes is taken at its word — `{ "reason": "none" }` included — and the
+ * body is not used: splicing on a guess about what the model meant is worse
+ * than one more repair round (A/B 13.10.2026; the header asks to leave it out).
  */
 export function parseFillAnswer(text: string | null | undefined, askedFor: readonly string[]): FillAnswerCheck {
   const parsed = parseModelJsonObject(text);
