@@ -175,7 +175,10 @@ export interface ContextualSuccessor {
   context: string;
 }
 
-const PRODUCTION_ORDER_TABLES = ['AFKO', 'AFPO', 'RESB', 'AFVC', 'AFRU'] as const;
+// RESB is not among them: a reservation is just as much a maintenance order's
+// component or a manual reservation, so AUFK beside RESB alone establishes no
+// production order (QA review of 03501b79fb3d, e6a7787ff3d0).
+const PRODUCTION_ORDER_TABLES = ['AFKO', 'AFPO', 'AFVC', 'AFRU'] as const;
 
 export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze([
   {
