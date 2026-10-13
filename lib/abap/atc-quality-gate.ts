@@ -16,7 +16,10 @@
  *     `security` (never baselined).
  *   - Whether a finding is a security finding is OUR READING of ATC's check
  *     identifier, check title and message — ATC exports carry no "security"
- *     column. The reading is named as one wherever it is shown.
+ *     column. The reading is named as one wherever it is shown, and it goes
+ *     by words: a security finding worded in none of them is missed. So the
+ *     panel lets the rest be baselined only once a person has checked that
+ *     none of it is a security finding — the gate does not decide that.
  *   - An exemption ATC records (`exempted`) is the customer's decision in ATC
  *     and is kept: an exempted security finding is not open, but it is not in
  *     the baseline either — it is listed apart, so the reader can check that a
@@ -45,8 +48,6 @@ const SECURITY_WORDS = new RegExp(
     'traversal',
     'cross[- ]?site',
     '\\bxss\\b',
-    'authori[sz]ation check',
-    'authority[- ]check',
     'berechtigung',
     'hard[- ]?coded (?:user|password|credential|sy-uname)',
     'backdoor',
@@ -60,6 +61,23 @@ const SECURITY_WORDS = new RegExp(
     'mandantenübergreifend',
     'os command',
     'kernel call',
+    // Credentials, secrets and their protection — under any check id, also a
+    // customer's own (QA 03501b79: a plain-text-password finding of a Z check
+    // was read as legacy).
+    'password',
+    'passwort',
+    'credential',
+    'secret',
+    'encrypt', // encryption, unencrypted
+    'verschlüssel',
+    'plain[- ]?text',
+    'sensitive',
+    'personal data',
+    'personenbezogen',
+    'privilege',
+    'permission',
+    'authori[sz]ation',
+    'authority',
   ].join('|'),
   'i',
 );
@@ -70,7 +88,7 @@ export function isSecurityFinding(f: Pick<AtcFinding, 'checkId' | 'checkTitle' |
 }
 
 export interface AtcQualityGate {
-  /** Not security findings: may be baselined as legacy, so new ones stand out. */
+  /** Not security findings in our reading: may be baselined as legacy once a person has checked the reading, so new ones stand out. */
   baseline: AtcFinding[];
   /** Security findings without an ATC exemption: open, never baselined. */
   securityOpen: AtcFinding[];

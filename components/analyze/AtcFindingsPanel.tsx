@@ -202,12 +202,13 @@ function AtcQualityGateNote({ gate }: { gate: ReturnType<typeof atcQualityGate> 
           ) : null}
           <li data-atc-gate-baseline={gate.baseline.length}>
             <span className="tabular-nums font-semibold">{gate.baseline.length}</span> other findings may be baselined as
-            legacy, so that new findings stand out from them.
+            legacy, so that new findings stand out from them — once a person has checked that none of them is a
+            security finding worded in a way our reading missed.
           </li>
         </ul>
         <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">
           Which findings are security findings is our reading of ATC&apos;s check name and message — the export
-          carries no such column. An import without open security findings is not a security sign-off: it lists only
+          carries no such column, and the reading goes by words, so it can miss one. An import without open security findings is not a security sign-off: it lists only
           what failed the checks that ran. Rule from the DSAG ABAP guideline (quality gates in the release process),
           CC BY 4.0, paraphrased.
         </p>
