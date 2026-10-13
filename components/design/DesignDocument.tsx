@@ -10,6 +10,7 @@ import CloudServiceIntegrations from '@/components/design/CloudServiceIntegratio
 import ApiBusinessHubMapping from '@/components/design/ApiBusinessHubMapping';
 import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChecklist';
 import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
+import OptionComparison from '@/components/design/OptionComparison';
 import SectionBoundary from '@/components/SectionBoundary';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import type { DesignData } from '@/lib/types';
@@ -341,6 +342,9 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
           ))}
         </ul>
       </section>
+
+      {/* 1b. The options, compared before the standard is ruled out (roadmap 3.0.12, F14) */}
+      <OptionComparison design={design} />
 
       {/* 2. The section nav */}
       <nav

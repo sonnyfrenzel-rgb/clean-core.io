@@ -719,8 +719,20 @@ export function buildAbapEvidence(
     // GUI Download / Local File access. Function-module names again (`text`,
     // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
     // The finding names what the statement calls: the module, or the class.
-    const guiModule = calledModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)');
+    // `WS_DOWNLOAD` / `WS_UPLOAD` are the obsolete forms of the same transfer
+    // and are read as it (SD review R12, 12.10.2026). Upload and download are
+    // said apart: a download is a list export, an upload a file the target
+    // has to take — neither forces a side-by-side split on its own
+    // (`GUI_FILE_NO_ROUTE_DRIVER_FROM` in the router).
+    const guiModule = calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)');
     if (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
+      const direction = guiModule
+        ? (/UPLOAD/.test(guiModule) ? 'upload' : 'download')
+        : /\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText)
+          ? 'upload'
+          : /\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText)
+            ? 'download'
+            : 'unknown';
       addFinding({
         kind: 'gui-download',
         title: 'Legacy Frontend File Upload/Download',
@@ -730,10 +742,18 @@ export function buildAbapEvidence(
         objectType: guiModule ? 'Function Module' : 'Class',
         lineStart: stmt.line,
         snippet: text,
-        technicalDetail: `Usage of GUI_DOWNLOAD, GUI_UPLOAD, or cl_gui_frontend_services to interact with the local client file system.`,
+        technicalDetail: direction === 'upload'
+          ? 'Reads a file from the user\'s PC through the SAP GUI frontend services (GUI_UPLOAD, WS_UPLOAD or cl_gui_frontend_services).'
+          : direction === 'download'
+            ? 'Writes a file to the user\'s PC through the SAP GUI frontend services (GUI_DOWNLOAD, WS_DOWNLOAD or cl_gui_frontend_services).'
+            : `Usage of GUI_DOWNLOAD, GUI_UPLOAD, WS_DOWNLOAD, WS_UPLOAD or cl_gui_frontend_services to interact with the local client file system.`,
         cleanCoreImpact: 'Frontend services require SAP GUI connection and client-side integration. Web browsers block direct local file system access for security.',
-        recommendation: `Replace with modern UI5 file upload elements, or persist files in SAP Document Management service / Cloud Storage.`,
-        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+        recommendation: direction === 'download'
+          ? 'Replace the download with the export of a Fiori Elements list report backed by a RAP service — on-stack; no separate runtime is needed for it.'
+          : direction === 'upload'
+            ? 'Replace the upload with a RAP large object (attachment) field and a Fiori upload control (S/4HANA 2022 or later) — on-stack. A side-by-side service only where a requirement the code does not show calls for one (external users, files from several systems).'
+            : 'Replace downloads with a Fiori list report export and uploads with a RAP large object field (S/4HANA 2022 or later) — both on-stack.',
+        targetOptions: direction === 'download' ? ['Developer Extensibility / RAP'] : ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
     }
 

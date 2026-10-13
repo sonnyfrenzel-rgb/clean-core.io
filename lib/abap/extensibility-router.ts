@@ -1,6 +1,6 @@
 import type { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
-import { scoreRuleFor } from '../score-rule';
+import { engineVersionAtLeast, scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 
 export interface DecisionCheckpoint {
@@ -115,13 +115,60 @@ export interface RouteDriver {
 }
 
 /**
+ * The first engine version whose route a frontend file feature no longer
+ * chooses (roadmap 3.0.12, owner decision 12.10.2026; CO review F14, PP F11,
+ * SD R12).
+ *
+ * Until then a single `GUI_UPLOAD` or `GUI_DOWNLOAD` made the route
+ * side-by-side, with the rationale "Frontend GUI file services are used.
+ * Decoupled web client uploads on SAP BTP are required" — our own sentence, in
+ * every reviewed package (FI, CO, PP, SD), including programs that only
+ * download a list. It was not true: a download is an export of a list, which a
+ * Fiori list report does on-stack, and an upload is a file a RAP business
+ * object takes as a large object (attachment) field from S/4HANA 2022 on.
+ * Neither needs a separate runtime. So a frontend file feature is now rework
+ * on-stack, like a dynpro or a classic ALV, and never a route driver.
+ *
+ * A run signed with an earlier engine keeps the rule it was signed with, the
+ * way the score does (`lib/score-rule.ts`): its route is recomputed with its
+ * own engine version wherever a screen compares it with the signed one.
+ */
+export const GUI_FILE_NO_ROUTE_DRIVER_FROM = '3.0.12';
+
+/** Whether a frontend file feature can choose the route for a run of this engine version. */
+export function guiFileDrivesRoute(engineVersion: string | null | undefined): boolean {
+  return !engineVersionAtLeast(engineVersion, GUI_FILE_NO_ROUTE_DRIVER_FROM);
+}
+
+/** Upload, download, or not readable — what a frontend file finding does, read off what it calls. */
+export type GuiFileDirection = 'upload' | 'download' | 'unknown';
+
+/**
+ * The direction of one frontend file finding, from the module or method it
+ * calls: `GUI_UPLOAD` / `WS_UPLOAD` / `FILE_OPEN_DIALOG` read a file from the
+ * user's PC; `GUI_DOWNLOAD` / `WS_DOWNLOAD` / `FILE_SAVE_DIALOG` write one.
+ * `CL_GUI_FRONTEND_SERVICES` with neither in the statement is not guessed.
+ */
+export function guiFileDirection(finding: { objectName?: string | null; snippet?: string | null }): GuiFileDirection {
+  const text = `${finding.objectName ?? ''} ${finding.snippet ?? ''}`;
+  const up = /\b(?:GUI|WS)_UPLOAD\b|\bFILE_OPEN_DIALOG\b/i.test(text);
+  const down = /\b(?:GUI|WS)_DOWNLOAD\b|\bFILE_SAVE_DIALOG\b/i.test(text);
+  if (up && !down) return 'upload';
+  if (down && !up) return 'download';
+  return 'unknown';
+}
+
+/**
  * The constructs that choose a side-by-side route, in the order the rule reads
  * them. Empty means on-stack: `needsBtp` is `drivers.length > 0` and nothing
  * else.
  *
  * `deploymentModel` decides two of the six — custom persistence and direct
  * writes to standard tables are triggers in the Public Edition only (CR-04,
- * see `routeExtensibility`).
+ * see `routeExtensibility`). `engineVersion` decides one: a frontend file
+ * feature is a trigger only for a run made before 3.0.12
+ * (`GUI_FILE_NO_ROUTE_DRIVER_FROM`). There is no default, so no caller picks
+ * a rule silently.
  */
 export function routeDrivers(
   // What it reads and nothing more, so a caller holding only findings — the
@@ -129,6 +176,7 @@ export function routeDrivers(
   // 596831bd53a3).
   evidence: { findings: ReadonlyArray<{ id: string; lineStart: number; kind: string }> },
   deploymentModel: 'public' | 'private',
+  engineVersion: string | null,
 ): RouteDriver[] {
   const of = (kind: EvidenceKind) => evidence.findings.filter((f) => f.kind === kind);
   const driver = (kind: EvidenceKind): RouteDriver | null => {
@@ -147,10 +195,42 @@ export function routeDrivers(
     driver('bdc'),
     driver('rfc-call'),
     driver('native-sql'),
-    driver('gui-download'),
+    guiFileDrivesRoute(engineVersion) ? driver('gui-download') : null,
     deploymentModel === 'public' ? driver('standard-table-write') : null,
   ];
   return ordered.filter((d): d is RouteDriver => d !== null);
+}
+
+type GuiFileFinding = { objectName?: string | null; snippet?: string | null; lineStart: number };
+
+/**
+ * What the frontend file features of a program mean for its route, upload and
+ * download apart (from 3.0.12). It names the finding and its line, says what
+ * replaces it on-stack, and — for an upload — names the requirement that would
+ * justify a side-by-side service instead, which the code cannot show. It never
+ * says side-by-side is required: no file feature makes it so.
+ */
+export function guiFileSentence(files: readonly GuiFileFinding[]): string {
+  const by = (dir: GuiFileDirection) => files.filter((f) => guiFileDirection(f) === dir);
+  const named = (list: readonly GuiFileFinding[]) => {
+    const names = [...new Set(list.map((f) => (f.objectName || 'CL_GUI_FRONTEND_SERVICES').toUpperCase()))].join(', ');
+    const first = list.reduce((min, f) => Math.min(min, f.lineStart), list[0].lineStart);
+    return `${names}, from line ${first}`;
+  };
+  const parts: string[] = [];
+  const downloads = by('download');
+  const uploads = by('upload');
+  const unknown = by('unknown');
+  if (downloads.length) {
+    parts.push(`The frontend file download (${named(downloads)}) writes a list to the user's PC: in ABAP Cloud a Fiori list report exports it to a spreadsheet on-stack, so the download forces no side-by-side split.`);
+  }
+  if (uploads.length) {
+    parts.push(`The frontend file upload (${named(uploads)}) reads a file from the user's PC: a RAP business object takes a file as a large object (attachment) field from S/4HANA 2022 on, so the upload alone forces no side-by-side split — a side-by-side service needs a requirement the code does not show, such as external users, files arriving from several systems, or a volume the S/4HANA stack should not carry.`);
+  }
+  if (unknown.length) {
+    parts.push(`The frontend file services (${named(unknown)}) do not run in ABAP Cloud and are replaced on-stack — an export by a Fiori list report, an upload by a RAP large object field (S/4HANA 2022 on); they force no side-by-side split.`);
+  }
+  return parts.join(' ');
 }
 
 /**
@@ -244,8 +324,11 @@ export function routeExtensibility(
   // sentence below that names a construct takes it from here, and so does the
   // architecture contract of roadmap 8.2, which has to give the *same* reason
   // for rejecting the other track.
-  const drivers = routeDrivers(evidence, deploymentModel);
+  const drivers = routeDrivers(evidence, deploymentModel, engineVersion);
   const needsBtp = drivers.length > 0;
+  // Before 3.0.12 a frontend file feature chose the route on its own
+  // (`GUI_FILE_NO_ROUTE_DRIVER_FROM`); a run of that engine keeps that rule.
+  const guiFileRule = guiFileDrivesRoute(engineVersion);
 
   const recommendedRoute = needsBtp ? SIDE_BY_SIDE_ROUTE : IN_APP_ROUTE;
 
@@ -273,7 +356,14 @@ export function routeExtensibility(
   // statement has to go and the boundary be left to the RAP save sequence. It
   // forces no side-by-side split. ROLLBACK WORK produces no finding kind, so
   // there is no evidence here to classify for it.
-  const ON_STACK_REWORK: ReadonlySet<string> = new Set(['dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input', 'commit-work']);
+  //
+  // From 3.0.12 frontend file services are among them: SAP GUI's file dialogs
+  // do not run in ABAP Cloud, and what replaces them — a list report's export,
+  // a RAP large object field — runs on-stack (`GUI_FILE_NO_ROUTE_DRIVER_FROM`).
+  const ON_STACK_REWORK: ReadonlySet<string> = new Set([
+    'dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input', 'commit-work',
+    ...(guiFileRule ? [] : ['gui-download']),
+  ]);
   const reworkKinds = [...new Set([
     ...enhancements.map((f) => f.kind),
     ...findings.filter((f) => ON_STACK_REWORK.has(f.kind)).map((f) => f.kind),
@@ -347,7 +437,10 @@ export function routeExtensibility(
     rationale = `Direct writes to standard SAP tables are strictly prohibited in S/4HANA Public Cloud. Side-by-Side integration is required.`;
   } else if (rfcCalls.length > 0) {
     rationale = `RFC integrations are present. These should be externalized via SAP Integration Suite destination service.`;
-  } else if (fileAccess.length > 0) {
+  } else if (guiFileRule && fileAccess.length > 0) {
+    // The rule of runs made before 3.0.12, kept word for word so a signed run
+    // recomputes to what it signed. Not said by a newer run: a file feature
+    // alone never forces side-by-side (`GUI_FILE_NO_ROUTE_DRIVER_FROM`).
     rationale = `Frontend GUI file services are used. Decoupled web client uploads on ${BTP} are required.`;
   } else if (nativeSql.length > 0) {
     // Native SQL and BDC set `needsBtp` and had no branch of their own, so a
@@ -386,6 +479,9 @@ export function routeExtensibility(
   // WORK never learned that the commit has to go (QA review of dd8e996,
   // a0ae65b2b30d).
   rationale = `${rationale}${commitSentence}`;
+  // What a frontend file feature means for the route, whichever branch chose
+  // it — upload and download apart, because they have different remedies.
+  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess)}`;
   // Every other branch named what it found; with an include not uploaded it
   // also says what it could not have found.
   if (includesNotRead.length > 0 && !namedNotRead) {
@@ -519,7 +615,7 @@ export function routeExtensibility(
 
   // 5. Calculate evidence counts
   const supportingFindings = needsBtp
-    ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + fileAccess.length + (deploymentModel === 'public' ? standardWrites.length : 0)
+    ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + (guiFileRule ? fileAccess.length : 0) + (deploymentModel === 'public' ? standardWrites.length : 0)
     : standardReads.length;
 
   const evidenceCounts = {

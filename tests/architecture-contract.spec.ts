@@ -212,7 +212,7 @@ test.describe('8.2 — the target context comes out of the signed input manifest
 test.describe('8.2 — a rejected alternative carries its reason at the evidence', () => {
   test('the off-stack route rejects on-stack with the same constructs the router routed on', () => {
     const evidence = buildAbapEvidence(SOURCE_OFF_STACK, 'Z_TEST.abap', 'public');
-    const drivers = routeDrivers(evidence, 'public');
+    const drivers = routeDrivers(evidence, 'public', APP_VERSION);
     expect(drivers.length).toBeGreaterThan(0);
 
     const c = contractFor(SOURCE_OFF_STACK, 'public');
