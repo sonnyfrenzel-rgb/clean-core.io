@@ -33,6 +33,7 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
 import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
 
@@ -154,6 +155,12 @@ function productModel(): string {
 
 // F-07: Hard prompt-size limit to prevent cost/quota abuse.
 const MAX_PROMPT_LENGTH = 250_000;
+/**
+ * The request body's byte bound. A prompt the length check admits is never
+ * refused here: one UTF-16 unit is at most six bytes of JSON (`\uXXXX`), and
+ * 64 KiB is room for every other field of the body.
+ */
+const GEMINI_BODY_LIMITS = { maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024, timeoutMs: 30_000 };
 
 const MAX_RETRIES = 3;
 const INITIAL_DELAY = 2000;
@@ -172,7 +179,15 @@ async function callWithRetry<T>(
     if (signal?.aborted) throw error;
     const message = error instanceof Error ? error.message : String(error);
     if (retries > 0 && isTransientModelError(message)) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      // The wait ends early when the caller goes, and a caller gone during it
+      // gets no retry: the lease slot is given back now, not after the backoff
+      // and one more provider call (QA review of 03501b79, 08b88f95cff6).
+      await new Promise<void>((resolve) => {
+        const onAbort = () => { clearTimeout(timer); resolve(); };
+        const timer = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, delay);
+        signal?.addEventListener('abort', onAbort, { once: true });
+      });
+      if (signal?.aborted) throw error;
       return callWithRetry(fn, retries - 1, delay * 2, signal);
     }
     throw error;
@@ -194,7 +209,18 @@ export async function POST(request: NextRequest) {
 
     // Read once, here: whether the call names a generation lease decides which
     // budget it is counted against (roadmap 3.0.12, `lib/transformation/lease.ts`).
-    const body = await request.json();
+    // Read under a byte bound: this runs before any limiter, and `request.json()`
+    // buffered a body of any size for an account at its hourly limit as readily
+    // as for any other (QA review of 03501b79, 7dd12d385189).
+    let body: unknown;
+    try {
+      body = await readBoundedJson(new Response(request.body, { headers: request.headers }), GEMINI_BODY_LIMITS);
+    } catch (bodyErr) {
+      if (bodyErr instanceof ResponseLimitError) {
+        return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+      }
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
     const lease = leaseReferenceOf(body, isFirestoreId);
     if (lease && 'ok' in lease) {
       return NextResponse.json({ error: lease.error, code: lease.code }, { status: lease.status });
@@ -208,6 +234,24 @@ export async function POST(request: NextRequest) {
         // lease must be this account's, open, unexpired, with calls and an
         // in-flight slot left; judged here before any other work, and counted
         // in a transaction right before the provider call below.
+        //
+        // What the body alone can refuse is refused first: a leased call skips
+        // the hourly counter, so a request that was going to be a 400 anyway
+        // must not cost a lease read (QA review of 03501b79, 456824b829b3).
+        // The same checks stand again below for every call.
+        const leased = body as { prompt?: unknown; stage?: unknown };
+        if (leased.stage !== 'transformation') {
+          return NextResponse.json(
+            { error: 'A generation lease pays only for calls of the Transformation stage.', code: LEASE_CODES.stage },
+            { status: 400 },
+          );
+        }
+        if (typeof leased.prompt !== 'string' || !leased.prompt || leased.prompt.length > MAX_PROMPT_LENGTH) {
+          return NextResponse.json(
+            { error: `The prompt must be a single string of 1 to ${MAX_PROMPT_LENGTH.toLocaleString()} characters.` },
+            { status: 400 },
+          );
+        }
         const { db } = await getAdminDb();
         const peek = await peekLease(db, lease, { uid: decodedToken.uid, now: Date.now() });
         if (!peek.ok) {

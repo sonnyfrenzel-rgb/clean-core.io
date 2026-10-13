@@ -1120,14 +1120,20 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * Roadmap 3.0.12, step E — *Cancel* really aborts. One controller per
    * generation, handed to the scaffold worker, the orchestrator (and through it
    * every leased model call, which the proxy aborts on the provider), the
-   * runner checks and the single call. Nothing is stored after it.
+   * runner checks and the single call. Cancel works until the package is sent
+   * to the server to be stored: the store is one transaction the browser cannot
+   * take back once it is sent, so `store` checks the signal right before it,
+   * then lets go of the controller, and the screen stops offering Cancel
+   * (QA review of 03501b79, 55bc1b0b72d5, bb1c38a8601e, bad3737d8f46).
    */
   const abortRef = useRef<AbortController | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelledNote, setCancelledNote] = useState(false);
   const cancelGeneration = useCallback(() => {
+    // Nothing to cancel any more: no generation, or its package is being stored.
+    if (!abortRef.current) return;
     setCancelling(true);
-    abortRef.current?.abort();
+    abortRef.current.abort();
   }, []);
   /** Which path the running generation is on — the engine-led one, or the single call it fell back to. */
   const [genPath, setGenPath] = useState<GenerationPathKey>('engine-led');
@@ -1233,6 +1239,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       /** The server's store, with the lost-answer reread (3.0.11) — both paths store through it. */
       const store = async (filesArray: ProjectFile[], tests: GeneratedTestSuite, record: unknown) => {
+        // The last point a cancel can win. After it the write is sent and may
+        // commit whatever the browser does, so the controller is let go: a
+        // click from here on aborts nothing and is not reported as a cancel.
+        if (controller.signal.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+        abortRef.current = null;
         const packaged = JSON.stringify(filesArray);
         let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
         try {
@@ -1657,7 +1668,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         now={now}
         phaseKey={generationPhase?.key ?? 'none'}
         units={board}
-        onCancel={cancelGeneration}
+        // Withheld while the package is stored: that write cannot be cancelled.
+        onCancel={generationPhase?.key === 'storing' ? undefined : cancelGeneration}
         cancelling={cancelling}
       />
     </StageFrame>

@@ -166,6 +166,31 @@ test.describe('the lease branch of /api/gemini', () => {
     expect(src).toMatch(/if \(signal\?\.aborted\) throw error;\s*const message[^\n]*\n\s*if \(retries > 0 && isTransientModelError\(message\)\)/);
   });
 
+  test('the body is read under a byte bound, before any limiter or lease read (QA review of 03501b79, 7dd12d385189)', () => {
+    expect(src).not.toContain('request.json()');
+    const read = at('readBoundedJson(new Response(request.body');
+    expect(read).toBeLessThan(at('leaseReferenceOf(body, isFirestoreId)'));
+    expect(read).toBeLessThan(at('assertRateLimit(`gemini:${decodedToken.uid}`'));
+    expect(src).toMatch(/bodyErr instanceof ResponseLimitError\) \{\s*return NextResponse\.json\([^\n]*\{ status: 413 \}\)/);
+    // The bound never refuses a prompt the length check admits.
+    expect(src).toContain('maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024');
+  });
+
+  test('a leased call the body alone refuses never reads the lease (QA review of 03501b79, 456824b829b3)', () => {
+    const before = src.slice(at('if (lease) {'), at('peekLease('));
+    expect(before).toMatch(/if \(leased\.stage !== 'transformation'\) \{\s*return NextResponse\.json\(/);
+    expect(before).toMatch(/if \(typeof leased\.prompt !== 'string' \|\| !leased\.prompt \|\| leased\.prompt\.length > MAX_PROMPT_LENGTH\) \{\s*return NextResponse\.json\(/);
+  });
+
+  test('a caller gone during the backoff gets no retry (QA review of 03501b79, 08b88f95cff6)', () => {
+    const retry = src.slice(at('async function callWithRetry'), at('export async function POST'));
+    const waited = retry.indexOf('setTimeout(');
+    const recursed = retry.indexOf('return callWithRetry(');
+    // The wait ends on abort, and the signal is read again between the wait and the retry.
+    expect(retry).toMatch(/signal\?\.addEventListener\('abort'/);
+    expect(retry.slice(waited, recursed)).toMatch(/\}\);\s*if \(signal\?\.aborted\) throw error;\s*$/);
+  });
+
   test('a refusal carries the lease\'s code and status', () => {
     expect(src).toMatch(/if \(!peek\.ok\) \{\s*return NextResponse\.json\(\{ error: peek\.error, code: peek\.code \}, \{ status: peek\.status \}\);/);
     expect(src).toMatch(/if \(!counted\.ok\) \{\s*return NextResponse\.json\(\{ error: counted\.error, code: counted\.code \}, \{ status: counted\.status \}\);/);

@@ -238,4 +238,19 @@ test.describe('the page uses the engine-led path in its order (source)', () => {
     expect(screen).toContain('onCancel');
     expect(screen).toContain('data-generation-cancel');
   });
+  test('cancel is not offered once the package is sent to be stored, and a cancel before it stores nothing', () => {
+    // QA review of 03501b79 (55bc1b0b72d5, bb1c38a8601e, bad3737d8f46): the
+    // store is one server transaction that aborting the browser's request
+    // cannot take back, so a click during it used to stop nothing and the page
+    // then reported a stored package as a success after "Cancel".
+    const body = page.slice(page.indexOf('const store = async ('), page.indexOf('await storeGeneration('));
+    expect(body.length, 'the store no longer calls storeGeneration').toBeGreaterThan(0);
+    // The last check of the signal comes before the write, and the controller is let go.
+    expect(body).toMatch(/if \(controller\.signal\.aborted\) throw [^\n]*AbortError/);
+    expect(body).toContain('abortRef.current = null;');
+    // A click with no controller aborts nothing and says nothing.
+    expect(page).toMatch(/const cancelGeneration = useCallback\(\(\) => \{[^}]*if \(!abortRef\.current\) return;/);
+    // The button is withheld while the package is stored.
+    expect(page).toContain("onCancel={generationPhase?.key === 'storing' ? undefined : cancelGeneration}");
+  });
 });

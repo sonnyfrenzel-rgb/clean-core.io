@@ -1089,7 +1089,17 @@ export default function TestingSandboxPage() {
    * catalog, so it is loaded after the page rather than in its bundle; until it
    * arrives the strip shows the routines and the hand-check marks only.
    */
-  const [tickState, setTickState] = useState<{ code: string; ticks: StripTick[] } | null>(null);
+  // Keyed by every input of the evidence below — source, file name, target
+  // edition and the signed run's engine — so a run of another engine over the
+  // same source never shows the last run's findings while the new ones are
+  // computed (QA review of 03501b79, dbe411efd049).
+  const [tickState, setTickState] = useState<{
+    code: string;
+    file: string;
+    deployment: ReturnType<typeof targetEditionOf>;
+    engine: string | null;
+    ticks: StripTick[];
+  } | null>(null);
   const evidenceFile = project?.auditMetadata?.inputFingerprint?.fileName || 'main.abap';
   const evidenceDeployment = targetEditionOf(project?.s4Deployment);
   /** The engine of the signed run (roadmap 3.0.12): an older run keeps the findings it signed. */
@@ -1104,6 +1114,9 @@ export default function TestingSandboxPage() {
         const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment, undefined, evidenceEngine);
         setTickState({
           code,
+          file: evidenceFile,
+          deployment: evidenceDeployment,
+          engine: evidenceEngine,
           ticks: report.findings.flatMap((f) => {
             const severity = normaliseSeverity(f.severity);
             return severity ? [{ id: f.id, line: f.lineStart, severity, title: f.title }] : [];
@@ -1118,8 +1131,15 @@ export default function TestingSandboxPage() {
       live = false;
     };
   }, [project?.legacyCode, evidenceFile, evidenceDeployment, evidenceEngine]);
-  /** Ticks only for the source they were computed from. */
-  const findingTicks: StripTick[] = tickState && tickState.code === project?.legacyCode ? tickState.ticks : [];
+  /** Ticks only for the source, file, edition and engine they were computed from. */
+  const findingTicks: StripTick[] =
+    tickState &&
+    tickState.code === project?.legacyCode &&
+    tickState.file === evidenceFile &&
+    tickState.deployment === evidenceDeployment &&
+    tickState.engine === evidenceEngine
+      ? tickState.ticks
+      : [];
 
   /** The mono line under the lead: file, size, catalog and engine of the active run — only what was recorded. */
   const metaParts: MetaPart[] = [];
