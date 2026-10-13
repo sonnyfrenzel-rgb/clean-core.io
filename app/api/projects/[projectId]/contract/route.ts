@@ -361,6 +361,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       const mismatch = traceMatchesRecord(JSON.parse(code) as Array<{ path: string; content: string }>, record);
       if (mismatch) return NextResponse.json({ error: mismatch, code: 'package-incomplete' }, { status: 400 });
     }
+    // Roadmap 3.0.12 (DSAG ABAP guide B5): abaplint on an ABAP Cloud package, run here under ABAP Cloud syntax and
+    // recorded as passed, failed or not run — the page cannot report this check for itself.
+    const lint = decision.isAbapCloud ? await import('@/lib/transformation/abaplint-check') : null;
+    const abaplint = lint ? lint.abaplintPackageCheck(JSON.parse(code) as Array<{ path: string; content: string }>) : null;
 
     // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
     // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
@@ -373,13 +377,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
             path: record.path,
             contextDigest: sha256Hex(platform.stamp.text),
             fallbackReason: record.fallbackReason,
-            engine: record.engine,
+            engine: record.engine && lint && abaplint ? lint.withAbaplint(record.engine, abaplint) : record.engine,
             scaffoldVersion: record.engine?.scaffoldVersion ?? null,
             scaffoldDigest: record.engine?.scaffoldDigest ?? null,
             basis: record.basis,
             elapsedMs: record.elapsedMs,
           }
         : {}),
+      ...(abaplint ? { abaplint } : {}),
     };
     const fields = {
       generatedCode: code,
