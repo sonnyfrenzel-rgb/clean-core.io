@@ -146,7 +146,7 @@ const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted
 
 const SHORT: Record<string, string> = {
   standard: 'SAP standard',
-  'key-user': 'Key user (tier 3)',
+  'key-user': 'Key user',
   'in-app-rap': 'In-app ABAP Cloud / RAP',
   'side-by-side-cap': 'Side-by-side CAP',
 };

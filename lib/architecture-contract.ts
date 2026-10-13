@@ -253,6 +253,9 @@ export type AlternativeId = (typeof ALTERNATIVES)[number];
 
 export const ALTERNATIVE_LABELS: Readonly<Record<AlternativeId, string>> = Object.freeze({
   standard: 'Cover the requirement with SAP standard — build nothing',
+  // Fingerprinted bytes too: "(tier 3)" is the retired three-tier wording, kept
+  // in the stored label so no fingerprint moves, and dropped on every screen by
+  // `contractForDisplay()` (DSAG guideline review C2, 13.10.2026).
   'key-user': 'Key user extensibility (tier 3)',
   'in-app-rap': 'In-app developer extensibility — ABAP Cloud / RAP on the stack',
   // Fingerprinted bytes (roadmap 3.0.15): a rejected alternative's label enters a
@@ -434,23 +437,33 @@ export function contractFingerprint(contract: ArchitectureContract): string {
 export function contractForDisplay(contract: ArchitectureContract): ArchitectureContract {
   return {
     ...contract,
-    summary: sapNamesForDisplay(contract.summary),
+    summary: forDisplay(contract.summary),
     fields: contract.fields.map((f) => ({
       ...f,
-      statement: f.statement === null ? null : sapNamesForDisplay(f.statement),
+      statement: f.statement === null ? null : forDisplay(f.statement),
     })),
     alternatives: contract.alternatives.map((a) => ({
       ...a,
-      label: sapNamesForDisplay(a.label),
-      reason: sapNamesForDisplay(a.reason),
+      label: forDisplay(a.label),
+      reason: forDisplay(a.reason),
     })),
   };
+}
+
+/**
+ * Stored contract text as a screen shows it: SAP's current names, and without
+ * the retired three-tier wording — SAP's clean core level concept replaced the
+ * three-tier extensibility model in 2025, and in that model the third tier was classic
+ * ABAP, not key user extensibility. The stored bytes keep it (fingerprints).
+ */
+function forDisplay(text: string): string {
+  return sapNamesForDisplay(text).replace(/\s*\(tier 3\)/gi, '');
 }
 
 /** An alternative's label as a screen shows it (`contractForDisplay`). */
 export function alternativeLabelForDisplay(id: string): string | undefined {
   const label = (ALTERNATIVE_LABELS as Record<string, string>)[id];
-  return label === undefined ? undefined : sapNamesForDisplay(label);
+  return label === undefined ? undefined : forDisplay(label);
 }
 
 /* ---------- the seam into the signed input manifest ---------- */

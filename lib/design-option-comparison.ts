@@ -203,9 +203,10 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
   }
   if (files.length) rap.push('Frontend file transfers move on-stack: a download to a list report export, an upload to a RAP large object field (S/4HANA 2022 or later).');
   rap.push(input.deployment === 'public'
-    ? 'Public Edition: released APIs only, no Tier-2 wrapper.'
+    ? 'Public Edition: released APIs only (clean core level A), no wrapper around an unreleased object.'
     : input.deployment === 'private'
-      ? 'Private Edition: released APIs first; a Tier-2 wrapper can encapsulate an unreleased object for use.'
+      // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
+      ? 'Private Edition: released APIs first (clean core level A); where SAP offers none, a wrapper can encapsulate an unreleased object, with an influence request to SAP. The wrapper does not make the wrapped object stable.'
       : 'Deployment not bound: Public or Private Edition decides what an in-app extension may call.');
   cap.push('Running cost: its own runtime, database and operations beside S/4HANA — qualitative here; amounts only from approved cost assumptions in Economics.');
 

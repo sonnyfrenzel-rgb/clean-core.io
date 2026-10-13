@@ -25,7 +25,7 @@ export const TARGET_EDITION_OPTIONS: readonly { value: TargetEdition; title: str
   {
     value: 'private',
     title: 'Private Cloud / RISE',
-    text: 'SAP S/4HANA Cloud, Private Edition or on-premise. Custom code can stay behind upgrade-safe wrappers.',
+    text: 'SAP S/4HANA Cloud, Private Edition or on-premise. Released APIs first; where SAP offers none, custom code may wrap the unreleased object, with an influence request to SAP.',
   },
   {
     value: 'public',
