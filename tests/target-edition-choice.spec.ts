@@ -7,6 +7,7 @@ import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEFAULT_TARGET_EDITION, targetEditionOf } from '../lib/target-edition';
+import { CLOUD_ERP_PRIVATE_FIRST } from '../lib/sap-naming';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -44,6 +45,15 @@ test.describe('the target edition of a new project', () => {
       // The write comes before the push into the workspace that signs the run.
       expect(src.indexOf('s4Deployment: edition'), file).toBeLessThan(src.indexOf('?first=1'));
     }
+  });
+
+  test('the Private card names the edition in its first-mention form (QA 5a559787: 28ab38ac9d05)', () => {
+    expect(CLOUD_ERP_PRIVATE_FIRST).toBe('SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)');
+    const src = read('components/TargetEditionChoice.tsx');
+    const privateCard = /value: 'private',[\s\S]*?\n  \},/.exec(src)?.[0] ?? '';
+    expect(privateCard).toMatch(/\n\s*title: CLOUD_ERP_PRIVATE_FIRST,\n/);
+    // The card's title is the first mention; the text under it does not say the old name a second time.
+    expect(privateCard).not.toMatch(/Formerly SAP S\/4HANA/i);
   });
 
   test('no client start path invents Private for a project without a target', () => {
