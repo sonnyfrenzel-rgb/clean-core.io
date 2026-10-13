@@ -10,29 +10,144 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [v3.0.12] — unreleased
+## [v3.0.12] — 2026-10-13
 
-Engine 3.0.12. This entry is completed with the release.
+Transformation is led by the engine: it writes the package's skeleton from what it already knows
+about the original, the model fills only the function bodies, and every check says whether it ran
+and whose code it judged — after external reviews of a CO, PP, SD and FI case. Routes, findings and
+levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its licence.
 
-### Engine
+### Transformation: the engine writes, the model fills (ADR-101)
 
-- **Checks from the DSAG ABAP guideline review**: security review tasks, a review task for
-  possibly copied SAP code, classic programming models, and the classic ALV, Dynpro and SAP GUI
-  findings worded by SAP Note 3578329. An RFC call is read from the statement's own DESTINATION:
-  a local destination is no call to another system.
-- **The route**: BDC, native SQL, a local RFC, Public Edition table writes and a frontend file
-  feature no longer force a side-by-side route on their own.
+- **The engine writes the scaffold.** Types with the original's decimal places and bounds, one
+  input contract for every channel, guards with their rule ids, a run store bound to a run id, an
+  app factory that does not start a server on import, CSV with a formula guard, the call contract
+  the tests use, and one function stub per reachable routine with its ABAP lines and rule ids. The
+  RAP path gets typed CDS, one validation per guard, determinations, a behavior pool and an ABAP
+  Unit skeleton.
+- **Step-wise fills under a lease.** The model writes only function bodies, from that routine's
+  ABAP lines, its rules and the facts the earlier tools established, in small calls (at most
+  14,000 characters each, at most four in flight, one lease of at most 48 calls per generation).
+  A body is spliced between markers and refused if a character of the scaffold moves. Failing
+  functions alone go back, for at most two repair rounds. Where no scaffold can be built, the
+  single model call remains as the fallback.
+- **A trace with line anchors.** Every function names its ABAP lines and rule ids in the code, in
+  `traceability.json`, `TRACE.md`, `STATUS.md` and on the screen. Nothing generated is signed.
+  Packages stored before 3.0.12 keep their binding and say they were generated in one model call.
+- **Before the run:** optional quality tips (open rules, requirements, non-functional
+  requirements, a design older than the latest run) with deep links and a way back, and a
+  decision warning above them — never a gate. The warning reads the standard-fit gate: a design
+  that weighed SAP's standard against RAP and CAP ends it; a decision record against a rebuild
+  still warns. During the run the screen shows the earlier tools as a chain in workflow order with
+  this project's numbers, then scaffold, fills and checks as they happen.
+- **The design reasons with SAP's standard** (moved in from 3.0.13): the design prompt compares
+  standard, RAP and CAP on the engine's option facts with a release-bound data contract (actual
+  ACDOCA, plan ACDOCP or the planning source as configured, statistical key figures apart, the
+  currency named) and refuses a circular reason; the delivery package carries
+  `docs/cost-revision.md`.
+
+### Checks that say what ran
+
+- **Passed, failed or not run**, counted apart, and split by whose code decided: the
+  engine-written code (precision, empty request, run identity, the engine probes) or the written
+  functions (guard and record-count cases, any other probe). Green only when something of the
+  written functions passed and nothing failed or was left not run. Records stored before the split
+  read "reported".
+- **Guard cases reach the written functions:** a case asks the check's predicate directly where
+  the request cannot carry the value (a system field, a computed decimal, the record table),
+  measured by mutation. Deterministic lints cover lenient number parsing, global state, run ids,
+  decimals, CSV, a start on import, claimed integrations and ignored options.
+- **The PO demo's engine cases run:** its obligatory `P_BANFN` gets a `DEFAULT` in the demo source
+  (line count and every anchor unchanged), so the cases no longer all read "no valid base value
+  known". The demo's headline figures stay: 32 findings, score 37, in-app.
+- **Confined execution.** The engine pass and the failure-pattern probe pass load the generated
+  modules in an SES compartment, with the probes and the outcome writer out of their reach; a
+  module that patches globals can no longer report its own probes as passed. The isolated test
+  runner speaks protocol 3 and is redeployed with the release.
+
+### The route
+
+- **On-stack constructs stay on-stack** (engine 3.0.12): BDC, native SQL, a local RFC
+  (`DESTINATION 'NONE'`, `IN GROUP`), a Public Edition custom table and a frontend file upload or
+  download no longer force a side-by-side route; the only side-by-side driver left is an RFC call
+  to another system. On the 300-case benchmark 161 routes move from side-by-side to in-app (Public
+  Edition 147 → 14 side-by-side, SAP Cloud ERP Private 42 → 14), none the other way.
 - **A run keeps what it signed.** Every screen that rebuilds a project's evidence or route uses
   the engine of the project's signed run, so a run made before 3.0.12 shows its own findings and
   route, not the new ones.
 
+### New findings (engine 3.0.12, from the DSAG ABAP guideline review)
+
+- **Security review tasks:** an AUTHORITY-CHECK whose result is not read, dummy or wildcard
+  fields, `SUBMIT … USER`, dynamic SQL clauses or file paths filled from input, `CLIENT
+  SPECIFIED`, native SQL, generated programs, `CALL TRANSACTION` without an explicit
+  authority-check addition. Tasks, not verdicts — no effect on score or route.
+- **Possibly copied SAP code** (a Z/Y name over an SAP program, class, interface or function
+  module, or a "copy of" header), at low confidence.
+- **Classic programming models:** BOPF, SEGW and DDIC-based CDS views. **Parallel processing:**
+  an asynchronous RFC that stays in the system is no RFC call; it is a finding of its own that
+  names `CL_ABAP_PARALLEL` for ABAP Cloud while SAP's release data lists it as released.
+- **Levels:** ALV, Dynpro and SAP GUI findings are worded by SAP Note 3578329 — level B through
+  the listed classic APIs; a classic Dynpro or SAP GUI screen estimates as level B, not D. An
+  estimate never yields level A: level A needs a released object from SAP's catalog.
+- Design and Transformation tips name the ABAP Cloud successor of a classic concept (application
+  log, background job, mail, BOPF, table maintenance); Documentation lists every modification and
+  level D enhancement with its open questions; an imported ATC result may baseline legacy
+  findings, never security findings.
+
+### RAP scaffold
+
+- **Authorization on:** both views check access, each has an access control that grants nothing
+  until a developer writes the check (fail-closed), and the behavior's authorization helpers deny
+  until filled.
+- **An application job** for a program that runs in the background, a UI service for one that
+  runs in dialog, or both — with the reason. An **access layer**: one interface per original with
+  a method per SAP object read, written or called, a default that raises until connected, and a
+  test double. **ABAP Doc** on every public method, anchored at the original's line.
+- **abaplint under ABAP Cloud syntax** runs on the server when a package is stored, with 21 rules
+  from Clean ABAP adopted (54 considered); the delivered `abaplint.json` is the same configuration.
+- **abapGit metadata files:** every object gets its abapGit XML, the package its `.abapgit.xml`
+  and `package.devc.xml`, so the package is laid out to import with abapGit; the single-call RAP
+  path writes the same class files. The files are format-checked against abapGit's serializers (as
+  abapGit wrote them in SAP's own samples) and against SAP's ABAP file formats — **they have not
+  been import-verified in an SAP system.**
+
+### SAP identifiers
+
+- **Every SAP name is checked against the best source that holds it:** an SAP page checked by
+  hand, then SAP's documentation on GitHub (SAP-docs, CC BY 4.0), then the owner's curated lists
+  (a name found in a list, never "verified"), then the catalog ("name found in catalog").
+  Mismatches on name, protocol or release are said as such. Communication scenario IDs with
+  letters are read; a model's line reference that disagrees with the engine's anchors is dropped.
+
+### Sources and licences
+
+- **Six sources sync weekly:** SAP-docs (CC BY 4.0), the DSAG ABAP guideline (CC BY 4.0), SAP's
+  ABAP cheat sheets and the flight reference scenario (Apache-2.0), Clean ABAP (CC BY 3.0) and
+  SAP's ABAP file formats (MIT). The sync stores commits, headings and hashes, no prose; every
+  citation is registered as adopted, adopted with correction or not adopted, and a changed adopted
+  section stops for review. All six are named on `/licenses`; `NOTICE` and
+  `THIRD-PARTY-NOTICES.md` carry the DSAG guideline and the four SAP GitHub sources, and SAP-docs
+  material carries its attribution wherever it is shown and in every export.
+
 ### Naming
 
+- **Levels, not tiers.** The deployment choice, the analysis prompt, the option comparison, the
+  target edition and the classification page speak in clean core levels A–D; a wrapper goes with
+  an influence request to SAP and is never called upgrade-safe.
 - **SAP Cloud ERP.** SAP S/4HANA Cloud Private Edition is now called SAP Cloud ERP Private:
   "SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)" at the first mention,
   "SAP Cloud ERP Private" after it. SAP S/4HANA Cloud Public Edition keeps its name ("part of SAP
   Cloud ERP" at the first mention). Screens, exports, prompts and engine findings from 3.0.12 use
   these names; a run signed before 3.0.12 keeps the words it signed.
+
+### Fixed in the release run
+
+- **abaplint loads from `node_modules` on the server.** Bundled, it registered its handlers twice
+  and every generation store answered 500 on a production build.
+- **Test races:** specs that bundle a component write into their own process's folder, so
+  parallel workers no longer read a half-written bundle; the benchmark's route distribution builds
+  each side's evidence with that side's engine.
 
 ## [v3.0.11] — 2026-10-12
 
