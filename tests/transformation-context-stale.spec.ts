@@ -53,7 +53,7 @@ test.describe('the Transformation phase reads the context digest', () => {
     expect(step).toMatchObject({ state: 'stale', done: false, proven: false, badge: 'Stale' });
     expect(step.detail).toBe('Generated before a rule decision, the decision record or an accepted requirement changed — regenerate it to build on what is decided now.');
     // The tool bar's action and "continue" read the same state.
-    expect(phaseActionLabel(step)).toBe('Bring Transformation up to date');
+    expect(phaseActionLabel(step, true)).toBe('Bring Transformation up to date');
     expect(nextPhaseKey(workflowSteps(p))).toBe('transformation');
     // Without the change, the same project reads generated.
     expect(transformation(generated(engineLed(A), A))).toMatchObject({ state: 'done', badge: 'Generated' });

@@ -21,7 +21,8 @@ import { signInViaLanding } from './helpers/sign-in';
  * score, design, management overview — against an edition nobody chose.
  */
 
-const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+// CRLF in a Windows checkout; the source patterns below match on a bare line feed.
+const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8').replace(/\r\n/g, '\n');
 
 test.describe('the target edition of a new project', () => {
   test('a missing target reads as the server default, the same on client and route', () => {

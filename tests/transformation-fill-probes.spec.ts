@@ -26,7 +26,8 @@ import { FIXTURES, fixture, nodePackage, planOf, poDemo, typecheck } from './hel
 
 test.describe.configure({ timeout: 300_000 });
 
-const SOURCE = fs.readFileSync(path.join(FIXTURES, 'probe-shape.abap'), 'utf8');
+// CRLF in a Windows checkout; the replacements below match on a bare line feed.
+const SOURCE = fs.readFileSync(path.join(FIXTURES, 'probe-shape.abap'), 'utf8').replace(/\r\n/g, '\n');
 const REFERENCE = path.join(FIXTURES, 'reference-fills', 'probe-shape.json');
 const FILL_IDS = FILL_PROBES.map((p) => `PRB_${p}`);
 
