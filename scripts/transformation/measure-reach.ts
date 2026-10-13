@@ -14,9 +14,10 @@
  *                             standing in for a model that ports the program faithfully; only where the file exists
  *   CC_SES_ROOT  a directory whose node_modules/ses holds SES, when the checkout's node_modules lacks it
  *   --what-if    also an in-memory variant of each source whose obligatory input has no value in the original,
- *                with a selection-screen DEFAULT added (PO: P_BANFN, PP: P_WERKS, SD: P_VKORG). The values are
- *                the measurement's, not the original's: they show what reach a DEFAULT would give. The files on
- *                disk are never changed.
+ *                with a selection-screen DEFAULT added (PP: P_WERKS, SD: P_VKORG). The values are the
+ *                measurement's, not the original's: they show what reach a DEFAULT would give. The files on
+ *                disk are never changed. The PO demo needs none: its P_BANFN carries DEFAULT '0010000001' in
+ *                the file itself since 13.10.2026 (owner decision).
  *
  * Per source and variant: fill regions (functions and predicates), engine cases by scope × outcome, probes
  * run / skipped, REACH (regions whose throwing or wrong-answer mutant changes a check's verdict) and value
@@ -61,7 +62,6 @@ export function reachSources(whatIf: boolean): ReachSource[] {
       return next;
     };
     out.push(
-      { key: 'po+default', label: "PO demo + DEFAULT '0010000001' for P_BANFN (what-if)", source: withDefault(po, /p_banfn TYPE eban-banfn OBLIGATORY,/, "p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',"), reference: null },
       { key: 'pp+default', label: "PP + DEFAULT '1000' for P_WERKS (what-if)", source: withDefault(pp, /PARAMETERS p_werks TYPE werks_d OBLIGATORY\./, "PARAMETERS p_werks TYPE werks_d OBLIGATORY DEFAULT '1000'."), reference: ref('pp-shape') },
       { key: 'sd+default', label: "SD + DEFAULT '1000' for P_VKORG (what-if)", source: withDefault(sd, /PARAMETERS p_vkorg TYPE vkorg OBLIGATORY\./, "PARAMETERS p_vkorg TYPE vkorg OBLIGATORY DEFAULT '1000'."), reference: ref('sd-shape') },
     );

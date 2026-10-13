@@ -23,6 +23,18 @@ export function poDemo(): string {
   return fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
 }
 
+/**
+ * The PO demo as it was until 13.10.2026: P_BANFN obligatory with no DEFAULT,
+ * so no valid base value is known and every engine case reads Not run. Kept
+ * for the specs that hold that case; the file itself carries the DEFAULT now.
+ */
+export function poDemoWithoutDefault(): string {
+  const src = poDemo();
+  const next = src.replace("p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',", 'p_banfn TYPE eban-banfn OBLIGATORY,');
+  if (next === src) throw new Error('the PO demo no longer gives P_BANFN its DEFAULT');
+  return next;
+}
+
 export function planOf(source: string, input: PlanInput = {}) {
   const facts = readEngineFacts(source);
   return { facts, plan: planUnits(source, input, facts) };

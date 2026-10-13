@@ -152,8 +152,9 @@ for (const width of [1280, 390] as const) {
     expect(b.engine!.units).toBe(trace.generation.units);
     expect(b.engine!.checks.map((c) => c.kind)).toEqual(expect.arrayContaining(['guards', 'lint', 'cases', 'probes']));
     // Step E, the honest count: every runner check says passed, failed and not
-    // run apart, and whose code decided it. On the PO demo no engine case can
-    // run (the original gives no valid value for P_BANFN): never "run, 0 failed".
+    // run apart, and whose code decided it: never "run, 0 failed". Since
+    // 13.10.2026 the PO demo gives P_BANFN a DEFAULT, so the engine cases run:
+    // the base value is no longer missing, and the engine's own cases pass.
     const runnerChecks = b.engine!.checks.filter((c) => c.kind === 'cases' || c.kind === 'probes');
     for (const c of runnerChecks) {
       expect(['engine-code', 'fills']).toContain(c.scope);
@@ -162,8 +163,9 @@ for (const width of [1280, 390] as const) {
     await expect(built.locator('[data-engine-checks]')).not.toContainText(/\d+ run, \d+ failed/);
     const cases = runnerChecks.filter((c) => c.kind === 'cases' && c.total > 0);
     if (cases.length > 0) {
-      for (const c of cases) expect(c.passed).toBe(0);
-      await expect(built.locator('[data-engine-checks]')).toContainText('not run — no valid base value known for P_BANFN');
+      for (const c of cases) expect(c.notRunReason ?? '').not.toContain('no valid base value known');
+      expect(cases.find((c) => c.scope === 'engine-code')?.passed ?? 0).toBeGreaterThan(0);
+      await expect(built.locator('[data-engine-checks]')).not.toContainText('no valid base value known for P_BANFN');
     }
     if (runnerChecks.some((c) => c.kind === 'probes' && c.scope === 'engine-code' && c.total > 0)) {
       await expect(built.locator('[data-engine-checks]')).toContainText("of the engine's decimal, CSV and run-store code");

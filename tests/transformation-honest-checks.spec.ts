@@ -12,14 +12,15 @@ import { executeSandboxRun } from '../lib/test-sandbox/core';
 import { generationRecordOf, storedGenerationRecord, type GenerationRecord } from '../lib/transformation/generation-record';
 import { howBuiltLines } from '../lib/delivery-package';
 import { judgeControl } from '../scripts/acceptance/child/engine-cases-core.mjs';
-import { fixture, poDemo } from './helpers/transformation-scaffold';
+import { fixture, poDemo, poDemoWithoutDefault } from './helpers/transformation-scaffold';
 
 /**
  * Roadmap 3.0.12, step E — the checks of an engine-led generation are counted
  * honestly (server-free):
  *
- *   - three outcomes: passed, failed, not run. On the PO demo every engine
- *     case is not run (no valid base value known for P_BANFN); it used to read
+ *   - three outcomes: passed, failed, not run. On the PO demo without its
+ *     P_BANFN DEFAULT (the demo source until 13.10.2026) every engine case is
+ *     not run (no valid base value known for P_BANFN); it used to read
  *     "26 run, 0 failed" in green;
  *   - who decides: the probes and the input-contract, decimal and run-identity
  *     cases test engine-written code, and are never said to test the written
@@ -76,10 +77,10 @@ async function verifyOnce(prep: EngineLedPrepared, source: string, bodies: Map<s
 
 const ofKind = (checks: readonly CheckLike[], kind: string): CheckLike[] => checks.filter((c) => c.kind === kind);
 
-test.describe('the PO demo: every engine case not run is never "run, 0 failed"', () => {
+test.describe('the PO demo without its P_BANFN DEFAULT: every engine case not run is never "run, 0 failed"', () => {
   test('the gate names the missing base value, the count says not run, and nothing is green', async () => {
-    const prep = prepared(poDemo());
-    const { answer, outcome } = await verifyOnce(prep, poDemo(), new Map());
+    const prep = prepared(poDemoWithoutDefault());
+    const { answer, outcome } = await verifyOnce(prep, poDemoWithoutDefault(), new Map());
     expect(answer.engine.ran).toBe(true);
     if (!answer.engine.ran) return;
     const results = answer.engine.results;
@@ -102,8 +103,8 @@ test.describe('the PO demo: every engine case not run is never "run, 0 failed"',
   });
 
   test('the probes that ran test the engine\'s own code, and are said to', async () => {
-    const prep = prepared(poDemo());
-    const { outcome } = await verifyOnce(prep, poDemo(), new Map());
+    const prep = prepared(poDemoWithoutDefault());
+    const { outcome } = await verifyOnce(prep, poDemoWithoutDefault(), new Map());
     const probes = ofKind(outcome.checks, 'probes');
     const engine = probes.find((c) => c.scope === 'engine-code')!;
     const fills = probes.find((c) => c.scope === 'fills')!;

@@ -11,6 +11,7 @@ import {
   nodePackage,
   planOf,
   poDemo,
+  poDemoWithoutDefault,
   runEngineCases,
   runHarness,
   runInPackage,
@@ -294,7 +295,7 @@ test('the probes are not vacuous: a scaffold with float rounding and no formula 
 });
 
 test('no valid base value known: every engine case reads Not run and names the field — nothing fails for a guessed value', () => {
-  for (const [source, fields] of [[poDemo(), 'P_BANFN'], [fixture('sd-shape'), 'NETWR, P_VKORG']] as const) {
+  for (const [source, fields] of [[poDemoWithoutDefault(), 'P_BANFN'], [fixture('sd-shape'), 'NETWR, P_VKORG']] as const) {
     const { dir, plan } = nodePackage(source);
     try {
       expect(plan.missingBaseValues.join(', ')).toBe(fields);

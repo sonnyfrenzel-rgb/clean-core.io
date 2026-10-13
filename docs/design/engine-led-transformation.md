@@ -460,7 +460,10 @@ what the original takes as input — components of structures it fills from a da
 file read, a split input line, or its demo data; a component it computes afterwards (arithmetic, a
 function, a value the logic sets) is a result, never a request field (`recordInputOf`). Measured on
 12.10.2026, scaffold alone: CO 17 engine cases pass (2 fail where a check predicate is still a stub), SD 17,
-PP 12; the PO demo stays "Not run — no valid base value known for P_BANFN": the original gives no value.
+PP 12; the PO demo stayed "Not run — no valid base value known for P_BANFN": the original gave no value.
+Since 13.10.2026 the demo source gives one (`P_BANFN … DEFAULT '0010000001'`, owner decision): scaffold
+alone, the PO demo's cases of the engine's code read 5 passed, 7 not run, those of the written functions
+2 failed (stub predicates), 12 not run; REACH 5/35 (was 0/35).
 
 ### 9.3 Splice and integrity
 
