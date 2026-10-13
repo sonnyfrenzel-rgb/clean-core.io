@@ -31,8 +31,8 @@
  *
  * The wrapper `<abapGit version="v1.0.0" serializer="LCL_OBJECT_<TYPE>"
  * serializer_version="v1.0.0">` is what abapGit's XML reader checks first: it
- * raises "abapGit element not found" without it and a version mismatch for any
- * version but `v1.0.0` (abapGit/abapGit@37f226f4 src/xml/zcl_abapgit_xml.clas.abap
+ * raises "abapGit element not found" without it and a version mismatch for
+ * any abapGit version but `v1.0.0` (abapGit/abapGit@37f226f4 src/xml/zcl_abapgit_xml.clas.abap
  * `parse`; zif_abapgit_version `c_xml_version`). The serializer name is the
  * class name with ZCL_ABAPGIT replaced by LCL (zcl_abapgit_objects_super `get_metadata`).
  *
