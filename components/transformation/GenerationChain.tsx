@@ -16,7 +16,9 @@ import type { ChainSlot, GenerationStage, UnitBoard, UnitBoardRow } from '@/lib/
  * The header says what is written, the real time since the click — no
  * percentage anywhere (§2.8) — and *Cancel*, which really aborts: the page
  * hands one AbortController to the scaffold worker, the orchestrator and every
- * model call, and nothing is stored after it. Under one factual caption stand
+ * model call. It is offered until the package is sent to be stored — that
+ * write cannot be taken back, so the page withholds the button from then on,
+ * and a cancel that wins stores nothing. Under one factual caption stand
  * two columns from L: the chain (the tools before Transformation, then the
  * generation's own stages as they run — engine scaffold, model fills, checks,
  * repairs only when needed, saved) and the work panel (the functions in plan
@@ -56,7 +58,7 @@ export default function GenerationChain({
   phaseKey: string;
   /** The functions of the engine-led path; null before the scaffold, and on the single call. */
   units?: UnitBoard | null;
-  /** Stops the generation; nothing is stored after it. Absent: no button. */
+  /** Stops the generation before its package is stored. Absent: no button (none to run, or the store has begun). */
   onCancel?: () => void;
   cancelling?: boolean;
 }) {
