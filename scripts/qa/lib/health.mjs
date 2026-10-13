@@ -20,7 +20,7 @@ const IGNORED_CONCLUSIONS = new Set(['cancelled', 'skipped', 'neutral', '']);
 const STALE_AFTER_DAYS = 8;
 
 /** Branches a scheduled bot pushes to instead of opening a pull request. */
-export const BOT_BRANCHES = ['chore/sync-cloudification-repo', 'chore/sync-sap-architecture-center'];
+export const BOT_BRANCHES = ['chore/sync-cloudification-repo', 'chore/sync-sap-architecture-center', 'chore/sync-sap-identifiers'];
 
 export function workflowFiles(dir = '.github/workflows') {
   return readdirSync(dir)

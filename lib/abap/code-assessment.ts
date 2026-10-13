@@ -9,6 +9,7 @@ import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readTableDependencies, type DependencyRoute } from './table-dependencies';
 import { maskComments, maskNonCode } from './statement-reader';
 import { isSideBySideRoute } from '../sap-naming';
+import { successorInContext } from './sap-api-catalog';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -26,6 +27,8 @@ const STANDARD_TABLE_MAP: Record<string, string> = {
   'LIKP': 'Use API_OUTBOUND_DELIVERY_SRV',
   'LIPS': 'Use API_OUTBOUND_DELIVERY_SRV',
   'AFKO': 'Use CDS I_ProductionOrder',
+  // Internal order unless the program reads production order tables — then
+  // `successorInContext` names the production order successor (PP review).
   'AUFK': 'Use CDS I_InternalOrder',
   'CDHDR': 'Use CDS I_ChangeDocument',
   'CDPOS': 'Use CDS I_ChangeDocumentItem',
@@ -184,8 +187,13 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
   }
 
   const statsMap = new Map<string, TableStats>();
+  const dependencies = readTableDependencies(code).dependencies;
+  // The tables this program reads or writes, for successors that depend on context (AUFK).
+  const tablesHere = new Set(
+    dependencies.filter((d) => d.access !== 'reference' && !d.possibleTargetOf).map((d) => d.table),
+  );
 
-  for (const dependency of readTableDependencies(code).dependencies) {
+  for (const dependency of dependencies) {
     let stats = statsMap.get(dependency.table);
     if (!stats) {
       stats = {
@@ -263,7 +271,10 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     if (referenceOnly) {
       recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
     } else if (isStandard && hasReplacement) {
-      recommendation = STANDARD_TABLE_MAP[tableName];
+      const inContext = successorInContext(tableName, tablesHere);
+      recommendation = inContext
+        ? `Use CDS ${inContext.entry.view} (${inContext.context}${inContext.readHere.length ? `: ${inContext.readHere.join(', ')}` : ''})`
+        : STANDARD_TABLE_MAP[tableName];
       // Hand-written guidance in this file, not a lookup in SAP's release data,
       // and not checked against the target release or the fields read here. A
       // candidate to check, not a verified replacement.

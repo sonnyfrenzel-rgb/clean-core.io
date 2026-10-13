@@ -31,7 +31,7 @@ import {
   readOptionComparison,
 } from '@/lib/design-option-comparison';
 // SAP identifiers the model wrote, each followed by its check (external review F-03).
-import { annotateSapReferences as checked, catalogNoteForMapping } from '@/lib/sap-reference-check';
+import { catalogNoteForMapping, sapAttributionHtml, sapReferenceAnnotator } from '@/lib/sap-reference-check';
 import {
   ARCHITECTURE_CENTER_SOURCE,
   FIT_LABEL,
@@ -123,6 +123,9 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
   if (!currentProject?.solutionDesign) return null;
   const esc = escapeHtml;
   const referenceSection = designReferenceSection(currentProject);
+  // Every SAP identifier marked here, and the attributions those marks need (CC BY 4.0, SAP-docs).
+  const sapRefs = sapReferenceAnnotator();
+  const checked = sapRefs.annotate;
 
   let htmlContent = '';
 
@@ -236,7 +239,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
 
     const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
         <h2>SAP Business Accelerator Hub Mappings</h2>
-        <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.</p>
+        <p>Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use, and “name found in catalog” means the name is in a list and nothing more.</p>
         <table>
           <thead>
             <tr>
@@ -252,6 +255,11 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
           </tbody>
         </table>
       ` : '';
+
+    // Marked before the template, so the attribution section below knows every mark it needs.
+    const approachText = checked(data.architectureOverview?.approachDescription);
+    const dataSyncText = checked(data.dataSync?.description);
+    const attributionSection = sapAttributionHtml(sapRefs.attributions(), esc);
 
     htmlContent = `
         <!DOCTYPE html>
@@ -269,7 +277,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
           <div class="content">
             <div class="summary-box">
               <h3>Architectural Approach</h3>
-              <p>${esc(checked(data.architectureOverview?.approachDescription))}</p>
+              <p>${esc(approachText)}</p>
             </div>
 
             ${optionSection}
@@ -311,7 +319,7 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
 
             <h2>Data Synchronization Pattern</h2>
             <p><strong>Pattern:</strong> <strong>${esc(data.dataSync?.patternName)}</strong></p>
-            <p>${esc(checked(data.dataSync?.description))}</p>
+            <p>${esc(dataSyncText)}</p>
 
             ${apiMappingSection}
 
@@ -333,6 +341,8 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
             <div class="card-grid">
               ${roadmapPhases}
             </div>
+
+            ${attributionSection}
           </div>
         </body>
         </html>

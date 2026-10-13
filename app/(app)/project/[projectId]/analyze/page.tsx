@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { looksLikeAbap } from '@/lib/abap-input-check';
@@ -661,6 +662,8 @@ export default function AnalyzePage() {
     // Loaded on the click: the export recomputes the evidence, so it imports
     // the engine and the SAP catalog with it (external audit PERF-01).
     const { buildAnalysisExportHtml, analysisExportFileName } = await import('@/lib/analysis-export');
+    // SAP's synced name lists, so the export's identifier marks read them too (3.0.12).
+    await loadSapNameLists();
     const htmlContent = buildAnalysisExportHtml({ project, routeReport, legacyCode, uploadedFileName, targetDeployment });
     if (htmlContent === null) return;
 
@@ -1396,6 +1399,7 @@ export default function AnalyzePage() {
                   text={analysisData.summary}
                   findings={evidenceFindings}
                   totalLines={sourceLines}
+                  code={legacyCode}
                 />
               ) : (
                 <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>

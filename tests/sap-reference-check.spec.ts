@@ -185,7 +185,7 @@ test.describe('the marks travel into the text a reader gets', () => {
     const md = formatDesignToMarkdown(JSON.stringify(design));
     expect(md).toContain("SAP_COM_0093 [name does not match SAP's");
     expect(md).toContain('API_BUSINESS_PARTNER [verified');
-    expect(md).toContain('SAP_COM_0002 [not verified — check before use]');
+    expect(md).toContain('SAP_COM_0002 [not verified — SAP lists SAP_COM_0002 as “Finance - Posting Integration”');
     expect(md).toContain('SAP restriction:');
     expect(md).toContain('names I_OperationalAcctgDocItem (CDS View) as the successor of BSID');
     expect(md).toContain('## SAP identifiers named in this document');
@@ -276,8 +276,9 @@ test.describe('the prompts carry the rules (source guards)', () => {
       // The route card of the stored analysis checks the model's target and rationale (QA bead0ed34426).
       ['app/(app)/project/[projectId]/analyze/page.tsx', /targetArtifact=\{analysisData\.extensibilityRouting\?\.targetArtifact[^}]*\}[\s\S]{0,600}?\bmodelWords\b/],
       ['lib/markdownFormatter.ts', /annotateSapReferences as checked[\s\S]*\bchecked\(data\.standardFit/],
-      ['lib/design-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)/],
-      ['lib/analysis-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)/],
+      // The HTML exports mark through an annotator that also collects the CC BY 4.0 attributions (SAP-docs).
+      ['lib/design-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)[\s\S]*const attributionSection = sapAttributionHtml\(sapRefs\.attributions\(\), esc\);[\s\S]*\$\{attributionSection\}/],
+      ['lib/analysis-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)[\s\S]*sapAttributionHtml\(sapRefs\.attributions\(\), esc\)/],
     ];
     for (const [rel, re] of sites) expect(read(rel), rel).toMatch(re);
     // The legacy, non-JSON narrative is model-written too: its identifiers are

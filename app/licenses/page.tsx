@@ -128,6 +128,32 @@ export default function LicensesPage() {
 
           <hr className="border-cc-line" />
 
+          {/* SAP documentation on GitHub (SAP-docs) */}
+          <section>
+            <h2 className={H2}>
+              Data — SAP documentation on GitHub
+            </h2>
+            <div className="space-y-3 text-sm">
+              <p>
+                Clean-Core.io includes the IDs and titles of SAP communication scenarios extracted from a few documents of
+                SAP&rsquo;s documentation sources on GitHub (<a href="https://github.com/SAP-docs" className={LINK} target="_blank" rel="noopener noreferrer">github.com/SAP-docs</a>),
+                © SAP SE or an SAP affiliate company and contributors. Each fact is shown with the document and the commit it was read from.
+              </p>
+              <p>
+                Licensed under the <strong>Creative Commons Attribution 4.0 International</strong> licence (CC BY 4.0), as each
+                repository&rsquo;s <code className={CODE}>REUSE.toml</code> states; the licence is checked again on every weekly sync. A copy of the licence is available at{' '}
+                <a href="https://creativecommons.org/licenses/by/4.0/" className={LINK} target="_blank" rel="noopener noreferrer">creativecommons.org/licenses/by/4.0</a>.
+              </p>
+              <p>
+                <strong>Modifications:</strong> only the scenario ID, the title the text pairs with it and the product the
+                document is about are extracted; nothing else of the text is kept. Where an exported document uses such a fact,
+                it carries an attribution section naming the source document.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-cc-line" />
+
           {/* Direct components */}
           <section>
             <h2 className={H2}>

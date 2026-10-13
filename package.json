@@ -18,6 +18,7 @@
     "build:whitepaper-pdf": "tsx scripts/generate-whitepaper-pdf.ts",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
+    "sync:identifiers": "tsx scripts/sync-sap-identifiers.ts",
     "sync:architecture-center": "tsx scripts/sync-sap-architecture-center.ts",
     "demo:regenerate": "tsx scripts/regenerate-demo.ts",
     "sync:content-dates": "node scripts/sync-content-dates.mjs",
