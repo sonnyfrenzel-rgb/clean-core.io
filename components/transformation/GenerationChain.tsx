@@ -134,7 +134,7 @@ function UnitsPanel({ units }: { units: UnitBoard | null }) {
           <p data-generation-units-counter="" className="m-0 mt-2 text-[13px] font-semibold text-cc-ink tabular-nums">
             {tfUnitsCounter(units.written, units.total)}
           </p>
-          <div aria-hidden={true} className="mt-2 mb-3 flex flex-wrap gap-0.5">
+          <div aria-hidden={true} className="mt-2 mb-3 flex flex-wrap gap-1">
             {units.rows.map((r) => (
               <i key={r.unitId} className={cn('h-2 min-w-2 flex-[1_0_8px] rounded-[2px] motion-safe:transition-colors motion-safe:duration-200', METER_CLASS[r.state])} />
             ))}
@@ -146,7 +146,7 @@ function UnitsPanel({ units }: { units: UnitBoard | null }) {
                 data-generation-unit={r.unitId}
                 data-unit-state={r.state}
                 className={cn(
-                  'grid grid-cols-[44px_minmax(0,1fr)] items-baseline gap-x-2 gap-y-0.5 border-b border-cc-line px-1 py-1.5 text-[13px] sm:grid-cols-[44px_minmax(0,1fr)_auto]',
+                  'grid grid-cols-[44px_minmax(0,1fr)] items-baseline gap-x-2 gap-y-1 border-b border-cc-line px-1 py-2 text-[13px] sm:grid-cols-[44px_minmax(0,1fr)_auto]',
                   !open && i >= PHONE_ROWS && 'max-sm:hidden',
                 )}
               >
