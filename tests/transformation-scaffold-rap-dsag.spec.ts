@@ -326,6 +326,7 @@ test.describe('B5 — abaplint under ABAP Cloud syntax, recorded as passed, fail
 
 test('the scaffold version moved with the engine-written text', () => {
   // 3: the abapGit metadata of every object (tests/transformation-abapgit-package.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(3);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(3);
+  // 4: the Node scaffold's probe entry points (tests/transformation-fill-probes.spec.ts); one number for both tracks.
+  expect(SCAFFOLD_VERSION).toBe(4);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(4);
 });

@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, useSyncExternalStore
 import { CODE_DRAFT_BUSINESS_RULES, codeDraftFactsSection, hardCodedLiteralFindings } from '@/lib/code-draft-rules';
 import { generatedCodeLints, lintCountLine, packedDecimalFields } from '@/lib/generated-code-lints';
 import { useParams, useRouter } from 'next/navigation';
-import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { loadProjectAndHydrate, withStoredGeneration } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers, Download } from 'lucide-react';
 import clsx from 'clsx';
@@ -1284,7 +1284,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         // state before the generation until something else reloaded the page
         // (QA review of 33471220d6e9, ce37b706107d). From what the server
         // stored, not from what this tab hoped it wrote.
-        setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
+        // The binding's context digest is the one the server built from the state it stored against, so the
+        // phase reads current without another read (roadmap 3.0.13; `withStoredGeneration`).
+        setProject((prev: any) => prev ? withStoredGeneration(prev, stored) : prev);
       };
 
       // ── Roadmap 3.0.12, step E: the engine-led path (design §4) ─────────

@@ -614,7 +614,7 @@ id it was built from so a reader can verify that run's pack separately.
 | Body guards | browser (`markers.ts`) | each fill answer | refused → repair |
 | Lints | browser (`lib/generated-code-lints.ts`, `feat/3.0.12-lints`) | candidate files | findings mapped to units by file + line |
 | Engine cases | runner (`/api/run-tests`, `mode: 'verify'`) | `test/engine-cases.json` through the call contract | failing cases → the units on their call path (trace) |
-| Failure-pattern probes | runner (harness of `feat/3.0.12-acceptance`, adapter from the scaffold) | `acceptance-adapter.json` | `fail` → the unit the adapter names; `not-runnable` → finding, no repair |
+| Failure-pattern probes | runner (harness of `feat/3.0.12-acceptance`, adapter from the scaffold) | `acceptance-adapter.json` | `fail` → the units the adapter names (since 3.0.13 the display filter, recalculation and negative write name the written functions they reach, `fill-probes.ts`); `not-runnable` → finding, no repair |
 
 Candidate packages are not stored yet, so the runner runs them as a **generation candidate**: a
 `RepairDraft` with `target: 'generation'` and no parent stand (`lib/repair-draft.ts`,
@@ -871,11 +871,65 @@ on the stub in 11–15 s. Where E differs from the table above:
 - **The phase does not go stale on a changed context digest.** The Built-on card marks every tool whose
   state differs from the generation's basis *Stale*, but `staleness()` in `lib/workflow-steps.ts` is pure
   over the project document, and the basis compares against data the page loads (the rule register,
-  the requirements). Bringing that into the phase is a later step, not 3.0.12.
+  the requirements). Bringing that into the phase is a later step, not 3.0.12. *Built in 3.0.13 — see
+  "Stale on a changed context digest, as built" below.*
 - **The decision warning** reads `standardFitAssessed` (`lib/standard-fit-gate.ts`, merged from
   `feat/3.0.12-standard`): a solution design that weighed the standard against RAP and CAP ends the
   standard-fit warning, as the PLATFORM KNOWLEDGE block already says. A decision record against a
   rebuild still warns.
+
+**Stale on a changed context digest, as built (3.0.13, item 3).** The phase reads the digest the way
+§12.2 asks. `GET /api/projects/{id}/contract?for=context` answers `{ contextDigest }` only: the
+PLATFORM KNOWLEDGE block built now by `platformContextOf`, digested the way the store digests it into the
+binding — the block itself never leaves the server, and the read has its own rate budget
+(`project-context`) so browsing the stages cannot use up a generation's. `loadProjectAndHydrate` asks for
+it beside the run, only when the binding names a context (`storedContextDigest`), into `_contextDigest`
+(in memory, never persisted). `staleness().context` compares the two server digests, and
+`workflowSteps` reads the Transformation phase `stale` with its own sentence ("Generated before a rule
+decision, the decision record or an accepted requirement changed — regenerate it …") — so the tool bar,
+the rail, the workspace, the steering page and Delivery all say it, as §2 of ARCHITECTURE.md requires.
+Unknown is never stale: a bare project document (the dashboard list reads no context — one contract
+build per listed project would cost more than the row is worth), a failed read, or a package from before
+3.0.12 (§18). A source change still wins and names the source. After a store the page takes the binding's
+digest as the current one (`withStoredGeneration`). The stale line names the *kind* of cause, not the
+count: the binding stores one digest for the whole block, and the slot-level comparison stays on the
+Built-on card — which now compares the date and **every** fact of a tool in the form the record keeps
+them (`basisSlotChanged` in `generation-record.ts`; QA caa5712913ad: only the first fact was compared).
+Delivery is not blocked by it: a changed decision makes the draft out of date, not its hand-over unsafe;
+the server's audit-pack gate is unchanged. Held by `tests/transformation-context-stale.spec.ts`.
+
+**Probes that reach the written functions, as built (3.0.13, item 4).** Until 3.0.13 the adapter declared
+the display-filter, recalculation and negative-write probes not applicable, so every probe that ran judged
+engine-written code. `lib/transformation/fill-probes.ts` now reads from the original where each pattern
+stands and maps the probe onto scaffold entry points that run **the whole process** — the written
+functions — on the probe's request (`test/acceptance-shims.ts`: `listOf`, `exportOf`, `recalcOf`,
+`writeOf`, engine-written):
+
+| Probe | Mapped when the original … | The probe's request | Expectation (from the pattern) |
+|---|---|---|---|
+| `display-filter` (FP-SCOPE-01) | has a SELECT-OPTION `FOR` a text component of its input records and applies it (`… IN s_x`) in a carried unit | the base request with two records that differ only in that component (`PRB-A`, `PRB-B`), once without and once with the range on `PRB-A` | the list (`rows`) and the export hold only the match — or the run is refused |
+| `recalc-additive` (FP-MEAN-05) | recalculates a packed record component from its own value with one operand the request can set (`<ls>-y = <ls>-y + p_add`, `ADD 1 TO ls-y`) | one record with the existing value 125, the operand set to 10 (or the literal) | the value shown (the row's, else the record's) is 135 |
+| `negative-write` (FP-GUARD-05) | writes a database table (UPDATE, INSERT/MODIFY … FROM) and refuses, before it, a negative value of a numeric request field the write carries (`IF ls-netwr < 0. MESSAGE e…`) | the base request with that field at −1; the base value as the control | −1 refused, the control accepted |
+
+A run that reaches a function still left as a stub has nothing to judge: the entry points answer with no
+list or value (`writeOf` throws, so the control reads not runnable), and the probe reads *Not run* with the
+reason — never a pass, never a fail. Each probe names the units it reaches (`units`): the unit whose ABAP
+lines hold the pattern (a folded helper's lines belong to the unit it folds into), and the orchestrator as
+well when the main block performs that routine only inside an IF, CASE or loop — the orchestrator decides
+whether it runs. `mapProbeFailures` sends a failure to exactly those units, so the repair round sends back
+the function the probe reached. The probes run in the same confined probe pass: the runner protocol, the
+driver, the outcome lines and `probeVerdicts` are unchanged — the new entry points are package files the
+pass bundles with the adapter's other modules, so **the runner needs no redeploy**. Where the original shows
+none of the patterns the probe stays `notApplicable` with the reason (CO, PP and SD shapes, the PO demo).
+
+Two version gates. **`SCAFFOLD_VERSION` 4**: the Node scaffold's shims and adapter text. **`PLAN_VERSION`
+2**: a structure component the original only recalculates from its own value is a record field of the
+request (`recordInputOf` → `accumulated`), starting at zero when the original gives it no value. Under plan
+1 it was dropped from the request as "computed", so no port could add to the existing value — FP-MEAN-05
+written into the contract itself. A component also computed any other way stays a result. Held by
+`tests/transformation-fill-probes.spec.ts` (fixture `tests/fixtures/transformation/probe-shape.abap` with
+reference fills: all three pass; the scaffold alone: all three Not run; one broken function each: the
+probe fails and names that unit).
 
 **Reach of the checks (13.10.2026).** `scripts/transformation/measure-reach.ts` measures which fill
 regions the engine cases and probes actually test, by mutation (`scripts/transformation/reach.ts`: a

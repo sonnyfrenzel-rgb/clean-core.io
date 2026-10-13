@@ -30,6 +30,7 @@ import { engineCaseProvenance } from '../engine-case-provenance';
 import { ENGINE_RUNTIME_JS } from '../test-sandbox/engine-runtime';
 import { deriveEngineCases, ENGINE_CASES_FILE, engineCasesFile, type EngineCaseDerivation } from '../testing-engine-cases';
 import { acceptanceAdapter, contractModel } from './call-contract';
+import { fillProbeConfigs } from './fill-probes';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
@@ -997,11 +998,20 @@ function checkExport(plan: UnitPlan): string[] {
 const SHIMS_TS = String.raw`/**
  * Entry points for the acceptance harness's probes (acceptance-adapter.json):
  * thin calls into the package's own decimal and CSV code, so the probes test
- * the code the package runs. Test-only; written by Clean-Core.io (engine).
+ * the code the package runs — and, for the probes of the written functions
+ * (display filter, recalculation, negative write), one run of the whole
+ * process on the probe's request. A run that reaches a function still left as
+ * a stub answers with nothing to judge, so the probe reads Not run.
+ * Test-only; written by Clean-Core.io (engine).
  */
+import { exportCsv } from '../srv/app.ts';
 import * as csv from '../srv/lib/csv.ts';
 import * as dec from '../srv/lib/decimal.ts';
-import { CSV_DELIMITER } from '../srv/lib/input-contract.ts';
+import { CSV_DELIMITER, validateRequest } from '../srv/lib/input-contract.ts';
+import { createRunStore } from '../srv/lib/run-store.ts';
+import type { RunState, Selection } from '../srv/lib/types.ts';
+import { runProcess } from '../srv/process.ts';
+import { simulateRequest, type RunResult } from '../srv/simulate.ts';
 
 const text = (v: unknown): string => (typeof v === 'number' ? String(v) : String(v));
 
@@ -1020,6 +1030,56 @@ export function coverage(input: { required: unknown; withdrawn: unknown; availab
 export function csvRows(rows: Array<Record<string, unknown>>): string {
   const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))];
   return csv.table(columns, rows, CSV_DELIMITER);
+}
+
+type ProcessRun = { state: 'refused' } | { state: 'incomplete'; notFilled: string[] } | { state: 'complete'; st: RunState };
+
+/** One run of the whole process on a request, through the one input contract — as simulate runs it. */
+function processRun(request: unknown): ProcessRun {
+  const v = validateRequest(request);
+  if (!v.ok || !v.normalized) return { state: 'refused' };
+  const { records, ...selection } = v.normalized;
+  const outcome = runProcess(selection, records);
+  if (outcome.refusal) return { state: 'refused' };
+  if (!outcome.complete) return { state: 'incomplete', notFilled: outcome.notFilled };
+  return { state: 'complete', st: outcome.state };
+}
+
+const notFilledOf = (r: ProcessRun): string[] => (r.state === 'incomplete' ? r.notFilled : []);
+
+/** The list a run shows (its rows); null when the run was refused or reached a stub. */
+export function listOf(request: unknown): { rows: Array<Record<string, unknown>> | null; refused: boolean; notFilled: string[] } {
+  const r = processRun(request);
+  return { rows: r.state === 'complete' ? r.st.rows : null, refused: r.state === 'refused', notFilled: notFilledOf(r) };
+}
+
+/** The export of a run, as the app writes it; null when the run was refused or reached a stub. */
+export function exportOf(request: unknown): { csv: string | null } {
+  const a = simulateRequest(request, createRunStore<Selection, RunResult>());
+  return { csv: a.ok && a.complete && a.run ? exportCsv(a.run) : null };
+}
+
+const numberOf = (raw: unknown): number | null =>
+  typeof raw === 'number' && Number.isFinite(raw) ? raw : typeof raw === 'string' && /^[-+]?\d+(?:\.\d+)?$/.test(raw.trim()) ? Number(raw.trim()) : null;
+
+/** The value of one record field after a run: as the list shows it, else as the record holds it; null when there is none. */
+export function recalcOf(request: unknown, key: string): { value: number | null; notFilled: string[] } {
+  const r = processRun(request);
+  if (r.state !== 'complete') return { value: null, notFilled: notFilledOf(r) };
+  const row = r.st.rows[0];
+  const record = r.st.records[0] as unknown as Record<string, unknown> | undefined;
+  const raw = row && key in row ? row[key] : record ? record[key] : undefined;
+  return { value: numberOf(raw), notFilled: [] };
+}
+
+/**
+ * Was the write of this request refused or accepted? A run that reaches a stub throws instead: the probe's
+ * control write then reads as not runnable, so a predicate still left as a stub is never judged.
+ */
+export function writeOf(request: unknown): { outcome: 'refused' | 'accepted' } {
+  const r = processRun(request);
+  if (r.state === 'incomplete') throw new Error('not judged: the run reached functions still left as stubs (' + r.notFilled.join(', ') + ')');
+  return { outcome: r.state === 'refused' ? 'refused' : 'accepted' };
 }
 `;
 
@@ -1230,7 +1290,7 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
     csv: 'srv/lib/csv.ts',
     runStore: 'srv/lib/run-store.ts',
   };
-  const adapter = acceptanceAdapter(plan, { packageName: name, modules, delimiter: plan.csvDelimiter });
+  const adapter = acceptanceAdapter(plan, { packageName: name, modules, delimiter: plan.csvDelimiter, fill: fillProbeConfigs(plan, facts) });
   files.push({ path: 'acceptance-adapter.json', content: `${JSON.stringify(adapter, null, 2)}\n`, owner: 'engine' });
 
   // traceability.json and TRACE.md are not part of the scaffold: they say who filled each function, so they

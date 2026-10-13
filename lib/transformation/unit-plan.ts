@@ -314,10 +314,12 @@ const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|AL
  * structures it fills from a database read, an upload or file read, a SPLIT of
  * an input line, or its demo-data routines — and, among their components, the
  * ones it computes afterwards (assigned outside the demo data: `ls-calc_discount
- * = …`, `ADD … TO ls-rem_num`). A computed component is a result, never a
- * request field.
+ * = …`, `ls-total = a * b`). A computed component is a result, never a
+ * request field. Since plan 2 a component the original only recalculates from
+ * its own value (`ADD … TO ls-rem_num`, `ls-y = ls-y + x`) is `accumulated`:
+ * input data the program builds on, so it stays a record field.
  */
-export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string> } {
+export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string>; accumulated: Set<string> } {
   const { statements } = facts;
   const fixtures = notCarried.filter((n) => n.reason === 'fixture');
   const inFixture = (line: number) => fixtures.some((n) => line >= n.lineStart && line <= n.lineEnd);
@@ -384,10 +386,23 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
   }
 
   // Components the original computes after the input is read (outside its demo data).
+  //
+  // Plan 2 (roadmap 3.0.13, item 4): a component the original only *recalculates from its own value*
+  // (`<ls>-menge = <ls>-menge + lv_add`, `ADD lv_add TO ls-menge`, `ls-menge += 1`, and the same with minus)
+  // is not a result but input data that the program builds on: its existing value comes with the record.
+  // Under plan 1 it was dropped from the request, so a port could never add to the existing value and
+  // had to start from nothing — the failure pattern FP-MEAN-05 written into the contract itself.
+  // A component that is also computed any other way stays computed.
   const computed = new Set<string>();
+  const accumulated = new Set<string>();
   for (const st of statements) {
     if (inFixture(st.lineStart) || st.keyword === 'SELECT' || st.keyword === 'SPLIT' || st.keyword === 'READ') continue;
     const t = st.text.replace(/\.$/, '');
+    const update = selfUpdateOf(t);
+    if (update) {
+      accumulated.add(update.component);
+      continue;
+    }
     const assign = /^<?[\w/~]+>?((?:-[\w/~]+)+)\s*((?:[-+*/]|&&)?)=(?!=)\s*([\s\S]*)$/.exec(t);
     if (assign) {
       // Computed: arithmetic, a function, an operator-assignment, or a value set by the logic (a literal, a status).
@@ -400,7 +415,59 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
     const writer = /^(?:ADD|SUBTRACT)\b.*\b(?:TO|FROM)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^(?:MULTIPLY|DIVIDE)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^COMPUTE\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t);
     if (writer) computed.add(lower(writer[1].slice(writer[1].lastIndexOf('-') + 1)));
   }
-  return { structures, computed };
+  for (const c of computed) accumulated.delete(c);
+  return { structures, computed, accumulated };
+}
+
+/**
+ * Plan 2: a record field the original only recalculates from its own value starts, when nothing else
+ * gives it a value, at its type's initial value — zero for a packed number, as in ABAP. The base request
+ * can then carry it; the field is no longer listed as missing. Returns the missing list without them.
+ */
+function withInitialBase(fields: ContractField[], accumulated: ReadonlySet<string>, missing: string[]): string[] {
+  const filled = new Set<string>();
+  for (const f of fields) {
+    if (f.where !== 'record' || f.kind !== 'packed' || f.base !== null || !accumulated.has(f.original.toLowerCase())) continue;
+    f.base = { value: f.places > 0 ? `0.${'0'.repeat(f.places)}` : '0', source: 'kind' };
+    filled.add(f.original);
+  }
+  return missing.filter((m) => !filled.has(m));
+}
+
+/** One statement that recalculates a structure component from its own value — see `recordInputOf`. */
+export interface SelfUpdate {
+  /** The data object as written (`<ls_item>`, `ls_item`). */
+  holder: string;
+  /** The component, lower case (`menge`). */
+  component: string;
+  /** `+` adds to the existing value, `-` takes from it. */
+  sign: '+' | '-';
+  /** The operand added or taken, as written (`lv_add`, `<ls_item>-delta`, `1`). */
+  operand: string;
+}
+
+/**
+ * `<ls>-y = <ls>-y + x`, `<ls>-y = x + <ls>-y`, `<ls>-y += x`, `ADD x TO <ls>-y` (and minus, `SUBTRACT x FROM`),
+ * on one component with exactly one operand; null for anything else.
+ */
+export function selfUpdateOf(text: string): SelfUpdate | null {
+  const t = text.trim().replace(/\.$/, '').replace(/\s+/g, ' ');
+  const target = '(<?[\\w/~]+>?)-([\\w/~]+)';
+  const operand = "(<?[\\w/~]+>?(?:-[\\w/~]+)*|'-?\\d+(?:\\.\\d+)?'|-?\\d+(?:\\.\\d+)?)";
+  const lowerComp = (s: string) => s.toLowerCase();
+  let m = new RegExp(`^${target}\\s*=\\s*${target}\\s*([-+])\\s*${operand}$`, 'i').exec(t);
+  if (m && m[1].toLowerCase() === m[3].toLowerCase() && m[2].toLowerCase() === m[4].toLowerCase()) {
+    return { holder: m[1], component: lowerComp(m[2]), sign: m[5] as '+' | '-', operand: m[6] };
+  }
+  m = new RegExp(`^${target}\\s*=\\s*${operand}\\s*\\+\\s*${target}$`, 'i').exec(t);
+  if (m && m[1].toLowerCase() === m[4].toLowerCase() && m[2].toLowerCase() === m[5].toLowerCase()) {
+    return { holder: m[1], component: lowerComp(m[2]), sign: '+', operand: m[3] };
+  }
+  m = new RegExp(`^${target}\\s*([-+])=\\s*${operand}$`, 'i').exec(t);
+  if (m) return { holder: m[1], component: lowerComp(m[2]), sign: m[3] as '+' | '-', operand: m[4] };
+  m = new RegExp(`^(ADD|SUBTRACT)\\s+${operand}\\s+(?:TO|FROM)\\s+${target}$`, 'i').exec(t);
+  if (m) return { holder: m[3], component: lowerComp(m[4]), sign: m[1].toUpperCase() === 'ADD' ? '+' : '-', operand: m[2] };
+  return null;
 }
 
 /** The CSV delimiter a constant of the original declares (`gc_sep VALUE ';'`), else a comma. */
@@ -771,7 +838,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- the request and its base values (from the original only; base-values.ts)
   const fields = readContractFields(facts, notCarried);
-  const missingBaseValues = assignBaseValues(fields, facts, notCarried);
+  const missingBaseValues = withInitialBase(fields, recordInputOf(facts, notCarried).accumulated, assignBaseValues(fields, facts, notCarried));
 
   // ---- split above the hard budget (§7.2), then budgets from the slices
   const plan: UnitPlan = {

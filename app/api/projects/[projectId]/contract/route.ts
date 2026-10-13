@@ -30,7 +30,9 @@ import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } fro
  *          PLATFORM KNOWLEDGE block (`lib/transformation-context-build.ts`) and
  *          `generation` is answered only to `?for=generation`: the IT rail and
  *          the Design stage read this route for the contract alone and do not
- *          pay for the rule reading.
+ *          pay for the rule reading. `?for=context` (3.0.13) answers only
+ *          `{ contextDigest }`: the digest of that block as it would be built
+ *          now, for the stale reading of the Transformation phase.
  * `POST` → stores a generated stand: code, test suite, status and the binding
  *          to the contract it was computed against, in one transaction, only if
  *          the project is still where the token says it was.
@@ -99,7 +101,7 @@ async function loadProjectAndRun(projectId: string, uid: string) {
 
 type Authorised = { ok: true; uid: string } | { ok: false; response: NextResponse };
 
-async function authorise(req: NextRequest): Promise<Authorised> {
+async function authorise(req: NextRequest, bucket = 'project-contract'): Promise<Authorised> {
   const decodedToken = await verifyRequestAuth(req);
   if (!decodedToken) {
     return { ok: false, response: NextResponse.json({ error: 'Authentication required.' }, { status: 401 }) };
@@ -121,7 +123,7 @@ async function authorise(req: NextRequest): Promise<Authorised> {
   // Both methods rebuild the contract, which runs the catalog-backed engine over
   // the source: one budget per account, asked before any project is read.
   try {
-    await assertRateLimit(`project-contract:${decodedToken.uid}`, 240, 60 * 60 * 1000);
+    await assertRateLimit(`${bucket}:${decodedToken.uid}`, 240, 60 * 60 * 1000);
   } catch (rateErr: unknown) {
     const q = rateErr as { message?: string; status?: number };
     return {
@@ -137,7 +139,10 @@ async function authorise(req: NextRequest): Promise<Authorised> {
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
-    const auth = await authorise(req);
+    const purpose = req.nextUrl.searchParams.get('for');
+    // The context read (3.0.13) has a budget of its own: it runs on every stage load of a project with a
+    // stored generation, and must never use up the budget a generation needs.
+    const auth = await authorise(req, purpose === 'context' ? 'project-context' : 'project-contract');
     if (!auth.ok) return auth.response;
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
@@ -173,9 +178,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       return NextResponse.json({ contract: null, decision: offTrackRefusal(built.decided || 'that decision') });
     }
     const decision = generationDirection(built.contract);
+    // Roadmap 3.0.13, item 3: the digest of the PLATFORM KNOWLEDGE block as it
+    // would be built now — the same block, built the same way, as the POST
+    // digests into the binding (`contextDigest`). `lib/workflow-steps.ts` reads
+    // the Transformation phase as stale when the two differ: a rule decision,
+    // the decision record or an accepted requirement changed after the
+    // generation. Only the digest leaves the server, never the block.
+    if (purpose === 'context') {
+      if (!decision.ok) return NextResponse.json({ contextDigest: null });
+      const platform = await platformContextOf(db, projectId, data, built, decision.isAbapCloud);
+      return NextResponse.json({ contextDigest: sha256Hex(platform.stamp.text) });
+    }
     // Roadmap 3.0.11: only a generation that may run gets a token — and since
     // 3.0.12 only a generation asks for one: the block is built for it alone.
-    if (!decision.ok || req.nextUrl.searchParams.get('for') !== 'generation') {
+    if (!decision.ok || purpose !== 'generation') {
       return NextResponse.json({ contract: built.contract, decision, generation: null });
     }
     const platform = await platformContextOf(db, projectId, data, built, decision.isAbapCloud);
