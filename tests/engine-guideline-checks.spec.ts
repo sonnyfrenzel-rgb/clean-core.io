@@ -295,6 +295,21 @@ test.describe('C5 classic ALV and IDoc are worded as classic technology that may
     expect(unlisted.cleanCoreImpact).toContain('not level B');
   });
 
+  test('a run of an earlier engine keeps its GUI file finding: no WS_ forms, no direction, the old remedy', () => {
+    // QA review of 03501b79fb3d, 5d3dbc1afb60 / 11a08254990d.
+    const ws = "REPORT zx.\nCALL FUNCTION 'WS_DOWNLOAD' EXPORTING filename = lv_f TABLES data_tab = lt.\n";
+    expect(evidence(ws, OLD).filter((f) => f.kind === 'gui-download')).toEqual([]);
+    expect(evidence(ws, NEW).filter((f) => f.kind === 'gui-download')).toHaveLength(1);
+    const upload = "REPORT zx.\nCALL FUNCTION 'GUI_UPLOAD' EXPORTING filename = lv_f TABLES data_tab = lt.\n";
+    const old = evidence(upload, OLD).find((f) => f.kind === 'gui-download')!;
+    expect(old.technicalDetail).toBe('Usage of GUI_DOWNLOAD, GUI_UPLOAD, or cl_gui_frontend_services to interact with the local client file system.');
+    expect(old.recommendation).toBe('Replace with modern UI5 file upload elements, or persist files in SAP Document Management service / Cloud Storage.');
+    expect(old.targetOptions).toEqual(['Developer Extensibility / RAP', 'Side-by-Side CAP']);
+    const now = evidence(upload, NEW).find((f) => f.kind === 'gui-download')!;
+    expect(now.technicalDetail).toContain("Reads a file from the user's PC");
+    expect(now.recommendation).toContain('RAP large object');
+  });
+
   test('IDoc from 3.0.12: level B, replacement for ABAP Cloud / Public Edition, the EDI exception', () => {
     const src = "REPORT zx.\nCALL FUNCTION 'MASTER_IDOC_DISTRIBUTE' EXPORTING master_idoc_control = ls_ctrl TABLES communication_idoc_control = lt_comm master_idoc_data = lt_data.\n";
     const r = recommendArchitecture(src, extractCodeInventory(src), extractDataCoupling(src), undefined, NEW);
@@ -428,4 +443,34 @@ test.describe('STARTING NEW TASK on this system is a parallel-processing finding
     expect(parallel(src, null)).toEqual([]);
     expect(evidence(src, OLD).map((f) => f.kind)).toEqual(['rfc-call']);
   });
+});
+
+/* ------------------------- the In-App track of a classic construct (3.0.12) */
+
+test.describe('a construct ABAP Cloud does not offer lowers In-App compatibility', () => {
+  // QA review of 03501b79fb3d, 62bd4e9b8079 / 6946241ed28c: a program whose
+  // only finding was one of these came out "Highly Compatible" and "Excellent
+  // fit", in the same report whose finding said ABAP Cloud does not offer it.
+  const ONLY: Record<string, string> = {
+    'parallel-processing': "REPORT zx.\nCALL FUNCTION 'Z_WORK' DESTINATION 'NONE' STARTING NEW TASK 'TASK' EXPORTING iv = 1.\n",
+    bopf: "REPORT zx.\nDATA lo_sm TYPE REF TO /bobf/if_tra_service_manager.\nlo_sm = /bobf/cl_tra_serv_mgr_factory=>get_service_manager( 'ZBO' ).\n",
+    'gateway-classic-service': 'CLASS zcl_orders_dpc_ext DEFINITION PUBLIC INHERITING FROM zcl_orders_dpc CREATE PUBLIC.\nENDCLASS.\nCLASS zcl_orders_dpc_ext IMPLEMENTATION.\nENDCLASS.\n',
+    'ddic-cds-view': "@AbapCatalog.sqlViewName: 'ZVCUST'\n@AccessControl.authorizationCheck: #CHECK\ndefine view ZI_Customer as select from zcustomer { kunnr }\n",
+  };
+  for (const [kind, src] of Object.entries(ONLY)) {
+    test(`${kind} alone: partial compatibility, named in words, and the route stays on-stack`, () => {
+      for (const deployment of ['private', 'public'] as const) {
+        const report = buildAbapEvidence(src, 'zx.abap', deployment, undefined, NEW);
+        expect(report.findings.map((f) => f.kind), `${kind} ${deployment}`).toEqual([kind]);
+        const route = routeExtensibility(report, deployment, NEW);
+        expect(route.recommendedRoute).not.toMatch(/side-by-side/i);
+        const inApp = route.comparativeAnalysis.inAppABAPCloud;
+        expect(inApp.technicalFeasibility).toBe('Partially Compatible');
+        expect(inApp.fitDetails).toMatch(/^Requires refactoring: /);
+        expect(inApp.fitDetails).not.toContain(kind);
+        const checkpoint = route.checkpoints.find((c) => c.checkpointName.startsWith('In-App Developer Extensibility'))!;
+        expect(checkpoint.evaluation).toMatch(/^Partial compatibility\./);
+      }
+    });
+  }
 });
