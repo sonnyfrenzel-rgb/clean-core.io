@@ -33,6 +33,23 @@ Clean-Core.io's own. No diagram is included — the reference architectures are
 linked, not embedded. The upstream repository ships no `NOTICE` file (checked
 10.10.2026; REUSE.toml carries the copyright and license per path).
 
+## SAP documentation on GitHub (communication scenario IDs and titles)
+
+The SAP identifier check includes the IDs and titles of SAP communication
+scenarios extracted from a few documents of SAP's documentation sources on
+GitHub (https://github.com/SAP-docs — `btp-cloud-platform`, `sap-datasphere`),
+© SAP SE or an SAP affiliate company and contributors, licensed under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/), as each repository's
+`REUSE.toml` states; the licence is checked again on every weekly sync
+(`scripts/sync-sap-identifiers.ts`).
+
+**Changes:** only the scenario ID, the title the text pairs with it and the
+product the document is about are extracted; nothing else of the text is kept.
+Every fact names the document and the commit it was read from
+(`lib/abap/generated/sap-identifiers.json`), and exports that use such a fact
+carry an attribution section. No endorsement by SAP is implied.
+
 ## DSAG ABAP-Leitfaden (adapted guidance, metadata and section hashes)
 
 Some rules of Clean-Core.io's ABAP analysis and generated code are adapted from

@@ -15,6 +15,23 @@ those licences, in THIRD-PARTY-NOTICES.md and in the CycloneDX SBOM that the
 "Security CI" workflow produces for every commit.
 
 --------------------------------------------------------------------------------
+SAP documentation on GitHub (CC BY 4.0)
+--------------------------------------------------------------------------------
+
+The SAP identifier check includes the IDs and titles of SAP communication
+scenarios extracted from a few documents of SAP's documentation sources on
+GitHub (https://github.com/SAP-docs: btp-cloud-platform, sap-datasphere),
+(c) SAP SE or an SAP affiliate company and contributors, licensed under CC BY
+4.0, https://creativecommons.org/licenses/by/4.0/ (per each repository's
+REUSE.toml, checked again on every weekly sync).
+
+Changes: only the scenario ID, the title the text pairs with it and the product
+the document is about are extracted; nothing else of the text is kept. Each
+fact names the document and commit it was read from (lib/abap/generated/
+sap-identifiers.json, scripts/sync-sap-identifiers.ts). No endorsement by SAP
+is implied.
+
+--------------------------------------------------------------------------------
 DSAG ABAP-Leitfaden (CC BY 4.0)
 --------------------------------------------------------------------------------
 
