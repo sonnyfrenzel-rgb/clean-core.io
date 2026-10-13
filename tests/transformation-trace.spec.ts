@@ -61,3 +61,17 @@ test('the PO demo trace names the 13 routines never reached; the RAP trace maps 
   const rapTrace = traceOf(plan, rap, []);
   for (const u of plan.units) expect(rapTrace.functions.some((f) => f.name.toLowerCase() === u.rapName && f.unitId === u.id), u.rapName).toBe(true);
 });
+
+test('an interface method is never a unit, even when it carries a unit name (access layer, application job)', () => {
+  const { facts, plan } = planOf(poDemo());
+  const rap = buildRapScaffold(plan, facts);
+  const u = plan.units[0];
+  const logic = rap.files.find((f) => f.path.endsWith('.abap') && f.content.includes(`METHOD ${u.rapName}.`))!;
+  const withSameName = { ...rap, files: rap.files.map((f) => (f === logic ? { ...f, content: `${f.content}\n  METHOD zif_cc_access~${u.rapName}.\n  ENDMETHOD.\n` } : f)) };
+  const trace = traceOf(plan, withSameName, []);
+  const iface = trace.functions.filter((f) => f.name.toLowerCase() === `zif_cc_access~${u.rapName}`);
+  expect(iface.length).toBe(1);
+  expect(iface[0].unitId ?? null).toBeNull();
+  const before = traceOf(plan, rap, []).functions.filter((f) => f.unitId === u.id).length;
+  expect(trace.functions.filter((f) => f.unitId === u.id).length).toBe(before);
+});

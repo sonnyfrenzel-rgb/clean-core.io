@@ -50,7 +50,9 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     for (let m = re.exec(f.content); m !== null; m = re.exec(f.content)) {
       const name = m[1];
       const unit = f.path.endsWith('.abap')
-        ? plan.units.find((u) => u.rapName.toLowerCase() === name.toLowerCase().replace(/^.*~/, '')) ?? null
+        ? // A unit is always a plain method of the logic class; `if~method` implements an
+          // interface (access layer, application job) and is the engine's, whatever its name.
+          name.includes('~') ? null : plan.units.find((u) => u.rapName.toLowerCase() === name.toLowerCase()) ?? null
         : plan.units.find((u) => u.file === f.path && u.fn === name) ?? null;
       const guard = guardByName.get(name) ?? (f.path.endsWith('.abap') ? plan.guards.find((g) => g.carried && name.toLowerCase().endsWith(g.id.replace('-', '').toLowerCase())) : undefined);
       // A guard's predicate is the model's; its wrapper (and a RAP validation) is the engine's.
