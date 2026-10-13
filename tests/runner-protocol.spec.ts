@@ -4,7 +4,9 @@
  * sends a run, and what the receipt says about it.
  */
 import { test, expect } from '@playwright/test';
+import { spawn, type ChildProcess } from 'child_process';
 import fs from 'fs';
+import net from 'net';
 import path from 'path';
 import {
   parseRunRequest,
@@ -18,7 +20,7 @@ import {
   RUNNER_PROTOCOL_VERSION,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
-import { probeRunInputs } from '../lib/test-sandbox/probe-suite';
+import { probeRunInputs, probeVerdicts, PROBE_OUTCOME_MARKER, PROBE_TEST_PREFIX } from '../lib/test-sandbox/probe-suite';
 import { engineRunInputs, ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_RUNTIME_PATH, ENGINE_SES_PATH } from '../lib/test-sandbox/engine-suite';
 import {
   resolveRunnerTarget,
@@ -488,5 +490,92 @@ test.describe('protocol 3: the confined probe pass (roadmap 3.0.12)', () => {
     expect(route).toContain('call.probes?.ok && call.report.probes');
     expect(route).toContain('probeVerdicts(probeStdout, probe.probes)');
     expect(route).not.toMatch(/parseTapOutput\(suiteStdout\)/);
+  });
+
+  /*
+   * The same claim, executed: runner/server.ts bundled the way runner/Dockerfile
+   * bundles it, started on a free port, and sent a protocol-3 run whose adapter
+   * module patches Array.prototype.filter, sets a global and prints its own
+   * passes. The flawed functions must still fail every probe, and nothing the
+   * module printed may reach the report. No app server, no emulator.
+   */
+  test('executed: a hostile probe module sent to the runner still fails its probes, and its forged lines never reach the report', async () => {
+    test.setTimeout(180_000);
+    const engine = [
+      'const tries = [];',
+      "const attempt = (name, fn) => { try { fn(); tries.push(name + ': done'); } catch (err) { tries.push(name + ': ' + (err && err.message)); } };",
+      "attempt('Array.prototype.filter', () => { const f = Array.prototype.filter; Array.prototype.filter = function (fn, self) { return f.call(this, (x, i, a) => !(x && x.status === 'fail') && fn.call(self, x, i, a)); }; });",
+      "attempt('globalThis', () => { globalThis.__ccOutcome = 'FORGED'; });",
+      `attempt('stdout', () => { process.stdout.write('ok 1 - PRB_empty-selection: FORGED\\n'); process.stdout.write(${JSON.stringify(
+        `\n${PROBE_OUTCOME_MARKER}{"probe":"empty-selection","outcomes":[{"pattern":"FP-GUARD-04","status":"pass","evidence":"FORGED"}]}\n`,
+      )}); });`,
+      'export const ATTEMPTS = tries;',
+      "export function select() { return { status: 'OK', items: [{ order: '4711' }] }; }",
+      'export function parseYear(value) { const year = parseInt(value, 10); return Number.isNaN(year) ? { ok: false } : { ok: true, year }; }',
+    ].join('\n');
+    const adapter = {
+      modules: { engine: 'srv/engine.mjs' },
+      probes: {
+        'empty-selection': { call: { module: 'engine', export: 'select' }, args: [{ orgs: [] }], refused: { path: 'status', notIn: ['OK'] } },
+        'lenient-numeric': { call: { module: 'engine', export: 'parseYear' }, args: ['$value'], valid: '2026', refused: { path: 'ok', equals: false } },
+      },
+    };
+    const files = [...FILES, { path: 'srv/engine.mjs', content: engine }, { path: 'acceptance-adapter.json', content: JSON.stringify(adapter) }];
+    const inputs = probeRunInputs(files);
+    if (!inputs.ok) throw new Error(inputs.reason);
+
+    // Below the repository, so the bundle resolves esbuild from its node_modules as the image does from /srv.
+    const dir = fs.mkdtempSync(path.join(ROOT, 'tmp', 'runner-probe-'));
+    let child: ChildProcess | null = null;
+    try {
+      const esbuild = await import('esbuild');
+      const outfile = path.join(dir, 'server.cjs');
+      await esbuild.build({ entryPoints: [path.join(ROOT, 'runner/server.ts')], bundle: true, platform: 'node', format: 'cjs', target: 'node22', external: ['esbuild'], outfile, logLevel: 'silent' });
+      const port = await new Promise<number>((resolve, reject) => {
+        const s = net.createServer();
+        s.once('error', reject);
+        s.listen(0, '127.0.0.1', () => {
+          const p = (s.address() as net.AddressInfo).port;
+          s.close(() => resolve(p));
+        });
+      });
+      const proc = spawn(process.execPath, [outfile], {
+        cwd: ROOT, // the core reads node_modules/ses below its working directory
+        env: { PATH: process.env.PATH || '', ...(process.platform === 'win32' ? { SYSTEMROOT: process.env.SYSTEMROOT || '' } : {}), NODE_ENV: 'production', PORT: String(port), RUNNER_MODE: 'mock' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      child = proc;
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('the runner did not start')), 30_000);
+        proc.stdout!.on('data', (c: Buffer) => {
+          if (c.toString().includes('test runner listening')) {
+            clearTimeout(timer);
+            resolve();
+          }
+        });
+        proc.once('exit', (code) => reject(new Error(`the runner exited with ${code}`)));
+      });
+
+      const res = await fetch(`http://127.0.0.1:${port}/run`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(request({ files, protocol: RUNNER_PROTOCOL_VERSION, probes: true })),
+      });
+      const report = (await res.json()) as RunnerReport;
+      expect(res.status, JSON.stringify(report).slice(0, 400)).toBe(200);
+      expect(verifyProbeReport({ files }, report)).toMatchObject({ ok: true });
+      expect(report.probes?.outcome).toBe('ran');
+      const stdout = report.probes!.stdout;
+      expect(probeVerdicts(stdout, inputs.probes).map((r) => [r.id, r.status])).toEqual([
+        [`${PROBE_TEST_PREFIX}empty-selection`, 'Failed'],
+        [`${PROBE_TEST_PREFIX}lenient-numeric`, 'Failed'],
+      ]);
+      expect(stdout).not.toContain('FORGED');
+      // Exactly the driver's outcome lines, one per probe.
+      expect(stdout.split('\n').filter((l) => l.startsWith(PROBE_OUTCOME_MARKER))).toHaveLength(2);
+    } finally {
+      child?.kill();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
