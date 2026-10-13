@@ -589,7 +589,8 @@ export function recommendArchitecture(
     // From 3.0.12 (`GUIDELINE_CHECKS_FROM`). IDoc is classic technology that
     // may stay, not middleware to replace on sight.
     // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
-    // DSAG ABAP guideline: integration/index.md § Bestand alter Technologien, § Beispiel: Massendatentransferierung
+    // DSAG ABAP guideline: integration/index.md § Bestand alter Technologien
+    // DSAG ABAP guideline: integration/index.md § Beispiel: Massendatentransferierung
     // The guideline is not consistent here: its level concept counts IDoc as
     // level B ("clean core"), while its own integration table and
     // what-is-clean-core.md say to avoid or successively replace RFC and IDoc.

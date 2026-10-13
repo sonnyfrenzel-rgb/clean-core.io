@@ -1320,7 +1320,7 @@ export function buildAbapEvidence(
       });
     }
 
-    // DSAG ABAP guideline: clean-core/what-is-clean-core.md § "NIEMALS SAP CODE KOPIEREN"
+    // DSAG ABAP guideline: clean-core/what-is-clean-core.md § “NIEMALS SAP CODE KOPIEREN”
     for (const signal of readSapCodeCopySignals(code, fileName, read)) {
       const own = signal.name ? ` ${signal.name}` : '';
       addFinding({

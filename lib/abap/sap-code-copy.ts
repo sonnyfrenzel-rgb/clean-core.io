@@ -6,7 +6,7 @@ import crClassifications from './generated/cloudification-repo.classifications-s
  * Possible copies of SAP code — roadmap 3.0.12, from the review of the DSAG
  * ABAP guideline (owner decision 13.10.2026).
  *
- * DSAG ABAP guideline: clean-core/what-is-clean-core.md § "NIEMALS SAP CODE KOPIEREN"
+ * DSAG ABAP guideline: clean-core/what-is-clean-core.md § “NIEMALS SAP CODE KOPIEREN”
  *
  * A copy of SAP code carries SAP's logic without SAP's maintenance: SAP's
  * corrections and upgrades no longer reach it, and it keeps calling whatever
