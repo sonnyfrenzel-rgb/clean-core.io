@@ -27,6 +27,7 @@ import { PROBES } from './lib/probes.mjs';
 import { loadFailure } from './lib/load-answer.mjs';
 import { bundleModules, copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
 import { staticScan } from './lib/static-scan.mjs';
+import { writeReportFiles } from './lib/write-report.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const CATALOGUE_PATH = path.join(HERE, '..', '..', 'docs', 'failure-patterns', 'catalogue.json');
@@ -298,10 +299,17 @@ async function main() {
     process.exit(2);
   }
   if (opts.out) {
-    fs.mkdirSync(opts.out, { recursive: true });
-    fs.writeFileSync(path.join(opts.out, 'acceptance-report.json'), `${JSON.stringify(report, null, 2)}\n`);
-    fs.writeFileSync(path.join(opts.out, 'acceptance-report.md'), toMarkdown(report));
-    process.stdout.write(`${path.join(opts.out, 'acceptance-report.json')}\n`);
+    // Same rule as engine-cases.mjs: a link where the report goes is refused, never followed.
+    try {
+      const [json] = writeReportFiles(opts.out, {
+        'acceptance-report.json': `${JSON.stringify(report, null, 2)}\n`,
+        'acceptance-report.md': toMarkdown(report),
+      });
+      process.stdout.write(`${json}\n`);
+    } catch (err) {
+      process.stderr.write(`acceptance harness: ${err.message}\n`);
+      process.exit(2);
+    }
   } else {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   }

@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleModules, copyToTemp, decideExecution, removeTemp, startExecutor } from './lib/sandbox.mjs';
+import { writeReportFiles } from './lib/write-report.mjs';
 import { CALL_CONTRACT_PATHS, NOT_RUN_NO_CONTRACT, judgeEngineCase } from './child/engine-cases-core.mjs';
 
 export { NOT_RUN_NO_CONTRACT };
@@ -139,10 +140,10 @@ if (invokedDirectly) {
     const opts = parseArgs(process.argv.slice(2));
     const report = await runEngineCases(opts);
     const out = path.resolve(opts.out ?? path.join(opts.pkg, 'engine-cases-report'));
-    fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, 'engine-cases-report.json'), `${JSON.stringify(report, null, 2)}\n`);
+    // The default directory is inside the package: a link there is refused, never followed.
+    const [written] = writeReportFiles(out, { 'engine-cases-report.json': `${JSON.stringify(report, null, 2)}\n` });
     const s = report.summary;
-    process.stdout.write(`engine cases: ${s.passed} passed, ${s.failed} failed, ${s.notRun} not run (${report.sandbox.mode}) → ${path.join(out, 'engine-cases-report.json')}\n`);
+    process.stdout.write(`engine cases: ${s.passed} passed, ${s.failed} failed, ${s.notRun} not run (${report.sandbox.mode}) → ${written}\n`);
   } catch (err) {
     process.stderr.write(`${err.message}\n\nusage: node scripts/acceptance/engine-cases.mjs <package-dir> [--cases file] [--out dir] [--timeout ms] [--trusted-fixture] [--static-only]\n`);
     process.exit(2);
