@@ -1,8 +1,10 @@
-# Request-attempt limit for `/api/gemini` — analysis
+# Request-attempt limit for `/api/gemini` — analysis and as built
 
 Roadmap row "Request-attempt limit for `/api/gemini` — analyse before building"
 (owner decision 13.10.2026; QA 7dd12d385189, 456824b829b3). Analysis of
-5a559787, written 13.10.2026. No production code was changed.
+5a559787, written 13.10.2026. Sonny approved the recommendation (option A
+below) the same day; it is built as described in "As built" at the end of
+this document. The analysis sections are kept as they were written.
 
 ## Outcome
 
@@ -192,7 +194,7 @@ different question from "an account loops refused requests", and it should
 be decided on its own. **A is the layer for this item. C is worth doing
 later, for other reasons.**
 
-### Design notes for A (for the build step, not built here)
+### Design notes for A (written for the build step; see "As built")
 
 - **Place it right after `verifyRequestAuth`, before `readBoundedJson`.** It
   then bounds every expensive path (the bounded parse, the lease peek, the
@@ -310,4 +312,89 @@ is two orders of magnitude below it.
   script and Sonny runs it.
 - **Check:** `maxScale` 20 is not set in `deploy.yml`, so it lives only in
   the service. It is also the cost ceiling the reasoning above relies on.
-  Putting it into the deploy flags would make it a reviewed value.
+  Putting it into the deploy flags would make it a reviewed value. *(Done in
+  the build, see below.)*
+
+## As built (13.10.2026)
+
+| Piece | Where | What it does |
+|---|---|---|
+| Limiter | `lib/attempt-limit.ts` | Pure module, no imports, injected clock. Sliding windows of **60 a minute and 300 an hour** per key (`GEMINI_ATTEMPT_ALLOWANCES`, the one place the numbers live). One instance per server process: `geminiAttemptLimiter`. |
+| Route call | `app/api/gemini/route.ts` | `geminiAttemptLimiter.attempt(decodedToken.uid)` directly after the 401 for a missing or invalid token and before `readBoundedJson`, the lease, every limiter and every Firestore access. Admins and leased calls count too. Past the allowance: **429**, `code: 'attempt-limit'`, a `Retry-After` header in seconds, and nothing else happens. It does not skip itself under the emulator flag. |
+| Profile read once | `app/api/gemini/route.ts`, `lib/firebase-admin.ts` | `users/{uid}` is read once, inside the MFA gate's `try` (where the gate read it before, so a failed read is answered as before), and handed to `assertMfaSatisfied(…, { profile })`, `assertAccountActive(…, { profile })` and the stage switch. Both gates take an optional `profile` snapshot and read the document themselves when none is given, so every other caller is unchanged. A leased call that a later gate refuses now reads **2** documents (lease + profile) instead of 4; an ordinary call reads the profile once instead of up to three times. |
+| Log noise | `lib/firebase-admin.ts` (`logRejectedToken`) | A token Firebase refuses for the caller's reasons (`auth/argument-error`, `id-token-expired`, `id-token-revoked`, `invalid-id-token`, `user-disabled`, `user-not-found`) is counted, and at most **one** `WARNING` line a minute reports the counts by code. Every other error from token verification (certificate fetch, `internal-error`, `invalid-credential`, anything unknown) is still logged in full with `console.error`, every time. |
+| Cost ceiling | `.github/workflows/deploy.yml` | `--max-instances` on the app deploy, from a per-branch value in `env-ctx`: **20** for `clean-core` (main) and **10** for `clean-core-dev` (dev), the values both services had on 13.10.2026 (`gcloud run services describe`, read-only). Nothing else in the deploy changed. |
+
+**Choices the analysis left open, and how they were made:**
+
+- **What counts.** Every attempt the limiter admits counts, whatever the later
+  gates answer. An attempt the limiter itself refuses is *not* recorded: it
+  has cost nothing, and recording it would push `Retry-After` back with every
+  retry, so a client that waits as told would be refused again. A flood past
+  the allowance is therefore refused for exactly as long as `Retry-After`
+  says, and no longer.
+- **Memory.** A key holds at most 300 timestamps (refused attempts are not
+  stored), and the map holds at most **2,000** keys
+  (`ATTEMPT_LIMIT_MAX_KEYS`). Keys idle for longer than the hour are dropped
+  whenever anything happens (the map is kept in order of last counted
+  attempt, so the sweep stops at the first live key). Past the cap, the key
+  least recently counted is dropped. Worst case is a few megabytes. The known
+  limit of that rule: 2,000 distinct verified accounts cycling can push each
+  other's counts out. Each needs a Firebase sign-up, and an account that is
+  not approved is refused by the account gate after one read.
+- **No test-only setting.** The analysis proposed a small allowance through a
+  test-only switch for the loop test. It was not built: a switch that changes
+  the allowance is one more thing a deployment could get wrong, and the real
+  allowance makes the loop only 61 requests per path. The route spec uses
+  fresh accounts and the real numbers.
+- **Admin tokens.** `verifyRequestAuth` itself reads the admin mirror for a
+  token that claims `admin` (`withoutWithdrawnAdminClaim`). That read is part
+  of authentication and happens before the limiter can know the account; it
+  affects only tokens with the admin claim.
+
+**The minute allowance against the product.** A fill call takes 10–15 s with
+the product model (`docs/design/engine-led-transformation.md`), so four in
+flight is about 16–24 calls a minute. The heavy-session test runs 20 hourly
+calls in a one-a-second burst plus three back-to-back 48-call generations at
+the fast end (10 s) and stays far below 60 in every minute. On the test
+server the provider stub answers at once, so a spec that drove *more* than
+about 55 calls a minute from one account would be refused; none does today
+(the largest, `transformation-engine-led-rendered.spec.ts`, is capped by its
+lease budget of at most 48).
+
+**Tests:**
+
+| § 4 item | Test | Needs |
+|---|---|---|
+| 1 unit | `tests/attempt-limit.spec.ts` — 60/61 in a minute, 300/301 in an hour, sliding, refused attempts not recorded, two keys apart, idle eviction, key cap (and 3 × the production cap of distinct keys stays at the cap), bad configuration refused | nothing |
+| 2 loop | `tests/gemini-attempt-limit-route.spec.ts` — not JSON, lease in a bad shape, unknown lease, valid lease with an unknown answer shape, and a request without a lease (stubbed 200): each gets its own answer until the allowance, then 429 `attempt-limit` with `Retry-After`, stays refused, and a second account is answered | emulators + test server |
+| 3 no I/O once spent | `scripts/measure-gemini-refusals.ts`, table `onceSpent` — every authenticated path: 429 `attempt-limit`, 0 Firestore RPCs, and < 1 ms CPU per request for the small-body paths; exits 1 otherwise | emulators |
+| 4 source order | `tests/attempt-limit.spec.ts` — the call sits after `verifyRequestAuth` and the 401, before `readBoundedJson`, the lease, `getAdminDb()`, every gate; no exemption in its block; one `assertRateLimit(`; profile read once | nothing |
+| 5 heavy session | `tests/attempt-limit.spec.ts` — 164 calls in the hour, none refused | nothing |
+| 6 no regression | the rendered specs that send `/api/gemini` from one account, against the production build with the emulator flag | emulators + production build |
+
+**Measured after the build** (13.10.2026, Node 24.20.0 on Windows 11, private
+emulators, 300 requests per path, `npx tsx scripts/measure-gemini-refusals.ts 300`):
+
+| Path | Before the limit is spent: Firestore reads | Once spent: answer | Once spent: RPCs | Once spent: CPU ms / request (two runs) | Once spent: wall ms, median |
+|---|---|---|---|---|---|
+| Body not JSON | 0 | 429 `attempt-limit` | 0 | 0.47 / 0.37 | 0.5–0.6 |
+| 413, declared length (1.7 MB) | 0 | 429 `attempt-limit` | 0 | 1.8 / 1.8 (after subtracting 1.9–2.5 of the harness) | 0.8 |
+| 413, streamed (1.7 MB) | 0 | 429 `attempt-limit` | 0 | 0.6 / 0.9 (after subtracting 1.9–2.2 of the harness) | 0.6–0.7 |
+| Over the hourly quota | 1 | 429 `attempt-limit` | 0 | 0.36 / 0.62 | 0.4–0.5 |
+| Lease in a bad shape | 0 | 429 `attempt-limit` | 0 | 0.42 / 0.47 | 0.4–0.7 |
+| Lease, wrong stage | 0 | 429 `attempt-limit` | 0 | 0.62 / 0.36 | 0.5–0.6 |
+| Lease, unknown id | 1 | 429 `attempt-limit` | 0 | 0.83 / 0.26 | 0.5–1.1 |
+| Lease, expired | 1 | 429 `attempt-limit` | 0 | 0.36 / 0.37 | 0.5–0.7 |
+| **Lease valid, a later gate refuses** | **2** (was 4) | 429 `attempt-limit` | 0 | 0.21 / 0.36 | 0.4–0.7 |
+| Every gate passed, no model key (503) | **3** (was 5) | 429 `attempt-limit` | 0 | 0.26 / 0.26 | 0.4–0.6 |
+
+All ten paths behind the limiter ended in 429 `attempt-limit` with no
+Firestore RPC. The CPU figures are process CPU, which includes GC and gRPC
+threads, and the same refusal measured 0.2–0.8 ms from run to run, so the
+script holds the small-body paths to < 1 ms rather than the 0.5 ms first
+proposed (a body parse costs about 1 ms and a Firestore read 3 ms and more,
+so the bound still catches real work). The 1.7 MB requests leave GC behind
+that no subtraction removes; they are held to the RPC count and the answer.
+The invalid-token path wrote no log line per request (one summary for the
+whole run, in the warm-up).

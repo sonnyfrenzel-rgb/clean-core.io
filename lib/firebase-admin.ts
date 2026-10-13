@@ -14,7 +14,7 @@ import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
-import type { DocumentReference, Firestore, Transaction, WriteBatch } from 'firebase-admin/firestore';
+import type { DocumentReference, DocumentSnapshot, Firestore, Transaction, WriteBatch } from 'firebase-admin/firestore';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -174,9 +174,44 @@ export async function verifyRequestAuth(req: Request) {
   try {
     return await withoutWithdrawnAdminClaim(await verifyIdToken(token));
   } catch (err) {
-    console.error('verifyRequestAuth error:', err);
+    logRejectedToken(err);
     return null;
   }
+}
+
+/**
+ * The codes with which Firebase refuses a token the caller sent: malformed,
+ * expired, revoked, signed for another project, or of a disabled or deleted
+ * account. That is the caller's doing, and anyone can send as many as they
+ * like — so these are counted and summarised, not logged one line each.
+ * Anything else (the certificate fetch failed, the SDK broke) is ours and is
+ * still logged in full, every time.
+ */
+const REJECTED_TOKEN_CODES = new Set([
+  'auth/argument-error',
+  'auth/id-token-expired',
+  'auth/id-token-revoked',
+  'auth/invalid-id-token',
+  'auth/user-disabled',
+  'auth/user-not-found',
+]);
+
+/** One summary line per minute at most, with the codes counted since the last. */
+const REJECTED_TOKEN_LOG_INTERVAL_MS = 60_000;
+const rejectedTokens = { lastLoggedAt: Number.NEGATIVE_INFINITY, counts: new Map<string, number>() };
+
+function logRejectedToken(err: unknown): void {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (typeof code !== 'string' || !REJECTED_TOKEN_CODES.has(code)) {
+    console.error('verifyRequestAuth error:', err);
+    return;
+  }
+  rejectedTokens.counts.set(code, (rejectedTokens.counts.get(code) ?? 0) + 1);
+  const now = Date.now();
+  if (now - rejectedTokens.lastLoggedAt < REJECTED_TOKEN_LOG_INTERVAL_MS) return;
+  logger.warn('verifyRequestAuth rejected tokens', { counts: Object.fromEntries(rejectedTokens.counts) });
+  rejectedTokens.lastLoggedAt = now;
+  rejectedTokens.counts.clear();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -488,10 +523,20 @@ export function accountLogRef(uid: string): string {
  */
 export async function assertAccountActive(
   uid: string,
-  opts: { requireApproved?: boolean; requireCurrentTerms?: boolean; isAdminClaim?: boolean } = {},
+  opts: {
+    requireApproved?: boolean;
+    requireCurrentTerms?: boolean;
+    isAdminClaim?: boolean;
+    /**
+     * `users/{uid}` as the caller has already read it in this request, so the
+     * gate does not read the same document again (`/api/gemini` reads it once
+     * for the MFA gate, this gate and the stage switch). It must be this
+     * account's profile; absent, the gate reads it itself.
+     */
+    profile?: DocumentSnapshot;
+  } = {},
 ): Promise<void> {
-  const { db } = await getAdminDb();
-  const snap = await db.collection('users').doc(uid).get();
+  const snap = opts.profile ?? await (await getAdminDb()).db.collection('users').doc(uid).get();
   if (!snap.exists) {
     throw new QuotaError('User profile not found. Please complete registration.', 403);
   }
@@ -1334,13 +1379,18 @@ export async function assertMfaSatisfied(
      * is tested without it. Everything else keeps the conditional gate.
      */
     requireEnrolment?: (mfaEnabled: boolean) => { status: number; message: string } | null;
+    /**
+     * `users/{uid}` as the caller has already read it in this request (see
+     * `assertAccountActive`). It must be this account's profile; absent, the
+     * gate reads it itself.
+     */
+    profile?: DocumentSnapshot;
   },
 ) {
   void req;
   const uid = decodedToken.uid;
-  const { db } = await getAdminDb();
 
-  const userDoc = await db.collection('users').doc(uid).get();
+  const userDoc = opts?.profile ?? await (await getAdminDb()).db.collection('users').doc(uid).get();
   if (!userDoc.exists) {
     // No profile means no enrolment on record. For the conditional gate that
     // is "nothing to require" and the caller decides what a missing profile

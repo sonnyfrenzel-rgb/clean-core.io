@@ -18,6 +18,16 @@
  * check production does; that check is measured on its own at the end
  * (`crypto.verify` on a token-sized RS256 JWT).
  *
+ * The attempt limiter (`lib/attempt-limit.ts`, since 13.10.2026) sits in
+ * front of every authenticated path below, so the first table is measured
+ * with it emptied before each request — it shows what each path costs once it
+ * is reached. The second table (`onceSpent`) is the limiter's own refusal: the
+ * same paths once the account's allowance is spent. There every path must
+ * answer 429 `attempt-limit` with no Firestore RPC, and the paths with small
+ * bodies under 1 ms of CPU (see the comment at the check for why not the
+ * 0.5 ms first proposed); the script exits 1 when one does not
+ * (docs/design/gemini-attempt-limit.md §4 item 3).
+ *
  * Run (emulators up: firebase emulators:start --only auth,firestore --project=cleancore-491216):
  *   npx tsx scripts/measure-gemini-refusals.ts [iterations=200]
  *
@@ -84,6 +94,7 @@ async function main() {
   const { getAdminDb } = await import('../lib/firebase-admin');
   const { TERMS_VERSION } = await import('../lib/constants');
   const { LEASE_COLLECTION } = await import('../lib/transformation/lease');
+  const { geminiAttemptLimiter, GEMINI_ATTEMPT_ALLOWANCES, ATTEMPT_LIMIT_CODE } = await import('../lib/attempt-limit');
   const { db } = await getAdminDb();
 
   // Two accounts: one approved and over its hourly limit, one approved and fresh.
@@ -152,18 +163,25 @@ async function main() {
   ];
 
   // Silence the route's per-request console.error (invalid token) during timing.
+  // A rejected token is summarised at most once a minute (lib/firebase-admin.ts,
+  // logRejectedToken), so both streams are counted.
   const origErr = console.error; let errLines = 0;
   console.error = () => { errLines++; };
+  const origWarn = console.warn; let warnLines = 0;
+  console.warn = () => { warnLines++; };
 
   const results: any[] = [];
   for (const p of paths) {
-    // Warm-up (module init, gRPC channel, cert cache).
-    for (let i = 0; i < 5; i++) { const r = await POST(p.make() as any); await r.text(); }
-    resetTally(); errLines = 0;
+    // Warm-up (module init, gRPC channel, cert cache). The attempt limiter is
+    // emptied before every request: this table is what each path costs once
+    // reached, and one account sends far more than its allowance here.
+    for (let i = 0; i < 5; i++) { geminiAttemptLimiter.clear(); const r = await POST(p.make() as any); await r.text(); }
+    resetTally(); errLines = 0; warnLines = 0;
     const walls: number[] = [];
     let status = 0;
     const cpu0 = process.cpuUsage();
     for (let i = 0; i < ITER; i++) {
+      geminiAttemptLimiter.clear();
       const req = p.make();
       const t0 = performance.now();
       const res = await POST(req as any);
@@ -183,9 +201,71 @@ async function main() {
       cpuMsPerReq: +(((cpu.user + cpu.system) / 1000) / ITER).toFixed(3),
       wallMsMedian: +median(walls).toFixed(2),
       errorLogLinesPerReq: per(errLines),
+      warnLogLinesTotal: warnLines,
     });
   }
   console.error = origErr;
+  console.warn = origWarn;
+
+  // The attempt limiter's own refusal: every authenticated path again, once the
+  // account has spent its allowance. Building a request (1.7 ms for the 413
+  // bodies, and the garbage collection it causes later, on whatever thread)
+  // is not the route's cost: the same number of requests is built and thrown
+  // away without the handler, and that CPU is subtracted.
+  const spent: Record<string, unknown>[] = [];
+  const spentFailures: string[] = [];
+  const perMinute = GEMINI_ATTEMPT_ALLOWANCES[0].max;
+  const SPENT_CPU_BOUND_MS = 1;
+  for (const p of paths) {
+    const bearer = p.make().headers.get('Authorization');
+    const uid = bearer === `Bearer ${over.idToken}` ? over.uid : bearer === `Bearer ${fresh.idToken}` ? fresh.uid : null;
+    if (!uid) continue; // refused before the limiter: no account to count
+    geminiAttemptLimiter.clear();
+    for (let i = 0; i < perMinute; i++) geminiAttemptLimiter.attempt(uid);
+    resetTally();
+    const walls: number[] = [];
+    const statuses = new Set<number>();
+    const codes = new Set<unknown>();
+    // The harness alone: build and drop the same requests.
+    const h0 = process.cpuUsage();
+    for (let i = 0; i < ITER; i++) { const req = p.make(); await Promise.resolve(req); }
+    const harness = process.cpuUsage(h0);
+    const c0 = process.cpuUsage();
+    for (let i = 0; i < ITER; i++) {
+      const req = p.make();
+      const t0 = performance.now();
+      const res = await POST(req as any);
+      const text = await res.text();
+      walls.push(performance.now() - t0);
+      statuses.add(res.status);
+      try { codes.add(JSON.parse(text).code); } catch { codes.add(undefined); }
+    }
+    const c = process.cpuUsage(c0);
+    const rpcs = Object.values(tally.rpcs).reduce((a, b) => a + b, 0);
+    const cpuMicros = Math.max(0, c.user + c.system - (harness.user + harness.system));
+    const cpuMsPerReq = +((cpuMicros / 1000) / ITER).toFixed(3);
+    spent.push({
+      path: p.name,
+      statuses: [...statuses],
+      codes: [...codes],
+      rpcsTotal: rpcs,
+      docReadsTotal: tally.docReads,
+      cpuMsPerReq,
+      harnessCpuMsPerReq: +(((harness.user + harness.system) / 1000) / ITER).toFixed(3),
+      wallMsMedian: +median(walls).toFixed(3),
+    });
+    if (statuses.size !== 1 || !statuses.has(429) || codes.size !== 1 || !codes.has(ATTEMPT_LIMIT_CODE)) spentFailures.push(`${p.name}: not refused by the attempt limit`);
+    if (rpcs !== 0) spentFailures.push(`${p.name}: ${rpcs} Firestore RPCs once the allowance was spent`);
+    // The CPU check is a guard against real work (a body parse is about 1 ms, a
+    // Firestore read 3 ms and more), not a benchmark: process CPU includes GC
+    // and gRPC threads, and on Windows the same refusal measures 0.2–0.8 ms
+    // from run to run. Requests whose building alone costs more than the bound
+    // (the 1.7 MB bodies) leave GC behind that no subtraction removes, so they
+    // are held to the RPC count and the answer only.
+    const harnessMs = (harness.user + harness.system) / 1000 / ITER;
+    if (harnessMs < 0.1 && cpuMsPerReq >= SPENT_CPU_BOUND_MS) spentFailures.push(`${p.name}: ${cpuMsPerReq} ms of CPU per refused attempt`);
+  }
+  geminiAttemptLimiter.clear();
 
   // What a Firestore attempt counter would add to every request: one admitted
   // `assertRateLimit` transaction (read + commit), on a key with a short window.
@@ -225,9 +305,11 @@ async function main() {
     iterations: ITER,
     node: process.version,
     results,
+    onceSpent: spent,
+    onceSpentFailures: spentFailures,
     rs256VerifyCpuMs: +(((c1.user + c1.system) / 1000) / N).toFixed(4),
   }, null, 2));
-  process.exit(0);
+  process.exit(spentFailures.length === 0 ? 0 : 1);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
