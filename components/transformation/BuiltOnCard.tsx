@@ -8,7 +8,7 @@ import { formatTextDate } from '@/lib/format';
 import { tfBuiltOnMeta, tfNotWritten, tfSingleCallNote, wt } from '@/lib/workspace-messages';
 import type { ChainSlot } from '@/lib/transformation-chain';
 import type { BasisSlot, GenerationRecord } from '@/lib/transformation/generation-record';
-import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from '@/lib/transformation/check-words';
+import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from '@/lib/transformation/check-words';
 
 /**
  * After the run (roadmap 3.0.12, step E; design §15.4, §16.2, §18): what the
@@ -109,5 +109,6 @@ function checksSentence(e: NonNullable<GenerationRecord['engine']>): string {
   for (const n of e.notRun) parts.push(`${n.kind === 'cases' ? 'engine cases' : n.kind === 'probes' ? 'probes' : n.kind} not run`);
   parts.push(`${e.callsUsed} model calls`);
   const engineNote = e.checks.some((c) => c.scope === 'engine-code') ? ` ${ENGINE_CODE_NOTE}` : '';
-  return `${parts.join(' · ')}.${engineNote} Every function, its ABAP lines and who wrote it: TRACE.md.`;
+  const pageNote = hasPageReportedChecks(e) ? ` ${PAGE_REPORTED_NOTE}` : '';
+  return `${parts.join(' · ')}.${engineNote}${pageNote} Every function, its ABAP lines and who wrote it: TRACE.md.`;
 }

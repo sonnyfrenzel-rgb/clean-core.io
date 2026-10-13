@@ -41,7 +41,7 @@ import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
-import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './transformation/check-words';
+import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from './transformation/check-words';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { TARGET_EDITION_NAMES } from './sap-naming';
 
@@ -1240,6 +1240,7 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
   if (e.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
   for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);
+  if (hasPageReportedChecks(e)) lines.push(`- ${PAGE_REPORTED_NOTE}`);
   for (const f of e.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
   lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);
   lines.push('- Every function, its ABAP lines, its rules and who wrote it: `TRACE.md` and `traceability.json`.', '');

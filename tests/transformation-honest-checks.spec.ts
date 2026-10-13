@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { prepareEngineLed, candidateFiles, assembleEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
 import { createRunnerVerifier, type RunnerResult, type VerifyRunAnswer } from '../lib/transformation/verify';
 import { engineCaseScope } from '../lib/transformation/call-contract';
-import { checkPhrase, checkStateOf, ENGINE_CODE_NOTE, type CheckLike } from '../lib/transformation/check-words';
+import { checkPhrase, checkStateOf, ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, type CheckLike } from '../lib/transformation/check-words';
 import type { GenerationRunResult } from '../lib/transformation/orchestrator';
 import { deriveEngineCasesOf, engineCaseProvenance } from '../lib/engine-case-provenance';
 import { engineVerdicts, planEngineRun } from '../lib/engine-case-run';
@@ -206,5 +208,27 @@ test.describe('the record, STATUS.md and TRACE.md say who decided', () => {
     const status = howBuiltLines(stored).join('\n');
     expect(status).toContain('- Check before saving — engine cases: 26 reported, 0 failed (passed and not run were not counted apart).');
     expect(checkStateOf(stored!.engine!.checks.filter((c) => c.kind === 'cases'))).toBe('warning');
+  });
+
+  test("STATUS.md says the checks are the page's report, not a server run - only abaplint is the server's (QA review of c38f8043, 05d1530a1092)", () => {
+    // The store route validates the record's shape and its trace; it does not
+    // see the checks run. A package whose record claims passing cases must not
+    // read as if Clean-Core.io had observed them.
+    const pkg = packageWith([{ ...casesFills, passed: 6, notRun: 0 }]);
+    const record = generationRecordOf({ path: 'engine-led', engine: pkg.summary, basis: [] }) as GenerationRecord;
+    const status = howBuiltLines({ ...record, contextDigest: null }).join('\n');
+    expect(status).toContain('- Check before saving — 6 engine cases of the written functions passed.');
+    expect(status).toContain(`- ${PAGE_REPORTED_NOTE}`);
+    expect(PAGE_REPORTED_NOTE).toMatch(/report of the browser/);
+    expect(PAGE_REPORTED_NOTE).toMatch(/did not run those checks again/);
+
+    // A record whose only checks are the server's own abaplint run carries no such note.
+    const serverOnly = { ...record, engine: { ...record.engine!, checks: [{ kind: 'abaplint', total: 3, failed: 0 }], notRun: [{ kind: 'abaplint-syntax', reason: 'not run here' }] } };
+    expect(howBuiltLines({ ...serverOnly, contextDigest: null }).join('\n')).not.toContain(PAGE_REPORTED_NOTE);
+
+    // The Built-on card under the Transformation tool says the same.
+    const card = readFileSync(path.join(__dirname, '..', 'components', 'transformation', 'BuiltOnCard.tsx'), 'utf8');
+    expect(card).toContain("const pageNote = hasPageReportedChecks(e) ? ` ${PAGE_REPORTED_NOTE}` : '';");
+    expect(card).toMatch(/\$\{engineNote\}\$\{pageNote\}/);
   });
 });

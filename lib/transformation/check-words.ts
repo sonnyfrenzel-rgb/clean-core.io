@@ -39,6 +39,24 @@ export interface CheckLike {
 export const ENGINE_CODE_NOTE =
   "Checks of the engine's own code run only what Clean-Core.io wrote (input contract, decimals, CSV, run store); they do not test the functions the model wrote.";
 
+/**
+ * Who ran the checks of a stored record. The page runs the guards, lints,
+ * engine cases, probes and file formats while it generates, and sends their
+ * outcome with the package; the store route checks the record's shape and its
+ * trace, not that the checks ran (QA review of c38f8043, 05d1530a1092). Only
+ * abaplint is run by the server itself when it stores the package.
+ */
+const SERVER_RUN_KINDS = new Set(['abaplint', 'abaplint-syntax']);
+
+/** Said once under the checks of a stored record when any of them is the page's report. */
+export const PAGE_REPORTED_NOTE =
+  "Every check listed here except abaplint is the report of the browser that generated the package: Clean-Core.io's server stored it as sent and did not run those checks again.";
+
+/** True when a stored record lists a check (run or not run) that the server did not run itself. */
+export function hasPageReportedChecks(e: { checks: readonly { kind: string }[]; notRun: readonly { kind: string }[] }): boolean {
+  return [...e.checks, ...e.notRun].some((c) => !SERVER_RUN_KINDS.has(c.kind));
+}
+
 const plural =(n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** The noun of a check, in the singular and plural, and what it checks. */
