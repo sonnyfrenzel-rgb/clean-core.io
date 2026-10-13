@@ -398,7 +398,11 @@ export function caseVerdict(examples) {
  * The positive control: the base request passes `validate` and `simulate`, each
  * with `ok: true`. Without it a "refused" verdict would prove nothing — the
  * mapping, not the case, would be refused. `{ ok: true, baseRecords }` or
- * `{ ok: false, reason }`, from the raw control `collectEngineCase` reports.
+ * `{ ok: false, reason, cause? }`, from the raw control `collectEngineCase`
+ * reports. `cause: 'base-threw'` when validate accepted the base request and
+ * simulate threw on it — the code behind the contract threw, not the mapping.
+ * The verdict stays Not run here (a recorded run keeps the model's verdict for
+ * it); the engine-led generation counts it against the written functions.
  */
 export function judgeControl(control) {
   if (!isObject(control)) return { ok: false, reason: 'no positive control was reported' };
@@ -410,12 +414,23 @@ export function judgeControl(control) {
   }
   if (control.noBase === true) return { ok: false, reason: 'the contract has no baseRequest' };
   const v = answerIn(control.validate);
+  // The scaffold's contract refuses a base request that lacks an obligatory
+  // field the original gives no valid value for — the cases are not run, and
+  // nothing about the mapping or the code is wrong.
+  const missingBase = typeof v?.threw === 'string' ? v.threw.match(/^Not run — (no valid base value known for .+)$/) : null;
+  if (missingBase) return { ok: false, reason: missingBase[1] };
   if (!v || v.threw !== undefined || v.ok !== true) {
     return { ok: false, reason: `the contract's baseRequest is not accepted by validate (${v?.threw ?? JSON.stringify(v?.errors ?? [])}) — the mapping does not fit the code` };
   }
   const s = answerIn(control.simulate);
-  if (!s || s.threw !== undefined || s.ok === false) {
-    return { ok: false, reason: `the contract's baseRequest is refused by simulate (${s?.threw ?? JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
+  if (s && s.threw !== undefined) {
+    // validate accepted the base request, so the fields fit: the throw came
+    // from the code simulate runs behind the contract. Not a mapping problem —
+    // `cause` lets a caller that knows whose code that is count it as a failure.
+    return { ok: false, cause: 'base-threw', reason: `the code behind the contract threw on the accepted baseRequest in simulate (${s.threw})` };
+  }
+  if (!s || s.ok === false) {
+    return { ok: false, reason: `the contract's baseRequest is refused by simulate (${JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
   }
   if (s.ok !== true) return { ok: false, reason: "simulate does not answer the contract's baseRequest with ok: true — the mapping does not fit the code" };
   if (typeof s.records !== 'number') return { ok: false, reason: 'simulate reports no record count (records) for the base request' };
@@ -430,7 +445,7 @@ export function judgeControl(control) {
  */
 export function judgeEngineCase(kase, collected) {
   const control = judgeControl(isObject(collected) ? collected.control : undefined);
-  if (!control.ok) return { status: 'Not run', reason: control.reason, examples: [] };
+  if (!control.ok) return { status: 'Not run', reason: control.reason, ...(control.cause ? { cause: control.cause } : {}), examples: [] };
   const reported = Array.isArray(collected.examples) ? collected.examples : [];
   const examples = [];
   (kase.examples ?? []).forEach((e, i) => {

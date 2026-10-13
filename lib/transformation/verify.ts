@@ -29,7 +29,7 @@
  * stays pure and the specs drive it without a server.
  */
 
-import type { CheckFailure, CheckKind, Verify, VerifyOutcome } from './orchestrator';
+import type { CheckCount, CheckFailure, CheckKind, CheckScope, Verify, VerifyOutcome } from './orchestrator';
 
 export interface FileLike {
   path: string;
@@ -97,6 +97,77 @@ export interface RunnerResult {
   id: string;
   status: string;
   message?: string;
+  /**
+   * Why an engine case did not run, when the judge can say it structurally:
+   * `base-threw` — `validate` accepted the contract's base request and
+   * `simulate` threw on it, i.e. code behind the call contract threw on the
+   * original's own base request (`judgeControl`).
+   */
+  cause?: string;
+}
+
+/* ------------------------------------------------- who decides the outcome */
+
+/**
+ * The probes whose subject is engine-written code (`acceptanceAdapter`,
+ * `lib/transformation/call-contract.ts`): they call the shims into the
+ * package's decimal and CSV code, the run store, and `validate`/`simulate` on
+ * a request the input contract refuses or the run-id check of two runs. A
+ * pass says the engine's code holds — nothing about the written functions.
+ * Every other probe (display filter, recalculation, negative write) has a
+ * subject only the fills write.
+ */
+export const ENGINE_CODE_PROBES: ReadonlySet<string> = new Set([
+  'rounding-commercial',
+  'decimal-quantity',
+  'csv-escaping',
+  'run-id-collision',
+  'empty-selection',
+  'lenient-numeric',
+]);
+
+export function probeScope(probeId: string): CheckScope {
+  const probe = probeId.startsWith(PROBE_TEST_PREFIX) ? probeId.slice(PROBE_TEST_PREFIX.length) : probeId;
+  return ENGINE_CODE_PROBES.has(probe) ? 'engine-code' : 'fills';
+}
+
+/**
+ * Who decides an engine case: the scope the route derived (`engineCaseScope`
+ * — guard refusals and record counts need the fills; input contract, exact
+ * arithmetic and run identity are the engine's), or, on an answer without it,
+ * a case with a business rule is the written functions' and one without is
+ * the engine's.
+ */
+export function caseScope(c: { ruleId?: string | null; scope?: string | null } | undefined): CheckScope {
+  if (c?.scope === 'fills' || c?.scope === 'engine-code') return c.scope;
+  return c?.ruleId ? 'fills' : 'engine-code';
+}
+
+const NOT_RUN_PREFIXES = [/^Not run through the call contract:\s*/i, /^not run(?:nable)?:\s*/i, /^not applicable:\s*/i];
+
+/** A not-run message without the runner's own lead-in, so a shared reason reads once. */
+export function notRunReasonOf(message: string | undefined): string {
+  let m = (message ?? '').trim();
+  for (const re of NOT_RUN_PREFIXES) m = m.replace(re, '');
+  return m.replace(/^Not run — /, '');
+}
+
+/** Count results three ways for one scope; the reason is said when every not-run result shares one. */
+export function countResults(results: readonly RunnerResult[], kind: CheckKind, scope: CheckScope, ms: number): CheckCount {
+  const passed = results.filter((r) => r.status === 'Passed').length;
+  const failed = results.filter((r) => r.status === 'Failed').length;
+  const notRunResults = results.filter((r) => r.status !== 'Passed' && r.status !== 'Failed');
+  const reasons = [...new Set(notRunResults.map((r) => notRunReasonOf(r.message)))];
+  return {
+    kind,
+    scope,
+    total: results.length,
+    passed,
+    failed,
+    notRun: notRunResults.length,
+    notRunReason: notRunResults.length > 0 && reasons.length === 1 && reasons[0] ? reasons[0].slice(0, 300) : null,
+    ms,
+  };
 }
 
 /**
@@ -164,15 +235,22 @@ export function mapProbeFailures(
 export interface VerifyRunAnswer {
   mode: 'verify';
   buildError?: string | null;
-  engine: { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null }> } | { ran: false; reason: string };
+  engine:
+    | { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null; scope?: CheckScope }> }
+    | { ran: false; reason: string };
   probes: { ran: true; results: RunnerResult[]; skipped: Array<{ probe: string; reason: string }> } | { ran: false; reason: string };
 }
 
 export interface RunnerVerifierDeps {
   /** The candidate package as files, with these bodies spliced in (Track B's `spliceBodies`). */
   candidate: (bodies: ReadonlyMap<string, string>) => FileLike[];
-  /** The units with their rule ids, for the engine-case mapping. */
-  units: ReadonlyArray<{ unitId: string; rules: readonly string[] }>;
+  /**
+   * The units with their rule ids, for the engine-case mapping; `kind` names
+   * the orchestrator (the unit every run of the base request goes through),
+   * which a base request that threw is sent back to when no guard case names
+   * a unit.
+   */
+  units: ReadonlyArray<{ unitId: string; rules: readonly string[]; kind?: string }>;
   /** The lints of `lib/generated-code-lints.ts`, reduced to path, line, message. */
   lint?: (files: readonly FileLike[]) => LintFinding[];
   /**
@@ -231,9 +309,38 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       return outcome;
     }
     if (answer.engine.ran) {
-      const failures = mapEngineFailures(answer.engine.results, answer.engine.cases, deps.units);
-      outcome.checks.push({ kind: 'cases', total: answer.engine.results.length, failed: answer.engine.results.filter((r) => r.status === 'Failed').length, ms });
-      outcome.failures.push(...failures);
+      const info = new Map(answer.engine.cases.map((c) => [c.id, c]));
+      // The base request threw inside the code behind the contract (validate
+      // accepted it): no case could run, and that is the written functions'
+      // failure, not a mapping that does not fit. A case that needs the fills
+      // counts as failed; a case of the engine's own code as not run.
+      const threw = answer.engine.results.find((r) => r.cause === 'base-threw');
+      const baseThrew = threw ? notRunReasonOf(threw.message).slice(0, 300) : null;
+      const threwOn = new Set(answer.engine.results.filter((r) => r.cause === 'base-threw' && caseScope(info.get(r.id)) === 'fills').map((r) => r.id));
+      const results = answer.engine.results.map((r): RunnerResult => {
+        if (r.cause !== 'base-threw') return r;
+        return caseScope(info.get(r.id)) === 'fills'
+          ? { ...r, status: 'Failed', message: `the base request threw in the written functions: ${baseThrew}` }
+          : { ...r, status: 'Not run', message: 'the written functions threw on the base request, so this case could not run' };
+      });
+      for (const scope of ['fills', 'engine-code'] as const) {
+        const count = countResults(results.filter((r) => caseScope(info.get(r.id)) === scope), 'cases', scope, ms);
+        if (baseThrew && scope === 'fills') count.baseThrew = baseThrew;
+        outcome.checks.push(count);
+      }
+      // The other failures onto their rule's units; the throw once per unit it
+      // can be sent back to — the units of the guard cases it stopped, else the
+      // orchestrator, which every run of the base request goes through. Never
+      // onto the engine: validate accepted the request, the written code threw.
+      outcome.failures.push(...mapEngineFailures(results.filter((r) => !threwOn.has(r.id)), answer.engine.cases, deps.units));
+      if (baseThrew) {
+        const rules = new Set([...threwOn].map((id) => info.get(id)?.ruleId).filter((r): r is string => typeof r === 'string'));
+        let owners = deps.units.filter((u) => u.rules.some((r) => rules.has(r))).map((u) => u.unitId);
+        if (owners.length === 0) owners = deps.units.filter((u) => u.kind === 'orchestrator').map((u) => u.unitId);
+        const failure = `the base request threw in the written functions: ${baseThrew}`;
+        if (owners.length === 0) outcome.failures.push({ unitId: null, check: 'cases', failure });
+        else for (const unitId of owners) outcome.failures.push({ unitId, check: 'cases', failure });
+      }
     } else {
       notRun('cases', answer.engine.reason);
     }
@@ -245,7 +352,9 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       } catch {
         adapter = null;
       }
-      outcome.checks.push({ kind: 'probes', total: answer.probes.results.length, failed: answer.probes.results.filter((r) => r.status === 'Failed').length, ms });
+      for (const scope of ['fills', 'engine-code'] as const) {
+        outcome.checks.push(countResults(answer.probes.results.filter((r) => probeScope(r.id) === scope), 'probes', scope, ms));
+      }
       outcome.failures.push(...mapProbeFailures(answer.probes.results, adapter, spans));
     } else {
       notRun('probes', answer.probes.reason);

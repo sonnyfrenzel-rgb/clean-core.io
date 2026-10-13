@@ -436,7 +436,8 @@ export interface Trace {
     written: number;
     repaired: number;
     notWritten: Array<{ unitId: string; reason: string }>;
-    checks: Array<{ kind: string; total: number; failed: number }>;
+    /** `passed`, `notRun`, `scope` and the reasons since the honest count (step E); absent in an older trace. */
+    checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number; scope?: 'engine-code' | 'fills'; notRunReason?: string | null; baseThrew?: string | null }>;
     notRun: Array<{ kind: string; reason: string }>;
     scaffoldFindings: string[];
     callsUsed: number;
@@ -528,7 +529,20 @@ export type GenerationEvent =
   | { t: 'slot'; slot: ContextSlotKey; state: 'loading' | 'loaded' | 'missing' | 'stale'; at: number }
   | { t: 'scaffold'; units: number; guards: number; decimals: number; inputs: number; cases: number; ms: number }
   | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable'; at: number }
-  | { t: 'check'; kind: 'guards' | 'lint' | 'cases' | 'probes'; total: number; failed: number; ms: number }
+  | {
+      t: 'check';
+      kind: 'guards' | 'lint' | 'cases' | 'probes';
+      total: number;
+      failed: number;
+      /** Split of `total` (step E): passed, failed, not run — absent on the guards and the lints. */
+      passed?: number;
+      notRun?: number;
+      /** Who decides the outcome: engine-written code, or the written functions (orchestrator `CheckScope`). */
+      scope?: 'engine-code' | 'fills';
+      notRunReason?: string | null;
+      baseThrew?: string | null;
+      ms: number;
+    }
   | { t: 'repair'; round: 1 | 2; unitIds: string[]; state: 'start' | 'done'; fixed?: number }
   | { t: 'fallback'; reason: string }
   | { t: 'stored' }

@@ -11,6 +11,7 @@
  */
 
 import { rangeWords } from './unit-plan';
+import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './check-words';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
 export interface TraceOptions {
@@ -134,7 +135,8 @@ export function traceMarkdown(trace: Trace): string {
   const g = trace.generation;
   if (g) {
     lines.push(`- Generation: ${g.status === 'complete' ? 'complete' : 'partial'} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
-    for (const c of g.checks) lines.push(`- Check ${c.kind}: ${c.total} run, ${c.failed} failed.`);
+    for (const c of orderedChecks(g.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
+    if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
     for (const n of g.notRun) lines.push(`- Not run (${n.kind}): ${n.reason}`);
     for (const n of g.notWritten) lines.push(`- Not written: ${n.unitId} — ${n.reason}`);
     for (const f of g.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);

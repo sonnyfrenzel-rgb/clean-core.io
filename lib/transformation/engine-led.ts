@@ -28,6 +28,7 @@ import { buildRapScaffold } from './scaffold-rap';
 import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts } from './unit-plan';
 import { traceJson, traceMarkdown, withTrace } from './trace';
+import { checkSummaryOf } from './check-words';
 import {
   PlanRefusal,
   type BodyGuardContext,
@@ -236,11 +237,23 @@ export function candidateFiles(prep: Pick<EngineLedPrepared, 'scaffold'>, bodies
 
 /* -------------------------------------------------------------- assembly */
 
+/**
+ * One check as the binding, STATUS.md and TRACE.md carry it. `passed`,
+ * `notRun` and `scope` since the honest count (step E): a not-run result is
+ * never counted as run, and a check of engine-written code is kept apart from
+ * a check of the written functions (`lib/transformation/check-words.ts`).
+ */
 export interface CheckSummary {
   kind: 'guards' | 'lint' | 'cases' | 'probes';
   total: number;
   failed: number;
+  passed?: number;
+  notRun?: number;
+  scope?: 'engine-code' | 'fills';
+  notRunReason?: string | null;
+  baseThrew?: string | null;
 }
+
 
 /** What the server writes into the binding of an engine-led generation (§12.2), and STATUS.md reads. */
 export interface EngineLedSummary {
@@ -337,7 +350,7 @@ export function assembleEngineLed(
     repaired: result.units.filter((u) => u.state === 'written' && u.filledBy !== 'model' && u.filledBy !== 'not-filled').length,
     notWritten,
     failing,
-    checks: options.checks,
+    checks: options.checks.map(checkSummaryOf),
     notRun: result.checksNotRun.map((n) => ({ kind: n.kind, reason: n.reason })),
     scaffoldFindings: result.scaffoldFindings,
     callsUsed: result.callsUsed,
@@ -370,7 +383,7 @@ function summaryForTrace(s: EngineLedSummary): NonNullable<Trace['generation']> 
     repaired: s.repaired,
     units: s.units,
     notWritten: s.notWritten.map((n) => ({ unitId: n.unitId, reason: n.reason })),
-    checks: s.checks.map((c) => ({ kind: c.kind, total: c.total, failed: c.failed })),
+    checks: s.checks.map(checkSummaryOf),
     notRun: s.notRun,
     scaffoldFindings: s.scaffoldFindings,
     callsUsed: s.callsUsed,

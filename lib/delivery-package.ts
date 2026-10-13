@@ -41,6 +41,7 @@ import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
+import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './transformation/check-words';
 
 /* ------------------------------------------------------------------ types */
 
@@ -1216,7 +1217,8 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   );
   for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
   for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
-  for (const c of e.checks) lines.push(`- Check before saving — ${c.kind}: ${c.total} run, ${c.failed} failed.`);
+  for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
+  if (e.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
   for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);
   for (const f of e.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
   lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);

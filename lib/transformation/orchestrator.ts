@@ -61,8 +61,35 @@ export interface CheckFailure {
   failure: string;
 }
 
+/**
+ * Who decides a check's outcome (roadmap 3.0.12, step E): `engine-code` — the
+ * check runs only code Clean-Core.io wrote (input contract, decimals, CSV, run
+ * store), so it says nothing about the model-written functions; `fills` — the
+ * check can reach the written functions.
+ */
+export type CheckScope = 'engine-code' | 'fills';
+
+/**
+ * One check's count. `total` is every result; `passed`, `failed` and `notRun`
+ * split it — a skipped or not-run result is never a run that passed. The
+ * runner checks (cases, probes) carry a `scope` each.
+ */
+export interface CheckCount {
+  kind: CheckKind;
+  total: number;
+  failed: number;
+  passed?: number;
+  notRun?: number;
+  scope?: CheckScope;
+  /** The reason every not-run result shares, when they all share one. */
+  notRunReason?: string | null;
+  /** The base request threw inside the written functions (the message), so no case could pass. */
+  baseThrew?: string | null;
+  ms: number;
+}
+
 export interface VerifyOutcome {
-  checks: Array<{ kind: CheckKind; total: number; failed: number; ms: number }>;
+  checks: CheckCount[];
   failures: CheckFailure[];
   /** Checks that could not run, with the reason (runner unreachable, no call contract …). */
   notRun: Array<{ kind: CheckKind; reason: string }>;
@@ -399,7 +426,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         outcome = { checks: [], failures: [], notRun: (['lint', 'cases', 'probes'] as const).map((kind) => ({ kind, reason })) };
       }
       if (cancelled()) break;
-      for (const c of outcome.checks) emit({ t: 'check', kind: c.kind, total: c.total, failed: c.failed, ms: c.ms });
+      for (const c of outcome.checks) emit({ t: 'check', ...c });
       checksNotRun = outcome.notRun;
 
       // Failures back onto their units; a failure no written unit owns is ours.

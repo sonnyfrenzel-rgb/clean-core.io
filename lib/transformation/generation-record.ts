@@ -35,7 +35,12 @@ export interface EngineLedRecord {
   repaired: number;
   notWritten: Array<{ unitId: string; title: string; reason: string }>;
   failing: Array<{ unitId: string; title: string; failure: string }>;
-  checks: Array<{ kind: string; total: number; failed: number }>;
+  /**
+   * `passed`, `notRun`, `scope` and the reasons since the honest count (step
+   * E); a record stored before it carries `total` and `failed` only and is read
+   * as such (§18) — its total is "reported", never "run".
+   */
+  checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number; scope?: 'engine-code' | 'fills'; notRunReason?: string | null; baseThrew?: string | null }>;
   notRun: Array<{ kind: string; reason: string }>;
   scaffoldFindings: string[];
   callsUsed: number;
@@ -63,6 +68,20 @@ const int = (v: unknown, max = 1_000_000): number => (typeof v === 'number' && N
 const list = <T>(v: unknown, max: number, map: (x: Record<string, unknown>) => T | null): T[] =>
   Array.isArray(v) ? v.slice(0, max).map((x) => (x && typeof x === 'object' && !Array.isArray(x) ? map(x as Record<string, unknown>) : null)).filter((x): x is T => x !== null) : [];
 
+/** One check, capped; the split fields only when the record carries them (an older one does not). */
+function checkOf(x: Record<string, unknown>): EngineLedRecord['checks'][number] | null {
+  if (typeof x.kind !== 'string') return null;
+  const out: EngineLedRecord['checks'][number] = { kind: str(x.kind, 20), total: int(x.total), failed: int(x.failed) };
+  if (typeof x.passed === 'number' && typeof x.notRun === 'number') {
+    out.passed = int(x.passed);
+    out.notRun = int(x.notRun);
+  }
+  if (x.scope === 'engine-code' || x.scope === 'fills') out.scope = x.scope;
+  if (typeof x.notRunReason === 'string' && x.notRunReason) out.notRunReason = str(x.notRunReason, 300);
+  if (typeof x.baseThrew === 'string' && x.baseThrew) out.baseThrew = str(x.baseThrew, 300);
+  return out;
+}
+
 function engineOf(raw: unknown): EngineLedRecord | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const e = raw as Record<string, unknown>;
@@ -77,7 +96,7 @@ function engineOf(raw: unknown): EngineLedRecord | null {
     repaired: int(e.repaired, 1_000),
     notWritten: list(e.notWritten, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), reason: str(x.reason, 500) } : null)),
     failing: list(e.failing, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), failure: str(x.failure, 500) } : null)),
-    checks: list(e.checks, 8, (x) => (typeof x.kind === 'string' ? { kind: str(x.kind, 20), total: int(x.total), failed: int(x.failed) } : null)),
+    checks: list(e.checks, 8, checkOf),
     notRun: list(e.notRun, 8, (x) => (typeof x.kind === 'string' ? { kind: str(x.kind, 20), reason: str(x.reason, 500) } : null)),
     scaffoldFindings: Array.isArray(e.scaffoldFindings) ? e.scaffoldFindings.slice(0, 50).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [],
     callsUsed: int(e.callsUsed, 1_000),

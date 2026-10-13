@@ -20,6 +20,8 @@ export interface TestRunResult {
   name: string;
   status: RunnerVerdict;
   message?: string;
+  /** An engine case's structural not-run cause (`engineVerdicts`): `base-threw` — the code threw on the accepted base request. */
+  cause?: 'base-threw';
 }
 
 /**

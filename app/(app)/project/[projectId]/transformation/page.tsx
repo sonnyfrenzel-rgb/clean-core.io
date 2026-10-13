@@ -45,7 +45,8 @@ import { holdsStoredPackage, missingArtefacts, usableTestSuite, type GeneratedTe
 // light pieces are imported here; the engine, the scaffold and the
 // orchestrator are loaded when a generation starts.
 import type { GenerationLease, LeaseRequestError } from '@/lib/transformation/lease-client';
-import type { UnitRow } from '@/lib/transformation/engine-led';
+import type { CheckSummary, UnitRow } from '@/lib/transformation/engine-led';
+import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks } from '@/lib/transformation/check-words';
 import type { GenerationEvent } from '@/lib/transformation/types';
 import { storedGenerationRecord } from '@/lib/transformation/generation-record';
 import { abapLines, fileGroups, traceOfFiles, unitsOfFile } from '@/lib/transformation/trace-view';
@@ -1336,7 +1337,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         //    repair rounds for the failing functions only (§8, §13).
         enterPhase('model');
         setStageLog((log) => enterStage(log, 'fills', Date.now(), { note: tfFillsNote(leaseNow.budget) }));
-        const checkSummaries = new Map<string, { kind: 'guards' | 'lint' | 'cases' | 'probes'; total: number; failed: number }>();
+        // One summary per check and scope: the runner checks come twice, once for
+        // the engine's own code and once for the written functions (step E).
+        const checkSummaries = new Map<string, CheckSummary>();
         const onEvent = (e: GenerationEvent) => {
           if (e.t === 'fill') setBoardEvents((prev) => [...prev, { t: 'fill', unitId: e.unitId, state: e.state }]);
           if (e.t === 'repair') {
@@ -1349,24 +1352,28 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             }
           }
           if (e.t === 'check') {
-            checkSummaries.set(e.kind, { kind: e.kind, total: e.total, failed: e.failed });
+            checkSummaries.set(
+              `${e.kind}:${e.scope ?? ''}`,
+              checkSummaryOf<CheckSummary>({ kind: e.kind, total: e.total, failed: e.failed, passed: e.passed, notRun: e.notRun, scope: e.scope, notRunReason: e.notRunReason, baseThrew: e.baseThrew }),
+            );
             const at = Date.now();
-            const result =
-              e.kind === 'guards'
-                ? `${e.total} bodies, ${e.failed} refused`
-                : e.kind === 'lint'
-                  ? `${e.total === 0 ? 'no finding' : `${e.total} finding${e.total === 1 ? '' : 's'}`}`
-                  : `${e.total} run, ${e.failed} failed`;
+            // Passed, failed and not run, each scope said apart: a skipped case is
+            // never "run", and a check of the engine's own code never stands for
+            // the written functions (`lib/transformation/check-words.ts`).
+            const ofKind = orderedChecks([...checkSummaries.values()].filter((c) => c.kind === e.kind));
+            const result = ofKind.map(checkPhrase).join(' · ');
+            const state =
+              e.kind === 'guards' || e.kind === 'lint' ? (e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed') : checkStateOf(ofKind);
             setStageLog((log) => {
               const base = log.checks?.state === 'active' ? log : withChecks(enterStage(log, 'checks', at), log.checks?.checks ?? pendingEngineChecks());
-              return withChecks(base, setCheck(base.checks?.checks ?? pendingEngineChecks(), e.kind, e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed', result));
+              return withChecks(base, setCheck(base.checks?.checks ?? pendingEngineChecks(), e.kind, state, result));
             });
             if (e.kind === 'guards') enterPhase('checking');
           }
         };
         const verify = createRunnerVerifier({
           candidate: (bodies) => candidateFiles(prep, bodies),
-          units: prep.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id) })),
+          units: prep.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id), kind: prep.plan.units.find((p) => p.id === u.unitId)?.kind })),
           lint: (candidate) =>
             generatedCodeLints(candidate, { decimalFields: packedDecimalFields(legacyCode) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
           runOnRunner: runnerOverHttp(projectId as string, postJson),

@@ -177,7 +177,8 @@ test.describe('STATUS.md says how the code was built (step E)', () => {
     const lines = howBuiltLines(g).join('\n');
     expect(lines).toContain('## How this code was built');
     expect(lines).toContain('Not written: `U07` Upload attachment — the model declined: no file API');
-    expect(lines).toContain('lint: 2 run, 2 failed');
+    expect(lines).toContain('Check before saving — lint checks: 2 findings.');
+    expect(lines).not.toMatch(/\d+ run, \d+ failed/);
     expect(lines).toContain('**partial**');
     const single = generationRecordOf({ path: 'single-call', fallbackReason: 'The source holds no routine.' }) as GenerationRecord;
     expect(howBuiltLines({ ...single, contextDigest: null }).join('\n')).toContain('In one model call — the engine could not build a scaffold for this program (The source holds no routine.)');

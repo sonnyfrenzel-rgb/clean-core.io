@@ -23,6 +23,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from '@/lib/testing-closure';
 import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
 import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
+import { engineCaseScope } from '@/lib/transformation/call-contract';
 import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
 import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
@@ -1052,7 +1053,7 @@ async function verifyCandidateResponse(input: {
   // `engineCaseProvenance`, and only those verified cases go into the plan —
   // never cases taken from the candidate or the request.
   let engineNotRun: string | null = null;
-  let caseInfo: Array<{ id: string; ruleId: string | null }> = [];
+  let caseInfo: Array<{ id: string; ruleId: string | null; scope: 'engine-code' | 'fills' }> = [];
   let enginePlan: EngineRunPlan | null = null;
   const signedSource = signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null;
   if (!signedSource || !signedSource.trim()) engineNotRun = 'Engine cases not run: the project holds no signed source to derive them from.';
@@ -1064,7 +1065,9 @@ async function verifyCandidateResponse(input: {
       engineNotRun = 'Engine cases not run: they could not be derived from the source.';
     } else {
       const verified = engineCaseProvenance(derivation.cases as unknown as Array<Record<string, unknown>>, derivation).verified;
-      caseInfo = verified.map((c) => ({ id: c.id, ruleId: c.engineCase.trace.ruleId ?? null }));
+      // Who decides each case (step E): the scaffold's own code, or the written functions.
+      const fills = new Set(engineCaseScope(verified).logic);
+      caseInfo = verified.map((c) => ({ id: c.id, ruleId: c.engineCase.trace.ruleId ?? null, scope: fills.has(c.id) ? 'fills' : 'engine-code' }));
       const planned = planEngineRun(verified, files, null);
       if (planned.kind === 'planned') enginePlan = planned.plan;
       else if (planned.kind === 'no-contract') engineNotRun = `${NOT_RUN_NO_CONTRACT} (${planned.reason})`;
@@ -1154,7 +1157,7 @@ async function verifyCandidateResponse(input: {
   // (`engineVerdicts`), as a recorded run is — never from TAP the code printed.
   const engineResults =
     engineStdout !== null && enginePlan
-      ? engineVerdicts(engineStdout, enginePlan.cases, enginePlan.patterns).map((r) => ({ id: r.id, status: r.status, message: r.message }))
+      ? engineVerdicts(engineStdout, enginePlan.cases, enginePlan.patterns).map((r) => ({ id: r.id, status: r.status, message: r.message, ...(r.cause ? { cause: r.cause } : {}) }))
       : [];
   return NextResponse.json({
     mode: 'verify',

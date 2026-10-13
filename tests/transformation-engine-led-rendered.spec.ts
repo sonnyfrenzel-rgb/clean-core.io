@@ -96,7 +96,7 @@ async function noSideScroll(page: Page) {
 type Stored = {
   generatedCode?: string;
   status?: string;
-  generationBinding?: { path?: string; contextDigest?: string; elapsedMs?: number; engine?: { status: string; units: number; written: number; notWritten: Array<{ unitId: string; reason: string }>; checks: Array<{ kind: string; total: number; failed: number }>; notRun: unknown[]; callsUsed: number }; basis?: unknown[]; fallbackReason?: string | null };
+  generationBinding?: { path?: string; contextDigest?: string; elapsedMs?: number; engine?: { status: string; units: number; written: number; notWritten: Array<{ unitId: string; reason: string }>; checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number; scope?: string; notRunReason?: string | null }>; notRun: unknown[]; callsUsed: number }; basis?: unknown[]; fallbackReason?: string | null };
 };
 
 for (const width of [1280, 390] as const) {
@@ -151,6 +151,23 @@ for (const width of [1280, 390] as const) {
     expect(b.contextDigest).toMatch(/^[0-9a-f]{64}$/);
     expect(b.engine!.units).toBe(trace.generation.units);
     expect(b.engine!.checks.map((c) => c.kind)).toEqual(expect.arrayContaining(['guards', 'lint', 'cases', 'probes']));
+    // Step E, the honest count: every runner check says passed, failed and not
+    // run apart, and whose code decided it. On the PO demo no engine case can
+    // run (the original gives no valid value for P_BANFN): never "run, 0 failed".
+    const runnerChecks = b.engine!.checks.filter((c) => c.kind === 'cases' || c.kind === 'probes');
+    for (const c of runnerChecks) {
+      expect(['engine-code', 'fills']).toContain(c.scope);
+      expect((c.passed ?? -1) + (c.failed ?? 0) + (c.notRun ?? -1)).toBe(c.total);
+    }
+    await expect(built.locator('[data-engine-checks]')).not.toContainText(/\d+ run, \d+ failed/);
+    const cases = runnerChecks.filter((c) => c.kind === 'cases' && c.total > 0);
+    if (cases.length > 0) {
+      for (const c of cases) expect(c.passed).toBe(0);
+      await expect(built.locator('[data-engine-checks]')).toContainText('not run — no valid base value known for P_BANFN');
+    }
+    if (runnerChecks.some((c) => c.kind === 'probes' && c.scope === 'engine-code' && c.total > 0)) {
+      await expect(built.locator('[data-engine-checks]')).toContainText("of the engine's decimal, CSV and run-store code");
+    }
     expect((b.basis ?? []).length).toBe(6);
     console.log(`[step E] stored: ${b.engine!.written}/${b.engine!.units} written, ${b.engine!.callsUsed} model calls, checks ${JSON.stringify(b.engine!.checks)}, not run ${JSON.stringify(b.engine!.notRun)}, elapsedMs ${b.elapsedMs}`);
   });
