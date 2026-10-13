@@ -5,6 +5,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import ChainList from '@/components/transformation/ChainList';
+import ConceptSuccessors from '@/components/ConceptSuccessors';
 import { tfCostLine, tfTipsMeta, wt } from '@/lib/workspace-messages';
 import { GENERATION_MAX_MODEL_CALLS, QUALITY_ANCHOR, type ChainSlot, type DecisionWarning, type QualityTip } from '@/lib/transformation-chain';
 
@@ -31,6 +32,7 @@ export default function QualityTips({
   regenerate,
   keySource,
   onGenerate,
+  conceptSource = '',
 }: {
   tips: QualityTip[];
   /**
@@ -49,6 +51,12 @@ export default function QualityTips({
   regenerate: boolean;
   keySource: 'byok' | 'community' | null;
   onGenerate: () => void;
+  /**
+   * The legacy source, for the concept successors under the tips (DSAG
+   * guideline review B2): classic concepts ABAP Cloud replaces. Not a tip —
+   * no count, no link, nothing to decide — so it stands as its own card.
+   */
+  conceptSource?: string;
 }) {
   return (
     <div data-quality-tips={settled ? String(tips.length) : 'reading'} className="mb-6 flex flex-col gap-4">
@@ -145,6 +153,8 @@ export default function QualityTips({
           {tfCostLine(GENERATION_MAX_MODEL_CALLS, keySource)}
         </p>
       </section>
+
+      <ConceptSuccessors source={conceptSource} place="transformation" />
 
       <section aria-labelledby="transformation-chain-before" className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
         <h2 id="transformation-chain-before" className="m-0 cc-text-h2 text-cc-ink">

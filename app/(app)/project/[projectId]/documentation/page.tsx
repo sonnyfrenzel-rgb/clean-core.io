@@ -25,6 +25,7 @@ import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
+import LevelDRegister from '@/components/documentation/LevelDRegister';
 import { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import BusinessLayer from '@/components/documentation/BusinessLayer';
 import { StatementProposalPanel } from '@/components/documentation/StatementProposal';
@@ -1643,6 +1644,18 @@ export default function DocumentationPage() {
           />
         </section>
       )}
+
+      {/* DSAG guideline review B7 — the level D register: shown and exported, no inputs. */}
+      {project?.legacyCode ? (
+        <div className="cc-no-print mb-8">
+          <LevelDRegister
+            projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
+            source={project.legacyCode}
+            runId={project.activeRunId ?? ''}
+            projectName={project.name}
+          />
+        </div>
+      ) : null}
 
       {/* The technical trace — the description's appendix, last on the page
           as it is last in every export. */}

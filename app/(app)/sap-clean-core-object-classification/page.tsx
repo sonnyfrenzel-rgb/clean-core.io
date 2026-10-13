@@ -15,7 +15,7 @@ import { ABCD_META, GRADES, type CloudReadinessGrade } from '@/lib/abap/abcd-cla
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Object Classification (A–D) | Clean-Core.io',
-  description: 'SAP classifies clean core objects into levels A–D by release status, upgrade safety and extensibility compliance, replacing Tier 1/2/3. How we derive it.',
+  description: 'SAP classifies clean core objects into levels A–D by release status, upgrade safety and extensibility compliance, the levels that replaced the three-tier model. How we derive it.',
   alternates: {
     canonical: 'https://clean-core.io/sap-clean-core-object-classification',
   },
@@ -29,8 +29,8 @@ export const metadata: Metadata = withTwitterCard({
 
 const faqs = [
   {
-    question: 'What changed from Tier 1/2/3 to A/B/C/D?',
-    answer: "SAP's Cloudification Repository governs which technical objects are clean-core ready. The classification of released/recommended objects moved from the older Tier 1/2/3 wording to a four-grade cloud-readiness scheme — A, B, C, D — driven by API release status, upgrade safety and extensibility compliance. It makes assessing custom code faster and technical-debt control clearer.",
+    question: 'What changed from the three-tier model to levels A/B/C/D?',
+    answer: "SAP's Cloudification Repository governs which technical objects are clean-core ready. In 2025 SAP replaced its earlier three-tier extensibility model with the clean core level concept — four levels, A, B, C, D — driven by API release status, upgrade safety and extensibility compliance. It makes assessing custom code faster and technical-debt control clearer.",
   },
   {
     question: 'How does Clean-Core.io assign an A–D grade?',
@@ -114,7 +114,7 @@ export default function CleanCoreClassificationPage() {
             Object Classification <span className="text-cc-brand-strong">A–D</span>
           </h1>
           <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
-            SAP grades clean-core extensions A, B, C or D by API release status, upgrade safety and extensibility compliance — superseding the older Tier 1/2/3 model. Here is the model, the full distribution across SAP’s published data, and how Clean-Core.io derives a grade for your custom code.
+            SAP grades clean-core extensions A, B, C or D by API release status, upgrade safety and extensibility compliance — the clean core level concept, which replaced SAP’s earlier three-tier extensibility model in 2025. Here is the model, the full distribution across SAP’s published data, and how Clean-Core.io derives a grade for your custom code.
           </p>
         </div>
       </div>
@@ -129,9 +129,9 @@ export default function CleanCoreClassificationPage() {
       <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-3">
         <div className="space-y-8 md:col-span-2">
           <section className="space-y-4">
-            <h2 className={H2}>From Tier 1/2/3 to A/B/C/D</h2>
+            <h2 className={H2}>From the three-tier model to levels A–D</h2>
             <p className={BODY}>
-              The Cloudification Repository is the key governance tool for SAP Clean Core analysis. It classifies technical objects by <strong>API release status, upgrade safety and extensibility compliance</strong>. The community has moved from the older Tier 1/2/3 wording to a clearer four-grade cloud-readiness scheme:
+              The Cloudification Repository is the key governance tool for SAP Clean Core analysis. It classifies technical objects by <strong>API release status, upgrade safety and extensibility compliance</strong>. SAP’s clean core level concept replaced the earlier three-tier extensibility model with four levels:
             </p>
             <div className="space-y-4 pt-2">
               {/* The level wears the one identifier of DESIGN.md §4.1 — its colour

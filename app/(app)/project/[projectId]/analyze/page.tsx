@@ -2015,11 +2015,12 @@ export default function AnalyzePage() {
                   ) : (
                     <>
                       <p>
-                        In <strong>SAP S/4HANA Private Cloud / On-Premise (RISE)</strong>, you can utilize the <strong>3-Tier Extensibility Model</strong>.
+                        In <strong>SAP S/4HANA Private Cloud / On-Premise (RISE)</strong>, SAP&apos;s <strong>clean core levels A–D</strong> apply.
                       </p>
+                      {/* DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept — the level concept replaced SAP's three-tier model. */}
                       <ul className="list-disc pl-4 space-y-1">
-                        <li><strong>Tier 2 API Wrappers:</strong> You can wrap legacy, unreleased SAP database tables or functions inside a custom Tier 2 API wrapper.</li>
-                        <li><strong>Upgrade-Safe Bridging:</strong> This wrapper acts as an upgrade-safe bridge, exposing unreleased structures to Tier 1 Cloud Developer Extensibility (RAP/CAP) without blocking future S/4HANA core releases.</li>
+                        <li><strong>Released APIs first:</strong> Level A is ABAP Cloud on released SAP APIs only. Classic SAP APIs and extension points are level B, internal SAP objects level C, modifications and direct writes to SAP tables level D.</li>
+                        <li><strong>Wrapper and influence request:</strong> Where SAP offers no released API, a custom wrapper can encapsulate the unreleased object so the rest of the code stays ABAP Cloud — together with an influence request asking SAP to release one. The wrapper does not make what it wraps stable: the wrapped object keeps its level and has to be checked at every upgrade.</li>
                       </ul>
                     </>
                   )}
@@ -2092,14 +2093,14 @@ const PAGE_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
   {
     value: 'private',
     title: 'Private Cloud RISE Edition',
-    tag: '3-Tier Extensibility',
-    text: 'SAP S/4HANA Cloud, Private Edition / On-Premise. Supports Custom Tier 2 API Wrappers to expose legacy unreleased objects upgrade-safely.',
+    tag: 'Clean core levels A–D',
+    text: 'SAP S/4HANA Cloud, Private Edition / On-Premise. Released APIs first (level A); where SAP offers none, classic APIs (level B) or a wrapper around the unreleased object, with an influence request to SAP.',
   },
 ];
 
 const DIALOG_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
   { value: 'public', title: 'Public Cloud', text: 'Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
-  { value: 'private', title: 'Private Cloud / RISE', text: '3-Tier Extensibility Model. Supports upgrade-safe Tier 2 custom wrappers.' },
+  { value: 'private', title: 'Private Cloud / RISE', text: 'Clean core levels A–D. Released APIs first; where none exists, a wrapper plus an influence request to SAP.' },
 ];
 
 /**

@@ -1973,6 +1973,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           regenerate={files.length > 0}
           keySource={modelAvailability.keySource}
           onGenerate={startGeneration}
+          conceptSource={legacySource}
         />
       ) : null}
 
