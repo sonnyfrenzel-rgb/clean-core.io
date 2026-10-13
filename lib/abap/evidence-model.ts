@@ -349,8 +349,8 @@ export function buildAbapEvidence(
    */
   const listedClassicApi = (name: string): boolean => getSapObjectStates(name, catalogSnapshot).classificationState === 'classicAPI';
   /** The level B sentence of SAP Note 3578329, for a UI technology used through the list. */
-  const LEVEL_B_UI = 'SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as clean core level B where they are used through documented classic APIs: they may stay while the users work in SAP GUI (on-premise or Private Edition).';
-  const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
+  const LEVEL_B_UI = 'SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as clean core level B where they are used through documented classic APIs: they may stay while the users work in SAP GUI (on-premise or SAP Cloud ERP Private).';
+  const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is SAP S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
@@ -615,13 +615,18 @@ export function buildAbapEvidence(
           lineStart: line,
           snippet: text,
           technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${routeNote}${isPublicCloud
-            ? ' In Public Cloud this is a hard break — no direct table access allowed.'
+            ? guideline
+              // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): SAP's product names (owner decision 13.10.2026).
+              ? ' In SAP S/4HANA Cloud Public Edition this is a hard break — no direct table access allowed.'
+              : ' In Public Cloud this is a hard break — no direct table access allowed.'
             : guideline
               // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): the level concept wording.
-              ? ' In Private Cloud the read works, but ties the code to SAP\'s table design; its clean core level is the one SAP\'s data gives the table.'
+              ? ' In SAP Cloud ERP Private the read works, but ties the code to SAP\'s table design; its clean core level is the one SAP\'s data gives the table.'
               : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
           cleanCoreImpact: isPublicCloud
-            ? 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
+            ? guideline
+              ? 'In SAP S/4HANA Cloud Public Edition, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
+              : 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
             : guideline
               ? 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. Where no released CDS view covers the data, a wrapper around the read together with an influence request to SAP for a released successor keeps the dependency in one place; the wrapper does not make the read itself upgrade-stable.'
               : 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. In Private Cloud, Tier 2 wrappers can mitigate this.',
@@ -705,7 +710,7 @@ export function buildAbapEvidence(
           ? `The call depends on the SAP GUI screens of the called transaction. ${LEVEL_B_UI} ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.`
           : 'The call depends on the SAP GUI screens of the called transaction. ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.',
         recommendation: guideline
-          ? 'The navigation may stay while the program runs in SAP GUI. When the UI moves to a browser or the Fiori launchpad, or the target is S/4HANA Cloud Public Edition, replace it with navigation to the SAP Fiori app for the same business object (intent-based navigation).'
+          ? 'The navigation may stay while the program runs in SAP GUI. When the UI moves to a browser or the Fiori launchpad, or the target is SAP S/4HANA Cloud Public Edition, replace it with navigation to the SAP Fiori app for the same business object (intent-based navigation).'
           : `Replace the call with navigation to the SAP Fiori app for the same business object (intent-based navigation) from a Fiori UI built on a RAP service.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
@@ -841,7 +846,7 @@ export function buildAbapEvidence(
           : `The list runs in SAP GUI only, and ABAP Cloud has no ALV. SAP Note 3578329 counts the ALV grid as clean core level B only where it is used through documented classic APIs; SAP's list of classic APIs names CL_SALV_TABLE and CL_GUI_ALV_GRID, not ${alvModule}.`,
         recommendation: listed
           ? `The list may stay while its users work in SAP GUI. ${REPLACE_WHEN}`
-          : `While the list stays in SAP GUI (on-premise or Private Edition), move it to CL_SALV_TABLE, the ALV interface on SAP's classic-API list. ${REPLACE_WHEN}`,
+          : `While the list stays in SAP GUI (on-premise or SAP Cloud ERP Private), move it to CL_SALV_TABLE, the ALV interface on SAP's classic-API list. ${REPLACE_WHEN}`,
         targetOptions: ['Developer Extensibility / RAP']
       });
     } else if (alvModule) {
@@ -1387,7 +1392,7 @@ export function buildAbapEvidence(
             ? `The code uses the Business Object Processing Framework (BOPF): ${(use.objects ?? [use.sapObject]).join(', ')}.`
             : 'The CDS annotations @ObjectModel.transactionalProcessingEnabled / writeActivePersistence generate a BOPF business object from the view.') + more,
           cleanCoreImpact: 'BOPF is a classic programming model. SAP lists its framework classes and interfaces as classic APIs (clean core level B): usable from classic ABAP, not available in ABAP Cloud.',
-          recommendation: 'For new development and for a move to ABAP Cloud, model the business object in the ABAP RESTful Application Programming Model (RAP), SAP\'s successor to BOPF; the BOPF object can stay where it runs on-premise or in Private Edition until then.',
+          recommendation: 'For new development and for a move to ABAP Cloud, model the business object in the ABAP RESTful Application Programming Model (RAP), SAP\'s successor to BOPF; the BOPF object can stay where it runs on-premise or in SAP Cloud ERP Private until then.',
           targetOptions: ['Developer Extensibility / RAP'],
         });
       } else if (use.kind === 'gateway-classic-service') {

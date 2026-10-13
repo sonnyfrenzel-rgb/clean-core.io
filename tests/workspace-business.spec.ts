@@ -47,10 +47,10 @@ test.describe('the head and the signed source, as pure functions', () => {
     const BASE = 'Z_MM_PO_APPROVAL';
     expect(workspaceEyebrow(project())).toEqual([BASE]);
     expect(workspaceEyebrow(project({ name: 'z_mm_po_approval' }))).toEqual([]);
-    expect(workspaceEyebrow(project({ s4Deployment: 'private' }))).toEqual([BASE, 'S/4HANA Cloud Private Edition']);
+    expect(workspaceEyebrow(project({ s4Deployment: 'private' }))).toEqual([BASE, 'SAP Cloud ERP Private']);
     expect(
       workspaceEyebrow(project({ s4Deployment: 'private', assessmentTarget: { release: '2023 FPS02', components: [], languageVersions: [] } })),
-    ).toEqual([BASE, 'S/4HANA Cloud Private Edition 2023 FPS02']);
+    ).toEqual([BASE, 'SAP Cloud ERP Private 2023 FPS02']);
     // An edition the catalog lookup would assume is not stated as declared.
     expect(workspaceEyebrow({ name: 'Empty' } as Project)).toEqual([]);
   });
@@ -114,7 +114,7 @@ test.describe('the Business view of a real project (mockup s1)', () => {
 
     // The head: eyebrow from the record, read access, Export and Invite.
     await expect(page.locator('[data-workspace-eyebrow]')).toHaveText(
-      `Project · ${FILE.replace(/\.abap$/, '')} · S/4HANA Cloud Private Edition`.toUpperCase(),
+      `Project · ${FILE.replace(/\.abap$/, '')} · SAP Cloud ERP Private`.toUpperCase(),
       { ignoreCase: true },
     );
     await expect(page.locator('[data-workspace-read-access="0"]')).toContainText('Read access: only you', { timeout: 60_000 });

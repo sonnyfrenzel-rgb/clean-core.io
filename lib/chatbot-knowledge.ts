@@ -36,7 +36,18 @@
 
 import { howToSteps } from './how-to-content';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
-import { BTP, BTP_FIRST, BUSINESS_AI_PLATFORM, BUSINESS_AI_PLATFORM_PARTS, SAP_BTP_COCKPIT } from './sap-naming';
+import {
+  BTP,
+  BTP_FIRST,
+  BUSINESS_AI_PLATFORM,
+  BUSINESS_AI_PLATFORM_PARTS,
+  CLOUD_ERP,
+  CLOUD_ERP_PRIVATE,
+  CLOUD_ERP_PRIVATE_FIRST,
+  PUBLIC_EDITION,
+  PUBLIC_EDITION_FIRST,
+  SAP_BTP_COCKPIT,
+} from './sap-naming';
 import { SCORE_BANDS_SOURCE, scoreBandsProse, scoreDeductionsProse } from './clean-core-score';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,6 +81,7 @@ export const EXTENDED_GLOSSARY = `
 ## EXTENDED GLOSSARY
 
 - **${BTP}**: SAP's platform for side-by-side extensions, part of the ${BUSINESS_AI_PLATFORM} — the portfolio SAP presented at Sapphire 2026, which bundles ${BUSINESS_AI_PLATFORM_PARTS}. SAP BTP keeps its name inside it, and so do the services: SAP was still shipping releases under the name "SAP BTP ABAP environment" in August 2026. Call the platform "${BTP_FIRST}" at its first mention and "${BTP}" after that; never call SAP BTP "SAP Business AI Platform" on its own; use SAP's own names for the concrete services.
+- **${CLOUD_ERP}**: SAP's ERP product. Its two cloud editions: **${CLOUD_ERP_PRIVATE}** — call it "${CLOUD_ERP_PRIVATE_FIRST}" at its first mention and "${CLOUD_ERP_PRIVATE}" after that, never by the retired short forms — a dedicated system that still allows classic extensions (clean core levels A–D); and **${PUBLIC_EDITION}** — "${PUBLIC_EDITION_FIRST}" at its first mention — the shared SaaS system with released APIs only (level A). On-premise SAP S/4HANA keeps its name.
 - **SAP Cloud Connector**: A secure software link that runs inside the customer's on-premise or private cloud network, establishing an encrypted TLS connection to ${BTP} without requiring complex inbound firewall configurations.
 - **CDS (Core Data Services)**: The data modeling infrastructure used by SAP. CDS views define database tables, relationships, and service projections declaratively inside both the ABAP environment (RAP) and the Node.js/Java environment (CAP).
 - **XSUAA (Extended Services for User Account and Authentication)**: the identity and access management service on ${BTP}. It issues and validates OAuth 2.0 tokens (JWTs) for securing microservice-to-microservice communication and enforcing user-level authorization scopes.

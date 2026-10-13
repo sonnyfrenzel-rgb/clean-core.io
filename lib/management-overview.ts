@@ -22,7 +22,7 @@ import {
   type ProjectDecision,
 } from './project-decision';
 import type { ProvenanceValue } from './provenance';
-import { sapNamesForDisplay } from './sap-naming';
+import { CLOUD_ERP_PRIVATE, sapNamesForDisplay } from './sap-naming';
 import type { DecisionCostBasis, DecisionCostCheck, OutdatedReason } from './decision-cost';
 
 /**
@@ -366,16 +366,16 @@ export function bucketsCard(fit: Loaded<FitByPlatform>): BucketsCard {
     total === 0
       ? 'The engine named no object in the staged source, so nothing can move between the editions.'
       : moves.length === 0
-        ? 'No object changes bucket between Private and Public Edition.'
-        : `${plural(moves.length, 'object changes', 'objects change')} bucket between Private and Public Edition — ` +
-          'the same level B is Keep in the Private Edition and not in the Public Edition.';
+        ? `No object changes bucket between ${CLOUD_ERP_PRIVATE} and Public Edition.`
+        : `${plural(moves.length, 'object changes', 'objects change')} bucket between ${CLOUD_ERP_PRIVATE} and Public Edition — ` +
+          `the same level B is Keep in ${CLOUD_ERP_PRIVATE} and not in Public Edition.`;
 
   const title =
     total === 0
       ? 'No object to sort: the engine named none in the staged source'
       : f.target
         ? `For ${TARGET_PLATFORM_LABELS[f.target]}: ${bucketSentence(f[f.target].summary)}`
-        : `No target platform set — Private Edition: ${bucketSentence(f.private.summary)}; ` +
+        : `No target platform set — ${CLOUD_ERP_PRIVATE}: ${bucketSentence(f.private.summary)}; ` +
           `Public Edition: ${bucketSentence(f.public.summary)}`;
 
   const target = f.target ? f[f.target].summary : f.private.summary;

@@ -101,6 +101,75 @@ export function isSideBySideRoute(route: string | null | undefined): boolean {
 }
 
 /**
+ * SAP's ERP product names — owner decision 13.10.2026 (from SAP's product
+ * pages). SAP's ERP product is SAP Cloud ERP:
+ *
+ *   - SAP S/4HANA Cloud Private Edition is now **SAP Cloud ERP Private**. Its
+ *     first mention on a page, in a document or in a prompt is
+ *     `CLOUD_ERP_PRIVATE_FIRST`; every later mention, and every label, is
+ *     `CLOUD_ERP_PRIVATE`. The retired short forms ("Private Edition",
+ *     "Private Cloud Edition", "PCE", "RISE") are not shown
+ *     (`tests/sap-naming-guard.spec.ts`). SAP's offering name "RISE with SAP"
+ *     and its methodology dashboard keep SAP's words.
+ *   - SAP S/4HANA Cloud Public Edition keeps its name. Its first mention is
+ *     `PUBLIC_EDITION_FIRST`, later ones `PUBLIC_EDITION`, or "Public Edition"
+ *     where the sentence has just named it.
+ *   - On-premise SAP S/4HANA stays SAP S/4HANA (on-premise).
+ *   - Where a two-option control needs a short label: `PUBLIC_SHORT`,
+ *     `PRIVATE_SHORT`.
+ *
+ * Stored values keep their spelling: the deployment keys `public`/`private`,
+ * catalog file names such as `pce-2025-1`, release ids such as `PCE-2025-1`,
+ * and SAP's own identifiers and document titles.
+ */
+export const CLOUD_ERP = 'SAP Cloud ERP';
+
+/** Every mention of the private ERP after the first, and every label. */
+export const CLOUD_ERP_PRIVATE = `${CLOUD_ERP} Private`;
+
+/** First mention of the private ERP on a page, in a document or in a prompt. */
+export const CLOUD_ERP_PRIVATE_FIRST = `${CLOUD_ERP_PRIVATE} (formerly SAP S/4HANA Cloud Private Edition)`;
+
+/** SAP's public SaaS ERP, by its name. */
+export const PUBLIC_EDITION = 'SAP S/4HANA Cloud Public Edition';
+
+/** First mention of the public ERP on a page, in a document or in a prompt. */
+export const PUBLIC_EDITION_FIRST = `${PUBLIC_EDITION} (part of ${CLOUD_ERP})`;
+
+/** Short labels of a two-option Public/Private control. */
+export const PUBLIC_SHORT = 'Public';
+export const PRIVATE_SHORT = 'Private';
+
+/** The two targets the engine assesses, by the name a label shows. */
+export const TARGET_EDITION_NAMES: Readonly<Record<'public' | 'private', string>> = Object.freeze({
+  public: PUBLIC_EDITION,
+  private: CLOUD_ERP_PRIVATE,
+});
+
+/**
+ * Names a reader may type for the private edition. Matching input only —
+ * never displayed. "PCE" and "RISE" are left out: the lookup matches inside
+ * words, and "enterprise" contains "rise".
+ */
+export const EDITION_ALIASES = [
+  'Private Edition',
+  'S/4HANA Cloud Private Edition',
+  'SAP S/4HANA Cloud Private Edition',
+  'Private Cloud Edition',
+  'Public and Private Edition',
+] as const;
+
+/**
+ * The edition names inside the fingerprinted architecture contract: its
+ * summary and target-context statement are hashed and bound, so they keep
+ * their bytes (as `FINGERPRINTED_PLATFORM_NAME` does). Only
+ * `lib/architecture-contract.ts` may use them; screens show them through
+ * `sapNamesForDisplay()`.
+ */
+export const FINGERPRINTED_EDITION_PUBLIC = 'S/4HANA Cloud, Public Edition';
+export const FINGERPRINTED_EDITION_PRIVATE = 'S/4HANA Cloud, Private Edition';
+
+/**
  * A text that has to keep its bytes — a stored route, a sentence inside a
  * fingerprinted contract, a model draft or summary stored before 02.10.2026 —
  * as the reader sees it now: a bare "BTP" reads "SAP BTP"; the spelled-out
@@ -120,6 +189,11 @@ export function sapNamesForDisplay(text: string): string {
       .replace(/\bBAIP\b/g, BTP)
       // A bare "BTP" that is not already part of "SAP BTP".
       .replace(/(?<!SAP )\bBTP\b/g, BTP)
+      // The edition names a fingerprinted contract or a stored draft carries
+      // (owner decision 13.10.2026): SAP Cloud ERP Private, and SAP S/4HANA
+      // Cloud Public Edition by its full name.
+      .replace(/(?<!formerly (?:SAP )?)(?:SAP )?S\/4HANA Cloud,? Private Edition(?: \/ RISE)?/g, CLOUD_ERP_PRIVATE)
+      .replace(/(?:SAP )?S\/4HANA Cloud, Public Edition/g, PUBLIC_EDITION)
   );
 }
 

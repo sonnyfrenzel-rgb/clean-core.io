@@ -158,7 +158,7 @@ test.describe('the figure is computed from the evidence', () => {
     const pub = standardFit(source());
     const priv = standardFit(source({ fit: FIT('private') }));
     if (pub.state !== 'ready' || priv.state !== 'ready') throw new Error('not ready');
-    expect(priv.platformLabel).toBe('Private Edition');
+    expect(priv.platformLabel).toBe('SAP Cloud ERP Private');
     expect(priv.counted).toBe(pub.counted);
   });
 

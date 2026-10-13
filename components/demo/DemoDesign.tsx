@@ -12,6 +12,7 @@ import SectionBoundary from '@/components/SectionBoundary';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { APP_VERSION } from '@/lib/version';
+import { TARGET_EDITION_NAMES } from '@/lib/sap-naming';
 import { ARCHITECTURE_OF_ROUTE } from '@/lib/design-recommendation';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { detectFindings } from '@/lib/abap/findings-detector';
@@ -96,7 +97,7 @@ export default function DemoDesign({
 
   const code = data?.contract ? ARCHITECTURE_OF_ROUTE[data.contract.route.chosen] : null;
   const label = (code && architectureOptionLabel(code)) ?? code ?? 'the recommended route';
-  const edition = demo.deployment === 'private' ? 'Private' : 'Public';
+  const edition = TARGET_EDITION_NAMES[demo.deployment === 'private' ? 'private' : 'public'];
 
   const signOffPanel = (
     <div data-testid="demo-signoff" className="flex flex-col gap-4">
@@ -151,8 +152,8 @@ export default function DemoDesign({
         model={model}
         // The demo has no run, so nothing is bound: the edition is the demo's
         // assumption, said as one.
-        targetLine={`${edition} Cloud Edition assumed · the demo has no run to bind it`}
-        targetKpi={{ value: 'Not determined', sub: `${edition} Edition assumed` }}
+        targetLine={`${edition} assumed · the demo has no run to bind it`}
+        targetKpi={{ value: 'Not determined', sub: `${edition} assumed` }}
         confidence={demo.design.confidenceScore}
         storedRoute={null}
         confirmed={confirmed ? { label, by: null, at: null } : null}

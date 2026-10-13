@@ -43,6 +43,7 @@ import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCount
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
 import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './transformation/check-words';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
+import { TARGET_EDITION_NAMES } from './sap-naming';
 
 /* ------------------------------------------------------------------ types */
 
@@ -1128,7 +1129,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
     let n = 1;
     if (entries.some((e) => e.path === '.abapgit.xml')) {
       lines.push(
-        `${n++}. Import with abapGit into a development package whose ABAP language version is ABAP for Cloud Development: on SAP S/4HANA on-premise or SAP Cloud ERP Private with the open-source abapGit (New Offline, Import ZIP, or push this package to a Git repository and link it with New Online); on SAP BTP ABAP Environment or SAP S/4HANA Cloud Public Edition with the abapGit version SAP ships for ABAP Cloud (in ADT), whose supported object types SAP documents.`,
+        `${n++}. Import with abapGit into a development package whose ABAP language version is ABAP for Cloud Development: on SAP S/4HANA on-premise or SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) with the open-source abapGit (New Offline, Import ZIP, or push this package to a Git repository and link it with New Online); on SAP BTP ABAP Environment or SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) with the abapGit version SAP ships for ABAP Cloud (in ADT), whose supported object types SAP documents.`,
       );
     }
     lines.push(`${n++}. Activate the objects in ADT and fix what does not activate.`);
@@ -1433,7 +1434,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
 
 const RULE_WORDS: Readonly<Record<ScoreRule, string>> = Object.freeze({
   'custom-writes-charged': 'writes to custom (Z/Y) tables are charged',
-  'own-custom-writes-free': "writes to the program's own Z/Y tables cost nothing (Private Edition rule from engine 3.0.9)",
+  'own-custom-writes-free': "writes to the program's own Z/Y tables cost nothing (SAP Cloud ERP Private rule from engine 3.0.9)",
 });
 
 /** "12 dev + 4 test days". */
@@ -1529,7 +1530,7 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
     return `${lines.join('\n').trimEnd()}\n`;
   }
   lines.push(
-    `Signed score: **${s.signed}/100**. A Clean-Core.io grade, not an SAP figure and not a compliance percentage. Rule of the signed run: ${RULE_WORDS[s.rule]}${s.edition ? ` — ${s.edition === 'public' ? 'Public' : 'Private'} Edition` : ''}${s.engineVersion ? `, engine ${s.engineVersion}` : ''}.`,
+    `Signed score: **${s.signed}/100**. A Clean-Core.io grade, not an SAP figure and not a compliance percentage. Rule of the signed run: ${RULE_WORDS[s.rule]}${s.edition ? ` — ${TARGET_EDITION_NAMES[s.edition]}` : ''}${s.engineVersion ? `, engine ${s.engineVersion}` : ''}.`,
     '',
   );
   const m = s.model;

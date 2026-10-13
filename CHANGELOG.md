@@ -26,6 +26,14 @@ Engine 3.0.12. This entry is completed with the release.
   the engine of the project's signed run, so a run made before 3.0.12 shows its own findings and
   route, not the new ones.
 
+### Naming
+
+- **SAP Cloud ERP.** SAP S/4HANA Cloud Private Edition is now called SAP Cloud ERP Private:
+  "SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)" at the first mention,
+  "SAP Cloud ERP Private" after it. SAP S/4HANA Cloud Public Edition keeps its name ("part of SAP
+  Cloud ERP" at the first mention). Screens, exports, prompts and engine findings from 3.0.12 use
+  these names; a run signed before 3.0.12 keeps the words it signed.
+
 ## [v3.0.11] — 2026-10-12
 
 Every view opens with what the program is for, the documentation keeps rules apart that differ,

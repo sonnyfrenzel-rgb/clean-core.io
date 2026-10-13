@@ -510,7 +510,7 @@ test.describe('a source for every SAP term — and an honest blank where there i
       'Customizing',
       'Scope item',
       'Fit-to-standard',
-      'Public and Private Edition',
+      'Public Edition and SAP Cloud ERP Private',
       'ATC',
       'Usage data',
       'BPMN',

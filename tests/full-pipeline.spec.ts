@@ -270,8 +270,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(startAnalysisBtn).toBeEnabled();
     console.log('Terms accepted checkbox verified.');
 
-    // Click Operating Model (Private Cloud RISE)
-    await page.click('text=Private Cloud RISE Edition');
+    // Click Operating Model (SAP Cloud ERP Private)
+    await page.getByText('SAP Cloud ERP Private', { exact: true }).first().click();
 
     // Click Start Analysis to trigger prompt model confirmation
     await startAnalysisBtn.click();

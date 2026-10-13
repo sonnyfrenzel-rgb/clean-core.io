@@ -214,6 +214,16 @@ export function guiFileDirection(finding: { objectName?: string | null; snippet?
  */
 export const ON_STACK_CONSTRUCTS_FROM = '3.0.12';
 
+/**
+ * The router's assumption for a Public Edition target, from 3.0.12 (SAP's
+ * product name, owner decision 13.10.2026). Exported because a contract whose
+ * run bound no target must not carry it: the router is handed `public` as its
+ * default there, and the most permissive target is not one to state unbound
+ * (`lib/architecture-contract.ts`, preconditions).
+ */
+export const PUBLIC_TARGET_ASSUMPTION =
+  'SAP S/4HANA Cloud Public Edition selected as the target — custom code uses released APIs only (clean core level A); an unreleased API cannot be wrapped.';
+
 /** Whether BDC, native SQL, a local RFC and Public Edition table writes can choose the route for a run of this engine version. */
 export function legacyConstructsDriveRoute(engineVersion: string | null | undefined): boolean {
   return !engineVersionAtLeast(engineVersion, ON_STACK_CONSTRUCTS_FROM);
@@ -364,7 +374,7 @@ export function onStackSentences(
   }
   if (bdc.length) {
     const noApi = deploymentModel === 'public'
-      ? 'where SAP has released none, the Public Edition offers no classic API to wrap, and the way forward is an influence request to SAP for a released API'
+      ? 'where SAP has released none, SAP S/4HANA Cloud Public Edition offers no classic API to wrap, and the way forward is an influence request to SAP for a released API'
       : 'where SAP has released none, by a wrapper around the classic API, released for use in ABAP Cloud, together with an influence request to SAP for a released API';
     parts.push(`The BDC screen automation (${bdc.length}×, from line ${firstLineOf(bdc)}) does not run in ABAP Cloud, and the screens it drives carry no stability contract. It is replaced on-stack by the released API of the same business object; ${noApi}. A side-by-side service would need the same released API, so the automation forces no side-by-side split.`);
   }
@@ -633,21 +643,27 @@ export function routeExtensibility(
   } else if (customWrites.length > 0 && deploymentModel === 'public') {
     // Reached from 3.0.12 only: before, a Public Edition custom write chose
     // the route and the branch above (`customPersistenceForcesBtp`) said so.
-    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. S/4HANA Cloud Public Edition holds custom tables on-stack through developer extensibility (ABAP Cloud): the table is a database table in the customer namespace and a RAP business object is built on it, so the write forces no side-by-side split. A side-by-side service is a choice to take on the requirement — data shared with other systems, or a volume the S/4HANA stack should not carry — which the code does not show.`;
+    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. SAP S/4HANA Cloud Public Edition holds custom tables on-stack through developer extensibility (ABAP Cloud): the table is a database table in the customer namespace and a RAP business object is built on it, so the write forces no side-by-side split. A side-by-side service is a choice to take on the requirement — data shared with other systems, or a volume the S/4HANA stack should not carry — which the code does not show.`;
   } else if (customWrites.length > 0) {
-    rationale =`Detected ${customWrites.length} write(s) to custom database persistence. In Private Edition / RISE this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`;
+    // The private edition by SAP's product name from 3.0.12 (owner decision
+    // 13.10.2026); a run of an earlier engine keeps the words it signed.
+    rationale = legacyRule
+      ? `Detected ${customWrites.length} write(s) to custom database persistence. In Private Edition / RISE this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`
+      : `Detected ${customWrites.length} write(s) to custom database persistence. In SAP Cloud ERP Private this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`;
   } else if (standardWrites.length > 0 && deploymentModel === 'public') {
     // Reached from 3.0.12 only (`ON_STACK_CONSTRUCTS_FROM`): leaving the stack
     // does not fix a write to SAP's rows, since a side-by-side service cannot
     // make one either.
-    rationale = `Direct writes to standard SAP tables are present. They are not allowed in S/4HANA Cloud Public Edition and are not clean core in any edition, but leaving the stack does not fix them: a side-by-side service cannot write SAP's tables either. The write is replaced on-stack by ${standardWriteRemedy}, so it forces no side-by-side split.`;
+    rationale = `Direct writes to standard SAP tables are present. They are not allowed in SAP S/4HANA Cloud Public Edition and are not clean core in any edition, but leaving the stack does not fix them: a side-by-side service cannot write SAP's tables either. The write is replaced on-stack by ${standardWriteRemedy}, so it forces no side-by-side split.`;
   } else if (standardWrites.length > 0) {
     // Not "wrappable". A wrapper ("Tier 2" in the words of runs before 3.0.12) encapsulates an unreleased SAP object
     // so that ABAP Cloud code may reach it; it does not make a direct write to
     // SAP's rows a supported operation, and presenting it as the remedy invited
     // the reader to keep the write and hide it (QA review of b88c77b,
     // dbbc1bf8f01d / 7d9778a8a847 / 32ca5741aeb1 / fbc8bdcaa983).
-    rationale = `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
+    rationale = legacyRule
+      ? `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`
+      : `Direct writes to standard SAP tables are present. In SAP Cloud ERP Private the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
   } else if (findings.length > 0) {
     rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
   } else if (includesNotRead.length > 0) {
@@ -843,8 +859,8 @@ export function routeExtensibility(
   } else {
     assumptions.push(
       deploymentModel === 'public'
-        ? 'S/4HANA Public Cloud deployment model selected — custom code uses released APIs only (clean core level A); an unreleased API cannot be wrapped.'
-        : 'S/4HANA Private Cloud deployment model selected — where an API is not released, a wrapper plus an influence request to SAP is available.',
+        ? PUBLIC_TARGET_ASSUMPTION
+        : 'SAP Cloud ERP Private selected as the target — where an API is not released, a wrapper plus an influence request to SAP is available.',
     );
   }
   if (modificationBlocks) {

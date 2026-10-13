@@ -24,6 +24,7 @@ import { declaredTargetOf } from './assessment-target';
 import { targetEditionOf, type TargetEdition } from './target-edition';
 import { PHASES, workflowSteps, type PhaseKey } from './workflow-steps';
 import type { Project } from './types';
+import { CLOUD_ERP_PRIVATE } from './sap-naming';
 
 export interface TargetFacts {
   edition: TargetEdition;
@@ -49,9 +50,9 @@ export function sameTarget(a: TargetFacts, b: TargetFacts): boolean {
   return a.edition === b.edition && normaliseRelease(a.release) === normaliseRelease(b.release);
 }
 
-const EDITION_WORDS: Record<TargetEdition, string> = { public: 'Public Edition', private: 'Private Edition' };
+const EDITION_WORDS: Record<TargetEdition, string> = { public: 'Public Edition', private: CLOUD_ERP_PRIVATE };
 
-/** "Private Edition 2023 FPS03", "Public Edition" — the target in words. */
+/** "SAP Cloud ERP Private 2023 FPS03", "Public Edition" — the target in words. */
 export function targetWords(t: TargetFacts): string {
   const release = normaliseRelease(t.release);
   return release ? `${EDITION_WORDS[t.edition]} ${release}` : EDITION_WORDS[t.edition];

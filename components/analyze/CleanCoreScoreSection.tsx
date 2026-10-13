@@ -369,7 +369,7 @@ export function ScoreDeductions({
   const [all, setAll] = useState(false);
   const addsUp = breakdown !== null && score !== null && model !== null && breakdown.score === score;
   const state = score === null ? 'none' : addsUp ? 'shown' : breakdown ? 'differs' : 'none';
-  const otherEdition = edition === 'public' ? 'Private Edition' : 'Public Edition';
+  const otherEdition = edition === 'public' ? 'SAP Cloud ERP Private' : 'Public Edition';
 
   return (
     <div className="min-w-0" data-score-breakdown={state}>
@@ -487,7 +487,7 @@ function DeductionTable({
               <span className="block cc-text-identifier text-cc-ink-muted">Writes to the program&rsquo;s own Z/Y tables</span>
               <span className="block cc-text-meta font-medium text-cc-ink-muted">
                 {[plural(model.free.count, 'finding', 'findings'), model.free.objects.slice(0, 4).join(', ')].filter(Boolean).join(' · ')} ·
-                free in Private Edition{model.free.pointsWhereCharged > 0 ? `, −${model.free.pointsWhereCharged} in ${otherEdition}` : ''}
+                free in SAP Cloud ERP Private{model.free.pointsWhereCharged > 0 ? `, −${model.free.pointsWhereCharged} in ${otherEdition}` : ''}
               </span>
               <span className="mt-1 block sm:hidden">
                 <LineChips lines={model.free.lines} onOpenLine={onOpenLine} />

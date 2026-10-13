@@ -226,7 +226,7 @@ test.describe('rule 4 — Keep, platform-dependent', () => {
       'private',
     );
     expect(a.bucket).toBe('keep');
-    expect(a.evidence).toBe('Level B, permitted for Private Edition.');
+    expect(a.evidence).toBe('Level B, permitted for SAP Cloud ERP Private.');
     expect(a.openCheck).toBe(false);
     expect(a.reviewTask).toBeNull();
     expect(a.catalogListed).toBe(true);
@@ -414,7 +414,7 @@ test.describe('summarizePublicCloudFit and the headline (ADR-029)', () => {
     const summary = summarizePublicCloudFit(assignments, { targetPlatform: 'private', usageImported: true });
     expect(summary.decisionBlocked).toBe(true);
     expect(publicCloudFitHeadline(summary)).toBe(
-      '1 object has no catalogued path — that has to be answered before a Private Edition decision.',
+      '1 object has no catalogued path — that has to be answered before an SAP Cloud ERP Private decision.',
     );
   });
 

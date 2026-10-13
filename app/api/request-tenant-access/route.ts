@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            A community user has requested live tenant access to connect their <strong>Live S/4HANA Public Cloud Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
+            A community user has requested live tenant access to connect their <strong>Live SAP S/4HANA Cloud Public Edition Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
           </p>
 
           <!-- Applicant Detail Card -->

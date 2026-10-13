@@ -65,7 +65,7 @@ import ConceptSuccessors from '@/components/ConceptSuccessors';
 import { conceptSuccessorsOf } from '@/lib/concept-successors';
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
-import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, TARGET_EDITION_NAMES, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { DESIGN_GENERATION_CEILING_MS } from '@/lib/model-stages';
 import { isProjectOwner } from '@/lib/project-readers';
 import {
@@ -1198,14 +1198,15 @@ ${DESIGN_ANSWER_REMINDER}`;
   // The target context, as the contract states it — bound by the run, or not.
   const contractNow = designEvidence.state === 'ready' ? designEvidence.contract : null;
   const targetBound = Boolean(contractNow?.fields.find((f) => f.key === 'target-context')?.statement);
-  const editionWord = deploymentModel === 'private' ? 'Private' : deploymentModel === 'public' ? 'Public' : null;
+  // The edition by SAP's product name (owner decision 13.10.2026).
+  const editionWord = deploymentModel === 'private' || deploymentModel === 'public' ? TARGET_EDITION_NAMES[deploymentModel] : null;
   const targetKpi = targetBound && editionWord
-    ? { value: `${editionWord} Edition`, sub: 'bound by the run' }
-    : { value: 'Not determined', sub: editionWord ? `${editionWord} Edition assumed` : null };
+    ? { value: editionWord, sub: 'bound by the run' }
+    : { value: 'Not determined', sub: editionWord ? `${editionWord} assumed` : null };
   const targetLine = targetBound && editionWord
-    ? `${editionWord} Cloud Edition · bound by the run`
+    ? `${editionWord} · bound by the run`
     : editionWord
-      ? `${editionWord} Cloud Edition assumed · target not bound by the run`
+      ? `${editionWord} assumed · target not bound by the run`
       : 'Edition not determined · target not bound by the run';
 
   return (

@@ -103,11 +103,13 @@ import { sha256Hex } from './artefact-digest';
 import { referenceDigest, type InputManifest, type ManifestInput, INPUT_IDS } from './input-manifest';
 import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
-import { routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import { PUBLIC_TARGET_ASSUMPTION, routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
 import { APP_VERSION } from './version';
 import {
   FINGERPRINTED_PLATFORM_NAME as FORMER_NAME,
   FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT,
+  FINGERPRINTED_EDITION_PRIVATE,
+  FINGERPRINTED_EDITION_PUBLIC,
   SIDE_BY_SIDE_ROUTE,
   sapNamesForDisplay,
 } from './sap-naming';
@@ -546,9 +548,15 @@ const TARGET_ARTIFACTS: Readonly<Record<TargetRoute, string>> = Object.freeze({
   'side-by-side-cap': 'CAP Node.js / Java Application',
 });
 
+/**
+ * The edition names the contract's hashed summary and target-context statement
+ * carry. They keep these bytes (owner decision 13.10.2026 renamed the private
+ * edition SAP Cloud ERP Private): a new name would change the fingerprint of
+ * every existing contract. Screens show them through `contractForDisplay()`.
+ */
 const EDITION_NAMES: Readonly<Record<string, string>> = Object.freeze({
-  public: 'S/4HANA Cloud, Public Edition',
-  private: 'S/4HANA Cloud, Private Edition',
+  public: FINGERPRINTED_EDITION_PUBLIC,
+  private: FINGERPRINTED_EDITION_PRIVATE,
 });
 
 function citeFinding(f: EvidenceFinding): ContractCitation {
@@ -815,7 +823,15 @@ export function buildArchitectureContract(args: {
       // has to act on is not a gate.
       limits.push(limit('modification-unreset', 'blocks', String(modifications.length)));
     }
-    const assumptions = route.assumptions || [];
+    // A run that bound no target was routed with `public` as the router's
+    // default; from 3.0.12 the router names that target, and the contract must
+    // not state the most permissive target as a precondition nobody bound. The
+    // wording of earlier engines is not matched, so their contracts keep their
+    // bytes. Citations keep the router's own indices.
+    const assumptionsAt = (route.assumptions || [])
+      .map((text, index) => ({ text, index }))
+      .filter((a) => deployment || a.text !== PUBLIC_TARGET_ASSUMPTION);
+    const assumptions = assumptionsAt.map((a) => a.text);
     fields.push({
       key: 'preconditions',
       label: CONTRACT_FIELD_LABELS.preconditions,
@@ -826,7 +842,7 @@ export function buildArchitectureContract(args: {
           : 'The router recorded no assumption for this run. Nothing is inferred in its place.',
       basis: assumptions.length > 0 ? 'stipulation' : 'not-determined',
       provenance: assumptions.length > 0 ? 'proposed' : 'not-determined',
-      citations: assumptions.map((_, i) => ({ kind: 'router' as const, ref: `assumptions[${i}]` })),
+      citations: assumptionsAt.map((a) => ({ kind: 'router' as const, ref: `assumptions[${a.index}]` })),
       limits,
     });
   }

@@ -133,7 +133,7 @@ test.describe('the target profile card no longer says "not declared"', () => {
     const p = catalogProfile({ edition: 'public', release: '' }, true, { registryKey: 'latest', sourceSha256: 'abc' });
     expect(p.release).toBeNull();
     expect(p.releaseMatters).toBe(false);
-    expect(wt('it.releasePublic')).toContain('SAP upgrades every Public Cloud tenant');
+    expect(wt('it.releasePublic')).toContain('SAP upgrades every SAP S/4HANA Cloud Public Edition tenant');
   });
 
   test('Private Edition without a release: what is read instead, and the way to set it', () => {

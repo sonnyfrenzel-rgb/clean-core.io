@@ -39,6 +39,7 @@ import {
   type SapNameList,
   type SapNameListKey,
 } from './sap-identifier-sync';
+import { sapNamesForDisplay } from './sap-naming';
 
 export type SapIdentifierKind =
   | 'fiori-app'
@@ -108,15 +109,15 @@ export const CURATED_SAP_IDENTIFIERS: readonly SapIdentifierEntry[] = Object.fre
   // ── Fiori apps ─────────────────────────────────────────────────────────
   { id: 'F2234', kind: 'fiori-app', title: 'Supplier Evaluation by Questionnaire', release: 'S/4HANA up to 2020; successor F2234A', onPremise: { until: 2020 }, related: 'F2234A', source: help('App Implementation: Supplier Evaluation by Questionnaire, 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/af9ef57f504840d2b81be8667206d485/be7bcd574b6ab40ce10000000a441470.html?version=2025.002'), checked: C },
   { id: 'F0247', kind: 'fiori-app', title: 'Monitor Material Coverage - Net Segments', release: 'obsolete; S/4HANA up to 2020; successor F0247A', onPremise: { until: 2020 }, related: 'F0247A', source: fal('F0247'), checked: C },
-  { id: 'F0247A', kind: 'fiori-app', title: 'Monitor Material Coverage (Version 2)', release: 'S/4HANA 1809 onwards, public cloud 2602/2608', onPremise: { from: 1809 }, related: 'F0247', source: fal('F0247A'), checked: C },
-  { id: 'F2336', kind: 'fiori-app', title: 'Manage Production Orders', release: 'S/4HANA 1709 onwards, public cloud 2602/2608', onPremise: { from: 1709 }, source: fal('F2336'), checked: C },
+  { id: 'F0247A', kind: 'fiori-app', title: 'Monitor Material Coverage (Version 2)', release: 'S/4HANA 1809 onwards, Public Edition 2602/2608', onPremise: { from: 1809 }, related: 'F0247', source: fal('F0247A'), checked: C },
+  { id: 'F2336', kind: 'fiori-app', title: 'Manage Production Orders', release: 'S/4HANA 1709 onwards, Public Edition 2602/2608', onPremise: { from: 1709 }, source: fal('F2336'), checked: C },
   { id: 'F0273', kind: 'fiori-app', title: 'Manage Production Orders or Process Orders', source: help('Manage Production Orders or Process Orders, 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/34de0103497c4b80a7c7fbf6952ff971/e2ce15560e1c792de10000000a44538d.html?version=2025.002'), checked: C },
   { id: 'F1814', kind: 'fiori-app', title: 'Sales Order', release: 'S/4HANA 1610 onwards; displays one sales order', onPremise: { from: 1610 }, source: help('Sales Order (App ID F1814), 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/7b24a64d9d0941bda1afa753263d9e39/43336e5621eb9d24e10000000a44147b.html?version=2025.002'), checked: C },
   { id: 'F1873', kind: 'fiori-app', title: 'Manage Sales Orders', release: 'S/4HANA 1610 onwards; newer version F3893', onPremise: { from: 1610 }, related: 'F3893', source: help('Manage Sales Orders (App ID F1873), 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/7b24a64d9d0941bda1afa753263d9e39/ce158e56ba281e5ee10000000a4450e5.html?version=2025.002'), checked: C },
   { id: 'F3893', kind: 'fiori-app', title: 'Manage Sales Orders - Version 2', release: 'S/4HANA 2021 onwards', onPremise: { from: 2021 }, related: 'F1873', source: help('Manage Sales Orders - Version 2 (App ID F3893), 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/7b24a64d9d0941bda1afa753263d9e39/ae4138d6a804446faa0a249f3a7e18d8.html?version=2025.002'), checked: C },
-  { id: 'F0804', kind: 'fiori-app', title: 'Manage Sales Orders - Services', release: 'public cloud 2602/2608 only', source: fal('F0804'), checked: C },
+  { id: 'F0804', kind: 'fiori-app', title: 'Manage Sales Orders - Services', release: 'Public Edition 2602/2608 only', source: fal('F0804'), checked: C },
   { id: 'F3338', kind: 'fiori-app', title: 'Manage Allocations', release: 'S/4HANA 1909 onwards; "Old Version" from 2025, beside F3338A', onPremise: { from: 1909 }, related: 'F3338A', source: fal('F3338'), checked: C },
-  { id: 'F3338A', kind: 'fiori-app', title: 'Manage Allocations (New version)', release: 'S/4HANA 2025 onwards (private cloud 2025, public cloud 2602/2608); before 2025 only F3338', onPremise: { from: 2025 }, related: 'F3338', source: fal('F3338A'), checked: C },
+  { id: 'F3338A', kind: 'fiori-app', title: 'Manage Allocations (New version)', release: 'S/4HANA 2025 onwards (SAP Cloud ERP Private 2025, Public Edition 2602/2608); before 2025 only F3338', onPremise: { from: 2025 }, related: 'F3338', source: fal('F3338A'), checked: C },
   { id: 'F2358', kind: 'fiori-app', title: 'Monitor Purchase Order Items', release: 'S/4HANA 1709 onwards', onPremise: { from: 1709 }, source: help('Monitor Purchase Order Items (App ID F2358), 2025 FPS02', 'SAP_S4HANA_ON-PREMISE/af9ef57f504840d2b81be8667206d485/e069cb1c9d624a4aad48631d9920a024.html?version=2025.002'), checked: C },
   { id: 'F0380', kind: 'fiori-app', title: 'Process Collections Worklist', release: 'S/4HANA 1511 onwards', onPremise: { from: 1511 }, source: fal('F0380'), checked: C },
   { id: 'F0842A', kind: 'fiori-app', title: 'Manage Purchase Orders (Version 2)', source: fal('F0842A'), checked: C },
@@ -128,16 +129,16 @@ export const CURATED_SAP_IDENTIFIERS: readonly SapIdentifierEntry[] = Object.fre
   { id: 'F1604', kind: 'fiori-app', title: 'Manage Internal Orders', source: fal('F1604'), checked: C },
 
   // ── APIs (SAP Help, SAP S/4HANA Cloud Public Edition 2608, unless named) ─
-  { id: 'API_PRODUCTION_ORDER_2_SRV', kind: 'api', title: 'Production Order (Version 2)', protocol: 'V2', release: 'public cloud 2608; S/4HANA 2020, 2022, 2023; communication scenarios SAP_COM_0104, SAP_COM_0522', source: help('Production Order (Version 2) (OData V2), 2608', 'SAP_S4HANA_CLOUD/d35113ee62644d3abee1aaec148291d9/0a4262096d2e43258df27c594bdd1468.html'), checked: C },
-  { id: 'API_SALES_ORDER_SRV', kind: 'api', title: 'Sales Order (A2X, OData V2)', protocol: 'V2', release: 'public cloud 2608; communication scenario SAP_COM_0109; the OData V4 service is API_SalesOrder (service SalesOrder 0001)', source: help('Sales Order (A2X, OData V2), 2608', 'SAP_S4HANA_CLOUD/03c04db2a7434731b7fe21dca77440da/00d244581efca007e10000000a441470.html'), checked: C },
-  { id: 'API_PRODUCT_SRV', kind: 'api', title: 'Product Master (A2X)', protocol: 'V2', release: 'public cloud 2608', source: help('APIs for Product Master, 2608', 'SAP_S4HANA_CLOUD/3c916ef10fc240c9afc594b346ffaf77/ccf66cce781c4a9a988d2553da64ffa5.html'), checked: C },
-  { id: 'API_PURCHASEORDER_PROCESS_SRV', kind: 'api', title: 'Purchase Order (OData V2) - (Deprecated)', protocol: 'V2', release: 'public cloud 2608: deprecated; successor API_PURCHASEORDER_2 (OData V4)', source: help('APIs in Sourcing and Procurement, 2608', 'SAP_S4HANA_CLOUD/bb9f1469daf04bd894ab2167f8132a1a/acd2da57df6cc525e10000000a4450e5.html'), checked: C },
-  { id: 'API_PURCHASEREQ_PROCESS_SRV', kind: 'api', title: 'Purchase Requisition - OData V2 (Deprecated)', protocol: 'V2', release: 'public cloud: deprecated with 2402; successor API_PURCHASEREQUISITION_2', source: help('Purchase Requisition - OData V2 (Deprecated), 2608', 'SAP_S4HANA_CLOUD/bb9f1469daf04bd894ab2167f8132a1a/43c43f584eff2160e10000000a44147b.html'), checked: C },
-  { id: 'API_BUSINESS_PARTNER', kind: 'api', title: 'Business Partner (A2X)', release: 'public cloud 2608; communication scenario SAP_COM_0008', source: help('Business Partner (A2X) – OData API, 2608', 'SAP_S4HANA_CLOUD/3c916ef10fc240c9afc594b346ffaf77/85043858ea0f9244e10000000a4450e5.html'), checked: C },
-  { id: 'API_OUTBOUND_DELIVERY_SRV', kind: 'api', title: 'Outbound Delivery (A2X) Deprecated', release: 'public cloud 2608: deprecated, SAP names a successor API', source: help('Outbound Delivery (A2X) Deprecated, 2608', 'SAP_S4HANA_CLOUD/588780cab2774a7ab9fffca3a7f919fe/b1b123d381bb4ad6b9cbaafaaa87aa24.html'), checked: C },
-  { id: 'API_BILLING_DOCUMENT_SRV', kind: 'api', title: 'Billing Document - Read, Cancel, GetPDF', release: 'public cloud 2608; communication scenario SAP_COM_0120', source: help('Billing Document - Read, Cancel, GetPDF, 2608', 'SAP_S4HANA_CLOUD/03c04db2a7434731b7fe21dca77440da/fe6f3eda2f914d81b512493fd79e9769.html'), checked: C },
-  { id: 'API_COSTCENTER_SRV', kind: 'api', title: 'Cost Center - Read (A2X)', release: 'public cloud 2608; OData V4 successor API_COST_CENTER', source: help('Cost Center - Read (A2X), 2608', 'SAP_S4HANA_CLOUD/1e3c2c0366834d1fb76461f439248880/37310ccbc01943d98e7d84dff3802537.html'), checked: C },
-  { id: 'API_PRODUCTION_ROUTING', kind: 'api', title: 'Production Routing (Deprecated)', release: 'public cloud 2608: deprecated', source: help('Production Routing (Deprecated), 2608', 'SAP_S4HANA_CLOUD/d35113ee62644d3abee1aaec148291d9/2dd233df3bc947d6b402d246ed887b5a.html'), checked: C },
+  { id: 'API_PRODUCTION_ORDER_2_SRV', kind: 'api', title: 'Production Order (Version 2)', protocol: 'V2', release: 'Public Edition 2608; S/4HANA 2020, 2022, 2023; communication scenarios SAP_COM_0104, SAP_COM_0522', source: help('Production Order (Version 2) (OData V2), 2608', 'SAP_S4HANA_CLOUD/d35113ee62644d3abee1aaec148291d9/0a4262096d2e43258df27c594bdd1468.html'), checked: C },
+  { id: 'API_SALES_ORDER_SRV', kind: 'api', title: 'Sales Order (A2X, OData V2)', protocol: 'V2', release: 'Public Edition 2608; communication scenario SAP_COM_0109; the OData V4 service is API_SalesOrder (service SalesOrder 0001)', source: help('Sales Order (A2X, OData V2), 2608', 'SAP_S4HANA_CLOUD/03c04db2a7434731b7fe21dca77440da/00d244581efca007e10000000a441470.html'), checked: C },
+  { id: 'API_PRODUCT_SRV', kind: 'api', title: 'Product Master (A2X)', protocol: 'V2', release: 'Public Edition 2608', source: help('APIs for Product Master, 2608', 'SAP_S4HANA_CLOUD/3c916ef10fc240c9afc594b346ffaf77/ccf66cce781c4a9a988d2553da64ffa5.html'), checked: C },
+  { id: 'API_PURCHASEORDER_PROCESS_SRV', kind: 'api', title: 'Purchase Order (OData V2) - (Deprecated)', protocol: 'V2', release: 'Public Edition 2608: deprecated; successor API_PURCHASEORDER_2 (OData V4)', source: help('APIs in Sourcing and Procurement, 2608', 'SAP_S4HANA_CLOUD/bb9f1469daf04bd894ab2167f8132a1a/acd2da57df6cc525e10000000a4450e5.html'), checked: C },
+  { id: 'API_PURCHASEREQ_PROCESS_SRV', kind: 'api', title: 'Purchase Requisition - OData V2 (Deprecated)', protocol: 'V2', release: 'Public Edition: deprecated with 2402; successor API_PURCHASEREQUISITION_2', source: help('Purchase Requisition - OData V2 (Deprecated), 2608', 'SAP_S4HANA_CLOUD/bb9f1469daf04bd894ab2167f8132a1a/43c43f584eff2160e10000000a44147b.html'), checked: C },
+  { id: 'API_BUSINESS_PARTNER', kind: 'api', title: 'Business Partner (A2X)', release: 'Public Edition 2608; communication scenario SAP_COM_0008', source: help('Business Partner (A2X) – OData API, 2608', 'SAP_S4HANA_CLOUD/3c916ef10fc240c9afc594b346ffaf77/85043858ea0f9244e10000000a4450e5.html'), checked: C },
+  { id: 'API_OUTBOUND_DELIVERY_SRV', kind: 'api', title: 'Outbound Delivery (A2X) Deprecated', release: 'Public Edition 2608: deprecated, SAP names a successor API', source: help('Outbound Delivery (A2X) Deprecated, 2608', 'SAP_S4HANA_CLOUD/588780cab2774a7ab9fffca3a7f919fe/b1b123d381bb4ad6b9cbaafaaa87aa24.html'), checked: C },
+  { id: 'API_BILLING_DOCUMENT_SRV', kind: 'api', title: 'Billing Document - Read, Cancel, GetPDF', release: 'Public Edition 2608; communication scenario SAP_COM_0120', source: help('Billing Document - Read, Cancel, GetPDF, 2608', 'SAP_S4HANA_CLOUD/03c04db2a7434731b7fe21dca77440da/fe6f3eda2f914d81b512493fd79e9769.html'), checked: C },
+  { id: 'API_COSTCENTER_SRV', kind: 'api', title: 'Cost Center - Read (A2X)', release: 'Public Edition 2608; OData V4 successor API_COST_CENTER', source: help('Cost Center - Read (A2X), 2608', 'SAP_S4HANA_CLOUD/1e3c2c0366834d1fb76461f439248880/37310ccbc01943d98e7d84dff3802537.html'), checked: C },
+  { id: 'API_PRODUCTION_ROUTING', kind: 'api', title: 'Production Routing (Deprecated)', release: 'Public Edition 2608: deprecated', source: help('Production Routing (Deprecated), 2608', 'SAP_S4HANA_CLOUD/d35113ee62644d3abee1aaec148291d9/2dd233df3bc947d6b402d246ed887b5a.html'), checked: C },
   ...availIf([
     ['API_INTERNALORDER_SRV', 'Internal Order - Read'],
     ['API_MATERIAL_DOCUMENT_SRV', 'Material Documents - Read, Create'],
@@ -255,7 +256,7 @@ function availIf(rows: Array<[string, string]>): SapIdentifierEntry[] {
     label: 'SAP Help, Best Practices 2608, Available Interfaces for Your Selected Scope',
     url: `${HELP}/SAP_S4HANA_BEST_PRACTICES/7c85a9907ecf4b039f4cf574cc299d93/5d55fc2d126844039fc4084ef3e945c9.html`,
   };
-  return rows.map(([id, title]) => ({ id, kind: 'api' as const, title, release: 'public cloud 2608', source, checked: C }));
+  return rows.map(([id, title]) => ({ id, kind: 'api' as const, title, release: 'Public Edition 2608', source, checked: C }));
 }
 
 function comm(label: string, path: string, rows: Array<[string, string]>): SapIdentifierEntry[] {
@@ -399,7 +400,7 @@ function inList(key: SapNameListKey, name: string): boolean {
 export function nameListStamp(key: SapNameListKey): string {
   const l = list(key);
   if (!l) return 'SAP Cloudification Repository (list not loaded)';
-  return `SAP Cloudification Repository, ${l.label} (${l.release})${l.fetchedAt ? `, fetched ${l.fetchedAt.slice(0, 10)}` : ''}`;
+  return `SAP Cloudification Repository, ${l.label} (${sapNamesForDisplay(l.release)})${l.fetchedAt ? `, fetched ${l.fetchedAt.slice(0, 10)}` : ''}`;
 }
 
 /** The list a released CDS view was found in — the public edition's first — or null. */
@@ -419,7 +420,7 @@ export const SAP_RELEASED_LIST_URL = 'https://github.com/SAP/abap-atc-cr-cv-s4hc
 export function releasedListsStamp(): string {
   const dates = synced.lists.map((l) => l.fetchedAt).filter(Boolean).sort() as string[];
   return dates.length
-    ? `SAP Cloudification Repository name lists (released CDS views, public and private edition; classic BAPIs), fetched ${dates[0].slice(0, 10)}`
+    ? `SAP Cloudification Repository name lists (released CDS views, SAP S/4HANA Cloud Public Edition and SAP Cloud ERP Private; classic BAPIs), fetched ${dates[0].slice(0, 10)}`
     : "SAP Cloudification Repository name lists not consulted here";
 }
 

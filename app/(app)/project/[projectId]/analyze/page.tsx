@@ -1786,7 +1786,7 @@ export default function AnalyzePage() {
                   <span className="block">To start the modernization analysis, please complete the following steps:</span>
                   <ul className="list-disc pl-5 mt-2 space-y-1">
                     {!targetDeployment && (
-                      <li>Select your <strong>S/4HANA Target Operating Model</strong> (Public Cloud or Private Cloud RISE Edition above).</li>
+                      <li>Select your <strong>S/4HANA Target Operating Model</strong> (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private above).</li>
                     )}
                     {!acceptedTerms && (
                       <li>Accept the <strong>Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
@@ -1815,7 +1815,7 @@ export default function AnalyzePage() {
                 busy={loading}
                 onClick={() => {
                   if (!targetDeployment) {
-                    setError('Please select a S/4HANA Target Operating Model (Public Cloud or Private Cloud RISE) before starting the analysis.');
+                    setError('Please select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) before starting the analysis.');
                     // Scroll to top where error displays
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
@@ -2005,7 +2005,7 @@ export default function AnalyzePage() {
                   {modalSelection === 'public' ? (
                     <>
                       <p>
-                        In <strong>SAP S/4HANA Public Cloud (Strict SaaS)</strong>, standard code modifications are entirely blocked.
+                        In <strong>SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP)</strong>, a strict SaaS system, standard code modifications are entirely blocked.
                       </p>
                       <ul className="list-disc pl-4 space-y-1">
                         <li><strong>Unreleased APIs Forbidden:</strong> Any legacy unreleased SAP tables/functions used by your custom logic are unreachable.</li>
@@ -2015,7 +2015,7 @@ export default function AnalyzePage() {
                   ) : (
                     <>
                       <p>
-                        In <strong>SAP S/4HANA Private Cloud / On-Premise (RISE)</strong>, SAP&apos;s <strong>clean core levels A–D</strong> apply.
+                        In <strong>SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)</strong> and in SAP S/4HANA on-premise, SAP&apos;s <strong>clean core levels A–D</strong> apply.
                       </p>
                       {/* DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept — the level concept replaced SAP's three-tier model. */}
                       <ul className="list-disc pl-4 space-y-1">
@@ -2086,21 +2086,21 @@ interface DeploymentOption {
 const PAGE_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
   {
     value: 'public',
-    title: 'Public Cloud Edition',
+    title: 'SAP S/4HANA Cloud Public Edition',
     tag: 'Strict Clean Core',
-    text: 'SAP S/4HANA Cloud, Public Edition (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.',
+    text: 'Part of SAP Cloud ERP (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.',
   },
   {
     value: 'private',
-    title: 'Private Cloud RISE Edition',
+    title: 'SAP Cloud ERP Private',
     tag: 'Clean core levels A–D',
-    text: 'SAP S/4HANA Cloud, Private Edition / On-Premise. Released APIs first (level A); where SAP offers none, classic APIs (level B) or a wrapper around the unreleased object, with an influence request to SAP.',
+    text: 'Formerly SAP S/4HANA Cloud Private Edition; also SAP S/4HANA on-premise. Released APIs first (level A); where SAP offers none, classic APIs (level B) or a wrapper around the unreleased object, with an influence request to SAP.',
   },
 ];
 
 const DIALOG_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
-  { value: 'public', title: 'Public Cloud', text: 'Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
-  { value: 'private', title: 'Private Cloud / RISE', text: 'Clean core levels A–D. Released APIs first; where none exists, a wrapper plus an influence request to SAP.' },
+  { value: 'public', title: 'SAP S/4HANA Cloud Public Edition', text: 'Part of SAP Cloud ERP. Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
+  { value: 'private', title: 'SAP Cloud ERP Private', text: 'Formerly SAP S/4HANA Cloud Private Edition; also on-premise. Clean core levels A–D. Released APIs first; where none exists, a wrapper plus an influence request to SAP.' },
 ];
 
 /**

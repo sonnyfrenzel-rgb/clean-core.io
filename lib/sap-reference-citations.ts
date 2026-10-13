@@ -212,7 +212,7 @@ export const SAP_REFERENCE_CITATIONS: SapReferenceCitation[] = [
     adopted:
       'Background work in ABAP Cloud is an application job: a job class, an application job catalog entry and a job template, created through CL_APJ_DT_CREATE_CONTENT (typed constants, an existence check before each create).',
     correction:
-      'The sample’s job class implements IF_APJ_RT_RUN; the scaffold implements IF_APJ_DT_EXEC_OBJECT and IF_APJ_RT_EXEC_OBJECT, which are released in every synced catalog, while IF_APJ_RT_RUN is missing from Private Cloud 2023. The catalog entry and template are created in a separate setup class, not in the job class.',
+      'The sample’s job class implements IF_APJ_RT_RUN; the scaffold implements IF_APJ_DT_EXEC_OBJECT and IF_APJ_RT_EXEC_OBJECT, which are released in every synced catalog, while IF_APJ_RT_RUN is missing from SAP Cloud ERP Private 2023. The catalog entry and template are created in a separate setup class, not in the job class.',
     refs: [{ path: '22_Released_ABAP_Classes.md', section: 'Application Jobs', hashAtAdoption: 'ddcfb75cea2c1c81b611e95d55f86165f62902c87b5da8bbdfaf6de0f89e917e' }],
   },
   {

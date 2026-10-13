@@ -446,7 +446,9 @@ test.describe('a direct write to SAP rows is never described as wrappable', () =
 
   test('Private Edition is told to replace the write, not to wrap it', () => {
     const report = route(WRITE_VBAK, 'private');
-    expect(report.rationale, 'the premise: the private route still keeps this on-stack').toMatch(/Private Edition/i);
+    expect(report.rationale, 'the premise: the private route still keeps this on-stack').toMatch(/SAP Cloud ERP Private/);
+    // A run of an earlier engine keeps the name it signed (owner decision 13.10.2026, gated from 3.0.12).
+    expect(route(WRITE_VBAK, 'private', OLD_ENGINE).rationale).toMatch(/In Private Edition the write can stay on-stack/);
     expect(prose(report)).not.toMatch(/writes? (to standard tables? )?can be wrapped/i);
     expect(prose(report)).not.toMatch(/Standard table writes can be wrapped/i);
     expect(report.rationale).toMatch(/released write API|BAPI|RAP action/i);

@@ -126,3 +126,46 @@ test('a run about to be made is read by this engine', () => {
   const built = buildRunEvidence(projectOf(OLD), { source: SOURCE, fileName: FILE, deployment: 'private' });
   expect(JSON.stringify(built.evidence)).toBe(JSON.stringify(buildAbapEvidence(SOURCE, FILE, 'private', built.catalog.registryKey, APP_VERSION)));
 });
+
+/**
+ * SAP's product names (owner decision 13.10.2026): from 3.0.12 the engine says
+ * "SAP Cloud ERP Private" and "SAP S/4HANA Cloud Public Edition"; a run signed
+ * by v3.0.11 keeps "Private Edition", "Private Cloud" and "Public Cloud", byte
+ * for byte, through every builder above.
+ */
+test.describe('the renamed editions, by engine', () => {
+  const OWN_WRITE = `REPORT zco_own.
+DATA ls_log TYPE zco_log.
+INSERT zco_log FROM ls_log.
+SELECT SINGLE * FROM vbak INTO @DATA(ls_vbak) WHERE vbeln = '1'.
+`;
+
+  test('the route rationale of a private own-table write', () => {
+    const rationaleOf = (engine: string) =>
+      routeExtensibility(buildAbapEvidence(OWN_WRITE, 'zco_own.abap', 'private', SNAPSHOT, engine), 'private', engine).rationale;
+    expect(rationaleOf(OLD)).toContain('In Private Edition / RISE this is on-stack developer extensibility');
+    expect(rationaleOf(NEW)).toContain('In SAP Cloud ERP Private this is on-stack developer extensibility');
+    expect(rationaleOf(NEW)).not.toMatch(/Private Edition|RISE/);
+  });
+
+  test('the standard-table read of a public target', () => {
+    const readOf = (engine: string) =>
+      buildAbapEvidence(OWN_WRITE, 'zco_own.abap', 'public', undefined, engine).findings.find((f) => f.kind === 'standard-table-read');
+    const old = readOf(OLD);
+    const now = readOf(NEW);
+    expect(old?.technicalDetail).toContain(' In Public Cloud this is a hard break');
+    expect(old?.cleanCoreImpact).toContain('In SAP S/4HANA Public Cloud, direct reads');
+    expect(now?.technicalDetail).toContain(' In SAP S/4HANA Cloud Public Edition this is a hard break');
+    expect(now?.cleanCoreImpact).toContain('In SAP S/4HANA Cloud Public Edition, direct reads');
+  });
+
+  test('the old run rebuilt through the contract keeps the old words', () => {
+    const project = { ...projectOf(OLD), legacyCode: OWN_WRITE, auditMetadata: { inputFingerprint: { fileName: 'zco_own.abap' }, modelCard: { engineVersion: OLD } } };
+    const built = contractOfProject(project as never, null);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    expect(JSON.stringify(built.evidence)).toBe(JSON.stringify(buildAbapEvidence(OWN_WRITE, 'zco_own.abap', 'private', SNAPSHOT, OLD)));
+    expect(JSON.stringify(built.contract)).toContain('S/4HANA Private Cloud deployment model selected');
+    expect(JSON.stringify(built.contract)).not.toContain('SAP Cloud ERP Private');
+  });
+});

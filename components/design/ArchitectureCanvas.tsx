@@ -29,7 +29,7 @@ import { successorSource } from '@/lib/successor-source';
 
 export interface ArchitectureCanvasProps {
   model: ArchitectureCanvasModel;
-  /** "Private Cloud Edition assumed · target not bound by the run" — the S/4HANA subtitle. */
+  /** "SAP Cloud ERP Private assumed · target not bound by the run" — the S/4HANA subtitle. */
   targetLine: string;
   selected?: string | null;
   onSelect?: (key: string) => void;

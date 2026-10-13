@@ -9,6 +9,7 @@ import {
   type TargetPlatform,
 } from './abap/public-cloud-fit';
 import type { ChainLinkId, ItFindingRow, ItFindingsSource, ItView } from './it-findings';
+import { CLOUD_ERP_PRIVATE, PUBLIC_EDITION } from './sap-naming';
 import { distinctFindingCount, placesInTheCode } from './it-findings';
 
 /**
@@ -198,8 +199,8 @@ export function whereTo(
     .filter((c) => c.count > 0)
     .map((c) => `${c.count} ${c.label.toLowerCase()}`);
   const lead = declared
-    ? `For the ${platformLabel} — the project's target`
-    : `For the ${platformLabel} — no target is declared, so the default the run uses`;
+    ? `For ${platform === 'public' ? 'the ' : ''}${platformLabel} — the project's target`
+    : `For ${platform === 'public' ? 'the ' : ''}${platformLabel} — no target is declared, so the default the run uses`;
   const sentence =
     assignments.length === 0
       ? `${lead}: no finding names an SAP object, so there is nothing to place.`
@@ -343,20 +344,20 @@ export interface CatalogProfile {
 }
 
 const EDITION_WORDS: Record<string, string> = {
-  public: 'S/4HANA Cloud Public Edition',
-  private: 'S/4HANA Cloud Private Edition',
+  public: PUBLIC_EDITION,
+  private: CLOUD_ERP_PRIVATE,
   btp: 'SAP BTP ABAP environment',
   'on-premise': 'S/4HANA on-premise',
 };
 
 /** The words for a snapshot key the sync script writes; `null` for a key this build does not name. */
 export function catalogSnapshotWords(key: string): string | null {
-  if (key === 'latest') return 'SAP’s release list for the Public Edition (moving list)';
-  if (key === 'pce-latest') return 'SAP’s release list for the Private Edition (moving list)';
+  if (key === 'latest') return `SAP’s release list for ${PUBLIC_EDITION} (moving list)`;
+  if (key === 'pce-latest') return `SAP’s release list for ${CLOUD_ERP_PRIVATE} (moving list)`;
   if (key === 'btp-latest') return 'SAP’s release list for the SAP BTP ABAP environment (moving list)';
   const pinned = /^pce-(20\d{2})-(\d{1,2})$/.exec(key);
   if (pinned) {
-    return `SAP’s release list for the Private Edition ${pinned[1]} FPS${pinned[2].padStart(2, '0')} (release-pinned)`;
+    return `SAP’s release list for ${CLOUD_ERP_PRIVATE} ${pinned[1]} FPS${pinned[2].padStart(2, '0')} (release-pinned)`;
   }
   return null;
 }

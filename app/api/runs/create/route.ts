@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
       const sentence =
         refusal.state === 'rejected'
           ? refusal.sentence
-          : `The evidence engine routes for the Public and the Private Edition only. No assessment is made against the ${asked} edition.`;
+          : `The evidence engine routes for SAP S/4HANA Cloud Public Edition and SAP Cloud ERP Private only. No assessment is made against the ${asked} edition.`;
       return NextResponse.json({ error: sentence, code: 'profile-rejected' }, { status: 422 });
     }
     const targetDeployment: 'public' | 'private' = rawDeployment;

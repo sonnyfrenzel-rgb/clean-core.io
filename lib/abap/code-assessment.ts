@@ -601,8 +601,8 @@ export function recommendArchitecture(
     return {
       architecture: 'integration',
       confidence: 80,
-      justification: `IDoc function modules are called (${idocModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in Private Edition. `
-        + 'It has to be replaced where the target is ABAP Cloud or S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
+      justification: `IDoc function modules are called (${idocModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in SAP Cloud ERP Private. `
+        + 'It has to be replaced where the target is ABAP Cloud or SAP S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
         + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
     };
   }

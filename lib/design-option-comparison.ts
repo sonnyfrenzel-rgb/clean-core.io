@@ -206,8 +206,8 @@ export function engineOptionFacts(input: OptionFactsInput): OptionFacts {
     ? 'Public Edition: released APIs only (clean core level A), no wrapper around an unreleased object.'
     : input.deployment === 'private'
       // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
-      ? 'Private Edition: released APIs first (clean core level A); where SAP offers none, a wrapper can encapsulate an unreleased object, with an influence request to SAP. The wrapper does not make the wrapped object stable.'
-      : 'Deployment not bound: Public or Private Edition decides what an in-app extension may call.');
+      ? 'SAP Cloud ERP Private: released APIs first (clean core level A); where SAP offers none, a wrapper can encapsulate an unreleased object, with an influence request to SAP. The wrapper does not make the wrapped object stable.'
+      : 'Deployment not bound: SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private decides what an in-app extension may call.');
   cap.push('Running cost: its own runtime, database and operations beside S/4HANA — qualitative here; amounts only from approved cost assumptions in Economics.');
 
   return {

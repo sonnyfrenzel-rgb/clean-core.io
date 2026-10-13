@@ -105,7 +105,7 @@ export const RATES_HELP = Object.freeze({
   horizon:
     'How many years to compare over. One-off effort is paid once, recurring effort at every release in this period — the longer it is, the more running costs weigh. Often the period of your budget planning or the remaining life of the system.',
   cadence:
-    'How often the recurring effort falls due: the SAP releases and feature packs you actually apply in a year. SAP S/4HANA Cloud Public Edition upgrades twice a year; on-premise and Private Cloud releases come less often.',
+    'How often the recurring effort falls due: the SAP releases and feature packs you actually apply in a year. SAP S/4HANA Cloud Public Edition upgrades twice a year; on-premise and SAP Cloud ERP Private releases come less often.',
   confirm:
     'Tick it once the figure is yours. Until then it counts as a proposal, and no option is priced on it.',
 });

@@ -113,6 +113,6 @@ test.describe('an example started for the Public Edition', () => {
     const fitTitle = page.locator('#standard-fit[data-standard-fit="ready"] h3');
     await expect(fitTitle).toBeAttached({ timeout: 90000 });
     await expect(fitTitle).toContainText('Public Edition', { timeout: 60000 });
-    await expect(fitTitle).not.toContainText('Private Edition');
+    await expect(fitTitle).not.toContainText('SAP Cloud ERP Private');
   });
 });

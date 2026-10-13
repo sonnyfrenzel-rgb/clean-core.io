@@ -705,7 +705,7 @@ export default function TestingSandboxPage() {
           uid,
           email: profile.email,
           name: `${profile.firstName} ${profile.lastName}`,
-          motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection'
+          motivation: accessRequestedMotivation || 'Live SAP S/4HANA Cloud Public Edition Sandbox Connection'
         })
       });
       if (!res.ok) {
@@ -2297,7 +2297,7 @@ export default function TestingSandboxPage() {
                             ) : undefined}
                           >
                             <p className="cc-text-cell text-cc-ink-muted mb-4">
-                              A non-productive S/4HANA Public Cloud endpoint, to check the connection and read OData metadata. Credentials are encrypted on the server and never shown again. Also in{' '}
+                              A non-productive SAP S/4HANA Cloud Public Edition endpoint, to check the connection and read OData metadata. Credentials are encrypted on the server and never shown again. Also in{' '}
                               <Link href="/settings" className="font-semibold text-cc-information hover:underline">Settings</Link>.
                             </p>
                             <form onSubmit={saveS4Config} className="space-y-6">
@@ -2701,7 +2701,7 @@ export default function TestingSandboxPage() {
                           write — the field only stops the typing earlier. */}
                       <CcTextarea
                         label="Description of your use case (Motivation)"
-                        placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
+                        placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."
                         value={accessRequestedMotivation}
                         maxLength={2000}
                         rows={3}

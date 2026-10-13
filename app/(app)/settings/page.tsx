@@ -1693,7 +1693,7 @@ export default function SettingsPage() {
                     rows={3}
                     value={byotMotivation}
                     onChange={setByotMotivation}
-                    placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
+                    placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."
                   />
 
                   {byotStatus === 'success' && (

@@ -744,10 +744,10 @@ and every assignment shows its evidence:
 | 1 | **Retire** | the rule the object serves is confirmed "Drop" — **or** the usage import shows zero executions over at least **13 months** | decision with revision · or usage import |
 | 2 | **No catalogued path** | needed, Level C or D, **an SAP catalog object without a released successor** and without an extension path — or named in neither of the two SAP files | entry in the Cloudification Repository, with data basis and synchronisation date |
 | 3 | **Rebuild** | needed, Level C or D, and there is a successor or extension path — as well as every modification and every own write access to SAP tables: that is own work, never SAP's | successor API · BAdI · finding |
-| 4 | **Keep** | needed and permitted for the **project's target platform**: Public Edition only Level A, Private Edition A or B | level and target platform |
+| 4 | **Keep** | needed and permitted for the **project's target platform**: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) only Level A, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) A or B | level and target platform |
 | — | *not assigned* | level unknown or *Not determined* | with a reason |
 
-- **The buckets depend on the target platform.** The same B object is *Keep* in the Private Edition, in the Public Edition
+- **The buckets depend on the target platform.** The same B object is *Keep* in SAP Cloud ERP Private, in the Public Edition
   *Rebuild* or *No catalogued path*. The card names the target platform in the answer sentence; changing the target platform
   re-sorts and says what moved.
 - **Retire is transparent.** Every Retire assignment from usage shows the source, the period with dates and whether it contains
@@ -756,15 +756,15 @@ and every assignment shows its evidence:
   Retire only via a business decision, never via "no usage known". The popover rule is there verbatim:
   *"Why 13 months: period-end and year-end programs run once a year."*
 - **Unconfirmed rules make the assignment provisional:** *"16 Rebuild — 9 on rules not yet confirmed"*.
-- A statement for the whole project needs no threshold: **one** object without a Public Cloud path blocks the
-  Public Cloud decision.
+- A statement for the whole project needs no threshold: **one** object without a Public Edition path blocks the
+  Public Edition decision.
 
 **First the answer, then the number** (ADR-029):
 
 - **Management** begins with a sentence above all cards that answers the view's question: *"One decision open
-  (DEC-1). It waits for counter-check S2. 4 objects block a Public Cloud decision."* Every card begins with its
+  (DEC-1). It waits for counter-check S2. 4 objects block a Public Edition decision."* Every card begins with its
   answer sentence as its title — *"Readiness 58 on rule set 1.3, up from 42 with the same rules"*, *"4 objects block a Public
-  Cloud decision"*, *"No cost winner yet — option C is incomplete"* — and only below it number, chart and table.
+  Edition decision"*, *"No cost winner yet — option C is incomplete"* — and only below it number, chart and table.
   Classifications that are easily misread ("a grade, not a compliance percentage"; "Simulation, not a quote")
   are in the answer sentence or directly below it, never only in the popover.
 - **IT:** the chain belongs to a selected finding. The table marks the selected row, the chain sits above it
@@ -986,7 +986,7 @@ and a process owner or manager does not know it for certain:
 - **A · SAP and Clean Core:** Clean Core · Clean core levels A–D · Released API · Classic API · Cloudification
   Repository · Successor · ABAP Cloud · Key user extensibility · Developer extensibility (on-stack) · Side-by-side
   extensibility (SAP BTP) · BAdI · Modification · Customizing · Scope item · Fit-to-standard · Public Edition and
-  Private Edition · ABAP Test Cockpit (ATC) · Usage data (SCMON, SUSG) · BPMN · SAP Signavio — plus, from today's
+  SAP Cloud ERP Private · ABAP Test Cockpit (ATC) · Usage data (SCMON, SUSG) · BPMN · SAP Signavio — plus, from today's
   glossary, RAP, CDS View, OData, SAP LUW; the duplicate entries "BTP" and "SAP BTP" become one.
 - **B · Terms of this product** — nobody can look them up anywhere else: Line anchor · Traceability · Run and signed
   run · Provenance · Not determined · Evidence level E0–E4 · Readiness ("a grade, not a compliance percentage") · The

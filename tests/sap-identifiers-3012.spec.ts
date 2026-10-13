@@ -227,7 +227,7 @@ test.describe('SAP’s synced name lists', () => {
     expect(sapIdMark(c)).toContain('fetched 2026-10-12');
     expect(c.source?.url).toBe('https://github.com/SAP/abap-atc-cr-cv-s4hc');
     // Only in the private edition's list: said so.
-    expect(sapIdMark(one('Use I_PrivateOnly.', 'I_PrivateOnly'))).toContain('Private Edition');
+    expect(sapIdMark(one('Use I_PrivateOnly.', 'I_PrivateOnly'))).toContain('(SAP Cloud ERP Private, latest)');
   });
 
   test('a classic BAPI reads “name found in catalog” with SAP’s classification', () => {

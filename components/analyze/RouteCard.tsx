@@ -234,7 +234,7 @@ export default function RouteCard({
 
       <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted">
         Target system:{' '}
-        {deployment === 'public' ? 'S/4HANA Public Cloud' : deployment === 'private' ? 'Private Cloud / RISE' : 'not specified'}
+        {deployment === 'public' ? 'SAP S/4HANA Cloud Public Edition' : deployment === 'private' ? 'SAP Cloud ERP Private' : 'not specified'}
       </p>
 
       {/* The artefact and the rationale as shown, when they are the model's

@@ -146,7 +146,7 @@ async function startSweep(page: Page, projectId: string, { pauseClock }: { pause
   // model if started before then. The notice is its word that it has read it.
   await expect(page.locator('[data-zero-llm-notice]'), 'the page never learned the narrative is off')
     .toBeVisible({ timeout: 30000 });
-  await page.getByText('Public Cloud Edition').first().click();
+  await page.getByText('SAP S/4HANA Cloud Public Edition', { exact: true }).first().click();
   await page.getByLabel(/^I agree to the Terms & Conditions/).check();
   await expect(start).toBeEnabled();
   await start.click();

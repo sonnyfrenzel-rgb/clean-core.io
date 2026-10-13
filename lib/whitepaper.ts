@@ -145,7 +145,7 @@ export const FROM_LANDING = {
       'Needed, below the target platform’s bar, and SAP’s Cloudification Repository names no released API and no successor for it.',
     rebuild:
       'Needed, below the bar, and a successor or an extension path is named — and every modification or own write to an SAP table.',
-    keep: 'Needed and permitted on the target platform: Public Edition level A only, Private Edition level A or B.',
+    keep: 'Needed and permitted on the target platform: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) level A only, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) level A or B.',
   } as Record<string, string>,
   evidenceStations: [
     { key: 'source', t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as ProvenanceValue },

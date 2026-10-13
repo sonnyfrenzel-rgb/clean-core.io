@@ -514,7 +514,7 @@ test.describe('capture the landing page views', () => {
       await startButton.waitFor({ timeout: 120000 });
       await page.waitForTimeout(2000);
       await assertNoTermsGate(page, `/project/${projectId}/analyze`);
-      await page.locator('label', { hasText: 'Private Cloud RISE Edition' }).first().click();
+      await page.locator('label', { hasText: 'Formerly SAP S/4HANA Cloud Private Edition' }).first().click();
       await startButton.click();
       const dialog = page.locator('[role=dialog]');
       await dialog.waitFor({ timeout: 30000 });

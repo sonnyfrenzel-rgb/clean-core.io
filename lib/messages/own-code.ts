@@ -63,9 +63,9 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.tryExample': 'Try an example instead',
   'ownCode.start': 'Start analysis',
   'ownCode.startNext':
-    'Next: your workspace reads the code and signs the reading — no model call, assessed against the Private Edition. Counted only once the run is signed.',
+    'Next: your workspace reads the code and signs the reading — no model call, assessed against SAP Cloud ERP Private. Counted only once the run is signed.',
   'ownCode.startNextModel':
-    'Next: your workspace reads the code, the model writes the narrative, and both are signed as one run, assessed against the Private Edition. Counted only once the run is signed.',
+    'Next: your workspace reads the code, the model writes the narrative, and both are signed as one run, assessed against SAP Cloud ERP Private. Counted only once the run is signed.',
   'ownCode.addSource': 'Add the ABAP source to start.',
   'ownCode.createFailed': 'The project could not be created. Nothing was saved.',
   'ownCode.nothingCreated': 'Nothing was created.',

@@ -97,7 +97,7 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
 
-  await page.getByText('Private Cloud RISE Edition').first().click();
+  await page.getByText('SAP Cloud ERP Private', { exact: true }).first().click();
   const ack = page.locator('[data-personal-data-ack] input[type="checkbox"]');
   if (await ack.count()) await ack.check();
   await page.getByRole('button', { name: /Start Analysis/ }).click();

@@ -343,7 +343,7 @@ interface S4Config {
 ```typescript
 interface Project {
   // ... other fields ...
-  s4Deployment?: 'public' | 'private';   // Public Cloud vs. Private Cloud
+  s4Deployment?: 'public' | 'private';   // SAP S/4HANA Cloud Public Edition vs. SAP Cloud ERP Private
   s4Environment?: 'mock' | 'live';       // Mock (simulated) vs. Live (real tenant)
   s4Config?: S4Config;                   // Tenant connection credentials
 }

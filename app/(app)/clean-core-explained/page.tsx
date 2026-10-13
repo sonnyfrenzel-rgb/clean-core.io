@@ -31,7 +31,7 @@ const CLEAN_CORE_DEFINITION = `SAP clean core means running SAP S/4HANA standard
 const IN_SHORT: { q: string; a: string; part: string; partLabel: string }[] = [
   {
     q: 'Why does SAP clean core matter?',
-    a: "Upgrades stay routine instead of becoming projects, and a move to the cloud stays possible: SAP's public cloud edition and ABAP Cloud do not run the older techniques, and the private cloud edition keeps them only at the price of harder upgrades.",
+    a: "Upgrades stay routine instead of becoming projects, and a move to the cloud stays possible: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) and ABAP Cloud do not run the older techniques, and SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) keeps them only at the price of harder upgrades.",
     part: '#basics',
     partLabel: 'Part 1',
   },

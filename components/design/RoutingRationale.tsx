@@ -106,13 +106,13 @@ export default function RoutingRationale({
             <span className="cc-text-label text-cc-ink-muted">Target Deployment</span>
           </div>
           <span className="cc-text-h3 text-cc-ink">
-            {/* An undefined deployment used to render as "Private Cloud (RISE)" —
+            {/* An undefined deployment used to render as the private edition —
                 a specific claim about the customer's landscape, made because a
                 value was missing. */}
             {s4Deployment === 'public'
-              ? 'Public Cloud'
+              ? 'SAP S/4HANA Cloud Public Edition'
               : s4Deployment === 'private'
-                ? 'Private Cloud (RISE)'
+                ? 'SAP Cloud ERP Private'
                 : 'Not specified'}
           </span>
         </div>
