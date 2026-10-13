@@ -1346,7 +1346,7 @@ export function buildAbapEvidence(
     const adbcLines = dependencies.adbc.map((execution) => execution.line);
     // One reading of the statements for the three detectors.
     const read = readStatements(code);
-    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines, validationOutcomeRead: fixes })) {
+    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines, precisionFixes: fixes })) {
       addFinding({
         kind: 'security-review',
         title: `Security review: ${task.title}`,

@@ -88,8 +88,8 @@ test.describe('a file-name validation counts only when its failure stops the pro
   const src = (validation: string) =>
     ['REPORT zfile.', 'PARAMETERS p_path TYPE string.', validation, 'OPEN DATASET p_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
   const CALL = "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = p_path";
-  const kinds = (validation: string, validationOutcomeRead: boolean) =>
-    readSecurityReviewTasks(src(validation), { validationOutcomeRead }).map((t) => t.kind);
+  const kinds = (validation: string, precisionFixes: boolean) =>
+    readSecurityReviewTasks(src(validation), { precisionFixes }).map((t) => t.kind);
 
   test('a handled failure whose sy-subrc nobody reads leaves the task', () => {
     expect(kinds(`${CALL} EXCEPTIONS OTHERS = 1.`, true)).toEqual(['file-path-from-input']);
@@ -110,6 +110,87 @@ test.describe('a file-name validation counts only when its failure stops the pro
   test('buildAbapEvidence passes the gate', () => {
     const code = src(`${CALL} EXCEPTIONS OTHERS = 1.`);
     const tasks = (engine: string) => buildAbapEvidence(code, 'zfile.abap', 'private', undefined, engine).findings.filter((f) => f.kind === 'security-review').length;
+    expect(tasks(NEW)).toBe(1);
+    expect(tasks(OLD)).toBe(0);
+  });
+});
+
+test.describe('a statement that only mentions sy-subrc does not count as evaluating it (SEC-2026-812, SEC-2026-814)', () => {
+  const CHECK = "AUTHORITY-CHECK OBJECT 'F_BKPF_BUK' ID 'BUKRS' FIELD p_bukrs ID 'ACTVT' FIELD '02'.";
+  const auth = (after: string) =>
+    ['REPORT zauth.', 'PARAMETERS p_bukrs TYPE bukrs.', CHECK, after, 'DELETE FROM zbkpf WHERE bukrs = p_bukrs.', ''].join('\n');
+  const authTasks = (after: string, precisionFixes: boolean) =>
+    readSecurityReviewTasks(auth(after), { precisionFixes }).filter((t) => t.kind === 'authority-result-not-evaluated').length;
+
+  test('after an AUTHORITY-CHECK, a statement that decides on sy-subrc clears the task', () => {
+    for (const after of [
+      'IF sy-subrc <> 0. RETURN. ENDIF.',
+      'CHECK sy-subrc = 0.',
+      'CASE sy-subrc. WHEN 0. WHEN OTHERS. LEAVE PROGRAM. ENDCASE.',
+      'ASSERT sy-subrc = 0.',
+      'DATA(ok) = COND abap_bool( WHEN sy-subrc = 0 THEN abap_true ELSE THROW zcx_no_auth( ) ).',
+    ]) {
+      expect(authTasks(after, true), after).toBe(0);
+    }
+  });
+
+  test('after an AUTHORITY-CHECK, a statement that only mentions sy-subrc keeps the task', () => {
+    for (const after of ['WRITE sy-subrc.', 'lv_rc = sy-subrc.', "MESSAGE |rc { sy-subrc }| TYPE 'S'.", 'DATA(ok) = xsdbool( sy-subrc = 0 ).']) {
+      expect(authTasks(after, true), after).toBe(1);
+    }
+    // What v3.0.12 signed: any mention counted.
+    expect(authTasks('WRITE sy-subrc.', false)).toBe(0);
+  });
+
+  test('after a file-name validation with EXCEPTIONS, the same rule decides whether the path is covered', () => {
+    const src = (after: string) => ['REPORT zfile.', 'PARAMETERS p_file TYPE string.',
+      "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'ZLOG' CHANGING physical_filename = p_file EXCEPTIONS validation_failed = 1 OTHERS = 2.",
+      after, 'OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
+    const fileTasks = (after: string) =>
+      readSecurityReviewTasks(src(after), { precisionFixes: true }).filter((t) => t.kind === 'file-path-from-input').length;
+    expect(fileTasks('WRITE sy-subrc.')).toBe(1);
+    expect(fileTasks('lv_rc = sy-subrc.')).toBe(1);
+    expect(fileTasks('IF sy-subrc <> 0. RETURN. ENDIF.')).toBe(0);
+    expect(fileTasks('CHECK sy-subrc = 0.')).toBe(0);
+  });
+
+  test('buildAbapEvidence passes the gate', () => {
+    const code = auth('WRITE sy-subrc.');
+    const tasks = (engine: string) => buildAbapEvidence(code, 'zauth.abap', 'private', undefined, engine).findings
+      .filter((f) => f.kind === 'security-review' && /result is not read/.test(f.title)).length;
+    expect(tasks(NEW)).toBe(1);
+    expect(tasks(OLD)).toBe(0);
+  });
+});
+
+test.describe('the flow from input is followed however long the chain and in whatever order the source writes it (SEC-2026-813)', () => {
+  const LENGTH = 12;
+  const chain = (reversed: boolean) => {
+    const steps: string[] = [];
+    for (let i = 2; i <= LENGTH; i++) steps.push(`v${i} = v${i - 1}.`);
+    const assignments = ['v1 = p_file.', ...steps];
+    return ['REPORT zchain.', 'PARAMETERS p_file TYPE string.',
+      `DATA: ${Array.from({ length: LENGTH }, (_, i) => `v${i + 1} TYPE string`).join(', ')}.`,
+      ...(reversed ? assignments.reverse() : assignments),
+      `OPEN DATASET v${LENGTH} FOR INPUT IN TEXT MODE ENCODING DEFAULT.`, ''].join('\n');
+  };
+  const fileTasks = (reversed: boolean, precisionFixes: boolean) =>
+    readSecurityReviewTasks(chain(reversed), { precisionFixes }).filter((t) => t.kind === 'file-path-from-input').length;
+
+  test('a chain written forwards reaches the path in both engines', () => {
+    expect(fileTasks(false, true)).toBe(1);
+    expect(fileTasks(false, false)).toBe(1);
+  });
+
+  test('a chain written backwards reaches the path from 3.0.13', () => {
+    expect(fileTasks(true, true)).toBe(1);
+    // What v3.0.12 signed: eight passes, one link each.
+    expect(fileTasks(true, false)).toBe(0);
+  });
+
+  test('buildAbapEvidence passes the gate', () => {
+    const tasks = (engine: string) => buildAbapEvidence(chain(true), 'zchain.abap', 'private', undefined, engine).findings
+      .filter((f) => f.kind === 'security-review').length;
     expect(tasks(NEW)).toBe(1);
     expect(tasks(OLD)).toBe(0);
   });
