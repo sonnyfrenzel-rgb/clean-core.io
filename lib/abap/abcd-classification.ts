@@ -2,9 +2,9 @@
  * SAP Clean Core object classification — A / B / C / D.
  *
  * SAP's Cloudification Repository governs which technical objects are Clean-Core
- * ready. The community has moved from the older Tier 1/2/3 wording to a four-grade
- * cloud-readiness classification, driven by API release status, upgrade safety and
- * extensibility compliance:
+ * ready. SAP's clean core level concept (2025) replaced the earlier three-tier
+ * extensibility model with four levels, driven by API release status, upgrade
+ * safety and extensibility compliance:
  *
  *   A = released SAP APIs & extension points (ABAP Cloud / BTP)
  *   B = classic SAP APIs, following SAP recommendations
@@ -21,7 +21,10 @@
  * Clean-Core.io derives this grade DETERMINISTICALLY — from the Cloudification
  * Repository release state where an object is known, and otherwise from the
  * evidence the engine already computes (access type, risk level, custom flag).
- * It is a *derived* readiness grade aligned to the A–D scheme — proven, not guessed.
+ * It is a *derived* readiness grade aligned to the A–D scheme. Where no SAP state
+ * applies the grade is an estimate, labelled as one, and an estimate is never A:
+ * level A means released (C1) objects only, and only SAP's release file can say
+ * that an object is released.
  */
 
 export type CloudReadinessGrade = 'A' | 'B' | 'C' | 'D' | 'Unknown';
@@ -127,7 +130,11 @@ export function gradeFromCoupling(c: { accessType?: string; riskLevel?: string; 
   const isWrite = access !== 'read' && access !== 'reference';
   if (risk === 'High') return isWrite ? 'D' : 'C';
   if (risk === 'Medium') return isWrite ? 'C' : 'B';
-  return 'A'; // Low risk
+  // Low risk: at most B. Level A is "released (C1) objects only", and a risk
+  // estimate has no released object behind it — only a catalog lookup
+  // (`gradeFromSapStates`) can say A.
+  // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
+  return 'B';
 }
 
 /** Grade a custom code object from its criticality and type. */
@@ -138,7 +145,9 @@ export function gradeFromInventory(item: { criticality?: string; type?: string }
   const crit = item.criticality;
   if (crit !== 'High' && crit !== 'Medium' && crit !== 'Low') return 'Unknown';
   if (crit === 'High') return 'C';
-  if (crit === 'Low') return 'A';
+  // Low and Medium criticality: B, never A — a criticality estimate has no
+  // released (C1) object behind it, and level A means exactly that.
+  // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
   return 'B';
 }
 
@@ -193,7 +202,8 @@ export function worstGrade(grades: CloudReadinessGrade[]): CloudReadinessGrade {
  *                      has an implementation that was not read, so it stays
  *                      heuristic.
  *   heuristic        - no SAP data applies (custom Z/Y objects, or evidence
- *                      without an object name). Falls back to risk/criticality.
+ *                      without an object name). Falls back to risk/criticality — at most B,
+ *                      since only a released object is level A.
  */
 export type GradeProvenance = 'catalog' | 'catalog-residual' | 'own-object' | 'heuristic';
 

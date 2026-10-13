@@ -21,14 +21,16 @@ import {
 
 /**
  * Cloud Readiness Classification (A–D) — SAP's clean core level concept, which
- * superseded the older Tier 1/2/3 wording.
+ * replaced SAP's earlier three-tier extensibility model in 2025.
  *
- * Three tiers, and the difference is visible per row. Where SAP has published a
+ * Three sources of a grade, and the difference is visible per row. Where SAP has published a
  * state for an object, the grade follows by a versioned rule from the Cloudification
  * Repository and SAP's classicAPI/noAPI file — for a table, for the access the
  * code makes: reading KNA1 is C, writing to it is D. Your own Z/Y tables are
  * graded as your own data (B). Everything else SAP has not classified falls
  * back to the heuristic over access type, risk and object type, and says so.
+ * An estimate is never A: level A is released (C1) objects only, and only
+ * SAP's release file can say that (C4, DSAG ABAP guideline review 13.10.2026).
  *
  * There is no grade for the program as a whole here: each row is one object and
  * the badge counts rows.
@@ -179,7 +181,7 @@ export default function AbcdClassificationPanel({
       title="Cloud Readiness Classification (A–D)"
       badge={`A ${dist.A} · B ${dist.B} · C ${dist.C} · D ${dist.D}`}
       badgeSeverity={dist.D > 0 ? 'error' : dist.C > 0 ? 'warning' : 'neutral'}
-      tooltip="SAP's clean core level concept (A = released, B = classic SAP API, C = internal/conditional, D = not recommended), one grade per object. Objects SAP has published a state for are looked up in the Cloudification Repository and SAP's classicAPI/noAPI file, and a table is graded for the access your code makes: reading a table SAP will not release is C, writing to it is D. Your own Z/Y tables are graded B as classic ABAP working on its own data; other objects SAP has not classified fall back to a heuristic and are marked as estimated. Not an authoritative SAP ATC classification and not part of the signed audit pack — verify with SAP ADT/ATC."
+      tooltip="SAP's clean core level concept (A = released, B = classic SAP API, C = internal/conditional, D = not recommended), one grade per object. Objects SAP has published a state for are looked up in the Cloudification Repository and SAP's classicAPI/noAPI file, and a table is graded for the access your code makes: reading a table SAP will not release is C, writing to it is D. Your own Z/Y tables are graded B as classic ABAP working on its own data; other objects SAP has not classified fall back to a heuristic, are marked as estimated and are never A — level A needs an object SAP lists as released. Not an authoritative SAP ATC classification and not part of the signed audit pack — verify with SAP ADT/ATC."
     >
       {/* Roadmap 7.10 - which snapshot answered, and whether it is the one this
           target's verdicts come from. A refused target shows no catalog grade. */}
@@ -219,7 +221,8 @@ export default function AbcdClassificationPanel({
           )}
           {estimated > 0 && (
             <> <b className="font-semibold">{estimated}</b> could not be looked up — SAP has not
-            classified them, so those are estimated from access type, risk and object type.</>
+            classified them, so those are estimated from access type, risk and object type, and an
+            estimate is at most B: level A needs an object SAP lists as released.</>
           )}{' '}
           Not an authoritative SAP ATC classification and <strong>not part of the signed audit pack</strong>.
           Verify each grade with SAP ADT / ATC for your target release before relying on it.
@@ -356,6 +359,6 @@ function gradeOrigin(it: {
     case 'own-object':
       return `Your own ${access ? `table, ${access} by this code` : 'object'}. SAP's files do not classify it; classic ABAP working on its own data is level B.`;
     default:
-      return 'Estimated from access type, risk and object type';
+      return 'Estimated from access type, risk and object type — at most B, since level A needs an object SAP lists as released';
   }
 }
