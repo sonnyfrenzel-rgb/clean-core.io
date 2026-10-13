@@ -14,7 +14,7 @@ import { readDataScope } from '../lib/abap/data-scope';
 import { APP_VERSION } from '../lib/version';
 
 /**
- * Roadmap 3.0.7 — "Engine: what the ZMM_BESTELLUEBERSICHT review showed",
+ * Roadmap 3.0.7 — "Engine: what the MM case review showed",
  * the bounded slice (a)–(e), and the rest of the item (f)–(k). Server-free: every test is a pure function of a
  * source written here, none of that report's code.
  */

@@ -4,7 +4,7 @@ import { nonEmptyGuarded } from './business-statement';
 
 /**
  * Data scope, derived values and selection defaults — roadmap 3.0.7, from the
- * ZMM_BESTELLUEBERSICHT review.
+ * MM case review.
  *
  * The review asked three questions the map does not answer and a business
  * reader does: *which* purchase orders does the list show (the `WHERE` of each
@@ -53,7 +53,7 @@ export interface DataScope {
 
 export interface DerivedValue {
   line: number;
-  /** The field computed: `it_ausgabe-offen`. */
+  /** The field computed: `gt_list-open_qty`. */
   target: string;
   expression: string;
   /** The data objects the expression reads, as written. */

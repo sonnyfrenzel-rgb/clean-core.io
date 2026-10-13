@@ -3216,7 +3216,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — a `CASE` on the function
+   * Roadmap 3.0.7 (MM case review) — a `CASE` on the function
    * code a person pressed. Its arms are **alternatives the user chooses
    * from**, each as often and in whatever order they like, not steps that
    * follow one another: the review found a list callback's "display order",
@@ -4037,7 +4037,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — **only an early end ends
+   * Roadmap 3.0.7 (MM case review) — **only an early end ends
    * the run.** The event blocks of a report used to stand side by side, each
    * with its own start and end, and a view that wanted one flow had to guess
    * whether the end of `START-OF-SELECTION` was the end of the run. ABAP
@@ -4764,7 +4764,7 @@ class SkeletonBuilder {
     const anchor = named?.anchor ?? program?.anchor ?? entry?.anchor ?? this.firstAnchor();
     if (!anchor) return [];
 
-    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): the run lane is named for
+    // Roadmap 3.0.7 (MM case review): the run lane is named for
     // the role its evidence proves — "User" where a person is at the keyboard,
     // "System" where nobody is — and not after the token that proved it. A lane
     // called REUSE_ALV_GRID_DISPLAY named a function module as the actor. The

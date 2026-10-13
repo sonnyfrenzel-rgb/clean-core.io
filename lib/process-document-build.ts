@@ -442,7 +442,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const whenOf = (branch: ProcessMapElement['branches'][number]) =>
     branch.label || (branch.condition ? `If ${branch.condition}` : 'Otherwise');
 
-  // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): the arms of a decision on
+  // Roadmap 3.0.7 (MM case review): the arms of a decision on
   // what the user pressed (`detail.userAction`, a `CASE` on `sy-ucomm` or on a
   // list callback's function code) are alternatives the user chooses from, as
   // often and in whatever order they like — not steps that follow one another.

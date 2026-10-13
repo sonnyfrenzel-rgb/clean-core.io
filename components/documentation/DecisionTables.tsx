@@ -9,7 +9,7 @@ import { decisionTableCaption, decisionTableRulesLine, wt } from '@/lib/workspac
 
 /**
  * One decision table as one business rule task — roadmap 3.0.7
- * (ZMM_BESTELLUEBERSICHT review, recommendation 3; `DESIGN.md` §5.8, *Business
+ * (MM case review, recommendation 3; `DESIGN.md` §5.8, *Business
  * rule task … opens as a decision table*).
  *
  * The task's name says which field it determines, the table one row per

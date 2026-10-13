@@ -249,7 +249,7 @@ export interface BusinessRule {
 export interface DecisionTable {
   /** `DT-001`, in source order. Stable per source. */
   id: string;
-  /** The field every arm sets, as the source writes it: `it_ausgabe-ampel`. */
+  /** The field every arm sets, as the source writes it: `gt_list-light`. */
   field: string;
   /** The `CASE` selector; `null` for an `IF` chain. */
   selector: string | null;
@@ -364,9 +364,9 @@ function conditionKey(conditionText: string, renumbered: boolean): string {
  * the first two.
  */
 /**
- * Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review) — the `WHEN` arms of a `CASE`
+ * Roadmap 3.0.7 (MM case review) — the `WHEN` arms of a `CASE`
  * with more than two arms stand apart: **one rule per arm.** Joined as one
- * value list, `CASE r_ucomm` with `'&IC1'`, `'ERLED'` and `'LDATUM'` became one
+ * value list, `CASE r_ucomm` with `'&IC1'`, `'DONE'` and `'DATE'` became one
  * rule whose three function codes "run" the step of the first arm — three
  * different actions read as one. Two arms stay one rule (a `CASE` that only
  * tells one value from another, the old join 2); a `WHEN 'A' OR 'B'` arm is

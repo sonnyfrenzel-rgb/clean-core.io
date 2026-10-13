@@ -250,7 +250,7 @@ test.describe('candidates that are one rule become one rule', () => {
   });
 
   test('a CASE with three values and WHEN OTHERS is one rule per valued arm, each with the selector and its WHEN anchored', () => {
-    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): three arms are three
+    // Roadmap 3.0.7 (MM case review): three arms are three
     // decisions, not one rule whose values all "run" the first arm's step.
     const rules = deriveBusinessRules(read('Z_MATERIAL_STOCK_CALC.txt')).rules;
     expect(rules.map((r) => r.label)).toEqual([

@@ -681,7 +681,7 @@ export function buildAbapEvidence(
     // this code, whatever the user then does in the transaction is their own
     // dialog. Reading both as BDC cost ten points instead of five, made the
     // router send a display list side by side, and told the reader the program
-    // "drives" a transaction it only opens (ZMM_BESTELLUEBERSICHT review,
+    // "drives" a transaction it only opens (MM case review,
     // roadmap 3.0.7). The navigation is a classic-UI dependency — the SAP GUI
     // screens of the called transaction — and is reported as one, with its
     // transaction code, so the level of the object is still graded.
@@ -731,7 +731,7 @@ export function buildAbapEvidence(
         technicalDetail: `CALL TRANSACTION statement to drive SAP screens programmatically.${batchInputDetail(call, writes, tcode)}`,
         cleanCoreImpact: 'BDC relies on traditional SAP GUI screen flows. These are highly unstable, prone to breaking during upgrades, and do not work in SAP Fiori or Cloud environments.',
         // Domain-neutral: the example named the sales order API for every
-        // transaction, purchase orders included (ZMM_BESTELLUEBERSICHT review).
+        // transaction, purchase orders included (MM case review).
         // Where the filled fields name the table, the successor SAP lists for
         // it is the domain-specific one, and the sentence names it (3.0.7).
         recommendation: successor
