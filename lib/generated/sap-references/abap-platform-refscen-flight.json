@@ -1,0 +1,5219 @@
+{
+  "key": "abap-platform-refscen-flight",
+  "source": "https://github.com/SAP-samples/abap-platform-refscen-flight",
+  "branch": "ABAP-platform-cloud",
+  "commit": "93f769170fa0b41591c3a4d39284f353cd90799e",
+  "syncedAt": "2026-10-13",
+  "licence": {
+    "spdx": "Apache-2.0",
+    "github": "Apache-2.0",
+    "reuse": [
+      "Apache-2.0"
+    ],
+    "file": "LICENSES/Apache-2.0.txt",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0"
+  },
+  "files": [
+    {
+      "path": "src/ana/#dmo#a_trvl_ana.tabl.xml",
+      "sha256": "1931ec8f328bac0cea64a70b81111f5b5b6926344e9af9dbb58609d4110127d3",
+      "size": 4200
+    },
+    {
+      "path": "src/ana/#dmo#c_travel_ana.ddls.asddls",
+      "sha256": "15e2db7f92248a442ee6da204e83821d8c48ff64e20b1ccc31e04d9fc20bc5a6",
+      "size": 1442
+    },
+    {
+      "path": "src/ana/#dmo#c_travel_ana.ddls.baseinfo",
+      "sha256": "859f930248d3c1b7f66d6f5ba1b5b0a8275d5aad043fe7fa5d7479a146f4cb46",
+      "size": 70
+    },
+    {
+      "path": "src/ana/#dmo#c_travel_ana.ddls.xml",
+      "sha256": "49dd65e233be4a28606fd204dff941d4b522f36773696a264e596aa5bc3c133c",
+      "size": 432
+    },
+    {
+      "path": "src/ana/#dmo#c_travel_ana.ddlx.asddlxs",
+      "sha256": "de659ec8836d5c74271410dab9f057743e0b88c28cf2e38a811478d23cc0e10a",
+      "size": 3206
+    },
+    {
+      "path": "src/ana/#dmo#c_travel_ana.ddlx.xml",
+      "sha256": "b1756ccc1767372110d816c947a48b61e58d8bb0ac888aa41ce090e6a2c0a17e",
+      "size": 452
+    },
+    {
+      "path": "src/ana/#dmo#i_travel_ana.ddls.asddls",
+      "sha256": "8ef0a07e550132d1aa7b77902896a8c9f015e9127b960fb926e372bca0dfe74c",
+      "size": 1159
+    },
+    {
+      "path": "src/ana/#dmo#i_travel_ana.ddls.baseinfo",
+      "sha256": "22a2cef8e367685e7bf1d039f72923a8fd66120757ef6c6e6c68bfa3c3c1fe65",
+      "size": 68
+    },
+    {
+      "path": "src/ana/#dmo#i_travel_ana.ddls.xml",
+      "sha256": "53cf965fb6eb32e2d05bdd2b8cb8318d01c5629e94ffe19509fd58b6ae3780c4",
+      "size": 432
+    },
+    {
+      "path": "src/ana/#dmo#ui_travel_o4_ana.srvb.xml",
+      "sha256": "6209aecb3ebf34b7b55909b15335fbd1b07879e79c90c96b9f4ad3b14722a068",
+      "size": 1459
+    },
+    {
+      "path": "src/ana/#dmo#ui_travel_o4_ana.srvd.srvdsrv",
+      "sha256": "679c2f3973fed47d4921d8508d1edefcc73f7d7fbde5dd8768ab555bd4b2d5ca",
+      "size": 218
+    },
+    {
+      "path": "src/ana/#dmo#ui_travel_o4_ana.srvd.xml",
+      "sha256": "dd81d08a16d238cbe823d8d2a196883d1f11d930d78e4989ee5ab08aec34f503",
+      "size": 772
+    },
+    {
+      "path": "src/ana/#dmo#ui_travel_o4_ana_0001_g4ba.sco2.xml",
+      "sha256": "727cb4cfd5eb4dbfd5fdac59618ae22898079835634005bf74165a08bba605f5",
+      "size": 662
+    },
+    {
+      "path": "src/ana/dg/#dmo#cl_data_gen_travel_ana.clas.abap",
+      "sha256": "6f20f32a5b6c4b85ed1b64e1712d5dacf16c09b51d3c3ae9430788e20b53649d",
+      "size": 420
+    },
+    {
+      "path": "src/ana/dg/#dmo#cl_data_gen_travel_ana.clas.locals_imp.abap",
+      "sha256": "2420ef6ac11457078fbd189a85839bb7bfd4441e23459611e429939e5756d713",
+      "size": 8218
+    },
+    {
+      "path": "src/ana/dg/#dmo#cl_data_gen_travel_ana.clas.xml",
+      "sha256": "35d088af803d849e1b47fb1682bdc920a3f6474f93d779bf398b7b6c2c5ee473",
+      "size": 506
+    },
+    {
+      "path": "src/ana/dg/#dmo#data_gen_travel_ana.enho.xml",
+      "sha256": "6637c56ec936de5c6762a729583ff34ff3c9a42711aa0516fb153d3e1b22bc34",
+      "size": 1536
+    },
+    {
+      "path": "src/ana/dg/package.devc.xml",
+      "sha256": "1f2de96bf56501d9afe93142e39696690a21ab569161d714b72702df95444a46",
+      "size": 458
+    },
+    {
+      "path": "src/ana/package.devc.xml",
+      "sha256": "97ec3cfea357270cbcd91fe8bc7eccbeb76a532b7a4ddeb127668a6b737d83a3",
+      "size": 441
+    },
+    {
+      "path": "src/colldraft/#dmo#a_book_cd.tabl.xml",
+      "sha256": "1d032237a1c5a6a4520debab9fae455849937173fe4628e5c8d746cb5f6a3e79",
+      "size": 2431
+    },
+    {
+      "path": "src/colldraft/#dmo#a_travel_cd.tabl.xml",
+      "sha256": "c36101363410907ecc26427e6f8c614ce0b47660b6f641c4483ad922f8cf5fb8",
+      "size": 3623
+    },
+    {
+      "path": "src/colldraft/#dmo#bp_c_traveltp_cd.clas.abap",
+      "sha256": "a9f54e74da97e045ddd1c1305a4e329fa8d7ac342b7dffd2fb484c4ec2e7783a",
+      "size": 162
+    },
+    {
+      "path": "src/colldraft/#dmo#bp_c_traveltp_cd.clas.xml",
+      "sha256": "bbbe22222e068f1f75becd2a573780f6ed4be1a666022284aff94d39bee1e22c",
+      "size": 585
+    },
+    {
+      "path": "src/colldraft/#dmo#bp_r_traveltp_cd.clas.abap",
+      "sha256": "1914693c7a3cc273af55620ea8550f6c08bcc0fa48c6253243ba944ff544899f",
+      "size": 162
+    },
+    {
+      "path": "src/colldraft/#dmo#bp_r_traveltp_cd.clas.locals_imp.abap",
+      "sha256": "ec9c0875661138359a1917ac8d90daa68ad63b5dc600f978a8e96c5ee023ea6f",
+      "size": 7445
+    },
+    {
+      "path": "src/colldraft/#dmo#bp_r_traveltp_cd.clas.xml",
+      "sha256": "4cd0448903e57c4c55eb54da3ef4c6ab7fb41c2751f5a1e24d4b885fd4bf23c3",
+      "size": 585
+    },
+    {
+      "path": "src/colldraft/#dmo#c_booking_cd.ddls.asddls",
+      "sha256": "18d7700b6c330bb0ad8c6fef72341e31a00dc81731717160c6c037ec61234000",
+      "size": 338
+    },
+    {
+      "path": "src/colldraft/#dmo#c_booking_cd.ddls.baseinfo",
+      "sha256": "96a0c54ea96fe424f6803edb7dd686b15802036bb066555611cc9f637bda0d7f",
+      "size": 161
+    },
+    {
+      "path": "src/colldraft/#dmo#c_booking_cd.ddls.xml",
+      "sha256": "189deb324184e3df6c83e0ad473ba55e699f1cd002f017814f40bb6f5691bd15",
+      "size": 435
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.dcls.asdcls",
+      "sha256": "bd24cbf7f549aa65fb1f5adf943a8829cf3e0a1f983d9af5334fbf50e62cc5a5",
+      "size": 288
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.dcls.xml",
+      "sha256": "f3aa179014a50c4d9d92d18f912c0c7c12302600dc19ee4d353bf3f62c641404",
+      "size": 403
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.ddls.asddls",
+      "sha256": "c32d98893bd45b0aa27df8fa9db3ea3c6c658bf15293efba7e2f1357cfd88e97",
+      "size": 857
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.ddls.baseinfo",
+      "sha256": "49a81f9789f7651d025a98d6608e8aad5c738e2d726f557c1a03ed8c5ba0c8b7",
+      "size": 203
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.ddls.xml",
+      "sha256": "1e1917259acefeabe41f837dc8eedf0a93562ed17d445efe3726fc7e14684988",
+      "size": 437
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.ddlx.asddlxs",
+      "sha256": "d3c50a98e0394c7223fbed85a7496d36489fc0dc5613cd6204bfa3e952543691",
+      "size": 1107
+    },
+    {
+      "path": "src/colldraft/#dmo#c_bookingtp_cd.ddlx.xml",
+      "sha256": "d38ea600456057ed28834b338509e552027f8931040d4ecc3f934094f3abe2f5",
+      "size": 457
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.bdef.asbdef",
+      "sha256": "e36bb3ca9954bda9a3a4941fb6c71c3353dac59d703e6f42905e5ab4d78c363d",
+      "size": 582
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.bdef.xml",
+      "sha256": "c93408edb6d31c9aad3167441af8874000252556ec4f86d62dadb129be1555d0",
+      "size": 1838
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.dcls.asdcls",
+      "sha256": "553633b7cd5d7fc6ddc0d2456bc00621214850d3f83f14673645a160b35c998b",
+      "size": 284
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.dcls.xml",
+      "sha256": "ec41f56da569b3e37b6be402ccc02d5613628d3cc2765b319f090efef4a3d213",
+      "size": 401
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.ddls.asddls",
+      "sha256": "3807a6ec2f688f97267fb2d0b8343abdc2c920499093e5a0b27ddeb9f50e0050",
+      "size": 1022
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.ddls.baseinfo",
+      "sha256": "06ebf1d4a9532b000402c5750b04116a344c8b4e7b5d536431180dc8724ec335",
+      "size": 203
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.ddls.xml",
+      "sha256": "9769fcd30f51137ae426ae0d16dcc239fa28b5e960c84817654ac323db57ed43",
+      "size": 435
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.ddlx.asddlxs",
+      "sha256": "a6b258ae65a25829094457d340e76734db3a106f9efb3e01a09bcbcb2df1a9ef",
+      "size": 1707
+    },
+    {
+      "path": "src/colldraft/#dmo#c_traveltp_cd.ddlx.xml",
+      "sha256": "44c203de3a4220d4eec588ffbb89a2a34b545bc6d46cc584e6bc3d74e4284657",
+      "size": 455
+    },
+    {
+      "path": "src/colldraft/#dmo#d_book_cd.tabl.xml",
+      "sha256": "45e613cccf7aea0934442d6a217a4cb58485d70f8867944c757e8d2d3b805e1b",
+      "size": 2618
+    },
+    {
+      "path": "src/colldraft/#dmo#d_travel_cd.tabl.xml",
+      "sha256": "79259809815f2c696f51a0e59e2fd3285f73d732eb0de4633a2b81a6c0e7a9e3",
+      "size": 3827
+    },
+    {
+      "path": "src/colldraft/#dmo#oast.auth.xml",
+      "sha256": "015a3e28e1437c89069e1fdb6258f87c2a50e1deadc22968ac5dadc8cca00667",
+      "size": 351
+    },
+    {
+      "path": "src/colldraft/#dmo#r_bookingtp_cd.dcls.asdcls",
+      "sha256": "669055c366aedf06a9b9bcab4ff00c56feace652253e65b0a8e89348418ad72f",
+      "size": 226
+    },
+    {
+      "path": "src/colldraft/#dmo#r_bookingtp_cd.dcls.xml",
+      "sha256": "215e53684a84fe5f591649052ab03286ab955d4b7102b79ac0f2b26ef7030e53",
+      "size": 403
+    },
+    {
+      "path": "src/colldraft/#dmo#r_bookingtp_cd.ddls.asddls",
+      "sha256": "2192b928ab22db80d2d6cf94a6b8c181b2683e5618a8ce2d7f8629644dbc0202",
+      "size": 705
+    },
+    {
+      "path": "src/colldraft/#dmo#r_bookingtp_cd.ddls.baseinfo",
+      "sha256": "0fc3bd1cb34295f3af1aa88ea6421d76a2b6859840bf3baa6fe397d6841d06e4",
+      "size": 121
+    },
+    {
+      "path": "src/colldraft/#dmo#r_bookingtp_cd.ddls.xml",
+      "sha256": "d530ed46d3f630c3b3f25f6183a03831ae10a9ef1fbb52cfbcbbb36316617c9b",
+      "size": 454
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveldraft_cd.dcls.asdcls",
+      "sha256": "871a7444bbedf4e6e6938f34cdee692d8ac1dd5570ed061168c55a87df0d20b5",
+      "size": 282
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveldraft_cd.dcls.xml",
+      "sha256": "066e08fe9b786ce6238511874ba7e0d3927d534132468978f89c17338bd3db38",
+      "size": 407
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveldraft_cd.ddls.asddls",
+      "sha256": "820da1f46975f6d2a0a03093b8ae2be9d12427b53387f0775d043fe8fc3a9343",
+      "size": 1431
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveldraft_cd.ddls.baseinfo",
+      "sha256": "89cf5b35b3ed8ae15ec02abdcedfd2620164420dbb8d7cd8e5352de59878f330",
+      "size": 69
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveldraft_cd.ddls.xml",
+      "sha256": "09780805c229449254f5ae8b9877ce8afd00b8ce6d21059725a8f6e5ee6831a9",
+      "size": 441
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.bdef.asbdef",
+      "sha256": "13602067e2f3a67bc0f91634ce265bbf7167f2cea32b5924594c8e4cf3334b19",
+      "size": 2287
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.bdef.xml",
+      "sha256": "4110c91a41d545cdc6f128b20f2241345dd8b1c7226ef8380d8175951b529472",
+      "size": 1852
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.dcls.asdcls",
+      "sha256": "7eded62bcead711d1c68f7c2d2f8aa2de65b9a14990e3b4832b9294836dff400",
+      "size": 223
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.dcls.xml",
+      "sha256": "0950f91e6f8fdd03c578baf453dc95ba183165122679bebbd16da78914b02452",
+      "size": 401
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.ddls.asddls",
+      "sha256": "d3ed5bf2b7e3fec67616a22e9c4b5421118309081e7c0f89004390b48a17e520",
+      "size": 1293
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.ddls.baseinfo",
+      "sha256": "aeec8fb193d93b8b9bf5f956057e7e73cb04b2a61aafaeacbbcb555845385c98",
+      "size": 124
+    },
+    {
+      "path": "src/colldraft/#dmo#r_traveltp_cd.ddls.xml",
+      "sha256": "18f792eba577d322ef21c48c4740e0829cb88402acd37a00428eaf78a79d4dcf",
+      "size": 449
+    },
+    {
+      "path": "src/colldraft/#dmo#tr_cd.suso.xml",
+      "sha256": "d78040fe25f33999eb4da8ccb9da82b31be0017616dee32986214afbfe03285c",
+      "size": 946
+    },
+    {
+      "path": "src/colldraft/#dmo#ui_travel_o4_cd.srvb.xml",
+      "sha256": "3f3ccd61720588f4625aba6bb3012ca6f167289de292ecfc18b01c3228f7c38c",
+      "size": 1458
+    },
+    {
+      "path": "src/colldraft/#dmo#ui_travel_o4_cd.srvd.srvdsrv",
+      "sha256": "f98bad2f0ff47b4d77823f59dfcaa059d91eb5819bbb494ede28aa7802f8eb49",
+      "size": 215
+    },
+    {
+      "path": "src/colldraft/#dmo#ui_travel_o4_cd.srvd.xml",
+      "sha256": "4a762bfce2e7b284876cc4462323e5431ace1953c0037d141f8f2a2730a8aac7",
+      "size": 772
+    },
+    {
+      "path": "src/colldraft/#dmo#ui_travel_o4_cd_0001_g4ba.sco2.xml",
+      "sha256": "2d0641c11fb810514d7f2bae4b8b4108682119d42d87ec7b6e78d904a14795e9",
+      "size": 658
+    },
+    {
+      "path": "src/colldraft/(dmo)travel_cd.nont.json",
+      "sha256": "12eb1ba6fe8af22c08284b7bb6a37257e39bad5c2d66c1caf858cff61c6c8688",
+      "size": 218
+    },
+    {
+      "path": "src/colldraft/(dmo)travel_cd.ront.json",
+      "sha256": "4b0f12d53a9edf3a6ba58a07e66feee61c42d78d759c900994cca0881eba0a87",
+      "size": 192
+    },
+    {
+      "path": "src/colldraft/dg/#dmo#cl_data_gen_travel_cd.clas.abap",
+      "sha256": "6aa4a0d4e6fdc7d0d011cbb52eecf2579e407ae2eb503b7aacee41b14ff238cf",
+      "size": 473
+    },
+    {
+      "path": "src/colldraft/dg/#dmo#cl_data_gen_travel_cd.clas.locals_imp.abap",
+      "sha256": "975486e5474da9fa08ef897c79e3f351a6fadae49d9e372780ed6ce8c4bed303",
+      "size": 12648
+    },
+    {
+      "path": "src/colldraft/dg/#dmo#cl_data_gen_travel_cd.clas.xml",
+      "sha256": "e7153bf74700f05256694701873e822cc026ea3a97fb42a06c0946e9620b24d2",
+      "size": 496
+    },
+    {
+      "path": "src/colldraft/dg/#dmo#data_gen_travel_cd.enho.xml",
+      "sha256": "7d9a48e1917a8bb9c8b6d80673d51322ac9ae2131f9c44053ee8b55f49ebaae5",
+      "size": 1541
+    },
+    {
+      "path": "src/colldraft/dg/package.devc.xml",
+      "sha256": "2f6fad03de8926f4d581f15ec173a4c5630f5c980d1e3c0ce209dd480d977463",
+      "size": 438
+    },
+    {
+      "path": "src/colldraft/package.devc.xml",
+      "sha256": "48dba5d52974f8075796a6cbd6d24db9737816a1643520a607cbf5d1dff60f4a",
+      "size": 415
+    },
+    {
+      "path": "src/draft/#dmo#a_bksuppl_d.tabl.xml",
+      "sha256": "b86bf51a724b674a4734e4f2ad65ae187180a6b1804dffbf990e7e8457fd545d",
+      "size": 2583
+    },
+    {
+      "path": "src/draft/#dmo#a_booking_d.tabl.xml",
+      "sha256": "bd40266367567276fb0990a92e82e8e24af36419ba1ba0b93a75072d568715a7",
+      "size": 3362
+    },
+    {
+      "path": "src/draft/#dmo#a_travel_d.tabl.xml",
+      "sha256": "5c73a91d50917b29f71808ba1d283a276a34d717be628b972b3ee6ca406c2c00",
+      "size": 4200
+    },
+    {
+      "path": "src/draft/#dmo#a_travel_discount.ddls.asddls",
+      "sha256": "59397d5abf522c6603d22f0965d01ff5045c56e25aa4e11980d62ba921da4dc7",
+      "size": 165
+    },
+    {
+      "path": "src/draft/#dmo#a_travel_discount.ddls.baseinfo",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1
+    },
+    {
+      "path": "src/draft/#dmo#a_travel_discount.ddls.xml",
+      "sha256": "69c963762bee37c03d931b64441b0071e8f744354f5f540f381ae76b2b49670f",
+      "size": 437
+    },
+    {
+      "path": "src/draft/#dmo#bp_booking_d.clas.abap",
+      "sha256": "8cbb4270875dffdf6959fde79dd07be474beb223fef820c8ebe28911821952d2",
+      "size": 151
+    },
+    {
+      "path": "src/draft/#dmo#bp_booking_d.clas.locals_imp.abap",
+      "sha256": "2b661236b1225498611289de66c14a45ee1bbe81437e614cab1d73bf60125e55",
+      "size": 18560
+    },
+    {
+      "path": "src/draft/#dmo#bp_booking_d.clas.testclasses.abap",
+      "sha256": "601aa2f5d453e1f280902cb105fde240ceebc9c553138ead57b7278faaa4ad62",
+      "size": 35438
+    },
+    {
+      "path": "src/draft/#dmo#bp_booking_d.clas.xml",
+      "sha256": "9c0dce389ef5a515e9a17edeafaab6ade23bd55b51897801504b63aaac3c4acc",
+      "size": 626
+    },
+    {
+      "path": "src/draft/#dmo#bp_bookingsupplement_d.clas.abap",
+      "sha256": "9c070dff57e5e31d919e064702ca9e1429db8850bcb8ab9b35d95436f91db897",
+      "size": 171
+    },
+    {
+      "path": "src/draft/#dmo#bp_bookingsupplement_d.clas.locals_imp.abap",
+      "sha256": "fd1d2acef43656248ef2402b0ada60898136850a18f00d432034e65dd41cfe47",
+      "size": 13150
+    },
+    {
+      "path": "src/draft/#dmo#bp_bookingsupplement_d.clas.testclasses.abap",
+      "sha256": "a247f75c86fc934ab50fd60cb9ef53c238fefff862d8fe2ff5d3c3b7a19ddb3d",
+      "size": 28538
+    },
+    {
+      "path": "src/draft/#dmo#bp_bookingsupplement_d.clas.xml",
+      "sha256": "a7269f89c103062fcefbd4dccaa92e6350202026e7f7fc7eafb2ad8a5f4c169e",
+      "size": 641
+    },
+    {
+      "path": "src/draft/#dmo#bp_travel_d.clas.abap",
+      "sha256": "aab6cdd2724d0d7129d23676141d5d25d968430abd8e675fc6e79382e54e2a60",
+      "size": 149
+    },
+    {
+      "path": "src/draft/#dmo#bp_travel_d.clas.locals_imp.abap",
+      "sha256": "1fd9010a52cf01ca814241e93ce4254e3045b386caa41fa767b141a5f3c8017d",
+      "size": 41226
+    },
+    {
+      "path": "src/draft/#dmo#bp_travel_d.clas.testclasses.abap",
+      "sha256": "3e67f4093bddab1aa5405b5555a2a7dddfe914124ecb0f1cca3fb4b2dd8ff325",
+      "size": 71435
+    },
+    {
+      "path": "src/draft/#dmo#bp_travel_d.clas.xml",
+      "sha256": "32e6d4755c0c52eab0d1dd92ac2012ef4ca9a4d888f4908ee268f91852ff6325",
+      "size": 615
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_a_d.ddls.asddls",
+      "sha256": "fe97859133e3eb7b3d4ecf977e7d5cfa1dbbbc658da46c96bf9d1f202e1f9ec8",
+      "size": 4016
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_a_d.ddls.baseinfo",
+      "sha256": "9577eebe92fd5a2586cf9081b6c998ea3fbc8cc3e501dde085b5d2b04a379f75",
+      "size": 499
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_a_d.ddls.xml",
+      "sha256": "7d9efd83076d0142292d201bf61f17928ea9b2378c89c76ac54fa2e75a20c5bf",
+      "size": 436
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_a_d.ddlx.asddlxs",
+      "sha256": "4c40f2dee70fe4daa15ee92af2be21db7dd6d2ea61a4b33273fa6297e7182001",
+      "size": 2070
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_a_d.ddlx.xml",
+      "sha256": "571b17b3c50602c6b08b9aa3f0389a22f4bca64387c8b8050f46a5f7d81ba226",
+      "size": 456
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_d_d.ddls.asddls",
+      "sha256": "7e1610fbc1d7d98d4304f3aef26c9571121e7a05945f960bd4012084aa666d73",
+      "size": 4180
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_d_d.ddls.baseinfo",
+      "sha256": "ede6d20e46476e1ac172daaba28b80b97fc8f81272d3740ccb111d1abac05ec0",
+      "size": 499
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_d_d.ddls.xml",
+      "sha256": "2f470ea21c5ff95a5ee49c1641f949e057db9c4689752a65ac4e70b7ea6752d2",
+      "size": 436
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_d_d.ddlx.asddlxs",
+      "sha256": "e22bd558824a5ee313c8e38a1eeabfaf89d5b65030f28905917971955f5c7a63",
+      "size": 2045
+    },
+    {
+      "path": "src/draft/#dmo#c_booking_d_d.ddlx.xml",
+      "sha256": "4f4756d328398b6e81b1c2069e3a17f2eab48cdfc857b6d6a932907600296e19",
+      "size": 456
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_a_d.ddls.asddls",
+      "sha256": "544f2c7027359a460ffcc8a6d96f9cf6b3affb4369df161a06b9101601cb99d4",
+      "size": 1358
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_a_d.ddls.baseinfo",
+      "sha256": "6b9fd0383f52962b68e06ca30acadd90f643f0a8a0bc486815d0757d4dadf833",
+      "size": 356
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_a_d.ddls.xml",
+      "sha256": "d09bc4b108a6814d745e5ea016280a14749048775da671a32c780ed00c72d216",
+      "size": 456
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_a_d.ddlx.asddlxs",
+      "sha256": "3b336524895a879cfb96f627c6ff0d2ee4760c4dd21e8838ba9ea50311468f61",
+      "size": 1280
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_a_d.ddlx.xml",
+      "sha256": "7387996ec4ad9561bd10dc95a0aaa9df201a600049c0a8f6e1f0b062202ab39b",
+      "size": 479
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_d_d.ddls.asddls",
+      "sha256": "5a0faabc4742510c407bebde8d1fe1d12c01cf6af28f11fddfcd3363307be251",
+      "size": 1409
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_d_d.ddls.baseinfo",
+      "sha256": "713d47fbe63de1683ef6554882795b51350e8a123e32548da1de5213520fc16a",
+      "size": 356
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_d_d.ddls.xml",
+      "sha256": "d797171160301efc80b1263885baff9a4330a8bae48f70502486315d7eb0d4c7",
+      "size": 456
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_d_d.ddlx.asddlxs",
+      "sha256": "93ba605b3311831f926c5bc694fed22e1014faa49d89b4154ff12a8df7add124",
+      "size": 1280
+    },
+    {
+      "path": "src/draft/#dmo#c_bookingsupplement_d_d.ddlx.xml",
+      "sha256": "c925eff1cfa4941772c0db582fc527c0198e3c0ebe7b2449a5e92ce009d60aa9",
+      "size": 479
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.bdef.asbdef",
+      "sha256": "13decf7df6692eab0643210fa7fbc9b85e1c7e72086c3d0c66cd59f42b3b2963",
+      "size": 641
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.bdef.xml",
+      "sha256": "a98b73759ac721b4ef3e3aae477b3cc5e59d95a275a4bfecef511900de11c842",
+      "size": 1822
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.ddls.asddls",
+      "sha256": "6349275455b80d323e7c973aa1ca09aced3ac2e89d62de1106cca7c0fcea90c3",
+      "size": 1695
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.ddls.baseinfo",
+      "sha256": "1c591b4ec797943e6e89864ea55b91d69b6b76ccc09be62b3b2b24154ca1c338",
+      "size": 416
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.ddls.xml",
+      "sha256": "95d93211ca1ead62e1dfdd9dd7f644eb2ac44554eff0de8305094603862e7f31",
+      "size": 434
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.ddlx.asddlxs",
+      "sha256": "d017e80a284dd12b0aba1a268052a99a478ee27ce7a7b14b3e748706d54b1d08",
+      "size": 3125
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_a_d.ddlx.xml",
+      "sha256": "f2103853526b859a576cd94a2b8e99d6e05037433b4116a678f97c1bb1e0ee90",
+      "size": 455
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.bdef.asbdef",
+      "sha256": "2f984af06820c8687b6263d1de8bcf8df8035a9e45d66da69f5d649c1e4219b1",
+      "size": 1054
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.bdef.xml",
+      "sha256": "c3c382acc5730c2739bb35c4b5f2f6cccee234691890dd24aa0783d540389eb7",
+      "size": 1822
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.ddls.asddls",
+      "sha256": "dc4b1b8a3bb96092cb45786da8f9be1eb1119909f91f93c1787cb1e5245ec1af",
+      "size": 1718
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.ddls.baseinfo",
+      "sha256": "bddb99e89e3821fb37ac1de419560dec59e443a7b9e363d0e208bbfc0e1a9ecd",
+      "size": 416
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.ddls.xml",
+      "sha256": "26a3b991669d8207b3594d21ce3be88fc6956a3136ede2fa8b04ddca53b97875",
+      "size": 434
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.ddlx.asddlxs",
+      "sha256": "2a76dab3be65c86ed94205f950f32dc2ccb1d57ef345e85f5091606aa23b0df1",
+      "size": 3111
+    },
+    {
+      "path": "src/draft/#dmo#c_travel_d_d.ddlx.xml",
+      "sha256": "4f32ca042a87b0b67f81daa35ee2003a58d87752cb392af5fae226f290581743",
+      "size": 455
+    },
+    {
+      "path": "src/draft/#dmo#cl_data_generator_draft.clas.abap",
+      "sha256": "4a09bfc4c2858e1e5796feb9c07bb46b1d18bb7c69809be9299b526c9d529248",
+      "size": 3357
+    },
+    {
+      "path": "src/draft/#dmo#cl_data_generator_draft.clas.xml",
+      "sha256": "2a1101bd00e7c20bc466a1ea18936c56a8ba124a0aafa9d1b8753b9e4f468255",
+      "size": 504
+    },
+    {
+      "path": "src/draft/#dmo#d_bksuppl_d.tabl.xml",
+      "sha256": "35253782c6d8ecae643a6b3f0f7f6fd53a28044d08ef4ae80910aad5c197fb2b",
+      "size": 2814
+    },
+    {
+      "path": "src/draft/#dmo#d_booking_d.tabl.xml",
+      "sha256": "d9e475632f9f75cf816cad0d9df3edfdd1e4dcb78caec0068182f7b41c7bea4d",
+      "size": 3572
+    },
+    {
+      "path": "src/draft/#dmo#d_travel_d.tabl.xml",
+      "sha256": "4938b4b79f56c72a0e61e504784c469277e264c49b664af2ab424e7519e9d0f0",
+      "size": 4401
+    },
+    {
+      "path": "src/draft/#dmo#data_generation_draft.enho.xml",
+      "sha256": "7b2a54f406ba3501f6c4c3baf1c65054426ef7cbd7e071b37f0fd8e23ece4329",
+      "size": 2505
+    },
+    {
+      "path": "src/draft/#dmo#i_booking_d.ddls.asddls",
+      "sha256": "e273c3adb98abfac4eb2f54f644029cdbcfed3c35f8935ff54710656c7e3e1bd",
+      "size": 854
+    },
+    {
+      "path": "src/draft/#dmo#i_booking_d.ddls.baseinfo",
+      "sha256": "9aaf058a1b800dea44685881f2e6df3389ac4c54cb3e5a7e47e505db742e09fb",
+      "size": 373
+    },
+    {
+      "path": "src/draft/#dmo#i_booking_d.ddls.xml",
+      "sha256": "23f8b9dfe8012075279589f83a55a0b37a3123c5841945c771b5caec7935e99c",
+      "size": 444
+    },
+    {
+      "path": "src/draft/#dmo#i_bookingsupplement_d.ddls.asddls",
+      "sha256": "1da3a59097404960d89c4cafc2029a7e8fba2fead4902e25d035b510495d19b6",
+      "size": 732
+    },
+    {
+      "path": "src/draft/#dmo#i_bookingsupplement_d.ddls.baseinfo",
+      "sha256": "b852810cafdd1183b1d513f76c96a3121b3534475321ebdfc00e7306ba8a60f2",
+      "size": 321
+    },
+    {
+      "path": "src/draft/#dmo#i_bookingsupplement_d.ddls.xml",
+      "sha256": "e16b9d08d7bce24724a791a762512c8374015223e63632fe8510fa3fffcc0613",
+      "size": 457
+    },
+    {
+      "path": "src/draft/#dmo#i_travel_d.bdef.asbdef",
+      "sha256": "98d8aac5ab7b128f8b75ec930af295e58215829dd45518e284ca01edeae445b3",
+      "size": 1060
+    },
+    {
+      "path": "src/draft/#dmo#i_travel_d.bdef.xml",
+      "sha256": "0f33549db77cdaba74ae1267a97e74e2a55041221a488ad203bad1a4131d46b6",
+      "size": 1808
+    },
+    {
+      "path": "src/draft/#dmo#i_travel_d.ddls.asddls",
+      "sha256": "0860cef5091034d8681abeb28a3c6fdb74e763846fd3783dca26477782bb3921",
+      "size": 855
+    },
+    {
+      "path": "src/draft/#dmo#i_travel_d.ddls.baseinfo",
+      "sha256": "3729073bed1d729afc4621f4ae889e831d79ef8829f1663cf45071c7610c83e3",
+      "size": 293
+    },
+    {
+      "path": "src/draft/#dmo#i_travel_d.ddls.xml",
+      "sha256": "41bbf5d671907a9ea60b0153d871dc40b554cd753dfd67318a4c5402c6dfa099",
+      "size": 442
+    },
+    {
+      "path": "src/draft/#dmo#r_booking_d.ddls.asddls",
+      "sha256": "a69b7ab84cabb73f0653b0d6957f91931d26a991384adb2a790cfce66457e104",
+      "size": 1881
+    },
+    {
+      "path": "src/draft/#dmo#r_booking_d.ddls.baseinfo",
+      "sha256": "065d180c91a10cc37780a3ce666823f819972100d34c2243b69c5b942e8c502b",
+      "size": 266
+    },
+    {
+      "path": "src/draft/#dmo#r_booking_d.ddls.xml",
+      "sha256": "57819be260f38e5f1469067c329b3932bf670f4bc090599546c57ccffe4b7205",
+      "size": 430
+    },
+    {
+      "path": "src/draft/#dmo#r_bookingsupplement_d.ddls.asddls",
+      "sha256": "8ad7105f590bbd76e0cca4f5bf092721def272b6185b26fb67a0ea5c279e58cf",
+      "size": 1356
+    },
+    {
+      "path": "src/draft/#dmo#r_bookingsupplement_d.ddls.baseinfo",
+      "sha256": "77bac878d09189b415dc6809fba8d6c987802d31993307822292fb5dc7524e35",
+      "size": 204
+    },
+    {
+      "path": "src/draft/#dmo#r_bookingsupplement_d.ddls.xml",
+      "sha256": "f7965b58a9f8488a5494f3f42ed7e4ab9a347cccd8275b3df5c1660c0984774a",
+      "size": 450
+    },
+    {
+      "path": "src/draft/#dmo#r_travel_d.bdef.asbdef",
+      "sha256": "b31ccd2c71a347e5c6e21cb744c1a1f7a47d990955d31911285a4eb6366e4898",
+      "size": 7772
+    },
+    {
+      "path": "src/draft/#dmo#r_travel_d.bdef.xml",
+      "sha256": "e9c8f746f6071ecad5ae935c552a48ff1b2a8c91f494cd66672cbba482d2ef5b",
+      "size": 1808
+    },
+    {
+      "path": "src/draft/#dmo#r_travel_d.ddls.asddls",
+      "sha256": "a7aaeb83e6642fcd7f848cb3578289817567027848cc11948c2c9428193fa171",
+      "size": 2042
+    },
+    {
+      "path": "src/draft/#dmo#r_travel_d.ddls.baseinfo",
+      "sha256": "0faa6d7a5193904f71909259ba3ffbc1a0c03a11ac5f212189c8062db2441e0a",
+      "size": 222
+    },
+    {
+      "path": "src/draft/#dmo#r_travel_d.ddls.xml",
+      "sha256": "1d84b8e7322502d002cc6c98975b2693dd4dc4c103b2fe836d5f2a29bc208735",
+      "size": 428
+    },
+    {
+      "path": "src/draft/#dmo#tc_botd_travel_d_demos.clas.abap",
+      "sha256": "6e9456fa230ce555aa9ce789ab95acd82f697ac9062c620075aa8c4a03c2a159",
+      "size": 680
+    },
+    {
+      "path": "src/draft/#dmo#tc_botd_travel_d_demos.clas.locals_imp.abap",
+      "sha256": "5c0fb231936ab313f7e8c2234a4614205d0ae08b6b63d5fbb6b9ab345a74101c",
+      "size": 1618
+    },
+    {
+      "path": "src/draft/#dmo#tc_botd_travel_d_demos.clas.testclasses.abap",
+      "sha256": "d57b7b4752fe9d3d3c2826027b902b9e01252faddb74cb5d0cab93a24ea6ccf4",
+      "size": 165841
+    },
+    {
+      "path": "src/draft/#dmo#tc_botd_travel_d_demos.clas.xml",
+      "sha256": "42a9d71094509dca948fd488616064bc488c15d78513cc8d1acf2be177c64b32",
+      "size": 571
+    },
+    {
+      "path": "src/draft/#dmo#tc_travel_d_bo_consumer.clas.abap",
+      "sha256": "3a7fb3adaca6dc4d47dbc7ad8bcc3cde6732c4978b30690472315c02e7d759a9",
+      "size": 14700
+    },
+    {
+      "path": "src/draft/#dmo#tc_travel_d_bo_consumer.clas.xml",
+      "sha256": "7c86b0b3fcbfd262823aaa6b40b2e1094a7aae2bffcfb066803dd6f32c2cd349",
+      "size": 530
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_a_d.srvd.srvdsrv",
+      "sha256": "8f179be650dc91bfb8a80fd49a5eefde0edeb89708dbc2a0f597671a2fa88a51",
+      "size": 862
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_a_d.srvd.xml",
+      "sha256": "55efa647477642c88f44252a9f9c6b74bfc037ecf3490bab3181cc64a713311b",
+      "size": 787
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_a_d_o2.srvb.xml",
+      "sha256": "9f30599bca83c4b07a2d6836743e79178460f816215bffe4c99732e413ab1a7e",
+      "size": 1395
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_a_d_o2_iwsg.sco2.xml",
+      "sha256": "44a1d40988ead21781764e0e2376b36670c92d0f707d20ea14c82505c3b07d0c",
+      "size": 663
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d.srvd.srvdsrv",
+      "sha256": "1c6a4ae4d0a3262ed19a44cc514ca6f26b0fe952232770e341b87881cc63efca",
+      "size": 862
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d.srvd.xml",
+      "sha256": "567b5f7d5cda67eb6be98f5b3413a3bbb869b2aafba92e373bff880422979607",
+      "size": 786
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d_o2.srvb.xml",
+      "sha256": "07f3679f575ae1e6e4f627a81cea51404d5411cfe5483e972721dd052eee7d2d",
+      "size": 1393
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d_o2_iwsg.sco2.xml",
+      "sha256": "ab58441d146d6368c47fe5d0470b0a8538472419b2906f6987d5e3e675d26aa0",
+      "size": 663
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d_o4.srvb.xml",
+      "sha256": "a613f9541cd8486788ea59ce25f80668321ced10d33349f11e213d6613c13131",
+      "size": 1469
+    },
+    {
+      "path": "src/draft/#dmo#ui_travel_d_d_o4_0001_g4ba.sco2.xml",
+      "sha256": "4856ad5735ffe086a39127fc62347318ce33400919ce7fb15dc83fb0b13b9065",
+      "size": 662
+    },
+    {
+      "path": "src/draft/(dmo)bt_discountpercentage.drty.acds",
+      "sha256": "b9e13790a2bd8263dadd4e2c707add5093a577f213912b9a99f0b5415684a33a",
+      "size": 92
+    },
+    {
+      "path": "src/draft/(dmo)bt_discountpercentage.drty.json",
+      "sha256": "3ba0173367c7859b8508a51e360990258dadc4d99a7bc9d9de502ab3c9ad5c84",
+      "size": 117
+    },
+    {
+      "path": "src/draft/package.devc.xml",
+      "sha256": "c96899d95802cfc891603ef342553dcb0182887e9f82e4fece0c44a52fde2a4b",
+      "size": 788
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#agency_a_hd.tabl.xml",
+      "sha256": "2c5482fd3db63b33000d0e013dc4bdcca525845ff93c138cb98cb13169b72019",
+      "size": 3495
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#agency_d_hd.tabl.xml",
+      "sha256": "7f20a53e8136240bfad559cb4b441fe7ef8330b97d2641a22f908253fe727752",
+      "size": 3671
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#agnhd.nrob.xml",
+      "sha256": "47d3936a29c732b0d13de76bbac73dfa29fd2883449a88309180506fd24e8457",
+      "size": 688
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_agencytp_hd.clas.abap",
+      "sha256": "45989305d0cd5b61b74d3c48aa172d5e933e63202643defa54319d1b10996963",
+      "size": 162
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_agencytp_hd.clas.locals_imp.abap",
+      "sha256": "73a993752ee46b5b76d347e7ff6f424d6eb81c55da2ae9e5555e235182220742",
+      "size": 13785
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_agencytp_hd.clas.testclasses.abap",
+      "sha256": "4f39c306cfcca7cf65ee97e2094da277ec009854ea01e3982c8e902eaa256667",
+      "size": 34361
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_agencytp_hd.clas.xml",
+      "sha256": "a764754a6136e9630b2c4a8cdb27c373603166044a172d3d5ca88dbe9d76fafc",
+      "size": 626
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_employeetp_hd.clas.abap",
+      "sha256": "ab42ec3b0ed932869687f8cfc78fcf4debc32c70f115dcf50250a08df754309d",
+      "size": 166
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_employeetp_hd.clas.locals_imp.abap",
+      "sha256": "ea21ae1212eb23c1fa700c28b4e65c4e5ada7d39d23cf578ce6c081118e74e13",
+      "size": 14675
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_employeetp_hd.clas.testclasses.abap",
+      "sha256": "72257e0199bcdf74455287a7d656684194e98b966ad497a9b64283a5256a03a4",
+      "size": 20137
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#bp_r_employeetp_hd.clas.xml",
+      "sha256": "606301c20cefb1744743b06a483aa3bc715c5f4bb7b650b0ab1825e454cc1b2f",
+      "size": 628
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.bdef.asbdef",
+      "sha256": "06a228c8084a09fddc1b2aaf9d0f4ec2bd31790b5fd2c5fee795c964bb0038ea",
+      "size": 673
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.bdef.xml",
+      "sha256": "8e5e971b14d087b3cf44f411321e2653ee86475275e0c849c7cedbec4816ed7a",
+      "size": 1822
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.ddls.asddls",
+      "sha256": "b71a1434b7c4550e813f47cec6be32df33280743def9d137fa8a80590b059b40",
+      "size": 566
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.ddls.baseinfo",
+      "sha256": "bccb42eba9a6ed50e2c353628a3eef2956e25f34b97f6ddbf99c8fa62932045f",
+      "size": 224
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.ddls.xml",
+      "sha256": "c3589486219f6f163679334ed653127f1567495dba9ff4ee42ff904019d43758",
+      "size": 419
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.ddlx.asddlxs",
+      "sha256": "948f4598b5205f92f7bb1f3f826e2bf0e3d36a4f7798d1664bcc867172fa9fb4",
+      "size": 3672
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_agencytp_hd.ddlx.xml",
+      "sha256": "30be9b451bae80790ad3e14d1ee1297652fc81c3103c3392faf3d8f0dcb9afca",
+      "size": 427
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_employeetp_hd.ddls.asddls",
+      "sha256": "f50f34c1c93445c0ac5592bc6d318aef5ce076107299f35f636877677394d7a2",
+      "size": 1554
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_employeetp_hd.ddls.baseinfo",
+      "sha256": "07c8e96a7db64f966e462edd0c4365aa9d0cca446954657f8c13c3eef38e635a",
+      "size": 283
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_employeetp_hd.ddls.xml",
+      "sha256": "1668f3213334b3a027427415e0725589b5fc529bf8ce26f45e0d36f1879acd54",
+      "size": 423
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_employeetp_hd.ddlx.asddlxs",
+      "sha256": "e9fba6268464aaf87e6daf6cd9705c359dfb35c99cdd434d4b973eb0bbeaf36c",
+      "size": 3555
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#c_employeetp_hd.ddlx.xml",
+      "sha256": "e744952db21de472deebe5c9b15f2e3a59b2b63aa07fbdd2ec055d4a1d46f6c8",
+      "size": 431
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#cm_hierarchy.msag.xml",
+      "sha256": "5d737f130232166a3b33466a7a7ae6eef837f650a7268d36064605649f0e2345",
+      "size": 2349
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#cx_hierarchy.clas.abap",
+      "sha256": "69a5ee5da185b2f51c3c531cdde6610853edb36644f186cd972105780ff01af9",
+      "size": 5510
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#cx_hierarchy.clas.xml",
+      "sha256": "b6aecbbe3b0cf247c3bdaf306f5bfdb2e258da1770ff7528bf4b946f444d073d",
+      "size": 507
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#employ_a_hd.tabl.xml",
+      "sha256": "02e85280b5b37f4d35416db793834ddcec8288640a423c29f04f296440e45659",
+      "size": 3325
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#employ_d_hd.tabl.xml",
+      "sha256": "e45054f0da5258baa5b9b8875eb5d90de0a46d86174df50df2d57453f7efb99c",
+      "size": 3533
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_hd.ddls.asddls",
+      "sha256": "085d36f2e3e0e1b44f32b767a30d8365170f84bf94cb2a1766a05a813bc339db",
+      "size": 2102
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_hd.ddls.baseinfo",
+      "sha256": "cb45156ca1c57e5e61a3daf54479d03888e04e9bc724a9d73478f34fa5afb5f0",
+      "size": 142
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_hd.ddls.xml",
+      "sha256": "6914f7e5fd8305223257fbdc051e5befd4d89556d9558f5d9b39f76d19c7c187",
+      "size": 417
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_stdvh_hd.ddls.asddls",
+      "sha256": "07222c8bafc0b6ecf7eee4832525ae3754b0a973bb1b952cbcaf7ab0c7a10400",
+      "size": 1529
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_stdvh_hd.ddls.baseinfo",
+      "sha256": "08a27b1834120e125b3070ed1d2dd523ff8020770a6b6d6108ea510773198fc7",
+      "size": 111
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_agency_stdvh_hd.ddls.xml",
+      "sha256": "f15862eeedf88384324b31a72fbfacbbcb593f394ec73e30c6117a81970cff9d",
+      "size": 415
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_hd.ddls.asddls",
+      "sha256": "8764460e0d1637befe02c67af48520f70dd9841604386f0366bbbe1c8f4c2820",
+      "size": 1629
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_hd.ddls.baseinfo",
+      "sha256": "e9dc8f5602d3d7acffae1e0ef3b1ec6562c6ab8c6f7b5e72fc8798f30daed17d",
+      "size": 169
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_hd.ddls.xml",
+      "sha256": "1263ea03221a6e0bee4bb7814148e307ba41f8b8736528e921c6c48dc5908103",
+      "size": 421
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_managervh_hd.ddls.asddls",
+      "sha256": "3d052cf15b8d0a8fdb3e4cd3b82696b2cf3461abda07b957d060ffc3d1f2b2fb",
+      "size": 1033
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_managervh_hd.ddls.baseinfo",
+      "sha256": "2adb4a3d4db277bfdc470bf1c91e0102c3a66c05ffb675d42c3ec81159a7311a",
+      "size": 131
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_managervh_hd.ddls.xml",
+      "sha256": "5a4fdc0f888675b073b2d3040b83f271278ef506390e9a6dc7f8b3743732e3f3",
+      "size": 443
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_stdvh_hd.ddls.asddls",
+      "sha256": "130d15ac14d89ae437628c9e947cc0c6bf3ffa41189a5f83715ea25b9073e4ea",
+      "size": 509
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_stdvh_hd.ddls.baseinfo",
+      "sha256": "a1c16dfa4c0f492ded2da3448441a4db5242aa4932ccc400d0e56c7be78e6fb6",
+      "size": 199
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employee_stdvh_hd.ddls.xml",
+      "sha256": "08e8ece8ecc73af6eb76643bc1e3ddf6400d071053c66d8b982b7db2e0e87941",
+      "size": 439
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employeehn_hd.ddls.asddls",
+      "sha256": "0580db11908ab9f1228d884bae3406c8227151421a6d7098d4c0deea1f5f42a8",
+      "size": 577
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employeehn_hd.ddls.baseinfo",
+      "sha256": "45289e628d336407a6426551d0af22d049b3c7299ca08e8d44469d738723e27d",
+      "size": 96
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#i_employeehn_hd.ddls.xml",
+      "sha256": "07c1b3c707be4206ca1ada0923424b3efa516f9848f131aa2b65b951e8175195",
+      "size": 438
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_agencytp_hd.bdef.asbdef",
+      "sha256": "83c7f69e1f5195cbebd36af4b41abf3912bbeb96e19134dd54f7e2970be4c614",
+      "size": 3973
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_agencytp_hd.bdef.xml",
+      "sha256": "d798cb138adc1890f494870c2b93dd5fd48567538c46bafe93e364aae4ad25c4",
+      "size": 1822
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_agencytp_hd.ddls.asddls",
+      "sha256": "ce93ad116df9d2c8467556b052339952c6ef4cb0a84869299702c9498f2b5552",
+      "size": 599
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_agencytp_hd.ddls.baseinfo",
+      "sha256": "0e43140245f9c5a37a37ebf637cac131ed42ac7d5d34dbd7db0f953add9fa182",
+      "size": 190
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_agencytp_hd.ddls.xml",
+      "sha256": "395ef3a9ecd93a7617ed08b172b5660e17398ce6af5cbf75e601c530cbc56a64",
+      "size": 419
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_employeetp_hd.ddls.asddls",
+      "sha256": "11e6fa8fb351903d9c60e1ad7f3ca86f9d383e6b21cf23ba8d727372e867ce86",
+      "size": 1250
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_employeetp_hd.ddls.baseinfo",
+      "sha256": "9657eb638733ce8480f10229f61dbb149b6dfa3d9bc513af2ecf95ce2740caf4",
+      "size": 175
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#r_employeetp_hd.ddls.xml",
+      "sha256": "8bd13cbff508283c05434b8720eb0c75e53b160c4fdc6aabf9669f0433676685",
+      "size": 423
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#sibling_order_number.doma.xml",
+      "sha256": "688eca36e456847408895b7ff6ea1ce4cbd6117e02ce9a773ded6f538ac1df63",
+      "size": 519
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#sibling_order_number.dtel.xml",
+      "sha256": "3311f22c7e481b5cbbc961749cb135924bfe6601f9f2b699bd8b7a1b43a1a79a",
+      "size": 789
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#ui_agency_hd.srvd.srvdsrv",
+      "sha256": "265835fb47edcc54dba975a000b3ccc47c74fc6ba2689baa00dc73c83fd834db",
+      "size": 252
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#ui_agency_hd.srvd.xml",
+      "sha256": "d9bd3206cf006399c146d9f4a1740714f9b348fd05e61f6954590249569827a6",
+      "size": 741
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#ui_agency_hd_o4.srvb.xml",
+      "sha256": "42539974349e19efce456ff9ff31b28bc8db8826788454e369a49c13c8c93008",
+      "size": 1433
+    },
+    {
+      "path": "src/hierarchy/draft/#dmo#ui_agency_hd_o4_0001_g4ba.sco2.xml",
+      "sha256": "3917c8456e07b92c845053acc529da0b60d5839840088bbbbfa9308f73bd0156",
+      "size": 658
+    },
+    {
+      "path": "src/hierarchy/draft/d/#dmo#cl_data_gen_hierarchydrft.clas.abap",
+      "sha256": "69af36b73a369c52c6efac47b4e2158e5acbfcef9922454af1e5a2754822465f",
+      "size": 478
+    },
+    {
+      "path": "src/hierarchy/draft/d/#dmo#cl_data_gen_hierarchydrft.clas.locals_imp.abap",
+      "sha256": "f3309c717680e59ced33d41b26c1e72af902e6738e5ec2d9f1bec4dc316af896",
+      "size": 19638
+    },
+    {
+      "path": "src/hierarchy/draft/d/#dmo#cl_data_gen_hierarchydrft.clas.xml",
+      "sha256": "fe0f01d6a991770e143b2ef281f5ade2e9813d21ac810f75b1fb2768b44b741c",
+      "size": 505
+    },
+    {
+      "path": "src/hierarchy/draft/d/#dmo#data_gen_employee_hd.enho.xml",
+      "sha256": "1151fd3cc786675f938668f9e72329fb9065b80e3e7734b3bebe38d66dad7804",
+      "size": 2462
+    },
+    {
+      "path": "src/hierarchy/draft/d/package.devc.xml",
+      "sha256": "88f9256340611c6a3e2629ffe37a3c317a88b65358373af65ad6b4e1af03d388",
+      "size": 401
+    },
+    {
+      "path": "src/hierarchy/draft/package.devc.xml",
+      "sha256": "77196d5817373b5130964f094cc3efa479d6562dc0f870e8e9507d02c8bcd751",
+      "size": 385
+    },
+    {
+      "path": "src/hierarchy/package.devc.xml",
+      "sha256": "9b9273f50c7f25bd0ebde98f2e08ad7841d0528b6d0cfceb2e8c0696c51e9123",
+      "size": 384
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#c_employee_hr.ddls.asddls",
+      "sha256": "48745816e586f16f83583b5daa9150e71c29e0ad5ebc6862cd6dc5ab8b37285a",
+      "size": 800
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#c_employee_hr.ddls.baseinfo",
+      "sha256": "9c1251681d8c6f14dc13f3edfb80f32c9a35f8fe4b0c899966a8e2ba96bf16fc",
+      "size": 125
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#c_employee_hr.ddls.xml",
+      "sha256": "69d9384077b51b1247b73c819676f45b6eab3ba8d77cc7bd5750876a42a4ba80",
+      "size": 425
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#c_employee_hr.ddlx.asddlxs",
+      "sha256": "cd0e33242dbf1e5d65c5542cbf02d81790b9a2e652d0e3d4201854662c15dbce",
+      "size": 1484
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#c_employee_hr.ddlx.xml",
+      "sha256": "aebf0e11530c8c6f970753926687e14d855cedd1080d14d92e0aecca0c36b330",
+      "size": 441
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#employee_hr.tabl.xml",
+      "sha256": "a1ac9a1f7136dae1d09a0134726ef4d97ac16abe93c6dccbda32c999df64570e",
+      "size": 2140
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#employee_id.doma.xml",
+      "sha256": "a71bf7bfe6525676bb9de9bf48fe12bf46844d600dad04ca31a80330eb97f7c5",
+      "size": 490
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#employee_id.dtel.xml",
+      "sha256": "0b0a36269ebcd165661710d432187c6522ad8ba42b028c51f69f55368f8cf402",
+      "size": 715
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employee_hr.ddls.asddls",
+      "sha256": "6c483a28b220158dd89e7a04ecfa9aafbd50ef91735d67e9e53ee3515a448cd8",
+      "size": 637
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employee_hr.ddls.baseinfo",
+      "sha256": "efcc6d0c61782e0b763a64b61cce68b711f1ec3ca04c4ceea22adceb33725059",
+      "size": 123
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employee_hr.ddls.xml",
+      "sha256": "1a73352af7798d8e4342595548d471d2c5a7c8c5c3ef6b0bd76e1077bdc24d04",
+      "size": 425
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employeehn_hr.ddls.asddls",
+      "sha256": "58db3f23d34e43ea50b299c5b507f378e3fcd68a501f477470d35f1a37c45cef",
+      "size": 393
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employeehn_hr.ddls.baseinfo",
+      "sha256": "6c5be8b6dc7407c25e879cf5b1fca317bcfccd49aae135c62d6ed657706f84a1",
+      "size": 96
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#i_employeehn_hr.ddls.xml",
+      "sha256": "15291d37c539b5fffc4093bf51da320873ecf9aaae881e53b1fe5c350740cd70",
+      "size": 442
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#salary.doma.xml",
+      "sha256": "482652d2d7262cc96d4f2bd8974c0d2e61ac1af1a809081d4f9aab90228c126a",
+      "size": 512
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#salary.dtel.xml",
+      "sha256": "24df8a3e5f411be542a8b16aa71b3bbac59ca29dae61a12757e8d4b26289a2e8",
+      "size": 692
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#ui_employee_hr.srvd.srvdsrv",
+      "sha256": "a6f9e367b25b04f65a8fe3a7676f93aef723cd46beba38f5446e4ef6ab136413",
+      "size": 190
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#ui_employee_hr.srvd.xml",
+      "sha256": "40d60fafde0ec4f75a0bf0fa937e8108a06c213b9fd9b42d355b74bd6a608a31",
+      "size": 759
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#ui_employee_hr_o4.srvb.xml",
+      "sha256": "673c1536f63cfe48b73641135f1778eb732c811734fe05326783c4742cdecdaa",
+      "size": 1449
+    },
+    {
+      "path": "src/hierarchy/ro/#dmo#ui_employee_hr_o4_0001_g4ba.sco2.xml",
+      "sha256": "3011ba7c78cbb107a4b84e8159e4e78827962d25f5693761f10ed73038970761",
+      "size": 666
+    },
+    {
+      "path": "src/hierarchy/ro/d/#dmo#cl_data_gen_employee_hr.clas.abap",
+      "sha256": "4a22070f586cfe72754804687becec004d69d651b6353e0f983062a3d9d004a1",
+      "size": 416
+    },
+    {
+      "path": "src/hierarchy/ro/d/#dmo#cl_data_gen_employee_hr.clas.locals_imp.abap",
+      "sha256": "55025c4db6b4a6ea9910afad1be0a3bcd44658830c07303bef3963da18312a1c",
+      "size": 14708
+    },
+    {
+      "path": "src/hierarchy/ro/d/#dmo#cl_data_gen_employee_hr.clas.xml",
+      "sha256": "27aaee5b66bd498d748e81b8cc5cb299c9fb183e9a29a090da34e4615aa40e55",
+      "size": 503
+    },
+    {
+      "path": "src/hierarchy/ro/d/#dmo#data_gen_employee_hr.enho.xml",
+      "sha256": "ff9cdfb22405325fd15a8d2a4a02ed471b1beb02bcef816dd4116b915d067389",
+      "size": 2426
+    },
+    {
+      "path": "src/hierarchy/ro/d/package.devc.xml",
+      "sha256": "e4f8de7bb599b50fcacee639d120b3eca0b33e1b43fe83d601910808dcd5e56a",
+      "size": 405
+    },
+    {
+      "path": "src/hierarchy/ro/package.devc.xml",
+      "sha256": "d87740a6c18427a04447f2c7dc6d8a516ddb07a062928fe864d06a47d6b47bbc",
+      "size": 389
+    },
+    {
+      "path": "src/legacy/#dmo#action_code.doma.xml",
+      "sha256": "94c10cf7af6c415ef918a0d0feb584087b50bae8169ec8151120b8212e5c0d7f",
+      "size": 1129
+    },
+    {
+      "path": "src/legacy/#dmo#action_code.dtel.xml",
+      "sha256": "8e950a9a5fdc33872bc3ca4848096f3650d326fb0a0f163bdb2ca3de24f788ec",
+      "size": 753
+    },
+    {
+      "path": "src/legacy/#dmo#agency_id.doma.xml",
+      "sha256": "4c13879809a6270a7bb9837f1d2c54d4d78ddadfe89694a4ce7fdb73cdbebbd2",
+      "size": 552
+    },
+    {
+      "path": "src/legacy/#dmo#agency_id.dtel.xml",
+      "sha256": "97c3f0361d1fa83c3ef3cf098d018cf8ef9efe557008d9b697f4c210739dde38",
+      "size": 744
+    },
+    {
+      "path": "src/legacy/#dmo#agency_name.doma.xml",
+      "sha256": "89bc8d7267aef80df7f850fb732bc94f79b3d6a06bc79ede54ea22e2b5c47e46",
+      "size": 546
+    },
+    {
+      "path": "src/legacy/#dmo#agency_name.dtel.xml",
+      "sha256": "e3e598a0eeb896485dd28049f607276fd738b3fd5032e7c374d54b1e016c0ef9",
+      "size": 755
+    },
+    {
+      "path": "src/legacy/#dmo#agncy.nrob.xml",
+      "sha256": "d8773375463dcd2dcc65ea4b9b9737303ff35d446058e24fec02ea77f67daba9",
+      "size": 578
+    },
+    {
+      "path": "src/legacy/#dmo#airport.tabl.xml",
+      "sha256": "d108d31969ca6f4b52deb2a805607b775c1b523a2fd4071688f4da71e39e5dbf",
+      "size": 1695
+    },
+    {
+      "path": "src/legacy/#dmo#airport_from_id.dtel.xml",
+      "sha256": "22201c249ce4e4aa03e1ab9d26e74f0f860cf8624c7b5674f56562fd0b9dd96e",
+      "size": 764
+    },
+    {
+      "path": "src/legacy/#dmo#airport_id.doma.xml",
+      "sha256": "c5b076b02dc68d8187237c0a401f3d1ea97c24c3f14012324ea62cb1d8af94ad",
+      "size": 515
+    },
+    {
+      "path": "src/legacy/#dmo#airport_id.dtel.xml",
+      "sha256": "bc13344f688288e9da2d5221c1de450a2440850105f556e1c283aed6952d8f73",
+      "size": 741
+    },
+    {
+      "path": "src/legacy/#dmo#airport_name.doma.xml",
+      "sha256": "8dbf510b3ce36b6eb5e7e91f50d9d988f211899d16574af28d586bcdcd455a39",
+      "size": 548
+    },
+    {
+      "path": "src/legacy/#dmo#airport_name.dtel.xml",
+      "sha256": "a3b46f989d172f7878a7fb83a8b4a3181422acc8cc9ff864b26f32c54b857c4d",
+      "size": 751
+    },
+    {
+      "path": "src/legacy/#dmo#airport_to_id.dtel.xml",
+      "sha256": "cc6e89c46ebacebb1c3d98f243786c7eb4c505ae0fef79c4eb422e9a99cd3cf8",
+      "size": 764
+    },
+    {
+      "path": "src/legacy/#dmo#begin_date.dtel.xml",
+      "sha256": "8a2ec0b153aa9c5febf688407f5b2a2f13af61ab3cee837111116a349aaa8656",
+      "size": 742
+    },
+    {
+      "path": "src/legacy/#dmo#book_suppl.tabl.xml",
+      "sha256": "b22be4f9685c37edff12b22596dbe9eec8cea082ffc6fa558dbe755381843264",
+      "size": 2040
+    },
+    {
+      "path": "src/legacy/#dmo#book_suppl_data.tabl.xml",
+      "sha256": "48bca856fb96e95617f21b8a120c12d32b99080e6961c0bbd19cda354a1c4566",
+      "size": 1116
+    },
+    {
+      "path": "src/legacy/#dmo#booking.tabl.xml",
+      "sha256": "237ddecc5ffba8635adfacf29387bceec191b458f9859e7851abea9b0d00e42e",
+      "size": 1769
+    },
+    {
+      "path": "src/legacy/#dmo#booking_data.tabl.xml",
+      "sha256": "8a40447d6d06a3f67c522bb1940a57f597e4dbdca6d0ff6dc95d61da5a81f70e",
+      "size": 1869
+    },
+    {
+      "path": "src/legacy/#dmo#booking_date.dtel.xml",
+      "sha256": "ad17e27c7cf380d7413dfdc1ed3d5b468582b5e5d3a65d3480b4840968bb4a72",
+      "size": 751
+    },
+    {
+      "path": "src/legacy/#dmo#booking_fee.dtel.xml",
+      "sha256": "782c9b6943a1b1850ac2f10054fc2ef2e16685db9e652040b5ff4735ede463ed",
+      "size": 746
+    },
+    {
+      "path": "src/legacy/#dmo#booking_id.doma.xml",
+      "sha256": "903dc5272931e98d6cbf9b62b2b2ac314b83b3af31dd94859b3264a5a4ff839c",
+      "size": 515
+    },
+    {
+      "path": "src/legacy/#dmo#booking_id.dtel.xml",
+      "sha256": "f1ad87de1cb6c74cdc2c7228634c1030c174932bc092bd0e2aa408a4be781c51",
+      "size": 758
+    },
+    {
+      "path": "src/legacy/#dmo#booking_supplement_id.doma.xml",
+      "sha256": "120a4b3d465376ce6ccf85296cc8ffccead79c8e0c25b7c85f1e03844c7bb413",
+      "size": 537
+    },
+    {
+      "path": "src/legacy/#dmo#booking_supplement_id.dtel.xml",
+      "sha256": "56d5a5e6d02e2d994be5998f89ccb777fe087df22bf792e48369fa60556c3a19",
+      "size": 818
+    },
+    {
+      "path": "src/legacy/#dmo#carrier_id.doma.xml",
+      "sha256": "23b5a099c32d15a749b4946bcb2fc608530cc1759500782084cee1b542b78ea0",
+      "size": 515
+    },
+    {
+      "path": "src/legacy/#dmo#carrier_id.dtel.xml",
+      "sha256": "5fe3b76968effe512554430bdadece8b2cc1c0811a92a795835451ddcef87a8e",
+      "size": 755
+    },
+    {
+      "path": "src/legacy/#dmo#carrier_name.doma.xml",
+      "sha256": "8d5bd343df4b89ced806debccceb7b14712b18a85f763c3339df72e46a0599f7",
+      "size": 548
+    },
+    {
+      "path": "src/legacy/#dmo#carrier_name.dtel.xml",
+      "sha256": "fa26c0b85e6d7ce36509923345fcfc33caa57f3f70503ab2ae905e6bc7320b05",
+      "size": 759
+    },
+    {
+      "path": "src/legacy/#dmo#city.doma.xml",
+      "sha256": "d259820081b15efb8fe7a532f2987c60cab38971318e4bb62c2bbbb9c2de2b4e",
+      "size": 532
+    },
+    {
+      "path": "src/legacy/#dmo#city.dtel.xml",
+      "sha256": "0d007da35373541047f158c18abfc474476d334ee5a7ef744d86233b8d57ffd9",
+      "size": 705
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_amdp.clas.abap",
+      "sha256": "18f3bc5029d00aa54c7601c4598a5ec2553c239a2ddab01ca9ca706e16dcbec8",
+      "size": 1598
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_amdp.clas.xml",
+      "sha256": "df7534e2ab02e3e0effc02553989c2ffd5ca5c34d6750f119337016ad3acdf4e",
+      "size": 510
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_data_generator.clas.abap",
+      "sha256": "bd4baedfbb92c7ca747a925dea8dfa62e7ca2c9a21e62b4e1a39f6e1920eb8a3",
+      "size": 7262
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_data_generator.clas.locals_imp.abap",
+      "sha256": "8bfb3939e36d1ca7c9f6ebf506baa547884cea63b3afbe8e39efc1022598d246",
+      "size": 117528
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_data_generator.clas.xml",
+      "sha256": "2b961ff21652b8a210d98f23014779ed34c833880cc47e8ff5da9b66042e27c6",
+      "size": 514
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_legacy.clas.abap",
+      "sha256": "79ab1a5ffecc840ecc4555ee3f9eb11c1eb1380a2b736be85694cbb1c3440192",
+      "size": 36205
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_legacy.clas.locals_imp.abap",
+      "sha256": "ab0c5eb70e63f110b8e80eb6b7b13e8c5b8cefa46d072cded6a5a65ff5e7dc1c",
+      "size": 106522
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_legacy.clas.testclasses.abap",
+      "sha256": "22dac99a29621e9567ae641348aad63ec5272ed6dd63559da445c99332fc4a98",
+      "size": 297432
+    },
+    {
+      "path": "src/legacy/#dmo#cl_flight_legacy.clas.xml",
+      "sha256": "68d293c50a8c7353b8feed595518b404b92ef4b1d80e26bc5b89218cc334ff9b",
+      "size": 554
+    },
+    {
+      "path": "src/legacy/#dmo#cm_flight_legac.msag.xml",
+      "sha256": "e4897748c9baa64dc026f79e026c19eb4e129faf65bad4add81bb963c40a9edf",
+      "size": 9223
+    },
+    {
+      "path": "src/legacy/#dmo#connection.tabl.xml",
+      "sha256": "c0ad9777426ddfb7d2e9002b61ffeb5a80b71436de5e6815298fa520e963c58c",
+      "size": 2557
+    },
+    {
+      "path": "src/legacy/#dmo#connection_id.doma.xml",
+      "sha256": "427d6750d0f04efd6f58b74174dd4eca75e77f349893c117eab15d58189305c2",
+      "size": 521
+    },
+    {
+      "path": "src/legacy/#dmo#connection_id.dtel.xml",
+      "sha256": "d816311a2192716a6d7236c9bbd8ee6b1b07e10a2e7937d385c89555e1dcc91b",
+      "size": 762
+    },
+    {
+      "path": "src/legacy/#dmo#currency_code.dtel.xml",
+      "sha256": "63c4e5188f0a05d36d31decc1e8e66e524c824ae287b4999cfa4f7b68caa0ee6",
+      "size": 784
+    },
+    {
+      "path": "src/legacy/#dmo#currency_helper.ddls.asddls",
+      "sha256": "8d7b1dbb693c3a9da22b5637135644aadf7a9965cff47284777841f7d284987d",
+      "size": 892
+    },
+    {
+      "path": "src/legacy/#dmo#currency_helper.ddls.baseinfo",
+      "sha256": "73ef7de2f74faad96f8797205575f6281136af9bb7fa648117f93d9302da719f",
+      "size": 64
+    },
+    {
+      "path": "src/legacy/#dmo#currency_helper.ddls.xml",
+      "sha256": "e81b4acc366e4a7845c9a3f48d9f2a299da6709a4b453e8365d30cd7e09edbdd",
+      "size": 430
+    },
+    {
+      "path": "src/legacy/#dmo#customer.tabl.xml",
+      "sha256": "a6f3896aba7f3f84f0d795671ea5a3a3246e6fa9af13cd13a6a7d396a217de3c",
+      "size": 3674
+    },
+    {
+      "path": "src/legacy/#dmo#customer_id.doma.xml",
+      "sha256": "fe14f243ab1364f1ccfcd21b3d1c26c5fabbaeffa3ee6c7c67a9ccc09b7d80a7",
+      "size": 517
+    },
+    {
+      "path": "src/legacy/#dmo#customer_id.dtel.xml",
+      "sha256": "d097a5bdac1b30ec0891d96941f1143f669c6f71abfa1c9e2478ccc876a327a1",
+      "size": 1100
+    },
+    {
+      "path": "src/legacy/#dmo#cx_flight_legacy.clas.abap",
+      "sha256": "eb114d9ffc46e405d4e539d23950b07fd583ce92335691ba372defc588b8518b",
+      "size": 17264
+    },
+    {
+      "path": "src/legacy/#dmo#cx_flight_legacy.clas.xml",
+      "sha256": "cd81c1e9be35eedb7088dfdc39e67ba59775000ab93fab683ceebf86686a3e20",
+      "size": 552
+    },
+    {
+      "path": "src/legacy/#dmo#data_generation_enh_spot.enhs.xml",
+      "sha256": "83772504b7782e224e758d88f7154ca50bdf6d40c35697de05a53325090e993f",
+      "size": 2361
+    },
+    {
+      "path": "src/legacy/#dmo#date.doma.xml",
+      "sha256": "1ee4421cad63b840c3bc4b27294eb7535b65f63d2c43976bd640481c55ba8450",
+      "size": 503
+    },
+    {
+      "path": "src/legacy/#dmo#description.dtel.xml",
+      "sha256": "7c6141541e9c5bd85e783a527a22b7a24bbe0c7c7fee99cde1e35df7166013ff",
+      "size": 742
+    },
+    {
+      "path": "src/legacy/#dmo#distance.doma.xml",
+      "sha256": "596452a1df2c8ef04cb66f223e561db87e59990e02e87556c3e42833335d00df",
+      "size": 511
+    },
+    {
+      "path": "src/legacy/#dmo#email_address.doma.xml",
+      "sha256": "1a8e93dbb0644374c2dcf4f9e75b7f20474c022878545b3f54580620ff5ece85",
+      "size": 516
+    },
+    {
+      "path": "src/legacy/#dmo#email_address.dtel.xml",
+      "sha256": "1b7b922e78513009b84d80b055e4e25e9714797dae82c4ca232d5d32e580d448",
+      "size": 756
+    },
+    {
+      "path": "src/legacy/#dmo#end_date.dtel.xml",
+      "sha256": "b615feccb02a3e74e29b25ee36ea4d523fffe5834d5360f343344e21a0fa1f46",
+      "size": 729
+    },
+    {
+      "path": "src/legacy/#dmo#etravel.enqu.xml",
+      "sha256": "aae7a8d04b34d9b5bf92444d9df727695f3aec26e130710ad5b571e1abe618cf",
+      "size": 1227
+    },
+    {
+      "path": "src/legacy/#dmo#first_name.dtel.xml",
+      "sha256": "c1e4f25218dddfadd0cc309588fc5c9aedae6c72a660d8138103e122f3ef9de6",
+      "size": 741
+    },
+    {
+      "path": "src/legacy/#dmo#flight.tabl.xml",
+      "sha256": "74f4366b7216ae5f461f4824aafb4ddf1c188cd23892e83d377042a63ba9238b",
+      "size": 2634
+    },
+    {
+      "path": "src/legacy/#dmo#flight_arrival_time.dtel.xml",
+      "sha256": "7b18aed4664e143d5cbbf608fd8bd7136a8769f6824e6e67eb101fe40239721c",
+      "size": 754
+    },
+    {
+      "path": "src/legacy/#dmo#flight_date.dtel.xml",
+      "sha256": "4607947eaa60bb4761d430450a22fd7005a853bd721192ed1bb58a2b8abcb4d1",
+      "size": 737
+    },
+    {
+      "path": "src/legacy/#dmo#flight_departure_time.dtel.xml",
+      "sha256": "f3b65d37cc2a3edc07a5bb7415058a0bd567d7af1b27a31b7e79a83fb58f1cfd",
+      "size": 769
+    },
+    {
+      "path": "src/legacy/#dmo#flight_distance.dtel.xml",
+      "sha256": "bbe9930e2f0a3237e152e51eb5f95b73cbd1c2162664ae6fe6540e24fe0f8ea8",
+      "size": 768
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.ddls.asddls",
+      "sha256": "959b2834368c0d678851ccc948fb95100b6299de5e65eca2e7939efef1b1dd09",
+      "size": 584
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.ddls.baseinfo",
+      "sha256": "b0dec13b45be9dd1d96d36736eb967eb1f0bfde640f2623817f8d968fa9448a5",
+      "size": 158
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.ddls.xml",
+      "sha256": "0ea1dbf40fe9c015b8408c3bc788421ee086f2b1064f09c6b9f983dabcbb84f5",
+      "size": 413
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.srvb.xml",
+      "sha256": "143639371e2a91c1f26d0fe0ace450adc1b92803e08c4d4f0188917fbfcf7a54",
+      "size": 1467
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.srvd.srvdsrv",
+      "sha256": "cad01bc7286889d8913017623c72ea4cf06266e95a2e5a96ad092e6f76c7e151",
+      "size": 110
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy.srvd.xml",
+      "sha256": "e0e04517e7c6388c56cd9b675e8ddb5c15bfb7a846a7f71c7461154911315c03",
+      "size": 745
+    },
+    {
+      "path": "src/legacy/#dmo#flight_legacy_0001_g4ba.sco2.xml",
+      "sha256": "319b4c1897cb2532a99a9ab1cca58aa349cf48daacff5ab0e601e2e19471a68c",
+      "size": 650
+    },
+    {
+      "path": "src/legacy/#dmo#flight_price.dtel.xml",
+      "sha256": "fa6520e82dff934289b150726202f10783a630002b90fc68c4556f482e589bc2",
+      "size": 744
+    },
+    {
+      "path": "src/legacy/#dmo#flight_time.doma.xml",
+      "sha256": "f0c776a9b38b0713edf21429863cda2bb680f0a333ee706a3765f2338379edf5",
+      "size": 517
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_adj_numbers.abap",
+      "sha256": "7c2e33e47826084a054605c96fd7948fb13d29fd9bf1bfade066b8751220286e",
+      "size": 1320
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_calc_price.abap",
+      "sha256": "125f5ff9d2b936949e669993a72ea57e2aa12566d9e40b95c20762e923318ec9",
+      "size": 3828
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_create.abap",
+      "sha256": "49e4fbfe06c1c746d564d8c72ecd75d93bf676968cbeb4dddab3485b72d53c68",
+      "size": 3481
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_delete.abap",
+      "sha256": "66e65e03da7b3296752b8c5b00260f24673dea860d3c09a55cd45ab3d4c07d50",
+      "size": 1093
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_initialize.abap",
+      "sha256": "e7edc65b102fa210a5db88909bf05a946827dc25cb7f336f80b2eca7e5b11a41",
+      "size": 347
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_read.abap",
+      "sha256": "a924bc4f9e9156436fecd69da736538c9718c495b0c5f7d912947f8ecf20cb5b",
+      "size": 2249
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_save.abap",
+      "sha256": "f58155e42cead013c65ca2539e2b5fc67c09fdaa796daa1b53111cf0e903e76f",
+      "size": 329
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_set_booking.abap",
+      "sha256": "637209dafa725b6351a126b1043b103ec8fed55a5cef885bee0c7704cedd13d6",
+      "size": 958
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#flight_travel_update.abap",
+      "sha256": "ae0b68f08d9e83dddb5e88c97a8e395da1ca4b2fe20097d434d6c487618dec4b",
+      "size": 3725
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#lflight_travel_apitop.abap",
+      "sha256": "c1927ea59f68f664d73eab404dbecca9667abd8761752eb195825ef13fe42cb8",
+      "size": 130
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#lflight_travel_apitop.xml",
+      "sha256": "5e0340f87b8fb1e6dcc249bcc33839071b8bc5c401086de1f4783bc761a859f8",
+      "size": 412
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#saplflight_travel_api.abap",
+      "sha256": "7579b7f9011d5fa07eb80aa6ad50d65b414e67a159d5c91aef871465627a5de5",
+      "size": 841
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.#dmo#saplflight_travel_api.xml",
+      "sha256": "ce21555e975e0741dc980ada78977c0889c4084a52d0e4660513548a918758ad",
+      "size": 412
+    },
+    {
+      "path": "src/legacy/#dmo#flight_travel_api.fugr.xml",
+      "sha256": "df84641ec7e35cf4feec54b39869516498407ab14827a998f2fda5a362fc8bda",
+      "size": 11419
+    },
+    {
+      "path": "src/legacy/#dmo#if_data_generation_badi.intf.abap",
+      "sha256": "f063853becf8366b872a042f0f46226add1f94b02180d5c68a2895a73b6a3a7d",
+      "size": 181
+    },
+    {
+      "path": "src/legacy/#dmo#if_data_generation_badi.intf.xml",
+      "sha256": "0b93e9ed6fcdab87f0de5ab027ffa4f216db3511aa4fd26e13ad65ae873ae012",
+      "size": 494
+    },
+    {
+      "path": "src/legacy/#dmo#if_flight_legacy.intf.abap",
+      "sha256": "ffcac0fc42aba1fa875620c776d9c74d03072fbdb9c218f07c511462429b45ef",
+      "size": 9206
+    },
+    {
+      "path": "src/legacy/#dmo#if_flight_legacy.intf.xml",
+      "sha256": "f9635bad897be43f8b626610529b0115e705d712a61542cfa6849c219e728109",
+      "size": 677
+    },
+    {
+      "path": "src/legacy/#dmo#last_name.dtel.xml",
+      "sha256": "147373b9b1b5a72e2c77368009e0d606ae701647251e1762ab8367233662b119",
+      "size": 733
+    },
+    {
+      "path": "src/legacy/#dmo#name.doma.xml",
+      "sha256": "4690a05d34696c78c1228375b1f2e786cf1351838a3d9c1901f74f5d50513149",
+      "size": 532
+    },
+    {
+      "path": "src/legacy/#dmo#phone_number.doma.xml",
+      "sha256": "82eabb57e5be215f1987d2417a7091e780dcbe5826238fac09719e2abf4a35d4",
+      "size": 519
+    },
+    {
+      "path": "src/legacy/#dmo#phone_number.dtel.xml",
+      "sha256": "2c8190c6f8b281cec7edf5e2de66eb1e39b71bbe1625b6d66111595447b2ffe0",
+      "size": 751
+    },
+    {
+      "path": "src/legacy/#dmo#plane_seats.doma.xml",
+      "sha256": "763551b8715ddd6a50f5e5d75be7091baea0a7abce0a91af44c84b07c83faf57",
+      "size": 517
+    },
+    {
+      "path": "src/legacy/#dmo#plane_seats_max.dtel.xml",
+      "sha256": "016c2e53ed70914021af49310cca2390b9c1f413871ad3659588a4cd0941a454",
+      "size": 781
+    },
+    {
+      "path": "src/legacy/#dmo#plane_seats_occupied.dtel.xml",
+      "sha256": "6597242a1890b2e834ca0862656f4e4c86559cd29e8b7658243857a7539f56c7",
+      "size": 772
+    },
+    {
+      "path": "src/legacy/#dmo#plane_type_id.doma.xml",
+      "sha256": "923e904b491af9777393a812c240a1b19f5b5115df662eb081e4d460d9ea326e",
+      "size": 521
+    },
+    {
+      "path": "src/legacy/#dmo#plane_type_id.dtel.xml",
+      "sha256": "4ca204fba3c07b706254e9e9b0c78f27b57e251a41a4680a4be7b9ed1b1f131a",
+      "size": 749
+    },
+    {
+      "path": "src/legacy/#dmo#postal_code.doma.xml",
+      "sha256": "8a02d6cacc853ea465cd10a77c0a31c2f11972279644e00d4d7d1f2421c08046",
+      "size": 517
+    },
+    {
+      "path": "src/legacy/#dmo#postal_code.dtel.xml",
+      "sha256": "d6822d13441cc0e82f38c7d55be696f6450c6e58dc1c254b498b8e7934659d02",
+      "size": 753
+    },
+    {
+      "path": "src/legacy/#dmo#price.doma.xml",
+      "sha256": "5b08930bd053af6963ad606357d0aab836734384407fba5fa40d0e4cfce9c1ec",
+      "size": 537
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_in.tabl.xml",
+      "sha256": "651a0451ff3055ca3a754143256cedb494f8f9da486aec837bf7dec5e574e5ab",
+      "size": 1051
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_intx.tabl.xml",
+      "sha256": "1ee6f174f9fb1f95d4ed989dbc9f44755bcd750599f682059283955540bb2353",
+      "size": 2050
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_inx.tabl.xml",
+      "sha256": "f0447cc7ab3f948b30240ce41e8f83bebfb89408432c62b4a329cbb74721d3ae",
+      "size": 1223
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_key.tabl.xml",
+      "sha256": "9b469dcd783987ff930864397ce306c18cc594f54a7123c4f3e87e9b24af4181",
+      "size": 942
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_supplement_in.tabl.xml",
+      "sha256": "178c541541703a209e451cb0572e64a5532b7ff07fb9119428ac0a2d4148b008",
+      "size": 1199
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_supplement_intx.tabl.xml",
+      "sha256": "ef8d024cbf8400b9d1921998c988e9cc5262d2dce834cf434aac725e2ea2fb4f",
+      "size": 1193
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_supplement_inx.tabl.xml",
+      "sha256": "1357bff709f8317f14d93c5723614a189bca3637dfd9d4e1d34d8e50dfe4c72d",
+      "size": 1455
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_supplement_key.tabl.xml",
+      "sha256": "47cad4aa6e4cf0d24657eece38ff77c1ad89171fb3938bde43f04e6ccae96ef5",
+      "size": 989
+    },
+    {
+      "path": "src/legacy/#dmo#s_booking_supplementx.tabl.xml",
+      "sha256": "bb8dc2266bcefa994c96c76510d950baebb6e52dd427009cf49fdc8710dd7d81",
+      "size": 1366
+    },
+    {
+      "path": "src/legacy/#dmo#s_bookingx.tabl.xml",
+      "sha256": "01038952e782072aecb65685eb7dac4721834ebe9573dda674df8ec9d1df0cf1",
+      "size": 1299
+    },
+    {
+      "path": "src/legacy/#dmo#s_travel_in.tabl.xml",
+      "sha256": "c6d8cbe06f8c91c103b28712f7b22cefe29e1698033a378bd1a4bf04aa2d59ae",
+      "size": 1055
+    },
+    {
+      "path": "src/legacy/#dmo#s_travel_intx.tabl.xml",
+      "sha256": "fc27472d85c20388183e4debdb5e58d13b3a2813a035f5f880016971c2fd0268",
+      "size": 2470
+    },
+    {
+      "path": "src/legacy/#dmo#s_travel_inx.tabl.xml",
+      "sha256": "c7fa32805f39c9c1fc9a66cb427413a9f148f9653ebe4b90ad5e9276096099b2",
+      "size": 1069
+    },
+    {
+      "path": "src/legacy/#dmo#s_travel_key.tabl.xml",
+      "sha256": "86d1ffcc06764ab5f3de33f8bb5ba3b3a13b363019a374e2c72c2ec71beb89cb",
+      "size": 673
+    },
+    {
+      "path": "src/legacy/#dmo#s_travelx.tabl.xml",
+      "sha256": "d3ed753ee5e06287efedd07b09e1fc6b3839ae2e34f0084cb5de2ad13c34d6d7",
+      "size": 1293
+    },
+    {
+      "path": "src/legacy/#dmo#status.doma.xml",
+      "sha256": "23716c299adc284e2c5f6b1e6809e74c07eb6cb037bcab10919d73bd1abc0066",
+      "size": 1286
+    },
+    {
+      "path": "src/legacy/#dmo#street.doma.xml",
+      "sha256": "9f5c54376e9b3324fa9d3d2dd731fb66db7e1d1d9fb0791f757d87ba1ce8cfd2",
+      "size": 536
+    },
+    {
+      "path": "src/legacy/#dmo#street.dtel.xml",
+      "sha256": "b9a84f37bcde677ebcb6e9f16ce87595a2f14fedd948d9a766761bfa5d1de019",
+      "size": 716
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking.ttyp.xml",
+      "sha256": "1ca7eca4ec700faa3e57877a2ed6cb9169c3132fb14faf849e5dbe27ea008d10",
+      "size": 952
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_in.ttyp.xml",
+      "sha256": "1ffe9f6a232b7be2af32301f1b901d42dc432c78325b55ada0f485efe31259d1",
+      "size": 797
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_inx.ttyp.xml",
+      "sha256": "4ae312ff40a788b9affb9c36feca486489aba2cb5552db8468a1e058b19e4d12",
+      "size": 810
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_key.ttyp.xml",
+      "sha256": "05adab368810989918d47fe72a06761632983dcff2d491bc684b1a33f54515d2",
+      "size": 993
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_supplement.ttyp.xml",
+      "sha256": "d63569aa69bd4405de34dcef5d469f03cc59a59d865926e4cfe77de902be854c",
+      "size": 1182
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_supplement_in.ttyp.xml",
+      "sha256": "2b5be296a437ffc072b7d5ad5dd3a9a5ef76f3757adcacf7a3c0ec379b369c57",
+      "size": 1035
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_supplement_inx.ttyp.xml",
+      "sha256": "fb0772b68df42e54582c4d1f0cd936d6a9e27a34852b7f83ec68d907e61be62e",
+      "size": 1049
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_supplement_key.ttyp.xml",
+      "sha256": "9685344af03318c6151d129044f6c4024f105d58799e95154e60d791e53dcbd1",
+      "size": 1241
+    },
+    {
+      "path": "src/legacy/#dmo#t_booking_supplementx.ttyp.xml",
+      "sha256": "e83cdf29479955d2245781fa788c781f701dac36d8f0e81a0f8c98e22b24912a",
+      "size": 1228
+    },
+    {
+      "path": "src/legacy/#dmo#t_bookingx.ttyp.xml",
+      "sha256": "f0f79a3c99880d9005d422e3a022402f6763739ece5f7ff267842495a46fce3e",
+      "size": 981
+    },
+    {
+      "path": "src/legacy/#dmo#t_flight.ttyp.xml",
+      "sha256": "0b05e2059385c21f8634ea28bfdd99c06877e952978dc78e1cf0d236aee47faf",
+      "size": 1284
+    },
+    {
+      "path": "src/legacy/#dmo#t_message.ttyp.xml",
+      "sha256": "85e52c124953b1f14a4e7c678cf28b8e4a6d2552ad2ab3ff8b72fa6c286ab02e",
+      "size": 542
+    },
+    {
+      "path": "src/legacy/#dmo#t_travel.ttyp.xml",
+      "sha256": "d69e5d095896d3180c27616f488e5790afd0a4d6237f833791e63cef751e7ca1",
+      "size": 779
+    },
+    {
+      "path": "src/legacy/#dmo#t_travel_key.ttyp.xml",
+      "sha256": "222d458a7b0820d77e9c682d4d646eea86dab32e72ba59ea9b3d1634cd5fd558",
+      "size": 816
+    },
+    {
+      "path": "src/legacy/#dmo#t_travelx.ttyp.xml",
+      "sha256": "278b3ed6cdd192d8bf636a34b4aba7bb57b4d136cf4ddcc63aef0433c910f0d8",
+      "size": 807
+    },
+    {
+      "path": "src/legacy/#dmo#tc_flight_travel_api.clas.abap",
+      "sha256": "fcc59f67cccc1b3363021addc83c4e9fdd1508630efc804c2d59973b2a8facaa",
+      "size": 14569
+    },
+    {
+      "path": "src/legacy/#dmo#tc_flight_travel_api.clas.testclasses.abap",
+      "sha256": "068bda7c15faca292549ff176e007516c2711e69c12841ad30fea048ed174f45",
+      "size": 268
+    },
+    {
+      "path": "src/legacy/#dmo#tc_flight_travel_api.clas.xml",
+      "sha256": "51d696f36318896eb82fb9313794dd37af58ff87c968e0e26c48f5ae5b26d7d5",
+      "size": 655
+    },
+    {
+      "path": "src/legacy/#dmo#text.doma.xml",
+      "sha256": "2560c1051f9b78b583587d62182eda76801db409802001f78829747b2c2be3fc",
+      "size": 498
+    },
+    {
+      "path": "src/legacy/#dmo#title.doma.xml",
+      "sha256": "fc143066e4123271f7d58a8fe635cad87b58583ed4f78bbe4038c069c08d74f0",
+      "size": 534
+    },
+    {
+      "path": "src/legacy/#dmo#title.dtel.xml",
+      "sha256": "7fb630287257234164cc0a831ce74d777ef1a8e1b47690f062e5e2629c5ac067",
+      "size": 712
+    },
+    {
+      "path": "src/legacy/#dmo#total_price.dtel.xml",
+      "sha256": "9cc8214c9dd97970f9c2bf96a1edfa4a9ccab9032dff3540ca4e77d189d3eae1",
+      "size": 742
+    },
+    {
+      "path": "src/legacy/#dmo#travel.tabl.xml",
+      "sha256": "2d4bfbdeed4522273ab9d4eb84cd473d7310a9de9eb1384d8cb506664b0fff15",
+      "size": 1879
+    },
+    {
+      "path": "src/legacy/#dmo#travel_admin.tabl.xml",
+      "sha256": "8229d3be08a58a816344ee1360324fb004880bd555bda96a9723077dedfd6238",
+      "size": 1247
+    },
+    {
+      "path": "src/legacy/#dmo#travel_data.tabl.xml",
+      "sha256": "489b55f51c2245524f31b88bc649902abf4f67790693920dbc36baa06f221e41",
+      "size": 2330
+    },
+    {
+      "path": "src/legacy/#dmo#travel_id.doma.xml",
+      "sha256": "7dc5337f7fc49738ca6eb5e831816bd703d0a62bc7917c8e51f1d4aa2f9e9451",
+      "size": 513
+    },
+    {
+      "path": "src/legacy/#dmo#travel_id.dtel.xml",
+      "sha256": "292d95d880317bdb94f8f837cf2b5bf0c1b649460c5bbe090886a485b0a61b8e",
+      "size": 744
+    },
+    {
+      "path": "src/legacy/#dmo#travel_status.dtel.xml",
+      "sha256": "00a3ee21b1a96de63973647cd7376cd7bfca3c5274639a9aa12d5628c74b4b30",
+      "size": 754
+    },
+    {
+      "path": "src/legacy/#dmo#travel_status_text.dtel.xml",
+      "sha256": "bb8379b77a4c485c686293f89ff74f16f012e3f42dd25fba64e4bb4ba34e474e",
+      "size": 739
+    },
+    {
+      "path": "src/legacy/#dmo#travl.nrob.xml",
+      "sha256": "e1a2345afa9d6aa263ec8a4071efe069e811da3a2c9a5c1f12d5541523988591",
+      "size": 685
+    },
+    {
+      "path": "src/legacy/#dmo#trvl_stat.tabl.xml",
+      "sha256": "58f0b82cea9fc641dcce77bd9b0bd51ddad7023f53f6b362f11ca4bf8afba357",
+      "size": 1297
+    },
+    {
+      "path": "src/legacy/#dmo#trvl_stat_t.tabl.xml",
+      "sha256": "b375c7e48ccde6ee094c28f2f90870ce0fa2c07db66e9e018a9bccd7d3e49483",
+      "size": 1741
+    },
+    {
+      "path": "src/legacy/#dmo#web_address.doma.xml",
+      "sha256": "589209f134b5a0f8dc0bd324b53e24746abd9f163d6802a01620b42c25eca64a",
+      "size": 511
+    },
+    {
+      "path": "src/legacy/#dmo#web_address.dtel.xml",
+      "sha256": "8480677981cbe438806ddeefeb30403965939405269d5200e6ae9ce73a42b09d",
+      "size": 746
+    },
+    {
+      "path": "src/legacy/package.devc.xml",
+      "sha256": "a38a4ef8ec69807766b9e30d6c898555bcadce44bc57a414d860b25e04e6645c",
+      "size": 796
+    },
+    {
+      "path": "src/managed/#dmo#booking_m.tabl.xml",
+      "sha256": "e91c52c023849ccb690705ec75568c28ef5c6c2c885541a5cd28adbb213d845c",
+      "size": 3192
+    },
+    {
+      "path": "src/managed/#dmo#booksuppl_m.tabl.xml",
+      "sha256": "47d4b2542a939d76346a1923847fcdd4462f5ce75fa339ca85f8f4555e399953",
+      "size": 2480
+    },
+    {
+      "path": "src/managed/#dmo#bp_booking_m.clas.abap",
+      "sha256": "f408c20e18d187be110c2fbe767b45198894cb334c155c2ab7f3024541438143",
+      "size": 154
+    },
+    {
+      "path": "src/managed/#dmo#bp_booking_m.clas.locals_imp.abap",
+      "sha256": "46534333ad1fcd2a9a422c94179e2d4e7e4f6134ae6cb94a28b9a2f519916017",
+      "size": 16829
+    },
+    {
+      "path": "src/managed/#dmo#bp_booking_m.clas.testclasses.abap",
+      "sha256": "f819c3f498a508b26ec940d96111008f0406bc1e8ea738d3cd04f6fec5f9e54c",
+      "size": 36995
+    },
+    {
+      "path": "src/managed/#dmo#bp_booking_m.clas.xml",
+      "sha256": "5fa09a7c753256f27cbeff4fa9ab448ef531c2150f84a808ae1fc4cd5e866daf",
+      "size": 616
+    },
+    {
+      "path": "src/managed/#dmo#bp_bookingsupplement_m.clas.abap",
+      "sha256": "77d4a05f4525cd32a4d1d6ee85cf3b332da7df4081731a992f9a09b77ce8ad08",
+      "size": 174
+    },
+    {
+      "path": "src/managed/#dmo#bp_bookingsupplement_m.clas.locals_imp.abap",
+      "sha256": "f84086fcebc692b7aeeff4ad1e582e69bcea32067ba1b5bcdbfff3b19c37dc72",
+      "size": 8564
+    },
+    {
+      "path": "src/managed/#dmo#bp_bookingsupplement_m.clas.testclasses.abap",
+      "sha256": "2a39b29c457bedf22c0866731c290db722e888f48f15808e0e841096dfa6f347",
+      "size": 22171
+    },
+    {
+      "path": "src/managed/#dmo#bp_bookingsupplement_m.clas.xml",
+      "sha256": "52956ca7bd0bcc19df696ef83a01dd9006c83352deea1236cad0a52e2b9a498e",
+      "size": 626
+    },
+    {
+      "path": "src/managed/#dmo#bp_travel_m.clas.abap",
+      "sha256": "b9b4ec08cfb2d58a1dd65c7ac03a22cf92358c5038b83f7ca8bbf2e51dd97fb2",
+      "size": 149
+    },
+    {
+      "path": "src/managed/#dmo#bp_travel_m.clas.locals_imp.abap",
+      "sha256": "bf3d48e917745e89b69391eeabadc345ff23d3423222b29490e73a4505a466ec",
+      "size": 34110
+    },
+    {
+      "path": "src/managed/#dmo#bp_travel_m.clas.testclasses.abap",
+      "sha256": "c15031165c620632ac26c19679b3f4fb801873ce078ac7bc6bbfee01eae5548e",
+      "size": 98300
+    },
+    {
+      "path": "src/managed/#dmo#bp_travel_m.clas.xml",
+      "sha256": "995188c9980b050306f11fb0868435c2f3bc7dcfad6f853893d3cf2bc6ec1dd2",
+      "size": 615
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_approver_m.ddls.asddls",
+      "sha256": "acc8d584548d27c17b8e1160be161aad54f72d8624660c8fc0e2bb7b49a1d9f6",
+      "size": 3100
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_approver_m.ddls.baseinfo",
+      "sha256": "33da430eabc220ef359225bc33d4bfcd72492430708ac0a8cda9447ea455eb4b",
+      "size": 405
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_approver_m.ddls.xml",
+      "sha256": "247a06ccacb73c99a71ec6a4d8dcb7e9fd88bd795e85ac13273e7e77baff90e0",
+      "size": 431
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_processor_m.ddls.asddls",
+      "sha256": "9b252c094f62ddc8672c509ea8c3f207949ed2f8c47edf904105c985990d03a4",
+      "size": 5517
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_processor_m.ddls.baseinfo",
+      "sha256": "eadd3248fe181d0732291f81715fe9b06c2b7e1610d9942415e003be803098f7",
+      "size": 472
+    },
+    {
+      "path": "src/managed/#dmo#c_booking_processor_m.ddls.xml",
+      "sha256": "0b5d99134b974be0a8cbb241cbbfc4bb0b350fbdcfd39ffa3b100f2352bf13bd",
+      "size": 426
+    },
+    {
+      "path": "src/managed/#dmo#c_booksuppl_processor_m.ddls.asddls",
+      "sha256": "b05c6143d48156315e3bbc917ded7880d6f5dfbc9c0aba6aa64d8cdda5eac493",
+      "size": 2572
+    },
+    {
+      "path": "src/managed/#dmo#c_booksuppl_processor_m.ddls.baseinfo",
+      "sha256": "b4a1e00612c1d6a1c4921c4cf91b903a9fc3930045073455038797ee05ff4aa6",
+      "size": 325
+    },
+    {
+      "path": "src/managed/#dmo#c_booksuppl_processor_m.ddls.xml",
+      "sha256": "8252eb61278a50f0ddc55c4b95c606c91f3f42a831dd27fb65bcf2a89dfe7b27",
+      "size": 439
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_approver_m.bdef.asbdef",
+      "sha256": "36847650efab05a96ee653c8b9dac57617c8993715e70b5d37c6ae2e23eeb87b",
+      "size": 231
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_approver_m.bdef.xml",
+      "sha256": "cad21931158a51afadece409ffccdcc43d96e5bf6b3233109a26191b7270bc95",
+      "size": 1871
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_approver_m.ddls.asddls",
+      "sha256": "1b96f5a6ecfa8cc7a76f7380b81f11e6324d2b6e0044e4ddba1d40d8ec0bbcdf",
+      "size": 4454
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_approver_m.ddls.baseinfo",
+      "sha256": "fd879664a0c98861c3d830c320c4336d1ee431876dd879cb98294bafa1908997",
+      "size": 403
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_approver_m.ddls.xml",
+      "sha256": "ca4090230e68ab6392af1cc5615722ad83ae6ccc5b4171ba3605c3e0df7efafe",
+      "size": 423
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_processor_m.bdef.asbdef",
+      "sha256": "cd1dd9bd748feaf589c296bc4b247734ca5f76124a22476ae79f4c5fc2718d9b",
+      "size": 720
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_processor_m.bdef.xml",
+      "sha256": "c669f226a2220708a58863498d23cea2e7ba3b074c3eb406f2b49dfd71945953",
+      "size": 1878
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_processor_m.ddls.asddls",
+      "sha256": "e540bd18febe1bcbc95039cc97c4c61efb7a23b00d34074425f3560d3a477d97",
+      "size": 4113
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_processor_m.ddls.baseinfo",
+      "sha256": "c72e9ba59e59f27af8c0914a7601c0a95b4f17f0f078c38a108206e614fc5e2f",
+      "size": 404
+    },
+    {
+      "path": "src/managed/#dmo#c_travel_processor_m.ddls.xml",
+      "sha256": "31bd910621dbb1a82e04a6e96556b21f86544443d08a6e6e2978ba5eae4c0b3e",
+      "size": 426
+    },
+    {
+      "path": "src/managed/#dmo#cl_data_generator_managed.clas.abap",
+      "sha256": "af6f7d1c7efa1c5cf30f062c4f9eb8dd1270cea05c12d979c006e79697238f8e",
+      "size": 4279
+    },
+    {
+      "path": "src/managed/#dmo#cl_data_generator_managed.clas.xml",
+      "sha256": "5967eae4d54774dfec5fdc8fba55a13b8f9f34978be99d6749470e86b5e02ee9",
+      "size": 508
+    },
+    {
+      "path": "src/managed/#dmo#cl_travel_auxiliary_m.clas.abap",
+      "sha256": "fd92961fbc0625e34e22318401d9978a0b736c66a03de22356ab77be023a038f",
+      "size": 214
+    },
+    {
+      "path": "src/managed/#dmo#cl_travel_auxiliary_m.clas.locals_def.abap",
+      "sha256": "8c17ee4120ade69344fa5369bc5de2e5b5f13236edea16fbba0360e64e96f4e7",
+      "size": 906
+    },
+    {
+      "path": "src/managed/#dmo#cl_travel_auxiliary_m.clas.locals_imp.abap",
+      "sha256": "77cba3d8ec472e764cb20cee474179b3e20a794310374c3eb5adca76639c0e12",
+      "size": 587
+    },
+    {
+      "path": "src/managed/#dmo#cl_travel_auxiliary_m.clas.xml",
+      "sha256": "9a37dbcc23551c0585575711c7bac4211b77eddad7946b01d1911ca69bed8cdb",
+      "size": 478
+    },
+    {
+      "path": "src/managed/#dmo#data_generation_managed.enho.xml",
+      "sha256": "65a36b0487cef1f769b5b9f4d859c2ebfa4c5755d2b7a23f2f9d3350dd19ade3",
+      "size": 2509
+    },
+    {
+      "path": "src/managed/#dmo#i_booking_m.ddls.asddls",
+      "sha256": "434f1c6868137008e21d201df0b1c0ecf52daed08ad9a4bf94e4844db766abe0",
+      "size": 1564
+    },
+    {
+      "path": "src/managed/#dmo#i_booking_m.ddls.baseinfo",
+      "sha256": "360479e6f0a63f603c1f0dc861e0d04272cbe5ae6beef80529785b23ac2978b8",
+      "size": 256
+    },
+    {
+      "path": "src/managed/#dmo#i_booking_m.ddls.xml",
+      "sha256": "edb62fdd4f7c6c6469b9f26087c8d6756fef8268a2eb33cbe2e4a4919386bafd",
+      "size": 422
+    },
+    {
+      "path": "src/managed/#dmo#i_booksuppl_m.ddls.asddls",
+      "sha256": "a9b154a05d4d7ea32263226a96e6848fb9fb7971b21724b48e9823422debd12c",
+      "size": 1242
+    },
+    {
+      "path": "src/managed/#dmo#i_booksuppl_m.ddls.baseinfo",
+      "sha256": "148c856e17d16d85b8356d93a3feef53f4cff72c2118f7dc96a8ffb888c0bc45",
+      "size": 204
+    },
+    {
+      "path": "src/managed/#dmo#i_booksuppl_m.ddls.xml",
+      "sha256": "e19f9c3e48f601c51a60f0e6734f130c9778be83e60c1726cb8f53d0773c16a9",
+      "size": 436
+    },
+    {
+      "path": "src/managed/#dmo#i_travel_m.bdef.asbdef",
+      "sha256": "9a5290b7bdd7b7488aabdf35fe5e3cc8a184ed5f559996346d2b13e4d4ead0af",
+      "size": 4550
+    },
+    {
+      "path": "src/managed/#dmo#i_travel_m.bdef.xml",
+      "sha256": "0809b65e1cd40991e356937395f8f686353982feaa641d63795ab0fe0cb51c36",
+      "size": 1808
+    },
+    {
+      "path": "src/managed/#dmo#i_travel_m.ddls.asddls",
+      "sha256": "23adaa7cca599f57a87d545a7943deb14464ff3cf347c65adea004b0136d8fc4",
+      "size": 1510
+    },
+    {
+      "path": "src/managed/#dmo#i_travel_m.ddls.baseinfo",
+      "sha256": "281dbd3983537fdd87cbac24a8e36ba5d0efabde468b9e54efe4fb2312a11902",
+      "size": 220
+    },
+    {
+      "path": "src/managed/#dmo#i_travel_m.ddls.xml",
+      "sha256": "07b7e04a5333a5b25c666b82faa65e67c8da0a399e853dab7b745d27f9b8d157",
+      "size": 420
+    },
+    {
+      "path": "src/managed/#dmo#log_travel.tabl.xml",
+      "sha256": "e23deae705ebce2ce45ace3ebd35d8ec92c3fd91e37dee2c106b28a5f4f0b2cc",
+      "size": 2382
+    },
+    {
+      "path": "src/managed/#dmo#tc_botd_travel_m_demos.clas.abap",
+      "sha256": "b88fb12dcd3b41b2621c1c25f61059ad8c8aff873aa8719854a0ef1f5ec48031",
+      "size": 586
+    },
+    {
+      "path": "src/managed/#dmo#tc_botd_travel_m_demos.clas.locals_imp.abap",
+      "sha256": "baec5df111360d141d526cc68ba418ffcfeacb39935babcdea29d2144adae224",
+      "size": 1604
+    },
+    {
+      "path": "src/managed/#dmo#tc_botd_travel_m_demos.clas.testclasses.abap",
+      "sha256": "2c275b53867539564c24a8a914f165b3329e19565a77ab8b1576acab607110e5",
+      "size": 190446
+    },
+    {
+      "path": "src/managed/#dmo#tc_botd_travel_m_demos.clas.xml",
+      "sha256": "0566a44973b71c9e469c30a065c3d4f09c331ee46252fd2c0d60c3b9e70a2da0",
+      "size": 571
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_m.clas.abap",
+      "sha256": "5fe3cad426c0c6d73c22fe84f2bb050376768ceb8d88fb138931c42a790a2df9",
+      "size": 22788
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_m.clas.xml",
+      "sha256": "97e922583c191c3f48bc8b49165e0eea913b3f6963180d9fc51d731e2ac03f4f",
+      "size": 615
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_m_bo_consumer.clas.abap",
+      "sha256": "12400415cc76736b568b3d2ab4fc6b113b56effeef9ea02fca389abe2c3d0d14",
+      "size": 20199
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_m_bo_consumer.clas.xml",
+      "sha256": "a8fe69195e2a8390faa19479d1586bee264b1daaa5e819b646f25b526246f1aa",
+      "size": 530
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_proc_m_o2_odata.clas.abap",
+      "sha256": "da1282b0d8c5d3983a10222313fb581913b7795c70211a87492010dd206ebbbb",
+      "size": 7595
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_proc_m_o2_odata.clas.locals_imp.abap",
+      "sha256": "72d5dae891e5c65fbed262708f1ce7755fb78bb2c64faae496dd04c307e1cf01",
+      "size": 2263
+    },
+    {
+      "path": "src/managed/#dmo#tc_travel_proc_m_o2_odata.clas.xml",
+      "sha256": "2a41f2f157d32f83716f2ba337926a05ee0ac7af87c906173d093b2eabca6478",
+      "size": 606
+    },
+    {
+      "path": "src/managed/#dmo#travel_m.tabl.xml",
+      "sha256": "638b0095dcd60cd03ce5fc2286188180dd420d85c7c3962cb65f8917027bde6c",
+      "size": 3791
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#flight_booksuppl_c.abap",
+      "sha256": "8e918df6765c60437f941af8dcedecfe5feb5a29fdba7aa449c28aa5a1574285",
+      "size": 337
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#flight_booksuppl_d.abap",
+      "sha256": "b0c538328e990f7e670cbcf8aff529ede403dc48be43e02c75b0867cc19796e1",
+      "size": 338
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#flight_booksuppl_u.abap",
+      "sha256": "be75ea6fb03f7f665a90c9a3db2c4c4f400eefe80d058524ae4b4a66c5cbf534",
+      "size": 338
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#ltravel_update_tasktop.abap",
+      "sha256": "3d45efded6e064d59018a536d713a7cb0111d36b06e03e78143bda1dfdcda18c",
+      "size": 130
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#ltravel_update_tasktop.xml",
+      "sha256": "1988bed4cb2bbb96645cf130304938ae0768760fd5a0ddb2646f665ea46fc062",
+      "size": 413
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#sapltravel_update_task.abap",
+      "sha256": "4f35df60cb5a214fdd86abbecff26cfa059748a05f88fd546e3498df1bae1160",
+      "size": 904
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.#dmo#sapltravel_update_task.xml",
+      "sha256": "5b38507e96967406fe551380e8cf29002119f2f434a7d54e2d55251c116cac51",
+      "size": 434
+    },
+    {
+      "path": "src/managed/#dmo#travel_update_task.fugr.xml",
+      "sha256": "a3b51d8fb2d05ebf74be98fcf0578d510eae652ccc0edb275375409d46c60ba6",
+      "size": 1650
+    },
+    {
+      "path": "src/managed/#dmo#trv_m.nrob.xml",
+      "sha256": "60d2dd1ac9b337c0410a1e73e343a908ff3e8913d75acb9bc4dd37b0133f2649",
+      "size": 694
+    },
+    {
+      "path": "src/managed/#dmo#tt_booksuppl_m.ttyp.xml",
+      "sha256": "df69650a205bc03fcff4f01a4bc2488c9cc0b08b5001dc610fe4bc24e1203f5e",
+      "size": 589
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_appr_m_o2.srvb.xml",
+      "sha256": "cce6bc9ac7195592026f852b5ce8042018b97c6d004eeb8c57265c680a279a3c",
+      "size": 1412
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_appr_m_o2_iwsg.sco2.xml",
+      "sha256": "a4cff61831fdd5b29423cd26c1fbea0dae36ee38f3cdf437a31a7c1b68045304",
+      "size": 675
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_approver_m.srvd.srvdsrv",
+      "sha256": "623b1fa4636e01d0f0ea9b58d5a91930bb4dc9c0e11c22c20ecd9d541f4638f7",
+      "size": 535
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_approver_m.srvd.xml",
+      "sha256": "e4a4bce3f368c9f3c09c428298ae99425d99fc439c113101c95a7fd861a12506",
+      "size": 800
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_proc_m_o2.srvb.xml",
+      "sha256": "cf8466bcd9641cd5843ec48247564a1d4aa2cfafb70d5525e8e00ed4113280ab",
+      "size": 1415
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_proc_m_o2_iwsg.sco2.xml",
+      "sha256": "339bd5bdfd79d10ab4937d24e22b98c20292749f4ab4f318a1eefd08acd1ed49",
+      "size": 675
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_processor_m.srvd.srvdsrv",
+      "sha256": "6dac82c60d5e2b74be6ff16f083db23f052fb6a7016c1abd106241de93950c0c",
+      "size": 893
+    },
+    {
+      "path": "src/managed/#dmo#ui_travel_processor_m.srvd.xml",
+      "sha256": "73db41c1ddc9258f9e30b4acd32c4f80af5fedf5f51d5aa52caeae0cb7593974",
+      "size": 802
+    },
+    {
+      "path": "src/managed/package.devc.xml",
+      "sha256": "76abef16177eaf0a33584d063a111ffbb6339bade0abfd4c68bf574ee37c40f8",
+      "size": 810
+    },
+    {
+      "path": "src/package.devc.xml",
+      "sha256": "ce2d6863b823c249d26f0614654e1c1eeb842609e0f9db7d79ffe9fef20e20f1",
+      "size": 1189
+    },
+    {
+      "path": "src/readonly/#dmo#c_connection_r.ddls.asddls",
+      "sha256": "7f6579aa6aba715920d4a400a37a61108159a412223c82bb919b3ad182013078",
+      "size": 1943
+    },
+    {
+      "path": "src/readonly/#dmo#c_connection_r.ddls.baseinfo",
+      "sha256": "66e375ea163430bbc1181280c71960091780a0ef2f1d5af1e217cacbc2a9389e",
+      "size": 268
+    },
+    {
+      "path": "src/readonly/#dmo#c_connection_r.ddls.xml",
+      "sha256": "b6048bda8166b660c77d95b28696ef669e2ed6730bf46ddad6cbacf479fb89fc",
+      "size": 423
+    },
+    {
+      "path": "src/readonly/#dmo#c_connection_r.ddlx.asddlxs",
+      "sha256": "c13f24feb57f3c1a310653666e321c36a353bb79f3a19f0a4dabbe2a676d29ef",
+      "size": 2918
+    },
+    {
+      "path": "src/readonly/#dmo#c_connection_r.ddlx.xml",
+      "sha256": "9e25c9eb277dae8d4ad589e3f1f42ef8c9897e1d5c6aea66b95ad4809a3cbe03",
+      "size": 445
+    },
+    {
+      "path": "src/readonly/#dmo#c_flight_r.ddls.asddls",
+      "sha256": "0ce3e167e5da7281de822cd11e24442ab52c23d575907e7593dc3519379b0a42",
+      "size": 783
+    },
+    {
+      "path": "src/readonly/#dmo#c_flight_r.ddls.baseinfo",
+      "sha256": "fb796b73a82006261b57a7335c8fcb9bb9dfbefad8c276da47dac43bd860d416",
+      "size": 187
+    },
+    {
+      "path": "src/readonly/#dmo#c_flight_r.ddls.xml",
+      "sha256": "87b92f538fec4d063452d4467c95f217f5ea55c8bdcab03dd3e5fdf990ed0c4c",
+      "size": 415
+    },
+    {
+      "path": "src/readonly/#dmo#c_flight_r.ddlx.asddlxs",
+      "sha256": "fc4538596cd46aaefd67f6662156dc794eb8b820a0b3562273c885d2cbef742b",
+      "size": 2767
+    },
+    {
+      "path": "src/readonly/#dmo#c_flight_r.ddlx.xml",
+      "sha256": "d8eacf8d72fb8b01e6fe960df63d0fd23b47d73542177beb04b769014082f57e",
+      "size": 437
+    },
+    {
+      "path": "src/readonly/#dmo#flight_r.srvd.srvdsrv",
+      "sha256": "697837236e90d649eed0001fcd0821ca5d5dd381b9e9f123f4485b2325dde7fc",
+      "size": 368
+    },
+    {
+      "path": "src/readonly/#dmo#flight_r.srvd.xml",
+      "sha256": "8f20b35de141a6ae0bad11f887d9b240f3c8acef1ae5166a49ba843dd11f6787",
+      "size": 756
+    },
+    {
+      "path": "src/readonly/#dmo#i_connection_r.ddls.asddls",
+      "sha256": "ae06fd1276e5e6122464b84418c503e9fe601c3ef2d2969df3c2fdc9119bd14e",
+      "size": 1520
+    },
+    {
+      "path": "src/readonly/#dmo#i_connection_r.ddls.baseinfo",
+      "sha256": "90640a22d3b3a13de2fe55ae998235bd813e58c617849cde54011deb36df7723",
+      "size": 167
+    },
+    {
+      "path": "src/readonly/#dmo#i_connection_r.ddls.xml",
+      "sha256": "67878ae0fff75fc933aab243c8f3d17d97e0af88b3444c21ad6e42aa8333d0e7",
+      "size": 428
+    },
+    {
+      "path": "src/readonly/#dmo#i_flight_r.ddls.asddls",
+      "sha256": "585d7018892d1770bea2d0d2cd47abfc6809943381a8344225bf20ea4bdd75db",
+      "size": 788
+    },
+    {
+      "path": "src/readonly/#dmo#i_flight_r.ddls.baseinfo",
+      "sha256": "75dde39187a34d5bc2f687a595d123868620331fb8dda4091864d9a5ece7f2c2",
+      "size": 114
+    },
+    {
+      "path": "src/readonly/#dmo#i_flight_r.ddls.xml",
+      "sha256": "7da12e81d7d23b40460b0276b50f782295b2456707ab1dea5464dd405435b651",
+      "size": 421
+    },
+    {
+      "path": "src/readonly/#dmo#ui_flight_r_v2.srvb.xml",
+      "sha256": "daf3f69f3acc5ad63eb79a7548d11093949c59965bfe352b7b1f8c62d463191e",
+      "size": 1358
+    },
+    {
+      "path": "src/readonly/#dmo#ui_flight_r_v2_iwsg.sco2.xml",
+      "sha256": "4721d88fcba56473d4c971da123505b313a92272b382bf4744af0daca93213f6",
+      "size": 655
+    },
+    {
+      "path": "src/readonly/#dmo#ui_flight_r_v4.srvb.xml",
+      "sha256": "61b82da758b8006fd22f3264ca39130a8dc3c2cc144419b62c316b104c6d59c3",
+      "size": 1431
+    },
+    {
+      "path": "src/readonly/#dmo#ui_flight_r_v4_0001_g4ba.sco2.xml",
+      "sha256": "340e765f991e99367ca55a505626a12e0d71e724d4751dada609db466b976e34",
+      "size": 654
+    },
+    {
+      "path": "src/readonly/package.devc.xml",
+      "sha256": "4506bed3356b550dcd72d3f0a7dcae4ec0729a143a568907a52a7ba424f871e4",
+      "size": 415
+    },
+    {
+      "path": "src/rec/#dmo#a_trvl_rec.tabl.xml",
+      "sha256": "0e3dc3c2b0c437f9fa5fd881dfbec0a02b5ef991990b1aca3f4afb85ac196949",
+      "size": 3011
+    },
+    {
+      "path": "src/rec/#dmo#bp_r_traveltp_rec.clas.abap",
+      "sha256": "ac5327ede02abb31dc54cb1b40f9a64d80bfe0c020e92bef3ad2447f1ff3bfbb",
+      "size": 165
+    },
+    {
+      "path": "src/rec/#dmo#bp_r_traveltp_rec.clas.locals_imp.abap",
+      "sha256": "07bc6fbcbf5bd26722e3627b88a6d3bb18e77513bd674965c7e558d72333f37b",
+      "size": 3810
+    },
+    {
+      "path": "src/rec/#dmo#bp_r_traveltp_rec.clas.xml",
+      "sha256": "788428923fb0de7ed4f12d108ac2fc78971d5088c9a0c6139e94c35052e1a2fc",
+      "size": 588
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.bdef.asbdef",
+      "sha256": "582ab9bebfc83f0b5715d7820d6bd008e51ff10d5e363c794b34b0d815cdfa36",
+      "size": 292
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.bdef.xml",
+      "sha256": "411ab18784da1526615ca3b8a8b9bc11bcb295781b3ef3efa730f7af150dd0a5",
+      "size": 1834
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.ddls.asddls",
+      "sha256": "eedc399933fb691c547ddf026f3d3e25018d1185f4d2e05ebd1b21bf38774fb9",
+      "size": 1370
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.ddls.baseinfo",
+      "sha256": "b458cbe5b7f0afaec82666237d383604e87c825fd69f44023ac77a73660be648",
+      "size": 72
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.ddls.xml",
+      "sha256": "165714a6de901648d5601cfa1333e367a78cbfe5978a70a33eb9ab1709b0299a",
+      "size": 426
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.ddlx.asddlxs",
+      "sha256": "141a2ad06440e21f22b09e86aed0d3296c8fadd3937685bf3fb42160fb0921d2",
+      "size": 1369
+    },
+    {
+      "path": "src/rec/#dmo#c_traveltp_rec.ddlx.xml",
+      "sha256": "4b7331d766149f8370b0ee5106eb419682d114347c30ead753fde301cb6730a9",
+      "size": 450
+    },
+    {
+      "path": "src/rec/#dmo#d_trvl_rec.tabl.xml",
+      "sha256": "1b54cd16b4723fd42f7611ad47744c6194787b333fff8fc765fde131bed82647",
+      "size": 3257
+    },
+    {
+      "path": "src/rec/#dmo#r_traveltp_rec.bdef.asbdef",
+      "sha256": "74ca91d763e804a290882d97fa1502baee11dedea6bf41ba7789ccc6cb0cb2e2",
+      "size": 1321
+    },
+    {
+      "path": "src/rec/#dmo#r_traveltp_rec.bdef.xml",
+      "sha256": "e7ceb4a68c71e1cccd98ca6f836a8a7cf6e34e56fd82855fcdd9b2fd3900eb5e",
+      "size": 1842
+    },
+    {
+      "path": "src/rec/#dmo#r_traveltp_rec.ddls.asddls",
+      "sha256": "9530d6f2ea6df0d846cd48fcf2ee659f08efe93fbf0b75001bfe26042cfb7160",
+      "size": 1039
+    },
+    {
+      "path": "src/rec/#dmo#r_traveltp_rec.ddls.baseinfo",
+      "sha256": "5d76fb9bdf20a215942d2335e3bf8173804b067f438d9f7c00d07ba28e935ba5",
+      "size": 68
+    },
+    {
+      "path": "src/rec/#dmo#r_traveltp_rec.ddls.xml",
+      "sha256": "b50572d140bb51aaf042f569b330bf071aff2afd6874fe6c9a6c2ddad5e39878",
+      "size": 434
+    },
+    {
+      "path": "src/rec/#dmo#ui_traveltp_o4_rec.srvb.xml",
+      "sha256": "08e87296d04b9b3c7e893a897ea4d8148ed4d431d1156c6fba2d001d3ecc8f05",
+      "size": 1468
+    },
+    {
+      "path": "src/rec/#dmo#ui_traveltp_o4_rec.srvd.srvdsrv",
+      "sha256": "91fe913faf3be40af5ba12c3d1256795d52cab88f2e88e86ad547f73c9905462",
+      "size": 146
+    },
+    {
+      "path": "src/rec/#dmo#ui_traveltp_o4_rec.srvd.xml",
+      "sha256": "9964af4a859adeaa3363f92c5a2b59074ae3061a10a9c9a23f7af5124b4dee37",
+      "size": 775
+    },
+    {
+      "path": "src/rec/#dmo#ui_traveltp_o4_rec_0001_g4ba.sco2.xml",
+      "sha256": "438133ed56ad0bf1ef973bcfcb01e9c6d7412938bf398139ef4e4d1d96e9fc6c",
+      "size": 670
+    },
+    {
+      "path": "src/rec/dg/#dmo#cl_data_gen_travel_rec.clas.abap",
+      "sha256": "46524fd41a9769d23c52353d5cc916a6a4ab517798b90ef35ea460ae629029d5",
+      "size": 474
+    },
+    {
+      "path": "src/rec/dg/#dmo#cl_data_gen_travel_rec.clas.locals_imp.abap",
+      "sha256": "28677620421ee7f790686b92ddb408767ed1ce4ddd8fce86a4d6ff82e789b56a",
+      "size": 31538
+    },
+    {
+      "path": "src/rec/dg/#dmo#cl_data_gen_travel_rec.clas.xml",
+      "sha256": "c0b027403065612b13b1354682f40f81f643eaa6b788087adacaec268b7c14ef",
+      "size": 516
+    },
+    {
+      "path": "src/rec/dg/#dmo#data_gen_travel_rec.enho.xml",
+      "sha256": "6831953287f275c3465023ded30c499cdc5effc4cd7cee2216ce6a56ede6a73b",
+      "size": 1600
+    },
+    {
+      "path": "src/rec/dg/package.devc.xml",
+      "sha256": "784bb4b9008ccc7800b76a1d24560e91b192a13a7b9bab1673daf62432fc1cee",
+      "size": 436
+    },
+    {
+      "path": "src/rec/h/#dmo#acc_rec_h.tabl.xml",
+      "sha256": "b8e3e564f0979c7c7743c247c3d83ad235545edfb2fe3d69d05b40818d71622b",
+      "size": 3309
+    },
+    {
+      "path": "src/rec/h/#dmo#c_acc_rec_h.ddls.asddls",
+      "sha256": "933f26a8497d28192b154c828ad10ec8c7249a8e11b19fed9e32c3dc43356ab1",
+      "size": 741
+    },
+    {
+      "path": "src/rec/h/#dmo#c_acc_rec_h.ddls.baseinfo",
+      "sha256": "f9f992203c9d9057f67c49c18bd46a4c146edeca9d54bee50e9ec32afdfb0d9e",
+      "size": 67
+    },
+    {
+      "path": "src/rec/h/#dmo#c_acc_rec_h.ddls.xml",
+      "sha256": "585d32bf9aac66d1fdbd1df75ae0e0a2721283f18f52b06f69ee49a56d4236b9",
+      "size": 427
+    },
+    {
+      "path": "src/rec/h/#dmo#c_acc_rec_h.ddlx.asddlxs",
+      "sha256": "d54af7765e7ca45c275542c8f558ee4ae9010475ea72a2ec3b782daa069ac8eb",
+      "size": 656
+    },
+    {
+      "path": "src/rec/h/#dmo#c_acc_rec_h.ddlx.xml",
+      "sha256": "96bb790117c145321b9040b0605a54ca9d0644352645e9d1fd8280ff07c22e6d",
+      "size": 444
+    },
+    {
+      "path": "src/rec/h/#dmo#c_dest_rec_h.ddls.asddls",
+      "sha256": "27b86197ea19dc465bcebac9d8dc95ad187dce70d85fb0820e7a2cb78a4ba715",
+      "size": 421
+    },
+    {
+      "path": "src/rec/h/#dmo#c_dest_rec_h.ddls.baseinfo",
+      "sha256": "fa55c87ca36917946a94e3f4d3f267cddc908ac03ac355181dd373163f3d5590",
+      "size": 66
+    },
+    {
+      "path": "src/rec/h/#dmo#c_dest_rec_h.ddls.xml",
+      "sha256": "7545f0dd9a4a29a55ecb42973093dbeff9b27c216012a584cf06d0eca8c9d932",
+      "size": 437
+    },
+    {
+      "path": "src/rec/h/#dmo#cl_ai_util_rec.clas.abap",
+      "sha256": "72e0a49958404ccd267dad8dabf80574fc482f263fdea5f716646692128f16bf",
+      "size": 4562
+    },
+    {
+      "path": "src/rec/h/#dmo#cl_ai_util_rec.clas.xml",
+      "sha256": "9ea7afcbda678e190b61e421a4310233e321b94aa0c7419325c85cc7b0d44ab9",
+      "size": 498
+    },
+    {
+      "path": "src/rec/h/package.devc.xml",
+      "sha256": "1d2fa016481b65aa348d20ebbd9271d333bc914ff771c5849c2efa6b6c19c7fc",
+      "size": 436
+    },
+    {
+      "path": "src/rec/package.devc.xml",
+      "sha256": "272fb8fd9379c7864fda4b7647b008c3765d0fe93c61d0defc3c461b63a502d2",
+      "size": 440
+    },
+    {
+      "path": "src/reuse/#dmo#book_stat.tabl.xml",
+      "sha256": "a9fd26d8fe3f51ae3735cf3c97dbe4a90a1dacd564cb88b3ba421881457bc213",
+      "size": 1300
+    },
+    {
+      "path": "src/reuse/#dmo#book_stat_t.tabl.xml",
+      "sha256": "fb568f8137ce3827d9a70454a6efee1e863649379b5ea3b251ea7c8eac579118",
+      "size": 1745
+    },
+    {
+      "path": "src/reuse/#dmo#book_status.doma.xml",
+      "sha256": "c152ee0a21771d26719b90dc5cbfb240b85c783e37e645fffbd8b2d41481c879",
+      "size": 1124
+    },
+    {
+      "path": "src/reuse/#dmo#booking_status.dtel.xml",
+      "sha256": "6b9064ce3ebfdab09c165e002c5ddd1c90c0810c0e3746ede641f8d77c6c098c",
+      "size": 763
+    },
+    {
+      "path": "src/reuse/#dmo#booking_status_text.dtel.xml",
+      "sha256": "43332b236f5459c5be6769e69454c522bc023eda3374b0eea6df60ec7736971d",
+      "size": 744
+    },
+    {
+      "path": "src/reuse/#dmo#carrier.tabl.xml",
+      "sha256": "c9438a442ffca2cd9569a16c13f3ab435a4942da71facf1dfdaa1f5f86a982cc",
+      "size": 2527
+    },
+    {
+      "path": "src/reuse/#dmo#cm_customer.msag.xml",
+      "sha256": "d48cc57998119a7fcc59df8fc6912d3bff6c8d6a11d87ebe4a8750df3ba2ac8d",
+      "size": 696
+    },
+    {
+      "path": "src/reuse/#dmo#cm_flight.msag.xml",
+      "sha256": "abc70985e64a1d5264087f8955e978fe721b8f9d5a4935235c75379d5dac5222",
+      "size": 4472
+    },
+    {
+      "path": "src/reuse/#dmo#cm_flight_messages.clas.abap",
+      "sha256": "897b668a56c13cc2fd70e7a5e4357885764b93f8d2f0b96f4d27f41bd3a9fa4a",
+      "size": 12382
+    },
+    {
+      "path": "src/reuse/#dmo#cm_flight_messages.clas.xml",
+      "sha256": "7fb51085f360be53a54568d225354a9b38f2cb99fc7976f75c01144940abe35e",
+      "size": 713
+    },
+    {
+      "path": "src/reuse/#dmo#cntry.auth.xml",
+      "sha256": "c60576f5cdef49f73857fef2a928f6fee552b57f500625e592cd7a278c936e03",
+      "size": 338
+    },
+    {
+      "path": "src/reuse/#dmo#cx_customer.clas.abap",
+      "sha256": "665e6438520a9233a355b0d41e01c30cb0926dc29c89cdc678a2b4a230bc1466",
+      "size": 1688
+    },
+    {
+      "path": "src/reuse/#dmo#cx_customer.clas.xml",
+      "sha256": "de7aae20c5e1c9fe4280f2e1700e092b0a549e3fcd5a39e5427365c6cc0141de",
+      "size": 506
+    },
+    {
+      "path": "src/reuse/#dmo#i_agency_stdvh.ddls.asddls",
+      "sha256": "8391841adb6b3b171ad7adf49a5560976569e9027f055524570a9953c86572d1",
+      "size": 1525
+    },
+    {
+      "path": "src/reuse/#dmo#i_agency_stdvh.ddls.baseinfo",
+      "sha256": "ca8ac6f413c7a2a7ed6b78c7cd0df09ade49d72f81b9eb2f97f3a1353416360e",
+      "size": 108
+    },
+    {
+      "path": "src/reuse/#dmo#i_agency_stdvh.ddls.xml",
+      "sha256": "5dd2ed81fec9ff84caba470ec5be45ef32c322eda8c341faf1af6f73fbedd45f",
+      "size": 412
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport.ddls.asddls",
+      "sha256": "62450218b25a5617437ceb400d2cc80eccad59d88e2c59b1c433dcbbe7ef31f4",
+      "size": 970
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport.ddls.baseinfo",
+      "sha256": "f9aca025050971f666ffc240d216da28222971a5d168ef205ce245e058a80025",
+      "size": 110
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport.ddls.xml",
+      "sha256": "e8c9c95a854a45bc33b6e9e6d47a55c6dc89023d8616dc3d95f9c64ce011257b",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport_stdvh.ddls.asddls",
+      "sha256": "dffa416f709d6062cce7495e7460c8e0f57d89b2ed24e383aa5abc771289598b",
+      "size": 1174
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport_stdvh.ddls.baseinfo",
+      "sha256": "f9840c2950dc702b2fec5886e4c93c8cd55a356a19d5c27b238e5930033f4f25",
+      "size": 109
+    },
+    {
+      "path": "src/reuse/#dmo#i_airport_stdvh.ddls.xml",
+      "sha256": "d3af106e1bdc17af9cb102032ba5039887e98607e446d941e592be4fe5ecbbd3",
+      "size": 414
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh.ddls.asddls",
+      "sha256": "818db44d1822606b4dfcd690592d42dc94607b6b6251f401d1875a22a20ed446",
+      "size": 712
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh.ddls.baseinfo",
+      "sha256": "b27ecfa4504f3a94a596a24ff221f8532a88bc2e20da73bea4b31bfe0285d3af",
+      "size": 132
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh.ddls.xml",
+      "sha256": "a182dafd78f4654f5f8cad135c7f0bd81aa3996e364a6fa27611332b7f812e4e",
+      "size": 426
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh_text.ddls.asddls",
+      "sha256": "910543062eaa46a67a6804f708b4876d6d5fcf1d3afad7ce33d60876bc6f535d",
+      "size": 788
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh_text.ddls.baseinfo",
+      "sha256": "8dd445bef2c9f9e6baad21c8fe7024f50a96f3d2a46a92ec96267cf92af573ba",
+      "size": 129
+    },
+    {
+      "path": "src/reuse/#dmo#i_booking_status_vh_text.ddls.xml",
+      "sha256": "bc84ec5c332e99cbebc40d72623c45877a1294a14018f5a1602df5b844b226b0",
+      "size": 431
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier.ddls.asddls",
+      "sha256": "06d1a259c23e04ad7de7f22b26633fdc29b25ad8f4a4762efa692685b6ba3f24",
+      "size": 939
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier.ddls.baseinfo",
+      "sha256": "75f320b726d7bd604de443187905a5e48b0cb7c37889ff93b4384b06f1e11793",
+      "size": 111
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier.ddls.xml",
+      "sha256": "d28c3d6577cce96d88c51416f827fcd0674e865473b611ddb22ee0c61e7dc7f8",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier_stdvh.ddls.asddls",
+      "sha256": "72d299c3dbbf9adc963ad1a16946dba53d2424d4d02a4c89fce6fafe7d9d92ac",
+      "size": 856
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier_stdvh.ddls.baseinfo",
+      "sha256": "042d27c0ca15d828bc5be88c126861ee2c9b7fbf31bd5c2914f01bfca6cf6ab1",
+      "size": 111
+    },
+    {
+      "path": "src/reuse/#dmo#i_carrier_stdvh.ddls.xml",
+      "sha256": "b82d705a04e7df09d89edf142c75c1ac9ed7f43fd17a30de318287b50c2d595e",
+      "size": 414
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection.ddls.asddls",
+      "sha256": "ffbcd6d5cfc36d3746f8ea64645816dc2c7118fb63df8bb0dfdb28750cb700a4",
+      "size": 2289
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection.ddls.baseinfo",
+      "sha256": "7f868fc457485bf24252bc72c83b9d4233ecb695ff1741080f6c1869288f3d69",
+      "size": 142
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection.ddls.xml",
+      "sha256": "0ad0063eb4e368e52e57e27164677f008a488c6fbcf434ed691f15211263e384",
+      "size": 426
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection_stdvh.ddls.asddls",
+      "sha256": "01f0b68a933b9e9246720fe9a8f19646e5932022622b40d51f0d03cb29868029",
+      "size": 2172
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection_stdvh.ddls.baseinfo",
+      "sha256": "030f39abf6589de32d8cd452d2c860eabaf676c589451c00977cf1886bfc3be1",
+      "size": 118
+    },
+    {
+      "path": "src/reuse/#dmo#i_connection_stdvh.ddls.xml",
+      "sha256": "ad4f9126cfacb2482434843b62d474e61a5dca4adc4ecd11c142e3f61ef63789",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer.ddls.asddls",
+      "sha256": "92df8a466bc27773e147835090b09ad07aad357b72c2d4c81d1e2bbc47a98319",
+      "size": 1651
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer.ddls.baseinfo",
+      "sha256": "d87b379325e397a496c5d62b5aaaffae677877aad2b91f8416bb415b8bdef1b8",
+      "size": 111
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer.ddls.xml",
+      "sha256": "633a82415d24992ba161f33adf010d63a2ce82e2f1e09f678ad52910c0929225",
+      "size": 422
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer_stdvh.ddls.asddls",
+      "sha256": "341a11bf8fc45d7b0d7de3adc569a5fa3548cffd604ebc06f6bcce73f6fb5c1b",
+      "size": 1490
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer_stdvh.ddls.baseinfo",
+      "sha256": "60be919aa177ac08dbf2c52e6d3c058eef1c7fc1bd220a3da7410b747747bdde",
+      "size": 110
+    },
+    {
+      "path": "src/reuse/#dmo#i_customer_stdvh.ddls.xml",
+      "sha256": "60c78c804e78b9aae56e256fb8fa6c84da9afc2ffe7a41d9a7f39732a1ee2b94",
+      "size": 416
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight.ddls.asddls",
+      "sha256": "5a0dd6ad52939d26641a0e43797e2930b94a9a9e89472bc91ef56f466e55872b",
+      "size": 1705
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight.ddls.baseinfo",
+      "sha256": "d9a66712cc1ac47b7910e05c3f5c124251e4b493306a3bc982fe32f99fa5c26e",
+      "size": 161
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight.ddls.xml",
+      "sha256": "40342b529be745ed610fd853079a4c0cfc2525587d2c09ebc9390710e19a39d2",
+      "size": 418
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight_stdvh.ddls.asddls",
+      "sha256": "2390da6b89eadf8a5ccbe95d86410b7a622ec9e5f08bfd892ae870bf335b1578",
+      "size": 1672
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight_stdvh.ddls.baseinfo",
+      "sha256": "f657ee75482d31f66d4009d8113885f788994319259196fe720db29b78c3f3ad",
+      "size": 90
+    },
+    {
+      "path": "src/reuse/#dmo#i_flight_stdvh.ddls.xml",
+      "sha256": "bc4185798c26036514209402e66fe547f0e15744928569f864cc1e3fc79c5cf8",
+      "size": 412
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh.ddls.asddls",
+      "sha256": "184003c426a3e58b88298d96c1bff951f0c46b41cba7630fb6ef623adad3be78",
+      "size": 712
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh.ddls.baseinfo",
+      "sha256": "7609378c8def358d8e3204f15ba87643e8fce5c13de3c46803057c90bfcf4036",
+      "size": 132
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh.ddls.xml",
+      "sha256": "ab871d36ff0e4a16302c7659178be09234db1389214eddf8b6cd5e96285f112a",
+      "size": 426
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh_text.ddls.asddls",
+      "sha256": "1d014718066183f0fbda2bcb3199db26e76de1b5791ef5055b5da4d70e40d6e7",
+      "size": 788
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh_text.ddls.baseinfo",
+      "sha256": "f7c4c7cdc3231b76399ec52c4db004a159c3ce6f28e8df6161dc7be83180f578",
+      "size": 129
+    },
+    {
+      "path": "src/reuse/#dmo#i_overall_status_vh_text.ddls.xml",
+      "sha256": "f8b7d37e74ca74cac929f65dfba28c3ad98416e6d6461d37084e146399da961e",
+      "size": 431
+    },
+    {
+      "path": "src/reuse/#dmo#i_supplement_stdvh.ddls.asddls",
+      "sha256": "9902980025fdf91877396d4d6bed52cc9033220cb4d275b89bfc7ba92ed8d493",
+      "size": 1639
+    },
+    {
+      "path": "src/reuse/#dmo#i_supplement_stdvh.ddls.baseinfo",
+      "sha256": "2a639ff962e2dab9fe8b23b62bdd07489dfb513ae64f1fcacb96f0cdafedd01a",
+      "size": 179
+    },
+    {
+      "path": "src/reuse/#dmo#i_supplement_stdvh.ddls.xml",
+      "sha256": "e574708d1d36c07c8a45c75945fba3d1b61912e0fa9b47b72de0a9f22090e47b",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh.ddls.asddls",
+      "sha256": "12f80c0feba388e8dc5e4e81069f441c47d39452b775c640699fff80c19dc61c",
+      "size": 708
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh.ddls.baseinfo",
+      "sha256": "b26680fbc62adcc2794579ca8b73f89264e876315cd10d52b46485c60d8a5ce0",
+      "size": 131
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh.ddls.xml",
+      "sha256": "7faa647c035eaa194a546673fa382767f4279cb5d05ed293c1fd661066841447",
+      "size": 425
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh_text.ddls.asddls",
+      "sha256": "57de3acf8bfde11dc0e24ef8bdfdbd9acc01bbd1292827664cee8b339dcb6ba6",
+      "size": 776
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh_text.ddls.baseinfo",
+      "sha256": "2aea49c9239e66aafb5d1fbe39680b963a2f573c0f179ff7e8ea3dbf3e9da92b",
+      "size": 128
+    },
+    {
+      "path": "src/reuse/#dmo#i_travel_status_vh_text.ddls.xml",
+      "sha256": "648ef863d12c8342afe06ee417f2bb9e79301378a729592a8f62bc5102ec346a",
+      "size": 430
+    },
+    {
+      "path": "src/reuse/#dmo#oall_stat.tabl.xml",
+      "sha256": "c861a8f672ab218dc1d8b2e70c2e6dc84578d37f65058052aff00606fdb5699c",
+      "size": 1300
+    },
+    {
+      "path": "src/reuse/#dmo#oall_stat_t.tabl.xml",
+      "sha256": "9d96a30581cd3d36a4da7968cc32cecc6fc6a3d74311d90308b237c31eb2a5a9",
+      "size": 1745
+    },
+    {
+      "path": "src/reuse/#dmo#overall_status.doma.xml",
+      "sha256": "f55fb769b2abe2f2cb7f75abf152da7de89bc70ce00b4f9cf263520423372390",
+      "size": 1138
+    },
+    {
+      "path": "src/reuse/#dmo#overall_status.dtel.xml",
+      "sha256": "95c5871d4dbce0079941303929169413f340ca7bfc5618e888785bbb20dc4b75",
+      "size": 766
+    },
+    {
+      "path": "src/reuse/#dmo#overall_status_text.dtel.xml",
+      "sha256": "11a663046fa490b13039fdaebdda8b5f8fdc2e1d2620385c5ab5b87fadcc0b4d",
+      "size": 744
+    },
+    {
+      "path": "src/reuse/#dmo#trvl.suso.xml",
+      "sha256": "8675bcbd38ae068997c2326fd78309af653298f6f02321f59d6aa42356c62468",
+      "size": 845
+    },
+    {
+      "path": "src/reuse/agency/#dmo#agency.tabl.xml",
+      "sha256": "3f32d5da0956becabc3572dfbb7a80fce9a0d94ee29aadd8937e112728dfe7ad",
+      "size": 4264
+    },
+    {
+      "path": "src/reuse/agency/#dmo#agency_d.tabl.xml",
+      "sha256": "5ac4ca50762dffe543452ac1f43c0153202d0726401dce9bdfce130c9d0997f9",
+      "size": 4636
+    },
+    {
+      "path": "src/reuse/agency/#dmo#attachment.doma.xml",
+      "sha256": "c4478e6c7785987115e99905a584e0293554bef840575b19a24ac7b3d25e32d3",
+      "size": 430
+    },
+    {
+      "path": "src/reuse/agency/#dmo#attachment.dtel.xml",
+      "sha256": "4e1179865297270bce842414bcc1f628a0fb2374c3e0c4bad9fd7aaf963b5f1a",
+      "size": 720
+    },
+    {
+      "path": "src/reuse/agency/#dmo#attachment_nvi.dtel.xml",
+      "sha256": "199c59e7def1d74f3498a2b2a8ffe3ddaf76c976c5952811300939ac0f3fcfe6",
+      "size": 794
+    },
+    {
+      "path": "src/reuse/agency/#dmo#bp_r_agencytp.clas.abap",
+      "sha256": "eea33590534b9bdf24a3dd3938a82833ddce26f2659c0813be60980c14881ea3",
+      "size": 153
+    },
+    {
+      "path": "src/reuse/agency/#dmo#bp_r_agencytp.clas.locals_imp.abap",
+      "sha256": "d4a0caf50b8baf04f0d5972cd224c6e8f68d318b13639c5a1da978b59365e647",
+      "size": 12254
+    },
+    {
+      "path": "src/reuse/agency/#dmo#bp_r_agencytp.clas.testclasses.abap",
+      "sha256": "7414c6e2934cb901ca8a3a81fe8a2d0501a8b766a92a64c56e190e6ba377dffa",
+      "size": 34661
+    },
+    {
+      "path": "src/reuse/agency/#dmo#bp_r_agencytp.clas.xml",
+      "sha256": "b4d6a04554ead0e14ed779e4472f605d904d92d188e52f9e59c4798ab4cd1eb0",
+      "size": 615
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.bdef.asbdef",
+      "sha256": "cfd6f56eacb6c1d33a200b77f0d559df4e83f1a09a56dd56bb91cecca237159a",
+      "size": 265
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.bdef.xml",
+      "sha256": "131cb5cf371ab376d33e84cf06ae9bd7ad8c3524f89f869860962423160339a7",
+      "size": 2029
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.ddls.asddls",
+      "sha256": "ab0efbae83730962d219ff26222e0dc43b87ca2baaa838c999c54cec55bffa07",
+      "size": 1011
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.ddls.baseinfo",
+      "sha256": "944c67c1ca62747b5674349935d84eae018a6b11065bc5d58bf63499707e47ea",
+      "size": 237
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.ddls.xml",
+      "sha256": "60b50778f96b299c1cbe18d33fa10d18552ef9f35dc3ac0ec98b66269eb31ac5",
+      "size": 398
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.ddlx.asddlxs",
+      "sha256": "16fac6a7d98c092d5f416b82853c795cbcf9b7dfde12cbb61a99e812f125b3cd",
+      "size": 3719
+    },
+    {
+      "path": "src/reuse/agency/#dmo#c_agencytp.ddlx.xml",
+      "sha256": "ab6eccd0955029dd20f48b4fcb9fb1285058046226d09d9bd354f1153619c3ba",
+      "size": 414
+    },
+    {
+      "path": "src/reuse/agency/#dmo#cm_agency.msag.xml",
+      "sha256": "69c8655e51ab46f0dae01771b59ceeed09de1e697b207c98fc2a193d62c9064f",
+      "size": 2486
+    },
+    {
+      "path": "src/reuse/agency/#dmo#cx_agency.clas.abap",
+      "sha256": "475fb303a6ba08f40b53d07bc70763bcfeec0526185b905ad7b63e20bf186dab",
+      "size": 6881
+    },
+    {
+      "path": "src/reuse/agency/#dmo#cx_agency.clas.xml",
+      "sha256": "e6a480a65c0faa07621954784a8980f3dbfd339481bb34d346e0d6a0da7a30a8",
+      "size": 508
+    },
+    {
+      "path": "src/reuse/agency/#dmo#e_agency.ddls.asddls",
+      "sha256": "592aa455f5d8c11f0f9aa7ba4542fcf16404bb996d9ce4b97fa534a777ddfd67",
+      "size": 488
+    },
+    {
+      "path": "src/reuse/agency/#dmo#e_agency.ddls.baseinfo",
+      "sha256": "73ef7de2f74faad96f8797205575f6281136af9bb7fa648117f93d9302da719f",
+      "size": 64
+    },
+    {
+      "path": "src/reuse/agency/#dmo#e_agency.ddls.xml",
+      "sha256": "54b2c3363a43264d50d2c6c36c08517899a621f6204b48ffdd4553937fb7101e",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/agency/#dmo#filename.doma.xml",
+      "sha256": "327382d0eaa2685522cc189959b14a108f99042a6be74833a2ad93982985e60d",
+      "size": 513
+    },
+    {
+      "path": "src/reuse/agency/#dmo#filename.dtel.xml",
+      "sha256": "30cd15014192bc778bb966fdf5664884b9fd2edf53785725fc49ec7fa41d07fb",
+      "size": 706
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agency.ddls.asddls",
+      "sha256": "27f26ce66ff8eb49b8cbc93a14f1e39cfbcb02b8dc88d8b3fed3f053df0f6cd0",
+      "size": 2325
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agency.ddls.baseinfo",
+      "sha256": "2465d7bcfb70c925fae59ca0b38781b91e5658129917fce3c44df7eec886e562",
+      "size": 109
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agency.ddls.xml",
+      "sha256": "2b03537f23845aac1e3cc531d75b0b492d7cb4086f059edc2c87868f707a1dd4",
+      "size": 418
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agencytp.bdef.asbdef",
+      "sha256": "6088167653de308e282b36240cbf26b8663d60ca8f18d06b81e6c33f5ecdd67d",
+      "size": 260
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agencytp.bdef.xml",
+      "sha256": "715dc51e4039eaf5e090c53e220f164368fda650d3572df1840c1d6baf70f605",
+      "size": 1786
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agencytp.ddls.asddls",
+      "sha256": "eb1ae81e6db5258babe98ff453b9f4480505d7df22db4be59a19f668482ee810",
+      "size": 2015
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agencytp.ddls.baseinfo",
+      "sha256": "8f20eba362fa30fec696592150ff45b2fa2e4688c0d6cc6a733f38bf8c330a21",
+      "size": 158
+    },
+    {
+      "path": "src/reuse/agency/#dmo#i_agencytp.ddls.xml",
+      "sha256": "1625fba08cb87d2056185a047bcd8a4119923ca190c8a3d7fa49b001e921716b",
+      "size": 398
+    },
+    {
+      "path": "src/reuse/agency/#dmo#mime_type.doma.xml",
+      "sha256": "96350667897da0b0d23bf94dfa7856b6f6780a966c80c6122a2b20d9bd8f4a98",
+      "size": 514
+    },
+    {
+      "path": "src/reuse/agency/#dmo#mime_type.dtel.xml",
+      "sha256": "5adb1d306c885f0e332883c17ccae8abfa15be8f2bf6a8b96e0ba7ddd9ac1f73",
+      "size": 712
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencydraft.ddls.asddls",
+      "sha256": "740fb10678d16855c73543ca8b8f08dbbd806db6aabbf568ea58a9d0f5397fd7",
+      "size": 1698
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencydraft.ddls.baseinfo",
+      "sha256": "889c2d3a6b1e8a209d179dedc610dd4451892de098631626f9854a487c8a6127",
+      "size": 66
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencydraft.ddls.xml",
+      "sha256": "ecbc4ba5caf2cf90f44f421d247e8db8c9317dbcc15c54fb8d8f377ca460b0f2",
+      "size": 419
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencytp.bdef.asbdef",
+      "sha256": "ad427a8256154eb04db0b6cedc74fcc012e346f303e2e62dc85c34903777a879",
+      "size": 2119
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencytp.bdef.xml",
+      "sha256": "0a4c6357b7c9b8b61b8b1fff51321d5fcb97e31ae66b251960970ae12365d1ed",
+      "size": 2029
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencytp.ddls.asddls",
+      "sha256": "fd7afe09d9d5485007d7d2f6d075cae043818c4fd2d3a893d96e76c86057a9d7",
+      "size": 1000
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencytp.ddls.baseinfo",
+      "sha256": "7655d9ac0b08105aaebd9109032425377952be376ad4c74c4ee2cd7f4b5b8e94",
+      "size": 134
+    },
+    {
+      "path": "src/reuse/agency/#dmo#r_agencytp.ddls.xml",
+      "sha256": "18de5a3e472038c04d7931be53044ea5718cb4e2b7f453f809fda99f6dd604a6",
+      "size": 398
+    },
+    {
+      "path": "src/reuse/agency/#dmo#s_ext_incl_agency.tabl.xml",
+      "sha256": "535e6724f2279caad578453451ecb5e080b81246a49eaa9668e2a052720c11c0",
+      "size": 1142
+    },
+    {
+      "path": "src/reuse/agency/#dmo#ui_agency.srvd.srvdsrv",
+      "sha256": "7279803e0d84a8fa93684c4ee09fd9be2384f3fc24dabaae712dfea3bf89abe2",
+      "size": 198
+    },
+    {
+      "path": "src/reuse/agency/#dmo#ui_agency.srvd.xml",
+      "sha256": "9e53225f2e0693903f89762ad5366190b9cce53fb91b15654d16df4185052f2f",
+      "size": 725
+    },
+    {
+      "path": "src/reuse/agency/#dmo#ui_agency_o4.srvb.xml",
+      "sha256": "0b95e6efb4292f42cd5372346cb03f21b408514f03ef51c0c1f4bedf3dc209c9",
+      "size": 1422
+    },
+    {
+      "path": "src/reuse/agency/#dmo#ui_agency_o4_0001_g4ba.sco2.xml",
+      "sha256": "646756aefd59fc8400e3c9a24df7eee28ce171fecd12856abafc4447ea7ab983",
+      "size": 646
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_a_address.ddls.asddls",
+      "sha256": "79bbc7dda21ffd248d33d33e9a8c39f61f709f05e68ebd93df3c40bf7252003f",
+      "size": 216
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_a_address.ddls.baseinfo",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_a_address.ddls.xml",
+      "sha256": "36dd8ed86537ffd6be4149fca5c39a423b00cfd2dcd82310385af8700435cc61",
+      "size": 430
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_agency_cntry.msag.xml",
+      "sha256": "7ad8fe23e70e83df1d21efa69e0ef7df59b7f98a7c8a16356b0a8e912072f918",
+      "size": 812
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_bp_x_cntry_r_agencytp.clas.abap",
+      "sha256": "961bae15bffef4b9bcb8adf66176fdc2d76cc3a7c6caa906b03f61de4217577f",
+      "size": 175
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_bp_x_cntry_r_agencytp.clas.locals_imp.abap",
+      "sha256": "5bb3de5536320c0c9f1863c2e8cc1852fae0050c1fa8e291a05b110e4e32c929",
+      "size": 7979
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_bp_x_cntry_r_agencytp.clas.testclasses.abap",
+      "sha256": "2231b7c95203085f8204853b49bd78fc283aa7273a0623efaab09ba1dd23c624",
+      "size": 10742
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_bp_x_cntry_r_agencytp.clas.xml",
+      "sha256": "c36d0344fa8a3bb76b31935ccbdefc78f0bd7072dd1e6f8d6ee8171843e084af",
+      "size": 641
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_cx_agency_country.clas.abap",
+      "sha256": "ca29407f3065e4ef446f07e84b28e5c337c916712fbfd4aec690b02adaa01225",
+      "size": 2110
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_cx_agency_country.clas.xml",
+      "sha256": "c551f2adfda9140dbe0e96cd08110061a16e232b643331a63587ebf733331950",
+      "size": 531
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_x_country_c_agencytp.bdef.asbdef",
+      "sha256": "bca10edfd6021587531687b87f7039bba70c60548e0758cd41b2008f85af232d",
+      "size": 97
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_x_country_c_agencytp.bdef.xml",
+      "sha256": "6b8104d086fcf3f4fd00bef371051f96382b99b5f7e0c0636176c405a34f565e",
+      "size": 2077
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_x_country_r_agencytp.bdef.asbdef",
+      "sha256": "72ae6b166e112352b95554a54278cba12c2888f9bbea33cf666e0c3bcb1fb260",
+      "size": 568
+    },
+    {
+      "path": "src/reuse/agency/cntry/#dmo#zz_x_country_r_agencytp.bdef.xml",
+      "sha256": "a323addce41379693fa852682ad8c4647158f1fa402ce6c5684bcff2575861ac",
+      "size": 2077
+    },
+    {
+      "path": "src/reuse/agency/cntry/package.devc.xml",
+      "sha256": "8c8e95e6de599960471f9b4d4c9d79e2e41212d2efb93d34564ec900cdb3debb",
+      "size": 419
+    },
+    {
+      "path": "src/reuse/agency/datgn/#dmo#zz_cl_data_gen_agency_ext.clas.abap",
+      "sha256": "8aefc427a15eb8675452dd095303349d42518552a3ce2defb985c8ad3a85ec10",
+      "size": 8552
+    },
+    {
+      "path": "src/reuse/agency/datgn/#dmo#zz_cl_data_gen_agency_ext.clas.locals_imp.abap",
+      "sha256": "52f82b70bea2c0a94674824c737508ac72797a8acad794db791fe8701585fc74",
+      "size": 16736
+    },
+    {
+      "path": "src/reuse/agency/datgn/#dmo#zz_cl_data_gen_agency_ext.clas.xml",
+      "sha256": "4d84a2b6d77feb662ce2db0f0ffdf7607341f153efdc53116930ed4f021f21eb",
+      "size": 510
+    },
+    {
+      "path": "src/reuse/agency/datgn/#dmo#zz_data_gen_agency_ext.enho.xml",
+      "sha256": "0e0886ed9e095a4bf945975c098ab6eb7e52c56a5ec45378edad2aa43245a34d",
+      "size": 2484
+    },
+    {
+      "path": "src/reuse/agency/datgn/package.devc.xml",
+      "sha256": "00aa15e9e65b6cf94eca0b29750c8203312baca6402ea16ce33ebaa86f521af8",
+      "size": 401
+    },
+    {
+      "path": "src/reuse/agency/package.devc.xml",
+      "sha256": "7d6284a88cc50efe46147b89637099cd7bf0d5b1363b350b354f5bba9feb05d4",
+      "size": 402
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_agency_rview.msag.xml",
+      "sha256": "479f16b0297d6184f9e51234b2604bb162273954b358fb97724cc1c12d194bce",
+      "size": 572
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_agn_reva.tabl.xml",
+      "sha256": "9aa212837b1af0477960554764bc42caddeb55433ed4a2e02f384c4d455ed0be",
+      "size": 2714
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_agn_revd.tabl.xml",
+      "sha256": "c04ed3d4148374547a04b956940a9a8ae3726bd1e6a7d07e83d9c1b1e5f48e84",
+      "size": 3328
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_bp_x_review_r_agencytp.clas.abap",
+      "sha256": "88d27ba3a418dd53c93971d9de60cc03dfee7659218a5642d2171fe9f1bb4985",
+      "size": 177
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_bp_x_review_r_agencytp.clas.locals_imp.abap",
+      "sha256": "6d2ba4b44dbfa912e25e5c9515c96f5369849bf7b6d3a9190c6447a4b5ee8996",
+      "size": 6468
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_bp_x_review_r_agencytp.clas.testclasses.abap",
+      "sha256": "14e440ccfa58f29d80a1cd47eec0547fe7a55b9634cd853b3a4e1a9619923d4f",
+      "size": 23552
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_bp_x_review_r_agencytp.clas.xml",
+      "sha256": "d2f247429a70affdcba9dea7bd6d0a62355b2c07e738340d65323a4d209eb7af",
+      "size": 641
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_c_agency_reviewtp.ddls.asddls",
+      "sha256": "45bfbfac71e3a5f1c782efa31fa1d112904f86ebe1372d0358ba6f2b08161926",
+      "size": 526
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_c_agency_reviewtp.ddls.baseinfo",
+      "sha256": "860b1babd9463d28b886f3d71fd7543bfcfa77871de734756af9f5d0691101fe",
+      "size": 209
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_c_agency_reviewtp.ddls.xml",
+      "sha256": "fad1d98cebdc8ef9567b1ee5cabc6c7a5db4de76c333e0f35dac77e6960e7bb2",
+      "size": 415
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_c_agency_reviewtp.ddlx.asddlxs",
+      "sha256": "d82ebd8f5df70d1a903c20c17449ee0bd0ca5244a58203926679008868e841d1",
+      "size": 2753
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_c_agency_reviewtp.ddlx.xml",
+      "sha256": "8f63a9edf4f52b6183a796dc68b5f80733657768576d23575bc5e4e4ae1255cd",
+      "size": 444
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_cx_agency_review.clas.abap",
+      "sha256": "e592efc1b19696cdd0ec602d8f3001646bc410bf7773e063c8a2a4d248811ad4",
+      "size": 1376
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_cx_agency_review.clas.xml",
+      "sha256": "e654c16f95ac15c2a1c68e38a4ddd356bfcd0c4b8d76a1d48c68de75190d778b",
+      "size": 529
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_free_text_comment.dtel.xml",
+      "sha256": "95481ad32cc892ad2c39b163353f260ee054b93f1e7c1a10bf30d3c8336b569b",
+      "size": 764
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_helpful.doma.xml",
+      "sha256": "758e0b944de17c6c10b4907b285d0dbd87a66c52473a3fb949ec95469fcecee7",
+      "size": 500
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_helpful_count.dtel.xml",
+      "sha256": "f24c5f499f257ed980b80886114e9a64174b0d6c2f713513ca25174792e3e120",
+      "size": 779
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_helpful_total.dtel.xml",
+      "sha256": "81175a47f12b1710d9b5aa261faa5e83469853d445a5392f28aaaee9cb69733a",
+      "size": 777
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_review.ddls.asddls",
+      "sha256": "993595c51f3b60ca7c4709e72eff09525cd854826e82860bdae56943307e7553",
+      "size": 807
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_review.ddls.baseinfo",
+      "sha256": "59f81b616352e2c5a66b19754b777047ad9ee45db9df4cd0df84a246198de7a3",
+      "size": 69
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_review.ddls.xml",
+      "sha256": "3d9ef5980d99e10180a4e207d05404a2163a0a123be33a5251f7346669205f7d",
+      "size": 413
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_reviewtp.ddls.asddls",
+      "sha256": "0489bc352cfa1aa99bf4bc3d8b8a121d25bb85cdaa464e6b0c310356470e9655",
+      "size": 646
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_reviewtp.ddls.baseinfo",
+      "sha256": "9b2b07501bcef561f73311a5b6502c5f73102877508f1724b9d876b2a13a8222",
+      "size": 209
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_i_agency_reviewtp.ddls.xml",
+      "sha256": "ae418f1c894ae7542ff05cede90f08c194e6ceb1e1db619d4b7937add918ff00",
+      "size": 415
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_r_agency_reviewtp.ddls.asddls",
+      "sha256": "f6769cd6c0f2d23cf6fc85b3a3fa5e2967b2eb03bb4e6a166c3f96687ef083f2",
+      "size": 473
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_r_agency_reviewtp.ddls.baseinfo",
+      "sha256": "4ef1690fc7299c9f3a942fd8b048ad2f88897a2fe62e0d108716b9668e0a9d6d",
+      "size": 127
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_r_agency_reviewtp.ddls.xml",
+      "sha256": "d1f3e8d3af8f9f82075115d19c16c4553234ae973d6ed6f09f1f6f2b51ac489d",
+      "size": 415
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_rating.doma.xml",
+      "sha256": "216959e3bb209684e6a094972e4b5f276c9eabfd505d231c1fec5feaf32201d3",
+      "size": 498
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_rating.dtel.xml",
+      "sha256": "56cf1e4d6341eb1bfe0ec0004d574816c767ee4ae4cf2618aedcac77f05e20fc",
+      "size": 713
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_review_id.doma.xml",
+      "sha256": "31447410b5c2ab15efae0ed3ec8f30a4853d1eaa7d1cbed95c4595e4858f1a1e",
+      "size": 504
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_review_id.dtel.xml",
+      "sha256": "b628bafbea97d1f11f1b4ec7ac7ddc0914b72f1505024d10b41c04a75f3d7da4",
+      "size": 734
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_c_agency.ddls.asddls",
+      "sha256": "8d366181f803a811dd80538c117c462de807a334ca38deec735266d24518916d",
+      "size": 396
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_c_agency.ddls.baseinfo",
+      "sha256": "263bd24d71e8a642a34f80557cb71bba5459e7485c5552271bf3741fd21dea48",
+      "size": 253
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_c_agency.ddls.xml",
+      "sha256": "3f077105448b4e8f150bb7a3ac6d44b329ecd43823ef953af6a7612b41e57b9c",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_c_agencytp.bdef.asbdef",
+      "sha256": "09cd47c86cea5067a46677e1b4b3b97eac00f53a188653d3b3bc7136a63c32de",
+      "size": 341
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_c_agencytp.bdef.xml",
+      "sha256": "56a294fe3d18db236280556badad6aeeb32c8817ef6d6ce4b1e5b90a76e15b81",
+      "size": 2071
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_i_agency.ddls.asddls",
+      "sha256": "0d59648f83d71c9eaef3bfad3c258de94ef80d779e9125439c42a6bcfa55042f",
+      "size": 135
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_i_agency.ddls.baseinfo",
+      "sha256": "32c9e618bd3381cee911d7c199585b543a125f8cf1f8e4e0da3df1de0b74d27b",
+      "size": 174
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_i_agency.ddls.xml",
+      "sha256": "45966115304313538c4cd5a8e0c8f590075ddb41f2b6c0e1506215de456f84b8",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_r_agency.ddls.asddls",
+      "sha256": "6960ce8b1cc2b2d46a2ff9c44831256419dec12a0abf3c3bb3a31484aa0b19a0",
+      "size": 138
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_r_agency.ddls.baseinfo",
+      "sha256": "2841b3b55e38d529549942f198e8d0f4797ff89506c61b671e30504fe42fc341",
+      "size": 150
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_r_agency.ddls.xml",
+      "sha256": "9ad81a2f15c8baff2014bcf3e2fca8d8dc5cabc837949dbd32255ef654293a67",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_r_agencytp.bdef.asbdef",
+      "sha256": "008bda66aff21e930177466f30b97768d7621e4b9efb33984d52db789976b337",
+      "size": 1510
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_r_agencytp.bdef.xml",
+      "sha256": "1f775408c0822a024b5b4a701ef5618c64017761d54fc6780c2f643c9d4547b1",
+      "size": 2071
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_ui_agency.srvd.srvdsrv",
+      "sha256": "d6b46e006ed8b479a6e2cc7ba5cacc5895d22f078140b8a06f7172dc91a58f6c",
+      "size": 94
+    },
+    {
+      "path": "src/reuse/agency/rev/#dmo#zz_x_review_ui_agency.srvd.xml",
+      "sha256": "f457fa855b1521fd5ff093b7963eed4b48dab6b50114544a81bc2990794ac1dc",
+      "size": 755
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_p_agency_review_avg.ddls.asddls",
+      "sha256": "12cbba1b10db65626a8d9bcdb4479d46d983509c6da45a3109ce0b52bff19e28",
+      "size": 329
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_p_agency_review_avg.ddls.baseinfo",
+      "sha256": "5d75078b289d4ddd39d24f4d834ec38e4348874ea52fc0061f4319d43487843a",
+      "size": 76
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_p_agency_review_avg.ddls.xml",
+      "sha256": "44b77cdf64c5c69cc6a6878e357889bda085e3d598057e85a50f828f4a4788cf",
+      "size": 434
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_c_agency.ddls.asddls",
+      "sha256": "a811b4fa617f4073d721e0ed9f7053ead67ef9d3babc3c35d6c40ee5d9230502",
+      "size": 776
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_c_agency.ddls.baseinfo",
+      "sha256": "ff1268f73ecaf70caed14f196e7ca5d5643b08b6b3035f924b5478cf3a0a9444",
+      "size": 147
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_c_agency.ddls.xml",
+      "sha256": "ead0da4cde157e3fd1eb88b0a17e22cc8989681c66f3fd0a011b3485d5811dba",
+      "size": 481
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_r_agency.ddls.asddls",
+      "sha256": "c31883ae8c1528f43b0af196bf5daeb76886dbb6875023c1f35e20ebc47bd43f",
+      "size": 197
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_r_agency.ddls.baseinfo",
+      "sha256": "7ea43164c202a4d1ed41aa56f687bda198ecf192afc5d8a24eea7eb796f9203a",
+      "size": 152
+    },
+    {
+      "path": "src/reuse/agency/rev/a/#dmo#zz_x_review_avg_r_agency.ddls.xml",
+      "sha256": "b6994864e46fb110e7750ffcb2976c06bf8db988347dc651b994bf3514b281fd",
+      "size": 473
+    },
+    {
+      "path": "src/reuse/agency/rev/a/package.devc.xml",
+      "sha256": "c761db5961601af6dacc1c45ee87245d0209f5b77bfa32f7177e30376da72970",
+      "size": 403
+    },
+    {
+      "path": "src/reuse/agency/rev/d/#dmo#zz_p_agencyreview_contact.ddls.asddls",
+      "sha256": "561b399ae6bb9e043b40c2cf3be2176ec51e75ca9a1611d9a6b6347b0f055b27",
+      "size": 243
+    },
+    {
+      "path": "src/reuse/agency/rev/d/#dmo#zz_p_agencyreview_contact.ddls.baseinfo",
+      "sha256": "e37a753642576d6ec03d91a0852944609d57cfbc88a735678ef4725cfd532d9b",
+      "size": 66
+    },
+    {
+      "path": "src/reuse/agency/rev/d/#dmo#zz_p_agencyreview_contact.ddls.xml",
+      "sha256": "11c00c17f98bcff9814fce413c5893a2507c0aaf77e5cc6617b525d7a824890d",
+      "size": 438
+    },
+    {
+      "path": "src/reuse/agency/rev/d/#dmo#zz_x_rev_cntct_r_agencytp.bdef.asbdef",
+      "sha256": "dab8e88dbdaca1bffeaf48923c6d8136ea0235d6a2671163c0626c7ff094a62f",
+      "size": 195
+    },
+    {
+      "path": "src/reuse/agency/rev/d/#dmo#zz_x_rev_cntct_r_agencytp.bdef.xml",
+      "sha256": "a21fa75065d5d0c2d79c7bd87787c70c09132e72053bc971c339b85939aa4424",
+      "size": 2114
+    },
+    {
+      "path": "src/reuse/agency/rev/d/package.devc.xml",
+      "sha256": "1af49ae7e8105785cf440a1f3711683dc0223d32d52204879e8f90543316d9aa",
+      "size": 401
+    },
+    {
+      "path": "src/reuse/agency/rev/e/#dmo#zz_d_agencyreviewcreated.ddls.asddls",
+      "sha256": "a9d48c5c419d7230692e0dba0e17fe846ecfcca417082c6333e3c265300ce77f",
+      "size": 286
+    },
+    {
+      "path": "src/reuse/agency/rev/e/#dmo#zz_d_agencyreviewcreated.ddls.baseinfo",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1
+    },
+    {
+      "path": "src/reuse/agency/rev/e/#dmo#zz_d_agencyreviewcreated.ddls.xml",
+      "sha256": "b3a3114dc5df274c46ac4d50b19ae743f67316a65e7302d9b6c30a9f2d940fc7",
+      "size": 461
+    },
+    {
+      "path": "src/reuse/agency/rev/e/package.devc.xml",
+      "sha256": "d01aa0af2d0083bb51660b0c8fe72127f461461d5258e4493ce2d37f095a9475",
+      "size": 404
+    },
+    {
+      "path": "src/reuse/agency/rev/package.devc.xml",
+      "sha256": "c3f55c3990971e1116a08709722076283b1c73ff38647b0ae96305882ebd9e5b",
+      "size": 414
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_s_ext_agency_slogan.tabl.xml",
+      "sha256": "f72a1e3fa54ef666606168694ab26f481c4bcc9a313eea5d491067cc45eeabf1",
+      "size": 727
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_slogan.doma.xml",
+      "sha256": "3879a223d6730324286370c84c68c0b223e66bf37bb01f5c97f924e79c269c08",
+      "size": 527
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_slogan.dtel.xml",
+      "sha256": "82fd451be44a5da1965687d4afa5dd7c9f5e708b8f388c62c6baab96e5d7c4ca",
+      "size": 713
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_tc_agency_slogan.clas.abap",
+      "sha256": "3dd8ef2222b2d86f14e47e4ff91c596210eb6189748527b9d5ad90f963ded708",
+      "size": 3082
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_tc_agency_slogan.clas.xml",
+      "sha256": "555e7867c591d0f8e3691e036b3c96922fe4c0ba01880f03d219bc21dbaf072d",
+      "size": 588
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_c_agency.ddls.asddls",
+      "sha256": "e67fe7418150965c5abc8ae6b38ba5b09a5d5a6ed57fffcc393fd3d3c8246956",
+      "size": 407
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_c_agency.ddls.baseinfo",
+      "sha256": "ff1268f73ecaf70caed14f196e7ca5d5643b08b6b3035f924b5478cf3a0a9444",
+      "size": 147
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_c_agency.ddls.xml",
+      "sha256": "b3b8fca412a71327989fdb451d462ff04cda4e8536ceab935e42585bf03eab80",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_e_agency.ddls.asddls",
+      "sha256": "213812513872b4291a85694b1cd32887216d603cecb8d9de02564748cf536317",
+      "size": 92
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_e_agency.ddls.baseinfo",
+      "sha256": "73ef7de2f74faad96f8797205575f6281136af9bb7fa648117f93d9302da719f",
+      "size": 64
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_e_agency.ddls.xml",
+      "sha256": "256a59e42c3b1fa6203430e5c514e47ff824a568f0e8079f7b3fbe3715e6cbd7",
+      "size": 467
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_i_agency.ddls.asddls",
+      "sha256": "ebc2096faea63560cf292d09fb7bafd14f7fe1fcb0e8314d83f2e52d20fa79ec",
+      "size": 74
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_i_agency.ddls.baseinfo",
+      "sha256": "804f66ea784ccb0364ed3abcc76cd5a738c5e1aabfcfee1d4479e662c1ccc006",
+      "size": 68
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_i_agency.ddls.xml",
+      "sha256": "ced4c969c38da0181fb129f4d5246cbd7b5ad4daae41e05add97bc40adfca938",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agency.ddls.asddls",
+      "sha256": "e99e5d7fe03e4b19896a26a4cfd1a69c35402b01601bbbfed7b579f470515dbe",
+      "size": 78
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agency.ddls.baseinfo",
+      "sha256": "cebcd46864411aee607fdda6746f9ac56b45e3717a8d64ae5266cbf979c5303a",
+      "size": 89
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agency.ddls.xml",
+      "sha256": "8b74ca638478b45c6760643898388aa082357619f027947edd70970da61a22db",
+      "size": 469
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agencydraft.ddls.asddls",
+      "sha256": "fa06474d0d18eff8351ca08472337d22079a670d508c6e689766a766e9a1554b",
+      "size": 97
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agencydraft.ddls.baseinfo",
+      "sha256": "889c2d3a6b1e8a209d179dedc610dd4451892de098631626f9854a487c8a6127",
+      "size": 66
+    },
+    {
+      "path": "src/reuse/agency/slogn/#dmo#zz_x_slogan_r_agencydraft.ddls.xml",
+      "sha256": "ecfb5ed07633114b5b9ebb2758bb1fb3cdaa7c5dc53f56dbe0d4a24c457a7432",
+      "size": 477
+    },
+    {
+      "path": "src/reuse/agency/slogn/package.devc.xml",
+      "sha256": "6636c1356c39c4c011075574e52237dbe6b4131a8340a029487ff1259ffda66a",
+      "size": 415
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#bp_i_carrierslocksingle_s.clas.abap",
+      "sha256": "7f18f4c47d6ce79a0c3928414e73365993740d9e906c840a9bb69d8c5755e054",
+      "size": 192
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#bp_i_carrierslocksingle_s.clas.locals_imp.abap",
+      "sha256": "d692ccf9be6e9cb642180beaf7f07326211cbecd91fee38690f1d92275e099f2",
+      "size": 7582
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#bp_i_carrierslocksingle_s.clas.testclasses.abap",
+      "sha256": "6cd3b7c3c51992328f556163f26a32e223313f35ea150f3ab2299e8b0756964b",
+      "size": 19550
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#bp_i_carrierslocksingle_s.clas.xml",
+      "sha256": "8219cd731cbe4a7897017e910778c87d77c379d3d061ba6b3a77dc6c33083225",
+      "size": 659
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrier_s.ddls.asddls",
+      "sha256": "66739696cfded546eac6723e8512f8ff4cc582e550b2a9f86fd35fe717b1ec42",
+      "size": 663
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrier_s.ddls.baseinfo",
+      "sha256": "ab5b6c9c87d305987e7e79d84ad4f1c2412d84d4d7084dc26231b20c90cb3f14",
+      "size": 221
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrier_s.ddls.xml",
+      "sha256": "88d69b07f5961dfea79c0da7cb9c00741cf1a92b7ba44f48f5f2e0b79b38a345",
+      "size": 416
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrier_s.ddlx.asddlxs",
+      "sha256": "7c52cfba8dd0f6e3b2be4bac1638fa0f15dc02b6b7bb28f7d53db545b1cedd37",
+      "size": 684
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrier_s.ddlx.xml",
+      "sha256": "7176a7e713e97367f92492b023ae893564ed56b3f1cd0dc50451111b113b1f8f",
+      "size": 444
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.bdef.asbdef",
+      "sha256": "95b35255035491bdcdf2116aaf8783426a8e46015ebff3c90f1ac07114c07366",
+      "size": 422
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.bdef.xml",
+      "sha256": "cb35fdcb17140dd270f9a408789ca3e62b5ed485f4920f4c1251451f33985e47",
+      "size": 1903
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.ddls.asddls",
+      "sha256": "366a94650bf909edc8a66ee84c75ceb3a1ecebc59c0f3bca032acd2217780cb2",
+      "size": 576
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.ddls.baseinfo",
+      "sha256": "d05f68d4e083e4a1b1f09d16c3d7299d34d54173949ac6e712c507d618a8ab4b",
+      "size": 221
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.ddls.xml",
+      "sha256": "2483041e9e56c3b394e584d4968db44a1b0d41375e0347a530d0e045238b2334",
+      "size": 440
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.ddlx.asddlxs",
+      "sha256": "12b70b0c8ceb7c6baa0be2b270b2d2377b506deaf4206093ef1ef3268e405d9d",
+      "size": 533
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#c_carrierslocksingleton_s.ddlx.xml",
+      "sha256": "700a460e23dcd96dee3d86bbcd75992adef5d9a7bfcecf234c28e15a41890068",
+      "size": 468
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#cm_carrier_s.msag.xml",
+      "sha256": "6a79cf2008d06c9fbef7e6aa7b56064c57c5021439ceee26dd330939aa4fdb0e",
+      "size": 1113
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#cx_carriers_s.clas.abap",
+      "sha256": "2c4cf2bfb34e7e2811014c1d399e053f74837dd7238fbdd590b8db492d6a6478",
+      "size": 2648
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#cx_carriers_s.clas.xml",
+      "sha256": "166f16423d22e9914457624dd7752392c0bf58d2ed4a40492a73d3acdb8623b6",
+      "size": 509
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#d_carr_lock.tabl.xml",
+      "sha256": "03668754f7c2d2090d952965aa9054b7a6591f145ee6e9e0a222fe5fb06c1b4f",
+      "size": 1863
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#d_carrier.tabl.xml",
+      "sha256": "e539f2efd50bb983351ef4fac45281f61bfb41410077ce98d4ce1d242f0c3097",
+      "size": 3029
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrier_s.ddls.asddls",
+      "sha256": "829df8fba8b48ef4ca6cff4e6514b5a70e6af17f295bd96416fb5f2c43462d96",
+      "size": 979
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrier_s.ddls.baseinfo",
+      "sha256": "d8f3aad8bc8e637751e98a3f36400339b0dd801b30cca66e5bb697815586d98e",
+      "size": 133
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrier_s.ddls.xml",
+      "sha256": "ec6105117c8a303f69ee6455b8748a24a43b48aa66b0f61b4c30714103775739",
+      "size": 419
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrierslocksingleton_s.bdef.asbdef",
+      "sha256": "0b0baaa57fda189c95a0226519c976e57e4df7ee44e6bee6ddca26881e86402c",
+      "size": 1681
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrierslocksingleton_s.bdef.xml",
+      "sha256": "6a6807f373c98fa87b2e1373470293aba58a2648fa6ee78fad572227185ada18",
+      "size": 1897
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrierslocksingleton_s.ddls.asddls",
+      "sha256": "a440e69f3d770905815f6f047104b561bc12d73d69293d1a16099f8fda318b84",
+      "size": 534
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrierslocksingleton_s.ddls.baseinfo",
+      "sha256": "eff73fa2cf115e172f7b8f043c73d448532d5599e7c6dce53606dd5124c0a1c8",
+      "size": 137
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#i_carrierslocksingleton_s.ddls.xml",
+      "sha256": "89da7eea6eb07425d602051c613057f3bdfa85a704360501bfec916a88890b45",
+      "size": 434
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#ui_carriers_s.srvd.srvdsrv",
+      "sha256": "c4d92cc52b525db0cee6e9423412ca634682dfbe2eddb43a80d85d2757aed89c",
+      "size": 257
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#ui_carriers_s.srvd.xml",
+      "sha256": "7e4f706f3fe94fe42ff73b36045a63e834e2412cfc4f3485c6bc852e8b980b3c",
+      "size": 753
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#ui_carriers_s_o4.srvb.xml",
+      "sha256": "738e12a3a3db921302601915a2b3bf9278f954779d63260c57efef189dd57d2d",
+      "size": 1440
+    },
+    {
+      "path": "src/reuse/carrier/#dmo#ui_carriers_s_o4_0001_g4ba.sco2.xml",
+      "sha256": "aa546d03126e8a56bee34c0355c81aa3785c849255e15de63f53552dad0b5563",
+      "size": 662
+    },
+    {
+      "path": "src/reuse/carrier/package.devc.xml",
+      "sha256": "ba28d6c506c7a7adfab053fac30a44faaf503644d91e27fe5dcaf5e914fb5a2f",
+      "size": 403
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_abstract_data_gen.clas.abap",
+      "sha256": "c6091d927fa0da03a06614054cc596ec019ad1ae87b9cbec93720fead4a096b2",
+      "size": 10433
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_abstract_data_gen.clas.xml",
+      "sha256": "5ecc1b9ed21e2bea25cfe399e4dbb4c2a750630bbc04edbc041fb285d4dc0b8c",
+      "size": 512
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_admin_field_generator.clas.abap",
+      "sha256": "6c409e038413f41d74cb8c51a197723da89930a6b3328d41de6b6d6fb1c45463",
+      "size": 2503
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_admin_field_generator.clas.xml",
+      "sha256": "de8fbbc1f9ae8723cd2fb35eafde86a478ff1cb8ecd0aa870c2482195d5754f6",
+      "size": 504
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_data_gen_util_factory.clas.abap",
+      "sha256": "123e3ddb658d82a7cce601500a7f83f3072887fea5a8cf9978e7c0017f81495c",
+      "size": 884
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_data_gen_util_factory.clas.xml",
+      "sha256": "976c9bb703f2e0aef03a74be5b1dcbda6997aefc77b5209d94c1227c0e054e80",
+      "size": 521
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_date_generator.clas.abap",
+      "sha256": "1d725c8f77fcad65ef20ae745310f09f360b0f2503fd59f64925a46c3df4aaf0",
+      "size": 5947
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_date_generator.clas.xml",
+      "sha256": "fae8be78a15716d35fd149c519be73db50e4687079fdda59fe2cbec4b1470c50",
+      "size": 490
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_name_generator.clas.abap",
+      "sha256": "3194338bcb0bc38192394f9fa7a41d48d10fc76421f8c740f9cdc4b1fadaec80",
+      "size": 9384
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_name_generator.clas.xml",
+      "sha256": "ad57e067d464d555da2f2aff795f263ea0d58a7122d36e0db8a0a6d3b1838d46",
+      "size": 490
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_skeleton_provider.clas.abap",
+      "sha256": "21362f723d81e58947ed96a01be4191ee58827b101762e2d2ec0b6c0312396b9",
+      "size": 38011
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_skeleton_provider.clas.xml",
+      "sha256": "781842207595ae3900971621c14cb6c514502b1c5ba03b70995380cbb623852c",
+      "size": 503
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_text_output_util.clas.abap",
+      "sha256": "2de39e1afc45693e8d182e7cf3f6a56f55a4e64070339106aa66cc90c0a667ad",
+      "size": 1442
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#cl_text_output_util.clas.xml",
+      "sha256": "1e01376f64b506153b3aaa9522a9418010f3475a8542433d630ba4adc56e6cc3",
+      "size": 489
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_admin_field_generator.intf.abap",
+      "sha256": "8c447fcfbefbd7da6d293fc5589f82ec16ea725a3b94e02d0f119b1d49760787",
+      "size": 543
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_admin_field_generator.intf.xml",
+      "sha256": "e8774d8635f82c3286a7ed424dd370199f334e6048744302c9fbf31d8cfeccc7",
+      "size": 487
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_data_gen_util_factory.intf.abap",
+      "sha256": "814e503255c3aba99f59463c3939196a965a3e32017d78201089908fff08d49a",
+      "size": 623
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_data_gen_util_factory.intf.xml",
+      "sha256": "16163602bd30cce1ca0597232cd87a760d82169f6e149ed9fca3a73d3aa788a7",
+      "size": 504
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_data_generator.intf.abap",
+      "sha256": "93e8119ad0ce51147655b2f56a30cda0f33696b929734d3f3953512d137678d0",
+      "size": 151
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_data_generator.intf.xml",
+      "sha256": "617064b0fd1d1b5a84bd5b89e04c1c74e854709ed50c53f578e49a7a5ae3707a",
+      "size": 478
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_date_generator.intf.abap",
+      "sha256": "35b396135472f5c13e2f2b4af336b619594680512cb9bfe1eaf42b64dde250f5",
+      "size": 947
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_date_generator.intf.xml",
+      "sha256": "efb0e9c218a3fb094cb440a9c8a6d0583b0e1c6232f00eac84b39de213449766",
+      "size": 473
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_name_generator.intf.abap",
+      "sha256": "05506010617713d3e1706558d50bd81d6dadd33992bbd9d49673fa44367f6cf4",
+      "size": 955
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_name_generator.intf.xml",
+      "sha256": "c412fa4044ae836cccbf014da37ec2d114719ea98bc018cb9bb9f4e715914482",
+      "size": 473
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_text_output_util.intf.abap",
+      "sha256": "6a130c6a7d2657f4001e6ab27a3ab46f2de32a8eab5b460e031732d083dae1cf",
+      "size": 369
+    },
+    {
+      "path": "src/reuse/data_gen/#dmo#if_text_output_util.intf.xml",
+      "sha256": "ad51b53c35c2f38e9cdb0b14d45045e7e5d7eaba88f0da1478239e9864d3e3ff",
+      "size": 472
+    },
+    {
+      "path": "src/reuse/data_gen/package.devc.xml",
+      "sha256": "7385216e5b7b529ebf7a13e2e13ca24272468c6cc699435fd0848de12a68d27c",
+      "size": 440
+    },
+    {
+      "path": "src/reuse/package.devc.xml",
+      "sha256": "f1ec84a8ac3d2cdac08e1ad1bf07c6b359302d83305de641ab1be603a5c2be52",
+      "size": 557
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_c_supplement.clas.abap",
+      "sha256": "b7eae928a56c4331d383949220ed82d4303b313d8a52f78bd45171ff70eb2987",
+      "size": 159
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_c_supplement.clas.locals_imp.abap",
+      "sha256": "d6e6be397615e512c4d583d8fafc0e0afa871f3a1d0fc6f4b3f85caa71f2bec8",
+      "size": 6816
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_c_supplement.clas.testclasses.abap",
+      "sha256": "7a532230c3166f6a5dc03cafec5e12902365952930b7225e6bb2c903869b625e",
+      "size": 60189
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_c_supplement.clas.xml",
+      "sha256": "f505424aa9b95e506934cc82c8fa1916be6aa9e64c5029eab90e6e071d31d9c7",
+      "size": 623
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_i_supplement.clas.abap",
+      "sha256": "55905d59b8d948b0776f904c4ff8defcee5237949989cf44d6f547ebf81ee5fa",
+      "size": 159
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_i_supplement.clas.locals_imp.abap",
+      "sha256": "45b32e2ead6a08fa4bb771a0d27ef654df49894b843ba37aff3dc3a7b4ec6237",
+      "size": 7919
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_i_supplement.clas.testclasses.abap",
+      "sha256": "615f5f349cd442c5578c09508fec060cd942378584e859494b0bc7a40c9b3780",
+      "size": 18109
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#bp_i_supplement.clas.xml",
+      "sha256": "ff638c96b957481bbef2c3d48d90577f5dbd70b4bd68e8bdb2b3be863081e055",
+      "size": 623
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.bdef.asbdef",
+      "sha256": "f98db9b76f48876432acb6e4194ce3701d2843a2717de005ba31bc3b7cfcf69b",
+      "size": 362
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.bdef.xml",
+      "sha256": "fb821b68a045b1782898c305d53f01c161172aee848d31841d933f1cfbd2545d",
+      "size": 1822
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.ddls.asddls",
+      "sha256": "bb25c0d6c092f94d43818d2df6948c1c1477cc2886bd9319ea28f4f1e4cb99fa",
+      "size": 1355
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.ddls.baseinfo",
+      "sha256": "c9c9650e5b8cd510862a342d9c65fc05ba153af9378730a8d3c5ba8cb59d6adf",
+      "size": 310
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.ddls.xml",
+      "sha256": "06c5716e5dab8d822d54018dd776819741a862c8ef8b4b374cb6f0398f8fc264",
+      "size": 421
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.ddlx.asddlxs",
+      "sha256": "5604e766d146691e8d3771b35ad14239f90aa267082fa9506977078c07e5f30c",
+      "size": 1299
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#c_supplement.ddlx.xml",
+      "sha256": "0fc376f1c8b6907fe3f23a5e9cc56d8628add832b612257c8edf786cab3133fc",
+      "size": 420
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#cm_supplement.msag.xml",
+      "sha256": "31e113c9925940e0bf3662e360118a8706ddf6020c00aa851e466d21df14d671",
+      "size": 1400
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#cx_supplement.clas.abap",
+      "sha256": "19ecbeb87ce9994a1501f45b0f7ee2865d94b31fc2fae515a0831639d1025a3b",
+      "size": 3566
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#cx_supplement.clas.xml",
+      "sha256": "fb1cc3661407773515a26540adb98ee7593f223631794baeb63dd099e6298d91",
+      "size": 511
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplement.bdef.asbdef",
+      "sha256": "ec00086dad086d77406279f075b150021d12ed5fe4c486483a56e7fcf37aaa94",
+      "size": 1939
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplement.bdef.xml",
+      "sha256": "c7446b469c544a935bc426b455370beb00b987ca04a2818ed0f2cb3b91845817",
+      "size": 1822
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplement.ddls.asddls",
+      "sha256": "416482508ddbac344476d5c7afd6e036eb6a5dfb18d4dc8bcc27e88343dcf148",
+      "size": 1734
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplement.ddls.baseinfo",
+      "sha256": "bc4976481abed8aea935b9c76905ffdaa9aac9872d6c015e60576eb837ee02a9",
+      "size": 183
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplement.ddls.xml",
+      "sha256": "d2a5730bb7e6bfdefe6e78addb86bb7a0be49d303475d1808bffc8bd8458d5fa",
+      "size": 426
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh.ddls.asddls",
+      "sha256": "8922b29742fd9a313ba01aa4f969d59d3b3eadfcd4f783325909e5b9bb0d226d",
+      "size": 741
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh.ddls.baseinfo",
+      "sha256": "c5469a411ff6535dd0e717198399fe8c152ad8cc40155a11f7341d6d908f598f",
+      "size": 132
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh.ddls.xml",
+      "sha256": "f6feb44e2d0d3843a8abfc5937de9318c3ef83a9cc72db0d5d6b78bb5d585227",
+      "size": 431
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh_t.ddls.asddls",
+      "sha256": "1f8d6fcacfc5198cbc4762b0a5dfa33fa87d405e0adcb30e42160c192e011738",
+      "size": 925
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh_t.ddls.baseinfo",
+      "sha256": "542634e10a261c9af0ea1aa03be4f9d870672d4f8e77a86689e73608f4b11059",
+      "size": 132
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementcategory_vh_t.ddls.xml",
+      "sha256": "3b8240b66a0ee5ff64fa0b34d9bc62bfd48ac38a5bd4a41a41686ca025aec584",
+      "size": 438
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementtext.ddls.asddls",
+      "sha256": "76b1bf51eb521c283dcb6bcda760e1ecef0ae0ba582097a6cda073466cd72750",
+      "size": 1049
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementtext.ddls.baseinfo",
+      "sha256": "fe14e6c2edb838256a589e0a6c28022cd27ad02900a25a5c4c07edc37e7cdacc",
+      "size": 141
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#i_supplementtext.ddls.xml",
+      "sha256": "8e1d98d3022a210dc7a6f9fd984f7b9642df871a11c07f2271b73995ebc90bda",
+      "size": 433
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#suppl.nrob.xml",
+      "sha256": "1cec1b7568dc4ce3de211662ce7088c8d85569b4e9ddda881f2f9db6d2560a17",
+      "size": 747
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#suppl_d.tabl.xml",
+      "sha256": "61e70c80545e9ecdec192b55b73f1063db61e0a6f134dec61eaee0121301afbb",
+      "size": 3116
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#suppl_text.tabl.xml",
+      "sha256": "c94050e6eedd70ed5d17aea3829eeea7890a74951f266b22b054e2d334a1a0b7",
+      "size": 1888
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#suppl_txt_d.tabl.xml",
+      "sha256": "cba26dc12b7eecab53ee4ef4beffced884f30bb2d23379979d85070400c8882d",
+      "size": 2156
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplcat.tabl.xml",
+      "sha256": "1ace4beb9091039d833dc9927cdba9e104d5615d93c89953a78992a2408a3011",
+      "size": 1287
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplcat_t.tabl.xml",
+      "sha256": "16624f651931b8e01dbe81793aea0f6d899dbf2c918a01a6bb8701ce9d612cc8",
+      "size": 1747
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement.tabl.xml",
+      "sha256": "001562d0abf4915480e1afb28ec5035d06536aa822fad3095a2cd73d71444cc3",
+      "size": 2869
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_category.doma.xml",
+      "sha256": "807ec779a55bd4283604ed3a225455cfd5df29bd380155da2cd4cfec6e190c01",
+      "size": 1381
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_category.dtel.xml",
+      "sha256": "3dfac252da1bf76fd29819a71d150cabc749516f6d07db8d96fbea0b5d9e677b",
+      "size": 770
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_description.dtel.xml",
+      "sha256": "c5430886377c56ead3c437ebe88dcaac7aea9b12a99e966cef59cfa9c9c22dd7",
+      "size": 771
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_id.doma.xml",
+      "sha256": "cb4c3968fe2cff9175cd02e1e874f0edadc034df6f438ab8b1fdd9f82c52e1ff",
+      "size": 521
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_id.dtel.xml",
+      "sha256": "09690f65a751bd96d972c742eb60a7cf1ed1d6ff25d1125e835061d6351a4d97",
+      "size": 765
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#supplement_price.dtel.xml",
+      "sha256": "622bea499f1c72ff2105a2a9d619f3ead979572e96981619693ae8337470948d",
+      "size": 758
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#ui_supplement.srvd.srvdsrv",
+      "sha256": "c33a1e97bc91e26bcb7e7fdbb359a5f5d8063972143381a4011be2afa566bb8d",
+      "size": 181
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#ui_supplement.srvd.xml",
+      "sha256": "50c79b9063a3c2871fe859fd6c09b179de974756925890e3db9d62877b665856",
+      "size": 749
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#ui_supplement_04.srvb.xml",
+      "sha256": "55642d71c9bb499575a4b8d9ae44dadb8d48179fd95fb4e94a57f6702fb43625",
+      "size": 1439
+    },
+    {
+      "path": "src/reuse/supplement/#dmo#ui_supplement_04_0001_g4ba.sco2.xml",
+      "sha256": "379c7be3fcbdf58d7328930527281b7928007d8ac13d25cc10dc828559f55669",
+      "size": 662
+    },
+    {
+      "path": "src/reuse/supplement/package.devc.xml",
+      "sha256": "d77f304679460174998a90952f99ef6be64edca21ec0077d57d0a7a7412bcc4f",
+      "size": 552
+    },
+    {
+      "path": "src/unmanaged/#dmo#api_travel_u_v2.srvb.xml",
+      "sha256": "32e3b802a0602a770d41f4029794476a962276634d5e17f157080ce0fcd9cb98",
+      "size": 1399
+    },
+    {
+      "path": "src/unmanaged/#dmo#api_travel_u_v2_iwsg.sco2.xml",
+      "sha256": "7452eb556250e886890039f3ea978eb936888d05dd4d95461df0440310f05884",
+      "size": 659
+    },
+    {
+      "path": "src/unmanaged/#dmo#api_travel_u_v4.srvb.xml",
+      "sha256": "ede52b086c0db426805387da03aaee6784650dcde28a50989bc929118885f99f",
+      "size": 1471
+    },
+    {
+      "path": "src/unmanaged/#dmo#api_travel_u_v4_0001_g4ba.sco2.xml",
+      "sha256": "7e15693969b48bd1176378b37e058e41efb245478a578605c6d89155eab4b2f5",
+      "size": 658
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_booking_u.clas.abap",
+      "sha256": "8e6827cfd57c19d13de860e5ae7b21d46c335a78ed99755f230e9b50f8bdfa46",
+      "size": 221
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_booking_u.clas.locals_imp.abap",
+      "sha256": "f99db9820d36d7ae953a434839060006d4c696c0507bcdd19b47f62188fff929",
+      "size": 19007
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_booking_u.clas.testclasses.abap",
+      "sha256": "809295af4fa29a7f3c7c4602f64c7fb7745989844757da62532a43afc90c7ac3",
+      "size": 45308
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_booking_u.clas.xml",
+      "sha256": "7e7673bec2211637a28ee480aa3594ea2ef9fdce8b955d21e5cb492819220a5d",
+      "size": 608
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_bookingsupplement_u.clas.abap",
+      "sha256": "a713b185243dba766056da16b9386ea0cdbf108b68687262bc9c4385e26dbd25",
+      "size": 241
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_bookingsupplement_u.clas.locals_imp.abap",
+      "sha256": "76708875ea4a3506e5f6773ee157ae2b545e7448330c1fb00ccde83281473afa",
+      "size": 14078
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_bookingsupplement_u.clas.testclasses.abap",
+      "sha256": "87df44e119e289de9d8f26b62aaf781ab0dac338942170b7db1074d7a8914d9b",
+      "size": 36238
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_bookingsupplement_u.clas.xml",
+      "sha256": "ba7086887bb029addc1baf791c72ae0071b1dbe83581fffc09fc492dfebac279",
+      "size": 629
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_travel_u.clas.abap",
+      "sha256": "ddcba91816bd3cf3bce04dfb5f3707b9e65fb5221264946776fc9688a7f2e6d9",
+      "size": 219
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_travel_u.clas.locals_imp.abap",
+      "sha256": "1e80e7db28abb22b796dbc1fb15dbdd6e861036ce2bf96118f9d75f3f5090bc8",
+      "size": 22313
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_travel_u.clas.testclasses.abap",
+      "sha256": "9ee1f2b31f77f413d83349a8a9f4ae90593e8d55edfe8eb9edb3e93f446554d0",
+      "size": 55747
+    },
+    {
+      "path": "src/unmanaged/#dmo#bp_travel_u.clas.xml",
+      "sha256": "e7bef5ca15cdc0b8cf818395ee502aaab1f3eb8d2b01be07720319759239beb5",
+      "size": 606
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_booking_u.ddls.asddls",
+      "sha256": "37b6bf1b82f2c1e0058ab0972257a2bce20a50778b4fe2880a08a9ae5f224bc4",
+      "size": 3792
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_booking_u.ddls.baseinfo",
+      "sha256": "cd140a97f8d2c15ada0b57b2f4af270569823f44186d982f9d8a1c5097cd3488",
+      "size": 388
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_booking_u.ddls.xml",
+      "sha256": "244b76472dfdb478792bbfac0081d0215f7e9baa70e2652c9c9bd4d010ef91d5",
+      "size": 416
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_booking_u.ddlx.asddlxs",
+      "sha256": "4de7f8806b87c41fffa6568114382ca62db7234b1fe9ca4d194aaea283eb13fb",
+      "size": 1954
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_booking_u.ddlx.xml",
+      "sha256": "ceeebbeeae8a29eb5a05c282f3a0ea84b711dc3b683c971409a59ef9ac453c4f",
+      "size": 455
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_bookingsupplement_u.ddls.asddls",
+      "sha256": "f1cbad0347afbe91fe8babe74ec25ae985e83f5536174ae6218b948adf6bc65a",
+      "size": 1413
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_bookingsupplement_u.ddls.baseinfo",
+      "sha256": "4386b189e20b81d0e66ebca88cb07e7658d2c6d59d299519645b44a573cd70bc",
+      "size": 352
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_bookingsupplement_u.ddls.xml",
+      "sha256": "4c9071edacfeb47b0ead0c0dea6407be033bf5bb923b48530e2135e603375645",
+      "size": 437
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_bookingsupplement_u.ddlx.asddlxs",
+      "sha256": "cfe9a6dea8772194ae27be868875183aefdf6c66b22986c147c9dfdfbfaffd30",
+      "size": 1329
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_bookingsupplement_u.ddlx.xml",
+      "sha256": "55d1c6bdec437118f588047b34a414baf523fa9c07075561577b56d9f416eb94",
+      "size": 458
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.bdef.asbdef",
+      "sha256": "3d00a121e80a795868632fd6ca7c1cbe6128b3a5a310dbc17b1df8c5625cdcf1",
+      "size": 535
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.bdef.xml",
+      "sha256": "fd5021f3ae582c564b6d5857382d3ae5c1b543042976255c670a000880cd0971",
+      "size": 1808
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.ddls.asddls",
+      "sha256": "7e3003acef9475f414228c14dac68ed716095f6c92128f48252d96905d7ffa8b",
+      "size": 1627
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.ddls.baseinfo",
+      "sha256": "06cee747108ad627e1dbce84439be41e4c81dcdcbf9bdf6fb9169b73aca659bc",
+      "size": 411
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.ddls.xml",
+      "sha256": "2e62fa316468ebeeaddadd947f710aab92184197ed9698717bd5a47e82491af3",
+      "size": 414
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.ddlx.asddlxs",
+      "sha256": "aff084336a7006958ef5caa9a2fa181503c1b1eddf64513e1b65c6220ed7fcd0",
+      "size": 2426
+    },
+    {
+      "path": "src/unmanaged/#dmo#c_travel_u.ddlx.xml",
+      "sha256": "a6e0727d52a11cf912c1ebda17c5df562161c20b87815c61f315f8697d41202e",
+      "size": 453
+    },
+    {
+      "path": "src/unmanaged/#dmo#cl_travel_auxiliary.clas.abap",
+      "sha256": "6b3a3b55769e916059185537f80cadd998e21112c2e3ba1a062683f82f44eb9e",
+      "size": 1799
+    },
+    {
+      "path": "src/unmanaged/#dmo#cl_travel_auxiliary.clas.testclasses.abap",
+      "sha256": "859ab8f23921a402ec33a3ea497ac8e38160879b07095ef02851cbba695163f6",
+      "size": 2274
+    },
+    {
+      "path": "src/unmanaged/#dmo#cl_travel_auxiliary.clas.xml",
+      "sha256": "7b99e20005e852b70a96f8d7907ced50ce0f63f24df82449a8410997a87ac84b",
+      "size": 521
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_booking_u.ddls.asddls",
+      "sha256": "edd3fda694892ef0b829f956ae9ff885239deb068f6e849b42bece2b5a37afac",
+      "size": 1511
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_booking_u.ddls.baseinfo",
+      "sha256": "a9019f20876447a875250b6efcd0eaf722ed675c7a1059c304815cef2678ca54",
+      "size": 228
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_booking_u.ddls.xml",
+      "sha256": "c70de0165b71d89633f9cfb8c9e19ed7fde904f91fbaedc69f2acd070d97199b",
+      "size": 422
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_bookingsupplement_u.ddls.asddls",
+      "sha256": "9e61fee49694076a294d21696478fbd660516e90c6b68d60d9358cea310a0a1e",
+      "size": 1509
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_bookingsupplement_u.ddls.baseinfo",
+      "sha256": "fc40ca5a351b2ca7c90cd4e5fe7926af3c752e9f77a1acf330f8e7aa2505efdb",
+      "size": 203
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_bookingsupplement_u.ddls.xml",
+      "sha256": "847bd2b25307556887707a42bdd5c2dd39bfd963091f9418442106f6d2bf42eb",
+      "size": 444
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_travel_u.bdef.asbdef",
+      "sha256": "6d96dad1063641b69eb0ab2f1a2f2659033c48feea3b88a25f6b6cc20f97073d",
+      "size": 2740
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_travel_u.bdef.xml",
+      "sha256": "b18860eb6d81916607522c890b27c868809b10f6070a578b207eb1d57c7e88c5",
+      "size": 1825
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_travel_u.ddls.asddls",
+      "sha256": "60442130d65e4b1de213139f546a26ed6a6281f22ff02000d5e37cf9b749ad64",
+      "size": 1437
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_travel_u.ddls.baseinfo",
+      "sha256": "ad15327c82b71b4e9589c7842a15e47dd3fd2ac735f0547c97108a6c237deeb5",
+      "size": 217
+    },
+    {
+      "path": "src/unmanaged/#dmo#i_travel_u.ddls.xml",
+      "sha256": "4f66b31a34add3eb91adeb6cd382f5dc5dd200ccb130a85544e4743d451f3a0b",
+      "size": 420
+    },
+    {
+      "path": "src/unmanaged/#dmo#travel_u.srvd.srvdsrv",
+      "sha256": "bfecedfbfa6b143e0f856bee9d77c1c35e1c1262e24c2ba12adbc2c8083ebeaa",
+      "size": 793
+    },
+    {
+      "path": "src/unmanaged/#dmo#travel_u.srvd.xml",
+      "sha256": "a4ac87976b313c1664150b749e8870884032e3918026ba205f55d0fc224fb18d",
+      "size": 756
+    },
+    {
+      "path": "src/unmanaged/#dmo#ui_travel_u_v2.srvb.xml",
+      "sha256": "6176cb1ba6a78d380da7af32be1c85ecdd61c938a76669f2f7411f8b746fed12",
+      "size": 1358
+    },
+    {
+      "path": "src/unmanaged/#dmo#ui_travel_u_v2_iwsg.sco2.xml",
+      "sha256": "835da691e92bcdb6738430f529306d7010d87110c1834d621956fbe687fb46bf",
+      "size": 655
+    },
+    {
+      "path": "src/unmanaged/package.devc.xml",
+      "sha256": "788472188e6e2cff3178c3e036f98b2ea53f3b9693a90946f440d01073b447c1",
+      "size": 677
+    },
+    {
+      "path": "src/xbo/#dmo#a_agncy_xbo.tabl.xml",
+      "sha256": "41c40193adc57d2480962ec7d6cc7de57b6b14592f9e9131922dbb1415305e63",
+      "size": 3013
+    },
+    {
+      "path": "src/xbo/#dmo#a_trvl_xbo.tabl.xml",
+      "sha256": "670936ed85b2231928d8a2da213ef6194d70be40ef2ac7aa518c9c68076be2a2",
+      "size": 3525
+    },
+    {
+      "path": "src/xbo/#dmo#bp_r_traveltp_xbo.clas.abap",
+      "sha256": "b87332728fbc86a63281abc33482a2fc1238021f8ddf6b205fc5cb7fedbf39ef",
+      "size": 165
+    },
+    {
+      "path": "src/xbo/#dmo#bp_r_traveltp_xbo.clas.locals_imp.abap",
+      "sha256": "59db991c0adab38fe545511d6c605f7d42d1f55a904b0bf629321ca13c1b07b5",
+      "size": 3752
+    },
+    {
+      "path": "src/xbo/#dmo#bp_r_traveltp_xbo.clas.xml",
+      "sha256": "aa89ac80a4bc68bd2b794ac5c36cae7aa09cde0d9749ca0b5aeae4342b90c440",
+      "size": 588
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.bdef.asbdef",
+      "sha256": "5db0d219af1ac22b114edd4cb70b7b0831cda4f30a2421145d3bd56694d50f44",
+      "size": 365
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.bdef.xml",
+      "sha256": "e0f61a9091cce1c10103753a7f1f036469f785bb885361ed520720ba150a7601",
+      "size": 1841
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.dcls.asdcls",
+      "sha256": "4860df075e71b4d414b7cbd4230dbd2653fcb9b2ffe8f6816bf0be980c29b4c0",
+      "size": 275
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.dcls.xml",
+      "sha256": "7b1fb80a221a8f8a10c7833c4e3fedd7ac5c62fa9ba4f0457bffc28b4b705f92",
+      "size": 403
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.ddls.asddls",
+      "sha256": "56895b87ce559e8bb22ba1df57e5bd50779655a6675f40f56740ca54b224dd44",
+      "size": 761
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.ddls.baseinfo",
+      "sha256": "bc294d7041728233427fbc346226a6d032b741efd9ffa169479ef52890309207",
+      "size": 213
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.ddls.xml",
+      "sha256": "c17b248df91130f604ebf69781b4da237c142beef1dc2647cec7a72f98612a7f",
+      "size": 433
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.ddlx.asddlxs",
+      "sha256": "4c888a03beef76e1687e68487842976aeeb99deae6edd8ae7a231e946eaa6b85",
+      "size": 1587
+    },
+    {
+      "path": "src/xbo/#dmo#c_agencytp_xbo.ddlx.xml",
+      "sha256": "a21c9ea414d66e81cb114e77285fe42968f383cd9f1d638ca0ecdf4d4238bd91",
+      "size": 448
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.bdef.asbdef",
+      "sha256": "2f3a376a82a8d4532199fe62dd7f02c5b255088daa7d3de45cb0b4b3479285c0",
+      "size": 337
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.bdef.xml",
+      "sha256": "252bf00450bd70609577ca08095698cbf8ae78f886f4ee29f52425dbf9ddb7b7",
+      "size": 1841
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.dcls.asdcls",
+      "sha256": "9ab9deb1252f74f362019172256eed6fe93502caa0916b56e5f751b78890b122",
+      "size": 275
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.dcls.xml",
+      "sha256": "1603b36fbaee2041d705a602fc84b33d8c88028fab513057f64f33529f4f8e56",
+      "size": 403
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.ddls.asddls",
+      "sha256": "255fe52a300d6cf2282527b2cdb8c28f1bd0ca228234f5de615db43fd2215db5",
+      "size": 1045
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.ddls.baseinfo",
+      "sha256": "fa3a0e6ce320493257025822b495ce2e27d11b3676aab96a6f4ba9c21716dbd1",
+      "size": 205
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.ddls.xml",
+      "sha256": "31531e16f933442b7ee83fa05e6a4c39407a2195e652c4e07858779d915a1bb8",
+      "size": 433
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.ddlx.asddlxs",
+      "sha256": "3bcb2f05b4d8bb567b1bf15b4e0724604d290030f2d05ef2bc2e9c75532675e9",
+      "size": 1276
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo.ddlx.xml",
+      "sha256": "1bebafa8c084bf4a5964813a0827960da8a586e263e9a026e742ac5f4bd5879a",
+      "size": 450
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.bdef.asbdef",
+      "sha256": "34d908a65bbc8dc95df782ca393971a58ffdf4758de6c313d16694ae2be18f28",
+      "size": 250
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.bdef.xml",
+      "sha256": "10a1b4d9c8fa66e98657d659881ad245ec3cd7127ee12564a8007979a50886f9",
+      "size": 1907
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.dcls.asdcls",
+      "sha256": "2ff13db64747c51f43043085fe1b52676549b7562006b61eabd08f05e2468211",
+      "size": 291
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.dcls.xml",
+      "sha256": "d46283614aa5fc1c998dcb8b2f03d95501f5d66d8b3cdba8e80c0a6f6b93e8b5",
+      "size": 411
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.ddls.asddls",
+      "sha256": "0be7a8a56d1c6a013a8616b3e1eac4397bca20911d3d8612504f26c2a701e4be",
+      "size": 1053
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.ddls.baseinfo",
+      "sha256": "fa3a0e6ce320493257025822b495ce2e27d11b3676aab96a6f4ba9c21716dbd1",
+      "size": 205
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.ddls.xml",
+      "sha256": "c7a0bf0414145bbf295072327b94dbaf0c9fc67831d0a83dee5d25965a9d574d",
+      "size": 441
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.ddlx.asddlxs",
+      "sha256": "a7fc694a3ce140137ea42d0bb47a82313e70fb8510530b50e00ca4af6aa5116e",
+      "size": 1284
+    },
+    {
+      "path": "src/xbo/#dmo#c_traveltp_xbo_draftdp.ddlx.xml",
+      "sha256": "5000aa079b0a909e739ee7323494e145eb0c300afdf698fb2e8714058d4071c5",
+      "size": 466
+    },
+    {
+      "path": "src/xbo/#dmo#d_agncy_xbo.tabl.xml",
+      "sha256": "3de6eb1b28471f21ac4fbdabe0e0de349155d3e7a3f1012c04ab358ca15a8414",
+      "size": 3262
+    },
+    {
+      "path": "src/xbo/#dmo#d_trvl_xbo.tabl.xml",
+      "sha256": "7fe369fbe2a33c2ed1cf29f50ee4b3516f62f6ced970ef83088bb43cc4a812ac",
+      "size": 3760
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencydraft_xbo.dcls.asdcls",
+      "sha256": "648a909b806373a1f4fad61bb7118b4307fed13102ea90ca3e4f9284a802f0c1",
+      "size": 284
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencydraft_xbo.dcls.xml",
+      "sha256": "a25c60c26d2844dc378e37cc170ded674ace5dbae120ff63f6158895b113f3c1",
+      "size": 407
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencydraft_xbo.ddls.asddls",
+      "sha256": "95d9a04cc4e088878605752cb9d02ae156c8566636d703bcf35e2da751272c9d",
+      "size": 914
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencydraft_xbo.ddls.baseinfo",
+      "sha256": "ff3b1ee95b650cfc29439d12f2bb5e15f89e8f5232b6bec6bc7d5b8d4a4654ab",
+      "size": 69
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencydraft_xbo.ddls.xml",
+      "sha256": "f92d23c8d15afcad59841f3d97c8473cc7e40b125ffe024a1190a9dae3722d6b",
+      "size": 438
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.bdef.asbdef",
+      "sha256": "8191a5c9e3770b4a0d0ac3c06644ddb167d9a94f4b60996fe168e0585a9703cc",
+      "size": 1363
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.bdef.xml",
+      "sha256": "2744e2ec728219388c2df174bb3c3c7fd19d4be318497ca7f3b2b6ce3bf1af12",
+      "size": 1839
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.dcls.asdcls",
+      "sha256": "97c48516a36c1d9ec09845d12739c7c8021337ff1af6edc00cd9a6639b4dc238",
+      "size": 226
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.dcls.xml",
+      "sha256": "239ff247d6a0ebd275f7ffb1ea7c0ad46af140dd6f4a6f05912a6aa6e0a68b87",
+      "size": 403
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.ddls.asddls",
+      "sha256": "c1c205f6c346edc4e37d81c0639a2d815c27e99df548b601c0e7d79c0d772961",
+      "size": 1160
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.ddls.baseinfo",
+      "sha256": "d78439980b895e24877a3143a126493c499b4142b770df0266694c57236be1b2",
+      "size": 124
+    },
+    {
+      "path": "src/xbo/#dmo#r_agencytp_xbo.ddls.xml",
+      "sha256": "9d021cc6d00bb0e94730a32abda52d648fa84270d15d0f2a63f521a490ff0fc2",
+      "size": 431
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveldraft_xbo.dcls.asdcls",
+      "sha256": "2f907028eb8bead014320ad75b8c5ee98c68b45c1ecc90d2c161918aaf8e9293",
+      "size": 284
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveldraft_xbo.dcls.xml",
+      "sha256": "f8945b82565a1c54c4c146ab7dd37dc21af7c702f36c1805acaa274a980cebbc",
+      "size": 407
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveldraft_xbo.ddls.asddls",
+      "sha256": "eeec1470b72d482a2c11e6f474d10c026521bd732d4329df82bb3ffc8ba3846f",
+      "size": 990
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveldraft_xbo.ddls.baseinfo",
+      "sha256": "53ff1f2afe405e550a9454afbf5834be6a76ab86f144a215bb66dc52e9a793fc",
+      "size": 68
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveldraft_xbo.ddls.xml",
+      "sha256": "de821bbe18c3e70a993650916388b54cce2218314086174ef898456b99a03ae8",
+      "size": 437
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.bdef.asbdef",
+      "sha256": "abcb2cf66defe12b002b9dca661b83f29e45c3ec17ede4ed02f70d42df984a51",
+      "size": 1896
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.bdef.xml",
+      "sha256": "d0af0768dc68113570dfaaf1c1f6d57c22e49a869b4c9785989a6f3206a8cc33",
+      "size": 1839
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.dcls.asdcls",
+      "sha256": "498e0171d7a43d6f6112e18372269f8f0674a671471d4b19a461c8883145e98d",
+      "size": 226
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.dcls.xml",
+      "sha256": "da41e5f6a19bd248bd5506fbacda0f520ff080e6bfed1c9fea85866385ad6dfe",
+      "size": 403
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.ddls.asddls",
+      "sha256": "c3b73da66afb941a833b37a347a82ebcd3baf9ed8de8cb8ceb3d5d3e9c34304d",
+      "size": 1324
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.ddls.baseinfo",
+      "sha256": "a8affb537d98ead5110b85c9c87952b7685548550475f92ad6ecf2fb3b23254d",
+      "size": 123
+    },
+    {
+      "path": "src/xbo/#dmo#r_traveltp_xbo.ddls.xml",
+      "sha256": "4dfc02eb93001d173da38825896ceb50e720fac63c7b3fa53a68a8864ae210e9",
+      "size": 431
+    },
+    {
+      "path": "src/xbo/#dmo#ui_agencytp_o4_xbo.srvb.xml",
+      "sha256": "4b2cf2b7e6af195c8f9aaf6c34fcdd685f4f0f8e6c6b5c8201e63ca46d02176b",
+      "size": 1465
+    },
+    {
+      "path": "src/xbo/#dmo#ui_agencytp_o4_xbo.srvd.srvdsrv",
+      "sha256": "8eb76274c07132ec24c61c0f54c9bf13c00beada22abe7e66ca40946d5bd9949",
+      "size": 251
+    },
+    {
+      "path": "src/xbo/#dmo#ui_agencytp_o4_xbo.srvd.xml",
+      "sha256": "dd6c9f7405152867ea94b1efad9db1f2d33a62083a8eeca40d9f6687e0ded0a3",
+      "size": 766
+    },
+    {
+      "path": "src/xbo/#dmo#ui_agencytp_o4_xbo_0001_g4ba.sco2.xml",
+      "sha256": "7db5757f9c0a2a2856fe2cdb5bcfbed4712b1f2fa6441b9fc81c4b07d5670459",
+      "size": 670
+    },
+    {
+      "path": "src/xbo/#dmo#ui_traveltp_o4_xbo.srvb.xml",
+      "sha256": "4b3136a47b9517258de4af9756f6dc9cfbbb96a6e69c545287d28861c99d0e8c",
+      "size": 1466
+    },
+    {
+      "path": "src/xbo/#dmo#ui_traveltp_o4_xbo.srvd.srvdsrv",
+      "sha256": "4349775e66903a7a1e4148044c59f994b7c22dd9598c52569568a06beccceb43",
+      "size": 137
+    },
+    {
+      "path": "src/xbo/#dmo#ui_traveltp_o4_xbo.srvd.xml",
+      "sha256": "f48dbb7bbd0dcd52421a26c819f3daca341d2ec6b4e27ca7152846ef13503d31",
+      "size": 766
+    },
+    {
+      "path": "src/xbo/#dmo#ui_traveltp_o4_xbo_0001_g4ba.sco2.xml",
+      "sha256": "d0a6745505da5d800f82ac0a47d8e677bbb074428ffd553c23c5cccc0a7f3e03",
+      "size": 670
+    },
+    {
+      "path": "src/xbo/dg/#dmo#cl_data_gen_agency_xbo.clas.abap",
+      "sha256": "55a75d4bc3de73914f145b0ae8255ab101e529b8678f2b357ef86605a4a97c59",
+      "size": 476
+    },
+    {
+      "path": "src/xbo/dg/#dmo#cl_data_gen_agency_xbo.clas.locals_imp.abap",
+      "sha256": "11b7bd252ce741406e22cc1803f18517badec19eff24a008f23e447ded59c852",
+      "size": 10450
+    },
+    {
+      "path": "src/xbo/dg/#dmo#cl_data_gen_agency_xbo.clas.xml",
+      "sha256": "bba207de012baa39fd4ccb8eb9b742c22f6738b44e6efbb3ee7223d34a8679b6",
+      "size": 502
+    },
+    {
+      "path": "src/xbo/dg/#dmo#data_gen_agency_xbo.enho.xml",
+      "sha256": "55749c1259e91310299f02ec1a33deb3a96f06ac57df9c6a0f28c52bbd0839f7",
+      "size": 1536
+    },
+    {
+      "path": "src/xbo/dg/package.devc.xml",
+      "sha256": "d45fc35a3641162b5d7081ead3131ecff6337820b924e6b171a4a81de4e828b1",
+      "size": 424
+    },
+    {
+      "path": "src/xbo/package.devc.xml",
+      "sha256": "f31c9d9a19176310aa2fb4ffcbcb208e172fe3cb6b35e732a4e83494a5cf5b50",
+      "size": 407
+    }
+  ],
+  "sections": []
+}

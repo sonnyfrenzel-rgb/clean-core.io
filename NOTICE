@@ -31,6 +31,44 @@ the guide is reused. No endorsement by DSAG e.V. or the authors is implied.
 Details: THIRD-PARTY-NOTICES.md and lib/dsag-citations.ts.
 
 --------------------------------------------------------------------------------
+SAP reference sources on GitHub (synced weekly)
+--------------------------------------------------------------------------------
+
+Four SAP repositories serve as references for the ABAP analysis and generated
+code, each (c) SAP SE or an SAP affiliate company and contributors. Metadata and
+hashes are synced weekly into lib/generated/sap-references/ by
+scripts/sync-sap-references.ts; what is taken from each is listed in
+lib/sap-reference-citations.ts. No endorsement by SAP SE or the contributors is
+implied.
+
+  SAP-samples/abap-cheat-sheets
+    https://github.com/SAP-samples/abap-cheat-sheets
+    reviewed at commit d43eb13c4c7c17599f5709a0314bca257b283137
+    Apache License 2.0, https://www.apache.org/licenses/LICENSE-2.0
+    Structure followed, no code copied.
+
+  SAP-samples/abap-platform-refscen-flight (branch ABAP-platform-cloud)
+    https://github.com/SAP-samples/abap-platform-refscen-flight
+    reviewed at commit 93f769170fa0b41591c3a4d39284f353cd90799e
+    Apache License 2.0, https://www.apache.org/licenses/LICENSE-2.0
+    Structure followed, no code copied.
+
+  SAP/styleguides ("Clean ABAP")
+    https://github.com/SAP/styleguides
+    reviewed at commit 6279311f42bf1f91896935c071bec8dbca97cf59
+    CC BY 3.0, https://creativecommons.org/licenses/by/3.0/
+    Rules cited and partly enabled through abaplint, paraphrased.
+
+  SAP/abap-file-formats
+    https://github.com/SAP/abap-file-formats
+    reviewed at commit e42c8003d8aa7b7b510b6ff4a8f1ed83a97a835b
+    MIT License, https://opensource.org/licenses/MIT
+    JSON schemas copied unchanged into lib/generated/aff-schemas/, with the
+    upstream LICENSE.
+
+Neither Apache-2.0 repository ships a NOTICE file.
+
+--------------------------------------------------------------------------------
 SAP data and trademarks
 --------------------------------------------------------------------------------
 

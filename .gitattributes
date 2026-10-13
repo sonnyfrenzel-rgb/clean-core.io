@@ -38,3 +38,9 @@ docs/terms/** text eol=lf
 # 300 cases report drift (1,992 errors) while nothing had changed. Same cure as
 # the corpus above; the cases themselves are never edited.
 tests/prozess-benchmark/** text eol=lf
+
+# The ABAP file format schemas are copied byte for byte from SAP/abap-file-formats
+# (MIT) and tests/sap-references.spec.ts compares each one with the SHA-256 the sync
+# recorded. No line-ending conversion in either direction, so the copy stays the
+# upstream file.
+lib/generated/aff-schemas/** -text
