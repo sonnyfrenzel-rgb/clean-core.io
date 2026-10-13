@@ -55,14 +55,18 @@ function sourceFiles(dir: string): string[] {
  *
  * - a rebuild: `engineVersionOfProject(…)` or `signedEngineVersionOf(…)`, or a
  *   local constant initialised from one of them;
- * - forwarded: a parameter of the enclosing function (or a property of one) —
- *   that function's own callers are what this guard, or TypeScript, checks;
+ * - forwarded: a parameter of the enclosing function named `engineVersion` (or
+ *   a property `engineVersion` of a parameter) — that function's own callers
+ *   are what this guard, or TypeScript, checks;
  * - a new run: `APP_VERSION`, and only in the places that make a new run, the
  *   demo or the reference analysis (`NEW_RUN`, by file and enclosing function).
  *
  * Anything else — a string literal, an unrelated variable — fails.
  */
 const REBUILD_SOURCES = new Set(['engineVersionOfProject', 'signedEngineVersionOf']);
+
+/** The only name a forwarded version may carry: a parameter `engineVersion`, or a parameter's property of that name. */
+const FORWARDED_NAME = 'engineVersion';
 
 /** `file#function` (the nearest named enclosing function, or `<module>`) where `APP_VERSION` is the right answer. */
 const NEW_RUN = new Set([
@@ -135,8 +139,13 @@ function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.So
   if (ts.isIdentifier(expr) && expr.text === 'APP_VERSION') {
     return NEW_RUN.has(place) ? { ok: true, source: 'new-run' } : { ok: false, source: `APP_VERSION outside a new run (${place})` };
   }
+  // Forwarded means the version itself is handed on: the parameter (or the
+  // property of a parameter) is named `engineVersion`. Any other parameter — the
+  // source text, a file name — is not a version because it sits in the
+  // signature (QA review of c38f8043f118, 80028f747c66).
   const root = ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression) ? expr.expression.text : ts.isIdentifier(expr) ? expr.text : null;
-  if (root && isParameterOfEnclosing(root, call)) return { ok: true, source: 'forwarded' };
+  const leaf = ts.isPropertyAccessExpression(expr) ? expr.name.text : ts.isIdentifier(expr) ? expr.text : null;
+  if (root && leaf === FORWARDED_NAME && isParameterOfEnclosing(root, call)) return { ok: true, source: 'forwarded' };
   if (ts.isIdentifier(expr) && isRebuildCall(constInitialiser(expr.text, sf))) return { ok: true, source: 'rebuild' };
   return { ok: false, source: expr.getText(sf) };
 }
@@ -211,6 +220,14 @@ test.describe('Engine version — every caller names it (3.0.12)', () => {
     expect(verdict('export function f(project: P) { return buildAbapEvidence(s, f, d, k, engineVersionOfProject(project)); }')).toEqual([[true, 'rebuild']]);
     expect(verdict('export function f(project: P) { const e = signedEngineVersionOf(project); return buildAbapEvidence(s, f, d, k, e); }')).toEqual([[true, 'rebuild']]);
     expect(verdict('export function f(engineVersion: string) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[true, 'forwarded']]);
+    expect(verdict('export function f(o: { engineVersion: string }) { return findingsOf(s, f, d, k, o.engineVersion); }')).toEqual([[true, 'forwarded']]);
+    expect(verdict('export function f({ engineVersion }: O) { return engineDesignContext({ contract, engineVersion }); }')).toEqual([[true, 'forwarded']]);
+    // Another parameter in the version's place is not a version (80028f747c66).
+    expect(verdict('export function f(source: string, fileName: string) { return buildAbapEvidence(source, fileName, d, k, fileName); }'))
+      .toEqual([[false, 'fileName']]);
+    expect(verdict('export function f(source: string) { return buildAbapEvidence(s, f, d, k, source); }')).toEqual([[false, 'source']]);
+    expect(verdict('export function f(o: { fileName: string }) { return findingsOf(s, f, d, k, o.fileName); }')).toEqual([[false, 'o.fileName']]);
+    expect(verdict('export function f(engineVersion: string) { return findingsOf(s, f, d, k, engineVersion.trim); }')).toEqual([[false, 'engineVersion.trim']]);
     expect(verdict('export function f(project: P) { return architectureCanvasModel({ contract, engineVersion: APP_VERSION }); }'))
       .toEqual([[false, 'APP_VERSION outside a new run (lib/some-rebuild.ts#f)']]);
   });

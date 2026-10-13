@@ -113,6 +113,10 @@ test.describe('an example started for the Public Edition', () => {
     const fitTitle = page.locator('#standard-fit[data-standard-fit="ready"] h3');
     await expect(fitTitle).toBeAttached({ timeout: 90000 });
     await expect(fitTitle).toContainText('Public Edition', { timeout: 60000 });
+    // Neither private name — the current one, nor the one before the 3.0.12
+    // rename, which a stale string would bring back (QA review of
+    // c38f8043f118, 6b28196085ce).
     await expect(fitTitle).not.toContainText('SAP Cloud ERP Private');
+    await expect(fitTitle).not.toContainText('Private Edition');
   });
 });
