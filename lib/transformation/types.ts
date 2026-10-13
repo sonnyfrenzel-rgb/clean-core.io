@@ -17,8 +17,13 @@ import type { DeclaredDecimal, GuardEffect, SelectionInput } from '../abap/origi
 
 /** The plan's rules (granularity, folding, fixtures, budgets). A new value changes unit ids. */
 export const PLAN_VERSION = 1;
-/** The engine-written package text. Enters the generation binding (§12.2); a new value does not make a draft stale. */
-export const SCAFFOLD_VERSION = 1;
+/**
+ * The engine-written package text. Enters the generation binding (§12.2); a new value does not make a draft stale.
+ * 2 (3.0.12, DSAG ABAP guide review): the RAP scaffold checks authorization (`#CHECK`, access controls, handlers
+ * that deny until filled), carries an access layer, ABAP Doc on every public method and, where the original runs in
+ * the background, an Application Job. The Node scaffold's text is unchanged.
+ */
+export const SCAFFOLD_VERSION = 2;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -231,9 +236,37 @@ export interface UnitPlan {
   csvDelimiter: string;
   notCarried: NotCarried[];
   folded: Array<{ routine: string; into: string }>;
+  /** How the RAP track delivers the process — UI service, Application Job or both — and why (`abap-delivery.ts`). */
+  abapDelivery: AbapDelivery;
   stats: PlanStats;
   /** sha256 over the plan's canonical form — the `<plan digest>` of the binding line `scaffold=` (§12.2). */
   digest: string;
+}
+
+/**
+ * How the RAP scaffold delivers the process (DSAG ABAP guide, "Migration von Reports": a report becomes a Fiori app
+ * on RAP or an Application Job). Read from the original by the engine; not part of the plan digest (the scaffold
+ * digest covers what it changes).
+ */
+export type AbapDeliveryKind = 'ui-service' | 'application-job' | 'ui-service-and-job';
+
+export interface AbapDeliveryEvidence {
+  line: number;
+  what: string;
+}
+
+export interface AbapDelivery {
+  kind: AbapDeliveryKind;
+  /** One sentence: why this kind, naming the evidence. */
+  reason: string;
+  /** Background use: `SUBMIT … VIA JOB`, `JOB_OPEN`/`JOB_CLOSE`/`JOB_SUBMIT`, `sy-batch`. */
+  background: AbapDeliveryEvidence[];
+  /** Interactive dialog: `CALL SCREEN`, `AT USER-COMMAND`, popups, ALV callbacks. */
+  dialog: AbapDeliveryEvidence[];
+  /** List output: `WRITE`, ALV display — in the background it goes to the spool. */
+  output: AbapDeliveryEvidence[];
+  /** Selection inputs of the original (`PARAMETERS`, `SELECT-OPTIONS`). */
+  inputs: number;
 }
 
 export interface PlanStats {

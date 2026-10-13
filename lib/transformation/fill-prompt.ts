@@ -52,16 +52,18 @@ export const FILL_REPAIR_PREVIOUS_MAX_CHARS = 4_000;
  * engine-written in the scaffold (§6.2) and are therefore not asked for.
  */
 export const FILL_RULE_NUMBERS = [11, 12, 13, 14, 15, 17, 19, 21, 23] as const;
+/** RAP bodies also get rule 25: the scaffold's access layer (`mo_access`) is where SAP is reached (3.0.12, DSAG B4). */
+export const FILL_RULE_NUMBERS_RAP = [...FILL_RULE_NUMBERS, 25] as const;
 
 /** The rules above, word for word from `CODE_DRAFT_BUSINESS_RULES`. */
-export function fillRulesText(): string {
+export function fillRulesText(track: 'node' | 'rap' = 'node'): string {
   const lines = CODE_DRAFT_BUSINESS_RULES.split('\n').map((l) => l.trim()).filter(Boolean);
   const byNumber = new Map<number, string>();
   for (const line of lines) {
     const m = line.match(/^(\d+)\.\s/);
     if (m) byNumber.set(Number(m[1]), line);
   }
-  return FILL_RULE_NUMBERS.map((n) => byNumber.get(n)).filter((l): l is string => !!l).join('\n');
+  return (track === 'rap' ? FILL_RULE_NUMBERS_RAP : FILL_RULE_NUMBERS).map((n) => byNumber.get(n)).filter((l): l is string => !!l).join('\n');
 }
 
 /** The fixed instruction header (§8.2). */
@@ -84,7 +86,7 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     `- A guard listed with a "regionId" under a unit is a check of the original whose condition you write as well: its predicate body — statements that return ${track === 'node' ? 'true' : "abap_true"} exactly when the original's "condition" holds, reading only the parameters of its signature. Answer it under "guards": [ { "id": "G-0506", "body": "…" } ] of that unit; the engine calls it where the original checks.`,
     '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [], "refused": null } ] } — one entry per unit asked for.',
     'CODE-DRAFT RULES (by number, unchanged):',
-    fillRulesText(),
+    fillRulesText(track),
   ].join('\n');
 }
 

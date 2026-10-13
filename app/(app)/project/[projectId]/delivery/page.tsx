@@ -92,6 +92,7 @@ import { packedDecimalFields } from '@/lib/generated-code-lints';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
+import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -541,24 +542,9 @@ export default function DeliveryPage() {
 
       // The linter of the ABAP route. The Node route's CI comes from the templates.
       if (isAbapCloud) {
-        bundle.file("abaplint.json", JSON.stringify({
-          "global": {
-            "files": "/src/**/*.*"
-          },
-          "dependencies": [],
-          "syntax": {
-            "version": "v750",
-            "errorForAllowed": true,
-            "keypath": ""
-          },
-          "rules": {
-            "obsolete_statement": true,
-            "check_subrc": true,
-            "parser_error": true,
-            "allowed_object_types": ["CLAS", "INTF", "DDLS", "BDEF", "SRVD", "SRVB"],
-            "forbidden_statements": ["SELECT * FROM vbak", "SELECT * FROM bseg", "INSERT INTO vbak"]
-          }
-        }, null, 2));
+        // ABAP Cloud syntax and the object types the scaffold writes — the same rules the server ran on this
+        // package (lib/transformation/abaplint-config.ts, roadmap 3.0.12).
+        bundle.file("abaplint.json", abaplintConfigJson());
       }
 
       // "Reference patterns" (roadmap 3.0.9): the SAP reference pattern of the

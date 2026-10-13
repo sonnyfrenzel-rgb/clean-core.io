@@ -29,6 +29,7 @@
  */
 
 import { sha256Hex } from '../artefact-digest';
+import { abapDeliveryOf } from './abap-delivery';
 import { deriveBusinessRules, type BusinessRule, type BusinessRuleSet } from '../abap/business-rule-set';
 import { readCallGraphFrom, type CallGraphReport, type FormDefinition } from '../abap/call-graph';
 import { containerAt, readBlocks, type BlockStructure, type Container } from '../abap/block-structure';
@@ -778,6 +779,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     csvDelimiter: csvDelimiterOf(statements),
     notCarried: notCarried.sort((a, b) => a.lineStart - b.lineStart),
     folded,
+    abapDelivery: abapDeliveryOf(facts),
     stats: {
       routines: routines.length,
       reachable: reachable.length,
