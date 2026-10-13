@@ -20,6 +20,7 @@
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
     "sync:identifiers": "tsx scripts/sync-sap-identifiers.ts",
     "sync:architecture-center": "tsx scripts/sync-sap-architecture-center.ts",
+    "sync:sap-references": "tsx scripts/sync-sap-references.ts",
     "demo:regenerate": "tsx scripts/regenerate-demo.ts",
     "sync:content-dates": "node scripts/sync-content-dates.mjs",
     "deploy:rules": "tsx scripts/rules-deploy.ts --deploy",

@@ -53,6 +53,64 @@ SHA-256 per section — no text of the guide. No image of the guide is reused (s
 of its figures are SAP's). Use of the guide does not imply that DSAG e.V. or its
 authors endorse Clean-Core.io or the way it uses the guide.
 
+## SAP reference sources on GitHub (synced weekly)
+
+Four SAP repositories on GitHub serve as references for Clean-Core.io's ABAP
+analysis and generated code. Each is © SAP SE or an SAP affiliate company and
+contributors. `scripts/sync-sap-references.ts` syncs them weekly into
+`lib/generated/sap-references/` — commit, licence, a SHA-256 per file and, for
+Markdown, per section with its anchor. What the product takes from each source is
+listed per row, with the file or section it rests on, in
+`lib/sap-reference-citations.ts`. Use of these sources does not imply that SAP SE
+or the contributors endorse Clean-Core.io or the way it uses them.
+
+### ABAP cheat sheets
+
+**SAP-samples/abap-cheat-sheets** (https://github.com/SAP-samples/abap-cheat-sheets,
+reviewed at commit `d43eb13c4c7c17599f5709a0314bca257b283137`), © SAP SE or an SAP
+affiliate company and abap-cheat-sheets contributors, licensed under the Apache
+License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0); REUSE.toml
+declares Apache-2.0 for every file. Used as the reference for ABAP Cloud usage —
+RAP, application jobs, application logs (`CL_BALI_*`), mail, XCO and released APIs.
+**Changes:** structure followed, no code copied; metadata and hashes synced weekly.
+The repository ships no `NOTICE` file, so Apache-2.0 §4(d) does not apply.
+
+### ABAP RESTful Application Programming Model — flight reference scenario
+
+**SAP-samples/abap-platform-refscen-flight**
+(https://github.com/SAP-samples/abap-platform-refscen-flight, branch
+`ABAP-platform-cloud`, reviewed at commit `93f769170fa0b41591c3a4d39284f353cd90799e`),
+© SAP SE or an SAP affiliate company and abap-platform-refscen-flight contributors,
+licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0); REUSE.toml declares Apache-2.0 for
+every file. Used as the reference RAP application — CDS, behavior definitions,
+access control (DCL), authorization and draft — and as the template for the RAP
+scaffold. **Changes:** structure followed, no code copied; metadata and hashes
+synced weekly. The repository ships no `NOTICE` file, so Apache-2.0 §4(d) does not
+apply.
+
+### Clean ABAP (SAP style guides)
+
+**"Clean ABAP"** in **SAP/styleguides** (https://github.com/SAP/styleguides,
+reviewed at commit `6279311f42bf1f91896935c071bec8dbca97cf59`), © SAP SE or an SAP
+affiliate company and styleguides contributors, licensed under the Creative Commons
+Attribution 3.0 Unported License (CC BY 3.0,
+https://creativecommons.org/licenses/by/3.0/); `.reuse/dep5` declares CC-BY-3.0 for
+every file. Used as rules for generated ABAP. **Changes:** rules cited and partly
+enabled through abaplint, paraphrased; no text of the guide is copied; metadata and
+section hashes synced weekly.
+
+### ABAP file formats
+
+**SAP/abap-file-formats** (https://github.com/SAP/abap-file-formats, reviewed at
+commit `e42c8003d8aa7b7b510b6ff4a8f1ed83a97a835b`), © SAP SE or an SAP affiliate
+company and ABAP file formats contributors, licensed under the MIT License
+(https://opensource.org/licenses/MIT). The JSON schemas of the object types TABL
+(with its table type), DDLS, BDEF, SRVD, SRVB, CLAS, DCLS, SAJC and SAJT are used to
+validate generated object files. **Changes:** schemas copied unchanged into
+`lib/generated/aff-schemas/`, next to the upstream `LICENSE` with its copyright and
+permission notice; metadata and hashes synced weekly.
+
 ## Trademarks
 
 SAP, S/4HANA, ABAP and other SAP product and service names are trademarks or

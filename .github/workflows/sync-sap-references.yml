@@ -1,0 +1,182 @@
+name: Sync SAP References
+
+# Weekly pull of four SAP repositories on GitHub that Clean-Core.io uses as references
+# (roadmap 3.0.12, owner decision 13.10.2026):
+#   SAP-samples/abap-cheat-sheets (Apache-2.0), SAP-samples/abap-platform-refscen-flight
+#   (Apache-2.0, branch ABAP-platform-cloud), SAP/styleguides (Clean ABAP, CC BY 3.0) and
+#   SAP/abap-file-formats (MIT).
+#
+# Only metadata moves into lib/generated/sap-references/: commit, licence, a SHA-256 per
+# file and, for Markdown, per section with its anchor. The one exception is the ABAP file
+# format JSON schemas of the object types our scaffolds produce, copied unchanged under
+# their MIT licence into lib/generated/aff-schemas/. What the product takes from the
+# sources stays the hand-reviewed registry in lib/sap-reference-citations.ts.
+# tests/sap-references.spec.ts fails on the bot branch when a file or section a row
+# ADOPTS has changed or gone — the signal to review that row by hand (then record the new
+# hash). A new upstream commit that changes nothing in scope pushes nothing.
+#
+# Same shape as sync-dsag-guide.yml and sync-architecture-center.yml: no pull request
+# (Actions may not open one here), the branch is pushed and the QA agent's weekly pipeline
+# check reports it while it is ahead of main; the job that installs and syncs holds a
+# read-only token and hands over only the two data folders as an artifact; the push job
+# starts from a fresh checkout, runs no npm at all, accepts nothing but the expected
+# paths, and runs git with hooks and fsmonitor switched off.
+on:
+  schedule:
+    - cron: '15 7 * * 1'   # Mondays 07:15 UTC, after the DSAG sync, before the 07:30 health check
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Nothing in this job pushes; npm install scripts and tsx run here,
+          # so no token is left in .git/config.
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Sync the SAP reference sources
+        id: sync
+        run: |
+          set -o pipefail
+          npx tsx scripts/sync-sap-references.ts | tee "$RUNNER_TEMP/sap-references-sync.log"
+          if [ -n "$(git status --porcelain --untracked-files=all -- lib/generated/sap-references lib/generated/aff-schemas)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Changes that touch a row of lib/sap-reference-citations.ts go to the summary.
+          if grep -q 'cited by' "$RUNNER_TEMP/sap-references-sync.log"; then
+            {
+              echo "### Cited SAP reference files or sections changed — review these rows by hand"
+              echo
+              echo '```'
+              grep 'cited by' "$RUNNER_TEMP/sap-references-sync.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if grep -q 'WARNING' "$RUNNER_TEMP/sap-references-sync.log"; then
+            {
+              echo "### Licence change — review the attribution before anything else"
+              echo
+              echo '```'
+              grep 'WARNING' "$RUNNER_TEMP/sap-references-sync.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Only the two data folders leave this job, complete, so a file removed
+      # upstream is removed on the branch too.
+      - name: Collect the data folders
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          out="$RUNNER_TEMP/sap-references-sync"
+          mkdir -p "$out/lib/generated"
+          cp -R lib/generated/sap-references "$out/lib/generated/sap-references"
+          cp -R lib/generated/aff-schemas "$out/lib/generated/aff-schemas"
+
+      - name: Upload the data folders
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sap-references-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/sap-references-sync/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: No change
+        if: steps.sync.outputs.changed == 'false'
+        run: echo "### SAP reference sources unchanged" >> "$GITHUB_STEP_SUMMARY"
+
+  push:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot branch; nothing else
+    steps:
+      # A fresh checkout of the same commit. No package install and no project
+      # script runs in this job, so nothing has had a chance to touch .git/.
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the data folders
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: sap-references-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/sap-references-sync
+
+      # The artifact may hold the source data files and the AFF schemas with their
+      # LICENSE and nothing else: no other path, no other subdirectory, no symlink.
+      - name: Accept only the expected paths
+        run: |
+          src="$RUNNER_TEMP/sap-references-sync"
+          unexpected=$(cd "$src" && find . -mindepth 1 \( -type l -o \( -type d ! -path ./lib ! -path ./lib/generated ! -path ./lib/generated/sap-references ! -path ./lib/generated/aff-schemas \) -o \( -type f ! -path './lib/generated/sap-references/*.json' ! -path './lib/generated/aff-schemas/*-v[0-9]*.json' ! -path ./lib/generated/aff-schemas/LICENSE \) -o \( ! -type f ! -type d \) \) -print)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The sync artifact holds unexpected paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          for f in abap-cheat-sheets abap-platform-refscen-flight styleguides abap-file-formats; do
+            if [ ! -f "$src/lib/generated/sap-references/$f.json" ]; then
+              echo "::error::The sync artifact lacks lib/generated/sap-references/$f.json"
+              exit 1
+            fi
+          done
+          rm -rf lib/generated/sap-references lib/generated/aff-schemas
+          cp -R "$src/lib/generated/sap-references" lib/generated/sap-references
+          cp -R "$src/lib/generated/aff-schemas" lib/generated/aff-schemas
+          changes=$(git status --porcelain --untracked-files=all)
+          stray=$(printf '%s\n' "$changes" | grep -vE '^.. lib/generated/(sap-references/[a-z-]+\.json|aff-schemas/([a-z]+-v[0-9]+\.json|LICENSE))$' | grep -v '^$' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::The working tree changed outside the SAP reference data:"
+            echo "$stray"
+            exit 1
+          fi
+          if [ -z "$changes" ]; then
+            echo "::error::The sync reported a change, but the artifact matches the checkout."
+            exit 1
+          fi
+
+      - name: Commit the update
+        run: |
+          git checkout -B chore/sync-sap-references
+          git add -A lib/generated/sap-references lib/generated/aff-schemas
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore(sap-references): sync SAP reference sources"
+
+      - name: Push the update to its branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c credential.helper= \
+            push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-sap-references
+          {
+            echo "### SAP reference update ready"
+            echo
+            echo "Branch \`chore/sync-sap-references\` holds this week's sync. Run \`tests/sap-references.spec.ts\` on it:"
+            echo "a failure names an adopted row whose file or section changed — review it by hand in"
+            echo "\`lib/sap-reference-citations.ts\`, then bring the branch in through \`dev\`; the weekly QA pipeline check"
+            echo "reports it until then."
+          } >> "$GITHUB_STEP_SUMMARY"

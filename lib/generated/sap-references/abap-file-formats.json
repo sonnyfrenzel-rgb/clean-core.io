@@ -1,0 +1,111 @@
+{
+  "key": "abap-file-formats",
+  "source": "https://github.com/SAP/abap-file-formats",
+  "branch": "main",
+  "commit": "e42c8003d8aa7b7b510b6ff4a8f1ed83a97a835b",
+  "syncedAt": "2026-10-13",
+  "licence": {
+    "spdx": "MIT",
+    "github": "MIT",
+    "reuse": [
+      "MIT"
+    ],
+    "file": "LICENSE",
+    "url": "https://opensource.org/licenses/MIT"
+  },
+  "files": [
+    {
+      "path": "file-formats/bdef/bdef-v1.json",
+      "sha256": "bd89b642dbcbee06af6ad64735f926fe40f64f7c50c550289eefca23930fa335",
+      "size": 2260
+    },
+    {
+      "path": "file-formats/clas/clas-v1.json",
+      "sha256": "ad907fedc79293554a9189d4f2fbf29e3e71d0a588fcc589b8ade256a1d15cff",
+      "size": 11159
+    },
+    {
+      "path": "file-formats/dcls/dcls-v1.json",
+      "sha256": "caf2f8ad3facc88e10a644e9a28634a2de74f27c30d4c42a8ee2a14e41fc7b69",
+      "size": 1932
+    },
+    {
+      "path": "file-formats/ddls/ddls-v1.json",
+      "sha256": "ca662007557098a6692bbba6b5b651a8532e7e97fdd61922d0bd98f6afd71ed3",
+      "size": 4474
+    },
+    {
+      "path": "file-formats/sajc/sajc-v1.json",
+      "sha256": "b2108ef337ba133ea936793639199f95fae32dcff6af5d08ea59b02e303b168d",
+      "size": 9865
+    },
+    {
+      "path": "file-formats/sajt/sajt-v1.json",
+      "sha256": "5ceede02d0d0a4eb0d5d969a11687c171dc949e2784cd9a453c70383c9006ab1",
+      "size": 7621
+    },
+    {
+      "path": "file-formats/srvb/srvb-v1.json",
+      "sha256": "6c55659de34304c0f5a53dde7748c25d3efc711e28157f361fa8f3c59ce63b49",
+      "size": 4260
+    },
+    {
+      "path": "file-formats/srvd/srvd-v1.json",
+      "sha256": "8022f453a976108f721bb7a869636cc91365786e8e92a04c214fae9b61a74795",
+      "size": 4210
+    },
+    {
+      "path": "file-formats/tabl/tabl-v1.json",
+      "sha256": "2fa7e5d5ffd111972bd92f5aa48e7a11a666689b787883fe981a38a6b38f71e4",
+      "size": 1891
+    },
+    {
+      "path": "file-formats/tabl/tabt-v1.json",
+      "sha256": "8b93d82547f4a7c2588c237e7634c481e6049a6261496e484cea422897b9d7d0",
+      "size": 5660
+    }
+  ],
+  "sections": [],
+  "copied": [
+    {
+      "path": "file-formats/bdef/bdef-v1.json",
+      "to": "lib/generated/aff-schemas/bdef-v1.json"
+    },
+    {
+      "path": "file-formats/clas/clas-v1.json",
+      "to": "lib/generated/aff-schemas/clas-v1.json"
+    },
+    {
+      "path": "file-formats/dcls/dcls-v1.json",
+      "to": "lib/generated/aff-schemas/dcls-v1.json"
+    },
+    {
+      "path": "file-formats/ddls/ddls-v1.json",
+      "to": "lib/generated/aff-schemas/ddls-v1.json"
+    },
+    {
+      "path": "file-formats/sajc/sajc-v1.json",
+      "to": "lib/generated/aff-schemas/sajc-v1.json"
+    },
+    {
+      "path": "file-formats/sajt/sajt-v1.json",
+      "to": "lib/generated/aff-schemas/sajt-v1.json"
+    },
+    {
+      "path": "file-formats/srvb/srvb-v1.json",
+      "to": "lib/generated/aff-schemas/srvb-v1.json"
+    },
+    {
+      "path": "file-formats/srvd/srvd-v1.json",
+      "to": "lib/generated/aff-schemas/srvd-v1.json"
+    },
+    {
+      "path": "file-formats/tabl/tabl-v1.json",
+      "to": "lib/generated/aff-schemas/tabl-v1.json"
+    },
+    {
+      "path": "file-formats/tabl/tabt-v1.json",
+      "to": "lib/generated/aff-schemas/tabt-v1.json"
+    }
+  ]
+}
