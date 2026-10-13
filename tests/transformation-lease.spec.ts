@@ -12,6 +12,7 @@ import {
   LEASE_MAX_CALLS,
   LEASE_MAX_IN_FLIGHT,
   LEASE_TTL_MS,
+  LEASE_WINDOW_COLLECTION,
   LEASE_WINDOW_MS,
   LEASES_PER_WINDOW,
   decideLeaseCall,
@@ -227,7 +228,12 @@ const id = (p: string) => `${p}-${Date.now()}-${Math.floor(Math.random() * 1e6)}
 test.describe('the store, against the Firestore emulator', () => {
   test.describe.configure({ mode: 'serial' });
   test.beforeAll(async () => {
-    test.skip(!(await emulatorUp()), 'The Firestore emulator does not answer on 127.0.0.1:8080.');
+    const up = await emulatorUp();
+    // CI starts the emulators before every E2E shard (deploy.yml): there a silent
+    // skip would pass the suite without one transaction run, so it fails instead.
+    // Only a local run without emulators may skip.
+    if (!up && process.env.CI) throw new Error('The Firestore emulator does not answer on 127.0.0.1:8080, and CI must run these tests.');
+    test.skip(!up, 'The Firestore emulator does not answer on 127.0.0.1:8080.');
   });
 
   test('issue, reuse for nothing, supersede, and the 4th lease in an hour refused', async () => {
@@ -291,12 +297,19 @@ test.describe('the store, against the Firestore emulator', () => {
     for (let i = 0; i < 8; i++) await releaseLeaseCall(db(), ref);
     expect((await readLease(db(), ref))?.inFlight).toBe(0);
   });
+});
 
-  test('the records sit where the rules close them to every browser', () => {
-    const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
-    expect(rules).not.toContain(LEASE_COLLECTION);
-    expect(rules).not.toContain('transformation_lease_windows');
-    // No recursive wildcard under projects that would open the subcollection.
-    expect(rules).not.toMatch(/match \/projects\/\{projectId\}\/\{[^}]*=\*\*\}/);
-  });
+/*
+ * What the rules text says. Whether a signed-in browser is in fact refused is
+ * tried against the emulator in tests/transformation-lease-route.spec.ts
+ * ('a browser signed in as the owner reads and writes neither ...').
+ */
+test('no rule names the lease records or opens a recursive path that would reach them', () => {
+  const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+  expect(rules).not.toContain(LEASE_COLLECTION);
+  expect(rules).not.toContain(LEASE_WINDOW_COLLECTION);
+  // No recursive wildcard under projects that would open the subcollection…
+  expect(rules).not.toMatch(/match \/projects\/\{projectId\}\/\{[^}]*=\*\*\}/);
+  // …and no catch-all at the database root that would open every collection.
+  expect(rules).not.toMatch(/match \/\{[^}]*=\*\*\}/);
 });

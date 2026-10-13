@@ -1,8 +1,9 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
-import { connectAuthToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
+import { connectAuthToEmulator, connectFirestoreToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc, adminGetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -29,11 +30,14 @@ const P2 = `lease-route-b-${STAMP}`;
 const PROGRAM = (name: string) =>
   [`REPORT ${name}.`, 'DATA lt_mara TYPE TABLE OF mara.', 'SELECT * FROM mara INTO TABLE lt_mara UP TO 10 ROWS.', "WRITE: / 'done'."].join('\n');
 
-let owner = { uid: '', token: '' };
-let stranger = { uid: '', token: '' };
+let owner = { uid: '', token: '', email: '' };
+let stranger = { uid: '', token: '', email: '' };
 const headers = (t: string) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' });
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+const clientDb = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(clientDb);
 
 async function seedProject(id: string, uid: string) {
   const source = PROGRAM(`z_${id.replace(/[^a-z0-9]/gi, '_').slice(0, 20)}`);
@@ -94,7 +98,7 @@ test.beforeAll(async () => {
       firstName: 'Lease', lastName: name, email, tier: 'pilot', status: 'approved', activatedAt: new Date(),
       transformationsUsed: 0, transformationsLimit: 50, termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
     });
-    return { uid: cred.user.uid, token: await cred.user.getIdToken() };
+    return { uid: cred.user.uid, token: await cred.user.getIdToken(), email };
   };
   owner = await make('owner');
   stranger = await make('stranger');
@@ -174,4 +178,25 @@ test('the 4th lease in an hour is refused', async ({ request }) => {
   const res = await lease(request, P2, await tokenOf(request, P2));
   expect(res.status()).toBe(429);
   expect((await res.json()).code).toBe('lease-hourly-limit');
+});
+
+test('a browser signed in as the owner reads and writes neither the lease nor the lease window', async () => {
+  const auth = getAuth(app);
+  await signInWithEmailAndPassword(auth, owner.email, EMULATOR_PASSWORD);
+  expect(auth.currentUser?.uid, 'the client SDK is not signed in as the owner').toBe(owner.uid);
+  // Both records exist (the tests above wrote them), so a refusal is the rules and not a missing document.
+  expect(await adminGetDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId)).toBeTruthy();
+  expect(await adminGetDoc(LEASE_WINDOW_COLLECTION, owner.uid)).toBeTruthy();
+
+  const leaseDoc = doc(clientDb, 'projects', P1, LEASE_COLLECTION, leaseId);
+  await expect(getDoc(leaseDoc)).rejects.toMatchObject({ code: 'permission-denied' });
+  await expect(setDoc(leaseDoc, { used: 0, inFlight: 0 }, { merge: true })).rejects.toMatchObject({ code: 'permission-denied' });
+  await expect(setDoc(doc(clientDb, 'projects', P1, LEASE_COLLECTION, 'forged'), { budget: 999 })).rejects.toMatchObject({ code: 'permission-denied' });
+  const windowDoc = doc(clientDb, LEASE_WINDOW_COLLECTION, owner.uid);
+  await expect(getDoc(windowDoc)).rejects.toMatchObject({ code: 'permission-denied' });
+  await expect(setDoc(windowDoc, { issued: [] })).rejects.toMatchObject({ code: 'permission-denied' });
+
+  // …while the same session reads the project itself, so the refusals above are
+  // the rules and not a signed-out client.
+  expect((await getDoc(doc(clientDb, 'projects', P1))).exists()).toBe(true);
 });

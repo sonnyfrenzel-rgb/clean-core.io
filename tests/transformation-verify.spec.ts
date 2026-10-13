@@ -511,7 +511,12 @@ const db = (): Firestore => {
 
 test.describe('generation drafts in the store, against the Firestore emulator', () => {
   test.beforeAll(async () => {
-    test.skip(!(await emulatorUp()), 'The Firestore emulator does not answer on 127.0.0.1:8080.');
+    const up = await emulatorUp();
+    // CI starts the emulators before every E2E shard (deploy.yml): there a silent
+    // skip would pass the suite without one transaction run, so it fails instead.
+    // Only a local run without emulators may skip.
+    if (!up && process.env.CI) throw new Error('The Firestore emulator does not answer on 127.0.0.1:8080, and CI must run these tests.');
+    test.skip(!up, 'The Firestore emulator does not answer on 127.0.0.1:8080.');
   });
 
   test('the owner cuts one and the runner may load it; another account reaches neither', async () => {
