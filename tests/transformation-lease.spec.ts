@@ -11,6 +11,7 @@ import {
   LEASE_COLLECTION,
   LEASE_MAX_CALLS,
   LEASE_MAX_IN_FLIGHT,
+  LEASE_MAX_TTL_MS,
   LEASE_TTL_MS,
   LEASE_WINDOW_COLLECTION,
   LEASE_WINDOW_MS,
@@ -18,12 +19,14 @@ import {
   decideLeaseCall,
   decideLeaseIssue,
   leaseBudget,
+  leaseTtlMs,
   leaseReferenceOf,
   leaseView,
   newLeaseRecord,
   type LeaseRecord,
 } from '../lib/transformation/lease';
 import { acquireLeaseCall, issueLease, peekLease, readLease, releaseLeaseCall } from '../lib/transformation/lease-store';
+import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 
 /**
  * The generation lease (design §11; owner decision 12.10.2026: one generation
@@ -59,7 +62,26 @@ test.describe('the decisions', () => {
     expect(leaseBudget(20)).toBe(LEASE_MAX_CALLS);
     expect(leaseBudget(10_000)).toBe(LEASE_MAX_CALLS);
     expect(leaseBudget(0)).toBe(10);
-    expect(lease().expiresAt - lease().createdAt).toBe(LEASE_TTL_MS);
+    expect(lease().expiresAt - lease().createdAt).toBe(leaseTtlMs(leaseBudget(9)));
+  });
+
+  test('a lease lasts long enough for its budget: every call, four at a time, each the route\'s full deadline', () => {
+    // 13.10.2026, production: a 1,848-line program planned 29 fill calls (budget
+    // 48); its calls took 9–292 s, the flat 15-minute lease expired after 25 of
+    // them and the next call was refused 403 lease-expired.
+    expect(leaseTtlMs(10)).toBe(LEASE_TTL_MS);
+    expect(leaseTtlMs(26)).toBe(7 * MODEL_CALL_DEADLINE_MS);
+    expect(leaseTtlMs(LEASE_MAX_CALLS)).toBe(12 * MODEL_CALL_DEADLINE_MS);
+    for (let budget = 1; budget <= LEASE_MAX_CALLS; budget++) {
+      const ttl = leaseTtlMs(budget);
+      expect(ttl, `budget ${budget}`).toBeGreaterThanOrEqual(Math.ceil(budget / LEASE_MAX_IN_FLIGHT) * MODEL_CALL_DEADLINE_MS);
+      expect(ttl).toBeGreaterThanOrEqual(LEASE_TTL_MS);
+      expect(ttl).toBeLessThanOrEqual(LEASE_MAX_TTL_MS);
+    }
+    for (const odd of [0, -1, 1.5, Number.NaN, 10_000]) expect(leaseTtlMs(odd)).toBeLessThanOrEqual(LEASE_MAX_TTL_MS);
+    const big = newLeaseRecord({ leaseId: 'L9', projectId: 'P1', uid: 'owner', generationToken: 'tok-9', plannedCalls: 29, budget: leaseBudget(29), now: T0 });
+    // The production run's last call was refused 15 min 46 s after the lease.
+    expect(decideLeaseCall(big, ctx({ now: T0 + (15 * 60 + 46) * 1000 })).ok).toBe(true);
   });
 
   test('another account\'s lease, a lease of another project and no lease get the same answer', () => {
@@ -74,7 +96,7 @@ test.describe('the decisions', () => {
   });
 
   test('reuse after expiry is refused; a superseded lease is closed', () => {
-    expect(decideLeaseCall(lease(), ctx({ now: T0 + LEASE_TTL_MS }))).toMatchObject({ ok: false, status: 403, code: 'lease-expired' });
+    expect(decideLeaseCall(lease(), ctx({ now: lease().expiresAt }))).toMatchObject({ ok: false, status: 403, code: 'lease-expired' });
     expect(decideLeaseCall(lease({ status: 'superseded' }), ctx())).toMatchObject({ ok: false, status: 403, code: 'lease-closed' });
   });
 
@@ -108,7 +130,7 @@ test.describe('the decisions', () => {
     expect(later).toMatchObject({ kind: 'issue', window: [T0 + 10, T0 + 20, T0 + LEASE_WINDOW_MS + 1] });
 
     // An expired or used-up lease of the same token is not handed back.
-    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + LEASE_TTL_MS, open, windowIssued: [] }).kind).toBe('issue');
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: lease().expiresAt, open, windowIssued: [] }).kind).toBe('issue');
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + 5, open: [lease({ used: 26 })], windowIssued: [] }).kind).toBe('issue');
   });
 
@@ -294,7 +316,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(issued.lease.budget).toBe(LEASE_MAX_CALLS);
 
     expect(await acquireLeaseCall(db(), ref, { uid: id('stranger'), now })).toMatchObject({ ok: false, status: 403, code: 'lease-invalid' });
-    expect(await acquireLeaseCall(db(), ref, { uid, now: now + LEASE_TTL_MS + 1 })).toMatchObject({ ok: false, status: 403, code: 'lease-expired' });
+    expect(await acquireLeaseCall(db(), ref, { uid, now: issued.lease.expiresAt + 1 })).toMatchObject({ ok: false, status: 403, code: 'lease-expired' });
 
     for (let i = 0; i < LEASE_MAX_CALLS; i++) {
       const got = await acquireLeaseCall(db(), ref, { uid, now: now + 10 });

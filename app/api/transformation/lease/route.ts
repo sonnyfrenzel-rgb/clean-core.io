@@ -30,7 +30,7 @@ import { issueLease, voidLease } from '@/lib/transformation/lease-store';
  * passing the per-account limit of `/api/gemini` (20 an hour) would make one
  * generation cost the hour, so the generation buys a lease here instead, for
  * **one** unit of that same limit (`gemini:<uid>`), and its calls name the
- * lease. The decisions — budget, 4 in flight, 15 minutes, 3 leases an hour,
+ * lease. The decisions — budget, 4 in flight, its time (`leaseTtlMs`), 3 leases an hour,
  * one open lease per project, idempotent per generation token — are in
  * `lib/transformation/lease.ts`; the transaction in `lease-store.ts`.
  *

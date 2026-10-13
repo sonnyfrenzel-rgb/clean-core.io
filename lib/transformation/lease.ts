@@ -10,8 +10,9 @@
  *   - one lease costs **one unit** of the account's hourly model limit
  *     (`gemini:<uid>`), charged by `/api/transformation/lease`;
  *   - a lease is good for at most **48 calls** (`min(48, plannedCalls × 2 + 8)`),
- *     at most **4 in flight**, for **15 minutes**, for one project and one
- *     generation token;
+ *     at most **4 in flight**, for one project and one generation token;
+ *   - a lease lasts long enough for its budget (`leaseTtlMs`): 15 minutes at
+ *     least, more for a large plan, never more than 60;
  *   - an account gets at most **3 leases per hour**;
  *   - a project has at most one open lease: a new one supersedes the old,
  *     whose calls are refused from then on;
@@ -35,6 +36,8 @@
  * Pure: no Firestore, no Next. The store and the specs call these functions.
  */
 
+import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
+
 export const LEASE_RECORD_VERSION = 1;
 export const LEASE_COLLECTION = 'transformation_leases';
 export const LEASE_WINDOW_COLLECTION = 'transformation_lease_windows';
@@ -43,8 +46,10 @@ export const LEASE_WINDOW_COLLECTION = 'transformation_lease_windows';
 export const LEASE_MAX_CALLS = 48;
 /** The most calls of one lease in flight at once (§8.3). */
 export const LEASE_MAX_IN_FLIGHT = 4;
-/** How long a lease is valid. */
+/** The shortest a lease is valid. */
 export const LEASE_TTL_MS = 15 * 60 * 1000;
+/** The longest a lease is valid. */
+export const LEASE_MAX_TTL_MS = 60 * 60 * 1000;
 /** Leases per account and window. */
 export const LEASES_PER_WINDOW = 3;
 export const LEASE_WINDOW_MS = 60 * 60 * 1000;
@@ -102,6 +107,24 @@ const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isI
 export function leaseBudget(plannedCalls: number): number {
   const planned = Number.isInteger(plannedCalls) && plannedCalls > 0 ? Math.min(plannedCalls, LEASE_MAX_PLANNED_CALLS) : 1;
   return Math.min(LEASE_MAX_CALLS, planned * 2 + 8);
+}
+
+/**
+ * How long a lease of `budget` calls is valid: long enough for every call it
+ * buys, at most `LEASE_MAX_IN_FLIGHT` at a time, each allowed the route's full
+ * deadline (`MODEL_CALL_DEADLINE_MS`) — 15 minutes at least, 60 at most.
+ *
+ * A flat 15 minutes was shorter than a generation of a large program takes: on
+ * 13.10.2026 a 1,848-line program planned 29 fill calls; its calls took 9–292 s
+ * (median 165 s), the lease expired after 25 of them, the next call was refused
+ * (403, `lease-expired`) and the functions not yet asked stayed stubs. The time
+ * a lease lasts adds no call: the budget bounds the calls, the hourly limit
+ * bounds the leases.
+ */
+export function leaseTtlMs(budget: number): number {
+  const calls = Number.isInteger(budget) && budget > 0 ? Math.min(budget, LEASE_MAX_CALLS) : 1;
+  const waves = Math.ceil(calls / LEASE_MAX_IN_FLIGHT);
+  return Math.min(LEASE_MAX_TTL_MS, Math.max(LEASE_TTL_MS, waves * MODEL_CALL_DEADLINE_MS));
 }
 
 /** Shape check of a stored lease. Anything else is treated as no lease at all. */
@@ -246,7 +269,7 @@ export function newLeaseRecord(input: {
     inFlight: 0,
     status: 'open',
     createdAt: input.now,
-    expiresAt: input.now + LEASE_TTL_MS,
+    expiresAt: input.now + leaseTtlMs(input.budget),
   };
 }
 
