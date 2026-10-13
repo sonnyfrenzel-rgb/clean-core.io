@@ -244,7 +244,7 @@ export function candidateFiles(prep: Pick<EngineLedPrepared, 'scaffold'>, bodies
  * a check of the written functions (`lib/transformation/check-words.ts`).
  */
 export interface CheckSummary {
-  kind: 'guards' | 'lint' | 'cases' | 'probes';
+  kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';
   total: number;
   failed: number;
   passed?: number;

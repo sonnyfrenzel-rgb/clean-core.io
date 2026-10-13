@@ -31,6 +31,8 @@
 
 import type { CheckCount, CheckFailure, CheckKind, CheckScope, Verify, VerifyOutcome } from './orchestrator';
 
+export { affFormatsCheck } from './aff-check';
+
 export interface FileLike {
   path: string;
   content: string;
@@ -258,6 +260,8 @@ export interface RunnerVerifierDeps {
    * run `/api/run-tests` in verify mode. Throws when the runner cannot be reached.
    */
   runOnRunner?: (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer>;
+  /** The file-format check of the RAP track (`aff-check.ts`, `affFormatsCheck`); absent on the Node track, which writes no ABAP object files. */
+  formats?: (files: readonly FileLike[]) => { count: CheckCount; failures: CheckFailure[] };
   now?: () => number;
 }
 
@@ -278,6 +282,13 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       outcome.failures.push(...mapLintFindings(findings, spans));
     } else {
       outcome.notRun.push({ kind: 'lint', reason: 'no lints were given to this check' });
+    }
+
+    if (deps.formats) {
+      const t0 = now();
+      const f = deps.formats(files);
+      outcome.checks.push({ ...f.count, ms: now() - t0 });
+      outcome.failures.push(...f.failures);
     }
 
     const notRun = (kind: CheckKind, reason: string) => outcome.notRun.push({ kind, reason });

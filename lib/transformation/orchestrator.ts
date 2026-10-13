@@ -52,7 +52,7 @@ import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types
 /** One model call: the prompt in, the answer text out; must honour the signal. */
 export type FillModel = (prompt: string, signal: AbortSignal) => Promise<string>;
 
-export type CheckKind = 'lint' | 'cases' | 'probes';
+export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats';
 
 export interface CheckFailure {
   /** The unit the failure belongs to, or null when it is in engine-written code. */
