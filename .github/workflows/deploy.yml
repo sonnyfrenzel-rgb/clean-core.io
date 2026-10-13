@@ -513,6 +513,9 @@ jobs:
               echo "service=clean-core" >> "$GITHUB_OUTPUT"
               echo "db_id=clean-core-eu" >> "$GITHUB_OUTPUT"
               echo "app_url=https://clean-core.io" >> "$GITHUB_OUTPUT"
+              # The cost ceiling (see the deploy step): the value the service had
+              # before it was written here (read 13.10.2026), not a new one.
+              echo "max_instances=20" >> "$GITHUB_OUTPUT"
               ;;
             release)
               # Retired on 2026-08-31. `clean-core-test` was deleted: its serving
@@ -537,6 +540,7 @@ jobs:
               echo "service=clean-core-dev" >> "$GITHUB_OUTPUT"
               echo "db_id=ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360" >> "$GITHUB_OUTPUT"
               echo "app_url=https://dev.clean-core.io" >> "$GITHUB_OUTPUT"
+              echo "max_instances=10" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "Unsupported branch: $REF_NAME" >&2
@@ -687,6 +691,14 @@ jobs:
       # with a reason and /api/health reports degraded. There is nothing to
       # migrate: no model key was stored before 3.0.13, and the pre-3.0.13
       # record shape is no longer read.
+      #
+      # --max-instances is the cost ceiling, written here so it is a reviewed
+      # value and not one kept only in the service (20 on clean-core, 10 on
+      # clean-core-dev, as read on 13.10.2026; set per branch in env-ctx). The
+      # attempt limiter of /api/gemini (lib/attempt-limit.ts) counts in memory
+      # per instance, so its worst case for one account is this number times its
+      # allowance — raising it raises that bound too
+      # (docs/design/gemini-attempt-limit.md).
       - name: Deploy to Google Cloud Run
         if: steps.fresh.outputs.current == 'true'
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
@@ -698,6 +710,7 @@ jobs:
           flags: |
             --memory=2Gi
             --cpu=2
+            --max-instances=${{ steps.env-ctx.outputs.max_instances }}
             --allow-unauthenticated
             --service-account=clean-core-run@cleancore-491216.iam.gserviceaccount.com
             ${{ steps.env-ctx.outputs.app_network_flags }}

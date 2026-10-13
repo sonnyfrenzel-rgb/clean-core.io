@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
+import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import {
   verifyRequestAuth,
   QuotaError,
@@ -36,6 +37,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
 import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
+import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@/lib/attempt-limit';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -207,6 +209,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // The attempt limit (docs/design/gemini-attempt-limit.md): every attempt of
+    // this account counts, leased or not, admin or not, whatever the gates below
+    // answer — and past the allowance it ends here, before the body is read and
+    // before any Firestore access. In memory, per instance; never skipped under
+    // the emulator flag.
+    const attempt = geminiAttemptLimiter.attempt(decodedToken.uid);
+    if (!attempt.ok) {
+      return NextResponse.json(
+        { error: attemptLimitMessage(attempt.retryAfterSeconds), code: ATTEMPT_LIMIT_CODE },
+        { status: 429, headers: { 'Retry-After': String(attempt.retryAfterSeconds) } },
+      );
+    }
+
     // Read once, here: whether the call names a generation lease decides which
     // budget it is counted against (roadmap 3.0.12, `lib/transformation/lease.ts`).
     // Read under a byte bound: this runs before any limiter, and `request.json()`
@@ -276,9 +291,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Server-side MFA gate
+    // Server-side MFA gate. `users/{uid}` is read once, here, and handed to the
+    // account gate and the stage switch below, which used to read it again each
+    // (docs/design/gemini-attempt-limit.md: 4 → 2 reads on a leased call). Read
+    // inside this try, where the gate read it before, so a failed read is
+    // answered as it was.
+    let profile: DocumentSnapshot;
     try {
-      await assertMfaSatisfied(request, decodedToken);
+      profile = await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get();
+      await assertMfaSatisfied(request, decodedToken, { profile });
     } catch (mfaErr: any) {
       return NextResponse.json(
         { error: mfaErr.message || 'MFA verification required.' },
@@ -294,6 +315,7 @@ export async function POST(request: NextRequest) {
         requireApproved: true,
         requireCurrentTerms: true,
         isAdminClaim: decodedToken.admin === true,
+        profile,
       });
     } catch (gateErr: any) {
       if (gateErr instanceof QuotaError) {
@@ -334,8 +356,6 @@ export async function POST(request: NextRequest) {
       if (!isModelStage(stage)) {
         return NextResponse.json({ error: `Unknown model stage: ${stage}.` }, { status: 400 });
       }
-      const { db } = await getAdminDb();
-      const profile = await db.collection('users').doc(decodedToken.uid).get();
       if (!modelStageEnabled(profile.exists ? (profile.data() as { modelStages?: Record<string, boolean> }) : null, stage)) {
         return NextResponse.json(
           {
