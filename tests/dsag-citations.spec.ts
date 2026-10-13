@@ -129,24 +129,51 @@ test.describe('code that cites the guide cites an adopted section', () => {
     return out;
   }
 
-  test('every "// DSAG ABAP guideline:" comment names a section a row adopts', () => {
-    const adopted = new Set(
-      DSAG_CITATIONS.filter((c) => c.status !== 'not-adopted').flatMap((c) => c.sections.map((s) => dsagGuidelineComment(s.file, s.heading))),
-    );
+  const adopted = new Set(
+    DSAG_CITATIONS.filter((c) => c.status !== 'not-adopted').flatMap((c) => c.sections.map((s) => dsagGuidelineComment(s.file, s.heading))),
+  );
+  /**
+   * The two lines of the module that defines the convention which carry the
+   * prefix without being a citation: the constant and the doc comment showing
+   * the form. Every other line with the prefix must parse as a citation (QA
+   * review of c38f8043f118, a3c76eeb0475: an unparsed one used to pass unread).
+   */
+  const CONVENTION_LINES: readonly string[] = [
+    "export const DSAG_GUIDELINE_COMMENT_PREFIX = '// DSAG ABAP guideline: ';",
+    ' * implements a row cites it as `// DSAG ABAP guideline: <file> § <heading>`',
+  ];
+  function citationProblems(file: string, text: string): string[] {
     const prefix = DSAG_GUIDELINE_COMMENT_PREFIX.trim();
-    const unknown: string[] = [];
+    const problems: string[] = [];
+    text.split(/\r?\n/).forEach((line, i) => {
+      const at = line.indexOf(prefix);
+      if (at < 0) return;
+      const m = /\/\/ DSAG ABAP guideline: (\S+\.md) § (.+?)\s*$/.exec(line.slice(at));
+      if (!m) {
+        const convention = file.replace(/\\/g, '/') === 'lib/dsag-citations.ts' && CONVENTION_LINES.some((c) => line.startsWith(c));
+        if (!convention) problems.push(`${file}:${i + 1} malformed citation: ${line.trim().slice(0, 120)}`);
+        return;
+      }
+      if (!adopted.has(dsagGuidelineComment(m[1], m[2]))) problems.push(`${file}:${i + 1} ${m[1]} § ${m[2]}`);
+    });
+    return problems;
+  }
+
+  test('a line with the citation prefix that does not parse is a failure, not a skip (QA c38f8043: a3c76eeb0475)', () => {
+    const cited = DSAG_CITATIONS.find((c) => c.status !== 'not-adopted')!.sections[0];
+    expect(citationProblems('lib/x.ts', `    ${dsagGuidelineComment(cited.file, cited.heading)}`)).toEqual([]);
+    expect(citationProblems('lib/x.ts', `    // DSAG ABAP guideline: ${cited.file}`)).toHaveLength(1);
+    expect(citationProblems('lib/x.ts', `    // DSAG ABAP guideline: ${cited.heading}`)).toHaveLength(1);
+    expect(citationProblems('lib/x.ts', CONVENTION_LINES[0])).toHaveLength(1);
+    expect(citationProblems('lib/dsag-citations.ts', CONVENTION_LINES.join('\n'))).toEqual([]);
+  });
+
+  test('every "// DSAG ABAP guideline:" comment names a section a row adopts', () => {
+    const problems: string[] = [];
     for (const file of ['app', 'components', 'lib', 'hooks', 'scripts'].filter((d) => fs.existsSync(path.join(ROOT, d))).flatMap((d) => walk(d))) {
-      read(file)
-        .split(/\r?\n/)
-        .forEach((line, i) => {
-          const at = line.indexOf(prefix);
-          if (at < 0) return;
-          const m = /\/\/ DSAG ABAP guideline: (\S+\.md) § (.+?)\s*$/.exec(line.slice(at));
-          if (!m) return; // the prefix constant itself, or prose about the convention
-          if (!adopted.has(dsagGuidelineComment(m[1], m[2]))) unknown.push(`${file}:${i + 1} ${m[1]} § ${m[2]}`);
-        });
+      problems.push(...citationProblems(file, read(file)));
     }
-    expect(unknown, 'cite a section a row of lib/dsag-citations.ts adopts, file and heading exactly as there').toEqual([]);
+    expect(problems, 'cite a section a row of lib/dsag-citations.ts adopts, file and heading exactly as there').toEqual([]);
   });
 });
 

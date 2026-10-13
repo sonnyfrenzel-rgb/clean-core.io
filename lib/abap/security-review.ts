@@ -176,16 +176,20 @@ export function readSecurityReviewTasksFrom(
   // it is opened has had what the task would ask for. The call counts for the
   // names it passes as actual parameters and for the accesses after it — a
   // call that validates another path, or this one only after the file was
-  // opened, does not (QA 03501b79). Order is the order of the source, not of
+  // opened, does not (QA 03501b79). Nor does it when the source writes the
+  // name again between the call and the access: what is opened then is not
+  // what was validated (QA c38f8043). Order is the order of the source, not of
   // execution.
-  const fileNameChecks = statements
-    .filter((s) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text))
-    .map((s) => ({
-      lineStart: s.lineStart,
-      names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))),
-    }));
-  const validatedBefore = (operand: string, line: number): boolean =>
-    fileNameChecks.some((c) => c.lineStart < line && c.names.has(baseName(operand)));
+  const isFileNameCheck = (s: AbapStatement) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text);
+  const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s)
+    ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
+    : []);
+  const writtenAt = statements.map((s) => (isFileNameCheck(s) ? new Set<string>() : writtenNames(s.text)));
+  const validatedBefore = (operand: string, access: number): boolean => {
+    const name = baseName(operand);
+    return fileNameChecks.some((c) => c.index < access && c.names.has(name)
+      && !writtenAt.slice(c.index + 1, access).some((w) => w.has(name)));
+  };
 
   const adbcLines = new Set(options.adbcLines ?? []);
   const adbcSeen = new Set<number>();
@@ -265,7 +269,7 @@ export function readSecurityReviewTasksFrom(
 
     // OPEN / DELETE DATASET — DSAG ABAP guideline: security/security-secure-development.md § Sichere Dateizugriffe und Pfadtraversal-Schutz
     const dataset = new RegExp(String.raw`^(OPEN|DELETE)\s+DATASET\s+(${OPERAND})`, 'i').exec(code);
-    if (dataset && fromInput(dataset[2]) && !validatedBefore(dataset[2], statement.lineStart)) {
+    if (dataset && fromInput(dataset[2]) && !validatedBefore(dataset[2], statements.indexOf(statement))) {
       tasks.push({
         kind: 'file-path-from-input',
         ...at(statement),
@@ -348,6 +352,31 @@ function baseName(operand: string): string {
   const dash = name.indexOf('-');
   if (dash > 0) name = name.slice(0, dash);
   return name;
+}
+
+/**
+ * The names a statement writes, by base name: the target of an assignment,
+ * `CONCATENATE … INTO`, `MOVE … TO`, `SPLIT … INTO`, `CLEAR`, `REPLACE … IN`,
+ * `TRANSLATE`, `CONDENSE`, `SHIFT` and `OVERLAY`, and every actual parameter
+ * after `IMPORTING` or `CHANGING` of a call — a value the call may hand back.
+ */
+function writtenNames(text: string): Set<string> {
+  const code = maskLiterals(text);
+  const names = new Set<string>();
+  const add = (operand: string) => names.add(baseName(operand.replace(/^DATA\(\s*([\w/]+)\s*\)$/i, '$1')));
+  let m: RegExpExecArray | null;
+  if ((m = new RegExp(String.raw`^(DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*(?:=|&&=|\+=|-=)`, 'i').exec(code))) add(m[1]);
+  if ((m = new RegExp(String.raw`^(?:CONCATENATE|SPLIT)\b[\s\S]*?\bINTO\s+((?:${OPERAND}\s*)+)`, 'i').exec(code))) {
+    for (const o of m[1].split(/\s+/)) if (o && !/^(?:TABLE|SEPARATED|RESPECTING|IN|DATA)$/i.test(o)) add(o);
+  }
+  if ((m = new RegExp(String.raw`^MOVE\b[\s\S]*?\bTO\s+(${OPERAND})`, 'i').exec(code))) add(m[1]);
+  if ((m = new RegExp(String.raw`^(?:CLEAR|TRANSLATE|CONDENSE|SHIFT|OVERLAY)\s+(${OPERAND})`, 'i').exec(code))) add(m[1]);
+  if ((m = new RegExp(String.raw`^REPLACE\b[\s\S]*?\bIN\s+(?:SECTION\b[\s\S]*?\bOF\s+)?(${OPERAND})`, 'i').exec(code))) add(m[1]);
+  for (const section of code.split(/\b(?=(?:EXPORTING|IMPORTING|CHANGING|TABLES|RECEIVING|EXCEPTIONS)\b)/i)) {
+    if (!/^(?:IMPORTING|CHANGING|TABLES|RECEIVING)\b/i.test(section)) continue;
+    for (const p of section.matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))) add(p[1]);
+  }
+  return names;
 }
 
 /**
