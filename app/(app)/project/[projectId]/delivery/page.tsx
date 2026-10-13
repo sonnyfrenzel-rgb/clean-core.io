@@ -93,7 +93,8 @@ import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, sco
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
 import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
-import { abapGitRepoSettingsXml } from '@/lib/transformation/abapgit-files';
+import { abapGitRepoSettingsXml, singleCallRapClassFiles } from '@/lib/transformation/abapgit-files';
+import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -429,7 +430,12 @@ export default function DeliveryPage() {
       const bundle = createDeliveryBundle();
       if (source.kind === 'package') {
         source.files.forEach((file) => {
-          bundle.file(file.path, file.content, 'generated');
+          // A class metadata file the model wrote without abapGit's structure
+          // (the single-call RAP prompt asks for one) is written here by the
+          // shared class builder instead; abapGit would refuse it as it came.
+          const xml = isAbapCloud ? deliverableClassXml(file.path, file.content) : null;
+          if (xml?.rebuilt) bundle.file(file.path, xml.content, 'engine');
+          else bundle.file(file.path, file.content, 'generated');
         });
       }
 
@@ -447,22 +453,9 @@ export default function DeliveryPage() {
         bundle.file(".abapgit.xml", abapGitRepoSettingsXml());
 
         if (!isModular && project.generatedCode) {
-          bundle.file("src/zcl_demo_rap_behavior.clas.abap", project.generatedCode, 'generated');
-          bundle.file("src/zcl_demo_rap_behavior.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <VSEOCLASS>
-   <CLSNAME>ZCL_DEMO_RAP_BEHAVIOR</CLSNAME>
-   <VERSION>1</VERSION>
-   <LANGU>E</LANGU>
-   <DESCRIPT>RAP Behavior Class</DESCRIPT>
-   <STATE>1</STATE>
-   <CLSCCINCL>X</CLSCCINCL>
-   <FIXPT>X</FIXPT>
-   <UNICODE>X</UNICODE>
-  </VSEOCLASS>
- </asx:values>
-</asx:abap>`);
+          // The metadata file in abapGit's serializer format (the <abapGit>
+          // wrapper abapGit reads first), from the builder every class uses.
+          for (const f of singleCallRapClassFiles('behavior', project.generatedCode)) bundle.file(f.path, f.content, f.origin);
         }
       }
 
@@ -477,24 +470,7 @@ export default function DeliveryPage() {
       // Add Test Suite (if not already included inside modular files)
       if (project.testSuite?.code) {
         if (isAbapCloud) {
-          bundle.file("src/zcl_demo_rap_test.clas.abap", project.testSuite.code, 'generated');
-          bundle.file("src/zcl_demo_rap_test.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <VSEOCLASS>
-   <CLSNAME>ZCL_DEMO_RAP_TEST</CLSNAME>
-   <VERSION>1</VERSION>
-   <LANGU>E</LANGU>
-   <DESCRIPT>ABAP Unit Test Class for RAP Service</DESCRIPT>
-   <CATEGORY>05</CATEGORY>
-   <STATE>1</STATE>
-   <CLSCCINCL>X</CLSCCINCL>
-   <FIXPT>X</FIXPT>
-   <UNICODE>X</UNICODE>
-   <WITH_UNIT_TESTS>X</WITH_UNIT_TESTS>
-  </VSEOCLASS>
- </asx:values>
-</asx:abap>`);
+          for (const f of singleCallRapClassFiles('test', project.testSuite.code)) bundle.file(f.path, f.content, f.origin);
         } else {
           const testPath = isModular ? "test.ts" : "src/test.ts";
           bundle.file(testPath, project.testSuite.code, 'generated');

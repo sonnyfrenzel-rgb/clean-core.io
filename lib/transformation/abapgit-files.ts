@@ -128,8 +128,12 @@ export function devcXml(description: string): string {
 export interface ClassMeta {
   name: string;
   description: string;
-  /** `06` a behavior pool (with `behaviorFor`), `40` an exception class; none for an ordinary class. */
-  category?: '06' | '40';
+  /**
+   * `06` a behavior pool (with `behaviorFor`), `40` an exception class, `05` a
+   * global test class (ABAP Unit; the category the single-call delivery always
+   * wrote for its test class); none for an ordinary class.
+   */
+  category?: '05' | '06' | '40';
   behaviorFor?: string;
   withUnitTests?: boolean;
 }
@@ -149,6 +153,32 @@ export function clasXml(c: ClassMeta): string {
     ...(c.withUnitTests ? ([['WITH_UNIT_TESTS', 'X']] as Node[]) : []),
   ];
   return objectXml('CLAS', [['VSEOCLASS', fields]]);
+}
+
+/**
+ * The two classes of the older single-call RAP delivery (the Delivery stage's
+ * bundle when no engine-led package was built): the model's code as a
+ * behavior class and its test suite as an ABAP Unit test class. Their
+ * metadata files come from `clasXml` like every other class, so abapGit reads
+ * them: the hand-written XML the page used to write had no `<abapGit>` wrapper
+ * and abapGit refused it ("abapGit element not found").
+ */
+export const SINGLE_CALL_RAP_CLASSES = {
+  behavior: { name: 'ZCL_DEMO_RAP_BEHAVIOR', description: 'RAP Behavior Class' },
+  test: { name: 'ZCL_DEMO_RAP_TEST', description: 'ABAP Unit Test Class for RAP Service', category: '05', withUnitTests: true },
+} as const satisfies Record<string, ClassMeta>;
+
+/**
+ * The source and metadata file of one single-call RAP class, under `src/`: the
+ * source as the model generated it, the metadata file written here.
+ */
+export function singleCallRapClassFiles(which: keyof typeof SINGLE_CALL_RAP_CLASSES, source: string): Array<{ path: string; content: string; origin: 'generated' | 'engine' }> {
+  const meta = SINGLE_CALL_RAP_CLASSES[which];
+  const base = `src/${meta.name.toLowerCase()}.clas`;
+  return [
+    { path: `${base}.abap`, content: source, origin: 'generated' },
+    { path: `${base}.xml`, content: clasXml(meta), origin: 'engine' },
+  ];
 }
 
 /** `<name>.intf.xml` (VSEOINTERF), exposure public. */
