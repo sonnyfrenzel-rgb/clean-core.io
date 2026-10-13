@@ -450,7 +450,9 @@ test.describe('the page', () => {
     expect(code).toMatch(/const warning = decisionWarning\(chainInputs\);/);
     expect(code).toMatch(/const nothingOpen = settled && tips\.length === 0 && warning === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?warning=\{warning\}/);
-    expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canGenerate \|\| files\.length > 0/);
+    // 13.10.2026: and only once the plan is read and the pre-flight check allows it.
+    expect(code).toMatch(/if \(autoStarted\.current \|\| !nothingOpen \|\| !canStart \|\| !planSettled \|\| files\.length > 0/);
+    expect(code).toMatch(/const canStart = canGenerate && planBlocked === null;/);
     expect(code).toMatch(/<QualityTips[\s\S]*?onGenerate=\{startGeneration\}/);
   });
 

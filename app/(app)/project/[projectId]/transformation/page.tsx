@@ -45,6 +45,10 @@ import { holdsStoredPackage, missingArtefacts, usableTestSuite, type GeneratedTe
 // light pieces are imported here; the engine, the scaffold and the
 // orchestrator are loaded when a generation starts.
 import type { GenerationLease, LeaseRequestError } from '@/lib/transformation/lease-client';
+import type { PlanView } from '@/components/transformation/GenerationPlan';
+import type { Preflight } from '@/lib/transformation/preflight';
+import { remainingFillEstimate, remainingWords, type ObservedCall } from '@/lib/transformation/duration-estimate';
+import { LEASE_MAX_PLANNED_CALLS } from '@/lib/transformation/lease';
 import type { CheckSummary, UnitRow } from '@/lib/transformation/engine-led';
 import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks } from '@/lib/transformation/check-words';
 import type { GenerationEvent } from '@/lib/transformation/types';
@@ -1127,6 +1131,12 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * (QA review of 03501b79, 55bc1b0b72d5, bb1c38a8601e, bad3737d8f46).
    */
   const abortRef = useRef<AbortController | null>(null);
+  /**
+   * Closes the running generation's lease on the server (13.10.2026): set once
+   * the lease is bought, called by *Cancel*. Best effort, never awaited — the
+   * screen does not wait for the server to stop.
+   */
+  const closeLeaseRef = useRef<(() => void) | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelledNote, setCancelledNote] = useState(false);
   const cancelGeneration = useCallback(() => {
@@ -1134,13 +1144,23 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     if (!abortRef.current) return;
     setCancelling(true);
     abortRef.current.abort();
+    closeLeaseRef.current?.();
+    closeLeaseRef.current = null;
   }, []);
+  /** The model calls of the running generation as they begin and end — the remaining-time estimate reads them. */
+  const [callLog, setCallLog] = useState<ObservedCall[]>([]);
+  /** The fill calls the running generation planned, for the estimate; null before the plan. */
+  const [plannedFillCalls, setPlannedFillCalls] = useState<number | null>(null);
+  /** The plan and its limits before the click (owner, 13.10.2026): undefined until asked, null where no engine plan applies. */
+  const [planView, setPlanView] = useState<PlanView | null | undefined>(undefined);
+  /** Bumped when a generation ends: the hour's generations and the plan are read again. */
+  const [planNonce, setPlanNonce] = useState(0);
   /** Which path the running generation is on — the engine-led one, or the single call it fell back to. */
   const [genPath, setGenPath] = useState<GenerationPathKey>('engine-led');
   /** The functions of the running generation (plan order) and the events that move them (§15.2). */
   const [unitRows, setUnitRows] = useState<UnitRow[] | null>(null);
   const [boardEvents, setBoardEvents] = useState<BoardEvent[]>([]);
-  const [boardFinal, setBoardFinal] = useState<Array<{ unitId: string; state: 'written' | 'not-written'; reason: string | null }> | null>(null);
+  const [boardFinal, setBoardFinal] = useState<Array<{ unitId: string; state: 'written' | 'not-written'; reason: string | null; code?: string | null; status?: number | null }> | null>(null);
   /** The chain as the page reads it, for the Built-on snapshot the store records (§15.4). */
   const slotsRef = useRef<ChainSlot[]>([]);
 
@@ -1163,8 +1183,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     setUnitRows(null);
     setBoardEvents([]);
     setBoardFinal(null);
+    setCallLog([]);
+    setPlannedFillCalls(null);
     const controller = new AbortController();
     abortRef.current = controller;
+    closeLeaseRef.current = null;
     let failed = false;
 
     // The rules, read again for the chain beside the contract — the one
@@ -1296,12 +1319,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       // never downloads the engine, the scaffold or the orchestrator (§6.1).
       const [
         { prepareScaffold },
-        { requestGenerationLease, leasedFillModel },
+        { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
         { createRunnerVerifier, runnerOverHttp, packageFormatsHook },
-        { guardBodyOf, candidateFiles, assembleEngineLed },
+        { guardBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
+        { preflight },
       ] = await Promise.all([
         import('@/lib/transformation/scaffold-client'),
         import('@/lib/transformation/lease-client'),
@@ -1310,6 +1334,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         import('@/lib/transformation/engine-led'),
         import('@/lib/artefact-digest'),
         import('@/lib/transformation/aff-schemas'),
+        import('@/lib/transformation/preflight'),
       ]);
       const prep = await prepareScaffold(
         {
@@ -1327,12 +1352,26 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       } else {
         setStageLog((log) => withFacts(log, 'scaffold', scaffoldFactsLines(prep.facts)));
         setUnitRows(prep.rows);
-        // 2. One lease for the whole generation: one unit of the hourly model
-        //    limit, at most 48 calls under it (owner, Q1). The user's own
-        //    limit is said as such; any other refusal falls back to the single
-        //    call, which keeps today's metering.
+        // A plan that cannot succeed does not start (owner, 13.10.2026) — the
+        // same check the start screen made before the click, made again on the
+        // plan this click built, before a lease is bought.
+        const facts = preflightFactsOf(prep, platformKnowledge);
+        const check = preflight({ ...facts, window: null });
+        if (check.blocked) {
+          const b = check.blocked;
+          throw new Error(`${b.label} — ${b.title}. ${b.detail} ${b.action} Nothing was generated.`);
+        }
+        setPlannedFillCalls(facts.fillCalls);
+        // 2. One lease for this run: one unit of the hourly model limit, at
+        //    most 48 calls under it (owner, Q1). Every click is its own run
+        //    (13.10.2026): a fresh run id, so a restart never reuses the lease
+        //    — and the in-flight slots — of a run that was cancelled. The
+        //    user's own limit is said as such; any other refusal falls back to
+        //    the single call, which keeps today's metering.
         try {
-          lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, 40));
+          lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, LEASE_MAX_PLANNED_CALLS), newGenerationRunId());
+          const bought = lease;
+          closeLeaseRef.current = () => closeGenerationLease(bought);
         } catch (leaseErr) {
           const e = leaseErr as LeaseRequestError;
           if (e.status === 429 || e.code === 'lease-hourly-limit' || e.code === 'model-hourly-limit') {
@@ -1349,12 +1388,21 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         // 3. The fills, up to four at a time, then the checks and at most two
         //    repair rounds for the failing functions only (§8, §13).
         enterPhase('model');
-        setStageLog((log) => enterStage(log, 'fills', Date.now(), { note: tfFillsNote(leaseNow.budget) }));
+        setStageLog((log) => enterStage(log, 'fills', Date.now(), { note: tfFillsNote(leaseNow.budget, prep.fillUnits.length) }));
         // One summary per check and scope: the runner checks come twice, once for
         // the engine's own code and once for the written functions (step E).
         const checkSummaries = new Map<string, CheckSummary>();
         const onEvent = (e: GenerationEvent) => {
-          if (e.t === 'fill') setBoardEvents((prev) => [...prev, { t: 'fill', unitId: e.unitId, state: e.state }]);
+          if (e.t === 'fill') {
+            setBoardEvents((prev) => [...prev, { t: 'fill', unitId: e.unitId, state: e.state, reason: e.reason, code: e.code, status: e.status }]);
+          }
+          if (e.t === 'call') {
+            setCallLog((prev) =>
+              e.state === 'start'
+                ? [...prev, { start: e.at }]
+                : prev.map((c, i) => (i === e.callId - 1 ? { ...c, end: e.at, admitted: e.admitted } : c)),
+            );
+          }
           if (e.t === 'repair') {
             setBoardEvents((prev) => [...prev, { t: 'repair', round: e.round, unitIds: e.unitIds, state: e.state }]);
             const at = Date.now();
@@ -1401,12 +1449,14 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           model: leasedFillModel(leaseNow),
           guardBody: guardBodyOf(prep),
           verify,
+          // The lease's own budget, as the server answered it (a fresh lease per
+          // run, so `used` is 0 unless this very run asked for it twice).
           budget: Math.max(0, leaseNow.budget - leaseNow.used),
           maxInFlight: leaseNow.maxInFlight,
           signal: controller.signal,
           onEvent,
         });
-        setBoardFinal(result.units.map((u) => ({ unitId: u.unitId, state: u.state, reason: u.reason })));
+        setBoardFinal(result.units.map((u) => ({ unitId: u.unitId, state: u.state, reason: u.reason, code: u.code ?? null, status: u.status ?? null })));
         if (result.status === 'cancelled') throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
         const writtenCount = result.units.filter((u) => u.state === 'written').length;
         setStageLog((log) =>
@@ -1458,7 +1508,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     } finally {
       generationInFlight.current = false;
       abortRef.current = null;
+      closeLeaseRef.current = null;
       setCancelling(false);
+      setPlanNonce((n) => n + 1);
       setStageLog((log) => finishStages(log, Date.now(), failed ? 'failed' : 'done'));
       setLoading(false);
       enterPhase('done');
@@ -1549,6 +1601,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    */
   const prerequisites = generationPrerequisites(project, 'transformation');
   const canGenerate = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0 && modelOff === null;
+  /** The pre-flight check (owner, 13.10.2026): a plan that cannot succeed does not start. */
+  const planBlocked: Preflight['blocked'] = planView && planView.state === 'ready' ? planView.preflight.blocked : null;
+  const canStart = canGenerate && planBlocked === null;
   /** Once a package exists the button replaces it, and says so. */
   const generateLabel = files.length > 0 ? 'Regenerate code' : 'Generate code';
   /** The first reason the code cannot be generated now, for the empty package card. */
@@ -1590,7 +1645,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
   /** The one way a generation starts — the header's button and "Generate now" alike. */
   const startGeneration = () => {
-    if (!canGenerate) return;
+    if (!canStart) return;
     // A package on record is replaced: asked first (ADR-083).
     if (files.length > 0) setReplaceCodeAsk(true);
     else generateTransformation();
@@ -1640,15 +1695,79 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * change what the generation uses, there is nothing to read first. Once per
    * visit, never over a package on record, and only where the button could.
    */
+  /**
+   * The plan before the click (owner, 13.10.2026): the same contract read and
+   * the same scaffold (in its worker) a click would make, and the account's
+   * generations this hour — so the start screen can say the limits that apply
+   * and keep a plan that cannot succeed from starting. Nothing is bought here:
+   * no lease, no model call. A program the engine cannot plan has no plan to
+   * show (the single call), and a read that fails says so and blocks nothing.
+   */
+  const planWanted = showTips && canGenerate && !loading;
+  useEffect(() => {
+    if (!planWanted) return;
+    let live = true;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const { decision, generation } = await fetchGenerationDecision(projectId as string);
+        if (!decision.ok || !generation) {
+          if (live) setPlanView(null);
+          return;
+        }
+        const [{ prepareScaffold }, { preflightFactsOf }, { preflight }, { readGenerationWindow }] = await Promise.all([
+          import('@/lib/transformation/scaffold-client'),
+          import('@/lib/transformation/engine-led'),
+          import('@/lib/transformation/preflight'),
+          import('@/lib/transformation/lease-client'),
+        ]);
+        const [prep, window] = await Promise.all([
+          prepareScaffold(
+            {
+              source: generation.inputs.legacyCode,
+              track: decision.isAbapCloud ? 'rap' : 'node',
+              program: projectRef.current?.name ?? null,
+              decisions: generation.inputs.context.decisions ?? [],
+              contextText: generation.inputs.context.text,
+            },
+            controller.signal,
+          ),
+          readGenerationWindow(),
+        ]);
+        if (!live) return;
+        if (!prep.ok) {
+          setPlanView(null);
+          return;
+        }
+        setPlanView({ state: 'ready', preflight: preflight({ ...preflightFactsOf(prep, generation.inputs.context.text), window }) });
+      } catch {
+        if (live) setPlanView({ state: 'unavailable' });
+      }
+    })();
+    return () => {
+      live = false;
+      controller.abort();
+    };
+  }, [planWanted, projectId, planNonce]);
+
   const autoStarted = useRef(false);
   // Never by itself while the decision warning shows: the reader decides to generate against it.
   const nothingOpen = settled && tips.length === 0 && warning === null;
+  // ... and only once the plan is read and allows it (owner, 13.10.2026).
+  const planSettled = planView !== undefined && planView?.state !== 'reading';
   useEffect(() => {
-    if (autoStarted.current || !nothingOpen || !canGenerate || files.length > 0 || modelAvailability.loading || loading) return;
+    if (autoStarted.current || !nothingOpen || !canStart || !planSettled || files.length > 0 || modelAvailability.loading || loading) return;
     autoStarted.current = true;
     const timer = setTimeout(() => generateTransformation(), 0);
     return () => clearTimeout(timer);
-  }, [nothingOpen, canGenerate, files.length, modelAvailability.loading, loading, generateTransformation]);
+  }, [nothingOpen, canStart, planSettled, files.length, modelAvailability.loading, loading, generateTransformation]);
+
+  /** The fills' time left — an estimate in words, from the calls that finished (owner, 13.10.2026). */
+  const fillsEstimate =
+    generating && generationPhase?.key === 'model' && plannedFillCalls !== null
+      ? remainingFillEstimate({ plannedCalls: plannedFillCalls, calls: callLog, now })
+      : null;
+  const fillsRemaining = fillsEstimate ? remainingWords(fillsEstimate) : null;
 
   if (generating) return (
     <StageFrame stage="transformation">
@@ -1671,6 +1790,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         // Withheld while the package is stored: that write cannot be cancelled.
         onCancel={generationPhase?.key === 'storing' ? undefined : cancelGeneration}
         cancelling={cancelling}
+        remaining={fillsRemaining}
       />
     </StageFrame>
   );
@@ -1899,7 +2019,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               // enabled click always starts the generation, which ends in the
               // code, a contract refusal or the error strip.
               onClick={startGeneration}
-              disabled={!canGenerate}
+              disabled={!canStart}
               aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
               data-generate-code=""
             >
@@ -1933,7 +2053,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         onKeep={() => setReplaceCodeAsk(false)}
         onReplace={() => {
           setReplaceCodeAsk(false);
-          if (canGenerate) generateTransformation();
+          if (canStart) generateTransformation();
         }}
       />
 
@@ -1985,9 +2105,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           warning={warning}
           settled={settled}
           slots={chainSlots(chainInputs)}
-          canGenerate={canGenerate}
+          canGenerate={canStart}
           busy={busy}
           regenerate={files.length > 0}
+          plan={planView === undefined ? (planWanted ? { state: 'reading' } : null) : planView}
           keySource={modelAvailability.keySource}
           onGenerate={startGeneration}
           conceptSource={legacySource}

@@ -21,7 +21,7 @@
  */
 
 import { deriveEngineCases } from '../testing-engine-cases';
-import { bundleFills } from './fill-prompt';
+import { LEASED_PROMPT_MAX_CHARS, bundleFills } from './fill-prompt';
 import { bodyGuards, spliceBodies } from './markers';
 import { buildNodeScaffold } from './scaffold-node';
 import { buildRapScaffold } from './scaffold-rap';
@@ -41,9 +41,28 @@ import {
   type Trace,
   type UnitPlan,
 } from './types';
-import type { GenerationRunResult, UnitOutcome } from './orchestrator';
+import { fillOrder, type GenerationRunResult, type UnitOutcome } from './orchestrator';
+import type { PreflightInput } from './preflight';
 
 /* ------------------------------------------------------------ preparation */
+
+/**
+ * The plan's facts for the pre-flight check (owner, 13.10.2026): the fill
+ * calls of the first wave bundled exactly as the orchestrator bundles them
+ * (plan order, the page's bundle options), and the calls whose prompt the
+ * route would refuse.
+ */
+export function preflightFactsOf(prep: EngineLedPrepared, context: string): Omit<PreflightInput, 'window'> {
+  const order = fillOrder(prep.plan.units);
+  const byId = new Map(prep.fillUnits.map((u) => [u.unitId, u]));
+  const ordered = [...order.map((id) => byId.get(id)).filter((u): u is FillRequestUnit => !!u), ...prep.fillUnits.filter((u) => !order.includes(u.unitId))];
+  const bundles = bundleFills(ordered, { track: prep.scaffold.track, program: prep.plan.program, context });
+  return {
+    functions: prep.fillUnits.length,
+    fillCalls: Math.max(1, bundles.length),
+    oversize: bundles.filter((b) => b.prompt.length > LEASED_PROMPT_MAX_CHARS).map((b) => ({ unitIds: b.unitIds, chars: b.prompt.length })),
+  };
+}
 
 export interface EngineLedRequest {
   source: string;

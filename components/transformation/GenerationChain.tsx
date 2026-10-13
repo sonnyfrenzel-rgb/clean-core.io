@@ -46,6 +46,7 @@ export default function GenerationChain({
   units = null,
   onCancel,
   cancelling = false,
+  remaining = null,
 }: {
   program: string | null | undefined;
   slots: ChainSlot[];
@@ -61,6 +62,12 @@ export default function GenerationChain({
   /** Stops the generation before its package is stored. Absent: no button (none to run, or the store has begun). */
   onCancel?: () => void;
   cancelling?: boolean;
+  /**
+   * The time left, as an estimate in words ("estimate: about 12–16 minutes
+   * left", `lib/transformation/duration-estimate.ts`) — beside the elapsed
+   * time, never a countdown (owner, 13.10.2026). Null when nothing is known.
+   */
+  remaining?: string | null;
 }) {
   const announcement = useAnnouncements(slots, lit, stages);
   const engineLed = stages.some((s) => s.key === 'scaffold');
@@ -74,6 +81,11 @@ export default function GenerationChain({
           <span aria-label={wt('transformation.elapsed')} data-generation-elapsed-total="" className="font-cc-mono text-[13px] font-semibold text-cc-ink-muted tabular-nums">
             {startedAt === null ? '0:00' : formatElapsed(now - startedAt)}
           </span>
+          {remaining ? (
+            <span data-generation-remaining="" className="text-[13px] font-semibold text-cc-ink-muted">
+              {remaining}
+            </span>
+          ) : null}
           {onCancel ? (
             <span className="ml-auto">
               <CcButton icon={<X size={16} aria-hidden="true" />} onClick={onCancel} busy={cancelling} data-generation-cancel="">
@@ -160,9 +172,15 @@ function UnitsPanel({ units }: { units: UnitBoard | null }) {
                     {r.rules.length > 0 ? ` · ${r.rules.slice(0, 4).join(' ')}${r.rules.length > 4 ? ' …' : ''}` : ''}
                   </span>
                 </span>
-                <span data-unit-word="" className={cn('col-start-2 text-[12px] font-semibold sm:col-start-auto sm:whitespace-nowrap', UNIT_STATE_CLASS[r.state])}>
+                <span data-unit-word="" className={cn('col-start-2 text-[12px] font-semibold sm:col-start-auto', UNIT_STATE_CLASS[r.state])}>
                   {r.word}
                 </span>
+                {r.code ? (
+                  <span data-unit-code={r.code} className="col-start-2 text-[12px] font-medium text-cc-ink-muted sm:col-span-2">
+                    <span className="font-cc-mono font-semibold text-cc-ink">{r.code}</span>
+                    {r.hint ? <> — {r.hint}</> : null}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ol>

@@ -122,7 +122,10 @@ export interface BundleOptions {
   /** Repair rounds: the failure and previous body per unit id. */
   repair?: ReadonlyMap<string, FillRepair> | null;
   unitsPerCall?: number;
+  /** The most characters of a call of several units (default `FILL_PROMPT_MAX_CHARS`). */
   maxChars?: number;
+  /** The most characters of a call of one unit before its context or ABAP is cut (default `LEASED_PROMPT_MAX_CHARS`). */
+  maxAloneChars?: number;
 }
 
 function cutRepair(r: FillRepair): FillRepair {
@@ -186,12 +189,17 @@ function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[
 
 /**
  * The fill calls for these units, in their order: ≤ 4 units and ≤ 14,000
- * characters per prompt. Never drops a unit; a unit too large alone is cut
- * (context first, then its ABAP slice from the end) and the cut is reported.
+ * characters per prompt of several units. A unit that does not fit 14,000
+ * goes alone, and alone it may use up to `LEASED_PROMPT_MAX_CHARS` (28,000)
+ * uncut (13.10.2026: cutting a unit to 14,000 dropped 108 of its ABAP lines,
+ * and the model then — rightly — declined it every time). Never drops a unit;
+ * a unit too large even for that is cut (context first, then its ABAP slice
+ * from the end) and the cut is reported.
  */
 export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptions): FillBundle[] {
   const perCall = Math.max(1, Math.min(opts.unitsPerCall ?? FILL_UNITS_PER_CALL, 6));
   const maxChars = opts.maxChars ?? FILL_PROMPT_MAX_CHARS;
+  const maxAlone = Math.max(maxChars, opts.maxAloneChars ?? LEASED_PROMPT_MAX_CHARS);
   const context = cutContext(opts.context, FILL_CONTEXT_MAX_CHARS).text;
 
   const bundles: FillBundle[] = [];
@@ -211,20 +219,27 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       continue;
     }
     close();
-    if (fillPrompt(requestOf(opts, context, [unit])).length <= maxChars) {
+    const aloneRequest = requestOf(opts, context, [unit]);
+    const alonePrompt = fillPrompt(aloneRequest);
+    if (alonePrompt.length <= maxChars) {
       current = [unit];
+      continue;
+    }
+    if (alonePrompt.length <= maxAlone) {
+      // Too large to share a call, small enough to go alone uncut.
+      bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [] });
       continue;
     }
     // Alone and still too large: give up context, then the end of the slice.
     const trimmed: FillBundle['trimmed'] = [];
     let ctx = context;
     let u = unit;
-    let over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+    let over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
     if (over > 0 && ctx.length > 0) {
       const cut = cutContext(ctx, Math.max(0, ctx.length - over - 80));
       trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length });
       ctx = cut.text;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
     }
     // JSON escaping makes a character of the slice cost more than one in the
     // prompt, so the cut is measured again until it fits.
@@ -233,7 +248,7 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       const cut = cutAbap(unit, over + abapCut);
       abapCut = cut.cut;
       u = cut.unit;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxChars;
+      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
       if (cut.unit.abap.text.split('\n').length <= 2) break;
     }
     if (abapCut > 0) trimmed.push({ unitId: unit.unitId, what: 'abap', chars: abapCut });

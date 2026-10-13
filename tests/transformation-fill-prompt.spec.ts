@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   FILL_CONTEXT_MAX_CHARS,
   FILL_PROMPT_MAX_CHARS,
+  LEASED_PROMPT_MAX_CHARS,
   FILL_RULE_NUMBERS,
   FILL_UNITS_PER_CALL,
   bundleFills,
@@ -65,7 +66,8 @@ test.describe('bundles: ≤ 4 units and ≤ 14,000 characters per call', () => {
   test('every prompt fits, every unit is asked exactly once and in the given order', () => {
     const bundles = bundleFills(units, OPTS);
     for (const b of bundles) {
-      expect(b.prompt.length, b.unitIds.join(',')).toBeLessThanOrEqual(FILL_PROMPT_MAX_CHARS);
+      // Several units share at most 14,000 characters; one unit alone may use up to 28,000 (13.10.2026).
+      expect(b.prompt.length, b.unitIds.join(',')).toBeLessThanOrEqual(b.unitIds.length > 1 ? FILL_PROMPT_MAX_CHARS : LEASED_PROMPT_MAX_CHARS);
       expect(b.unitIds.length).toBeGreaterThanOrEqual(1);
       expect(b.unitIds.length).toBeLessThanOrEqual(FILL_UNITS_PER_CALL);
       expect(b.request.context.length).toBeLessThanOrEqual(FILL_CONTEXT_MAX_CHARS);
@@ -73,11 +75,26 @@ test.describe('bundles: ≤ 4 units and ≤ 14,000 characters per call', () => {
     expect(bundles.flatMap((b) => b.unitIds)).toEqual(units.map((u) => u.unitId));
   });
 
+  test('a unit between 14,000 and 28,000 characters goes alone and uncut (13.10.2026)', () => {
+    // Cut to 14,000, a unit lost 108 of its ABAP lines and the model declined it every time.
+    const big = unit(1, 220, { abap: { ranges: [{ lineStart: 1, lineEnd: 220, routine: 'LOAD' }], text: abapText(1, 220, 70) } });
+    const [b, ...rest] = bundleFills([big, unit(2, 3), unit(3, 3)], OPTS);
+    expect(b.unitIds).toEqual(['U01']);
+    expect(b.prompt.length).toBeGreaterThan(FILL_PROMPT_MAX_CHARS);
+    expect(b.prompt.length).toBeLessThanOrEqual(LEASED_PROMPT_MAX_CHARS);
+    expect(b.trimmed).toEqual([]);
+    expect(b.request.units[0].abap.text).toBe(big.abap.text);
+    expect(b.prompt).not.toContain('cut to fit the prompt budget');
+    // The units after it still share a call of at most 14,000.
+    expect(rest.map((r) => r.unitIds)).toEqual([['U02', 'U03']]);
+    expect(rest[0].prompt.length).toBeLessThanOrEqual(FILL_PROMPT_MAX_CHARS);
+  });
+
   test('a unit past the hard slice budget is cut — context first, then the end of its slice — and the cut is said', () => {
-    const huge = unit(1, 220, { abap: { ranges: [{ lineStart: 1, lineEnd: 220, routine: 'LOAD' }], text: abapText(1, 220, 70) } });
-    expect(huge.abap.text.length).toBeGreaterThan(12_000);
+    const huge = unit(1, 440, { abap: { ranges: [{ lineStart: 1, lineEnd: 440, routine: 'LOAD' }], text: abapText(1, 440, 70) } });
+    expect(huge.abap.text.length).toBeGreaterThan(LEASED_PROMPT_MAX_CHARS);
     const [b] = bundleFills([huge], OPTS);
-    expect(b.prompt.length).toBeLessThanOrEqual(FILL_PROMPT_MAX_CHARS);
+    expect(b.prompt.length).toBeLessThanOrEqual(LEASED_PROMPT_MAX_CHARS);
     expect(b.trimmed.map((t) => t.what)).toEqual(['context', 'abap']);
     expect(b.prompt).toContain('cut to fit the prompt budget');
   });

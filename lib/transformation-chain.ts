@@ -39,10 +39,12 @@ import { PHASES, staleness, type PhaseKey } from '@/lib/workflow-steps';
 import { choiceHref, type OriginKey } from '@/lib/choice-addresses';
 import { stageHref } from '@/lib/workspace-back-href';
 import { formatTextDate } from '@/lib/format';
-import { TRANSFORMATION_MESSAGES as M } from '@/lib/messages/transformation';
+import { TRANSFORMATION_MESSAGES as M, tfUnitAgain, tfUnitWaiting, tfUnitWriting } from '@/lib/messages/transformation';
 import { decisionRecordIsLive, recordedDecisionOf } from '@/lib/transformation-context';
 import { standardFitAssessed } from '@/lib/standard-fit-gate';
-import { LEASE_MAX_CALLS } from '@/lib/transformation/lease';
+import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '@/lib/transformation/lease';
+import { explainCode } from '@/lib/transformation/error-codes';
+import { perCallWords } from '@/lib/transformation/duration-estimate';
 
 /* ------------------------------------------------------------ prompt seam */
 
@@ -821,8 +823,17 @@ export interface UnitBoardRow {
   lines: string;
   rules: string[];
   state: 'waiting' | 'writing' | 'written' | 'repair' | 'repaired' | 'not-written';
-  /** "writing…", "written", "repair round 1…", "repaired (round 1)", "not written — …". */
+  /**
+   * What is going on, in plain words (owner, 13.10.2026): "waiting for a free
+   * slot (4 calls run at once)", "writing — the model is working (usually 8–20
+   * seconds)", "asked again: the first answer could not be used (…)",
+   * "not written — …", "repaired (round 1)".
+   */
   word: string;
+  /** The failure's code and status as shown — `lease-busy · 429` — or null when there is none. */
+  code: string | null;
+  /** One sentence of what the code means and one of what to do; null without a code. */
+  hint: string | null;
 }
 
 export interface UnitBoard {
@@ -835,8 +846,18 @@ export interface UnitBoard {
 
 /** The generation events the panel reads (`GenerationEvent`, design §15.5) — only the ones it needs. */
 export type BoardEvent =
-  | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable' }
+  | { t: 'fill'; unitId: string; state: 'writing' | 'waiting-slot' | 'written' | 'refused' | 'unusable'; reason?: string; code?: string; status?: number }
   | { t: 'repair'; round: 1 | 2; unitIds: string[]; state: 'start' | 'done' };
+
+/** "lease-busy · 429" and its two sentences — from the one table (`lib/transformation/error-codes.ts`). */
+function codeOf(code: string | undefined | null, status?: number | null): { code: string | null; hint: string | null } {
+  if (!code && !status) return { code: null, hint: null };
+  const e = explainCode(code ?? null, status ?? null);
+  return { code: e.label, hint: `${e.explain} ${e.action}` };
+}
+
+/** A reason without the "not written — " the orchestrator may already have put in front of it. */
+const bare = (reason: string) => reason.replace(/^not written — /, '');
 
 /**
  * The work panel from the plan's rows and the generation's events, in order.
@@ -845,10 +866,12 @@ export type BoardEvent =
 export function unitBoard(
   rows: ReadonlyArray<{ unitId: string; title: string; lines: string; rules: string[] }>,
   events: readonly BoardEvent[],
-  final?: ReadonlyArray<{ unitId: string; state: 'written' | 'not-written'; reason: string | null }>,
+  final?: ReadonlyArray<{ unitId: string; state: 'written' | 'not-written'; reason: string | null; code?: string | null; status?: number | null }>,
 ): UnitBoard {
   const state = new Map<string, UnitBoardRow['state']>(rows.map((r) => [r.unitId, 'waiting']));
-  const word = new Map<string, string>(rows.map((r) => [r.unitId, M['transformation.unit.waiting']]));
+  const word = new Map<string, string>(rows.map((r) => [r.unitId, tfUnitWaiting(LEASE_MAX_IN_FLIGHT)]));
+  const code = new Map<string, { code: string | null; hint: string | null }>(rows.map((r) => [r.unitId, { code: null, hint: null }]));
+  const clear = { code: null, hint: null };
   let round = 0;
   for (const e of events) {
     if (e.t === 'repair') {
@@ -858,6 +881,7 @@ export function unitBoard(
           if (!state.has(id)) continue;
           state.set(id, 'repair');
           word.set(id, `repair round ${e.round}…`);
+          code.set(id, clear);
         }
       } else {
         for (const id of e.unitIds) {
@@ -873,22 +897,37 @@ export function unitBoard(
     if (e.state === 'writing') {
       if (round === 0) {
         state.set(e.unitId, 'writing');
-        word.set(e.unitId, M['transformation.unit.writing']);
+        word.set(e.unitId, tfUnitWriting(perCallWords()));
+        // A function asked again keeps the code of why, until it is answered.
       }
+    } else if (e.state === 'waiting-slot') {
+      if (round === 0) {
+        state.set(e.unitId, 'writing');
+        word.set(e.unitId, M['transformation.unit.waitingSlot']);
+      }
+      code.set(e.unitId, codeOf(e.code, e.status));
     } else if (e.state === 'written') {
       state.set(e.unitId, round > 0 ? 'repaired' : 'written');
       word.set(e.unitId, round > 0 ? `repaired (round ${round})` : M['transformation.unit.written']);
+      code.set(e.unitId, clear);
     } else if (round === 0) {
       state.set(e.unitId, e.state === 'refused' ? 'not-written' : 'waiting');
-      word.set(e.unitId, e.state === 'refused' ? M['transformation.unit.refused'] : M['transformation.unit.again']);
+      word.set(
+        e.unitId,
+        e.state === 'refused'
+          ? e.reason ? `not written — ${bare(e.reason)}` : M['transformation.unit.refused']
+          : tfUnitAgain(e.reason ? bare(e.reason) : null),
+      );
+      code.set(e.unitId, codeOf(e.code, e.status));
     }
   }
   for (const f of final ?? []) {
     if (f.state !== 'not-written' || !state.has(f.unitId)) continue;
     state.set(f.unitId, 'not-written');
-    word.set(f.unitId, `not written — ${f.reason ?? 'no answer'}`);
+    word.set(f.unitId, `not written — ${f.reason ? bare(f.reason) : 'no answer'}`);
+    if (f.code || f.status) code.set(f.unitId, codeOf(f.code, f.status));
   }
-  const out = rows.map((r) => ({ ...r, state: state.get(r.unitId)!, word: word.get(r.unitId)! }));
+  const out = rows.map((r) => ({ ...r, state: state.get(r.unitId)!, word: word.get(r.unitId)!, ...code.get(r.unitId)! }));
   return {
     rows: out,
     total: out.length,

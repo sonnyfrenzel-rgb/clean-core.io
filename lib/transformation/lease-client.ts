@@ -29,19 +29,77 @@ export class LeaseRequestError extends Error {
   }
 }
 
-/** One lease for one generation of this project, at the generation token the contract route handed out. */
-export async function requestGenerationLease(projectId: string, generationToken: string, plannedCalls: number): Promise<GenerationLease> {
+/**
+ * A fresh id for one click of *Generate*. The lease route returns an open lease
+ * only to the run it was issued to, so a restart after *Cancel* never inherits
+ * the in-flight slots the cancelled run's calls still hold (13.10.2026).
+ */
+export function newGenerationRunId(): string {
+  const c = (globalThis as { crypto?: Crypto }).crypto;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (c && typeof c.getRandomValues === 'function') c.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
   const token = await getAuth().currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** One lease for one run of this project's generation, at the generation token the contract route handed out. */
+export async function requestGenerationLease(projectId: string, generationToken: string, plannedCalls: number, runId: string): Promise<GenerationLease> {
   const res = await fetch('/api/transformation/lease', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ projectId, generationToken, plannedCalls }),
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify({ projectId, generationToken, plannedCalls, runId }),
   });
   const body = (await res.json().catch(() => null)) as { lease?: GenerationLease; error?: string; code?: string } | null;
   if (!res.ok || !body?.lease) {
     throw new LeaseRequestError(body?.error || `The generation could not be prepared (HTTP ${res.status}).`, res.status, body?.code);
   }
   return body.lease;
+}
+
+/**
+ * *Cancel*: close the run's lease on the server. Best effort and never awaited
+ * by the screen — a close that fails leaves a lease the next run supersedes
+ * anyway. `keepalive` lets it finish when the tab is closed.
+ */
+export function closeGenerationLease(lease: LeaseReference): void {
+  void (async () => {
+    try {
+      await fetch('/api/transformation/lease', {
+        method: 'DELETE',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({ projectId: lease.projectId, leaseId: lease.leaseId }),
+      });
+    } catch {
+      /* best effort: the next run supersedes it */
+    }
+  })();
+}
+
+export interface GenerationWindow {
+  used: number;
+  limit: number;
+  nextFreeInSeconds: number | null;
+}
+
+/** The account's generations this hour (`GET /api/transformation/lease`), or null when they could not be read. */
+export async function readGenerationWindow(): Promise<GenerationWindow | null> {
+  try {
+    const res = await fetch('/api/transformation/lease', { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const body = (await res.json().catch(() => null)) as { window?: { used?: unknown; limit?: unknown; nextFreeInSeconds?: unknown } } | null;
+    const w = body?.window;
+    if (!w || typeof w.used !== 'number' || typeof w.limit !== 'number') return null;
+    return { used: w.used, limit: w.limit, nextFreeInSeconds: typeof w.nextFreeInSeconds === 'number' ? w.nextFreeInSeconds : null };
+  } catch {
+    return null;
+  }
 }
 
 /** The fill model call under a lease: stage `transformation`, fill answer shape, aborted with the generation. */

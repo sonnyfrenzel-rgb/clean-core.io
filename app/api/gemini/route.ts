@@ -34,10 +34,11 @@ import { resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
-import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
-import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
+import { LEASE_CODES, leaseReferenceOf } from '@/lib/transformation/lease';
+import { acquireLeaseCall, peekLease, releaseLeaseCall, type HeldLeaseSlot } from '@/lib/transformation/lease-store';
 import { LEASED_PROMPT_MAX_CHARS } from '@/lib/transformation/fill-prompt';
 import { modelUsageLog } from '@/lib/model-usage-log';
+import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
 
 /**
@@ -199,7 +200,7 @@ async function callWithRetry<T>(
 
 export async function POST(request: NextRequest) {
   // The generation lease whose in-flight slot this call holds, given back in `finally`.
-  let heldLease: LeaseReference | null = null;
+  let heldLease: HeldLeaseSlot | null = null;
   // The deadline of the model call (`lib/model-deadline.ts`), counted from the
   // request's arrival, so the route answers before Cloud Run ends it at 300 s.
   const arrivedAt = Date.now();
@@ -481,7 +482,8 @@ export async function POST(request: NextRequest) {
       if (!counted.ok) {
         return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
       }
-      heldLease = lease;
+      // The slot this call took, by its time, so the release frees exactly it.
+      heldLease = { ...lease, slotAt: counted.slotAt };
     }
     const abortSignal = lease ? request.signal : undefined;
     // Every call, leased or not, is stopped at the deadline: the whole
@@ -490,6 +492,8 @@ export async function POST(request: NextRequest) {
     deadline = modelDeadline(Math.max(1_000, MODEL_CALL_DEADLINE_MS - (Date.now() - arrivedAt)), abortSignal);
     const callSignal = deadline.signal;
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
+    // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); every other shape keeps the default.
+    const thinkingConfig = thinkingConfigFor(shape);
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : await callWithRetry(async () => {
@@ -504,9 +508,10 @@ export async function POST(request: NextRequest) {
               ? {
                   responseMimeType: 'application/json',
                   ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
+                  ...(thinkingConfig ? { thinkingConfig } : {}),
                   abortSignal: callSignal,
                 }
-              : { abortSignal: callSignal },
+              : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
           });
           // Where the time of a call went (input, output, thinking): counts
           // only, never the prompt or the answer (`lib/model-usage-log.ts`).

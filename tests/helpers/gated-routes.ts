@@ -64,6 +64,9 @@ export const GATED_ROUTES: GatedRoute[] = [
   // account's key or the community key; a token from before the second factor
   // buys none.
   { file: 'app/api/transformation/lease/route.ts', method: 'POST', path: () => '/api/transformation/lease', body: { projectId: 'nowhere', generationToken: 'x', plannedCalls: 1 } },
+  // 13.10.2026: Cancel closes the run's lease; the start screen reads the hour's generations.
+  { file: 'app/api/transformation/lease/route.ts', method: 'DELETE', path: () => '/api/transformation/lease', body: { projectId: 'nowhere', leaseId: 'nothing' } },
+  { file: 'app/api/transformation/lease/route.ts', method: 'GET', path: () => '/api/transformation/lease' },
   // Added with the gate itself (security audit of b88c77b): reading the key's
   // metadata was behind a valid ID token and nothing else, while every other
   // verb on the same secret asked for the factor. Listed here rather than only

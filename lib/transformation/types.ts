@@ -564,7 +564,20 @@ export type ContextSlotKey = string;
 export type GenerationEvent =
   | { t: 'slot'; slot: ContextSlotKey; state: 'loading' | 'loaded' | 'missing' | 'stale'; at: number }
   | { t: 'scaffold'; units: number; guards: number; decimals: number; inputs: number; cases: number; ms: number }
-  | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable'; at: number }
+  | {
+      t: 'fill';
+      unitId: string;
+      /** `waiting-slot`: the server said `lease-busy` and the call waits for a free slot (13.10.2026). */
+      state: 'writing' | 'waiting-slot' | 'written' | 'refused' | 'unusable';
+      at: number;
+      /** Why, in words, on `refused` / `unusable` — the reason the unit carries. */
+      reason?: string;
+      /** The code of the failure (`lib/transformation/error-codes.ts`) and the HTTP status, when there was one. */
+      code?: string;
+      status?: number;
+    }
+  /** One model call begins or ends — what the remaining-time estimate is read from. `admitted`: the server counted it. */
+  | { t: 'call'; callId: number; state: 'start' | 'end'; at: number; admitted?: boolean }
   | {
       t: 'check';
       kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';

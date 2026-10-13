@@ -551,7 +551,22 @@ So the calls of one generation run under a **lease**:
   model stage `transformation` enabled, the generation token is current; charges **one** unit of
   `gemini:<uid>`; limits leases to **3 per hour per account** (`transformation-lease:<uid>`); writes
   `projects/{id}/transformation_leases/{leaseId}` with `{ uid, budget: min(48, plannedCalls × 2 + 8),
-  used: 0, inFlight: 0, expiresAt: now + leaseTtlMs(budget) }` (15 min at least, 60 at most: every call of the budget, 4 at a time, each allowed the route's 270 s deadline; since 13.10.2026, when a flat 15 min ended a 29-call generation after 25 calls); one open lease per project.
+  used: 0, inFlight: 0, expiresAt: now + leaseTtlMs(budget) }` (15 min at least, 180 at most: every call of the budget, 4 at a time, each allowed the route's deadline — 870 s since the app service's request limit became 900 s on 13.10.2026; introduced when a flat 15 min ended a 29-call generation after 25 calls); one open lease per project.
+- **Runs and slots (13.10.2026).** Every click of *Generate* is its own run with a random `runId`;
+  an open lease is returned only to the same run (a retry of the lease request itself), and a new run
+  supersedes it with a fresh lease (in flight 0) — a restart after *Cancel* had reused the cancelled
+  run's lease, whose four slots its server-side calls still held, and every call was `lease-busy`.
+  *Cancel* closes the run's lease (`DELETE /api/transformation/lease`, owner only, best effort). Each
+  in-flight slot carries the time it was taken; a slot older than the deadline + 30 s is free again.
+  The browser counts only calls the server counted, and a `lease-busy` refusal waits for a slot
+  without using the call's one retry. `GET /api/transformation/lease` tells the start screen how many
+  of the hour's generations are used; the start screen shows the plan and its limits and keeps a plan
+  that cannot succeed from starting (`lib/transformation/preflight.ts`); every code is explained from
+  one table (`lib/transformation/error-codes.ts`).
+- **Thinking LOW on fill calls (13.10.2026).** Fill and repair calls (`transformation-fill`) send
+  `thinkingConfig: { thinkingLevel: LOW }`: A/B on the SD program, 39 calls — p50 5.4 s / p90 9.7 s
+  instead of 121–246 s, about a tenth of the cost, at least as usable. A unit too large to share a
+  14,000-character call goes alone and uncut up to 28,000 characters before anything is cut.
 - `/api/gemini` accepts an optional `leaseId`. With a valid lease (same uid, not expired, `used <
   budget`, `inFlight < 4`), it skips the per-call limiter and increments `used`/`inFlight` in a
   transaction, decrementing `inFlight` when done. Without one it behaves exactly as today. The prompt

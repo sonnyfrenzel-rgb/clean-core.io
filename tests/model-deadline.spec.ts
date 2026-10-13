@@ -32,12 +32,17 @@ test.describe('the deadline', () => {
   test('ends the call before Cloud Run ends the request, with room for the gates and the receipt', () => {
     expect(MODEL_CALL_DEADLINE_MS).toBeLessThanOrEqual(CLOUD_RUN_REQUEST_TIMEOUT_MS - 20_000);
     expect(MODEL_CALL_DEADLINE_MS).toBeGreaterThanOrEqual(240_000);
-    expect(modelTimeoutMessage()).toContain('270 seconds');
+    expect(MODEL_CALL_DEADLINE_MS).toBeGreaterThanOrEqual(CLOUD_RUN_REQUEST_TIMEOUT_MS - 60_000);
+    expect(modelTimeoutMessage()).toContain(`${MODEL_CALL_DEADLINE_MS / 1000} seconds`);
+    // Owner decision 13.10.2026: the app service runs requests for 900 s, the deadline 870 s.
+    expect(CLOUD_RUN_REQUEST_TIMEOUT_MS).toBe(900_000);
+    expect(MODEL_CALL_DEADLINE_MS).toBe(870_000);
   });
 
   test('the app service keeps the request limit the deadline is measured against', () => {
-    // deploy.yml sets no --timeout for the app service (the platform default
-    // of 300 s); a --timeout for it must move CLOUD_RUN_REQUEST_TIMEOUT_MS too.
+    // deploy.yml sets --timeout=900 for the app service (owner, 13.10.2026);
+    // without one Cloud Run's default of 300 s applies. Either way it must be
+    // the CLOUD_RUN_REQUEST_TIMEOUT_MS the deadline is measured against.
     const yml = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8');
     const app = yml.slice(yml.lastIndexOf('deploy-cloudrun@'));
     const set = app.match(/--timeout=(\d+)/);
