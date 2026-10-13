@@ -4,8 +4,8 @@ import path from 'node:path';
 import { buildRapScaffold } from '../lib/transformation';
 import { rapTableName } from '../lib/transformation/scaffold-rap';
 import { affFileNameOf, type AffSchemaSource } from '../lib/transformation/aff-check';
-import { ABAPGIT_SOURCE_OF, packageFormatsCheck, packageFormatsHook, parseXml } from '../lib/transformation/abapgit-check';
-import { abapGitRepoSettingsXml, clasXml, srvdXml, tablXml } from '../lib/transformation/abapgit-files';
+import { ABAPGIT_SOURCE_OF, deliverableClassXml, packageFormatsCheck, packageFormatsHook, parseXml } from '../lib/transformation/abapgit-check';
+import { abapGitRepoSettingsXml, clasXml, singleCallRapClassFiles, srvdXml, tablXml } from '../lib/transformation/abapgit-files';
 import { abaplintPackageCheck } from '../lib/transformation/abaplint-check';
 import { createRunnerVerifier } from '../lib/transformation/verify';
 import { checkPhrase } from '../lib/transformation/check-words';
@@ -230,4 +230,73 @@ test('a transparent table name stays within 16 characters', () => {
   expect(rapTableName('mm_po_approv')).toBe('zmm_po_appro_rec');
   expect(rapTableName('mm_po_appro_')).toBe('zmm_po_appro_rec');
   for (const s of ['a', 'abcdefghijkl', 'ab_cd_ef_gh_']) expect(rapTableName(s).length).toBeLessThanOrEqual(16);
+});
+
+/* --------------------------------------- the single-call RAP delivery path */
+
+test.describe('the single-call RAP delivery: every class metadata file is one abapGit reads', () => {
+  const PAGE = path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'delivery', 'page.tsx');
+  const BEHAVIOR = 'CLASS zcl_demo_rap_behavior DEFINITION PUBLIC FINAL CREATE PUBLIC.\n  PUBLIC SECTION.\nENDCLASS.\n\nCLASS zcl_demo_rap_behavior IMPLEMENTATION.\nENDCLASS.\n';
+  const TEST = 'CLASS zcl_demo_rap_test DEFINITION PUBLIC FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.\n  PRIVATE SECTION.\n    METHODS first FOR TESTING.\nENDCLASS.\n\nCLASS zcl_demo_rap_test IMPLEMENTATION.\n  METHOD first.\n  ENDMETHOD.\nENDCLASS.\n';
+  /** What the page wrote before 3.0.12: no <abapGit> wrapper, abapGit refuses it. */
+  const HAND_WRITTEN = `<?xml version="1.0" encoding="utf-8"?>
+<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+ <asx:values>
+  <VSEOCLASS>
+   <CLSNAME>ZCL_DEMO_RAP_BEHAVIOR</CLSNAME>
+   <VERSION>1</VERSION>
+   <LANGU>E</LANGU>
+   <DESCRIPT>RAP Behavior &amp; Service Class</DESCRIPT>
+   <STATE>1</STATE>
+   <CLSCCINCL>X</CLSCCINCL>
+   <FIXPT>X</FIXPT>
+   <UNICODE>X</UNICODE>
+  </VSEOCLASS>
+ </asx:values>
+</asx:abap>`;
+  const failed = (files: Array<{ path: string; content: string }>) => packageFormatsCheck(files, schemas).filter((r) => r.status === 'failed');
+
+  test('the behavior and the test class: both metadata files pass the abapGit structure check', () => {
+    const files = [
+      { path: '.abapgit.xml', content: abapGitRepoSettingsXml() },
+      ...singleCallRapClassFiles('behavior', BEHAVIOR),
+      ...singleCallRapClassFiles('test', TEST),
+    ];
+    expect(files.map((f) => f.path)).toEqual(['.abapgit.xml', 'src/zcl_demo_rap_behavior.clas.abap', 'src/zcl_demo_rap_behavior.clas.xml', 'src/zcl_demo_rap_test.clas.abap', 'src/zcl_demo_rap_test.clas.xml']);
+    expect(failed(files)).toEqual([]);
+    const results = packageFormatsCheck(files, schemas);
+    expect(results.filter((r) => r.path.endsWith('.clas.xml')).map((r) => r.status)).toEqual(['passed', 'passed']);
+    const test = files.find((f) => f.path === 'src/zcl_demo_rap_test.clas.xml')!.content;
+    expect(test).toContain('<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">');
+    expect(test).toContain('<CATEGORY>05</CATEGORY>');
+    expect(test).toContain('<WITH_UNIT_TESTS>X</WITH_UNIT_TESTS>');
+    // The source is the model's, the metadata file is written here.
+    expect(singleCallRapClassFiles('behavior', BEHAVIOR).map((f) => f.origin)).toEqual(['generated', 'engine']);
+    // abaplint reads the pair without an XML consistency finding.
+    expect(abaplintPackageCheck(files).issues.filter((i) => /xml/i.test(i.rule))).toEqual([]);
+  });
+
+  test('the XML the page wrote before fails the check; the delivery rebuilds a model-written one that does', () => {
+    const before = [{ path: 'src/zcl_demo_rap_behavior.clas.abap', content: BEHAVIOR }, { path: 'src/zcl_demo_rap_behavior.clas.xml', content: HAND_WRITTEN }];
+    expect(failed(before).map((r) => r.status === 'failed' && r.message)).toEqual([expect.stringContaining('abapGit reads <abapGit> only')]);
+    const rebuilt = deliverableClassXml('src/zcl_demo_rap_behavior.clas.xml', HAND_WRITTEN);
+    expect(rebuilt.rebuilt).toBe(true);
+    expect(rebuilt.content).toContain('<DESCRIPT>RAP Behavior &amp; Service Class</DESCRIPT>');
+    expect(failed([before[0], { path: before[1].path, content: rebuilt.content }])).toEqual([]);
+    // A file that holds stays as written; anything but a class metadata file is not touched.
+    const good = clasXml({ name: 'zcl_x', description: 'X' });
+    expect(deliverableClassXml('src/zcl_x.clas.xml', good)).toEqual({ content: good, rebuilt: false });
+    expect(deliverableClassXml('src/z_demo_rap_ddls.ddls.asddls', 'define view entity')).toEqual({ content: 'define view entity', rebuilt: false });
+    expect(deliverableClassXml('src/zi.intf.xml', '<x/>')).toEqual({ content: '<x/>', rebuilt: false });
+    // No description given: the class name stands in.
+    expect(deliverableClassXml('src/zcl_y.clas.xml', '<x/>').content).toContain('<DESCRIPT>Class ZCL_Y</DESCRIPT>');
+  });
+
+  test('the Delivery page writes no class XML of its own: both paths go through the shared builder', () => {
+    const page = fs.readFileSync(PAGE, 'utf8');
+    expect(page).not.toMatch(/<VSEOCLASS>/);
+    expect(page).not.toMatch(/\.clas\.xml["'`]/);
+    expect(page.match(/singleCallRapClassFiles\('(behavior|test)'/g)).toEqual(["singleCallRapClassFiles('behavior'", "singleCallRapClassFiles('test'"]);
+    expect(page).toContain('deliverableClassXml(file.path, file.content)');
+  });
 });

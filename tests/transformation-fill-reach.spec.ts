@@ -7,7 +7,7 @@ import { candidateFiles } from '../lib/transformation/engine-led';
 import { guardUnits, mapEngineFailures } from '../lib/transformation/verify';
 import { caseTable, measureReach, prepared, referenceBodies, runChecks, stubBodies } from '../scripts/transformation/reach';
 import { reachSources } from '../scripts/transformation/measure-reach';
-import { FIXTURES, fixture, poDemo } from './helpers/transformation-scaffold';
+import { FIXTURES, fixture, poDemo, poDemoWithoutDefault } from './helpers/transformation-scaffold';
 
 /**
  * Owner, 13.10.2026: the engine-led checks must reach the functions the model
@@ -101,15 +101,21 @@ test.describe('reach of the written functions (mutation)', () => {
     }
   });
 
-  test('the PO demo: without a value for P_BANFN nothing runs; with one in memory the predicates are asked', async () => {
+  test('the PO demo: its DEFAULT for P_BANFN lets the cases run and the predicates be asked; without it nothing runs', async () => {
+    // The demo source gives P_BANFN a DEFAULT since 13.10.2026 (owner decision).
     const po = poDemo();
-    const without = await runChecks(prepared(po), po, new Map());
-    expect(without.cases.every((c) => c.status === 'Not run')).toBe(true);
-    const withDefault = reachSources(true).find((s) => s.key === 'po+default')!;
-    const prep = prepared(withDefault.source);
-    const run = await runChecks(prep, withDefault.source, stubBodies(prep));
+    expect(po).toContain("p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',");
+    expect(reachSources(true).map((s) => s.key)).not.toContain('po+default');
+    const prep = prepared(po);
+    const run = await runChecks(prep, po, stubBodies(prep));
     const failedOnPredicates = run.cases.filter((c) => c.status === 'Failed' && /the predicate of G-\d{4}/.test(c.reason ?? ''));
     expect(failedOnPredicates.length).toBeGreaterThanOrEqual(6);
+    const scaffoldAlone = await runChecks(prep, po, new Map());
+    expect(scaffoldAlone.cases.some((c) => c.status === 'Passed')).toBe(true);
+    // The same program without the DEFAULT: no valid base value, nothing runs.
+    const without = poDemoWithoutDefault();
+    const none = await runChecks(prepared(without), without, new Map());
+    expect(none.cases.every((c) => c.status === 'Not run')).toBe(true);
     expect(fs.readFileSync(path.join(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8')).toBe(po);
   });
 });

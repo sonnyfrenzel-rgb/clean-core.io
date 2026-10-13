@@ -33,7 +33,7 @@ DATA: gs_eban       TYPE eban,
       gt_return     TYPE STANDARD TABLE OF bapiret2 WITH DEFAULT KEY.
 
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.
-PARAMETERS: p_banfn TYPE eban-banfn OBLIGATORY,
+PARAMETERS: p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',
             p_bnfpo TYPE eban-bnfpo DEFAULT '00010',
             p_file  TYPE string LOWER CASE,
             p_test  AS CHECKBOX DEFAULT 'X'.

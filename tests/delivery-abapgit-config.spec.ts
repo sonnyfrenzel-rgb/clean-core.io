@@ -9,6 +9,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
+import { abapGitXmlHolds } from '../lib/transformation/abapgit-check';
 
 /**
  * The ABAP Cloud delivery bundle has to survive the one thing it exists for.
@@ -77,7 +78,10 @@ test.describe('the ABAP Cloud bundle a customer imports', () => {
       solutionDesign: '# Target architecture\n\nOne paragraph.\n',
       generatedCode: JSON.stringify([
         { path: 'src/zcl_cfg_behavior.clas.abap', content: 'CLASS zcl_cfg DEFINITION.\nENDCLASS.\n' },
+        // What the single-call RAP prompt gets back: a class XML without abapGit's wrapper.
+        { path: 'src/zcl_cfg_behavior.clas.xml', content: '<?xml version="1.0" encoding="utf-8"?>\n<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0"><asx:values><VSEOCLASS><CLSNAME>ZCL_CFG_BEHAVIOR</CLSNAME><DESCRIPT>Behavior</DESCRIPT></VSEOCLASS></asx:values></asx:abap>' },
       ]),
+      testSuite: { code: 'CLASS zcl_demo_rap_test DEFINITION FOR TESTING.\nENDCLASS.\n' },
       testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Passed' }],
       coverageEstimate: { percentage: 73 },
       documentation: JSON.stringify({
@@ -140,6 +144,16 @@ test.describe('the ABAP Cloud bundle a customer imports', () => {
       names.some((n) => n.startsWith('src/')),
       'nothing is under /src/, so the starting folder points at an empty tree',
     ).toBe(true);
+
+    // Every class metadata file is one abapGit reads: the model's is rebuilt by
+    // the shared class builder, the test class's comes from it (3.0.12).
+    const classXml = names.filter((n) => /^src\/.+\.clas\.xml$/.test(n)).sort();
+    expect(classXml).toEqual(['src/zcl_cfg_behavior.clas.xml', 'src/zcl_demo_rap_test.clas.xml']);
+    for (const n of classXml) {
+      const xml = await zip.file(n)!.async('string');
+      expect(abapGitXmlHolds(n, xml), `${n} is not in abapGit's serializer format`).toBe(true);
+    }
+    for (const n of names.filter((x) => /^src\/.+\.clas\.abap$/.test(x))) expect(names, `${n} has no metadata file`).toContain(n.replace(/\.abap$/, '.xml'));
 
     // The README is the other half of the promise, and it has to match.
     const readme = await zip.file('README.md')!.async('string');

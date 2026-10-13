@@ -27,11 +27,11 @@
  *
  * Results use the shape of the AFF check (`aff-check.ts`), so one `formats`
  * count holds both: AFF JSON files against SAP's schemas, abapGit XML files
- * here. Pure: no imports beyond the AFF check and types.
+ * here. Pure: no imports beyond the AFF check, the class builder and types.
  */
 
 import { affCheck, affCount, affFailures, affFileNameOf, AFF_NOT_RUN, type AffFile, type AffFileResult, type AffSchemaSource } from './aff-check';
-import { DESCRIPTION_MAX, NAME_MAX } from './abapgit-files';
+import { DESCRIPTION_MAX, NAME_MAX, clasXml } from './abapgit-files';
 import type { CheckCount, CheckFailure } from './orchestrator';
 
 /* ------------------------------------------------------------ XML reader */
@@ -270,6 +270,22 @@ function checkObjectXml(path: string, name: string, type: string, content: strin
 export function abapGitXmlHolds(path: string, content: string): boolean {
   const n = affFileNameOf(path);
   return !!n && n.rest === 'xml' && checkObjectXml(path, n.name.toLowerCase(), n.type, content, null).status === 'passed';
+}
+
+/**
+ * The class metadata file a delivery ships for `path`: the file as written when
+ * it is not a class metadata file or already holds abapGit's structure;
+ * otherwise the one `clasXml` builds, named by the file and keeping the
+ * description the file gave (`rebuilt` true). The older single-call RAP
+ * generation asks the model for `src/zcl_demo_rap_behavior.clas.xml`, and what
+ * comes back has no `<abapGit>` wrapper — abapGit refuses such a file.
+ */
+export function deliverableClassXml(path: string, content: string): { content: string; rebuilt: boolean } {
+  const n = affFileNameOf(path);
+  if (!n || n.type !== 'clas' || n.rest !== 'xml' || abapGitXmlHolds(path, content)) return { content, rebuilt: false };
+  const found = /<DESCRIPT>([^<]*)<\/DESCRIPT>/i.exec(content)?.[1];
+  const given = found ? decode(found).trim() : '';
+  return { content: clasXml({ name: n.name, description: given || `Class ${n.name.toUpperCase()}` }), rebuilt: true };
 }
 
 /** The fields of `.abapgit.xml` (zif_abapgit_dot_abapgit `ty_dot_abapgit`). */
