@@ -116,7 +116,10 @@ function decimalOf(statement: AbapStatement): DeclaredDecimal | null {
  */
 const ALIASING = /^(?:DATA|TYPES|STATICS|CLASS-DATA|CONSTANTS|PARAMETERS)\s*:?\s*([\w/]+(?:-[\w/]+)*)\s+(TYPE|LIKE)\s+([\w/]+(?:-[\w/]+)*)(?:\s+(?:VALUE|READ-ONLY|OBLIGATORY|DEFAULT)\b.*)?$/i;
 
-function aliasOf(statement: AbapStatement, known: ReadonlyMap<string, DeclaredDecimal>): DeclaredDecimal | null {
+const PROCEDURE_OPENS = new Set(['METHOD', 'FORM', 'FUNCTION', 'MODULE']);
+const PROCEDURE_CLOSES = new Set(['ENDMETHOD', 'ENDFORM', 'ENDFUNCTION', 'ENDMODULE']);
+
+function aliasOf(statement: AbapStatement, known: { get(name: string): DeclaredDecimal | undefined }): DeclaredDecimal | null {
   const m = ALIASING.exec(statement.text.replace(/\.$/, ''));
   if (!m) return null;
   const target = known.get(m[3].toLowerCase());
@@ -217,14 +220,22 @@ export function readOriginalContract(source: string): OriginalContract {
   const statements = readStatements(source);
   const decimals: DeclaredDecimal[] = [];
   const inputs: SelectionInput[] = [];
-  // Packed types and fields declared so far, by name: what a later `TYPE x` / `LIKE x` resolves through.
-  const known = new Map<string, DeclaredDecimal>();
+  // Packed types and fields declared so far, by name: what a later `TYPE x` /
+  // `LIKE x` resolves through. A declaration inside a METHOD, FORM, FUNCTION or
+  // MODULE is local to it: it shadows a global of the same name there and is
+  // gone once the procedure ends, so a later procedure resolves the name
+  // against the global again (QA c38f8043).
+  const global = new Map<string, DeclaredDecimal>();
+  let local: Map<string, DeclaredDecimal> | null = null;
+  const known = { get: (name: string) => local?.get(name) ?? global.get(name) };
   for (const statement of statements) {
     if (statement.nativeSql) continue;
+    if (PROCEDURE_OPENS.has(statement.keyword)) local = new Map();
+    else if (PROCEDURE_CLOSES.has(statement.keyword)) local = null;
     const d = decimalOf(statement) ?? aliasOf(statement, known);
     if (d) {
       decimals.push(d);
-      known.set(d.name.toLowerCase(), d);
+      (local ?? global).set(d.name.toLowerCase(), d);
     }
     const i = inputOf(statement);
     if (i) inputs.push(i);

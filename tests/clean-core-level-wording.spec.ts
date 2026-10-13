@@ -46,8 +46,12 @@ const LEGACY_LINES: Record<string, readonly string[]> = {
   ],
 };
 
-/** "(tier 3)" survives in the stored contract label only — fingerprinted bytes, dropped for display. */
-const STORED_LABEL = /'Key user extensibility \(tier 3\)'|"\(tier 3\)"|\\\(tier 3\\\)/;
+/**
+ * "(tier 3)" survives in the stored contract label only — fingerprinted bytes,
+ * dropped for display. Only the label's own text is exempt, not the line it
+ * stands on (QA review of c38f8043f118, 824c18916f3c).
+ */
+const STORED_LABEL = /'Key user extensibility \(tier 3\)'|"\(tier 3\)"|\\\(tier 3\\\)/g;
 
 function files(dir: string): string[] {
   const out: string[] = [];
@@ -64,22 +68,42 @@ function files(dir: string): string[] {
 const TIER = /\bTier[- ]?[123]\b|\b3-Tier\b|\bTier[- ]2\b/i;
 const UPGRADE_SAFE_WRAPPER = /upgrade-safe\w*[^.\n]{0,60}wrapper|wrapper[^.\n]{0,60}upgrade-safe/i;
 
+/**
+ * The lines of one file that carry tier vocabulary once the exempt text — the
+ * stored label and this file's legacy fragments, each used once — is cut out of
+ * them. What else stands on an exempt line is still read.
+ */
+function offendingLines(rel: string, text: string, used: Set<string>): string[] {
+  const legacy = LEGACY_LINES[rel] ?? [];
+  const hits: string[] = [];
+  text.split('\n').forEach((line, i) => {
+    let rest = line.replace(STORED_LABEL, '');
+    const allowed = legacy.find((fragment) => rest.includes(fragment) && !used.has(`${rel}\u0000${fragment}`));
+    if (allowed) {
+      used.add(`${rel}\u0000${allowed}`);
+      rest = rest.replace(allowed, '');
+    }
+    // "tier" as a pricing or stacking word is no extensibility tier.
+    if (!TIER.test(rest) && !UPGRADE_SAFE_WRAPPER.test(rest)) return;
+    hits.push(`${rel}:${i + 1}: ${line.trim().slice(0, 140)}`);
+  });
+  return hits;
+}
+
+test('an exempt label or legacy fragment exempts only itself, not the rest of its line (QA c38f8043: 824c18916f3c)', () => {
+  const label = "  'key-user': 'Key user extensibility (tier 3)',";
+  expect(offendingLines('lib/x.ts', label, new Set())).toEqual([]);
+  expect(offendingLines('lib/x.ts', `${label} // a Tier 2 wrapper`, new Set())).toHaveLength(1);
+  const fragment = LEGACY_LINES['lib/abap/extensibility-router.ts'][1];
+  expect(offendingLines('lib/abap/extensibility-router.ts', `  name: ${fragment} : 'x',`, new Set())).toEqual([]);
+  expect(offendingLines('lib/abap/extensibility-router.ts', `  name: ${fragment} : 'Tier 1',`, new Set())).toHaveLength(1);
+});
+
 test('no tier vocabulary and no upgrade-safe wrapper claim outside the legacy engine lines', () => {
   const hits: string[] = [];
   const used = new Set<string>();
   for (const rel of [...files('app'), ...files('components'), ...files('lib'), ...files('hooks')]) {
-    const legacy = LEGACY_LINES[rel] ?? [];
-    fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\n').forEach((line, i) => {
-      if (STORED_LABEL.test(line)) return;
-      // "tier" as a pricing or stacking word is no extensibility tier.
-      if (!TIER.test(line) && !UPGRADE_SAFE_WRAPPER.test(line)) return;
-      const allowed = legacy.find((fragment) => line.includes(fragment) && !used.has(`${rel}\u0000${fragment}`));
-      if (allowed) {
-        used.add(`${rel}\u0000${allowed}`);
-        return;
-      }
-      hits.push(`${rel}:${i + 1}: ${line.trim().slice(0, 140)}`);
-    });
+    hits.push(...offendingLines(rel, fs.readFileSync(path.join(ROOT, rel), 'utf8'), used));
   }
   expect(hits).toEqual([]);
   const stale = Object.entries(LEGACY_LINES).flatMap(([rel, list]) => list.filter((f) => !used.has(`${rel}\u0000${f}`)).map((f) => `${rel}: ${f}`));

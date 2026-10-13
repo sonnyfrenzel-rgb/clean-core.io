@@ -151,6 +151,24 @@ test.describe('B1 security review tasks', () => {
     expect(kinds(resolved)).toEqual([]);
   });
 
+  test('a path written again between its validation and the access is not validated (QA c38f8043: 64056fc2ef1f)', () => {
+    const src = `REPORT zx.\nPARAMETERS: p_file TYPE string, p_alt TYPE string.\nDATA lv_path TYPE string.\nlv_path = |/usr/sap/in/{ p_file }|.\nCALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = lv_path.\nOVERWRITE\nOPEN DATASET lv_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.\n`;
+    const at = (overwrite: string) => readSecurityReviewTasks(src.replace('OVERWRITE', overwrite)).map((t) => [t.kind, t.lineStart]);
+    for (const overwrite of [
+      'lv_path = p_alt.',
+      'CONCATENATE p_alt lv_path INTO lv_path.',
+      'MOVE p_alt TO lv_path.',
+      "REPLACE 'in' IN lv_path WITH p_alt.",
+      "CALL FUNCTION 'Z_PICK' EXPORTING iv = p_alt IMPORTING ev_path = lv_path.",
+    ]) {
+      expect(at(overwrite), overwrite).toEqual([['file-path-from-input', 7]]);
+    }
+    // A statement between the two that does not write the path keeps the validation.
+    expect(at("WRITE / lv_path.")).toEqual([]);
+    // Validated again after the overwrite: covered.
+    expect(at("lv_path = p_alt.\nCALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = lv_path.")).toEqual([]);
+  });
+
   test('every name of a chained PARAMETERS or SELECT-OPTIONS statement is input (QA 03501b79: ad73c7129e31)', () => {
     const sql = `REPORT zx.\nPARAMETERS: p_unused TYPE c, p_where TYPE string.\nSELECT * FROM kna1 INTO TABLE @DATA(r) WHERE (p_where).\n`;
     expect(readSecurityReviewTasks(sql).map((t) => [t.kind, t.subject])).toEqual([['dynamic-sql-from-input', 'p_where']]);

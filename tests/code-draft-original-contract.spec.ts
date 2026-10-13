@@ -245,6 +245,27 @@ test.describe('packed fields typed through a local type (coordinator, 12.10.2026
     expect(byName('ty_comp_tab')).toBeUndefined();
   });
 
+  test('LIKE resolves through the scope it stands in: a method-local field shadows only inside its method (QA c38f8043)', () => {
+    const scoped = readOriginalContract([
+      'CLASS lcl DEFINITION.',
+      '  PUBLIC SECTION.',
+      '    DATA gv_amount TYPE p LENGTH 8 DECIMALS 2.',
+      '    METHODS: a, b.',
+      'ENDCLASS.',
+      'CLASS lcl IMPLEMENTATION.',
+      '  METHOD a.',
+      '    DATA gv_amount TYPE p LENGTH 8 DECIMALS 5.',
+      '    DATA lv_inner LIKE gv_amount.',
+      '  ENDMETHOD.',
+      '  METHOD b.',
+      '    DATA lv_copy LIKE gv_amount.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n')).decimals;
+    expect(scoped.find((d) => d.name === 'lv_inner')).toMatchObject({ decimals: 5, line: 9 });
+    expect(scoped.find((d) => d.name === 'lv_copy')).toMatchObject({ decimals: 2, line: 12 });
+  });
+
   test('a chained DATA statement is still read declaration by declaration', () => {
     const chained = readOriginalContract('REPORT z.\nDATA: a TYPE p LENGTH 5 DECIMALS 2,\n      b TYPE p LENGTH 3 DECIMALS 1.').decimals;
     expect(chained.map((d) => [d.name, d.line, d.decimals])).toEqual([['a', 2, 2], ['b', 3, 1]]);
