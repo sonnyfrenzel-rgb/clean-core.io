@@ -349,7 +349,9 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
     //
     // If the writer and the reader are ever made to agree, this guard is where
     // that decision gets reopened.
-    const readers: string[] = [];
+    // Every read, per file: a new read in a file already on the list fails
+    // the guard as surely as a new file does (QA 708705e5ec09).
+    const readers: Record<string, string[]> = {};
     const walk = (dir: string) => {
       for (const entry of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
         const rel = `${dir}/${entry.name}`;
@@ -366,17 +368,17 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
             const known = rest.indexOf('loaded.exports');
             if (known >= 0) rest.splice(known, 1);
           }
-          if (rest.length > 0) readers.push(rel);
+          if (rest.length > 0) readers[rel] = rest.sort();
         }
       }
     };
     for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
-    expect(readers.sort(), 'a new reader of `exports` appeared').toEqual([
-      'app/(app)/dashboard/page.tsx',
-      'app/(app)/project/[projectId]/analyze/page.tsx',
-      'app/(app)/project/[projectId]/design/page.tsx',
-      'lib/project-loader.ts',
-    ]);
+    expect(readers, 'a new reader of `exports` appeared').toEqual({
+      'app/(app)/dashboard/page.tsx': ['project.exports', 'project.exports'],
+      'app/(app)/project/[projectId]/analyze/page.tsx': ['project.exports'],
+      'app/(app)/project/[projectId]/design/page.tsx': ['currentProject.exports'],
+      'lib/project-loader.ts': ['data.exports', 'runData.exports'],
+    });
 
     const dashboard = read('app/(app)/dashboard/page.tsx');
     const block = dashboard.slice(dashboard.indexOf('const dynamicExports'));
