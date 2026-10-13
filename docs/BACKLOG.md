@@ -3,6 +3,24 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 12.–13.10.2026 — 3.0.12 released
+
+**Built (dev 13.10.2026, main on Sonny's go):** the engine-led transformation (ADR-101) — engine-written Node and RAP
+scaffolds, step-wise fills under a generation lease, verify and targeted repair, the trace with line anchors,
+quality tips and a decision warning that reads `lib/standard-fit-gate.ts`; checks that count passed, failed and
+not run and say whose code decided; the engine and probe passes confined in SES (runner protocol 3); the PO
+demo's `P_BANFN` default; the 3.0.13 design-with-standard row moved in; the DSAG ABAP guideline review — on-stack
+routing (161 of 300 benchmark routes side-by-side → in-app), security review tasks, copied SAP code, classic
+programming models, parallel processing, level B per SAP Note 3578329, no level A from an estimate, level
+wording; RAP scaffold v2 with abaplint under ABAP Cloud, Clean ABAP rules and abapGit metadata files; the SAP
+identifier check with its source levels; six weekly-synced reference sources with licences and a citation
+registry; SAP Cloud ERP naming. Release-run fixes: abaplint from `node_modules` on the server, bundling races
+in specs. No `firestore.rules` change. CHANGELOG has the details.
+
+**Open:** acceptance with a real model key against the external reviews' probe sets; importing the abapGit
+package in a real SAP system; the Transformation phase going stale on a changed context digest; probes that
+reach the written functions (display filter, additive recalculation, negative write); the ORD research row.
+
 ## Session 12.10.2026 — 3.0.11 released
 
 **Built (main on Sonny's go, 12.10.2026):** the v3.0.10 router patch live after a byte-identity proof on 793
