@@ -28,6 +28,7 @@ import {
   type ChainInputs,
 } from '../lib/transformation-chain';
 import { ORIGINS, originBackHref, originBackLabel } from '../lib/choice-addresses';
+import { standardFitAssessed } from '../lib/standard-fit-gate';
 import { PHASES } from '../lib/workflow-steps';
 import { buildTransformationContext, recordedDecisionOf } from '../lib/transformation-context';
 import { tfCostLine, tfContextAnnouncement } from '../lib/messages/transformation';
@@ -393,6 +394,26 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
     expect(warn(recorded(null))).toEqual(expected);
     // A withdrawn record decides nothing any more — the same as the prompt reads it.
     expect(warn(recorded('retire · Retire', 'withdrawn'))).toEqual(expected);
+  });
+
+  test('a design that weighed SAP standard against RAP and CAP: no standard-fit warning — the prompt says the same', () => {
+    const comparison = {
+      optionComparison: {
+        options: [
+          { option: 'cap', targetRelease: 'S/4HANA 2023', fitGap: 'Covers all.', effort: 'High', runningCost: 'Own runtime', dataContract: 'ACDOCA via API' },
+          { option: 'standard', targetRelease: 'S/4HANA 2023', fitGap: 'SAP allocation (KSU5) covers the cycle; the gap is the custom key.', effort: 'Low', runningCost: 'None beyond licence', dataContract: 'ACDOCA' },
+          { option: 'rap', targetRelease: 'S/4HANA 2023', fitGap: 'Rebuilds the key on-stack.', effort: 'Medium', runningCost: 'Costs about 12.000 EUR a year', dataContract: 'ACDOCA, plan ACDOCP' },
+        ],
+        recommended: 'rap',
+        decisionReason: 'The custom allocation key per plant is not configurable in SAP allocation, and no external user needs the result, so no separate runtime is warranted.',
+        requirementOthersMiss: 'An allocation key per plant that the standard cycle cannot express.',
+      },
+    };
+    const weighed = project({ activeRunId: 'run-1', solutionDesign: JSON.stringify(comparison) });
+    expect(standardFitAssessed(weighed as never)).toMatchObject({ assessed: true, basis: 'design-comparison' });
+    expect(decisionWarning(inputs({ project: weighed }))).toBeNull();
+    // A decision against the rebuild still warns, whatever the design compared.
+    expect(decisionWarning(inputs({ project: project({ activeRunId: 'run-1', solutionDesign: JSON.stringify(comparison), decision: recorded('retire · Retire the program') }) }))).toMatchObject({ kind: 'against-decision' });
   });
 
   test('the prompt and the tip read the record the same way', () => {

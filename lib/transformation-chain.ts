@@ -41,6 +41,7 @@ import { stageHref } from '@/lib/workspace-back-href';
 import { formatTextDate } from '@/lib/format';
 import { TRANSFORMATION_MESSAGES as M } from '@/lib/messages/transformation';
 import { decisionRecordIsLive, recordedDecisionOf } from '@/lib/transformation-context';
+import { standardFitAssessed } from '@/lib/standard-fit-gate';
 import { LEASE_MAX_CALLS } from '@/lib/transformation/lease';
 
 /* ------------------------------------------------------------ prompt seam */
@@ -604,6 +605,10 @@ export function qualityTips(inputs: TipInputs): QualityTip[] {
  *     assesses whether SAP standard already covers the need (architecture
  *     contract limit `standard-fit-not-assessed`); the decision record is
  *     where a reader weighs it. A live record that chose rebuild has.
+ *     So has a solution design that compared the standard with RAP and CAP
+ *     on facts: whether the standard was weighed is `standardFitAssessed`
+ *     (`lib/standard-fit-gate.ts`), the same reading the PLATFORM KNOWLEDGE
+ *     block states, so the tip and the prompt cannot disagree.
  *
  * "Generate now" stays; the page does not start a generation by itself while
  * the warning shows.
@@ -632,6 +637,7 @@ export function decisionWarning(inputs: Pick<ChainInputs, 'projectId' | 'project
     };
   }
   if (live && live.optionKind === 'rebuild') return null;
+  if (standardFitAssessed(inputs.project as Parameters<typeof standardFitAssessed>[0]).assessed) return null;
   return {
     kind: 'standard-fit-open',
     text: M['transformation.warnDecision.standardFitOpen'],
