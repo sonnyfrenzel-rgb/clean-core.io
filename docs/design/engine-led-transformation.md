@@ -823,7 +823,11 @@ leases per hour is `transformation_lease_windows/{uid}` beside `projects/{id}/tr
 `responseShape: 'transformation-fill'` in the `/api/gemini` body. The probe pass is
 `lib/test-sandbox/probe-suite.ts` with the probes as `probe-runtime.ts`, generated from
 `scripts/acceptance/lib/probes.mjs` by `scripts/transformation/sync-probe-runtime.mjs` (the harness
-file is read, not edited). The stop rules of §13.2 are `decideGenerationRepair` in `lib/repair-draft.ts`.
+file is read, not edited). Since the QA hardening of the engine pass the probe pass runs the same way
+(runner protocol 3): the adapter's modules bundled on their own and evaluated in a SES compartment after
+`lockdown()`, the probes outside it in the driver, their requests answered by `createProbeExecutor` in
+`scripts/acceptance/child/engine-cases-core.mjs` (the harness's executor uses the same), one outcome line
+per probe, read by `probeVerdicts`. The stop rules of §13.2 are `decideGenerationRepair` in `lib/repair-draft.ts`.
 The fills carry code-draft rules 11–15, 17, 19, 21 and 23; 16, 18, 20, 22 and 24 are engine-written in
 the scaffold.
 

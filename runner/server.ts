@@ -7,9 +7,11 @@ import {
   RUNNER_PROTOCOL_VERSION,
   type RunnerEngineReport,
   type RunnerMode,
+  type RunnerProbeReport,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
 import { engineRunInputs } from '../lib/test-sandbox/engine-suite';
+import { probeRunInputs } from '../lib/test-sandbox/probe-suite';
 import { startRelay } from './relay';
 
 /**
@@ -141,6 +143,31 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
           : { outcome: 'ran', stdout: pass.stdout, stderr: pass.stderr, exitCode: pass.exitCode, files: pass.files, suiteSha256: pass.suiteSha256, casesSha256: inputs.casesSha256, contractModule: run.engine.contractModule };
     }
 
+    // 3.0.12 (protocol 3) — the probe pass: the failure-pattern probes against the adapter's
+    // modules, through the same core and the same guards, as a further child. The runner derives
+    // its files and driver from the request's files (`probeRunInputs`); the app derives the same
+    // and compares the hashes. The modules run in a SES compartment, apart from the probes and
+    // the outcome writer.
+    let probes: RunnerProbeReport | undefined;
+    if (run.probes) {
+      const inputs = probeRunInputs(run.files);
+      if (!inputs.ok) return send(res, 400, { error: inputs.reason });
+      const pass = await executeSandboxRun({
+        files: inputs.files,
+        suiteCode: inputs.suiteCode,
+        patterns: [],
+        allowUnsandboxed: false,
+        probe: inputs.probe,
+        extraEnv,
+        loopback: relay ? { host: '127.0.0.1', port: relay.port } : null,
+      });
+      if (pass.kind === 'unavailable') return send(res, 500, { error: pass.reason });
+      probes =
+        pass.kind === 'build-error'
+          ? { outcome: 'build-error', stdout: '', stderr: '', exitCode: 1, buildError: pass.message, files: pass.files, suiteSha256: pass.suiteSha256 }
+          : { outcome: 'ran', stdout: pass.stdout, stderr: pass.stderr, exitCode: pass.exitCode, files: pass.files, suiteSha256: pass.suiteSha256 };
+    }
+
     const report: RunnerReport =
       outcome.kind === 'build-error'
         ? {
@@ -156,6 +183,7 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
             mode: run.mode,
             protocol: RUNNER_PROTOCOL_VERSION,
             ...(engine ? { engine } : {}),
+            ...(probes ? { probes } : {}),
           }
         : {
             outcome: 'ran',
@@ -169,6 +197,7 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
             mode: run.mode,
             protocol: RUNNER_PROTOCOL_VERSION,
             ...(engine ? { engine } : {}),
+            ...(probes ? { probes } : {}),
           };
     return send(res, 200, report);
   } catch {

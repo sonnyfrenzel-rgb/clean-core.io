@@ -18,9 +18,20 @@ import {
   type VerifyRunAnswer,
 } from '../lib/transformation/verify';
 import { PROBE_RUNTIME_JS } from '../lib/test-sandbox/probe-runtime';
-import { PROBE_RUNTIME_PATH, PROBE_TEST_PREFIX as SUITE_PREFIX, SANDBOX_PROBES, probeRunInputs } from '../lib/test-sandbox/probe-suite';
+import { ENGINE_RUNTIME_JS } from '../lib/test-sandbox/engine-runtime';
+import {
+  ADAPTER_PATH,
+  PROBE_CONFINEMENT_PATH,
+  PROBE_MODULES_BUNDLE_PATH,
+  PROBE_OUTCOME_MARKER,
+  PROBE_RUNTIME_PATH,
+  PROBE_SES_PATH,
+  PROBE_TEST_PREFIX as SUITE_PREFIX,
+  SANDBOX_PROBES,
+  probeRunInputs,
+  probeVerdicts,
+} from '../lib/test-sandbox/probe-suite';
 import { executeSandboxRun } from '../lib/test-sandbox/core';
-import { parseTapOutput } from '../lib/test-verdicts';
 import {
   GENERATION_DRAFT_MAX_BYTES,
   REPAIR_DRAFT_VERSION,
@@ -200,6 +211,92 @@ const readPackage = (dir: string) => {
   return out;
 };
 
+/**
+ * A candidate that fails three probes and tries, from inside the process that
+ * runs it, to have them reported as passes anyway (roadmap 3.0.12): it hides
+ * failed outcomes from every `filter`, takes over the clock the probe freezes,
+ * and prints passes of its own. Before the probe pass ran confined, the first
+ * two turned all three into passes.
+ */
+const FORGING_ENGINE = `
+const tries = [];
+const attempt = (name, fn) => {
+  try {
+    fn();
+    tries.push(name + ': done');
+  } catch (err) {
+    tries.push(name + ': ' + (err && err.message));
+  }
+};
+// 1. Whoever filters a list of outcomes for failures finds none.
+attempt('Array.prototype.filter', () => {
+  const filter = Array.prototype.filter;
+  Array.prototype.filter = function (fn, self) {
+    return filter.call(this, (x, i, a) => !(x && x.status === 'fail') && fn.call(self, x, i, a));
+  };
+});
+// 2. A clock nobody can freeze: run ids stay distinct whatever the probe sets.
+let tick = 0;
+attempt('Date.now', () => {
+  Object.defineProperty(Date, 'now', { configurable: true, get: () => () => 1767225600000 + ++tick, set: () => {} });
+});
+// 3. Passes of its own, as TAP and as an outcome line.
+attempt('stdout', () => {
+  process.stdout.write('ok 1 - PRB_empty-selection: FORGED\\n');
+  process.stdout.write('\\n${PROBE_OUTCOME_MARKER}{"probe":"empty-selection","outcomes":[{"pattern":"FP-GUARD-04","status":"pass","evidence":"FORGED"}]}\\n');
+});
+export const ATTEMPTS = tries;
+
+/** FP-RUN-02: ids from the millisecond clock. */
+export class RunStore {
+  runs = new Map();
+  simulate(input) {
+    const runId = 'RUN-' + Date.now();
+    this.runs.set(runId, { input });
+    return { runId, result: { input } };
+  }
+  get(runId) {
+    return this.runs.get(runId);
+  }
+}
+/** FP-GUARD-04: no selection reads everything and reports success. */
+export function select() {
+  return { status: 'OK', items: [{ order: '4711' }] };
+}
+/** FP-GUARD-03: parseInt accepts '2026x'. */
+export function parseYear(value) {
+  const year = parseInt(value, 10);
+  return Number.isNaN(year) ? { ok: false } : { ok: true, year };
+}
+`;
+const FORGING_ADAPTER = {
+  modules: { engine: 'srv/engine.mjs' },
+  probes: {
+    'run-id-collision': {
+      create: { module: 'engine', export: 'RunStore', construct: [], method: 'simulate' },
+      argsA: [{ amounts: [1, 2] }],
+      argsB: [{ amounts: [30, 40] }],
+      id: 'runId',
+      get: { module: 'engine', export: 'RunStore', construct: [], method: 'get', args: ['$id'] },
+      compare: { create: 'result', get: '' },
+    },
+    'empty-selection': { call: { module: 'engine', export: 'select' }, args: [{ orgs: [] }], refused: { path: 'status', notIn: ['OK'] } },
+    'lenient-numeric': { call: { module: 'engine', export: 'parseYear' }, args: ['$value'], valid: '2026', refused: { path: 'ok', equals: false } },
+  },
+};
+const forging = (engine = FORGING_ENGINE) => [
+  { path: 'srv/engine.mjs', content: engine },
+  { path: ADAPTER_PATH, content: JSON.stringify(FORGING_ADAPTER) },
+];
+
+/** The probe pass in the execution core, as the runner runs it: the verdicts and the raw run. */
+async function probePass(files: Array<{ path: string; content: string }>) {
+  const inputs = probeRunInputs(files);
+  if (!inputs.ok) throw new Error(inputs.reason);
+  const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true, probe: inputs.probe });
+  return { inputs, out, verdicts: out.kind === 'ran' ? probeVerdicts(out.stdout, inputs.probes) : [] };
+}
+
 test.describe('the probe pass the runner executes', () => {
   test('the probes the runner gets are the acceptance harness\'s probes, word for word', () => {
     const source = fs.readFileSync(path.join(ROOT, 'scripts', 'acceptance', 'lib', 'probes.mjs'), 'utf8').replace(/\r\n/g, '\n');
@@ -207,36 +304,102 @@ test.describe('the probe pass the runner executes', () => {
     expect(PROBE_RUNTIME_JS).not.toMatch(/^import /m);
   });
 
-  test('the suite imports only the candidate\'s own files, adds the probes, and says what it does not run', () => {
+  test('the pass is a driver that locks the child down before the candidate exists in it, and imports none of it', () => {
     const files = readPackage(path.join(FIXTURES, 'sound-package'));
     const inputs = probeRunInputs(files);
     expect(inputs.ok).toBe(true);
     if (!inputs.ok) return;
     expect(inputs.probes).toEqual([...SANDBOX_PROBES]);
-    expect(inputs.files.map((f) => f.path)).toContain(PROBE_RUNTIME_PATH);
-    expect(inputs.suiteCode).toContain('import * as m0 from "./srv/engine.mjs";');
+    expect(inputs.files.map((f) => f.path)).toEqual(expect.arrayContaining([PROBE_RUNTIME_PATH, PROBE_CONFINEMENT_PATH]));
+    expect(inputs.files.find((f) => f.path === PROBE_CONFINEMENT_PATH)!.content).toBe(ENGINE_RUNTIME_JS);
+    expect(inputs.probe).toEqual({ modules: [['engine', 'srv/engine.mjs'], ['app', 'srv/app.mjs']] });
     expect(inputs.skipped.map((s) => s.probe)).toEqual(['import-side-effects']);
+    const s = inputs.suiteCode;
+    // The candidate is never imported by the driver: it runs bundled, in a compartment.
+    expect(s).not.toMatch(/from "\.\/srv\//);
+    expect(s).not.toContain("from 'node:test'");
+    expect(s).toContain(`// The adapter's modules ["srv/engine.mjs","srv/app.mjs"] run bundled as ./${PROBE_MODULES_BUNDLE_PATH}, in a SES compartment.`);
+    expect(s.indexOf('const write = process.stdout.write.bind(process.stdout);')).toBeGreaterThan(-1);
+    expect(s.indexOf('const write = ')).toBeLessThan(s.indexOf('globalThis.lockdown(LOCKDOWN_OPTIONS);'));
+    expect(s.indexOf('globalThis.lockdown(LOCKDOWN_OPTIONS);')).toBeLessThan(s.indexOf('confinement.load(bundle)'));
+    // The clock is the confinement's: nothing in the driver assigns the global Date.
+    expect(s).not.toMatch(/Date\.now\s*=/);
 
     expect(probeRunInputs(files.filter((f) => f.path !== 'acceptance-adapter.json'))).toMatchObject({ ok: false });
     const escaping = files.map((f) =>
       f.path === 'acceptance-adapter.json' ? { ...f, content: JSON.stringify({ modules: { engine: '../../etc/passwd.js' }, probes: { 'rounding-commercial': { call: { module: 'engine', export: 'x' } } } }) } : f,
     );
     expect(probeRunInputs(escaping)).toMatchObject({ ok: false });
+    // A file posing as one of the pass's own is dropped, never trusted, and cannot be named as a module.
+    const posing = probeRunInputs([
+      ...files,
+      { path: PROBE_RUNTIME_PATH, content: 'export const PROBES = {};' },
+      { path: PROBE_SES_PATH, content: 'globalThis.lockdown = () => {};' },
+    ]);
+    if (!posing.ok) throw new Error(posing.reason);
+    expect(posing.files.filter((f) => f.path === PROBE_RUNTIME_PATH).map((f) => f.content)).toEqual([PROBE_RUNTIME_JS]);
+    expect(posing.files.map((f) => f.path)).not.toContain(PROBE_SES_PATH);
+    expect(posing.suiteCode).toBe(inputs.suiteCode);
   });
 
   test('in the execution core: the sound package passes every probe, the flawed one fails every probe', async () => {
     test.setTimeout(180_000);
-    const run = async (fixture: string) => {
-      const inputs = probeRunInputs(readPackage(path.join(FIXTURES, fixture)));
-      if (!inputs.ok) throw new Error(inputs.reason);
-      const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true });
-      if (out.kind !== 'ran') throw new Error(`the probe pass did not run: ${JSON.stringify(out).slice(0, 400)}`);
-      return parseTapOutput(out.stdout).filter((r) => r.id.startsWith(SUITE_PREFIX));
-    };
-    const sound = await run('sound-package');
-    expect(sound.map((r) => [r.id, r.status])).toEqual(SANDBOX_PROBES.map((p) => [`${SUITE_PREFIX}${p}`, 'Passed']));
-    const flawed = await run('flawed-package');
-    expect(flawed.map((r) => [r.id, r.status])).toEqual(SANDBOX_PROBES.map((p) => [`${SUITE_PREFIX}${p}`, 'Failed']));
+    const sound = await probePass(readPackage(path.join(FIXTURES, 'sound-package')));
+    expect(sound.out.kind).toBe('ran');
+    expect(sound.verdicts.map((r) => [r.id, r.status])).toEqual(SANDBOX_PROBES.map((p) => [`${SUITE_PREFIX}${p}`, 'Passed']));
+    const flawed = await probePass(readPackage(path.join(FIXTURES, 'flawed-package')));
+    expect(flawed.verdicts.map((r) => [r.id, r.status])).toEqual(SANDBOX_PROBES.map((p) => [`${SUITE_PREFIX}${p}`, 'Failed']));
+  });
+
+  test('a candidate that patches filter and the clock and prints its own passes still fails its probes', async () => {
+    test.setTimeout(120_000);
+    const { out, verdicts } = await probePass(forging());
+    expect(out.kind).toBe('ran');
+    if (out.kind !== 'ran') return;
+    expect(verdicts.map((r) => [r.id, r.status])).toEqual([
+      [`${SUITE_PREFIX}run-id-collision`, 'Failed'],
+      [`${SUITE_PREFIX}empty-selection`, 'Failed'],
+      [`${SUITE_PREFIX}lenient-numeric`, 'Failed'],
+    ]);
+    expect(verdicts[0].message).toContain('(collision)');
+    // Nothing the candidate printed reached the run's output.
+    expect(out.stdout).not.toContain('FORGED');
+    // Exactly the driver's lines, one per probe: the candidate's own outcome line never got out.
+    expect(out.stdout.split('\n').filter((l) => l.startsWith(PROBE_OUTCOME_MARKER))).toHaveLength(3);
+  });
+
+  test('an outcome line printed beside the driver\'s is never read as a pass', () => {
+    const line = (entry: unknown) => `${PROBE_OUTCOME_MARKER}${JSON.stringify(entry)}`;
+    const fail = { probe: 'empty-selection', outcomes: [{ pattern: 'FP-GUARD-04', status: 'fail', evidence: 'answered as a success' }] };
+    const pass = { probe: 'empty-selection', outcomes: [{ pattern: 'FP-GUARD-04', status: 'pass', evidence: 'x' }] };
+    const probes = ['empty-selection', 'lenient-numeric'];
+    const twice = probeVerdicts([line(fail), line(pass)].join('\n'), probes);
+    expect(twice.map((r) => r.status)).toEqual(['Skipped', 'Skipped']);
+    expect(twice[0].message).toContain('2 times');
+    expect(twice[1].message).toContain('reported no outcome');
+    // TAP, a line for a probe nobody planned, and a probe that reports nothing at all are not passes either.
+    const noise = probeVerdicts(['ok 1 - PRB_empty-selection', line({ probe: 'csv-escaping', outcomes: pass.outcomes }), line({ probe: 'lenient-numeric', outcomes: [] })].join('\n'), probes);
+    expect(noise.map((r) => r.status)).toEqual(['Skipped', 'Skipped']);
+    expect(probeVerdicts(line({ probe: 'empty-selection', outcomes: [{ pattern: 'FP-RUN-01', status: 'not-applicable', evidence: '' }] }), probes)[0].status).toBe('Skipped');
+    expect(probeVerdicts(line({ probe: 'empty-selection', notRun: 'no item list', adapter: true }), probes)[0]).toMatchObject({ status: 'Skipped', message: 'not runnable: adapter mapping does not fit the package: no item list' });
+  });
+
+  test('a module that needs what the compartment does not provide is Not run with the reason, never a pass', async () => {
+    test.setTimeout(120_000);
+    const needsFs = `import fs from 'node:fs';\nexport const select = () => ({ status: fs.existsSync('/') ? 'EMPTY' : 'EMPTY' });\nexport const parseYear = () => ({ ok: false });\nexport class RunStore { simulate() { return { runId: 'x' }; } }\n`;
+    const { out, verdicts } = await probePass(forging(needsFs));
+    expect(out.kind).toBe('ran');
+    expect(verdicts.map((r) => r.status)).toEqual(['Skipped', 'Skipped', 'Skipped']);
+    for (const v of verdicts) expect(v.message).toMatch(/^not runnable: the code cannot run in the confined sandbox: .*'node:fs'/);
+  });
+
+  test('a module cannot import the probes, their runtime or the driver', async () => {
+    test.setTimeout(120_000);
+    for (const spec of ['../__cc_probe/probes.mjs', '../__cc_probe/runtime.mjs', '../__probe.mjs']) {
+      const { out } = await probePass(forging(`import * as leaked from ${JSON.stringify(spec)};\nexport const LEAKED = leaked;\n${FORGING_ENGINE}`));
+      expect(out.kind, spec).toBe('build-error');
+      if (out.kind === 'build-error') expect(out.message).toContain('reserved for Clean-Core.io');
+    }
   });
 });
 

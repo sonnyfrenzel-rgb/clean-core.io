@@ -2,7 +2,9 @@ import type { SandboxFile } from './test-sandbox/files';
 import {
   parseRunnerReport,
   verifyEngineReport,
+  verifyProbeReport,
   verifyRunnerReport,
+  RUNNER_ENGINE_PROTOCOL_VERSION,
   RUNNER_PROTOCOL_VERSION,
   type RunnerMode,
   type RunnerProxy,
@@ -131,6 +133,8 @@ export type RunnerCallResult =
        * not used. The main run's result stands either way.
        */
       engine?: { ok: true; digest: string } | { ok: false; reason: string };
+      /** 3.0.12 — the probe pass, when one was asked for: verified like the engine pass. */
+      probes?: { ok: true; digest: string } | { ok: false; reason: string };
     }
   | { ok: false; status: number; reason: string };
 
@@ -152,6 +156,8 @@ export async function callIsolatedRunner(
     proxy?: RunnerProxy;
     /** 3.0.12 — the engine pass (protocol 2). */
     engine?: { cases: string; contractModule: string; patterns: string[] };
+    /** 3.0.12 — the confined probe pass, derived by the runner from `files` (protocol 3). */
+    probes?: boolean;
   },
   deps: {
     idToken(audience: string): Promise<string>;
@@ -164,7 +170,10 @@ export async function callIsolatedRunner(
     suite: { code: input.suiteCode, patterns: input.patterns },
     mode: input.mode,
     ...(input.proxy ? { proxy: input.proxy } : {}),
-    ...(input.engine ? { protocol: RUNNER_PROTOCOL_VERSION, engine: input.engine } : {}),
+    // The lowest protocol that carries the request: an engine pass alone stays protocol 2.
+    ...(input.probes ? { protocol: RUNNER_PROTOCOL_VERSION } : input.engine ? { protocol: RUNNER_ENGINE_PROTOCOL_VERSION } : {}),
+    ...(input.engine ? { engine: input.engine } : {}),
+    ...(input.probes ? { probes: true as const } : {}),
   };
   let token: string;
   try {
@@ -209,12 +218,14 @@ export async function callIsolatedRunner(
   if (!report) return { ok: false, status: 502, reason: 'The test runner answered with something that is not a run report.' };
   const check = verifyRunnerReport({ files: input.files, suiteCode: input.suiteCode, mode: input.mode }, report);
   if (!check.ok) return { ok: false, status: 502, reason: `${check.reason} Nothing was recorded from this run.` };
-  if (!input.engine) return { ok: true, report, filesDigest: check.digest };
-  const engineCheck = verifyEngineReport({ files: input.files, engine: input.engine }, report);
+  if (!input.engine && !input.probes) return { ok: true, report, filesDigest: check.digest };
+  const engineCheck = input.engine ? verifyEngineReport({ files: input.files, engine: input.engine }, report) : null;
+  const probeCheck = input.probes ? verifyProbeReport({ files: input.files }, report) : null;
   return {
     ok: true,
     report,
     filesDigest: check.digest,
-    engine: engineCheck.ok ? { ok: true, digest: engineCheck.digest } : { ok: false, reason: engineCheck.reason },
+    ...(engineCheck ? { engine: engineCheck.ok ? { ok: true as const, digest: engineCheck.digest } : { ok: false as const, reason: engineCheck.reason } } : {}),
+    ...(probeCheck ? { probes: probeCheck.ok ? { ok: true as const, digest: probeCheck.digest } : { ok: false as const, reason: probeCheck.reason } } : {}),
   };
 }

@@ -11,12 +11,14 @@ import {
   parseRunnerReport,
   verifyRunnerReport,
   verifyEngineReport,
+  verifyProbeReport,
   engineDigest,
   hashRunInputs,
   MAX_RUN_INPUT_BYTES,
   RUNNER_PROTOCOL_VERSION,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
+import { probeRunInputs } from '../lib/test-sandbox/probe-suite';
 import { engineRunInputs, ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_RUNTIME_PATH, ENGINE_SES_PATH } from '../lib/test-sandbox/engine-suite';
 import {
   resolveRunnerTarget,
@@ -292,7 +294,7 @@ test.describe('protocol 2: the engine pass (roadmap 3.0.12, owner 12.10.2026)', 
     const refusals: Array<[Record<string, unknown>, number]> = [
       [engineRequest({ protocol: undefined }), 400],
       [engineRequest({ protocol: 1 }), 400],
-      [request({ protocol: 3 }), 400],
+      [request({ protocol: 4 }), 400],
       [engineRequest({ engine: { ...ENGINE, contractModule: 'srv/service.ts' } }), 400],
       [engineRequest({ files: FILES }), 400], // the contract module is not among the files
       [engineRequest({ engine: { ...ENGINE, cases: 'not json' } }), 400],
@@ -407,5 +409,84 @@ test.describe('protocol 2: the engine pass (roadmap 3.0.12, owner 12.10.2026)', 
     expect(isTestRunReceipt({ ...receipt, engine: { digest: 'd'.repeat(64), contractModule: 'srv/engine-contract.ts', viaContract: ['TC_ENG_01'] } })).toBe(true);
     expect(isTestRunReceipt({ ...receipt, engine: { digest: 'short', contractModule: 'srv/engine-contract.ts', viaContract: [] } })).toBe(false);
     expect(isTestRunReceipt({ ...receipt, engine: { digest: 'd'.repeat(64), contractModule: 'srv/engine-contract.ts', viaContract: [1] } })).toBe(false);
+  });
+});
+
+/* ------------------------------------------------- protocol 3: the probe pass */
+
+test.describe('protocol 3: the confined probe pass (roadmap 3.0.12)', () => {
+  const ADAPTER = {
+    modules: { engine: 'srv/a.ts' },
+    probes: { 'empty-selection': { call: { module: 'engine', export: 'a' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } } },
+  };
+  const PFILES = [...FILES, { path: 'acceptance-adapter.json', content: JSON.stringify(ADAPTER) }];
+  const probeRequest = (over: Record<string, unknown> = {}) => request({ files: PFILES, protocol: RUNNER_PROTOCOL_VERSION, probes: true, ...over });
+  const probeReportFor = (files = PFILES): RunnerReport => {
+    const inputs = probeRunInputs(files);
+    if (!inputs.ok) throw new Error(inputs.reason);
+    const h = hashRunInputs(inputs.files, inputs.suiteCode);
+    return { ...reportFor(files), protocol: RUNNER_PROTOCOL_VERSION, probes: { outcome: 'ran', stdout: '', stderr: '', exitCode: 0, files: h.files, suiteSha256: h.suiteSha256 } };
+  };
+
+  test('a probe pass needs protocol 3 and files that hold one; an engine pass alone stays protocol 2', () => {
+    expect(RUNNER_PROTOCOL_VERSION).toBe(3);
+    const r = parseRunRequest(probeRequest(), { serviceMode: 'mock' });
+    expect(r.ok && r.value).toMatchObject({ protocol: 3, probes: true });
+    const refusals: Array<Record<string, unknown>> = [
+      probeRequest({ protocol: 2 }),
+      probeRequest({ protocol: undefined }),
+      probeRequest({ probes: 'yes' }),
+      probeRequest({ files: FILES }), // no adapter: nothing to derive
+    ];
+    for (const body of refusals) {
+      const res = parseRunRequest(body, { serviceMode: 'mock' });
+      expect(res.ok, JSON.stringify(body).slice(0, 200)).toBe(false);
+      if (!res.ok) expect(res.status).toBe(400);
+    }
+  });
+
+  test('the probe report is hash-bound: another driver or file is refused; a runner before protocol 3 is named', () => {
+    const report = probeReportFor();
+    const inputs = probeRunInputs(PFILES);
+    if (!inputs.ok) throw new Error(inputs.reason);
+    expect(verifyProbeReport({ files: PFILES }, report)).toEqual({ ok: true, digest: hashRunInputs(inputs.files, inputs.suiteCode).digest });
+    expect(verifyProbeReport({ files: PFILES }, { ...report, probes: { ...report.probes!, suiteSha256: 'f'.repeat(64) } })).toMatchObject({ ok: false, reason: 'The runner reported a different probe driver.' });
+    expect(verifyProbeReport({ files: PFILES }, { ...report, probes: { ...report.probes!, files: report.probes!.files.slice(1) } })).toMatchObject({ ok: false, reason: 'The runner reported a different set of probe files.' });
+    // A report about another adapter (other probe inputs) is not a report about this pass.
+    const tampered = probeReportFor([...FILES, { path: 'acceptance-adapter.json', content: JSON.stringify({ ...ADAPTER, probes: { 'empty-selection': { ...ADAPTER.probes['empty-selection'], args: [{ orgs: ['X'] }] } } }) }]);
+    expect(verifyProbeReport({ files: PFILES }, tampered)).toMatchObject({ ok: false });
+    const { probes: _drop, ...older } = report;
+    void _drop;
+    expect(verifyProbeReport({ files: PFILES }, older)).toEqual({ ok: false, missing: true, reason: 'The runner did not run the failure-pattern probes (a runner revision before protocol 3).' });
+    expect(parseRunnerReport(report)).not.toBeNull();
+    expect(parseRunnerReport({ ...report, probes: { ...report.probes!, suiteSha256: 'x' } })).toBeNull();
+  });
+
+  test('the client sends protocol 3 with the probe pass, and verifies the probe report', async () => {
+    let sentBody: Record<string, unknown> | null = null;
+    const fetchWith = (answer: RunnerReport) =>
+      (async (_url: string, init: RequestInit) => {
+        sentBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify(answer), { status: 200 });
+      }) as unknown as typeof fetch;
+    const input = { files: PFILES, suiteCode: SUITE, patterns: [], mode: 'mock' as const, probes: true };
+    const good = await callIsolatedRunner('https://r.example.run.app', input, { idToken: async () => 't', fetchImpl: fetchWith(probeReportFor()) });
+    expect(sentBody).toMatchObject({ protocol: 3, probes: true });
+    expect(good.ok && good.probes).toMatchObject({ ok: true });
+    const { probes: _p, ...older } = probeReportFor();
+    void _p;
+    const old = await callIsolatedRunner('https://r.example.run.app', input, { idToken: async () => 't', fetchImpl: fetchWith(older as RunnerReport) });
+    expect(old.ok && old.probes).toEqual({ ok: false, reason: 'The runner did not run the failure-pattern probes (a runner revision before protocol 3).' });
+  });
+
+  test('the runner derives the pass itself and runs it confined, through the same core with the same guards', () => {
+    const server = fs.readFileSync(path.join(ROOT, 'runner/server.ts'), 'utf8');
+    expect(server).toContain('const inputs = probeRunInputs(run.files);');
+    const pass = server.slice(server.indexOf('const inputs = probeRunInputs('));
+    expect(pass.slice(0, 600)).toMatch(/executeSandboxRun\(\{\s+files: inputs\.files,\s+suiteCode: inputs\.suiteCode,\s+patterns: \[\],\s+allowUnsandboxed: false,\s+probe: inputs\.probe,/);
+    const route = fs.readFileSync(path.join(ROOT, 'app/api/run-tests/route.ts'), 'utf8');
+    expect(route).toContain('call.probes?.ok && call.report.probes');
+    expect(route).toContain('probeVerdicts(probeStdout, probe.probes)');
+    expect(route).not.toMatch(/parseTapOutput\(suiteStdout\)/);
   });
 });

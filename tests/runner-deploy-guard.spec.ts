@@ -147,6 +147,9 @@ test.describe('the runner image', () => {
       'lib/test-sandbox/express-fake.ts',
       'lib/test-sandbox/files.ts',
       'lib/test-sandbox/net-guard.ts',
+      // 3.0.12: the confined probe pass — the probes (a generated string) and the pass derivation, no app code.
+      'lib/test-sandbox/probe-runtime.ts',
+      'lib/test-sandbox/probe-suite.ts',
       'lib/test-sandbox/protocol.ts',
       'lib/test-verdicts.ts',
       'runner/relay.ts',

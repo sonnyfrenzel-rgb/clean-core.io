@@ -27,7 +27,7 @@ import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
 import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
 import { isGenerationDraft } from '@/lib/repair-draft';
-import { probeRunInputs, PROBE_TEST_PREFIX } from '@/lib/test-sandbox/probe-suite';
+import { probeRunInputs, probeVerdicts } from '@/lib/test-sandbox/probe-suite';
 import { NOT_RUN_NO_CONTRACT } from '@/lib/engine-call-contract';
 import { MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
@@ -911,11 +911,18 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
  */
 async function executeLocally(
   target: RunnerTarget,
-  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string } },
+  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string }; probe?: { modules: Array<[string, string]> } },
 ): Promise<SandboxRunOutcome> {
   if (target.kind === 'isolated') throw new Error('An isolated runner is configured; nothing runs in the application service.');
   if (target.kind === 'unavailable') return { kind: 'unavailable', reason: target.reason };
-  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true, ...(input.engine ? { engine: input.engine } : {}) });
+  return executeSandboxRun({
+    files: input.files,
+    suiteCode: input.suiteCode,
+    patterns: input.patterns,
+    allowUnsandboxed: true,
+    ...(input.engine ? { engine: input.engine } : {}),
+    ...(input.probe ? { probe: input.probe } : {}),
+  });
 }
 
 /**
@@ -1006,14 +1013,20 @@ async function mutationProbeResponse(input: {
   return NextResponse.json({ output: '', error: '', exitCode: 0, mutation, receipt: { ...receipt, mutation } });
 }
 
-/** The suite of a verify run that has no probe to run: the engine pass still needs a suite beside it. */
+/**
+ * The main suite of a verify run. The checks are the engine pass and the probe
+ * pass, each confined in a pass of its own; the main run only carries the
+ * candidate's files, which both passes are derived from.
+ */
 const VERIFY_NOOP_SUITE = "import { test } from 'node:test';\ntest('VERIFY_NOOP: no failure-pattern probe to run', () => {});\n";
 
 /**
  * Verify mode (3.0.12, `docs/design/engine-led-transformation.md` §13.1): one
  * runner call checks a generation candidate before it is stored — the engine
  * cases through the call contract (runner protocol 2) and the failure-pattern
- * probes (`lib/test-sandbox/probe-suite.ts`) as the suite beside them.
+ * probes (`lib/test-sandbox/probe-suite.ts`, runner protocol 3), each a confined
+ * pass the runner derives from the candidate's files: the candidate's modules
+ * run in a SES compartment and only the drivers' outcome lines are read.
  *
  * The engine cases are derived here, on the server, from the project's own
  * source (`deriveEngineCases`) — not taken from the candidate or the request —
@@ -1059,10 +1072,10 @@ async function verifyCandidateResponse(input: {
     }
   }
 
+  // The probe pass is derived from the candidate's files: here, and on the runner from the same files.
   const probe = probeRunInputs(files);
-  const runFiles = probe.ok ? probe.files : files;
-  const suiteCode = probe.ok ? probe.suiteCode : VERIFY_NOOP_SUITE;
-  const inputBytes = runFiles.reduce((n, f) => n + Buffer.byteLength(f.content, 'utf8'), 0) + Buffer.byteLength(suiteCode, 'utf8');
+  const suiteCode = VERIFY_NOOP_SUITE;
+  const inputBytes = files.reduce((n, f) => n + Buffer.byteLength(f.content, 'utf8'), 0) + Buffer.byteLength(suiteCode, 'utf8');
   if (inputBytes > MAX_RUN_INPUT_BYTES) {
     return NextResponse.json({ output: '', error: 'Test/code payload exceeds the allowed size limit.', exitCode: 1 }, { status: 413 });
   }
@@ -1076,7 +1089,8 @@ async function verifyCandidateResponse(input: {
     });
   }
 
-  let suiteStdout = '';
+  let probeStdout: string | null = null;
+  let probeReason: string | null = probe.ok ? null : probe.reason;
   let engineStdout: string | null = null;
   let engineReason: string | null = engineNotRun;
   let buildError: string | null = null;
@@ -1084,7 +1098,7 @@ async function verifyCandidateResponse(input: {
   if (target.kind === 'isolated') {
     const call = await callIsolatedRunner(
       target.url,
-      { files: runFiles, suiteCode, patterns: [], mode: 'mock', ...(enginePlan ? { engine: enginePlan } : {}) },
+      { files, suiteCode, patterns: [], mode: 'mock', ...(enginePlan ? { engine: enginePlan } : {}), ...(probe.ok ? { probes: true } : {}) },
       { idToken: (audience) => fetchMetadataIdToken(audience) },
     );
     if (!call.ok) {
@@ -1093,7 +1107,15 @@ async function verifyCandidateResponse(input: {
     }
     runner = { kind: 'isolated', revision: call.report.revision };
     if (call.report.outcome === 'build-error') buildError = call.report.buildError || 'Compilation failed.';
-    suiteStdout = call.report.stdout;
+    // Read only when the runner's probe report carries the hashes the app derived (`verifyProbeReport`).
+    if (probe.ok) {
+      if (call.probes?.ok && call.report.probes) {
+        if (call.report.probes.outcome === 'build-error') buildError = call.report.probes.buildError || 'Compilation failed.';
+        else probeStdout = call.report.probes.stdout;
+      } else {
+        probeReason = `Failure-pattern probes not run: ${call.probes && !call.probes.ok ? call.probes.reason : 'the runner did not report the probe pass.'}`;
+      }
+    }
     if (enginePlan) {
       if (call.engine?.ok && call.report.engine) {
         if (call.report.engine.outcome === 'build-error') engineReason = `The engine pass did not compile: ${call.report.engine.buildError ?? 'compilation failed'}`;
@@ -1104,12 +1126,18 @@ async function verifyCandidateResponse(input: {
     }
   } else {
     runner = { kind: 'local-emulator', revision: 'local-emulator' };
-    const outcome = await executeLocally(target, { files: runFiles, suiteCode, patterns: [] });
+    const outcome = await executeLocally(target, { files, suiteCode, patterns: [] });
     if (outcome.kind === 'unavailable') {
       return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1, code: 'runner-unavailable' }, { status: 500 });
     }
     if (outcome.kind === 'build-error') buildError = outcome.message;
-    else suiteStdout = outcome.stdout;
+    if (probe.ok && !buildError) {
+      // The same derivation and the same confined pass the runner runs.
+      const pass = await executeLocally(target, { files: probe.files, suiteCode: probe.suiteCode, patterns: [], probe: probe.probe });
+      if (pass.kind === 'ran') probeStdout = pass.stdout;
+      else if (pass.kind === 'build-error') buildError = pass.message;
+      else probeReason = `Failure-pattern probes not run: ${pass.reason}`;
+    }
     if (enginePlan && !buildError) {
       const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
       const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns, engine: inputs.engine });
@@ -1118,11 +1146,10 @@ async function verifyCandidateResponse(input: {
     }
   }
 
-  const probeResults = probe.ok
-    ? parseTapOutput(suiteStdout)
-        .filter((r) => r.id.startsWith(PROBE_TEST_PREFIX))
-        .map((r) => ({ id: r.id, status: r.status, message: r.message }))
-    : [];
+  // Judged from the probe driver's outcome lines for the probes this route planned
+  // (`probeVerdicts`), never from TAP or anything else the candidate's code could print.
+  const probeResults =
+    probe.ok && probeStdout !== null ? probeVerdicts(probeStdout, probe.probes).map((r) => ({ id: r.id, status: r.status, message: r.message })) : [];
   // Judged here from the outcome lines against the cases this route planned
   // (`engineVerdicts`), as a recorded run is — never from TAP the code printed.
   const engineResults =
@@ -1136,8 +1163,11 @@ async function verifyCandidateResponse(input: {
     buildError,
     engine: engineStdout !== null ? { ran: true, results: engineResults, cases: caseInfo } : { ran: false, reason: engineReason ?? 'Engine cases not run.' },
     probes:
-      probe.ok && !buildError
+      probe.ok && !buildError && probeStdout !== null
         ? { ran: true, results: probeResults, skipped: probe.skipped }
-        : { ran: false, reason: probe.ok ? 'Failure-pattern probes not run: the candidate did not compile.' : probe.reason },
+        : {
+            ran: false,
+            reason: !probe.ok ? probe.reason : buildError ? 'Failure-pattern probes not run: the candidate did not compile.' : (probeReason ?? 'Failure-pattern probes not run.'),
+          },
   });
 }

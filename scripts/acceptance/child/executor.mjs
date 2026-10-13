@@ -24,7 +24,7 @@
 import crypto from 'node:crypto';
 import net from 'node:net';
 import { createRequire } from 'node:module';
-import { LOCKDOWN_OPTIONS, collectEngineCase, createConfinement, createEngineState } from './engine-cases-core.mjs';
+import { LOCKDOWN_OPTIONS, collectEngineCase, createConfinement, createEngineState, createProbeExecutor } from './engine-cases-core.mjs';
 
 // Taken before lockdown and before any package code exists in this process.
 const out = new net.Socket({ fd: 3, readable: false, writable: true });
@@ -66,98 +66,16 @@ function reply(id, answer) {
 
 const message = (err) => String(err && err.message ? err.message : err).split('\n')[0].slice(0, 300);
 
-/**
- * A value as plain JSON data: functions and symbols dropped, a typed array read
- * as UTF-8 text, a BigInt as its digits, a cycle cut. Non-finite numbers become
- * null, as `JSON.stringify` writes them.
- */
-function plain(value, depth = 0, seen = new Set()) {
-  if (value === null || value === undefined) return value;
-  const t = typeof value;
-  if (t === 'string' || t === 'boolean') return value;
-  if (t === 'number') return Number.isFinite(value) ? value : null;
-  if (t === 'bigint') return String(value);
-  if (t === 'function' || t === 'symbol') return undefined;
-  if (depth > 40 || seen.has(value)) return '[cut]';
-  seen.add(value);
-  try {
-    if (value instanceof Uint8Array) return new TextDecoder().decode(value);
-    if (Array.isArray(value)) return value.map((v) => plain(v, depth + 1, seen) ?? null);
-    if (value instanceof Date) return value.toISOString();
-    const outObj = {};
-    for (const key of Object.keys(value)) {
-      const v = plain(value[key], depth + 1, seen);
-      if (v !== undefined) outObj[key] = v;
-    }
-    return outObj;
-  } catch (err) {
-    return `[unreadable: ${message(err)}]`;
-  } finally {
-    seen.delete(value);
-  }
-}
-
 /* ------------------------------------------------------------- the modules */
 
-const modules = new Map();
-const instances = new Map();
+// The probes' requests (call, call-many, clock) are answered by the shared probe executor
+// (`createProbeExecutor` in ./engine-cases-core.mjs), which the runner's probe pass uses as well.
+const probes = createProbeExecutor(confinement);
 
 /** Evaluate the package's bundle in a compartment: `{ exports } | { failure }`. */
 function loadBundle(source) {
   if (typeof source !== 'string' || !source) return { failure: 'the harness sent no bundle of the package' };
   return confinement.load(source);
-}
-
-const adapter = (text) => ({ adapter: text });
-
-/** Errors JavaScript throws by itself: a crash, not a refusal the code decided on. */
-const CRASHES = new Set(['TypeError', 'ReferenceError', 'SyntaxError']);
-
-/** The sandbox's refusal (a module or global it does not provide), or the package's own throw. */
-function thrown(err) {
-  const reason = confinement.hooks.notRunnable(err);
-  if (reason) return { sandbox: reason };
-  let crash = false;
-  try {
-    crash = Boolean(err) && typeof err === 'object' && CRASHES.has(String(err.name));
-  } catch {
-    crash = true;
-  }
-  return { threw: true, error: message(err), crash };
-}
-
-/**
- * Resolve and call a callable spec: `{ module, export, method?, construct?: [...], factory?: [...] }`.
- * Instances are cached per child, so `create` and `get` of one store share it.
- */
-async function invoke(spec, args) {
-  if (!spec || !spec.module || !spec.export) return adapter('callable needs module and export');
-  const mod = modules.get(spec.module);
-  if (!mod) return adapter(`adapter names no module '${spec.module}'`);
-  try {
-    const exported = mod[spec.export] ?? (mod.default && mod.default[spec.export]);
-    if (exported === undefined) return adapter(`module '${spec.module}' exports no '${spec.export}'`);
-    let target = exported;
-    let self;
-    if (spec.construct || spec.factory) {
-      const key = `${spec.module}|${spec.export}|${spec.construct ? 'new' : 'call'}|${stringify(spec.construct ?? spec.factory)}`;
-      if (!instances.has(key)) {
-        const ctorArgs = Array.isArray(spec.construct ?? spec.factory) ? spec.construct ?? spec.factory : [];
-        instances.set(key, spec.construct ? new exported(...ctorArgs) : await exported(...ctorArgs));
-      }
-      self = instances.get(key);
-      target = self;
-    }
-    if (spec.method) {
-      const owner = self ?? exported;
-      if (typeof owner[spec.method] !== 'function') return adapter(`'${spec.export}' has no method '${spec.method}'`);
-      return { threw: false, value: plain(await owner[spec.method](...(Array.isArray(args) ? args : []))) };
-    }
-    if (typeof target !== 'function') return adapter(`'${spec.export}' is not callable`);
-    return { threw: false, value: plain(await target(...(Array.isArray(args) ? args : []))) };
-  } catch (err) {
-    return thrown(err);
-  }
 }
 
 /* --------------------------------------------------------------- the requests */
@@ -174,7 +92,7 @@ async function handle(req) {
       const imported = [];
       for (const [name, key] of Object.entries(names)) {
         try {
-          modules.set(name, loaded.exports[String(key)]);
+          probes.use(name, loaded.exports[String(key)]);
         } catch (err) {
           return { imported, failure: `module '${name}' cannot be read: ${message(err)}` };
         }
@@ -183,19 +101,9 @@ async function handle(req) {
       return { imported };
     }
     case 'call':
-      return invoke(req.spec, req.args);
-    case 'call-many': {
-      const results = [];
-      for (const args of Array.isArray(req.argsList) ? req.argsList : []) {
-        const r = await invoke(req.spec, args);
-        results.push(r);
-        if (r.adapter || r.sandbox) break;
-      }
-      return { results };
-    }
+    case 'call-many':
     case 'clock':
-      confinement.setClock(req.clock ?? null);
-      return {};
+      return probes.request(req.op, req);
     case 'engine-load': {
       const loaded = loadBundle(req.bundle);
       if (loaded.failure !== undefined) return { failure: String(loaded.failure) };

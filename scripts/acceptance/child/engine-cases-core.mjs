@@ -35,6 +35,10 @@
  *   - the app judges those lines (`lib/engine-case-run.ts`, `engineVerdicts`).
  *   - the acceptance harness: the sandboxed executor (`executor.mjs`) locks
  *     down, confines and collects, the harness process (`../engine-cases.mjs`) judges.
+ * The failure-pattern probes reach a package through the same confinement:
+ * `createProbeExecutor` answers their requests in the harness's executor and
+ * in the runner's probe pass (`lib/test-sandbox/probe-suite.ts`, which sends
+ * this file as `__cc_probe/runtime.mjs`).
  *
  * The contract a generated package exports (`lib/engine-call-contract.ts`, code-draft rule 24):
  *   CONTRACT = { version: 1, baseRequest, fields: { ORIGINAL_NAME: 'request.path' | 'list[].key' | null } }
@@ -926,6 +930,136 @@ export function createConfinement(host) {
         return { failure: notRunnable(err) ?? `the code throws while it is loaded: ${message(err)}` };
       }
       return { exports: module.exports };
+    },
+  };
+}
+
+/* ------------------------------------------------------ the probe executor */
+
+/**
+ * The executing half of the failure-pattern probes (`../lib/probes.mjs`):
+ * answers the probes' requests — `call`, `call-many`, `clock` — against the
+ * modules a confinement loaded, the way the harness's executor (`executor.mjs`)
+ * always answered them, and the probe pass of the isolated test runner
+ * (`lib/test-sandbox/probe-suite.ts`) now answers them too (roadmap 3.0.12).
+ *
+ * Runs outside the compartment, after `lockdown()`, in the process that holds
+ * the confinement. Every answer is plain JSON data (`plainData`) — never an
+ * object of the package — and an error the confinement raised (a module or a
+ * global it does not provide) is the sandbox's (`{ sandbox }`), not the
+ * package's throw. The clock is the confinement's (`setClock`), a host
+ * capability: the global `Date` is never touched. Instances are cached per
+ * executor, so `create` and `get` of one store share it.
+ *
+ * `use(name, namespace)` registers a module under its adapter name;
+ * `request(kind, payload)` answers one request.
+ */
+export function createProbeExecutor(confinement) {
+  const modules = new Map();
+  const instances = new Map();
+  const say = (err) => String(err && err.message ? err.message : err).split('\n')[0].slice(0, 300);
+
+  /**
+   * A value as plain JSON data: functions and symbols dropped, a typed array read
+   * as UTF-8 text, a BigInt as its digits, a cycle cut. Non-finite numbers become
+   * null, as `JSON.stringify` writes them.
+   */
+  const plainData = (value, depth = 0, seen = new Set()) => {
+    if (value === null || value === undefined) return value;
+    const t = typeof value;
+    if (t === 'string' || t === 'boolean') return value;
+    if (t === 'number') return Number.isFinite(value) ? value : null;
+    if (t === 'bigint') return String(value);
+    if (t === 'function' || t === 'symbol') return undefined;
+    if (depth > 40 || seen.has(value)) return '[cut]';
+    seen.add(value);
+    try {
+      if (value instanceof Uint8Array) return new TextDecoder().decode(value);
+      if (Array.isArray(value)) return value.map((v) => plainData(v, depth + 1, seen) ?? null);
+      if (value instanceof Date) return value.toISOString();
+      const outObj = {};
+      for (const key of Object.keys(value)) {
+        const v = plainData(value[key], depth + 1, seen);
+        if (v !== undefined) outObj[key] = v;
+      }
+      return outObj;
+    } catch (err) {
+      return `[unreadable: ${say(err)}]`;
+    } finally {
+      seen.delete(value);
+    }
+  };
+
+  const adapter = (text) => ({ adapter: text });
+
+  /** The sandbox's refusal (a module or global it does not provide), or the package's own throw. */
+  const thrown = (err) => {
+    const reason = confinement.hooks.notRunnable(err);
+    if (reason) return { sandbox: reason };
+    let crash = false;
+    try {
+      crash = Boolean(err) && typeof err === 'object' && CRASHES.has(String(err.name));
+    } catch {
+      crash = true;
+    }
+    return { threw: true, error: say(err), crash };
+  };
+
+  /** Resolve and call a callable spec: `{ module, export, method?, construct?: [...], factory?: [...] }`. */
+  const invoke = async (spec, args) => {
+    if (!spec || !spec.module || !spec.export) return adapter('callable needs module and export');
+    const mod = modules.get(spec.module);
+    if (!mod) return adapter(`adapter names no module '${spec.module}'`);
+    try {
+      const exported = mod[spec.export] ?? (mod.default && mod.default[spec.export]);
+      if (exported === undefined) return adapter(`module '${spec.module}' exports no '${spec.export}'`);
+      let target = exported;
+      let self;
+      if (spec.construct || spec.factory) {
+        const key = `${spec.module}|${spec.export}|${spec.construct ? 'new' : 'call'}|${JSON.stringify(spec.construct ?? spec.factory)}`;
+        if (!instances.has(key)) {
+          const ctorArgs = Array.isArray(spec.construct ?? spec.factory) ? spec.construct ?? spec.factory : [];
+          instances.set(key, spec.construct ? new exported(...ctorArgs) : await exported(...ctorArgs));
+        }
+        self = instances.get(key);
+        target = self;
+      }
+      if (spec.method) {
+        const owner = self ?? exported;
+        if (typeof owner[spec.method] !== 'function') return adapter(`'${spec.export}' has no method '${spec.method}'`);
+        return { threw: false, value: plainData(await owner[spec.method](...(Array.isArray(args) ? args : []))) };
+      }
+      if (typeof target !== 'function') return adapter(`'${spec.export}' is not callable`);
+      return { threw: false, value: plainData(await target(...(Array.isArray(args) ? args : []))) };
+    } catch (err) {
+      return thrown(err);
+    }
+  };
+
+  return {
+    use(name, namespace) {
+      modules.set(String(name), namespace);
+    },
+    async request(kind, payload) {
+      const p = payload && typeof payload === 'object' ? payload : {};
+      switch (kind) {
+        case 'call':
+          return invoke(p.spec, p.args);
+        case 'call-many': {
+          const results = [];
+          for (const args of Array.isArray(p.argsList) ? p.argsList : []) {
+            const r = await invoke(p.spec, args);
+            results.push(r);
+            if (r.adapter || r.sandbox) break;
+          }
+          return { results };
+        }
+        case 'clock':
+          confinement.setClock(p.clock ?? null);
+          return {};
+        default:
+          return { transportError: `unknown request '${String(kind)}'` };
+      }
     },
   };
 }
