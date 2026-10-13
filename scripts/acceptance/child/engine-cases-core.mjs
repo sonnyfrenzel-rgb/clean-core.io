@@ -46,6 +46,13 @@
  *   simulate(request)        → { ok, runId, records, errors }
  *   getRun(runId)            → the stored run ({ runId, … }) or null
  *   compute(field, a, op, b) → the exact result as a decimal string at the field's places (op: + - * /)
+ *   check(guard, request, values) → { ok: true, holds } | { ok: false, errors } — optional; the engine-led
+ *                              scaffold exports it: whether the predicate of the original's check `guard`
+ *                              (`G-0061`) holds on the request, with the computed values a derived check
+ *                              reads (`values`, by original name). A case asks it where `set` cannot be
+ *                              built through the request (a system field, a computed or internal value,
+ *                              the record table itself) and for a check that ends a step early, which no
+ *                              request outcome shows (3.0.12, owner 13.10.2026).
  *
  * Pure apart from calling the module it is handed and, in `createConfinement`,
  * the host capabilities its caller passes in. No imports.
@@ -268,6 +275,10 @@ export function outcomeIn(raw) {
   if (raw.value !== undefined) out.value = plain(raw.value);
   if (typeof raw.path === 'string') out.path = raw.path.slice(0, 200);
   if (raw.run !== undefined) out.run = answerIn(raw.run);
+  if (raw.via === 'check') {
+    out.via = 'check';
+    if (raw.holds === true || raw.holds === false) out.holds = raw.holds;
+  }
   return out;
 }
 
@@ -292,6 +303,18 @@ export function judge(call, out) {
   const said = threw ? `threw: ${out.threw}` : `ok: ${out.ok}; errors: ${JSON.stringify(errors)}`;
   const names = (err) => (e.rule && err.rule && err.rule.toUpperCase() === e.rule.toUpperCase()) || (e.field && sameField(err.field, e.field, out.path));
   const target = e.rule ?? e.field;
+  if (out.via === 'check') {
+    const want = call.check?.holds;
+    if (want !== true && want !== false) return { status: 'not-runnable', evidence: 'the case names no expectation for the check' };
+    const of = `the predicate of ${call.check.guard}`;
+    if (threw) return { status: 'fail', evidence: `${of} threw (${out.threw})` };
+    if (out.ok === false) return { status: 'not-runnable', evidence: `${of} could not be asked: the request is refused (${JSON.stringify(errors)})` };
+    if (out.holds !== true && out.holds !== false) return { status: 'fail', evidence: `${of} answered without holds: true or false` };
+    return out.holds === want
+      ? { status: 'pass', evidence: `${of} ${want ? 'holds' : 'does not hold'}, as the original's condition` }
+      : { status: 'fail', evidence: `${of} ${out.holds ? 'holds' : 'does not hold'}; the original's condition ${want ? 'holds' : 'does not hold'} on this input` };
+  }
+  if (call.op === 'check') return { status: 'not-runnable', evidence: 'no answer of the check was reported' };
   if (call.op === 'compute') {
     if (e.kind === 'refused') {
       if (!threw) return { status: 'fail', evidence: `accepted (${JSON.stringify(out.value ?? null)}), expected refused` };
@@ -571,8 +594,14 @@ async function execute(mod, call, state) {
       restore();
     }
   }
+  if (call.op === 'check') return executeCheck(mod, call, state);
   const built = buildRequest(contract, call);
-  if (built.notRunnable) return { notRunnable: built.notRunnable };
+  if (built.notRunnable) {
+    // The request cannot carry the value (a system field, a computed or internal value, the record
+    // table): ask the check's predicate directly, where the contract offers it.
+    if (call.check && typeof mod.check === 'function') return executeCheck(mod, call, state);
+    return { notRunnable: built.notRunnable };
+  }
   const field = call.expect?.field;
   const mapped = field ? resolveField(contract, field).path : null;
   if (call.op === 'validate') {
@@ -596,6 +625,60 @@ async function execute(mod, call, state) {
   const r = await attempt(() => mod.simulate(built.request), state);
   if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
   return { ...answerOf(r), path: mapped };
+}
+
+/**
+ * Ask the predicate of one check (`call.check.guard`) through the contract's
+ * `check` export: the base request with every field of `set` the contract maps,
+ * and the rest handed in as `values` by original name (a value the original
+ * computes, a system field) — `{ special: 'empty' }` for the record table.
+ */
+async function executeCheck(mod, call, state) {
+  if (!isObject(call.check) || typeof call.check.guard !== 'string') return { notRunnable: 'the case names no check' };
+  if (typeof mod.check !== 'function') return { notRunnable: 'the contract exports no check — the predicate cannot be asked directly' };
+  const contract = mod.CONTRACT;
+  if (!isObject(contract?.baseRequest)) return { notRunnable: 'the contract has no baseRequest' };
+  const base = structuredClone(contract.baseRequest);
+  // The passing side "as in the base request" holds only where the base gives the checked field a value.
+  if ((call.set ?? []).length === 0 && typeof call.check.field === 'string') {
+    const r = resolveField(contract, call.check.field);
+    const v = r.path ? readField(base, r.path) : undefined;
+    if (r.path && (v === undefined || v === null || (typeof v === 'string' && v.trim() === ''))) {
+      return { notRunnable: `the base request gives ${String(call.check.field).toUpperCase()} no value, so the passing side of ${call.check.guard} cannot be asked` };
+    }
+  }
+  const mapped = [];
+  const values = {};
+  for (const s of call.set ?? []) {
+    const r = resolveField(contract, s.field);
+    if (r.path) {
+      mapped.push(s);
+      continue;
+    }
+    if (isObject(s.to) && s.to.special === 'empty') {
+      values[String(s.field).toUpperCase()] = { special: 'empty' };
+      continue;
+    }
+    const v = valueFor(s.to, contract, base);
+    if (v.error) return { notRunnable: v.error };
+    if (isObject(v.value)) return { notRunnable: `no value for ${String(s.field).toUpperCase()} can be handed to the check` };
+    values[String(s.field).toUpperCase()] = v.value;
+  }
+  const built = buildRequest(contract, { ...call, mode: call.mode === 'append' ? 'request' : call.mode, set: mapped });
+  if (built.notRunnable) return { notRunnable: built.notRunnable };
+  const r = await attempt(() => mod.check(call.check.guard, built.request, values), state);
+  if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+  if (r.threw !== undefined) return { via: 'check', threw: r.threw, crash: r.crash };
+  const a = r.answer;
+  if (isObject(a) && a.known === false) return { notRunnable: `the contract's check does not know ${call.check.guard}` };
+  if (isObject(a) && a.notFilled === true) return { notRunnable: `the predicate of ${call.check.guard} is not written (a stub)` };
+  if (isObject(a) && Array.isArray(a.unsupported) && a.unsupported.length > 0) {
+    return { notRunnable: `the predicate of ${call.check.guard} reads ${a.unsupported.slice(0, 4).map((m) => String(m).slice(0, 40)).join(', ')}, a computed value in no form the port fixes (only system fields and declared decimals are handed in)` };
+  }
+  if (isObject(a) && Array.isArray(a.missingValues) && a.missingValues.length > 0) {
+    return { notRunnable: `the case gives no value for ${a.missingValues.slice(0, 4).map((m) => String(m).slice(0, 40)).join(', ')}, which the predicate of ${call.check.guard} reads` };
+  }
+  return { via: 'check', ok: a?.ok === true ? true : a?.ok === false ? false : undefined, errors: errorsOf(a), holds: a?.holds };
 }
 
 /**

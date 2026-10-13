@@ -859,10 +859,13 @@ function engineContractFile(plan: UnitPlan): string {
   const model = contractModel(plan);
   return [
     '/**',
-    ' * The call contract (code-draft rule 24): the engine cases run against these five exports without a',
-    ' * model-written assertion. No server, no I/O on import. Written by Clean-Core.io (engine).',
+    ' * The call contract (code-draft rule 24): the engine cases run against these exports without a',
+    " * model-written assertion; `check` asks one check's predicate directly. No server, no I/O on import.",
+    ' * Written by Clean-Core.io (engine).',
     ' */',
     "import * as dec from './lib/decimal.ts';",
+    "import { NotImplementedFill } from './lib/errors.ts';",
+    "import * as guards from './lib/guards.ts';",
     "import { validateRequest, type InputError } from './lib/input-contract.ts';",
     "import { createRunStore } from './lib/run-store.ts';",
     "import { DECIMALS, type Request, type Selection } from './lib/types.ts';",
@@ -919,7 +922,76 @@ function engineContractFile(plan: UnitPlan): string {
     '  return out;',
     '}',
     '',
+    ...checkExport(plan),
   ].join('\n');
+}
+
+/**
+ * `check(guard, request, values)` (3.0.12, owner 13.10.2026): whether the predicate of one carried check
+ * holds — the request validated as `validate` does, a fresh run state, the computed values a derived check
+ * reads handed in by original name. A value is handed in only in a form the port fixes: a system field
+ * (`SY-SUBRC`) as a number, a declared decimal as a decimal string at its places; any other computed value
+ * is `unsupported` and the case is not run. A predicate still a stub answers `notFilled`.
+ */
+function checkExport(plan: UnitPlan): string[] {
+  const decimals = new Set(plan.decimals.map((d) => d.name.toUpperCase()));
+  const recordTable = plan.fields.some((f) => f.where === 'record');
+  const fieldNames = new Set(plan.fields.map((f) => f.original));
+  type CheckSpec = { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> };
+  const table: Record<string, CheckSpec> = {};
+  for (const g of plan.guards) {
+    if (!g.carried || !g.regionId) continue;
+    const subject = g.subject ? g.subject.toUpperCase() : null;
+    // `gt_rcv IS INITIAL` on the table the records stand for: the check is asked with no records.
+    const isTable = Boolean(recordTable && subject && !subject.includes('-') && !fieldNames.has(subject) && /\bIS\s+(?:NOT\s+)?INITIAL\s*$/i.test(g.condition));
+    table[g.id] = {
+      predicate: predicateName(g),
+      record: g.outcome === 'skips',
+      table: isTable ? subject : null,
+      operands: (g.basis === 'derived' ? g.operands : []).map((o) => {
+        const name = o.name.toUpperCase();
+        const comp = name.includes('-') ? name.slice(name.lastIndexOf('-') + 1) : name;
+        return { name, key: o.key, form: name.startsWith('SY-') ? 'number' : decimals.has(name) || decimals.has(comp) ? 'decimal' : null };
+      }),
+    };
+  }
+  return [
+    '/** The carried checks: the predicate, whether it reads a record, the record table it tests, the values it reads. */',
+    `const CHECKS: Record<string, { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> }> = ${JSON.stringify(table, null, 2)};`,
+    '',
+    "/** Does the predicate of the original's check `guard` (`G-0061`) hold on this request? `values`: the computed values it reads, by original name. */",
+    'export function check(guard: string, request: unknown, values: Record<string, unknown> = {}) {',
+    '  const spec = CHECKS[String(guard)];',
+    '  if (!spec) return { ok: false, known: false, errors: [] as InputError[] };',
+    '  requireBaseValues(request);',
+    '  const v = validateRequest(request);',
+    '  if (!v.ok || !v.normalized) return { ok: false, errors: v.errors };',
+    '  const { records, ...selection } = v.normalized;',
+    '  const given = (values ?? {}) as Record<string, unknown>;',
+    '  const asked = spec.table !== null ? given[spec.table] : undefined;',
+    "  const empty = typeof asked === 'object' && asked !== null && (asked as { special?: unknown }).special === 'empty';",
+    '  const st = { selection, records: empty ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local: {} };',
+    '  const missingValues = spec.operands.filter((o) => !(o.name in given)).map((o) => o.name);',
+    '  if (missingValues.length > 0) return { ok: false, missingValues, errors: [] as InputError[] };',
+    '  const unsupported = spec.operands.filter((o) => o.form === null).map((o) => o.name);',
+    '  if (unsupported.length > 0) return { ok: false, unsupported, errors: [] as InputError[] };',
+    '  const handed: Record<string, unknown> = {};',
+    '  for (const o of spec.operands) {',
+    '    const raw = String(given[o.name]);',
+    "    const decimal = DECIMALS[o.name] ?? DECIMALS[o.name.slice(o.name.lastIndexOf('-') + 1)];",
+    "    handed[o.key] = o.form === 'number' ? Number(raw) : decimal && dec.parse(raw) ? dec.round(raw, decimal.places) : raw;",
+    '  }',
+    '  const record = spec.record ? (st.records[0] ?? null) : null;',
+    '  const predicate = (guards as unknown as Record<string, (...args: unknown[]) => unknown>)[spec.predicate];',
+    '  try {',
+    '    return { ok: true, holds: predicate(selection, st, record, handed) === true };',
+    '  } catch (err) {',
+    '    if (err instanceof NotImplementedFill) return { ok: false, notFilled: true, errors: [] as InputError[] };',
+    '    throw err;',
+    '  }',
+    '}',
+    '',
+  ];
 }
 
 const SHIMS_TS = String.raw`/**

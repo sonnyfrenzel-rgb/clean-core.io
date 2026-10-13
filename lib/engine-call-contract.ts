@@ -81,11 +81,33 @@ export type CallExpect =
   /** Two runs with a frozen clock: two ids, and the first run is still readable as itself. */
   | { kind: 'distinct-runs' }
   /** `compute` gives exactly this decimal string. */
-  | { kind: 'equals'; value: string };
+  | { kind: 'equals'; value: string }
+  /** `check`: the predicate answers as `EngineCaseCall.check.holds` says. */
+  | { kind: 'holds' };
+
+/**
+ * The predicate of one of the original's checks, asked directly (3.0.12, owner
+ * 13.10.2026): does `G-0061`'s condition hold on this input? `holds` is the
+ * original's answer, derived from its condition — never the code's. The
+ * engine-led scaffold's contract exports `check`; a contract without it leaves
+ * the example not run.
+ */
+export interface EngineCheckCall {
+  guard: string;
+  holds: boolean;
+  /** The checked field, when the condition names one: an example on the base request is asked only when the base gives it a value. */
+  field?: string;
+}
 
 /** The machine form of one example. Firestore-safe: no nested arrays, no `undefined`. */
 export interface EngineCaseCall {
-  op: 'validate' | 'simulate' | 'run-identity' | 'compute';
+  /** `check`: only the predicate is asked (a check that ends a step early shows in no request outcome). */
+  op: 'validate' | 'simulate' | 'run-identity' | 'compute' | 'check';
+  /**
+   * The same example as a question to the check's predicate: asked for `op: 'check'`, and in place of a
+   * `simulate` whose `set` the contract cannot carry in a request (a system field, a computed value).
+   */
+  check?: EngineCheckCall;
   /** `compute`: fold `start` through `compute(field, acc, op, b)` for each step. */
   compute?: { field: string; start: string; steps: Array<{ op: '+' | '-' | '*' | '/'; b: string }> };
   /**

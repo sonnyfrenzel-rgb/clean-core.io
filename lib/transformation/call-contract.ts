@@ -14,7 +14,7 @@
  *     `notApplicable` with the reason.
  *   - `engineCaseScope(cases)` — which engine cases the scaffold alone can
  *     answer (input contract, exact arithmetic, run identity) and which need
- *     the business logic of the fills (guards, record counts). Track C's verify
+ *     the business logic of the fills (guards, record counts, a check's predicate asked directly). Track C's verify
  *     maps the second group to units; the first group is the scaffold's own
  *     test (a failure there is the engine's bug, §13.2 rule 2).
  *
@@ -164,11 +164,19 @@ export function engineCaseScope(cases: readonly Pick<EngineTestCase, 'id' | 'eng
     const calls = c.engineCase.examples.map((e) => e.call).filter((x): x is NonNullable<typeof x> => Boolean(x));
     const needsLogic = calls.some(
       (call) =>
-        call.op === 'simulate' &&
+        // A check's predicate is a fill region (`when_G0061`): asked directly, it answers for the written function.
+        call.op === 'check' ||
+        (call.op === 'simulate' &&
         call.mode !== 'empty' &&
-        (call.expect.kind === 'refused' || call.expect.kind === 'records-delta' || call.expect.kind === 'not-refused-by'),
+        (call.expect.kind === 'refused' || call.expect.kind === 'records-delta' || call.expect.kind === 'not-refused-by')),
     );
     (needsLogic ? logic : scaffold).push(c.id);
   }
   return { scaffold, logic };
+}
+
+/** The check a guard case asks about (`G-0061`), for mapping its failure to the unit that writes the predicate; null for other cases. */
+export function engineCaseGuard(c: Pick<EngineTestCase, 'engineCase'>): string | null {
+  for (const e of c.engineCase.examples) if (e.call?.check?.guard) return e.call.check.guard;
+  return null;
 }

@@ -171,21 +171,37 @@ export function countResults(results: readonly RunnerResult[], kind: CheckKind, 
 }
 
 /**
- * Failing engine cases onto the units that carry their rule. One failure per
- * case per unit; a case no unit owns is one failure with `unitId: null`.
+ * The unit that writes each check's predicate, read from the candidate's fill
+ * markers (`// @cc-fill BEGIN U02.G0061 …` → `G-0061` → `U02`).
+ */
+export function guardUnits(files: readonly FileLike[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const f of files) for (const m of f.content.matchAll(/@cc-fill BEGIN (U[0-9A-Za-z_-]+)\.G(\d+)\b/g)) out.set(`G-${m[2]}`, m[1]);
+  return out;
+}
+
+/**
+ * Failing engine cases onto the units that carry their rule — or, for a case
+ * traced by its line, the unit that writes the check's predicate (`guard`).
+ * One failure per case per unit; a case no unit owns is one failure with
+ * `unitId: null`.
  */
 export function mapEngineFailures(
   results: readonly RunnerResult[],
-  cases: ReadonlyArray<{ id: string; ruleId?: string | null }>,
+  cases: ReadonlyArray<{ id: string; ruleId?: string | null; guard?: string | null }>,
   units: ReadonlyArray<{ unitId: string; rules: readonly string[] }>,
+  byGuard: ReadonlyMap<string, string> = new Map(),
 ): CheckFailure[] {
   const ruleOf = new Map(cases.map((c) => [c.id, c.ruleId ?? null]));
+  const guardOf = new Map(cases.map((c) => [c.id, c.guard ?? null]));
   const out: CheckFailure[] = [];
   for (const r of results) {
     if (r.status !== 'Failed') continue;
     const rule = ruleOf.get(r.id) ?? null;
+    const guard = guardOf.get(r.id) ?? null;
     const failure = `${r.id}${rule ? ` (${rule})` : ''} failed through the call contract${r.message ? `: ${r.message}` : ''}`;
-    const owners = rule ? units.filter((u) => u.rules.includes(rule)).map((u) => u.unitId) : [];
+    let owners = rule ? units.filter((u) => u.rules.includes(rule)).map((u) => u.unitId) : [];
+    if (owners.length === 0 && guard && byGuard.has(guard)) owners = [byGuard.get(guard)!];
     if (owners.length === 0) out.push({ unitId: null, check: 'cases', failure });
     else for (const unitId of owners) out.push({ unitId, check: 'cases', failure });
   }
@@ -236,7 +252,7 @@ export interface VerifyRunAnswer {
   mode: 'verify';
   buildError?: string | null;
   engine:
-    | { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null; scope?: CheckScope }> }
+    | { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null; scope?: CheckScope; guard?: string | null }> }
     | { ran: false; reason: string };
   probes: { ran: true; results: RunnerResult[]; skipped: Array<{ probe: string; reason: string }> } | { ran: false; reason: string };
 }
@@ -332,7 +348,7 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       // can be sent back to — the units of the guard cases it stopped, else the
       // orchestrator, which every run of the base request goes through. Never
       // onto the engine: validate accepted the request, the written code threw.
-      outcome.failures.push(...mapEngineFailures(results.filter((r) => !threwOn.has(r.id)), answer.engine.cases, deps.units));
+      outcome.failures.push(...mapEngineFailures(results.filter((r) => !threwOn.has(r.id)), answer.engine.cases, deps.units, guardUnits(files)));
       if (baseThrew) {
         const rules = new Set([...threwOn].map((id) => info.get(id)?.ruleId).filter((r): r is string => typeof r === 'string'));
         let owners = deps.units.filter((u) => u.rules.some((r) => rules.has(r))).map((u) => u.unitId);
