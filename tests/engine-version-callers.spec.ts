@@ -111,3 +111,22 @@ test.describe('Engine version — every caller names it (3.0.12)', () => {
     expect(silent, 'pass engineVersionOfProject(project) for an existing project, APP_VERSION for a new run').toEqual([]);
   });
 });
+
+/**
+ * A screen that keeps rebuilt evidence in state must key that state by the
+ * engine too. The Testing strip kept its finding ticks as `{ code, ticks }`:
+ * a run of another engine over the same source passed the "same source" check
+ * and showed the previous engine's findings until the rebuild finished (QA
+ * review of 03501b79, dbe411efd049).
+ */
+test('the Testing strip shows finding ticks only for the engine, file and edition they were built with', () => {
+  const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/testing/page.tsx'), 'utf8');
+  const set = page.slice(page.indexOf('setTickState({'), page.indexOf('ticks:', page.indexOf('setTickState({')));
+  for (const field of ['engine: evidenceEngine', 'file: evidenceFile', 'deployment: evidenceDeployment']) {
+    expect(set, `the tick state no longer records ${field}`).toContain(field);
+  }
+  const shown = page.slice(page.indexOf('const findingTicks'), page.indexOf('tickState.ticks', page.indexOf('const findingTicks')));
+  for (const check of ['tickState.code === project?.legacyCode', 'tickState.engine === evidenceEngine', 'tickState.file === evidenceFile', 'tickState.deployment === evidenceDeployment']) {
+    expect(shown, `the ticks are shown without ${check}`).toContain(check);
+  }
+});
