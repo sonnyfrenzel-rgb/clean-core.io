@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { AtcComparisonState, AtcJoinRow, AtcReport } from '@/lib/abap/atc-model';
 import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join';
+import { atcQualityGate } from '@/lib/abap/atc-quality-gate';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { normaliseSeverity } from '@/lib/severity';
 import { formatIsoDate } from '@/lib/format';
@@ -65,6 +66,8 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
   // Three numbers, one per bucket — never added up into one.
   const overlap = useMemo(() => summarizeAtcComparison(rows), [rows]);
   const findingsById = useMemo(() => new Map(findings.map((f) => [f.id, f])), [findings]);
+  // DSAG guideline review B10: the quality gate over the import — ATC's findings only.
+  const gate = useMemo(() => atcQualityGate(atcReport), [atcReport]);
 
   const [filter, setFilter] = useState<AtcComparisonState | 'all'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -121,6 +124,8 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
         </CcDisclosure>
       </div>
 
+      <AtcQualityGateNote gate={gate} />
+
       <div className="px-6 pb-4">
         <CcFilterBar
           noun="objects"
@@ -169,6 +174,61 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
         {' '}Imported <span className="font-cc-mono">{formatIsoDate(atcReport.importedAt) ?? 'date not recorded'}</span>
       </p>
     </section>
+  );
+}
+
+/**
+ * The quality gate over the imported findings (DSAG guideline review B10):
+ * legacy findings may be baselined, security findings never. Counts of ATC's
+ * own findings only — never added to the engine's. Shown, not decided: the
+ * baseline and any exemption are decided in ATC, not here.
+ */
+function AtcQualityGateNote({ gate }: { gate: ReturnType<typeof atcQualityGate> }) {
+  const open = gate.securityOpen.length;
+  return (
+    <div className="px-6 pb-4" data-atc-quality-gate={gate.state}>
+      <div className="rounded-cc-row border border-cc-line p-3">
+        <p className="cc-text-label m-0 text-cc-ink-muted">Quality gate</p>
+        <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 cc-text-cell text-cc-ink">
+          <li data-atc-gate-security-open={open}>
+            <span className="tabular-nums font-semibold">{open}</span> security findings open — never baselined
+            {open > 0 ? '; the gate holds until each is fixed, or excluded in ATC as a false positive with a reason.' : '.'}
+          </li>
+          {gate.securityExempted.length > 0 ? (
+            <li data-atc-gate-security-exempted={gate.securityExempted.length}>
+              <span className="tabular-nums font-semibold">{gate.securityExempted.length}</span> security findings exempted in
+              ATC — not in the baseline either; check that a reason stands behind each exemption.
+            </li>
+          ) : null}
+          <li data-atc-gate-baseline={gate.baseline.length}>
+            <span className="tabular-nums font-semibold">{gate.baseline.length}</span> other findings may be baselined as
+            legacy, so that new findings stand out from them.
+          </li>
+        </ul>
+        <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">
+          Which findings are security findings is our reading of ATC&apos;s check name and message — the export
+          carries no such column. An import without open security findings is not a security sign-off: it lists only
+          what failed the checks that ran. Rule from the DSAG ABAP guideline (quality gates in the release process),
+          CC BY 4.0, paraphrased.
+        </p>
+      </div>
+      {open > 0 ? (
+        <ul className="m-0 mt-2 list-none p-0 cc-text-cell text-cc-ink" data-atc-gate-open-list="">
+          {gate.securityOpen.map((f, i) => (
+            <li key={`${f.objectName}-${i}`} className="flex items-start gap-2 py-1">
+              <CcTag>{PRIORITY_LABEL[f.priority] ?? f.priority}</CcTag>
+              <span className="min-w-0">
+                <span className="font-cc-mono">{f.objectName}</span>
+                {f.line !== undefined ? <span className="text-cc-ink-muted"> (line <span className="font-cc-mono">{f.line}</span>)</span> : null}
+                {' — '}
+                {f.checkTitle ? <span className="font-semibold">{f.checkTitle}: </span> : null}
+                {f.message}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
