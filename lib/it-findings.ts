@@ -2,6 +2,7 @@ import { coverage, type Coverage, type CoverageExclusion } from './management-an
 import { ALL_GRADES, type CloudReadinessGrade } from './abap/abcd-classification';
 import { LEVEL_OVERLAY_NOTE } from './process-overlays';
 import type { ProvenanceValue } from './provenance';
+import type { RfcTarget } from './abap/extensibility-router';
 
 /**
  * The IT view's answers — roadmap step 8.1.
@@ -113,6 +114,14 @@ export interface ItFindingRow {
    */
   successorType?: string | null;
   successorConfidence?: string | null;
+  /**
+   * Where an `rfc-call` finding calls — this system or another one
+   * (`rfcCallTarget`). The row carries no snippet, and from 3.0.12 only a call
+   * to another system chooses the route, so the canvas and the design context
+   * read this. Absent on other kinds and on a row built before it existed,
+   * which `routeDrivers` reads as outbound — the rule every RFC had before.
+   */
+  rfcTarget?: RfcTarget;
   /** The extensibility targets the router named for this finding. Possibly empty. */
   targetOptions: string[];
   /** `BR-nnn` of every derived rule whose own anchor covers `lineStart`. */

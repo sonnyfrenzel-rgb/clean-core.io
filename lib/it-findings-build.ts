@@ -4,7 +4,7 @@ import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { containerAt } from '@/lib/abap/block-structure';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { getCatalogSnapshotRef, gradeSapObjectUse } from '@/lib/abap/catalog-service';
-import { routeKindLabel } from '@/lib/abap/extensibility-router';
+import { rfcCallTarget, routeKindLabel } from '@/lib/abap/extensibility-router';
 import {
   CLASSIC_VIEW_META,
   CLOUD_VIEW_META,
@@ -96,6 +96,7 @@ function rowOf(
     successor: finding.sapReplacement?.objectName ?? null,
     successorType: finding.sapReplacement?.objectType ?? null,
     successorConfidence: finding.sapReplacement?.confidence ?? null,
+    ...(finding.kind === 'rfc-call' ? { rfcTarget: rfcCallTarget(finding) } : {}),
     targetOptions: [...(finding.targetOptions ?? [])],
     rulesCoveringLine,
     rulesInRoutine,

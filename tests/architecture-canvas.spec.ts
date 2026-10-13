@@ -4,6 +4,7 @@ import path from 'path';
 import { architectureCanvasModel, findingIdsOfKey } from '../lib/architecture-canvas';
 import { findingsOf } from '../lib/it-findings-build';
 import { contractOfProject } from '../lib/contract-build';
+import { ON_STACK_CONSTRUCTS_FROM } from '../lib/abap/extensibility-router';
 
 /**
  * The Design canvas (proposal B "Canvas first", owner decision 01.10.2026) is
@@ -13,16 +14,20 @@ import { contractOfProject } from '../lib/contract-build';
 
 const EXAMPLE = fs.readFileSync(path.join(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
 
-function canvasOf(source: string, deployment: 'public' | 'private') {
-  const built = contractOfProject({ legacyCode: source, s4Deployment: deployment, activeRunId: 'run-1' }, null);
+function canvasOf(source: string, deployment: 'public' | 'private', engine?: string) {
+  // `engine` is the run's engine version, which picks the route rule
+  // (`ON_STACK_CONSTRUCTS_FROM`); omitted, the contract reads an unstamped run
+  // and the canvas the current engine, as before.
+  const built = contractOfProject({ legacyCode: source, s4Deployment: deployment, activeRunId: 'run-1', ...(engine ? { analyzerVersion: engine } : {}) }, null);
   if (!built.ok) throw new Error('no contract');
   const { rows } = findingsOf(source, 'main.abap', deployment);
-  return { contract: built.contract, rows, model: architectureCanvasModel({ contract: built.contract, findings: rows, deployment }) };
+  return { contract: built.contract, rows, model: architectureCanvasModel({ contract: built.contract, findings: rows, deployment, ...(engine ? { engineVersion: engine } : {}) }) };
 }
 
 test.describe('the architecture canvas is derived, not drawn freehand', () => {
   test('the shipped example: route, successors, gaps and custom tables come from the findings', () => {
-    const { contract, rows, model } = canvasOf(EXAMPLE, 'private');
+    // A run of an engine before 3.0.12, where the BDC call chose side-by-side.
+    const { contract, rows, model } = canvasOf(EXAMPLE, 'private', 'v3.0.11');
     expect(model.route).toBe(contract.route.chosen);
     expect(model.route).toBe('side-by-side-cap');
 
@@ -61,6 +66,16 @@ test.describe('the architecture canvas is derived, not drawn freehand', () => {
     // A click on a box lists exactly the findings behind it.
     const first = model.successors[0];
     expect(findingIdsOfKey(model, first.key)).toEqual(first.findingIds);
+  });
+
+  test('from 3.0.12 the shipped example stays on the stack: its BDC call is rework, not a driver', () => {
+    const { contract, model } = canvasOf(EXAMPLE, 'private', ON_STACK_CONSTRUCTS_FROM);
+    expect(contract.route.chosen).toBe('in-app-rap');
+    expect(model.route).toBe('in-app-rap');
+    expect(model.drivers).toEqual([]);
+    expect(model.driverPhrases).toEqual([]);
+    // The screen automation is still a gap with no successor.
+    expect(model.gaps[0].object).toBe('ME21N');
   });
 
   test('code that stays on the stack is drawn as the in-app route', () => {

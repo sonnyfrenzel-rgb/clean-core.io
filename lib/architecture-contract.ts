@@ -20,8 +20,9 @@
  * Every sentence in a contract comes from one of three places and says which:
  *
  *   - **`evidence`** — a finding of this run, cited by finding id and line.
- *     `lib/abap/extensibility-router.ts` already decides the route from exactly
- *     six constructs; `routeDrivers()` there is that rule, exported, so the
+ *     `lib/abap/extensibility-router.ts` already decides the route from a
+ *     fixed set of constructs (six before engine 3.0.12, an RFC call to
+ *     another system from then on); `routeDrivers()` there is that rule, exported, so the
  *     reason the other track was rejected is the same rule that chose this one
  *     and not a second copy of it.
  *   - **`bound-input`** — an entry of the run's signed input manifest
@@ -637,7 +638,7 @@ export function buildArchitectureContract(args: {
   const standardWrites = byKind('standard-table-write');
   const coverageIncomplete = evidence.coverage ? !evidence.coverage.complete : false;
   // The same rule that chose the route, not a second copy of it. `deployment`
-  // decides two of the six triggers, so an unbound target cannot produce
+  // decides two of the triggers of engines before 3.0.12, so an unbound target cannot produce
   // drivers at all — which is why this asks the manifest and not a parameter.
   const drivers: RouteDriver[] =
     deployment === 'public' || deployment === 'private'
