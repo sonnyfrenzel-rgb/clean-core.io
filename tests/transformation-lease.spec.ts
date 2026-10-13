@@ -8,6 +8,7 @@ import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 import { isFirestoreId } from '../lib/firestore-id';
 import {
+  LEASE_CODES,
   LEASE_COLLECTION,
   LEASE_MAX_CALLS,
   LEASE_MAX_IN_FLIGHT,
@@ -27,6 +28,7 @@ import {
 } from '../lib/transformation/lease';
 import { acquireLeaseCall, issueLease, peekLease, readLease, releaseLeaseCall } from '../lib/transformation/lease-store';
 import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
+import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 
 /**
  * The generation lease (design §11; owner decision 12.10.2026: one generation
@@ -203,6 +205,19 @@ test.describe('the lease branch of /api/gemini', () => {
     const before = src.slice(at('if (lease) {'), at('peekLease('));
     expect(before).toMatch(/if \(leased\.stage !== 'transformation'\) \{\s*return NextResponse\.json\(/);
     expect(before).toMatch(/if \(typeof leased\.prompt !== 'string' \|\| !leased\.prompt \|\| leased\.prompt\.length > MAX_PROMPT_LENGTH\) \{\s*return NextResponse\.json\(/);
+  });
+
+  test('a leased prompt is a fill prompt: above twice the fill budget it is refused 413 before the lease is read (QA finding 804d0920fff4)', () => {
+    expect(LEASED_PROMPT_MAX_CHARS).toBe(FILL_PROMPT_MAX_CHARS * 2);
+    expect(LEASED_PROMPT_MAX_CHARS).toBeLessThan(250_000);
+    expect(LEASE_CODES.promptTooLarge).toBe('lease-prompt-too-large');
+    const before = src.slice(at('if (lease) {'), at('peekLease('));
+    expect(before).toMatch(
+      /if \(leased\.prompt\.length > LEASED_PROMPT_MAX_CHARS\) \{\s*return NextResponse\.json\(\s*\{[\s\S]*?code: LEASE_CODES\.promptTooLarge,\s*\},\s*\{ status: 413 \},\s*\);/,
+    );
+    // After the shape check, which makes `leased.prompt` a string.
+    expect(at('leased.prompt.length > LEASED_PROMPT_MAX_CHARS')).toBeGreaterThan(at('leased.prompt.length > MAX_PROMPT_LENGTH'));
+    expect(src.match(/assertRateLimit\(/g)).toHaveLength(1);
   });
 
   test('a caller gone during the backoff gets no retry (QA review of 03501b79, 08b88f95cff6)', () => {

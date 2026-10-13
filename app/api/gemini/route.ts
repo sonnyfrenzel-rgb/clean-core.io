@@ -36,6 +36,8 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
 import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
+import { LEASED_PROMPT_MAX_CHARS } from '@/lib/transformation/fill-prompt';
+import { modelUsageLog } from '@/lib/model-usage-log';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
 
 /**
@@ -255,6 +257,19 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: `The prompt must be a single string of 1 to ${MAX_PROMPT_LENGTH.toLocaleString()} characters.` },
             { status: 400 },
+          );
+        }
+        // A leased call is a fill call, and a fill prompt is small (design §2
+        // goal 4): the general 250,000 would let a lease spend its calls on
+        // prompts eighteen times the size the design promises (QA finding
+        // 804d0920fff4). Refused before the lease is read.
+        if (leased.prompt.length > LEASED_PROMPT_MAX_CHARS) {
+          return NextResponse.json(
+            {
+              error: `A call under a generation lease carries at most ${LEASED_PROMPT_MAX_CHARS.toLocaleString()} characters; this one has ${leased.prompt.length.toLocaleString()}.`,
+              code: LEASE_CODES.promptTooLarge,
+            },
+            { status: 413 },
           );
         }
         const { db } = await getAdminDb();
@@ -478,6 +493,7 @@ export async function POST(request: NextRequest) {
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : await callWithRetry(async () => {
+          const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
             model,
             contents: prompt,
@@ -492,6 +508,16 @@ export async function POST(request: NextRequest) {
                 }
               : { abortSignal: callSignal },
           });
+          // Where the time of a call went (input, output, thinking): counts
+          // only, never the prompt or the answer (`lib/model-usage-log.ts`).
+          logger.info('gemini usage', modelUsageLog({
+            usage: result.usageMetadata,
+            model,
+            stage: stage ?? null,
+            responseShape: shape ?? null,
+            leased: lease !== null,
+            durationMs: Date.now() - attemptAt,
+          }));
           return {
             text: result.text,
             finishReason: result.candidates?.[0]?.finishReason ?? null,

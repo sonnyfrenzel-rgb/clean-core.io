@@ -45,7 +45,7 @@
  */
 
 import { decideGenerationRepair, GENERATION_REPAIR_MAX_ROUNDS } from '../repair-draft';
-import { bundleFills, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
+import { LEASED_PROMPT_MAX_CHARS, bundleFills, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
 
 import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types';
 
@@ -109,6 +109,8 @@ export interface OrchestratorInput {
   /** Model calls this generation may make (the lease's budget). */
   budget: number;
   maxInFlight?: number;
+  /** The largest prompt a call may carry; the route refuses a leased one above it (default `LEASED_PROMPT_MAX_CHARS`). */
+  maxPromptChars?: number;
   signal?: AbortSignal;
   onEvent?: (event: GenerationEvent) => void;
   /** Injected for the specs; resolves early when the signal aborts. */
@@ -264,7 +266,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
   let stoppedBy: 'lease' | 'budget' | null = null;
   const halted = () => calls.signal.aborted || stoppedBy !== null;
 
-  type CallOutcome = { text: string } | { error: string };
+  type CallOutcome = { text: string } | { error: string; final?: boolean };
+  const maxPromptChars = input.maxPromptChars ?? LEASED_PROMPT_MAX_CHARS;
 
   /** One model call, asked once more after a 429 or a transient error. */
   async function call(prompt: string): Promise<CallOutcome> {
@@ -305,6 +308,15 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     const worker = async () => {
       while (next < bundles.length && !halted()) {
         const b = bundles[next++];
+        // A prompt the route would refuse is never sent: no call is spent on it,
+        // and asking again would build the same prompt (QA finding 804d0920fff4).
+        if (b.prompt.length > maxPromptChars) {
+          onAnswer(b, {
+            error: `its prompt has ${b.prompt.length.toLocaleString('en-US')} characters, more than the ${maxPromptChars.toLocaleString('en-US')} a fill call may carry`,
+            final: true,
+          });
+          continue;
+        }
         for (const id of b.unitIds) emit({ t: 'fill', unitId: id, state: 'writing', at: now() });
         onAnswer(b, await call(b.prompt));
       }
@@ -327,6 +339,19 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       }
       return [...ids];
     };
+    if ('error' in outcome && outcome.final) {
+      // Not sent at all: the unit is out of the loop with the reason, in a fill
+      // round; a repair round leaves it as it was.
+      for (const id of b.unitIds) {
+        const st = states.get(id)!;
+        if (round === 0) {
+          st.final = true;
+          st.reason = `not written — ${outcome.error}`;
+        }
+        emit({ t: 'fill', unitId: id, state: 'unusable', at: now() });
+      }
+      return [];
+    }
     if ('error' in outcome) return unusable(b.unitIds, `the model call failed: ${outcome.error}`);
     const parsed = parseFillAnswer(outcome.text, b.unitIds);
     if (!parsed.ok) return unusable(b.unitIds, parsed.reason);

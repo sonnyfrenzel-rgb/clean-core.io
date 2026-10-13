@@ -64,6 +64,8 @@ export const LEASE_CODES = {
   exhausted: 'lease-exhausted',
   busy: 'lease-busy',
   stage: 'lease-stage',
+  /** A leased prompt above `LEASED_PROMPT_MAX_CHARS` (`fill-prompt.ts`): this call is refused, the lease is not touched. */
+  promptTooLarge: 'lease-prompt-too-large',
   hourly: 'lease-hourly-limit',
 } as const;
 
