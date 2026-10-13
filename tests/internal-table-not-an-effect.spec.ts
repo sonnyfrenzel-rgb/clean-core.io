@@ -4,7 +4,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { buildBusinessStatements } from '../lib/abap/business-statement';
 
 /**
- * Engine fixes from the ZMM_BESTELLUEBERSICHT review (owner, 06.10.2026).
+ * Engine fixes from the MM case review (owner, 06.10.2026).
  *
  * 1. `MODIFY gt_fieldcat FROM gs_fieldcat` reads exactly like a database
  *    MODIFY to `databaseWriteIn`. The call graph asked nothing else, so the

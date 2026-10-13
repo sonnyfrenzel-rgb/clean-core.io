@@ -2,7 +2,7 @@ import { maskLiterals, readStatements, type AbapStatement } from './statement-re
 
 /**
  * User input that is read and then ignored, and dialog parameters of the wrong
- * type — roadmap 3.0.7, from the ZMM_BESTELLUEBERSICHT review.
+ * type — roadmap 3.0.7, from the MM case review.
  *
  * The review program asks for a new delivery date in `POPUP_GET_VALUES`, hands
  * the popup its batch-input table as `FIELDS` (a table of `BDCDATA` where the

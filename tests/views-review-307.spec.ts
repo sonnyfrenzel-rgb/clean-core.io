@@ -20,7 +20,7 @@ import { decisionTableViews } from '../lib/decision-tables';
 import { processOverviewSvg } from '../lib/process-overview-svg';
 
 /**
- * Roadmap 3.0.7 — "Engine: what the ZMM_BESTELLUEBERSICHT review showed", the
+ * Roadmap 3.0.7 — "Engine: what the MM case review showed", the
  * views half: the engine slice (`tests/abap-engine-review-307.spec.ts`)
  * recorded the run order, user actions and decision tables; here the BPMN, the
  * process description and "Ask this case" read them. Server-free: every test

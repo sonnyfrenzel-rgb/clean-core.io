@@ -211,7 +211,7 @@ export function collectLocalDataObjects(source: string): Set<string> {
   // Structured declarations: `DATA: BEGIN OF it_out OCCURS 0, … END OF it_out.`
   // The chain above reads `BEGIN` as the name, so the table with header line
   // that a classic report builds its list in was never known as local, and
-  // `MODIFY it_out.` read as a database write (ZMM_BESTELLUEBERSICHT review,
+  // `MODIFY it_out.` read as a database write (MM case review,
   // roadmap 3.0.7). The selection-screen forms of BEGIN OF name no data object.
   const structured = /\bBEGIN\s+OF\s+(?!(?:BLOCK|SCREEN|LINE|TABBED|COMMON\s+PART|VERSION)\b)([\w\/]+)/gi;
   for (const m of code.matchAll(structured)) add(m[1]);

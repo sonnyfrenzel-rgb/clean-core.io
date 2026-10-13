@@ -928,7 +928,7 @@ function openItems(ctx: Ctx, rules: BusinessRule[], unreachable: string[], formR
     }
   }
   if (unreachable.length) {
-    // Two different facts, kept apart (review of ZMM_BESTELLUEBERSICHT,
+    // Two different facts, kept apart (review of the MM case,
     // 06.10.2026): a routine nothing performs or registers is dead where it
     // stands; one performed only from such a routine is dead because its
     // caller is. Saying "the program never calls" of both counted BDC helpers

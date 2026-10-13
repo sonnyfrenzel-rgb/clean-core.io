@@ -1,7 +1,7 @@
 import type { BusinessRuleSet, DecisionTable } from '@/lib/abap/business-rule-set';
 
 /**
- * Decision tables as a reader sees them — roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT
+ * Decision tables as a reader sees them — roadmap 3.0.7 (MM case
  * review, recommendation 3): a classification the source writes as an
  * `IF`/`ELSEIF` chain or a `CASE` whose arms only set one field reads as **one
  * business rule task with its table**, one row per arm, condition → value.
