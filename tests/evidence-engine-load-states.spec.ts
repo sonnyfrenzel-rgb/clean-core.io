@@ -74,16 +74,39 @@ async function gateEvidence(page: Page, mode: 'hold' | 'abort'): Promise<Evidenc
   return { requested, release };
 }
 
-/** Counts the engine chunks the page fetches. */
-async function countEngineChunks(page: Page): Promise<{ count: () => number }> {
+/**
+ * Counts the engine chunks the page fetches.
+ *
+ * `count()` first lets every chunk still on its way arrive, then stops
+ * intercepting. A page loads chunks after it has drawn — since 3.0.12 the
+ * Analyze page fetches the synced SAP name lists (`loadSapNameLists`, ~0.5 MB,
+ * a chunk of its own by design) once its report is up — and a count taken
+ * while such a chunk was still being read would miss it if it were the engine,
+ * and would leave this route's `route.fetch` running into the end of the test
+ * ("route.fetch: Test ended", reported against the next test).
+ */
+async function countEngineChunks(page: Page): Promise<{ count: () => Promise<number> }> {
   let seen = 0;
-  await page.route(CHUNKS, async (route: Route) => {
-    const response = await route.fetch();
-    const body = await response.text();
-    if (body.includes(ENGINE_MARKER)) seen++;
-    await route.fulfill({ response, body });
-  });
-  return { count: () => seen };
+  const inFlight = new Set<Promise<void>>();
+  const handler = (route: Route): Promise<void> => {
+    const done = (async () => {
+      const response = await route.fetch();
+      const body = await response.text();
+      if (body.includes(ENGINE_MARKER)) seen++;
+      await route.fulfill({ response, body });
+    })();
+    inFlight.add(done);
+    return done.finally(() => inFlight.delete(done));
+  };
+  await page.route(CHUNKS, handler);
+  return {
+    count: async () => {
+      while (inFlight.size) await Promise.allSettled([...inFlight]);
+      await page.unroute(CHUNKS, handler);
+      while (inFlight.size) await Promise.allSettled([...inFlight]);
+      return seen;
+    },
+  };
 }
 
 /** Fails if `selector` shows up at any point over `ms` — a state that must hold, not merely start. */
@@ -133,7 +156,7 @@ test.describe('the project evidence, read from the server', () => {
     await expect(page.locator('[data-analysis-findings] [data-findings-group]').first()).toBeVisible();
     await expect(page.locator('body')).not.toContainText('The evidence engine found nothing');
     await expect(page.getByText('Loading project data...')).toHaveCount(0);
-    expect(chunks.count(), 'Analyze downloaded the evidence engine').toBe(0);
+    expect(await chunks.count(), 'Analyze downloaded the evidence engine').toBe(0);
   });
 
   test('Analyze says the evidence could not be read, and claims no findings it never computed', async ({ page }) => {
@@ -182,7 +205,7 @@ test.describe('the project evidence, read from the server', () => {
     // Counted from findings, not from none: the rich fixture has some.
     await expect(page.locator('[data-transformation-places]')).not.toHaveAttribute('data-transformation-places', '0');
     await expect(page.locator('[data-evidence-loading]')).toHaveCount(0);
-    expect(chunks.count(), 'Transformation downloaded the evidence engine').toBe(0);
+    expect(await chunks.count(), 'Transformation downloaded the evidence engine').toBe(0);
   });
 
   test('Transformation says the evidence could not be read, and draws no facets counted from none', async ({ page }) => {
