@@ -24,19 +24,29 @@ test('the abapGit layout of one business object; every name within 30 characters
   expect(paths).toEqual(
     [
       '.abapgit.xml',
+      'src/package.devc.xml',
       'src/zbp_fx_co_alloc_r.clas.abap',
       'src/zbp_fx_co_alloc_r.clas.locals_imp.abap',
+      'src/zbp_fx_co_alloc_r.clas.xml',
       'src/zcl_fx_co_alloc_logic.clas.abap',
       'src/zcl_fx_co_alloc_logic.clas.testclasses.abap',
+      'src/zcl_fx_co_alloc_logic.clas.xml',
       'src/zcx_fx_co_alloc_nofill.clas.abap',
+      'src/zcx_fx_co_alloc_nofill.clas.xml',
       'src/zfx_co_alloc_c.ddls.asddls',
+      'src/zfx_co_alloc_c.ddls.xml',
       'src/zfx_co_alloc_c.dcls.asdcls',
+      'src/zfx_co_alloc_c.dcls.xml',
       'src/zfx_co_alloc_r.bdef.asbdef',
+      'src/zfx_co_alloc_r.bdef.xml',
       'src/zfx_co_alloc_r.ddls.asddls',
+      'src/zfx_co_alloc_r.ddls.xml',
       'src/zfx_co_alloc_r.dcls.asdcls',
-      'src/zfx_co_alloc_rec.tabl.astabl',
+      'src/zfx_co_alloc_r.dcls.xml',
+      'src/zfx_co_alloc_rec.tabl.xml',
       'src/zfx_co_alloc_srvb.srvb.xml',
       'src/zfx_co_alloc_srvd.srvd.srvdsrv',
+      'src/zfx_co_alloc_srvd.srvd.xml',
     ].sort(),
   );
   for (const p of paths) {
@@ -49,13 +59,16 @@ test('the abapGit layout of one business object; every name within 30 characters
 
 test('packed record fields are abap.dec(2L−1, d) from their declaration', () => {
   const { scaffold, plan } = rap(fixture('co-shape'));
-  const table = file(scaffold, '.tabl.astabl');
+  // abapGit's table XML (scaffold version 3): DEC with 2L−1 digits in L bytes — `abap.dec(2L−1, d)` in ADT's source.
+  const table = file(scaffold, '.tabl.xml');
+  const field = (name: string) => table.slice(table.indexOf(`<FIELDNAME>${name}</FIELDNAME>`), table.indexOf('</DD03P>', table.indexOf(`<FIELDNAME>${name}</FIELDNAME>`)));
   // quota TYPE p LENGTH 4 DECIMALS 2 → 7 digits; amount LENGTH 8 DECIMALS 2 → 15.
-  expect(table).toContain('quota : abap.dec(7,2);');
-  expect(table).toContain('amount : abap.dec(15,2);');
+  expect(field('QUOTA')).toMatch(/<DATATYPE>DEC<\/DATATYPE>\s*<LENG>000007<\/LENG>\s*<DECIMALS>000002<\/DECIMALS>/);
+  expect(field('AMOUNT')).toMatch(/<DATATYPE>DEC<\/DATATYPE>\s*<LENG>000015<\/LENG>\s*<DECIMALS>000002<\/DECIMALS>/);
   for (const f of plan.fields.filter((x) => x.where === 'record' && x.kind === 'packed')) {
     const length = plan.decimals.find((d) => d.name.toLowerCase() === f.original.toLowerCase())!.length;
-    expect(table).toContain(`: abap.dec(${2 * length - 1},${f.places});`);
+    expect(table).toContain(`<LENG>${String(2 * length - 1).padStart(6, '0')}</LENG>`);
+    expect(table).toContain(`<DECIMALS>${String(f.places).padStart(6, '0')}</DECIMALS>`);
   }
   const logic = file(scaffold, '_logic.clas.abap');
   expect(logic).toContain('quota TYPE p LENGTH 4 DECIMALS 2,');

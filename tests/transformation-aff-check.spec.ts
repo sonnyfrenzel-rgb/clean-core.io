@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildRapScaffold } from '../lib/transformation';
 import { affCheck, affCount, affFileNameOf, AFF_NOT_RUN, type AffSchemaSource } from '../lib/transformation/aff-check';
-import { affFormatsCheck, createRunnerVerifier } from '../lib/transformation/verify';
+import { createRunnerVerifier, packageFormatsHook } from '../lib/transformation/verify';
 import { checkPhrase } from '../lib/transformation/check-words';
 import { AFF_SCHEMAS, affSchemaSource } from '../lib/transformation/aff-schemas';
 import { fixture, planOf, ROOT } from './helpers/transformation-scaffold';
@@ -116,11 +116,12 @@ test('the RAP verifier counts the formats check three ways and reports a broken 
   const scaffold = buildRapScaffold(plan, facts);
   const tooLong = { ...JSON.parse(example('z_aff_example_ddls.ddls.json')), header: { description: 'y'.repeat(70), originalLanguage: 'en' } };
   const files = [...scaffold.files, { path: 'src/zfx_co_alloc_r.ddls.json', content: JSON.stringify(tooLong) }];
-  const verify = createRunnerVerifier({ candidate: () => files, units: [], formats: affFormatsCheck(schemas) });
+  // The RAP verifier's hook checks both formats (abapgit-check.ts): AFF JSON here, abapGit XML and `.abapgit.xml` beside it.
+  const verify = createRunnerVerifier({ candidate: () => files, units: [], formats: packageFormatsHook(schemas) });
   const outcome = await verify(new Map(), { round: 0, signal: new AbortController().signal });
 
   const formats = outcome.checks.find((c) => c.kind === 'formats')!;
-  const objectFiles = files.filter((f) => affFileNameOf(f.path)).length;
+  const objectFiles = files.filter((f) => affFileNameOf(f.path)).length + 1; // + .abapgit.xml
   expect(formats).toMatchObject({ total: objectFiles, failed: 1 });
   expect((formats.passed ?? 0) + formats.failed + (formats.notRun ?? 0)).toBe(formats.total);
   // Every file of today's scaffold is source or abapGit XML: none of them can pass.
@@ -134,7 +135,7 @@ test('the RAP verifier counts the formats check three ways and reports a broken 
   expect(finding.failure).toContain('#/properties/header/properties/description/maxLength');
 
   const phrase = checkPhrase(formats);
-  expect(phrase).toMatch(/^object files against SAP's ABAP file formats \(AFF schemas\): \d+ passed, 1 failed, \d+ not run/);
+  expect(phrase).toMatch(/^object files against SAP's ABAP file formats \(AFF schemas\) and abapGit's serializer format: \d+ passed, 1 failed, \d+ not run/);
   expect(phrase).not.toMatch(/\b\d+ object files? .*passed$/);
 });
 

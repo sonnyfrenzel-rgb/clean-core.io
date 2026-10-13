@@ -1287,7 +1287,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { prepareScaffold },
         { requestGenerationLease, leasedFillModel },
         { runGeneration },
-        { createRunnerVerifier, runnerOverHttp, affFormatsCheck },
+        { createRunnerVerifier, runnerOverHttp, packageFormatsHook },
         { guardBodyOf, candidateFiles, assembleEngineLed },
         { sha256Hex },
         { affSchemaSource },
@@ -1379,8 +1379,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           lint: (candidate) =>
             generatedCodeLints(candidate, { decimalFields: packedDecimalFields(legacyCode) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
           runOnRunner: runnerOverHttp(projectId as string, postJson),
-          // The generated ABAP object files against SAP's file formats; no schema is in this build until the AFF sync lands, so every file reads "not run".
-          formats: prep.scaffold.track === 'rap' ? affFormatsCheck(affSchemaSource) : undefined,
+          // The generated ABAP object files against abapGit's serializer format (every metadata file the RAP scaffold writes) and
+          // SAP's file formats (AFF JSON, against the schemas the weekly sync copies).
+          formats: prep.scaffold.track === 'rap' ? packageFormatsHook(affSchemaSource) : undefined,
         });
         const result = await runGeneration({
           units: prep.fillUnits,

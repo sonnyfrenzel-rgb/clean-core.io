@@ -29,8 +29,8 @@ import { cleanAbapAbaplintRules } from '@/lib/clean-abap-rules';
  * Pure, no imports — the Delivery page imports it without abaplint itself.
  */
 
-/** Object types the RAP scaffold writes, and the ones its Application Job may add. abaplint knows every one. */
-export const ABAPLINT_ALLOWED_OBJECT_TYPES: readonly string[] = ['CLAS', 'INTF', 'TABL', 'DDLS', 'DCLS', 'BDEF', 'SRVD', 'SRVB', 'SAJC', 'SAJT'];
+/** Object types the RAP scaffold writes (DEVC: the root package's `package.devc.xml`), and the ones its Application Job may add. abaplint knows every one. */
+export const ABAPLINT_ALLOWED_OBJECT_TYPES: readonly string[] = ['CLAS', 'INTF', 'TABL', 'DDLS', 'DCLS', 'BDEF', 'SRVD', 'SRVB', 'DEVC', 'SAJC', 'SAJT'];
 
 /** The rules the check runs. Each needs no SAP definitions. */
 export const ABAPLINT_RULES = {
@@ -45,6 +45,17 @@ export const ABAPLINT_RULES = {
   abapdoc: { checkLocal: false },
   obsolete_statement: true,
   check_subrc: true,
+  /**
+   * The abapGit metadata files (3.0.12, importable package): well-formed XML, a class's or interface's
+   * name and description against its source, a transparent table with delivery class and size category.
+   */
+  xml_consistency: true,
+  /** Every object name within its type's length and pattern — a transparent table 16 characters, a binding 26. */
+  allowed_object_naming: true,
+  /** An object with both an AFF JSON and an abapGit XML metadata file: abapGit would read only one. */
+  aff_and_xml: true,
+  /** abapGit writes its XML files with a UTF-8 byte order mark. */
+  xml_bom: true,
 } as const;
 
 /**

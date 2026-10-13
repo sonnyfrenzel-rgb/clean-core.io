@@ -264,9 +264,10 @@ test.describe('B5 — abaplint under ABAP Cloud syntax, recorded as passed, fail
     expect(r.state).toBe('passed');
     expect(r.syntax).toBe('Cloud');
     expect(r.abaplint).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(r.checked).toBe(scaffold.files.filter((f) => /\.(?:clas|intf)(?:\.\w+)?\.abap$|\.ddls\.asddls$/.test(f.path)).length);
+    // The table is read in abapGit's XML form since scaffold version 3.
+    expect(r.checked).toBe(scaffold.files.filter((f) => /\.(?:clas|intf)(?:\.\w+)?\.abap$|\.ddls\.asddls$|\.tabl\.xml$/.test(f.path)).length);
     const unread = r.notRun.map((n) => n.path.split('.').slice(-2).join('.')).sort();
-    expect(unread).toEqual(['bdef.asbdef', 'dcls.asdcls', 'dcls.asdcls', 'srvb.xml', 'srvd.srvdsrv', 'tabl.astabl']);
+    expect(unread).toEqual(['bdef.asbdef', 'dcls.asdcls', 'dcls.asdcls', 'srvb.xml', 'srvd.srvdsrv']);
     expect(r.checksNotRun).toEqual([{ check: 'check_syntax', reason: CHECK_SYNTAX_NOT_RUN }]);
   });
 
@@ -324,6 +325,7 @@ test.describe('B5 — abaplint under ABAP Cloud syntax, recorded as passed, fail
 });
 
 test('the scaffold version moved with the engine-written text', () => {
-  expect(SCAFFOLD_VERSION).toBe(2);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(2);
+  // 3: the abapGit metadata of every object (tests/transformation-abapgit-package.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(3);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(3);
 });

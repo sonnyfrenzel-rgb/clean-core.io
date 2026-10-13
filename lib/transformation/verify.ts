@@ -32,6 +32,7 @@
 import type { CheckCount, CheckFailure, CheckKind, CheckScope, Verify, VerifyOutcome } from './orchestrator';
 
 export { affFormatsCheck } from './aff-check';
+export { packageFormatsHook } from './abapgit-check';
 
 export interface FileLike {
   path: string;
@@ -276,7 +277,7 @@ export interface RunnerVerifierDeps {
    * run `/api/run-tests` in verify mode. Throws when the runner cannot be reached.
    */
   runOnRunner?: (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer>;
-  /** The file-format check of the RAP track (`aff-check.ts`, `affFormatsCheck`); absent on the Node track, which writes no ABAP object files. */
+  /** The file-format check of the RAP track (`abapgit-check.ts`, `packageFormatsHook`: AFF JSON and abapGit XML); absent on the Node track, which writes no ABAP object files. */
   formats?: (files: readonly FileLike[]) => { count: CheckCount; failures: CheckFailure[] };
   now?: () => number;
 }
