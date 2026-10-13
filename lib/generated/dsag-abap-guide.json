@@ -1,0 +1,4366 @@
+{
+  "source": "https://github.com/1DSAG/ABAP-Leitfaden",
+  "site": "https://1dsag.github.io/ABAP-Leitfaden",
+  "branch": "main",
+  "commit": "100600dfc9d98136b1992bde20e201049cbb1116",
+  "syncedAt": "2026-10-13",
+  "licence": {
+    "spdx": "CC-BY-4.0",
+    "file": "LICENSE",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "reuse": false
+  },
+  "pages": [
+    {
+      "file": "docs/abap/OO-basics.md",
+      "title": "Ergänzungen zu Objektorientierung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/oo-basics/"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "title": "Architektur und Strukturierung in der ABAP Entwicklung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/architecture_and_design/"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "title": "Sauberen und modernen ABAP Code schreiben",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/clean_and_modern_abap/"
+    },
+    {
+      "file": "docs/abap/index.md",
+      "title": "Moderne ABAP Entwicklung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "title": "Entwurf und Gestaltung moderner SAP-Anwendungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/oo-design/"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "title": "Grundlagen des Paketkonzepts",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/package_details/"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "title": "Das ABAP RESTful Application Programming Model (RAP)",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/abap/restful_abap/"
+    },
+    {
+      "file": "docs/application-lifecycle-management/alm-general_information.md",
+      "title": "ALM Hintergrundwissen und Werkzeugunterstützung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/application-lifecycle-management/alm-general_information/"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "title": "Qualitätssicherung und -Monitoring",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/application-lifecycle-management/ensuring-quality/"
+    },
+    {
+      "file": "docs/application-lifecycle-management/index.md",
+      "title": "ALM",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/application-lifecycle-management/"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "title": "Versionsverwaltung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/application-lifecycle-management/version-management/"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "title": "Künstliche Intelligenz",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/artificial-intelligence/"
+    },
+    {
+      "file": "docs/authors/index.md",
+      "title": "Autoren & Reviewer",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/authors/"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "title": "Architekturkonzepte",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/architectural-concepts/"
+    },
+    {
+      "file": "docs/clean-core/index.md",
+      "title": "Clean Core",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "title": "Problemfelder und Herausforderungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/problems-and-challenges/"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "title": "Lösungsansatz",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/solution-approach/"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "title": "Was ist Clean Core",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/what-is-clean-core/"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "title": "Warum Clean Core",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/clean-core/why-clean-core/"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "title": "Core Data Services",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/core-data-services/"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "title": "Dokumentation von Entwicklungsobjekten",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/documentation/dev_object_related_doc/"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "title": "Allgemeine Dokumentations-Tipps",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/documentation/documentation_tipps/"
+    },
+    {
+      "file": "docs/documentation/index.md",
+      "title": "Dokumentation",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/documentation/"
+    },
+    {
+      "file": "docs/documentation/non_dev_object_related_doc.md",
+      "title": "Entwicklungsobjektübergreifende Dokumentation",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/documentation/non_dev_object_related_doc/"
+    },
+    {
+      "file": "docs/forms/adobe-document-service.md",
+      "title": "Adobe Document Services",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/forms/adobe-document-services/"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "title": "Formulartechnologien",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/forms/form-technologies/"
+    },
+    {
+      "file": "docs/forms/index.md",
+      "title": "Formulare",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/forms/"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "title": "Ausgabelösungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/forms/output-solutions/"
+    },
+    {
+      "file": "docs/full-review-page/index.md",
+      "title": "Komplette Version",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/full-version/"
+    },
+    {
+      "file": "docs/index.md",
+      "title": "DSAG ABAP Leitfaden",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "title": "Integration",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/integration/"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "title": "Einleitung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/introduction/"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "title": "Herausforderungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/challenges/"
+    },
+    {
+      "file": "docs/open-source/contributing-to-open-source-software.md",
+      "title": "Beteiligung an Open-Source-Software",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/contributing-to-open-source-software/"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "title": "Entwicklung von Open-Source-Software",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/developing-open-source-software/"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "title": "Open Source",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/"
+    },
+    {
+      "file": "docs/open-source/licenses.md",
+      "title": "Lizenzen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/licenses/"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "title": "Einsatz von Open-Source-Software",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/open-source/using-open-source-software/"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "title": "Organisation",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/organization/"
+    },
+    {
+      "file": "docs/security/index.md",
+      "title": "Sicherheit",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "title": "ABAP Test Cockpit",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/abap-test-cockpit/"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "title": "Grundlagen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/basics/"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "title": "Weitere Beispiele",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/additional-examples/"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "title": "Überblick",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/overview/"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "title": "Entwicklungsprozess",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/process/"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "title": "Screen Personas",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/screen-personas/"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "title": "Sichere Entwicklung",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/secure-development/"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "title": "Bedrohungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/security/threats/"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "title": "ABAP Unit - Testtechniken",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/abap-unit_basics/"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "title": "ABAP Unit - erweiterte Techniken",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/abap_unit_advanced/"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "title": "Grundlagen zu Unit Tests",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/abap_unit_methods/"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "title": "Softwaretest mit ABAP Unit",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "title": "Empfehlungen",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/recommendations/"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "title": "Weitere Testwerkzeuge",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/testing/recommended-tools/"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "title": "User Interface (UI)",
+      "url": "https://1dsag.github.io/ABAP-Leitfaden/user-interface/"
+    }
+  ],
+  "sections": [
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Ergänzungen und Details zu Themen der Objektorientierung",
+      "level": 1,
+      "anchor": "ergänzungen-und-details-zu-themen-der-objektorientierung",
+      "hash": "db8f914ffabc5fbc7b5a1022cd78fa8bda04fa474fcf387b5cc75c9d5f3793dc"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Grundprinzipien der Objektorientierung (SOLID) - Ergänzung",
+      "level": 2,
+      "anchor": "grundprinzipien-der-objektorientierung-solid---ergänzung",
+      "hash": "5de6e37071e8226440f382c0f76c27f3fa0ffbda07f334eefb09de37457e4e73"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Entwurfsmuster",
+      "level": 2,
+      "anchor": "entwurfsmuster",
+      "hash": "7cfb875c47efecbbf76150a745713af93647997230b6de6937ad4b6b7e51a31a"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Singleton-Pattern",
+      "level": 3,
+      "anchor": "singleton-pattern",
+      "hash": "a45911ac7b7bfe3db7e2f63610098814dea4e1c21cdf4c405ac84dd232858132"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Factory-Pattern",
+      "level": 3,
+      "anchor": "factory-pattern",
+      "hash": "4a603e98b4ec432dc504e185192f50bcd494bb88ed10bb10f05100feb5f932ea"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "Facade-Pattern",
+      "level": 3,
+      "anchor": "facade-pattern",
+      "hash": "4c42a6dd950b0c6854b1407852db74313272255c39166915445e6bdcd095ce40"
+    },
+    {
+      "file": "docs/abap/OO-basics.md",
+      "heading": "MVC-Pattern",
+      "level": 3,
+      "anchor": "mvc-pattern",
+      "hash": "788689794faca2490a4318912e0737a84c8387ab4a2443db8241234619feba98"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Architektur und Strukturierung in der ABAP Entwicklung",
+      "level": 1,
+      "anchor": "architektur-und-strukturierung-in-der-abap-entwicklung",
+      "hash": "7cb0df60e98f5ce0f11a6ecf1bf7ce3603f5dbbc30d30d18ba5b39c637754214"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Strukturelle Herausforderungen in SAP-Anwendungen",
+      "level": 2,
+      "anchor": "strukturelle-herausforderungen-in-sap-anwendungen",
+      "hash": "cf4e4b7eefe874f426423cb6ab1c46c1eb4e961fe6042a75e560cf680f1849a5"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Architektur und Struktur als Fundament und Rahmen einer guten SAP Anwendung",
+      "level": 2,
+      "anchor": "architektur-und-struktur-als-fundament-und-rahmen-einer-guten-sap-anwendung",
+      "hash": "475e6584dd2c411409b1078743bd43962d2b713cc57862d3a2fa41e43578580e"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Strukturierung von Software in Paketen",
+      "level": 2,
+      "anchor": "strukturierung-von-software-in-paketen",
+      "hash": "cd8df023ff5ea6277b2499fcff5f94fb4c8efe9ea5c4d81c1a538cf6eefb9a2c"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Das SAP Paketkonzept und die Aufgabe von Paketen",
+      "level": 3,
+      "anchor": "das-sap-paketkonzept-und-die-aufgabe-von-paketen",
+      "hash": "9af43634484206342ccbb27cf23f4ccaa377959347e1639a8268cab10072acd3"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Paketstrukturen und Hierarchien",
+      "level": 2,
+      "anchor": "paketstrukturen-und-hierarchien",
+      "hash": "7206f39d902cb3c94cdaec333052b57389e016adc18117104ee83b80306f381d"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Kontrolle der Abhängigkeiten",
+      "level": 2,
+      "anchor": "kontrolle-der-abhängigkeiten",
+      "hash": "7951a0a9e7eab1a9036ecb2af13a92a87e48a5aa303df8c8d48fdf25ca65d34c"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Vorteile und Mehrwert durch die Anwendung des Paketkonzepts",
+      "level": 2,
+      "anchor": "vorteile-und-mehrwert-durch-die-anwendung-des-paketkonzepts",
+      "hash": "d8ac3e9e4cce695e4c51e3b1485e8e9030f83f0e489fab43c3f1d741c9514f03"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Eindeutig deklarierte Abhängigkeiten",
+      "level": 3,
+      "anchor": "eindeutig-deklarierte-abhängigkeiten",
+      "hash": "ff93a382febb86c6bd784005d3f33629bfe61990b9076532e7a4423a6584d37c"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Bessere Übersicht und Erklärbarkeit",
+      "level": 3,
+      "anchor": "bessere-übersicht-und-erklärbarkeit",
+      "hash": "a981f0ba34985048edd9f0f660ed8d6c945471492e6e3a353ef62b98fa3e5fbb"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Flexibilität",
+      "level": 3,
+      "anchor": "flexibilität",
+      "hash": "45c5cd7ff014f1922c28bc66dad04e60ea3e3498fae6cee7462b88b36d53addd"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Zukunftsfähigkeit",
+      "level": 3,
+      "anchor": "zukunftsfähigkeit",
+      "hash": "35fd108700ef11c7a556abf4945ed6455eed2de3ac6dcc00079af6c62b35b20f"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Maßnahmen zur Umsetzung des Paketkonzepts in der Entwicklung",
+      "level": 2,
+      "anchor": "maßnahmen-zur-umsetzung-des-paketkonzepts-in-der-entwicklung",
+      "hash": "e8539f99bce55504e35529e450e55af76d408c45744cb6e2a94b9a75ffc8f85e"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Definition und Umsetzung der Paketstrategie",
+      "level": 3,
+      "anchor": "definition-und-umsetzung-der-paketstrategie",
+      "hash": "1bad1a251c9e4173155e6b6680014f7a6bc2711026289d1d9c8d08dcf556f1d5"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Vermeidung großer / unspezifischer Sammlerpakete",
+      "level": 3,
+      "anchor": "vermeidung-großer--unspezifischer-sammlerpakete",
+      "hash": "ec391e1fe8b8c58408c0638263f9d078876728c98b5d1a3899ac3a1a8f6ba638"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Weiterführende Fragestellungen bei der Umsetzung des Paketkonzepts",
+      "level": 2,
+      "anchor": "weiterführende-fragestellungen-bei-der-umsetzung-des-paketkonzepts",
+      "hash": "44f1f86f6907fd7691a86c839d7a87eb08a0f95f1d739e51876a1275f9a99f9a"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Das Paketkonzept in ABAP Cloud - Softwarekomponenten",
+      "level": 2,
+      "anchor": "das-paketkonzept-in-abap-cloud---softwarekomponenten",
+      "hash": "b47f5049ccea28a47ef3d608c045d115d8076581a3000418faab0e160a84f493"
+    },
+    {
+      "file": "docs/abap/architecture_and_structure.md",
+      "heading": "Von der Architektur zum Design",
+      "level": 2,
+      "anchor": "von-der-architektur-zum-design",
+      "hash": "4547ae175db995214aaa4a7b3206554c1bb5d6ee0ae38145f48f0d1300da4069"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Sauberen und modernen ABAP Code schreiben",
+      "level": 1,
+      "anchor": "sauberen-und-modernen-abap-code-schreiben",
+      "hash": "7f0994119814c6b9e81b75483650cd2f29ace7a76394c2a459ae84614ae78023"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Clean ABAP als Basis",
+      "level": 2,
+      "anchor": "clean-abap-als-basis",
+      "hash": "a45397c906dfa0ed5e9d15904ecc28a278ddc972bf488d50036e4e5f34484aa0"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "DSAG Empfehlung",
+      "level": 3,
+      "anchor": "dsag-empfehlung",
+      "hash": "17122895e753a5b218525a5aa8e43f4465af6524da735aada36d0f8bef0fe953"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Clean ABAP & Entwicklungsrichtlinien",
+      "level": 3,
+      "anchor": "clean-abap--entwicklungsrichtlinien",
+      "hash": "d96882392814f6adbb64df3bbc67967b5322830b1680ae95ba7ccc768f51db3c"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Clean ABAP Owner",
+      "level": 3,
+      "anchor": "clean-abap-owner",
+      "hash": "4bfeb55a23637436d954db89c37136b9d829a8642ed9bae72f97a13bfb093549"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Clean ABAP ist ein Prozess",
+      "level": 3,
+      "anchor": "clean-abap-ist-ein-prozess",
+      "hash": "43a12d6078885e8139a54ea93bcc818e02417cf85186aa15c3989eee0dcfaed2"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Grundlagen sauberer Entwicklung",
+      "level": 2,
+      "anchor": "grundlagen-sauberer-entwicklung",
+      "hash": "2e80e2fa4fc6e549882798cdace1ff2d9fc66c7cf9a480b56ac69650af5a5002"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Ausdrucksstarke Namen",
+      "level": 3,
+      "anchor": "ausdrucksstarke-namen",
+      "hash": "ad63b488838324e32117ce504fa23422d241a82c0d6a7f1b341f60cebea4aefd"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Kommentare",
+      "level": 3,
+      "anchor": "kommentare",
+      "hash": "60489fc38a55e95e56c524b4d2198d86a5ab047d34f75b28ef3f3c50cf21ea9b"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Moderne Sprachmittel",
+      "level": 2,
+      "anchor": "moderne-sprachmittel",
+      "hash": "481bb60496dc65a0a61a9e3e6de3a7ebba9d09151b98f5d79923ff45657051b9"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Deklarationen",
+      "level": 3,
+      "anchor": "deklarationen",
+      "hash": "b6cdb20901667881467f2168be15450eb1ed12eedd904c085b6f5aedc3a00555"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Deklaration mit FINAL",
+      "level": 4,
+      "anchor": "deklaration-mit-final",
+      "hash": "e0c0e63ac965165060f18e7a1405c14db7025ba6b330a8b26b7a787d9707a44e"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Funktionale Aufrufe",
+      "level": 3,
+      "anchor": "funktionale-aufrufe",
+      "hash": "db1cf8a0496da3179ccf7094c7a5f7146114acc0979be94df6b265f15671b175"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Zuweisungen von logischen Ausdrücken",
+      "level": 4,
+      "anchor": "zuweisungen-von-logischen-ausdrücken",
+      "hash": "b3c7726e8bf735492a1332fe8312a29aa4174d7295988998b2a32063ac85df7f"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Funktionen in der ABAP-Hilfe",
+      "level": 4,
+      "anchor": "funktionen-in-der-abap-hilfe",
+      "hash": "2888435122573546b55b1a2a2cd59dd81f61eba6531695eb9a228f7eacca79aa"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "ABAP Doc",
+      "level": 3,
+      "anchor": "abap-doc",
+      "hash": "42bc419baf2f0f39d8b19fffcb32e5ea187861e36a9c34a932a18f7ac2449819"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Konstruktoroperatoren",
+      "level": 3,
+      "anchor": "konstruktoroperatoren",
+      "hash": "6b90df6ee3294e0acb43b0204fe3f2f2cd0c6d1727dbccbb33230cb70e5c722c"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Referenzen mit NEW erzeugen",
+      "level": 3,
+      "anchor": "referenzen-mit-new-erzeugen",
+      "hash": "ec5444c5c97d9a64c5bba99f68f9e1793d6186223c1b23d202e724f222f78579"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Nutzung neuer Befehlsvarianten (CALL TRANSACTION WITH AUTHORITY-CHECK)",
+      "level": 3,
+      "anchor": "nutzung-neuer-befehlsvarianten-call-transaction-with-authority-check",
+      "hash": "fcad0ed3b59529c7857e22a83a4649fcabcfb62d365f8df6100f4989c7040ecf"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Beispiele für modernes ABAP",
+      "level": 2,
+      "anchor": "beispiele-für-modernes-abap",
+      "hash": "ca50ec281d3313ffdeb4681bf0732e053ed0efba95bc4377d40815377d45d077"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Strukturen und Tabellen erzeugen",
+      "level": 3,
+      "anchor": "strukturen-und-tabellen-erzeugen",
+      "hash": "ee65be0ea3b3f12da9a138f992572f9a1591bbd854c3458290ebe314311b8766"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Werte aus Tabellen auslesen",
+      "level": 3,
+      "anchor": "werte-aus-tabellen-auslesen",
+      "hash": "eecfd2d4c7e61d774695054bf25c59da23cb32a7127fe76cde0c3039a9cb9145"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Tabellen umwandeln",
+      "level": 3,
+      "anchor": "tabellen-umwandeln",
+      "hash": "5b6e7b1ccb3c3f6774ad941af1eb6a885a4d1b5e11aac5fb2ae2aaa0958ebcdd"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "String Templates und Konvertierungsexits",
+      "level": 3,
+      "anchor": "string-templates-und-konvertierungsexits",
+      "hash": "ec2ca0df5e0311493b51feacf9095becd7b08d90132a1c11fa280c2e41b00303"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Bestimmung von Werten aus Tabellen, z.B. Minimum",
+      "level": 3,
+      "anchor": "bestimmung-von-werten-aus-tabellen-zb-minimum",
+      "hash": "48d6899e9c8fc53e650920182bd5a571626b5e8bd55d4a74865130266cf9eb3f"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Namenskonventionen - Empfehlungen NCs vs. Clean Code",
+      "level": 2,
+      "anchor": "namenskonventionen---empfehlungen-ncs-vs-clean-code",
+      "hash": "9d89a9f511a7a434460db0711017a2e2bf6fcfc4096e2c5b531a02bddb63addc"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Namen für Repository-Objekte",
+      "level": 3,
+      "anchor": "namen-für-repository-objekte",
+      "hash": "6ba0014b57be5bb6399a9e97b77464527c3b68b9f26d2d2c9bc507d1b402a353"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "Ungarische Notation",
+      "level": 3,
+      "anchor": "ungarische-notation",
+      "hash": "bcf62be8ba52a2516bc4bd89681b9b85ba5c6546886abc55e4b6c71e1601421d"
+    },
+    {
+      "file": "docs/abap/clean_and_modern_abap.md",
+      "heading": "ABAP Cleaner",
+      "level": 2,
+      "anchor": "abap-cleaner",
+      "hash": "53225417562585a1e4bc5a8256c0cc078329715d35023373f2f2dac1e41b0b21"
+    },
+    {
+      "file": "docs/abap/index.md",
+      "heading": "Moderne ABAP Entwicklung",
+      "level": 1,
+      "anchor": "moderne-abap-entwicklung",
+      "hash": "16854b69ba9fef68ded5117702e7bf9398aacd6fab7c20178d7cff3bd1583e8d"
+    },
+    {
+      "file": "docs/abap/index.md",
+      "heading": "Die Rolle der Organisation",
+      "level": 2,
+      "anchor": "die-rolle-der-organisation",
+      "hash": "fc606fb78f85d1176c473314fabd65d365244c56c514781b683a92b4d2844aba"
+    },
+    {
+      "file": "docs/abap/index.md",
+      "heading": "Zielgruppe des Kapitels",
+      "level": 2,
+      "anchor": "zielgruppe-des-kapitels",
+      "hash": "b06658ddac33829a48a7a6ad8353906a320e1fe4f22bd29685130ca207f4b1a6"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Entwurf und Gestaltung moderner SAP-Anwendungen",
+      "level": 1,
+      "anchor": "entwurf-und-gestaltung-moderner-sap-anwendungen",
+      "hash": "9b4ef08044935dd39f8937a46e31b3461671075c32182a55d51498d6dfcc7c45"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Moderne Geschäftsanwendungen erfordern zeitgemäße Softwareentwicklungsmethoden",
+      "level": 2,
+      "anchor": "moderne-geschäftsanwendungen-erfordern-zeitgemäße-softwareentwicklungsmethoden",
+      "hash": "6e6c14df9881f0e93f033d953c46f95d5f2102f250833998f44812aa0dadcfc0"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Grundlagen und einfache Anwendung von Objektorientierung im ABAP Kontext",
+      "level": 2,
+      "anchor": "grundlagen-und-einfache-anwendung-von-objektorientierung-im-abap-kontext",
+      "hash": "250cba2bef39e673f694d7dd2065bf7f5685e33901dee72402831115398ee7f1"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Merkmale objektorientierter Entwicklung in ABAP-Klassen",
+      "level": 2,
+      "anchor": "merkmale-objektorientierter-entwicklung-in-abap-klassen",
+      "hash": "88d202e8db0d3e97e8dd5434db661f19b137cc343051c05a69021b4f2b3cf8a4"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Grundprinzipien der Objektorientierung (SOLID)",
+      "level": 2,
+      "anchor": "grundprinzipien-der-objektorientierung-solid",
+      "hash": "f4ec69bd81fbe663060133985da12d6d67eadbae4bfed0d8f1aee319afd37ac0"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Entwurfsmuster",
+      "level": 2,
+      "anchor": "entwurfsmuster",
+      "hash": "caa8ac0e62757bb13648c6b2310e14b56ab9a109ecf65fce1de59697003a774d"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Vergleich Vorgehen prozedurale vs. objektorientierter Entwicklung",
+      "level": 2,
+      "anchor": "vergleich-vorgehen-prozedurale-vs-objektorientierter-entwicklung",
+      "hash": "2fe22e89aa70218fd2d30873de1ddb2f4b7db4f3e2e7b45c5aa7450e4fa4a49c"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Ablauf Prozedurale Entwicklung",
+      "level": 3,
+      "anchor": "ablauf-prozedurale-entwicklung",
+      "hash": "e2a0973d3fac9d16df231420a4c91421257e4da53db82b98eec63516d86f8718"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Ablauf bei Objektorientiertem Ansatz",
+      "level": 3,
+      "anchor": "ablauf-bei-objektorientiertem-ansatz",
+      "hash": "dc0bc271778541233c9bc5a83a120d3f4c13e826bde9693d7eb5e73dc10bdbc2"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Konzepte in der Objektorientierung",
+      "level": 2,
+      "anchor": "konzepte-in-der-objektorientierung",
+      "hash": "9310bb6a24cce07b4b0598b2d665176e0dc5858821f97395d928926373797af8"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Erstellung von Factories",
+      "level": 3,
+      "anchor": "erstellung-von-factories",
+      "hash": "d28cc0016a4580478c39146f35d25ce499df56d044bee3e4c102d06fb283cd8b"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Beispiel: Verschalung des Customizing in der Factory-Methode",
+      "level": 3,
+      "anchor": "beispiel-verschalung-des-customizing-in-der-factory-methode",
+      "hash": "f0d480f736104455b15b69771bb3c31b35cde9105c369ca9e8bef866b805e013"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Vollständiger Einsatz von klassenbasierten Ausnahmen zur Fehlerbehandlung",
+      "level": 3,
+      "anchor": "vollständiger-einsatz-von-klassenbasierten-ausnahmen-zur-fehlerbehandlung",
+      "hash": "6179af707c562de0ec930d9f0fd3418aea7d3ad1871e53dcae37f4ec451d2285"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Interfaces",
+      "level": 3,
+      "anchor": "interfaces",
+      "hash": "3d6ac8ab85436dbb3ed796916de7b3ea2f87bf00b4cf26891677d30c5e438360"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Vererbung",
+      "level": 3,
+      "anchor": "vererbung",
+      "hash": "3a78db1b429098a1c8647ea531ef93a8d1bf72df9d016a8eaee860df02f9cb3f"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Objektorientierung in Funktionsbausteinen und Form-Routinen",
+      "level": 2,
+      "anchor": "objektorientierung-in-funktionsbausteinen-und-form-routinen",
+      "hash": "9ff3826681a7e144f4f6b9888fbb3c1b1fa863dab53f1b295ba65261a9a62bbf"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Verwendung von SAP Code - Gesetz von Demeter",
+      "level": 2,
+      "anchor": "verwendung-von-sap-code---gesetz-von-demeter",
+      "hash": "8050da0566544379a0a458e358a875b47a1a58779e03ee2cf8d6adc02cad7667"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Testbarkeit durch gutes Design",
+      "level": 2,
+      "anchor": "testbarkeit-durch-gutes-design",
+      "hash": "62843e97c83d7a74d5d2ba3c376358a064f06cdc6bebf7b8a1a8e318960125a4"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Die Bedeutung des Refactorings von bestehenden Anwendungen",
+      "level": 2,
+      "anchor": "die-bedeutung-des-refactorings-von-bestehenden-anwendungen",
+      "hash": "c9e5464acfb2a05ddab6788338702cd4cab03978547236f69eaccdc19af19b15"
+    },
+    {
+      "file": "docs/abap/modern_development.md",
+      "heading": "Eine gute Architektur braucht auch sauberen Code",
+      "level": 2,
+      "anchor": "eine-gute-architektur-braucht-auch-sauberen-code",
+      "hash": "132a5bd8bdb2c25513d26c122a0122f0614476923819451bdc23bf15d7115481"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Grundlagen des Paketkonzepts",
+      "level": 1,
+      "anchor": "grundlagen-des-paketkonzepts",
+      "hash": "356dfc9ae90f0b5e97899b68134827e8d33fa5cccce6ded30e35c281c3985de9"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Begriffserklärungen zum Paketkonzept",
+      "level": 2,
+      "anchor": "begriffserklärungen-zum-paketkonzept",
+      "hash": "6155047555813d8298a59f565b0e72e8737f4f2136dd289791cfe78438e72710"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Definition des Hauptpakets",
+      "level": 2,
+      "anchor": "definition-des-hauptpakets",
+      "hash": "16a1893bfbbfbd172578c4a7b1a1be744565f28721105bd02105a3f0739a7c77"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Erstellung der Unterpakete - Unterteilung nach Funktion der enthaltenen Objekte",
+      "level": 2,
+      "anchor": "erstellung-der-unterpakete---unterteilung-nach-funktion-der-enthaltenen-objekte",
+      "hash": "0fee96143858019d6465d8acacacb23625783e6dc992022989fc520a5f34e8e0"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Einsatz von Paketen bei der Implementierung von BAdIs und bei kleinen Erweiterungen",
+      "level": 2,
+      "anchor": "einsatz-von-paketen-bei-der-implementierung-von-badis-und-bei-kleinen-erweiterungen",
+      "hash": "bc5a95d4920c919e7fe716dec560e30df57f10603e0f962d3fed97110ffc8ee8"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Paketschnittstellen",
+      "level": 2,
+      "anchor": "paketschnittstellen",
+      "hash": "91c13bac5948baa3fd6b95fc08d52c7bedefe793a2f940701c0aa77e7a51b60b"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Verwendungserklärung",
+      "level": 2,
+      "anchor": "verwendungserklärung",
+      "hash": "bfaaf2b19bd383ccdfb01a2767fe286f57582ed848731338d7846ccdad49d2c5"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Paketprüfung",
+      "level": 2,
+      "anchor": "paketprüfung",
+      "hash": "8c615aedfc53dc4fa8575d01084235b5b6f8518212962ed2cd853dccdd4f4bdd"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Paketkapselung und Paketschnittstellen von Unterpaketen innerhalb des Hauptpaketes",
+      "level": 2,
+      "anchor": "paketkapselung-und-paketschnittstellen-von-unterpaketen-innerhalb-des-hauptpaketes",
+      "hash": "94b3de1b3e969c3b6d5d7614c0f90892cf234031f6a7e6841af8eca2d247ffcf"
+    },
+    {
+      "file": "docs/abap/package_extended.md",
+      "heading": "Pakethierarchien",
+      "level": 2,
+      "anchor": "pakethierarchien",
+      "hash": "fe448dbfc04d3e7db1da91eb71c73d999a4c5d5f25a20aca214dffbe0d25741e"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "ABAP RESTful Application Programming Model (RAP)",
+      "level": 1,
+      "anchor": "abap-restful-application-programming-model-rap",
+      "hash": "bfb00bbcf90e6da5b2c306322dc6c6dfe1380290b05c2e3c97dfbba635e4bf18"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Managed Entwicklungen mit RAP",
+      "level": 2,
+      "anchor": "managed-entwicklungen-mit-rap",
+      "hash": "520bd34cbfabeefc057f5b69be87b0dafe9ea6c99a8cda7b7534590f9bcfc2f8"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Datenbankebene",
+      "level": 3,
+      "anchor": "datenbankebene",
+      "hash": "a63b760236834457fadd881ace0dfb72c04c476074981bce9357d602f8f64fd8"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Virtuelles Datenmodell",
+      "level": 3,
+      "anchor": "virtuelles-datenmodell",
+      "hash": "87f2e038585443873e22da2c1482e7237742840248d15829b4c15887d61cea7d"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Behavior Definition & Pool",
+      "level": 3,
+      "anchor": "behavior-definition--pool",
+      "hash": "f21d1b9ea4d5b6181ff9fba8ba25f43913500f00d4c3f22df36eb7e426e32880"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Behavior Projection",
+      "level": 3,
+      "anchor": "behavior-projection",
+      "hash": "1dc9e264dcd3dec36d12e930befb7b7b941936b7b055d340fdb095daf67e8686"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "OData Veröffentlichung",
+      "level": 3,
+      "anchor": "odata-veröffentlichung",
+      "hash": "a9b302ecb47f19c38336fb6efa62eaa9b4325a0f6fc28875c565b9c9b39e49e2"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Weitergehende RAP-Funktionalitäten",
+      "level": 2,
+      "anchor": "weitergehende-rap-funktionalitäten",
+      "hash": "136bac23191a784133215ee3b05699822669f5b4f654e56cd431e489e2e23007"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "RAP Unit Testing",
+      "level": 3,
+      "anchor": "rap-unit-testing",
+      "hash": "a0b9bf66d8805f28b2848be8e22ab9c3b3e3999138cb08367cc2d4715aa6cfc4"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Erweiterbarkeit",
+      "level": 3,
+      "anchor": "erweiterbarkeit",
+      "hash": "3f9e79888f39ab21edde2f6500849a36f44fc90d6100a4941a3324566f397ea5"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Unmanaged Szenario",
+      "level": 3,
+      "anchor": "unmanaged-szenario",
+      "hash": "9f4ce6337024546d4d6274f8ec205bcca216ddd6ba293b37c30e152f24a2a0bc"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Entity Manipulation Language (EML)",
+      "level": 3,
+      "anchor": "entity-manipulation-language-eml",
+      "hash": "ecc102c7174d66178a91bf2c47495dac542798378163a0485e7d222164c77d64"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "RAP Feature Showcase App",
+      "level": 3,
+      "anchor": "rap-feature-showcase-app",
+      "hash": "9166302787c68e72cb9e958e02aacd2eb0316549f1571baeec8bb9ee32b1a0ef"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Migration von CDS-generiertem BOPF",
+      "level": 3,
+      "anchor": "migration-von-cds-generiertem-bopf",
+      "hash": "7ac293f6146da94c47fdb17d71d04c6d9d349c7b2554a6c2509fd18ed33a9077"
+    },
+    {
+      "file": "docs/abap/restful_abap.md",
+      "heading": "Verfügbarkeitsübersicht der Features",
+      "level": 2,
+      "anchor": "verfügbarkeitsübersicht-der-features",
+      "hash": "cc18a5a93772d4bd3226dc5dad644270678a3b7faa86903e72b5a45d51c5843c"
+    },
+    {
+      "file": "docs/application-lifecycle-management/alm-general_information.md",
+      "heading": "ALM-Hintergrundwissen und Werkzeugunterstützung",
+      "level": 1,
+      "anchor": "alm-hintergrundwissen-und-werkzeugunterstützung",
+      "hash": "4bf05fd3d0fa8d815d5dc66e03b242bdb8ee83246eadd21d4c5cc66531e8066a"
+    },
+    {
+      "file": "docs/application-lifecycle-management/alm-general_information.md",
+      "heading": "ALM-Unterstützung durch die SAP",
+      "level": 2,
+      "anchor": "alm-unterstützung-durch-die-sap",
+      "hash": "f45c909b4de1aaa807c26b486427144afcae51696a6ce51a6e51d07faaced917"
+    },
+    {
+      "file": "docs/application-lifecycle-management/alm-general_information.md",
+      "heading": "Nutzen von ALM",
+      "level": 2,
+      "anchor": "nutzen-von-alm",
+      "hash": "ebbbb7c617a07539c5b0ed9186273f17fdaec07764bc3c455753f35e67dc005f"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Qualitätssicherung und -Monitoring",
+      "level": 1,
+      "anchor": "qualitätssicherung-und--monitoring",
+      "hash": "d8d81202733efc5667cca239f26392cea88cdaa7759cc1472d135c127667cd4c"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Kontinuierliche Selbstüberprüfung durch den Entwickler",
+      "level": 2,
+      "anchor": "kontinuierliche-selbstüberprüfung-durch-den-entwickler",
+      "hash": "705e2c7b1ddd73e996256da4960c9bf8c9c6f6aa0aa5c0faf2e73322075e6d1a"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Code Review",
+      "level": 2,
+      "anchor": "code-review",
+      "hash": "a0e43601b53f1f620d6d040b3aed37b39517eed5cb3f49f5ca4326394cd35d77"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Best Practices",
+      "level": 3,
+      "anchor": "best-practices",
+      "hash": "52e5a8ee8a6f7e59e0453cd01f443df7e0651852dfff1992add2fa92f9f539d7"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Allgemeine Prinzipien",
+      "level": 4,
+      "anchor": "allgemeine-prinzipien",
+      "hash": "e89ba15e239d306dcc4e5f34cb521731dd327c661a88d67037356a39ab6f56ef"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Für den Autor",
+      "level": 4,
+      "anchor": "für-den-autor",
+      "hash": "0373325489875d5fab87949403776f6d95e1ed12197c1f3d77fcbdd30deac241"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Für den Reviewer",
+      "level": 4,
+      "anchor": "für-den-reviewer",
+      "hash": "711d9f35b3628ce28c4d4f9622d3f0a1f5ff801a513673b0be51eebe9895346a"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "abapGit",
+      "level": 3,
+      "anchor": "abapgit",
+      "hash": "1323ab3dbe4c0f078dda0c0d3ace364dbf63778194f2aa07374a1f76a41540db"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Git-based CTS (gCTS)",
+      "level": 3,
+      "anchor": "git-based-cts-gcts",
+      "hash": "027bcdfe88922cb2a85e91c956e02b6d2e5b2f59009ea4fef307977aa445cef7"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Fazit",
+      "level": 3,
+      "anchor": "fazit",
+      "hash": "3cf8f86507043a55adead8f5d3a9fe86a532744cc8637415b2b6e78f6e69760f"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Quality Gates im Release-Prozess",
+      "level": 2,
+      "anchor": "quality-gates-im-release-prozess",
+      "hash": "90fd82966e71bc2d0405b599ca29c0a997dce872a7a8386b30e8681b283c3d8c"
+    },
+    {
+      "file": "docs/application-lifecycle-management/ensuring-quality.md",
+      "heading": "Ganzheitliche Betrachtung und Kontinuierliche Qualitätskontrolle",
+      "level": 2,
+      "anchor": "ganzheitliche-betrachtung-und-kontinuierliche-qualitätskontrolle",
+      "hash": "0d5066d55ab751727cce9cef8764b72d01cd84950d27fe0c5dffd8a678773791"
+    },
+    {
+      "file": "docs/application-lifecycle-management/index.md",
+      "heading": "Application Lifecycle Management (ALM)",
+      "level": 1,
+      "anchor": "application-lifecycle-management-alm",
+      "hash": "73a3b67e1094d58dd9a0aa054938d747e8e7ec346106bf9750d447666133d975"
+    },
+    {
+      "file": "docs/application-lifecycle-management/index.md",
+      "heading": "Zielgruppe",
+      "level": 2,
+      "anchor": "zielgruppe",
+      "hash": "378f1adac12db1144a1f7cf0f832c68655b960890cc8ab7ca9130a5cdb42eb6d"
+    },
+    {
+      "file": "docs/application-lifecycle-management/index.md",
+      "heading": "Inhalt des Kapitels",
+      "level": 2,
+      "anchor": "inhalt-des-kapitels",
+      "hash": "cd087ed770351c427250fdcd3bb3e605a9939582968a41de736247b626af6f19"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Versionsverwaltung in SAP",
+      "level": 1,
+      "anchor": "versionsverwaltung-in-sap",
+      "hash": "e360d3730644cd8b5a34689b2be2317e55da3d3a3fa1b21c682a3d039b008917"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Git-Grundlagen",
+      "level": 2,
+      "anchor": "git-grundlagen",
+      "hash": "ac986bf671fa98ab4a2f9896d1c082d9881c8a6f0fcebe8a55fdc30cee51b317"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Wichtige Begriffe",
+      "level": 3,
+      "anchor": "wichtige-begriffe",
+      "hash": "e8db1e906ba258eb8350fc8a6cd98219c2f4babc9d73180f649ab477b9d682df"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Einsatz von Git-basierten Lösungen in der ABAP-Entwicklung",
+      "level": 2,
+      "anchor": "einsatz-von-git-basierten-lösungen-in-der-abap-entwicklung",
+      "hash": "4c0c2a42663035f024f53ffaa688944505496e6e805e7de284e6984c299d0ef0"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Versionskontrollsysteme im SAP-Umfeld",
+      "level": 2,
+      "anchor": "versionskontrollsysteme-im-sap-umfeld",
+      "hash": "1466bce286b30ff2b8825506e29c5dcfe1ce007a1a6af12c89c6fd9963219902"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Serverbasierte Versionsverwaltung",
+      "level": 3,
+      "anchor": "serverbasierte-versionsverwaltung",
+      "hash": "be216a15f301a269959967305d340f4a8683a0a9ce722bb6932fa64f004d6897"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Lokale Versionsverwaltung in ABAP Development Tools",
+      "level": 3,
+      "anchor": "lokale-versionsverwaltung-in-abap-development-tools",
+      "hash": "0c07d364f7a70cf98caba9e7628da9468891e451f37cc8c4b2fe73180bdb03c3"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "abapGit",
+      "level": 3,
+      "anchor": "abapgit",
+      "hash": "cd86f863ed56069779eef3a50a1392fb714461e125cb903e9b9ad59efc5de9bc"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "gCTS",
+      "level": 3,
+      "anchor": "gcts",
+      "hash": "c6013ff287a0197155dcebe671a3ce1a783aa8b2647e85d298b6434d726bd01b"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Versionsverwaltung in SAP BAS",
+      "level": 3,
+      "anchor": "versionsverwaltung-in-sap-bas",
+      "hash": "11c4c4cf9b64f0d30080a5615dac73d5da8294f4d059e4a93d45f8bd137954b3"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Vergleich der unterschiedlichen Versionskontrollsysteme",
+      "level": 2,
+      "anchor": "vergleich-der-unterschiedlichen-versionskontrollsysteme",
+      "hash": "6260fdcb1779c6de77d6488133178ec4cc5b353c54499e9c33658a7945c6849c"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "SAP-System und Verfügbarkeit",
+      "level": 3,
+      "anchor": "sap-system-und-verfügbarkeit",
+      "hash": "5f94a363edf3d52d70b824f5ad562319da0b96070d8c1f64e3782d6330a07910"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Funktionsumfang",
+      "level": 3,
+      "anchor": "funktionsumfang",
+      "hash": "d7a6e80c665e0c4f66ff7f0b84d061f87d3321c3ecfd4598bfac7f1ba80847fd"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Versionsumfang",
+      "level": 3,
+      "anchor": "versionsumfang",
+      "hash": "50e749422a9506da5eaf632fe01e2116dcb8d0381bcd87df80c56bc04c9dc0bf"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Triggerpunkt",
+      "level": 3,
+      "anchor": "triggerpunkt",
+      "hash": "6c2e32533f0aa2c0f6ceb37f1b051e9a4562eb8d3ecf1d9ded6b5c3c3cbf16f4"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Anwendungen",
+      "level": 3,
+      "anchor": "anwendungen",
+      "hash": "0731292bbaf5815afbd5d8f8eb3c25eaca3ac84f9d77b9c4b55f53416217da1d"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Einsatzszenarien",
+      "level": 2,
+      "anchor": "einsatzszenarien",
+      "hash": "7cf522b007ffa8eb63656cb544b5b41871b83961396c0afd5541a20b900ed989"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Weit verbreitete 3-System-Landschaft",
+      "level": 3,
+      "anchor": "weit-verbreitete-3-system-landschaft",
+      "hash": "bef0c5dc927e049fc2a28b07f9d2871413745ae72fd055ec53ec0fd5b97cca79"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Softwarelieferant",
+      "level": 3,
+      "anchor": "softwarelieferant",
+      "hash": "fc71f9228137b2a31d5ecd9a652e88395bf1c53dad357194237b7b0646bd4aa4"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Verteilung in verschiedene Systemlandschaften",
+      "level": 3,
+      "anchor": "verteilung-in-verschiedene-systemlandschaften",
+      "hash": "ba91c1c33ecb7fe1ca6e9f8f7f6992a53f9a7f925174fb278c02de7ad479ec55"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Recovery",
+      "level": 3,
+      "anchor": "recovery",
+      "hash": "f454d987fe7110d88673a03f3b545894eae72b2ec00d5c2c40fe64293e9fbae7"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Paralleles Arbeiten",
+      "level": 3,
+      "anchor": "paralleles-arbeiten",
+      "hash": "fff812adf38c97da1b64d8a2a281599ed2eb67eb0c4870a3de6c59c7dd12bef7"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Custom Code Migration",
+      "level": 3,
+      "anchor": "custom-code-migration",
+      "hash": "dfbc0c3fb5b107f298ccd83e62a038f7e52ef57a588dd50768ccad1508263c2f"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Vergleich des Entwicklungsprozess mit verschiedenen Versionsverwaltungen",
+      "level": 2,
+      "anchor": "vergleich-des-entwicklungsprozess-mit-verschiedenen-versionsverwaltungen",
+      "hash": "a563b3fe6b81a5381fb9823c72c0bc67464baff33e9774c826119b788cd8e116"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Annäherung Entwicklungsprozesse ABAP und Non-ABAP über git-basierte Tools",
+      "level": 2,
+      "anchor": "annäherung-entwicklungsprozesse-abap-und-non-abap-über-git-basierte-tools",
+      "hash": "c5e6a81e17414bf2c736c794a6aaa787ab400867edb1a59c1f7148211ee8b41c"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Integration an andere Komponenten",
+      "level": 2,
+      "anchor": "integration-an-andere-komponenten",
+      "hash": "c20d6521e0c08dccc2e9ace24b7d0a2a26d6a84409dbdfb9d7416df85c0aefd0"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Azure Pipelines",
+      "level": 3,
+      "anchor": "azure-pipelines",
+      "hash": "bc8257151b1332a0db680f16eaef88e7d6c2301ad66334a04523f96ce2e5ef1f"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Apache Jenkins",
+      "level": 3,
+      "anchor": "apache-jenkins",
+      "hash": "2e751d08c62699328fe3ced3791f1ad9ccd1f18456f51b4145f58784fcd038b4"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Security Aspekte",
+      "level": 2,
+      "anchor": "security-aspekte",
+      "hash": "49456951eb7e5bb89f681d5063ae2896ae01ffcd8b0f0966ce6654aed247ba1d"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Revisionssicherheit",
+      "level": 3,
+      "anchor": "revisionssicherheit",
+      "hash": "f96bfa309a9ec539fe052f3929e3d5b5e93ec33a04b70a9abbd9f029c42938ef"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Sicherung und Wiederherstellung",
+      "level": 3,
+      "anchor": "sicherung-und-wiederherstellung",
+      "hash": "8014b4fabf20de909c537acd563da3f9afa85a291a0ef57ab068c81ea434a7c3"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Verwaltung von Zugriffsrechten",
+      "level": 3,
+      "anchor": "verwaltung-von-zugriffsrechten",
+      "hash": "f090cbfd58b63d238aa35966b98764ac4b46001d33d4e624caf9f226d0d7c2a5"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Änderungsverfolgung",
+      "level": 3,
+      "anchor": "änderungsverfolgung",
+      "hash": "7c8fc9d87c7f14657959750b922154db3c7d834c888206deca72cdd840223772"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Manipulationseinsatz",
+      "level": 3,
+      "anchor": "manipulationseinsatz",
+      "hash": "15ba5e44e6043f9ebdb0bdcdcdc1cd64af6683076c89ac1c51e3a2c3dc7fbca3"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Risiken",
+      "level": 2,
+      "anchor": "risiken",
+      "hash": "d8cae37d751316f595e3b34c3e39677fdff1d99fef598e13f72b83dcd4e738a5"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Empfehlung",
+      "level": 2,
+      "anchor": "empfehlung",
+      "hash": "e68383842c1beb5d5309fa68d7c27068ed0e1a5600f66a05c7676ab9edfbce52"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Definition der Anforderungen",
+      "level": 3,
+      "anchor": "definition-der-anforderungen",
+      "hash": "7ad815501cc7912558e5159b8a104f8e4dd49861be4aa6a56c541092061c0143"
+    },
+    {
+      "file": "docs/application-lifecycle-management/version-management.md",
+      "heading": "Einsatz von weiteren Tools",
+      "level": 3,
+      "anchor": "einsatz-von-weiteren-tools",
+      "hash": "472105f16bc3932f4b79bc11d219b69fae89f50476d7fca300af2876b62fe2d8"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Generative künstliche Intelligenz (genAI)",
+      "level": 1,
+      "anchor": "generative-künstliche-intelligenz-genai",
+      "hash": "1b1f67f6422a9bb21ea7b7e6aebd30e9d5e5cde7e4b8a2a82f6c449a94bb5114"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "KI in der Entwicklung - Ein Thema mit großer Bedeutung und Dynamik",
+      "level": 2,
+      "anchor": "ki-in-der-entwicklung---ein-thema-mit-großer-bedeutung-und-dynamik",
+      "hash": "594c7effd10a7e80884569623dad6d53e95fd70925d4d4139394d5888cdd8a58"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Volle Verantwortung bzgl. KI-Ergebnis, aber auch Einsatzgebiet beim Entwickler",
+      "level": 2,
+      "anchor": "volle-verantwortung-bzgl-ki-ergebnis-aber-auch-einsatzgebiet-beim-entwickler",
+      "hash": "f11275a7f927169c872beccaaa6da00f1f950a742e40ce4e2fdbd4b8954c35ba"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Hilfestellungen für die Entscheidungsfindung zum Einsatz von KI und KI-Tools",
+      "level": 2,
+      "anchor": "hilfestellungen-für-die-entscheidungsfindung-zum-einsatz-von-ki-und-ki-tools",
+      "hash": "82dfe68ff50ff25498fe5cf17e010ecd4be922a4232bfa51f9f6c05b20aaa5b4"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "SAP AI Roadmaps und Tools für die Entwicklung",
+      "level": 2,
+      "anchor": "sap-ai-roadmaps-und-tools-für-die-entwicklung",
+      "hash": "5d37a706d8af262a6a85fc25287806c6c51e3087e9a76f206894994d9a2ed6e3"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Aktueller Stand (SAP TechEd 2025) KI-Unterstützung im SAP Umfeld",
+      "level": 3,
+      "anchor": "aktueller-stand-sap-teched-2025-ki-unterstützung-im-sap-umfeld",
+      "hash": "dc0e00a0c57e7819a4f5c6b582897b724a223560b3b8bc8652d88586401e7972"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Unterstützung bei der ABAP Entwicklung durch alternative KI Werkzeuge",
+      "level": 2,
+      "anchor": "unterstützung-bei-der-abap-entwicklung-durch-alternative-ki-werkzeuge",
+      "hash": "a55a7dffd76a784ef6e6bf0c4dca7c829249347b72629088abded09c585a9a04"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Verwendung von GitHub Copilot",
+      "level": 3,
+      "anchor": "verwendung-von-github-copilot",
+      "hash": "55430f3fe6a95641d44d8bcacba60091fc11ae6db1324317049f8d1c291dec80"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Weitere Alternativen",
+      "level": 3,
+      "anchor": "weitere-alternativen",
+      "hash": "068992e5722841e45a0565e766e3c0900e8fa2a804fcf831ef52b66fba0c6cbb"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Systemkontext und ausgeführte Prüfungen bei MCP-gestützten Änderungen",
+      "level": 3,
+      "anchor": "systemkontext-und-ausgeführte-prüfungen-bei-mcp-gestützten-änderungen",
+      "hash": "4bcc6ee9ad2747f572cf5eed8e019560b7d1834e95020469d65f4cfc30111847"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Weiterführende Anwendungsfälle für generative KI in der Softwareentwicklung",
+      "level": 2,
+      "anchor": "weiterführende-anwendungsfälle-für-generative-ki-in-der-softwareentwicklung",
+      "hash": "bcff5028070afca2ae85a870d20d8cbafeea8addd8c8a3ce04dd79ac11cd890e"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "KI zur Erstellung, Prüfung und Aufbereitung von Kundenanforderungen",
+      "level": 3,
+      "anchor": "ki-zur-erstellung-prüfung-und-aufbereitung-von-kundenanforderungen",
+      "hash": "4c4f05eca51bd443ff4e8b5710777008e35011954b27f95c8aa55fbc2f17296f"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "KI als Werkzeug bei Dokumentationserstellung",
+      "level": 3,
+      "anchor": "ki-als-werkzeug-bei-dokumentationserstellung",
+      "hash": "0e1a6d64cdfd1396905d4786187605da679106db9d031f24dc61f0afccf89c37"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "KI-Entwicklung auf der SAP BTP über ABAP hinaus",
+      "level": 2,
+      "anchor": "ki-entwicklung-auf-der-sap-btp-über-abap-hinaus",
+      "hash": "be90afef7c9d417e5eeb028c1d87f712bc6e02309de1ac6722d781b1a925cde9"
+    },
+    {
+      "file": "docs/artificial-intelligence/index.md",
+      "heading": "Zusammenfassung (KI assistiert)",
+      "level": 2,
+      "anchor": "zusammenfassung-ki-assistiert",
+      "hash": "4cce2c320a3344945e4e67074c61cd170fe913d257d272f44b0c34bf990cf73f"
+    },
+    {
+      "file": "docs/authors/index.md",
+      "heading": "Abschluss",
+      "level": 1,
+      "anchor": "abschluss",
+      "hash": "0966a5c28fa316dc8a4da3b78ef51d8400cd550c89caaa990b4cf623066fb1a7"
+    },
+    {
+      "file": "docs/authors/index.md",
+      "heading": "Mitarbeiter",
+      "level": 2,
+      "anchor": "mitarbeiter",
+      "hash": "b67fca40748fb7eb08508bdd8ca4e33604cfcffee3d7155e5492adcea336270b"
+    },
+    {
+      "file": "docs/authors/index.md",
+      "heading": "Autoren",
+      "level": 2,
+      "anchor": "autoren",
+      "hash": "17f69b15c65d97eaa61580f4bcbdd4fd67badb1df40c6cfbb3390cb6d256f561"
+    },
+    {
+      "file": "docs/authors/index.md",
+      "heading": "Danksagungen",
+      "level": 2,
+      "anchor": "danksagungen",
+      "hash": "261cae19005c800ca9df502938236b0171a735ca67ff65a798d3b7d3f221949d"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Architekturkonzepte",
+      "level": 1,
+      "anchor": "architekturkonzepte",
+      "hash": "43412770b841709bd824edc7c2bee162b7ea579e5b41db4a938e69bb66f13b0e"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Einstieg",
+      "level": 2,
+      "anchor": "einstieg",
+      "hash": "bd34822c6458cc652486b029b65d14e52fc38ba965d8f855d17004bb8be7729f"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Szenarien",
+      "level": 2,
+      "anchor": "szenarien",
+      "hash": "e5c72d675b4d729f321268390ad83fe1da01d28a8749cfbe6ddd2a7477e389e6"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "On-Stack",
+      "level": 3,
+      "anchor": "on-stack",
+      "hash": "94676b82d49e355c21bd319e9820ea0bd332af0fd2a409080a4c03dcedeac99e"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Side-by-Side",
+      "level": 3,
+      "anchor": "side-by-side",
+      "hash": "be051e7bbbaef4eff54d3a5d9452b60a9938b3986a3d7ecdc78e1ae1cd10e0ba"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Strategie",
+      "level": 2,
+      "anchor": "strategie",
+      "hash": "5df40613e4e752639110d49cb150bb18956ae5201609c736b5e7025174c5611e"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Modelle",
+      "level": 3,
+      "anchor": "modelle",
+      "hash": "01cbaf79e52c1dc06c8bc17c3a0b382e286a35b03199bae1e7ad196dbd83dd94"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Kopplung",
+      "level": 3,
+      "anchor": "kopplung",
+      "hash": "8d7110c52b8afb5e7f962a1df2001c266ba38db0d991829d100e3773df3152db"
+    },
+    {
+      "file": "docs/clean-core/architectural-concepts.md",
+      "heading": "Make the Core clean",
+      "level": 2,
+      "anchor": "make-the-core-clean",
+      "hash": "1dde17519b5cc58e07923eb67203f82a95bff825376cfc96bba4c8aacb6f210e"
+    },
+    {
+      "file": "docs/clean-core/index.md",
+      "heading": "Clean Core",
+      "level": 1,
+      "anchor": "clean-core",
+      "hash": "0bac1fc71f0871fd9f1b145e01786193e71f5f00e285dce77ba3257ab14ac342"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "Problemfelder und Herausforderungen",
+      "level": 1,
+      "anchor": "problemfelder-und-herausforderungen",
+      "hash": "676951bfd982a7476ce15eb633c464d75a134d5d80cdb21eedcdf05b8c5fabf8"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "Kundencode",
+      "level": 2,
+      "anchor": "kundencode",
+      "hash": "890df71931e3adcbce7a0451eee121fb3d85a26bf18fe48ab9ff29c0c636a9ca"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "Technologien",
+      "level": 2,
+      "anchor": "technologien",
+      "hash": "69b0c9f18d22321ea1a9c0f1ce1853dba575a4f648806ccef98bb24e7df0c991"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "Organisation",
+      "level": 2,
+      "anchor": "organisation",
+      "hash": "59a0e241bfba24941737ca711622d9e39d9f5b3f4c48802e1cac7049865a4c4a"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "(Geschäfts-)Prozesse",
+      "level": 2,
+      "anchor": "geschäfts-prozesse",
+      "hash": "f9a9f43f9210eefcf27b93b248e69e45f371d743b5db9ecf468e69b9a41e3726"
+    },
+    {
+      "file": "docs/clean-core/problems-and-challenges.md",
+      "heading": "Add-Ons",
+      "level": 2,
+      "anchor": "add-ons",
+      "hash": "7c24e7245039eeedcb8996f1733162f70afa9ebab626fc719b389b01ad1719d3"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Lösungsansatz",
+      "level": 1,
+      "anchor": "lösungsansatz",
+      "hash": "a37a7e0f77bc3b223fb4a82229ccac3fde2b367515f49e4e1d1684bcc3fd831e"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Definieren Sie Ihren Lösungsweg",
+      "level": 2,
+      "anchor": "definieren-sie-ihren-lösungsweg",
+      "hash": "892dda8d3dd3d058634dd1586ba7b829621edde6dd539e2ba45140ddfbd4e60c"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Entscheidungshilfen",
+      "level": 2,
+      "anchor": "entscheidungshilfen",
+      "hash": "dc58927b276ad105db11476027f7d412a694ff0b8aa0be09fd7aac623d201452"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "ABAP Cloud",
+      "level": 2,
+      "anchor": "abap-cloud",
+      "hash": "947b5d0d46aa2c98c3438e9097d5119077c7d9f6ffad7f36789fbec4abaeeacd"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Freigegebene APIs",
+      "level": 3,
+      "anchor": "freigegebene-apis",
+      "hash": "e492e390113f9b3cc2d42556f3451cdffd3cb388c6e2277e087717745d42fd28"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Level Concept",
+      "level": 3,
+      "anchor": "level-concept",
+      "hash": "683acb0e81cd1658b5ee6759605f77c50ab848a4a297563dcccedce4bae0907c"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Migration von Reports",
+      "level": 3,
+      "anchor": "migration-von-reports",
+      "hash": "879cfb3f3d92a7a60e3c7d4a7e3e3483bf06e56766eb3dfac2790ff912274d11"
+    },
+    {
+      "file": "docs/clean-core/solution-approach.md",
+      "heading": "Neue Konzepte",
+      "level": 3,
+      "anchor": "neue-konzepte",
+      "hash": "b2e8929feb3808e8e12d1a9613c37df88da5370d6d10319302c61da7ac40da77"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Was ist Clean Core",
+      "level": 1,
+      "anchor": "was-ist-clean-core",
+      "hash": "a733ef592cbf59d9f83395c98043226c1ef1b96b3979fbbd0d72cad3f9d6075c"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Clean Core auf den ersten Blick",
+      "level": 2,
+      "anchor": "clean-core-auf-den-ersten-blick",
+      "hash": "74dcba6deb8c0f1d8197da177beb33ff1dafec53678c4109bb7aa6e21a0fe994"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Clean Core Definition",
+      "level": 2,
+      "anchor": "clean-core-definition",
+      "hash": "b0b1c5a308ecc7e184df6b8d254bf5e52c0ca360b00a530fa325181bddf37c9c"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Datenmodelle",
+      "level": 4,
+      "anchor": "datenmodelle",
+      "hash": "ab995b8764a26423b667d470c24853aae7966bd5244f3c2400b82b65c0868ef9"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Anwendungslogik",
+      "level": 4,
+      "anchor": "anwendungslogik",
+      "hash": "336e2883eb309a47a8b2126f0895ab9e0f74128d1ef2d7375e403ebb6404ad6c"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Applikationen",
+      "level": 4,
+      "anchor": "applikationen",
+      "hash": "b6bb6af9cdfdd94756534a94e1912981db0b249d392a16d131bc7f5cb91abe41"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Schnittstellen",
+      "level": 4,
+      "anchor": "schnittstellen",
+      "hash": "c11730074294771d8951ec716cec66274f23580613eacc44ce16d7893417a1b8"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Zielgruppe",
+      "level": 2,
+      "anchor": "zielgruppe",
+      "hash": "02fea4a0027b85dff7b710dcc2321b47ed656c5d4fe367b91d5bba07ee21da2a"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Private/Public Cloud",
+      "level": 3,
+      "anchor": "privatepublic-cloud",
+      "hash": "eb744417698e41c2a2e49020afc15def9fe36f8e41d8db78fd3d4afe5b70bb2a"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Unterschiede zwischen den Modellen",
+      "level": 2,
+      "anchor": "unterschiede-zwischen-den-modellen",
+      "hash": "61d4bfd13d4e73bd60a93a8e6d60583009a904c4583059a558d3c7efba792f42"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Public Cloud",
+      "level": 3,
+      "anchor": "public-cloud",
+      "hash": "4e62115ea6ce0673c20ef802992be7e55754796095e31bc8545963da148b3e76"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Private Cloud",
+      "level": 3,
+      "anchor": "private-cloud",
+      "hash": "b34bd4c119711df3539d0a53ee129178bfac19de51262d19ccb747548613fb9d"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "On-Premise",
+      "level": 3,
+      "anchor": "on-premise",
+      "hash": "c24db44775fefc24c6772567b8c13a7390109ba019a238ebfffa132100da552e"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Anwendbarkeit von Clean Core:",
+      "level": 3,
+      "anchor": "anwendbarkeit-von-clean-core",
+      "hash": "b48b4366a936f231362abfed8df1c0d677ae75d50a2837635082f0896f3daa57"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "S/4HANA Transformation",
+      "level": 2,
+      "anchor": "s4hana-transformation",
+      "hash": "b3ce30621248528a0d02baa8a708bdc88d62dd096bc27aa0cb342f0741b2fed8"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Greenfield-Ansatz",
+      "level": 3,
+      "anchor": "greenfield-ansatz",
+      "hash": "86db65f31d9000674aa7014c25931d7d111998af52e8189f2398067757330829"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Brownfield-Ansatz",
+      "level": 3,
+      "anchor": "brownfield-ansatz",
+      "hash": "2a802a0a32901f28101a9fd37f5a9cb5f3630d9771fe9a36e9343a20d7cbd41a"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Bluefield-Ansatz",
+      "level": 3,
+      "anchor": "bluefield-ansatz",
+      "hash": "a0b5353ca2b07a97a570c69d9938f6c980a2f731b5a7a46d3e0dcf5aee047b8b"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Abgrenzung im Überblick",
+      "level": 2,
+      "anchor": "abgrenzung-im-überblick",
+      "hash": "923bf81bf3f77afe680af12d2a93ba934bd14d8070fc183af4183cf59e378f37"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Modifikationen in SAP Code",
+      "level": 2,
+      "anchor": "modifikationen-in-sap-code",
+      "hash": "c2574728122a1037a2fa8b31e14fb84fcef51de1d4504be8f71cc651a4173ee9"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Grundsätze für Modifikationen",
+      "level": 3,
+      "anchor": "grundsätze-für-modifikationen",
+      "hash": "18ae4da61f79598a496d220a4ab69b46ecd9a0b6e6d3a1f2c8710759b669447c"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Wichtige Hinweise",
+      "level": 3,
+      "anchor": "wichtige-hinweise",
+      "hash": "2c98e09d6fe92be8a89872ee8753ab690a49ccc8715a080c7eb5e6a3fffa2e1c"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "“NIEMALS SAP CODE KOPIEREN”",
+      "level": 3,
+      "anchor": "niemals-sap-code-kopieren",
+      "hash": "2eab3ff122690d68bba25ac4375036ab46fded95faefa6d3c26d3e201b8119f3"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Rechtfertigung für Modifikationen",
+      "level": 4,
+      "anchor": "rechtfertigung-für-modifikationen",
+      "hash": "25e3d0202d3ff21d20b33be6aa57f50af3ff5e6946fb8eb6587b9f19ce875e0b"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Mögliche Rechtfertigungen:",
+      "level": 4,
+      "anchor": "mögliche-rechtfertigungen",
+      "hash": "902ec068c7591bd328b00282ad6e00a12cebac30a5180380e740f7e5bb951cc0"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Saubere Modifikationen",
+      "level": 2,
+      "anchor": "saubere-modifikationen",
+      "hash": "2e4e57a9e562beae60ddd27ea28c6c146a1617547dd240a9f419b83ea58ca54f"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "DO",
+      "level": 3,
+      "anchor": "do",
+      "hash": "b83cd4463e7ba936426a0ba23e5908cb256616b7ae7904237657a4cdd73111d3"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "DON'T",
+      "level": 3,
+      "anchor": "dont",
+      "hash": "0ee7891682220c10ce3b528f980f0981043217013b746709489de2cee8063f42"
+    },
+    {
+      "file": "docs/clean-core/what-is-clean-core.md",
+      "heading": "Clean ABAP - Abgrenzung",
+      "level": 2,
+      "anchor": "clean-abap---abgrenzung",
+      "hash": "15d515b7ab72d7150241e81e861963fb650b6f2700a94ecd552353e03029e68c"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Warum Clean Core",
+      "level": 1,
+      "anchor": "warum-clean-core",
+      "hash": "ea7e79b04779d00089101ad45a4afb153c1f1360c608167c0527851c151a30e4"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Eine Management-freundliche Zusammenfassung",
+      "level": 2,
+      "anchor": "eine-management-freundliche-zusammenfassung",
+      "hash": "5eb2bd70b30a8abe260cdd17c7a8d697fe433d01cdc3c0ee522d4d2900378db0"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Gründe für die Nutzung von SAP-Standard-Prozessen und Erweiterungsmöglichkeiten",
+      "level": 2,
+      "anchor": "gründe-für-die-nutzung-von-sap-standard-prozessen-und-erweiterungsmöglichkeiten",
+      "hash": "c29cc6882e823375817796e0438df7a6257607cd3f529667a014ca558810644c"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Zukunftssicherheit und Innovation",
+      "level": 3,
+      "anchor": "zukunftssicherheit-und-innovation",
+      "hash": "4ffa03b43425184a30234e522bb2700f866b8e594e270966508fba0421934afd"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Reduzierung technischer Schulden",
+      "level": 3,
+      "anchor": "reduzierung-technischer-schulden",
+      "hash": "cc90614f575f1ae3be43fee69e05f35c220a9c29a5e97aa97d688d7d5797c4ff"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Verbesserung der Upgrade-Fähigkeit",
+      "level": 3,
+      "anchor": "verbesserung-der-upgrade-fähigkeit",
+      "hash": "96b6f5358330e64f74987e78e19d61109dfff386324473749c4958d078d8f980"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Förderung von Digitalisierung und Innovation",
+      "level": 3,
+      "anchor": "förderung-von-digitalisierung-und-innovation",
+      "hash": "bfeef29b9adbbdcff773f3725e1f1f6f1a4312d146e9d9c9e911e21ec22e828e"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Effiziente Nutzung und Erweiterung von SAP-Lösungen",
+      "level": 3,
+      "anchor": "effiziente-nutzung-und-erweiterung-von-sap-lösungen",
+      "hash": "92941c02881735aa9761ff2afa0cb04ede5036ce8850e98ecc5a4986a5758063"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Vorbereitung auf die Cloud-Transformation",
+      "level": 3,
+      "anchor": "vorbereitung-auf-die-cloud-transformation",
+      "hash": "febcee79b1c5cbecd52565cd523d5e999714a852d07ec4242e35e0e922d14d6e"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Einfache Integration von Drittanbieter-Tools",
+      "level": 3,
+      "anchor": "einfache-integration-von-drittanbieter-tools",
+      "hash": "cf0bb24654cdd5ddfb546cf40ef93753c4995f0eefad753a9bebd0b3d7ab5cfb"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Nachteile des Clean Core Ansatzes",
+      "level": 2,
+      "anchor": "nachteile-des-clean-core-ansatzes",
+      "hash": "a011c6c712c82719bdd6e82c563019b2988754f5221e8c03de54c3c67da81c2a"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Wirtschaftlichkeit",
+      "level": 3,
+      "anchor": "wirtschaftlichkeit",
+      "hash": "356254e58cffd2df6fcd5c776553483c42ff896c361332e337a4f8c49729136a"
+    },
+    {
+      "file": "docs/clean-core/why-clean-core.md",
+      "heading": "Know How",
+      "level": 3,
+      "anchor": "know-how",
+      "hash": "3f801a0b574e437e6f400021d5d2f535a4d05992b0de4b758cf2eec4f57ea81a"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Core Data Services",
+      "level": 1,
+      "anchor": "core-data-services",
+      "hash": "8b3182a052e79028b519df2276570130a62cd951e8a3531c89f33f75e3478ce1"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Aufbau von dem VDM",
+      "level": 2,
+      "anchor": "aufbau-von-dem-vdm",
+      "hash": "eb4caf500d1dc3c5064458c9081771ffdf814596be881daeb62208370904acd8"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "View-Typen, Namenskonventionen und Einsatzmöglichkeiten",
+      "level": 2,
+      "anchor": "view-typen-namenskonventionen-und-einsatzmöglichkeiten",
+      "hash": "9806fa8cc2d1aeb73a47e9836d5e68119a3a0ad7088b236059ab9eec30ff2ff9"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Klassifizierung von CDS Views",
+      "level": 2,
+      "anchor": "klassifizierung-von-cds-views",
+      "hash": "514e8abcb19dc618e4ff5d339ae719e5ab16dbae2ba516a5ed703c966f61b6d8"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Unterstützte Funktionen",
+      "level": 3,
+      "anchor": "unterstützte-funktionen",
+      "hash": "c9d674f46c200e09362e3b0b48e3c59cfd98d5e3efd439335adbf959dc0edaa6"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Modellierungsmuster",
+      "level": 3,
+      "anchor": "modellierungsmuster",
+      "hash": "a0302a0c056ffae80dbe317af1bd2408e0eea617770cc5b0ebe9f7f11c088097"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "CDS View Modellierungsmöglichkeiten",
+      "level": 2,
+      "anchor": "cds-view-modellierungsmöglichkeiten",
+      "hash": "68ba5fb35227049782a18e690fc0a4858db057ca7d3983aab0ee6d28f2157ad9"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Typ-Definitionen",
+      "level": 3,
+      "anchor": "typ-definitionen",
+      "hash": "20e0dd458dfb15b3998056e4f50baf347f293b61f7129b08253223b6794eae42"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Simple Types",
+      "level": 4,
+      "anchor": "simple-types",
+      "hash": "82f1d7c332d16e70d3b7300af25910f4015efa9e28ee6f2619978eda43e64568"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Enumerated Types",
+      "level": 4,
+      "anchor": "enumerated-types",
+      "hash": "645e5f009af540d62ac6d2aa2837c4d6e417e8df3f8bc121478b743d4404533d"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Tabellenfunktionen",
+      "level": 2,
+      "anchor": "tabellenfunktionen",
+      "hash": "6860d6c2eb157681a1f6d1fcb3ff5282d03a85fc5544b0220755a7e3f81ac89d"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Annotations",
+      "level": 2,
+      "anchor": "annotations",
+      "hash": "3b2d679fcd0593b838841163cd575e4e585eec97699abcaa7c33e6298cefcf85"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Syntax",
+      "level": 3,
+      "anchor": "syntax",
+      "hash": "6693f389c4c9896efdcf7d8581263bb547d72e9c705dc611f677ff90d6eefabb"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "SAP Annotations",
+      "level": 3,
+      "anchor": "sap-annotations",
+      "hash": "6cd51f73fa7bd8c3c743c1826d2c1ac9d6b50787c73920698eda128b595f934b"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Data Definitions",
+      "level": 2,
+      "anchor": "data-definitions",
+      "hash": "004580cfe87420320949cdeb7b6cc38b376ede15063048497f2009cad1e19d2e"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Was sind Data Definitions?",
+      "level": 4,
+      "anchor": "was-sind-data-definitions",
+      "hash": "70c9bff9b14ee1c3f60e4cb831aa417fb94f513bb61069f3f95dc4bf0235c63e"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "DDIC-based views - OBSOLET",
+      "level": 4,
+      "anchor": "ddic-based-views---obsolet",
+      "hash": "abd4dffae690fff846aea371be62be3bd1e56b8e19a1d02c92cad9b663b1e691"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "View Entities",
+      "level": 3,
+      "anchor": "view-entities",
+      "hash": "62ff776b4baaca0f0ca0de33dce2e657f936d0fff6f5d4a3a8093985d8157ccb"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Projection Views",
+      "level": 3,
+      "anchor": "projection-views",
+      "hash": "53c93a4362b8afe622dec525233ad84fcac48eb7426a82514e27089e0ec3e8f1"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Tabellenfunktion",
+      "level": 3,
+      "anchor": "tabellenfunktion",
+      "hash": "fecb734d2ea43a2973c7bf1f4ac8bb628febb067ffec6c65ca2a8892903bb548"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Hierarchies",
+      "level": 3,
+      "anchor": "hierarchies",
+      "hash": "d6210daabf22f2dc60f5200c42a2b2d154e57af619f123e73b30963accd0ab84"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Custom Entities",
+      "level": 3,
+      "anchor": "custom-entities",
+      "hash": "6c7e858785c4a6130dda460326c32f16243202b6ffacec79d41e9c66e1044641"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Abstract Entities",
+      "level": 3,
+      "anchor": "abstract-entities",
+      "hash": "6c6cbb6cc6c378944caebc8ed281252f566238e3bf53a1f2578a2c063bc25552"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "External Entities",
+      "level": 3,
+      "anchor": "external-entities",
+      "hash": "6e8dcaed19f5c1adf84d7af10aabc9ff033b6645bd8197940722c554a97a4297"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Tuning objects",
+      "level": 3,
+      "anchor": "tuning-objects",
+      "hash": "936870772c8b94f76d6e802698d52d95ee95479e7cb0fff561093953628c0cdd"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Access Control",
+      "level": 2,
+      "anchor": "access-control",
+      "hash": "8968fc0015fd92543772bef6a69d5be8d5fbe4754f19da22e1c9d0e3624dc0dd"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Eigenschaften",
+      "level": 3,
+      "anchor": "eigenschaften",
+      "hash": "9bd1ce05bb024dba778072cb02b984b1e6536a59a09f9075af9d25816d3cd24d"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Associations",
+      "level": 2,
+      "anchor": "associations",
+      "hash": "80086b1322a29b750e40e646cd8c80bc0307bcb406ab7022d0503a823ea11c73"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Erweiterbarkeit",
+      "level": 2,
+      "anchor": "erweiterbarkeit",
+      "hash": "ded394d4f45d089c56b9e14765aa905942c9bf8e8ac7402587dbb651f50f8100"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Stabilitätsverträge",
+      "level": 3,
+      "anchor": "stabilitätsverträge",
+      "hash": "35dca5a40ebf0f6e34c290c2ef52a3d271a86d8c2ffe26d359fc63562349be6c"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Erweiterungen von SAP Standard CDS Views",
+      "level": 3,
+      "anchor": "erweiterungen-von-sap-standard-cds-views",
+      "hash": "41978e10f158a1bd13750ac33dab2fe5334a6774707583660c90df1f12c18c5a"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "BW-Integration, Embedded Analytics und ODP",
+      "level": 2,
+      "anchor": "bw-integration-embedded-analytics-und-odp",
+      "hash": "9bf6e371b32cd7f1a67cfbcdfd63e16dd7b952adf7d897ced8015cc963aaf735"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Voraussetzungen für den Transfer zu SAP BW/4HANA",
+      "level": 4,
+      "anchor": "voraussetzungen-für-den-transfer-zu-sap-bw4hana",
+      "hash": "4fa6750bf52e72fd272c22e22a496ee73fefa3197062f23e4815b45f76a9203f"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Voraussetzungen für Embedded Analytics",
+      "level": 3,
+      "anchor": "voraussetzungen-für-embedded-analytics",
+      "hash": "9e024bab90e64b0c2ecef3dc3a1e283b852a4eaedcc955a1a7c4328851c5b548"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Funktionsweise ODP",
+      "level": 3,
+      "anchor": "funktionsweise-odp",
+      "hash": "b3dcb7cd53bc1b969e5f2bdfb39f923718637715b2ba4db6706296a71435ddbb"
+    },
+    {
+      "file": "docs/core-data-services/index.md",
+      "heading": "Tipps und Trick",
+      "level": 2,
+      "anchor": "tipps-und-trick",
+      "hash": "38b73639d7d00c475c7c10a5f4873db71094817edd11c6d385682c2396ca6e81"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Dokumentation von Entwicklungsobjekten",
+      "level": 1,
+      "anchor": "dokumentation-von-entwicklungsobjekten",
+      "hash": "8482c5848c1bcd90873e4b058eb9cac3d453d17911951419e713a79352a5f2b3"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Kurztexte",
+      "level": 2,
+      "anchor": "kurztexte",
+      "hash": "230f000af769e849eca70ce394d0dfc3330955339cd651688fb3c785cb15974b"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Knowledge Transfer Documents (KTD)",
+      "level": 2,
+      "anchor": "knowledge-transfer-documents-ktd",
+      "hash": "c1a1449e1ec2d1533dc31209c6fdfa5f9ffb84239ab8376bee178ca5e302d007"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Dokumentation im Quellcode",
+      "level": 1,
+      "anchor": "dokumentation-im-quellcode",
+      "hash": "d668d11cefb4c986416762ad6369e904a129300e57434b2bfd665517f75e7b1f"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Dokumentationssprache",
+      "level": 2,
+      "anchor": "dokumentationssprache",
+      "hash": "35cd337d2b15818efed234477b850a5ff1b487d0069ae6e6ca64151ca638b353"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Dokumentation von Änderungen",
+      "level": 2,
+      "anchor": "dokumentation-von-änderungen",
+      "hash": "a4a43e88b471f99d795064201ad74f9f7aa14221cad63955b21ba99d412640f9"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "Kommentare im Quellcode",
+      "level": 2,
+      "anchor": "kommentare-im-quellcode",
+      "hash": "c17db0d4d6e19709a7b17b996bb365fef686de2f3d5ef18b8021ce42cc9b66c2"
+    },
+    {
+      "file": "docs/documentation/dev_object_related_doc.md",
+      "heading": "ABAP Doc",
+      "level": 2,
+      "anchor": "abap-doc",
+      "hash": "a9bcd779cdd66cd44d4749d7b98a60db1dc8c2240b3a7fffa4c6888c4611e676"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Allgemeine Dokumentations-Tipps",
+      "level": 1,
+      "anchor": "allgemeine-dokumentations-tipps",
+      "hash": "60103a1d7dc92f19a931ee7da11de83311594e3ee483ec7abf2be22d12e90996"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Goldene Dokumentationsregeln",
+      "level": 2,
+      "anchor": "goldene-dokumentationsregeln",
+      "hash": "72e7008fcf61ab0d965c6cb86257bbb98102199fbb459336fbc42788e8902534"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Dokumentation muss einfach zu verstehen sein (#1)",
+      "level": 3,
+      "anchor": "dokumentation-muss-einfach-zu-verstehen-sein-1",
+      "hash": "9bb5c825534251e60f320d0073976ce49b9051b3fb50cdbcdcf39246a8cd60c8"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Dokumentation muss einfach zu nutzen sein (#2)",
+      "level": 3,
+      "anchor": "dokumentation-muss-einfach-zu-nutzen-sein-2",
+      "hash": "065d454e4a6943848f5013c3b3c0a689f925f4b2ed44e54a469e137dc8f6b169"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Dokumentation muss spezifisch und nachvollziehbar sein (#3)",
+      "level": 3,
+      "anchor": "dokumentation-muss-spezifisch-und-nachvollziehbar-sein-3",
+      "hash": "15ab72715bd71d9efadeaf1a6e9c98229df1d6e435977ae1b67cc5d28b2197d9"
+    },
+    {
+      "file": "docs/documentation/documentation_tipps.md",
+      "heading": "Dokumentation muss einen sinnvollen Wertebeitrag liefern (#4)",
+      "level": 3,
+      "anchor": "dokumentation-muss-einen-sinnvollen-wertebeitrag-liefern-4",
+      "hash": "7781135568c8a106e49f3b835892b32d3c83f96ae6e993400126320bf5d806dd"
+    },
+    {
+      "file": "docs/documentation/index.md",
+      "heading": "Dokumentation von ABAP Entwicklungen",
+      "level": 1,
+      "anchor": "dokumentation-von-abap-entwicklungen",
+      "hash": "ea5650c87d6ab4f266c1db56fa4fd5ba8e0cd4b1fa6a70027ca3cada7354f09d"
+    },
+    {
+      "file": "docs/documentation/index.md",
+      "heading": "Zielgruppe",
+      "level": 2,
+      "anchor": "zielgruppe",
+      "hash": "0a8bc5e5d3b4848fca9e5d96e6c871cc39d70c1813a1dfe9c27039a8c14098a9"
+    },
+    {
+      "file": "docs/documentation/index.md",
+      "heading": "Inhalt des Kapitels",
+      "level": 2,
+      "anchor": "inhalt-des-kapitels",
+      "hash": "72b3cef498b0417dc606a0dfd07b071632bc3468b0ee333450cbdec38ef91a11"
+    },
+    {
+      "file": "docs/documentation/non_dev_object_related_doc.md",
+      "heading": "Entwicklungsobjektübergreifende Dokumentation",
+      "level": 1,
+      "anchor": "entwicklungsobjektübergreifende-dokumentation",
+      "hash": "0d16f998c57844af481c85b57496e8cc27dbe10ea3f51a9231826b946a375825"
+    },
+    {
+      "file": "docs/documentation/non_dev_object_related_doc.md",
+      "heading": "Dokumentation zur Versionsverwaltung",
+      "level": 2,
+      "anchor": "dokumentation-zur-versionsverwaltung",
+      "hash": "95bfabffa0b6daae60a9f5c2e8afdec81183ce6b0bc21787c9af4fed66419fab"
+    },
+    {
+      "file": "docs/documentation/non_dev_object_related_doc.md",
+      "heading": "Transportauftrag",
+      "level": 3,
+      "anchor": "transportauftrag",
+      "hash": "704ffb49c752de057ab114dc76b5a1e84b503596d336a07b8c65400d225e81dd"
+    },
+    {
+      "file": "docs/documentation/non_dev_object_related_doc.md",
+      "heading": "Git-Client",
+      "level": 3,
+      "anchor": "git-client",
+      "hash": "e8f2ecc8297aec21300cd0c714027fcc96bcb4bdeb9114b3704fb19625b52ae8"
+    },
+    {
+      "file": "docs/forms/adobe-document-service.md",
+      "heading": "Adobe Document Services",
+      "level": 1,
+      "anchor": "adobe-document-services",
+      "hash": "b7513f4a2966d1b1db18ec027b1222e966c68f269838720978c178be3c16c111"
+    },
+    {
+      "file": "docs/forms/adobe-document-service.md",
+      "heading": "ADS On-Premise",
+      "level": 2,
+      "anchor": "ads-on-premise",
+      "hash": "800314700795ab10492d6256d5e04ca235e00997b8df66ea454217cd9de1fad0"
+    },
+    {
+      "file": "docs/forms/adobe-document-service.md",
+      "heading": "SAP Forms Service by Adobe (Cloud-ADS)",
+      "level": 2,
+      "anchor": "sap-forms-service-by-adobe-cloud-ads",
+      "hash": "f292b56daa10a91f1b3b5a48f84b511f8ff4b08f6dea95d13293b3677c675190"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "Formulartechnologien",
+      "level": 1,
+      "anchor": "formulartechnologien",
+      "hash": "6880818432faa007e1daab4d0ba2c1039111c7a89e058a738d0cf6534355123d"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "SAPscript (1992 R/3)",
+      "level": 2,
+      "anchor": "sapscript-1992-r3",
+      "hash": "1a0a860b440e5146df98cf1ef2369c5605bd584fce2274eba47257689fa012d2"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "SmartForms (2001)",
+      "level": 2,
+      "anchor": "smartforms-2001",
+      "hash": "ae3ab8da8e02eab48ceb5dbc881a66c7ff1b3feb0091dd0e39bb6bd121f24fed"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "Adobe Forms",
+      "level": 2,
+      "anchor": "adobe-forms",
+      "hash": "17a1f617039edc27f402723d568cc1de4ea6b3f3101da0163644ed5b0d1d234d"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "SAP Interactive Forms by Adobe (2005)",
+      "level": 3,
+      "anchor": "sap-interactive-forms-by-adobe-2005",
+      "hash": "e706676ab877f50cdcddc1afe98896d3b48b35caa3795e420992f4e1e9a8abda"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "SAP S/4HANA Forms (2015 S/4HANA)",
+      "level": 3,
+      "anchor": "sap-s4hana-forms-2015-s4hana",
+      "hash": "c094c12b2f3948bb88661aea9be27ecdcbe19096704a24247253acdbe4579b30"
+    },
+    {
+      "file": "docs/forms/form-technologies.md",
+      "heading": "Fazit",
+      "level": 2,
+      "anchor": "fazit",
+      "hash": "5256bed119acb3929be4d8318a46f456f5e3a6537de2f323651635293fa05665"
+    },
+    {
+      "file": "docs/forms/index.md",
+      "heading": "Formulare",
+      "level": 1,
+      "anchor": "formulare",
+      "hash": "7811705b3f89dda76257a566479967043bf85d3a7a9b78fe1acf498c50b3688d"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "Ausgabelösungen",
+      "level": 1,
+      "anchor": "ausgabelösungen",
+      "hash": "f97e45709a8cac4392b3e96da8871038d926f8aba016afeeee52bdbf5564ed23"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "Nachrichtensteuerung (NAST)",
+      "level": 2,
+      "anchor": "nachrichtensteuerung-nast",
+      "hash": "8cb8743c2426f2a19a1ae5e7fb0c61af6fe1ea801b4e219ada8be7cccee5af79"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "Post Processing Framework (PPF)",
+      "level": 2,
+      "anchor": "post-processing-framework-ppf",
+      "hash": "faf624483e5b033635f0b00f152dd54116492b864bfaa4fae1af7b1338da0fbc"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "Druck-Workbench",
+      "level": 2,
+      "anchor": "druck-workbench",
+      "hash": "2c8aad3a1a88e498a850a57e2fb0a332843668086e15ccc833b3c01977f6f9c7"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "Applikationsspezifische Lösungen",
+      "level": 2,
+      "anchor": "applikationsspezifische-lösungen",
+      "hash": "12bd6f8a48929d684587f072c2dca51f8a4975e7676db71930b74b3a817dfc3f"
+    },
+    {
+      "file": "docs/forms/output-solutions.md",
+      "heading": "S/4HANA Output Control",
+      "level": 2,
+      "anchor": "s4hana-output-control",
+      "hash": "0e3b5d94e8bb45fbfbad3879269b676bb6b78b67e5bdace0620dec1d3b3ba9f4"
+    },
+    {
+      "file": "docs/index.md",
+      "heading": "DSAG ABAP Leitfaden",
+      "level": 1,
+      "anchor": "dsag-abap-leitfaden",
+      "hash": "e1bcf7da7e9d88c63c4e5fb6d1268449d754f7d29e45a627a3c79052481285d2"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Integration",
+      "level": 1,
+      "anchor": "integration",
+      "hash": "47d2007d1667f4f17dce766eb9bd9fd3944da6c13fa65023a85238ae33fe18f2"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Business Accelerator Hub",
+      "level": 3,
+      "anchor": "business-accelerator-hub",
+      "hash": "7ce6e02053bdf9a6b788f82cc36911c3ec46e284611f55a08afcd5dfa1105233"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Technologie",
+      "level": 2,
+      "anchor": "technologie",
+      "hash": "55e1d47e1df209f9b7d366c5db5dfc328e494e94ca1d139d5304884a07234c49"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "IDoc",
+      "level": 3,
+      "anchor": "idoc",
+      "hash": "c6da743203fed107d1c09261aea5f9137d5ecd484fc6c446a6a8ca4e2e9b1e8c"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "RFC",
+      "level": 3,
+      "anchor": "rfc",
+      "hash": "bd3feb6cc756adba1c22400e556330132a48d8d0e2ff0babc0c7cac972f288e7"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "SOAP",
+      "level": 3,
+      "anchor": "soap",
+      "hash": "c9a62fe2e6114d2bbeb10a18b053aeb85e64e910c76bb762f24b3d23d77fc1b1"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "OData",
+      "level": 3,
+      "anchor": "odata",
+      "hash": "d7ebe9d91aec78ebee1fdc1cd3021666e69d4a4244a6884df60075c0fbeed131"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "HTTP",
+      "level": 3,
+      "anchor": "http",
+      "hash": "e98616d157c03f224101a930555781020c4f19407b36b1a276649285da030a47"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Event",
+      "level": 3,
+      "anchor": "event",
+      "hash": "2851204924800a57e09544c10fca1b116541ba789856f772800ccf6c8155224a"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Clean Core",
+      "level": 2,
+      "anchor": "clean-core",
+      "hash": "4b1d0f2e603041aaab27ce06ae9cf1f42b2344b1d8ea79198a7323ac3ec8d1f4"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Empfehlungen für Grenzfälle",
+      "level": 2,
+      "anchor": "empfehlungen-für-grenzfälle",
+      "hash": "5bdc6dbc3f47b014f37bc4f7c07c713b3d75557e16ade8ea6cec01225c376486"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Berücksichtigung zukünftiger Entwicklungen",
+      "level": 3,
+      "anchor": "berücksichtigung-zukünftiger-entwicklungen",
+      "hash": "8dd41ef0abeaf317d91ce9b2cc6a386d1e5c68defc35c224558e589886a903ef"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Bestand alter Technologien",
+      "level": 3,
+      "anchor": "bestand-alter-technologien",
+      "hash": "e6961213ef6b8856bda87c7d98d9454f24e7cda1c4d0c4878a282833d2721a54"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Nachhaltige Architektur und Clean-Core-Strategie",
+      "level": 3,
+      "anchor": "nachhaltige-architektur-und-clean-core-strategie",
+      "hash": "eb9938f243b24b493f8ce482cd002a65f30999756df6f0ff4d95c8bfab9bcd3c"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Wichtige Entscheidungsfaktoren bei Grenzfällen",
+      "level": 3,
+      "anchor": "wichtige-entscheidungsfaktoren-bei-grenzfällen",
+      "hash": "51a0891a80cf55bbd79e9a6955ff99479831ce57ff91770e143f9bcce759c7c6"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Beispiel: Massendatentransferierung",
+      "level": 3,
+      "anchor": "beispiel-massendatentransferierung",
+      "hash": "3b40d983df0dd1c03a2aa97b9522d5a44df19f282f89fbc70019aaa82beec0b3"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "EDI (Electronic Data Interchange) im S/4HANA",
+      "level": 4,
+      "anchor": "edi-electronic-data-interchange-im-s4hana",
+      "hash": "61a4dbfad575f9c3c2e97cecd415ffa08be854736bf83887a781f1ec6689746b"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Weitere Lösungswege für Massendatentranferierung",
+      "level": 4,
+      "anchor": "weitere-lösungswege-für-massendatentranferierung",
+      "hash": "18a903f8e140d5ff5e784f972d7ce7f38a9f74e2647a371be26748ba07f3022f"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Cloud Connector",
+      "level": 2,
+      "anchor": "cloud-connector",
+      "hash": "8ff62e402ea08d37812f8d8106811e61ba94247e008a769d59498190480ef532"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Aufbau",
+      "level": 3,
+      "anchor": "aufbau",
+      "hash": "f70dfa06433836eb0f3a477fb8b4a7c5255c44a9b84b032a8e3ff2e60dd08c3e"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Protokolle",
+      "level": 3,
+      "anchor": "protokolle",
+      "hash": "7608da080fd51043535123aa89e434982b7eead8ad603acbca904f588422cb08"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Erweiterungen",
+      "level": 3,
+      "anchor": "erweiterungen",
+      "hash": "ffb7af83271f762941c7628a702e79566f3be7991f0a67e245768b5b6663e312"
+    },
+    {
+      "file": "docs/integration/index.md",
+      "heading": "Zugriffsrichtung",
+      "level": 3,
+      "anchor": "zugriffsrichtung",
+      "hash": "8b362da471bde76d371a08b663e92cdd02d18a88192104688115b0c10a69055b"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Einleitung",
+      "level": 1,
+      "anchor": "einleitung",
+      "hash": "52615f0462dbabb8f8b1982e700180f357c995f5ea1642e982c87b66e7d2a6f2"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Der neue DSAG ABAP-Leitfaden",
+      "level": 2,
+      "anchor": "der-neue-dsag-abap-leitfaden",
+      "hash": "023c9450b0810f71809a101252b3c6ade1e3eaaa98a033b504e8b5c3668acb7a"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Aufbau und Inhalte des Leitfadens",
+      "level": 2,
+      "anchor": "aufbau-und-inhalte-des-leitfadens",
+      "hash": "37b4c3245a34b1778cea35a04d37461132a05324e3ef3305aa6a54ee270448e4"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Positionierung",
+      "level": 2,
+      "anchor": "positionierung",
+      "hash": "cc8bb5aa2679e87638051b5e47a9ea824541fc8f444c593d5032117621b5ceb4"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Motivation",
+      "level": 2,
+      "anchor": "motivation",
+      "hash": "ca3e51e9b18bb628b59bc50b2acd82c51661a9e8f5b795f786eee05ab0a70075"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Feedback",
+      "level": 2,
+      "anchor": "feedback",
+      "hash": "53f1f83858162feee7403f1e26b0e218a6af93343c4cfc49a0351661031ea580"
+    },
+    {
+      "file": "docs/introduction/index.md",
+      "heading": "Disclaimer",
+      "level": 2,
+      "anchor": "disclaimer",
+      "hash": "c214ebea115a3b19f3bcc059cf7c4093ab0320096c2d23b8544c92c3152df5f8"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Herausforderungen",
+      "level": 1,
+      "anchor": "herausforderungen",
+      "hash": "e422d86a4fea8616d295eda142076f8cce9814f2dc1c87443c36c93d4f314fc8"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Quellcode in der Datenbank",
+      "level": 2,
+      "anchor": "quellcode-in-der-datenbank",
+      "hash": "8599db9852f23d6582a5190139c9cf5cadf44e5d65d3aa7d2b71fddeda2caba6"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Ungeeignete eingebaute Versionsverwaltung",
+      "level": 2,
+      "anchor": "ungeeignete-eingebaute-versionsverwaltung",
+      "hash": "dd52d118ec8fd1a5817aa5a9dab2d6077fb02f5b4bb1cc6e8dee1f4a63a0a35e"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Proprietäre Programmiersprache",
+      "level": 2,
+      "anchor": "proprietäre-programmiersprache",
+      "hash": "92917ad3e93b755b03b743d1745664e1e78f94a3348289d62a9aa89d6a5f02e6"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Monolithische Architektur",
+      "level": 2,
+      "anchor": "monolithische-architektur",
+      "hash": "2fa29f232e479eba2483f3cd3250e0f32914c3fa27ec228c04a1b6cc8c4763dc"
+    },
+    {
+      "file": "docs/open-source/challenges.md",
+      "heading": "Namensräume",
+      "level": 2,
+      "anchor": "namensräume",
+      "hash": "05fea8d2a45b8c24385a05834c89fcbf3cd4cb49afb63783eeff7ce39d058ee8"
+    },
+    {
+      "file": "docs/open-source/contributing-to-open-source-software.md",
+      "heading": "Beteiligung an Open-Source-Software",
+      "level": 1,
+      "anchor": "beteiligung-an-open-source-software",
+      "hash": "c3e6a2b58815e5985896b17769258535ed6079cc2b349bc5a41e33d06617e634"
+    },
+    {
+      "file": "docs/open-source/contributing-to-open-source-software.md",
+      "heading": "Chancen bei der Beteiligung an Open-Source-Entwicklung",
+      "level": 2,
+      "anchor": "chancen-bei-der-beteiligung-an-open-source-entwicklung",
+      "hash": "5ede16017cf796658741f62a0e0fb1aba2e4999b43ad412944a70dc368e94ef5"
+    },
+    {
+      "file": "docs/open-source/contributing-to-open-source-software.md",
+      "heading": "Mögliche organisatorische Hürden",
+      "level": 2,
+      "anchor": "mögliche-organisatorische-hürden",
+      "hash": "9ff6ea0fb9aa3f1e13be85f6ade46fbad9238c1c94673a1350763c89d438aac1"
+    },
+    {
+      "file": "docs/open-source/contributing-to-open-source-software.md",
+      "heading": "Arten der Beteiligung",
+      "level": 2,
+      "anchor": "arten-der-beteiligung",
+      "hash": "0e479f70e3522fd1dc5f7657a9b62c72677babf0ad64c94267816fce2fa33581"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Entwicklung von Open-Source-Software",
+      "level": 1,
+      "anchor": "entwicklung-von-open-source-software",
+      "hash": "995cde1b98ba63a06958af2ce37f4e600ac3099e0e3bc4079e99f00c9acccc16"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Mehrwert aus Unternehmenssicht",
+      "level": 2,
+      "anchor": "mehrwert-aus-unternehmenssicht",
+      "hash": "9da69d5322e256f92ec42b92865facab82d1773e3544d40de9f0b1742f8bbdc5"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Anpassung des Entwicklungsprozesses zur Berücksichtigung externer Entwickler",
+      "level": 2,
+      "anchor": "anpassung-des-entwicklungsprozesses-zur-berücksichtigung-externer-entwickler",
+      "hash": "1ab3173308fd48890ee0950b5e0276a4a977ea3f34f1e8e537700cb6b0a34807"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Dokumentation",
+      "level": 3,
+      "anchor": "dokumentation",
+      "hash": "aa7d185ef84f6d83103a4ab39086e82d6218e174f23d828774f0efdc6044c53e"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Namensräume",
+      "level": 3,
+      "anchor": "namensräume",
+      "hash": "0c7e5da35aaee5eb60ad526d2f62b0142492a3359a3d515c229cb7ac6b0968cc"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Kollisionsprüfung auf dotabap.org",
+      "level": 4,
+      "anchor": "kollisionsprüfung-auf-dotabaporg",
+      "hash": "fd78e03dcaba4a4689e5341d72a027b30c5c8ea2a55d1d35d7f41a63a4496d93"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Eigener reservierter Namensraum",
+      "level": 4,
+      "anchor": "eigener-reservierter-namensraum",
+      "hash": "f17e2193eb44289106b15b4a8bdeabaca01657d7e39820deffc7a18ed3f92f58"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "ABAP Open Source Namespaces",
+      "level": 4,
+      "anchor": "abap-open-source-namespaces",
+      "hash": "9b12b2a259790a40c7284fd37f6f7311d4882fee157ac5ab94d59bb30fc249fc"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Architektur",
+      "level": 3,
+      "anchor": "architektur",
+      "hash": "77ded0bfac13bc063fb23a909d79dcf6f1fc88f8780f84f43d7c855519cd45a6"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Unterstützung verschiedener Releases",
+      "level": 3,
+      "anchor": "unterstützung-verschiedener-releases",
+      "hash": "a9b6d8cfc6f6d9d5788c4d15e50195914f60bc7b7f89745793596d8ce0bbe510"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Unterstützung verschiedener ABAP-Sprachversionen",
+      "level": 3,
+      "anchor": "unterstützung-verschiedener-abap-sprachversionen",
+      "hash": "0c8d4e435df79a40870ffd9b9c37fcc633048c4d1d11d2b88bdd707f8933f4fe"
+    },
+    {
+      "file": "docs/open-source/developing-open-source-software.md",
+      "heading": "Continuous Integration ohne SAP-System",
+      "level": 3,
+      "anchor": "continuous-integration-ohne-sap-system",
+      "hash": "e7cf09b128fe770cf9f7b7604777502d49e4015358d9d1acbd40948af6c42d48"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "Open Source",
+      "level": 1,
+      "anchor": "open-source",
+      "hash": "4c8627a2a30bb18a1d091f63f538ec14924f36a460f00f5f7fc50faa788a46be"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "Was ist Open Source?",
+      "level": 2,
+      "anchor": "was-ist-open-source",
+      "hash": "b24f0ccb64cd9ab392f6b4573f419097fab799b22820d999831df57daefa7a32"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "Motivation und Chancen",
+      "level": 2,
+      "anchor": "motivation-und-chancen",
+      "hash": "e70b7c5ea572b0f48e63aa855afcd8ab37a04f8f4b39821fb4a2a73409985d29"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "...in der Optimierung der eigenen Entwicklungsprozesse",
+      "level": 3,
+      "anchor": "in-der-optimierung-der-eigenen-entwicklungsprozesse",
+      "hash": "61e689b49cd6c3262a1dca24704afbc7690d220ae1bc490b3885c4ff2b548d42"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "...in der Umsetzung von betriebswirtschaftlichen Anforderungen",
+      "level": 3,
+      "anchor": "in-der-umsetzung-von-betriebswirtschaftlichen-anforderungen",
+      "hash": "f15e4ed190c3376f581e65083fb874e8e2c64669848dec825359ce2232dc7cab"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "...in der Außendarstellung",
+      "level": 3,
+      "anchor": "in-der-außendarstellung",
+      "hash": "6fa9aaa5de2a9d73aa1d22f79418420bad68316bab3006adf6a64f90fd55a88c"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "...im Upskilling von Entwicklern",
+      "level": 3,
+      "anchor": "im-upskilling-von-entwicklern",
+      "hash": "278496b43768d26eafa4ec12777d03d7404a4183e904118243feb9bf4051e820"
+    },
+    {
+      "file": "docs/open-source/index.md",
+      "heading": "Ausbaustufen",
+      "level": 2,
+      "anchor": "ausbaustufen",
+      "hash": "986d724ad10426c3516ac36488ac44ff86bf44e334b9f29aa56cc4716c629964"
+    },
+    {
+      "file": "docs/open-source/licenses.md",
+      "heading": "Lizenzen",
+      "level": 1,
+      "anchor": "lizenzen",
+      "hash": "6841d4add2dfd81a6ab838ad57b29dfaf4df922425045bcc5687123e58296151"
+    },
+    {
+      "file": "docs/open-source/licenses.md",
+      "heading": "Aspekte von Software-Lizenzen",
+      "level": 2,
+      "anchor": "aspekte-von-software-lizenzen",
+      "hash": "f21458711febaa735eba2a6cd5f7bfa2a403d4f48642f659f6ec4529c03fde1d"
+    },
+    {
+      "file": "docs/open-source/licenses.md",
+      "heading": "Übersicht von Open-Source-Lizenzen",
+      "level": 2,
+      "anchor": "übersicht-von-open-source-lizenzen",
+      "hash": "00353e90610ebe6d091fcdaa7c7b789e8b1ed8d35a0928e8fbc86b6e3fe1d285"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Einsatz von Open-Source-Software",
+      "level": 1,
+      "anchor": "einsatz-von-open-source-software",
+      "hash": "a8fbd3e0210f4574875431e95ad4652f470624a1c4a90496211e591e1371ee2e"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "abapGit zum Bezug von Open-Source-Software",
+      "level": 2,
+      "anchor": "abapgit-zum-bezug-von-open-source-software",
+      "hash": "896d964b610a639510ce62f5d8d649df6d64cac932976395dc6dbb17726ce8b1"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Wer stellt ABAP-Open-Source-Software bereit?",
+      "level": 2,
+      "anchor": "wer-stellt-abap-open-source-software-bereit",
+      "hash": "7a0fcc9f98dbebecaeafa762af55a37b48d3bec7e9561e4bf844c78a196fc2cb"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Wer nutzt ABAP-Open-Source-Software?",
+      "level": 2,
+      "anchor": "wer-nutzt-abap-open-source-software",
+      "hash": "efc701eefb11e735699c48e858cce229a127a9c79fbd35d38abee4685598b8ba"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Integration von Open-Source-Tools im Entwicklungsprozess",
+      "level": 2,
+      "anchor": "integration-von-open-source-tools-im-entwicklungsprozess",
+      "hash": "1da8508355b88ebd758d1f8e908f477e9de98db5b725e405399f55cb4fe309f0"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Nutzung von Open-Source-Bibliotheken in der eigenen Software",
+      "level": 2,
+      "anchor": "nutzung-von-open-source-bibliotheken-in-der-eigenen-software",
+      "hash": "c0c3b362ff1b7682005638de5b5a261a0284b0854195eb99ae6706905d8f181a"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Bewertung und Lebenszyklus einer externen Abhängigkeit",
+      "level": 2,
+      "anchor": "bewertung-und-lebenszyklus-einer-externen-abhängigkeit",
+      "hash": "0727cd2385cca637174afc6aad37db926fc65df723398e126a73a61041a53580"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Best Practices: Bewertungskriterien",
+      "level": 3,
+      "anchor": "best-practices-bewertungskriterien",
+      "hash": "a0ede14dd03bc98d59fa4976b33f93752421c634a428badd41fcfd58233bbbb4"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Best Practices: Vorgehen und Prozess",
+      "level": 3,
+      "anchor": "best-practices-vorgehen-und-prozess",
+      "hash": "78a41117c5af3c02adbef917a2eb48f32f062c83683f7c09131ae0fdc16ef96c"
+    },
+    {
+      "file": "docs/open-source/using-open-source-software.md",
+      "heading": "Auslieferung von Open-Source-Abhängigkeiten in eigenen Produkten",
+      "level": 2,
+      "anchor": "auslieferung-von-open-source-abhängigkeiten-in-eigenen-produkten",
+      "hash": "48407916d7ff9223ee5e1e2051f36dedb2b3ce46e75d86eaa75761300193ca97"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Organisation",
+      "level": 1,
+      "anchor": "organisation",
+      "hash": "66f00ffd33163084b72477ec10bbf22564d9a62db7a6dc0caabc73ba81104589"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Bausteine einer effektiven Entwicklungsorganisation",
+      "level": 2,
+      "anchor": "bausteine-einer-effektiven-entwicklungsorganisation",
+      "hash": "426b661f7ba4825cae4114a3193764fd1f4c5abbba6e87b096472f51834ed21e"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Definition der passenden Aufbau- und Ablauforganisation",
+      "level": 3,
+      "anchor": "definition-der-passenden-aufbau--und-ablauforganisation",
+      "hash": "d211749a00a62c274aba027012627abfd3776db3bc5ea36227ec8ab4ff1227ef"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Teamorganisation und Teamzusammensetzung",
+      "level": 3,
+      "anchor": "teamorganisation-und-teamzusammensetzung",
+      "hash": "8832c92edc4b9f3e57506f066f9419b277abd42590669bf85bdcb6964c00f4f2"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Definition der passenden Custom Code Strategie",
+      "level": 3,
+      "anchor": "definition-der-passenden-custom-code-strategie",
+      "hash": "20148f1ce7e1a9c3b3827e5e44a44c9ad61df1d6e31c5be546ad94b15496899a"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Prozesse und Methodik",
+      "level": 2,
+      "anchor": "prozesse-und-methodik",
+      "hash": "a6e09daedf9197f464905280dd29198a17e74c644fb6d28d9c5dd4b1fea9a1e7"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Status Quo in gewachsenen Landschaften",
+      "level": 2,
+      "anchor": "status-quo-in-gewachsenen-landschaften",
+      "hash": "5cfc71a733f21e815588b6db6e958d475f51a9ac40be73a96cd3d1bf966c8aa0"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Best Practice",
+      "level": 3,
+      "anchor": "best-practice",
+      "hash": "0bb254c07402203893a25e7cecc48059e43957340bd0e7f89276e65b146222a0"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Warum sollte sich etwas ändern?",
+      "level": 3,
+      "anchor": "warum-sollte-sich-etwas-ändern",
+      "hash": "1ebad8816dc01546645ac074ce7646b02a8a5556c633dde2fbd8c2433454594f"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Der nächste Schritt",
+      "level": 3,
+      "anchor": "der-nächste-schritt",
+      "hash": "4f63af8be44b924126ebc38ce44bfec40cb7eec3533b8edbd0ce7ed4949a348e"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Erfahrungsbericht aus der Praxis: Brownfield in S/4HANA",
+      "level": 2,
+      "anchor": "erfahrungsbericht-aus-der-praxis-brownfield-in-s4hana",
+      "hash": "8978258d266f4c59265e8aad79f366ad7c1e7dc7e503c3a1851cfe6889267c76"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Vision",
+      "level": 3,
+      "anchor": "vision",
+      "hash": "c38de45635c57676a4bdd8c97ef8bba6ad8cc9b33450d6d71aca619a7ae67f02"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Umsetzung",
+      "level": 3,
+      "anchor": "umsetzung",
+      "hash": "1915c69810b9e45ee0eee8ad508f07d2f6339c38b2fa585ff9f13541c964ed4a"
+    },
+    {
+      "file": "docs/organization/index.md",
+      "heading": "Abschließende Gedanken",
+      "level": 2,
+      "anchor": "abschließende-gedanken",
+      "hash": "62413ff4b9609bae3076237b9b56e6556e3632c3dcc0d1c4aacf517a52d4573d"
+    },
+    {
+      "file": "docs/security/index.md",
+      "heading": "Sicherheit",
+      "level": 1,
+      "anchor": "sicherheit",
+      "hash": "f6fd8783df11584c116407804028f58c79bd25d1295b67b70052c56af09d815e"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "ABAP Test Cockpit",
+      "level": 1,
+      "anchor": "abap-test-cockpit",
+      "hash": "1feba3e075db4deef4e29fe3061c43e65c664749530137fce82e3ae846478c80"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Überblick",
+      "level": 2,
+      "anchor": "überblick",
+      "hash": "994429adf83a18cf57d53ae0305a30606d7f2b4a604102f807f12d7d25e14867"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Zentrales ATC",
+      "level": 2,
+      "anchor": "zentrales-atc",
+      "hash": "b6fd75f34e10f96712a1c17b66b8167b5d39792b1d74b003deefe69010240d6d"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "abapGIT",
+      "level": 2,
+      "anchor": "abapgit",
+      "hash": "2c908300675b9302f4831465a3db0039ca053c177ae15ad23c8c47c9ff8563e4"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Prüfungen - ABAP Checks",
+      "level": 2,
+      "anchor": "prüfungen---abap-checks",
+      "hash": "aa6e9aaf09f55fd90080903351d45353171593b4b406a4be5ab75b856ec9e948"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "S/4 Readiness-Checks",
+      "level": 3,
+      "anchor": "s4-readiness-checks",
+      "hash": "e77458aa9eb94695137dbe951c7b46f30004e4c0d047815dc80060b4fbdd5898"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "abapOpenChecks",
+      "level": 3,
+      "anchor": "abapopenchecks",
+      "hash": "cffb1fb7cfdea5009ce5f02294257211fd91bc360bdf141db02389689dde441a"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Code Pal for ABAP",
+      "level": 3,
+      "anchor": "code-pal-for-abap",
+      "hash": "ed1749171df0fb94360c04f5e37c79011ec304145337660a56cdfc565592fb7b"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Code Pal for ABAP Cloud",
+      "level": 3,
+      "anchor": "code-pal-for-abap-cloud",
+      "hash": "f2328450afc89ddece30227068bdd0b808a4e71bfe8d78576385d3c3d0474767"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Prüfungen - Sicherheit",
+      "level": 2,
+      "anchor": "prüfungen---sicherheit",
+      "hash": "92245b41a514d6f53a24fa48e167ddec7fea63e8e9241b2b3b3d3a23ac64a005"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "Standard-Sicherheitsprüfungen",
+      "level": 3,
+      "anchor": "standard-sicherheitsprüfungen",
+      "hash": "dbd1ff54145d106fb8803a7f230d5053242789c331ec9b870e5fd1f16de48e0c"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "CVA - Code Vulnerability Analyzer",
+      "level": 3,
+      "anchor": "cva---code-vulnerability-analyzer",
+      "hash": "f18f39c74f575439bdf7ab47b7d914f5999baa64e157610daad75bc99349b093"
+    },
+    {
+      "file": "docs/security/security-abap-test-cockpit.md",
+      "heading": "CVA - Code Vulnerability Analyzer (Cloud)",
+      "level": 3,
+      "anchor": "cva---code-vulnerability-analyzer-cloud",
+      "hash": "8b22cbbb71c60f871c98a06aefb35e39c118a48fd267d86558ecb937c6b73472"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Grundlagen",
+      "level": 1,
+      "anchor": "grundlagen",
+      "hash": "e933cdf8a8c2b70e40980859cfc83fad4c2f7c5db8380ad3575b5acfd865b42b"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Die häufigsten ABAP-Sicherheitslücken im Überblick",
+      "level": 2,
+      "anchor": "die-häufigsten-abap-sicherheitslücken-im-überblick",
+      "hash": "9cc4eaa33cb4d3494dcd9724ebe88a409f3b909d45cafa277ec96cef23461dd2"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Die Top ABAP-Sicherheitslücken",
+      "level": 3,
+      "anchor": "die-top-abap-sicherheitslücken",
+      "hash": "854f4f61fc20b0ddf75ea6f52b34fe559929a46b6115a9da81359904ba3ccaa9"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Warum entstehen diese Schwachstellen immer wieder?",
+      "level": 3,
+      "anchor": "warum-entstehen-diese-schwachstellen-immer-wieder",
+      "hash": "3574f227d4be89386ef7179dd497b7dffd6fb79e64e78bfd323bd80d37ee9974"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Security-Mindset: Vom reaktiven zum proaktiven Denken",
+      "level": 2,
+      "anchor": "security-mindset-vom-reaktiven-zum-proaktiven-denken",
+      "hash": "95d29e41562753bf6169fff73338a4c9cf16c72546a64540f9d45c87e3033aad"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Reaktives vs. proaktives Security-Denken",
+      "level": 3,
+      "anchor": "reaktives-vs-proaktives-security-denken",
+      "hash": "e38fd5cfb500e2d4f599b22f79972cf503ff0add623293b7e42e15f8f78da270"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Die Prinzipien des Security-Mindsets",
+      "level": 3,
+      "anchor": "die-prinzipien-des-security-mindsets",
+      "hash": "1b1ddde0b6bfddca4b5320476d467312d90236d948abbaf821c77dadf93e7779"
+    },
+    {
+      "file": "docs/security/security-basics.md",
+      "heading": "Der Weg zur Security-Kultur im Team",
+      "level": 3,
+      "anchor": "der-weg-zur-security-kultur-im-team",
+      "hash": "c4be66e8875f043eca68569d20a41cd21f58f06516a68134ccb2d534c9c1f82b"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "Beispiele",
+      "level": 1,
+      "anchor": "beispiele",
+      "hash": "a687b31a7b657c67373cc72fbf0882ddd7e0365f826d31d92759758f2ea1cc12"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "Directory Traversal (Write Access)",
+      "level": 2,
+      "anchor": "directory-traversal-write-access",
+      "hash": "ccbe2718f43fe70f6d0f4287a07fa211c885a189dd2c5e8b083f5ad8c6794224"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "Generic ABAP Module Calls",
+      "level": 2,
+      "anchor": "generic-abap-module-calls",
+      "hash": "2fdf65a16b929c4c3d35e8aca5c6dd945a7edacdef430653d72d25f053c71f8c"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "OS Command Injection (CALL 'SYSTEM')",
+      "level": 2,
+      "anchor": "os-command-injection-call-system",
+      "hash": "c1d4102ae0a8d813aacfa7ad8ca5479c2ffc1e94c06c1dd0eb96cdb404159cfa"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "ABAP Command Injection (Report)",
+      "level": 2,
+      "anchor": "abap-command-injection-report",
+      "hash": "0a463bbb59a7d5d872831a0774a6c469494b312033b8bcd0bc5e05e298517c39"
+    },
+    {
+      "file": "docs/security/security-examples.md",
+      "heading": "Dangerous ABAP Commands",
+      "level": 2,
+      "anchor": "dangerous-abap-commands",
+      "hash": "db752d86b647a82fe5065b16512a5ffc2e5b04b34459d846e0e9e4d0a22d534c"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Überblick",
+      "level": 1,
+      "anchor": "überblick",
+      "hash": "b2004c99dce68563d2e6a5cf8467d638306d534075f9c4f8cb027033874c637f"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "ABAP Security: Warum sichere Programmierung in SAP entscheidend ist",
+      "level": 2,
+      "anchor": "abap-security-warum-sichere-programmierung-in-sap-entscheidend-ist",
+      "hash": "5240cbb7c7bf24d96b85410fe5d94d67a6e60142f807e904614a3c593ca6904f"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Vom funktionierenden Code zur sicheren Anwendung",
+      "level": 3,
+      "anchor": "vom-funktionierenden-code-zur-sicheren-anwendung",
+      "hash": "0560fd725e1543395cb00443154404035f7b2739ed779c32a2f57135e209596c"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "ABAP-Code: Der Schlüssel zu den Kronjuwelen",
+      "level": 3,
+      "anchor": "abap-code-der-schlüssel-zu-den-kronjuwelen",
+      "hash": "1f420b5eede23d888e659e7ba3ec9b5c9b22698673b84591d21ce189c959ef6e"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Der Teufelskreis der nachgelagerten Sicherheit",
+      "level": 3,
+      "anchor": "der-teufelskreis-der-nachgelagerten-sicherheit",
+      "hash": "ffaee68b9cf30ce7f97a9fa80a3fa8727e545cf14d3dc82100ff4d0280bbc006"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Warum Security von Anfang an mitgedacht werden muss",
+      "level": 2,
+      "anchor": "warum-security-von-anfang-an-mitgedacht-werden-muss",
+      "hash": "24514d107cd98d4270da7a9af0e97eb2e87cedaaafef461670f74724c7727b12"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Wirtschaftliche Gründe sprechen klar für \"Security by Design\":",
+      "level": 3,
+      "anchor": "wirtschaftliche-gründe-sprechen-klar-für-security-by-design",
+      "hash": "69b53f907565c423ae3b000172ec4148731a16ae2617705d8dc24493eba70a33"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Technische Vorteile sicherer Programmierung:",
+      "level": 3,
+      "anchor": "technische-vorteile-sicherer-programmierung",
+      "hash": "514dcdb26d6d8b1869f4501e93ba9c67b803a0aa93fd036c5c08fe0444e3fb74"
+    },
+    {
+      "file": "docs/security/security-overview.md",
+      "heading": "Ihr Beitrag zur Unternehmenssicherheit",
+      "level": 2,
+      "anchor": "ihr-beitrag-zur-unternehmenssicherheit",
+      "hash": "4004d40ab56f7ea97f00e05da5d7b659a0b9308bf3fb3b4ac6ba4fd916e3966d"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Entwicklungsprozess",
+      "level": 1,
+      "anchor": "entwicklungsprozess",
+      "hash": "b9499b802c069c5f799d3483a47df4d247b0c6becc1f0253b53467ffe4eabad2"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Secure Code Reviews: Systematische Sicherheitsprüfungen",
+      "level": 2,
+      "anchor": "secure-code-reviews-systematische-sicherheitsprüfungen",
+      "hash": "48fd51045addec16af1cb80c4f971e66cfa7ad20a40bca37259187746b8fe2c8"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Struktur eines Security-fokussierten Code Reviews",
+      "level": 3,
+      "anchor": "struktur-eines-security-fokussierten-code-reviews",
+      "hash": "419568002c73a37af228bea727b3bd09513c49a8a800b2c88f6f1a0ef1b8c60e"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Best Practices für ABAP Secure Code Reviews",
+      "level": 3,
+      "anchor": "best-practices-für-abap-secure-code-reviews",
+      "hash": "8df83fe10072224870f274b4ee25e88166fdf04fd61ebcfc8c1008dafedf3361"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Automatisierte Sicherheitstests in der ABAP-Entwicklung",
+      "level": 2,
+      "anchor": "automatisierte-sicherheitstests-in-der-abap-entwicklung",
+      "hash": "2a4970c8b9e168588f913c1c199237d023a1d57b880dac93e968408e2cc5b364"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Static Application Security Testing für ABAP",
+      "level": 3,
+      "anchor": "static-application-security-testing-für-abap",
+      "hash": "e28757cbdcde4dd776d1559931f12e4bc8918a96797595372bda0aed37c9d470"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Integration in den Entwicklungsprozess",
+      "level": 3,
+      "anchor": "integration-in-den-entwicklungsprozess",
+      "hash": "2d246ea9cd24ca9439b735923b33523b3e3689a6731c150000bb59f08db4c406"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Security-Checklisten für ABAP-Entwickler",
+      "level": 2,
+      "anchor": "security-checklisten-für-abap-entwickler",
+      "hash": "470e50ea459f8fd0107f6d4180b118196c4e7ee2828bc36be9cd0abe32787881"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Entwicklungs-Checkliste: Vor der Implementierung",
+      "level": 3,
+      "anchor": "entwicklungs-checkliste-vor-der-implementierung",
+      "hash": "99eb510da7d871607625aa81773ddb9756291bb2e788b6555471ca1306ad6fea"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Implementierungs-Checkliste: Während der Entwicklung",
+      "level": 3,
+      "anchor": "implementierungs-checkliste-während-der-entwicklung",
+      "hash": "7402b955d3b2068b125fcceaa044d37de68c0b5d8bee7b00c2a05311dfb2fc65"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Test-Checkliste: Vor der Produktivsetzung",
+      "level": 3,
+      "anchor": "test-checkliste-vor-der-produktivsetzung",
+      "hash": "88a05c84317412a095152e404841bdd023cb559314302678ae26d5801597ccd5"
+    },
+    {
+      "file": "docs/security/security-process.md",
+      "heading": "Wartungs-Checkliste: Nach der Produktivsetzung",
+      "level": 3,
+      "anchor": "wartungs-checkliste-nach-der-produktivsetzung",
+      "hash": "185a55f1364590b8ae44f9b81f01d6d16d276f4b6c5d956a0c1568c51d9673d8"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "SAP Screen Personas 3.0",
+      "level": 1,
+      "anchor": "sap-screen-personas-30",
+      "hash": "37cb76b36cf585fd4469502e5a2e505f958b59ab28be40cd56201bbb69087a2b"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Allgemein",
+      "level": 2,
+      "anchor": "allgemein",
+      "hash": "dc0b77f1627892026500c2f4e2b82c182b7b0b8b10f34e8446f8f554cb0b6cdd"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Spezielle Sicherheitsaspekte",
+      "level": 2,
+      "anchor": "spezielle-sicherheitsaspekte",
+      "hash": "8fb625dfc6e7dd9c414e718dcfa3d58a63ceef02a7dc894ab85dd040215bf69b"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "SSL Verschlüsselung der Verbindung",
+      "level": 3,
+      "anchor": "ssl-verschlüsselung-der-verbindung",
+      "hash": "51849ab2024f4571822022adfaf148f9a73d49436675a8962fb9a1bc4456111f"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Schutz vor Cross Site Request Forgery für ITS",
+      "level": 3,
+      "anchor": "schutz-vor-cross-site-request-forgery-für-its",
+      "hash": "8552d1acc0241f747e3ccc93a41a5c51cf0e520c7fd39afdbeee44000179264c"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Allgemeine Empfehlungen für ITS und SAP  GUI for HTML",
+      "level": 2,
+      "anchor": "allgemeine-empfehlungen-für-its-und-sap--gui-for-html",
+      "hash": "87524b53b2bbd8cb79506249461227bc22637f3d954d75a138e0cb241fc9c9ca"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Abmeldung für SAP GUI for HTML aktivieren",
+      "level": 3,
+      "anchor": "abmeldung-für-sap-gui-for-html-aktivieren",
+      "hash": "865f1cd6d69f2d3a9e38916e3ddcc99a0890bfc3d430d6c75436c933ea40b7c1"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "Domain Relaxing deaktivieren (falls notwendig)",
+      "level": 3,
+      "anchor": "domain-relaxing-deaktivieren-falls-notwendig",
+      "hash": "738f5001fdbab392335d12549cc517d828e8f1e381e2834f59bef97d13ca07d0"
+    },
+    {
+      "file": "docs/security/security-screen-personas.md",
+      "heading": "SAP Berechtigungen",
+      "level": 2,
+      "anchor": "sap-berechtigungen",
+      "hash": "627c5e062f110787288a8ab85ddbfe6ef572474705fd3bc1338e942744d23916"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Sichere Entwicklung",
+      "level": 1,
+      "anchor": "sichere-entwicklung",
+      "hash": "99704012b1c5a15ec0069e42a69cc84df3a413e403d4fa8943caa21329927ea6"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Input-Validierung: Der erste Schutzwall",
+      "level": 2,
+      "anchor": "input-validierung-der-erste-schutzwall",
+      "hash": "2664fe88a8a71e661b8c634062499d3484ad8683f96124e68bc16499d6fea5f4"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Output-Encoding: Daten sicher ausgeben",
+      "level": 2,
+      "anchor": "output-encoding-daten-sicher-ausgeben",
+      "hash": "246e07579bdf40df0cc73d762eb92a053dca41b1806d0170e39bdb848aefdfcf"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "HTML-Encoding für Webanwendungen",
+      "level": 3,
+      "anchor": "html-encoding-für-webanwendungen",
+      "hash": "6b3ebc24b3acc501abb07c33d007f2b45555a8077ecbb55c9c61c8d651728bab"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Sichere Datenbankzugriffe: OpenSQL Best Practices",
+      "level": 2,
+      "anchor": "sichere-datenbankzugriffe-opensql-best-practices",
+      "hash": "67e4d0955f5f671683add843534eb166e1af91cfaefb9e77d88c5cfe96ea0cb0"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Dynamische WHERE-Klauseln absichern",
+      "level": 3,
+      "anchor": "dynamische-where-klauseln-absichern",
+      "hash": "90389d98930012aa5ef78a0131c453e075d78aae81da61f3bc8df497a7daa577"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Berechtigungsprüfungen richtig implementieren",
+      "level": 2,
+      "anchor": "berechtigungsprüfungen-richtig-implementieren",
+      "hash": "446c863173c0052f40b73e397e124c250fff4c8ab46ef9231f2c0396da2f5ee6"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Berechtigungen in CDS Views",
+      "level": 3,
+      "anchor": "berechtigungen-in-cds-views",
+      "hash": "2226aa3072c5e742f80942e9d2de50469012edb01ab5d1ed641da397c1e39f9b"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Organisatorische Berechtigungen immer komplett prüfen",
+      "level": 3,
+      "anchor": "organisatorische-berechtigungen-immer-komplett-prüfen",
+      "hash": "cbc8a60de4ba7b28b5bb9d3e466d7306dc014c531c9f54aefbe1c2d248bbb874"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Sichere RFC- und Webservice-Kommunikation",
+      "level": 3,
+      "anchor": "sichere-rfc--und-webservice-kommunikation",
+      "hash": "80392fb20cab7290da6bd1c22be59286d0ce9cd56f1c3e7b596a39edccf20cd7"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "RFC-Funktionsbausteine absichern",
+      "level": 3,
+      "anchor": "rfc-funktionsbausteine-absichern",
+      "hash": "4363cdc8df42673ff786b1c51a52fee61de1762532d9e65e0549eaba8e37d4a6"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Mandantensicherheit: Datentrennungen garantieren",
+      "level": 2,
+      "anchor": "mandantensicherheit-datentrennungen-garantieren",
+      "hash": "474d255f7b7be3dcc9a24db747686b348a72f2b4b892c0c19c19ff9f7b85b249"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Sichere Dateizugriffe und Pfadtraversal-Schutz",
+      "level": 2,
+      "anchor": "sichere-dateizugriffe-und-pfadtraversal-schutz",
+      "hash": "3a91e4845c9dcdb53dba45f2156c4f6de7804c5692636547c063593359fc2dfe"
+    },
+    {
+      "file": "docs/security/security-secure-development.md",
+      "heading": "Generelles",
+      "level": 2,
+      "anchor": "generelles",
+      "hash": "8b9bd39ba9743909eb4568bd2692b8686f45a95e5a99692a204ae0ecd83d12f3"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Bedrohungen",
+      "level": 1,
+      "anchor": "bedrohungen",
+      "hash": "6231411ae777cb54fda7a44efd6020437fe6d9c614296f778aa0ef16e89fa953"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "SQL-Injection in ABAP: Angriffsvektoren und Abwehrmaßnahmen",
+      "level": 2,
+      "anchor": "sql-injection-in-abap-angriffsvektoren-und-abwehrmaßnahmen",
+      "hash": "54a081db4dfb6c219b2d78cc60fe836983683f9bb092fbc4d9a2a947ea539524"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Angriffsvektoren in ABAP",
+      "level": 3,
+      "anchor": "angriffsvektoren-in-abap",
+      "hash": "e50714a32b5f630e7594f41b5b26fc86ae876c54eeeee591ee12a1376bc327a7"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Effektive Abwehrmaßnahmen",
+      "level": 3,
+      "anchor": "effektive-abwehrmaßnahmen",
+      "hash": "d50988ff9caa9a515618ef1a2c49d040e1e0b2c0a7d6ae4159478755ada34f72"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Cross-Site Scripting (XSS) in SAP-Webanwendungen",
+      "level": 2,
+      "anchor": "cross-site-scripting-xss-in-sap-webanwendungen",
+      "hash": "6d4bbc6664906a4635123676190344e363f47cf79814c265b92d770c323ce6e8"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "XSS-Angriffsvektoren in SAP",
+      "level": 3,
+      "anchor": "xss-angriffsvektoren-in-sap",
+      "hash": "7f63f48ec382b111febe1893055bf6be823f4f08478862cfee8bdf24184c2173"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Schutzmaßnahmen gegen XSS",
+      "level": 3,
+      "anchor": "schutzmaßnahmen-gegen-xss",
+      "hash": "1bed734ffc7a017ac4fbc458ec137bc88883a42775c04f02fd37394e6707df1b"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Unsichere Direktzugriffe auf Objekte und Autorisierungsumgehung",
+      "level": 2,
+      "anchor": "unsichere-direktzugriffe-auf-objekte-und-autorisierungsumgehung",
+      "hash": "2439572774d8500a8508701cabf026c3d6f7e52d2a157ff872133d5e22f7a7d4"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Typische Angriffsmuster",
+      "level": 3,
+      "anchor": "typische-angriffsmuster",
+      "hash": "dd31e04fa28c627164643a1dd050859edec01108f62d630dcd1a0d3921f5e987"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Effektive Autorisierungsprüfungen",
+      "level": 3,
+      "anchor": "effektive-autorisierungsprüfungen",
+      "hash": "f7817960096a62e1461b84deb85f58ff3b6283606979d7fa895920b386401765"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Code-Injection und Dynamic Programming Risiken",
+      "level": 2,
+      "anchor": "code-injection-und-dynamic-programming-risiken",
+      "hash": "6d9cafd64306e2864a12979491f8142667c5c5f16fc909bda199fec2c46792e8"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Gefährliche dynamische Konstrukte",
+      "level": 3,
+      "anchor": "gefährliche-dynamische-konstrukte",
+      "hash": "abf56c69851c2e56420bee7ef1a02cf0bf10873250b18277bc69d46aa8cb37ed"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Sichere Alternativen",
+      "level": 3,
+      "anchor": "sichere-alternativen",
+      "hash": "e1d8cb1f6cdf0be8aa2031ad4855840829359b710eaa155638c8e5404359fe85"
+    },
+    {
+      "file": "docs/security/security-threats.md",
+      "heading": "Präventive Maßnahmen",
+      "level": 3,
+      "anchor": "präventive-maßnahmen",
+      "hash": "42356557126cf12cb62ca9a708ca822c7625abc44ffc04a375ba82fec8aad62f"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "ABAP Unit: Testtechniken",
+      "level": 1,
+      "anchor": "abap-unit-testtechniken",
+      "hash": "9e60c6c86d6512086a144f662edcad0531e864b497310cc31f85c64983816167"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Was ist mittels ABAP Unit testbar?",
+      "level": 2,
+      "anchor": "was-ist-mittels-abap-unit-testbar",
+      "hash": "f3fe56a5e668560c89f6fdd5cd8d3f0726d690cb3c814f316ad6dfc1b69f7631"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Behandlung von Daten in Unit Tests",
+      "level": 2,
+      "anchor": "behandlung-von-daten-in-unit-tests",
+      "hash": "a82739d56dc5da9083e3bf18e3fd9d635476b5f408c203243b030bd5055f1abd"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Testumgebung",
+      "level": 2,
+      "anchor": "testumgebung",
+      "hash": "3917d17c825bf9ab2b0dc2c5554c3c8357374b9d7787b8e7f99587e56d7cc18c"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Erstellen einer lokalen Testklasse in ADT",
+      "level": 3,
+      "anchor": "erstellen-einer-lokalen-testklasse-in-adt",
+      "hash": "d699b7c4dff5e2e3b3244d7f34cada370a3be7eb87f5fc996981104e7a2318ac"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Tastenkombinationen in ADT",
+      "level": 3,
+      "anchor": "tastenkombinationen-in-adt",
+      "hash": "87cc68dae37fffa2b0f70fa077d6f434bd6a28fb5283aae8698cc495ff2ed2ca"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Tastenkombinationen in der Workbench",
+      "level": 3,
+      "anchor": "tastenkombinationen-in-der-workbench",
+      "hash": "e485e82d502f8d574f8d878228f64059c7036eeb887b9bc00e71dd186bca748c"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Testmethodiken und Prinzipien",
+      "level": 2,
+      "anchor": "testmethodiken-und-prinzipien",
+      "hash": "28db0b798737a18be0816ca164f36adb56fda50ad0d82411eeceb473d274decd"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "GIVEN - WHEN - THEN",
+      "level": 3,
+      "anchor": "given---when---then",
+      "hash": "555b65773cf4f73e1a4e273663a3fc1a94e81eb2b2c048f1beb83cc86c3b4793"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Clean Code in Unit Tests",
+      "level": 3,
+      "anchor": "clean-code-in-unit-tests",
+      "hash": "36085b19125048d1f38eb1c1e621c192bb6cae578923893411d97f2f7f675494"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Unit Test sauber halten",
+      "level": 3,
+      "anchor": "unit-test-sauber-halten",
+      "hash": "8e9af79342294f9ff58a5e0d567a6c718b5e5b9bc49742d93a3603f3632ba4b3"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Behandlung von Ausnahmen",
+      "level": 3,
+      "anchor": "behandlung-von-ausnahmen",
+      "hash": "7ec6db55b12efa50f0b79431ba0c763895153cc8244e46f26ac016a3ec66ac71"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Aufbau einer Unit Test Klasse",
+      "level": 3,
+      "anchor": "aufbau-einer-unit-test-klasse",
+      "hash": "455e6c7142f07c022c8f283c955a656c6ec281f0c213aa79f3029c71aa3a9966"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Genereller Ablauf",
+      "level": 3,
+      "anchor": "genereller-ablauf",
+      "hash": "83a15051971a450a7cfa417ea99535473fc9a35be93e71539461e24a31c96f0a"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Risikostufe/ Risk Level",
+      "level": 3,
+      "anchor": "risikostufe-risk-level",
+      "hash": "7702d0d0496a2d0b5316d008c908608934a51c4899e6ec36e4f5c2a2b36040b4"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Dauer/ Duration",
+      "level": 3,
+      "anchor": "dauer-duration",
+      "hash": "580171fbad7e613337b5f51a756a121e574e075e76e95f853f5207b9d4293cf8"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "ASSERT",
+      "level": 3,
+      "anchor": "assert",
+      "hash": "7cffb282b6f58c04efeb602300d41e8df55b5d177819e7b63b8dc88d3a1af19f"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Beispiel Testklasse",
+      "level": 3,
+      "anchor": "beispiel-testklasse",
+      "hash": "ba88c06d2a98d416107a3393d8990065aa94efacffba6a8e6e7473caff43f0a7"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Methoden zur Zusammenstellung von abhängigen Klassen",
+      "level": 4,
+      "anchor": "methoden-zur-zusammenstellung-von-abhängigen-klassen",
+      "hash": "596cee1d4cf577ca35d907e04a3477c4c7892a3dbeb92924727229ed5c0f8211"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Hilfsmethoden zum Aufbau von Testdaten",
+      "level": 4,
+      "anchor": "hilfsmethoden-zum-aufbau-von-testdaten",
+      "hash": "2aaf960403357c1f240491cf9a49fd8b844ce3500bf98b4f2d968ae9268a472b"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Hilfsmethoden zur Modularisierung von Tests",
+      "level": 4,
+      "anchor": "hilfsmethoden-zur-modularisierung-von-tests",
+      "hash": "416a5b2584549ba271295285f2a51485654937df8e62e2d7fb89415c9db3fbf6"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Testen von privaten, geschützten und öffentlichen Methoden",
+      "level": 3,
+      "anchor": "testen-von-privaten-geschützten-und-öffentlichen-methoden",
+      "hash": "f8d8058b0eea06154a134492a629b7b6fe7f4c6da8674416fe26e3b393619452"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Unit Tests erweitern",
+      "level": 3,
+      "anchor": "unit-tests-erweitern",
+      "hash": "ad858efa9edf806c949487e2b1af469ebe7879e46b90ce28540bb0ebaf5dc873"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Beispiel Testklasse mit Hilfsmethode",
+      "level": 4,
+      "anchor": "beispiel-testklasse-mit-hilfsmethode",
+      "hash": "8041aa813f1aefde253714de2bb8869c625a602340f2a4c18c8ea8ce60aa7fd4"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Testumgebung",
+      "level": 3,
+      "anchor": "testumgebung-1",
+      "hash": "1a09400be0939749989b1601aeaef32636fa9f2949170270708ffe5890cfd7b2"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Auflösen von Abhängigkeiten mit Mocking, Faking, Stubbing und Spying",
+      "level": 3,
+      "anchor": "auflösen-von-abhängigkeiten-mit-mocking-faking-stubbing-und-spying",
+      "hash": "e4eebfff608025f8e5a95f230962c2c273b15751ed1b4ea81e413757b409fa33"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Test-Doubles",
+      "level": 4,
+      "anchor": "test-doubles",
+      "hash": "ae31dc0278be0b219225498d7c6500cbfcc2a70662d86fab20613cdab537cd82"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Automatisierte regelmäßige Läufe von Unit Tests",
+      "level": 4,
+      "anchor": "automatisierte-regelmäßige-läufe-von-unit-tests",
+      "hash": "32218e8bcd14e888ffcc46450166ee171d3ffe2ea36a3771cf76c9d8c4ce67d0"
+    },
+    {
+      "file": "docs/testing/abap-unit_basics.md",
+      "heading": "Do's & Dont's",
+      "level": 2,
+      "anchor": "dos--donts",
+      "hash": "0b4d0c90758161efac9837034830cf6adf83bdbffcad69472e8d00d1e2615a7b"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "ABAP Unit: erweiterte Techniken",
+      "level": 1,
+      "anchor": "abap-unit-erweiterte-techniken",
+      "hash": "2ed091cc24e70726fa7133c00a6f2f553beb3936d7605bac8788886abc10cb76"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Erweiterte Testtechniken mit ABAP Unit",
+      "level": 2,
+      "anchor": "erweiterte-testtechniken-mit-abap-unit",
+      "hash": "872bb0d41046b2a65ba937a886452dc3a033d5c9cf4d88785393d243199d8aef"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Test-Double-Frameworks",
+      "level": 3,
+      "anchor": "test-double-frameworks",
+      "hash": "84a47e3bd0992b27035aabb296ecc9e899d9afb53718827fc46a05fe84ba3c17"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Test-Double-Framework für ABAP Datenbankzugriffe/ CDS Views/ AMDP",
+      "level": 4,
+      "anchor": "test-double-framework-für-abap-datenbankzugriffe-cds-views-amdp",
+      "hash": "70cde46ce6588edb83207885898cb5e4b00d2f0c9ea774e573c4d5a2987cea28"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Test-Double-Framework für Funktionsbausteine",
+      "level": 4,
+      "anchor": "test-double-framework-für-funktionsbausteine",
+      "hash": "753602597f0a1743d9df06a0b2afcbe091adcc8f5f4900edee301e467eff1a92"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Test-Double-Framewortk für Klassen",
+      "level": 4,
+      "anchor": "test-double-framewortk-für-klassen",
+      "hash": "3243a7c0d4d588356af24bcbc7ef84274d0299ed650e23cd6acea37149c17419"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Test-Seams",
+      "level": 3,
+      "anchor": "test-seams",
+      "hash": "8638842acf130132719ea85b26a343c55f724dc570843d5f1c7d9fc7313ade69"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "SAP Komponenten wie BAPIs & Funktionsbausteine in Unit Test",
+      "level": 3,
+      "anchor": "sap-komponenten-wie-bapis--funktionsbausteine-in-unit-test",
+      "hash": "391fc71af90bf990f5fa640607c0b8584a0812fa1d7356e309e040258f34ff63"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "VALUE-Anweisung für Mockdaten automatisch generieren",
+      "level": 3,
+      "anchor": "value-anweisung-für-mockdaten-automatisch-generieren",
+      "hash": "c6c960b2a1b5efd82fd1052ef996554586a230fdc049c3d6cf5c5a374934a4ef"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Testdatenverwaltung in ECATT-Containern",
+      "level": 3,
+      "anchor": "testdatenverwaltung-in-ecatt-containern",
+      "hash": "815a4d6a8bdaa7cf3eca6f82a3d6176d6c0e678a8892449aaf3c9d3a6fc2093a"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Manuelle Verwaltung",
+      "level": 4,
+      "anchor": "manuelle-verwaltung",
+      "hash": "010eefa3d93063586858595d242d1cc0207dded59e591fc2cde3b86aefd7cd79"
+    },
+    {
+      "file": "docs/testing/abap_unit_advanced.md",
+      "heading": "Programmatischer Zugriff",
+      "level": 4,
+      "anchor": "programmatischer-zugriff",
+      "hash": "65fa083ebed5ccc75fded4b011c592766b514d0c7b3c265ca4ad501f8ea3f1b2"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Grundlagen zu ABAP Unit Tests",
+      "level": 1,
+      "anchor": "grundlagen-zu-abap-unit-tests",
+      "hash": "9a875f664e9151c56be0b5e6723efd63533bacfc6109feedcde22dc80b898ac0"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Voraussetzungen für ABAP Unit Tests",
+      "level": 2,
+      "anchor": "voraussetzungen-für-abap-unit-tests",
+      "hash": "70b6d039150a6796fe5b9c4e9a5b5d67eb1e696d0dbf0e56d9cf6b7c399867c5"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Trennung von Datenmodell, Geschäftslogik und Präsentationsschicht",
+      "level": 3,
+      "anchor": "trennung-von-datenmodell-geschäftslogik-und-präsentationsschicht",
+      "hash": "698592ed57c359063e0d16ce5b380359847534410b8160cb378532c58feff0c7"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Unit Tests sind nicht optional - Unit Tests als Teil der Definition of Done",
+      "level": 3,
+      "anchor": "unit-tests-sind-nicht-optional---unit-tests-als-teil-der-definition-of-done",
+      "hash": "e0f5358680d7cbb510c704c979df709d3f591530c0916336e5b485d84248b193"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "TDD (Test-Driven-Development)",
+      "level": 3,
+      "anchor": "tdd-test-driven-development",
+      "hash": "54d4829cdabf7146ae216c55b2bbb05e3d0354a3a733199a210d031ab6619879"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Allgemeines zu Unit Tests - Begriffsdefinitionen und Erläuterungen",
+      "level": 2,
+      "anchor": "allgemeines-zu-unit-tests---begriffsdefinitionen-und-erläuterungen",
+      "hash": "e86127e0aaca39ad77487baeb83a7e0bfbe9fdb0808637649ad5da7bb9845011"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Einstieg",
+      "level": 3,
+      "anchor": "einstieg",
+      "hash": "0b5faa8fae444c79e48e41d88821e64ef9bfc15b0b05b4e262532834c758db12"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Skills, die beim Arbeiten mit Unit Tests trainiert werden",
+      "level": 4,
+      "anchor": "skills-die-beim-arbeiten-mit-unit-tests-trainiert-werden",
+      "hash": "9b67c9c8aa9dbf271e29a3d83b52c805829036d85efc8b0ec403ae71aebc6663"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Was sind Unit Tests genau?",
+      "level": 3,
+      "anchor": "was-sind-unit-tests-genau",
+      "hash": "951c1d2d3d42b3f1acbdd28c538e6e1737ade6b8889894677e30a94d367593b5"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Wann sind Unit Tests sinnvoll?",
+      "level": 3,
+      "anchor": "wann-sind-unit-tests-sinnvoll",
+      "hash": "843c9e3378c0c40dd07b17e0cbb321a8158ddd30cbc66dc3eec7d0c93a6d5d38"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Mocking",
+      "level": 3,
+      "anchor": "mocking",
+      "hash": "74845e77d2dc3cc55edd93aa1507e29809bf28471136b9223c8a4db6eec44b1c"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Testlevel",
+      "level": 3,
+      "anchor": "testlevel",
+      "hash": "e194899ad48e29de936390745ff2f62621ac6d2e57872b3d6589b08d6472d934"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Methoden Tests",
+      "level": 4,
+      "anchor": "methoden-tests",
+      "hash": "2af37f8f32f1f00656da8313992d3e0887d2543420f1eff52181a28b83501f74"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Komponententests",
+      "level": 4,
+      "anchor": "komponententests",
+      "hash": "a1bf974d27f6378c0c5df5310fff7bd391a59326e3c53adee94d5301345828bd"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Integrationstests",
+      "level": 4,
+      "anchor": "integrationstests",
+      "hash": "1805ecdbae6dd581d950f0182a2c5368c811b9fcdb3ee541cf9185aee89cb763"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Vorgehen und Methodiken",
+      "level": 2,
+      "anchor": "vorgehen-und-methodiken",
+      "hash": "0030371b2abcbe79584efa3c0ac4b601d64dbf0f015dbbed9351b50710d70ab2"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Clean Islands",
+      "level": 3,
+      "anchor": "clean-islands",
+      "hash": "437d8fefc967f9e5e0c6b21ee8a5cb5e5734d77cb2856668fed35e99caacc1a5"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Unit Tests modularisieren",
+      "level": 3,
+      "anchor": "unit-tests-modularisieren",
+      "hash": "ec7591a55f45b55c19c28e2a7c378af4a68938e3e2d89cd7c552d84b040ec368"
+    },
+    {
+      "file": "docs/testing/abap_unit_methods.md",
+      "heading": "Code-Abdeckung (coverage)",
+      "level": 3,
+      "anchor": "code-abdeckung-coverage",
+      "hash": "984308a10c94e6f1ece3fd85c1b523049819d59f6c3ae061ab7b735012c0f519"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Softwaretest mit ABAP Unit",
+      "level": 1,
+      "anchor": "softwaretest-mit-abap-unit",
+      "hash": "7ef11699c7a4c24baf11bf8915d1be28161f4679dbd0f35a88c891fa758fa138"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Zielgruppe",
+      "level": 2,
+      "anchor": "zielgruppe",
+      "hash": "b36338e90140018e439103aca2c6ecb5cbcd46be9efffdb24ced10084e14cad6"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Motivation",
+      "level": 2,
+      "anchor": "motivation",
+      "hash": "a6cdc84958083209c7be6a71341649b33960aadef983b35a8c62b9b4118759a3"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Herausforderungen die den Einsatz von ABAP Unit beeinflussen",
+      "level": 2,
+      "anchor": "herausforderungen-die-den-einsatz-von-abap-unit-beeinflussen",
+      "hash": "ec804a138f1172f78f393a9716007277e4b1c420a14765da8ea531069bb8d49b"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Mangelndes Wissen und Qualifikation",
+      "level": 3,
+      "anchor": "mangelndes-wissen-und-qualifikation",
+      "hash": "574c47b699c5d3e1ddc554558640f0f2dc6743fbec30caf0d47d7e3f833c7531"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Erfahrungsdefizit als Umsetzungshürde",
+      "level": 3,
+      "anchor": "erfahrungsdefizit-als-umsetzungshürde",
+      "hash": "956bd2b549054caf3254be3954ee4a74b644688865bd8bdf7cbef9506907224c"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Zeitdruck und die \"Definition of Done\"",
+      "level": 3,
+      "anchor": "zeitdruck-und-die-definition-of-done",
+      "hash": "16ff576b9b56ce44e3bd732f1525eebf824206401f7c22456b9226aabfbd404c"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Rahmenbedingungen für den Einsatz von ABAP Unit",
+      "level": 2,
+      "anchor": "rahmenbedingungen-für-den-einsatz-von-abap-unit",
+      "hash": "7e0989951baa9c635fe64cc2198c184934ff31f472dfdba2932a3a4554526cba"
+    },
+    {
+      "file": "docs/testing/index.md",
+      "heading": "Die Rolle des DSAG ABAP-Leitfadens für die Umsetzung Ihrer Test Strategie",
+      "level": 2,
+      "anchor": "die-rolle-des-dsag-abap-leitfadens-für-die-umsetzung-ihrer-test-strategie",
+      "hash": "20baebce0a8fa2612a892d77c4469869a71f8e1bf12682048c0e9639436abe0d"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Empfehlungen",
+      "level": 1,
+      "anchor": "empfehlungen",
+      "hash": "da04bd04847ce9e5d924332bd7aff9afb6e380450943cf35a0bb369f140686e6"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Konsens",
+      "level": 2,
+      "anchor": "konsens",
+      "hash": "940ac91d9305d7c86034b1734c4e15d72622108fef226979d2dd7a2632179484"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Verantwortlichkeiten",
+      "level": 2,
+      "anchor": "verantwortlichkeiten",
+      "hash": "290a62565d28563768cbf5a4c056aa2dce4558c6f59f4d2066582d241926fd05"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Am Anfang war das Konzept",
+      "level": 2,
+      "anchor": "am-anfang-war-das-konzept",
+      "hash": "d814c53a2df1a11206045ef95579c3b2d56a3545979ad2447e91b456d1278680"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Einfach anfangen",
+      "level": 2,
+      "anchor": "einfach-anfangen",
+      "hash": "954f624a66e963984cd0412bf33e3b9dc81b6fdcc0011b77120ec3f3fd078dd8"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Management",
+      "level": 2,
+      "anchor": "management",
+      "hash": "72234725c2d604b10f4c475eb826090d1c9ce845ba734b89efd64e64f7bc132b"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Weiterbildung",
+      "level": 2,
+      "anchor": "weiterbildung",
+      "hash": "bf4b3b61b921f9bc25d32f524a483c6a3a99854ed5f2564ab629f5389a01f7f4"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Code - Test - Repeat",
+      "level": 2,
+      "anchor": "code---test---repeat",
+      "hash": "0cb2462b19e7c76b6f060045181569429be9084d64c108ffbbcf08e253f05ae3"
+    },
+    {
+      "file": "docs/testing/recommendations.md",
+      "heading": "Fazit",
+      "level": 2,
+      "anchor": "fazit",
+      "hash": "e560a25a373ade75c901cdf8d0e7821c837ff9bebdf9093aabb08ae16c74ff87"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Empfehlungen für Testwerkzeuge",
+      "level": 1,
+      "anchor": "empfehlungen-für-testwerkzeuge",
+      "hash": "bb5154f640c89cb41420f6d26a82e5a8fccec0cdeac60b308c1c98b013176f80"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Testwerkzeuge im SAP Solution Manager",
+      "level": 2,
+      "anchor": "testwerkzeuge-im-sap-solution-manager",
+      "hash": "3a6753e0feea17784d0724b0b9dae8929d1a6d2300adb5c88cce80eed100db84"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Test-Suite",
+      "level": 3,
+      "anchor": "test-suite",
+      "hash": "435e08d51c2f258fd4ce2111bff9b67c485c57ab8e077bd9c69fe6f9ebaf5245"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Testschritt-Designer",
+      "level": 3,
+      "anchor": "testschritt-designer",
+      "hash": "473cf2c4dd3794cf9a8934e15bc8b77fb4f5e91a04fab943f81093a88ffb42a1"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Komponentenbasierte Testautomatisierung",
+      "level": 3,
+      "anchor": "komponentenbasierte-testautomatisierung",
+      "hash": "dd3ce4edbbb77493b2b790de92d2008d41d082143b20f33c92f1861d9335b9de"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Testwerkzeuge in SAP Cloud ALM",
+      "level": 2,
+      "anchor": "testwerkzeuge-in-sap-cloud-alm",
+      "hash": "159cd2ed70ebb0b94b09547be45a8ee7a79b0581ea5050ff7cebaec10a9d1a8b"
+    },
+    {
+      "file": "docs/testing/recommended-tools.md",
+      "heading": "Tricentis Test Automation",
+      "level": 2,
+      "anchor": "tricentis-test-automation",
+      "hash": "f4bf43451813e25600ff65ec896460c984853f7f2efd607be2e27d8c9b909945"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "User Interface (UI)",
+      "level": 1,
+      "anchor": "user-interface-ui",
+      "hash": "dfbea08bccdd1a348be1aa99870fca725179c0bfbc0decdd3c45375d46f960fc"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "Fiori & SAPUI5",
+      "level": 2,
+      "anchor": "fiori--sapui5",
+      "hash": "829237d6577c2293cf6844a9f95d34f4da37ce69097dfc3d7d3c3a68df5f5ea6"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "Fiori Elements",
+      "level": 3,
+      "anchor": "fiori-elements",
+      "hash": "dd44a1a689ced211a1f2de79af25b98163ce60b4b386dd1ab411548af3ebd642"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "Fiori Freestyle",
+      "level": 3,
+      "anchor": "fiori-freestyle",
+      "hash": "0b2ad707e517afb009333ae8b1e9b439ec3a4ed18052a39e1d17f9752b252da0"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "Flexible Programming Model",
+      "level": 3,
+      "anchor": "flexible-programming-model",
+      "hash": "4fe743b2bc6307e98fee0cb3c182aa7c64d09153b34fcb5fe580da70a4d42dc6"
+    },
+    {
+      "file": "docs/user-interface/index.md",
+      "heading": "Legacy Technologien",
+      "level": 2,
+      "anchor": "legacy-technologien",
+      "hash": "c7888adc52503f4d1b076ba109d85190861a76fd9e973fafa48f11ef85bac013"
+    }
+  ]
+}

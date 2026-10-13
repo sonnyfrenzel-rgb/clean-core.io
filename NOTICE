@@ -15,6 +15,22 @@ those licences, in THIRD-PARTY-NOTICES.md and in the CycloneDX SBOM that the
 "Security CI" workflow produces for every commit.
 
 --------------------------------------------------------------------------------
+DSAG ABAP-Leitfaden (CC BY 4.0)
+--------------------------------------------------------------------------------
+
+Some rules of the ABAP analysis and generated code are adapted from the
+"DSAG ABAP-Leitfaden" by DSAG e.V. and contributors,
+https://1dsag.github.io/ABAP-Leitfaden/ (https://github.com/1DSAG/ABAP-Leitfaden,
+reviewed at commit 100600dfc9d98136b1992bde20e201049cbb1116), licensed under
+CC BY 4.0, https://creativecommons.org/licenses/by/4.0/.
+
+Changes: translated from German, excerpted, paraphrased and corrected where
+outdated or inconsistent; metadata and section hashes synced weekly into
+lib/generated/dsag-abap-guide.json by scripts/sync-dsag-guide.ts. No image of
+the guide is reused. No endorsement by DSAG e.V. or the authors is implied.
+Details: THIRD-PARTY-NOTICES.md and lib/dsag-citations.ts.
+
+--------------------------------------------------------------------------------
 SAP data and trademarks
 --------------------------------------------------------------------------------
 
