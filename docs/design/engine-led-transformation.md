@@ -450,7 +450,14 @@ A body is refused — and the unit goes to repair with that reason — when it:
    writes the guard function with a `values` argument for the computed operands, and the body calls it at
    the original's line (`Unit.bodyCalls`, `Scaffold.required`, `fillGuardsOf`;
    `lib/transformation/guard-basis.ts`). A derived check is no RAP validation; the logic method calls its
-   predicate.
+   predicate. A literal the unit's own non-check statements also use (`WHEN 'SHIP'` before
+   `IF ls_parent-kind = 'SHIP' AND lv_qty > …`) is no evidence of an inlined check and is not looked for
+   (A/B 13.10.2026);
+8. reads a field its parameters' types do not have (`unknown-field`, Node): `sel`, `st`, `args`, `record`
+   and `values` are typed by closed interfaces of the scaffold, and `st.gt_effects` is as invented as `tsc`
+   would say. The shapes are read from the scaffold itself (`lib/transformation/type-shapes.ts`) — the same
+   text every fill request carries under `types` — so prompt and check have one source of truth. A
+   derived predicate's own `values` parameter is a root of member calls (`values.lvCode.trim()`).
 
 The call contract's base request takes each value from the original — the selection DEFAULT, the demo
 data, a fixed list in the code, a value that satisfies the original's checks — never a placeholder; an

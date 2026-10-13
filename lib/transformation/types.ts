@@ -355,6 +355,12 @@ export interface BodyGuardContext {
    * (`values.lvCode.trim()`) reads the region's input and is no foreign call.
    */
   params?: readonly string[];
+  /**
+   * The fields of the region's parameters typed by a closed interface of the scaffold (`type-shapes.ts`):
+   * `{ sel: […], st: […], args: […] }`. A body reading `st.gt_effects` when RunState has no such field is refused,
+   * as `tsc` would refuse it — the name was invented (A/B 13.10.2026, defect D).
+   */
+  shapes?: Readonly<Record<string, readonly string[]>>;
 }
 
 /** A guard a fill body must call at the original's position. */
@@ -378,7 +384,8 @@ export type BodyRefusalCode =
   | 'too-long'
   | 'binary-number'
   | 'guard-missing'
-  | 'guard-inlined';
+  | 'guard-inlined'
+  | 'unknown-field';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;
@@ -526,6 +533,11 @@ export interface FillRequestUnit {
   }>;
   facts: { decimals: Array<{ name: string; digits: number; decimals: number; type: string }> };
   available: { helpers: string[]; callees: string[] };
+  /**
+   * The declarations of the types the signature and the callees' signatures name, with the types they name one
+   * level down — as the scaffold writes them (`type-shapes.ts`), so a body reads fields that exist (Node only).
+   */
+  types?: string;
 }
 
 /** A repair round's addition to a unit (§13.2 step 3). */

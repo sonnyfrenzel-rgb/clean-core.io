@@ -115,6 +115,7 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     'Rules for every body:',
     `- Do not write ${forbidden}, and never the text "@cc-fill".`,
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
+    ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : []),
     ...fillGuardLines(track),
     '- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.',
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',

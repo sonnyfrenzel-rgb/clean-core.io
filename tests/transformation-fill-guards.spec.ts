@@ -69,9 +69,9 @@ test('B: a derived predicate reads its values through member calls; names it is 
   expect(guard(g.regionId!, "return lvCode.trim() !== '';", [])).toContain('lvCode.trim');
   // A unit body has no `values` parameter: a member call on it stays foreign there.
   expect(guard(u.id, "if (values.lvCode.trim()) return;", [])).toContain('values.lvCode.trim');
-  // The predicate of the other derived check reads its own values and the record the body hands in.
+  // The predicate of the other derived check reads its own values.
   const conservation = guardOf(prep, unitOf(prep, 'checkConservation').id);
-  expect(guard(conservation.regionId!, "return record !== null && dec.compare(values.lvQty?.toString() ?? '0', String(record.qty)) > 0;", [])).toBeNull();
+  expect(guard(conservation.regionId!, "return dec.compare(values.lvQty?.toString() ?? '0', '0') > 0;", [])).toBeNull();
 });
 
 test('A and B: the header says how a body calls a guard and what a predicate reads', () => {
