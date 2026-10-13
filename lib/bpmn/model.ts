@@ -773,7 +773,7 @@ class ModelBuilder {
    * keeps its anchor; only the event keywords' own lines leave the picture, and
    * they stay in the Technical names view.
    *
-   * **Which flows (roadmap 3.0.7, ZMM_BESTELLUEBERSICHT review).** The skeleton
+   * **Which flows (roadmap 3.0.7, MM case review).** The skeleton
    * decides the run order (`chainReportEvents`), and this draws exactly its
    * flows (`this.runOrder`) — no flow of its own. So only an early end ends the
    * run: a block's normal end hands over to the next block; `RETURN`/`EXIT` in

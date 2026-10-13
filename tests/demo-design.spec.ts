@@ -83,7 +83,7 @@ test.describe('what the demo Design stage is drawn from', () => {
     expect(targetRouteOf({ recommendedRoute: demo.design.recommendedRoute })).toBe(route);
 
     // The whole contract is `GET /api/projects/{id}/contract`'s answer for a project with no run.
-    const built = contractOfProject({ legacyCode: source, s4Deployment: demo.deployment }, null);
+    const built = contractOfProject({ legacyCode: source, s4Deployment: demo.deployment, analyzerVersion: APP_VERSION }, null);
     expect(built.ok).toBe(true);
     if (built.ok) expect(data.contract).toEqual(built.contract);
 

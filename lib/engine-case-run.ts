@@ -107,7 +107,7 @@ export function engineVerdicts(stdout: string, casesJson: string, patterns: read
     const notRun = (reason: string): TestRunResult => ({ id: kase.id, name, status: 'Skipped', message: `Not run through the call contract: ${reason}` });
     if (lines.length === 0) return notRun('the engine pass reported no outcome for this case');
     if (lines.length > 1) return notRun(`the engine pass reported this case ${lines.length} times — something besides the engine suite printed an outcome line, so none is judged`);
-    const r = judgeEngineCase(kase, lines[0]) as { status: string; reason?: string; examples: Array<{ input: string; status: string; evidence: string }> };
+    const r = judgeEngineCase(kase, lines[0]) as { status: string; reason?: string; cause?: string; examples: Array<{ input: string; status: string; evidence: string }> };
     if (r.status === 'Passed') return { id: kase.id, name, status: 'Passed', message: 'Passed through the call contract' };
     if (r.status === 'Failed') {
       return {
@@ -117,7 +117,8 @@ export function engineVerdicts(stdout: string, casesJson: string, patterns: read
         message: r.examples.filter((e) => e.status === 'fail').map((e) => `${e.input}: ${e.evidence}`).join(' | '),
       };
     }
-    return notRun(String(r.reason ?? 'not run'));
+    const skipped = notRun(String(r.reason ?? 'not run'));
+    return r.cause === 'base-threw' ? { ...skipped, cause: 'base-threw' } : skipped;
   });
 }
 

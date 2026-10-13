@@ -22,7 +22,7 @@ const checkpoint = (report: ReturnType<typeof route>, name: string) =>
 
 const READ_ONLY = 'REPORT zcc_read.\nSELECT * FROM vbak INTO TABLE @DATA(lt).';
 const STANDARD_WRITE = 'REPORT zcc_write.\nUPDATE vbak SET netwr = 0 WHERE vbeln = lv_vbeln.';
-const RFC = "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'NONE'.";
+const RFC = "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'ERP_PRD'.";
 
 test('1d5ab9d90793 — the Key User checkpoint does not grade feasibility from a count', () => {
   for (const code of [READ_ONLY, STANDARD_WRITE, RFC]) {
@@ -103,7 +103,7 @@ test('a0ae65b2b30d — COMMIT WORK next to a higher-priority finding still names
   // branch and dropped it.
   const CASES = [
     "REPORT zcc_bdc.\nCALL TRANSACTION 'VA02' USING lt_bdcdata MODE 'N'.\nCOMMIT WORK.",
-    "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'NONE'.\nCOMMIT WORK.",
+    "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'ERP_PRD'.\nCOMMIT WORK.",
     'REPORT zcc_write.\nUPDATE vbak SET netwr = 0 WHERE vbeln = lv_vbeln.\nCOMMIT WORK.',
   ];
   for (const deployment of ['private', 'public'] as const) {

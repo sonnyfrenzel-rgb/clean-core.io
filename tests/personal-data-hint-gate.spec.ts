@@ -237,7 +237,7 @@ async function openUploadScreen(page: import('@playwright/test').Page) {
 
 /** The two things the upload screen already required before today. */
 async function satisfyTheOlderGates(page: import('@playwright/test').Page) {
-  await page.getByText('Public Cloud Edition').first().click();
+  await page.getByText('SAP S/4HANA Cloud Public Edition', { exact: true }).first().click();
   // CcCheckbox since D.10b: the label is beside the box, tied by for/id.
   await page.getByLabel(/^I agree to the Terms & Conditions/).check();
 }

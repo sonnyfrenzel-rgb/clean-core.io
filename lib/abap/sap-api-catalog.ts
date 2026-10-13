@@ -8,9 +8,24 @@
  *
  * Source: SAP API Business Hub, SAP Note 2811791, SAP S/4HANA Cloud
  *         Release Notes 2024 FPS02
+ *
+ * Stamp (3.0.12, SD review CC-R29): this hand-written layer was compiled
+ * against 2024 FPS02 and is not refreshed by any sync. What is refreshed is
+ * SAP's own release data underneath it — the SAP Cloudification Repository
+ * (`scripts/sync-cloudification-repo.ts`, weekly, `npm run sync:catalog`) —
+ * and the identifier list `lib/abap/generated/sap-identifiers.json`
+ * (`npm run sync:identifiers`). Wherever a hit in this layer is shown, its
+ * release is shown with it (`SAP_API_CATALOG_STAMP`), so a 2024 mapping never
+ * reads as current.
  */
 
 export const SAP_API_CATALOG_VERSION = '2024.FPS02';
+
+/** The day the entries below were last reviewed by hand (not a sync date). */
+export const SAP_API_CATALOG_REVIEWED = '2026-10-12';
+
+/** The words shown beside a hit in this layer. */
+export const SAP_API_CATALOG_STAMP = `this product's curated SAP API catalog, compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not synced from SAP`;
 
 export type SapApiObjectType = 'CDS View' | 'OData API' | 'BAPI' | 'Fiori App' | 'Business Event' | 'Unknown';
 
@@ -132,6 +147,70 @@ export const SAP_API_CATALOG: Record<string, SapApiEntry> = {
   'TVARV': { view: 'I_VariantVariable',           type: 'CDS View' },
   'DD03L': { view: 'I_TableField',                type: 'CDS View' },
 };
+
+/**
+ * Successors that depend on what else the program reads (PP review, 12.10.2026).
+ *
+ * AUFK is the order master of every order category: internal orders,
+ * production orders, maintenance orders. Mapped unconditionally to
+ * I_InternalOrder, a production planning program that reads AUFK beside AFKO,
+ * AFPO and RESB was told to use the internal order view. When the program reads
+ * the production order tables, the successor is the one SAP's own release data
+ * names for the production order header (AFKO → I_MANUFACTURINGORDER in the
+ * SAP Cloudification Repository, synced 2026-10-01; released, PP-VDM). RESB
+ * outside a production order context is a reservation: SAP's release data
+ * names I_RESERVATIONDOCUMENTITEM for it, not the order component view.
+ *
+ * The first rule whose `when` tables the program reads wins; `unless` keeps a
+ * rule off when one of those tables is read.
+ */
+export interface ContextualSuccessor {
+  table: string;
+  /** The rule applies when the program reads any of these. */
+  when?: readonly string[];
+  /** The rule applies only when the program reads none of these. */
+  unless?: readonly string[];
+  entry: SapApiEntry;
+  /** Said with the successor: what the context is and why. */
+  context: string;
+}
+
+const PRODUCTION_ORDER_TABLES = ['AFKO', 'AFPO', 'RESB', 'AFVC', 'AFRU'] as const;
+
+export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze([
+  {
+    table: 'AUFK',
+    when: PRODUCTION_ORDER_TABLES,
+    entry: { view: 'I_ManufacturingOrder', type: 'CDS View' },
+    context: 'production order context: the program also reads the production order tables',
+  },
+  {
+    table: 'RESB',
+    unless: ['AFKO', 'AFPO', 'AFVC', 'AUFK'],
+    entry: { view: 'I_ReservationDocumentItem', type: 'CDS View' },
+    context: 'reservation context: the program reads no production order table',
+  },
+]);
+
+/**
+ * The successor of a table in the context of the program that reads it, or
+ * null when no context rule applies (the plain catalog entry then stands).
+ */
+export function successorInContext(
+  table: string,
+  tablesInProgram: Iterable<string>,
+): { entry: SapApiEntry; context: string; readHere: string[] } | null {
+  const key = (table || '').trim().toUpperCase();
+  const read = new Set([...tablesInProgram].map((t) => String(t).toUpperCase()));
+  for (const rule of CONTEXT_SUCCESSORS) {
+    if (rule.table !== key) continue;
+    const hits = (rule.when ?? []).filter((t) => read.has(t));
+    if (rule.when && hits.length === 0) continue;
+    if (rule.unless && rule.unless.some((t) => read.has(t))) continue;
+    return { entry: rule.entry, context: rule.context, readHere: hits };
+  }
+  return null;
+}
 
 /** Total number of SAP standard table entries in the catalog */
 export const SAP_API_CATALOG_SIZE = Object.keys(SAP_API_CATALOG).length;

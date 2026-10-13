@@ -47,7 +47,7 @@ const signedProject = (over: Partial<Project> & Record<string, unknown> = {}): P
 
 test.describe('what a target change does, said before the click', () => {
   test('the target in words', () => {
-    expect(targetWords(projectTarget(signedProject()))).toBe('Private Edition 2023 FPS03');
+    expect(targetWords(projectTarget(signedProject()))).toBe('SAP Cloud ERP Private 2023 FPS03');
     expect(targetWords({ edition: 'public', release: '' })).toBe('Public Edition');
     // Absent means the Public Edition, as the route has always read it.
     expect(projectTarget({}).edition).toBe('public');
@@ -112,7 +112,7 @@ test.describe('after the change, the profile box says what changed', () => {
 
   test('from, to and the day, while it is recent', () => {
     const notice = targetChangeNotice(changed(), Date.parse('2026-10-06T12:00:00.000Z'));
-    expect(notice).toMatchObject({ day: '2026-10-06', from: 'Private Edition 2023 FPS03', to: 'Public Edition' });
+    expect(notice).toMatchObject({ day: '2026-10-06', from: 'SAP Cloud ERP Private 2023 FPS03', to: 'Public Edition' });
   });
 
   test('a decision read from the earlier run is named as outdated', () => {
@@ -211,12 +211,12 @@ test.describe('changing the target in the IT view', () => {
     await goto(page, `/project/${projectId}?view=it`);
     const open = page.locator('[data-target-change-open]');
     await expect(open, 'the owner is offered the change').toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-it-profile]')).toContainText('Private Edition');
+    await expect(page.locator('[data-it-profile]')).toContainText('SAP Cloud ERP Private');
 
     await open.click();
     const dialog = page.locator('[data-target-change-dialog] [role="dialog"]');
     await expect(dialog).toBeVisible();
-    await expect(page.locator('[data-target-change-current]')).toHaveText('Private Edition 2023 FPS03');
+    await expect(page.locator('[data-target-change-current]')).toHaveText('SAP Cloud ERP Private 2023 FPS03');
     // Unchanged, the dialog does not continue.
     await expect(page.locator('[data-target-change-next]')).toBeDisabled();
     await page.locator('[data-target-edition-option="public"]').click();
@@ -225,7 +225,7 @@ test.describe('changing the target in the IT view', () => {
 
     // Step 2 — what the change does, before the click.
     await expect(page.locator('[data-target-change-next-target]')).toHaveText('Public Edition');
-    await expect(page.locator('[data-target-change-moves]')).toContainText('Private Edition 2023 FPS03 → Public Edition', { timeout: 60000 });
+    await expect(page.locator('[data-target-change-moves]')).toContainText('SAP Cloud ERP Private 2023 FPS03 → Public Edition', { timeout: 60000 });
     await expect(page.locator('[data-target-change-cost]')).toContainText('Free — changing the target of an example');
     // The confirmation waits for the account's model answer: analysis stage off, so no model call.
     await expect(page.locator('[data-target-change-confirm]')).toBeEnabled({ timeout: 30000 });
@@ -237,11 +237,11 @@ test.describe('changing the target in the IT view', () => {
     await page.locator('[data-target-change-confirm]').click();
     // The page reloads onto the new run, and the box says what changed.
     const notice = page.locator('[data-target-change-notice]');
-    await expect(notice).toContainText('Target changed from Private Edition 2023 FPS03 to Public Edition', { timeout: 120000 });
+    await expect(notice).toContainText('Target changed from SAP Cloud ERP Private 2023 FPS03 to Public Edition', { timeout: 120000 });
     await expect(page.locator('[data-it-profile]')).toContainText('Public Edition');
     // The Public Edition has no release to choose, and the row says why instead of "not declared".
     await expect(page.locator('[data-it-profile-release]')).toHaveAttribute('data-it-profile-release', 'current');
-    await expect(page.locator('[data-it-profile-release]')).toContainText('SAP upgrades every Public Cloud tenant');
+    await expect(page.locator('[data-it-profile-release]')).toContainText('SAP upgrades every SAP S/4HANA Cloud Public Edition tenant');
 
     const project = (await db().collection('projects').doc(projectId).get()).data()!;
     expect(project.s4Deployment).toBe('public');

@@ -316,7 +316,7 @@ test.describe('a source whose statements run over many lines', () => {
       'Z_EMPLOYEE_EXPENSE_VAL.txt': { statements: 55, digest: 'a5a713c52094aca21e4ce1ed1ab2c84726c6f6a23df20bb9462c8608091ac7ae' },
       'Z_INVOICE_EXTRACTOR.txt': { statements: 31, digest: '24dc545fef3689becfd96b5fef8ac7ff209fead0b2f4acc202b7789200d8fef7' },
       'Z_MATERIAL_STOCK_CALC.txt': { statements: 45, digest: 'e3f59263b3cd2a7ccb0989b5bbf6f58f58c66bba2d1d6ef0d497316d2aba833f' },
-      'Z_MM_PO_APPROVAL.abap': { statements: 388, digest: 'b56c29b4d23f16a84aec1903a3c6c546120bdb6686a40055625192e7eb441d2b' },
+      'Z_MM_PO_APPROVAL.abap': { statements: 388, digest: 'fc2c33c1be80282526c744279a9e6f18f9072ff68e31b2fc4eb8a3f65018ce15' },
       'Z_ORDER_INTEGRITY_CHECK.txt': { statements: 53, digest: '5c3daf720abb2939bfebcd5c06691226682dbea054cbfb703aae598818e6f9e9' },
       'Z_SALES_ORDER_CREATOR.txt': { statements: 38, digest: '6f54c75c3851fcbfa64435d14ce3b90bc74bb164c7103568268adbeb7560ee1e' },
     };

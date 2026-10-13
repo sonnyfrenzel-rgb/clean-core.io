@@ -60,6 +60,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   // here so that neither state is a surprise.
   { file: 'app/api/auth/jira/url/route.ts', method: 'GET', path: () => '/api/auth/jira/url', expectedStatus: [404, 403] },
   { file: 'app/api/secrets/gemini/test/route.ts', method: 'POST', path: () => '/api/secrets/gemini/test', body: { apiKey: 'not-a-real-key' } },
+  // Roadmap 3.0.12 — the generation lease buys up to 48 model calls on the
+  // account's key or the community key; a token from before the second factor
+  // buys none.
+  { file: 'app/api/transformation/lease/route.ts', method: 'POST', path: () => '/api/transformation/lease', body: { projectId: 'nowhere', generationToken: 'x', plannedCalls: 1 } },
   // Added with the gate itself (security audit of b88c77b): reading the key's
   // metadata was behind a valid ID token and nothing else, while every other
   // verb on the same secret asked for the factor. Listed here rather than only

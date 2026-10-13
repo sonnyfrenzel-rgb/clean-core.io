@@ -5,7 +5,7 @@ import type { SopSentence } from '@/lib/sop-provenance';
 /**
  * The prompt of the business SOP and RACI, and what is stored with its answer
  * — moved out of the Documentation page so it can be read and tested (owner
- * 11.10.2026, external review of the FI Collection Worklist package, F-06).
+ * 11.10.2026, external review of the FI case, F-06).
  *
  * The review found a SOP that turned technical facts into organisational
  * practice. The prompt now:

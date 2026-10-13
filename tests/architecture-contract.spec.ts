@@ -23,7 +23,7 @@ import {
 } from '../lib/input-manifest';
 import { PROVENANCE_VALUES } from '../lib/provenance';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
-import { routeDrivers, routeExtensibility } from '../lib/abap/extensibility-router';
+import { ON_STACK_CONSTRUCTS_FROM, routeDrivers, routeExtensibility } from '../lib/abap/extensibility-router';
 import type { AbapEvidenceReport, EvidenceFinding } from '../lib/abap/evidence-model';
 import { APP_VERSION } from '../lib/version';
 
@@ -83,15 +83,17 @@ function contractFor(
   source: string,
   deployment: 'public' | 'private' | null,
   extra?: Partial<Parameters<typeof buildArchitectureContract>[0]>,
+  engine: string = APP_VERSION,
 ) {
   const evidence = buildAbapEvidence(source, 'Z_TEST.abap', deployment || undefined);
-  const route = routeExtensibility(evidence, deployment === 'private' ? 'private' : 'public', APP_VERSION);
+  const route = routeExtensibility(evidence, deployment === 'private' ? 'private' : 'public', engine);
   return buildArchitectureContract({
     contractId: 'AC-1',
     runId: 'run-1',
     inputManifest: manifestFor(deployment),
     evidence,
     route,
+    engineVersion: engine,
     ...extra,
   });
 }
@@ -212,7 +214,7 @@ test.describe('8.2 — the target context comes out of the signed input manifest
 test.describe('8.2 — a rejected alternative carries its reason at the evidence', () => {
   test('the off-stack route rejects on-stack with the same constructs the router routed on', () => {
     const evidence = buildAbapEvidence(SOURCE_OFF_STACK, 'Z_TEST.abap', 'public');
-    const drivers = routeDrivers(evidence, 'public');
+    const drivers = routeDrivers(evidence, 'public', APP_VERSION);
     expect(drivers.length).toBeGreaterThan(0);
 
     const c = contractFor(SOURCE_OFF_STACK, 'public');
@@ -232,9 +234,10 @@ test.describe('8.2 — a rejected alternative carries its reason at the evidence
     }
   });
 
-  test('the same writes reject the on-stack track in one edition and not in the other', () => {
-    // Public: both writes drive the route off the stack (CR-04).
-    const pub = contractFor(SOURCE_WRITES, 'public');
+  test('the same writes reject the on-stack track in one edition and not in the other — engines before 3.0.12', () => {
+    // Public: both writes drive the route off the stack (CR-04) — the rule of
+    // a run signed before 3.0.12 (`ON_STACK_CONSTRUCTS_FROM`).
+    const pub = contractFor(SOURCE_WRITES, 'public', undefined, 'v3.0.11');
     expect(pub.route.chosen).toBe('side-by-side-cap');
     const rejectedOnStack = alt(pub, 'in-app-rap');
     expect(rejectedOnStack.verdict).toBe('rejected');
@@ -245,11 +248,23 @@ test.describe('8.2 — a rejected alternative carries its reason at the evidence
     // Private: the identical source rejects nothing on the stack. A contract
     // that took the deployment from anywhere but the manifest would print the
     // public answer here.
-    const priv = contractFor(SOURCE_WRITES, 'private');
+    const priv = contractFor(SOURCE_WRITES, 'private', undefined, 'v3.0.11');
     expect(priv.route.chosen).toBe('in-app-rap');
     expect(alt(priv, 'in-app-rap').verdict).toBe('chosen');
     expect(alt(priv, 'side-by-side-cap').verdict).toBe('rejected');
     expect(alt(priv, 'side-by-side-cap').basis).toBe('stipulation');
+  });
+
+  test('from 3.0.12 the same writes reject the on-stack track in neither edition', () => {
+    // Custom tables are developer extensibility on-stack in the Public Edition
+    // too, and a side-by-side service cannot write SAP's tables either
+    // (`ON_STACK_CONSTRUCTS_FROM`, DSAG guide review C1).
+    for (const deployment of ['public', 'private'] as const) {
+      const c = contractFor(SOURCE_WRITES, deployment, undefined, ON_STACK_CONSTRUCTS_FROM);
+      expect(c.route.chosen, deployment).toBe('in-app-rap');
+      expect(alt(c, 'in-app-rap').verdict, deployment).toBe('chosen');
+      expect(alt(c, 'side-by-side-cap').basis, deployment).toBe('stipulation');
+    }
   });
 
   test('rejecting BTP is a setting and says so — nothing in the code rules it out', () => {

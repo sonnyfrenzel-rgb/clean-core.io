@@ -130,7 +130,7 @@ test.describe('the frames (pure)', () => {
 test.describe('the markup', () => {
   type BuildUp = (props: Record<string, unknown>) => React.ReactElement;
   let FirstLookBuildUp: BuildUp;
-  const OUT = path.resolve(ROOT, 'tmp', 'first-look-pacing');
+  const OUT = path.resolve(ROOT, 'tmp', 'first-look-pacing', String(process.pid));
 
   test.beforeAll(async () => {
     test.setTimeout(120 * 1000);

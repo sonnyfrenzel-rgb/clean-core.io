@@ -113,7 +113,7 @@ test.describe('the IT answer, derived', () => {
 
   test('where to: the declared platform, and the default said as one', () => {
     const w = whereTo(FIT);
-    expect(w.platformLabel).toBe('Private Edition');
+    expect(w.platformLabel).toBe('SAP Cloud ERP Private');
     expect(w.sentence).toContain('the project\'s target');
     expect(w.counts.find((c) => c.bucket === 'keep')?.count).toBe(1);
     const undeclared = whereTo({ ...FIT, target: null });
@@ -153,18 +153,18 @@ test.describe('the IT answer, derived', () => {
 test.describe('the target profile names the snapshot that answered', () => {
   test('snapshot words for the keys the sync writes', () => {
     expect(catalogSnapshotWords('latest')).toContain('Public Edition');
-    expect(catalogSnapshotWords('pce-latest')).toContain('Private Edition');
+    expect(catalogSnapshotWords('pce-latest')).toContain('SAP Cloud ERP Private');
     expect(catalogSnapshotWords('pce-2023-3')).toContain('2023 FPS03');
     expect(catalogSnapshotWords('something-else')).toBeNull();
   });
 
   test('the note names the snapshot the route read — not the stale "Public only" sentence', () => {
     const p = catalogProfile({ edition: 'private', release: '' }, true, { registryKey: 'pce-latest', sourceSha256: 'abcdef0123' });
-    expect(p.edition).toBe('S/4HANA Cloud Private Edition');
+    expect(p.edition).toBe('SAP Cloud ERP Private');
     expect(p.release).toBeNull();
     expect(p.catalogKey).toBe('pce-latest · abcdef01');
     expect(p.note).toContain('abap-atc-cr-cv-s4hc');
-    expect(p.note).toContain('Private Edition');
+    expect(p.note).toContain('SAP Cloud ERP Private');
     expect(p.note).not.toContain('There is no second snapshot');
     expect(catalogProfile({ edition: 'public', release: '' }, false, null).note).toContain('not recorded');
   });
@@ -465,11 +465,11 @@ test.describe('the IT view on a real project', () => {
     for (const id of ['uses', 'findings', 'level', 'not-determined']) {
       await expect(page.locator(`[data-it-figure="${id}"] [data-figure-coverage]`)).toHaveCount(1);
     }
-    // Where to resolves under the Private Edition.
-    await expect(page.locator('[data-it-where-to]')).toContainText('Private Edition', { timeout: 60000 });
+    // Where to resolves under SAP Cloud ERP Private.
+    await expect(page.locator('[data-it-where-to]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
 
     // The side column: target profile with the PCE snapshot, the route, the imports.
-    await expect(page.locator('[data-it-profile-catalog]')).toContainText('Private Edition');
+    await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private');
     await expect(page.locator('[data-it-catalog-note]')).toContainText('abap-atc-cr-cv-s4hc');
     await expect(page.locator('[data-it-routes] li').first()).toBeVisible();
     await expect(page.locator('[data-it-import="usage-none"]')).toContainText('never “unused”');
@@ -496,7 +496,7 @@ test.describe('the IT view on a real project', () => {
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-it-view=""]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-it-where-to]')).toContainText('Private Edition', { timeout: 60000 });
+    await expect(page.locator('[data-it-where-to]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     // The filter bar folds behind one button on a phone.

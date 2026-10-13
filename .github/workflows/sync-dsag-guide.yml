@@ -1,0 +1,160 @@
+name: Sync DSAG ABAP Guide
+
+# Weekly pull of the structure of the DSAG ABAP guide (github.com/1DSAG/ABAP-Leitfaden,
+# CC BY 4.0) into lib/generated/dsag-abap-guide.json (roadmap 3.0.12, owner 13.10.2026).
+#
+# Only metadata moves: commit, licence, page titles and URLs, headings with their
+# published anchors, and a SHA-256 per section — no prose of the guide. What the
+# product takes from the guide stays the hand-reviewed registry in lib/dsag-citations.ts.
+# tests/dsag-citations.spec.ts fails on the bot branch when a section a rule ADOPTS has
+# changed or gone, and that is the signal to re-read the section and review the adopted
+# rule by hand (then record the new hash). Sections we deliberately do not follow are
+# only annotated, so a guide that corrects itself can be reconsidered. A new upstream
+# commit that changes no page, heading, anchor, hash or licence pushes nothing.
+#
+# Same shape as sync-architecture-center.yml, for the same reasons: no pull request
+# (Actions may not open one here), the branch is pushed and the QA agent's weekly
+# pipeline check reports it while it is ahead of main; the job that installs and syncs
+# holds a read-only token and hands over only the data file as an artifact; the push job
+# starts from a fresh checkout, runs no npm at all, accepts nothing but the expected
+# path, and runs git with hooks and fsmonitor switched off.
+on:
+  schedule:
+    - cron: '0 7 * * 1'   # Mondays 07:00 UTC, after the catalog and architecture syncs
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Nothing in this job pushes; npm install scripts and tsx run here,
+          # so no token is left in .git/config.
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Sync the guide structure
+        id: sync
+        run: |
+          set -o pipefail
+          npx tsx scripts/sync-dsag-guide.ts | tee "$RUNNER_TEMP/dsag-sync.log"
+          if [ -n "$(git status --porcelain -- lib/generated/dsag-abap-guide.json)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Changes that touch a section lib/dsag-citations.ts cites go to the summary.
+          if grep -q 'cited by' "$RUNNER_TEMP/dsag-sync.log"; then
+            {
+              echo "### Cited DSAG guide sections changed — review these rules by hand"
+              echo
+              echo '```'
+              grep 'cited by' "$RUNNER_TEMP/dsag-sync.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Only the data file leaves this job.
+      - name: Collect the changed data file
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          out="$RUNNER_TEMP/dsag-sync"
+          mkdir -p "$out/lib/generated"
+          cp lib/generated/dsag-abap-guide.json "$out/lib/generated/dsag-abap-guide.json"
+
+      - name: Upload the data file
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dsag-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/dsag-sync/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: No change
+        if: steps.sync.outputs.changed == 'false'
+        run: echo "### DSAG guide structure unchanged" >> "$GITHUB_STEP_SUMMARY"
+
+  push:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot branch; nothing else
+    steps:
+      # A fresh checkout of the same commit. No package install and no project
+      # script runs in this job, so nothing has had a chance to touch .git/.
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the data file
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dsag-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/dsag-sync
+
+      # The artifact may hold the one data file and nothing else: no other path,
+      # no subdirectory, no symlink.
+      - name: Accept only the expected path
+        run: |
+          src="$RUNNER_TEMP/dsag-sync"
+          unexpected=$(cd "$src" && find . -mindepth 1 \( -type l -o \( -type d ! -path ./lib ! -path ./lib/generated \) -o \( -type f ! -path ./lib/generated/dsag-abap-guide.json \) -o \( ! -type f ! -type d \) \) -print)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The sync artifact holds unexpected paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          cp "$src/lib/generated/dsag-abap-guide.json" lib/generated/dsag-abap-guide.json
+          changes=$(git status --porcelain --untracked-files=all)
+          stray=$(printf '%s\n' "$changes" | grep -vE '^.. lib/generated/dsag-abap-guide\.json$' | grep -v '^$' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::The working tree changed outside the DSAG guide data:"
+            echo "$stray"
+            exit 1
+          fi
+          if [ -z "$changes" ]; then
+            echo "::error::The sync reported a change, but the artifact matches the checkout."
+            exit 1
+          fi
+
+      - name: Commit the update
+        run: |
+          git checkout -B chore/sync-dsag-guide
+          git add lib/generated/dsag-abap-guide.json
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore(dsag): sync DSAG ABAP guide structure"
+
+      - name: Push the update to its branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c credential.helper= \
+            push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-dsag-guide
+          {
+            echo "### DSAG guide update ready"
+            echo
+            echo "Branch \`chore/sync-dsag-guide\` holds this week's sync. Run \`tests/dsag-citations.spec.ts\` on it:"
+            echo "a failure names an adopted rule whose guide section changed — review it by hand in"
+            echo "\`lib/dsag-citations.ts\`, then bring the branch in through \`dev\`; the weekly QA pipeline check"
+            echo "reports it until then."
+          } >> "$GITHUB_STEP_SUMMARY"

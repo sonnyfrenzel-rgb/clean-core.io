@@ -3,6 +3,8 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { catalogSnapshotRefFor, catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { ProjectEvidence } from '@/lib/project-evidence';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { APP_VERSION } from '@/lib/version';
 
 /**
  * The engine's evidence report for a project, as the signed run computes it —
@@ -44,7 +46,9 @@ export function buildProjectEvidence(project: Record<string, unknown>, source: s
   const fileName = projectEvidenceFileName(project);
   const deployment = editionOf(project.s4Deployment);
   return {
-    evidence: buildAbapEvidence(source, fileName, deployment, catalog.registryKey),
+    // The engine of the project's signed run (roadmap 3.0.12): an older run
+    // keeps the findings it signed.
+    evidence: buildAbapEvidence(source, fileName, deployment, catalog.registryKey, engineVersionOfProject(project)),
     sourceSha256: sha256Hex(source),
     catalog,
     fileName,
@@ -67,7 +71,8 @@ export function buildRunEvidence(
   const catalog = catalogSnapshotRefFor(input.deployment, release);
   const fileName = input.fileName || 'unknown_file.abap';
   return {
-    evidence: buildAbapEvidence(input.source, fileName, input.deployment, catalog.registryKey),
+    // A run about to be made: this engine.
+    evidence: buildAbapEvidence(input.source, fileName, input.deployment, catalog.registryKey, APP_VERSION),
     sourceSha256: sha256Hex(input.source),
     catalog,
     fileName,

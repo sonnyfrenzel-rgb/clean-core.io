@@ -20,8 +20,9 @@
  * Every sentence in a contract comes from one of three places and says which:
  *
  *   - **`evidence`** — a finding of this run, cited by finding id and line.
- *     `lib/abap/extensibility-router.ts` already decides the route from exactly
- *     six constructs; `routeDrivers()` there is that rule, exported, so the
+ *     `lib/abap/extensibility-router.ts` already decides the route from a
+ *     fixed set of constructs (six before engine 3.0.12, an RFC call to
+ *     another system from then on); `routeDrivers()` there is that rule, exported, so the
  *     reason the other track was rejected is the same rule that chose this one
  *     and not a second copy of it.
  *   - **`bound-input`** — an entry of the run's signed input manifest
@@ -102,10 +103,13 @@ import { sha256Hex } from './artefact-digest';
 import { referenceDigest, type InputManifest, type ManifestInput, INPUT_IDS } from './input-manifest';
 import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
-import { routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import { PUBLIC_TARGET_ASSUMPTION, routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import { APP_VERSION } from './version';
 import {
   FINGERPRINTED_PLATFORM_NAME as FORMER_NAME,
   FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT,
+  FINGERPRINTED_EDITION_PRIVATE,
+  FINGERPRINTED_EDITION_PUBLIC,
   SIDE_BY_SIDE_ROUTE,
   sapNamesForDisplay,
 } from './sap-naming';
@@ -252,6 +256,9 @@ export type AlternativeId = (typeof ALTERNATIVES)[number];
 
 export const ALTERNATIVE_LABELS: Readonly<Record<AlternativeId, string>> = Object.freeze({
   standard: 'Cover the requirement with SAP standard — build nothing',
+  // Fingerprinted bytes too: "(tier 3)" is the retired three-tier wording, kept
+  // in the stored label so no fingerprint moves, and dropped on every screen by
+  // `contractForDisplay()` (DSAG guideline review C2, 13.10.2026).
   'key-user': 'Key user extensibility (tier 3)',
   'in-app-rap': 'In-app developer extensibility — ABAP Cloud / RAP on the stack',
   // Fingerprinted bytes (roadmap 3.0.15): a rejected alternative's label enters a
@@ -433,23 +440,33 @@ export function contractFingerprint(contract: ArchitectureContract): string {
 export function contractForDisplay(contract: ArchitectureContract): ArchitectureContract {
   return {
     ...contract,
-    summary: sapNamesForDisplay(contract.summary),
+    summary: forDisplay(contract.summary),
     fields: contract.fields.map((f) => ({
       ...f,
-      statement: f.statement === null ? null : sapNamesForDisplay(f.statement),
+      statement: f.statement === null ? null : forDisplay(f.statement),
     })),
     alternatives: contract.alternatives.map((a) => ({
       ...a,
-      label: sapNamesForDisplay(a.label),
-      reason: sapNamesForDisplay(a.reason),
+      label: forDisplay(a.label),
+      reason: forDisplay(a.reason),
     })),
   };
+}
+
+/**
+ * Stored contract text as a screen shows it: SAP's current names, and without
+ * the retired three-tier wording — SAP's clean core level concept replaced the
+ * three-tier extensibility model in 2025, and in that model the third tier was classic
+ * ABAP, not key user extensibility. The stored bytes keep it (fingerprints).
+ */
+function forDisplay(text: string): string {
+  return sapNamesForDisplay(text).replace(/\s*\(tier 3\)/gi, '');
 }
 
 /** An alternative's label as a screen shows it (`contractForDisplay`). */
 export function alternativeLabelForDisplay(id: string): string | undefined {
   const label = (ALTERNATIVE_LABELS as Record<string, string>)[id];
-  return label === undefined ? undefined : sapNamesForDisplay(label);
+  return label === undefined ? undefined : forDisplay(label);
 }
 
 /* ---------- the seam into the signed input manifest ---------- */
@@ -531,9 +548,15 @@ const TARGET_ARTIFACTS: Readonly<Record<TargetRoute, string>> = Object.freeze({
   'side-by-side-cap': 'CAP Node.js / Java Application',
 });
 
+/**
+ * The edition names the contract's hashed summary and target-context statement
+ * carry. They keep these bytes (owner decision 13.10.2026 renamed the private
+ * edition SAP Cloud ERP Private): a new name would change the fingerprint of
+ * every existing contract. Screens show them through `contractForDisplay()`.
+ */
 const EDITION_NAMES: Readonly<Record<string, string>> = Object.freeze({
-  public: 'S/4HANA Cloud, Public Edition',
-  private: 'S/4HANA Cloud, Private Edition',
+  public: FINGERPRINTED_EDITION_PUBLIC,
+  private: FINGERPRINTED_EDITION_PRIVATE,
 });
 
 function citeFinding(f: EvidenceFinding): ContractCitation {
@@ -592,6 +615,13 @@ export function buildArchitectureContract(args: {
    * 79759e45695d).
    */
   inputsDiffer?: ReadonlyArray<string>;
+  /**
+   * The engine version the run was made with, which picks the route rule
+   * (`routeDrivers`): before 3.0.12 a frontend file feature was a driver.
+   * Absent means the current engine (`APP_VERSION`) — a contract of a signed
+   * run passes the run's own (`lib/contract-build.ts`).
+   */
+  engineVersion?: string | null;
 }): ArchitectureContract {
   const { contractId, runId, evidence, route } = args;
   const manifest = args.inputManifest || null;
@@ -616,11 +646,11 @@ export function buildArchitectureContract(args: {
   const standardWrites = byKind('standard-table-write');
   const coverageIncomplete = evidence.coverage ? !evidence.coverage.complete : false;
   // The same rule that chose the route, not a second copy of it. `deployment`
-  // decides two of the six triggers, so an unbound target cannot produce
+  // decides two of the triggers of engines before 3.0.12, so an unbound target cannot produce
   // drivers at all — which is why this asks the manifest and not a parameter.
   const drivers: RouteDriver[] =
     deployment === 'public' || deployment === 'private'
-      ? routeDrivers(evidence, deployment)
+      ? routeDrivers(evidence, deployment, args.engineVersion === undefined ? APP_VERSION : args.engineVersion)
       : [];
 
   const fields: ContractField[] = [];
@@ -793,7 +823,15 @@ export function buildArchitectureContract(args: {
       // has to act on is not a gate.
       limits.push(limit('modification-unreset', 'blocks', String(modifications.length)));
     }
-    const assumptions = route.assumptions || [];
+    // A run that bound no target was routed with `public` as the router's
+    // default; from 3.0.12 the router names that target, and the contract must
+    // not state the most permissive target as a precondition nobody bound. The
+    // wording of earlier engines is not matched, so their contracts keep their
+    // bytes. Citations keep the router's own indices.
+    const assumptionsAt = (route.assumptions || [])
+      .map((text, index) => ({ text, index }))
+      .filter((a) => deployment || a.text !== PUBLIC_TARGET_ASSUMPTION);
+    const assumptions = assumptionsAt.map((a) => a.text);
     fields.push({
       key: 'preconditions',
       label: CONTRACT_FIELD_LABELS.preconditions,
@@ -804,7 +842,7 @@ export function buildArchitectureContract(args: {
           : 'The router recorded no assumption for this run. Nothing is inferred in its place.',
       basis: assumptions.length > 0 ? 'stipulation' : 'not-determined',
       provenance: assumptions.length > 0 ? 'proposed' : 'not-determined',
-      citations: assumptions.map((_, i) => ({ kind: 'router' as const, ref: `assumptions[${i}]` })),
+      citations: assumptionsAt.map((a) => ({ kind: 'router' as const, ref: `assumptions[${a.index}]` })),
       limits,
     });
   }

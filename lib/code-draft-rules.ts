@@ -2,7 +2,7 @@
  * Rules for the Transformation code draft, and a deterministic lint over what
  * the model wrote.
  *
- * External review of FI_Collection_Worklist, F-01 and F-02 (owner, 11.10.2026):
+ * External review of the FI case, F-01 and F-02 (owner, 11.10.2026):
  * the generated service looked up a credit memo's reference with
  *
  *     const referenceItem01 = filteredItems.find(i => i.belnr === '1900000001');
@@ -24,6 +24,12 @@
  * Rule 24 (owner, 12.10.2026): the call contract (`lib/engine-call-contract.ts`)
  * the engine cases run against without a model-written assertion
  * (`scripts/acceptance/engine-cases.mjs`).
+ *
+ * Rule 25 (roadmap 3.0.12, DSAG ABAP guide review B4; abap/modern_development.md
+ * "Verwendung von SAP Code"): SAP access — released APIs included — behind an
+ * interface of the package's own, injectable for unit tests, return codes
+ * turned into exceptions. The RAP scaffold writes that interface
+ * (`lib/transformation/access-layer.ts`).
  *
  * Rules 15–23 (roadmap 3.0.12; CO/FI/PP/SD reviews): the generated packages of
  * four external reviews dropped the original's guards, accepted "2026x" as a
@@ -57,6 +63,7 @@ export const CODE_DRAFT_BUSINESS_RULES = `
         22. NO SERVER ON IMPORT: export an app factory (createApp()) and listen only in a separate entry point, so importing the module for a test never opens a port.
         23. HONEST NAMES: never name a class, function, message, log line or comment after an SAP API, OData call, event or integration the code does not perform (an in-memory store is not an "S4HanaAdapter"; no "updated via OData PATCH" without that call). An event publisher only where SAP has no standard business event for the change, never in SAP's namespace (no sap.s4.* topics or types). package.json declares exactly the dependencies the code imports.
         24. CALL CONTRACT: also write srv/engine-contract.ts (no server, no I/O on import) exporting CONTRACT = { version: 1, baseRequest: <a request every check passes, still valid with a copy of its first record appended>, fields: { '<ORIGINAL field as in FACTS, e.g. P_GJAHR, QUOTA>': '<request path, e.g. fiscalYear, receivers[].quota>' or null if internal } }, validate(request) → { ok, errors: [{ field, rule, message }], normalized } (decimals as strings at their places), simulate(request) → { ok, runId, records, errors } (records = input records in the result; a refusal names the rule id or line) and getRun(runId) and compute(field, a, op, b) (+ - * / on decimal strings for every decimal field of FACTS, internal ones too, rounded commercially to its places). They call the real validator, checks, engine and decimal code; values arrive as strings.
+        25. ACCESS LAYER: SAP data and functions, released APIs too, only through an interface of your own (one method per access, named after what it does), injected so a unit test can replace it; a return code or sy-subrc becomes an exception, never an ignored value.
 `;
 
 /** Most checks the facts section lists; the rest are counted. Keeps the prompt within its budget. */
@@ -119,7 +126,7 @@ export function codeDraftFactsSection(contract: OriginalContract | null, rules: 
       : [...items.slice(0, max).map((s) => `          ${s}`), ...(items.length > max ? [`          (and ${items.length - max} more in the source — keep them too)`] : [])].join('\n');
 
   const decimals = contract.decimals.map((d) =>
-    `${d.name} L${d.line}: TYPE p LENGTH ${d.length} DECIMALS ${d.decimals} → ${d.decimals} places, |value| ≤ ${d.max}`);
+    `${d.name} L${d.line}: TYPE p LENGTH ${d.length} DECIMALS ${d.decimals}${d.via ? ` (via ${d.via})` : ''} → ${d.decimals} places, |value| ≤ ${d.max}`);
   const inputs = contract.inputs.map((i) => {
     const parts = [
       i.kind === 'select-option' ? `select-option FOR ${i.type ?? '?'}` : `parameter${i.type ? ` TYPE ${i.type}` : ''}`,

@@ -2,7 +2,7 @@
 *& Minimal fixture for CO review F02 (12.10.2026): two alternative ways to
 *& get the data before one shared calculation, an authorization check on
 *& one of them only, and an optional export before the display. Written
-*& for the spec, after the shape of the CO close simulation.
+*& for the spec, after the shape of the CO case.
 *&---------------------------------------------------------------------*
 REPORT zf02_alternative_data_paths.
 

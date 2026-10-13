@@ -342,9 +342,10 @@ export default function CleanCoreExplainedPrintPage() {
           </p>
           <p>
             The purpose is not tidiness. It is that upgrades stay routine instead of becoming
-            projects, and that a move to the cloud remains possible at all — because SAP&apos;s public
-            cloud edition and ABAP Cloud do not run the older techniques, and the private cloud edition
-            keeps them only at the price of harder upgrades. Everything below explains how to tell
+            projects, and that a move to the cloud remains possible at all — because SAP S/4HANA
+            Cloud Public Edition (part of SAP Cloud ERP) and ABAP Cloud do not run the older
+            techniques, and SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) keeps
+            them only at the price of harder upgrades. Everything below explains how to tell
             which of your code is affected, and what to do with each kind.
           </p>
         </section>

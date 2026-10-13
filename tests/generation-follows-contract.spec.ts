@@ -264,6 +264,17 @@ function generationBody(): string {
   return src.slice(start, end);
 }
 
+/**
+ * Where the generation first asks a model (3.0.12, step E): the engine-led
+ * fills (`runGeneration`) or the single call it falls back to
+ * (`runSingleCall`, which holds the `callGemini` of today's prompt).
+ */
+function firstModelCall(body: string): number {
+  const at = ['runGeneration(', 'runSingleCall('].map((s) => body.indexOf(s)).filter((i) => i > -1);
+  expect(at.length, 'the generation asks no model').toBeGreaterThan(0);
+  return Math.min(...at);
+}
+
 test('the generation does not take its direction from the project document', () => {
   const body = generationBody();
   // `extensibilityRoute` was on the client-writable allowlist of
@@ -283,7 +294,7 @@ test('the generation does not take its direction from the project document', () 
 test('a refused contract stops the generation before the model is called', () => {
   const body = generationBody();
   const refusal = body.indexOf('if (!decision.ok)');
-  const modelCall = body.indexOf('callGemini(');
+  const modelCall = firstModelCall(body);
   expect(refusal).toBeGreaterThan(-1);
   // A stage that calls the model and then discards the answer has still spent
   // the call and still told the reader nothing.
@@ -312,7 +323,7 @@ test('the binding names the contract the code was generated from, or nothing is 
   expect(body).toContain('const generatedAgainst = contract.fingerprint;');
   expect(body).toContain('expectedContractFingerprint: generatedAgainst,');
   // Read before the model is asked, not after.
-  expect(body.indexOf('const generatedAgainst')).toBeLessThan(body.indexOf('callGemini('));
+  expect(body.indexOf('const generatedAgainst')).toBeLessThan(firstModelCall(body));
 
   const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
   const post = route.slice(route.indexOf('export async function POST'));
@@ -358,7 +369,7 @@ test('the prompt is built from the inputs the token covers, not from what the pa
   expect(body).toContain('const generateTransformation = useCallback(async () => {');
   expect(body).toContain('const generationToken = generation.token;');
   expect(body).toContain('const { legacyCode, solutionDesign: design, analysis } = generation.inputs;');
-  expect(body.indexOf('generation.inputs')).toBeLessThan(body.indexOf('callGemini('));
+  expect(body.indexOf('generation.inputs')).toBeLessThan(firstModelCall(body));
   expect(body).toContain('generationToken,');
   const src = readFileSync(PAGE, 'utf8');
   expect(src).not.toMatch(/generateTransformation\([^)]/);

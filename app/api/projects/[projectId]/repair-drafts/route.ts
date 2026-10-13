@@ -22,6 +22,9 @@ const REPAIR_BODY_LIMITS = { maxBytes: 2 * 1024 * 1024, timeoutMs: 20_000 };
  *
  *   { action: 'propose', parentDraftId?, expectedCodeDigest, expectedSuiteDigest, target, content }
  *     → 200 { draftId, draftDigest, codeDigest, suiteDigest, parent }
+ *   { action: 'propose', target: { kind: 'generation' }, generatedCode, suiteCode }
+ *     → the same answer: a whole generation candidate for the runner's checks
+ *       before it is stored (3.0.12, `buildGenerationDraft`); never adopted
  *   { action: 'adopt', draftId, expectedDraftDigest }
  *     → 200 { draftId, fields }  |  409 with a sentence, nothing written
  *

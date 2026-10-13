@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import { callGemini } from '@/lib/gemini';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import type { Project } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -91,6 +92,9 @@ import { packedDecimalFields } from '@/lib/generated-code-lints';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
+import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
+import { abapGitRepoSettingsXml, singleCallRapClassFiles } from '@/lib/transformation/abapgit-files';
+import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -403,6 +407,8 @@ export default function DeliveryPage() {
       // Loaded on the click that builds the bundle, not with the stage
       // (~28 kB gzip of the stage's first JavaScript, docs/perf/REPORT.md).
       const { default: JSZip } = await import('jszip');
+      // SAP's synced name lists, so the package's identifier marks read them too (3.0.12).
+      await loadSapNameLists();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
       // The entry names of a generated package come from the model, and the
@@ -424,7 +430,12 @@ export default function DeliveryPage() {
       const bundle = createDeliveryBundle();
       if (source.kind === 'package') {
         source.files.forEach((file) => {
-          bundle.file(file.path, file.content, 'generated');
+          // A class metadata file the model wrote without abapGit's structure
+          // (the single-call RAP prompt asks for one) is written here by the
+          // shared class builder instead; abapGit would refuse it as it came.
+          const xml = isAbapCloud ? deliverableClassXml(file.path, file.content) : null;
+          if (xml?.rebuilt) bundle.file(file.path, xml.content, 'engine');
+          else bundle.file(file.path, file.content, 'generated');
         });
       }
 
@@ -438,41 +449,13 @@ export default function DeliveryPage() {
         // and `VERSION` are not fields of this file at all, and `START_CLASS` was
         // additionally hard-wired to ZCL_DEMO_RAP_TEST — a class out of a demo,
         // shipped inside every customer's package. It is gone rather than guessed.
-        bundle.file(".abapgit.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <DATA>
-   <MASTER_LANGUAGE>E</MASTER_LANGUAGE>
-   <STARTING_FOLDER>/src/</STARTING_FOLDER>
-   <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>
-   <IGNORE>
-    <item>/README.md</item>
-    <item>/STATUS.md</item>
-    <item>/manifest.json</item>
-    <item>/abaplint.json</item>
-    <item>/docs/</item>
-   </IGNORE>
-  </DATA>
- </asx:values>
-</asx:abap>`);
+        // One builder for this file and the RAP scaffold's (lib/transformation/abapgit-files.ts), so the two never differ.
+        bundle.file(".abapgit.xml", abapGitRepoSettingsXml());
 
         if (!isModular && project.generatedCode) {
-          bundle.file("src/zcl_demo_rap_behavior.clas.abap", project.generatedCode, 'generated');
-          bundle.file("src/zcl_demo_rap_behavior.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <VSEOCLASS>
-   <CLSNAME>ZCL_DEMO_RAP_BEHAVIOR</CLSNAME>
-   <VERSION>1</VERSION>
-   <LANGU>E</LANGU>
-   <DESCRIPT>RAP Behavior Class</DESCRIPT>
-   <STATE>1</STATE>
-   <CLSCCINCL>X</CLSCCINCL>
-   <FIXPT>X</FIXPT>
-   <UNICODE>X</UNICODE>
-  </VSEOCLASS>
- </asx:values>
-</asx:abap>`);
+          // The metadata file in abapGit's serializer format (the <abapGit>
+          // wrapper abapGit reads first), from the builder every class uses.
+          for (const f of singleCallRapClassFiles('behavior', project.generatedCode)) bundle.file(f.path, f.content, f.origin);
         }
       }
 
@@ -487,24 +470,7 @@ export default function DeliveryPage() {
       // Add Test Suite (if not already included inside modular files)
       if (project.testSuite?.code) {
         if (isAbapCloud) {
-          bundle.file("src/zcl_demo_rap_test.clas.abap", project.testSuite.code, 'generated');
-          bundle.file("src/zcl_demo_rap_test.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <VSEOCLASS>
-   <CLSNAME>ZCL_DEMO_RAP_TEST</CLSNAME>
-   <VERSION>1</VERSION>
-   <LANGU>E</LANGU>
-   <DESCRIPT>ABAP Unit Test Class for RAP Service</DESCRIPT>
-   <CATEGORY>05</CATEGORY>
-   <STATE>1</STATE>
-   <CLSCCINCL>X</CLSCCINCL>
-   <FIXPT>X</FIXPT>
-   <UNICODE>X</UNICODE>
-   <WITH_UNIT_TESTS>X</WITH_UNIT_TESTS>
-  </VSEOCLASS>
- </asx:values>
-</asx:abap>`);
+          for (const f of singleCallRapClassFiles('test', project.testSuite.code)) bundle.file(f.path, f.content, f.origin);
         } else {
           const testPath = isModular ? "test.ts" : "src/test.ts";
           bundle.file(testPath, project.testSuite.code, 'generated');
@@ -529,32 +495,18 @@ export default function DeliveryPage() {
 
       // Documentation formatted into corporate markdown specifications
       const docs = bundle.folder("docs");
-      if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
-      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
+      // The model's raw line references are held against the engine's anchors of the source (3.0.12).
+      if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis, { code: project.legacyCode }));
+      if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode }));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
       if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
       docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
 
       // The linter of the ABAP route. The Node route's CI comes from the templates.
       if (isAbapCloud) {
-        bundle.file("abaplint.json", JSON.stringify({
-          "global": {
-            "files": "/src/**/*.*"
-          },
-          "dependencies": [],
-          "syntax": {
-            "version": "v750",
-            "errorForAllowed": true,
-            "keypath": ""
-          },
-          "rules": {
-            "obsolete_statement": true,
-            "check_subrc": true,
-            "parser_error": true,
-            "allowed_object_types": ["CLAS", "INTF", "DDLS", "BDEF", "SRVD", "SRVB"],
-            "forbidden_statements": ["SELECT * FROM vbak", "SELECT * FROM bseg", "INSERT INTO vbak"]
-          }
-        }, null, 2));
+        // ABAP Cloud syntax and the object types the scaffold writes — the same rules the server ran on this
+        // package (lib/transformation/abaplint-config.ts, roadmap 3.0.12).
+        bundle.file("abaplint.json", abaplintConfigJson());
       }
 
       // "Reference patterns" (roadmap 3.0.9): the SAP reference pattern of the

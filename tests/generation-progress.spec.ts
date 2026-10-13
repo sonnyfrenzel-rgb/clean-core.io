@@ -73,7 +73,8 @@ test.describe('generation progress', () => {
       expect(t[1], 'a timer advances the generation').not.toMatch(/enterPhase|enterStage|setStageLog|setGenerationPhase/);
     }
     // The stages drawn are the ones the work entered, timed from their own start.
-    expect(src).toContain('stages={generationStages(stageLog)}');
+    // 3.0.12, step E: the stages of the path the generation is on (engine-led, or the single call it fell back to).
+    expect(src).toContain('stages={generationStages(stageLog, genPath)}');
     for (const key of ['contract', 'model', 'checking', 'storing', 'done']) {
       expect(src, `the page never enters "${key}"`).toMatch(new RegExp(`'${key}'`));
     }

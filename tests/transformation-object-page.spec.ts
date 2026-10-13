@@ -41,10 +41,13 @@ test.describe('the per-finding target is honest about the project route', () => 
   test('the demo plan no longer prints the first option as the route of every row', () => {
     const demo = buildDemoProject();
     const track = trackOfRoute(demo.design.recommendedRoute);
-    expect(track).toBe('side-by-side');
+    // In-app since engine 3.0.12: the demo's BDC and GUI download no longer
+    // drive the route (`ON_STACK_CONSTRUCTS_FROM`, `GUI_FILE_NO_ROUTE_DRIVER_FROM`);
+    // its release file records the move (lib/demo-release.json).
+    expect(track).toBe('in-app');
     const plan = demo.transformation.plan;
     expect(plan.length).toBeGreaterThan(0);
-    // The bug: one value on every row, the in-app option, under a side-by-side route.
+    // The bug: one value on every row, the first option, whatever the route.
     expect(new Set(plan.map((p) => p.target)).size).toBeGreaterThan(1);
     for (const row of plan) {
       const f = demo.analyze.findings.find((x) => x.id === row.findingId)!;
@@ -52,11 +55,14 @@ test.describe('the per-finding target is honest about the project route', () => 
         expect(row.targetKind).toBe('successor');
         expect(row.target).toBe(f.sapReplacement.objectName);
       }
-      // An in-app option may only stand as the target when it is said to be off the route.
+      // An in-app option stands as the route's target under an in-app route,
+      // and only as off the route under a side-by-side one.
       if (row.target === 'Developer Extensibility / RAP' || row.target === 'Key User Extensibility') {
-        expect(row.routeFit, `${row.findingId} shows an in-app target as if it were the route`).toBe('differs');
+        expect(row.routeFit, `${row.findingId} says the wrong thing about its fit with the route`).toBe(track === 'in-app' ? 'matches' : 'differs');
       }
-      if (row.targetKind === 'route') expect(['Side-by-Side CAP', 'Integration Suite', 'Event Mesh']).toContain(row.target);
+      if (row.targetKind === 'route') {
+        expect(track === 'in-app' ? ['Developer Extensibility / RAP', 'Key User Extensibility'] : ['Side-by-Side CAP', 'Integration Suite', 'Event Mesh']).toContain(row.target);
+      }
       // All of the engine's options stay available, in its order.
       expect(row.targetOptions).toEqual(f.targetOptions);
     }
@@ -104,7 +110,7 @@ test.describe('the figures are counts of what the engine and the package hold', 
     expect(changeOrder(f, track)).toHaveLength(units.length);
   });
 
-  test('the demo figures are the release file’s: 25 findings at 31 places in the code', () => {
+  test('the demo figures are the release file’s: 26 findings at 32 places in the code', () => {
     const fig = transformationFigures(buildDemoProject().analyze.findings);
     expect(fig.findings).toBe(DEMO_RELEASE.figures.distinctFindings);
     expect(fig.places).toBe(DEMO_RELEASE.figures.findings);

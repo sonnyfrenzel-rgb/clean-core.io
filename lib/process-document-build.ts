@@ -8,7 +8,7 @@ import { readInputUse, type InputIssue } from '@/lib/abap/input-use';
 import { readBatchInput, writesOf, type BatchInputCall } from '@/lib/abap/batch-input';
 import { tableTerm, termFor } from '@/lib/abap/business-glossary';
 import { decisionTableViews } from '@/lib/decision-tables';
-import { anchorNarrative } from '@/lib/abap/narrative-anchors';
+import { anchorNarrative, engineLineAnchors } from '@/lib/abap/narrative-anchors';
 import { TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/abap/plain-glossary';
 import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import { callWord, plainOf, plainStepLine, readerQuestions, tablesPhrase, tableWord, thirdPerson, type RawQuestion } from '@/lib/process-document-words';
@@ -415,7 +415,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   //
   // In the order a run takes, not the order the map stores its elements in:
   // that order draws one arm of a decision to the end of the process before
-  // the other, and the CO close simulation read as if the authorization check
+  // the other, and the CO case read as if the authorization check
   // and the live read ran after the result was shown (CO review F02,
   // 12.10.2026). The order is the package documentation's (`readingOrder`), so
   // the two documents agree; an element it does not know keeps its place at
@@ -442,7 +442,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const whenOf = (branch: ProcessMapElement['branches'][number]) =>
     branch.label || (branch.condition ? `If ${branch.condition}` : 'Otherwise');
 
-  // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review): the arms of a decision on
+  // Roadmap 3.0.7 (MM case review): the arms of a decision on
   // what the user pressed (`detail.userAction`, a `CASE` on `sy-ucomm` or on a
   // list callback's function code) are alternatives the user chooses from, as
   // often and in whatever order they like — not steps that follow one another.
@@ -1477,7 +1477,8 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
     if (text) {
       // Only sentences the model anchored to lines of this source; a finding
       // citation cannot be checked here and drops the sentence.
-      const anchored = anchorNarrative(stripModelMarkdown(text), [], lines.length).sentences
+      // Since 3.0.12 the ranges are held against the engine's anchors of this source, not its length alone.
+      const anchored = anchorNarrative(stripModelMarkdown(text), [], lines.length, engineLineAnchors(source)).sentences
         .filter((s) => s.status === 'anchored' && s.anchors.every((a) => a.kind === 'lines'))
         .slice(0, 3);
       // Roadmap 3.0.11: a model's purpose is shown only when it does not

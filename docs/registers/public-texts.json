@@ -459,7 +459,7 @@
       "kind": "legal",
       "purpose": "NOTICE file for the Apache license",
       "audience": "public, legal",
-      "saysToday": "Copyright and third-party notice.",
+      "saysToday": "Copyright and third-party notice, including the CC BY 4.0 attribution for the DSAG ABAP-Leitfaden.",
       "wrongWith30": [],
       "decision": "keep",
       "reason": "Legal text.",
@@ -585,9 +585,9 @@
     {
       "path": "THIRD-PARTY-NOTICES.md",
       "kind": "legal",
-      "purpose": "License notice for the data of the SAP Cloudification Repository",
+      "purpose": "License notices for third-party data and guidance: SAP Cloudification Repository, SAP Architecture Center, DSAG ABAP-Leitfaden",
       "audience": "public, legal",
-      "saysToday": "Apache 2.0 notice for SAP's catalog data.",
+      "saysToday": "Apache 2.0 notices for SAP's catalog and reference-architecture data; CC BY 4.0 attribution for the DSAG ABAP-Leitfaden.",
       "wrongWith30": [],
       "decision": "keep",
       "reason": "Legal text, nothing in it becomes wrong with 3.0.",
@@ -3379,7 +3379,7 @@
       "kind": "docs",
       "purpose": "Failure-pattern library and acceptance harness: catalogue format, pattern index, probes, adapters, sandbox rules",
       "audience": "Developers, agents",
-      "saysToday": "42 failure patterns seeded from the FI, CO, PP and SD reviews of v3.0.10, the probes of scripts/acceptance/run.mjs and how the harness relates to the code-draft rules, the generated-code lints and the case derivation.",
+      "saysToday": "43 failure patterns, 42 seeded from the FI, CO, PP and SD reviews of v3.0.10 and one from the DSAG ABAP guideline, the probes of scripts/acceptance/run.mjs and how the harness relates to the code-draft rules, the generated-code lints and the case derivation.",
       "wrongWith30": [],
       "decision": "keep",
       "reason": "Written for 3.0.12 against the current product; the spec tests/acceptance-harness.spec.ts keeps its index in step with the catalogue.",
@@ -3416,6 +3416,25 @@
       ],
       "measured": {
         "lines": 873
+      }
+    },
+    {
+      "path": "tests/fixtures/aff/README.md",
+      "kind": "notice",
+      "purpose": "Provenance of the AFF schema and example fixtures used by the file-format check's specs: source repository, commit, MIT licence",
+      "audience": "Developers",
+      "saysToday": "The fixtures are copied unchanged from SAP/abap-file-formats at the recorded commit under its MIT licence.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Licence and provenance of copied third-party files must stay next to them.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 11
       }
     }
   ],

@@ -421,7 +421,7 @@ export default function CleanCoreScorePage() {
                     kind: (
                       <span className="font-semibold text-cc-ink">
                         {rule.label}
-                        {rule.kind === 'custom-table-write' ? ' — own Z/Y tables cost nothing in Private Edition' : ''}
+                        {rule.kind === 'custom-table-write' ? ' — own Z/Y tables cost nothing in SAP Cloud ERP Private' : ''}
                       </span>
                     ),
                     first: `−${rule.first}`,

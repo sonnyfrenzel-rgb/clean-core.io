@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -14,6 +15,7 @@ import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-rea
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
+import { OPTION_COMPARISON_PROMPT_RULE, OPTION_COMPARISON_SCHEMA } from '@/lib/design-option-comparison';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -24,6 +26,7 @@ import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-com
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
+import { signedEngineVersionOf } from '@/lib/score-rule';
 import { withPreviewPolicy } from '@/lib/export-preview';
 
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -58,9 +61,11 @@ import CcButton from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
+import ConceptSuccessors from '@/components/ConceptSuccessors';
+import { conceptSuccessorsOf } from '@/lib/concept-successors';
 import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
-import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, TARGET_EDITION_NAMES, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { DESIGN_GENERATION_CEILING_MS } from '@/lib/model-stages';
 import { isProjectOwner } from '@/lib/project-readers';
 import {
@@ -148,6 +153,7 @@ function modelFailureText(err: unknown): string {
 async function designContextFor(
   narrative: string | null,
   { source, evidence }: { source: string | null; evidence: DesignEvidence | null },
+  target: { deployment: 'public' | 'private' | null; engineVersion: string | null },
 ): Promise<string> {
   const [{ buildRequirementSet }, { engineDesignContext }] = await Promise.all([
     import('@/lib/functional-requirements'),
@@ -160,7 +166,13 @@ async function designContextFor(
   } catch (err) {
     console.warn('[Design] The engine evidence could not be read for the prompt:', err);
   }
-  const engine = engineDesignContext({ requirements, contract: ready?.contract ?? null, findings: ready?.findings ?? [] });
+  const engine = engineDesignContext({
+    requirements,
+    contract: ready?.contract ?? null,
+    findings: ready?.findings ?? [],
+    deployment: target.deployment,
+    engineVersion: target.engineVersion,
+  });
   const narrativePart = narrative
     ? `Analysis Context (the run's model narrative, further context only):
 ${prepareAnalysisContext(narrative)}`
@@ -182,7 +194,8 @@ ${engine}`;
 const DESIGN_ANSWER_REMINDER =
   'Answer with the DesignData JSON object only. The evidence above is input, not the answer format: do not echo its keys. ' +
   'Every top-level key of DesignData must be present, each with the type the schema gives: projectName, architectureOverview, ' +
-  'nodeAppBlueprint (an object with projectStructure and apiEndpoints), cloudServices, dataSync, securityHardening and roadmap (at least one named phase).';
+  'nodeAppBlueprint (an object with projectStructure and apiEndpoints), cloudServices, dataSync, securityHardening, roadmap (at least one named phase) ' +
+  'and optionComparison (the SAP standard, RAP and CAP compared on the OPTION FACTS, with the requirement the other options miss).';
 
 const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
@@ -325,7 +338,10 @@ export default function DesignPage() {
         return;
       }
       const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
-      const designContext = await designContextFor(analysis, engineEvidenceRef.current);
+      const designContext = await designContextFor(analysis, engineEvidenceRef.current, {
+        deployment: projData?.s4Deployment === 'public' ? 'public' : projData?.s4Deployment === 'private' ? 'private' : null,
+        engineVersion: signedEngineVersionOf(projData),
+      });
       const isAbapCloud = !isSideBySideRoute(route);
 
       const prompt = isAbapCloud 
@@ -362,11 +378,12 @@ interface DesignData {
     title: string; // Title of the phase (e.g. DDIC Setup, RAP Behavior Implementation, Service Exposure, Fiori Elements Integration)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
+${OPTION_COMPARISON_SCHEMA}
 }
 
 ${SAP_REFERENCE_PROMPT_RULES}
 
-OPTIONS: ${OPTION_COMPARISON_RULE}
+OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
 ${designContext}
 
@@ -411,11 +428,12 @@ interface DesignData {
     title: string; // Title of the phase (e.g. Foundation, CAP Service exposure, ${BTP} Event Integration, Production Hardening)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
+${OPTION_COMPARISON_SCHEMA}
 }
 
 ${SAP_REFERENCE_PROMPT_RULES}
 
-OPTIONS: ${OPTION_COMPARISON_RULE}
+OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
 
 ${designContext}
 
@@ -682,6 +700,8 @@ ${DESIGN_ANSWER_REMINDER}`;
    */
   const exportToConfluence = async (viewOnly = false) => {
     const currentProject = projectRef.current;
+    // SAP's synced name lists, so the export's identifier marks read them too (3.0.12).
+    await loadSapNameLists();
     const htmlContent = currentProject ? buildDesignExportHtml(currentProject) : null;
     if (!currentProject || htmlContent === null) {
       console.warn("No solution design found");
@@ -774,6 +794,8 @@ ${DESIGN_ANSWER_REMINDER}`;
       sapStandardApiMapping: (data.sapStandardApiMapping || []).filter(Boolean),
       securityHardening: (data.securityHardening || []).filter(Boolean),
       roadmap: (data.roadmap || []).filter(Boolean),
+      // Read for the reader by `readOptionComparison`, which refuses a circular reason.
+      optionComparison: data.optionComparison,
     };
   }, [design, project?.name]);
 
@@ -786,9 +808,10 @@ ${DESIGN_ANSWER_REMINDER}`;
             contract: designEvidence.contract,
             findings: designEvidence.findings,
             deployment: deploymentModel,
+            engineVersion: signedEngineVersionOf(project),
           })
         : null,
-    [designEvidence, deploymentModel],
+    [designEvidence, deploymentModel, project],
   );
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
@@ -1175,14 +1198,15 @@ ${DESIGN_ANSWER_REMINDER}`;
   // The target context, as the contract states it — bound by the run, or not.
   const contractNow = designEvidence.state === 'ready' ? designEvidence.contract : null;
   const targetBound = Boolean(contractNow?.fields.find((f) => f.key === 'target-context')?.statement);
-  const editionWord = deploymentModel === 'private' ? 'Private' : deploymentModel === 'public' ? 'Public' : null;
+  // The edition by SAP's product name (owner decision 13.10.2026).
+  const editionWord = deploymentModel === 'private' || deploymentModel === 'public' ? TARGET_EDITION_NAMES[deploymentModel] : null;
   const targetKpi = targetBound && editionWord
-    ? { value: `${editionWord} Edition`, sub: 'bound by the run' }
-    : { value: 'Not determined', sub: editionWord ? `${editionWord} Edition assumed` : null };
+    ? { value: editionWord, sub: 'bound by the run' }
+    : { value: 'Not determined', sub: editionWord ? `${editionWord} assumed` : null };
   const targetLine = targetBound && editionWord
-    ? `${editionWord} Cloud Edition · bound by the run`
+    ? `${editionWord} · bound by the run`
     : editionWord
-      ? `${editionWord} Cloud Edition assumed · target not bound by the run`
+      ? `${editionWord} assumed · target not bound by the run`
       : 'Edition not determined · target not bound by the run';
 
   return (
@@ -1320,6 +1344,13 @@ ${DESIGN_ANSWER_REMINDER}`;
           view={view}
         />
       </div>
+
+      {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
+      {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (
+        <div className="mb-12">
+          <ConceptSuccessors source={project.legacyCode} place="design" />
+        </div>
+      ) : null}
 
       <div className="mb-12">
         <RequirementsEntryCard

@@ -73,6 +73,20 @@ export const MAX_VALUE_SOURCE_NOTE = 500;
 /** The most other rules one answer may also apply to. */
 export const MAX_APPLIES_TO = 50;
 
+/**
+ * The most a confirmation request body may be, read with `readBoundedJson`
+ * before anything parses it.
+ *
+ * Sized from the largest request `checkStateChoices` accepts:
+ * `MAX_STATE_CHOICES` (200) answers, each with a note of `MAX_STATE_NOTE`
+ * (2,000) characters, a value-source note of `MAX_VALUE_SOURCE_NOTE` (500)
+ * and `MAX_APPLIES_TO` (50) rule ids. At up to three UTF-8 bytes per
+ * character that is about 7.5 kB of notes and 3.5 kB of ids and keys per
+ * answer — some 2.3 MB for the whole request. 3 MiB holds it with room for
+ * JSON escaping; anything larger is no request this route can accept.
+ */
+export const PROCESS_STATES_BODY_LIMITS = { maxBytes: 3 * 1024 * 1024, timeoutMs: 20_000 };
+
 export interface ValueSource {
   kind: ValueSourceKind;
   /** What the account wrote beside it — the table, the regulation — or null. */

@@ -18,7 +18,7 @@ import type { RouteCardProps } from '../components/analyze/RouteCard';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'route-card-provenance');
+const OUT = path.resolve(ROOT, 'tmp', 'route-card-provenance', String(process.pid));
 
 let RouteCard: (props: RouteCardProps) => React.ReactElement;
 

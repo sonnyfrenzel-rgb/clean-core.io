@@ -59,7 +59,9 @@ test.describe('ADBC: the string template is the SQL statement (R13b a, CC-034)',
 
   test('the evidence engine calls it native SQL and reports the write', () => {
     const at9 = findings(ADBC).filter((f) => f.lineStart === 9);
-    expect(at9.map((f) => f.kind).sort()).toEqual(['native-sql', 'standard-table-write']);
+    // Since engine 3.0.12 (DSAG B1) ADBC also carries a security review task:
+    // native SQL has no automatic client handling.
+    expect(at9.map((f) => f.kind).sort()).toEqual(['native-sql', 'security-review', 'standard-table-write']);
     expect(at9.find((f) => f.kind === 'standard-table-write')!.objectName).toBe('KNA1');
   });
 
@@ -77,7 +79,8 @@ test.describe('ADBC: the string template is the SQL statement (R13b a, CC-034)',
     // not part of the text (R13a). Nothing is resolved, and nothing is invented.
     expect(tables(code)).not.toContain('P_TAB');
     expect(gaps(code).map((g) => `${g.line} ${g.gap}`)).toContain('7 dynamic-target');
-    expect(findings(code).filter((f) => f.lineStart === 7).map((f) => f.kind)).toEqual(['native-sql']);
+    // The security review task of 3.0.12 (DSAG B1) is on the same statement.
+    expect(findings(code).filter((f) => f.lineStart === 7).map((f) => f.kind)).toEqual(['native-sql', 'security-review']);
   });
 
   test('SQL in a literal is prose until something executes it (R13a, CC-016)', () => {
@@ -176,7 +179,9 @@ test.describe('dynamic targets: resolved, or said to be open (R07/R26)', () => {
     const kna1 = entry(INPUT_TARGET, 'KNA1');
     expect(kna1!.possibleTargetOf).toEqual(['P_TAB']);
     expect(kna1!.recommendation).toContain('Possible target only');
-    expect(findings(INPUT_TARGET), 'a possible target is no finding').toEqual([]);
+    // The one finding is the 3.0.12 security review task (DSAG B1): a dynamic
+    // clause built from input. No table access is reported for the target.
+    expect(findings(INPUT_TARGET).map((f) => `${f.kind}@${f.lineStart}`), 'a possible target is no finding').toEqual(['security-review@5']);
     expect(gaps(INPUT_TARGET).map((g) => `${g.line} ${g.gap}`)).toEqual(['5 dynamic-target']);
     const unresolved = readTableDependencies(INPUT_TARGET).unresolved;
     expect(unresolved).toHaveLength(1);

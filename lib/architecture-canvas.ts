@@ -24,7 +24,8 @@
  * Pure: no React, no fetch. The component draws the model; the spec drives it.
  */
 import type { ArchitectureContract, ContractField, TargetRoute } from './architecture-contract';
-import { routeDrivers, type RouteDriver } from './abap/extensibility-router';
+import { routeDrivers, type RfcTarget, type RouteDriver } from './abap/extensibility-router';
+import { APP_VERSION } from './version';
 
 /** The part of a findings row the canvas reads (`ItFindingRow`, structurally). */
 export interface CanvasFinding {
@@ -37,6 +38,8 @@ export interface CanvasFinding {
   successor: string | null;
   successorType?: string | null;
   successorConfidence?: string | null;
+  /** Where an RFC finding calls (`ItFindingRow.rfcTarget`), which picks whether it drives the route from 3.0.12. */
+  rfcTarget?: RfcTarget;
 }
 
 export type SuccessorTag = 'odata' | 'cds' | 'other';
@@ -161,6 +164,8 @@ export function architectureCanvasModel(args: {
   contract: ArchitectureContract | null;
   findings: readonly CanvasFinding[];
   deployment?: 'public' | 'private' | null;
+  /** The signed run's engine version, which picks the route rule (`routeDrivers`); absent means the current engine. */
+  engineVersion?: string | null;
 }): ArchitectureCanvasModel {
   const { contract, findings } = args;
 
@@ -234,7 +239,7 @@ export function architectureCanvasModel(args: {
     .filter((f) => f.kind === 'gui-download')
     .map((f) => ({ key: `file:${f.id}`, title: f.title, lines: [f.lineStart], findingIds: [f.id] }));
 
-  const drivers = routeDrivers({ findings }, args.deployment === 'public' ? 'public' : 'private');
+  const drivers = routeDrivers({ findings }, args.deployment === 'public' ? 'public' : 'private', args.engineVersion === undefined ? APP_VERSION : args.engineVersion);
 
   const SHORT_KIND: Record<string, string> = {
     bdc: 'BDC',

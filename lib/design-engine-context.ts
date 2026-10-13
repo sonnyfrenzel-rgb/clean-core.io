@@ -1,6 +1,8 @@
 import { anchorList, type RequirementSet } from '@/lib/functional-requirements';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import type { ItFindingRow } from '@/lib/it-findings';
+import { routeDrivers } from '@/lib/abap/extensibility-router';
+import { engineOptionFacts } from '@/lib/design-option-comparison';
 
 /**
  * What the solution-design prompt is given from the signed engine evidence —
@@ -31,9 +33,17 @@ export interface EngineDesignInput {
   requirements: RequirementSet | null;
   contract: ArchitectureContract | null;
   findings: readonly ItFindingRow[];
+  /**
+   * The project's deployment and the signed run's engine version, for the
+   * option comparison's facts (roadmap 3.0.12, F14): which constructs drive a
+   * split is the router's rule for that deployment and engine. Absent, the
+   * facts say the deployment is not bound and name no driver.
+   */
+  deployment?: 'public' | 'private' | null;
+  engineVersion?: string | null;
 }
 
-export function engineDesignContext({ requirements, contract, findings }: EngineDesignInput): string {
+export function engineDesignContext({ requirements, contract, findings, deployment = null, engineVersion = null }: EngineDesignInput): string {
   const context: Record<string, unknown> = {
     note: 'Read from the ABAP source of the signed run by the deterministic engine. Line numbers refer to that source. Do not contradict it; do not invent what it lists as not determined.',
   };
@@ -45,6 +55,16 @@ export function engineDesignContext({ requirements, contract, findings }: Engine
       summary: contract.summary,
     };
   }
+  // The facts the standard, RAP and CAP are compared on — before the design
+  // rules the standard out (CO review F14, F15). Second in the object, so
+  // the final cut below reaches them last; the lists are trimmed first.
+  context.optionFacts = engineOptionFacts({
+    recommended: contract ? contract.route.recommended : null,
+    drivers: deployment ? routeDrivers({ findings: [...findings] }, deployment, engineVersion) : [],
+    findings,
+    requirements: requirements ? { total: requirements.counts.total, open: requirements.counts.open } : null,
+    deployment,
+  });
   if (requirements) {
     context.program = requirements.program;
     context.processSteps = requirements.steps

@@ -231,9 +231,9 @@ export const SCORE_BANDS: readonly ScoreBand[] = Object.freeze([
     to: 100,
     label: 'Close to clean core',
     meaning:
-      "Nothing heavy in what was read — at most lighter constructs such as reads of SAP tables, classic screens or remote calls, and in Private Edition writes to the program's own Z/Y tables.",
+      "Nothing heavy in what was read — at most lighter constructs such as reads of SAP tables, classic screens or remote calls, and in SAP Cloud ERP Private writes to the program's own Z/Y tables.",
     because:
-      "Every heavy kind of construct costs at least 10 points on its first occurrence — except a write to the program's own Z/Y tables in Private Edition, which costs nothing.",
+      "Every heavy kind of construct costs at least 10 points on its first occurrence — except a write to the program's own Z/Y tables in SAP Cloud ERP Private, which costs nothing.",
   },
 ]);
 
@@ -281,7 +281,7 @@ export function scoreBandsProse(): string {
  * explained (owner decision 11.10.2026, `lib/score-rule.ts`).
  */
 export const SCORE_EDITION_RULE =
-  "In Private Edition a write to the program's own Z/Y tables costs nothing — it is on-stack developer extensibility, not a clean core violation; in Public Cloud, and for a namespaced /NS/ table in either edition, it costs the points in the table. Runs signed before engine 3.0.9 keep the score they were signed with.";
+  "In SAP Cloud ERP Private a write to the program's own Z/Y tables costs nothing — it is on-stack developer extensibility, not a clean core violation; in SAP S/4HANA Cloud Public Edition, and for a namespaced /NS/ table in either edition, it costs the points in the table. Runs signed before engine 3.0.9 keep the score they were signed with.";
 
 /** The deduction table in prose — for a text that explains how the score is computed. */
 export function scoreDeductionsProse(): string {

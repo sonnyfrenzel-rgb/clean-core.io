@@ -3,7 +3,7 @@ import { readBlocks, containerAt, type Container } from './block-structure';
 
 /**
  * Batch input read field by field — roadmap 3.0.7, from the
- * ZMM_BESTELLUEBERSICHT review.
+ * MM case review.
  *
  * `CALL TRANSACTION 'ME22' USING it_bdc` says only that a transaction is
  * driven. What it changes is written in the rows of `it_bdc`: a screen

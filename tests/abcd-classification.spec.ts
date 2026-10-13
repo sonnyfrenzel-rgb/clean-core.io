@@ -30,8 +30,11 @@ import { CLEAN_CORE_LEVEL } from '../lib/clean-core-level';
 import { join } from 'path';
 
 test.describe('A/B/C/D readiness derivation', () => {
-  test('gradeFromCoupling maps access + risk to A/B/C/D', () => {
-    expect(gradeFromCoupling({ accessType: 'Read', riskLevel: 'Low' })).toBe('A');
+  test('gradeFromCoupling maps access + risk to B/C/D — an estimate is never A', () => {
+    // C4 (DSAG ABAP guideline review, 13.10.2026): level A means released (C1)
+    // objects only; a risk estimate has no released object behind it.
+    expect(gradeFromCoupling({ accessType: 'Read', riskLevel: 'Low' })).toBe('B');
+    expect(gradeFromCoupling({ accessType: 'Write', riskLevel: 'Low' })).toBe('B');
     expect(gradeFromCoupling({ accessType: 'Read', riskLevel: 'Medium' })).toBe('B');
     expect(gradeFromCoupling({ accessType: 'Read', riskLevel: 'High' })).toBe('C');
     expect(gradeFromCoupling({ accessType: 'Write', riskLevel: 'Medium' })).toBe('C');
@@ -44,12 +47,24 @@ test.describe('A/B/C/D readiness derivation', () => {
   });
 
   test('gradeFromInventory maps type + criticality, Unknown on missing criticality', () => {
-    expect(gradeFromInventory({ type: 'Dynpro' })).toBe('D');
-    expect(gradeFromInventory({ type: 'Screen' })).toBe('D');
+    // SAP Note 3578329 (owner, 13.10.2026): classic Dynpro / SAP GUI is Level B, not D.
+    expect(gradeFromInventory({ type: 'Dynpro' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Screen' })).toBe('B');
+    expect(gradeFromInventory({ type: 'Dynpro', criticality: 'High' })).toBe('C');
     expect(gradeFromInventory({ type: 'Class', criticality: 'High' })).toBe('C');
-    expect(gradeFromInventory({ type: 'Class', criticality: 'Low' })).toBe('A');
+    expect(gradeFromInventory({ type: 'Class', criticality: 'Low' })).toBe('B');
     expect(gradeFromInventory({ type: 'Class', criticality: 'Medium' })).toBe('B');
     expect(gradeFromInventory({ type: 'Class' })).toBe('Unknown');
+  });
+
+  test('no heuristic yields A: only a released catalog state does (C4)', () => {
+    const heuristic = [
+      ...['High', 'Medium', 'Low', undefined].flatMap((riskLevel) =>
+        ['Read', 'Write', 'Reference', undefined].map((accessType) => gradeFromCoupling({ accessType, riskLevel }))),
+      ...['High', 'Medium', 'Low', undefined].flatMap((criticality) =>
+        ['Class', 'Report', 'Dynpro', undefined].map((type) => gradeFromInventory({ type, criticality }))),
+    ];
+    expect(heuristic).not.toContain('A');
   });
 
   test('gradeFromCatalogState maps release state, Unknown on unknown state', () => {

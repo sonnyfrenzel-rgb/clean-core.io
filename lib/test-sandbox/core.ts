@@ -12,6 +12,7 @@ import { hashRunInputs, type FileHash } from './protocol';
 import type { SandboxFile } from './files';
 import { FAKED_PACKAGES } from './express-fake';
 import { ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_SES_PATH } from './engine-suite';
+import { PROBE_DIR, PROBE_MODULES_BUNDLE_PATH, PROBE_SES_PATH } from './probe-suite';
 
 /**
  * The execution core of the test sandbox — one copy, used in two places.
@@ -379,6 +380,14 @@ export interface SandboxRunInput {
    * `node:test` runner is involved (QA 342adaac5625).
    */
   engine?: { contractModule: string };
+  /**
+   * 3.0.12 — run this as the probe pass (`probeRunInputs`): the adapter's
+   * modules (name, path) are bundled on their own, `suiteCode` is the driver
+   * that locks the child down, evaluates that bundle in a SES compartment and
+   * runs the probes outside it; no `node:test` runner is involved. Ignored
+   * when `engine` is set.
+   */
+  probe?: { modules: Array<[string, string]> };
 }
 
 export type SandboxRunOutcome =
@@ -416,9 +425,12 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     testDir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'cc-tests-')));
 
     // ── 1) Materialise the sources ─────────────────────────────────────────
-    // The engine pass bundles the contract module, and its driver runs as a plain ES module.
+    // The engine pass bundles the contract module, the probe pass the adapter's modules; each
+    // driver runs as a plain ES module and evaluates its bundle in a SES compartment.
     const enginePass = input.engine ?? null;
-    const testEntry = path.join(testDir, enginePass ? '__engine.mjs' : 'test.ts');
+    const probePass = enginePass ? null : (input.probe ?? null);
+    const confined = enginePass !== null || probePass !== null;
+    const testEntry = path.join(testDir, enginePass ? '__engine.mjs' : probePass ? '__probe.mjs' : 'test.ts');
     // Raw source of every materialised file — scanned for named imports so the
     // hermetic stub can expose exactly the bindings the generated code imports.
     const sourceTexts: string[] = [input.suiteCode];
@@ -442,25 +454,45 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     const stubbedPackages = new Set<string>();
     // The engine pass's own files — the runtime, the cases with their expectations, the driver — are
     // never part of the contract's bundle (QA 592fd4f81e78).
-    const reserved = enginePass ? [path.join(testDir, path.dirname(ENGINE_CASES_PATH)), testEntry] : [];
+    // The same for the probe pass's own files: the probes with their expectations, the runtime, the driver.
+    const reserved = enginePass
+      ? [path.join(testDir, path.dirname(ENGINE_CASES_PATH)), testEntry]
+      : probePass
+        ? [path.join(testDir, PROBE_DIR), testEntry]
+        : [];
     const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports), reserved });
 
-    const bundlePath = path.join(testDir, enginePass ? ENGINE_CONTRACT_BUNDLE_PATH : '__sandbox_bundle.cjs');
+    const bundlePath = path.join(testDir, enginePass ? ENGINE_CONTRACT_BUNDLE_PATH : probePass ? PROBE_MODULES_BUNDLE_PATH : '__sandbox_bundle.cjs');
     const entryPoint = enginePass ? path.resolve(testDir, enginePass.contractModule) : testEntry;
     if (!entryPoint.startsWith(testDir + path.sep)) {
       return { kind: 'build-error', message: 'The contract module is not inside the run.', stubbedPackages: [], files: fileHashes, suiteSha256 };
     }
+    // The probe pass's entry: module i of the adapter as the export m<i> (`probeSuiteCode` reads them so).
+    let probeEntry: string | null = null;
+    if (probePass) {
+      const lines: string[] = [];
+      for (const [i, [, rel]] of probePass.modules.entries()) {
+        const abs = path.resolve(testDir, rel);
+        if (!abs.startsWith(testDir + path.sep)) {
+          return { kind: 'build-error', message: 'An adapter module is not inside the run.', stubbedPackages: [], files: fileHashes, suiteSha256 };
+        }
+        lines.push(`export * as m${i} from ${JSON.stringify(`./${path.relative(testDir, abs).split(path.sep).join('/')}`)};`);
+      }
+      probeEntry = lines.join('\n');
+    }
     try {
       await esbuild.build({
-        entryPoints: [entryPoint],
+        ...(probeEntry !== null
+          ? { stdin: { contents: probeEntry, resolveDir: testDir, sourcefile: '__cc_probe_entry.mjs', loader: 'js' } }
+          : { entryPoints: [entryPoint] }),
         bundle: true,
         platform: 'node',
         format: 'cjs',
         target: 'node22',
         outfile: bundlePath,
-        // The contract bundle is evaluated as source text in a SES compartment: no source map, no legal comments.
-        sourcemap: enginePass ? false : 'inline',
-        legalComments: enginePass ? 'none' : 'eof',
+        // A confined bundle is evaluated as source text in a SES compartment: no source map, no legal comments.
+        sourcemap: confined ? false : 'inline',
+        legalComments: confined ? 'none' : 'eof',
         logLevel: 'silent',
         resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
         // Enable TS decorators so typeorm-style entities (@Entity/@Column/…) compile.
@@ -476,14 +508,14 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     }
 
     // ── 3) The in-process runner (TAP, optional name filtering) ─────────────
-    // The engine pass has none: its driver (`testEntry`) is the program, and it
+    // The engine and the probe pass have none: the driver (`testEntry`) is the program, and it
     // loads SES from the run's directory, which is all the child may read.
-    if (enginePass) {
+    if (confined) {
       const ses = loadSesSource();
       if (ses === null) return { kind: 'unavailable', reason: 'Sandbox unavailable: ses (hardened JavaScript) not installed.' };
-      await fs.writeFile(path.join(testDir, ENGINE_SES_PATH), ses);
+      await fs.writeFile(path.join(testDir, enginePass ? ENGINE_SES_PATH : PROBE_SES_PATH), ses);
     }
-    const runnerPath = enginePass ? testEntry : path.join(testDir, '__runner.mjs');
+    const runnerPath = confined ? testEntry : path.join(testDir, '__runner.mjs');
     const runnerSrc = `
 import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
@@ -501,7 +533,7 @@ for await (const chunk of stream.compose(tap)) {
 }
 process.exitCode = failed ? 1 : 0;
 `;
-    if (!enginePass) await fs.writeFile(runnerPath, runnerSrc);
+    if (!confined) await fs.writeFile(runnerPath, runnerSrc);
 
     // ── 4) The guards, written next to the runner ───────────────────────────
     // The network guard is written on every run, closed unless the caller
@@ -538,7 +570,7 @@ process.exitCode = failed ? 1 : 0;
     // spawns one child per file and the option filters there — the flag would
     // match the parent's file-level test instead and skip the whole suite.
     const namePattern = testNamePattern(input.patterns);
-    if (namePattern && inProcessIsolationSupported() && !enginePass) {
+    if (namePattern && inProcessIsolationSupported() && !confined) {
       args.push(`--test-name-pattern=${namePattern}`);
     }
     args.push(runnerPath);

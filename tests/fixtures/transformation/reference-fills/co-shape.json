@@ -1,0 +1,60 @@
+{
+  "note": "Hand-written reference fills for co-shape.abap: what a model that ports the program faithfully would write into each fill region. Test data for the reach measurement (scripts/transformation/reach.ts) — never shipped, never an expectation of a check.",
+  "bodies": {
+    "U00": [
+      "if (!sel.demo) {",
+      "  const r = readReceivers(sel, st);",
+      "  if (r) return r;",
+      "}",
+      "const v = validatePolicy(sel, st);",
+      "if (v) return v;",
+      "const a = allocate(sel, st);",
+      "if (a) return a;",
+      "const head = { value: '' as unknown };",
+      "csvCell(sel, st, { ivText: 'Cost center', cvCell: head });",
+      "let out = String(head.value) + ';';",
+      "for (const rec of st.records) {",
+      "  const cell = { value: '' as unknown };",
+      "  csvCell(sel, st, { ivText: rec.kostl ?? '', cvCell: cell });",
+      "  out += String(cell.value) + ';';",
+      "}",
+      "st.result.csv = out;",
+      "st.rows = st.records.map((r) => ({ kostl: r.kostl, quota: r.quota, amount: r.amount }));"
+    ],
+    "U00.G0029": "return sel.gjahr < '1900' || sel.gjahr > '2199';",
+    "U01": [
+      "const sySubrc = st.records.length > 0 ? 0 : 4;",
+      "const g = guard_G0047(sel, st, null, { sySubrc });",
+      "if (g) return g;"
+    ],
+    "U01.G0047": "return Number(values.sySubrc) !== 0;",
+    "U02": [
+      "let lvSum = '0.00';",
+      "for (const r of st.records) lvSum = dec.add(lvSum, r.quota, 2);",
+      "const g = guard_BR_004_G0066(sel, st, null, { lvSum });",
+      "if (g) return g;"
+    ],
+    "U02.G0054": "return st.records.length === 0;",
+    "U02.G0058": "return (record ? [record] : st.records).some((r) => r.kostl === sel.sender);",
+    "U02.G0061": "return (record ? [record] : st.records).some((r) => dec.compare(r.quota, '100') > 0);",
+    "U02.G0066": "return dec.compare(String(values.lvSum), '100') > 0;",
+    "U03": [
+      "let total = '0.00';",
+      "const kept: Rec[] = [];",
+      "for (const r of st.records) {",
+      "  if (skip_G0074(sel, st, r)) continue;",
+      "  kept.push(r);",
+      "  const share = dec.div(dec.mul(r.amount, r.quota, 6), '100', 2);",
+      "  total = dec.add(total, share, 2);",
+      "}",
+      "st.records = kept;",
+      "st.local.gvTotal = total;",
+      "st.result.total = total;"
+    ],
+    "U03.G0074": "return record !== null && dec.compare(record.quota, '0') > 0;",
+    "U04": [
+      "const text = String(args.ivText ?? '');",
+      "args.cvCell.value = text.replace(/\"/g, '\"\"');"
+    ]
+  }
+}

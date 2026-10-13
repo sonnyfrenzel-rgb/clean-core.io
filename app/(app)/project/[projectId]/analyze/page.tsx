@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
+import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { looksLikeAbap } from '@/lib/abap-input-check';
@@ -661,6 +662,8 @@ export default function AnalyzePage() {
     // Loaded on the click: the export recomputes the evidence, so it imports
     // the engine and the SAP catalog with it (external audit PERF-01).
     const { buildAnalysisExportHtml, analysisExportFileName } = await import('@/lib/analysis-export');
+    // SAP's synced name lists, so the export's identifier marks read them too (3.0.12).
+    await loadSapNameLists();
     const htmlContent = buildAnalysisExportHtml({ project, routeReport, legacyCode, uploadedFileName, targetDeployment });
     if (htmlContent === null) return;
 
@@ -926,8 +929,8 @@ export default function AnalyzePage() {
     if (!evidenceReport) return null;
     if (!routeReport) return 'differs' as const;
     const deployment = project?.s4Deployment === 'public' ? 'public' : 'private';
-    return { drivers: routeDrivers(evidenceReport, deployment), assumptions: routeReport.assumptions };
-  }, [evidenceReport, routeReport, project?.s4Deployment]);
+    return { drivers: routeDrivers(evidenceReport, deployment, signedEngineVersionOf(project)), assumptions: routeReport.assumptions };
+  }, [evidenceReport, routeReport, project]);
 
   /**
    * Why this run has no narrative — roadmap 1.2.
@@ -1396,6 +1399,7 @@ export default function AnalyzePage() {
                   text={analysisData.summary}
                   findings={evidenceFindings}
                   totalLines={sourceLines}
+                  code={legacyCode}
                 />
               ) : (
                 <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
@@ -1782,7 +1786,7 @@ export default function AnalyzePage() {
                   <span className="block">To start the modernization analysis, please complete the following steps:</span>
                   <ul className="list-disc pl-5 mt-2 space-y-1">
                     {!targetDeployment && (
-                      <li>Select your <strong>S/4HANA Target Operating Model</strong> (Public Cloud or Private Cloud RISE Edition above).</li>
+                      <li>Select your <strong>S/4HANA Target Operating Model</strong> (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private above).</li>
                     )}
                     {!acceptedTerms && (
                       <li>Accept the <strong>Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
@@ -1811,7 +1815,7 @@ export default function AnalyzePage() {
                 busy={loading}
                 onClick={() => {
                   if (!targetDeployment) {
-                    setError('Please select a S/4HANA Target Operating Model (Public Cloud or Private Cloud RISE) before starting the analysis.');
+                    setError('Please select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) before starting the analysis.');
                     // Scroll to top where error displays
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
@@ -2001,7 +2005,7 @@ export default function AnalyzePage() {
                   {modalSelection === 'public' ? (
                     <>
                       <p>
-                        In <strong>SAP S/4HANA Public Cloud (Strict SaaS)</strong>, standard code modifications are entirely blocked.
+                        In <strong>SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP)</strong>, a strict SaaS system, standard code modifications are entirely blocked.
                       </p>
                       <ul className="list-disc pl-4 space-y-1">
                         <li><strong>Unreleased APIs Forbidden:</strong> Any legacy unreleased SAP tables/functions used by your custom logic are unreachable.</li>
@@ -2011,11 +2015,12 @@ export default function AnalyzePage() {
                   ) : (
                     <>
                       <p>
-                        In <strong>SAP S/4HANA Private Cloud / On-Premise (RISE)</strong>, you can utilize the <strong>3-Tier Extensibility Model</strong>.
+                        In <strong>SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)</strong> and in SAP S/4HANA on-premise, SAP&apos;s <strong>clean core levels A–D</strong> apply.
                       </p>
+                      {/* DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept — the level concept replaced SAP's three-tier model. */}
                       <ul className="list-disc pl-4 space-y-1">
-                        <li><strong>Tier 2 API Wrappers:</strong> You can wrap legacy, unreleased SAP database tables or functions inside a custom Tier 2 API wrapper.</li>
-                        <li><strong>Upgrade-Safe Bridging:</strong> This wrapper acts as an upgrade-safe bridge, exposing unreleased structures to Tier 1 Cloud Developer Extensibility (RAP/CAP) without blocking future S/4HANA core releases.</li>
+                        <li><strong>Released APIs first:</strong> Level A is ABAP Cloud on released SAP APIs only. Classic SAP APIs and extension points are level B, internal SAP objects level C, modifications and direct writes to SAP tables level D.</li>
+                        <li><strong>Wrapper and influence request:</strong> Where SAP offers no released API, a custom wrapper can encapsulate the unreleased object so the rest of the code stays ABAP Cloud — together with an influence request asking SAP to release one. The wrapper does not make what it wraps stable: the wrapped object keeps its level and has to be checked at every upgrade.</li>
                       </ul>
                     </>
                   )}
@@ -2081,21 +2086,21 @@ interface DeploymentOption {
 const PAGE_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
   {
     value: 'public',
-    title: 'Public Cloud Edition',
+    title: 'SAP S/4HANA Cloud Public Edition',
     tag: 'Strict Clean Core',
-    text: 'SAP S/4HANA Cloud, Public Edition (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.',
+    text: 'Part of SAP Cloud ERP (SaaS). Custom core modifications are fully prohibited. Standard released APIs must be used exclusively.',
   },
   {
     value: 'private',
-    title: 'Private Cloud RISE Edition',
-    tag: '3-Tier Extensibility',
-    text: 'SAP S/4HANA Cloud, Private Edition / On-Premise. Supports Custom Tier 2 API Wrappers to expose legacy unreleased objects upgrade-safely.',
+    title: 'SAP Cloud ERP Private',
+    tag: 'Clean core levels A–D',
+    text: 'Formerly SAP S/4HANA Cloud Private Edition; also SAP S/4HANA on-premise. Released APIs first (level A); where SAP offers none, classic APIs (level B) or a wrapper around the unreleased object, with an influence request to SAP.',
   },
 ];
 
 const DIALOG_DEPLOYMENT_OPTIONS: readonly DeploymentOption[] = [
-  { value: 'public', title: 'Public Cloud', text: 'Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
-  { value: 'private', title: 'Private Cloud / RISE', text: '3-Tier Extensibility Model. Supports upgrade-safe Tier 2 custom wrappers.' },
+  { value: 'public', title: 'SAP S/4HANA Cloud Public Edition', text: 'Part of SAP Cloud ERP. Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.' },
+  { value: 'private', title: 'SAP Cloud ERP Private', text: 'Formerly SAP S/4HANA Cloud Private Edition; also on-premise. Clean core levels A–D. Released APIs first; where none exists, a wrapper plus an influence request to SAP.' },
 ];
 
 /**

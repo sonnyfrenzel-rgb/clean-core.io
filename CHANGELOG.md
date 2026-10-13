@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.12] — unreleased
+
+Engine 3.0.12. This entry is completed with the release.
+
+### Engine
+
+- **Checks from the DSAG ABAP guideline review**: security review tasks, a review task for
+  possibly copied SAP code, classic programming models, and the classic ALV, Dynpro and SAP GUI
+  findings worded by SAP Note 3578329. An RFC call is read from the statement's own DESTINATION:
+  a local destination is no call to another system.
+- **The route**: BDC, native SQL, a local RFC, Public Edition table writes and a frontend file
+  feature no longer force a side-by-side route on their own.
+- **A run keeps what it signed.** Every screen that rebuilds a project's evidence or route uses
+  the engine of the project's signed run, so a run made before 3.0.12 shows its own findings and
+  route, not the new ones.
+
+### Naming
+
+- **SAP Cloud ERP.** SAP S/4HANA Cloud Private Edition is now called SAP Cloud ERP Private:
+  "SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition)" at the first mention,
+  "SAP Cloud ERP Private" after it. SAP S/4HANA Cloud Public Edition keeps its name ("part of SAP
+  Cloud ERP" at the first mention). Screens, exports, prompts and engine findings from 3.0.12 use
+  these names; a run signed before 3.0.12 keeps the words it signed.
+
 ## [v3.0.11] — 2026-10-12
 
 Every view opens with what the program is for, the documentation keeps rules apart that differ,

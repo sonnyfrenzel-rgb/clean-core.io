@@ -59,7 +59,9 @@ const PCE_PROJECT = {
   s4Deployment: 'private',
   legacyCode: SOURCE,
   activeRunId: 'run-pce-derived',
-  auditMetadata: { inputFingerprint: { fileName: FILE } },
+  // The stamp `/api/runs/create` writes: a run of this engine, so the builders
+  // rebuild with this engine's checks (roadmap 3.0.12, `engineVersionOfProject`).
+  auditMetadata: { inputFingerprint: { fileName: FILE }, modelCard: { engineVersion: APP_VERSION } },
 };
 
 /** The snapshot the signed run reads for this project — `/api/runs/create`, verbatim. */
@@ -119,7 +121,7 @@ test.describe('a PCE project gets the same grade in the core result and each der
 
   test('IT findings route: it passes the project target, not the default list', () => {
     const route = read('app/api/projects/[projectId]/findings/route.ts');
-    expect(route).toMatch(/findingsOf\([^)]*catalogSnapshotKeyForProject\(data\)\)/);
+    expect(route).toMatch(/findingsOf\([^)]*catalogSnapshotKeyForProject\(data\)[,)]/);
   });
 
   test('contract: derived from the same evidence as the core result', () => {

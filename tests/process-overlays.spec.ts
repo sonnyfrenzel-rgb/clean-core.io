@@ -306,9 +306,9 @@ test.describe('the level overlay', () => {
     expect(overlay?.note).toBe(LEVEL_OVERLAY_NOTE);
     expect(LEVEL_OVERLAY_NOTE).toContain('abap-atc-cr-cv-s4hc');
     expect(LEVEL_OVERLAY_NOTE).toContain('Public Edition');
-    // Since 7.10 the Private Edition lists ship too; the note names how the list is chosen
-    // instead of saying there is only one.
-    expect(LEVEL_OVERLAY_NOTE).toContain('Private Edition list');
+    // Since 7.10 the private edition's lists ship too; the note names how the list is chosen
+    // instead of saying there is only one. SAP's product name since 13.10.2026.
+    expect(LEVEL_OVERLAY_NOTE).toContain('SAP Cloud ERP Private list');
     expect(LEVEL_OVERLAY_NOTE).not.toContain('no second snapshot');
   });
 

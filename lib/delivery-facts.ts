@@ -13,6 +13,7 @@
  * and hands it in; this module only reads.
  */
 
+import { storedGenerationRecord } from './transformation/generation-record';
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
 import { formatTextDate } from './format';
@@ -42,7 +43,9 @@ import { isAbapUnitRoute } from './test-runnability';
 import { scoreBreakdown, type ScoredFinding } from './clean-core-score';
 import { scoreHeroModel, type HeroFinding, type HeroGap } from './score-hero';
 import { scoreRuleFor, signedEngineVersionOf } from './score-rule';
+import type { EconomicsRecord } from './economics-record';
 import type {
+  CostRevisionFacts,
   DecisionFacts,
   DeliveryFacts,
   RuleFacts,
@@ -79,6 +82,69 @@ export function recordedCostSentence(confirmed: boolean, basis: DecisionCostBasi
   return basis.cheapest
     ? `${on}, on which "${basis.cheapest.label}" was the cheapest option.${tail}`
     : `${on}; it named no cheapest option (${NO_CHEAPEST_WORDS[basis.noCheapest ?? 'assumptions-incomplete']}).${tail}`;
+}
+
+/**
+ * The cost revision a confirmed decision names, for `docs/cost-revision.md`
+ * (roadmap 3.0.12, CO review F17). Its number, date and verdict come from the
+ * decision's recorded cost basis (ADR-092). The figures come from Economics
+ * only when Economics still holds that very revision — the product keeps one
+ * revision, so a later one is said to be later and its figures are left out
+ * rather than shown as the ones the decision was priced on.
+ */
+export function costRevisionFactsOf(
+  project: HandoverProject,
+  basis: DecisionCostBasis | null,
+  identity: string | null,
+): CostRevisionFacts | null {
+  if (!basis) return null;
+  const noFigures = basis.revision === null;
+  const economics = (project as { _economics?: EconomicsRecord | null })._economics;
+  const held = economics && !noFigures && economics.revision === basis.revision ? economics : null;
+  const figuresNote = noFigures
+    ? 'No cost figures were stored when the decision was confirmed, so there are none to copy.'
+    : held
+      ? 'The figures below are the inputs of this revision as stored in Economics — the same revision the decision was priced on.'
+      : economics === undefined
+        ? 'The figures of this revision were not read when the package was built; the revision is named above.'
+        : economics === null
+          ? 'Economics holds no figures any more; the figures of this revision are not kept, and the revision is named above.'
+          : `Economics holds a later revision now (${costRevisionWords({ ...basis, sequence: typeof economics.sequence === 'number' ? economics.sequence : null, at: economics.revisionAt ?? economics.savedAt ?? null })}); the figures of the revision the decision was priced on are not kept, so none are copied — the later figures are not this decision's.`;
+  const a = held ? held.assumptions : null;
+  const pair = (d: { devDays: number; testDays: number } | null | undefined) =>
+    d && Number.isFinite(d.devDays) && Number.isFinite(d.testDays) ? { dev: d.devDays, test: d.testDays } : null;
+  return {
+    decision: identity,
+    sequence: basis.sequence,
+    at: basis.at,
+    words: costRevisionWords(basis),
+    noFigures,
+    cheapest: basis.cheapest ? basis.cheapest.label : null,
+    noCheapest: basis.noCheapest ? NO_CHEAPEST_WORDS[basis.noCheapest] : null,
+    figures: a
+      ? {
+          currency: a.currency,
+          devDayRate: a.devDayRate,
+          testDayRate: a.testDayRate,
+          horizonYears: a.horizonYears,
+          releasesPerYear: a.releaseCadence ? a.releaseCadence.perYear : null,
+          cadenceConfirmed: a.releaseCadence ? a.releaseCadence.confirmed : null,
+          options: a.options.map((o) => {
+            const low = pair(o.oneOff?.low);
+            const high = pair(o.oneOff?.high);
+            return {
+              label: o.label || o.id,
+              kind: o.kind,
+              oneOff: low && high ? { low, high } : null,
+              perRelease: pair(o.perRelease),
+              baselinePerYear: pair(o.maintenanceBaselinePerYear),
+              effortSource: o.effortSource,
+            };
+          }),
+        }
+      : null,
+    figuresNote,
+  };
 }
 
 const optionIdOf = (revision: string | null): string | null => {
@@ -123,6 +189,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
       reasons,
       recommendation,
       cost: recordedCostSentence(confirmed, stored.costBasis),
+      costRevision: confirmed ? costRevisionFactsOf(project, stored.costBasis, view.identity) : null,
       conditions: view.conditions.map((c) => ({ text: sapNamesForDisplay(c.text), status: c.status === 'not-determined' ? 'not determined' : c.status })),
       bindings: [...view.bindings, view.run].map((b) => ({
         label: b.label,
@@ -147,6 +214,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
       reasons,
       recommendation,
       cost: 'No decision record is confirmed, so no cost revision is recorded.',
+      costRevision: null,
       conditions: [],
       bindings: [],
       reversibility: null,
@@ -164,6 +232,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
     reasons,
     recommendation,
     cost: 'No decision is confirmed, so no cost revision is recorded.',
+    costRevision: null,
     conditions: [],
     bindings: [],
     reversibility: null,
@@ -447,6 +516,8 @@ export function deliveryFactsOf(
     score: opts.score,
     documentationFromEngine: opts.documentationFromEngine,
     referenceSection: opts.referenceSection,
+    // Roadmap 3.0.12, step E: how the stored package was made (engine-led or one call).
+    generation: storedGenerationRecord(project.generationBinding),
   };
 }
 

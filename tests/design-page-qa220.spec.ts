@@ -104,7 +104,13 @@ test('with the stage off, opening it sends no model request (6c4734f60aa8)', asy
     if (req.url().includes('/api/gemini')) modelCalls.push(req.url());
   });
   await openDesign(page, UNDESIGNED, EMAIL_OFF);
-  // The stage names why nothing was generated.
+  // The stage names why nothing was generated. Without any key the page names
+  // that reason instead (correctly), so a server started without
+  // GEMINI_API_KEY fails here with a reason, not on a missing sentence.
+  await expect(
+    page.locator('[data-design-model-off]'),
+    'the stage-off reason needs a key on the server: start it with GEMINI_API_KEY set, as CI does',
+  ).toHaveAttribute('data-design-model-off', 'stage-off', { timeout: 30000 });
   await expect(page.locator('body')).toContainText('Turn the design stage back on', { timeout: 30000 });
   expect(modelCalls, 'a request the proxy will refuse was sent').toEqual([]);
 

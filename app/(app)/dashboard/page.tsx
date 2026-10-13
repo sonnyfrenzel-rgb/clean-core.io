@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { useSapNameLists } from '@/components/SapIdentifierCheck';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, serverTimestamp, getDocs, limit } from 'firebase/firestore';
 import { createWithinCeiling } from '@/lib/write-ceiling';
@@ -83,6 +84,8 @@ const PROJECT_COLUMNS: readonly CcTableColumn[] = [
 ];
 
 export default function Dashboard() {
+  // The deliverables below mark SAP identifiers; they re-render when SAP's name lists arrive (3.0.12).
+  useSapNameLists();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -848,8 +851,8 @@ function ProjectDeliverables({
 
   const deliverables = [
     { id: 'legacy', title: '1. Original ABAP Source', content: project.legacyCode, type: 'code', ext: '.abap', isExport: false },
-    { id: 'analysis', title: '2. Business Analysis Report', content: formatAnalysisToMarkdown(project.analysis), type: 'markdown', ext: '.md', isExport: false },
-    { id: 'design', title: '3. Solution Design Specification', content: formatDesignToMarkdown(project.solutionDesign), type: 'markdown', ext: '.md', isExport: false },
+    { id: 'analysis', title: '2. Business Analysis Report', content: formatAnalysisToMarkdown(project.analysis, { code: project.legacyCode }), type: 'markdown', ext: '.md', isExport: false },
+    { id: 'design', title: '3. Solution Design Specification', content: formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode }), type: 'markdown', ext: '.md', isExport: false },
     {
       id: 'code',
       title: isAbapCloud ? '4. Transformed RAP ABAP Code' : '4. Transformed Node.js Code',

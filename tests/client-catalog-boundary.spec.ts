@@ -52,6 +52,9 @@ const DYNAMIC_ALLOWED: Record<string, string> = {
   'hooks/useProcessOverlays.ts ~> lib/abap/evidence-model.ts': 'loads the engine for the overlays',
   // The test stage's evidence-backed cases, built on demand.
   'app/(app)/project/[projectId]/testing/page.tsx ~> lib/abap/evidence-model.ts': 'loads the engine for the test cases',
+  // SAP's synced name lists (released CDS views, classic BAPIs; ~0.5 MB) for the
+  // identifier check, fetched once when a mark or an export first needs them (3.0.12).
+  'lib/sap-identifiers.ts ~> lib/sap-identifier-lists.ts': 'loads SAP name lists for the identifier check',
 };
 
 interface Graph {

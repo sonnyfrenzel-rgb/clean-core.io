@@ -156,7 +156,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
           fileName,
           lines: sourceLines || null,
           catalog: catalog && catalog.includes('@') ? catalog.split(' + ')[0] : catalog,
-          target: `${demo.deployment === 'public' ? 'Public Edition' : 'Private Edition'} assumed for the demo`,
+          target: `${demo.deployment === 'public' ? 'SAP S/4HANA Cloud Public Edition' : 'SAP Cloud ERP Private'} assumed for the demo`,
         }}
         severities={SEVERITY_ORDER.map((key) => ({ key, count: rows.filter((r) => r.finding.severity === key).length }))}
         findingCount={findingCounts.total}
@@ -193,7 +193,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
             confidence={demo.design.confidenceScore}
             rationale={demo.design.rationale ? sapNamesForDisplay(demo.design.rationale) : null}
             deployment={demo.deployment}
-            derived={{ drivers: routeDrivers({ findings: a.findings }, demo.deployment), assumptions: demo.design.assumptions }}
+            derived={{ drivers: routeDrivers({ findings: a.findings }, demo.deployment, APP_VERSION), assumptions: demo.design.assumptions }}
             notRecorded={[]}
             decideHref="/demo/workspace?view=management"
             openLine={openLine}

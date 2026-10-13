@@ -194,7 +194,7 @@ test.describe('the decision panel', () => {
 
   test('the bucket chart is the target platform, not assigned is its own segment, and no segment is a state colour', () => {
     const e = exec(project());
-    expect(e.buckets?.platformLabel).toBe('Private Edition');
+    expect(e.buckets?.platformLabel).toBe('SAP Cloud ERP Private');
     expect(e.buckets?.isTarget).toBe(true);
     const nd = e.buckets!.segments.find((s) => s.notDetermined)!;
     expect(nd.tone).toBe('not-determined');

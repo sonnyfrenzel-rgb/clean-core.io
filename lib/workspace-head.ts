@@ -19,12 +19,10 @@
 
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
+import { TARGET_EDITION_NAMES } from '@/lib/sap-naming';
 
 /** The edition words, as the product names them elsewhere (`lib/architecture-contract.ts`). */
-const EDITION_WORDS: Record<string, string> = {
-  public: 'S/4HANA Cloud Public Edition',
-  private: 'S/4HANA Cloud Private Edition',
-};
+const EDITION_WORDS: Record<string, string> = TARGET_EDITION_NAMES;
 
 /** The source file the active run signed, when the record names one. */
 export function signedFileName(project: Project | null): string | null {

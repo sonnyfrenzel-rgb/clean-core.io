@@ -24,6 +24,7 @@ import {
   type ScoredFinding,
 } from './clean-core-score';
 import { scoreRuleFor, type ScoreRule } from './score-rule';
+import { CLOUD_ERP_PRIVATE } from './sap-naming';
 
 /** A finding as the hero needs it: what the score counts, and the line it stands on. */
 export interface HeroFinding extends ScoredFinding {
@@ -202,7 +203,7 @@ export function otherEditionFigure(
   return { edition: other, score: scoreBreakdown(findings, unassessedKinds, theirs).score, sameRule: own === theirs };
 }
 
-/** "Private Edition", "Public Edition". */
+/** "SAP Cloud ERP Private", "Public Edition" (owner decision 13.10.2026). */
 export function editionName(edition: Edition): string {
-  return edition === 'public' ? 'Public Edition' : 'Private Edition';
+  return edition === 'public' ? 'Public Edition' : CLOUD_ERP_PRIVATE;
 }

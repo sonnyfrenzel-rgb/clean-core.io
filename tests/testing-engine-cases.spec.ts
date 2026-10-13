@@ -313,8 +313,9 @@ test.describe('PP-shaped quantities (P LENGTH 8 DECIMALS 3)', () => {
     expect(exclusion.engineCase.examples[1].input).toBe('record B appended instead: identical to A except GS_COMP-BDMNG = 99999.001');
     // in machine form: A appended (+1 record), B appended (skipped, +0)
     expect(exclusion.engineCase.examples.map((e) => e.call)).toEqual([
-      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.000' } }], expect: { kind: 'records-delta', delta: 1 } },
-      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.001' } }], expect: { kind: 'records-delta', delta: 0 } },
+      // …and, where the request cannot carry the value, the same question to the check's predicate (G-0015)
+      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.000' } }], expect: { kind: 'records-delta', delta: 1 }, check: { guard: 'G-0015', holds: false, field: 'GS_COMP-BDMNG' } },
+      { op: 'simulate', mode: 'append', set: [{ field: 'GS_COMP-BDMNG', to: { value: '99999.001' } }], expect: { kind: 'records-delta', delta: 0 }, check: { guard: 'G-0015', holds: true, field: 'GS_COMP-BDMNG' } },
     ]);
   });
 

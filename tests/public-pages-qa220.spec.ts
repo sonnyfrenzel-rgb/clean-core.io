@@ -54,7 +54,8 @@ test.describe('the guides and reference pages', () => {
   test('the printable guide qualifies which cloud edition drops the older techniques (2ed522ad06bb)', () => {
     const src = code('app/clean-core-explained-print/page.tsx');
     expect(src).not.toMatch(/cloud\s+offerings simply do not run/);
-    expect(src).toMatch(/private cloud edition/);
+    // SAP's product name since 13.10.2026: SAP Cloud ERP Private, with its former name at the first mention.
+    expect(src).toMatch(/SAP Cloud ERP Private\s+\(formerly SAP S\/4HANA Cloud Private Edition\)/);
   });
 
   test('the facts page claims the numbers it documents and its real freshness (a8879493075c, 49e61b0a9eec)', () => {

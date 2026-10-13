@@ -163,7 +163,7 @@ const BUCKET_RULE: Record<string, string> = {
     'Needed, below the target platform’s bar, and SAP’s Cloudification Repository names no released API and no successor for it.',
   rebuild:
     'Needed, below the bar, and a successor or an extension path is named — and every modification or own write to an SAP table.',
-  keep: 'Needed and permitted on the target platform: Public Edition level A only, Private Edition level A or B.',
+  keep: 'Needed and permitted on the target platform: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) level A only, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) level A or B.',
 };
 
 const PROVENANCE_GROUPS: Array<{ form: string; meaning: string; values: ProvenanceValue[] }> = [
@@ -1003,7 +1003,7 @@ export default function Home() {
                   </div>
                 ))}
                 <p className="honest">
-                  The same level B object is Keep in Private Edition and Rebuild or {PUBLIC_CLOUD_FIT_BUCKET_LABELS['no-catalogued-path']} in Public
+                  The same level B object is Keep in SAP Cloud ERP Private and Rebuild or {PUBLIC_CLOUD_FIT_BUCKET_LABELS['no-catalogued-path']} in Public
                   Edition. Change the target platform and the page says what moved.
                 </p>
               </div>

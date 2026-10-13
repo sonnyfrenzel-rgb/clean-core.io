@@ -1,5 +1,5 @@
 {
-  "package": "SD legacy order cockpit (v3.0.10 delivery package)",
+  "package": "SD case (v3.0.10 delivery package)",
   "status": "Written from the exported names of the package and the probe description of the SD review; never executed. The package's service imports its web framework at module level, so without installed dependencies every probe reports 'not runnable', and on Node < 25 the harness does not execute third-party packages at all.",
   "modules": {
     "service": "srv/service.ts"

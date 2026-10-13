@@ -5,7 +5,7 @@ import type { AuthorClaim } from '@/lib/program-summary-check';
 
 /**
  * The business page every documentation opens with (owner 11.10.2026, external
- * review of the FI Collection Worklist package, F-07 and §6.1: "I do not want
+ * review of the FI case, F-07 and §6.1: "I do not want
  * to read 74 technical steps, 66 decision points and hundreds of local
  * assignments first. They may be there, but behind the business answers.").
  *

@@ -83,12 +83,104 @@ export function geminiTestStubActive(
  */
 export const GEMINI_TEST_STUB_FINISH_HEADER = 'x-test-gemini-stub-finish';
 
-export function geminiTestStubAnswer(finishHeader: string | null | undefined): {
+export function geminiTestStubAnswer(
+  finishHeader: string | null | undefined,
+  /**
+   * 3.0.12 — the prompt of a fill call (`responseShape: 'transformation-fill'`),
+   * passed only for that shape. The stub then answers in the fill shape: one
+   * body per unit the request names, so an engine-led generation runs end to
+   * end on the test server without a model.
+   */
+  fillPromptText?: string,
+): {
   text: string;
   finishReason: string;
 } {
   const finishReason = typeof finishHeader === 'string' && /^[A-Z_]{1,40}$/.test(finishHeader) ? finishHeader : 'STOP';
+  const text = fillPromptText !== undefined ? geminiTestStubFillText(fillPromptText) : GEMINI_TEST_STUB_TEXT;
   return finishReason === 'STOP'
-    ? { text: GEMINI_TEST_STUB_TEXT, finishReason }
-    : { text: GEMINI_TEST_STUB_TEXT.slice(0, Math.floor(GEMINI_TEST_STUB_TEXT.length / 2)), finishReason };
+    ? { text, finishReason }
+    : { text: text.slice(0, Math.floor(text.length / 2)), finishReason };
+}
+
+/** The body the stub writes for every unit: a statement any fill check accepts, and obviously not a model's. */
+export const GEMINI_TEST_STUB_FILL_BODY = {
+  node: "return undefined as never; // gemini-test-stub",
+  rap: '" gemini-test-stub\nRETURN.',
+} as const;
+
+/**
+ * The fill answer for a fill prompt: the request is the JSON after the
+ * `REQUEST (JSON):` line (`lib/transformation/fill-prompt.ts`). A prompt the
+ * stub cannot read gets an answer with no units — which the orchestrator
+ * treats as unusable, as it would a model's.
+ */
+export function geminiTestStubFillText(prompt: string): string {
+  const marker = 'REQUEST (JSON):\n';
+  const at = prompt.indexOf(marker);
+  type StubUnit = { unitId: string; decline: boolean; calls: string[]; predicates: string[] };
+  let units: StubUnit[] = [];
+  let track: 'node' | 'rap' = 'node';
+  if (at >= 0) {
+    try {
+      const request = JSON.parse(prompt.slice(at + marker.length)) as {
+        track?: unknown;
+        units?: Array<{ unitId?: unknown; abap?: { text?: unknown }; guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown }> }>;
+      };
+      if (request.track === 'rap') track = 'rap';
+      units = Array.isArray(request.units)
+        ? request.units
+            .filter((u) => u && typeof u.unitId === 'string')
+            .map((u) => {
+              const guards = Array.isArray(u.guards) ? u.guards : [];
+              return {
+                unitId: u.unitId as string,
+                decline: typeof u.abap?.text === 'string' && u.abap.text.includes(GEMINI_TEST_STUB_DECLINE),
+                calls: guards.filter((g) => g.placement === 'body' && typeof g.helper === 'string').map((g) => g.helper as string),
+                predicates: guards.filter((g) => typeof g.regionId === 'string' && typeof g.id === 'string').map((g) => g.id as string),
+              };
+            })
+        : [];
+    } catch {
+      units = [];
+    }
+  }
+  return JSON.stringify({
+    units: units.map((u) =>
+      u.decline
+        ? { unitId: u.unitId, body: '', needs: [], refused: { reason: 'gemini-test-stub: the slice asks the stub to decline this function.' } }
+        : {
+            unitId: u.unitId,
+            body: stubBody(track, u.calls),
+            guards: u.predicates.map((id) => ({ id, body: GEMINI_TEST_STUB_PREDICATE[track] })),
+            needs: [],
+            refused: null,
+          },
+    ),
+    stub: 'gemini-test-stub',
+  });
+}
+
+/**
+ * A comment in a seeded ABAP routine that makes the stub decline that unit — so
+ * a rendered spec can prove the partial path (owner, 12.10.2026, Q4: a unit the
+ * model cannot write stays a stub with a finding). Only the stub reads it.
+ */
+export const GEMINI_TEST_STUB_DECLINE = 'gemini-test-stub:decline';
+
+/** The predicate the stub writes for every guard: the condition never holds. Obviously not a model's. */
+export const GEMINI_TEST_STUB_PREDICATE = {
+  node: 'return false; // gemini-test-stub',
+  rap: '" gemini-test-stub\nresult = abap_false.',
+} as const;
+
+/**
+ * The stub's body: the fixed statement, and — where the unit must call a
+ * guard at the original's line (design §9.2 rule 7) — that call in a branch
+ * that never runs, so the fill checks accept it as they would a model's body.
+ */
+function stubBody(track: 'node' | 'rap', calls: readonly string[]): string {
+  if (calls.length === 0) return GEMINI_TEST_STUB_FILL_BODY[track];
+  if (track === 'node') return `if (Date.now() < 0) {\n${calls.map((c) => `  ${c}();`).join('\n')}\n}\n${GEMINI_TEST_STUB_FILL_BODY.node}`;
+  return `IF 1 = 0.\n${calls.map((c) => `  ${c}( ).`).join('\n')}\nENDIF.\n${GEMINI_TEST_STUB_FILL_BODY.rap}`;
 }

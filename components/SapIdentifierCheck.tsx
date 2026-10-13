@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { CcStateDot } from '@/components/cc/StateText';
 import { STATE_CLASSES } from '@/components/cc/state';
@@ -13,7 +13,26 @@ import {
   sapIdMark,
   type SapIdCheck,
   type SapIdStatus,
+  sapIdentifierSourcesNote,
 } from '@/lib/sap-reference-check';
+import { loadSapNameLists, onSapNameListsChange, sapNameListsVersion } from '@/lib/sap-identifiers';
+
+/**
+ * Loads SAP's synced name lists (a chunk of their own, never in the page's
+ * bundle) and re-renders when they arrive, so a released CDS view reads "name
+ * found in catalog" instead of "not verified" once the list is there (3.0.12).
+ */
+export function useSapNameLists(): number {
+  const [version, setVersion] = useState(sapNameListsVersion());
+  useEffect(() => {
+    const off = onSapNameListsChange(() => setVersion(sapNameListsVersion()));
+    void loadSapNameLists();
+    return () => {
+      off();
+    };
+  }, []);
+  return version;
+}
 
 /**
  * SAP identifiers a model wrote, with their check beside them — owner,
@@ -27,6 +46,8 @@ import {
 const STATE: Record<SapIdStatus, { state: Exclude<SemanticState, 'success'>; hollow: boolean }> = {
   verified: { state: 'information', hollow: false },
   mismatch: { state: 'error', hollow: false },
+  // A name found in a list: known to exist, nothing more checked (3.0.12).
+  catalog: { state: 'neutral', hollow: false },
   unverified: { state: 'neutral', hollow: true },
 };
 
@@ -55,6 +76,20 @@ export function SapIdMark({ check }: { check: SapIdCheck }) {
           </a>
         </>
       ) : null}
+      {check.attribution ? (
+        <>
+          {' '}
+          {/* SAP's GitHub documentation is CC BY 4.0: the licence is linked wherever its facts are shown. */}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noopener noreferrer license"
+            className="underline underline-offset-2 hover:text-cc-ink"
+          >
+            licence
+          </a>
+        </>
+      ) : null}
     </span>
   );
 }
@@ -65,6 +100,7 @@ export function SapIdMark({ check }: { check: SapIdCheck }) {
  * name (`occurrencesToMark`). Text without identifiers comes back unchanged.
  */
 export function SapCheckedText({ text }: { text: string | null | undefined }) {
+  useSapNameLists();
   if (!text) return null;
   const checks = findSapIdentifiers(text);
   if (checks.length === 0) return <>{text}</>;
@@ -87,6 +123,7 @@ export function SapCheckedText({ text }: { text: string | null | undefined }) {
  * Nothing at all when there are none.
  */
 export function SapIdentifierChecks({ texts, title = 'SAP identifiers named here' }: { texts: Array<string | null | undefined>; title?: string }) {
+  useSapNameLists();
   const checks = checkSapReferences(...texts);
   if (checks.length === 0) return null;
   return (
@@ -101,6 +138,7 @@ export function SapIdentifierChecks({ texts, title = 'SAP identifiers named here
           </li>
         ))}
       </ul>
+      <p className="m-0 mt-1 cc-text-meta text-cc-ink-muted">{sapIdentifierSourcesNote()}</p>
     </div>
   );
 }

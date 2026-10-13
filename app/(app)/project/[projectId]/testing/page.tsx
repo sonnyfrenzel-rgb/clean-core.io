@@ -65,6 +65,7 @@ import { readProgram } from '@/components/testing/program-reading';
 import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
 import TestingClosureCard from '@/components/testing/TestingClosureCard';
 import { CLOSED_NOT_VERIFIED, failureSentence, testingClosureReading } from '@/lib/testing-closure';
@@ -704,7 +705,7 @@ export default function TestingSandboxPage() {
           uid,
           email: profile.email,
           name: `${profile.firstName} ${profile.lastName}`,
-          motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection'
+          motivation: accessRequestedMotivation || 'Live SAP S/4HANA Cloud Public Edition Sandbox Connection'
         })
       });
       if (!res.ok) {
@@ -1091,6 +1092,8 @@ export default function TestingSandboxPage() {
   const [tickState, setTickState] = useState<{ code: string; ticks: StripTick[] } | null>(null);
   const evidenceFile = project?.auditMetadata?.inputFingerprint?.fileName || 'main.abap';
   const evidenceDeployment = targetEditionOf(project?.s4Deployment);
+  /** The engine of the signed run (roadmap 3.0.12): an older run keeps the findings it signed. */
+  const evidenceEngine = engineVersionOfProject(project);
   useEffect(() => {
     const code = project?.legacyCode;
     if (typeof code !== 'string' || !code.trim()) return undefined;
@@ -1098,7 +1101,7 @@ export default function TestingSandboxPage() {
     import('@/lib/abap/evidence-model')
       .then(({ buildAbapEvidence }) => {
         if (!live) return;
-        const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment);
+        const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment, undefined, evidenceEngine);
         setTickState({
           code,
           ticks: report.findings.flatMap((f) => {
@@ -1114,7 +1117,7 @@ export default function TestingSandboxPage() {
     return () => {
       live = false;
     };
-  }, [project?.legacyCode, evidenceFile, evidenceDeployment]);
+  }, [project?.legacyCode, evidenceFile, evidenceDeployment, evidenceEngine]);
   /** Ticks only for the source they were computed from. */
   const findingTicks: StripTick[] = tickState && tickState.code === project?.legacyCode ? tickState.ticks : [];
 
@@ -2294,7 +2297,7 @@ export default function TestingSandboxPage() {
                             ) : undefined}
                           >
                             <p className="cc-text-cell text-cc-ink-muted mb-4">
-                              A non-productive S/4HANA Public Cloud endpoint, to check the connection and read OData metadata. Credentials are encrypted on the server and never shown again. Also in{' '}
+                              A non-productive SAP S/4HANA Cloud Public Edition endpoint, to check the connection and read OData metadata. Credentials are encrypted on the server and never shown again. Also in{' '}
                               <Link href="/settings" className="font-semibold text-cc-information hover:underline">Settings</Link>.
                             </p>
                             <form onSubmit={saveS4Config} className="space-y-6">
@@ -2698,7 +2701,7 @@ export default function TestingSandboxPage() {
                           write — the field only stops the typing earlier. */}
                       <CcTextarea
                         label="Description of your use case (Motivation)"
-                        placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
+                        placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."
                         value={accessRequestedMotivation}
                         maxLength={2000}
                         rows={3}

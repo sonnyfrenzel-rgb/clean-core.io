@@ -1,6 +1,6 @@
 {
   "name": "clean-core-io",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "description": "Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision.",
   "private": true,
   "license": "Apache-2.0",
@@ -18,7 +18,9 @@
     "build:whitepaper-pdf": "tsx scripts/generate-whitepaper-pdf.ts",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
+    "sync:identifiers": "tsx scripts/sync-sap-identifiers.ts",
     "sync:architecture-center": "tsx scripts/sync-sap-architecture-center.ts",
+    "sync:sap-references": "tsx scripts/sync-sap-references.ts",
     "demo:regenerate": "tsx scripts/regenerate-demo.ts",
     "sync:content-dates": "node scripts/sync-content-dates.mjs",
     "deploy:rules": "tsx scripts/rules-deploy.ts --deploy",

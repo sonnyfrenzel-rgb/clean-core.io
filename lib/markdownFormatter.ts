@@ -15,6 +15,32 @@ import {
   coverageClaims,
   sapReferenceAppendixMarkdown,
 } from './sap-reference-check';
+import { checkModelLineRefs, engineLineAnchors } from './abap/narrative-anchors';
+
+/** What the exports of model text may be given beside it. */
+export interface ModelTextExportOptions {
+  /** The analysed ABAP source: the model's raw line references are checked against the engine's anchors of it. */
+  code?: string | null;
+}
+
+/**
+ * The model's raw line references in an export, held against the engine's
+ * anchors of the source (SD review CC-R32, 12.10.2026: "L24–L31" for lines
+ * 4–13). A reference that disagrees is dropped, and so is every one when no
+ * source is at hand — and the document says how many went.
+ */
+function withCheckedLineRefs(md: string, options?: ModelTextExportOptions): string {
+  const index = typeof options?.code === 'string' && options.code ? engineLineAnchors(options.code) : null;
+  const { text, dropped } = checkModelLineRefs(md, index);
+  if (!dropped.length) return text;
+  const why = index
+    ? "they do not agree with the engine's line anchors of the source"
+    : 'no source was at hand to check them against';
+  return `${text.replace(/\s+$/, '')}
+
+> ${dropped.length} line reference${dropped.length === 1 ? '' : 's'} the model wrote ${dropped.length === 1 ? 'was' : 'were'} dropped: ${why}. Finding ids ([CC-…]) and the engine's own anchors are unaffected.
+`;
+}
 
 /**
  * Professional Markdown Formatting Engine
@@ -22,7 +48,7 @@ import {
  * into beautifully readable, corporate-grade executive reports.
  */
 
-export function formatAnalysisToMarkdown(rawJson: string): string {
+export function formatAnalysisToMarkdown(rawJson: string, options?: ModelTextExportOptions): string {
   if (!rawJson) return '';
   try {
     // The shared reader of a stored analysis: code fences stripped, amounts of money masked (lib/money-honesty.ts).
@@ -98,13 +124,13 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
       ...(Array.isArray(data.strategicNextSteps) ? data.strategicNextSteps : []),
     );
 
-    return md;
+    return withCheckedLineRefs(md, options);
   } catch (e) {
     return withoutUnapprovedMoney(rawJson);
   }
 }
 
-export function formatDesignToMarkdown(rawJson: string): string {
+export function formatDesignToMarkdown(rawJson: string, options?: ModelTextExportOptions): string {
   if (!rawJson) return '';
   try {
     const cleanedJson = rawJson.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
@@ -162,7 +188,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
       md += `## SAP Business Accelerator Hub Mappings\n`;
-      md += `Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use.\n\n`;
+      md += `Model proposal: the released SAP APIs the model names in place of direct database access. Every identifier is checked against SAP data this product holds; a verified ID is SAP's, not a proof that it covers this use, and “name found in catalog” means the name is in a list and nothing more.\n\n`;
       md += `| Legacy Object | Proposed SAP API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.sapStandardApiMapping.forEach((map: any) => {
@@ -204,7 +230,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
       ...(Array.isArray(data.sapStandardApiMapping) ? data.sapStandardApiMapping.flatMap((m: any) => [m?.sapStandardApiName, m?.apiId, m?.description]) : []),
     );
 
-    return md;
+    return withCheckedLineRefs(md, options);
   } catch (e) {
     return rawJson;
   }

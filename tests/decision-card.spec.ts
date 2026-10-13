@@ -852,7 +852,8 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
       attestation: null,
       provenance: 'reconstructed',
     });
-    expect(point.line).toBe('The SAP catalog check is not specific to S/4HANA Cloud, Private Edition.');
+    // The record keeps the contract's bytes; the line reads SAP's product name (owner decision 13.10.2026).
+    expect(point.line).toBe('The SAP catalog check is not specific to SAP Cloud ERP Private.');
     // A limit of this build, not a task: no setting closes it (ADR-085).
     expect(point.kind).toBe('limit');
     expect(point.place).toEqual({ kind: 'view', view: 'it', hash: 'it-target-profile', action: 'See the target profile' });

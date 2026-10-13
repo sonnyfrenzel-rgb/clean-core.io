@@ -228,8 +228,8 @@ export function lookupObjects(sites: readonly ObjectSite[]): { name: string; use
  */
 export const LEVEL_OVERLAY_NOTE =
   'Levels come from SAP’s released-object lists (abap-atc-cr-cv-s4hc), read for this project’s target: '
-  + 'the S/4HANA Cloud Public Edition list for a Public Edition project, the Private Edition list — pinned to '
-  + 'the named release where SAP publishes one — for a Private Edition project, and the Public Edition list '
+  + 'the SAP S/4HANA Cloud Public Edition list for a Public Edition project, the SAP Cloud ERP Private list — pinned to '
+  + 'the named release where SAP publishes one — for an SAP Cloud ERP Private project, and the Public Edition list '
   + 'when the project names no edition.';
 
 /** `NAME` or `NAME@use`, the shape `/api/abcd-classify` answers with. */

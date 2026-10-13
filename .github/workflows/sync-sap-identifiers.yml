@@ -1,0 +1,149 @@
+name: Sync SAP Identifiers
+
+# Weekly pull of SAP identifier facts into lib/abap/generated/sap-identifiers.json
+# (roadmap 3.0.12, owner 12.10.2026): the CDS views SAP has released for the public and
+# the private edition and the BAPIs SAP classifies as classic APIs, read from the SAP
+# Cloudification Repository on GitHub (Apache-2.0); and, since 13.10.2026, communication
+# scenario IDs and titles from a few pinned documents of SAP's documentation sources on
+# GitHub (github.com/SAP-docs, CC BY 4.0), read through api.github.com at each repository's
+# HEAD commit after its REUSE.toml licence is checked, each entry stored with its source,
+# commit and attribution (lib/sap-identifier-sync.ts, SAP_DOCS_SOURCES). The sync job runs
+# without a token: a handful of unauthenticated GitHub API requests. SAP Help Portal, the
+# Business Accelerator Hub and the Fiori apps library are not fetched: SAP's Terms of Use
+# for SAP Websites forbid automated extraction, so their facts stay in the hand-checked list
+# in lib/sap-identifiers.ts. A list or document that fails or comes back short keeps the
+# previous one. The log carries counts and IDs only.
+#
+# Same shape as sync-catalog.yml and sync-architecture-center.yml: no pull request (Actions
+# may not open one here), the branch is pushed and the QA agent's weekly pipeline check
+# reports it while it is ahead of main; the job that installs and syncs holds a read-only
+# token and hands over only the data file as an artifact; the push job starts from a fresh
+# checkout, runs no npm at all, accepts nothing but the expected path, and runs git with
+# hooks and fsmonitor switched off.
+on:
+  schedule:
+    - cron: '45 6 * * 1'   # Mondays 06:45 UTC, after the catalog and architecture syncs
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Nothing in this job pushes; npm install scripts and tsx run here,
+          # so no token is left in .git/config.
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Sync SAP identifier facts
+        id: sync
+        run: |
+          npx tsx scripts/sync-sap-identifiers.ts
+          if [ -n "$(git status --porcelain -- lib/abap/generated/sap-identifiers.json)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only the data file leaves this job.
+      - name: Collect the changed data file
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          out="$RUNNER_TEMP/identifier-sync"
+          mkdir -p "$out/lib/abap/generated"
+          cp lib/abap/generated/sap-identifiers.json "$out/lib/abap/generated/sap-identifiers.json"
+
+      - name: Upload the data file
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: identifier-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/identifier-sync/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: No change
+        if: steps.sync.outputs.changed == 'false'
+        run: echo "### SAP identifiers unchanged" >> "$GITHUB_STEP_SUMMARY"
+
+  push:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot branch; nothing else
+    steps:
+      # A fresh checkout of the same commit. No package install and no project
+      # script runs in this job, so nothing has had a chance to touch .git/.
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the data file
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: identifier-sync-${{ github.run_id }}
+          path: ${{ runner.temp }}/identifier-sync
+
+      # The artifact may hold the one data file and nothing else: no other path,
+      # no subdirectory, no symlink.
+      - name: Accept only the expected path
+        run: |
+          src="$RUNNER_TEMP/identifier-sync"
+          unexpected=$(cd "$src" && find . -mindepth 1 \( -type l -o \( -type d ! -path ./lib ! -path ./lib/abap ! -path ./lib/abap/generated \) -o \( -type f ! -path ./lib/abap/generated/sap-identifiers.json \) -o \( ! -type f ! -type d \) \) -print)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The sync artifact holds unexpected paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          cp "$src/lib/abap/generated/sap-identifiers.json" lib/abap/generated/sap-identifiers.json
+          changes=$(git status --porcelain --untracked-files=all)
+          stray=$(printf '%s\n' "$changes" | grep -vE '^.. lib/abap/generated/sap-identifiers\.json$' | grep -v '^$' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::The working tree changed outside the identifier data:"
+            echo "$stray"
+            exit 1
+          fi
+          if [ -z "$changes" ]; then
+            echo "::error::The sync reported a change, but the artifact matches the checkout."
+            exit 1
+          fi
+
+      - name: Commit the update
+        run: |
+          git checkout -B chore/sync-sap-identifiers
+          git add lib/abap/generated/sap-identifiers.json
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore(identifiers): sync SAP identifier facts"
+
+      - name: Push the update to its branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c credential.helper= \
+            push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/sync-sap-identifiers
+          {
+            echo "### SAP identifier update ready"
+            echo
+            echo "Branch \`chore/sync-sap-identifiers\` holds this week's sync. It is reviewed and brought in"
+            echo "through \`dev\`; the weekly QA pipeline check reports it until then."
+          } >> "$GITHUB_STEP_SUMMARY"

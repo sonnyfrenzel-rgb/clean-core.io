@@ -2,6 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import { gradeSapObject } from '@/lib/abap/catalog-service';
+import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import { sha256Hex } from '@/lib/artefact-digest';
@@ -32,6 +33,7 @@ import {
 } from '@/lib/transformation-context';
 import { readSpecRecord, SPEC_COLLECTION, SPEC_DOC, SPEC_NFR_CATEGORY_LABEL, type SpecRecord } from '@/lib/requirements-spec';
 import { richPlain } from '@/lib/rich-text';
+import { standardFitAssessed } from '@/lib/standard-fit-gate';
 
 /**
  * The server's half of the PLATFORM KNOWLEDGE block (owner, 12.10.2026;
@@ -64,6 +66,12 @@ export interface TransformationContextStamp {
   decision: string;
   /** Revision of the accepted requirements: who, and a digest of what was accepted (`none` when none is). */
   requirements: string;
+  /**
+   * The owner's answer per rule, as the scaffold applies it (roadmap 3.0.12,
+   * step E: DROP absent, CHANGE with the proposal, OPEN as the original).
+   * Covered by `rules` above; not a line of the token's canonical form.
+   */
+  decisions: Array<{ id: string; answer: ContextRule['answer']; note: string | null }>;
 }
 
 /** What `readRuleAnswers` found: the answers to apply, and on what they rest. */
@@ -257,6 +265,8 @@ function decisionOf(project: Record<string, unknown>, contract: ArchitectureCont
   const record = recordedDecisionOf(project.decision);
   const signedOff =
     project.approvedByArchitect === true && typeof project.targetArchitecture === 'string' ? project.targetArchitecture : null;
+  // The same reading as the Transformation's warning tip (`lib/standard-fit-gate.ts`).
+  const standardFit = standardFitAssessed(project);
   return {
     route: {
       chosen: contract.route.chosen,
@@ -266,6 +276,7 @@ function decisionOf(project: Record<string, unknown>, contract: ArchitectureCont
     record,
     signedOff,
     reference: referenceLineOf(ROUTE_CODE[contract.route.chosen]),
+    standardFit: { assessed: standardFit.assessed, sentence: standardFit.sentence },
   };
 }
 
@@ -375,6 +386,40 @@ export function assembleTransformationContext(args: AssembleArgs): { context: Tr
       rules: rulesStamp(rules),
       decision: decisionStamp(args.project),
       requirements: requirementsStamp(args.accepted ?? null),
+      decisions: rules.items.map((r) => ({ id: r.id, answer: r.answer, note: r.note })),
     },
   };
+}
+
+/**
+ * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
+ * 3.0.12): the owner's rule answers (one read beside revision 1 of the
+ * process), the requirements accepted in the specification, the decision
+ * record, the summary facts and the catalog
+ * successors of the evidence this contract was just built on. GET and POST
+ * build it the same way, so the token compares the same block — and the
+ * lease route (step E) checks the token against the same block.
+ */
+export async function platformContextOf(
+  db: Firestore,
+  projectId: string,
+  data: Record<string, unknown>,
+  built: { contract: ArchitectureContract; evidence: AbapEvidenceReport },
+  isAbapCloud: boolean,
+) {
+  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
+  const [answers, accepted] = await Promise.all([
+    readRuleAnswers(db, projectId, source),
+    readAcceptedRequirements(db, projectId),
+  ]);
+  return assembleTransformationContext({
+    source,
+    project: data,
+    answers,
+    accepted,
+    evidence: built.evidence,
+    contract: built.contract,
+    isAbapCloud,
+    catalogSnapshot: catalogSnapshotKeyForProject(data),
+  });
 }

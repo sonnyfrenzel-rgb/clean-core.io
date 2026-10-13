@@ -122,7 +122,7 @@ start and changeable in the IT view (free for examples, also repeatedly); Manage
 Keep · Rebuild · Move to SAP standard · Retire with distance to SAP standard, effort and cost (ADR-079);
 German ABAP names in English; "Work from this process" band; two names for the two ways back; level
 explanations in IT and Management; Transformation progress by real steps; "Back to top" fixed; safe engine
-fixes from the ZMM_BESTELLUEBERSICHT review. CHANGELOG has the details.
+fixes from the MM case review. CHANGELOG has the details.
 
 **Planned:** 3.0.6 = security hardening (moved from 3.0.5) + "not determined" as closable open questions
 (concept from 06.10., in the scratchpad until 3.0.6 starts) + level explanations on one-pager, print and

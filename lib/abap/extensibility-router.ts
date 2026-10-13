@@ -1,6 +1,6 @@
 import type { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
-import { scoreRuleFor } from '../score-rule';
+import { engineVersionAtLeast, scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 
 export interface DecisionCheckpoint {
@@ -115,24 +115,184 @@ export interface RouteDriver {
 }
 
 /**
+ * The first engine version whose route a frontend file feature no longer
+ * chooses (roadmap 3.0.12, owner decision 12.10.2026; CO review F14, PP F11,
+ * SD R12).
+ *
+ * Until then a single `GUI_UPLOAD` or `GUI_DOWNLOAD` made the route
+ * side-by-side, with the rationale "Frontend GUI file services are used.
+ * Decoupled web client uploads on SAP BTP are required" — our own sentence, in
+ * every reviewed package (FI, CO, PP, SD), including programs that only
+ * download a list. It was not true: a download is an export of a list, which a
+ * Fiori list report does on-stack, and an upload is a file a RAP business
+ * object takes as a large object (attachment) field from S/4HANA 2022 on.
+ * Neither needs a separate runtime. So a frontend file feature is now rework
+ * on-stack, like a dynpro or a classic ALV, and never a route driver.
+ *
+ * A run signed with an earlier engine keeps the rule it was signed with, the
+ * way the score does (`lib/score-rule.ts`): its route is recomputed with its
+ * own engine version wherever a screen compares it with the signed one.
+ */
+export const GUI_FILE_NO_ROUTE_DRIVER_FROM = '3.0.12';
+
+/** Whether a frontend file feature can choose the route for a run of this engine version. */
+export function guiFileDrivesRoute(engineVersion: string | null | undefined): boolean {
+  return !engineVersionAtLeast(engineVersion, GUI_FILE_NO_ROUTE_DRIVER_FROM);
+}
+
+/** Upload, download, or not readable — what a frontend file finding does, read off what it calls. */
+export type GuiFileDirection = 'upload' | 'download' | 'unknown';
+
+/**
+ * The direction of one frontend file finding, from the module or method it
+ * calls: `GUI_UPLOAD` / `WS_UPLOAD` / `FILE_OPEN_DIALOG` read a file from the
+ * user's PC; `GUI_DOWNLOAD` / `WS_DOWNLOAD` / `FILE_SAVE_DIALOG` write one.
+ * `CL_GUI_FRONTEND_SERVICES` with neither in the statement is not guessed.
+ */
+export function guiFileDirection(finding: { objectName?: string | null; snippet?: string | null }): GuiFileDirection {
+  const text = `${finding.objectName ?? ''} ${finding.snippet ?? ''}`;
+  const up = /\b(?:GUI|WS)_UPLOAD\b|\bFILE_OPEN_DIALOG\b/i.test(text);
+  const down = /\b(?:GUI|WS)_DOWNLOAD\b|\bFILE_SAVE_DIALOG\b/i.test(text);
+  if (up && !down) return 'upload';
+  if (down && !up) return 'download';
+  return 'unknown';
+}
+
+/**
+ * The first engine version whose route BDC, native SQL, a local RFC and — in
+ * the Public Edition — writes to custom or SAP standard tables no longer
+ * choose (roadmap 3.0.12, finding C1 of the DSAG ABAP guide review, owner
+ * decision 13.10.2026).
+ *
+ * Until then each of them made the route side-by-side on its own. None of
+ * them is a reason to leave the stack:
+ *
+ *   - BDC (`CALL TRANSACTION … USING`) does not run in ABAP Cloud, and its
+ *     dynpros carry no stability contract. The answer is the released API for
+ *     the same business object, called on-stack; where SAP has released none,
+ *     a wrapper around the classic API plus an influence request to SAP
+ *     (Private Edition and on-premise — the Public Edition gives no access to
+ *     an unreleased object to wrap). A side-by-side service would need the
+ *     same released API, so moving the code off the stack solves nothing.
+ *   - Native SQL (`EXEC SQL`, ADBC) is rewritten in ABAP SQL against released
+ *     CDS views or the customer's own CDS view entities, on-stack.
+ *   - A call of an RFC-enabled function module with `DESTINATION 'NONE'` or
+ *     `DESTINATION IN GROUP` (parallel processing) stays in this system. Only a
+ *     call to another system — any other destination, a variable one included,
+ *     because the code does not show it is local — remains a route driver.
+ *   - Public Edition: a custom table is developer extensibility on-stack (a
+ *     database table in the customer namespace, a RAP business object on it).
+ *     A direct write to an SAP standard table is not clean core in any
+ *     edition, and a side-by-side service cannot write SAP's tables either:
+ *     the remedy is the released API, which is a finding to fix, not a runtime
+ *     to choose.
+ *
+ * Sources: the DSAG ABAP guide (github.com/1DSAG/ABAP-Leitfaden, commit
+ * 100600df, CC BY 4.0; translated from German, paraphrased) — clean-core/
+ * solution-approach.md "ABAP Cloud" (one development model for SAP BTP, ABAP
+ * environment, S/4HANA Cloud Public and Private Edition and on-premise) and
+ * "Level Concept" (wrapper plus influence request), architectural-concepts.md
+ * "Kopplung" (clean core is reachable on the own system without side-by-side;
+ * tightly coupled applications belong on the stack). Where the guide was not
+ * followed word for word:
+ *   - "Kopplung" says a tightly coupled application "should be built
+ *     on-premise". On-premise is a deployment, not an extension style; in the
+ *     Public Edition the same answer is on-stack developer extensibility, so
+ *     this rule says "on-stack" (`IN_APP_ROUTE`).
+ *   - "Level Concept" offers a wrapper wherever an API is not released. A
+ *     wrapper needs access to the unreleased object, which only Private
+ *     Edition and on-premise give (classic ABAP in a separate software
+ *     component); in the Public Edition the answer is the influence request
+ *     alone, and the sentences below say so.
+ *   - The guide is not consistent on RFC (integration/index.md keeps existing
+ *     RFC, its own table there says to avoid it). A call to another system
+ *     therefore stays a driver; only the local call, which integrates nothing,
+ *     is dropped.
+ *
+ * A run signed with an earlier engine keeps the rule it was signed with, like
+ * `GUI_FILE_NO_ROUTE_DRIVER_FROM`.
+ */
+export const ON_STACK_CONSTRUCTS_FROM = '3.0.12';
+
+/**
+ * The router's assumption for a Public Edition target, from 3.0.12 (SAP's
+ * product name, owner decision 13.10.2026). Exported because a contract whose
+ * run bound no target must not carry it: the router is handed `public` as its
+ * default there, and the most permissive target is not one to state unbound
+ * (`lib/architecture-contract.ts`, preconditions).
+ */
+export const PUBLIC_TARGET_ASSUMPTION =
+  'SAP S/4HANA Cloud Public Edition selected as the target — custom code uses released APIs only (clean core level A); an unreleased API cannot be wrapped.';
+
+/** Whether BDC, native SQL, a local RFC and Public Edition table writes can choose the route for a run of this engine version. */
+export function legacyConstructsDriveRoute(engineVersion: string | null | undefined): boolean {
+  return !engineVersionAtLeast(engineVersion, ON_STACK_CONSTRUCTS_FROM);
+}
+
+/** Where an RFC finding calls: this system (`local`) or another one (`outbound`). */
+export type RfcTarget = 'local' | 'outbound';
+
+/**
+ * Where one `rfc-call` finding calls, read off its statement.
+ *
+ * Local: `DESTINATION 'NONE'` (this system, a new session) and `DESTINATION IN
+ * GROUP` (parallel processing on this system's servers), and a statement whose
+ * only `DESTINATION` is a parameter of that name — the call itself has no
+ * destination addition. Everything else is
+ * outbound: a literal naming another destination, `'BACK'` (the calling
+ * system), and a variable or constant — the code does not show where it
+ * points, so it is not shown to be local. A finding that carries `rfcTarget`
+ * (a findings row, which has no snippet) is read by that; one with neither is
+ * outbound, which is what every RFC finding was before 3.0.12.
+ */
+export function rfcCallTarget(finding: { snippet?: string | null; rfcTarget?: RfcTarget | null }): RfcTarget {
+  if (finding.rfcTarget === 'local' || finding.rfcTarget === 'outbound') return finding.rfcTarget;
+  const snippet = finding.snippet ?? '';
+  if (!snippet.trim()) return 'outbound';
+  // `DESTINATION` followed by `=` is a parameter of that name, not the
+  // addition (`CALL FUNCTION 'RFC_CONNECTION_CLOSE' EXPORTING destination =
+  // …`): a statement with no addition calls this system.
+  const m = /\bDESTINATION\s+(IN\s+GROUP\b|'(?:[^']|'')*'|`[^`]*`|[\w/-]+)/i.exec(snippet);
+  if (!m) return 'local';
+  const dest = m[1].replace(/\s+/g, ' ').toUpperCase();
+  if (dest === 'IN GROUP') return 'local';
+  if (/^['`]\s*NONE\s*['`]$/.test(dest)) return 'local';
+  return 'outbound';
+}
+
+/** A finding as `routeDrivers` reads it. */
+export type RouteDriverFinding = {
+  id: string;
+  lineStart: number;
+  kind: string;
+  /** The statement, which says where an RFC goes (`rfcCallTarget`). */
+  snippet?: string | null;
+  /** Where an RFC goes, for a caller that holds no snippet (`ItFindingRow`). */
+  rfcTarget?: RfcTarget | null;
+};
+
+/**
  * The constructs that choose a side-by-side route, in the order the rule reads
  * them. Empty means on-stack: `needsBtp` is `drivers.length > 0` and nothing
  * else.
  *
- * `deploymentModel` decides two of the six — custom persistence and direct
- * writes to standard tables are triggers in the Public Edition only (CR-04,
- * see `routeExtensibility`).
+ * From 3.0.12 (`ON_STACK_CONSTRUCTS_FROM`) one construct chooses it: an RFC
+ * call to another system. Before, six did — custom persistence and direct
+ * writes to standard tables in the Public Edition only (CR-04, see
+ * `routeExtensibility`), BDC, every RFC call, native SQL and a frontend file
+ * feature (`GUI_FILE_NO_ROUTE_DRIVER_FROM`). `engineVersion` picks the rule;
+ * there is no default, so no caller picks a rule silently.
  */
 export function routeDrivers(
   // What it reads and nothing more, so a caller holding only findings — the
   // architecture canvas — passes them without a cast (carried QA finding
   // 596831bd53a3).
-  evidence: { findings: ReadonlyArray<{ id: string; lineStart: number; kind: string }> },
+  evidence: { findings: ReadonlyArray<RouteDriverFinding> },
   deploymentModel: 'public' | 'private',
+  engineVersion: string | null,
 ): RouteDriver[] {
-  const of = (kind: EvidenceKind) => evidence.findings.filter((f) => f.kind === kind);
-  const driver = (kind: EvidenceKind): RouteDriver | null => {
-    const hits = of(kind);
+  const driver = (kind: EvidenceKind, keep: (f: RouteDriverFinding) => boolean = () => true): RouteDriver | null => {
+    const hits = evidence.findings.filter((f) => f.kind === kind && keep(f));
     if (hits.length === 0) return null;
     return {
       kind,
@@ -142,15 +302,93 @@ export function routeDrivers(
       findingIds: hits.map((f) => f.id),
     };
   };
-  const ordered: Array<RouteDriver | null> = [
-    deploymentModel === 'public' ? driver('custom-table-write') : null,
-    driver('bdc'),
-    driver('rfc-call'),
-    driver('native-sql'),
-    driver('gui-download'),
-    deploymentModel === 'public' ? driver('standard-table-write') : null,
-  ];
+  const ordered: Array<RouteDriver | null> = legacyConstructsDriveRoute(engineVersion)
+    ? [
+        deploymentModel === 'public' ? driver('custom-table-write') : null,
+        driver('bdc'),
+        driver('rfc-call'),
+        driver('native-sql'),
+        guiFileDrivesRoute(engineVersion) ? driver('gui-download') : null,
+        deploymentModel === 'public' ? driver('standard-table-write') : null,
+      ]
+    : [driver('rfc-call', (f) => rfcCallTarget(f) === 'outbound')];
   return ordered.filter((d): d is RouteDriver => d !== null);
+}
+
+type GuiFileFinding = { objectName?: string | null; snippet?: string | null; lineStart: number };
+
+/**
+ * What the frontend file features of a program mean for its route, upload and
+ * download apart (from 3.0.12). It names the finding and its line, says what
+ * replaces it on-stack, and — for an upload — names the requirement that would
+ * justify a side-by-side service instead, which the code cannot show. It never
+ * says side-by-side is required: no file feature makes it so.
+ */
+export function guiFileSentence(files: readonly GuiFileFinding[]): string {
+  const by = (dir: GuiFileDirection) => files.filter((f) => guiFileDirection(f) === dir);
+  const named = (list: readonly GuiFileFinding[]) => {
+    const names = [...new Set(list.map((f) => (f.objectName || 'CL_GUI_FRONTEND_SERVICES').toUpperCase()))].join(', ');
+    const first = list.reduce((min, f) => Math.min(min, f.lineStart), list[0].lineStart);
+    return `${names}, from line ${first}`;
+  };
+  const parts: string[] = [];
+  const downloads = by('download');
+  const uploads = by('upload');
+  const unknown = by('unknown');
+  if (downloads.length) {
+    parts.push(`The frontend file download (${named(downloads)}) writes a list to the user's PC: in ABAP Cloud a Fiori list report exports it to a spreadsheet on-stack, so the download forces no side-by-side split.`);
+  }
+  if (uploads.length) {
+    parts.push(`The frontend file upload (${named(uploads)}) reads a file from the user's PC: a RAP business object takes a file as a large object (attachment) field from S/4HANA 2022 on, so the upload alone forces no side-by-side split — a side-by-side service needs a requirement the code does not show, such as external users, files arriving from several systems, or a volume the S/4HANA stack should not carry.`);
+  }
+  if (unknown.length) {
+    parts.push(`The frontend file services (${named(unknown)}) do not run in ABAP Cloud and are replaced on-stack — an export by a Fiori list report, an upload by a RAP large object field (S/4HANA 2022 on); they force no side-by-side split.`);
+  }
+  return parts.join(' ');
+}
+
+type LinedFinding = { lineStart: number; snippet?: string | null };
+
+const firstLineOf = (list: readonly LinedFinding[]) => list.reduce((min, f) => Math.min(min, f.lineStart), list[0].lineStart);
+
+/**
+ * What native SQL, BDC and a local RFC call mean for the route, from 3.0.12
+ * (`ON_STACK_CONSTRUCTS_FROM`). Each names its count and first line, says what
+ * replaces it on-stack in ABAP Cloud, and that it forces no side-by-side
+ * split. Empty when none of them was found.
+ *
+ * The BDC answer differs by edition: a wrapper around an unreleased classic
+ * API exists only where custom code can reach that API — Private Edition and
+ * on-premise. In the Public Edition what is left is an influence request to
+ * SAP for a released API (see `ON_STACK_CONSTRUCTS_FROM` for why this departs
+ * from the DSAG guide's general wording).
+ */
+export function onStackSentences(
+  found: { nativeSql: readonly LinedFinding[]; bdc: readonly LinedFinding[]; localRfc: readonly LinedFinding[] },
+  deploymentModel: 'public' | 'private',
+): string {
+  const parts: string[] = [];
+  const { nativeSql, bdc, localRfc } = found;
+  if (nativeSql.length) {
+    parts.push(`The native SQL (${nativeSql.length}×, EXEC SQL or ADBC, from line ${firstLineOf(nativeSql)}) does not run in ABAP Cloud: it is rewritten on-stack in ABAP SQL against released CDS views or the customer's own CDS view entities, so it forces no side-by-side split.`);
+  }
+  if (bdc.length) {
+    const noApi = deploymentModel === 'public'
+      ? 'where SAP has released none, SAP S/4HANA Cloud Public Edition offers no classic API to wrap, and the way forward is an influence request to SAP for a released API'
+      : 'where SAP has released none, by a wrapper around the classic API, released for use in ABAP Cloud, together with an influence request to SAP for a released API';
+    parts.push(`The BDC screen automation (${bdc.length}×, from line ${firstLineOf(bdc)}) does not run in ABAP Cloud, and the screens it drives carry no stability contract. It is replaced on-stack by the released API of the same business object; ${noApi}. A side-by-side service would need the same released API, so the automation forces no side-by-side split.`);
+  }
+  if (localRfc.length) {
+    const forms = [
+      localRfc.some((f) => /\bDESTINATION\s+'\s*NONE\s*'/i.test(f.snippet ?? '')) ? "DESTINATION 'NONE'" : '',
+      localRfc.some((f) => /\bDESTINATION\s+IN\s+GROUP\b/i.test(f.snippet ?? '')) ? 'DESTINATION IN GROUP' : '',
+      localRfc.some((f) => !/\bDESTINATION\s+(?:IN\s+GROUP\b|'|`|[\w/-])/i.test(f.snippet ?? '')) ? 'no destination addition' : '',
+    ].filter(Boolean);
+    const how = forms.length ? `${forms.join(', ')}, ` : '';
+    const parallel = forms.includes('DESTINATION IN GROUP');
+    parts.push(`The function module call(s) read as RFC that stay in this system (${localRfc.length}×, ${how}from line ${firstLineOf(localRfc)}) integrate no other system, so they force no side-by-side split. In ABAP Cloud the called function is reached through a released API${parallel ? ', and parallel processing through the released class CL_ABAP_PARALLEL' : ''}.`);
+  }
+  return parts.join(' ');
 }
 
 /**
@@ -237,15 +475,28 @@ export function routeExtensibility(
   // model does not offer that path for custom persistence. The distinction is
   // the deployment, not the construct, which is why it is read from
   // `deploymentModel` and not from the finding.
-  const customPersistenceForcesBtp = deploymentModel === 'public' && customWrites.length > 0;
+  //
+  // From 3.0.12 it is no trigger in Public Edition either: developer
+  // extensibility holds custom tables on-stack there too
+  // (`ON_STACK_CONSTRUCTS_FROM`). A run of an earlier engine keeps the rule.
+  const legacyRule = legacyConstructsDriveRoute(engineVersion);
+  const customPersistenceForcesBtp = legacyRule && deploymentModel === 'public' && customWrites.length > 0;
+  // Before 3.0.12 every RFC call was a trigger; from then on only a call to
+  // another system is, and a local one (`DESTINATION 'NONE'`, `IN GROUP`) is
+  // rework on-stack (`rfcCallTarget`).
+  const outboundRfc = legacyRule ? rfcCalls : rfcCalls.filter((f) => rfcCallTarget(f) === 'outbound');
+  const localRfc = legacyRule ? [] : rfcCalls.filter((f) => rfcCallTarget(f) === 'local');
 
   // The constructs that actually chose the route, in the order the rule reads
   // them, and the one definition of that rule (`routeDrivers` above). Every
   // sentence below that names a construct takes it from here, and so does the
   // architecture contract of roadmap 8.2, which has to give the *same* reason
   // for rejecting the other track.
-  const drivers = routeDrivers(evidence, deploymentModel);
+  const drivers = routeDrivers(evidence, deploymentModel, engineVersion);
   const needsBtp = drivers.length > 0;
+  // Before 3.0.12 a frontend file feature chose the route on its own
+  // (`GUI_FILE_NO_ROUTE_DRIVER_FROM`); a run of that engine keeps that rule.
+  const guiFileRule = guiFileDrivesRoute(engineVersion);
 
   const recommendedRoute = needsBtp ? SIDE_BY_SIDE_ROUTE : IN_APP_ROUTE;
 
@@ -255,7 +506,16 @@ export function routeExtensibility(
   // A direct write to SAP's rows is not a side-by-side trigger in Private
   // Edition, and it is not compatible with ABAP Cloud either: it stays on-stack
   // only once it is replaced (QA full review of v2.20.0, e08f739fe79e).
-  const privateStandardWrites = deploymentModel === 'private' && standardWrites.length > 0;
+  // From 3.0.12 the same holds in Public Edition (`ON_STACK_CONSTRUCTS_FROM`):
+  // a side-by-side service cannot write SAP's rows either, so the write is a
+  // finding to replace, not a reason to leave the stack.
+  const standardWritesOnStack = standardWrites.length > 0 && (deploymentModel === 'private' || !legacyRule);
+  // What replaces such a write. A BAPI is a classic API the Public Edition
+  // does not offer to custom code, so its sentence names only released ones;
+  // the Private Edition words are the ones every earlier run signed.
+  const standardWriteRemedy = deploymentModel === 'public'
+    ? 'a released API or a RAP action of a released business object'
+    : 'a released write API, a BAPI or a RAP action';
 
   // Constructs that force no side-by-side split but do not run unchanged in
   // ABAP Cloud either: classic enhancements, dynpros, classic ALV, SUBMIT,
@@ -273,7 +533,18 @@ export function routeExtensibility(
   // statement has to go and the boundary be left to the RAP save sequence. It
   // forces no side-by-side split. ROLLBACK WORK produces no finding kind, so
   // there is no evidence here to classify for it.
-  const ON_STACK_REWORK: ReadonlySet<string> = new Set(['dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input', 'commit-work']);
+  //
+  // From 3.0.12 frontend file services are among them: SAP GUI's file dialogs
+  // do not run in ABAP Cloud, and what replaces them — a list report's export,
+  // a RAP large object field — runs on-stack (`GUI_FILE_NO_ROUTE_DRIVER_FROM`).
+  const ON_STACK_REWORK: ReadonlySet<string> = new Set([
+    'dynpro', 'classic-alv', 'submit', 'update-task', 'legacy-mail', 'unreleased-api', 'batch-input', 'commit-work',
+    ...(guiFileRule ? [] : ['gui-download']),
+    // From 3.0.12 native SQL, BDC and a local RFC are rework on-stack too
+    // (`ON_STACK_CONSTRUCTS_FROM`).
+    ...(legacyRule ? [] : ['native-sql', 'bdc']),
+    ...(localRfc.length > 0 ? ['rfc-call'] : []),
+  ]);
   const reworkKinds = [...new Set([
     ...enhancements.map((f) => f.kind),
     ...findings.filter((f) => ON_STACK_REWORK.has(f.kind)).map((f) => f.kind),
@@ -318,7 +589,7 @@ export function routeExtensibility(
   if (needsBtp) {
     // Custom writes only add confidence where they actually drove the decision.
     const customWeight = customPersistenceForcesBtp ? customWrites.length * 5 : 0;
-    confidenceScore = Math.min(95, 80 + customWeight + rfcCalls.length * 5);
+    confidenceScore = Math.min(95, 80 + customWeight + outboundRfc.length * 5);
   } else {
     confidenceScore = Math.min(90, 70 + standardReads.length * 5);
   }
@@ -343,13 +614,22 @@ export function routeExtensibility(
     // below is a recommendation with a precondition, not a technical
     // impossibility, and it says so (external counter-review, CR-03).
     rationale = `Detected ${customWrites.length} write(s) to custom database persistence. This recommendation routes it to a decoupled Side-by-Side service (CAP). It is not the only option: S/4HANA Cloud Public Edition can hold custom tables on-stack through developer extensibility (ABAP Cloud), where that is set up and the data belongs on the stack — a decision to take on the requirement, not one this analysis can settle from the code.`;
-  } else if (standardWrites.length > 0 && deploymentModel === 'public') {
+  } else if (legacyRule && standardWrites.length > 0 && deploymentModel === 'public') {
+    // The rule of runs made before 3.0.12, kept word for word
+    // (`ON_STACK_CONSTRUCTS_FROM`).
     rationale = `Direct writes to standard SAP tables are strictly prohibited in S/4HANA Public Cloud. Side-by-Side integration is required.`;
-  } else if (rfcCalls.length > 0) {
+  } else if (outboundRfc.length > 0) {
     rationale = `RFC integrations are present. These should be externalized via SAP Integration Suite destination service.`;
-  } else if (fileAccess.length > 0) {
+  } else if (guiFileRule && fileAccess.length > 0) {
+    // The rule of runs made before 3.0.12, kept word for word so a signed run
+    // recomputes to what it signed. Not said by a newer run: a file feature
+    // alone never forces side-by-side (`GUI_FILE_NO_ROUTE_DRIVER_FROM`).
     rationale = `Frontend GUI file services are used. Decoupled web client uploads on ${BTP} are required.`;
-  } else if (nativeSql.length > 0) {
+  } else if (legacyRule && nativeSql.length > 0) {
+    // This branch and the BDC one below are the rule of runs made before
+    // 3.0.12, kept word for word; a newer run says what replaces them on-stack
+    // (`onStackSentences` below, `ON_STACK_CONSTRUCTS_FROM`).
+    //
     // Native SQL and BDC set `needsBtp` and had no branch of their own, so a
     // program whose only finding was an `EXEC SQL` block was routed
     // Side-by-Side and told in the same report that only standard-table reads
@@ -358,17 +638,32 @@ export function routeExtensibility(
     // 8b1862e32291). Two contradictory recommendations in one signed report is
     // worse than either of them alone.
     rationale = `Detected ${nativeSql.length} native SQL statement(s) (EXEC SQL or ADBC). Native SQL bypasses the database abstraction and does not run in ABAP Cloud at all; the access has to be rewritten in ABAP SQL against released objects, or moved to a decoupled service.`;
-  } else if (bdcCalls.length > 0) {
+  } else if (legacyRule && bdcCalls.length > 0) {
     rationale = `Detected ${bdcCalls.length} BDC screen automation(s) (CALL TRANSACTION). Screen automation depends on SAP GUI dynpros that carry no stability contract; it has to be replaced by a released API, which is a side-by-side integration where none exists on-stack.`;
+  } else if (customWrites.length > 0 && deploymentModel === 'public') {
+    // Reached from 3.0.12 only: before, a Public Edition custom write chose
+    // the route and the branch above (`customPersistenceForcesBtp`) said so.
+    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. SAP S/4HANA Cloud Public Edition holds custom tables on-stack through developer extensibility (ABAP Cloud): the table is a database table in the customer namespace and a RAP business object is built on it, so the write forces no side-by-side split. A side-by-side service is a choice to take on the requirement — data shared with other systems, or a volume the S/4HANA stack should not carry — which the code does not show.`;
   } else if (customWrites.length > 0) {
-    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. In Private Edition / RISE this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`;
+    // The private edition by SAP's product name from 3.0.12 (owner decision
+    // 13.10.2026); a run of an earlier engine keeps the words it signed.
+    rationale = legacyRule
+      ? `Detected ${customWrites.length} write(s) to custom database persistence. In Private Edition / RISE this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`
+      : `Detected ${customWrites.length} write(s) to custom database persistence. In SAP Cloud ERP Private this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`;
+  } else if (standardWrites.length > 0 && deploymentModel === 'public') {
+    // Reached from 3.0.12 only (`ON_STACK_CONSTRUCTS_FROM`): leaving the stack
+    // does not fix a write to SAP's rows, since a side-by-side service cannot
+    // make one either.
+    rationale = `Direct writes to standard SAP tables are present. They are not allowed in SAP S/4HANA Cloud Public Edition and are not clean core in any edition, but leaving the stack does not fix them: a side-by-side service cannot write SAP's tables either. The write is replaced on-stack by ${standardWriteRemedy}, so it forces no side-by-side split.`;
   } else if (standardWrites.length > 0) {
-    // Not "wrappable". A Tier-2 wrapper encapsulates an unreleased SAP object
+    // Not "wrappable". A wrapper ("Tier 2" in the words of runs before 3.0.12) encapsulates an unreleased SAP object
     // so that ABAP Cloud code may reach it; it does not make a direct write to
     // SAP's rows a supported operation, and presenting it as the remedy invited
     // the reader to keep the write and hide it (QA review of b88c77b,
     // dbbc1bf8f01d / 7d9778a8a847 / 32ca5741aeb1 / fbc8bdcaa983).
-    rationale = `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
+    rationale = legacyRule
+      ? `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`
+      : `Direct writes to standard SAP tables are present. In SAP Cloud ERP Private the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
   } else if (findings.length > 0) {
     rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
   } else if (includesNotRead.length > 0) {
@@ -386,6 +681,16 @@ export function routeExtensibility(
   // WORK never learned that the commit has to go (QA review of dd8e996,
   // a0ae65b2b30d).
   rationale = `${rationale}${commitSentence}`;
+  // From 3.0.12: what native SQL, BDC and a local RFC mean for the route,
+  // whichever branch chose it — each names its finding and line and says what
+  // replaces it on-stack (`ON_STACK_CONSTRUCTS_FROM`).
+  if (!legacyRule) {
+    const onStack = onStackSentences({ nativeSql, bdc: bdcCalls, localRfc }, deploymentModel);
+    if (onStack) rationale = `${rationale} ${onStack}`;
+  }
+  // What a frontend file feature means for the route, whichever branch chose
+  // it — upload and download apart, because they have different remedies.
+  if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess)}`;
   // Every other branch named what it found; with an include not uploaded it
   // also says what it could not have found.
   if (includesNotRead.length > 0 && !namedNotRead) {
@@ -416,7 +721,7 @@ export function routeExtensibility(
       cleanCoreImpact: 'Zero modification where standard covers the process — whether it does is not established by this step.'
     },
     {
-      checkpointName: 'Key User Extensibility (Tier 3)',
+      checkpointName: legacyRule ? 'Key User Extensibility (Tier 3)' : 'Key User Extensibility',
       question: 'Can the extension be implemented using low-code/no-code Key User tools?',
       evaluation: findings.length === 0 && coverageIncomplete
         ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
@@ -432,17 +737,19 @@ export function routeExtensibility(
       cleanCoreImpact: 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
     },
     {
-      checkpointName: 'In-App Developer Extensibility (Tier 1)',
+      checkpointName: legacyRule ? 'In-App Developer Extensibility (Tier 1)' : 'In-App Developer Extensibility (ABAP Cloud)',
       question: 'Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?',
       evaluation: needsBtp
         ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.${commitSentence}`
-        : privateStandardWrites
-        ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.${commitSentence}`
+        : standardWritesOnStack
+        ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by ${standardWriteRemedy}.${commitSentence}`
         : onStackRework
         ? `Partial compatibility. What was found — ${reworkList} — does not run unchanged on ABAP Cloud${reworkCheckpoint}`
         : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-      cleanCoreImpact: 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
+      cleanCoreImpact: legacyRule
+        ? 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
+        : 'Target: clean core level A (ABAP Cloud) once the code uses released APIs only. Not established for the analysed code.'
     },
     {
       checkpointName: `Side-by-Side Extensibility (${BTP} CAP)`,
@@ -476,13 +783,13 @@ export function routeExtensibility(
   const modificationBlocks = modifications.length > 0;
 
   const inAppABAPCloud: ComparativeTrack = {
-    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp || privateStandardWrites || onStackRework ? 'Partially Compatible' : 'Highly Compatible',
+    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp || standardWritesOnStack || onStackRework ? 'Partially Compatible' : 'Highly Compatible',
     fitDetails: modificationBlocks
       ? `Not reachable as it stands. ${modifications.length} core modification(s) sit inside SAP standard code and have to be reset via SPAU before any ABAP Cloud target applies.`
       : needsBtp
       ? `Requires refactoring: ${btpTriggerList} must be replaced with released APIs or decoupled.`
-      : privateStandardWrites
-      ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by a released write API, a BAPI or a RAP action.`
+      : standardWritesOnStack
+      ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by ${standardWriteRemedy}.`
       : onStackRework
       ? reworkFit
       : 'Excellent fit. On-stack RAP execution provides high performance and direct access to standard released views.',
@@ -493,7 +800,11 @@ export function routeExtensibility(
     ],
     cons: [
       'Increases memory load on S/4HANA application server',
-      'Requires Tier-2 wrapping if unreleased APIs are needed'
+      legacyRule
+        ? 'Requires Tier-2 wrapping if unreleased APIs are needed'
+        : deploymentModel === 'public'
+        ? 'Uses released APIs only: where SAP has released none, an influence request to SAP is the way forward'
+        : 'Where an API is not released, needs a wrapper plus an influence request to SAP'
     ]
   };
 
@@ -519,7 +830,10 @@ export function routeExtensibility(
 
   // 5. Calculate evidence counts
   const supportingFindings = needsBtp
-    ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + fileAccess.length + (deploymentModel === 'public' ? standardWrites.length : 0)
+    ? legacyRule
+      ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + (guiFileRule ? fileAccess.length : 0) + (deploymentModel === 'public' ? standardWrites.length : 0)
+      // From 3.0.12 the one driver is an RFC call to another system.
+      : outboundRfc.length
     : standardReads.length;
 
   const evidenceCounts = {
@@ -530,24 +844,51 @@ export function routeExtensibility(
 
   // 6. Generate context-sensitive assumptions
   const assumptions: string[] = [];
-  if (deploymentModel === 'public') {
-    assumptions.push('S/4HANA Public Cloud deployment model selected — no Tier-2 unreleased API access available.');
+  // "Tier" is the vocabulary of the three-tier extensibility model, which
+  // SAP's clean core level concept (levels A–D, 2025) replaced. From
+  // 3.0.12 the router speaks in levels and says "a wrapper plus an influence
+  // request to SAP" — never that a wrapper makes what it wraps upgrade-stable,
+  // because it does not. Runs of an earlier engine keep their words, so a
+  // signed report re-renders unchanged (`ON_STACK_CONSTRUCTS_FROM`).
+  if (legacyRule) {
+    assumptions.push(
+      deploymentModel === 'public'
+        ? 'S/4HANA Public Cloud deployment model selected — no Tier-2 unreleased API access available.'
+        : 'S/4HANA Private Cloud deployment model selected — Tier-2 unreleased API wrapping is available.',
+    );
   } else {
-    assumptions.push('S/4HANA Private Cloud deployment model selected — Tier-2 unreleased API wrapping is available.');
+    assumptions.push(
+      deploymentModel === 'public'
+        ? PUBLIC_TARGET_ASSUMPTION
+        : 'SAP Cloud ERP Private selected as the target — where an API is not released, a wrapper plus an influence request to SAP is available.',
+    );
   }
   if (modificationBlocks) {
     assumptions.push(`The recommended route is where the requirement goes once the ${modifications.length} core modification(s) have been reset to SAP standard. Until then neither track is reachable: the code runs inside SAP's own program.`);
   }
   if (standardWrites.length > 0 && !needsBtp) {
-    // Tier 2 wraps an unreleased SAP object so ABAP Cloud may *use* it. It does
+    // A wrapper ("Tier 2" before 3.0.12) wraps an unreleased SAP object so ABAP Cloud may *use* it. It does
     // not turn a direct modification of SAP's rows into a supported operation,
     // and this line told the reader it did (dbbc1bf8f01d and its three carries).
-    assumptions.push('Direct writes to SAP standard tables are replaced with a released write API, a BAPI or a RAP action. A Tier-2 wrapper may encapsulate an unreleased object for use; it does not make a direct write supported.');
+    //
+    // From 3.0.12 the line says "wrapper", not "Tier-2 wrapper": the level
+    // concept replaced the three-tier model (DSAG guide, solution-approach.md
+    // "Level Concept"), and the Public Edition, which reaches this line from
+    // 3.0.12 on, has no wrapper at all (`ON_STACK_CONSTRUCTS_FROM`).
+    assumptions.push(
+      legacyRule
+        ? 'Direct writes to SAP standard tables are replaced with a released write API, a BAPI or a RAP action. A Tier-2 wrapper may encapsulate an unreleased object for use; it does not make a direct write supported.'
+        : deploymentModel === 'public'
+        ? `Direct writes to SAP standard tables are replaced with ${standardWriteRemedy}.`
+        : `Direct writes to SAP standard tables are replaced with ${standardWriteRemedy}. A wrapper may encapsulate an unreleased object for use; it does not make a direct write supported.`,
+    );
   }
-  if (rfcCalls.length > 0) {
+  if (outboundRfc.length > 0) {
     assumptions.push('RFC destinations are not yet migrated to SAP Integration Suite or Event Mesh.');
   }
-  if (customWrites.length > 0) {
+  // From 3.0.12 custom tables stay on-stack in both editions, so there is
+  // nothing to decouple and the line would contradict the rationale.
+  if (legacyRule && customWrites.length > 0) {
     assumptions.push(`Custom table persistence is not yet decoupled into an ${BTP}-managed database or CAP service.`);
   }
   if (bdcCalls.length > 0) {

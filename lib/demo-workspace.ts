@@ -5,6 +5,7 @@ import { buildReadingExports } from '@/lib/bpmn/export';
 import { buildProcessMapModel, type ProcessMapModel } from '@/lib/process-map';
 import { applyNaming, namingContextOf } from '@/lib/process-naming';
 import { findingsOf } from '@/lib/it-findings-build';
+import { APP_VERSION } from '@/lib/version';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
 import type { Project } from '@/lib/types';
@@ -73,7 +74,7 @@ export function buildDemoWorkspace(): DemoWorkspaceData {
     project,
     processMap: demoProcessMap(source),
     // The same snapshot as the demo's evidence — its target profile's.
-    itFindings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot),
+    itFindings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot, APP_VERSION),
   };
 
   // The same invariant as the stages: a demo that carries a run, a signature or

@@ -55,8 +55,9 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
 
     expect(publicVbak!.severity).toBe('High');
     expect(privateVbak!.severity).toBe('Medium');
-    expect(publicVbak!.technicalDetail).toContain('Public Cloud');
-    expect(privateVbak!.technicalDetail).toContain('Private Cloud');
+    // SAP's product names from engine 3.0.12 (owner decision 13.10.2026).
+    expect(publicVbak!.technicalDetail).toContain('SAP S/4HANA Cloud Public Edition');
+    expect(privateVbak!.technicalDetail).toContain('SAP Cloud ERP Private');
   });
 
   test('should detect Credit Management custom logic', () => {

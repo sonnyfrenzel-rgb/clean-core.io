@@ -40,7 +40,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence, type AbapEvidenceReport } from '../lib/abap/evidence-model';
-import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { ON_STACK_CONSTRUCTS_FROM, routeExtensibility } from '../lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
 import { gradeFromSapStates, gradeFromSapStatesForUse } from '../lib/abap/abcd-classification';
 import { getSapObjectStates } from '../lib/abap/catalog-service';
@@ -58,8 +58,11 @@ const evidence = (code: string, deployment: 'public' | 'private' = 'private') =>
 const kinds = (code: string, deployment: 'public' | 'private' = 'private') =>
   evidence(code, deployment).findings.map((f) => f.kind);
 
-const route = (code: string, deployment: 'public' | 'private' = 'private') =>
-  routeExtensibility(evidence(code, deployment), deployment, APP_VERSION);
+const route = (code: string, deployment: 'public' | 'private' = 'private', engine: string = APP_VERSION) =>
+  routeExtensibility(evidence(code, deployment), deployment, engine);
+
+/** An engine before 3.0.12, whose route rule BDC, native SQL and every RFC drove (`ON_STACK_CONSTRUCTS_FROM`). */
+const OLD_ENGINE = 'v3.0.11';
 
 const architecture = (code: string) =>
   recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code)).architecture;
@@ -351,7 +354,9 @@ test.describe('the rationale explains the route the report recommends', () => {
 
   for (const s of sources) {
     test(`a ${s.name} route is explained by ${s.name}`, () => {
-      const report = route(s.code);
+      // The premise holds under the rule of engines before 3.0.12; from then on
+      // only the RFC to another system routes off-stack (test below).
+      const report = route(s.code, 'private', OLD_ENGINE);
       expect(report.recommendedRoute, 'the premise: this construct routes off-stack').toBe(
         'Side-by-Side (SAP BTP)',
       );
@@ -363,6 +368,15 @@ test.describe('the rationale explains the route the report recommends', () => {
     });
   }
 
+  test('from 3.0.12 native SQL, BDC and a file feature stay on-stack and are named; an RFC to another system still routes off it', () => {
+    for (const s of sources) {
+      const report = route(s.code, 'private', ON_STACK_CONSTRUCTS_FROM);
+      expect(report.recommendedRoute, s.name).toBe(s.name === 'RFC' ? 'Side-by-Side (SAP BTP)' : 'In-App (ABAP Cloud)');
+      expect(report.rationale, s.name).toMatch(s.names);
+      if (s.name !== 'RFC') expect(report.rationale, s.name).toMatch(/forces? no side-by-side split/);
+    }
+  });
+
   test('an on-stack sentence never explains an off-stack route', () => {
     // The enhancement branch recommends a released BAdI "which ABAP Cloud (RAP)
     // supports on-stack" and stood before the side-by-side triggers, so a source
@@ -370,6 +384,8 @@ test.describe('the rationale explains the route the report recommends', () => {
     // stay on it.
     const report = route(
       ['REPORT zcc_mix.', 'ENHANCEMENT 1 z_enh_impl.', 'ENDENHANCEMENT.', 'EXEC SQL.', 'SELECT 1 FROM DUAL', 'ENDEXEC.'].join('\n'),
+      'private',
+      OLD_ENGINE,
     );
     expect(report.recommendedRoute).toBe('Side-by-Side (SAP BTP)');
     expect(report.rationale).toMatch(/native SQL/i);
@@ -430,16 +446,25 @@ test.describe('a direct write to SAP rows is never described as wrappable', () =
 
   test('Private Edition is told to replace the write, not to wrap it', () => {
     const report = route(WRITE_VBAK, 'private');
-    expect(report.rationale, 'the premise: the private route still keeps this on-stack').toMatch(/Private Edition/i);
+    expect(report.rationale, 'the premise: the private route still keeps this on-stack').toMatch(/SAP Cloud ERP Private/);
+    // A run of an earlier engine keeps the name it signed (owner decision 13.10.2026, gated from 3.0.12).
+    expect(route(WRITE_VBAK, 'private', OLD_ENGINE).rationale).toMatch(/In Private Edition the write can stay on-stack/);
     expect(prose(report)).not.toMatch(/writes? (to standard tables? )?can be wrapped/i);
     expect(prose(report)).not.toMatch(/Standard table writes can be wrapped/i);
     expect(report.rationale).toMatch(/released write API|BAPI|RAP action/i);
   });
 
-  test('Tier-2 is still offered for what it actually covers', () => {
+  test('the wrapper is still offered for what it actually covers', () => {
     // The wrapper is not removed from the product — only from the sentence
-    // about writing to SAP's own rows.
-    expect(route(WRITE_VBAK, 'private').assumptions.join('\n')).toMatch(/Tier-2/);
+    // about writing to SAP's own rows. Runs before 3.0.12 keep the three-tier
+    // words they were signed with; from 3.0.12 it is "a wrapper plus an
+    // influence request to SAP" (clean core level concept), and no "Tier".
+    expect(route(WRITE_VBAK, 'private', OLD_ENGINE).assumptions.join('\n')).toMatch(/Tier-2/);
+    const now = route(WRITE_VBAK, 'private', ON_STACK_CONSTRUCTS_FROM);
+    expect(now.assumptions.join('\n')).toMatch(/a wrapper plus an influence request to SAP/);
+    const all = [prose(now), now.assumptions.join('\n'), ...now.checkpoints.map((c) => c.checkpointName), ...now.comparativeAnalysis.inAppABAPCloud.cons].join('\n');
+    expect(all).not.toMatch(/\bTier\b|Tier-\d/);
+    expect(all).not.toMatch(/upgrade-safe/i);
   });
 });
 
@@ -495,7 +520,8 @@ test('the public-cloud rationale states no untruth about developer extensibility
   // S/4HANA Cloud Public Edition has held custom database tables on-stack since
   // ABAP Cloud developer extensibility (ADT, three-system landscape). The
   // rationale claimed the opposite as a fact and used it to justify the route.
-  const report = route('REPORT zcc_cp.\nINSERT zcust_log FROM ls_row.', 'public');
+  // The rule of engines before 3.0.12, where this write still chose the route.
+  const report = route('REPORT zcc_cp.\nINSERT zcust_log FROM ls_row.', 'public', OLD_ENGINE);
   expect(report.recommendedRoute, 'the routing decision itself is unchanged').toBe('Side-by-Side (SAP BTP)');
   expect(report.rationale).not.toMatch(/does not offer on-stack custom persistence/i);
   expect(report.rationale, 'the alternative is named instead of denied').toMatch(/developer extensibility/i);

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { normalizeSandboxPath, MAX_SANDBOX_PATH, SANDBOX_PATTERN_ID, type SandboxFile } from './files';
 import { CALL_CONTRACT_PATHS, MAX_ENGINE_CASES_BYTES, engineRunInputs } from './engine-suite';
+import { probeRunInputs } from './probe-suite';
 
 /**
  * The wire contract between the app and the isolated test runner (roadmap 8.9).
@@ -26,8 +27,18 @@ export type RunnerMode = 'mock' | 'live';
  * contract module), and the report then carries `engine` with its own hashes
  * and output. A request with `engine` must say `protocol: 2`; a runner that
  * does not know 2 refuses it rather than silently running half of it.
+ *
+ * 3 adds the confined probe pass: a request may carry `probes: true`, and the
+ * runner then derives the failure-pattern probe pass from the files itself
+ * (`probeRunInputs`) and runs it confined (the adapter's modules in a SES
+ * compartment, `./probe-suite.ts`); the report carries `probes` with its own
+ * hashes and output. A request with `probes` must say `protocol: 3`; a runner
+ * that knows only 2 refuses it. An engine pass alone still goes as protocol 2,
+ * so a runner of protocol 2 keeps running it.
  */
-export const RUNNER_PROTOCOL_VERSION = 2;
+export const RUNNER_PROTOCOL_VERSION = 3;
+/** The protocol of a request with an engine pass and no probe pass. */
+export const RUNNER_ENGINE_PROTOCOL_VERSION = 2;
 
 /** Combined size of all file contents plus the suite. Same ceiling the route always had. */
 export const MAX_RUN_INPUT_BYTES = 2 * 1024 * 1024;
@@ -44,7 +55,7 @@ export interface RunnerProxy {
 }
 
 export interface RunRequest {
-  /** 2 when `engine` is present; absent from a version-1 app. */
+  /** 3 when `probes` is present, else 2 when `engine` is; absent from a version-1 app. */
   protocol?: number;
   files: SandboxFile[];
   suite: { code: string; patterns: string[] };
@@ -57,6 +68,23 @@ export interface RunRequest {
    * the engine case ids to run, empty for all.
    */
   engine?: { cases: string; contractModule: string; patterns: string[] };
+  /**
+   * 3.0.12 (protocol 3) — the probe pass: the runner derives its files and
+   * driver from `files` (`probeRunInputs`) and runs it confined.
+   */
+  probes?: true;
+}
+
+/** The probe pass as the runner reports it — hashed like the main run. */
+export interface RunnerProbeReport {
+  outcome: 'ran' | 'build-error';
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  buildError?: string;
+  /** SHA-256 of every file of the pass (generated code, probes, runtime), sorted by path. */
+  files: FileHash[];
+  suiteSha256: string;
 }
 
 /** The engine pass as the runner reports it — hashed like the main run. */
@@ -99,6 +127,8 @@ export interface RunnerReport {
   protocol?: number;
   /** The engine pass, when the request asked for one. */
   engine?: RunnerEngineReport;
+  /** The probe pass, when the request asked for one (protocol 3). */
+  probes?: RunnerProbeReport;
 }
 
 export function sha256Hex(text: string): string {
@@ -205,9 +235,14 @@ export function parseRunRequest(body: unknown, opts: { serviceMode: RunnerMode; 
     return fail(400, 'A mock run takes no proxy.');
   }
 
+  const protocolKnown = b.protocol === undefined || b.protocol === 1 || b.protocol === RUNNER_ENGINE_PROTOCOL_VERSION || b.protocol === RUNNER_PROTOCOL_VERSION;
+  if (!protocolKnown) return fail(400, `Unknown protocol ${String(b.protocol)}.`);
+
   let engine: RunRequest['engine'];
   if (b.engine !== undefined) {
-    if (b.protocol !== RUNNER_PROTOCOL_VERSION) return fail(400, `An engine pass needs protocol ${RUNNER_PROTOCOL_VERSION}.`);
+    if (b.protocol !== RUNNER_ENGINE_PROTOCOL_VERSION && b.protocol !== RUNNER_PROTOCOL_VERSION) {
+      return fail(400, `An engine pass needs protocol ${RUNNER_ENGINE_PROTOCOL_VERSION}.`);
+    }
     const e = b.engine as { cases?: unknown; contractModule?: unknown; patterns?: unknown } | null;
     if (!e || typeof e !== 'object' || typeof e.cases !== 'string' || typeof e.contractModule !== 'string') return fail(400, 'engine needs cases and contractModule.');
     if (Buffer.byteLength(e.cases, 'utf8') > MAX_ENGINE_CASES_BYTES) return fail(413, 'The engine cases exceed the allowed size.');
@@ -227,19 +262,27 @@ export function parseRunRequest(body: unknown, opts: { serviceMode: RunnerMode; 
       enginePatterns.push(p);
     }
     engine = { cases: e.cases, contractModule: e.contractModule, patterns: enginePatterns };
-  } else if (b.protocol !== undefined && b.protocol !== 1 && b.protocol !== RUNNER_PROTOCOL_VERSION) {
-    return fail(400, `Unknown protocol ${String(b.protocol)}.`);
+  }
+
+  let probes: true | undefined;
+  if (b.probes !== undefined) {
+    if (b.probes !== true) return fail(400, 'probes must be true.');
+    if (b.protocol !== RUNNER_PROTOCOL_VERSION) return fail(400, `A probe pass needs protocol ${RUNNER_PROTOCOL_VERSION}.`);
+    // The app asks only when it derived a pass from these files; the runner derives the same or refuses.
+    if (!probeRunInputs(files).ok) return fail(400, 'probes: the files hold no probe pass to run.');
+    probes = true;
   }
 
   return {
     ok: true,
     value: {
-      ...(engine ? { protocol: RUNNER_PROTOCOL_VERSION } : {}),
+      ...(probes ? { protocol: RUNNER_PROTOCOL_VERSION } : engine ? { protocol: RUNNER_ENGINE_PROTOCOL_VERSION } : {}),
       files,
       suite: { code: suite.code, patterns },
       mode,
       ...(proxy ? { proxy } : {}),
       ...(engine ? { engine } : {}),
+      ...(probes ? { probes } : {}),
     },
   };
 }
@@ -269,8 +312,25 @@ export function parseRunnerReport(value: unknown): RunnerReport | null {
     r.revision.length <= 200 &&
     (r.mode === 'mock' || r.mode === 'live') &&
     (r.protocol === undefined || typeof r.protocol === 'number') &&
-    (r.engine === undefined || isEngineReport(r.engine));
+    (r.engine === undefined || isEngineReport(r.engine)) &&
+    (r.probes === undefined || isProbeReport(r.probes));
   return ok ? (r as unknown as RunnerReport) : null;
+}
+
+function isProbeReport(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const e = value as Record<string, unknown>;
+  return (
+    (e.outcome === 'ran' || e.outcome === 'build-error') &&
+    typeof e.stdout === 'string' &&
+    typeof e.stderr === 'string' &&
+    typeof e.exitCode === 'number' &&
+    (e.buildError === undefined || typeof e.buildError === 'string') &&
+    Array.isArray(e.files) &&
+    e.files.every((f) => !!f && typeof f === 'object' && typeof (f as FileHash).path === 'string' && HEX64.test(String((f as FileHash).sha256))) &&
+    typeof e.suiteSha256 === 'string' &&
+    HEX64.test(e.suiteSha256)
+  );
 }
 
 function isEngineReport(value: unknown): boolean {
@@ -318,6 +378,32 @@ export function verifyEngineReport(
     }
   }
   return { ok: true, digest: engineDigest(expected.files, expected.suiteSha256, inputs.casesSha256) };
+}
+
+/**
+ * Does the runner's probe report describe the probe pass the app derived from
+ * the files it sent? The app derives the pass's files and driver itself
+ * (`probeRunInputs`) and compares every hash. `missing` when the runner sent
+ * no probe report at all.
+ */
+export function verifyProbeReport(
+  sent: { files: SandboxFile[] },
+  report: RunnerReport,
+): { ok: true; digest: string } | { ok: false; missing: boolean; reason: string } {
+  const p = report.probes;
+  if (!p) return { ok: false, missing: true, reason: 'The runner did not run the failure-pattern probes (a runner revision before protocol 3).' };
+  const inputs = probeRunInputs(sent.files);
+  if (!inputs.ok) return { ok: false, missing: false, reason: inputs.reason };
+  const expected = hashRunInputs(inputs.files, inputs.suiteCode);
+  if (p.suiteSha256 !== expected.suiteSha256) return { ok: false, missing: false, reason: 'The runner reported a different probe driver.' };
+  const reported = [...p.files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  if (reported.length !== expected.files.length) return { ok: false, missing: false, reason: 'The runner reported a different set of probe files.' };
+  for (let i = 0; i < reported.length; i++) {
+    if (reported[i].path !== expected.files[i].path || reported[i].sha256 !== expected.files[i].sha256) {
+      return { ok: false, missing: false, reason: 'The runner reported a probe file the app did not derive.' };
+    }
+  }
+  return { ok: true, digest: expected.digest };
 }
 
 /** One digest over the engine pass: its file hashes, its suite and its cases. */

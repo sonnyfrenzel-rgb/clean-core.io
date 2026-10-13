@@ -115,6 +115,30 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.check.artefacts': 'Every artefact the prompt asked for',
   'transformation.check.tests': 'The test suite is there',
   'transformation.check.literals': 'Hard-coded document or partner numbers in the logic',
+  // Step E: the engine-led stages, the work panel and what is shown after the run.
+  'transformation.stage.scaffold': 'Engine scaffold',
+  'transformation.stage.scaffoldNote': 'no model',
+  'transformation.stage.fills': 'Model fills',
+  'transformation.stage.fillsNote': 'up to 4 at a time',
+  'transformation.stage.repairs': 'Repairs',
+  'transformation.stage.repairsNote': 'only the failing functions go back',
+  'transformation.check.guards': 'Body guards — no body touched engine-written code',
+  'transformation.check.lint': 'Lint checks of the candidate',
+  'transformation.check.cases': 'Engine cases through the call contract',
+  'transformation.check.probes': 'Failure-pattern probes',
+  'transformation.unitsTitle': 'Functions',
+  'transformation.unitsWaiting': 'Waiting for the scaffold',
+  'transformation.unit.waiting': 'waiting',
+  'transformation.unit.writing': 'writing…',
+  'transformation.unit.written': 'written',
+  'transformation.unit.refused': 'not written — declined',
+  'transformation.unit.again': 'asked again',
+  'transformation.cancel': 'Cancel',
+  'transformation.cancelling': 'Cancelling…',
+  'transformation.cancelled': 'Cancelled. Nothing was saved; calls already sent finish on the server and count against this generation.',
+  'transformation.builtOnTitle': 'Built on',
+  'transformation.builtOnStale': 'changed since',
+  'transformation.legacyGeneration': 'Generated in one model call before 3.0.12 — regenerate to get functions anchored to ABAP lines and rule decisions.',
   'transformation.checkState.pending': 'not checked yet',
   'transformation.checkState.met': 'met',
   'transformation.checkState.warning': 'warning',
@@ -137,7 +161,7 @@ export function tfCostLine(maxCalls: number, keySource: 'byok' | 'community' | n
   return `No analysis run used · up to ${plural(maxCalls, 'model call')}${key} for this generation`;
 }
 
-/** "Writing the code for ZCO_CC_CLOSE_SIMULATION". */
+/** "Writing the code for Z_CO_CASE". */
 export function tfRunTitle(program: string | null | undefined): string {
   const name = typeof program === 'string' ? program.trim() : '';
   return name ? `Writing the code for ${name}` : 'Writing the code';
@@ -156,6 +180,36 @@ export function tfFilesResult(n: number): string {
 /** "3 values found — listed with the code" / "none found" — the literal scan's result. */
 export function tfLiteralsResult(n: number): string {
   return n === 0 ? 'none found' : `${plural(n, 'value')} found — listed with the code`;
+}
+
+/** "14 of 20 functions written" — the work panel's counter, from the events. */
+export function tfUnitsCounter(written: number, total: number): string {
+  return `${count(written)} of ${plural(total, 'function')} written`;
+}
+
+/** "Show all 20 functions" — the phone's way to the whole list. */
+export function tfShowAllUnits(total: number): string {
+  return `Show all ${plural(total, 'function')}`;
+}
+
+/** "up to 4 at a time · up to 22 model calls under this generation's lease". */
+export function tfFillsNote(budget: number): string {
+  return `up to 4 at a time · up to ${plural(budget, 'model call')} under this generation’s lease`;
+}
+
+/** The fallback's note on the screen, in STATUS and above the result (design §16.2). */
+export function tfSingleCallNote(reason: string | null): string {
+  return `Generated in one model call — the engine could not build a scaffold for this program${reason ? ` (${reason})` : ''}. Functions are not anchored to ABAP lines.`;
+}
+
+/** "1 of 20 functions not written: U07 Upload attachment — the model declined: …" */
+export function tfNotWritten(n: number, total: number): string {
+  return `${count(n)} of ${plural(total, 'function')} not written — left as ${n === 1 ? 'a stub' : 'stubs'} with the reason below and in STATUS.md.`;
+}
+
+/** "Generated 12 Oct 2026 · 1:24" — the Built-on card's meta. */
+export function tfBuiltOnMeta(date: string | null, clock: string | null): string {
+  return [date ? `generated ${date}` : null, clock].filter(Boolean).join(' · ');
 }
 
 /** "attempt 2 of 2" — said only when the model is asked a second time. */

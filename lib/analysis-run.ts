@@ -159,7 +159,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
   // 1. The deterministic evidence. No network, no model — this is the half that
   //    the signature is over.
   move('evidence', 'running');
-  const evidenceReport = buildAbapEvidence(legacyCode, fileName, deployment);
+  const evidenceReport = buildAbapEvidence(legacyCode, fileName, deployment, undefined, APP_VERSION);
   const routeReport = routeExtensibility(evidenceReport, deployment, APP_VERSION);
   const findingCount = evidenceReport.findings.length;
   // "Findings" as Analyze counts them, one per pattern and object; the

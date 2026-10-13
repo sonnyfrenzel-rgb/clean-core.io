@@ -335,7 +335,7 @@ ${CO_SHAPED}`);
  * background job" although it calls a screen and downloads to the user's PC.
  * Written here, smaller than the reviewed program, with the same shape.
  */
-const SD_COCKPIT = `REPORT zsd_order_cockpit.
+const SD_COCKPIT = `REPORT zsd_order_overview.
 TABLES vbak.
 DATA: gt_orders TYPE STANDARD TABLE OF vbap,
       gt_bdcdata TYPE STANDARD TABLE OF bdcdata,
@@ -470,11 +470,11 @@ test.describe("the author's claim in German, or in a language the check does not
   const noteOf = (claim: ReturnType<typeof authorClaimOf>) => (claim && claim.state === 'contradicted' ? claim.note : '');
 
   test('a table named as changed must be one the code writes — by its code, in any language', () => {
-    const claim = authorClaimOf(sd(['Zweck: Vertriebs-Cockpit für Aufträge.', '  - Direkte DB-Manipulationen auf Standardtabellen (VBAK, VBAP)']));
+    const claim = authorClaimOf(sd(['Zweck: Monitor für offene Kundenaufträge.', '  - Änderungen erfolgen direkt in den Standardtabellen (VBAK, VBAP)']));
     expect(claim?.state).toBe('contradicted');
     expect(noteOf(claim)).toBe('The header comment (L2–3) is not quoted here: it names VBAK as changed; the code does not write VBAK.');
     // Naming the table it writes is no contradiction.
-    expect(authorClaimOf(sd(['Zweck: Vertriebs-Cockpit für Aufträge; ändert die Positionen (VBAP).']))?.state).toBe('shown');
+    expect(authorClaimOf(sd(['Zweck: Monitor für offene Kundenaufträge; ändert die Positionen (VBAP).']))?.state).toBe('shown');
     expect(checkPurposeProposal('It reads the order headers and updates VBAK.', programSummaryFactsOf(SD_COCKPIT)).problems).toContain(
       'names VBAK as changed; the code does not write VBAK',
     );

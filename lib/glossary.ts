@@ -18,7 +18,17 @@
  * because it reads as evidence.
  */
 
-import { BTP, BTP_FIRST, PLATFORM_ALIASES } from './sap-naming';
+import {
+  BTP,
+  BTP_FIRST,
+  CLOUD_ERP,
+  CLOUD_ERP_PRIVATE,
+  CLOUD_ERP_PRIVATE_FIRST,
+  EDITION_ALIASES,
+  PLATFORM_ALIASES,
+  PUBLIC_EDITION,
+  PUBLIC_EDITION_FIRST,
+} from './sap-naming';
 
 /** Where a term's definition comes from — `origin` and `absentReason` after `lib/first-look.ts`. */
 export type GlossarySourceOrigin =
@@ -249,7 +259,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     kind: 'sap',
     sourceRef: SAP_CATALOG_SOURCE,
     definition: 'An older SAP interface - a BAPI or a remote-enabled function module - that is usable but is not part of the ABAP Cloud contract.',
-    cleanCoreImplication: 'Classic APIs keep working in Private Edition and on-stack, and are the usual reason a system cannot move to Public Edition unchanged.',
+    cleanCoreImplication: `Classic APIs keep working in ${CLOUD_ERP_PRIVATE} and on-premise, and are the usual reason a system cannot move to ${PUBLIC_EDITION} unchanged.`,
   },
   'Cloudification Repository': {
     term: 'SAP ABAP Cloudification Repository',
@@ -350,14 +360,16 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     definition: 'The workshop method of comparing a required process against the SAP standard process and deciding, step by step, what really has to differ.',
     cleanCoreImplication: 'Every custom object that survives a fit-to-standard discussion has an argument behind it; the ones that do not are the cheapest to retire.',
   },
-  'Public and Private Edition': {
-    term: 'S/4HANA Cloud Public Edition and Private Edition',
-    shortName: 'Public and Private Edition',
+  'Public Edition and SAP Cloud ERP Private': {
+    term: `${PUBLIC_EDITION} and ${CLOUD_ERP_PRIVATE}`,
+    shortName: `Public Edition and ${CLOUD_ERP_PRIVATE}`,
+    // The former name of the private edition and its short forms still find the entry.
+    aliases: [...EDITION_ALIASES],
     category: 'Architecture',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'Two operating models: Public Edition is a shared, standardised SaaS system with key user and developer extensibility only; Private Edition is a dedicated system that still allows classic extensions and modifications.',
-    cleanCoreImplication: 'The same custom object can be impossible in Public Edition and merely expensive in Private Edition - the target edition decides, so it is an input, not a conclusion.',
+    definition: `Two operating models of ${CLOUD_ERP}: ${PUBLIC_EDITION_FIRST} is a shared, standardised SaaS system with key user and developer extensibility only; ${CLOUD_ERP_PRIVATE_FIRST} is a dedicated system that still allows classic extensions and modifications.`,
+    cleanCoreImplication: `The same custom object can be impossible in Public Edition and merely expensive in ${CLOUD_ERP_PRIVATE} - the target edition decides, so it is an input, not a conclusion.`,
   },
   ATC: {
     term: 'ABAP Test Cockpit',

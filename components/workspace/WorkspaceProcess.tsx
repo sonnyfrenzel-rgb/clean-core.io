@@ -32,6 +32,7 @@ import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
 import { newerBase, revisionLine } from '@/lib/process-revisions';
@@ -719,6 +720,7 @@ export default function WorkspaceProcess({
               measuredAt={map.measuredAt}
               usage={project?.usageReport ?? null}
               catalogTarget={project ? catalogLookupTargetOf(project) : null}
+              engineVersion={engineVersionOfProject(project)}
               plane={plane}
               onPlaneChange={setPlane}
               selected={selected}

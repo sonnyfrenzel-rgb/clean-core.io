@@ -442,6 +442,13 @@ export interface DesignData {
     title: string;
     deliverables: string[];
   }>;
+  /**
+   * The SAP standard, RAP and CAP compared before the standard is ruled out
+   * (roadmap 3.0.12, F14) — model text, stored as answered and read through
+   * `readOptionComparison` (`lib/design-option-comparison.ts`). Absent on a
+   * design written before.
+   */
+  optionComparison?: unknown;
 }
 
 export interface WorklistItem {

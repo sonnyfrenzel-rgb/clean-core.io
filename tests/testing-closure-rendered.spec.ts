@@ -58,7 +58,7 @@ const BUILD_ERROR = 'Compilation failed:\nBuild failed with 1 error:\n<sandbox>/
 function project(extra: Partial<Project> = {}): Project {
   return {
     id: 'p1',
-    name: 'FI_Collection_Worklist',
+    name: 'FI case',
     userId: 'owner-uid',
     legacyCode: 'REPORT z.',
     activeRunId: 'run-1',

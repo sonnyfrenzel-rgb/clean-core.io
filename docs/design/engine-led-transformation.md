@@ -246,9 +246,19 @@ in the customer namespace and the body is a fill unit of its own.
 | `src/z<name>_r.bdef.asbdef` | behavior definition: `strict ( 2 )`, `managed` or `unmanaged` per the design's route; **one `validation` per carried guard** (`validation val_br_003_g0120 on save { create; update; field … }`), determinations for derived fields (COMPUTE/ADD read by the engine), actions for steps triggered by a user command (event callbacks), `etag`, locks |
 | `src/zbp_<name>_r.clas.abap` + `.locals_imp.abap` | behavior pool: `CLASS lhc_<entity> DEFINITION` with every method signature engine-written; **method bodies between fill markers**; each method header comment names ABAP lines, rule ids, guard ids |
 | `src/zcl_<name>_logic.clas.abap` | one method per routine unit (same markers), so the logic is unit-testable apart from the BO |
-| `src/z<name>_srvd.srvd.assrvd`, `src/z<name>_srvb.srvb.assrvb` | service definition / binding (OData V4 UI) |
+| `src/z<name>_srvd.srvd.srvdsrv`, `src/z<name>_srvb.srvb.xml` | service definition / binding (OData V4 UI), in abapGit's file names |
 | `src/ztc_<name>.clas.testclasses.abap` | ABAP Unit class: one `FOR TESTING` method per engine case with given/when/then comments and the expected value from the case; the *when* line (the call into the logic class) is engine-written when the case maps to a logic method by the call contract, otherwise a fill unit of kind `event` with the case as input |
 | `.abapgit.xml` | as delivery writes it today (not model-written) |
+| `src/<name>.<type>.xml`, `src/package.devc.xml` | since scaffold version 3 (3.0.12, importable package): abapGit's metadata file for every object, in the structure abapGit's serializer writes; the table is `src/z<name>_rec.tabl.xml` only (abapGit has no source form of a table; name ≤ 16 characters); the service definition's source is `.srvd.srvdsrv` (abapGit's extension) |
+
+Format per type (evidence, 13.10.2026): abapGit is the import route a customer has today — the
+open-source abapGit on S/4HANA on-premise and SAP Cloud ERP Private, the abapGit SAP ships for
+ABAP Cloud on BTP ABAP Environment and S/4HANA Cloud Public Edition. abapGit reads SAP's ABAP file
+formats (AFF JSON) only for the types in its AFF registry (abapGit/abapGit@37f226f4
+`src/objects/aff/zcl_abapgit_aff_registry.clas.abap`): of the types here only INTF, and only behind
+the experimental "AFF" switch. So every object is abapGit XML; the formats check
+(`lib/transformation/abapgit-check.ts`) holds each XML file against abapGit's serializer structure
+and each AFF JSON file, should one appear, against SAP's schema. Sources: `lib/transformation/abapgit-files.ts`.
 
 Guard condition texts translate ABAP to ABAP Cloud; that is a fill (the validation body), the
 validation's existence, name, trigger and message class are engine-owned.
@@ -336,7 +346,7 @@ instruction header), response schema `TRANSFORMATION_FILL_SCHEMA` in `lib/model-
 {
   "schema": "cc.fill.v1",
   "track": "node",                       // or "rap"
-  "program": "ZCO_CC_CLOSE_SIMULATION",
+  "program": "Z_CO_CASE",
   "context": "…contextPackText(ctx, 3000)…",
   "rules": "…CODE_DRAFT_BUSINESS_RULES subset: 13, 15–24 …",   // from lib/code-draft-rules.ts, unchanged
   "units": [
@@ -397,7 +407,7 @@ Node (TypeScript):
 ```ts
 /**
  * Validate the allocation policy.
- * ABAP: ZCO_CC_CLOSE_SIMULATION L500–L540 (FORM VALIDATE_POLICY)
+ * ABAP: Z_CO_CASE L500–L540 (FORM VALIDATE_POLICY)
  * Rules: BR-009 (keep), BR-010 (change — owner's proposal below)
  * Guards: G-0506 → guard_BR_009_G0506
  */
@@ -426,12 +436,34 @@ A body is refused — and the unit goes to repair with that reason — when it:
    `codeMask` from `lib/ts-source-scan.ts` (strings and comments masked first), for ABAP on the
    statement reader;
 3. removes a guard call: every `guard_*` the stub has before the marker is engine text and cannot be
-   touched; a body that *re-implements* a guard condition inline is a lint finding, not a refusal;
+   touched; a body that *re-implements* the condition of a guard it must call is refused (rule 7);
 4. calls a name that is neither in `available` nor in `needs` ∩ allowlist;
 5. is longer than 4× its ABAP slice or 16,000 characters;
 6. uses `Number(`, `parseFloat(`, `parseInt(` or arithmetic operators on a `Dec` value (lint
    `lenient number parsing` / `binary decimals` from `lib/generated-code-lints.ts`, raised to a
-   refusal inside fills).
+   refusal inside fills);
+7. does not call a guard its unit must call in the body, or writes that guard's comparison itself
+   (`guard-missing`, `guard-inlined`). Rule 15 as fixed by QA finding 4e9d1315469d: a check on **raw**
+   input (selection inputs, constants, input records) runs before any calculation — at the step's entry or
+   with the selection; a check on a **derived** value (a variable written earlier in the routine, a global
+   written by another step, a system field such as `sy-subrc`) keeps the original's order: the engine
+   writes the guard function with a `values` argument for the computed operands, and the body calls it at
+   the original's line (`Unit.bodyCalls`, `Scaffold.required`, `fillGuardsOf`;
+   `lib/transformation/guard-basis.ts`). A derived check is no RAP validation; the logic method calls its
+   predicate.
+
+The call contract's base request takes each value from the original — the selection DEFAULT, the demo
+data, a fixed list in the code, a value that satisfies the original's checks — never a placeholder; an
+obligatory field with none is listed (`missingBaseValues`) and every engine case reads "Not run — no
+valid base value known for X" (`lib/transformation/base-values.ts`). The request's record fields are only
+what the original takes as input — components of structures it fills from a database read, an upload or
+file read, a split input line, or its demo data; a component it computes afterwards (arithmetic, a
+function, a value the logic sets) is a result, never a request field (`recordInputOf`). Measured on
+12.10.2026, scaffold alone: CO 17 engine cases pass (2 fail where a check predicate is still a stub), SD 17,
+PP 12; the PO demo stayed "Not run — no valid base value known for P_BANFN": the original gave no value.
+Since 13.10.2026 the demo source gives one (`P_BANFN … DEFAULT '0010000001'`, owner decision): scaffold
+alone, the PO demo's cases of the engine's code read 5 passed, 7 not run, those of the written functions
+2 failed (stub predicates), 12 not run; REACH 5/35 (was 0/35).
 
 ### 9.3 Splice and integrity
 
@@ -448,7 +480,7 @@ Measured on 12.10.2026 with the engine of `feat/3.0.12-prompt` (0abfc377), Node 
 the build plan turns them into `scripts/transformation/measure.ts`, §17 Track B). Sources: the CO, SD
 and PP review programs (outside the repository) and the PO starter example.
 
-| | CO `ZCO_CC_CLOSE_SIMULATION` | PP/MM kit simulation | SD order cockpit | PO demo `Z_MM_PO_APPROVAL` |
+| | CO case | PP/MM case | SD case | PO demo `Z_MM_PO_APPROVAL` |
 |---|---:|---:|---:|---:|
 | Lines / characters | 2,027 / 79,009 | 2,500 / 84,801 | 616 / 21,307 | 669 / 19,615 |
 | Business rules (rule + control) | 66 (42 + 24) | 47 (39 + 8) | 17 (16 + 1) | 12 (11 + 1) |
@@ -458,7 +490,7 @@ and PP review programs (outside the repository) and the PO starter example.
 | Routines: all / reachable / unreachable | 49 / 49 / 0 | 33 / 33 / 0 | 14 / 14 / 0 | 35 / 22 / 13 |
 | Routine size p50 / p90 / max (lines) | 18 / 74 / 118 | 26 / 73 / 881 | 22 / 35 / 63 | 16 / 23 / 57 |
 | Folded helpers / demo routines | 6 / 8 (15,455 ch.) | 6 / 2 (29,703 ch.) | 3 / 0 | 3 / 0 |
-| **Fill units** | **35** | **25** | **11** | **19** |
+| **Fill units** | **35** (built: **34**, see below) | **25** | **11** | **19** |
 | Units over the soft budget | 0 | 1 (151 lines) | 0 | 0 |
 | Guards inside units / at program level | 58 / 14 | 47 / 9 | 6 / 1 | 12 / 5 |
 | Engine time: documentation / rules+contract+graph | 3.98 s / 0.13 s | 1.16 s / 0.15 s | 1.15 s / 0.03 s | 0.25 s / 0.03 s |
@@ -468,6 +500,14 @@ and PP review programs (outside the repository) and the PO starter example.
 | Fill calls at ≤ 4 units per call | 9 | 7 | 3 | 5 |
 | Total input over all fill calls (context sent once per call) | ≈ 112 k | ≈ 91 k | ≈ 31 k | ≈ 46 k |
 | **Largest single prompt** | ≤ 14 k (today ≥ 95 k) | ≤ 14 k (today ≥ 98 k) | ≤ 14 k | ≤ 14 k |
+
+**Built plan (Track B, `scripts/transformation/measure.ts`, 12.10.2026): CO 34, PP 25, SD 11, PO 19 fill
+units**, each plus the orchestrator. CO has one unit fewer than measured above: `CHANGE_FAC_DRIVER` is
+reached only from the demo routine `APPLY_DEMO_CASE`, so §7.1 rule 6 makes it a fixture (owner, 12.10.2026:
+a routine reached only from demo routines is demo data); the measurement script had classified demo
+routines by name alone. With declarations and call sites in the slice, the per-unit prompt estimate is
+larger (CO p50 6,344 / max 13,575); a unit too large to share a 14,000-character call goes out alone — the
+cap and the cut rules stay.
 
 Observations that shaped the design:
 
@@ -663,7 +703,7 @@ what is different in factual terms:
 
 ### 15.2 Layout
 
-- **Header row**: "Writing the code for ZCO_CC_CLOSE_SIMULATION" · elapsed `m:ss` (`formatElapsed`,
+- **Header row**: "Writing the code for Z_CO_CASE" · elapsed `m:ss` (`formatElapsed`,
   real time since the click) · *Cancel* (ghost). No percentage anywhere (DESIGN.md §2.8: phases, not
   percentages that do not exist). Real denominators are shown where they exist ("14 of 35 functions
   written").
@@ -786,6 +826,24 @@ times each on the four sources on dev → the baseline medians the acceptance co
 | **C — Fills, lease, verify, repair loop** | `feat/3.0.12-fills` | `lib/transformation/{fill-prompt,orchestrator,verify,lease}.ts`, `app/api/transformation/lease/route.ts`, the `leaseId` branch in `app/api/gemini/route.ts`, `TRANSFORMATION_FILL_SCHEMA` in `lib/model-response-schema.ts`, the `generation` target in `lib/repair-draft.ts` / `lib/repair-draft-store.ts`, the verify mode in `app/api/run-tests/route.ts` + `lib/test-sandbox/*` (probe mode, C2), `lib/gemini-test-stub.ts` fill answers, `tests/transformation-{fill-prompt,orchestrator,lease,verify}.spec.ts` | B's `types.ts` (§6.1 interfaces are the contract) |
 | **D — Generation screen and tips (UI)** | `feat/3.0.12-screen` | `components/transformation/{GenerationScreen,GenerationChain,GenerationUnits,QualityTips,BuiltOnCard}.tsx`, `lib/generation-screen-model.ts`, `lib/generation-progress.ts` (rewritten or retired), the `transformation.tips` key in `lib/choice-addresses.ts` + its message key, the anchor ids/filters in the target pages (`design-route`, `rules=open`), in `page.tsx` **only the progress/log JSX block and its state**, `tests/generation-screen*.spec.ts`, `tests/quality-tips*.spec.ts` | A's `ContextSlot` shape and C's `GenerationEvent` (§15.5) — builds against recorded fake events |
 
+**Track C as built (`feat/3.0.12-fills`).** Beside the files above: `lib/transformation/types.ts`
+was written first by C from §6.1/§8.2/§15.5 word for word (B's copy wins on merge; C added only
+`FillRequestUnit`, `FillRepair`, `FillAnswerUnit`, and `repair` is a list because a repair bundle holds
+up to four units); the lease is split into `lease.ts` (pure decisions) and `lease-store.ts` (Admin-SDK
+transactions), plus `lease-client.ts` (browser: buy a lease, the leased fill call); the window of 3
+leases per hour is `transformation_lease_windows/{uid}` beside `projects/{id}/transformation_leases/{leaseId}`
+(both default-deny, no rules change); a leased call names `lease: { projectId, leaseId }` and
+`responseShape: 'transformation-fill'` in the `/api/gemini` body. The probe pass is
+`lib/test-sandbox/probe-suite.ts` with the probes as `probe-runtime.ts`, generated from
+`scripts/acceptance/lib/probes.mjs` by `scripts/transformation/sync-probe-runtime.mjs` (the harness
+file is read, not edited). Since the QA hardening of the engine pass the probe pass runs the same way
+(runner protocol 3): the adapter's modules bundled on their own and evaluated in a SES compartment after
+`lockdown()`, the probes outside it in the driver, their requests answered by `createProbeExecutor` in
+`scripts/acceptance/child/engine-cases-core.mjs` (the harness's executor uses the same), one outcome line
+per probe, read by `probeVerdicts`. The stop rules of §13.2 are `decideGenerationRepair` in `lib/repair-draft.ts`.
+The fills carry code-draft rules 11–15, 17, 19, 21 and 23; 16, 18, 20, 22 and 24 are engine-written in
+the scaffold.
+
 Rules for the four: nobody edits `lib/code-draft-rules.ts`, `lib/generated-code-lints.ts`,
 `lib/testing-engine-cases.ts` or `scripts/acceptance/*` (owned by the cases/lints/acceptance branches;
 import only). Before pushing a moved/renamed module, `grep -rl <file> tests/` (CLAUDE.md).
@@ -797,6 +855,40 @@ import only). Before pushing a moved/renamed module, `grep -rl <file> tests/` (C
 | **E — Integration** | one agent, after A–D are merged into the 3.0.12 line | rewrite `generateTransformation` in page.tsx onto the orchestrator; extract the single-call path into `lib/transformation/single-call.ts`; `GENERATION_REVISION_VERSION` 3 with `context`/`scaffold` lines (`lib/generation-revision.ts`) and the binding fields in the store route; `workflowSteps` stale on context digest change (`lib/workflow-steps.ts`); STATUS.md section + `traceability.json` (`lib/delivery-package.ts`, `lib/delivery-facts.ts`); file-tree grouping and chip row in the Transformation object page; the "Built on" card |
 | **F — Acceptance** | agent + Sonny (real key on dev) | regenerate CO, PP, SD, PO demo (and FI where its source is available) on dev; run the harness with the scaffold's adapters plus the reviews' probe sets (CO E01–E18 + 25 scenarios, PP E01–E08/A01–A14 + 26 scenarios, SD probes, FI checks); time three runs each against the Step 0 baseline; results into CHANGELOG |
 | **G — Owner look** | Sonny | the generation screen on his CO project before release (look at the pictures) |
+
+**Step E as built (`feat/3.0.12-integration-e`, 13.10.2026).** `generateTransformation` runs the
+engine-led path: the preparation (unit plan, slices, scaffold) in a worker, a lease from
+`/api/transformation/lease` checked against the same PLATFORM KNOWLEDGE block the contract route
+reads (`platformContextOf` in `lib/transformation-context-build.ts`), the orchestrator's fills and
+checks, the assembly with the trace, and the store with the generation record in the binding (path,
+basis, engine cases, probes, lints, `contextDigest`). The verify mode of `/api/run-tests` runs the
+engine pass and the probe pass confined, locally as on the runner (protocol 3). The PO demo generates
+on the stub in 11–15 s. Where E differs from the table above:
+
+- **The single call stays in `page.tsx`** as `runSingleCall`, the fallback when no scaffold can be
+  built. About twenty source guards read its prompt in the page; moving it to
+  `lib/transformation/single-call.ts` would move all of them for no change in behaviour.
+- **The phase does not go stale on a changed context digest.** The Built-on card marks every tool whose
+  state differs from the generation's basis *Stale*, but `staleness()` in `lib/workflow-steps.ts` is pure
+  over the project document, and the basis compares against data the page loads (the rule register,
+  the requirements). Bringing that into the phase is a later step, not 3.0.12.
+- **The decision warning** reads `standardFitAssessed` (`lib/standard-fit-gate.ts`, merged from
+  `feat/3.0.12-standard`): a solution design that weighed the standard against RAP and CAP ends the
+  standard-fit warning, as the PLATFORM KNOWLEDGE block already says. A decision record against a
+  rebuild still warns.
+
+**Reach of the checks (13.10.2026).** `scripts/transformation/measure-reach.ts` measures which fill
+regions the engine cases and probes actually test, by mutation (`scripts/transformation/reach.ts`: a
+region is reached when a throwing or a wrong-answer mutant of it alone changes a check's verdict), on
+the empty scaffold, the Gemini test stub's fills and hand-written reference fills
+(`tests/fixtures/transformation/reference-fills/`). Since then the call contract of the Node scaffold
+exports `check(guard, request, values)`: a guard case asks the check's predicate directly where the
+request cannot carry the value (a system field such as SY-SUBRC, a computed decimal, the record table)
+and for a RETURN or EXIT outside a loop, which ends a routine and is no refusal (runtime op `check`; a
+contract without it leaves the example not run). A field symbol's component (`<ls_rcv>-quota`) is a
+subject a case can set, and a value a skipping check drops is expected as a skipped record. A failing
+case traced by its line goes back to the unit that writes the predicate. The base values are unchanged:
+an obligatory input without a value in the original still has none, and its cases stay not run.
 
 ## 18. Migration of stored drafts
 

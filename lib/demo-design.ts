@@ -4,6 +4,7 @@ import { contractOfProject } from '@/lib/contract-build';
 import { findingsOf } from '@/lib/it-findings-build';
 import { assertNoTrustChain, type DemoProject } from '@/lib/demo-project';
 import { DEMO_SOURCE_FILE } from '@/lib/demo-marks';
+import { APP_VERSION } from '@/lib/version';
 import type { ArchitectureContract } from '@/lib/architecture-contract';
 import type { ItFindingRow } from '@/lib/it-findings';
 
@@ -40,10 +41,15 @@ const DEMO_PATH = path.join(process.cwd(), 'public', 'starter-examples', DEMO_SO
 export function buildDemoDesign(demo: Pick<DemoProject, 'deployment' | 'catalogSnapshot'>): DemoDesignData {
   // LF, as `lib/demo-workspace.ts` reads it: the same bytes on every checkout.
   const source = fs.readFileSync(DEMO_PATH, 'utf8').replace(/\r\n/g, '\n');
-  const built = contractOfProject({ legacyCode: source, s4Deployment: demo.deployment }, null);
+  // The demo's analysis is made with the current engine (`buildDemoProject`
+  // routes at `APP_VERSION`), so its contract reads the same route rule —
+  // with no version the contract would read an unstamped run's, the rule
+  // before 3.0.12 (`ON_STACK_CONSTRUCTS_FROM`), and disagree with the demo's
+  // own route.
+  const built = contractOfProject({ legacyCode: source, s4Deployment: demo.deployment, analyzerVersion: APP_VERSION }, null);
   const data: DemoDesignData = {
     contract: built.ok ? built.contract : null,
-    findings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot).rows,
+    findings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot, APP_VERSION).rows,
     source,
   };
   assertNoTrustChain(data);

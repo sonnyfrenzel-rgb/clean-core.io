@@ -5,6 +5,7 @@ import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { findingsOf } from '@/lib/it-findings-build';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { isFirestoreId } from '@/lib/firestore-id';
 
@@ -127,7 +128,11 @@ export async function GET(
 
     // The catalog of the project's target profile — the one the signed run
     // read — not the default list (owner decision 30.09.2026).
-    return NextResponse.json(findingsOf(source, fileName, deployment, catalogSnapshotKeyForProject(data)));
+    // And the engine of the signed run (roadmap 3.0.12): an older run keeps the
+    // findings it signed.
+    return NextResponse.json(
+      findingsOf(source, fileName, deployment, catalogSnapshotKeyForProject(data), engineVersionOfProject(data)),
+    );
   } catch (err: unknown) {
     logger.error('project findings read failed', {
       route: 'api/projects/findings',

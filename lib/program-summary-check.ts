@@ -241,7 +241,7 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   if (MONEY.test(t) || MONEY_DE.test(t) || containsAmount(t)) problems.push('states money, savings or accuracy');
 
   // A table named in a sentence that says it is changed must be one the code writes — by its
-  // code, so in any language: "Direkte DB-Manipulationen auf Standardtabellen (VBAK, VBAP)" for a
+  // code, so in any language: "Änderungen erfolgen direkt in den Standardtabellen (VBAK, VBAP)" for a
   // program that writes only VBAP (SD review, 12.10.2026). Coarse on purpose — one sentence that
   // reads one table and changes another is held too; the engine's own sentence then stands alone.
   const written = new Set([...facts.writes.map((o) => o.name), ...facts.changes.actions.map((a) => a.name)]);

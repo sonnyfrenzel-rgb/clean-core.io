@@ -5,8 +5,8 @@ import { annotateSapReferences, checkSapReferences, findSapIdentifiers } from '.
 import { SAP_SCOPE_ITEMS } from '../lib/sap-scope-items';
 
 /**
- * Two wording errors of our own, from the external review of the CO cost
- * center allocation package on v3.0.10 (CO_3_0_10_Review.md, 12.10.2026).
+ * Two wording errors of our own, from the external review of the CO case on
+ * v3.0.10 (12.10.2026).
  * Pure: no server, no emulator.
  *
  *   F03 — the business page's limit line said "Master and credit data (CSKS)"

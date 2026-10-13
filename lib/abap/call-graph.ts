@@ -486,7 +486,7 @@ export function readCallGraphFrom(
   const containers = structure.containers;
   // `MODIFY gt_fieldcat FROM gs_fieldcat` reads like a database write to
   // `databaseWriteIn`; a declared local data object is an internal table, never
-  // one (ZMM_BESTELLUEBERSICHT review: an ALV field catalogue was the main effect).
+  // one (MM case review: an ALV field catalogue was the main effect).
   const localData = localDataObjectsOf(statements);
 
   const forms: FormDefinition[] = structure.blocks

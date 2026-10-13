@@ -5,7 +5,7 @@ import { readBlocks } from './block-structure';
 
 /**
  * The authorization check assessed — roadmap 3.0.7, from the
- * ZMM_BESTELLUEBERSICHT review.
+ * MM case review.
  *
  * Until now an `AUTHORITY-CHECK` was a fact with an object and its fields
  * (`call-graph.ts`) and an Info finding saying "retain it". The review showed

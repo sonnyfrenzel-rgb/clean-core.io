@@ -1,0 +1,424 @@
+import { createLiteralScanner, maskLiterals, readStatements, type AbapStatement } from './statement-reader';
+import { readCallGraphFrom } from './call-graph';
+import { readBlocks } from './block-structure';
+
+/**
+ * Security review tasks — roadmap 3.0.12, from the review of the DSAG ABAP
+ * guideline (owner decision 13.10.2026).
+ *
+ * `authority-assessment.ts` asks whether an authorization check that is there
+ * holds what a reader assumes it holds. This module asks the neighbouring
+ * questions a security review of classic ABAP starts from: statements that
+ * switch a protection off, hand it to someone else, or build what the database
+ * or the file system executes out of what a user typed.
+ *
+ * **A task, not a verdict.** Every entry names the statement, its line and the
+ * one thing a person has to check there. None of them says the program is
+ * insecure: a `DUMMY` field is a sound pre-check when a full check follows, a
+ * dynamic `WHERE` built from a whitelist is safe, a cross-client read can be
+ * the job of the program. The engine cannot decide that; it can say where to
+ * look.
+ *
+ * **What is not read.** Comments and the contents of literals never produce a
+ * task: each statement is read with its literal contents blanked
+ * (`maskLiterals`), and comments are gone before a statement exists
+ * (`readStatements`). Pseudo-comments (`"#EC …`) are comments. Where input
+ * flows into a dynamic clause or a path, the flow is followed through plain
+ * assignments, `CONCATENATE`, `APPEND`/`INSERT … INTO TABLE` and string
+ * templates inside one source; a value that reaches the clause through a
+ * routine call, a database read or a field symbol is not followed, so those
+ * clauses stay without a task rather than with a guessed one.
+ *
+ * Pure: source in, tasks out; no catalogue, no model.
+ */
+
+export type SecurityReviewKind =
+  | 'authority-result-not-evaluated'
+  | 'authority-dummy-field'
+  | 'authority-blank-value'
+  | 'authority-full-value'
+  | 'submit-as-other-user'
+  | 'dynamic-sql-from-input'
+  | 'cross-client-access'
+  | 'native-sql-client-handling'
+  | 'file-path-from-input'
+  | 'generated-program'
+  | 'editor-call-for-report'
+  | 'communication-statement'
+  | 'call-transaction-without-authority-addition';
+
+export interface SecurityReviewTask {
+  kind: SecurityReviewKind;
+  lineStart: number;
+  lineEnd: number;
+  /** A short name for the task, never a verdict. */
+  title: string;
+  /** What the statement does, read off the source. */
+  detail: string;
+  /** What a person has to check at this line. */
+  check: string;
+  severity: 'High' | 'Medium' | 'Low';
+  /** The authorization object, transaction or data object the task is about, where the source names one. */
+  subject?: string;
+  /** The statement, whitespace collapsed. */
+  text: string;
+}
+
+export interface SecurityReviewOptions {
+  /**
+   * Lines of ADBC calls (`CL_SQL_STATEMENT`) the caller has already identified
+   * (`table-dependencies.ts`): native SQL without the keyword, with the same
+   * missing client handling as `EXEC SQL`.
+   */
+  adbcLines?: readonly number[];
+}
+
+export function readSecurityReviewTasks(source: string, options: SecurityReviewOptions = {}): SecurityReviewTask[] {
+  return readSecurityReviewTasksFrom(source, readStatements(source), options);
+}
+
+/** A name in code, as ABAP writes it: `lv_x`, `ls_x-field`, `/ns/x`, `<fs>`, `me->x`. */
+const OPERAND = String.raw`[\w/<>~-]+(?:->[\w~-]+)?`;
+
+const SQL_KEYWORDS = new Set(['SELECT', 'UPDATE', 'DELETE', 'MODIFY', 'INSERT', 'OPEN', 'WITH', 'FETCH']);
+
+export function readSecurityReviewTasksFrom(
+  source: string,
+  statements: AbapStatement[],
+  options: SecurityReviewOptions = {},
+): SecurityReviewTask[] {
+  const tasks: SecurityReviewTask[] = [];
+  const at = (statement: AbapStatement) => ({ lineStart: statement.lineStart, lineEnd: statement.lineEnd, text: statement.text });
+
+  /* ---------------------------------------------- authorization checks */
+  // DSAG ABAP guideline: security/security-secure-development.md § Berechtigungsprüfungen richtig implementieren
+  const graph = readCallGraphFrom(statements, readBlocks(statements));
+  const indexAt = new Map<number, number>();
+  statements.forEach((s, i) => {
+    if (s.keyword === 'AUTHORITY-CHECK' && !indexAt.has(s.lineStart)) indexAt.set(s.lineStart, i);
+  });
+  for (const check of graph.authorityChecks) {
+    const index = indexAt.get(check.lineStart);
+    if (index === undefined) continue;
+    const statement = statements[index];
+    const object = check.object ?? (check.objectExpression || undefined);
+    const named = object ? `on ${object} ` : '';
+
+    // The return code has to be read by the statement right after the check:
+    // anything in between can overwrite sy-subrc, and a check nobody reads
+    // decides nothing.
+    const next = statements[index + 1];
+    const evaluated = next !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(next.text));
+    if (!evaluated) {
+      tasks.push({
+        kind: 'authority-result-not-evaluated',
+        ...at(statement),
+        title: `Authorization check ${named}whose result is not read`,
+        detail: next
+          ? `The statement after the AUTHORITY-CHECK (line ${next.lineStart}) does not read sy-subrc, so the outcome of the check decides nothing at this point.`
+          : 'The AUTHORITY-CHECK is the last statement of the source; nothing reads sy-subrc after it.',
+        check: 'Check whether the result is evaluated at all. If it is meant to stop the program, read sy-subrc in the statement right after the check and stop or raise an exception when it is not 0.',
+        severity: 'Medium',
+        subject: object,
+      });
+    }
+
+    for (const field of check.fields) {
+      if (field.dummy) {
+        tasks.push({
+          kind: 'authority-dummy-field',
+          ...at(statement),
+          title: `Authorization check ${named}skips field ${field.id} (DUMMY)`,
+          detail: `ID '${field.id}' DUMMY leaves the field ${field.id} unchecked: the check passes for any value of it.`,
+          // The guideline names DUMMY fields as a problem and, two paragraphs
+          // later, recommends a DUMMY pre-check at INITIALIZATION. Both are
+          // true for different uses, so the task asks which use this is.
+          check: `Check whether a full check with the actual value of ${field.id} follows before data is read or changed. A DUMMY check is a sound early pre-check; it is not a check of the value.`,
+          severity: 'Low',
+          subject: object,
+        });
+        continue;
+      }
+      const value = field.value;
+      if (value === undefined) continue;
+      if (value.trim() === '' || /^SPACE$/i.test(value.trim())) {
+        tasks.push({
+          kind: 'authority-blank-value',
+          ...at(statement),
+          title: `Authorization check ${named}tests field ${field.id} against a blank value`,
+          detail: `FIELD ' ' asks whether the user is authorized for a blank ${field.id}, which only a blank or a full authorization ('*') satisfies — it is not the same as leaving the field out.`,
+          check: `Check which value of ${field.id} was meant. If the field is not to be checked, write DUMMY; otherwise pass the value the program works with.`,
+          severity: 'Medium',
+          subject: object,
+        });
+      } else if (value.trim() === '*') {
+        tasks.push({
+          kind: 'authority-full-value',
+          ...at(statement),
+          title: `Authorization check ${named}tests field ${field.id} for full authorization ('*')`,
+          detail: `FIELD '*' passes only for users who hold every value of ${field.id}; it tests for a superuser, not for the value the program works with.`,
+          check: `Check whether a specific value of ${field.id} was meant. A test for full authorization locks out every user with a precise role and passes every user with a broad one.`,
+          severity: 'Medium',
+          subject: object,
+        });
+      }
+    }
+  }
+
+  /* ------------------------------------------- input and what it reaches */
+  const tainted = taintedNames(source, statements, graph.forms.flatMap((f) => f.parameters.map((p) => p.name)));
+  const fromInput = (operand: string): boolean => {
+    const base = baseName(operand);
+    return base !== '' && tainted.has(base);
+  };
+
+  // A program that resolves or validates its file names through the logical
+  // file name modules has done what the task would ask for.
+  const validatesFileNames = statements.some((s) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text));
+
+  const adbcLines = new Set(options.adbcLines ?? []);
+  const adbcSeen = new Set<number>();
+
+  for (const statement of statements) {
+    if (statement.nativeSql && !/^EXEC\s+SQL\b/i.test(statement.text)) continue;
+    const code = maskLiterals(statement.text);
+    const keyword = statement.keyword;
+
+    // SUBMIT … USER — DSAG ABAP guideline: security/security-secure-development.md § Berechtigungsprüfungen richtig implementieren
+    if (keyword === 'SUBMIT' && /\bUSER\b/i.test(code)) {
+      const user = new RegExp(String.raw`\bUSER\s+(${OPERAND}|'[^']*')`, 'i').exec(statement.text)?.[1];
+      tasks.push({
+        kind: 'submit-as-other-user',
+        ...at(statement),
+        title: 'Program scheduled under another user (SUBMIT … USER)',
+        detail: `The USER addition runs the submitted program as a background job under ${user ? `the user ${user}` : 'another user'}, with that user's authorizations instead of the caller's.`,
+        check: 'Check who can decide which user is named here and whether the caller is authorized to run the job under that user (authorization object S_BTCH_NAM). A user taken from input lets the caller borrow someone else\'s authorizations.',
+        severity: 'Medium',
+        subject: user,
+      });
+    }
+
+    if (SQL_KEYWORDS.has(keyword)) {
+      // Dynamic clauses — DSAG ABAP guideline: security/security-secure-development.md § Sichere Datenbankzugriffe: OpenSQL Best Practices
+      const dynamic: string[] = [];
+      const clause = new RegExp(String.raw`\b(WHERE|FROM|SET|FIELDS|BY|HAVING|UPDATE|MODIFY|DELETE|INSERT|JOIN|SINGLE|SELECT|DISTINCT)\s*\(\s*(${OPERAND})\s*\)`, 'gi');
+      let m: RegExpExecArray | null;
+      while ((m = clause.exec(code))) {
+        if (fromInput(m[2]) && !dynamic.includes(m[2])) dynamic.push(m[2]);
+      }
+      if (dynamic.length) {
+        tasks.push({
+          kind: 'dynamic-sql-from-input',
+          ...at(statement),
+          title: `Dynamic SQL clause built from input (${dynamic.join(', ')})`,
+          detail: `The statement takes part of its SQL from ${dynamic.join(', ')}, and the source fills ${dynamic.length > 1 ? 'them' : 'it'} from a selection parameter or a routine parameter.`,
+          check: 'Check that only fixed table and field names reach the clause — a whitelist of allowed names, values passed as host variables (@value) rather than as text, and CL_ABAP_DYN_PRG where text is unavoidable. A clause typed by the user can read or change rows the program was never meant to touch.',
+          severity: 'Medium',
+          subject: dynamic.join(', '),
+        });
+      }
+
+      // DSAG ABAP guideline: security/security-secure-development.md § Mandantensicherheit: Datentrennungen garantieren
+      if (/\bCLIENT\s+SPECIFIED\b|\bUSING\s+(?:ALL\s+CLIENTS\b|CLIENTS\s+IN\b|CLIENT\b)/i.test(code)) {
+        tasks.push({
+          kind: 'cross-client-access',
+          ...at(statement),
+          title: 'Database access across clients',
+          detail: 'CLIENT SPECIFIED or USING CLIENT switches off the automatic client handling of ABAP SQL: the statement reads or changes data of a client other than the logged-on one, or of all clients.',
+          check: 'Check that the access to another client is a requirement of the program and that it is guarded: which client is used, who may choose it, and an authorization check for the cross-client access.',
+          severity: 'Medium',
+        });
+      }
+    }
+
+    // Native SQL — DSAG ABAP guideline: security/security-secure-development.md § Sichere Datenbankzugriffe: OpenSQL Best Practices
+    const adbc = adbcLines.has(statement.lineStart) && !adbcSeen.has(statement.lineStart);
+    if (/^EXEC\s+SQL\b/i.test(code) || adbc) {
+      if (adbc) adbcSeen.add(statement.lineStart);
+      tasks.push({
+        kind: 'native-sql-client-handling',
+        ...at(statement),
+        title: adbc ? 'Native SQL through ADBC: no automatic client handling' : 'Native SQL (EXEC SQL): no automatic client handling',
+        detail: 'Native SQL goes to the database as written. ABAP SQL restricts every access to the logged-on client; native SQL does not, and the database tables carry the data of every client.',
+        check: 'Check that every native statement restricts itself to the current client (the client column, usually MANDT, compared with sy-mandt) and that no part of it is built from input.',
+        severity: 'Medium',
+      });
+    }
+
+    // OPEN / DELETE DATASET — DSAG ABAP guideline: security/security-secure-development.md § Sichere Dateizugriffe und Pfadtraversal-Schutz
+    const dataset = new RegExp(String.raw`^(OPEN|DELETE)\s+DATASET\s+(${OPERAND})`, 'i').exec(code);
+    if (dataset && fromInput(dataset[2]) && !validatesFileNames) {
+      tasks.push({
+        kind: 'file-path-from-input',
+        ...at(statement),
+        title: `Server file path built from input (${dataset[2]})`,
+        detail: `${dataset[1].toUpperCase()} DATASET opens a file on the application server whose name the source fills from a selection parameter or a routine parameter. The kernel checks S_DATASET for the resulting path; it does not check that the path stays in the directory the program means.`,
+        check: 'Check that the name is validated before the file is opened — a logical file name (transaction FILE) resolved and validated with FILE_GET_NAME and FILE_VALIDATE_NAME, or at least a fixed directory and no "..", "/" or "\\" taken from the input.',
+        severity: 'Medium',
+        subject: dataset[2],
+      });
+    }
+
+    // DSAG ABAP guideline: security/security-examples.md § ABAP Command Injection (Report)
+    // The guideline says GENERATE REPORT executes the program; it generates it
+    // (compiles the load). SUBMIT or PERFORM runs it. The task says what the statement does.
+    const generated = /^INSERT\s+REPORT\s+\S+\s+FROM\b/i.test(code)
+      ? 'INSERT REPORT writes ABAP source into the repository'
+      : /^GENERATE\s+SUBROUTINE\s+POOL\b/i.test(code)
+        ? 'GENERATE SUBROUTINE POOL compiles ABAP source held in an internal table into a temporary program'
+        : null;
+    if (generated) {
+      tasks.push({
+        kind: 'generated-program',
+        ...at(statement),
+        title: 'ABAP code generated at run time',
+        detail: `${generated}. Whatever reaches that source runs with the program's authorizations, and the generated code is not in any transport, review or code check.`,
+        check: 'Check where every line of the generated source comes from. No part of it may come from input; prefer a fixed implementation or released dynamic features (RTTS, dynamic calls with a whitelist) over generated code.',
+        severity: 'High',
+      });
+    }
+
+    // DSAG ABAP guideline: security/security-examples.md § Dangerous ABAP Commands
+    if (/^EDITOR-CALL\s+FOR\s+REPORT\b/i.test(code)) {
+      tasks.push({
+        kind: 'editor-call-for-report',
+        ...at(statement),
+        title: 'ABAP editor opened from the program (EDITOR-CALL FOR REPORT)',
+        detail: 'EDITOR-CALL FOR REPORT opens the source of a program in an editor. The statement is obsolete in ABAP.',
+        check: 'Check why custom code offers an ABAP editor. Changing source belongs to the development tools, where it is authorized and recorded; remove the call.',
+        severity: 'Medium',
+      });
+    }
+    if (/^COMMUNICATION\s+(?:INIT|ALLOCATE|ACCEPT|SEND|RECEIVE|DEALLOCATE)\b/i.test(code)) {
+      tasks.push({
+        kind: 'communication-statement',
+        ...at(statement),
+        title: 'Obsolete CPI-C communication (COMMUNICATION)',
+        detail: 'COMMUNICATION exchanges data with another program over CPI-C. The statement is obsolete, and the connection cannot use the protections of RFC such as SNC encryption.',
+        check: 'Check which partner the program talks to and replace the exchange with RFC or an HTTP-based interface that is authenticated and encrypted.',
+        severity: 'Medium',
+      });
+    }
+
+    // CALL TRANSACTION without WITH or WITHOUT AUTHORITY-CHECK
+    if (/^CALL\s+TRANSACTION\b/i.test(code) && !/\bWITH(?:OUT)?\s+AUTHORITY-CHECK\b/i.test(code)) {
+      const tcode = /^CALL\s+TRANSACTION\s+'([^']+)'/i.exec(statement.text)?.[1]?.toUpperCase()
+        ?? new RegExp(String.raw`^CALL\s+TRANSACTION\s+(${OPERAND})`, 'i').exec(code)?.[1];
+      tasks.push({
+        kind: 'call-transaction-without-authority-addition',
+        ...at(statement),
+        title: `CALL TRANSACTION${tcode ? ` ${tcode}` : ''} without WITH or WITHOUT AUTHORITY-CHECK`,
+        detail: 'Without one of the two additions, whether the user\'s authorization for the called transaction (S_TCODE) is checked depends on the system\'s check-indicator table maintained in transaction SE97, not on the program.',
+        check: 'Check which behaviour is intended and write it: WITH AUTHORITY-CHECK to check the user\'s authorization for the transaction, or WITHOUT AUTHORITY-CHECK together with a check of your own before the call.',
+        severity: 'Low',
+        subject: tcode,
+      });
+    }
+  }
+
+  return tasks.sort((a, b) => a.lineStart - b.lineStart);
+}
+
+/* ------------------------------------------------------------ input flow */
+
+/** `ls_x-field` → `LS_X`; `me->mv_x` → `MV_X`; `<fs>` → `<FS>`; `p_x-low` → `P_X`. */
+function baseName(operand: string): string {
+  let name = operand.trim().toUpperCase();
+  const arrow = name.lastIndexOf('->');
+  if (arrow >= 0) name = name.slice(arrow + 2);
+  name = name.replace(/^!/, '');
+  const dash = name.indexOf('-');
+  if (dash > 0) name = name.slice(0, dash);
+  return name;
+}
+
+/**
+ * The statement with every literal's text blanked but the expressions embedded
+ * in string templates kept: `|{ p_field } = @p_value|` hands `p_field` on, the
+ * text around it does not.
+ */
+function codeWithEmbedded(text: string): string {
+  const scan = createLiteralScanner();
+  let out = '';
+  for (const ch of text) {
+    const code = scan(ch);
+    out += code || scan.embedded() ? ch : ' ';
+  }
+  return out;
+}
+
+function mentions(text: string, names: Set<string>): boolean {
+  for (const m of text.matchAll(/(?:->)?(!?[\w/<>~]+)/g)) {
+    const name = m[1].toUpperCase().replace(/^!/, '');
+    if (names.has(name)) return true;
+  }
+  return false;
+}
+
+/**
+ * The names whose value comes from input, and every name the source fills
+ * from one of them.
+ *
+ * Input is what the person or the caller hands the code: `PARAMETERS` and
+ * `SELECT-OPTIONS`, the parameters of a `FORM`, the `IMPORTING` and `CHANGING`
+ * parameters of a method, and the `IMPORTING`, `CHANGING` and `TABLES`
+ * parameters of a function module (its interface comment block). The flow is
+ * followed through assignments, `CONCATENATE … INTO`, `APPEND … TO`,
+ * `INSERT … INTO TABLE` and `MOVE … TO`, to a fixed point.
+ */
+function taintedNames(source: string, statements: AbapStatement[], formParameters: string[]): Set<string> {
+  const names = new Set<string>(formParameters.map((n) => n.toUpperCase()));
+
+  for (const statement of statements) {
+    const selection = /^(?:PARAMETERS|PARAMETER|SELECT-OPTIONS)\s*:?\s*([\w/]+)/i.exec(statement.text);
+    if (selection) names.add(selection[1].toUpperCase());
+    if (/^(?:CLASS-)?METHODS\b/i.test(statement.text)) {
+      const sections = statement.text.split(/\b(IMPORTING|EXPORTING|CHANGING|RETURNING|RAISING|EXCEPTIONS)\b/i);
+      for (let i = 1; i < sections.length; i += 2) {
+        if (!/^(?:IMPORTING|CHANGING)$/i.test(sections[i])) continue;
+        for (const p of (sections[i + 1] ?? '').matchAll(/(?:VALUE\(\s*|REFERENCE\(\s*)?!?([\w/]+)\s*\)?\s+(?:TYPE|LIKE)\b/gi)) {
+          names.add(p[1].toUpperCase());
+        }
+      }
+    }
+  }
+
+  // Function module interface: the `*"` comment block the editor writes.
+  let section = '';
+  for (const raw of source.split(/\r?\n/)) {
+    if (!/^\*"/.test(raw)) continue;
+    const head = /^\*"\s*(IMPORTING|EXPORTING|CHANGING|TABLES|EXCEPTIONS|RAISING)\b/i.exec(raw);
+    if (head) { section = head[1].toUpperCase(); continue; }
+    if (!['IMPORTING', 'CHANGING', 'TABLES'].includes(section)) continue;
+    const p = /^\*"\s*(?:VALUE\(|REFERENCE\()?([\w/]+)\)?\s+(?:TYPE|LIKE|STRUCTURE)\b/i.exec(raw);
+    if (p) names.add(p[1].toUpperCase());
+  }
+
+  // What each statement fills, and from what.
+  const flows: Array<{ target: string; from: string }> = [];
+  for (const statement of statements) {
+    const code = codeWithEmbedded(statement.text);
+    const target = (name: string) => baseName(name.replace(/^DATA\(\s*([\w/]+)\s*\)$/i, '$1'));
+    let m: RegExpExecArray | null;
+    if ((m = new RegExp(String.raw`^(DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*(?:=|&&=|\+=)\s*([\s\S]*)$`, 'i').exec(code))) {
+      flows.push({ target: target(m[1]), from: m[2] });
+    } else if ((m = new RegExp(String.raw`^CONCATENATE\b([\s\S]*?)\bINTO\s+(DATA\(\s*[\w/]+\s*\)|${OPERAND})`, 'i').exec(code))) {
+      flows.push({ target: target(m[2]), from: m[1] });
+    } else if ((m = new RegExp(String.raw`^APPEND\b([\s\S]*?)\bTO\s+(${OPERAND})`, 'i').exec(code))) {
+      flows.push({ target: target(m[2]), from: m[1] });
+    } else if ((m = new RegExp(String.raw`^INSERT\b([\s\S]*?)\bINTO\s+TABLE\s+(${OPERAND})`, 'i').exec(code))) {
+      flows.push({ target: target(m[2]), from: m[1] });
+    } else if ((m = new RegExp(String.raw`^MOVE\b([\s\S]*?)\bTO\s+(${OPERAND})`, 'i').exec(code))) {
+      flows.push({ target: target(m[2]), from: m[1] });
+    }
+  }
+  for (let pass = 0; pass < 8; pass++) {
+    let grew = false;
+    for (const flow of flows) {
+      if (!flow.target || names.has(flow.target)) continue;
+      if (mentions(flow.from, names)) { names.add(flow.target); grew = true; }
+    }
+    if (!grew) break;
+  }
+  return names;
+}

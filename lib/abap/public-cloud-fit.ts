@@ -101,6 +101,7 @@
  */
 
 import { RETIREMENT_WINDOW_DAYS } from './usage-model';
+import { CLOUD_ERP_PRIVATE } from '../sap-naming';
 
 export type CloudReadinessGrade = 'A' | 'B' | 'C' | 'D' | 'Unknown';
 
@@ -149,7 +150,7 @@ export const PUBLIC_CLOUD_FIT_BUCKET_MEANINGS: Record<PublicCloudFitBucket, stri
 
 export const TARGET_PLATFORM_LABELS: Record<TargetPlatform, string> = Object.freeze({
   public: 'Public Edition',
-  private: 'Private Edition',
+  private: CLOUD_ERP_PRIVATE,
 });
 
 /**
@@ -500,7 +501,7 @@ export function assignPublicCloudFit(
       code: 'target-platform-not-set',
       detail:
         'The project has no target platform yet. Keep, Rebuild and the catalogued-path question all depend on it '
-        + '(Public Edition allows only level A; Private Edition allows A or B) — set the target deployment '
+        + `(Public Edition allows only level A; ${CLOUD_ERP_PRIVATE} allows A or B) — set the target deployment `
         + 'before these buckets can be concluded.',
     });
   }
@@ -669,16 +670,18 @@ export function summarizePublicCloudFit(
 export function publicCloudFitHeadline(summary: PublicCloudFitSummary): string {
   if (!summary.targetPlatform) return 'Target platform not set — Public-Cloud-Fit cannot be concluded yet.';
   const platformLabel = TARGET_PLATFORM_LABELS[summary.targetPlatform];
+  // "a Public Edition decision", "an SAP Cloud ERP Private decision".
+  const a = platformLabel.startsWith('SAP ') ? 'an' : 'a';
   if (summary.decisionBlocked) {
     const n = summary.objectsWithoutCataloguedPath.length;
-    return `${n} object${n === 1 ? ' has' : 's have'} no catalogued path — that has to be answered before a ${platformLabel} decision.`;
+    return `${n} object${n === 1 ? ' has' : 's have'} no catalogued path — that has to be answered before ${a} ${platformLabel} decision.`;
   }
   // An unassigned object was never asked the path question, so "no object is
   // waiting" cannot speak for it (QA full review of v2.20.0, 50eec718700f).
   const open = summary.counts.notAssigned;
   if (open > 0) {
-    return `No assigned object is waiting on a catalogued path for a ${platformLabel} decision; `
+    return `No assigned object is waiting on a catalogued path for ${a} ${platformLabel} decision; `
       + `${open} object${open === 1 ? ' is' : 's are'} not assigned, so the question is still open for ${open === 1 ? 'it' : 'them'}.`;
   }
-  return `No object is waiting on a catalogued path for a ${platformLabel} decision.`;
+  return `No object is waiting on a catalogued path for ${a} ${platformLabel} decision.`;
 }

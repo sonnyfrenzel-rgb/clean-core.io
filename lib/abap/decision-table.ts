@@ -3,16 +3,16 @@ import type { Branch } from './control-flow';
 
 /**
  * A decision table read off an `IF`/`ELSEIF` chain or a `CASE` — roadmap 3.0.7
- * (ZMM_BESTELLUEBERSICHT review, recommendation 3).
+ * (MM case review, recommendation 3).
  *
  * The review's most important business rule was a traffic light:
  *
- *     IF it_ausgabe-eindt < sy-datum AND it_ausgabe-offen > 0.
- *       it_ausgabe-ampel = c_rot.
- *     ELSEIF it_ausgabe-eindt < sy-datum + 7.
- *       it_ausgabe-ampel = c_gelb.
+ *     IF gt_list-due_date < sy-datum AND gt_list-open_qty > 0.
+ *       gt_list-light = c_red.
+ *     ELSEIF gt_list-due_date < sy-datum + 7.
+ *       gt_list-light = c_yellow.
  *     ELSE.
- *       it_ausgabe-ampel = c_gruen.
+ *       gt_list-light = c_green.
  *     ENDIF.
  *
  * and the product showed it as a gateway whose three arms run back without a
@@ -45,7 +45,7 @@ export interface DecisionTableRow {
 }
 
 export interface DecisionTableReading {
-  /** The assigned field as the source writes it in the first arm: `it_ausgabe-ampel`. */
+  /** The assigned field as the source writes it in the first arm: `gt_list-light`. */
   field: string;
   /** For a `CASE`, its selector; `null` for an `IF` chain. */
   selector: string | null;

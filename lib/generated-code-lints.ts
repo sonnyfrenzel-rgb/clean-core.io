@@ -36,7 +36,8 @@ export type LintId =
   | 'claimed-integration'
   | 'sap-event-namespace'
   | 'unused-dependency'
-  | 'ignored-option';
+  | 'ignored-option'
+  | 'abap-doc-missing';
 
 export interface GeneratedCodeLintFinding {
   id: LintId;
@@ -71,6 +72,7 @@ const SOURCES: Readonly<Record<LintId, string>> = Object.freeze({
   'sap-event-namespace': "Roadmap 3.0.12 — SD review: no event publisher in SAP's namespace",
   'unused-dependency': 'Roadmap 3.0.12 — SD review: dependencies follow the import graph',
   'ignored-option': 'Roadmap 3.0.12 — PP review F07, FI review: an option is honoured or refused, never ignored',
+  'abap-doc-missing': "Roadmap 3.0.12 — DSAG ABAP guide (documentation/dev_object_related_doc.md): ABAP Doc on public methods, why and not what, with the original's line",
 });
 
 const SEVERITY: Readonly<Record<LintId, LintSeverity>> = Object.freeze({
@@ -85,6 +87,7 @@ const SEVERITY: Readonly<Record<LintId, LintSeverity>> = Object.freeze({
   'sap-event-namespace': 'P1',
   'unused-dependency': 'P2',
   'ignored-option': 'P1',
+  'abap-doc-missing': 'P2',
 });
 
 const CODE_FILE = /\.(ts|tsx|js|mjs|cjs)$/i;
@@ -625,6 +628,66 @@ function abapSapEvents(path: string, src: string): GeneratedCodeLintFinding[] {
   return out;
 }
 
+/* ------------------------------------------------------ 7b. ABAP Doc */
+
+/** A global class's main file or a global interface — where public methods live. */
+const ABAP_GLOBAL_FILE = /\.(?:clas|intf)\.abap$/i;
+/** ABAP Doc that anchors at the original — `L120`, `L12–L40` — or says there is nothing to anchor at. */
+const ABAP_DOC_ANCHOR = /\bL\d+\b|no counterpart in the original/i;
+
+/**
+ * Every public method of a global class or interface carries ABAP Doc (`"!`)
+ * directly above it that says why it exists and anchors at the original's
+ * line, or says it has no counterpart there (DSAG ABAP guide; the RAP
+ * scaffold writes it so, 3.0.12). Whether the doc says *why* rather than
+ * *what*, and whether it is English, is a reader's judgement — the lint checks
+ * that it is there and anchored. Test methods and redefinitions are exempt;
+ * a redefinition inherits its doc.
+ */
+function abapDocMissing(path: string, src: string): GeneratedCodeLintFinding[] {
+  if (!ABAP_GLOBAL_FILE.test(path)) return [];
+  const out: GeneratedCodeLintFinding[] = [];
+  const lines = src.split(/\r?\n/);
+  let inPublic = false;
+  let doc: string[] = [];
+  lines.forEach((raw, i) => {
+    const l = raw.trim();
+    if (/^"!/.test(l)) {
+      doc.push(l);
+      return;
+    }
+    const docAbove = doc;
+    doc = [];
+    if (l === '' || /^\*/.test(raw) || /^"/.test(l)) return;
+    if (/^CLASS\s+\S+\s+DEFINITION\b/i.test(l)) {
+      inPublic = false;
+      return;
+    }
+    if (/^INTERFACE\s+\S+(?:\s+PUBLIC)?\s*\.$/i.test(l)) {
+      inPublic = /\bPUBLIC\b/i.test(l);
+      return;
+    }
+    if (/^PUBLIC\s+SECTION\s*\./i.test(l)) {
+      inPublic = true;
+      return;
+    }
+    if (/^(?:PROTECTED\s+SECTION|PRIVATE\s+SECTION|ENDCLASS|ENDINTERFACE)\b/i.test(l)) {
+      inPublic = false;
+      return;
+    }
+    if (!inPublic) return;
+    const m = l.match(/^(?:CLASS-)?METHODS\s*:?\s*([\w~]+)/i);
+    if (!m || /\bFOR\s+TESTING\b|\bREDEFINITION\b/i.test(l)) return;
+    const name = m[1];
+    if (docAbove.length === 0) {
+      out.push(finding('abap-doc-missing', path, i + 1, `The public method ${name} has no ABAP Doc ("!) above it. Say why it exists, in English, and name the original's line (L<n>) — or that it has no counterpart in the original.`));
+    } else if (!ABAP_DOC_ANCHOR.test(docAbove.join(' '))) {
+      out.push(finding('abap-doc-missing', path, i + 1, `The ABAP Doc of the public method ${name} names no line of the original (L<n>) and does not say it has no counterpart there.`));
+    }
+  });
+  return out;
+}
+
 /* --------------------------------------------------------- 8. dependencies */
 
 /** Tools a package declares to build, type-check or run itself — used by the scripts, not imported. */
@@ -759,7 +822,7 @@ export function generatedCodeLints(
       ...ignoredOptions(s, sources),
     );
   }
-  for (const f of files) if (ABAP_FILE.test(f.path)) out.push(...abapSapEvents(f.path, f.content));
+  for (const f of files) if (ABAP_FILE.test(f.path)) out.push(...abapSapEvents(f.path, f.content), ...abapDocMissing(f.path, f.content));
   out.push(...unusedDependencies(files));
   const rank = (x: LintSeverity) => LINT_SEVERITIES.indexOf(x);
   return out.sort((a, b) => rank(a.severity) - rank(b.severity) || a.file.localeCompare(b.file) || a.line - b.line || a.id.localeCompare(b.id));

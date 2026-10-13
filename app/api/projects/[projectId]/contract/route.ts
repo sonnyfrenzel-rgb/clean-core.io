@@ -9,13 +9,10 @@ import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/g
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision, generationStateOf } from '@/lib/generation-revision';
-import { assembleTransformationContext, readAcceptedRequirements, readRuleAnswers } from '@/lib/transformation-context-build';
-import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
-import type { ArchitectureContract } from '@/lib/architecture-contract';
-import type { AbapEvidenceReport } from '@/lib/abap/evidence-model';
-import type { Firestore } from 'firebase-admin/firestore';
+import { platformContextOf } from '@/lib/transformation-context-build';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { generationRecordOf, traceMatchesRecord } from '@/lib/transformation/generation-record';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
 
@@ -73,38 +70,6 @@ const MAX_PACKAGE_CHARS = 1_000_000;
 // UTF-8, plus the suite beside it; nothing larger is read (QA slice review of
 // bd016957d13c, 44f03f652da7).
 const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
-
-/**
- * The PLATFORM KNOWLEDGE block of this project (owner, 12.10.2026; roadmap
- * 3.0.12): the owner's rule answers (one read beside revision 1 of the
- * process), the requirements accepted in the specification, the decision
- * record, the summary facts and the catalog
- * successors of the evidence this contract was just built on. GET and POST
- * build it the same way, so the token compares the same block.
- */
-async function platformContextOf(
-  db: Firestore,
-  projectId: string,
-  data: Record<string, unknown>,
-  built: { contract: ArchitectureContract; evidence: AbapEvidenceReport },
-  isAbapCloud: boolean,
-) {
-  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
-  const [answers, accepted] = await Promise.all([
-    readRuleAnswers(db, projectId, source),
-    readAcceptedRequirements(db, projectId),
-  ]);
-  return assembleTransformationContext({
-    source,
-    project: data,
-    answers,
-    accepted,
-    evidence: built.evidence,
-    contract: built.contract,
-    isAbapCloud,
-    catalogSnapshot: catalogSnapshotKeyForProject(data),
-  });
-}
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
 const GENERATION_BINDING_FIELD = 'generationBinding';
@@ -281,7 +246,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       testSuite?: unknown;
       expectedContractFingerprint?: unknown;
       generationToken?: unknown;
+      /** Roadmap 3.0.12, step E: how the package was made — engine-led or the single call (`generation-record.ts`). */
+      generation?: unknown;
     };
+    const record = generationRecordOf(body.generation);
+    if (record && 'error' in record) {
+      return NextResponse.json({ error: record.error, code: 'bad-generation-record' }, { status: 400 });
+    }
     const code = typeof body.generatedCode === 'string' ? body.generatedCode : '';
     if (!code.trim()) {
       return NextResponse.json(
@@ -382,12 +353,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       );
     }
 
-    const checked = checkGeneratedPackage(code, body.testSuite, decision.isAbapCloud);
+    const checked = checkGeneratedPackage(code, body.testSuite, decision.isAbapCloud, record?.path ?? 'single-call');
     if (!checked.ok) {
       return NextResponse.json({ error: checked.error, code: 'package-incomplete' }, { status: 400 });
     }
+    if (record) {
+      const mismatch = traceMatchesRecord(JSON.parse(code) as Array<{ path: string; content: string }>, record);
+      if (mismatch) return NextResponse.json({ error: mismatch, code: 'package-incomplete' }, { status: 400 });
+    }
+    // Roadmap 3.0.12 (DSAG ABAP guide B5): abaplint on an ABAP Cloud package, run here under ABAP Cloud syntax and
+    // recorded as passed, failed or not run — the page cannot report this check for itself.
+    const lint = decision.isAbapCloud ? await import('@/lib/transformation/abaplint-check') : null;
+    const abaplint = lint ? lint.abaplintPackageCheck(JSON.parse(code) as Array<{ path: string; content: string }>) : null;
 
-    const binding = generationBinding(built.contract, { codeSha256: sha256Hex(code) });
+    // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
+    // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
+    // the server's, from the block this request just rebuilt; the rest is the
+    // page's report of a model-written package and stays `proposed`.
+    const binding = {
+      ...generationBinding(built.contract, { codeSha256: sha256Hex(code) }),
+      ...(record
+        ? {
+            path: record.path,
+            contextDigest: sha256Hex(platform.stamp.text),
+            fallbackReason: record.fallbackReason,
+            engine: record.engine && lint && abaplint ? lint.withAbaplint(record.engine, abaplint) : record.engine,
+            scaffoldVersion: record.engine?.scaffoldVersion ?? null,
+            scaffoldDigest: record.engine?.scaffoldDigest ?? null,
+            basis: record.basis,
+            elapsedMs: record.elapsedMs,
+          }
+        : {}),
+      ...(abaplint ? { abaplint } : {}),
+    };
     const fields = {
       generatedCode: code,
       testSuite: checked.testSuite,

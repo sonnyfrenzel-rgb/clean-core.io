@@ -92,7 +92,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.profileNote':
     'Every level on this page is looked up under this profile — the same catalog the signed run of this project reads.',
   'it.releasePublic':
-    'Always SAP’s current list — SAP upgrades every Public Cloud tenant on the same schedule, so there is no older release to choose.',
+    'Always SAP’s current list — SAP upgrades every SAP S/4HANA Cloud Public Edition tenant on the same schedule, so there is no older release to choose.',
   'it.releaseLatest': 'Not set — SAP’s latest list is used.',
   'it.releaseSet': 'Set the release',
   'it.notRecorded': 'not recorded',

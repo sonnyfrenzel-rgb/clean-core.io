@@ -173,7 +173,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const deployment: unknown = body.s4Deployment || loaded.data.s4Deployment || 'public';
     if (deployment !== 'public' && deployment !== 'private') {
       return NextResponse.json(
-        { error: 'The evidence engine assesses for the Public and the Private Edition only.', code: 'profile-rejected' },
+        { error: 'The evidence engine assesses for SAP S/4HANA Cloud Public Edition and SAP Cloud ERP Private only.', code: 'profile-rejected' },
         { status: 422 },
       );
     }

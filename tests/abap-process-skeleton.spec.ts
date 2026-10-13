@@ -1331,7 +1331,7 @@ test.describe('roadmap 2.16 — lanes', () => {
     // deterministic lane too — so the test is not "is this word on a blacklist"
     // but "is this word in the file".
     //
-    // Roadmap 3.0.7 (ZMM_BESTELLUEBERSICHT review, decision Sonny): the run
+    // Roadmap 3.0.7 (MM case review, decision Sonny): the run
     // lane is named for its role, `User` or `System` — the two roles BPMN
     // knows, never a job title — and the token that proved it moves to its
     // evidence. So for a run lane the evidence tokens are what must be in the

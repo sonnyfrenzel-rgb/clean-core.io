@@ -24,13 +24,13 @@ export type TargetEdition = 'public' | 'private';
 export const TARGET_EDITION_OPTIONS: readonly { value: TargetEdition; title: string; text: string }[] = [
   {
     value: 'private',
-    title: 'Private Cloud / RISE',
-    text: 'SAP S/4HANA Cloud, Private Edition or on-premise. Custom code can stay behind upgrade-safe wrappers.',
+    title: 'SAP Cloud ERP Private',
+    text: 'Formerly SAP S/4HANA Cloud Private Edition; also SAP S/4HANA on-premise. Released APIs first; where SAP offers none, custom code may wrap the unreleased object, with an influence request to SAP.',
   },
   {
     value: 'public',
-    title: 'Public Cloud',
-    text: 'SAP S/4HANA Cloud, Public Edition. Released APIs only; no modification of the core.',
+    title: 'SAP S/4HANA Cloud Public Edition',
+    text: 'Part of SAP Cloud ERP. Released APIs only; no modification of the core.',
   },
 ];
 

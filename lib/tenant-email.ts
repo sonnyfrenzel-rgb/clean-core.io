@@ -54,7 +54,7 @@ export function buildTenantApprovalEmail({ name, recipient }: TenantMailInput): 
   return buildUserMail({
     greeting: `Hello ${name},`,
     paragraphs: [
-      'Your request to connect a live S/4HANA Public Cloud tenant has been reviewed and approved. You can now connect your non-production SAP environment in stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant stays locked until the isolated live runner is switched on; until then they run against mocks.',
+      'Your request to connect a live SAP S/4HANA Cloud Public Edition tenant has been reviewed and approved. You can now connect your non-production SAP environment in stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant stays locked until the isolated live runner is switched on; until then they run against mocks.',
       'In stage 5, open the tab "Check tenant connection", enter your credentials and choose "Test Connection".',
       '<strong>Credentials stay on the server.</strong> They are encrypted with AES-256-GCM in a server-only store, decrypted only for the server-side calls to your tenant, and never returned to the browser.',
       '<strong>Guidelines for a safe connection.</strong> Prefer importing the connection as an HTTP destination (JSON) from the SAP Destination service over entering credentials by hand. Use OAuth 2.0 SAML bearer assertions where you want user-specific identity propagation and audit logs in the target system. For on-premise development tenants, route traffic through the SAP Cloud Connector so your firewall stays closed. Connection checks and metadata reads are read-only requests from the Clean-Core.io server.',
@@ -73,7 +73,7 @@ export function buildTenantRevokeEmail({ name, recipient }: TenantMailInput): st
   return buildUserMail({
     greeting: `Hello ${name},`,
     paragraphs: [
-      'Your access for connecting a live S/4HANA Public Cloud tenant has been suspended by the Clean-Core.io administration. Typical reasons are the end of an evaluation period, an administrative change or routine security housekeeping.',
+      'Your access for connecting a live SAP S/4HANA Cloud Public Edition tenant has been suspended by the Clean-Core.io administration. Typical reasons are the end of an evaluation period, an administrative change or routine security housekeeping.',
       'Your projects remain intact. Connection checks against your tenant are unavailable until access is granted again. Generated tests always run against mocks, so they keep working as before, and your connection credentials remain stored encrypted.',
       `<strong>To restore access</strong>, write to ${CONTACT_EMAIL} for a review, or submit a new request under Settings with an updated description of your scenario. Your own Gemini key (BYOK) keeps working for everything else.`,
     ],

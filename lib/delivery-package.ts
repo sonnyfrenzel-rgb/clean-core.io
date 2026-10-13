@@ -1,6 +1,6 @@
 /**
  * The delivery package tells the truth (owner, 11.10.2026; external review of
- * the FI_Collection_Worklist bundle, findings F-04, F-05, F-08, F-09, F-10).
+ * the FI case's bundle, findings F-04, F-05, F-08, F-09, F-10).
  *
  * The bundle used to carry a README written before its files were known: it
  * named `srv/service.cds` and `npm run dev` whether or not the package had
@@ -32,6 +32,7 @@
  * comes back into the ZIP.
  */
 
+import type { GenerationRecord } from './transformation/generation-record';
 import { sha256Hex } from './artefact-digest';
 import { formatTextDate } from './format';
 import { SCORE_FLOOR } from './clean-core-score';
@@ -40,6 +41,9 @@ import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
+import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './transformation/check-words';
+import { abapGitXmlHolds } from './transformation/abapgit-check';
+import { TARGET_EDITION_NAMES } from './sap-naming';
 
 /* ------------------------------------------------------------------ types */
 
@@ -107,6 +111,7 @@ export type FileKind =
   | 'decision-record'
   | 'rule-register'
   | 'rule-register-csv'
+  | 'cost-revision'
   | 'service-source'
   | 'source'
   | 'cds-schema'
@@ -165,10 +170,66 @@ export interface DecisionFacts {
   recommendation: { option: string; code: string | null; reasoning: string | null } | null;
   /** ADR-092: the cost revision the decision was priced on, in one or two sentences. */
   cost: string;
+  /**
+   * The cost revision the confirmed decision names, exported beside it
+   * (roadmap 3.0.12, CO review F17): `docs/cost-revision.md`. Null when no
+   * decision is confirmed or it recorded no cost basis (before 3.0.10).
+   */
+  costRevision: CostRevisionFacts | null;
   conditions: Array<{ text: string; status: string }>;
   bindings: Array<{ label: string; value: string }>;
   reversibility: string | null;
 }
+
+/**
+ * The cost revision a confirmed decision was priced on, read-only (roadmap
+ * 3.0.12, CO review F17): so a reader of the package can follow which
+ * revision priced the decision. The figures are the reader's own Economics
+ * inputs, copied only when the revision on record is the one Economics still
+ * holds — the product keeps one revision, and a later one is never passed off
+ * as the one the decision was priced on.
+ */
+export interface CostRevisionFacts {
+  /** The decision record it belongs to — "DEC-1 · revision 2". */
+  decision: string | null;
+  /** The revision's number, or null for figures saved before 3.0.10. */
+  sequence: number | null;
+  /** When that revision was first saved (ISO), or null. */
+  at: string | null;
+  /** "revision 3 (10 Oct 2026)". */
+  words: string;
+  /** No cost figures were stored when the decision was confirmed. */
+  noFigures: boolean;
+  /** The option the comparison named the cheapest on it, or null. */
+  cheapest: string | null;
+  /** Why it named none, in words, or null. */
+  noCheapest: string | null;
+  /** The inputs of that revision, or null when they are not kept (see `figuresNote`). */
+  figures: CostRevisionFigures | null;
+  /** Why the figures are or are not in the file. */
+  figuresNote: string;
+}
+
+export interface CostRevisionFigures {
+  currency: string;
+  devDayRate: number | null;
+  testDayRate: number | null;
+  horizonYears: number | null;
+  releasesPerYear: number | null;
+  cadenceConfirmed: boolean | null;
+  options: Array<{
+    label: string;
+    kind: string;
+    /** Days, development + test, low–high. */
+    oneOff: { low: { dev: number; test: number }; high: { dev: number; test: number } } | null;
+    perRelease: { dev: number; test: number } | null;
+    baselinePerYear: { dev: number; test: number } | null;
+    effortSource: string;
+  }>;
+}
+
+/** Where the cost revision sits in the package (roadmap 3.0.12, CO review F17). */
+export const COST_REVISION_PATH = 'docs/cost-revision.md';
 
 /** Where the rule register sits in the package (CO review F16, 12.10.2026). */
 export const RULE_REGISTER_PATH = 'docs/rule-register.md';
@@ -238,6 +299,8 @@ export interface DeliveryFacts {
   documentationFromEngine: boolean;
   /** The "Reference patterns" section (`referencePatternsReadme`), passed through as it is. */
   referenceSection: string;
+  /** Roadmap 3.0.12, step E: how the stored package was made — absent or null for a package from before. */
+  generation?: (GenerationRecord & { contextDigest: string | null }) | null;
 }
 
 /* ------------------------------------------------------------ the collector */
@@ -724,6 +787,7 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
   if (p === 'docs/decision.md') return { kind: 'decision-record', status: 'implemented', note: null };
   if (p === RULE_REGISTER_PATH) return { kind: 'rule-register', status: 'implemented', note: null };
   if (p === RULE_REGISTER_CSV_PATH) return { kind: 'rule-register-csv', status: 'implemented', note: null };
+  if (p === COST_REVISION_PATH) return { kind: 'cost-revision', status: 'implemented', note: "The reader's own Economics figures, copied read-only — not a quote and not signed." };
   if (DOC_FILES[p]) return { kind: 'documentation', status: DOC_FILES[p].status, note: 'Review material, not approved.' };
   if (/^docs\/process-[\w-]+\.md$/.test(p)) {
     return facts.documentationFromEngine
@@ -766,9 +830,15 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
     };
   }
   if (/\.clas\.abap$/i.test(p) && /test/i.test(p)) return { kind: 'test-suite', status: 'implemented', note: 'ABAP Unit class — runs only inside an SAP system.' };
-  if (/\.(abap|asddls|asbdef|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
+  if (/\.(abap|asddls|asbdef|asdcls|srvdsrv|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
+  // A table is its abapGit XML: abapGit has no source form of a table (3.0.12, importable package).
+  if (/^src\/.+\.tabl\.xml$/i.test(p)) {
+    return { kind: 'abap-object', status: 'implemented', note: abapGitXmlHolds(p, e.content) ? "Table definition in abapGit's serializer format (structure checked) — not imported into or activated in an SAP system." : "Table definition — not in the structure abapGit's serializer writes; not imported into an SAP system." };
+  }
   if (/\.xml$/i.test(p) && p.startsWith('src/')) {
-    return { kind: 'abap-metadata', status: 'implemented', note: 'Generated, not produced by an abapGit serializer; names and attributes may need adjusting.' };
+    return abapGitXmlHolds(p, e.content)
+      ? { kind: 'abap-metadata', status: 'implemented', note: "In abapGit's serializer format (structure checked against it) — not imported into an SAP system." }
+      : { kind: 'abap-metadata', status: 'implemented', note: 'Generated, not produced by an abapGit serializer; names and attributes may need adjusting.' };
   }
   return { kind: 'other', status: 'implemented', note: null };
 }
@@ -950,6 +1020,7 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^docs\/decision\.md$/, () => 'The target decision as recorded, and how the Clean Core Score was derived.'],
   [/^docs\/rule-register\.md$/, () => 'Every business rule: current meaning, proposal, decision, evidence and revision.'],
   [/^docs\/rule-register\.csv$/, () => 'The same rule register as CSV (UTF-8, every field quoted) for a spreadsheet.'],
+  [/^docs\/cost-revision\.md$/, () => 'The cost revision the decision was priced on — its number, date and figures, read-only.'],
   [/^package\.json$/, () => 'Node.js dependencies and scripts — the scripts are set by Clean-Core.io to match the files here.'],
   [/^tsconfig\.json$/, (r) => (r.packageJson && r.packageJson.main === 'dist/app.js' ? 'TypeScript settings: compiles src/ to dist/.' : 'TypeScript settings for `npm run build` (type-check only).')],
   [/^Dockerfile$/, () => `Container build on Node.js ${PACKAGE_NODE_MAJOR} (template of Clean-Core.io) — not built or deployed by Clean-Core.io.`],
@@ -961,9 +1032,13 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^abaplint\.json$/, () => 'abaplint rules for the sources under src/.'],
   [/\.asddls$/i, () => 'CDS data definition (for abapGit).'],
   [/\.asbdef$/i, () => 'RAP behavior definition (for abapGit).'],
-  [/\.assrvd$/i, () => 'RAP service definition (for abapGit).'],
+  [/\.asdcls$/i, () => 'CDS access control (for abapGit).'],
+  [/\.(?:srvdsrv|assrvd)$/i, () => 'RAP service definition (for abapGit).'],
   [/\.assrvb$/i, () => 'RAP service binding (for abapGit).'],
-  [/^src\/.+\.xml$/i, () => 'abapGit object metadata — generated, not produced by an abapGit serializer.'],
+  [/^src\/package\.devc\.xml$/i, () => 'abapGit package metadata of the root folder (its description).'],
+  [/^src\/.+\.tabl\.xml$/i, () => "Database table in abapGit's format (abapGit has no source form of a table)."],
+  [/^src\/.+\.srvb\.xml$/i, () => "RAP service binding in abapGit's format (OData V4 UI, not published)."],
+  [/^src\/.+\.xml$/i, () => 'abapGit object metadata (name, description, language).'],
 ];
 
 function describe(path: string, reading: PackageReading, facts: DeliveryFacts): string {
@@ -1040,15 +1115,23 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
     lines.push('');
   } else if (reading.kind === 'abap') {
     lines.push('## abapGit layout — what is verified, and what is not', '');
+    const metadata = entries.filter((e) => /^src\/.+\.xml$/i.test(e.path));
+    const checked = metadata.length > 0 && metadata.every((e) => abapGitXmlHolds(e.path, e.content));
     lines.push(
-      'The repository configuration file `.abapgit.xml` follows the format documented at https://docs.abapgit.org/user-guide/repo-settings/dot-abapgit.html, and the sources sit under the `/src/` folder it names.',
+      'The repository configuration file `.abapgit.xml` follows the format documented at https://docs.abapgit.org/user-guide/repo-settings/dot-abapgit.html, and the sources sit under the `/src/` folder it names (folder logic PREFIX: every object goes into the package you link the repository to).',
       '',
-      'What has **not** been verified: nobody imported this package into an SAP system. The object metadata files (`*.clas.xml` and the rest) were generated here, not produced by an abapGit serializer, so names, packages and attributes may need adjusting before the objects activate.',
+      checked
+        ? "Every object carries its abapGit metadata file (`<name>.<type>.xml`), written in the structure abapGit's serializer writes and checked against it; the table is abapGit's `.tabl.xml`. What has **not** been verified: nobody imported this package into an SAP system or activated its objects there — only that proves the package."
+        : 'What has **not** been verified: nobody imported this package into an SAP system. The object metadata files (`*.clas.xml` and the rest) were generated here, not produced by an abapGit serializer, so names, packages and attributes may need adjusting before the objects activate.',
       '',
     );
     lines.push('## Getting started', '');
     let n = 1;
-    if (entries.some((e) => e.path === '.abapgit.xml')) lines.push(`${n++}. Link the repository with abapGit and import \`/src\` into a development package.`);
+    if (entries.some((e) => e.path === '.abapgit.xml')) {
+      lines.push(
+        `${n++}. Import with abapGit into a development package whose ABAP language version is ABAP for Cloud Development: on SAP S/4HANA on-premise or SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) with the open-source abapGit (New Offline, Import ZIP, or push this package to a Git repository and link it with New Online); on SAP BTP ABAP Environment or SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) with the abapGit version SAP ships for ABAP Cloud (in ADT), whose supported object types SAP documents.`,
+      );
+    }
     lines.push(`${n++}. Activate the objects in ADT and fix what does not activate.`);
     const unit = entries.find((e) => /\.clas\.abap$/i.test(e.path) && /test/i.test(e.path));
     if (unit) lines.push(`${n++}. Run the ABAP Unit class \`${unit.path.split('/').pop()!.replace(/\.clas\.abap$/i, '').toUpperCase()}\` in ADT.`);
@@ -1069,7 +1152,7 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
 
 /** STATUS, README, manifest, decision first; then the rest. */
 function order(path: string): number {
-  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
+  const first = ['STATUS.md', 'README.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH];
   const i = first.indexOf(path);
   return i === -1 ? first.length : i;
 }
@@ -1121,6 +1204,46 @@ export interface StatusInputs {
    * `null` when the package holds no Node code to check.
    */
   lints?: readonly GeneratedCodeLintFinding[] | null;
+}
+
+/**
+ * Roadmap 3.0.12, step E (design §12.1, §16, §18): one line for the table —
+ * how the package was made — or null for a package from before 3.0.12.
+ */
+export function generationLine(g: DeliveryFacts['generation'] | null): string | null {
+  if (!g) return null;
+  if (g.path === 'single-call') {
+    return `In one model call${g.fallbackReason ? ` — the engine could not build a scaffold for this program (${g.fallbackReason})` : ''}. Functions are not anchored to ABAP lines.`;
+  }
+  const e = g.engine;
+  if (!e) return null;
+  return `Engine scaffold and model-written function bodies — ${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}${e.status === 'partial' ? '; partial' : ''}. See "How this code was built" and TRACE.md.`;
+}
+
+/** The "How this code was built" section of STATUS.md: counts, what is not written and why, the checks. */
+export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
+  if (!g) return [];
+  const lines: string[] = ['## How this code was built', ''];
+  if (g.path === 'single-call') {
+    lines.push(generationLine(g) ?? '', '');
+    return lines;
+  }
+  const e = g.engine;
+  if (!e) return [];
+  lines.push(
+    'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is a model proposal, never proven.',
+    '',
+    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${e.status}**.`,
+  );
+  for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
+  for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
+  for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
+  if (e.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
+  for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);
+  for (const f of e.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
+  lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);
+  lines.push('- Every function, its ABAP lines, its rules and who wrote it: `TRACE.md` and `traceability.json`.', '');
+  return lines;
 }
 
 /** The "Code checks" section of STATUS.md: counts by severity, then every finding with its file and line. */
@@ -1225,6 +1348,8 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   row('Data mode', dataMode(reading).sentence);
   row('Delivered implementation', implementationStatement(reading, facts));
   if (lints) row('Code checks', lints.length === 0 ? 'No finding.' : `${lintCountLine(lints)} — see "Code checks".`);
+  const built = generationLine(facts.generation ?? null);
+  if (built) row('How the code was built', built);
   row('Clean Core Score', scoreLine(facts.score));
   row('Production use', 'Blocked — review version, not approved for production.');
   lines.push('');
@@ -1289,6 +1414,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   for (const f of notable) lines.push(`- \`${f.path}\` — ${f.status}${f.note ? `: ${f.note}` : ''}`);
   if (notable.length) lines.push('');
 
+  lines.push(...howBuiltLines(facts.generation ?? null));
   if (lints) lines.push(...codeChecksLines(lints));
 
   lines.push('## Known limits', '');
@@ -1308,8 +1434,55 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
 
 const RULE_WORDS: Readonly<Record<ScoreRule, string>> = Object.freeze({
   'custom-writes-charged': 'writes to custom (Z/Y) tables are charged',
-  'own-custom-writes-free': "writes to the program's own Z/Y tables cost nothing (Private Edition rule from engine 3.0.9)",
+  'own-custom-writes-free': "writes to the program's own Z/Y tables cost nothing (SAP Cloud ERP Private rule from engine 3.0.9)",
 });
+
+/** "12 dev + 4 test days". */
+const days = (d: { dev: number; test: number } | null): string => (d ? `${d.dev} dev + ${d.test} test days` : 'not stated');
+
+/**
+ * `docs/cost-revision.md` — the cost revision the confirmed decision was
+ * priced on, read-only (roadmap 3.0.12, CO review F17). Amounts are not
+ * computed here: the file carries the reader's own inputs, as entered, and the
+ * comparison's verdict as the decision recorded it.
+ */
+export function buildCostRevision(facts: DeliveryFacts): string {
+  const d = facts.decision;
+  const r = d.costRevision;
+  const lines: string[] = [];
+  lines.push(`# ${facts.projectName} — the cost revision the decision was priced on`, '');
+  lines.push("Written by Clean-Core.io from the records of the project, without a model. Read-only: the figures are the reader's own Economics inputs, not a quote, and not signed.", '');
+  if (!r) {
+    lines.push('No decision is confirmed with a recorded cost revision.');
+    return `${lines.join('\n').trimEnd()}\n`;
+  }
+  lines.push('## Which revision', '');
+  if (r.decision) lines.push(`- Decision record: ${r.decision} (see \`docs/decision.md\`)`);
+  lines.push(`- Cost revision: ${r.noFigures ? 'none — no cost figures were stored when the decision was confirmed' : r.words}`);
+  if (r.sequence !== null) lines.push(`- Revision number: ${r.sequence}`);
+  if (r.at) lines.push(`- Saved: ${day(r.at)} (${r.at})`);
+  if (!r.noFigures) {
+    lines.push(r.cheapest ? `- Cheapest option on it: "${r.cheapest}"` : `- Cheapest option on it: none named${r.noCheapest ? ` (${r.noCheapest})` : ''}`);
+  }
+  lines.push('');
+  lines.push('## Figures', '');
+  lines.push(r.figuresNote, '');
+  const f = r.figures;
+  if (f) {
+    lines.push(`- Currency: ${f.currency || 'not stated'}`);
+    lines.push(`- Day rate, development: ${f.devDayRate ?? 'not stated'}`);
+    lines.push(`- Day rate, test: ${f.testDayRate ?? 'not stated'}`);
+    lines.push(`- Observation period: ${f.horizonYears === null ? 'not stated' : plural(f.horizonYears, 'year')}`);
+    lines.push(`- Releases per year: ${f.releasesPerYear ?? 'not stated'}${f.cadenceConfirmed === false ? ' (proposal, not confirmed)' : ''}`);
+    lines.push('');
+    lines.push('| Option | Kind | One-off effort, low | One-off effort, high | Per release | Maintenance baseline per year | Effort source |', '|---|---|---|---|---|---|---|');
+    for (const o of f.options) {
+      lines.push(`| ${o.label.replace(/\|/g, '\\|')} | ${o.kind} | ${o.oneOff ? days(o.oneOff.low) : 'not stated'} | ${o.oneOff ? days(o.oneOff.high) : 'not stated'} | ${days(o.perRelease)} | ${o.baselinePerYear ? days(o.baselinePerYear) : '—'} | ${o.effortSource} |`);
+    }
+    lines.push('');
+  }
+  return `${lines.join('\n').trimEnd()}\n`;
+}
 
 export function buildDecisionRecord(facts: DeliveryFacts): string {
   const d = facts.decision;
@@ -1323,7 +1496,7 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
   if (d.option) lines.push(`- Option: ${d.option}${d.optionKey ? ` (${DECISION_OPTION_LABELS[d.optionKey]})` : ''}`);
   if (d.by) lines.push(`- By: ${d.by}`);
   if (d.at) lines.push(`- On: ${day(d.at)} (${d.at})`);
-  lines.push(`- Costs: ${d.cost}`);
+  lines.push(`- Costs: ${d.cost}${d.costRevision ? ` The revision itself: \`${COST_REVISION_PATH}\`.` : ''}`);
   if (d.reversibility) lines.push(`- Reversible: ${d.reversibility}`);
   lines.push('');
   lines.push('### Alternatives', '');
@@ -1357,7 +1530,7 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
     return `${lines.join('\n').trimEnd()}\n`;
   }
   lines.push(
-    `Signed score: **${s.signed}/100**. A Clean-Core.io grade, not an SAP figure and not a compliance percentage. Rule of the signed run: ${RULE_WORDS[s.rule]}${s.edition ? ` — ${s.edition === 'public' ? 'Public' : 'Private'} Edition` : ''}${s.engineVersion ? `, engine ${s.engineVersion}` : ''}.`,
+    `Signed score: **${s.signed}/100**. A Clean-Core.io grade, not an SAP figure and not a compliance percentage. Rule of the signed run: ${RULE_WORDS[s.rule]}${s.edition ? ` — ${TARGET_EDITION_NAMES[s.edition]}` : ''}${s.engineVersion ? `, engine ${s.engineVersion}` : ''}.`,
     '',
   );
   const m = s.model;
@@ -1467,6 +1640,14 @@ export function buildManifest(
       reasons: d.reasons,
       recommendation: d.recommendation,
       cost: d.cost,
+      costRevision: d.costRevision
+        ? {
+            file: COST_REVISION_PATH,
+            revision: d.costRevision.sequence,
+            at: d.costRevision.at,
+            figuresIncluded: d.costRevision.figures !== null,
+          }
+        : null,
       openConditions: d.conditions.filter((c) => c.status === 'open' || c.status === 'not determined').length,
     },
     // The rows are in docs/rule-register.md; the manifest carries the counts and points there.
@@ -1512,7 +1693,7 @@ export function finishDeliveryPackage(input: {
   decimalFields?: readonly string[];
 }): FinishedPackage {
   const { facts } = input;
-  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
+  let entries = input.entries.filter((e) => !['README.md', 'STATUS.md', 'manifest.json', 'docs/decision.md', COST_REVISION_PATH, RULE_REGISTER_PATH, RULE_REGISTER_CSV_PATH].includes(e.path));
   let notes: Record<string, string[]> = {};
   if (facts.route === 'side-by-side' && entries.some((e) => CODE_EXT.test(e.path) && !e.path.startsWith('docs/'))) {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
@@ -1523,12 +1704,17 @@ export function finishDeliveryPackage(input: {
   const capabilities = packageCapabilities(reading, facts);
 
   const decision: BundleEntry = { path: 'docs/decision.md', content: buildDecisionRecord(facts), origin: 'engine' };
+  // The cost revision the decision names travels with it (CO review F17).
+  const costRevision: BundleEntry[] = facts.decision.costRevision
+    ? [{ path: COST_REVISION_PATH, content: buildCostRevision(facts), origin: 'engine' }]
+    : [];
   const register: BundleEntry = { path: RULE_REGISTER_PATH, content: buildRuleRegister(facts), origin: 'engine' };
   const registerCsv: BundleEntry = { path: RULE_REGISTER_CSV_PATH, content: ruleRegisterCsv(facts.rules), origin: 'engine' };
   // README names STATUS.md, manifest.json and itself, so it is written over the final list.
   const finalPaths: BundleEntry[] = [
     ...entries,
     decision,
+    ...costRevision,
     register,
     registerCsv,
     { path: 'STATUS.md', content: '', origin: 'engine' },
@@ -1541,15 +1727,15 @@ export function finishDeliveryPackage(input: {
     const c = classifyFile(e, reading, facts);
     return { path: e.path, kind: c.kind, status: c.status, origin: originOf(e, facts), sha256: sha256Hex(e.content), bytes: bytesOf(e.content), note: c.note };
   };
-  const beforeStatus = [...entries, decision, register, registerCsv, readme].map(describeFile);
+  const beforeStatus = [...entries, decision, ...costRevision, register, registerCsv, readme].map(describeFile);
   // The code checks read the package as it ships — the model's code with the normalised package.json.
   const lints = reading.kind === 'node' ? generatedCodeLints(entries, { decimalFields: input.decimalFields }) : null;
   const status: BundleEntry = { path: 'STATUS.md', content: buildStatus(facts, { reading, capabilities, files: beforeStatus, lints }), origin: 'engine' };
-  const listed = [...entries, decision, register, registerCsv, readme, status]
+  const listed = [...entries, decision, ...costRevision, register, registerCsv, readme, status]
     .sort((a, b) => order(a.path) - order(b.path) || a.path.localeCompare(b.path))
     .map(describeFile);
   const manifest: BundleEntry = { path: 'manifest.json', content: buildManifest(facts, { reading, capabilities, files: listed, notes }), origin: 'engine' };
 
-  const files = [status, readme, manifest, decision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
+  const files = [status, readme, manifest, decision, ...costRevision, register, registerCsv, ...entries].map((e) => ({ path: e.path, content: e.content }));
   return { files, reading, capabilities, manifest: listed, lints };
 }

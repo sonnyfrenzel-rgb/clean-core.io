@@ -1,5 +1,5 @@
 import { tokenize } from './declaration-parser';
-import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
+import { SAP_API_CATALOG_VERSION, successorInContext } from './sap-api-catalog';
 import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates, functionModuleCatalogAnswer, isSapDatabaseTable } from './catalog-service';
 import { readBatchInput, writesOf, type BatchInputCall, type BatchInputWrite } from './batch-input';
 import { assessAuthority } from './authority-assessment';
@@ -7,8 +7,13 @@ import { tableTerm, termFor } from './business-glossary';
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
-import { maskLiterals } from './statement-reader';
+import { maskLiterals, readStatements } from './statement-reader';
 import { BTP } from '../sap-naming';
+import { APP_VERSION } from '../version';
+import { guidelineChecksApply } from './guideline-checks-gate';
+import { readSecurityReviewTasksFrom } from './security-review';
+import { readSapCodeCopySignals } from './sap-code-copy';
+import { readLegacyTechnology } from './legacy-technology';
 
 export type EvidenceKind =
   | 'table-access'
@@ -32,7 +37,17 @@ export type EvidenceKind =
   | 'batch-input'
   | 'business-rule'
   | 'enhancement'
-  | 'modification';
+  | 'modification'
+  // From engine 3.0.12 (`GUIDELINE_CHECKS_FROM`): review tasks and classic
+  // programming models, from the review of the DSAG ABAP guideline.
+  | 'security-review'
+  | 'sap-code-copy'
+  | 'bopf'
+  | 'gateway-classic-service'
+  | 'ddic-cds-view'
+  // From engine 3.0.12: asynchronous RFC on this system (`STARTING NEW TASK`
+  // with no destination, `DESTINATION 'NONE'` or `DESTINATION IN GROUP`).
+  | 'parallel-processing';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -141,6 +156,38 @@ function calledModule(text: string, pattern: string): string | null {
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
+/**
+ * The `DESTINATION` addition of a `CALL FUNCTION`, read as the statement's own
+ * addition — from 3.0.12 (`GUIDELINE_CHECKS_FROM`).
+ *
+ * The rule before read the word anywhere in the call, so
+ * `CALL FUNCTION 'RFC_CONNECTION_CLOSE' EXPORTING destination = lv_dest`
+ * — a parameter that happens to be called `destination` — was reported as a
+ * remote call (benchmark case BM-056). The addition stands before the
+ * parameter list; a word after `EXPORTING`, `IMPORTING`, `TABLES`, `CHANGING`
+ * or `EXCEPTIONS` is a parameter name.
+ *
+ * - `null`: no addition — a local call.
+ * - `local`: `DESTINATION 'NONE'` (this system, in a new session) or
+ *   `DESTINATION IN GROUP` (parallel processing on this system's servers).
+ *   Neither leaves the system; the router reads both as local as well.
+ * - `remote`: any other destination, a literal or a variable.
+ */
+export function rfcDestinationOf(text: string): 'remote' | 'local' | null {
+  const masked = maskLiterals(text);
+  if (!/^\s*CALL\s+FUNCTION\b/i.test(masked)) return null;
+  const end = masked.search(/\b(?:EXPORTING|IMPORTING|TABLES|CHANGING|EXCEPTIONS|PARAMETER-TABLE|EXCEPTION-TABLE)\b/i);
+  const head = end < 0 ? masked : masked.slice(0, end);
+  const at = /\bDESTINATION\s+(?!=)/i.exec(head);
+  if (!at) return null;
+  // `maskLiterals` keeps offsets, so the original text at the same place
+  // holds the literal the mask blanked.
+  const operand = text.slice(at.index + at[0].length);
+  if (/^IN\s+GROUP\b/i.test(operand)) return 'local';
+  if (/^'NONE'/i.test(operand)) return 'local';
+  return 'remote';
+}
+
 function staticCallTarget(text: string): string | null {
   const m = /\bCALL\s+FUNCTION\s+['`]([\w/]+)['`]/i.exec(text);
   return m ? m[1].toUpperCase() : null;
@@ -278,13 +325,32 @@ function batchInputDetail(call: BatchInputCall | undefined, writes: BatchInputWr
  * default file. A snapshot that is not shipped throws rather than being
  * answered from another one (`CatalogSnapshotNotShipped`). The successor
  * mapping (`MERGED_TABLE_MAP`) stays the shared mapping layer.
+ *
+ * `engineVersion` is the engine the evidence is (or was) made with. Omitted, it
+ * is this engine (`APP_VERSION`). Whatever rebuilds the evidence of a signed
+ * run passes that run's version (`signedEngineVersionOf`), so the run keeps the
+ * findings it was signed with: the checks of 3.0.12 (`GUIDELINE_CHECKS_FROM`)
+ * appear only for a run of that engine or later.
  */
 export function buildAbapEvidence(
   code: string,
   fileName: string,
   deployment?: 'public' | 'private',
   catalogSnapshot?: string,
+  engineVersion?: string | null,
 ): AbapEvidenceReport {
+  const guideline = guidelineChecksApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  /**
+   * Is this object on SAP's list of classic APIs (the classification file,
+   * `classicAPI`)? SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as
+   * level B where they are used through documented classic APIs or released
+   * extension points — the list is what documents them (owner check of the
+   * note, 13.10.2026). A use outside the list is not level B by that rule.
+   */
+  const listedClassicApi = (name: string): boolean => getSapObjectStates(name, catalogSnapshot).classificationState === 'classicAPI';
+  /** The level B sentence of SAP Note 3578329, for a UI technology used through the list. */
+  const LEVEL_B_UI = 'SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as clean core level B where they are used through documented classic APIs: they may stay while the users work in SAP GUI (on-premise or SAP Cloud ERP Private).';
+  const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is SAP S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
@@ -301,6 +367,20 @@ export function buildAbapEvidence(
     accessesAt.set(dependency.statement, [...(accessesAt.get(dependency.statement) ?? []), dependency]);
   }
   const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
+
+  // Some successors depend on what else the program reads: AUFK beside AFKO,
+  // AFPO or RESB is a production order, not an internal order (PP review,
+  // 12.10.2026; `successorInContext`). A context successor is our curated
+  // mapping, labelled as such, never SAP's catalog answer.
+  const tablesHere = new Set(
+    dependencies.dependencies.filter((d) => d.access !== 'reference' && !d.possibleTargetOf).map((d) => d.table),
+  );
+  const successorOf = (table: string): (typeof STANDARD_TABLE_MAP)[string] | undefined => {
+    const base = STANDARD_TABLE_MAP[table];
+    if (!base) return undefined;
+    const inContext = successorInContext(table, tablesHere);
+    return inContext ? { view: inContext.entry.view, type: inContext.entry.type, confidence: 'curated' } : base;
+  };
 
   // Roadmap 3.0.7 — batch input read field by field (`batch-input.ts`). The
   // screen fields a call fills name the table it changes where their structure
@@ -380,7 +460,7 @@ export function buildAbapEvidence(
   // the session queues the change rather than that it is made (QA review of
   // d939fb5b056b, 11d2bd848df5).
   const addBatchInputWrite = (write: BatchInputWrite, tcode: string, line: number, text: string, queued = false) => {
-    const entry = STANDARD_TABLE_MAP[write.table];
+    const entry = successorOf(write.table);
     // Anchored where the table is named — the statement that fills the first
     // of its fields — so the anchor carries what the finding claims; the call
     // is in the detail. The statement's first line, as every finding here: a
@@ -493,7 +573,11 @@ export function buildAbapEvidence(
           technicalDetail: unownedNamespace
             ? `SELECT statement reading from ${table}, a reserved-namespace table SAP does not list — a partner's or the customer's; the name does not say which.${routeNote}`
             : `SELECT statement reading from custom table ${table}.${routeNote}`,
-          cleanCoreImpact: 'Reading from custom tables directly is acceptable if wrapped in Tier-2 or CDS views, but should be checked for proper API usage.',
+          // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): the clean core level concept,
+          // the wording of the clean core level concept (owner rule 13.10.2026).
+          cleanCoreImpact: guideline
+            ? 'Reading the customer\'s own table directly is classic ABAP. In ABAP Cloud the access goes through a CDS view entity over the table, which is also what a RAP service is built on.'
+            : 'Reading from custom tables directly is acceptable if wrapped in Tier-2 or CDS views, but should be checked for proper API usage.',
           recommendation: `Expose custom table via CDS view and wrap it in a RAP service layer.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility']
         });
@@ -515,9 +599,9 @@ export function buildAbapEvidence(
           recommendation: `REPLACE IMMEDIATELY with official SAP released APIs (OData APIs, BAPIs) or RAP actions. Do NOT perform direct writes in S/4HANA.`,
           targetOptions: ['Developer Extensibility / RAP', 'Integration Suite'],
           sapReplacement: hasReplacement ? {
-            objectName: STANDARD_TABLE_MAP[table].view,
-            objectType: STANDARD_TABLE_MAP[table].type,
-            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
+            objectName: successorOf(table)!.view,
+            objectType: successorOf(table)!.type,
+            ...replacementProvenance(successorOf(table)),
           } : undefined
         });
       } else {
@@ -530,16 +614,28 @@ export function buildAbapEvidence(
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${routeNote}${isPublicCloud ? ' In Public Cloud this is a hard break — no direct table access allowed.' : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
+          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${routeNote}${isPublicCloud
+            ? guideline
+              // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): SAP's product names (owner decision 13.10.2026).
+              ? ' In SAP S/4HANA Cloud Public Edition this is a hard break — no direct table access allowed.'
+              : ' In Public Cloud this is a hard break — no direct table access allowed.'
+            : guideline
+              // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): the level concept wording.
+              ? ' In SAP Cloud ERP Private the read works, but ties the code to SAP\'s table design; its clean core level is the one SAP\'s data gives the table.'
+              : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
           cleanCoreImpact: isPublicCloud
-            ? 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
-            : 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. In Private Cloud, Tier 2 wrappers can mitigate this.',
+            ? guideline
+              ? 'In SAP S/4HANA Cloud Public Edition, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
+              : 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
+            : guideline
+              ? 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. Where no released CDS view covers the data, a wrapper around the read together with an influence request to SAP for a released successor keeps the dependency in one place; the wrapper does not make the read itself upgrade-stable.'
+              : 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. In Private Cloud, Tier 2 wrappers can mitigate this.',
           recommendation: `Replace with released CDS views (e.g. I_ views) or official APIs.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility'],
           sapReplacement: hasReplacement ? {
-            objectName: STANDARD_TABLE_MAP[table].view,
-            objectType: STANDARD_TABLE_MAP[table].type,
-            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
+            objectName: successorOf(table)!.view,
+            objectType: successorOf(table)!.type,
+            ...replacementProvenance(successorOf(table)),
           } : undefined // never guess a successor name: `I_${table}` invented objects that do not exist
         });
       }
@@ -590,7 +686,7 @@ export function buildAbapEvidence(
     // this code, whatever the user then does in the transaction is their own
     // dialog. Reading both as BDC cost ten points instead of five, made the
     // router send a display list side by side, and told the reader the program
-    // "drives" a transaction it only opens (ZMM_BESTELLUEBERSICHT review,
+    // "drives" a transaction it only opens (MM case review,
     // roadmap 3.0.7). The navigation is a classic-UI dependency — the SAP GUI
     // screens of the called transaction — and is reported as one, with its
     // transaction code, so the level of the object is still graded.
@@ -609,8 +705,13 @@ export function buildAbapEvidence(
         lineStart: stmt.line,
         snippet: text,
         technicalDetail: `CALL TRANSACTION without USING opens the transaction's screens for the user; the program passes no screen data and posts nothing through it.`,
-        cleanCoreImpact: 'The call depends on the SAP GUI screens of the called transaction. ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.',
-        recommendation: `Replace the call with navigation to the SAP Fiori app for the same business object (intent-based navigation) from a Fiori UI built on a RAP service.`,
+        // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): SAP GUI is level B per SAP Note 3578329.
+        cleanCoreImpact: guideline
+          ? `The call depends on the SAP GUI screens of the called transaction. ${LEVEL_B_UI} ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.`
+          : 'The call depends on the SAP GUI screens of the called transaction. ABAP Cloud has no CALL TRANSACTION, and a Fiori UI navigates to an app instead of a transaction code.',
+        recommendation: guideline
+          ? 'The navigation may stay while the program runs in SAP GUI. When the UI moves to a browser or the Fiori launchpad, or the target is SAP S/4HANA Cloud Public Edition, replace it with navigation to the SAP Fiori app for the same business object (intent-based navigation).'
+          : `Replace the call with navigation to the SAP Fiori app for the same business object (intent-based navigation) from a Fiori UI built on a RAP service.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
     } else if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
@@ -635,17 +736,17 @@ export function buildAbapEvidence(
         technicalDetail: `CALL TRANSACTION statement to drive SAP screens programmatically.${batchInputDetail(call, writes, tcode)}`,
         cleanCoreImpact: 'BDC relies on traditional SAP GUI screen flows. These are highly unstable, prone to breaking during upgrades, and do not work in SAP Fiori or Cloud environments.',
         // Domain-neutral: the example named the sales order API for every
-        // transaction, purchase orders included (ZMM_BESTELLUEBERSICHT review).
+        // transaction, purchase orders included (MM case review).
         // Where the filled fields name the table, the successor SAP lists for
         // it is the domain-specific one, and the sentence names it (3.0.7).
         recommendation: successor
-          ? `Replace this screen automation with the released SAP API for ${tablePhrase(successor)}: SAP names ${STANDARD_TABLE_MAP[successor].view} as the successor of ${successor}. Change the data through that API or the RAP business object behind it, not through the screens.`
+          ? `Replace this screen automation with the released SAP API for ${tablePhrase(successor)}: SAP names ${successorOf(successor)!.view} as the successor of ${successor}. Change the data through that API or the RAP business object behind it, not through the screens.`
           : `Replace this screen automation with the released SAP API for the same business object, or wrap it in an OData service via RAP.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite'],
         sapReplacement: successor ? {
-          objectName: STANDARD_TABLE_MAP[successor].view,
-          objectType: STANDARD_TABLE_MAP[successor].type,
-          ...replacementProvenance(STANDARD_TABLE_MAP[successor]),
+          objectName: successorOf(successor)!.view,
+          objectType: successorOf(successor)!.type,
+          ...replacementProvenance(successorOf(successor)),
         } : undefined,
       });
       for (const write of writes) addBatchInputWrite(write, tcode, stmt.line, text);
@@ -657,8 +758,11 @@ export function buildAbapEvidence(
       for (const write of batchWrites(call)) addBatchInputWrite(write, call?.transaction ?? 'UNKNOWN', stmt.line, text, true);
     }
 
-    // Remote Function Calls (RFC)
-    if (/\bCALL\s+FUNCTION\b[\s\S]+?\bDESTINATION\b/i.test(codeText)) {
+    // Remote Function Calls (RFC). From 3.0.12 only the statement's own
+    // DESTINATION addition to another system counts (`rfcDestinationOf`).
+    if (guideline
+      ? rfcDestinationOf(text) === 'remote'
+      : /\bCALL\s+FUNCTION\b[\s\S]+?\bDESTINATION\b/i.test(codeText)) {
       const fmMatch = text.match(/\bCALL\s+FUNCTION\s+'?([\w\/]+)'?/i);
       const fmName = fmMatch ? fmMatch[1].toUpperCase() : 'UNKNOWN';
       addFinding({
@@ -679,18 +783,34 @@ export function buildAbapEvidence(
 
     // Classic Dynpro UI
     if (/\bCALL\s+SCREEN\b/i.test(codeText) || /\bMODULE\s+[\w\/]+\s+(?:OUTPUT|INPUT)\b/i.test(codeText)) {
-      addFinding({
-        kind: 'dynpro',
-        title: 'Legacy Screen Painter (Dynpro) UI Pattern',
-        severity: 'Medium',
-        confidence: 'High',
-        lineStart: stmt.line,
-        snippet: text,
-        technicalDetail: `Legacy Dynpro CALL SCREEN or MODULE statement.`,
-        cleanCoreImpact: 'Dynpro screens only work in SAP GUI. Modern web-based Fiori architectures require decoupled REST/OData APIs and UI5 frontend elements.',
-        recommendation: `Rewrite UI as a Fiori Elements app on ${BTP} or S/4HANA, backed by a RAP OData service.`,
-        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
-      });
+      addFinding(guideline
+        // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): a classic screen is level B
+        // per SAP Note 3578329 (owner check, 13.10.2026) — it may stay.
+        // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
+        ? {
+          kind: 'dynpro',
+          title: 'Classic screen (Dynpro)',
+          severity: 'Low',
+          confidence: 'High',
+          lineStart: stmt.line,
+          snippet: text,
+          technicalDetail: `CALL SCREEN or a screen MODULE: the program has its own classic screens.`,
+          cleanCoreImpact: `Dynpro screens run in SAP GUI only, and ABAP Cloud has none. ${LEVEL_B_UI}`,
+          recommendation: `The screens may stay while the program runs in SAP GUI. ${REPLACE_WHEN}`,
+          targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+        }
+        : {
+          kind: 'dynpro',
+          title: 'Legacy Screen Painter (Dynpro) UI Pattern',
+          severity: 'Medium',
+          confidence: 'High',
+          lineStart: stmt.line,
+          snippet: text,
+          technicalDetail: `Legacy Dynpro CALL SCREEN or MODULE statement.`,
+          cleanCoreImpact: 'Dynpro screens only work in SAP GUI. Modern web-based Fiori architectures require decoupled REST/OData APIs and UI5 frontend elements.',
+          recommendation: `Rewrite UI as a Fiori Elements app on ${BTP} or S/4HANA, backed by a RAP OData service.`,
+          targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+        });
     }
 
     // Classic ALV Grid. The name of a called function module stands in a
@@ -699,7 +819,37 @@ export function buildAbapEvidence(
     // but only the literal a `CALL FUNCTION` (or a constant) names: in
     // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
     const alvModule = calledModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY');
-    if (alvModule) {
+    if (alvModule && guideline) {
+      // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): an ALV list is classic
+      // technology, not a defect to replace on sight.
+      // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
+      // SAP Note 3578329 (owner check, 13.10.2026) counts the ALV grid as
+      // level B where it is used through documented classic APIs. SAP's
+      // classification file lists CL_SALV_TABLE and CL_GUI_ALV_GRID as
+      // classicAPI and does not list the REUSE_ALV function modules, so a
+      // REUSE_ALV call is not level B by that rule: it stays a Medium finding
+      // whose level is what the catalog answers for the module, and the
+      // sentence points at the listed class first.
+      const listed = listedClassicApi(alvModule);
+      addFinding({
+        kind: 'classic-alv',
+        title: 'Classic ALV list (SAP GUI)',
+        severity: listed ? 'Low' : 'Medium',
+        confidence: 'High',
+        objectName: alvModule,
+        objectType: 'Function Module',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `Call of ${alvModule}: the list is displayed in SAP GUI.`,
+        cleanCoreImpact: listed
+          ? `The list runs in SAP GUI only, and ABAP Cloud has no ALV. ${LEVEL_B_UI}`
+          : `The list runs in SAP GUI only, and ABAP Cloud has no ALV. SAP Note 3578329 counts the ALV grid as clean core level B only where it is used through documented classic APIs; SAP's list of classic APIs names CL_SALV_TABLE and CL_GUI_ALV_GRID, not ${alvModule}.`,
+        recommendation: listed
+          ? `The list may stay while its users work in SAP GUI. ${REPLACE_WHEN}`
+          : `While the list stays in SAP GUI (on-premise or SAP Cloud ERP Private), move it to CL_SALV_TABLE, the ALV interface on SAP's classic-API list. ${REPLACE_WHEN}`,
+        targetOptions: ['Developer Extensibility / RAP']
+      });
+    } else if (alvModule) {
       addFinding({
         kind: 'classic-alv',
         title: 'Legacy ALV Grid Display',
@@ -719,8 +869,20 @@ export function buildAbapEvidence(
     // GUI Download / Local File access. Function-module names again (`text`,
     // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
     // The finding names what the statement calls: the module, or the class.
-    const guiModule = calledModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)');
+    // `WS_DOWNLOAD` / `WS_UPLOAD` are the obsolete forms of the same transfer
+    // and are read as it (SD review R12, 12.10.2026). Upload and download are
+    // said apart: a download is a list export, an upload a file the target
+    // has to take — neither forces a side-by-side split on its own
+    // (`GUI_FILE_NO_ROUTE_DRIVER_FROM` in the router).
+    const guiModule = calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)');
     if (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
+      const direction = guiModule
+        ? (/UPLOAD/.test(guiModule) ? 'upload' : 'download')
+        : /\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText)
+          ? 'upload'
+          : /\b(?:GUI_DOWNLOAD|FILE_SAVE_DIALOG)\b/i.test(codeText) && !/\b(?:GUI_UPLOAD|FILE_OPEN_DIALOG)\b/i.test(codeText)
+            ? 'download'
+            : 'unknown';
       addFinding({
         kind: 'gui-download',
         title: 'Legacy Frontend File Upload/Download',
@@ -730,10 +892,24 @@ export function buildAbapEvidence(
         objectType: guiModule ? 'Function Module' : 'Class',
         lineStart: stmt.line,
         snippet: text,
-        technicalDetail: `Usage of GUI_DOWNLOAD, GUI_UPLOAD, or cl_gui_frontend_services to interact with the local client file system.`,
-        cleanCoreImpact: 'Frontend services require SAP GUI connection and client-side integration. Web browsers block direct local file system access for security.',
-        recommendation: `Replace with modern UI5 file upload elements, or persist files in SAP Document Management service / Cloud Storage.`,
-        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+        technicalDetail: direction === 'upload'
+          ? 'Reads a file from the user\'s PC through the SAP GUI frontend services (GUI_UPLOAD, WS_UPLOAD or cl_gui_frontend_services).'
+          : direction === 'download'
+            ? 'Writes a file to the user\'s PC through the SAP GUI frontend services (GUI_DOWNLOAD, WS_DOWNLOAD or cl_gui_frontend_services).'
+            : `Usage of GUI_DOWNLOAD, GUI_UPLOAD, WS_DOWNLOAD, WS_UPLOAD or cl_gui_frontend_services to interact with the local client file system.`,
+        // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): SAP Note 3578329 — level B
+        // through a listed classic API; WS_DOWNLOAD / WS_UPLOAD are not listed.
+        cleanCoreImpact: guideline
+          ? (listedClassicApi(guiModule ?? 'CL_GUI_FRONTEND_SERVICES')
+            ? `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. SAP lists ${guiModule ?? 'CL_GUI_FRONTEND_SERVICES'} as a classic API, and SAP Note 3578329 counts SAP GUI technology used through classic APIs as clean core level B: the transfer may stay while the users work in SAP GUI.`
+            : `Frontend services require an SAP GUI connection; a browser does not allow this access to the local file system. ${guiModule} is not on SAP's list of classic APIs (GUI_UPLOAD, GUI_DOWNLOAD and CL_GUI_FRONTEND_SERVICES are), so it is not level B under SAP Note 3578329.`)
+          : 'Frontend services require SAP GUI connection and client-side integration. Web browsers block direct local file system access for security.',
+        recommendation: direction === 'download'
+          ? 'Replace the download with the export of a Fiori Elements list report backed by a RAP service — on-stack; no separate runtime is needed for it.'
+          : direction === 'upload'
+            ? 'Replace the upload with a RAP large object (attachment) field and a Fiori upload control (S/4HANA 2022 or later) — on-stack. A side-by-side service only where a requirement the code does not show calls for one (external users, files from several systems).'
+            : 'Replace downloads with a Fiori list report export and uploads with a RAP large object field (S/4HANA 2022 or later) — both on-stack.',
+        targetOptions: direction === 'download' ? ['Developer Extensibility / RAP'] : ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
     }
 
@@ -925,7 +1101,7 @@ export function buildAbapEvidence(
     // the A–D letter, because findings go into the signed run.
     {
       const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
-      if (local && !/\bDESTINATION\b/i.test(codeText)) {
+      if (local && (guideline ? rfcDestinationOf(text) !== 'remote' : !/\bDESTINATION\b/i.test(codeText))) {
         const fm = local[1].toUpperCase();
         const answer = functionModuleCatalogAnswer(fm, catalogSnapshot);
         // Only an earlier finding of this kind stands in for it: the update-task
@@ -1107,6 +1283,154 @@ export function buildAbapEvidence(
       targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Retire'],
       needsBusinessDecision: true
     });
+  }
+
+  if (guideline) {
+    // The new findings stand where their lines are: each goes in front of the
+    // first finding anchored below it, and the ids are counted again in that
+    // order. Appended at the end, a program's tasks came after every finding
+    // of a program concatenated behind it, and the order of one file's
+    // findings depended on what else was in the file (tests/abap-metamorphic,
+    // "concatenation is union").
+    const before = findings.length;
+    addGuidelineFindings();
+    const added = findings.splice(before);
+    for (const finding of added) {
+      const at = findings.findIndex((f) => f.lineStart > finding.lineStart);
+      findings.splice(at < 0 ? findings.length : at, 0, finding);
+    }
+    findings.forEach((finding, index) => { finding.id = `CC-${String(index + 1).padStart(3, '0')}`; });
+  }
+
+  /**
+   * From 3.0.12 (`GUIDELINE_CHECKS_FROM`) — the checks taken over from the
+   * review of the DSAG ABAP guideline (owner decision 13.10.2026), placed by
+   * line above. None of these kinds costs score points or drives the route; they
+   * are review tasks and successor notes, anchored at their lines.
+   */
+  function addGuidelineFindings(): void {
+    const NOT_A_LEVEL = 'Not a clean core level question: a security review task for the people who own the code. It changes neither the score nor the route.';
+    const adbcLines = dependencies.adbc.map((execution) => execution.line);
+    // One reading of the statements for the three detectors.
+    const read = readStatements(code);
+    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines })) {
+      addFinding({
+        kind: 'security-review',
+        title: `Security review: ${task.title}`,
+        severity: task.severity,
+        confidence: 'Medium',
+        lineStart: task.lineStart,
+        snippet: task.text,
+        technicalDetail: task.detail,
+        cleanCoreImpact: NOT_A_LEVEL,
+        recommendation: task.check,
+        targetOptions: [],
+      });
+    }
+
+    // DSAG ABAP guideline: clean-core/what-is-clean-core.md § “NIEMALS SAP CODE KOPIEREN”
+    for (const signal of readSapCodeCopySignals(code, fileName, read)) {
+      const own = signal.name ? ` ${signal.name}` : '';
+      addFinding({
+        kind: 'sap-code-copy',
+        title: signal.via === 'name'
+          ? `Possible copy of SAP code: ${signal.name} repeats SAP's ${signal.sapName}`
+          : `Possible copy of SAP code: the header says it is a copy${signal.sapName ? ` of ${signal.sapName}` : ''}`,
+        severity: 'Medium',
+        confidence: 'Low',
+        lineStart: signal.lineStart,
+        snippet: signal.via === 'header-comment' ? (signal.comment ?? '') : (statements.find((s) => s.line === signal.lineStart)?.text.trim() ?? signal.name),
+        technicalDetail: signal.via === 'name'
+          ? `The customer object${own} carries the name of SAP's ${signal.sapName} behind the customer prefix. A name is not proof: the object may be a wrapper, a subclass or an unrelated program.`
+          : `A comment in the header of${own || ' the source'} says the code was copied${signal.sapName ? ` from ${signal.sapName}` : ' from SAP standard'}: "${signal.comment ?? ''}".`,
+        cleanCoreImpact: 'A copy of SAP code keeps SAP\'s logic without SAP\'s maintenance: corrections and upgrades no longer reach it, and it keeps calling the internals the original called, released or not.',
+        recommendation: `Check whether${own || ' the code'} is a copy of SAP code. If it is, compare it with the current SAP original, keep only what differs, and build that difference on a released API or a released extension point (a BAdI where SAP offers one) instead of the copy.`,
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    // Parallel processing through asynchronous RFC on this system. Since
+    // 3.0.12 a local destination is no `rfc-call` (it never leaves the system);
+    // what is left to say is that ABAP Cloud has no asynchronous RFC, and what
+    // it offers instead. A call to another system stays an `rfc-call`.
+    const parallelClass = getSapObjectStates('CL_ABAP_PARALLEL', catalogSnapshot).releaseState === 'released' ? 'CL_ABAP_PARALLEL' : null;
+    for (const stmt of statements) {
+      const text = stmt.text.trim();
+      if (!/^CALL\s+FUNCTION\b[\s\S]*?\bSTARTING\s+NEW\s+TASK\b/i.test(maskLiterals(text))) continue;
+      if (rfcDestinationOf(text) === 'remote') continue;
+      const fmName = /^CALL\s+FUNCTION\s+'([\w/]+)'/i.exec(text)?.[1]?.toUpperCase();
+      const where = /\bIN\s+GROUP\b/i.test(maskLiterals(text)) ? 'on the application servers of a server group (DESTINATION IN GROUP)' : 'in a new session on this system';
+      addFinding({
+        kind: 'parallel-processing',
+        title: `Parallel processing with asynchronous RFC${fmName ? ` (${fmName})` : ''}`,
+        severity: 'Low',
+        confidence: 'High',
+        ...(fmName ? { objectName: fmName, objectType: 'Function Module' } : {}),
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `CALL FUNCTION … STARTING NEW TASK runs the function module asynchronously ${where}. The call does not leave the system, so it is no remote call.`,
+        cleanCoreImpact: 'Asynchronous RFC is classic ABAP: it may stay on-premise and in SAP Cloud ERP Private, but ABAP Cloud does not offer STARTING NEW TASK. It costs no score points and does not change the route.',
+        recommendation: parallelClass
+          ? `Keep it while the program runs on-premise or in SAP Cloud ERP Private. For ABAP Cloud, run the parallel work through the released class ${parallelClass} instead.`
+          : 'Keep it while the program runs on-premise or in SAP Cloud ERP Private. For ABAP Cloud, run the parallel work through a released parallel-processing API instead.',
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    for (const use of readLegacyTechnology(code, read)) {
+      const more = use.lines.length > 1 ? ` It is used on ${use.lines.length} lines (${use.lines.slice(0, 8).join(', ')}${use.lines.length > 8 ? ', …' : ''}).` : '';
+      if (use.kind === 'bopf') {
+        addFinding({
+          kind: 'bopf',
+          title: use.sapObject ? `BOPF business object framework (${use.objects?.length ?? 1} object${(use.objects?.length ?? 1) > 1 ? 's' : ''})` : `BOPF business object generated from CDS${use.customObject ? ` (${use.customObject})` : ''}`,
+          severity: 'Medium',
+          confidence: 'High',
+          ...(use.sapObject ? { objectName: use.sapObject, objectType: use.objectType ?? 'BOPF object' } : {}),
+          lineStart: use.lineStart,
+          snippet: use.text,
+          technicalDetail: (use.sapObject
+            ? `The code uses the Business Object Processing Framework (BOPF): ${(use.objects ?? [use.sapObject]).join(', ')}.`
+            : 'The CDS annotations @ObjectModel.transactionalProcessingEnabled / writeActivePersistence generate a BOPF business object from the view.') + more,
+          cleanCoreImpact: 'BOPF is a classic programming model. SAP lists its framework classes and interfaces as classic APIs (clean core level B): usable from classic ABAP, not available in ABAP Cloud.',
+          recommendation: 'For new development and for a move to ABAP Cloud, model the business object in the ABAP RESTful Application Programming Model (RAP), SAP\'s successor to BOPF; the BOPF object can stay where it runs on-premise or in SAP Cloud ERP Private until then.',
+          targetOptions: ['Developer Extensibility / RAP'],
+        });
+      } else if (use.kind === 'gateway-classic-service') {
+        addFinding({
+          kind: 'gateway-classic-service',
+          title: use.customObject
+            ? `Classic SAP Gateway service (SEGW): ${use.customObject}`
+            : `Classic SAP Gateway service framework: ${use.sapObject}`,
+          severity: 'Medium',
+          confidence: 'High',
+          ...(use.sapObject ? { objectName: use.sapObject, objectType: use.objectType ?? 'Class' } : {}),
+          lineStart: use.lineStart,
+          snippet: use.text,
+          technicalDetail: (use.customObject
+            ? `${use.customObject} is a data or model provider class of an OData service built in transaction SEGW.`
+            : `The code uses the classic SAP Gateway framework that SEGW services are built on: ${(use.objects ?? [use.sapObject]).join(', ')}.`) + more,
+          cleanCoreImpact: 'A SEGW service is classic technology: SAP lists the Gateway framework classes as classic APIs (clean core level B), and ABAP Cloud does not offer them.',
+          recommendation: 'Build new OData services in RAP: a service definition with an OData V4 service binding on a RAP business object or a CDS view entity. Rebuild an existing SEGW service that way when it moves to ABAP Cloud or needs substantial change; until then it can stay.',
+          targetOptions: ['Developer Extensibility / RAP'],
+        });
+      } else {
+        const append = /sqlViewAppendName/i.test(use.text);
+        addFinding({
+          kind: 'ddic-cds-view',
+          title: `DDIC-based CDS view${use.customObject ? ` ${use.customObject}` : ''} (${append ? 'sqlViewAppendName' : 'sqlViewName'} ${use.sqlViewName})`,
+          severity: 'Medium',
+          confidence: 'High',
+          lineStart: use.lineStart,
+          snippet: use.text,
+          technicalDetail: `The annotation @AbapCatalog.sqlView${append ? 'Append' : ''}Name generates the DDIC view ${use.sqlViewName} next to the CDS entity: a DDIC-based CDS view.`,
+          cleanCoreImpact: 'SAP\'s ABAP language documentation marks DDIC-based CDS views as obsolete. They are not available in ABAP Cloud.',
+          recommendation: append
+            ? 'Rewrite the extension as a CDS view entity extension (EXTEND VIEW ENTITY) once the extended view is a view entity.'
+            : 'Migrate the view to a CDS view entity (DEFINE VIEW ENTITY, no sqlViewName annotation), and point every consumer of the DDIC view at the entity.',
+          targetOptions: ['Developer Extensibility / RAP'],
+        });
+      }
+    }
   }
 
   // Calculate counts for summary

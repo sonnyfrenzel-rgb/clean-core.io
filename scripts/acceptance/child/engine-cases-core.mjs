@@ -35,6 +35,10 @@
  *   - the app judges those lines (`lib/engine-case-run.ts`, `engineVerdicts`).
  *   - the acceptance harness: the sandboxed executor (`executor.mjs`) locks
  *     down, confines and collects, the harness process (`../engine-cases.mjs`) judges.
+ * The failure-pattern probes reach a package through the same confinement:
+ * `createProbeExecutor` answers their requests in the harness's executor and
+ * in the runner's probe pass (`lib/test-sandbox/probe-suite.ts`, which sends
+ * this file as `__cc_probe/runtime.mjs`).
  *
  * The contract a generated package exports (`lib/engine-call-contract.ts`, code-draft rule 24):
  *   CONTRACT = { version: 1, baseRequest, fields: { ORIGINAL_NAME: 'request.path' | 'list[].key' | null } }
@@ -42,6 +46,13 @@
  *   simulate(request)        → { ok, runId, records, errors }
  *   getRun(runId)            → the stored run ({ runId, … }) or null
  *   compute(field, a, op, b) → the exact result as a decimal string at the field's places (op: + - * /)
+ *   check(guard, request, values) → { ok: true, holds } | { ok: false, errors } — optional; the engine-led
+ *                              scaffold exports it: whether the predicate of the original's check `guard`
+ *                              (`G-0061`) holds on the request, with the computed values a derived check
+ *                              reads (`values`, by original name). A case asks it where `set` cannot be
+ *                              built through the request (a system field, a computed or internal value,
+ *                              the record table itself) and for a check that ends a step early, which no
+ *                              request outcome shows (3.0.12, owner 13.10.2026).
  *
  * Pure apart from calling the module it is handed and, in `createConfinement`,
  * the host capabilities its caller passes in. No imports.
@@ -264,6 +275,10 @@ export function outcomeIn(raw) {
   if (raw.value !== undefined) out.value = plain(raw.value);
   if (typeof raw.path === 'string') out.path = raw.path.slice(0, 200);
   if (raw.run !== undefined) out.run = answerIn(raw.run);
+  if (raw.via === 'check') {
+    out.via = 'check';
+    if (raw.holds === true || raw.holds === false) out.holds = raw.holds;
+  }
   return out;
 }
 
@@ -288,6 +303,18 @@ export function judge(call, out) {
   const said = threw ? `threw: ${out.threw}` : `ok: ${out.ok}; errors: ${JSON.stringify(errors)}`;
   const names = (err) => (e.rule && err.rule && err.rule.toUpperCase() === e.rule.toUpperCase()) || (e.field && sameField(err.field, e.field, out.path));
   const target = e.rule ?? e.field;
+  if (out.via === 'check') {
+    const want = call.check?.holds;
+    if (want !== true && want !== false) return { status: 'not-runnable', evidence: 'the case names no expectation for the check' };
+    const of = `the predicate of ${call.check.guard}`;
+    if (threw) return { status: 'fail', evidence: `${of} threw (${out.threw})` };
+    if (out.ok === false) return { status: 'not-runnable', evidence: `${of} could not be asked: the request is refused (${JSON.stringify(errors)})` };
+    if (out.holds !== true && out.holds !== false) return { status: 'fail', evidence: `${of} answered without holds: true or false` };
+    return out.holds === want
+      ? { status: 'pass', evidence: `${of} ${want ? 'holds' : 'does not hold'}, as the original's condition` }
+      : { status: 'fail', evidence: `${of} ${out.holds ? 'holds' : 'does not hold'}; the original's condition ${want ? 'holds' : 'does not hold'} on this input` };
+  }
+  if (call.op === 'check') return { status: 'not-runnable', evidence: 'no answer of the check was reported' };
   if (call.op === 'compute') {
     if (e.kind === 'refused') {
       if (!threw) return { status: 'fail', evidence: `accepted (${JSON.stringify(out.value ?? null)}), expected refused` };
@@ -394,7 +421,11 @@ export function caseVerdict(examples) {
  * The positive control: the base request passes `validate` and `simulate`, each
  * with `ok: true`. Without it a "refused" verdict would prove nothing — the
  * mapping, not the case, would be refused. `{ ok: true, baseRecords }` or
- * `{ ok: false, reason }`, from the raw control `collectEngineCase` reports.
+ * `{ ok: false, reason, cause? }`, from the raw control `collectEngineCase`
+ * reports. `cause: 'base-threw'` when validate accepted the base request and
+ * simulate threw on it — the code behind the contract threw, not the mapping.
+ * The verdict stays Not run here (a recorded run keeps the model's verdict for
+ * it); the engine-led generation counts it against the written functions.
  */
 export function judgeControl(control) {
   if (!isObject(control)) return { ok: false, reason: 'no positive control was reported' };
@@ -406,12 +437,23 @@ export function judgeControl(control) {
   }
   if (control.noBase === true) return { ok: false, reason: 'the contract has no baseRequest' };
   const v = answerIn(control.validate);
+  // The scaffold's contract refuses a base request that lacks an obligatory
+  // field the original gives no valid value for — the cases are not run, and
+  // nothing about the mapping or the code is wrong.
+  const missingBase = typeof v?.threw === 'string' ? v.threw.match(/^Not run — (no valid base value known for .+)$/) : null;
+  if (missingBase) return { ok: false, reason: missingBase[1] };
   if (!v || v.threw !== undefined || v.ok !== true) {
     return { ok: false, reason: `the contract's baseRequest is not accepted by validate (${v?.threw ?? JSON.stringify(v?.errors ?? [])}) — the mapping does not fit the code` };
   }
   const s = answerIn(control.simulate);
-  if (!s || s.threw !== undefined || s.ok === false) {
-    return { ok: false, reason: `the contract's baseRequest is refused by simulate (${s?.threw ?? JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
+  if (s && s.threw !== undefined) {
+    // validate accepted the base request, so the fields fit: the throw came
+    // from the code simulate runs behind the contract. Not a mapping problem —
+    // `cause` lets a caller that knows whose code that is count it as a failure.
+    return { ok: false, cause: 'base-threw', reason: `the code behind the contract threw on the accepted baseRequest in simulate (${s.threw})` };
+  }
+  if (!s || s.ok === false) {
+    return { ok: false, reason: `the contract's baseRequest is refused by simulate (${JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
   }
   if (s.ok !== true) return { ok: false, reason: "simulate does not answer the contract's baseRequest with ok: true — the mapping does not fit the code" };
   if (typeof s.records !== 'number') return { ok: false, reason: 'simulate reports no record count (records) for the base request' };
@@ -426,7 +468,7 @@ export function judgeControl(control) {
  */
 export function judgeEngineCase(kase, collected) {
   const control = judgeControl(isObject(collected) ? collected.control : undefined);
-  if (!control.ok) return { status: 'Not run', reason: control.reason, examples: [] };
+  if (!control.ok) return { status: 'Not run', reason: control.reason, ...(control.cause ? { cause: control.cause } : {}), examples: [] };
   const reported = Array.isArray(collected.examples) ? collected.examples : [];
   const examples = [];
   (kase.examples ?? []).forEach((e, i) => {
@@ -552,8 +594,14 @@ async function execute(mod, call, state) {
       restore();
     }
   }
+  if (call.op === 'check') return executeCheck(mod, call, state);
   const built = buildRequest(contract, call);
-  if (built.notRunnable) return { notRunnable: built.notRunnable };
+  if (built.notRunnable) {
+    // The request cannot carry the value (a system field, a computed or internal value, the record
+    // table): ask the check's predicate directly, where the contract offers it.
+    if (call.check && typeof mod.check === 'function') return executeCheck(mod, call, state);
+    return { notRunnable: built.notRunnable };
+  }
   const field = call.expect?.field;
   const mapped = field ? resolveField(contract, field).path : null;
   if (call.op === 'validate') {
@@ -577,6 +625,60 @@ async function execute(mod, call, state) {
   const r = await attempt(() => mod.simulate(built.request), state);
   if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
   return { ...answerOf(r), path: mapped };
+}
+
+/**
+ * Ask the predicate of one check (`call.check.guard`) through the contract's
+ * `check` export: the base request with every field of `set` the contract maps,
+ * and the rest handed in as `values` by original name (a value the original
+ * computes, a system field) — `{ special: 'empty' }` for the record table.
+ */
+async function executeCheck(mod, call, state) {
+  if (!isObject(call.check) || typeof call.check.guard !== 'string') return { notRunnable: 'the case names no check' };
+  if (typeof mod.check !== 'function') return { notRunnable: 'the contract exports no check — the predicate cannot be asked directly' };
+  const contract = mod.CONTRACT;
+  if (!isObject(contract?.baseRequest)) return { notRunnable: 'the contract has no baseRequest' };
+  const base = structuredClone(contract.baseRequest);
+  // The passing side "as in the base request" holds only where the base gives the checked field a value.
+  if ((call.set ?? []).length === 0 && typeof call.check.field === 'string') {
+    const r = resolveField(contract, call.check.field);
+    const v = r.path ? readField(base, r.path) : undefined;
+    if (r.path && (v === undefined || v === null || (typeof v === 'string' && v.trim() === ''))) {
+      return { notRunnable: `the base request gives ${String(call.check.field).toUpperCase()} no value, so the passing side of ${call.check.guard} cannot be asked` };
+    }
+  }
+  const mapped = [];
+  const values = {};
+  for (const s of call.set ?? []) {
+    const r = resolveField(contract, s.field);
+    if (r.path) {
+      mapped.push(s);
+      continue;
+    }
+    if (isObject(s.to) && s.to.special === 'empty') {
+      values[String(s.field).toUpperCase()] = { special: 'empty' };
+      continue;
+    }
+    const v = valueFor(s.to, contract, base);
+    if (v.error) return { notRunnable: v.error };
+    if (isObject(v.value)) return { notRunnable: `no value for ${String(s.field).toUpperCase()} can be handed to the check` };
+    values[String(s.field).toUpperCase()] = v.value;
+  }
+  const built = buildRequest(contract, { ...call, mode: call.mode === 'append' ? 'request' : call.mode, set: mapped });
+  if (built.notRunnable) return { notRunnable: built.notRunnable };
+  const r = await attempt(() => mod.check(call.check.guard, built.request, values), state);
+  if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+  if (r.threw !== undefined) return { via: 'check', threw: r.threw, crash: r.crash };
+  const a = r.answer;
+  if (isObject(a) && a.known === false) return { notRunnable: `the contract's check does not know ${call.check.guard}` };
+  if (isObject(a) && a.notFilled === true) return { notRunnable: `the predicate of ${call.check.guard} is not written (a stub)` };
+  if (isObject(a) && Array.isArray(a.unsupported) && a.unsupported.length > 0) {
+    return { notRunnable: `the predicate of ${call.check.guard} reads ${a.unsupported.slice(0, 4).map((m) => String(m).slice(0, 40)).join(', ')}, a computed value in no form the port fixes (only system fields and declared decimals are handed in)` };
+  }
+  if (isObject(a) && Array.isArray(a.missingValues) && a.missingValues.length > 0) {
+    return { notRunnable: `the case gives no value for ${a.missingValues.slice(0, 4).map((m) => String(m).slice(0, 40)).join(', ')}, which the predicate of ${call.check.guard} reads` };
+  }
+  return { via: 'check', ok: a?.ok === true ? true : a?.ok === false ? false : undefined, errors: errorsOf(a), holds: a?.holds };
 }
 
 /**
@@ -926,6 +1028,136 @@ export function createConfinement(host) {
         return { failure: notRunnable(err) ?? `the code throws while it is loaded: ${message(err)}` };
       }
       return { exports: module.exports };
+    },
+  };
+}
+
+/* ------------------------------------------------------ the probe executor */
+
+/**
+ * The executing half of the failure-pattern probes (`../lib/probes.mjs`):
+ * answers the probes' requests — `call`, `call-many`, `clock` — against the
+ * modules a confinement loaded, the way the harness's executor (`executor.mjs`)
+ * always answered them, and the probe pass of the isolated test runner
+ * (`lib/test-sandbox/probe-suite.ts`) now answers them too (roadmap 3.0.12).
+ *
+ * Runs outside the compartment, after `lockdown()`, in the process that holds
+ * the confinement. Every answer is plain JSON data (`plainData`) — never an
+ * object of the package — and an error the confinement raised (a module or a
+ * global it does not provide) is the sandbox's (`{ sandbox }`), not the
+ * package's throw. The clock is the confinement's (`setClock`), a host
+ * capability: the global `Date` is never touched. Instances are cached per
+ * executor, so `create` and `get` of one store share it.
+ *
+ * `use(name, namespace)` registers a module under its adapter name;
+ * `request(kind, payload)` answers one request.
+ */
+export function createProbeExecutor(confinement) {
+  const modules = new Map();
+  const instances = new Map();
+  const say = (err) => String(err && err.message ? err.message : err).split('\n')[0].slice(0, 300);
+
+  /**
+   * A value as plain JSON data: functions and symbols dropped, a typed array read
+   * as UTF-8 text, a BigInt as its digits, a cycle cut. Non-finite numbers become
+   * null, as `JSON.stringify` writes them.
+   */
+  const plainData = (value, depth = 0, seen = new Set()) => {
+    if (value === null || value === undefined) return value;
+    const t = typeof value;
+    if (t === 'string' || t === 'boolean') return value;
+    if (t === 'number') return Number.isFinite(value) ? value : null;
+    if (t === 'bigint') return String(value);
+    if (t === 'function' || t === 'symbol') return undefined;
+    if (depth > 40 || seen.has(value)) return '[cut]';
+    seen.add(value);
+    try {
+      if (value instanceof Uint8Array) return new TextDecoder().decode(value);
+      if (Array.isArray(value)) return value.map((v) => plainData(v, depth + 1, seen) ?? null);
+      if (value instanceof Date) return value.toISOString();
+      const outObj = {};
+      for (const key of Object.keys(value)) {
+        const v = plainData(value[key], depth + 1, seen);
+        if (v !== undefined) outObj[key] = v;
+      }
+      return outObj;
+    } catch (err) {
+      return `[unreadable: ${say(err)}]`;
+    } finally {
+      seen.delete(value);
+    }
+  };
+
+  const adapter = (text) => ({ adapter: text });
+
+  /** The sandbox's refusal (a module or global it does not provide), or the package's own throw. */
+  const thrown = (err) => {
+    const reason = confinement.hooks.notRunnable(err);
+    if (reason) return { sandbox: reason };
+    let crash = false;
+    try {
+      crash = Boolean(err) && typeof err === 'object' && CRASHES.has(String(err.name));
+    } catch {
+      crash = true;
+    }
+    return { threw: true, error: say(err), crash };
+  };
+
+  /** Resolve and call a callable spec: `{ module, export, method?, construct?: [...], factory?: [...] }`. */
+  const invoke = async (spec, args) => {
+    if (!spec || !spec.module || !spec.export) return adapter('callable needs module and export');
+    const mod = modules.get(spec.module);
+    if (!mod) return adapter(`adapter names no module '${spec.module}'`);
+    try {
+      const exported = mod[spec.export] ?? (mod.default && mod.default[spec.export]);
+      if (exported === undefined) return adapter(`module '${spec.module}' exports no '${spec.export}'`);
+      let target = exported;
+      let self;
+      if (spec.construct || spec.factory) {
+        const key = `${spec.module}|${spec.export}|${spec.construct ? 'new' : 'call'}|${JSON.stringify(spec.construct ?? spec.factory)}`;
+        if (!instances.has(key)) {
+          const ctorArgs = Array.isArray(spec.construct ?? spec.factory) ? spec.construct ?? spec.factory : [];
+          instances.set(key, spec.construct ? new exported(...ctorArgs) : await exported(...ctorArgs));
+        }
+        self = instances.get(key);
+        target = self;
+      }
+      if (spec.method) {
+        const owner = self ?? exported;
+        if (typeof owner[spec.method] !== 'function') return adapter(`'${spec.export}' has no method '${spec.method}'`);
+        return { threw: false, value: plainData(await owner[spec.method](...(Array.isArray(args) ? args : []))) };
+      }
+      if (typeof target !== 'function') return adapter(`'${spec.export}' is not callable`);
+      return { threw: false, value: plainData(await target(...(Array.isArray(args) ? args : []))) };
+    } catch (err) {
+      return thrown(err);
+    }
+  };
+
+  return {
+    use(name, namespace) {
+      modules.set(String(name), namespace);
+    },
+    async request(kind, payload) {
+      const p = payload && typeof payload === 'object' ? payload : {};
+      switch (kind) {
+        case 'call':
+          return invoke(p.spec, p.args);
+        case 'call-many': {
+          const results = [];
+          for (const args of Array.isArray(p.argsList) ? p.argsList : []) {
+            const r = await invoke(p.spec, args);
+            results.push(r);
+            if (r.adapter || r.sandbox) break;
+          }
+          return { results };
+        }
+        case 'clock':
+          confinement.setClock(p.clock ?? null);
+          return {};
+        default:
+          return { transportError: `unknown request '${String(kind)}'` };
+      }
     },
   };
 }

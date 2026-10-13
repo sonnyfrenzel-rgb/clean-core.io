@@ -1,4 +1,6 @@
 import type { EvidenceFinding } from './evidence-model';
+import { readStatements, type SourceRange } from './statement-reader';
+import { readBlocks } from './block-structure';
 
 /**
  * Ties every sentence of the model's narrative back to a line of code, or says
@@ -21,8 +23,16 @@ import type { EvidenceFinding } from './evidence-model';
  *   [CC-017]    a finding id, as the engine assigns it (evidence-model.ts).
  *               Verifiable: the id is either in the evidence report the model
  *               was given, or it was invented.
- *   [L380-412]  a raw line range. Checkable only against the file's length,
- *               so it can be plausible and still wrong.
+ *   [L380-412]  a raw line range. Against the file's length alone it can be
+ *               plausible and still wrong — the SD review of 12.10.2026 found
+ *               "L24–L31" for a purpose written at lines 4–13 and "L317–L336"
+ *               for a routine at 313–332, while the engine's own anchors held.
+ *               Since 3.0.12 a range is also checked against the engine's
+ *               anchors when the source is at hand (`engineLineAnchors`): it
+ *               must start where a statement starts, end on a statement, and
+ *               lie inside one routine, event, block or statement. A range
+ *               that fails is rejected here and dropped from exported text
+ *               (`checkModelLineRefs`).
  *
  * Anything that fails validation is *not* silently dropped. An invented anchor is
  * a more serious event than a missing one — a sentence with no citation is
@@ -79,7 +89,89 @@ export interface AnchoredNarrative {
  * `[CC-003]` as much as `[F-credit-limit]` — and validating it keeps both failures
  * visible: a real id anchors, an invented one is rejected, never ignored.
  */
-const ANCHOR_PATTERN = /\[\s*(?:([A-Z]{1,4}-[A-Za-z0-9_-]+)|L\s*(\d+)\s*(?:[-–]\s*(\d+))?)\s*\]/gi;
+const ANCHOR_PATTERN = /\[\s*(?:([A-Z]{1,4}-[A-Za-z0-9_-]+)|L\s*(\d+)\s*(?:[-–]\s*L?\s*(\d+))?)\s*\]/gi;
+
+/**
+ * The engine's line anchors of one source: every statement, and the regions a
+ * model's range may lie in — routines, methods, modules, event blocks, control
+ * blocks, the runs of statements outside any routine, and any further ranges
+ * the caller holds (finding ranges).
+ */
+export interface LineAnchorIndex {
+  totalLines: number;
+  statements: SourceRange[];
+  regions: SourceRange[];
+}
+
+export function engineLineAnchors(code: string, extra: readonly SourceRange[] = []): LineAnchorIndex {
+  const source = typeof code === 'string' ? code : '';
+  const statements = readStatements(source);
+  const { blocks, containers } = readBlocks(statements);
+  const regions: SourceRange[] = [...containers, ...blocks].map((r) => ({ lineStart: r.lineStart, lineEnd: r.lineEnd }));
+  // The statements outside every routine and event block — declarations at the
+  // top, mostly — form regions of their own, run by run.
+  const inside = (s: SourceRange) => containers.some((c) => c.lineStart <= s.lineStart && s.lineEnd <= c.lineEnd);
+  let run: SourceRange | null = null;
+  for (const s of statements) {
+    if (inside(s)) {
+      if (run) regions.push(run);
+      run = null;
+      continue;
+    }
+    run = run ? { lineStart: run.lineStart, lineEnd: s.lineEnd } : { lineStart: s.lineStart, lineEnd: s.lineEnd };
+  }
+  if (run) regions.push(run);
+  for (const r of extra) {
+    if (Number.isInteger(r.lineStart) && Number.isInteger(r.lineEnd) && r.lineEnd >= r.lineStart) regions.push({ lineStart: r.lineStart, lineEnd: r.lineEnd });
+  }
+  return {
+    totalLines: source.replace(/\r\n?/g, '\n').split('\n').length,
+    statements: statements.map((s) => ({ lineStart: s.lineStart, lineEnd: s.lineEnd })),
+    regions,
+  };
+}
+
+/**
+ * Does a model's line range agree with the engine's anchors? It starts where a
+ * statement starts, ends on a line of a statement, and lies inside one
+ * statement or one region. "L317–L336" over a routine written at 313–332
+ * starts inside it and ends past it: no.
+ */
+export function lineRefAgrees(from: number, to: number, index: LineAnchorIndex): boolean {
+  if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from || to > index.totalLines) return false;
+  const first = index.statements.find((s) => s.lineStart === from);
+  if (!first) return false;
+  if (!index.statements.some((s) => s.lineStart <= to && to <= s.lineEnd)) return false;
+  if (to <= first.lineEnd) return true;
+  return index.regions.some((r) => r.lineStart <= from && to <= r.lineEnd);
+}
+
+/** A raw line reference in model text: `[L24-L31]`, `[L24–31]`, `[L508]`. */
+const LINE_REF = /\s*\[\s*L\s*(\d+)\s*(?:[-–]\s*L?\s*(\d+))?\s*\]/gi;
+
+/**
+ * Model text with every raw line reference checked against the engine's
+ * anchors: a reference that agrees stays as written, one that does not is
+ * dropped. Without the source (`index` null) no reference can be checked, and
+ * every one is dropped — an unchecked line number reads as evidence. Finding
+ * ids (`[CC-013]`) are the engine's own and are left alone.
+ */
+export function checkModelLineRefs(text: string, index: LineAnchorIndex | null): { text: string; kept: number; dropped: string[] } {
+  if (typeof text !== 'string' || !text) return { text: typeof text === 'string' ? text : '', kept: 0, dropped: [] };
+  const dropped: string[] = [];
+  let kept = 0;
+  const out = text.replace(LINE_REF, (raw, a: string, b: string | undefined) => {
+    const from = Number(a);
+    const to = b ? Number(b) : from;
+    if (index && lineRefAgrees(from, to, index)) {
+      kept++;
+      return raw;
+    }
+    dropped.push(raw.trim());
+    return '';
+  });
+  return { text: out, kept, dropped };
+}
 
 /**
  * Split prose into sentences.
@@ -130,6 +222,7 @@ function resolveAnchors(
   sentence: string,
   findingsById: Map<string, EvidenceFinding>,
   totalLines: number,
+  engine?: LineAnchorIndex,
 ): { anchors: ResolvedAnchor[]; rejected: string[]; stripped: string } {
   const anchors: ResolvedAnchor[] = [];
   const rejected: string[] = [];
@@ -157,7 +250,8 @@ function resolveAnchors(
     const from = Number(match[2]);
     const to = match[3] ? Number(match[3]) : from;
     const sane = Number.isInteger(from) && from >= 1 && to >= from && to <= totalLines;
-    if (!sane) {
+    // With the source at hand, the range is also held against the engine's anchors (SD review CC-R32).
+    if (!sane || (engine && !lineRefAgrees(from, to, engine))) {
       rejected.push(raw);
       continue;
     }
@@ -180,12 +274,14 @@ export function anchorNarrative(
   text: string,
   findings: EvidenceFinding[],
   totalLines: number,
+  /** The engine's anchors of the source (`engineLineAnchors`); without it a line range is checked against the length only. */
+  engine?: LineAnchorIndex,
 ): AnchoredNarrative {
   const findingsById = new Map(findings.map((f) => [f.id.toUpperCase(), f]));
   const sentences: NarrativeSentence[] = [];
 
   for (const raw of splitSentences(text || '')) {
-    const { anchors, rejected, stripped } = resolveAnchors(raw, findingsById, totalLines);
+    const { anchors, rejected, stripped } = resolveAnchors(raw, findingsById, totalLines, engine);
     // A fabricated citation is checked first: one valid anchor beside it made
     // the sentence count as sourced and hid the invented one (QA full review of
     // v2.20.0, a42b040e23a5).

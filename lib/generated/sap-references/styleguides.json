@@ -1,0 +1,2193 @@
+{
+  "key": "styleguides",
+  "source": "https://github.com/SAP/styleguides",
+  "branch": "main",
+  "commit": "6279311f42bf1f91896935c071bec8dbca97cf59",
+  "syncedAt": "2026-10-13",
+  "licence": {
+    "spdx": "CC-BY-3.0",
+    "github": "NOASSERTION",
+    "reuse": [
+      "CC-BY-3.0"
+    ],
+    "file": "LICENSE",
+    "url": "https://creativecommons.org/licenses/by/3.0/"
+  },
+  "files": [
+    {
+      "path": "clean-abap/CleanABAP.md",
+      "sha256": "aba2b825ca6676c5879bb2f01610d5b741442576fe90b7d03c76e66006a27f32",
+      "size": 192078
+    },
+    {
+      "path": "clean-abap/cheat-sheet/CheatSheet.md",
+      "sha256": "145f05cf4802a18a8584a3ac13f0661ba608aae142013cad65372d10937199de",
+      "size": 1984
+    },
+    {
+      "path": "clean-abap/sub-sections/AvoidEncodings.md",
+      "sha256": "3254c0d5406c9296f6530f4e551002d8db8b372c77f20f760d12c85e477c4547",
+      "size": 7100
+    },
+    {
+      "path": "clean-abap/sub-sections/Enumerations.md",
+      "sha256": "6da6b77cfe8936492cb32f2acc2c6719f930cf3869b0f7962d672d5c56b89800",
+      "size": 13989
+    },
+    {
+      "path": "clean-abap/sub-sections/Exceptions.md",
+      "sha256": "701bfc04870580d85e42bbdd81111863aa0c37a26c853f6ca454cfa8757686d0",
+      "size": 4031
+    },
+    {
+      "path": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "sha256": "ea3fbb338bd5c98304a3c056d69ebf5f1c5883e1c095fb97c36ebf727a465000",
+      "size": 3159
+    },
+    {
+      "path": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "sha256": "4665394a3940821156ca352918b96015223c3027623ef274ebe3dc0bfb2c3cd6",
+      "size": 6004
+    },
+    {
+      "path": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "sha256": "c398829677e8b3c86e8d6949dc34e36476dba9693372b53c86c50019f10f3fe1",
+      "size": 15139
+    },
+    {
+      "path": "clean-abap/sub-sections/UpperVsLowerCase.md",
+      "sha256": "75f2a5221dc5de089258f04253ae9bf9d775ebef6bfa69e8f3475a648590f87a",
+      "size": 2048
+    }
+  ],
+  "sections": [
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Clean ABAP",
+      "level": 1,
+      "anchor": "clean-abap",
+      "hash": "7c0b064cda876444753f58f88594d8b628d9181388a2afdd3254d6e8e3cd19bc"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Content",
+      "level": 2,
+      "anchor": "content",
+      "hash": "7f34543f0cf5e3900357168e8730e5f288aaeca9dc984ab0bad8c9f1408a9680"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to",
+      "level": 2,
+      "anchor": "how-to",
+      "hash": "1c98a132c4af4eed7fc7a72c6d98cd148516f9e7a5a6fa7e213e0ff3ca161979"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to Get Started with Clean Code",
+      "level": 3,
+      "anchor": "how-to-get-started-with-clean-code",
+      "hash": "4c7b8f90a86ddaa7ff0eb032dfc88e708164fb9c40a3a7b8f05a874e612f8b1b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to Refactor Legacy Code",
+      "level": 3,
+      "anchor": "how-to-refactor-legacy-code",
+      "hash": "763a35394903021e92af0744d9e5921e5143c903535e6bf1ff153df0f9f71846"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to Check Automatically",
+      "level": 3,
+      "anchor": "how-to-check-automatically",
+      "hash": "330480eebec728c7705285c2893817b171bd76cb5f5a3e1950938e78b37635bb"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to Relate to Other Guides",
+      "level": 3,
+      "anchor": "how-to-relate-to-other-guides",
+      "hash": "98682e8d4f971cba75104a934acc2666cc3fef9727abb641b2d582772bb4fbc9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to Disagree",
+      "level": 3,
+      "anchor": "how-to-disagree",
+      "hash": "ccd56c59f638722de35d8bdb9ba7e4228d51569c1d90ae4df3d6bc19b7809a52"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Names",
+      "level": 2,
+      "anchor": "names",
+      "hash": "d99820ae2bbe0a01aae17b76c2c1db26c50cbc45d3d112f02599b96d0995dde4"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use descriptive names",
+      "level": 3,
+      "anchor": "use-descriptive-names",
+      "hash": "a3d6ebd98b58ef2e359c67874c3fb57c200434e6d6773e4f611fb3a46d8c12e3"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer solution domain and problem domain terms",
+      "level": 3,
+      "anchor": "prefer-solution-domain-and-problem-domain-terms",
+      "hash": "a75bc42754f902dce7c77a4a2781a07730f3b67f5555ca7d9fb6bc10f506b5a5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use plural",
+      "level": 3,
+      "anchor": "use-plural",
+      "hash": "a956c1b21c13c37f0582319e5bb24feb252de46e40e7e1cfc058dc50b3f741fe"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use pronounceable names",
+      "level": 3,
+      "anchor": "use-pronounceable-names",
+      "hash": "96258d42353b05d13b5461b1872dc587c99fd28ee6e4730771f0bb5a3f0dfe53"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use snake_case",
+      "level": 3,
+      "anchor": "use-snake_case",
+      "hash": "2d888b488b6d749016d9a8bfcf9d94979e0f1eaba52bb7257fedd2b7a0218299"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid abbreviations",
+      "level": 3,
+      "anchor": "avoid-abbreviations",
+      "hash": "66070e624f7b83f4da847997709838b00028125ed4f55c656b9ec29c9acfa60e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use same abbreviations everywhere",
+      "level": 3,
+      "anchor": "use-same-abbreviations-everywhere",
+      "hash": "c5583ca729f4353a5d364b4793b06e1d840f403c75269a50b285456cc411fa11"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use nouns for classes and verbs for methods",
+      "level": 3,
+      "anchor": "use-nouns-for-classes-and-verbs-for-methods",
+      "hash": "b75f36c732101e6e99fe51e5918e9710711845a8fa271c54d49270c1564de329"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid noise words such as \"data\", \"info\", \"object\"",
+      "level": 3,
+      "anchor": "avoid-noise-words-such-as-data-info-object",
+      "hash": "6ab1bb0a024756ab3aeede1c96f281c631960d5de270cd6a27a9c8f718107ae7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Pick one word per concept",
+      "level": 3,
+      "anchor": "pick-one-word-per-concept",
+      "hash": "d35c24f7cf72618aacffb4c9f198d9586a6afdeac40c4bb58698072b351c4ca5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use pattern names only if you mean them",
+      "level": 3,
+      "anchor": "use-pattern-names-only-if-you-mean-them",
+      "hash": "607c478db3a24441704494edf1e91a9d36561e337ddae4a5cff1f5fc7405ee10"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid encodings, esp. Hungarian notation and prefixes",
+      "level": 3,
+      "anchor": "avoid-encodings-esp-hungarian-notation-and-prefixes",
+      "hash": "07603f0b5be2a9ed2cadc6e766c9d711cce85cb33ced592fa301fda3966ff422"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid obscuring built-in functions",
+      "level": 3,
+      "anchor": "avoid-obscuring-built-in-functions",
+      "hash": "9af1070030590080ad2ca7fbe38fdf058582c892671f478a785632a5d36b7abb"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Language",
+      "level": 2,
+      "anchor": "language",
+      "hash": "34408ce0c473492a0b643ba234a02a59bf510f4f87e5268eeb89e2bbe7a0a72d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Mind the legacy",
+      "level": 3,
+      "anchor": "mind-the-legacy",
+      "hash": "4f79bd3535af895b8929a917375708fc7e1e0c3842f2e43d515752f73b71d9c5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Mind the performance",
+      "level": 3,
+      "anchor": "mind-the-performance",
+      "hash": "cddb98919131ab8d6b23f2ab206f019f255827ccc29c531038666beda068efa4"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer object orientation to procedural programming",
+      "level": 3,
+      "anchor": "prefer-object-orientation-to-procedural-programming",
+      "hash": "dda4311005a0b1e279a3cf7e3295a8db457c35db77893f4273e5f14e7f7d7a91"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer functional to procedural language constructs",
+      "level": 3,
+      "anchor": "prefer-functional-to-procedural-language-constructs",
+      "hash": "b5694b65d5628a9443308a037a6e5a2bfe3cb813b8fff8ba0b527024ec1a545e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid obsolete language elements",
+      "level": 3,
+      "anchor": "avoid-obsolete-language-elements",
+      "hash": "46e10150cc93e828237622e075b0df3c21ea1700a0f76b33ec825ca7396bf75d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use design patterns wisely",
+      "level": 3,
+      "anchor": "use-design-patterns-wisely",
+      "hash": "fbc443f390fa3d349cf3d57237e3ec3de2b616076e9986528e282e5a1ac36036"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Constants",
+      "level": 2,
+      "anchor": "constants",
+      "hash": "6ce282bd7c612f8b8ad2e58538daf3da1b06f7d734a03fbe55991c2413c143c1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use constants instead of magic numbers",
+      "level": 3,
+      "anchor": "use-constants-instead-of-magic-numbers",
+      "hash": "fd063f3ccdf8be0ba40021d8e0c12ec02ce91f5331155509205b3c006e1d176f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Constants also need descriptive names",
+      "level": 3,
+      "anchor": "constants-also-need-descriptive-names",
+      "hash": "b758877c344cc39f6fd9b6654002a1449ff4d69861bba230df07274cf0a91e8c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer ENUM to constants interfaces",
+      "level": 3,
+      "anchor": "prefer-enum-to-constants-interfaces",
+      "hash": "1dcd582cb0a54946805fc8dd7a50d131b9f06fb8fdaaa9a6f4778a8cdfd616c5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "If you don't use ENUM or enumeration patterns, group your constants",
+      "level": 3,
+      "anchor": "if-you-dont-use-enum-or-enumeration-patterns-group-your-constants",
+      "hash": "a0b8debbd7c3e33563e0d0d2015c7cdd3528f256e1cfc14e581d49784b8f215e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Variables",
+      "level": 2,
+      "anchor": "variables",
+      "hash": "f11f46b872a83f53534d4e53b7d08d473e4a003248c5f258e89833fa73d986a2"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer inline to up-front declarations",
+      "level": 3,
+      "anchor": "prefer-inline-to-up-front-declarations",
+      "hash": "bbcc3fa8ca85a36e8c3ff883b3b90b399906f10916e676cbf8c4673ff1053bf3"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Do not use variables outside of the statement block they are declared in",
+      "level": 3,
+      "anchor": "do-not-use-variables-outside-of-the-statement-block-they-are-declared-in",
+      "hash": "153e63ebea8238b60ae4842efe10831e4a642bbb1cf76807c296107c5b59fa50"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Do not chain up-front declarations",
+      "level": 3,
+      "anchor": "do-not-chain-up-front-declarations",
+      "hash": "98faba5d4549451e2e491a032265241eb3632b3e581d7f5033be92b3d422d08d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Do not use field symbols for dynamic data access",
+      "level": 3,
+      "anchor": "do-not-use-field-symbols-for-dynamic-data-access",
+      "hash": "2c838444a642bf17b7affc0c68cac9ac439101e780db054359d63ca8e78d61e0"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Choose the right targets for your loops",
+      "level": 3,
+      "anchor": "choose-the-right-targets-for-your-loops",
+      "hash": "ffc86e1228c5d04e24ffa86f2ae0ca01fd3d750b020e072839147551651a2f5f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Tables",
+      "level": 2,
+      "anchor": "tables",
+      "hash": "aa666d15c25b0ac16dfa8dcb3639e385cb32408ae1c81f2523716184f0a20abf"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use the right table type",
+      "level": 3,
+      "anchor": "use-the-right-table-type",
+      "hash": "f7220216d77c50de62351c612d47619545d9a4f59a3588b5a127f2221417ae5a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid DEFAULT KEY",
+      "level": 3,
+      "anchor": "avoid-default-key",
+      "hash": "f3091318acc3203011f47d7a5cb791b466a94cad164a99583a42728653e4348d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer INSERT INTO TABLE to APPEND TO",
+      "level": 3,
+      "anchor": "prefer-insert-into-table-to-append-to",
+      "hash": "223d5ddc1979b86da78872fbeadf713e7459bc676ca46ee95d1173e36820612d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer LINE_EXISTS to READ TABLE or LOOP AT",
+      "level": 3,
+      "anchor": "prefer-line_exists-to-read-table-or-loop-at",
+      "hash": "c0bbd5db81349f7cfe240b4c8de2277d1f4c10fb184b61c042dfbc1da3373bab"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer READ TABLE to LOOP AT",
+      "level": 3,
+      "anchor": "prefer-read-table-to-loop-at",
+      "hash": "e872c61365488a845b94b40414fb70b18c37351eb0fcb28faa8904a5f7011bcd"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer LOOP AT WHERE to nested IF",
+      "level": 3,
+      "anchor": "prefer-loop-at-where-to-nested-if",
+      "hash": "85e392475b1c03030a1bd34d683415e4919a5ebdab6cf6fada2497a2faa85b95"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid unnecessary table reads",
+      "level": 3,
+      "anchor": "avoid-unnecessary-table-reads",
+      "hash": "46a96b0eb8dda8faf2d3342c6ad39e3dde213efcf02095a4f430ba540cf8d387"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Strings",
+      "level": 2,
+      "anchor": "strings",
+      "hash": "02499dd00bf339296c49b3cc85a0f9d67aacc223092c49eebb3c475fa2792268"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use ` to define literals",
+      "level": 3,
+      "anchor": "use--to-define-literals",
+      "hash": "88cd5e0b150692508a9d30d047ef2714a720eef2e5974e1c2295f0babf97d499"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use | to assemble text",
+      "level": 3,
+      "anchor": "use--to-assemble-text",
+      "hash": "b0daa2a5908caaaf0ce3873f199490d7538b640527a23ff2371ceff25b0b5d4c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Booleans",
+      "level": 2,
+      "anchor": "booleans",
+      "hash": "658b624e0a8f79e7480fb76f092a7087a4a600a8d0fa88a22a2512a7ef5e934e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use Booleans wisely",
+      "level": 3,
+      "anchor": "use-booleans-wisely",
+      "hash": "9f611d25bf14af365ae6b4e58f491010c674834fa5f50e764dde489237c859b7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use ABAP_BOOL for Booleans",
+      "level": 3,
+      "anchor": "use-abap_bool-for-booleans",
+      "hash": "8559f91dfe9cbf5c12e7a3eaca542aeac439a5c14405c2ca0233a980a4429be6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use ABAP_TRUE and ABAP_FALSE for comparisons",
+      "level": 3,
+      "anchor": "use-abap_true-and-abap_false-for-comparisons",
+      "hash": "c6394c9abe045a0fe5a9bfa0948a52288c732d5dad76613af8b545e6626b1ddd"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use XSDBOOL to set Boolean variables",
+      "level": 3,
+      "anchor": "use-xsdbool-to-set-boolean-variables",
+      "hash": "2d0affa16b5b97e0c3ef89e2f38cefb97b4b73b1a0e418fbe45353abc1ab26af"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Conditions",
+      "level": 2,
+      "anchor": "conditions",
+      "hash": "b5756b6d4ca2d6d11445035cebb6ea5684f9c0dbc30f3b542ceb59bfb092a6d1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Try to make conditions positive",
+      "level": 3,
+      "anchor": "try-to-make-conditions-positive",
+      "hash": "1a1ee013b4c6ab6605dd8199d0815aea92f70de8c1efc828476528716cfda9e1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer IS NOT to NOT IS",
+      "level": 3,
+      "anchor": "prefer-is-not-to-not-is",
+      "hash": "374102c78bf0a497ced758498cd6e1e60fbfd09c44883196985ddd714fe1d7d8"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider using predicative method calls for boolean methods",
+      "level": 3,
+      "anchor": "consider-using-predicative-method-calls-for-boolean-methods",
+      "hash": "6a070b2c96067157e24f2f86fbce89d927f0d444878f7086c02e12bcccae9b21"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider decomposing complex conditions",
+      "level": 3,
+      "anchor": "consider-decomposing-complex-conditions",
+      "hash": "dc780c29d029e5855be75057ca715172ab21cc3884604edc609cd92f159ec80b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider extracting complex conditions",
+      "level": 3,
+      "anchor": "consider-extracting-complex-conditions",
+      "hash": "621185435acf7b0cff4cc520428791c47c25d79ae6c1165e84c33c025c15cb5a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Ifs",
+      "level": 2,
+      "anchor": "ifs",
+      "hash": "e94ca5643fbce5eee1264d93ebaf4351cb1bf1c9581b3c564efb79d4e27a1664"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "No empty IF branches",
+      "level": 3,
+      "anchor": "no-empty-if-branches",
+      "hash": "6af8c655bf5ff39eff16d767ffea3e34467a4a1b9d05f78f26377c70a63de051"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer CASE to ELSE IF for multiple alternative conditions",
+      "level": 3,
+      "anchor": "prefer-case-to-else-if-for-multiple-alternative-conditions",
+      "hash": "7bdc5ad93bb0c1faa7df66dd3d90af1a0b0e7a6864d605469e09ae5eddaf2dad"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Keep the nesting depth low",
+      "level": 3,
+      "anchor": "keep-the-nesting-depth-low",
+      "hash": "2327279f7141f889776f7faf08ee18a530b810cbcd6cb01f298a251a60cae932"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Regular expressions",
+      "level": 2,
+      "anchor": "regular-expressions",
+      "hash": "d88a1e30e6299a0924aeb67e2bf61340fa97cd03dd02aea3f910d14d3616ae2d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer simpler methods to regular expressions",
+      "level": 3,
+      "anchor": "prefer-simpler-methods-to-regular-expressions",
+      "hash": "4a5a41039024d98bc8586c57ffd55fbe7ad092bfe7f04a993138fe0b4fd39059"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer basis checks to regular expressions",
+      "level": 3,
+      "anchor": "prefer-basis-checks-to-regular-expressions",
+      "hash": "2b3f605beab8f5f673db9410179fa6eda33c09264618582fe82e7e104f21d46e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider assembling complex regular expressions",
+      "level": 3,
+      "anchor": "consider-assembling-complex-regular-expressions",
+      "hash": "2ccc1e203e6a00843a7c5d69f26980d526ede6038d2674c941814d649dedf0c2"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Classes",
+      "level": 2,
+      "anchor": "classes",
+      "hash": "7f5dda05ca520eee47189890ce80bbaab749e4c79077d3f6b7ff4cc45ee96f44"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Classes: Object orientation",
+      "level": 3,
+      "anchor": "classes-object-orientation",
+      "hash": "aa0501f1a1f3ec5f3604b432345f0d066857fd6f0130793a5c82e9afca38ab93"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer objects to static classes",
+      "level": 4,
+      "anchor": "prefer-objects-to-static-classes",
+      "hash": "a8753803ce5f79cb810bd3dae165aeac5d496eda3c95c9c28c94f093cbedb1f6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer composition to inheritance",
+      "level": 4,
+      "anchor": "prefer-composition-to-inheritance",
+      "hash": "aa064591080a338824f16e00f7755eb48fc005319ebc78c0318cdcd30b538e37"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't mix stateful and stateless in the same class",
+      "level": 4,
+      "anchor": "dont-mix-stateful-and-stateless-in-the-same-class",
+      "hash": "9edd4ddef9a207a0d81a0d813ef204c9aa3275f9a0bbaf415456e7599b4e8a05"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Scope",
+      "level": 3,
+      "anchor": "scope",
+      "hash": "805d2591f5317ecc2c1e5e0aac3c19ee16670a082155441f883613cc1504697b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Global by default, local only where appropriate",
+      "level": 4,
+      "anchor": "global-by-default-local-only-where-appropriate",
+      "hash": "79d9690d8db9038eeafc0fb7fdba6f08980ac406f9046da95ea0534337f6edf7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "FINAL if not designed for inheritance",
+      "level": 4,
+      "anchor": "final-if-not-designed-for-inheritance",
+      "hash": "19c9be84664b66a94efd2c9fa62091a9597abb553d56d9822c917e04321442a3"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Members PRIVATE by default, PROTECTED only if needed",
+      "level": 4,
+      "anchor": "members-private-by-default-protected-only-if-needed",
+      "hash": "b9cfae8e0f1e34d70f9c5a693d79773dd47cebd975a49e6bdb956bf416b03238"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider using immutable instead of getter",
+      "level": 4,
+      "anchor": "consider-using-immutable-instead-of-getter",
+      "hash": "80b8ce0771789017a01a9f939eec1e2191d1355fda10bf85839eadc53e2cb727"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use READ-ONLY sparingly",
+      "level": 4,
+      "anchor": "use-read-only-sparingly",
+      "hash": "e884ceb468aec26fa83c48bb23d5eb07d7e30339dd91f5832b8ecdd123c5139d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Constructors",
+      "level": 3,
+      "anchor": "constructors",
+      "hash": "6e4ad0b56c105b79f6e8c5e26b632f5813a01b532a2c2b04e0ab779cc9e667c0"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer NEW to CREATE OBJECT",
+      "level": 4,
+      "anchor": "prefer-new-to-create-object",
+      "hash": "131564e71b8721a9b9f8cc23e314167ef928746118b1862e7420fbeceeed6f31"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "If your global class is CREATE PRIVATE, leave the CONSTRUCTOR public",
+      "level": 4,
+      "anchor": "if-your-global-class-is-create-private-leave-the-constructor-public",
+      "hash": "0bceb756e2e05220a333f13196957eb51c099b6daf3f1372f945bfddeaf9a16a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer multiple static creation methods to optional parameters",
+      "level": 4,
+      "anchor": "prefer-multiple-static-creation-methods-to-optional-parameters",
+      "hash": "180bd1968401cd0e1ec1cdbb5f88000cf2e6ad6f1f1af80dab6ca67330780596"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use descriptive names for multiple creation methods",
+      "level": 4,
+      "anchor": "use-descriptive-names-for-multiple-creation-methods",
+      "hash": "ad8a89019a4266648e0ce8bffaef03e4e1cbdda9213b71182613c909e6fb21b7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Make singletons only where multiple instances don't make sense",
+      "level": 4,
+      "anchor": "make-singletons-only-where-multiple-instances-dont-make-sense",
+      "hash": "b88fd3eb76e78c45b9f439ea6235ef2331e8616cc02a3d17430f3b7d30adab4e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Methods",
+      "level": 2,
+      "anchor": "methods",
+      "hash": "1736e7518dbfc55fe1cd069ed724f31e26a4274ab3df5ffb681dfbac3ae16079"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Calls",
+      "level": 3,
+      "anchor": "calls",
+      "hash": "af0bb3cfa4d9781f09d685c940b5d629e2727cf4ae02a2509a7f378a767eb32e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't call static methods through instance variables",
+      "level": 4,
+      "anchor": "dont-call-static-methods-through-instance-variables",
+      "hash": "3f3372a088126122cab4229991a2008721d8b1b38e8ad52bdbdf2004e1d4f73c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't access types through instance variables",
+      "level": 4,
+      "anchor": "dont-access-types-through-instance-variables",
+      "hash": "489c1440c7f5cf1f4520fcddc3179199ee802bb5c47b803070c661413a4f97c6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer functional to procedural calls",
+      "level": 4,
+      "anchor": "prefer-functional-to-procedural-calls",
+      "hash": "842c777431ceecc873ae2e070f139f5ebd4b4a6709107cdf271591fe9ac56b06"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Omit RECEIVING",
+      "level": 4,
+      "anchor": "omit-receiving",
+      "hash": "37ed03b8a73f0de3b33fd34040ee553283dbbcd16bd7da7b3c7c185fd36c16cf"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Omit the optional keyword EXPORTING",
+      "level": 4,
+      "anchor": "omit-the-optional-keyword-exporting",
+      "hash": "004adb842b73bcdf3ea20ad7bb4acb617d284eaaaf476ff9dfe8baba5abcd673"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Omit the parameter name in single parameter calls",
+      "level": 4,
+      "anchor": "omit-the-parameter-name-in-single-parameter-calls",
+      "hash": "0169bfff43f347a1ffe96a57a3f270c6a0c1a814860b0a3d7cc6307c4d032311"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Omit the self-reference me when calling an instance attribute or method",
+      "level": 4,
+      "anchor": "omit-the-self-reference-me-when-calling-an-instance-attribute-or-method",
+      "hash": "00ded58cd2d49d7ca308141d8ff38a64d658055262bec2df20c85a758f53e48f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Methods: Object orientation",
+      "level": 3,
+      "anchor": "methods-object-orientation",
+      "hash": "8c0565100dad5f4ff13902b42fe5f3c974121bb32b96afb49cf997e5d93ba89b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer instance to static methods",
+      "level": 4,
+      "anchor": "prefer-instance-to-static-methods",
+      "hash": "dae4d04783f03b412fa6d353a3e27cad7b782f359e41a369e0de8405ffc5aee9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Public instance methods should be part of an interface",
+      "level": 4,
+      "anchor": "public-instance-methods-should-be-part-of-an-interface",
+      "hash": "47497a84e2271fcdaf92b03dde5267cc29ae71814d0f6304024f4e6056c60e6e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Parameter Number",
+      "level": 3,
+      "anchor": "parameter-number",
+      "hash": "f9654a8a74dc67f43394a60d4784790e04ca14c9e5c17b3595f72d15878ac8b7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Aim for few IMPORTING parameters, at best less than three",
+      "level": 4,
+      "anchor": "aim-for-few-importing-parameters-at-best-less-than-three",
+      "hash": "04a3b672fd8e1ea400660fb15a52dfbd5284716afffddff300e2e3324324f109"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Split methods instead of adding OPTIONAL parameters",
+      "level": 4,
+      "anchor": "split-methods-instead-of-adding-optional-parameters",
+      "hash": "7cf71a7578ca767e3257fa17a4f811cf351a32bb4e8059bda73d3c4e157eb2ba"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use PREFERRED PARAMETER sparingly",
+      "level": 4,
+      "anchor": "use-preferred-parameter-sparingly",
+      "hash": "34ce1795925d54b761c3ce9c05310ad2d41c164a1bbb1fae5075393e1cf6f2de"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "RETURN, EXPORT, or CHANGE exactly one parameter",
+      "level": 4,
+      "anchor": "return-export-or-change-exactly-one-parameter",
+      "hash": "e13f77aa1393ab86ab679aee540a9f9534d13aa2cf3db47db343ddb6d6853213"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Parameter Types",
+      "level": 3,
+      "anchor": "parameter-types",
+      "hash": "a168cbc24cabd8144638d045cee67bd9a0922cbfef1f967276f7c9cd00edfd92"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer RETURNING to EXPORTING",
+      "level": 4,
+      "anchor": "prefer-returning-to-exporting",
+      "hash": "dd38e2e2580c7a05fe58a7a94aecc0a17b4d9e13a10fd09ff0e6c620f4e65be2"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "RETURNING large tables is usually okay",
+      "level": 4,
+      "anchor": "returning-large-tables-is-usually-okay",
+      "hash": "c35537437548367d5ff82670df416b581d85484739d48a488d20a8c4f847791f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use either RETURNING or EXPORTING or CHANGING, but not a combination",
+      "level": 4,
+      "anchor": "use-either-returning-or-exporting-or-changing-but-not-a-combination",
+      "hash": "73e745aedd8fb23bdb703d585df4febe29e95680c98949dbc8d7afd0e42f3790"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use CHANGING sparingly, where suited",
+      "level": 4,
+      "anchor": "use-changing-sparingly-where-suited",
+      "hash": "e83409a39a784fc836a90f5aeeda81afc4bda01eca700a761bee5e0c5c496cec"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Split method instead of Boolean input parameter",
+      "level": 4,
+      "anchor": "split-method-instead-of-boolean-input-parameter",
+      "hash": "ef38407dd27f101abe4f380c746fce706aca9bff8013186159f79133f936427d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Parameter Names",
+      "level": 3,
+      "anchor": "parameter-names",
+      "hash": "0d400c3ed63cb942e9e85701f8af5324a95e6fa5732b023ed7613cb90789dc0f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider calling the RETURNING parameter RESULT",
+      "level": 4,
+      "anchor": "consider-calling-the-returning-parameter-result",
+      "hash": "cf5d36e8ab14bd05cebcbfeffa9dda374f2aa7f0115fba8d5967a8006d289895"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Parameter Initialization",
+      "level": 3,
+      "anchor": "parameter-initialization",
+      "hash": "ebb5eca1190808e5aae6ed3a499c8f1ab4b183b4c26d34805794e35cb082093b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Clear or overwrite EXPORTING reference parameters",
+      "level": 4,
+      "anchor": "clear-or-overwrite-exporting-reference-parameters",
+      "hash": "30221d456b66c2462f22caec3720e71eb682ab71d3978eef859e5f22089335db"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Take care if input and output could be the same",
+      "level": 5,
+      "anchor": "take-care-if-input-and-output-could-be-the-same",
+      "hash": "03b1f4c97e04c33f40b9bbaca7b6851ed317f25169064b579296d411e3d88f82"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't clear VALUE parameters",
+      "level": 4,
+      "anchor": "dont-clear-value-parameters",
+      "hash": "6b1edfdcdcdf61a2bc191e13f572f7c4bec4a9b9ad27aded9c860fb9d7d55c73"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Method Body",
+      "level": 3,
+      "anchor": "method-body",
+      "hash": "8a5a2b21cd9ac3685ffe3578ca53c184c31a97bfba0dd91c36ed1ae2a32ca51c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Do one thing, do it well, do it only",
+      "level": 4,
+      "anchor": "do-one-thing-do-it-well-do-it-only",
+      "hash": "5f0da6ba89d2495fbcaa46dbe612face0838846ff4a423ad59a89a811e4014fc"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Focus on the happy path or error handling, but not both",
+      "level": 4,
+      "anchor": "focus-on-the-happy-path-or-error-handling-but-not-both",
+      "hash": "b9c17897334ee564721d12ed542bfc6af50b42697aa798cdeebdd9591ee5ae2a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Descend one level of abstraction",
+      "level": 4,
+      "anchor": "descend-one-level-of-abstraction",
+      "hash": "5602925f73061c1387298567c5222e6ff117a95d634af5ab1daabf4916ae13a7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Keep methods small",
+      "level": 4,
+      "anchor": "keep-methods-small",
+      "hash": "1d0d1b304d9aaeccf03cb9f19b970ac6a65b76efe3ae727f110d9e5cfa946912"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Control flow",
+      "level": 3,
+      "anchor": "control-flow",
+      "hash": "e462a441c231a4fc998fc3b2691f156b1254354e814e8354ed916d9c164a0cb5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Fail fast",
+      "level": 4,
+      "anchor": "fail-fast",
+      "hash": "d4af003f874869309399e3926416e9feb92ae13febcc118afab05c6514fc2514"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "CHECK vs. RETURN",
+      "level": 4,
+      "anchor": "check-vs-return",
+      "hash": "d450984fe9fc5d97446c4049170d27c26b1df8b43c2c559e500da92eedae4710"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Avoid CHECK in other positions",
+      "level": 4,
+      "anchor": "avoid-check-in-other-positions",
+      "hash": "afc296ce2e498f13507f0487e1a3a8a5e361f56cb87143453c4c5a8a08d8b62f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Error Handling",
+      "level": 2,
+      "anchor": "error-handling",
+      "hash": "bb58252b0df5bab879d4af64397e6bcf836c2c2d6aa6ded9e7da4f68215086d0"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Messages",
+      "level": 3,
+      "anchor": "messages",
+      "hash": "86162bdc534d922a9d1be49859eb2ec8d840b1a1082df995989ae28ec2dede7b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Make messages easy to find",
+      "level": 4,
+      "anchor": "make-messages-easy-to-find",
+      "hash": "c4204a905401cb87697323a9f2c9efacf3dbc48b8766de446d51c785b9331a8f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Return Codes",
+      "level": 3,
+      "anchor": "return-codes",
+      "hash": "f5cbfbc2f8e630d359fada3167822d63e1900bbc2effa23bf031514249636be6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer exceptions to return codes",
+      "level": 4,
+      "anchor": "prefer-exceptions-to-return-codes",
+      "hash": "88c96785a6edff25990a493b884371c999e4e3203648a25d89623b5a7d946390"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't let failures slip through",
+      "level": 4,
+      "anchor": "dont-let-failures-slip-through",
+      "hash": "df829e0612b2f7a3758c9c1d8477152a5994747aeb761fd08053c9669400020e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Exceptions",
+      "level": 3,
+      "anchor": "exceptions",
+      "hash": "e5846804a7b0e08926d7e5d406064a28150199958257f0fb6f8f0ba80f5916e1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Exceptions are for errors, not for regular cases",
+      "level": 4,
+      "anchor": "exceptions-are-for-errors-not-for-regular-cases",
+      "hash": "5c6deb20744fd22adbd1043ba9276d4c6377c1303f48a04e28a2f1eeab17389f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use class-based exceptions",
+      "level": 4,
+      "anchor": "use-class-based-exceptions",
+      "hash": "ce0f9df50131d27f297b8c7b5f20ad3e732ed0010a8eb874171acc66d7911612"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Throwing",
+      "level": 3,
+      "anchor": "throwing",
+      "hash": "1b60188cff059bfccca0f9184851df97ec938e5bccd80a120e598d0a56e7b1de"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use own super classes",
+      "level": 4,
+      "anchor": "use-own-super-classes",
+      "hash": "0549f8cf2cfedda97c3b2309f9eda229f8a2024a39c79379e22e46a173a12f48"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Throw one type of exception",
+      "level": 4,
+      "anchor": "throw-one-type-of-exception",
+      "hash": "bb85c4e24bb1ec88afb9a1c7d3515f56a88e9f3530416b648b2b8049d489322a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use sub-classes to enable callers to distinguish error situations",
+      "level": 4,
+      "anchor": "use-sub-classes-to-enable-callers-to-distinguish-error-situations",
+      "hash": "096e2ed350159d5ee1ff0b966caaccda791ba6c4e500578a53ff2ed43ea859b9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Throw CX_STATIC_CHECK for manageable exceptions",
+      "level": 4,
+      "anchor": "throw-cx_static_check-for-manageable-exceptions",
+      "hash": "b43d4fbbc7d52cc93862e8890a630f1c4b362edf8d61c70f248abb06ab20dc61"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Throw CX_NO_CHECK for usually unrecoverable situations",
+      "level": 4,
+      "anchor": "throw-cx_no_check-for-usually-unrecoverable-situations",
+      "hash": "a0b7ee810eaa63a1b9dbad91808700a3eff8736e2e60cb84bc6659e92d960666"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider CX_DYNAMIC_CHECK for avoidable exceptions",
+      "level": 4,
+      "anchor": "consider-cx_dynamic_check-for-avoidable-exceptions",
+      "hash": "ce0e068602d71751b9f7f6aac1bc81915e012a18cd28312036a727f778885594"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Dump for totally unrecoverable situations",
+      "level": 4,
+      "anchor": "dump-for-totally-unrecoverable-situations",
+      "hash": "12fbfb659e58f5bc9fe1e4c2e65d06262fb6a79e618c42451e2d92c57405d6fa"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer RAISE EXCEPTION NEW to RAISE EXCEPTION TYPE",
+      "level": 4,
+      "anchor": "prefer-raise-exception-new-to-raise-exception-type",
+      "hash": "b2565a9e221384e510dfb8058d57a9fc4dbb5bbfa5be4e5327aa9edc4c519f9d"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Catching",
+      "level": 3,
+      "anchor": "catching",
+      "hash": "fdb4a150cbad96f4b7f120fea2bfaa372d42ef9f079256086b31516ae84115a8"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Wrap foreign exceptions instead of letting them invade your code",
+      "level": 4,
+      "anchor": "wrap-foreign-exceptions-instead-of-letting-them-invade-your-code",
+      "hash": "0c555a4db27d919b28737afdd386e3037dcddbd86f635a8b4b64f6e6bbd73813"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Comments",
+      "level": 2,
+      "anchor": "comments",
+      "hash": "ee4a454028de33cf00a3354c587cfa25902ecb3bf90c0f18e325d3da7064c0e4"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Express yourself in code, not in comments",
+      "level": 3,
+      "anchor": "express-yourself-in-code-not-in-comments",
+      "hash": "ce891a593ba08f34ba8fe0531096a87dfb3fbafb26fb5ae58a8d94b246ee025c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Comments are no excuse for bad names",
+      "level": 3,
+      "anchor": "comments-are-no-excuse-for-bad-names",
+      "hash": "e170be1ae31fb221418b18f37c69f18a68b4b7b3963cb9362d1ef20217c081a3"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use methods instead of comments to segment your code",
+      "level": 3,
+      "anchor": "use-methods-instead-of-comments-to-segment-your-code",
+      "hash": "0cdf171d4c175f3bfd366e567cd386bf7142b37cee74218f6ff07084274668a6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Write comments to explain the why, not the what",
+      "level": 3,
+      "anchor": "write-comments-to-explain-the-why-not-the-what",
+      "hash": "5292d4897d5aee5ba894dfb97fb6d719b5649881127a0ff54de30d4f93e830f7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Design goes into the design documents, not the code",
+      "level": 3,
+      "anchor": "design-goes-into-the-design-documents-not-the-code",
+      "hash": "c4d3b8227e6d6fe0be7fef4186b315fcfcd674b9551814d793a34c2aecefd431"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Comment with \", not with *",
+      "level": 3,
+      "anchor": "comment-with--not-with-",
+      "hash": "50116bf3f4999a8e47c7b3fa8b456d04b384d705702a55535359aabbfed69574"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Put comments before the statement they relate to",
+      "level": 3,
+      "anchor": "put-comments-before-the-statement-they-relate-to",
+      "hash": "e60ec141bb25153f1a9aac709bcdb3ce140c8589e76b067ee3bfac6aec46cece"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Delete code instead of commenting it",
+      "level": 3,
+      "anchor": "delete-code-instead-of-commenting-it",
+      "hash": "d0b5e81f98a2a5ae2eafb6be388af78450cc58fd9e3634b6f7f73f747cd34ae8"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't do manual versioning",
+      "level": 3,
+      "anchor": "dont-do-manual-versioning",
+      "hash": "f48deec9a23095bfb2d9a8f59e442e002e5253835e2e0d8410b5968954fbc4dc"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use FIXME, TODO, and XXX and add your ID",
+      "level": 3,
+      "anchor": "use-fixme-todo-and-xxx-and-add-your-id",
+      "hash": "5fc25018bea3cd87f771147b40d38cf609d2266014093c34dfe114d44dd66068"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't add method signature and end-of comments",
+      "level": 3,
+      "anchor": "dont-add-method-signature-and-end-of-comments",
+      "hash": "a9e7e6b8259569289ab563c3d82c1324224960f49043f0cebb31d193999f3d0f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't duplicate message texts as comments",
+      "level": 3,
+      "anchor": "dont-duplicate-message-texts-as-comments",
+      "hash": "31fb82ca05b969d0aaa8c1c9f8ad5cdef5b41c71b05ed76ffe9785362f8c5b59"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "ABAP Doc only for public APIs",
+      "level": 3,
+      "anchor": "abap-doc-only-for-public-apis",
+      "hash": "94f58f154e0110e49ccbe52b351f5e46c7339619bffb6d4b76c66235113b9154"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Prefer pragmas to pseudo comments",
+      "level": 3,
+      "anchor": "prefer-pragmas-to-pseudo-comments",
+      "hash": "571d22cbae523483e4cf4f43fae855cb40fe6cc632f0393fac3a03437ece5d9f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Formatting",
+      "level": 2,
+      "anchor": "formatting",
+      "hash": "939e0cff033bfc51aefcf7f81ecb01d38bed8b214d97411238c3ae758ce02220"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Be consistent",
+      "level": 3,
+      "anchor": "be-consistent",
+      "hash": "74e62a538b0375564b8c3a84c63e0d66c4d0280dd0194ec55caaf65613bb0185"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Optimize for reading, not for writing",
+      "level": 3,
+      "anchor": "optimize-for-reading-not-for-writing",
+      "hash": "b024afe93b1d9621599a1368a4296f50e305969763d5dd8e586e9927547aec41"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use the ABAP Formatter before activating",
+      "level": 3,
+      "anchor": "use-the-abap-formatter-before-activating",
+      "hash": "335507d3fe026e5f072eedb4689748dd05b2080d98ca1cd5e2c2f87a4acda6da"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use your team's ABAP Formatter settings",
+      "level": 3,
+      "anchor": "use-your-teams-abap-formatter-settings",
+      "hash": "d9c96a08117610be4555b771210df0c9b846d68d1df37295451e06728233f17a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "No more than one statement per line",
+      "level": 3,
+      "anchor": "no-more-than-one-statement-per-line",
+      "hash": "2b532b970bbe46f3d483fd78e15fb566170bd62bd43c846eb6e6eb504b3f1ac9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Stick to a reasonable line length",
+      "level": 3,
+      "anchor": "stick-to-a-reasonable-line-length",
+      "hash": "59ca999e702be9a66698db60531aea83b6864287716f7500ed30521a394227a5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Condense your code",
+      "level": 3,
+      "anchor": "condense-your-code",
+      "hash": "1f2c6fea140407103746430e3143b5ca415ab9812f9797a4a860256e39e6e465"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Add a single blank line to separate things, but not more",
+      "level": 3,
+      "anchor": "add-a-single-blank-line-to-separate-things-but-not-more",
+      "hash": "0a2fb5a8186405ac7a4195840c47b467a4c343f54ac016379b9dd4a0619620e7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't obsess with separating blank lines",
+      "level": 3,
+      "anchor": "dont-obsess-with-separating-blank-lines",
+      "hash": "bd45d4888d2255f21a993ab61d99af9e94a02c6288aacc3f975ad3a857b45999"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Align assignments to the same object, but not to different ones",
+      "level": 3,
+      "anchor": "align-assignments-to-the-same-object-but-not-to-different-ones",
+      "hash": "fa76ee0e4f9a9b595442e089da01208750faa341c6f4672e1bd01fce0f085511"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Close brackets at line end",
+      "level": 3,
+      "anchor": "close-brackets-at-line-end",
+      "hash": "278ab17930d1158f029bb97c97a49ad9c2c9e847a48ab95474773316e438a152"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Keep single parameter calls on one line",
+      "level": 3,
+      "anchor": "keep-single-parameter-calls-on-one-line",
+      "hash": "242d827395b8e4f76405c108719621e262adc50f36f73b47c877cec8a102d9f6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Keep parameters behind the call",
+      "level": 3,
+      "anchor": "keep-parameters-behind-the-call",
+      "hash": "5f00f4b64c082977700b350a12cfbc28eff453afbaa68336debbb01ccf3b8f7e"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "If you break, indent parameters under the call",
+      "level": 3,
+      "anchor": "if-you-break-indent-parameters-under-the-call",
+      "hash": "280e92adcbd9301d72b64fe77e125e33368a610efe78955eb132b3415d17d232"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Line-break multiple parameters",
+      "level": 3,
+      "anchor": "line-break-multiple-parameters",
+      "hash": "de9d5ef68e09a76f5da175b588965a8aaac66dd3f3167f52087d9b72b6dd4e7f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Align parameters",
+      "level": 3,
+      "anchor": "align-parameters",
+      "hash": "ed5ca611a65f9bf102055399633924a5349db3ac5206af22d9165924a6a31b8b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Break the call to a new line if the line gets too long",
+      "level": 3,
+      "anchor": "break-the-call-to-a-new-line-if-the-line-gets-too-long",
+      "hash": "ceee0aec86286937f013075b1fae316bba47df9c619ad8dd2398506a299ed9eb"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Indent and snap to tab",
+      "level": 3,
+      "anchor": "indent-and-snap-to-tab",
+      "hash": "b3a55413e00defe507eb593216779f0ebb346d171a782be359cec82e2eab838f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Indent in-line declarations like method calls",
+      "level": 3,
+      "anchor": "indent-in-line-declarations-like-method-calls",
+      "hash": "56a7bb7bbf4e35cf6e9d63370e18f0466563f51e5d18e9f6eccb1984a23dd8c7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't align type clauses",
+      "level": 3,
+      "anchor": "dont-align-type-clauses",
+      "hash": "63e08f9d4784f36f4d81a826787c8775e2c569cb0289812b6994b2baf9d156d7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't chain assignments",
+      "level": 3,
+      "anchor": "dont-chain-assignments",
+      "hash": "5c5bb6c150f86db538d9cfe4d5470ed201dcf51f51a43dc16492cbfe15f95b52"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Testing",
+      "level": 2,
+      "anchor": "testing",
+      "hash": "a1b845e0cba1daa27d42abab744104cc2e1b91a1533d8f916213c2a3af7b4d02"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Principles",
+      "level": 3,
+      "anchor": "principles",
+      "hash": "f133b57dafef580329e0708a84c8895cce151fa890d35561d0243d9192f83161"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Write testable code",
+      "level": 4,
+      "anchor": "write-testable-code",
+      "hash": "00836ca1f3fe55f98fda79464546bac0d7b4f4db17be781dc68403c2d153a3dd"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Enable others to mock you",
+      "level": 4,
+      "anchor": "enable-others-to-mock-you",
+      "hash": "c893a02efd52276e03ecd34f12c8d51a02e12d51ec5574f2a75ba3745334a03f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Readability rules",
+      "level": 4,
+      "anchor": "readability-rules",
+      "hash": "e7a973ce0d1187df5f37a5a415f55b2f57b5f6b77975bdb3f003ccfe4941fb63"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't make copies or write test reports",
+      "level": 4,
+      "anchor": "dont-make-copies-or-write-test-reports",
+      "hash": "9490de5849b080665ed1c551c65d01d3c6fd0f2c04a2ee0906d014464c6de1f4"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test publics, not private internals",
+      "level": 4,
+      "anchor": "test-publics-not-private-internals",
+      "hash": "442260527701098cce0e0b9bfa15b96f42ebf37a80179b546fdd30dfd73d66cf"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't obsess about coverage",
+      "level": 4,
+      "anchor": "dont-obsess-about-coverage",
+      "hash": "01b5066aa723b3739fee6fc95c88460f8dfbe27aab2e91c4673505b41263c902"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test Classes",
+      "level": 3,
+      "anchor": "test-classes",
+      "hash": "7eb4d7e11ec7bfef49063e1fcbf0a495a3b502889b976dd9cf07924b88026231"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Call local test classes by their purpose",
+      "level": 4,
+      "anchor": "call-local-test-classes-by-their-purpose",
+      "hash": "27bd1d0e0fda31521f45159fb039274cf0157c2e65591a7569114bb18984d75f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Put tests in local classes",
+      "level": 4,
+      "anchor": "put-tests-in-local-classes",
+      "hash": "61406cd8c0978e593bab9bf6e2b3476e421c09a09d53d9646a7bfbb209e53dbb"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Put help methods in help classes",
+      "level": 4,
+      "anchor": "put-help-methods-in-help-classes",
+      "hash": "d9735d57cfddb15466e1d25ebaec0bc2f93172f4e68dc86104cc435768a27ad6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "How to execute test classes",
+      "level": 4,
+      "anchor": "how-to-execute-test-classes",
+      "hash": "69deaf7205bc2d247a2668dc31413c9d3f8838345b9a8c9dcc681da98951911b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Code Under Test",
+      "level": 3,
+      "anchor": "code-under-test",
+      "hash": "365b22feecb9d5a9eefcb90884f32ea37ee9d0bb953f18793a6c918b80710b8b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Name the code under test meaningfully, or default to CUT",
+      "level": 4,
+      "anchor": "name-the-code-under-test-meaningfully-or-default-to-cut",
+      "hash": "948e206fc98fe354e45163be7c602c6f39a3aaa63369504a7842cc1242ee0e62"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test against interfaces, not implementations",
+      "level": 4,
+      "anchor": "test-against-interfaces-not-implementations",
+      "hash": "7030e4d944fe15c6c1d827fa56866d0072f8f41cbf2a70a387ebb452a00b2c50"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Extract the call to the code under test to its own method",
+      "level": 4,
+      "anchor": "extract-the-call-to-the-code-under-test-to-its-own-method",
+      "hash": "10d3218f99755be28d54fb491508789112d7b6da0acbf5e0e20f8c24b3cd692c"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Injection",
+      "level": 3,
+      "anchor": "injection",
+      "hash": "414720682f6f93117270f0714dc857f9d691c348931790d744bd4abcff6de4a5"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use dependency inversion to inject test doubles",
+      "level": 4,
+      "anchor": "use-dependency-inversion-to-inject-test-doubles",
+      "hash": "341af3693401b0f73d4bd9946c14e902906760b3bc1ec53dae874ee32f4c9529"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Consider to use the tool ABAP test double",
+      "level": 4,
+      "anchor": "consider-to-use-the-tool-abap-test-double",
+      "hash": "0b78d1fa56ff60153aa0d39eedc2f19302e4e8c6f653dd5424844300a6c932dd"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Exploit the test tools",
+      "level": 4,
+      "anchor": "exploit-the-test-tools",
+      "hash": "35c9985be597a08ff129857360a66cdbf9cc934ac32514e19a903ebf73370068"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use test seams as temporary workaround",
+      "level": 4,
+      "anchor": "use-test-seams-as-temporary-workaround",
+      "hash": "c14b0d183db728d402bb5f606726418eb2ef47d5da01840e1be30e8c003d3ce1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use LOCAL FRIENDS to access the dependency-inverting constructor",
+      "level": 4,
+      "anchor": "use-local-friends-to-access-the-dependency-inverting-constructor",
+      "hash": "e2da216366dc82ad103f30180be6c0429ca22530c91662665c3242db30973f2b"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't misuse LOCAL FRIENDS to invade the tested code",
+      "level": 4,
+      "anchor": "dont-misuse-local-friends-to-invade-the-tested-code",
+      "hash": "f59c5b41aa080bbea4ac9f3fb98541733441e77469f320827a510586acafb6d6"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't add features to production code that are only intended for use during automated testing",
+      "level": 4,
+      "anchor": "dont-add-features-to-production-code-that-are-only-intended-for-use-during-automated-testing",
+      "hash": "ef73dde11560dd3c43f7ba82f6f11d629726da5f9d0d55ddb73d48800434ed95"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't sub-class to mock methods",
+      "level": 4,
+      "anchor": "dont-sub-class-to-mock-methods",
+      "hash": "4681c0541da12b41b300883ef3281a986b072a3a536b65a18f0d9ecddb46a0c7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't mock stuff that's not needed",
+      "level": 4,
+      "anchor": "dont-mock-stuff-thats-not-needed",
+      "hash": "5d96ce180ca4d54398a0d8ada6ef6eea5d2fb40ca32186b68681c99f8933bb8a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't build test frameworks",
+      "level": 4,
+      "anchor": "dont-build-test-frameworks",
+      "hash": "b2d0f7af922fe9b118115ce25842e70d6cd1274b3ef8ef959afdacb60947ecf1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test Methods",
+      "level": 3,
+      "anchor": "test-methods",
+      "hash": "5900b2dba7760747bf8dca10cf69cab65c3d7d94ee4dd39808a4ce14f204bf80"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test method names: reflect what's given and expected",
+      "level": 4,
+      "anchor": "test-method-names-reflect-whats-given-and-expected",
+      "hash": "ea7feba5cffda729f2a0cd883bf2661b95c164acb8971e96a4ca3a00fce9ec6a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use given-when-then",
+      "level": 4,
+      "anchor": "use-given-when-then",
+      "hash": "f4325b7c19d6b543d3f595ffaa5bb701717a3c38a31b602a1cb4d85d9cbff3c1"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "\"When\" is exactly one call",
+      "level": 4,
+      "anchor": "when-is-exactly-one-call",
+      "hash": "e04e83ce3e2a65aee05b284ec3a7119b8e8590029473a6796019208c872059df"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Don't add a TEARDOWN unless you really need it",
+      "level": 4,
+      "anchor": "dont-add-a-teardown-unless-you-really-need-it",
+      "hash": "8b544058f02c057b5b916a70b103fcf61123e9a3397b85dfc266b844dbd5a904"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Test Data",
+      "level": 3,
+      "anchor": "test-data",
+      "hash": "020e9166f9a23fd503340a0e8306be40a44954d0da6656bcfe4bae011fec3374"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Make it easy to spot meaning",
+      "level": 4,
+      "anchor": "make-it-easy-to-spot-meaning",
+      "hash": "dd551577330e3073d8599ade2248808f9a3e61114235c848266f6e79aef39308"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Make it easy to spot differences",
+      "level": 4,
+      "anchor": "make-it-easy-to-spot-differences",
+      "hash": "bfc0d389296c03a9be385dfacc031c81e3189d19237ee4903825f8f5bf446c1f"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use constants to describe purpose and importance of test data",
+      "level": 4,
+      "anchor": "use-constants-to-describe-purpose-and-importance-of-test-data",
+      "hash": "a2b187b63ee22fc4a5143cff8f8ae4f29815ae396c130c07450736488bc873fa"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Assertions",
+      "level": 3,
+      "anchor": "assertions",
+      "hash": "89313a307d48802428484f439819f779f7b37c0547d55640ede56f6021a4f6a8"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Few, focused assertions",
+      "level": 4,
+      "anchor": "few-focused-assertions",
+      "hash": "5426fb197422f02f3a4e8f01773d61c1987b84cbff836880cf5df7f8f0abc0c2"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use the right assert type",
+      "level": 4,
+      "anchor": "use-the-right-assert-type",
+      "hash": "ae3ab05012f8a05928b4c5045bcdd255bf622a510bbba1867018123745be8db9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Assert content, not quantity",
+      "level": 4,
+      "anchor": "assert-content-not-quantity",
+      "hash": "1bb829c5f3748142bfbf48b5b385898819b7c936654b73fc373c350e1a0eb932"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Assert quality, not content",
+      "level": 4,
+      "anchor": "assert-quality-not-content",
+      "hash": "df4a99d7e55a7e602c24c056f5569e6794d9d1653b30b214d8bdc0343a1ced6a"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Use FAIL to check for expected exceptions",
+      "level": 4,
+      "anchor": "use-fail-to-check-for-expected-exceptions",
+      "hash": "0de5d51add26f70d5f8a8cf2dde0cc7d3dd7a6f81b46385ea14705fdc4e89da9"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Forward unexpected exceptions instead of catching and failing",
+      "level": 4,
+      "anchor": "forward-unexpected-exceptions-instead-of-catching-and-failing",
+      "hash": "21c76fab92a1396c32f3f5883544c96f3badb7a34686c247a8f01d01b7f4feb7"
+    },
+    {
+      "file": "clean-abap/CleanABAP.md",
+      "heading": "Write custom asserts to shorten code and avoid duplication",
+      "level": 4,
+      "anchor": "write-custom-asserts-to-shorten-code-and-avoid-duplication",
+      "hash": "b23ce4322c2a8c9532793d911d7cbf361bd27605b55290e41d463b6bf579f5a3"
+    },
+    {
+      "file": "clean-abap/cheat-sheet/CheatSheet.md",
+      "heading": "Cheat Sheet",
+      "level": 1,
+      "anchor": "cheat-sheet",
+      "hash": "e3ccb1fd7a249ef24b4f1a72b694c65f4cc16ef6b2f8db0b9de430ded312a525"
+    },
+    {
+      "file": "clean-abap/cheat-sheet/CheatSheet.md",
+      "heading": "Download",
+      "level": 2,
+      "anchor": "download",
+      "hash": "26044339e34003f645dcfe61d2d6c18d0dfff203b050723653735f4dfce6a718"
+    },
+    {
+      "file": "clean-abap/cheat-sheet/CheatSheet.md",
+      "heading": "Versions",
+      "level": 2,
+      "anchor": "versions",
+      "hash": "2e5a1b1abecd2259e889cbcb10c08531311ddf5c6e580586620eae25a2bf853c"
+    },
+    {
+      "file": "clean-abap/cheat-sheet/CheatSheet.md",
+      "heading": "Cheat Sheet",
+      "level": 3,
+      "anchor": "cheat-sheet-1",
+      "hash": "1764534653fd481772ca3c251f449f66f2908c9d2379c275b22eac32683f72b1"
+    },
+    {
+      "file": "clean-abap/cheat-sheet/CheatSheet.md",
+      "heading": "The Golden Rules",
+      "level": 3,
+      "anchor": "the-golden-rules",
+      "hash": "47151768f7007e6f1b8d5e7cfda4201bc5b38a94edb2d1e19549ab880cb95cce"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Avoid Encodings",
+      "level": 1,
+      "anchor": "avoid-encodings",
+      "hash": "f6135bb48325fccf59dce0b21a79fb910f5c7759c0362e8f766a9bb1a1ba0289"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Abstract",
+      "level": 2,
+      "anchor": "abstract",
+      "hash": "e4655af00426767d1d81498a9065a286a02f55f38ce6740f51cd8e54c78201bb"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Reasoning",
+      "level": 2,
+      "anchor": "reasoning",
+      "hash": "7917ffd756a3771f5a0ac1c9aeeb3f35dac0e85af5d18c8a6be7ca337e1e3674"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Arguments",
+      "level": 2,
+      "anchor": "arguments",
+      "hash": "1c864e87f325e5bf8ba9a67a2f509628e88c20315f8ae731576af11bd8c19b16"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Avoiding name clashes",
+      "level": 2,
+      "anchor": "avoiding-name-clashes",
+      "hash": "bc3fba1f98b07512bc69175653d442e08c005d4c47b73beb6730b92ebd3a0337"
+    },
+    {
+      "file": "clean-abap/sub-sections/AvoidEncodings.md",
+      "heading": "Compromises",
+      "level": 2,
+      "anchor": "compromises",
+      "hash": "7adcbe0fb0b2bc99ab3f3179a530ad21ccdb89815d561200e8e2c5cbef4e73d4"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Enumerations",
+      "level": 1,
+      "anchor": "enumerations",
+      "hash": "d13c01aeddadb3c770caaabdc2adab52d01406ac05ed24d2aa2cfeeeaf39a84d"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Native enumerations",
+      "level": 2,
+      "anchor": "native-enumerations",
+      "hash": "89cf084519cad08e4709f09db791f714255b73a13b73d839ed41ae598ccb5aaf"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Compatibility",
+      "level": 3,
+      "anchor": "compatibility",
+      "hash": "ac055166c0d010bb3c8de1d7ed6c485951aa31e7ea5c9b96c730030e59b404f0"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Patterns",
+      "level": 2,
+      "anchor": "patterns",
+      "hash": "615e0df9baabd1530dbab666ab488ce22cee70610585ae70274c1dff33e5bc94"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Constant Pattern",
+      "level": 3,
+      "anchor": "constant-pattern",
+      "hash": "0dec8f38ab46b03a23386fcbfc1e8ecc107d2afffb19bb3e9f0ff062232064e6"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Object Pattern",
+      "level": 3,
+      "anchor": "object-pattern",
+      "hash": "42973b3d310765cb435971abd95b062a1821bcc1ea31467de0e81584a6c0ea76"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Interface Pattern",
+      "level": 3,
+      "anchor": "interface-pattern",
+      "hash": "68bb602fc76542b1c0777ecd7c9b2f636f33d9930f2dbaf3c8b2f3896a741d14"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Collection Pattern",
+      "level": 3,
+      "anchor": "collection-pattern",
+      "hash": "f737622dfe2cfc2b3d69156896a221b10421da699634c02ca1a0341ee626edda"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Guidelines",
+      "level": 2,
+      "anchor": "guidelines",
+      "hash": "bf365a2c463730965fec4cd7e99b10cb598acbaa34614e23a541e237da3cd722"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Use one development object per enumeration",
+      "level": 3,
+      "anchor": "use-one-development-object-per-enumeration",
+      "hash": "6cdc4e589c8e5d171b6d3dc43134f4cbc6f02686a066755aed1b90127dcb6f83"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Prefer classes to interfaces",
+      "level": 3,
+      "anchor": "prefer-classes-to-interfaces",
+      "hash": "da3c020e1d6606b9dbe22f06b7fb1c2a10cb996833e8937c5732ecb57df0424d"
+    },
+    {
+      "file": "clean-abap/sub-sections/Enumerations.md",
+      "heading": "Try to enforce type safety",
+      "level": 3,
+      "anchor": "try-to-enforce-type-safety",
+      "hash": "3687b456ebd0c0b89f82d7e775839756cec407391d83dad500537b9d36182346"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Exceptions",
+      "level": 1,
+      "anchor": "exceptions",
+      "hash": "2711862cc3c49532c72e102967024596d7b17ba968bafcdcca87655e8eb8dec1"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "The Ideal",
+      "level": 2,
+      "anchor": "the-ideal",
+      "hash": "d8d0ee1f0d044878fdb97689a2d0bf5d48019dccd9d01dc7d76965003718071c"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "What's in the Way",
+      "level": 2,
+      "anchor": "whats-in-the-way",
+      "hash": "b122c837347ca957fcbdbd3156d9c8376cd896ae48744efef448277779a30bac"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Why CX_STATIC_CHECK Doesn't Help",
+      "level": 3,
+      "anchor": "why-cx_static_check-doesnt-help",
+      "hash": "21169b2ff90ac2fb2fd0b2c95e1ac9a64b39010803c0065a050ad72d86d3b4ec"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Why CX_DYNAMIC_CHECK Doesn't Help",
+      "level": 3,
+      "anchor": "why-cx_dynamic_check-doesnt-help",
+      "hash": "362c2e44e880f53e963abc8a4858107ce21603abfe98dff485c3341aab6b3644"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Why CX_NO_CHECK Doesn't Help",
+      "level": 3,
+      "anchor": "why-cx_no_check-doesnt-help",
+      "hash": "f39fd6e65b95bb845aa5235072b900271b7d69d848e65c93dd9c06e90f16609b"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Why CX_SY_NO_HANDLER Doesn't Help",
+      "level": 3,
+      "anchor": "why-cx_sy_no_handler-doesnt-help",
+      "hash": "50e187bc0ff766161f9f3f9d87a3a202648a2a8266a6584b3454fbf94909a493"
+    },
+    {
+      "file": "clean-abap/sub-sections/Exceptions.md",
+      "heading": "Compromises",
+      "level": 2,
+      "anchor": "compromises",
+      "hash": "513db024135a371760b971460fe176ffaff8e579eaa624c00cefca2031863d4a"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "Function Groups vs. Classes",
+      "level": 1,
+      "anchor": "function-groups-vs-classes",
+      "hash": "e7d4f80d14ea67c1b5430f3fcfcf1f87ad41e020a4dc419d158bf22e0828f2f6"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "No instantiation",
+      "level": 2,
+      "anchor": "no-instantiation",
+      "hash": "7f992ea796fa83b0f1bb962db57af191b7986747e4bbb564286b0687bbb5c497"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "No inheritance",
+      "level": 2,
+      "anchor": "no-inheritance",
+      "hash": "ad4754dc0e2d53db63c059b29d0f8fc6124e4bc6ac0424485e4d5efed3d6739e"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "No interfaces",
+      "level": 2,
+      "anchor": "no-interfaces",
+      "hash": "d719168f67594df8a622bddd0c343b14994694cb68fec2a312089ef8746813ff"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "Weak substitution",
+      "level": 2,
+      "anchor": "weak-substitution",
+      "hash": "e0f26bb2169e071591a46f830d00e78f1cdcb4f9cf9208836d6093eaeb066096"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "No overloading",
+      "level": 2,
+      "anchor": "no-overloading",
+      "hash": "9d1ede4b9ab8eec63c8d61aedcefbf63d664ed98df525c835a04fdd38161d633"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "Weak variable encapsulation",
+      "level": 2,
+      "anchor": "weak-variable-encapsulation",
+      "hash": "0d0e6644357eb180dc0ae3b5f677949970da50dcffdd75b170dcc496f6a417b7"
+    },
+    {
+      "file": "clean-abap/sub-sections/FunctionGroupsVsClasses.md",
+      "heading": "No method encapsulation",
+      "level": 2,
+      "anchor": "no-method-encapsulation",
+      "hash": "242319cb25e4836d7201bfb2b159b164a5e1bbe323db24c4784f539f2c42c10a"
+    },
+    {
+      "file": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "heading": "Interfaces vs. Abstract Classes",
+      "level": 1,
+      "anchor": "interfaces-vs-abstract-classes",
+      "hash": "4e7157845aa4cf5630a1607dd147d38885c11fc85a838e5335eedfacaf1454fc"
+    },
+    {
+      "file": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "heading": "Interfaces",
+      "level": 2,
+      "anchor": "interfaces",
+      "hash": "37f87696b760beb54a5a408f689a4192d4063178ef671439ec9a60db4a4626d3"
+    },
+    {
+      "file": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "heading": "Abstract classes",
+      "level": 2,
+      "anchor": "abstract-classes",
+      "hash": "fbec992989ed0e2b1eaae6ce8d8ffcc502e720e11729a6f6214ba411b6cc6fd7"
+    },
+    {
+      "file": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "heading": "Comparison",
+      "level": 2,
+      "anchor": "comparison",
+      "hash": "c963e73964dfcc47a823280aea1e137071aa607bdb7bb936220365326122c779"
+    },
+    {
+      "file": "clean-abap/sub-sections/InterfacesVsAbstractClasses.md",
+      "heading": "Combination",
+      "level": 2,
+      "anchor": "combination",
+      "hash": "7cfa5d6f7cd069f514eda30e692ed6f4ca2a20eda16c5627bc8f41f290ff4429"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Modern ABAP Language Elements",
+      "level": 1,
+      "anchor": "modern-abap-language-elements",
+      "hash": "726a0baa925d8d4b1b80cc18192d09b6f3161d786288bfd914ce268914442c32"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Content",
+      "level": 2,
+      "anchor": "content",
+      "hash": "9f52432dac70acef1a360283ac4e656f83bc8bd8853126dd5421a1985e902fd3"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Functional statements and expressions in ABAP",
+      "level": 2,
+      "anchor": "functional-statements-and-expressions-in-abap",
+      "hash": "c0a0a0e529f463190657b5a9498c09db085260da3a40a2a6384d13c1780e6067"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Inline declaration of variables",
+      "level": 2,
+      "anchor": "inline-declaration-of-variables",
+      "hash": "8d5d86f07563440aa1915dcc788dbe36b02f021b0cba3d9e0e56c36f084e604e"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Compound Assignment Operators",
+      "level": 2,
+      "anchor": "compound-assignment-operators",
+      "hash": "b4a9c9d61ae6c7a9c8cd5439bcb8722e36f74273deff71e4aac94c7f599d1e12"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Non-Initial Conditions",
+      "level": 2,
+      "anchor": "non-initial-conditions",
+      "hash": "65eabc31b3abe0d9ded5fff39eedd3f2c56bd695bfd3e5741848d14ccca93e2e"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Enumerations",
+      "level": 2,
+      "anchor": "enumerations",
+      "hash": "f31791968e5efb51cb7b9b32f03e778878cb706f1eec1702c24154bd6f928293"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Internal Tables",
+      "level": 2,
+      "anchor": "internal-tables",
+      "hash": "6bae9818218beee225e4478eba41ad76b57fd1fa4ae77a10921e462d4e3ac575"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Count table lines",
+      "level": 3,
+      "anchor": "count-table-lines",
+      "hash": "7810ed0b218baaeae9795ccf58dbaf02c1065e5bc79ff493c6c174add4240d85"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Check existence of a table line",
+      "level": 3,
+      "anchor": "check-existence-of-a-table-line",
+      "hash": "293288922e9077bb8287dd1536db1bef991ddd990394614fd18d49de8ac4da1c"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Access table key with uncertain result",
+      "level": 3,
+      "anchor": "access-table-key-with-uncertain-result",
+      "hash": "a30d0e59a9824b23d229f27fd1f84bec3d3c1eb24712a63bdd4801aa5a6b80bb"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Access table index",
+      "level": 3,
+      "anchor": "access-table-index",
+      "hash": "48313f12c8979d5ff7b01f02dcf1b368e3ad023a02625ca8ffea6a9f0017c0cc"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Conditions",
+      "level": 2,
+      "anchor": "conditions",
+      "hash": "c179d8888c272923b7cc2af5205b7d3fec1d20b08360933f43f01ab883c981af"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Conditional distinction",
+      "level": 3,
+      "anchor": "conditional-distinction",
+      "hash": "f78054c7652b11cae5d023d666f08e3e123eb238d9caa3ad16db4b561231581f"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Case distinction",
+      "level": 3,
+      "anchor": "case-distinction",
+      "hash": "5accfe3c0e2ec15b0efe03d34b3b8b873cbac80b5b02b9de868b94982cf54030"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Case distinctions of reference types class and interface",
+      "level": 3,
+      "anchor": "case-distinctions-of-reference-types-class-and-interface",
+      "hash": "2ee53773503a4b45398461e56bb7c545d3739909e98b1fa356ce2c5502962fae"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Conversions",
+      "level": 2,
+      "anchor": "conversions",
+      "hash": "ff9ae19f63903a6b0fa22cadcf3eb58991005f56ff4a6e2d886dc412026c0a36"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Cast data references",
+      "level": 3,
+      "anchor": "cast-data-references",
+      "hash": "0bada517f91261f43b5669cb1a448dc7b406e70d072bbf9d12b2424f3512cb8d"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Create data references",
+      "level": 3,
+      "anchor": "create-data-references",
+      "hash": "9d51f9be015a3417fa382784ab2e5ec9a013cf7b5f1a3c27ab133f9a5bc7f9d9"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Convert data types",
+      "level": 3,
+      "anchor": "convert-data-types",
+      "hash": "97262dac43a57feed8648e9c949c5ff92332b8e57e61b1ca678b92b6ab2bf569"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Copy fields with matching names",
+      "level": 3,
+      "anchor": "copy-fields-with-matching-names",
+      "hash": "39d2e6c7c5265942cbd9de4fc863a03282aece9e8c5b49f6253c6848c59fd805"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Constructors",
+      "level": 2,
+      "anchor": "constructors",
+      "hash": "820bfdeabe9e022e382962a3d14c2336a1e106e2a713796517d8af8c5c60d028"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Construct objects and data",
+      "level": 3,
+      "anchor": "construct-objects-and-data",
+      "hash": "f67e271fe0d11551f91a12554a6e212c05006e005582c3a68aa37d570de46838"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Construct data types",
+      "level": 3,
+      "anchor": "construct-data-types",
+      "hash": "c30508579397e3d21a0161b95116e8887b47136f6285688cbc07895971c7cdb7"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Filter tables",
+      "level": 3,
+      "anchor": "filter-tables",
+      "hash": "c4212514761fd2871af543256e0ea83bf53be762707d40139d7838bbfc5858de"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Character Handling",
+      "level": 2,
+      "anchor": "character-handling",
+      "hash": "9816ba39baf4baebb0d1a79a0616e816e0413f5b6d6c95209c96fd1e62cbf886"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Lower and upper case conversion",
+      "level": 3,
+      "anchor": "lower-and-upper-case-conversion",
+      "hash": "92abb090fabf0a9218bb23649e8985978b1b2cdeaa48445a81de57fb740c6a03"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Flow control",
+      "level": 2,
+      "anchor": "flow-control",
+      "hash": "e41e928c180354455f249d3fa4cb1c694f8252d1b35bcc2b9d21fbdbda66d571"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Loop with control break",
+      "level": 3,
+      "anchor": "loop-with-control-break",
+      "hash": "417ff2f1b50dadae659c53658a7c3c53dfa6dfe3359193564b8531281e188064"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Interface implementation",
+      "level": 2,
+      "anchor": "interface-implementation",
+      "hash": "215bb3fc1a9fda169a8963853d0bc1e3549f14f38beadec6752bd3d6e4748553"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Behavior on not implemented interface methods",
+      "level": 3,
+      "anchor": "behavior-on-not-implemented-interface-methods",
+      "hash": "ccb3d7afc5311d817cceaf2164401da7ce828a4a8174b13670df82f6689c19a2"
+    },
+    {
+      "file": "clean-abap/sub-sections/ModernABAPLanguageElements.md",
+      "heading": "Partially implement interfaces in tests",
+      "level": 3,
+      "anchor": "partially-implement-interfaces-in-tests",
+      "hash": "e0e62f811621528665799518a18c880138533c3bd87f34294e7d8538bafbb14d"
+    },
+    {
+      "file": "clean-abap/sub-sections/UpperVsLowerCase.md",
+      "heading": "Upper vs. Lower Case",
+      "level": 1,
+      "anchor": "upper-vs-lower-case",
+      "hash": "5a2051364b80d262651751d85c4a801661a71d82e0b48b5884043fd343c364f6"
+    }
+  ]
+}

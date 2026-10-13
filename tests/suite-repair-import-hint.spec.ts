@@ -6,7 +6,7 @@ import { suiteRepairImportHint } from '../lib/generated-package';
 import { sandboxFilesFromStoredCode } from '../lib/test-sandbox/files';
 
 /**
- * Owner report of 11.10.2026 (FI_Collection_Worklist): the test runner failed
+ * Owner report of 11.10.2026 (the FI case): the test runner failed
  * three times. The generated suite held one syntax error; the auto-heal asked
  * the model to repair it and told it, for every route, that the code under test
  * was `./app`. The package's code lives at `./srv/service`, so the model moved

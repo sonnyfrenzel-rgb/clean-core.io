@@ -23,9 +23,14 @@ import { isFirestoreId } from '@/lib/firestore-id';
 import { nextTestRunFailure, type TestRunFailure, type TestRunFailureKind } from '@/lib/testing-closure';
 import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
 import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
+import { engineCaseGuard, engineCaseScope } from '@/lib/transformation/call-contract';
 import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
 import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
+import { isGenerationDraft } from '@/lib/repair-draft';
+import { probeRunInputs, probeVerdicts } from '@/lib/test-sandbox/probe-suite';
+import { NOT_RUN_NO_CONTRACT } from '@/lib/engine-call-contract';
+import { MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
 import { signedSourceOf, type HandoverProject } from '@/lib/handover';
 
@@ -41,6 +46,13 @@ import { signedSourceOf, type HandoverProject } from '@/lib/handover';
  *   OUT: { mutation, receipt } - the suite run again against a few deterministic
  *        mutants of the code (`lib/testing-mutation.ts`), recorded on the receipt
  *        it probed. Only on a receipt of a passing run of the whole suite.
+ *
+ *   IN : { projectId, mode: 'verify', draftId }   (3.0.12, engine-led transformation)
+ *   OUT: { mode, draftId, runner, buildError, engine, probes } - a generation
+ *        candidate (a draft with target `generation`) checked before it is
+ *        stored: the engine cases derived here from the project's source,
+ *        through the call contract, and the failure-pattern probes. Writes
+ *        nothing (`verifyCandidateResponse`).
  *
  * WHERE IT RUNS (roadmap 8.9, CR-09 — "there or not at all"):
  *   Generated code is untrusted and does not execute in this service. It runs
@@ -309,6 +321,40 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+  }
+
+  // 3.0.12 — verify mode: a generation candidate (a draft with target
+  // `generation`) is checked before it is stored, and nothing else is. A
+  // candidate never runs as the project's suite, and verify never runs the
+  // stored code.
+  if (runRequest?.mode === 'verify') {
+    if (!draft || !isGenerationDraft(draft)) {
+      return NextResponse.json(
+        { output: '', error: 'Verify mode checks a generation candidate: name its draft (draftId).', exitCode: 1, code: 'verify-needs-generation-draft' },
+        { status: 400 },
+      );
+    }
+    if (activeRuns >= MAX_CONCURRENT_RUNS) {
+      return NextResponse.json(
+        { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
+        { status: 429 },
+      );
+    }
+    activeRuns++;
+    try {
+      return await verifyCandidateResponse({ projectId: sanitizedProjectId, projectData, draft });
+    } catch (verifyErr) {
+      logger.error('run-tests: the verify run failed', { route: 'api/run-tests', projectId: sanitizedProjectId, error: errMessage(verifyErr) });
+      return NextResponse.json({ output: '', error: 'Internal Server Error during the verify run.', exitCode: 1 }, { status: 500 });
+    } finally {
+      activeRuns--;
+    }
+  }
+  if (draft && isGenerationDraft(draft)) {
+    return NextResponse.json(
+      { output: '', error: 'A generation candidate is checked in verify mode only.', exitCode: 1, code: 'generation-draft-verify-only' },
+      { status: 400 },
+    );
   }
 
   const storedSuite = projectData.testSuite as { code?: unknown; spec?: unknown } | undefined;
@@ -866,11 +912,18 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
  */
 async function executeLocally(
   target: RunnerTarget,
-  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string } },
+  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string }; probe?: { modules: Array<[string, string]> } },
 ): Promise<SandboxRunOutcome> {
   if (target.kind === 'isolated') throw new Error('An isolated runner is configured; nothing runs in the application service.');
   if (target.kind === 'unavailable') return { kind: 'unavailable', reason: target.reason };
-  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true, ...(input.engine ? { engine: input.engine } : {}) });
+  return executeSandboxRun({
+    files: input.files,
+    suiteCode: input.suiteCode,
+    patterns: input.patterns,
+    allowUnsandboxed: true,
+    ...(input.engine ? { engine: input.engine } : {}),
+    ...(input.probe ? { probe: input.probe } : {}),
+  });
 }
 
 /**
@@ -959,4 +1012,165 @@ async function mutationProbeResponse(input: {
     );
   }
   return NextResponse.json({ output: '', error: '', exitCode: 0, mutation, receipt: { ...receipt, mutation } });
+}
+
+/**
+ * The main suite of a verify run. The checks are the engine pass and the probe
+ * pass, each confined in a pass of its own; the main run only carries the
+ * candidate's files, which both passes are derived from.
+ */
+const VERIFY_NOOP_SUITE = "import { test } from 'node:test';\ntest('VERIFY_NOOP: no failure-pattern probe to run', () => {});\n";
+
+/**
+ * Verify mode (3.0.12, `docs/design/engine-led-transformation.md` §13.1): one
+ * runner call checks a generation candidate before it is stored — the engine
+ * cases through the call contract (runner protocol 2) and the failure-pattern
+ * probes (`lib/test-sandbox/probe-suite.ts`, runner protocol 3), each a confined
+ * pass the runner derives from the candidate's files: the candidate's modules
+ * run in a SES compartment and only the drivers' outcome lines are read.
+ *
+ * The engine cases are derived here, on the server, from the project's own
+ * source (`deriveEngineCases`) — not taken from the candidate or the request —
+ * so a candidate cannot bring the cases it is judged by. Nothing is written:
+ * no receipt, no verdict, no failed-run record, nothing on the draft. The
+ * answer goes back to the generation, which maps each failure to its function.
+ */
+async function verifyCandidateResponse(input: {
+  projectId: string;
+  projectData: Record<string, unknown>;
+  draft: RepairDraft;
+}): Promise<NextResponse> {
+  const { projectId, projectData, draft } = input;
+  const target = resolveRunnerTarget('mock', readRunnerConfig());
+  if (target.kind === 'unavailable') {
+    return NextResponse.json({ output: '', error: target.reason, exitCode: 1, code: 'runner-unavailable' }, { status: target.status });
+  }
+
+  const files = sandboxFilesFromStoredCode(draft.generatedCode);
+
+  // The engine cases of the signed source, planned exactly as a recorded run
+  // plans them (QA round 3): recomputed from the signed source, branded by
+  // `engineCaseProvenance`, and only those verified cases go into the plan —
+  // never cases taken from the candidate or the request.
+  let engineNotRun: string | null = null;
+  let caseInfo: Array<{ id: string; ruleId: string | null; scope: 'engine-code' | 'fills'; guard: string | null }> = [];
+  let enginePlan: EngineRunPlan | null = null;
+  const signedSource = signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null;
+  if (!signedSource || !signedSource.trim()) engineNotRun = 'Engine cases not run: the project holds no signed source to derive them from.';
+  else if (Buffer.byteLength(signedSource, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) engineNotRun = 'Engine cases not run: the source is larger than the engine derives cases from in one request.';
+  else {
+    const derivation = deriveEngineCasesOf(signedSource);
+    if (!derivation) {
+      logger.error('run-tests: engine cases could not be derived for a verify run', { route: 'api/run-tests', projectId });
+      engineNotRun = 'Engine cases not run: they could not be derived from the source.';
+    } else {
+      const verified = engineCaseProvenance(derivation.cases as unknown as Array<Record<string, unknown>>, derivation).verified;
+      // Who decides each case (step E): the scaffold's own code, or the written functions.
+      const fills = new Set(engineCaseScope(verified).logic);
+      caseInfo = verified.map((c) => ({ id: c.id, ruleId: c.engineCase.trace.ruleId ?? null, scope: fills.has(c.id) ? 'fills' : 'engine-code', guard: engineCaseGuard(c) }));
+      const planned = planEngineRun(verified, files, null);
+      if (planned.kind === 'planned') enginePlan = planned.plan;
+      else if (planned.kind === 'no-contract') engineNotRun = `${NOT_RUN_NO_CONTRACT} (${planned.reason})`;
+      else engineNotRun = 'Engine cases not run: the engine derives no case from this source.';
+    }
+  }
+
+  // The probe pass is derived from the candidate's files: here, and on the runner from the same files.
+  const probe = probeRunInputs(files);
+  const suiteCode = VERIFY_NOOP_SUITE;
+  const inputBytes = files.reduce((n, f) => n + Buffer.byteLength(f.content, 'utf8'), 0) + Buffer.byteLength(suiteCode, 'utf8');
+  if (inputBytes > MAX_RUN_INPUT_BYTES) {
+    return NextResponse.json({ output: '', error: 'Test/code payload exceeds the allowed size limit.', exitCode: 1 }, { status: 413 });
+  }
+  if (!enginePlan && !probe.ok) {
+    return NextResponse.json({
+      mode: 'verify',
+      draftId: draft.draftId,
+      buildError: null,
+      engine: { ran: false, reason: engineNotRun ?? 'Engine cases not run.' },
+      probes: { ran: false, reason: probe.reason },
+    });
+  }
+
+  let probeStdout: string | null = null;
+  let probeReason: string | null = probe.ok ? null : probe.reason;
+  let engineStdout: string | null = null;
+  let engineReason: string | null = engineNotRun;
+  let buildError: string | null = null;
+  let runner: { kind: string; revision: string };
+  if (target.kind === 'isolated') {
+    const call = await callIsolatedRunner(
+      target.url,
+      { files, suiteCode, patterns: [], mode: 'mock', ...(enginePlan ? { engine: enginePlan } : {}), ...(probe.ok ? { probes: true } : {}) },
+      { idToken: (audience) => fetchMetadataIdToken(audience) },
+    );
+    if (!call.ok) {
+      logger.error('run-tests: the isolated runner did not deliver a usable verify report', { projectId, reason: call.reason });
+      return NextResponse.json({ output: '', error: call.reason, exitCode: 1, code: 'runner-error' }, { status: call.status });
+    }
+    runner = { kind: 'isolated', revision: call.report.revision };
+    if (call.report.outcome === 'build-error') buildError = call.report.buildError || 'Compilation failed.';
+    // Read only when the runner's probe report carries the hashes the app derived (`verifyProbeReport`).
+    if (probe.ok) {
+      if (call.probes?.ok && call.report.probes) {
+        if (call.report.probes.outcome === 'build-error') buildError = call.report.probes.buildError || 'Compilation failed.';
+        else probeStdout = call.report.probes.stdout;
+      } else {
+        probeReason = `Failure-pattern probes not run: ${call.probes && !call.probes.ok ? call.probes.reason : 'the runner did not report the probe pass.'}`;
+      }
+    }
+    if (enginePlan) {
+      if (call.engine?.ok && call.report.engine) {
+        if (call.report.engine.outcome === 'build-error') engineReason = `The engine pass did not compile: ${call.report.engine.buildError ?? 'compilation failed'}`;
+        else engineStdout = call.report.engine.stdout;
+      } else {
+        engineReason = call.engine && !call.engine.ok ? call.engine.reason : 'The runner did not report the engine pass.';
+      }
+    }
+  } else {
+    runner = { kind: 'local-emulator', revision: 'local-emulator' };
+    const outcome = await executeLocally(target, { files, suiteCode, patterns: [] });
+    if (outcome.kind === 'unavailable') {
+      return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1, code: 'runner-unavailable' }, { status: 500 });
+    }
+    if (outcome.kind === 'build-error') buildError = outcome.message;
+    if (probe.ok && !buildError) {
+      // The same derivation and the same confined pass the runner runs.
+      const pass = await executeLocally(target, { files: probe.files, suiteCode: probe.suiteCode, patterns: [], probe: probe.probe });
+      if (pass.kind === 'ran') probeStdout = pass.stdout;
+      else if (pass.kind === 'build-error') buildError = pass.message;
+      else probeReason = `Failure-pattern probes not run: ${pass.reason}`;
+    }
+    if (enginePlan && !buildError) {
+      const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
+      const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns, engine: inputs.engine });
+      if (pass.kind === 'ran') engineStdout = pass.stdout;
+      else engineReason = pass.kind === 'build-error' ? `The engine pass did not compile: ${pass.message}` : pass.reason;
+    }
+  }
+
+  // Judged from the probe driver's outcome lines for the probes this route planned
+  // (`probeVerdicts`), never from TAP or anything else the candidate's code could print.
+  const probeResults =
+    probe.ok && probeStdout !== null ? probeVerdicts(probeStdout, probe.probes).map((r) => ({ id: r.id, status: r.status, message: r.message })) : [];
+  // Judged here from the outcome lines against the cases this route planned
+  // (`engineVerdicts`), as a recorded run is — never from TAP the code printed.
+  const engineResults =
+    engineStdout !== null && enginePlan
+      ? engineVerdicts(engineStdout, enginePlan.cases, enginePlan.patterns).map((r) => ({ id: r.id, status: r.status, message: r.message, ...(r.cause ? { cause: r.cause } : {}) }))
+      : [];
+  return NextResponse.json({
+    mode: 'verify',
+    draftId: draft.draftId,
+    runner,
+    buildError,
+    engine: engineStdout !== null ? { ran: true, results: engineResults, cases: caseInfo } : { ran: false, reason: engineReason ?? 'Engine cases not run.' },
+    probes:
+      probe.ok && !buildError && probeStdout !== null
+        ? { ran: true, results: probeResults, skipped: probe.skipped }
+        : {
+            ran: false,
+            reason: !probe.ok ? probe.reason : buildError ? 'Failure-pattern probes not run: the candidate did not compile.' : (probeReason ?? 'Failure-pattern probes not run.'),
+          },
+  });
 }
