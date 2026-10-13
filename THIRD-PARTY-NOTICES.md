@@ -33,6 +33,26 @@ Clean-Core.io's own. No diagram is included — the reference architectures are
 linked, not embedded. The upstream repository ships no `NOTICE` file (checked
 10.10.2026; REUSE.toml carries the copyright and license per path).
 
+## DSAG ABAP-Leitfaden (adapted guidance, metadata and section hashes)
+
+Some rules of Clean-Core.io's ABAP analysis and generated code are adapted from
+the **"DSAG ABAP-Leitfaden"** by DSAG e.V. (Deutschsprachige SAP-Anwendergruppe)
+and contributors (https://1dsag.github.io/ABAP-Leitfaden/authors/), published at
+https://1dsag.github.io/ABAP-Leitfaden/ from the repository
+https://github.com/1DSAG/ABAP-Leitfaden (reviewed at commit
+`100600dfc9d98136b1992bde20e201049cbb1116`), licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/).
+
+**Changes:** translated from German, excerpted, paraphrased and corrected where
+outdated or inconsistent; metadata and section hashes synced weekly. What was
+taken over, corrected or declined is listed per item, with the guide section it
+rests on, in `lib/dsag-citations.ts`. `lib/generated/dsag-abap-guide.json` (written
+by `scripts/sync-dsag-guide.ts`) holds page titles, headings, anchors and a
+SHA-256 per section — no text of the guide. No image of the guide is reused (some
+of its figures are SAP's). Use of the guide does not imply that DSAG e.V. or its
+authors endorse Clean-Core.io or the way it uses the guide.
+
 ## Trademarks
 
 SAP, S/4HANA, ABAP and other SAP product and service names are trademarks or

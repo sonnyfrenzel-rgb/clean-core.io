@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import CcTable from '@/components/cc/Table';
+import { DSAG_REVIEWED_COMMIT } from '@/lib/dsag-citations';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Third-Party Notices & Licenses | Clean-Core.io',
   description:
-    'Open-source software and data Clean-Core.io is built on, with its attributions — SAP Cloudification Repository and SAP Architecture Center, Apache-2.0.',
+    'Open-source software and data Clean-Core.io is built on, with its attributions — SAP Cloudification Repository and SAP Architecture Center (Apache-2.0), DSAG ABAP-Leitfaden (CC BY 4.0).',
   alternates: {
     canonical: 'https://clean-core.io/licenses',
   },
@@ -122,6 +123,39 @@ export default function LicensesPage() {
               <p>
                 <strong>No NOTICE file:</strong> the upstream repository does not ship an
                 Apache <code className={CODE}>NOTICE</code> text file (checked 10.10.2026), so Apache-2.0 §4(d) does not apply.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-cc-line" />
+
+          {/* DSAG ABAP-Leitfaden */}
+          <section>
+            <h2 className={H2}>
+              Guidance — DSAG ABAP-Leitfaden
+            </h2>
+            <div className="space-y-3 text-sm">
+              <p>
+                Some rules of Clean-Core.io&rsquo;s ABAP analysis and generated code are adapted from the{' '}
+                <strong>&ldquo;DSAG ABAP-Leitfaden&rdquo;</strong> by DSAG e.V. and{' '}
+                <a href="https://1dsag.github.io/ABAP-Leitfaden/authors/" className={LINK} target="_blank" rel="noopener noreferrer">contributors</a>,
+                published at{' '}
+                <a href="https://1dsag.github.io/ABAP-Leitfaden/" className={LINK} target="_blank" rel="noopener noreferrer">1dsag.github.io/ABAP-Leitfaden</a>{' '}
+                from the repository{' '}
+                <a href={`https://github.com/1DSAG/ABAP-Leitfaden/tree/${DSAG_REVIEWED_COMMIT}`} className={LINK} target="_blank" rel="noopener noreferrer">github.com/1DSAG/ABAP-Leitfaden</a>{' '}
+                (reviewed at commit <code className={CODE}>{DSAG_REVIEWED_COMMIT.slice(0, 8)}</code>).
+              </p>
+              <p>
+                Licensed under the <strong>Creative Commons Attribution 4.0 International License</strong> (CC BY 4.0), available at{' '}
+                <a href="https://creativecommons.org/licenses/by/4.0/" className={LINK} target="_blank" rel="noopener noreferrer">creativecommons.org/licenses/by/4.0</a>.
+              </p>
+              <p>
+                <strong>Changes:</strong> translated from German, excerpted, paraphrased and corrected where outdated or
+                inconsistent; metadata and section hashes synced weekly. No image of the guide is reused.
+              </p>
+              <p>
+                <strong>No endorsement:</strong> use of the guide does not imply that DSAG e.V. or its authors endorse
+                Clean-Core.io or the way it uses the guide.
               </p>
             </div>
           </section>
