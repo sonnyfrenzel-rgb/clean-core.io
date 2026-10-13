@@ -23,7 +23,9 @@
  *   2. `lib/abap/generated/sap-identifiers.json`, written weekly by
  *      `scripts/sync-sap-identifiers.ts` (`npm run sync:identifiers`) from the
  *      public sources whose terms allow it, with source and fetch date per
- *      entry, and the names of SAP's released CDS views from the SAP
+ *      entry: communication scenarios from SAP's documentation sources on
+ *      GitHub (SAP-docs, CC BY 4.0 — each entry with its product, commit and
+ *      attribution), and the names of SAP's released CDS views from the SAP
  *      Cloudification Repository this repository already syncs.
  *
  * Read at build time only — nothing is fetched at run time.
@@ -74,6 +76,8 @@ export interface SapIdentifierEntry {
   checked: string;
   /** The product the source documents, where it is not S/4HANA itself or not obvious (synced entries). */
   product?: string;
+  /** Read by the weekly sync from a licensed source (SAP-docs on GitHub), not curated by hand. */
+  synced?: true;
   /** The source names the ID without a title: a name found in a list, nothing more. */
   listedOnly?: boolean;
   /** The attribution the source's licence asks for (CC BY 4.0), shown wherever the entry is. */
@@ -341,8 +345,9 @@ function fromSynced(e: SapIdentifierFile['entries'][number]): SapIdentifierEntry
     ...(e.protocol ? { protocol: e.protocol } : {}),
     ...(e.availableInRelease ? { release: e.availableInRelease } : {}),
     product: e.product,
+    synced: true,
     listedOnly: e.title === null,
-    source: { label: `SAP documentation on GitHub (${e.source.repo}), ${e.product}, read ${day}`, url: e.source.url },
+    source: { label: `SAP documentation on GitHub (${e.source.repo}), read ${day}`, url: e.source.url },
     attribution: e.license === 'CC-BY-4.0' ? sapDocsAttribution(e.source.url) : `${e.license} — source: ${e.source.url}`,
     checked: day,
   };

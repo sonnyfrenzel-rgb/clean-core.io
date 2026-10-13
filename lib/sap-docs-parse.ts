@@ -234,16 +234,51 @@ export function scenariosFromProse(md: string): ParsedScenario[] {
 export function scenarioIdsInContext(md: string, context: RegExp): ParsedScenario[] {
   const out: ParsedScenario[] = [];
   const seen = new Set<string>();
-  for (const line of md.split(/\r?\n/)) {
-    const text = unescapeMarkdown(line);
+  const add = (id: string) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push({ id, title: null, apiRefs: [], protocol: null, deprecated: null });
+  };
+  const lines = md.split(/\r?\n/);
+  const indent = (l: string) => /^\s*/.exec(l)![0].length;
+  for (let i = 0; i < lines.length; i++) {
+    const text = unescapeMarkdown(lines[i]);
     if (!/communication scenarios?/i.test(text) || !context.test(text)) continue;
-    for (const m of text.matchAll(SCENARIO_ID)) {
-      if (seen.has(m[0])) continue;
-      seen.add(m[0]);
-      out.push({ id: m[0], title: null, apiRefs: [], protocol: null, deprecated: null });
+    for (const m of text.matchAll(SCENARIO_ID)) add(m[0]);
+    // "In the SAP S/4HANA Cloud system, … for the following communication
+    // scenarios:" — the bullets right under it name one ID each, at their start.
+    // Deeper lines ("For more information, …") are the bullets' own text and
+    // are not read; anything at the intro's depth or shallower ends the list.
+    if (!/:\s*$/.test(text)) continue;
+    const base = indent(lines[i]);
+    let bulletIndent: number | null = null;
+    for (let j = i + 1; j < lines.length; j++) {
+      const raw = lines[j];
+      if (!raw.trim()) continue;
+      const d = indent(raw);
+      const bullet = /^\s*[-*+]\s+(.*)$/.exec(raw);
+      if (bullet && bulletIndent === null && d >= base) bulletIndent = d;
+      if (bullet && d === bulletIndent) {
+        const lead = /^`?(SAP_COM_[0-9A-Z]{4})`?(?:\s|$)/.exec(unescapeMarkdown(bullet[1]).trim());
+        if (!lead) break;
+        add(lead[1]);
+        continue;
+      }
+      if (bulletIndent !== null && d > bulletIndent) continue;
+      break;
     }
   }
   return out;
+}
+
+/**
+ * The SPDX identifier a LICENSE file's text states, for the licences the sync
+ * accepts — or null. Used where a repository has no REUSE.toml.
+ */
+export function licenseFromText(text: string): string | null {
+  if (/Attribution 4\.0 International/i.test(text) && /creativecommons\.org\/licenses\/by\/4\.0|Creative Commons/i.test(text) && !/NonCommercial|NoDerivatives|ShareAlike/i.test(text)) return 'CC-BY-4.0';
+  if (/Apache License,?\s+Version 2\.0/i.test(text)) return 'Apache-2.0';
+  return null;
 }
 
 /** The licence a REUSE.toml states for every path (`path = "**"`), or null. */

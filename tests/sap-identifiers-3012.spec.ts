@@ -267,10 +267,11 @@ test.describe('SAP’s synced name lists', () => {
 });
 
 test.describe('the sync: sources, parsing, replace only if complete', () => {
-  test('only the Apache-2.0 repository is fetched; SAP’s websites are listed as not synced, with the terms', () => {
+  test('only the open GitHub sources are fetched; SAP’s websites are listed as not synced, with the terms', () => {
     for (const spec of SAP_NAME_LIST_SPECS) expect(spec.url).toMatch(/^https:\/\/raw\.githubusercontent\.com\/SAP\/abap-atc-cr-cv-s4hc\/main\/src\//);
     const synced = SAP_IDENTIFIER_SOURCES.filter((s) => s.synced).map((s) => s.key);
-    expect(synced).toEqual(['sap-cloudification-repository']);
+    // The Apache-2.0 Cloudification Repository and SAP's CC BY 4.0 documentation on GitHub (13.10.2026).
+    expect(synced).toEqual(['sap-cloudification-repository', 'sap-docs']);
     for (const s of SAP_IDENTIFIER_SOURCES.filter((x) => !x.synced)) {
       expect(s.terms, s.key).toContain('https://www.sap.com/about/legal/terms-of-use.html');
     }

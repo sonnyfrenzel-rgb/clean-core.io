@@ -276,8 +276,9 @@ test.describe('the prompts carry the rules (source guards)', () => {
       // The route card of the stored analysis checks the model's target and rationale (QA bead0ed34426).
       ['app/(app)/project/[projectId]/analyze/page.tsx', /targetArtifact=\{analysisData\.extensibilityRouting\?\.targetArtifact[^}]*\}[\s\S]{0,600}?\bmodelWords\b/],
       ['lib/markdownFormatter.ts', /annotateSapReferences as checked[\s\S]*\bchecked\(data\.standardFit/],
-      ['lib/design-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)/],
-      ['lib/analysis-export.ts', /annotateSapReferences as checked[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)/],
+      // The HTML exports mark through an annotator that also collects the CC BY 4.0 attributions (SAP-docs).
+      ['lib/design-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(map\.sapStandardApiName\)\)[\s\S]*const attributionSection = sapAttributionHtml\(sapRefs\.attributions\(\), esc\);[\s\S]*\$\{attributionSection\}/],
+      ['lib/analysis-export.ts', /const checked = sapRefs\.annotate;[\s\S]*esc\(checked\(data\.recommendations\?\.keepCoreClean\)\)[\s\S]*sapAttributionHtml\(sapRefs\.attributions\(\), esc\)/],
     ];
     for (const [rel, re] of sites) expect(read(rel), rel).toMatch(re);
     // The legacy, non-JSON narrative is model-written too: its identifiers are

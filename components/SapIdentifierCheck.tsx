@@ -76,6 +76,20 @@ export function SapIdMark({ check }: { check: SapIdCheck }) {
           </a>
         </>
       ) : null}
+      {check.attribution ? (
+        <>
+          {' '}
+          {/* SAP's GitHub documentation is CC BY 4.0: the licence is linked wherever its facts are shown. */}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noopener noreferrer license"
+            className="underline underline-offset-2 hover:text-cc-ink"
+          >
+            licence
+          </a>
+        </>
+      ) : null}
     </span>
   );
 }

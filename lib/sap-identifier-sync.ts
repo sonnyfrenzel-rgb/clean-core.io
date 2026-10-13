@@ -14,6 +14,14 @@
  *   - SAP Cloudification Repository, github.com/SAP/abap-atc-cr-cv-s4hc —
  *     Apache License 2.0, read through raw.githubusercontent.com like the
  *     catalog sync already does. Synced.
+ *   - SAP documentation sources on GitHub, github.com/SAP-docs — CC BY 4.0 per
+ *     repository (REUSE.toml), read through api.github.com at the repository's
+ *     HEAD commit (owner, 13.10.2026). Synced: the pinned documents in
+ *     `SAP_DOCS_SOURCES`, communication scenario IDs and the titles the text
+ *     pairs with them, each entry with its source, licence, commit and the
+ *     attribution CC BY 4.0 asks for. SAP-docs holds no complete list of SAP
+ *     S/4HANA Cloud communication scenarios (searched 13.10.2026); the
+ *     documents name the scenarios their own topic needs.
  *   - SAP Help Portal (help.sap.com, incl. /http.svc), SAP Business Accelerator
  *     Hub (api.sap.com, incl. /odata/1.0/catalog.svc) and the SAP Fiori apps
  *     reference library — governed by SAP's "Terms of Use for SAP Websites"
@@ -157,6 +165,13 @@ export const SAP_IDENTIFIER_SOURCES: readonly SyncedSourceMeta[] = Object.freeze
     label: 'SAP Cloudification Repository (github.com/SAP/abap-atc-cr-cv-s4hc)',
     url: 'https://github.com/SAP/abap-atc-cr-cv-s4hc',
     terms: 'Apache License 2.0 (https://github.com/SAP/abap-atc-cr-cv-s4hc/blob/main/LICENSE); read like the catalog sync does',
+    synced: true,
+  },
+  {
+    key: 'sap-docs',
+    label: 'SAP documentation sources on GitHub (github.com/SAP-docs)',
+    url: 'https://github.com/SAP-docs',
+    terms: 'CC BY 4.0 per repository (REUSE.toml or LICENSE, checked on every run); read through api.github.com at the HEAD commit of each repository; attribution kept per entry',
     synced: true,
   },
   {
@@ -329,7 +344,8 @@ export interface SapDocumentSpec {
 }
 
 /**
- * The pinned documents, each checked by hand on 12.10.2026: the repository's
+ * The pinned documents, each checked by hand on 12.10.2026 (the Datasphere one
+ * on 13.10.2026): the repository's
  * REUSE.toml states CC-BY-4.0 for `**` (btp-cloud-platform: "SPDX-License-Identifier
  * = CC-BY-4.0", © SAP SE or an SAP affiliate company and contributors). The
  * sync checks the licence again on every run and skips a document whose
@@ -363,6 +379,19 @@ export const SAP_DOCS_SOURCES: readonly SapDocumentSpec[] = Object.freeze([
     edition: null,
     read: 'scenarios',
     minCount: 20,
+  },
+  {
+    // Checked 13.10.2026: REUSE.toml of SAP-docs/sap-datasphere states CC-BY-4.0 for `**`.
+    // The bullets under "In the SAP S/4HANA Cloud system, communication arrangements
+    // have been created for the following communication scenarios:" — IDs, no titles.
+    key: 'sapdocs-datasphere-s4hc-connectivity',
+    repo: 'sap-datasphere',
+    path: 'docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md',
+    product: 'SAP S/4HANA Cloud',
+    edition: null,
+    read: 'ids-in-context',
+    context: /SAP S\/4HANA Cloud/,
+    minCount: 3,
   },
 ] as SapDocumentSpec[]);
 
@@ -542,14 +571,19 @@ export function buildIdentifierFile(
   };
 }
 
-/** The file with its run dates blanked — two syncs that read the same facts compare equal. */
+/**
+ * The file with its run dates blanked — two syncs that read the same facts
+ * compare equal. A SAP-docs commit that left the read facts as they were is not
+ * a change either (those repositories move daily): the file keeps the earlier
+ * commit, whose permalink states the same facts.
+ */
 export function comparable(file: SapIdentifierFile): string {
   return JSON.stringify({
     sources: file.sources,
     lists: file.lists.map((l) => ({ ...l, fetchedAt: null, status: null })),
-    documents: file.documents.map((d) => ({ ...d, observedAt: null, status: null })),
-    entries: file.entries.map((e) => ({ ...e, observedAt: null })),
-    conflicts: file.conflicts,
+    documents: file.documents.map((d) => ({ ...d, observedAt: null, status: null, sourceRevision: null })),
+    entries: file.entries.map((e) => ({ ...e, observedAt: null, sourceRevision: null, source: { ...e.source, url: null } })),
+    conflicts: file.conflicts.map((c) => ({ ...c, url: null })),
   });
 }
 
@@ -578,6 +612,8 @@ export interface PoliteFetchOptions {
   /** Largest body accepted, bytes. */
   maxBytes?: number;
   fetchImpl?: typeof fetch;
+  /** Extra request headers (an `Authorization` for the GitHub API where a token is at hand). */
+  headers?: Record<string, string>;
   sleep?: (ms: number) => Promise<void>;
   /** Optional cache: read before a request, written after a 200. */
   cache?: { get(url: string): string | null; set(url: string, body: string): void };
@@ -613,7 +649,7 @@ export function politeFetcher(options: PoliteFetchOptions = {}) {
         const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         let status = 0;
         try {
-          const res = await doFetch(url, { headers: { 'User-Agent': SYNC_USER_AGENT, Accept: accept }, signal: ctrl.signal });
+          const res = await doFetch(url, { headers: { ...options.headers, 'User-Agent': SYNC_USER_AGENT, Accept: accept }, signal: ctrl.signal });
           status = res.status;
           if (res.ok) {
             const body = await res.text();

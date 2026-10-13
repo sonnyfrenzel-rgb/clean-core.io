@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { findSapIdentifiers, sapIdMark, sapIdStateWord } from '../lib/sap-reference-check';
 import { CURATED_SCENARIO_LIST, CURATED_SCOPE_ITEM_LIST } from '../lib/sap-curated-lists';
 import { SAP_SCOPE_ITEMS } from '../lib/sap-scope-items';
+import { setSyncedSapIdentifiers } from '../lib/sap-identifiers';
+import { EMPTY_SAP_IDENTIFIER_FILE, SAP_DOCS_SOURCES, buildIdentifierFile, entriesFromDocument } from '../lib/sap-identifier-sync';
 
 /**
  * The owner's hand-curated scope-item and communication-scenario lists
@@ -61,5 +63,32 @@ test('the lists hold ID and title only, one row per ID, and agree with every pag
   for (const s of SAP_SCOPE_ITEMS) {
     const listed = CURATED_SCOPE_ITEM_LIST.entries.find((e) => e.id === s.id);
     if (listed) expect(norm(listed.title), s.id).toBe(norm(s.title));
+  }
+});
+
+test('SAP documentation on GitHub wins over the list: a scenario it titles is no longer "curated list"', () => {
+  const spec = SAP_DOCS_SOURCES.find((s) => s.key === 'sapdocs-s4hc-service-plans')!;
+  const markdown = [
+    '> -   *Enterprise Eventing Integration (SAP_COM_0092)*: consume events.',
+    '> -   *Product Integration (SAP_COM_0009)*: replicate products.',
+    '> -   *Sales Order Integration (SAP_COM_0109)*: sales orders.',
+  ].join('\n');
+  const result = { key: spec.key, markdown, license: 'CC-BY-4.0', sourceRevision: 'c'.repeat(40), observedAt: '2026-10-13T06:45:00.000Z' };
+  const file = buildIdentifierFile(EMPTY_SAP_IDENTIFIER_FILE, [], '2026-10-13T06:45:00.000Z', {
+    documents: [{ spec, result, entries: entriesFromDocument(spec, result) }],
+  }).file;
+  try {
+    expect(one('Events via SAP_COM_0092.', 'SAP_COM_0092').curatedList).toBe(true);
+    setSyncedSapIdentifiers(file);
+    const c = one('Events via SAP_COM_0092 (Enterprise Eventing Integration).', 'SAP_COM_0092');
+    expect(c.status).toBe('verified');
+    expect(c.curatedList).toBeUndefined();
+    expect(c.sapDocs).toBe(true);
+    expect(sapIdStateWord(c)).toBe('verified');
+    // A name the list holds and SAP's documentation contradicts is SAP's mismatch, not the list's.
+    const wrong = one('Events via SAP_COM_0092 (Credit Management Integration).', 'SAP_COM_0092');
+    expect(sapIdStateWord(wrong)).toBe("name does not match SAP's");
+  } finally {
+    setSyncedSapIdentifiers(EMPTY_SAP_IDENTIFIER_FILE);
   }
 });

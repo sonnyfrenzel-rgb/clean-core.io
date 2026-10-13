@@ -12,6 +12,7 @@ import {
   sapIdentifierIndex,
   sapNameListsLoaded,
   sapNameListsVersion,
+  syncedSapIdentifiers,
   type ReleaseSpan,
   type SapProtocol,
 } from './sap-identifiers';
@@ -60,8 +61,18 @@ import {
  *   1. `CURATED_SAP_IDS` below — only entries whose SAP source is named on the
  *      entry. No entry goes in without one.
  *   2. `lib/sap-identifiers.ts` (3.0.12) — curated identifiers with a public
- *      SAP page each, over the weekly synced `lib/abap/generated/sap-identifiers.json`,
- *      and SAP's released CDS views (names only: `catalog`).
+ *      SAP page each, over the weekly synced `lib/abap/generated/sap-identifiers.json`
+ *      (communication scenarios from SAP's documentation on GitHub, CC BY 4.0,
+ *      each with its product and attribution; an ID named there without a
+ *      title is `catalog`), and SAP's released CDS views (names only: `catalog`).
+ *   2a. The owner's hand-curated lists (`lib/sap-curated-lists.ts`): under
+ *      every SAP source, over our own catalog.
+ *
+ * Precedence, highest first: a SAP page held by hand (`CURATED_SAP_IDS`,
+ * `CURATED_SAP_IDENTIFIERS`) > SAP documentation on GitHub (synced, with its
+ * source) > a curated list > this product's catalog. Where SAP's GitHub
+ * documentation names an ID without a title and a curated list holds a title
+ * for it, the list stands: a name to compare is worth more than a bare ID.
  *   2b. The successors of `lib/abap/sap-api-catalog.ts` — this product's own
  *      2024 catalog; a hit there is a name found in a catalog, shown with the
  *      catalog's release (`SAP_API_CATALOG_STAMP`).
@@ -90,7 +101,16 @@ export type SapIdMismatch = 'name' | 'protocol' | 'release';
  * Where the data for an ID comes from: a public SAP page, SAP's released-object
  * list, a hand-curated list (`lib/sap-curated-lists.ts`), or our own catalog.
  */
-type KnownOrigin = 'public' | 'released-list' | 'curated-list' | 'product-catalog';
+type KnownOrigin = 'public' | 'sap-docs' | 'released-list' | 'curated-list' | 'product-catalog';
+
+/** A different title another SAP source gives for the same ID — said beside the one shown, never over it. */
+export interface SapOtherTitle {
+  title: string;
+  /** The product that source documents. */
+  product: string | null;
+  source: SapSource;
+  attribution: string | null;
+}
 
 export interface SapSource {
   /** Short, for an inline mark: "SAP KBA 3409472". */
@@ -116,6 +136,13 @@ interface KnownSapId {
   release?: string;
   /** `public` when absent. */
   origin?: KnownOrigin;
+  /** The product the source documents (SAP-docs entries): context, not a claim about other products. */
+  product?: string;
+  /** The attribution the source's licence asks for (CC BY 4.0). */
+  attribution?: string;
+  otherTitle?: SapOtherTitle;
+  /** The source names the ID without a title. */
+  listedOnly?: boolean;
 }
 
 /** The review's primary sources (FI_Collection_Worklist_Review.md §10, retrieved 11.10.2026). */
@@ -224,8 +251,11 @@ function knownTables(): KnownTables {
     }
   }
   for (const e of sapIdentifierIndex().values()) {
+    const key = e.id.toUpperCase();
+    // A bare ID from SAP's GitHub documentation does not displace a curated list's title.
+    if (e.synced && e.listedOnly && map.get(key)?.origin === 'curated-list') continue;
     const technical = TECHNICAL_KINDS.has(e.kind);
-    map.set(e.id.toUpperCase(), {
+    map.set(key, {
       id: e.id,
       kind: e.kind,
       name: technical ? null : e.title,
@@ -235,12 +265,27 @@ function knownTables(): KnownTables {
       ...(e.onPremise ? { onPremise: e.onPremise } : {}),
       ...(e.release ? { release: e.release } : {}),
       ...(e.kind === 'function-module' && isClassicBapi(e.id) ? { caveat: CLASSIC_BAPI_CAVEAT } : {}),
-      origin: 'public',
+      ...(e.synced ? { product: e.product, attribution: e.attribution, listedOnly: e.listedOnly === true } : {}),
+      ...(e.otherTitle
+        ? { otherTitle: { title: e.otherTitle.title, product: e.otherTitle.product, source: { ...e.otherTitle.source }, attribution: e.otherTitle.attribution ?? null } }
+        : {}),
+      origin: e.synced ? 'sap-docs' : 'public',
     });
   }
   for (const entry of CURATED_SAP_IDS) {
-    const page = map.get(entry.id.toUpperCase());
-    map.set(entry.id.toUpperCase(), { ...(page?.origin === 'public' ? page : {}), ...entry, origin: 'public' });
+    const key = entry.id.toUpperCase();
+    const before = map.get(key);
+    // A page held by hand: its facts only. The synced fields of SAP's GitHub
+    // documentation are never spread under it; a title that differs from the
+    // row's own is said beside it.
+    const synced = before?.origin === 'sap-docs' ? before : null;
+    const otherTitle: SapOtherTitle | undefined =
+      synced && synced.name && entry.name && !namesAgree(synced.name, entry.name)
+        ? { title: synced.name, product: synced.product ?? null, source: synced.source, attribution: synced.attribution ?? null }
+        : before?.origin === 'public'
+          ? before.otherTitle
+          : undefined;
+    map.set(key, { ...(before?.origin === 'public' ? before : {}), ...entry, ...(otherTitle ? { otherTitle } : {}), origin: 'public' });
   }
   const all = [...map.values()];
   tables = {
@@ -278,6 +323,14 @@ export interface SapIdCheck {
   sapTitle: string | null;
   /** The ID and its name come from a hand-curated list, not a SAP page (`lib/sap-curated-lists.ts`). */
   curatedList?: true;
+  /** The facts come from SAP's documentation on GitHub (synced weekly, CC BY 4.0). */
+  sapDocs?: true;
+  /** The product the source documents, for an entry from SAP's GitHub documentation. */
+  product?: string;
+  /** The attribution the source's licence asks for, wherever its facts are shown. */
+  attribution?: string;
+  /** Another SAP source titles the ID differently: a flagged caveat beside SAP's name. */
+  otherTitle?: SapOtherTitle;
   /** Where in the text: the first occurrence. */
   index: number;
   length: number;
@@ -585,6 +638,10 @@ function classify(text: string, hit: RawHit): SapIdCheck {
     sapRelease: known?.release ?? null,
     sapTitle: known?.title ?? null,
     ...(known?.origin === 'curated-list' ? { curatedList: true as const } : {}),
+    ...(known?.origin === 'sap-docs' ? { sapDocs: true as const } : {}),
+    ...(known?.product ? { product: known.product } : {}),
+    ...(known?.attribution ? { attribution: known.attribution } : {}),
+    ...(known?.otherTitle ? { otherTitle: known.otherTitle } : {}),
     index: hit.index,
     length: hit.length,
   };
@@ -597,6 +654,8 @@ function classify(text: string, hit: RawHit): SapIdCheck {
     if (modelName && known.name && !namesAgree(modelName, known.name)) return { ...base, status: 'mismatch', mismatchOn: 'name' };
     return { ...base, status: 'catalog' };
   }
+  // SAP's GitHub documentation names the ID without a title: a name found in a list.
+  if (known.origin === 'sap-docs' && known.listedOnly && !TECHNICAL_KINDS.has(known.kind)) return { ...base, status: 'catalog' };
   // What the source states and the model contradicts: the protocol, then the release.
   if (modelProtocol && known.protocol && modelProtocol !== known.protocol) {
     return { ...base, status: 'mismatch', mismatchOn: 'protocol' };
@@ -673,6 +732,26 @@ const PROTOCOL_WORD: Readonly<Record<SapProtocol, string>> = Object.freeze({ V2:
 
 /** The mark after an ID, in plain text: the same words in the UI, the markdown and the HTML exports. */
 export function sapIdMark(check: SapIdCheck): string {
+  return sapIdMarkCore(check) + sapIdMarkTail(check);
+}
+
+/** What follows the mark of an entry from SAP's GitHub documentation, or one with a second SAP title: the conflict, then the licence. */
+function sapIdMarkTail(check: SapIdCheck): string {
+  const o = check.otherTitle;
+  const other = o
+    ? `; sources differ: ${o.source.label}${o.product ? ` (${o.product})` : ''} titles it “${o.title}”${o.attribution && !check.attribution ? ` — ${SAP_DOCS_LICENCE_SHORT}` : ''}`
+    : '';
+  const licence = check.attribution ? `; ${SAP_DOCS_LICENCE_SHORT}` : '';
+  return other + licence;
+}
+
+/** The short form of the CC BY 4.0 attribution inside a mark; the full one stands in the document's attribution section. */
+export const SAP_DOCS_LICENCE_SHORT = '© SAP SE and contributors, CC BY 4.0, adapted';
+
+/** " (documented for SAP S/4HANA Cloud)" — the product an entry from SAP's GitHub documentation belongs to. */
+const productWords = (check: SapIdCheck) => (check.product ? ` (documented for ${check.product})` : '');
+
+function sapIdMarkCore(check: SapIdCheck): string {
   const src = check.source ? check.source.label : '';
   const caveat = check.caveat ? `; SAP restriction: ${check.caveat}` : '';
   const facts = [
@@ -681,13 +760,16 @@ export function sapIdMark(check: SapIdCheck): string {
     check.sapRelease ?? '',
   ].filter(Boolean).join(', ');
   if (check.status === 'verified') {
-    if (check.sapName) return `verified: SAP lists ${check.id} as “${check.sapName}”${check.sapRelease ? ` (${check.sapRelease})` : ''}, ${src}${caveat}`;
+    if (check.sapName) return `verified: SAP lists ${check.id} as “${check.sapName}”${check.sapRelease ? ` (${check.sapRelease})` : ''}${productWords(check)}, ${src}${caveat}`;
     return facts
       ? `verified: SAP lists ${check.id} — ${facts}, ${src}${caveat}`
       : `verified: ${check.id} is in ${src}${caveat}`;
   }
   if (check.status === 'catalog' && check.curatedList) {
     return `name found in curated list: ${check.id} is “${check.sapName}” in the ${src} — not checked against a SAP page; check before use${caveat}`;
+  }
+  if (check.status === 'catalog' && check.sapDocs) {
+    return `name found in catalog: SAP's documentation names ${check.id}${productWords(check)} without a title, ${src} — check before use${caveat}`;
   }
   if (check.status === 'catalog') {
     return check.source?.url
@@ -702,10 +784,10 @@ export function sapIdMark(check: SapIdCheck): string {
       return `release does not match SAP's (the text names release ${check.modelRelease}; SAP: ${check.id}${check.sapName ? ` “${check.sapName}”` : ''} — ${check.sapRelease ?? 'another release'}, ${src})${caveat}`;
     }
     if (check.curatedList) return `name does not match the curated list (the ${src} gives ${check.id} as “${check.sapName}”)${caveat}`;
-    return `name does not match SAP's (SAP: ${check.id} is “${check.sapName}”, ${src})${caveat}`;
+    return `name does not match SAP's (SAP: ${check.id} is “${check.sapName}”${productWords(check)}, ${src})${caveat}`;
   }
   return check.sapName
-    ? `not verified — SAP lists ${check.id} as “${check.sapName}”, ${src}; check before use${caveat}`
+    ? `not verified — SAP lists ${check.id} as “${check.sapName}”${productWords(check)}, ${src}; check before use${caveat}`
     : `not verified — check before use`;
 }
 
@@ -738,6 +820,10 @@ export function occurrencesToMark(checks: readonly SapIdCheck[]): SapIdCheck[] {
  * exports and the HTML exports (escaped after this) both read it.
  */
 export function annotateSapReferences(text: unknown): string {
+  return annotateInto(text, null);
+}
+
+function annotateInto(text: unknown, sink: Set<string> | null): string {
   if (typeof text !== 'string') return text == null ? '' : String(text);
   if (!text) return text;
   let out = '';
@@ -745,9 +831,36 @@ export function annotateSapReferences(text: unknown): string {
   for (const c of occurrencesToMark(findSapIdentifiers(text))) {
     const end = c.index + c.length;
     out += text.slice(pos, end) + ` [${sapIdMark(c)}]`;
+    if (sink) for (const a of attributionsOf(c)) sink.add(a);
     pos = end;
   }
   return out + text.slice(pos);
+}
+
+/** The full attributions behind one check: its own source and the source of a differing title. */
+function attributionsOf(c: SapIdCheck): string[] {
+  return [c.attribution, c.otherTitle?.attribution].filter((a): a is string => !!a);
+}
+
+/** The heading and lead of the attribution section, the same in markdown and HTML. */
+export const SAP_DOCS_ATTRIBUTION_HEADING = 'Attribution';
+export const SAP_DOCS_ATTRIBUTION_LEAD =
+  'Some SAP identifier facts in this document (IDs and titles of communication scenarios) were extracted from SAP documentation published on GitHub under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). The sources, at the commit they were read:';
+
+/**
+ * For an export that marks several texts one at a time (the HTML exports): the
+ * marks, and afterwards the full attributions every mark it wrote needs.
+ */
+export function sapReferenceAnnotator(): { annotate: (text: unknown) => string; attributions: () => string[] } {
+  const sink = new Set<string>();
+  return { annotate: (text: unknown) => annotateInto(text, sink), attributions: () => [...sink].sort() };
+}
+
+/** The full attributions the SAP identifiers of these texts need, one per source document. */
+export function sapReferenceAttributions(...texts: unknown[]): string[] {
+  const out = new Set<string>();
+  for (const c of checkSapReferences(...texts)) for (const a of attributionsOf(c)) out.add(a);
+  return [...out].sort();
 }
 
 /**
@@ -756,8 +869,14 @@ export function annotateSapReferences(text: unknown): string {
  */
 export function sapIdentifierSourcesNote(): string {
   const sync = identifierSyncDate();
+  const docs = syncedSapIdentifiers().documents.filter((d) => d.count > 0);
+  const repos = [...new Set(docs.map((d) => d.repo))];
   return [
     `Checked against: curated SAP identifiers (public SAP pages, checked ${SAP_IDENTIFIERS_CHECKED})`,
+    ...(docs.length
+      ? [`SAP documentation on GitHub (${repos.join(', ')}; CC BY 4.0): communication scenarios from ${docs.length} document${docs.length === 1 ? '' : 's'}${sync ? `, weekly sync of ${sync}` : ''}`]
+      : []),
+    `the curated scope-item and scenario lists (${CURATED_SCOPE_ITEM_LIST.checked})`,
     sapNameListsLoaded() ? `${releasedListsStamp()}${sync ? ` (weekly sync of ${sync})` : ''}` : releasedListsStamp(),
     SAP_API_CATALOG_STAMP,
   ].join('; ') + '.';
@@ -781,10 +900,20 @@ export function sapReferenceAppendixMarkdown(...texts: unknown[]): string {
       c.mismatchOn === 'release' && c.modelRelease ? ` (text names release ${c.modelRelease})` :
       c.modelName ? ` (model wrote “${c.modelName}”)` : '';
     const name = c.sapName ?? c.sapTitle ?? (c.status === 'verified' || c.status === 'catalog' ? c.id : '—');
-    const facts = [c.sapProtocol ? PROTOCOL_WORD[c.sapProtocol] : '', c.sapRelease ?? ''].filter(Boolean).join('; ');
-    md += `| \`${c.id}\` | ${SAP_ID_KIND_LABEL[c.kind]} | ${sapIdStateWord(c)}${said} | ${name}${facts ? ` (${facts})` : ''}${c.caveat ? ` — ${c.caveat}` : ''} | ${src} |\n`;
+    const facts = [c.sapProtocol ? PROTOCOL_WORD[c.sapProtocol] : '', c.sapRelease ?? '', c.product ? `documented for ${c.product}` : '']
+      .filter(Boolean)
+      .join('; ');
+    const o = c.otherTitle;
+    const other = o
+      ? ` — sources differ: ${o.source.url ? `[${o.source.label}](${o.source.url})` : o.source.label}${o.product ? ` (${o.product})` : ''} titles it “${o.title}”`
+      : '';
+    md += `| \`${c.id}\` | ${SAP_ID_KIND_LABEL[c.kind]} | ${sapIdStateWord(c)}${said} | ${name}${facts ? ` (${facts})` : ''}${c.caveat ? ` — ${c.caveat}` : ''}${other} | ${src}${c.attribution ? ` (${SAP_DOCS_LICENCE_SHORT})` : ''} |\n`;
   }
   md += `\n${sapIdentifierSourcesNote()}\n`;
+  const attributions = [...new Set(checks.flatMap(attributionsOf))].sort();
+  if (attributions.length) {
+    md += `\n### ${SAP_DOCS_ATTRIBUTION_HEADING}\n${SAP_DOCS_ATTRIBUTION_LEAD}\n\n${attributions.map((a) => `- ${a}`).join('\n')}\n`;
+  }
   return md + '\n';
 }
 
@@ -848,3 +977,13 @@ export const SAP_REFERENCE_PROMPT_RULES = `SAP IDENTIFIERS — every SAP identif
 
 /** The comparison every recommendation of a route carries (review 6.3). */
 export const OPTION_COMPARISON_RULE = `Compare the options before you recommend one — adopt the SAP standard and retire the custom code; adapt the existing logic; an in-app RAP extension; a side-by-side CAP application. State the reason for the option you recommend over the others, and what is not known that could change it (target release, usage, volumes, external users, cost data). Do not assume the standard covers everything, and do not assume CAP is better.`;
+
+/**
+ * The attribution section of an HTML export, from the lines a
+ * `sapReferenceAnnotator` collected; empty when no mark came from a CC BY
+ * source. `esc` is the export's own HTML escaper.
+ */
+export function sapAttributionHtml(lines: readonly string[], esc: (s: string) => string): string {
+  if (!lines.length) return '';
+  return `<h2 data-sap-attribution="">${esc(SAP_DOCS_ATTRIBUTION_HEADING)}</h2><p class="muted">${esc(SAP_DOCS_ATTRIBUTION_LEAD)}</p><ul class="muted">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
+}
