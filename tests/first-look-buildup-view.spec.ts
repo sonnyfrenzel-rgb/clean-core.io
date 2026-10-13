@@ -19,7 +19,7 @@ import { countSourceLines } from '../lib/source-lines';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'first-look-buildup-view');
+const OUT = path.resolve(ROOT, 'tmp', 'first-look-buildup-view', String(process.pid));
 const SRC = fs
   .readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8')
   .replace(/\r\n/g, '\n');

@@ -22,7 +22,7 @@ import { readSource } from '../lib/first-look';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'workspace-print-sheet');
+const OUT = path.resolve(ROOT, 'tmp', 'workspace-print-sheet', String(process.pid));
 const SOURCE = fs
   .readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8')
   .replace(/\r\n/g, '\n');

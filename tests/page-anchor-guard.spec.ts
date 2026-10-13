@@ -40,7 +40,7 @@ import { NAVIGATION_MESSAGES } from '../lib/messages/navigation';
  *      sticky under the shell bar) is in `tests/workflow-style-guard.spec.ts`.
  */
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'page-anchor-guard');
+const OUT = path.resolve(ROOT, 'tmp', 'page-anchor-guard', String(process.pid));
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 /** Code only — a comment may name an id or a component without drawing it. */
 const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

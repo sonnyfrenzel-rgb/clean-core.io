@@ -20,7 +20,7 @@ import type { FocusPick } from '../lib/findings-view';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'successor-source');
+const OUT = path.resolve(ROOT, 'tmp', 'successor-source', String(process.pid));
 
 type Focus = (props: { picks: readonly FocusPick[] }) => React.ReactElement;
 let FindingsFocus: Focus;

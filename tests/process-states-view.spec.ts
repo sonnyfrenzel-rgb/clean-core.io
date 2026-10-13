@@ -43,7 +43,7 @@ import {
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'process-states-view');
+const OUT = path.resolve(ROOT, 'tmp', 'process-states-view', String(process.pid));
 
 type Card = (props: {
   subject: StateSubject;
