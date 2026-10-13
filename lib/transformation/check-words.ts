@@ -55,6 +55,7 @@ function nounOf(kind: string, scope: CheckScopeWord | undefined): { one: string;
   }
   if (kind === 'guards') return { one: 'body guard', many: 'body guards', of: '' };
   if (kind === 'lint') return { one: 'lint check', many: 'lint checks', of: '' };
+  if (kind === 'formats') return { one: 'object file', many: 'object files', of: "against SAP's ABAP file formats (AFF schemas)" };
   return { one: kind, many: kind, of: '' };
 }
 
@@ -100,7 +101,7 @@ export function checkStateOf(checks: readonly CheckLike[]): 'met' | 'warning' | 
 
 /** The order the phrases of one kind are said in: the written functions first, then the engine's own code. */
 export function orderedChecks<T extends CheckLike>(checks: readonly T[]): T[] {
-  const rank = (c: CheckLike) => ['guards', 'lint', 'cases', 'probes'].indexOf(c.kind) * 3 + (c.scope === 'fills' ? 0 : c.scope === 'engine-code' ? 1 : 2);
+  const rank = (c: CheckLike) => ['guards', 'lint', 'cases', 'probes', 'formats'].indexOf(c.kind) * 3 + (c.scope === 'fills' ? 0 : c.scope === 'engine-code' ? 1 : 2);
   return [...checks].sort((a, b) => rank(a) - rank(b));
 }
 

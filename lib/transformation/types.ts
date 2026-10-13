@@ -531,7 +531,7 @@ export type GenerationEvent =
   | { t: 'fill'; unitId: string; state: 'writing' | 'written' | 'refused' | 'unusable'; at: number }
   | {
       t: 'check';
-      kind: 'guards' | 'lint' | 'cases' | 'probes';
+      kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';
       total: number;
       failed: number;
       /** Split of `total` (step E): passed, failed, not run — absent on the guards and the lints. */
