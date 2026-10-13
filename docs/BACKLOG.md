@@ -19,9 +19,9 @@ usage log) merged in. Demo headline figures unchanged (32 findings, score 37, in
 no route moves. No `firestore.rules` change. CHANGELOG has the details.
 
 **Open:** acceptance with a real model key against the external reviews' probe sets; importing the abapGit
-package in a real SAP system; the ORD research row; whether a sy-subrc result stored in a variable or returned
-(`rv_ok = xsdbool( sy-subrc = 0 )`, the RAP global-authorization `COND #( WHEN sy-subrc = 0 … )`) should count
-as evaluated — from 3.0.13 it keeps the review task (benchmark BM-153, BM-255).
+package in a real SAP system. (ORD research dropped by the owner, 13.10.2026.) A value decided on sy-subrc and
+assigned (`rv_ok = xsdbool( sy-subrc = 0 )`, the RAP global-authorization `COND #( WHEN sy-subrc = 0 … )`) counts
+as evaluated (1484c6de), so benchmark BM-153 and BM-255 keep no review task.
 
 ## Session 12.–13.10.2026 — 3.0.12 released
 
