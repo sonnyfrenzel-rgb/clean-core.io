@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-12",
+  "updated": "2026-10-13",
   "about": "Known failure patterns of generated delivery packages, seeded from four external reviews of v3.0.10 packages (FI, CO, PP, SD). Each pattern is described in our own words; origin IDs refer to the numbering of the respective review document. See README.md.",
   "classes": {
     "identifiers": "SAP identifiers (apps, scope items, communication scenarios, APIs, views) named wrongly, too confidently, or without release and protocol.",
@@ -687,6 +687,21 @@
       },
       "layers": ["prompt", "lint", "cases", "harness"],
       "harnessProbe": "csv-escaping"
+    },
+    {
+      "id": "FP-GUARD-08",
+      "class": "lost-guards",
+      "title": "Generated code builds a dynamic query or file path from input",
+      "description": "The generated code concatenates a user-supplied value into a WHERE clause, a table or field name, a native SQL string or a server file path. The original either used fixed names, a whitelist or a logical file name, or the generated code drops the validation it performed; either way input now decides what the database or the file system executes.",
+      "origin": [
+        { "case": "DSAG", "ids": ["security/security-secure-development.md", "security/security-examples.md"] }
+      ],
+      "probe": {
+        "input": "A filter or file name containing SQL syntax (a quote followed by OR 1 = 1), a field name outside the selection, or a path segment '..'.",
+        "expected": "Refused, or passed only as a bound value; table and field names come from a fixed list and file paths from a fixed base directory."
+      },
+      "layers": ["engine", "prompt", "lint"],
+      "harnessProbe": null
     }
   ]
 }

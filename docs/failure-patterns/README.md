@@ -32,7 +32,9 @@ Each entry in `catalogue.json` has:
 - `id` — stable pattern ID (`FP-<CLASS>-<nn>`).
 - `class` — one of the ten classes below.
 - `title`, `description` — the pattern in our own words.
-- `origin` — the case (`FI`, `CO`, `PP`, `SD`) and the finding IDs **as numbered
+- `origin` — the case (`FI`, `CO`, `PP`, `SD`, or `DSAG` for a pattern taken
+  from the DSAG ABAP guideline, where the IDs are the guideline's source files)
+  and the finding IDs **as numbered
   in that review document** (CO and PP number their findings `F01…`, FI uses
   `F-01…`, SD uses `CC-R01…`; `E..` and `A..` are the reviews' probe IDs). The
   roadmap's 3.0.12 row numbers some CO findings differently; the review's own
@@ -46,13 +48,13 @@ Each entry in `catalogue.json` has:
   `harness` (this acceptance harness).
 - `harnessProbe` — the harness probe that judges it, or `null`.
 
-## Size by class (catalogue v1, 42 patterns)
+## Size by class (catalogue v1, 43 patterns)
 
 | Class | Patterns | Judged by a harness probe |
 |---|---:|---|
 | identifiers | 3 | — |
 | file-detector-architecture | 3 | — |
-| lost-guards | 7 | FP-GUARD-03, -04, -05, -07 |
+| lost-guards | 8 | FP-GUARD-03, -04, -05, -07 |
 | precision | 5 | FP-PREC-01, -02 |
 | run-identity | 3 | FP-RUN-01, -02 |
 | compute-vs-display-scope | 4 | FP-SCOPE-01 |
@@ -78,6 +80,7 @@ Each entry in `catalogue.json` has:
 | FP-GUARD-05 | lost-guards | A write path loses the original's preconditions | SD CC-R16 | prompt, cases, harness | `negative-write` |
 | FP-GUARD-06 | lost-guards | Missing, empty and zero collapse into one state | FI section 5; PP F02 | prompt, cases | — |
 | FP-GUARD-07 | lost-guards | The original's CSV escaping and formula guard are lost | PP F08 | prompt, lint, cases, harness | `csv-escaping` |
+| FP-GUARD-08 | lost-guards | Generated code builds a dynamic query or file path from input | DSAG ABAP guideline, security chapter | engine, prompt, lint | — |
 | FP-PREC-01 | precision | Packed quantities computed in binary floating point | PP F01, E01, E02, E05–E07 | engine, prompt, lint, harness | `decimal-quantity` |
 | FP-PREC-02 | precision | Rounding mode differs from the original's commercial rounding | CO F05, E01; SD CC-R18 | engine, prompt, lint, harness | `rounding-commercial` |
 | FP-PREC-03 | precision | A ratio loses declared places and a threshold flips | CO F06, E02 | engine, lint, cases | — |

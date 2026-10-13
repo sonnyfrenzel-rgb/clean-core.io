@@ -131,6 +131,12 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   'business-rule': { one: 'Business rule', many: 'Business rules' },
   enhancement: { one: 'Enhancement', many: 'Enhancements' },
   modification: { one: 'Modification of SAP code', many: 'Modifications of SAP code' },
+  // From engine 3.0.12 (`GUIDELINE_CHECKS_FROM`, lib/abap/guideline-checks-gate.ts).
+  'security-review': { one: 'Security review task', many: 'Security review tasks' },
+  'sap-code-copy': { one: 'Possible copy of SAP code', many: 'Possible copies of SAP code' },
+  bopf: { one: 'BOPF business object', many: 'BOPF business objects' },
+  'gateway-classic-service': { one: 'Classic SAP Gateway service (SEGW)', many: 'Classic SAP Gateway services (SEGW)' },
+  'ddic-cds-view': { one: 'DDIC-based CDS view', many: 'DDIC-based CDS views' },
 };
 
 export function kindLabel(kind: string, count: number): string {

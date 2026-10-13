@@ -10,6 +10,8 @@ import { readTableDependencies, type DependencyRoute } from './table-dependencie
 import { maskComments, maskNonCode } from './statement-reader';
 import { isSideBySideRoute } from '../sap-naming';
 import { successorInContext } from './sap-api-catalog';
+import { APP_VERSION } from '../version';
+import { guidelineChecksApply } from './guideline-checks-gate';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -511,7 +513,9 @@ export function recommendArchitecture(
   code: string,
   codeInventory: CodeInventoryItem[],
   dataCoupling: DataCouplingEntry[],
-  extensibilityRoute?: string
+  extensibilityRoute?: string,
+  /** The engine the recommendation is made with; omitted, this one (`APP_VERSION`). See `GUIDELINE_CHECKS_FROM`. */
+  engineVersion?: string | null,
 ): { architecture: 'rap' | 'cap' | 'integration' | 'event' | 'retire'; confidence: number; justification: string } {
   // The architecture is decided from what the program *executes*, so comments
   // and literal contents are blanked first. `IDOC` written in a comment — a
@@ -556,7 +560,9 @@ export function recommendArchitecture(
   // 24a2ea35802c / 9a05d24b9cf0). The IDoc families the routing has always
   // meant are the function modules, which `isRfcOrIdocModule` already names;
   // the word added nothing but the declarations.
-  const hasRfcIdoc = calledFunctionModules(code).some(isRfcOrIdocModule);
+  const calledModules = calledFunctionModules(code);
+  const hasRfcIdoc = calledModules.some(isRfcOrIdocModule);
+  const idocModules = [...new Set(calledModules.filter((name) => /(?:^|_)IDOC(?:_|$)/.test(name)))];
   const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT)\b/i.test(upper);
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;
 
@@ -576,6 +582,27 @@ export function recommendArchitecture(
         + (existingRouteIsBTP
           ? 'the project\'s deployment target is Side-by-Side.'
           : 'without a Side-by-Side deployment target, On-Stack RAP is the default.'),
+    };
+  }
+
+  if (hasRfcIdoc && idocModules.length > 0 && guidelineChecksApply(engineVersion === undefined ? APP_VERSION : engineVersion)) {
+    // From 3.0.12 (`GUIDELINE_CHECKS_FROM`). IDoc is classic technology that
+    // may stay, not middleware to replace on sight.
+    // DSAG ABAP guideline: clean-core/solution-approach.md § Level Concept
+    // DSAG ABAP guideline: integration/index.md § Bestand alter Technologien, § Beispiel: Massendatentransferierung
+    // The guideline is not consistent here: its level concept counts IDoc as
+    // level B ("clean core"), while its own integration table and
+    // what-is-clean-core.md say to avoid or successively replace RFC and IDoc.
+    // Neither extreme is taken over. What is said is what SAP's own data
+    // supports: the classification file lists the IDoc framework modules
+    // (MASTER_IDOC_DISTRIBUTE, IDOC_INBOUND_SINGLE, …) as classicAPI, i.e.
+    // level B for classic ABAP, and ABAP Cloud does not offer them.
+    return {
+      architecture: 'integration',
+      confidence: 80,
+      justification: `IDoc function modules are called (${idocModules.join(', ')}). SAP's classification file lists the IDoc framework modules as classic APIs (clean core level B): the interface may stay while the program runs on-premise or in Private Edition. `
+        + 'It has to be replaced where the target is ABAP Cloud or S/4HANA Cloud Public Edition, where custom code cannot call these modules: released APIs or business events, connected through SAP Integration Suite, take its place there. '
+        + 'For EDI and other high-volume asynchronous document exchange an IDoc interface can remain the better fit than one API call per document; decide that with the owners of the integration.',
     };
   }
 
