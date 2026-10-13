@@ -137,6 +137,7 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   bopf: { one: 'BOPF business object', many: 'BOPF business objects' },
   'gateway-classic-service': { one: 'Classic SAP Gateway service (SEGW)', many: 'Classic SAP Gateway services (SEGW)' },
   'ddic-cds-view': { one: 'DDIC-based CDS view', many: 'DDIC-based CDS views' },
+  'parallel-processing': { one: 'Parallel processing (asynchronous RFC)', many: 'Parallel processing (asynchronous RFC)' },
 };
 
 export function kindLabel(kind: string, count: number): string {

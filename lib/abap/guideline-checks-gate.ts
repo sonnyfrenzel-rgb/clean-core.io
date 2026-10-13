@@ -11,7 +11,11 @@ import { engineVersionAtLeast } from '../score-rule';
  *     by SAP Note 3578329 (level B through listed classic APIs), the table-read
  *     texts in level wording, and the IDoc justification (`code-assessment.ts`),
  *   - the RFC finding read from the statement's own DESTINATION addition only
- *     (`rfcDestinationOf` in `evidence-model.ts`).
+ *     (`rfcDestinationOf` in `evidence-model.ts`),
+ *   - the parallel-processing finding for `CALL FUNCTION … STARTING NEW TASK`
+ *     on this system (no destination, `'NONE'` or `IN GROUP`), which keeps
+ *     the ABAP Cloud note the local RFC lost when it stopped being an
+ *     `rfc-call` (owner decision 13.10.2026).
  *
  * Every one of them changes what a run signs, so a run made by an older engine
  * keeps the evidence it was signed with: whatever rebuilds the evidence of a

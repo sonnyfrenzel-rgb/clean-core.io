@@ -44,7 +44,10 @@ export type EvidenceKind =
   | 'sap-code-copy'
   | 'bopf'
   | 'gateway-classic-service'
-  | 'ddic-cds-view';
+  | 'ddic-cds-view'
+  // From engine 3.0.12: asynchronous RFC on this system (`STARTING NEW TASK`
+  // with no destination, `DESTINATION 'NONE'` or `DESTINATION IN GROUP`).
+  | 'parallel-processing';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -1337,6 +1340,34 @@ export function buildAbapEvidence(
           : `A comment in the header of${own || ' the source'} says the code was copied${signal.sapName ? ` from ${signal.sapName}` : ' from SAP standard'}: "${signal.comment ?? ''}".`,
         cleanCoreImpact: 'A copy of SAP code keeps SAP\'s logic without SAP\'s maintenance: corrections and upgrades no longer reach it, and it keeps calling the internals the original called, released or not.',
         recommendation: `Check whether${own || ' the code'} is a copy of SAP code. If it is, compare it with the current SAP original, keep only what differs, and build that difference on a released API or a released extension point (a BAdI where SAP offers one) instead of the copy.`,
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    // Parallel processing through asynchronous RFC on this system. Since
+    // 3.0.12 a local destination is no `rfc-call` (it never leaves the system);
+    // what is left to say is that ABAP Cloud has no asynchronous RFC, and what
+    // it offers instead. A call to another system stays an `rfc-call`.
+    const parallelClass = getSapObjectStates('CL_ABAP_PARALLEL', catalogSnapshot).releaseState === 'released' ? 'CL_ABAP_PARALLEL' : null;
+    for (const stmt of statements) {
+      const text = stmt.text.trim();
+      if (!/^CALL\s+FUNCTION\b[\s\S]*?\bSTARTING\s+NEW\s+TASK\b/i.test(maskLiterals(text))) continue;
+      if (rfcDestinationOf(text) === 'remote') continue;
+      const fmName = /^CALL\s+FUNCTION\s+'([\w/]+)'/i.exec(text)?.[1]?.toUpperCase();
+      const where = /\bIN\s+GROUP\b/i.test(maskLiterals(text)) ? 'on the application servers of a server group (DESTINATION IN GROUP)' : 'in a new session on this system';
+      addFinding({
+        kind: 'parallel-processing',
+        title: `Parallel processing with asynchronous RFC${fmName ? ` (${fmName})` : ''}`,
+        severity: 'Low',
+        confidence: 'High',
+        ...(fmName ? { objectName: fmName, objectType: 'Function Module' } : {}),
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `CALL FUNCTION … STARTING NEW TASK runs the function module asynchronously ${where}. The call does not leave the system, so it is no remote call.`,
+        cleanCoreImpact: 'Asynchronous RFC is classic ABAP: it may stay on-premise and in SAP Cloud ERP Private, but ABAP Cloud does not offer STARTING NEW TASK. It costs no score points and does not change the route.',
+        recommendation: parallelClass
+          ? `Keep it while the program runs on-premise or in SAP Cloud ERP Private. For ABAP Cloud, run the parallel work through the released class ${parallelClass} instead.`
+          : 'Keep it while the program runs on-premise or in SAP Cloud ERP Private. For ABAP Cloud, run the parallel work through a released parallel-processing API instead.',
         targetOptions: ['Developer Extensibility / RAP'],
       });
     }

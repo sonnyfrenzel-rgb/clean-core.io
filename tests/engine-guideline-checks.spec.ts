@@ -6,6 +6,7 @@ import { readLegacyTechnology } from '../lib/abap/legacy-technology';
 import { recommendArchitecture, extractCodeInventory, extractDataCoupling } from '../lib/abap/code-assessment';
 import { GUIDELINE_CHECKS_FROM, guidelineChecksApply } from '../lib/abap/guideline-checks-gate';
 import { KIND_LABEL } from '../lib/findings-view';
+import { routeExtensibility } from '../lib/abap/extensibility-router';
 
 /**
  * Roadmap 3.0.12 — the checks taken over from the review of the DSAG ABAP
@@ -18,7 +19,7 @@ import { KIND_LABEL } from '../lib/findings-view';
 
 const NEW = GUIDELINE_CHECKS_FROM;
 const OLD = '3.0.11';
-const NEW_KINDS = ['security-review', 'sap-code-copy', 'bopf', 'gateway-classic-service', 'ddic-cds-view'];
+const NEW_KINDS = ['security-review', 'sap-code-copy', 'bopf', 'gateway-classic-service', 'ddic-cds-view', 'parallel-processing'];
 
 const kinds = (src: string): SecurityReviewKind[] => readSecurityReviewTasks(src).map((t) => t.kind);
 const evidence = (src: string, version: string | null, file = 'zx.abap'): EvidenceFinding[] =>
@@ -370,5 +371,61 @@ test.describe('an RFC is the DESTINATION addition, not a parameter called destin
     expect(rfc(lines('REPORT zx.', "CALL FUNCTION 'Z_LOCAL' DESTINATION 'NONE' EXPORTING iv = 1."), NEW)).toEqual([]);
     expect(rfc(lines('REPORT zx.', "CALL FUNCTION 'Z_PARALLEL' STARTING NEW TASK lv_task DESTINATION IN GROUP DEFAULT EXPORTING iv = 1."), NEW)).toEqual([]);
     expect(rfc(lines('REPORT zx.', "CALL FUNCTION 'Z_LOCAL' EXPORTING iv = 'DESTINATION x'."), NEW)).toEqual([]);
+  });
+});
+
+/* ------------------------------------ parallel processing (asynchronous RFC) */
+
+test.describe('STARTING NEW TASK on this system is a parallel-processing finding, not an RFC', () => {
+  const lines = (...l: string[]) => l.join('\n');
+  const parallel = (src: string, version: string | null) => evidence(src, version).filter((f) => f.kind === 'parallel-processing');
+
+  test('IN GROUP, NONE and no destination each give one finding at the call line, naming the released CL_ABAP_PARALLEL', () => {
+    const src = lines(
+      'REPORT zx.',
+      'DATA lv_task TYPE c LENGTH 8.',
+      "CALL FUNCTION 'Z_WORK' STARTING NEW TASK lv_task DESTINATION IN GROUP DEFAULT",
+      '  PERFORMING done ON END OF TASK',
+      '  EXPORTING iv = 1.',
+      "CALL FUNCTION 'Z_NONE' STARTING NEW TASK lv_task DESTINATION 'NONE' EXPORTING iv = 1.",
+      "CALL FUNCTION 'Z_PLAIN' STARTING NEW TASK lv_task EXPORTING iv = 1.",
+    );
+    const found = parallel(src, NEW);
+    expect(found.map((f) => [f.objectName, f.lineStart])).toEqual([['Z_WORK', 3], ['Z_NONE', 6], ['Z_PLAIN', 7]]);
+    for (const f of found) {
+      expect(f.severity).toBe('Low');
+      expect(f.cleanCoreImpact).toMatch(/SAP Cloud ERP Private/);
+      expect(f.recommendation).toContain('CL_ABAP_PARALLEL');
+    }
+    expect(found[0].technicalDetail).toContain('DESTINATION IN GROUP');
+    expect(evidence(src, NEW).filter((f) => f.kind === 'rfc-call')).toEqual([]);
+  });
+
+  test('a comment, a literal and a call to another system give none; the remote call stays an rfc-call', () => {
+    expect(parallel(lines('REPORT zx.', "* CALL FUNCTION 'Z_WORK' STARTING NEW TASK lv_task DESTINATION IN GROUP DEFAULT.", "\" CALL FUNCTION 'Z_WORK' STARTING NEW TASK t."), NEW)).toEqual([]);
+    expect(parallel(lines('REPORT zx.', "DATA(m) = |CALL FUNCTION 'Z' STARTING NEW TASK t|.", "WRITE 'CALL FUNCTION x STARTING NEW TASK t'."), NEW)).toEqual([]);
+    const remote = lines('REPORT zx.', "CALL FUNCTION 'Z_REMOTE' STARTING NEW TASK lv_task DESTINATION 'ERP_PRD' EXPORTING iv = 1.");
+    expect(parallel(remote, NEW)).toEqual([]);
+    expect(evidence(remote, NEW).filter((f) => f.kind === 'rfc-call').map((f) => f.objectName)).toEqual(['Z_REMOTE']);
+  });
+
+  test('costs no score points and does not change the route', () => {
+    const src = lines('REPORT zx.', "CALL FUNCTION 'Z_WORK' STARTING NEW TASK lv_task DESTINATION IN GROUP DEFAULT EXPORTING iv = 1.");
+    const report = buildAbapEvidence(src, 'zx.abap', 'private', undefined, NEW);
+    const without = { ...report, findings: report.findings.filter((f) => f.kind !== 'parallel-processing') };
+    expect(report.findings.length).toBe(without.findings.length + 1);
+    for (const deployment of ['private', 'public'] as const) {
+      const a = routeExtensibility(report, deployment, NEW);
+      const b = routeExtensibility(without, deployment, NEW);
+      expect(a.cleanCoreScore).toBe(b.cleanCoreScore);
+      expect(a.recommendedRoute).toBe(b.recommendedRoute);
+    }
+  });
+
+  test('a run of an older engine keeps exactly what it was signed with', () => {
+    const src = lines('REPORT zx.', "CALL FUNCTION 'Z_WORK' STARTING NEW TASK lv_task DESTINATION IN GROUP DEFAULT EXPORTING iv = 1.");
+    expect(parallel(src, OLD)).toEqual([]);
+    expect(parallel(src, null)).toEqual([]);
+    expect(evidence(src, OLD).map((f) => f.kind)).toEqual(['rfc-call']);
   });
 });
