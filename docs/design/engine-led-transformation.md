@@ -58,9 +58,9 @@ project's own numbers.
 - No streaming from the proxy. Progress is real because there are many small calls, not because a
   single call streams.
 - Nothing generated is signed and nothing generated enters the audit pack (§12).
-- The rebuild gate of 3.0.13 (no rebuild code while standard fit is unassessed and core rules are
-  undecided, unless the owner overrides with a reason) is out of scope; this design leaves a hook for
-  it (§14.4) and does not implement it.
+- No rebuild gate: the owner withdrew it on 12.10.2026 ("it takes the decision away from the user").
+  Instead a non-blocking warning tip (§14.4) says plainly when the decision on record is retire or move
+  to standard, or standard fit is unassessed; the user may generate anyway.
 - No user-facing switch between "engine-led" and "single-call". The single-call path survives only as
   an automatic fallback with a visible note (§16.2).
 
@@ -639,8 +639,11 @@ handles late-rendered targets.
 
 Today the first generation starts by itself when the stage is opened and nothing blocks it
 (`setAwaitingAutoGeneration`). With tips, the proposal (Q5) is: **auto-start only when no tip is
-open**; otherwise the page shows the tips and *Generate now*. The 3.0.13 rebuild gate, when built,
-uses the same card as its one blocking item; nothing here blocks.
+open**; otherwise the page shows the tips and *Generate now*. Nothing here blocks: where the decision
+on record is retire or move to SAP standard, or standard fit is unassessed, the tips open with a
+highlighted warning that says what that means and links to the decision — *Generate now* stays
+available (owner, 12.10.2026: no rebuild gate). The prompt's context keeps its loud warning, so code
+generated against the decision says so in its first comment.
 
 ## 15. The generation screen
 

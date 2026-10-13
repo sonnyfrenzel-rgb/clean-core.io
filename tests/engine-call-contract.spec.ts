@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import {
   MAX_GUARD_CASES,
@@ -17,9 +18,12 @@ import { ENGINE_RUNTIME_JS } from '../lib/test-sandbox/engine-runtime';
 import { ENGINE_CONTRACT_MARKER, engineRunInputs } from '../lib/test-sandbox/engine-suite';
 import { executeSandboxRun } from '../lib/test-sandbox/core';
 import { parseTapOutput } from '../lib/test-verdicts';
-import { mergeEngineVerdicts, planEngineRun } from '../lib/engine-case-run';
+import { engineVerdicts, mergeEngineVerdicts, planEngineRun } from '../lib/engine-case-run';
+import { ENGINE_OUTCOME_MARKER, collectEngineCase, judgeEngineCase, runEngineCase } from '../scripts/acceptance/child/engine-cases-core.mjs';
 import { CODE_DRAFT_BUSINESS_RULES } from '../lib/code-draft-rules';
+import { deriveEngineCasesOf, engineCaseProvenance } from '../lib/engine-case-provenance';
 import { testFactsOf } from '../lib/delivery-facts';
+import { sha256Hex } from '../lib/artefact-digest';
 
 /**
  * Owner decisions of 12.10.2026 on the engine cases (roadmap 3.0.12):
@@ -96,6 +100,8 @@ const WIDE = [
 ].join('\n');
 
 const derive = (src: string) => deriveEngineCases(src, deriveBusinessRules(src).rules);
+/** The engine cases of a source as engineCaseProvenance hands them out: the only way to a VerifiedEngineCase. */
+const verifiedOf = (src: string) => engineCaseProvenance(derive(src).cases as unknown as Array<Record<string, unknown>>, deriveEngineCasesOf(src)).verified;
 
 function runRunner(pkg: string, casesFile: string, extra: string[] = []) {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-spec-'));
@@ -142,7 +148,11 @@ test.describe('caps: 20 precision and 20 guard cases, prioritised, the rest coun
     expect(engineCasesNotCovered(WIDE)).toEqual({ precision: 16, guard: 8 });
     expect(r.limits.join(' ')).toContain('16 precision cases past the first 20 are not covered: gv_c, gv_d, gv_e, gv_f.');
     expect(r.limits.join(' ')).toMatch(/8 guard cases past the first 20 are not covered: the check at L\d+/);
-    const facts = testFactsOf({ testCases: r.cases, legacyCode: WIDE } as unknown as Parameters<typeof testFactsOf>[0], []);
+    // Counted from the signed source the stored cases reproduce from (QA review of 2e6596ddbbc8, 3ea38fd51acf).
+    const facts = testFactsOf(
+      { testCases: r.cases, legacyCode: WIDE, activeRunId: 'run-1', inputFingerprint: { sha256: sha256Hex(WIDE) } } as unknown as Parameters<typeof testFactsOf>[0],
+      [],
+    );
     expect(facts.detail).toContain('Engine cases past the caps (20 precision, 20 guard): 24 more not covered — 16 precision, 8 guard.');
   });
 });
@@ -248,6 +258,102 @@ test.describe('the call contract', () => {
   });
 });
 
+/* ------------------------------------------------------------- the judge */
+
+test.describe('the judge: only a structured answer is a verdict', () => {
+  const BASE = { amount: '1.00', year: '2026' };
+  const FIELDS = { P_AMOUNT: 'amount', P_GJAHR: 'year' };
+  type Answer = Record<string, unknown> | (() => never);
+  /** A contract whose validate/simulate answers are given per call; the base request always passes. */
+  const contract = (opts: { validate?: (r: Record<string, unknown>) => Answer; simulate?: (r: Record<string, unknown>) => Answer; compute?: () => unknown } = {}) => {
+    const isBase = (r: Record<string, unknown>) => JSON.stringify(r) === JSON.stringify(BASE);
+    const answer = (fn: ((r: Record<string, unknown>) => Answer) | undefined, r: Record<string, unknown>, ok: Record<string, unknown>) => {
+      if (isBase(r) || !fn) return ok;
+      const a = fn(r);
+      return typeof a === 'function' ? a() : a;
+    };
+    return {
+      CONTRACT: { version: 1, baseRequest: BASE, fields: FIELDS },
+      validate: (r: Record<string, unknown>) => answer(opts.validate, r, { ok: true, errors: [], normalized: r }),
+      simulate: (r: Record<string, unknown>) => answer(opts.simulate, r, { ok: true, runId: 'R1', records: 1, errors: [] }),
+      getRun: () => null,
+      compute: opts.compute ?? (() => '0'),
+    };
+  };
+  const kase = (call: Record<string, unknown>, more: Array<Record<string, unknown>> = []) => ({ id: 'TC_ENG_01', examples: [{ input: 'x', call }, ...more] });
+  const refuseYear = { op: 'validate', set: [{ field: 'P_GJAHR', to: { value: '2026x' } }], expect: { kind: 'refused', field: 'P_GJAHR' } };
+  const crash = () => () => {
+    throw new TypeError("Cannot read properties of undefined (reading 'trim')");
+  };
+
+  test('a throw is a crash, never a refusal (QA 6700520b5295)', async () => {
+    const r = await runEngineCase(contract({ validate: crash() }), kase(refuseYear));
+    expect(r.status).toBe('Failed');
+    expect(r.examples[0].evidence).toContain('threw instead of answering { ok, errors }');
+    // a refusal that does not name the expected field is no pass either, and a named one is
+    expect((await runEngineCase(contract({ validate: () => ({ ok: false, errors: [{ field: 'amount' }] }) }), kase(refuseYear))).status).toBe('Failed');
+    expect((await runEngineCase(contract({ validate: () => ({ ok: false, errors: [{ field: 'year' }] }) }), kase(refuseYear))).status).toBe('Passed');
+    // the empty request: a crash is not "not a success"
+    const empty = kase({ op: 'simulate', mode: 'empty', set: [], expect: { kind: 'not-success' } });
+    expect((await runEngineCase(contract({ simulate: crash() }), empty)).status).toBe('Failed');
+    expect((await runEngineCase(contract({ simulate: () => ({ ok: false, errors: [] }) }), empty)).status).toBe('Passed');
+  });
+
+  test('compute refuses by throwing an Error; a TypeError is a crash (QA 6700520b5295)', async () => {
+    const overflow = kase({ op: 'compute', compute: { field: 'P_AMOUNT', start: '9', steps: [{ op: '+', b: '1' }] }, set: [], expect: { kind: 'refused' } });
+    const refusing = await runEngineCase(contract({ compute: () => { throw new Error('P_AMOUNT overflows'); } }), overflow);
+    expect(refusing.status).toBe('Passed');
+    const crashing = await runEngineCase(contract({ compute: () => { throw new TypeError('x is undefined'); } }), overflow);
+    expect(crashing.status).toBe('Failed');
+    expect(crashing.examples[0].evidence).toContain('compute crashed');
+  });
+
+  test('an accepted case needs ok: true; an answer without ok is not the contract\'s (QA e996eb7b1be9)', async () => {
+    const accept = kase({ op: 'validate', set: [{ field: 'P_GJAHR', to: { value: '2024' } }], expect: { kind: 'accepted', field: 'P_GJAHR' } });
+    expect((await runEngineCase(contract({ validate: () => ({ errors: [] }) }), accept)).status).toBe('Failed');
+    expect((await runEngineCase(contract({ validate: () => ({ ok: 'yes', errors: [] }) }), accept)).status).toBe('Failed');
+    expect((await runEngineCase(contract({ validate: crash() }), accept)).status).toBe('Failed');
+    expect((await runEngineCase(contract({ validate: (r) => ({ ok: true, errors: [], normalized: r }) }), accept)).status).toBe('Passed');
+    // nor is "not refused by" a pass on an answer without ok
+    const passing = kase({ op: 'simulate', set: [{ field: 'P_AMOUNT', to: { value: '2.00' } }], expect: { kind: 'not-refused-by', field: 'P_AMOUNT' } });
+    expect((await runEngineCase(contract({ simulate: () => ({ runId: 'R2' }) }), passing)).status).toBe('Failed');
+  });
+
+  test('the positive control needs simulate to answer ok: true (QA e996eb7b1be9)', async () => {
+    const c = contract();
+    const shapeless = { ...c, simulate: () => ({ runId: 'R1', records: 1 }) };
+    const r = await runEngineCase(shapeless, kase(refuseYear));
+    expect(r).toMatchObject({ status: 'Not run' });
+    expect(r.reason).toContain("simulate does not answer the contract's baseRequest with ok: true");
+  });
+
+  test('a case passes only when every example ran and passed (QA 4596770c4aa0)', async () => {
+    const r = await runEngineCase(contract({ validate: () => ({ ok: false, errors: [{ field: 'year' }] }) }), kase(refuseYear, [{ input: 'CSV with only a header', expected: 'refused' }]));
+    expect(r.status).toBe('Not run');
+    expect(r.reason).toMatch(/^ran in part — 1 of 2 examples passed through the call contract; 1 could not run: not expressible/);
+  });
+
+  test('a missing value held as missing must not run as 0 either (QA b6c141d88ccf)', async () => {
+    const nullAmount = kase({ op: 'validate', set: [{ field: 'P_AMOUNT', to: { value: null } }], expect: { kind: 'not-zero', field: 'P_AMOUNT' } });
+    const keeps = { validate: (r: Record<string, unknown>) => ({ ok: true, errors: [], normalized: r }) };
+    // validate keeps null, simulate runs it as if it were 0 — the defect of the fixture before this fix
+    const silent = await runEngineCase(contract({ ...keeps, simulate: () => ({ ok: true, runId: 'R2', records: 1, errors: [] }) }), nullAmount);
+    expect(silent.status).toBe('Failed');
+    expect(silent.examples[0].evidence).toContain('simulate on the same request answered ok: true without naming P_AMOUNT');
+    expect((await runEngineCase(contract({ ...keeps, simulate: () => ({ ok: false, errors: [{ field: 'amount', rule: 'missing' }] }) }), nullAmount)).status).toBe('Passed');
+    expect((await runEngineCase(contract({ ...keeps, simulate: () => ({ ok: true, runId: 'R2', records: 1, errors: [{ field: 'amount', rule: 'missing' }] }) }), nullAmount)).status).toBe('Passed');
+    expect((await runEngineCase(contract({ ...keeps, simulate: crash() }), nullAmount)).status).toBe('Failed');
+  });
+
+  test('collected answers are data: the judge keeps only typed fields and its own expectations', async () => {
+    const collected = await collectEngineCase(contract(), kase(refuseYear));
+    // a forged "pass" in the collected data is not read; only ok/errors are
+    const forged = { ...collected, examples: [{ status: 'pass', evidence: 'forged', ok: true }] };
+    expect(judgeEngineCase(kase(refuseYear), forged).status).toBe('Failed');
+    expect(judgeEngineCase(kase(refuseYear), null)).toMatchObject({ status: 'Not run', reason: 'no positive control was reported' });
+  });
+});
+
 /* ----------------------------------------------------------- the runner */
 
 test.describe('the runner executes engine cases in the harness sandbox', () => {
@@ -256,7 +362,7 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
   test.beforeAll(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-cases-'));
     casesFile = path.join(dir, 'engine-cases.json');
-    fs.writeFileSync(casesFile, engineCasesFile(derive(CO).cases as unknown as Array<Record<string, unknown>>)!);
+    fs.writeFileSync(casesFile, engineCasesFile(verifiedOf(CO))!);
   });
   test.afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
@@ -275,7 +381,6 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
       ...byKind('precision-overflow'),
       ...byKind('precision-rounding'),
       ...byKind('precision-exact-arithmetic'),
-      ...byKind('contract-empty-request'),
       ...byKind('contract-integer'),
       ...byKind('contract-non-finite'),
       ...byKind('contract-null-not-zero'),
@@ -286,6 +391,49 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
     // BR-001 reads the quota sum, which is internal to the original: not part of a request
     for (const id of byKind('guard-breaks-one', (c) => c.engineCase.trace.ruleId === 'BR-001')) {
       expect(status(r, id)).toMatchObject({ status: 'Not run', reason: 'the contract marks GV_QUOTA_SUM as internal (not part of a request)' });
+    }
+    // QA 4596770c4aa0: the JSON example passes, the CSV example has no machine form — the case ran in part, so it is not Passed
+    const empty = status(r, byKind('contract-empty-request')[0]);
+    expect(empty.status).toBe('Not run');
+    expect(empty.reason).toBe(
+      "ran in part — 1 of 2 examples passed through the call contract; 1 could not run: not expressible through the call contract — asserted by the model's test only",
+    );
+    expect(empty.examples.map((e) => e.status)).toEqual(['pass', 'not-runnable']);
+    // QA b6c141d88ccf: a missing value is held as missing and the run on it refuses — not computed as 0
+    const nulls = status(r, byKind('contract-null-not-zero')[0]).examples.filter((e) => e.input.endsWith('missing (null)'));
+    expect(nulls.length).toBeGreaterThan(0);
+    for (const e of nulls) expect(e.evidence, e.input).toMatch(/; simulate refuses the request/);
+  });
+
+  test('a package that tries to rewrite the executor\'s answer channel gets its own verdicts (QA e1478690996c, 1021a63b7b6c)', () => {
+    const r = runRunner('hostile', casesFile, ['--trusted-fixture']);
+    expect(r.sandbox).toMatchObject({ executed: true });
+    // Its stdout, socket, Object.prototype, JSON and Function-constructor rewrites would make these two pass
+    // (tests below show they work unconfined); in the executor's compartment none of them lands.
+    expect(status(r, byKind('run-identity')[0]).status).toBe('Failed');
+    expect(status(r, byKind('run-identity')[0]).examples[0].evidence).toMatch(/^two runs in the same millisecond got the same id RUN-\d+$/);
+    expect(status(r, byKind('contract-empty-request')[0]).status).toBe('Failed');
+    expect(status(r, byKind('precision-overflow', (c) => c.engineCase.trace.field === 'quota')[0]).status).toBe('Failed');
+    expect(r.cases.map((c) => c.id).sort()).toEqual(derive(CO).cases.map((c) => c.id).sort());
+    expect(JSON.stringify(r.cases)).not.toContain('RUN-A');
+  });
+
+  test('a contract that imports what the compartment does not provide is Not run, with the reason', () => {
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-fs-'));
+    try {
+      fs.mkdirSync(path.join(pkg, 'srv'));
+      fs.writeFileSync(path.join(pkg, 'srv', 'engine-contract.mjs'), "import fs from 'node:fs';\nexport const CONTRACT = { version: 1, baseRequest: {}, fields: {} };\nexport const validate = () => ({ ok: true, errors: [] });\nexport const simulate = () => ({ ok: true, records: 0, errors: [] });\nexport const getRun = () => null;\nexport const compute = () => fs.readFileSync('x', 'utf8');\n");
+      const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-eng-fs-out-'));
+      try {
+        execFileSync(process.execPath, [RUNNER, pkg, '--cases', casesFile, '--out', out, '--timeout', '15000', '--trusted-fixture'], { cwd: ROOT, stdio: 'ignore', timeout: 120_000 });
+        const r = JSON.parse(fs.readFileSync(path.join(out, 'engine-cases-report.json'), 'utf8')) as ReturnType<typeof runRunner>;
+        expect(r.summary.passed + r.summary.failed).toBe(0);
+        for (const c of r.cases) expect(c.reason).toBe("Not run — module 'contract' imports 'node:fs', which the confined executor does not provide (it provides crypto, url, http, https, net)");
+      } finally {
+        fs.rmSync(out, { recursive: true, force: true });
+      }
+    } finally {
+      fs.rmSync(pkg, { recursive: true, force: true });
     }
   });
 
@@ -339,20 +487,23 @@ test.describe('the runner executes engine cases in the harness sandbox', () => {
 test.describe('the engine pass runs through the execution core the isolated runner uses', () => {
   // The core is the same code the runner bundles (lib/test-sandbox/core.ts). Here it runs in this
   // process's child with `allowUnsandboxed` — the emulator path; in a deployment only the runner runs it.
-  const cases = derive(CO).cases as unknown as Array<Record<string, unknown>>;
+  // The cases as the route plans them: recomputed from the signed source (QA e04537f4bb66).
+  const cases = verifiedOf(CO);
   const filesOf = (fixture: string) => [
     { path: 'srv/engine-contract.mjs', content: fs.readFileSync(path.join(FIXTURES, fixture, 'srv', 'engine-contract.mjs'), 'utf8') },
   ];
-  const pass = async (fixture: string) => {
+  const run = async (fixture: string) => {
     const plan = planEngineRun(cases, filesOf(fixture), null);
     expect(plan.kind).toBe('planned');
     if (plan.kind !== 'planned') throw new Error('no plan');
     const inputs = engineRunInputs(filesOf(fixture), plan.plan.cases, plan.plan.contractModule);
     expect(inputs.files.map((f) => f.path).sort()).toEqual(['__cc_engine/cases.json', '__cc_engine/runtime.mjs', 'srv/engine-contract.mjs']);
-    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true });
+    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true, engine: inputs.engine });
     if (out.kind !== 'ran') throw new Error(`the engine pass did not run: ${JSON.stringify(out).slice(0, 300)}`);
-    return parseTapOutput(out.stdout);
+    // judged here, as the route judges it — never read from the run's TAP
+    return { stdout: out.stdout, results: engineVerdicts(out.stdout, plan.plan.cases, []) };
   };
+  const pass = async (fixture: string) => (await run(fixture)).results;
 
   test('the sound package: every case passes through the contract, except a check on a value internal to the original', async () => {
     test.setTimeout(120_000);
@@ -361,10 +512,87 @@ test.describe('the engine pass runs through the execution core the isolated runn
     expect(results.map((r) => r.id).sort()).toEqual([...ids].sort());
     for (const r of results) expect(r.name, r.id).toContain(ENGINE_CONTRACT_MARKER);
     const skipped = results.filter((r) => r.status !== 'Passed');
+    const partial = derive(CO).cases.filter((c) => c.engineCase.kind === 'contract-empty-request').map((c) => c.id);
     expect(skipped.map((r) => [r.id, r.status])).toEqual(
-      derive(CO).cases.filter((c) => c.engineCase.trace.ruleId === 'BR-001').map((c) => [c.id, 'Skipped']),
+      derive(CO).cases.filter((c) => c.engineCase.trace.ruleId === 'BR-001' || partial.includes(c.id)).map((c) => [c.id, 'Skipped']),
     );
-    expect(skipped[0].message).toContain('the contract marks GV_QUOTA_SUM as internal (not part of a request)');
+    expect(skipped.find((r) => !partial.includes(r.id))!.message).toContain('the contract marks GV_QUOTA_SUM as internal (not part of a request)');
+    expect(skipped.find((r) => partial.includes(r.id))!.message).toContain('ran in part — 1 of 2 examples passed');
+  });
+
+  test('code that rewrites the outcome lines it shares a process with does not pass: it runs in a SES compartment (QA b1b316b2322a, 342adaac5625)', async () => {
+    test.setTimeout(120_000);
+    const { stdout, results } = await run('hostile');
+    const identity = derive(CO).cases.find((c) => c.engineCase.kind === 'run-identity')!.id;
+    const empty = derive(CO).cases.find((c) => c.engineCase.kind === 'contract-empty-request')!.id;
+    // Exactly one genuine outcome line per case — the forgery keeps one line per id, so only its content could tell.
+    const outcomeIds = stdout.split('\n').filter((l) => l.startsWith(ENGINE_OUTCOME_MARKER)).map((l) => JSON.parse(l.slice(ENGINE_OUTCOME_MARKER.length)).id);
+    expect(outcomeIds.sort()).toEqual(derive(CO).cases.map((c) => c.id).sort());
+    expect(stdout).not.toContain('RUN-A');
+    // judged from the genuine lines: the clock-based run id and the empty request fail
+    expect(results.find((r) => r.id === identity)?.status).toBe('Failed');
+    expect(results.find((r) => r.id === empty)?.status).toBe('Failed');
+    expect(results.filter((r) => r.status === 'Passed').map((r) => r.id)).not.toContain(empty);
+    // the TAP of a node:test runner is gone from the pass: there is nothing for a forger to rewrite into a verdict
+    expect(parseTapOutput(stdout)).toEqual([]);
+  });
+
+  test('the same hostile contract, imported unconfined, does rewrite stdout and every socket — the attack the compartment stops', () => {
+    // Unconfined, as the engine pass ran before this fix: the module is imported beside the outcome writer.
+    const contract = pathToFileURL(path.join(FIXTURES, 'hostile', 'srv', 'engine-contract.mjs')).href;
+    const genuine = `${ENGINE_OUTCOME_MARKER}${JSON.stringify({ id: 'TC_ENG_X', collected: { control: {}, examples: [{ ok: true, errors: [], records: 0 }] } })}`;
+    const script = `const m = await import(${JSON.stringify(contract)}); process.stderr.write(JSON.stringify(m.ESCAPE_ATTEMPTS) + '\\n'); process.stdout.write(${JSON.stringify(`${genuine}\n`)});`;
+    const res = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: ROOT, encoding: 'utf8', timeout: 30_000 });
+    const attempts = JSON.parse(res.stderr.trim().split('\n').pop()!) as string[];
+    for (const done of ['stdout: done', 'socket: done', 'Object.prototype: done', 'JSON.stringify: done', 'Function constructor: done']) expect(attempts).toContain(done);
+    // the genuine line left the process rewritten: the empty request now reads as refused
+    expect(res.stdout).toContain('"examples":[{"ok":false,"errors":[],"ids":["RUN-A","RUN-B"],"readBack":"RUN-A"}]');
+    expect(res.stdout).not.toContain('"records":0');
+  });
+
+  test('in the compartment every one of those attempts fails, and Object.keys stays the real one', () => {
+    const res = spawnSync(process.execPath, [path.join(ROOT, 'tests', 'fixtures', 'acceptance', 'confined-attempts.mjs'), path.join(FIXTURES, 'hostile'), 'srv/engine-contract.mjs'], { cwd: ROOT, encoding: 'utf8', timeout: 60_000 });
+    expect(res.status, res.stderr).toBe(0);
+    const { attempts, keysIntact } = JSON.parse(res.stdout) as { attempts: string[]; keysIntact: string };
+    expect(attempts).toHaveLength(9);
+    for (const a of attempts) expect(a, a).not.toMatch(/: done$/);
+    expect(attempts.find((a) => a.startsWith('Function constructor'))).toContain('Function.prototype.constructor is not a valid constructor');
+    expect(attempts.find((a) => a.startsWith('socket'))).toMatch(/not extensible|read only|frozen/);
+    expect(attempts.find((a) => a.startsWith('Object.prototype'))).toMatch(/not extensible/);
+    expect(keysIntact).toBe('status');
+  });
+
+  test('a contract that needs a module the compartment does not provide is Not run with the reason, never a pass', async () => {
+    test.setTimeout(120_000);
+    const files = [{ path: 'srv/engine-contract.mjs', content: "import fs from 'node:fs';\nexport const CONTRACT = { version: 1, baseRequest: {}, fields: {} };\nexport const validate = () => ({ ok: true, errors: [] });\nexport const simulate = () => ({ ok: true, records: 0, errors: [] });\nexport const getRun = () => null;\nexport const compute = () => fs.readFileSync('x', 'utf8');\n" }];
+    const plan = planEngineRun(cases, files, null);
+    if (plan.kind !== 'planned') throw new Error('no plan');
+    const inputs = engineRunInputs(files, plan.plan.cases, plan.plan.contractModule);
+    const out = await executeSandboxRun({ files: inputs.files, suiteCode: inputs.suiteCode, patterns: [], allowUnsandboxed: true, engine: inputs.engine });
+    if (out.kind !== 'ran') throw new Error(`the engine pass did not run: ${JSON.stringify(out).slice(0, 300)}`);
+    const results = engineVerdicts(out.stdout, plan.plan.cases, []);
+    expect(results.length).toBe(cases.length);
+    for (const r of results) {
+      expect(r.status).toBe('Skipped');
+      expect(r.message).toContain("the call contract cannot run in the confined sandbox: the code imports 'node:fs', which the confined sandbox does not provide");
+    }
+  });
+
+  test('the judge reads only outcome lines, once per case, for the cases the app planned', () => {
+    const json = engineCasesFile(cases)!;
+    const planned = JSON.parse(json).cases as Array<{ id: string }>;
+    const id = planned[0].id;
+    const line = (collected: unknown) => `${ENGINE_OUTCOME_MARKER}${JSON.stringify({ id, collected })}`;
+    // TAP saying "ok" is no verdict; nothing reported is Not run
+    expect(engineVerdicts(`ok 1 - ${id}: ${ENGINE_CONTRACT_MARKER} x\n`, json, [id])).toEqual([
+      expect.objectContaining({ id, status: 'Skipped', message: 'Not run through the call contract: the engine pass reported no outcome for this case' }),
+    ]);
+    // an outcome for a case nobody planned is ignored; a selection limits the verdicts
+    expect(engineVerdicts(`${ENGINE_OUTCOME_MARKER}${JSON.stringify({ id: 'TC_ENG_999', collected: {} })}\n`, json, [id]).map((r) => r.id)).toEqual([id]);
+    // a control without ok: true is no positive control
+    const r = engineVerdicts(`${line({ control: { validate: { ok: true, errors: [] }, simulate: { errors: [], records: 2 } }, examples: [] })}\n`, json, [id]);
+    expect(r[0]).toMatchObject({ status: 'Skipped' });
+    expect(r[0].message).toContain('does not answer the contract\'s baseRequest with ok: true');
   });
 
   test('the flawed package fails through the contract, and the contract\'s verdict wins over the model\'s test', async () => {
@@ -390,7 +618,7 @@ test.describe('the engine pass runs through the execution core the isolated runn
   });
 
   test('planning: nothing without engine cases or outside the selection; "no contract" when the code lacks it', () => {
-    expect(planEngineRun([{ id: 'TC_01' }], filesOf('sound'), null)).toEqual({ kind: 'none' });
+    expect(planEngineRun([], filesOf('sound'), null)).toEqual({ kind: 'none' });
     expect(planEngineRun(cases, filesOf('sound'), ['TC_01'])).toEqual({ kind: 'none' });
     const some = planEngineRun(cases, filesOf('sound'), ['TC_01', 'TC_ENG_02']);
     expect(some.kind === 'planned' && some.plan.patterns).toEqual(['TC_ENG_02']);

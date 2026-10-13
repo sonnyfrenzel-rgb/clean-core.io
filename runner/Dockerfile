@@ -12,7 +12,9 @@ COPY runner/server.ts runner/relay.ts runner/
 COPY lib/test-sandbox/ lib/test-sandbox/
 COPY lib/sandbox-module-guard.ts lib/test-verdicts.ts lib/google-id-token.ts lib/
 # One file: the server, the relay and the shared execution core. esbuild stays
-# external — the core loads it at run time to bundle the generated code.
+# external — the core loads it at run time to bundle the generated code — and
+# so does ses: the core reads node_modules/ses/dist/ses.cjs below its working
+# directory (/srv) and writes it into each engine pass's run directory.
 RUN runner/node_modules/.bin/esbuild runner/server.ts --bundle --platform=node --format=cjs \
       --target=node22 --external:esbuild --outfile=/out/server.cjs
 

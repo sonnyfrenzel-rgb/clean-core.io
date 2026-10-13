@@ -2,15 +2,39 @@
  * The engine-case runtime: runs engine cases against a package's call contract
  * and judges the answers — no model-written assertion anywhere.
  *
- * ONE source, two places that execute it, both sandboxed:
+ * Two halves, and they never run in the same process:
+ *   - the COLLECTOR (`collectEngineCase`) runs in the process that executes the
+ *     package and only records what the contract answered — raw outcomes, no
+ *     verdict;
+ *   - the JUDGE (`judgeEngineCase`) runs in a trusted process that never
+ *     imports the package, and turns those answers into verdicts against the
+ *     expectations it holds itself.
+ *
+ * The package's code never runs as a peer of the collector (QA b1b316b2322a,
+ * 342adaac5625, 1021a63b7b6c). The process that executes it first calls SES's
+ * `lockdown()` — every JavaScript intrinsic (Object.prototype, JSON, Function,
+ * Array.prototype, …) is frozen — and then evaluates the package in a
+ * `Compartment` (`createConfinement`): a global object of its own that holds
+ * only the endowments listed there, no `process`, no `require` of Node's
+ * modules beyond a short allowlist of hardened stand-ins, and an inert
+ * `Function` constructor. The collector, the outcome writer and the response
+ * channel live outside the compartment, and nothing the compartment can reach
+ * leads back to them. The expectations of a case are never handed to the
+ * package either: it sees the requests, nothing else. What the package can
+ * still do is choose its answers — which is what is being tested.
+ *
+ * ONE source, used in three places:
  *   - the isolated test runner (roadmap 8.9): the app sends this file as
- *     `__cc_engine/runtime.mjs` beside the generated code, and the engine suite
- *     (`lib/test-sandbox/engine-suite.ts`) imports it — hash-bound like every
- *     file of a run. The app carries it as `ENGINE_RUNTIME_JS`
- *     (`lib/test-sandbox/engine-runtime.ts`), generated from this file by
- *     `node scripts/acceptance/sync-engine-runtime.mjs`;
+ *     `__cc_engine/runtime.mjs` beside the generated code, and the engine
+ *     driver (`lib/test-sandbox/engine-suite.ts`) locks the process down,
+ *     loads the contract into a compartment, collects with this runtime and
+ *     prints one outcome line per case — hash-bound like every file of a run.
+ *     The app carries it as `ENGINE_RUNTIME_JS` (`lib/test-sandbox/engine-runtime.ts`),
+ *     generated from this file by `node scripts/acceptance/sync-engine-runtime.mjs`;
  *     `tests/engine-call-contract.spec.ts` fails when the two differ.
- *   - the acceptance harness (`../engine-cases.mjs` → `engine-cases-child.mjs`).
+ *   - the app judges those lines (`lib/engine-case-run.ts`, `engineVerdicts`).
+ *   - the acceptance harness: the sandboxed executor (`executor.mjs`) locks
+ *     down, confines and collects, the harness process (`../engine-cases.mjs`) judges.
  *
  * The contract a generated package exports (`lib/engine-call-contract.ts`, code-draft rule 24):
  *   CONTRACT = { version: 1, baseRequest, fields: { ORIGINAL_NAME: 'request.path' | 'list[].key' | null } }
@@ -19,7 +43,8 @@
  *   getRun(runId)            → the stored run ({ runId, … }) or null
  *   compute(field, a, op, b) → the exact result as a decimal string at the field's places (op: + - * /)
  *
- * Pure apart from calling the module it is handed. No imports.
+ * Pure apart from calling the module it is handed and, in `createConfinement`,
+ * the host capabilities its caller passes in. No imports.
  */
 
 /** Where the contract module may stand, in the order they are tried. */
@@ -36,9 +61,15 @@ export const CONTRACT_EXPORTS = ['CONTRACT', 'validate', 'simulate', 'getRun', '
 
 export const NOT_RUN_NO_CONTRACT = 'Not run — the code does not export the call contract';
 
+/** Starts the line the engine suite prints per case: the marker, then `{ id, collected }` as JSON. */
+export const ENGINE_OUTCOME_MARKER = '@@CC-ENGINE-OUTCOME ';
+
 const NOT_EXPRESSIBLE = "not expressible through the call contract — asserted by the model's test only";
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Errors JavaScript throws by itself: a crash, not a refusal the code decided on. */
+const CRASHES = new Set(['TypeError', 'ReferenceError', 'SyntaxError']);
 
 /** The request path the contract maps an original field name to. */
 export function resolveField(contract, name) {
@@ -158,8 +189,8 @@ export function buildRequest(contract, call) {
 export function errorsOf(answer) {
   const list = Array.isArray(answer?.errors) ? answer.errors : [];
   return list.slice(0, 20).map((e) => ({
-    field: isObject(e) && e.field !== undefined ? String(e.field).slice(0, 120) : null,
-    rule: isObject(e) && e.rule !== undefined ? String(e.rule).slice(0, 40) : null,
+    field: isObject(e) && e.field !== undefined && e.field !== null ? String(e.field).slice(0, 120) : null,
+    rule: isObject(e) && e.rule !== undefined && e.rule !== null ? String(e.rule).slice(0, 40) : null,
   }));
 }
 
@@ -177,19 +208,112 @@ const isZero = (v) => v === 0 || (typeof v === 'string' && /^[-+]?0+(\.0+)?$/.te
 
 const message = (err) => String(err && err.message ? err.message : err).split('\n')[0].slice(0, 200);
 
+const crashed = (err) => {
+  try {
+    return Boolean(err) && typeof err === 'object' && CRASHES.has(String(err.name));
+  } catch {
+    return false;
+  }
+};
+
+/** A value as the judge reads it, safe to print as JSON: decimals stay strings, everything else becomes text. */
+function plain(v) {
+  if (v === null || typeof v === 'string' || typeof v === 'boolean') return v;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : String(v);
+  if (typeof v === 'bigint') return String(v);
+  if (v === undefined) return undefined;
+  try {
+    const text = JSON.stringify(v, (_k, x) => (typeof x === 'bigint' ? String(x) : x));
+    return text === undefined ? String(v) : text;
+  } catch {
+    return '[not serialisable]';
+  }
+}
+
+/* ------------------------------------------------------------------ the judge */
+
+const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : undefined);
+
+/** One answer of `validate` or `simulate` as the judge accepts it: `{ threw, crash } | { ok, errors, records? }`. */
+function answerIn(raw) {
+  if (!isObject(raw)) return null;
+  if (raw.threw !== undefined) return { threw: str(String(raw.threw), 200), crash: raw.crash === true };
+  const out = { ok: raw.ok === true ? true : raw.ok === false ? false : undefined, errors: errorsOf(raw) };
+  if (typeof raw.records === 'number' && Number.isFinite(raw.records)) out.records = raw.records;
+  return out;
+}
+
+/**
+ * A raw outcome, read as untrusted data: it came from the process that ran the
+ * package's code. Only the fields `judge` reads survive, each with its type.
+ */
+export function outcomeIn(raw) {
+  if (!isObject(raw)) return null;
+  if (typeof raw.notRunnable === 'string') return { notRunnable: raw.notRunnable.slice(0, 300) };
+  const out = {};
+  if (raw.threw !== undefined) {
+    out.threw = String(raw.threw).slice(0, 200);
+    out.crash = raw.crash === true;
+  }
+  if (raw.ok === true || raw.ok === false) out.ok = raw.ok;
+  out.errors = errorsOf(raw);
+  if (raw.normalized !== undefined) out.normalized = plain(raw.normalized);
+  if (typeof raw.records === 'number' && Number.isFinite(raw.records)) out.records = raw.records;
+  if (Array.isArray(raw.ids)) out.ids = raw.ids.slice(0, 2).map((x) => (typeof x === 'string' ? x.slice(0, 200) : null));
+  if (raw.readBack !== undefined) out.readBack = typeof raw.readBack === 'string' ? raw.readBack.slice(0, 200) : null;
+  if (raw.value !== undefined) out.value = plain(raw.value);
+  if (typeof raw.path === 'string') out.path = raw.path.slice(0, 200);
+  if (raw.run !== undefined) out.run = answerIn(raw.run);
+  return out;
+}
+
 /**
  * Judge one call's outcome:
- * `{ threw?, ok?, errors?, normalized?, records?, baseRecords?, ids?, readBack?, value?, notRunnable?, path? }`.
+ * `{ threw?, crash?, ok?, errors?, normalized?, run?, records?, baseRecords?, ids?, readBack?, value?, notRunnable?, path? }`.
  * Returns `{ status: 'pass' | 'fail' | 'not-runnable', evidence }`.
+ *
+ * `validate` and `simulate` answer `{ ok, errors }` — a refusal is `ok: false`,
+ * never an exception. A throw is a crash and fails the example, whatever was
+ * expected; an answer without `ok: true` or `ok: false` is not the contract's
+ * answer and fails too. `compute` has no answer shape for a refusal: there, an
+ * `Error` it throws is the refusal, a TypeError, ReferenceError or SyntaxError
+ * is a crash.
  */
 export function judge(call, out) {
   if (!out) return { status: 'not-runnable', evidence: 'no outcome was reported' };
   if (out.notRunnable) return { status: 'not-runnable', evidence: out.notRunnable };
   const e = call.expect ?? {};
-  const refused = out.threw !== undefined || out.ok === false;
+  const threw = out.threw !== undefined;
   const errors = out.errors ?? [];
-  const said = out.threw !== undefined ? `threw: ${out.threw}` : `ok: ${out.ok}; errors: ${JSON.stringify(errors)}`;
+  const said = threw ? `threw: ${out.threw}` : `ok: ${out.ok}; errors: ${JSON.stringify(errors)}`;
   const names = (err) => (e.rule && err.rule && err.rule.toUpperCase() === e.rule.toUpperCase()) || (e.field && sameField(err.field, e.field, out.path));
+  const target = e.rule ?? e.field;
+  if (call.op === 'compute') {
+    if (e.kind === 'refused') {
+      if (!threw) return { status: 'fail', evidence: `accepted (${JSON.stringify(out.value ?? null)}), expected refused` };
+      return out.crash
+        ? { status: 'fail', evidence: `compute crashed (${out.threw}) — a refusal is an Error that says why, not a crash` }
+        : { status: 'pass', evidence: `refused (${said})` };
+    }
+    if (e.kind === 'equals') {
+      if (threw) return { status: 'fail', evidence: `compute threw: ${out.threw}` };
+      const got = typeof out.value === 'string' ? out.value : JSON.stringify(out.value ?? null);
+      return got === e.value ? { status: 'pass', evidence: `exactly ${got}` } : { status: 'fail', evidence: `${got}, expected exactly ${e.value}` };
+    }
+    return { status: 'not-runnable', evidence: `unknown expectation '${e.kind}' for compute` };
+  }
+  if (e.kind === 'distinct-runs') {
+    if (threw) return { status: 'fail', evidence: `simulate threw: ${out.threw}` };
+    const [a, b] = out.ids ?? [];
+    if (!a || !b) return { status: 'fail', evidence: `simulate returned no run id (${JSON.stringify(out.ids ?? [])})` };
+    if (a === b) return { status: 'fail', evidence: `two runs in the same millisecond got the same id ${a}` };
+    if (out.readBack !== a) return { status: 'fail', evidence: `getRun(${a}) after the second run returned ${JSON.stringify(out.readBack ?? null)} — the first run was overwritten or lost` };
+    return { status: 'pass', evidence: `two ids (${a}, ${b}); the first run is still readable as itself` };
+  }
+  // validate / simulate: a throw is a crash, and an answer must say ok: true or ok: false.
+  if (threw) return { status: 'fail', evidence: `threw instead of answering { ok, errors } (${out.threw})` };
+  if (out.ok !== true && out.ok !== false) return { status: 'fail', evidence: `answered without ok: true or ok: false — not the contract's answer (${said})` };
+  const refused = out.ok === false;
   switch (e.kind) {
     case 'accepted': {
       if (refused) return { status: 'fail', evidence: `refused, expected accepted (${said})` };
@@ -203,22 +327,30 @@ export function judge(call, out) {
     case 'refused': {
       if (!refused) return { status: 'fail', evidence: `accepted, expected refused (${said})` };
       const wrong = errors.filter((err) => err.rule && (e.notRules ?? []).some((r) => r.toUpperCase() === err.rule.toUpperCase()));
-      if (wrong.length > 0) return { status: 'fail', evidence: `refused, but also by ${wrong.map((w) => w.rule).join(', ')} — the case breaks only ${e.rule ?? e.field}` };
-      if (out.threw !== undefined) return { status: 'pass', evidence: `refused (${said})` };
+      if (wrong.length > 0) return { status: 'fail', evidence: `refused, but also by ${wrong.map((w) => w.rule).join(', ')} — the case breaks only ${target}` };
       if (!e.rule && !e.field) return { status: 'pass', evidence: `refused (${said})` };
       return errors.some(names)
         ? { status: 'pass', evidence: `refused, naming ${[e.rule, e.field].filter(Boolean).join(' / ')}` }
         : { status: 'fail', evidence: `refused, but no error names ${[e.rule, e.field].filter(Boolean).join(' or ')} (${said})` };
     }
     case 'not-refused-by':
-      return refused && (out.threw !== undefined || errors.some(names))
-        ? { status: 'fail', evidence: `refused by ${e.rule ?? e.field} although the value is on the passing side (${said})` }
-        : { status: 'pass', evidence: refused ? `refused, but not by ${e.rule ?? e.field} (${said})` : 'not refused' };
-    case 'not-zero':
+      return refused && errors.some(names)
+        ? { status: 'fail', evidence: `refused by ${target} although the value is on the passing side (${said})` }
+        : { status: 'pass', evidence: refused ? `refused, but not by ${target} (${said})` : 'not refused' };
+    case 'not-zero': {
       if (refused) return { status: 'pass', evidence: `refused as missing (${said})` };
-      return isZero(out.normalized)
-        ? { status: 'fail', evidence: `a missing ${e.field} was held as ${JSON.stringify(out.normalized)}` }
-        : { status: 'pass', evidence: `a missing ${e.field} is held as ${JSON.stringify(out.normalized ?? null)}, not 0` };
+      if (isZero(out.normalized)) return { status: 'fail', evidence: `a missing ${e.field} was held as ${JSON.stringify(out.normalized)}` };
+      const held = `a missing ${e.field} is held as ${JSON.stringify(out.normalized ?? null)}, not 0`;
+      // Held as missing is half of it: a run on that request must not compute it as 0 either.
+      const run = out.run;
+      if (!run) return { status: 'fail', evidence: `${held}; no run was reported for the same request` };
+      if (run.threw !== undefined) return { status: 'fail', evidence: `${held}; simulate on the same request threw (${run.threw})` };
+      if (run.ok === false) return { status: 'pass', evidence: `${held}; simulate refuses the request (errors: ${JSON.stringify(run.errors ?? [])})` };
+      if (run.ok !== true) return { status: 'fail', evidence: `${held}; simulate answered without ok: true or ok: false` };
+      return (run.errors ?? []).some(names)
+        ? { status: 'pass', evidence: `${held}; simulate runs and reports ${e.field} as missing` }
+        : { status: 'fail', evidence: `${held}, but simulate on the same request answered ok: true without naming ${e.field} — the missing value was computed as something (0?)` };
+    }
     case 'zero':
       if (refused) return { status: 'fail', evidence: `0 was refused (${said})` };
       return isZero(out.normalized)
@@ -234,18 +366,6 @@ export function judge(call, out) {
         ? { status: 'pass', evidence: `${out.records} records (base ${out.baseRecords})` }
         : { status: 'fail', evidence: `${out.records} records, expected ${want} (base ${out.baseRecords})` };
     }
-    case 'distinct-runs': {
-      const [a, b] = out.ids ?? [];
-      if (!a || !b) return { status: 'fail', evidence: `simulate returned no run id (${JSON.stringify(out.ids ?? [])})` };
-      if (a === b) return { status: 'fail', evidence: `two runs in the same millisecond got the same id ${a}` };
-      if (out.readBack !== a) return { status: 'fail', evidence: `getRun(${a}) after the second run returned ${JSON.stringify(out.readBack ?? null)} — the first run was overwritten or lost` };
-      return { status: 'pass', evidence: `two ids (${a}, ${b}); the first run is still readable as itself` };
-    }
-    case 'equals': {
-      if (out.threw !== undefined) return { status: 'fail', evidence: `compute threw: ${out.threw}` };
-      const got = typeof out.value === 'string' ? out.value : JSON.stringify(out.value);
-      return got === e.value ? { status: 'pass', evidence: `exactly ${got}` } : { status: 'fail', evidence: `${got}, expected exactly ${e.value}` };
-    }
     default:
       return { status: 'not-runnable', evidence: `unknown expectation '${e.kind}'` };
   }
@@ -253,53 +373,153 @@ export function judge(call, out) {
 
 /**
  * One case's verdict from its examples: Failed when any example failed, Passed
- * when at least one ran and none failed, otherwise Not run with the reason.
+ * only when every example ran and passed, otherwise Not run with the reason —
+ * a case that ran in part says how much of it ran.
  */
 export function caseVerdict(examples) {
   if (examples.some((x) => x.status === 'fail')) return { status: 'Failed' };
-  if (examples.some((x) => x.status === 'pass')) return { status: 'Passed' };
-  const reasons = [...new Set(examples.map((x) => x.evidence).filter(Boolean))];
+  if (examples.length > 0 && examples.every((x) => x.status === 'pass')) return { status: 'Passed' };
+  const reasons = [...new Set(examples.filter((x) => x.status !== 'pass').map((x) => x.evidence).filter(Boolean))];
+  const passed = examples.filter((x) => x.status === 'pass').length;
+  if (passed > 0) {
+    return {
+      status: 'Not run',
+      reason: `ran in part — ${passed} of ${examples.length} examples passed through the call contract; ${examples.length - passed} could not run: ${reasons.join('; ')}`,
+    };
+  }
   return { status: 'Not run', reason: reasons.length > 0 ? reasons.join('; ') : 'no example of this case can be expressed through the call contract' };
 }
 
-async function attempt(fn) {
-  try {
-    return { answer: await fn() };
-  } catch (err) {
-    return { threw: message(err) };
+/**
+ * The positive control: the base request passes `validate` and `simulate`, each
+ * with `ok: true`. Without it a "refused" verdict would prove nothing — the
+ * mapping, not the case, would be refused. `{ ok: true, baseRecords }` or
+ * `{ ok: false, reason }`, from the raw control `collectEngineCase` reports.
+ */
+export function judgeControl(control) {
+  if (!isObject(control)) return { ok: false, reason: 'no positive control was reported' };
+  if (typeof control.loadFailure === 'string') {
+    return { ok: false, reason: `the call contract cannot run in the confined sandbox: ${control.loadFailure.slice(0, 300)}` };
   }
-}
-
-/** Per-module state: the positive control and the base record count, computed once. */
-export function createEngineState() {
-  return { control: undefined };
+  if (Array.isArray(control.missing) && control.missing.length > 0) {
+    return { ok: false, reason: `${NOT_RUN_NO_CONTRACT} (it lacks ${control.missing.map((m) => String(m).slice(0, 40)).join(', ')})` };
+  }
+  if (control.noBase === true) return { ok: false, reason: 'the contract has no baseRequest' };
+  const v = answerIn(control.validate);
+  if (!v || v.threw !== undefined || v.ok !== true) {
+    return { ok: false, reason: `the contract's baseRequest is not accepted by validate (${v?.threw ?? JSON.stringify(v?.errors ?? [])}) — the mapping does not fit the code` };
+  }
+  const s = answerIn(control.simulate);
+  if (!s || s.threw !== undefined || s.ok === false) {
+    return { ok: false, reason: `the contract's baseRequest is refused by simulate (${s?.threw ?? JSON.stringify(s?.errors ?? [])}) — the mapping does not fit the code` };
+  }
+  if (s.ok !== true) return { ok: false, reason: "simulate does not answer the contract's baseRequest with ok: true — the mapping does not fit the code" };
+  if (typeof s.records !== 'number') return { ok: false, reason: 'simulate reports no record count (records) for the base request' };
+  return { ok: true, baseRecords: s.records };
 }
 
 /**
- * The positive control: the base request passes `validate` and `simulate`.
- * Without it a "refused" verdict would prove nothing — the mapping, not the
- * case, would be refused. `{ ok: true, baseRecords }` or `{ ok: false, reason }`.
+ * Judge one engine case (`{ id, examples: [{ input, expected, call? }] }`) from
+ * what the collector reported for it. The expectations come from `kase`, which
+ * the judging side holds itself; `collected` is untrusted data. Returns
+ * `{ status: 'Passed' | 'Failed' | 'Not run', reason?, examples: [{ input, status, evidence }] }`.
  */
-async function controlOf(mod, state) {
-  if (state.control) return state.control;
-  const missing = CONTRACT_EXPORTS.filter((name) => mod[name] === undefined);
-  if (missing.length > 0) return (state.control = { ok: false, reason: `${NOT_RUN_NO_CONTRACT} (it lacks ${missing.join(', ')})` });
-  const contract = mod.CONTRACT;
-  if (!isObject(contract) || !isObject(contract.baseRequest)) return (state.control = { ok: false, reason: 'the contract has no baseRequest' });
-  const v = await attempt(() => mod.validate(structuredClone(contract.baseRequest)));
-  if (v.threw !== undefined || v.answer?.ok !== true) {
-    return (state.control = { ok: false, reason: `the contract's baseRequest is not accepted by validate (${v.threw ?? JSON.stringify(errorsOf(v.answer))}) — the mapping does not fit the code` });
-  }
-  const s = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
-  if (s.threw !== undefined || s.answer?.ok === false) {
-    return (state.control = { ok: false, reason: `the contract's baseRequest is refused by simulate (${s.threw ?? JSON.stringify(errorsOf(s.answer))}) — the mapping does not fit the code` });
-  }
-  if (typeof s.answer?.records !== 'number') return (state.control = { ok: false, reason: 'simulate reports no record count (records) for the base request' });
-  return (state.control = { ok: true, baseRecords: s.answer.records });
+export function judgeEngineCase(kase, collected) {
+  const control = judgeControl(isObject(collected) ? collected.control : undefined);
+  if (!control.ok) return { status: 'Not run', reason: control.reason, examples: [] };
+  const reported = Array.isArray(collected.examples) ? collected.examples : [];
+  const examples = [];
+  (kase.examples ?? []).forEach((e, i) => {
+    if (!e.call) {
+      examples.push({ input: e.input, status: 'not-runnable', evidence: NOT_EXPRESSIBLE });
+      return;
+    }
+    const out = outcomeIn(reported[i]);
+    if (out && e.call.expect?.kind === 'records-delta') out.baseRecords = control.baseRecords;
+    examples.push({ input: e.input, ...judge(e.call, out) });
+  });
+  const verdict = caseVerdict(examples);
+  return { status: verdict.status, ...(verdict.reason ? { reason: verdict.reason } : {}), examples };
 }
 
-/** Execute one call against the contract; the outcome `judge` reads. */
-async function execute(mod, call, baseRecords) {
+/* -------------------------------------------------------------- the collector */
+
+/**
+ * Why an error is the sandbox's and not the package's, or null: a module or a
+ * global the confinement does not provide (`createConfinement`). Without hooks
+ * (code that runs the package unconfined, the specs) nothing is the sandbox's.
+ */
+function sandboxReason(state, err) {
+  const hook = state && state.hooks && state.hooks.notRunnable;
+  if (typeof hook !== 'function') return null;
+  try {
+    const reason = hook(err);
+    return typeof reason === 'string' && reason ? reason.slice(0, 300) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function attempt(fn, state) {
+  try {
+    return { answer: await fn() };
+  } catch (err) {
+    const reason = sandboxReason(state, err);
+    if (reason) return { notRunnable: reason };
+    return { threw: message(err), crash: crashed(err) };
+  }
+}
+
+/** A `validate`/`simulate` answer as raw data: `{ notRunnable } | { threw, crash } | { ok, errors, records? }`. */
+function answerOf(r) {
+  if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+  if (r.threw !== undefined) return { threw: r.threw, crash: r.crash };
+  const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer) };
+  if (typeof r.answer?.records === 'number') out.records = r.answer.records;
+  return out;
+}
+
+/**
+ * Per-module state: the raw positive control, collected once, and the hooks of
+ * the confinement the module runs in (`createConfinement(...).hooks`):
+ * `freezeClock(at) → restore` for the package's clock, `notRunnable(err)` for
+ * an error the sandbox raised rather than the package. Without hooks the
+ * collector freezes `Date.now` itself — only possible where nothing is locked
+ * down, i.e. where the package runs unconfined (the specs).
+ */
+export function createEngineState(hooks = null) {
+  return { control: undefined, hooks };
+}
+
+function freezeClock(state, at) {
+  const hook = state && state.hooks && state.hooks.freezeClock;
+  if (typeof hook === 'function') return hook(at);
+  const realNow = Date.now;
+  Date.now = () => at;
+  return () => {
+    Date.now = realNow;
+  };
+}
+
+async function collectControl(mod, state) {
+  if (state.control) return state.control;
+  const missing = CONTRACT_EXPORTS.filter((name) => mod[name] === undefined);
+  if (missing.length > 0) return (state.control = { missing });
+  const contract = mod.CONTRACT;
+  if (!isObject(contract) || !isObject(contract.baseRequest)) return (state.control = { noBase: true });
+  const v = await attempt(() => mod.validate(structuredClone(contract.baseRequest)), state);
+  if (v.notRunnable !== undefined) return (state.control = { loadFailure: v.notRunnable });
+  const control = { validate: answerOf(v) };
+  if (v.threw === undefined && v.answer?.ok === true) {
+    const s = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)), state);
+    if (s.notRunnable !== undefined) return (state.control = { loadFailure: s.notRunnable });
+    control.simulate = answerOf(s);
+  }
+  return (state.control = control);
+}
+
+/** Execute one call against the contract: the raw outcome `judge` reads. */
+async function execute(mod, call, state) {
   const contract = mod.CONTRACT;
   if (call.op === 'compute') {
     const c = call.compute ?? {};
@@ -307,26 +527,29 @@ async function execute(mod, call, baseRecords) {
     try {
       for (const step of c.steps ?? []) acc = await mod.compute(String(c.field), acc, step.op, step.b);
     } catch (err) {
-      return { threw: message(err) };
+      const reason = sandboxReason(state, err);
+      if (reason) return { notRunnable: reason };
+      return { threw: message(err), crash: crashed(err) };
     }
-    return { value: typeof acc === 'number' && !Number.isFinite(acc) ? String(acc) : acc };
+    return { value: plain(acc) };
   }
   if (call.op === 'run-identity') {
-    const realNow = Date.now;
-    const fixed = realNow();
-    Date.now = () => fixed;
+    const restore = freezeClock(state, Date.now());
     try {
-      const a = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
-      if (a.threw !== undefined) return { threw: a.threw };
-      const b = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)));
+      const a = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)), state);
+      if (a.notRunnable !== undefined) return { notRunnable: a.notRunnable };
+      if (a.threw !== undefined) return { threw: a.threw, crash: a.crash };
+      const b = await attempt(() => mod.simulate(structuredClone(contract.baseRequest)), state);
+      if (b.notRunnable !== undefined) return { notRunnable: b.notRunnable };
       const idA = a.answer?.runId ?? null;
-      const read = idA ? await attempt(() => mod.getRun(idA)) : { answer: null };
+      const read = idA ? await attempt(() => mod.getRun(idA), state) : { answer: null };
+      if (read.notRunnable !== undefined) return { notRunnable: read.notRunnable };
       return {
         ids: [idA, b.answer?.runId ?? null].map((x) => (x === null || x === undefined ? null : String(x))),
         readBack: read.answer && read.answer.runId !== undefined ? String(read.answer.runId) : null,
       };
     } finally {
-      Date.now = realNow;
+      restore();
     }
   }
   const built = buildRequest(contract, call);
@@ -334,40 +557,375 @@ async function execute(mod, call, baseRecords) {
   const field = call.expect?.field;
   const mapped = field ? resolveField(contract, field).path : null;
   if (call.op === 'validate') {
-    const r = await attempt(() => mod.validate(built.request));
-    if (r.threw !== undefined) return { threw: r.threw, path: mapped };
-    const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer), path: mapped };
-    if (mapped && r.answer && isObject(r.answer.normalized)) {
+    const request = built.request;
+    const forRun = call.expect?.kind === 'not-zero' ? structuredClone(request) : null;
+    const r = await attempt(() => mod.validate(request), state);
+    if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+    const out = { ...answerOf(r), path: mapped };
+    if (r.threw === undefined && mapped && r.answer && isObject(r.answer.normalized)) {
       const v = readField(r.answer.normalized, mapped);
-      if (v !== undefined) out.normalized = typeof v === 'number' && !Number.isFinite(v) ? String(v) : v;
+      if (v !== undefined) out.normalized = plain(v);
+    }
+    // "Never computed as 0" is a claim about the run as well: the same request through simulate.
+    if (forRun && r.threw === undefined) {
+      const s = await attempt(() => mod.simulate(forRun), state);
+      if (s.notRunnable !== undefined) return { notRunnable: s.notRunnable };
+      out.run = answerOf(s);
     }
     return out;
   }
-  const r = await attempt(() => mod.simulate(built.request));
-  if (r.threw !== undefined) return { threw: r.threw, path: mapped };
-  const out = { ok: r.answer?.ok === true ? true : r.answer?.ok === false ? false : undefined, errors: errorsOf(r.answer), path: mapped };
-  if (typeof r.answer?.records === 'number') out.records = r.answer.records;
-  if (call.expect?.kind === 'records-delta') out.baseRecords = baseRecords;
-  return out;
+  const r = await attempt(() => mod.simulate(built.request), state);
+  if (r.notRunnable !== undefined) return { notRunnable: r.notRunnable };
+  return { ...answerOf(r), path: mapped };
 }
 
 /**
- * Run one engine case (`{ id, examples: [{ input, expected, call? }] }`)
- * against a loaded contract module. Returns
- * `{ status: 'Passed' | 'Failed' | 'Not run', reason?, examples: [{ input, status, evidence }] }`.
+ * Collect one engine case against a loaded contract module: the raw control and
+ * one raw outcome per example (`null` for an example without a machine form).
+ * No verdict — `judgeEngineCase` gives it, in a process without the package.
+ * The result is plain JSON.
  */
-export async function runEngineCase(mod, kase, state = createEngineState()) {
-  const control = await controlOf(mod, state);
-  if (!control.ok) return { status: 'Not run', reason: control.reason, examples: [] };
+export async function collectEngineCase(mod, kase, state = createEngineState()) {
+  const control = await collectControl(mod, state);
+  if (!judgeControl(control).ok) return { control, examples: [] };
   const examples = [];
-  for (const e of kase.examples ?? []) {
-    if (!e.call) {
-      examples.push({ input: e.input, status: 'not-runnable', evidence: NOT_EXPRESSIBLE });
-      continue;
-    }
-    const out = await execute(mod, e.call, control.baseRecords);
-    examples.push({ input: e.input, ...judge(e.call, out) });
+  for (const e of kase.examples ?? []) examples.push(e.call ? await execute(mod, e.call, state) : null);
+  return { control, examples };
+}
+
+/** Collect and judge in one process — for code that already runs the package in-process (tests). */
+export async function runEngineCase(mod, kase, state = createEngineState()) {
+  return judgeEngineCase(kase, await collectEngineCase(mod, kase, state));
+}
+
+/* ------------------------------------------------------------ the confinement */
+
+/**
+ * The options both executing processes pass to SES's `lockdown()` before any
+ * code of the package exists in them. `overrideTaming: 'severe'` lets ordinary
+ * code assign over a frozen inherited property (`err.name = …`, `obj.toString
+ * = …`) on its own objects, which generated code does; it loosens nothing that
+ * is frozen.
+ */
+export const LOCKDOWN_OPTIONS = { overrideTaming: 'severe', consoleTaming: 'unsafe', errorTaming: 'unsafe', stackFiltering: 'concise' };
+
+/**
+ * The Node modules the package may import inside the compartment, each a
+ * hardened stand-in built here — never the module itself, whose objects lead
+ * back to the process (a socket's prototype, a stream, a Buffer):
+ *   - crypto: `randomUUID` only — run identities are part of the contract;
+ *   - url: `pathToFileURL` / `fileURLToPath` as string conversions — the common
+ *     "am I the entry point?" check of a server file;
+ *   - http, https, net: a server whose `listen` binds nothing and is reported
+ *     (FP-TEST-03), and connections that are refused and reported.
+ * Anything else is refused, and the case is Not run with that reason.
+ */
+export const CONFINED_MODULES = ['crypto', 'url', 'http', 'https', 'net'];
+
+/** Globals of a Node process the compartment does not provide: a use is the sandbox's limit, not the package's crash. */
+const HOST_ONLY_GLOBALS = [
+  'require', 'module', 'exports', '__dirname', '__filename', 'Buffer', 'URL', 'URLSearchParams', 'TextDecoderStream', 'TextEncoderStream',
+  'setImmediate', 'clearImmediate', 'performance', 'AbortController', 'AbortSignal', 'Intl', 'Blob', 'File', 'FormData', 'Headers', 'Request',
+  'Response', 'WebSocket', 'EventTarget', 'Event', 'MessageChannel', 'MessagePort', 'BroadcastChannel', 'navigator', 'WebAssembly',
+  'SharedArrayBuffer', 'Atomics', 'FinalizationRegistry', 'WeakRef', 'DOMException', 'ReadableStream', 'WritableStream', 'TransformStream',
+];
+
+/**
+ * After `lockdown()`: a confinement for one package. `host` holds the only
+ * capabilities the stand-ins use, all taken by the trusted caller:
+ *   `{ now(), random(), randomUUID(), getRandomValues(a), structuredClone(v),
+ *      setTimeout, clearTimeout, setInterval, clearInterval,
+ *      emit?(event), nodeEnv?, platform?, version? }`.
+ * Returns `{ load(source), setClock(clock), hooks, provides }`:
+ *   - `load(source)` evaluates one CommonJS bundle of the package (esbuild's
+ *     output; the caller bundles, nothing is resolved from disk in here) in a
+ *     fresh compartment: `{ exports } | { failure }`;
+ *   - `setClock({ kind: 'frozen', at } | { kind: 'tick', start, step } | null)`
+ *     sets the clock the package reads (`Date.now()`, `new Date()`);
+ *   - `hooks` go to `createEngineState`.
+ * The compartment's global object holds exactly the names passed below plus
+ * the frozen JavaScript intrinsics; its `Function`, `eval` and `Compartment`
+ * evaluate only inside it, and `Function.prototype.constructor` is inert.
+ */
+export function createConfinement(host) {
+  const { Compartment, harden } = globalThis;
+  if (typeof Compartment !== 'function' || typeof harden !== 'function' || !Object.isFrozen(Object.prototype)) {
+    throw new Error('createConfinement needs lockdown() first');
   }
-  const verdict = caseVerdict(examples);
-  return { status: verdict.status, ...(verdict.reason ? { reason: verdict.reason } : {}), examples };
+  const emit = (event) => {
+    try {
+      if (typeof host.emit === 'function') host.emit(event);
+    } catch {
+      // the report channel is gone: nothing left to tell
+    }
+  };
+  const refusals = new WeakSet();
+  const refuse = (text) => {
+    const err = new Error(text);
+    refusals.add(err);
+    return err;
+  };
+  const rethrowPlain = (fn) => {
+    try {
+      return fn();
+    } catch (err) {
+      // A host error object (a DOMException, a Node-internal TypeError) carries a host prototype: never hand it in.
+      throw new TypeError(message(err));
+    }
+  };
+
+  // The clock the package reads.
+  let clock = null;
+  const now = () => (clock ? clock() : host.now());
+  const RealDate = Date;
+  const ConfinedDate = function Date(...args) {
+    if (new.target === undefined) return new RealDate(now()).toString();
+    return Reflect.construct(RealDate, args.length === 0 ? [now()] : args, new.target);
+  };
+  Object.defineProperty(ConfinedDate, 'prototype', { value: RealDate.prototype, writable: false });
+  Object.defineProperties(ConfinedDate, {
+    now: { value: () => now() },
+    parse: { value: (text) => RealDate.parse(text) },
+    UTC: { value: (...args) => RealDate.UTC(...args) },
+  });
+  harden(ConfinedDate);
+
+  const ConfinedMath = {};
+  for (const key of Reflect.ownKeys(Math)) {
+    if (key !== 'random') Object.defineProperty(ConfinedMath, key, { value: Math[key], enumerable: false });
+  }
+  Object.defineProperty(ConfinedMath, 'random', { value: () => host.random() });
+  harden(ConfinedMath);
+
+  // Timers: numbers in, numbers out — a host Timeout object never enters.
+  const timers = new Map();
+  let timerSeq = 0;
+  const guarded = (fn, args) => () => {
+    try {
+      if (typeof fn === 'function') fn(...args);
+    } catch {
+      // the package's own asynchronous failure: not the executor's to crash on
+    }
+  };
+  const later = (set, clear, repeat) => [
+    (fn, ms, ...args) => {
+      const id = ++timerSeq;
+      const run = guarded(fn, args);
+      const handle = set(() => {
+        if (!repeat) timers.delete(id);
+        run();
+      }, Number(ms) || 0);
+      timers.set(id, { clear, handle });
+      return id;
+    },
+    (id) => {
+      const t = timers.get(id);
+      if (t) {
+        t.clear(t.handle);
+        timers.delete(id);
+      }
+    },
+  ];
+  const [setTimeoutC, clearTimeoutC] = later(host.setTimeout, host.clearTimeout, false);
+  const [setIntervalC, clearIntervalC] = later(host.setInterval, host.clearInterval, true);
+
+  const noop = () => undefined;
+  const confinedConsole = harden({ log: noop, info: noop, warn: noop, error: noop, debug: noop, trace: noop, dir: noop, table: noop, group: noop, groupEnd: noop, time: noop, timeEnd: noop, assert: noop });
+  const randomUUID = () => String(host.randomUUID());
+  const confinedCrypto = harden({ randomUUID, getRandomValues: (array) => rethrowPlain(() => host.getRandomValues(array)) });
+
+  const blocked = (kind) => () => {
+    emit({ type: 'network', kind });
+    throw refuse(`network access (${kind}) is not available in the confined sandbox`);
+  };
+  const describeListen = (args) => {
+    const first = args[0];
+    if (typeof first === 'number' || typeof first === 'string') return String(first);
+    if (first && typeof first === 'object' && 'port' in first) return String(first.port);
+    return 'unspecified';
+  };
+  const fakeServer = () => {
+    const server = {
+      listen(...args) {
+        emit({ type: 'listen', port: describeListen(args) });
+        return server;
+      },
+      close(cb) {
+        if (typeof cb === 'function') setTimeoutC(cb, 0);
+        return server;
+      },
+      on: () => server,
+      once: () => server,
+      off: () => server,
+      address: () => null,
+    };
+    return server;
+  };
+  const httpLike = (name) =>
+    harden({
+      createServer: () => fakeServer(),
+      Server: function Server() {
+        return fakeServer();
+      },
+      request: blocked(`${name}.request`),
+      get: blocked(`${name}.get`),
+    });
+  const toFileUrl = (p) => {
+    const text = String(p).replace(/\\/g, '/');
+    const href = `file://${text.startsWith('/') ? '' : '/'}${encodeURI(text)}`;
+    return harden({ href, protocol: 'file:', pathname: href.slice(7), toString: () => href });
+  };
+  const fromFileUrl = (u) => {
+    const text = typeof u === 'string' ? u : String(u && u.href);
+    if (!text.startsWith('file://')) throw new TypeError('The URL must be of scheme file');
+    return decodeURI(text.slice(7));
+  };
+  const modules = {
+    crypto: harden({ randomUUID }),
+    url: harden({ pathToFileURL: toFileUrl, fileURLToPath: fromFileUrl }),
+    http: httpLike('http'),
+    https: httpLike('https'),
+    net: harden({
+      createServer: () => fakeServer(),
+      Server: function Server() {
+        return fakeServer();
+      },
+      connect: blocked('net.connect'),
+      createConnection: blocked('net.createConnection'),
+      Socket: function Socket() {
+        return blocked('net.Socket')();
+      },
+    }),
+  };
+  const confinedRequire = harden((spec) => {
+    const name = String(spec).startsWith('node:') ? String(spec).slice(5) : String(spec);
+    if (Object.prototype.hasOwnProperty.call(modules, name)) return modules[name];
+    throw refuse(`the code imports '${String(spec).slice(0, 80)}', which the confined sandbox does not provide (it provides ${CONFINED_MODULES.join(', ')})`);
+  });
+
+  const hostGlobals = new Set(HOST_ONLY_GLOBALS);
+  const missingGlobal = (name) => `the code uses the global '${name}', which the confined sandbox does not provide`;
+  /**
+   * The sandbox's reason for an error, or null when it is the package's own.
+   * Inside a compartment an unknown global reads as undefined rather than
+   * throwing, so each host-only global is installed as a getter that throws a
+   * refusal (QA 9eac38e0e0b6); a ReferenceError is still recognised by its name
+   * and message, never by `instanceof` across compartments.
+   */
+  const notRunnable = (err) => {
+    try {
+      if (err && (typeof err === 'object' || typeof err === 'function') && refusals.has(err)) return String(err.message);
+      if (err && typeof err === 'object' && String(err.name) === 'ReferenceError') {
+        const m = /^([A-Za-z_$][\w$]*) is not defined$/.exec(String(err.message));
+        if (m && hostGlobals.has(m[1])) return missingGlobal(m[1]);
+      }
+    } catch {
+      // an error object that cannot even be read is the package's own failure
+    }
+    return null;
+  };
+
+  return {
+    provides: CONFINED_MODULES,
+    hooks: harden({
+      notRunnable,
+      freezeClock: (at) => {
+        const previous = clock;
+        clock = () => at;
+        return () => {
+          clock = previous;
+        };
+      },
+    }),
+    setClock(spec) {
+      if (spec && spec.kind === 'frozen' && Number.isFinite(spec.at)) {
+        const at = spec.at;
+        clock = () => at;
+      } else if (spec && spec.kind === 'tick' && Number.isFinite(spec.start) && Number.isFinite(spec.step)) {
+        let t = spec.start;
+        const step = spec.step;
+        clock = () => (t += step);
+      } else {
+        clock = null;
+      }
+    },
+    load(source) {
+      // Per load: a process stand-in the package may write to without reaching anything.
+      const env = {};
+      if (typeof host.nodeEnv === 'string') env.NODE_ENV = host.nodeEnv;
+      const sink = { write: () => true, isTTY: false, on: () => sink, once: () => sink, end: noop };
+      const proc = {
+        env,
+        argv: [],
+        execArgv: [],
+        platform: String(host.platform ?? 'linux'),
+        version: String(host.version ?? ''),
+        versions: {},
+        pid: 1,
+        exitCode: undefined,
+        stdout: sink,
+        stderr: sink,
+        cwd: () => '/',
+        exit: (code) => {
+          throw refuse(`the code called process.exit(${String(code ?? '')})`);
+        },
+        nextTick: (fn, ...args) => {
+          Promise.resolve().then(guarded(fn, args));
+        },
+        on: () => proc,
+        once: () => proc,
+        off: () => proc,
+        removeListener: () => proc,
+        emit: () => false,
+        emitWarning: noop,
+        hrtime: Object.assign(() => [0, 0], { bigint: () => 0n }),
+        memoryUsage: () => ({ rss: 0, heapTotal: 0, heapUsed: 0, external: 0, arrayBuffers: 0 }),
+      };
+      const compartment = new Compartment({
+        globals: {
+          console: confinedConsole,
+          process: proc,
+          Date: ConfinedDate,
+          Math: ConfinedMath,
+          crypto: confinedCrypto,
+          setTimeout: setTimeoutC,
+          clearTimeout: clearTimeoutC,
+          setInterval: setIntervalC,
+          clearInterval: clearIntervalC,
+          queueMicrotask: (fn) => {
+            Promise.resolve().then(guarded(fn, []));
+          },
+          structuredClone: (value) => rethrowPlain(() => host.structuredClone(value)),
+          fetch: async () => blocked('fetch')(),
+        },
+        __options__: true,
+      });
+      // `global` is the compartment's own global object, as `globalThis` is.
+      compartment.globalThis.global = compartment.globalThis;
+      // A host-only global is not silently undefined: reading it is the sandbox's refusal, and the case is Not run.
+      for (const name of HOST_ONLY_GLOBALS) {
+        if (['require', 'module', 'exports', '__dirname', '__filename'].includes(name)) continue;
+        Object.defineProperty(compartment.globalThis, name, {
+          get() {
+            throw refuse(missingGlobal(name));
+          },
+          configurable: false,
+          enumerable: false,
+        });
+      }
+      const module = { exports: {} };
+      let factory;
+      try {
+        factory = compartment.evaluate(`(function (module, exports, require, __filename, __dirname) {\n${source}\n})`);
+      } catch (err) {
+        return { failure: `the code cannot be evaluated in the confined sandbox: ${message(err)}` };
+      }
+      try {
+        factory(module, module.exports, confinedRequire, '/package/bundle.cjs', '/package');
+      } catch (err) {
+        return { failure: notRunnable(err) ?? `the code throws while it is loaded: ${message(err)}` };
+      }
+      return { exports: module.exports };
+    },
+  };
 }

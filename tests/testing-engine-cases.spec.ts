@@ -19,6 +19,8 @@ import {
 import { CASE_ASSESSMENT_WORD, assessCase, assessmentSummary, countAssessments } from '../lib/testing-rule-trace';
 import { testFactsOf } from '../lib/delivery-facts';
 import { createDeliveryBundle } from '../lib/delivery-package';
+import { sha256Hex } from '../lib/artefact-digest';
+import { deriveEngineCasesOf, engineCaseProvenance } from '../lib/engine-case-provenance';
 
 /**
  * Roadmap 3.0.12, part C — boundary cases the engine derives from the
@@ -392,23 +394,26 @@ test.describe('the generated suite carries the engine cases', () => {
 
   test('the export file holds the engine cases as data, the model cases not at all', () => {
     const merged = withEngineCases(model, engine) as Array<Record<string, unknown>>;
-    const text = engineCasesFile(merged)!;
+    const text = engineCasesFile(engineCaseProvenance(merged, deriveEngineCasesOf(CO)).verified)!;
     const file = JSON.parse(text);
     expect(file.format).toBe('clean-core.engine-cases/1');
     expect(file.cases.map((c: { id: string }) => c.id)).toEqual(engine.map((c) => c.id));
     const quota = file.cases.find((c: { kind: string; trace: { field?: string } }) => c.kind === 'precision-max' && c.trace.field === 'quota');
     expect(quota.examples[0]).toMatchObject({ input: 'QUOTA = 9999999.999999', expected: 'accepted; kept exactly as 9999999.999999' });
     expect(quota.trace.lines).toEqual([{ start: 4, end: 4 }]);
-    expect(engineCasesFile(model)).toBeNull();
+    expect(engineCasesFile(engineCaseProvenance(model, deriveEngineCasesOf(CO)).verified)).toBeNull();
   });
 
   test('the delivery package ships test/engine-cases.json as an engine file and STATUS counts the cases apart', () => {
     const merged = withEngineCases(model, engine) as Array<Record<string, unknown>>;
     const bundle = createDeliveryBundle();
-    bundle.file(ENGINE_CASES_FILE, engineCasesFile(merged)!, 'engine');
+    bundle.file(ENGINE_CASES_FILE, engineCasesFile(engineCaseProvenance(merged, deriveEngineCasesOf(CO)).verified)!, 'engine');
     expect(bundle.entries.find((e) => e.path === 'test/engine-cases.json')?.origin).toBe('engine');
 
-    const facts = testFactsOf({ testCases: merged } as unknown as Parameters<typeof testFactsOf>[0], []);
+    // The cases count as derived by Clean-Core.io only against the signed
+    // source they reproduce from (QA review of 2e6596ddbbc8, 0297134b3b87).
+    const signed = { activeRunId: 'run-1', legacyCode: CO, inputFingerprint: { sha256: sha256Hex(CO) } };
+    const facts = testFactsOf({ testCases: merged, ...signed } as unknown as Parameters<typeof testFactsOf>[0], []);
     expect(facts.detail).toContain(`Scenarios: 1 case written by the testing model · ${engine.length} derived by Clean-Core.io from the original (20 precision, 6 guard, 4 input contract, 1 run identity).`);
 
     const page = readFileSync(join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'delivery', 'page.tsx'), 'utf8');

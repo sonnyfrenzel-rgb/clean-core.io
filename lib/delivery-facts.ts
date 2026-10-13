@@ -13,7 +13,8 @@
  * and hands it in; this module only reads.
  */
 
-import { countEngineCases, engineCaseCountsSentence, engineCasesNotCovered, engineCasesNotCoveredSentence } from './testing-engine-cases';
+import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
+import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
 import { formatTextDate } from './format';
 import { sha256Hex } from './artefact-digest';
 import { countSourceLines } from './source-lines';
@@ -303,12 +304,37 @@ export function testFactsOf(project: HandoverProject, phases: readonly RailStep[
   const list = Array.isArray(project.testCases) ? (project.testCases as unknown as Array<Record<string, unknown>>) : [];
   if (list.length === 0) return facts;
   const origins = countEngineCases(list);
-  const detail = [...facts.detail, `Scenarios: ${engineCaseCountsSentence(origins)}.`];
+  if (origins.engine === 0) return { ...facts, detail: [...facts.detail, `Scenarios: ${engineCaseCountsSentence(origins)}.`] };
+  // QA review of 2e6596ddbbc8 (0297134b3b87, 3ea38fd51acf): `testCases` is
+  // client-written, so a case counts as derived by Clean-Core.io only when the
+  // engine reproduces it from the signed source; and the cases past the caps
+  // are counted from that same derivation, only while it is the one the stored
+  // cases came from and the test phase is not stale — otherwise the reason is said.
+  const testsStale = phases.find((p) => p.key === 'testing')?.state === 'stale';
+  const provenance = engineCaseProvenance(list, deriveEngineCasesOf(signedSourceOf(project)?.source ?? null), testsStale);
+  // Each verified id counts once; every other stored engine entry — a duplicate copy included (QA 663172392dc6) — counts as not derived.
+  const verifiedIds = new Set(provenance.verified.map((c) => c.id));
+  const counted = countEngineCases(list.filter((tc) => !engineCaseOf(tc) || verifiedIds.has(String(tc.id ?? ''))));
+  const notDerived = provenance.unverifiedEntries;
+  const detail = [
+    ...facts.detail,
+    `Scenarios: ${engineCaseCountsSentence({ ...counted, model: counted.model + notDerived })}.`,
+  ];
+  // The sentence counts stored entries, the same number the line above moves to the model side,
+  // and says of a duplicated id that it is one (QA 796fe8bcbadd).
+  if (notDerived > 0) {
+    const copiesOf = new Map(provenance.duplicates);
+    const named = provenance.unverified.map((id) => (copiesOf.has(id) ? `${id} (stored ${copiesOf.get(id)} times; one derivation yields each id once)` : id));
+    detail.push(
+      `${notDerived} stored as engine ${notDerived === 1 ? 'case is' : 'cases are'} not reproduced from the signed source and counted as not derived by Clean-Core.io: ${named.join(', ')}.`,
+    );
+  }
   // Owner, 12.10.2026: the engine cases are capped (20 precision, 20 guard); the rest is counted here.
-  const source = typeof (project as { legacyCode?: unknown }).legacyCode === 'string' ? (project as { legacyCode: string }).legacyCode : '';
-  if (origins.engine > 0 && source) {
-    const left = engineCasesNotCovered(source);
+  if (provenance.notCovered) {
+    const left = provenance.notCovered;
     if (left.precision + left.guard > 0) detail.push(engineCasesNotCoveredSentence(left));
+  } else if (provenance.notCoveredReason) {
+    detail.push(engineCasesNotCountedSentence(provenance.notCoveredReason));
   }
   return { ...facts, detail };
 }

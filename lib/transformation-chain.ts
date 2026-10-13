@@ -40,6 +40,7 @@ import { choiceHref, type OriginKey } from '@/lib/choice-addresses';
 import { stageHref } from '@/lib/workspace-back-href';
 import { formatTextDate } from '@/lib/format';
 import { TRANSFORMATION_MESSAGES as M } from '@/lib/messages/transformation';
+import { decisionRecordIsLive, recordedDecisionOf } from '@/lib/transformation-context';
 
 /* ------------------------------------------------------------ prompt seam */
 
@@ -579,6 +580,57 @@ export function qualityTips(inputs: TipInputs): QualityTip[] {
   }
 
   return tips.sort((a, z) => a.rank - z.rank);
+}
+
+/* ------------------------------------------------- the decision warning */
+
+/**
+ * A highlighted, never blocking warning above the tips (owner, 12.10.2026:
+ * no rebuild gate — the decision stays the reader's). It says plainly when a
+ * generation would go against the decision on record, or when nothing on
+ * record has weighed SAP standard against a rebuild yet:
+ *
+ *   - `against-decision` — a live decision record whose option is retire,
+ *     keep or move to SAP standard. The record is read exactly as the
+ *     PLATFORM KNOWLEDGE block reads it (`recordedDecisionOf`), so the
+ *     prompt's "DRAFT AGAINST THE DECISION ON RECORD" and this line agree.
+ *   - `standard-fit-open` — no live record names an option. The router never
+ *     assesses whether SAP standard already covers the need (architecture
+ *     contract limit `standard-fit-not-assessed`); the decision record is
+ *     where a reader weighs it. A live record that chose rebuild has.
+ *
+ * "Generate now" stays; the page does not start a generation by itself while
+ * the warning shows.
+ */
+export type DecisionWarning =
+  | { kind: 'against-decision'; option: 'retire' | 'keep' | 'standard'; recordId: string; text: string; link: ChainLink }
+  | { kind: 'standard-fit-open'; text: string; link: ChainLink };
+
+const AGAINST_TEXT: Record<'retire' | 'keep' | 'standard', string> = {
+  retire: M['transformation.warnDecision.retire'],
+  keep: M['transformation.warnDecision.keep'],
+  standard: M['transformation.warnDecision.standard'],
+};
+
+export function decisionWarning(inputs: Pick<ChainInputs, 'projectId' | 'project' | 'view' | 'origin'>): DecisionWarning | null {
+  if (!inputs.project) return null;
+  const record = recordedDecisionOf((inputs.project as { decision?: unknown }).decision);
+  const live = decisionRecordIsLive(record) ? record : null;
+  if (live && live.optionKind && live.optionKind !== 'rebuild') {
+    return {
+      kind: 'against-decision',
+      option: live.optionKind,
+      recordId: live.id,
+      text: AGAINST_TEXT[live.optionKind],
+      link: { label: M['transformation.warnDecision.openDecision'], href: choice(inputs, 'management.confirm') },
+    };
+  }
+  if (live && live.optionKind === 'rebuild') return null;
+  return {
+    kind: 'standard-fit-open',
+    text: M['transformation.warnDecision.standardFitOpen'],
+    link: { label: M['transformation.warnDecision.checkStandardFit'], href: choice(inputs, 'it.standard-fit') },
+  };
 }
 
 /** Whether every count of the tips has been read, so "nothing open" can be said — and acted on. */

@@ -8,6 +8,12 @@
  * status `pass` or `fail`. A probe that cannot judge — its positive control does
  * not hold, so the adapter is probably wrong — throws an adapter error and the
  * result becomes `not-runnable`, never a silent pass.
+ *
+ * The probes run in the harness process, which never imports the package. They
+ * reach it through `ctx` — `call`, `callMany` and `setClock`, each a request to
+ * the sandboxed executor (`../child/executor.mjs`, `startExecutor` in
+ * `./sandbox.mjs`). A request the executor could not answer rejects with a
+ * transport error, which is never read as the package refusing something.
  */
 
 // ---------------------------------------------------------------- utilities
@@ -65,50 +71,65 @@ function short(value) {
   return s.length > 160 ? `${s.slice(0, 157)}...` : s;
 }
 
+/** One executor answer to a call: `{ threw, value } | { threw: true, error } | { adapter }`, checked. */
+function callAnswer(answer) {
+  if (!answer || typeof answer !== 'object') throw Object.assign(new Error('the executor sent no answer'), { transport: true });
+  if (typeof answer.transportError === 'string') throw Object.assign(new Error(answer.transportError), { transport: true });
+  if (typeof answer.adapter === 'string') throw adapterError(answer.adapter);
+  // The confinement refused something the package asked for (a module, a global, the network): not the package's answer.
+  if (typeof answer.sandbox === 'string') throw Object.assign(new Error(answer.sandbox), { transport: true });
+  if (answer.threw === true) return { threw: true, error: String(answer.error ?? '').slice(0, 300), crash: answer.crash === true };
+  if (answer.threw === false) return { threw: false, value: answer.value };
+  throw Object.assign(new Error('the executor sent an answer of an unknown shape'), { transport: true });
+}
+
 /**
- * Resolve a callable spec: `{ module, export, method?, construct?: [...], factory?: [...] }`.
- * Instances are cached per child, so `create` and `get` of one store share it.
+ * Call a callable spec in the executor: `{ module, export, method?, construct?: [...], factory?: [...] }`.
+ * Resolves to what it returned; rejects with what it threw (as `{ packageThrew }`),
+ * an adapter error, or a transport error.
  */
 function makeCaller(ctx) {
-  const instances = new Map();
   return async function call(spec, args) {
-    if (!spec || !spec.module || !spec.export) throw adapterError('callable needs module and export');
-    const mod = await ctx.load(spec.module);
-    const exported = mod[spec.export] ?? (mod.default && mod.default[spec.export]);
-    if (exported === undefined) throw adapterError(`module '${spec.module}' exports no '${spec.export}'`);
-    let target = exported;
-    let self;
-    if (spec.construct || spec.factory) {
-      const key = `${spec.module}|${spec.export}|${spec.construct ? 'new' : 'call'}|${short(spec.construct ?? spec.factory)}`;
-      if (!instances.has(key)) {
-        const ctorArgs = spec.construct ?? spec.factory;
-        instances.set(key, spec.construct ? new exported(...(Array.isArray(ctorArgs) ? ctorArgs : [])) : await exported(...(Array.isArray(ctorArgs) ? ctorArgs : [])));
-      }
-      self = instances.get(key);
-      target = self;
-    }
-    if (spec.method) {
-      const owner = self ?? exported;
-      if (typeof owner[spec.method] !== 'function') throw adapterError(`'${spec.export}' has no method '${spec.method}'`);
-      return await owner[spec.method](...args);
-    }
-    if (typeof target !== 'function') throw adapterError(`'${spec.export}' is not callable`);
-    return await target(...args);
+    const r = callAnswer(await ctx.request('call', { spec, args }));
+    if (r.threw) throw Object.assign(new Error(r.error), { packageThrew: true, crash: r.crash });
+    return r.value;
   };
 }
 
-/** Call and report `{ threw, value, error }` instead of throwing. */
+/** Many calls of one spec in one request: `[{ threw, value, error }]`, in order. */
+async function callMany(ctx, spec, argsList) {
+  const answer = await ctx.request('call-many', { spec, argsList });
+  if (!answer || !Array.isArray(answer.results)) throw Object.assign(new Error('the executor sent no results'), { transport: true });
+  const results = answer.results.map(callAnswer);
+  if (results.length !== argsList.length) throw Object.assign(new Error(`the executor answered ${results.length} of ${argsList.length} calls`), { transport: true });
+  return results;
+}
+
+/** Call and report `{ threw, value, error }` instead of throwing — only for what the package threw. */
 async function attempt(call, spec, args) {
   try {
     return { threw: false, value: await call(spec, args) };
   } catch (err) {
-    if (err && err.adapter) throw err;
-    return { threw: true, error: String(err && err.message ? err.message : err).split('\n')[0] };
+    if (!err || !err.packageThrew) throw err;
+    return { threw: true, error: err.message, crash: err.crash === true };
   }
 }
 
+/**
+ * Did the package refuse? An answer matching the adapter's refusal condition.
+ * A thrown `Error` proves only that the call threw — "database unavailable"
+ * is no refusal (QA d9df190f3850) — unless the adapter documents that this
+ * package refuses by throwing (`refused.throws: true`); even then a crash (a
+ * TypeError, ReferenceError or SyntaxError JavaScript threw by itself) is not.
+ */
 function refused(res, matcher) {
-  return res.threw || matches(res.value, matcher);
+  if (res.threw) return !res.crash && matcher?.throws === true;
+  return matches(res.value, matcher);
+}
+
+/** Refused with a structured answer only: the adapter's refusal condition, never an exception (QA 612ac86f6c4c). */
+function refusedStructured(res, matcher) {
+  return !res.threw && matches(res.value, matcher);
 }
 
 // ------------------------------------------------- exact decimal reference
@@ -138,7 +159,6 @@ function roundHalfAway(num, den) {
  * every amount in cents from 0.01 to `maxAmount` (and the negatives if signed).
  */
 async function roundingCommercial(cfg, ctx) {
-  const call = makeCaller(ctx);
   const places = Number.isInteger(cfg.places) ? cfg.places : 2;
   const rate = decimal(cfg.ratePercent ?? '5');
   const maxCents = Number(decimal(cfg.maxAmount ?? '1000.00').units) * 10 ** (2 - decimal(cfg.maxAmount ?? '1000.00').scale);
@@ -148,17 +168,19 @@ async function roundingCommercial(cfg, ctx) {
   let checked = 0;
   const signs = cfg.signed ? [1, -1] : [1];
   for (const sign of signs) {
-    for (let c = 1; c <= maxCents; c++) {
-      const cents = sign * c;
-      const amount = cents / 100;
-      const expectedUnits = roundHalfAway(BigInt(cents) * rate.units * pow, den);
-      const expected = Number(expectedUnits) / Number(pow);
-      const value = getPath(await call(cfg.call, fill(cfg.args, { amount, rate: Number(cfg.ratePercent ?? '5') })), cfg.result);
+    const cents = Array.from({ length: maxCents }, (_, i) => sign * (i + 1));
+    // One request per sign: the executor calls the package for every amount in turn.
+    const results = await callMany(ctx, cfg.call, cents.map((c) => fill(cfg.args, { amount: c / 100, rate: Number(cfg.ratePercent ?? '5') })));
+    cents.forEach((c, i) => {
+      const amount = c / 100;
+      const expected = Number(roundHalfAway(BigInt(c) * rate.units * pow, den)) / Number(pow);
+      if (results[i].threw) throw new Error(results[i].error);
+      const value = getPath(results[i].value, cfg.result);
       checked++;
       if (typeof value !== 'number' || Math.abs(value - expected) > 1e-9) {
         diffs.push([amount, value, expected]);
       }
-    }
+    });
   }
   if (checked > 0 && diffs.length === checked) {
     throw adapterError(`every one of ${checked} results differs (first: ${short(diffs[0])}); the result path or argument mapping is probably wrong`);
@@ -202,18 +224,22 @@ async function decimalQuantity(cfg, ctx) {
 /** FP-RUN-02 and FP-RUN-01. Frozen clock, a tight loop, and A -> B -> get A. */
 async function runIdCollision(cfg, ctx) {
   const call = makeCaller(ctx);
-  const realNow = Date.now;
+  // The package's clock, in the executor: frozen, ticking, or the real one again.
+  const setClock = async (clock) => {
+    const answer = await ctx.request('clock', { clock });
+    if (!answer || typeof answer !== 'object' || answer.transportError) throw Object.assign(new Error('the executor did not set the clock'), { transport: true });
+  };
   const outcomes = [];
   const idOf = (value) => getPath(value, cfg.id);
   const frozen = 1767225600000;
   let a;
   let b;
   try {
-    Date.now = () => frozen;
+    await setClock({ kind: 'frozen', at: frozen });
     a = await call(cfg.create, fill(cfg.argsA, {}));
     b = await call(cfg.create, fill(cfg.argsB, {}));
   } finally {
-    Date.now = realNow;
+    await setClock(null);
   }
   const idA = idOf(a);
   const idB = idOf(b);
@@ -235,13 +261,12 @@ async function runIdCollision(cfg, ctx) {
   // A clean A -> B -> get(A) with distinct clock values, so this half judges
   // "latest result" semantics on its own and not the collision again.
   let a2;
-  let tick = frozen + 10_000;
   try {
-    Date.now = () => (tick += 1000);
+    await setClock({ kind: 'tick', start: frozen + 10_000, step: 1000 });
     a2 = await call(cfg.create, fill(cfg.argsA, {}));
     await call(cfg.create, fill(cfg.argsB, {}));
   } finally {
-    Date.now = realNow;
+    await setClock(null);
   }
   // `compare` is one path for both shapes, or `{ create, get }` when the
   // retrieval returns a different envelope than the creation.
@@ -274,29 +299,40 @@ async function emptySelection(cfg, ctx) {
     status: ok ? 'pass' : 'fail',
     evidence: ok
       ? (res.threw ? `refused: ${res.error}` : `answered with a non-success state: ${short(getPath(res.value, cfg.refused?.path))}`)
-      : `an empty selection was answered as a success: ${short(res.value)}`,
+      : res.threw
+        ? `an empty selection threw instead of being refused with a structured answer: ${res.error}`
+        : `an empty selection was answered as a success: ${short(res.value)}`,
   }];
 }
 
-/** FP-GUARD-03. Malformed numbers are refused, never coerced. */
+/**
+ * FP-GUARD-03. Malformed numbers are refused, never coerced. A refusal is the
+ * adapter's structured refusal answer; an exception for a malformed value is a
+ * failure of the probe, not a refusal (QA 612ac86f6c4c).
+ */
 async function lenientNumeric(cfg, ctx) {
   const call = makeCaller(ctx);
   const control = await attempt(call, cfg.call, fill(cfg.args, { value: cfg.valid }));
-  if (refused(control, cfg.refused)) {
+  if (control.threw || refusedStructured(control, cfg.refused)) {
     throw adapterError(`the valid control value ${short(cfg.valid)} is refused (${control.threw ? control.error : short(control.value)})`);
   }
   const invalid = Array.isArray(cfg.invalid) ? cfg.invalid : ['2026x', 'abc', '1.9', 'NaN', 'Infinity', '', null];
   const accepted = [];
+  const threw = [];
   for (const value of invalid) {
     const res = await attempt(call, cfg.call, fill(cfg.args, { value }));
-    if (!refused(res, cfg.refused)) accepted.push(value);
+    if (res.threw) threw.push([value, res.error]);
+    else if (!refusedStructured(res, cfg.refused)) accepted.push(value);
   }
+  const problems = [];
+  if (accepted.length) problems.push(`accepted malformed input ${short(accepted)} for a numeric field`);
+  if (threw.length) problems.push(`threw instead of refusing malformed input ${short(threw.map(([v]) => v))} (first: ${short(threw[0][1])})`);
   return [{
     pattern: 'FP-GUARD-03',
-    status: accepted.length === 0 ? 'pass' : 'fail',
-    evidence: accepted.length === 0
+    status: problems.length === 0 ? 'pass' : 'fail',
+    evidence: problems.length === 0
       ? `valid ${short(cfg.valid)} accepted; ${invalid.length} malformed values refused`
-      : `accepted malformed input ${short(accepted)} for a numeric field`,
+      : problems.join('; '),
   }];
 }
 
@@ -400,6 +436,9 @@ async function displayFilter(cfg, ctx) {
   if (refused(filtered, cfg.refused)) {
     return [{ pattern: 'FP-SCOPE-01', status: 'pass', evidence: `the filter is refused explicitly${filtered.threw ? `: ${filtered.error}` : ''}` }];
   }
+  if (filtered.threw) {
+    return [{ pattern: 'FP-SCOPE-01', status: 'fail', evidence: `the filtered call threw instead of answering or refusing with a structured answer: ${filtered.error}` }];
+  }
   const itemsAll = getPath(all, cfg.items);
   const itemsF = getPath(filtered.value, cfg.items);
   if (!Array.isArray(itemsAll) || !Array.isArray(itemsF)) throw adapterError(`no item list at '${cfg.items}'`);
@@ -454,7 +493,7 @@ async function negativeWrite(cfg, ctx) {
   const call = makeCaller(ctx);
   if (cfg.validValue !== undefined) {
     const control = await attempt(call, cfg.call, fill(cfg.args, { value: cfg.validValue }));
-    if (refused(control, cfg.refused)) throw adapterError(`the valid control write ${short(cfg.validValue)} is refused`);
+    if (control.threw || refused(control, cfg.refused)) throw adapterError(`the valid control write ${short(cfg.validValue)} is refused`);
   }
   const value = typeof cfg.value === 'number' ? cfg.value : -99999;
   const res = await attempt(call, cfg.call, fill(cfg.args, { value }));

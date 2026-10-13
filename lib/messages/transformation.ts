@@ -24,6 +24,14 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.chainBeforeLead': 'From the tools before Transformation, in workflow order.',
   'transformation.notReadYet': 'Recorded here; the code model does not read it yet.',
   'transformation.opensNewTab': 'opens in a new tab',
+  // The decision warning above the tips — never blocking (owner, 12.10.2026).
+  'transformation.warnDecision.retire': 'The decision on record is to retire this program — generating a rebuild goes against it.',
+  'transformation.warnDecision.keep': 'The decision on record is to keep this program as it is — generating a rebuild goes against it.',
+  'transformation.warnDecision.standard': 'The decision on record is to move to SAP standard — generating a rebuild goes against it.',
+  'transformation.warnDecision.standardFitOpen': 'Standard fit is not assessed yet — SAP standard may already cover this.',
+  'transformation.warnDecision.openDecision': 'Open the decision',
+  'transformation.warnDecision.checkStandardFit': 'Check standard fit',
+  'transformation.warnDecision.lead': 'You can still generate — the decision stays yours.',
 
   'transformation.tip.rules.titleLoading': 'Decide the open rules',
   'transformation.tip.rules.impact':

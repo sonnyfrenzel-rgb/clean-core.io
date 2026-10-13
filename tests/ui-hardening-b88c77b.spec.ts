@@ -357,7 +357,11 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
         else if (/\.(ts|tsx)$/.test(entry.name)) {
           // Without a lookbehind, which is ES2018 and this repo targets ES2017.
           const hits = read(rel).match(/[A-Za-z_$][\w$]*\.exports\b/g) || [];
-          if (hits.some((h) => h !== 'module.exports')) readers.push(rel);
+          // In the runner's engine pass, `loaded.exports` is the confinement
+          // handing back a generated module's exports, not a project's field.
+          // Exempt there only: anywhere else it still counts as a reader.
+          const moduleExports = rel === 'lib/test-sandbox/engine-suite.ts' ? ['module.exports', 'loaded.exports'] : ['module.exports'];
+          if (hits.some((h) => !moduleExports.includes(h))) readers.push(rel);
         }
       }
     };

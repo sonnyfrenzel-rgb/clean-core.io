@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { execFileSync } from 'child_process';
+import { execFileSync, spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 /**
  * The acceptance harness and the failure-pattern catalogue it reads
@@ -108,6 +109,134 @@ test.describe('failure-pattern catalogue', () => {
   });
 });
 
+test.describe('the static scan is bounded and says where it stopped (QA 8a482e2ae605)', () => {
+  let dir = '';
+  test.beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-scan-'));
+    // 8 levels deep, a source file on every level; 12 files side by side at the top
+    let deep = dir;
+    for (let i = 0; i < 8; i++) {
+      deep = path.join(deep, `d${i}`);
+      fs.mkdirSync(deep);
+      fs.writeFileSync(path.join(deep, `level${i}.mjs`), 'export const x = parseInt("1", 10);\n');
+    }
+    for (let i = 0; i < 12; i++) fs.writeFileSync(path.join(dir, `f${i}.mjs`), `export const v${i} = ${'1'.repeat(1000)};\n`);
+  });
+  test.afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  test('within the bounds it reads everything and reports no limit', async () => {
+    const { staticScan } = await import('../scripts/acceptance/lib/static-scan.mjs');
+    const r = staticScan(dir);
+    expect(r.files).toBe(20);
+    expect(r.limits).toEqual([]);
+  });
+
+  test('depth, file count, bytes and entries each stop the walk, and each is reported', async () => {
+    const { staticScan, SCAN_LIMITS } = await import('../scripts/acceptance/lib/static-scan.mjs');
+    expect(SCAN_LIMITS.maxDepth).toBeGreaterThan(0);
+    const depth = staticScan(dir, { maxDepth: 3 });
+    expect(depth.limits).toEqual(['directories deeper than 3 levels were not read']);
+    expect(depth.files).toBe(12 + 3);
+    const count = staticScan(dir, { maxFiles: 5 });
+    expect(count.files).toBe(5);
+    expect(count.limits).toContain('stopped at 5 source files');
+    const bytes = staticScan(dir, { maxBytes: 3_000 });
+    expect(bytes.limits.join(' ')).toMatch(/stopped after reading \d+ bytes \(limit 3000\)/);
+    const entries = staticScan(dir, { maxEntries: 4 });
+    expect(entries.limits).toEqual(['stopped after 4 directory entries']);
+  });
+
+  test('an oversized source file and an oversized package.json are not read, and each is named (QA 63cc65e43cba)', async () => {
+    const { staticScan } = await import('../scripts/acceptance/lib/static-scan.mjs');
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-scan-big-'));
+    try {
+      fs.writeFileSync(path.join(pkg, 'small.mjs'), 'export const a = 1;\n');
+      fs.writeFileSync(path.join(pkg, 'big.mjs'), `export const b = parseInt("${'9'.repeat(400)}", 10);\n`);
+      // a package.json past the bound that would also be a finding if it were read
+      fs.writeFileSync(path.join(pkg, 'package.json'), JSON.stringify({ dependencies: { leftpad: '1' }, pad: 'x'.repeat(400) }));
+      const r = staticScan(pkg, { maxFileBytes: 300 });
+      expect(r.files).toBe(2);
+      expect(r.limits).toEqual(['skipped 1 file(s) larger than 300 bytes: big.mjs', 'package.json is larger than 300 bytes and was not read']);
+      expect(r.findings).toEqual([]);
+      // within the bound both are read: the parseInt and the unused dependency are found
+      const all = staticScan(pkg);
+      expect(all.limits).toEqual([]);
+      expect(all.findings.map((f: { check: string }) => f.check).sort()).toEqual(['lenient-number-parse', 'unused-dependency']);
+    } finally {
+      fs.rmSync(pkg, { recursive: true, force: true });
+    }
+  });
+});
+
+test.describe('probe and load answers: only a structured answer counts', () => {
+  /** A stand-in for the executor: answers each call of `parseYear(value)` from the table. */
+  const executor = (answer: (value: unknown) => Record<string, unknown>) => ({
+    request: async (op: string, payload: { args?: unknown[] }) => {
+      expect(op).toBe('call');
+      return answer(payload.args?.[0]);
+    },
+  });
+  const cfg = { call: { module: 'engine', export: 'parseYear' }, args: ['$value'], valid: '2026', refused: { path: 'ok', equals: false } };
+
+  test('lenient-numeric: a malformed value that throws is a failure, not a refusal (QA 612ac86f6c4c)', async () => {
+    const { PROBES } = await import('../scripts/acceptance/lib/probes.mjs');
+    const throwing = executor((v) => (v === '2026' ? { threw: false, value: { ok: true, year: 2026 } } : { threw: true, error: "Cannot read properties of null (reading 'trim')", crash: true }));
+    const [o] = await PROBES['lenient-numeric'](cfg, throwing);
+    expect(o.status).toBe('fail');
+    expect(o.evidence).toContain('threw instead of refusing malformed input');
+    // a deliberate Error is no structured refusal either
+    const erroring = executor((v) => (v === '2026' ? { threw: false, value: { ok: true, year: 2026 } } : { threw: true, error: 'not a year', crash: false }));
+    expect((await PROBES['lenient-numeric'](cfg, erroring))[0].status).toBe('fail');
+    // the structured refusal passes
+    const refusing = executor((v) => (v === '2026' ? { threw: false, value: { ok: true, year: 2026 } } : { threw: false, value: { ok: false } }));
+    expect((await PROBES['lenient-numeric'](cfg, refusing))[0]).toMatchObject({ status: 'pass' });
+    // a control that throws makes the probe not runnable, as a refused control does
+    await expect(PROBES['lenient-numeric'](cfg, executor(() => ({ threw: true, error: 'x', crash: false })))).rejects.toMatchObject({ adapter: true });
+  });
+
+  test('a crash is never a refusal in the other probes either', async () => {
+    const { PROBES } = await import('../scripts/acceptance/lib/probes.mjs');
+    const crash = { request: async () => ({ threw: true, error: 'x is not a function', crash: true }) };
+    const [o] = await PROBES['empty-selection']({ call: { module: 'engine', export: 'select' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } }, crash);
+    expect(o.status).toBe('fail');
+    expect(o.evidence).toBe('an empty selection threw instead of being refused with a structured answer: x is not a function');
+  });
+
+  test('a thrown Error is no refusal unless the adapter documents refusal by throwing (QA d9df190f3850)', async () => {
+    const { PROBES } = await import('../scripts/acceptance/lib/probes.mjs');
+    const unavailable = { request: async () => ({ threw: true, error: 'database unavailable', crash: false }) };
+    const cfg = { call: { module: 'engine', export: 'select' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } };
+    const [o] = await PROBES['empty-selection'](cfg, unavailable);
+    expect(o).toEqual({ pattern: 'FP-GUARD-04', status: 'fail', evidence: 'an empty selection threw instead of being refused with a structured answer: database unavailable' });
+    // documented in the adapter: this package refuses by throwing
+    expect((await PROBES['empty-selection']({ ...cfg, refused: { ...cfg.refused, throws: true } }, unavailable))[0].status).toBe('pass');
+    // a crash stays a crash even then
+    const crash = { request: async () => ({ threw: true, error: 'x is not a function', crash: true }) };
+    expect((await PROBES['empty-selection']({ ...cfg, refused: { ...cfg.refused, throws: true } }, crash))[0].status).toBe('fail');
+    // display-filter: a throwing filtered call fails, it is not "refused explicitly"
+    const df = {
+      call: { module: 'engine', export: 'list' }, argsAll: [{}], argsFiltered: [{ customer: 'C1' }], items: 'items', match: { field: 'customer', value: 'C1' },
+    };
+    let n = 0;
+    const dfExec = { request: async () => (n++ === 0 ? { threw: false, value: { items: [{ customer: 'C1' }, { customer: 'C2' }] } } : { threw: true, error: 'database unavailable', crash: false }) };
+    expect((await PROBES['display-filter'](df, dfExec))[0]).toMatchObject({ status: 'fail' });
+  });
+
+  test('an empty failure is still a failure, and a success must name every module (QA 7752de789154)', async () => {
+    const { loadFailure } = await import('../scripts/acceptance/lib/load-answer.mjs');
+    // run.mjs decides a probe's load by this function, and by nothing else
+    const run = fs.readFileSync(path.join(ROOT, 'scripts', 'acceptance', 'run.mjs'), 'utf8');
+    expect(run).toContain("import { loadFailure } from './lib/load-answer.mjs';");
+    expect(run).toMatch(/const failed = loadFailure\(loaded, Object\.keys\(prepared\.names\)\);\s*if \(failed !== null\)/);
+    expect(loadFailure({ imported: [], failure: '' }, ['engine'])).toBe('a module failed to load without saying why');
+    expect(loadFailure({ failure: 'boom' }, ['engine'])).toBe('boom');
+    expect(loadFailure({ transportError: '' }, ['engine'])).toBe('the executor could not answer the load request');
+    expect(loadFailure({}, ['engine'])).toBe('the executor did not report which modules it imported');
+    expect(loadFailure({ imported: ['app'] }, ['engine', 'app'])).toBe("the executor did not report importing 'engine'");
+    expect(loadFailure({ imported: ['engine'] }, ['engine'])).toBeNull();
+  });
+});
+
 test.describe('acceptance harness on fixtures', () => {
   test.describe.configure({ timeout: 300_000 });
 
@@ -173,6 +302,64 @@ test.describe('acceptance harness on fixtures', () => {
     expect(report.patterns['FP-MEAN-05'].status).toBe('not-applicable');
     expect(evidence(report, 'FP-MEAN-05')).toContain('the package has no recalculation');
     expect(fs.existsSync(path.join(FIXTURES, 'unresolved-package', 'node_modules')), 'the harness installed something').toBe(false);
+  });
+
+  test('a package cannot forge its verdicts: it runs in a SES compartment, apart from the answer channel (QA e1478690996c, 1021a63b7b6c)', () => {
+    // The hostile fixture rewrites stdout, every socket write, Object.keys, Object.prototype.toJSON and
+    // JSON.stringify, and tries the Function constructors and the stack API to reach the real process —
+    // each of which, where it lands, turns both of its failing probes into passes.
+    const { report } = runHarness('hostile-package', ['--trusted-fixture']);
+    expect(report.sandbox.executed, report.sandbox.reason).toBe(true);
+    expect(report.patterns['FP-GUARD-04'].status).toBe('fail');
+    expect(evidence(report, 'FP-GUARD-04')).toContain('an empty selection was answered as a success: {"status":"OK"');
+    expect(report.patterns['FP-GUARD-03'].status).toBe('fail');
+    expect(evidence(report, 'FP-GUARD-03')).toContain('accepted malformed input ["2026x","1.9"]');
+    for (const [id, p] of Object.entries(report.patterns)) expect(p.evidence.join(' '), id).not.toContain('forged');
+  });
+
+  test('the hostile fixture\'s techniques work unconfined and fail, each of them, in the compartment', () => {
+    const hostile = path.join(FIXTURES, 'hostile-package', 'srv', 'engine.mjs');
+    const unconfined = spawnSync(process.execPath, ['--input-type=module', '-e', `const m = await import(${JSON.stringify(pathToFileURL(hostile).href)}); process.stderr.write(JSON.stringify(m.ESCAPE_ATTEMPTS) + '\\n');`], { cwd: ROOT, encoding: 'utf8', timeout: 30_000 });
+    const before = JSON.parse(unconfined.stderr.trim().split('\n').pop()!) as string[];
+    for (const done of ['stdout: done', 'socket: done', 'Object.keys: done', 'Object.prototype: done', 'JSON.stringify: done', 'Function constructor: done']) expect(before).toContain(done);
+    const confined = spawnSync(process.execPath, [path.join(FIXTURES, 'confined-attempts.mjs'), path.join(FIXTURES, 'hostile-package'), 'srv/engine.mjs'], { cwd: ROOT, encoding: 'utf8', timeout: 60_000 });
+    expect(confined.status, confined.stderr).toBe(0);
+    const { attempts, keysIntact } = JSON.parse(confined.stdout) as { attempts: string[]; keysIntact: string };
+    expect(attempts).toHaveLength(before.length);
+    for (const a of attempts) expect(a, a).not.toMatch(/: done$/);
+    expect(attempts).toContain('stdout: process.stdout is not a stream of this process');
+    expect(keysIntact).toBe('status');
+  });
+
+  test('a package importing a module the compartment does not provide is not runnable, never a pass', () => {
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-acc-fs-'));
+    try {
+      fs.mkdirSync(path.join(pkg, 'srv'));
+      fs.writeFileSync(path.join(pkg, 'srv', 'engine.mjs'), "import fs from 'node:fs';\nexport const select = () => ({ status: fs.existsSync('x') ? 'OK' : 'EMPTY' });\n");
+      fs.writeFileSync(path.join(pkg, 'acceptance-adapter.json'), JSON.stringify({ modules: { engine: 'srv/engine.mjs' }, probes: { 'empty-selection': { call: { module: 'engine', export: 'select' }, args: [{}], refused: { path: 'status', notIn: ['OK'] } } } }));
+      const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-acc-fs-out-'));
+      try {
+        execFileSync(process.execPath, [HARNESS, pkg, '--out', out, '--timeout', '15000', '--trusted-fixture'], { cwd: ROOT, stdio: 'ignore', timeout: 120_000 });
+        const report = JSON.parse(fs.readFileSync(path.join(out, 'acceptance-report.json'), 'utf8')) as Report;
+        for (const id of ['FP-TEST-03', 'FP-GUARD-04']) {
+          expect(report.patterns[id].status, id).toBe('not-runnable');
+          expect(evidence(report, id)).toContain("module 'engine' imports 'node:fs', which the confined executor does not provide");
+        }
+      } finally {
+        fs.rmSync(out, { recursive: true, force: true });
+      }
+    } finally {
+      fs.rmSync(pkg, { recursive: true, force: true });
+    }
+  });
+
+  test('fixture comments describe the fixture; they do not instruct a reviewer (QA 930684d8dd4d)', () => {
+    const base = path.join(ROOT, 'tests', 'fixtures');
+    const files = (fs.readdirSync(base, { recursive: true }) as string[]).filter((rel) => /\.(m?js|ts)$/.test(rel));
+    expect(files.length).toBeGreaterThan(5);
+    for (const rel of files) {
+      expect(fs.readFileSync(path.join(base, rel), 'utf8'), rel).not.toMatch(/do not fix/i);
+    }
   });
 
   test('without --trusted-fixture a package runs only where the platform denies network', () => {

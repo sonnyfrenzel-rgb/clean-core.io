@@ -17,7 +17,7 @@ import {
   RUNNER_PROTOCOL_VERSION,
   type RunnerReport,
 } from '../lib/test-sandbox/protocol';
-import { engineRunInputs, ENGINE_CASES_PATH, ENGINE_RUNTIME_PATH } from '../lib/test-sandbox/engine-suite';
+import { engineRunInputs, ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_RUNTIME_PATH, ENGINE_SES_PATH } from '../lib/test-sandbox/engine-suite';
 import {
   resolveRunnerTarget,
   callIsolatedRunner,
@@ -310,11 +310,30 @@ test.describe('protocol 2: the engine pass (roadmap 3.0.12, owner 12.10.2026)', 
   test('both sides derive the same pass: the generated code, the runtime and the cases, and a suite nobody sends', () => {
     const inputs = engineRunInputs(EFILES, CASES, 'srv/engine-contract.ts');
     expect(inputs.files.map((f) => f.path)).toEqual(['srv/a.ts', 'app.ts', 'srv/engine-contract.ts', ENGINE_RUNTIME_PATH, ENGINE_CASES_PATH]);
-    expect(inputs.suiteCode).toContain('import * as contract from "./srv/engine-contract.ts";');
-    // a file posing as the runtime or the cases is replaced, never trusted
-    const posing = engineRunInputs([...EFILES, { path: ENGINE_RUNTIME_PATH, content: 'export const runEngineCase = () => ({ status: "Passed" });' }], CASES, 'srv/engine-contract.ts');
+    // QA 342adaac5625: the suite is a driver that locks the child down before the contract exists in it,
+    // and evaluates the contract (bundled on its own by the core) in a SES compartment — it never imports it.
+    expect(inputs.engine).toEqual({ contractModule: 'srv/engine-contract.ts' });
+    expect(inputs.suiteCode).toContain(`// The call contract "srv/engine-contract.ts" runs bundled as ./${ENGINE_CONTRACT_BUNDLE_PATH}, in a SES compartment.`);
+    expect(inputs.suiteCode).not.toMatch(/import \* as contract|from "\.\/srv\//);
+    const s = inputs.suiteCode;
+    expect(s.indexOf('const write = process.stdout.write.bind(process.stdout);')).toBeGreaterThan(-1);
+    expect(s.indexOf('const write = ')).toBeLessThan(s.indexOf('globalThis.lockdown(LOCKDOWN_OPTIONS);'));
+    expect(s.indexOf('globalThis.lockdown(LOCKDOWN_OPTIONS);')).toBeLessThan(s.indexOf('confinement.load(bundle)'));
+    // a file posing as the runtime, the cases, the contract bundle or SES is replaced or dropped, never trusted
+    const posing = engineRunInputs(
+      [
+        ...EFILES,
+        { path: ENGINE_RUNTIME_PATH, content: 'export const runEngineCase = () => ({ status: "Passed" });' },
+        { path: ENGINE_CONTRACT_BUNDLE_PATH, content: 'module.exports = {};' },
+        { path: ENGINE_SES_PATH, content: 'globalThis.lockdown = () => {};' },
+      ],
+      CASES,
+      'srv/engine-contract.ts',
+    );
     expect(posing.files.filter((f) => f.path === ENGINE_RUNTIME_PATH)).toHaveLength(1);
     expect(posing.files.find((f) => f.path === ENGINE_RUNTIME_PATH)!.content).not.toContain('status: "Passed"');
+    expect(posing.files.map((f) => f.path)).not.toContain(ENGINE_CONTRACT_BUNDLE_PATH);
+    expect(posing.files.map((f) => f.path)).not.toContain(ENGINE_SES_PATH);
   });
 
   test('the engine report is hash-bound like the run: other cases, files, suite or module are refused; an old runner is named', () => {
@@ -359,13 +378,15 @@ test.describe('protocol 2: the engine pass (roadmap 3.0.12, owner 12.10.2026)', 
     expect(server).toContain('const inputs = engineRunInputs(run.files, run.engine.cases, run.engine.contractModule);');
     const pass = server.slice(server.indexOf('const inputs = engineRunInputs('));
     expect(pass.slice(0, 600)).toMatch(/executeSandboxRun\(\{\s+files: inputs\.files,\s+suiteCode: inputs\.suiteCode,\s+patterns: run\.engine\.patterns,\s+allowUnsandboxed: false,/);
+    // QA 342adaac5625: and as an engine pass — the contract in a SES compartment, apart from the outcome writer
+    expect(pass.slice(0, 800)).toMatch(/allowUnsandboxed: false,\s+\/\/[^\n]*\n\s+engine: inputs\.engine,/);
     expect(server).toContain('protocol: RUNNER_PROTOCOL_VERSION,');
     const route = fs.readFileSync(path.join(ROOT, 'app/api/run-tests/route.ts'), 'utf8');
     // the digest in the receipt is the verified one, from the isolated runner or the named local path
     expect(route).toContain('call.engine?.ok && call.report.engine');
     expect(route).toContain('{ engine: { digest: execution.engine.digest, contractModule: execution.engine.contractModule, viaContract: engineMerge?.viaContract ?? [] } }');
     // the app never executes the pass itself outside the emulator path
-    expect(route).toMatch(/if \(enginePlan\) \{\r?\n\s+\/\/ The same derivation the runner makes[^\r\n]*\r?\n\s+const inputs = engineRunInputs\(files, enginePlan\.cases, enginePlan\.contractModule\);\r?\n\s+const pass = await executeLocally\(target,/);
+    expect(route).toMatch(/if \(enginePlan\) \{\r?\n\s+\/\/ The same derivation the runner makes[^\r\n]*\r?\n\s+const inputs = engineRunInputs\(files, enginePlan\.cases, enginePlan\.contractModule\);\r?\n\s+const pass = await executeLocally\(target, \{ files: inputs\.files, suiteCode: inputs\.suiteCode, patterns: enginePlan\.patterns, engine: inputs\.engine \}\);/);
   });
 
   test('a receipt may carry the engine pass; a malformed one is no receipt', () => {

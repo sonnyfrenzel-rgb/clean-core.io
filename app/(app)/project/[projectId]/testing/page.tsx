@@ -62,7 +62,7 @@ import TestPipeline from '@/components/testing/TestPipeline';
 import HandChecks from '@/components/testing/HandChecks';
 import type { StripTick } from '@/components/testing/ProgramStrip';
 import { readProgram } from '@/components/testing/program-reading';
-import { coveringTestRunReceipt } from '@/lib/test-receipt';
+import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
@@ -86,7 +86,6 @@ import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAsses
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
 import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
-import { ENGINE_CONTRACT_MARKER } from '@/lib/test-sandbox/engine-contract-shape';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 
@@ -288,7 +287,7 @@ export default function TestingSandboxPage() {
     () => (project && project.s4Environment === 'live' ? { ...project, s4Environment: 'mock' } : project),
     [project],
   );
-  const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants } = useTestExecution(projectId as string, runProject, setProject);
+  const { isRunning, testResults, engineViaContract, sandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError, probe, probeMutants } = useTestExecution(projectId as string, runProject, setProject);
   /**
    * 3.0.10 (owner 11.10.2026, external review F-01/F-02/F-05) — the material
    * business rules of the signed source, the owner's decisions on them
@@ -894,13 +893,12 @@ export default function TestingSandboxPage() {
   const sessionVerdicts = new Map((testResults ?? []).map((r) => [String(r.id ?? ''), r.status as string | undefined]));
   /**
    * 3.0.12 — the cases whose verdict the call contract gave in the isolated
-   * runner (no model-written assertion): from the covering receipt, or for
-   * this session's run from the engine pass's test titles.
+   * runner (no model-written assertion): from the covering receipt for a
+   * recorded run, or for this session's run from the server's answer. Never
+   * from a test title: a model-written test can carry the marker (QA review
+   * of 2e6596ddbbc8, 0019c1b57d65).
    */
-  const viaContract = new Set<string>([
-    ...(coveringTestRunReceipt(project)?.engine?.viaContract ?? []),
-    ...(testResults ?? []).filter((r) => String((r as { name?: unknown }).name ?? '').includes(ENGINE_CONTRACT_MARKER)).map((r) => String(r.id ?? '')),
-  ]);
+  const viaContract = viaContractOfRun(lastRun(project, testResults).kind, coveringTestRunReceipt(project), engineViaContract);
   const verdictOf = (tc: { id?: unknown }): string | null => {
     const id = String(tc.id ?? '');
     const v = run.kind === 'recorded' ? receiptVerdicts.get(id) : run.kind === 'session' ? sessionVerdicts.get(id) : undefined;

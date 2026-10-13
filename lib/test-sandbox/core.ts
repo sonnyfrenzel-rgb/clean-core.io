@@ -11,6 +11,7 @@ import { netGuardSource, type LoopbackAllowance } from './net-guard';
 import { hashRunInputs, type FileHash } from './protocol';
 import type { SandboxFile } from './files';
 import { FAKED_PACKAGES } from './express-fake';
+import { ENGINE_CASES_PATH, ENGINE_CONTRACT_BUNDLE_PATH, ENGINE_SES_PATH } from './engine-suite';
 
 /**
  * The execution core of the test sandbox — one copy, used in two places.
@@ -187,11 +188,28 @@ export function createSandboxResolvePlugin(opts: {
   stubbedPackages: Set<string>;
   /** Packages that get a recording fake instead of the universal stub (`buildFakeModules`). Still named as stubbed. */
   fakeModuleSources?: Record<string, string>;
+  /**
+   * Paths inside `testDir` the bundled code may not import — a directory
+   * covers everything below it. The engine pass refuses its own files here
+   * (`__cc_engine/`: the runtime and the cases with their expectations), so a
+   * contract cannot read what it is judged against (QA 592fd4f81e78).
+   */
+  reserved?: string[];
 }) {
   const { testDir, stubModuleSource, stubbedPackages } = opts;
   const fakes = opts.fakeModuleSources ?? {};
+  const reserved = (opts.reserved ?? []).map((r) => path.resolve(r));
   const insideSandbox = (abs: string) =>
     abs === testDir || abs.startsWith(testDir + path.sep);
+  const isReserved = (abs: string) => reserved.some((r) => abs === r || abs.startsWith(r + path.sep));
+  /** The path with every symlink resolved, or the path itself when it does not exist (yet). */
+  const real = (abs: string) => {
+    try {
+      return fssync.realpathSync.native(abs);
+    } catch {
+      return abs;
+    }
+  };
 
   return {
     name: 'cc-sandbox-resolve',
@@ -218,8 +236,13 @@ export function createSandboxResolvePlugin(opts: {
         // A fixed error text is returned on rejection so the checked path is
         // never echoed back to the caller.
         const base = path.resolve(args.resolveDir || testDir, p);
-        if (!insideSandbox(base)) {
+        if (!insideSandbox(base) || !insideSandbox(real(base))) {
           return { errors: [{ text: 'Path outside sandbox rejected.' }] };
+        }
+        // Every candidate the default resolver could pick for this import (extensions, index files)
+        // lies below `base` or beside it with an extension: refuse a reserved one before it is read.
+        if (reserved.length > 0 && (isReserved(base) || reserved.some((r) => r.startsWith(base) && /^[.\\/]/.test(r.slice(base.length))))) {
+          return { errors: [{ text: 'This import is reserved for Clean-Core.io and not available to the code under test.' }] };
         }
 
         // Inside the sandbox: mirror tsx/Node resolution "./x.js → ./x.ts".
@@ -228,6 +251,17 @@ export function createSandboxResolvePlugin(opts: {
           return { path: tsCandidate };
         }
         return undefined; // inside sandbox → default resolver
+      });
+
+      // The last gate, whatever path the resolver arrived at (a package.json `main`, an index file, a
+      // symlink): the file read must lie inside the run directory and outside the reserved paths.
+      build.onLoad({ filter: /.*/, namespace: 'file' }, (args) => {
+        const target = real(args.path);
+        if (!insideSandbox(target)) return { errors: [{ text: 'Path outside sandbox rejected.' }] };
+        if (isReserved(args.path) || isReserved(target)) {
+          return { errors: [{ text: 'This import is reserved for Clean-Core.io and not available to the code under test.' }] };
+        }
+        return undefined;
       });
 
       build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, (args) => {
@@ -277,6 +311,24 @@ export function resolvePermissionFlag(allowUnsandboxed: boolean): { flag: string
   return { flag: null, reason: 'Node 22.8.0+ is required for sandboxed test isolation.' };
 }
 
+/**
+ * SES (`ses/dist/ses.cjs`, Apache-2.0) as text, for the engine pass's child,
+ * which may read only its run directory. Read from the working directory's
+ * `node_modules`, where `ses` is a top-level dependency: the runner image's
+ * `/srv/node_modules` (runner/package.json), the app's own on the emulator
+ * path. A plain path, not a module resolution, so no bundler rewrites it. Null
+ * when it is not installed — the engine pass then does not run at all.
+ */
+export const SES_DIST_PATH = ['node_modules', 'ses', 'dist', 'ses.cjs'] as const;
+
+function loadSesSource(): string | null {
+  try {
+    return fssync.readFileSync(path.join(process.cwd(), ...SES_DIST_PATH), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
 async function loadEsbuild(): Promise<Esbuild | null> {
   try {
     return (await import('esbuild')) as unknown as Esbuild;
@@ -320,6 +372,13 @@ export interface SandboxRunInput {
   extraEnv?: Record<string, string>;
   /** The one loopback port the child may connect to (the live relay), or none. */
   loopback?: LoopbackAllowance | null;
+  /**
+   * 3.0.12 — run this as the engine pass (`engineRunInputs`): the contract
+   * module is bundled on its own, `suiteCode` is the driver that locks the
+   * child down and evaluates that bundle in a SES compartment, and no
+   * `node:test` runner is involved (QA 342adaac5625).
+   */
+  engine?: { contractModule: string };
 }
 
 export type SandboxRunOutcome =
@@ -357,7 +416,9 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     testDir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'cc-tests-')));
 
     // ── 1) Materialise the sources ─────────────────────────────────────────
-    const testEntry = path.join(testDir, 'test.ts');
+    // The engine pass bundles the contract module, and its driver runs as a plain ES module.
+    const enginePass = input.engine ?? null;
+    const testEntry = path.join(testDir, enginePass ? '__engine.mjs' : 'test.ts');
     // Raw source of every materialised file — scanned for named imports so the
     // hermetic stub can expose exactly the bindings the generated code imports.
     const sourceTexts: string[] = [input.suiteCode];
@@ -379,18 +440,27 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     // One resolver plugin owns the whole import surface; each stubbed package is
     // named in the result (CR-14). See createSandboxResolvePlugin above.
     const stubbedPackages = new Set<string>();
-    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports) });
+    // The engine pass's own files — the runtime, the cases with their expectations, the driver — are
+    // never part of the contract's bundle (QA 592fd4f81e78).
+    const reserved = enginePass ? [path.join(testDir, path.dirname(ENGINE_CASES_PATH)), testEntry] : [];
+    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages, fakeModuleSources: buildFakeModules(namedImports), reserved });
 
-    const bundlePath = path.join(testDir, '__sandbox_bundle.cjs');
+    const bundlePath = path.join(testDir, enginePass ? ENGINE_CONTRACT_BUNDLE_PATH : '__sandbox_bundle.cjs');
+    const entryPoint = enginePass ? path.resolve(testDir, enginePass.contractModule) : testEntry;
+    if (!entryPoint.startsWith(testDir + path.sep)) {
+      return { kind: 'build-error', message: 'The contract module is not inside the run.', stubbedPackages: [], files: fileHashes, suiteSha256 };
+    }
     try {
       await esbuild.build({
-        entryPoints: [testEntry],
+        entryPoints: [entryPoint],
         bundle: true,
         platform: 'node',
         format: 'cjs',
         target: 'node22',
         outfile: bundlePath,
-        sourcemap: 'inline',
+        // The contract bundle is evaluated as source text in a SES compartment: no source map, no legal comments.
+        sourcemap: enginePass ? false : 'inline',
+        legalComments: enginePass ? 'none' : 'eof',
         logLevel: 'silent',
         resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
         // Enable TS decorators so typeorm-style entities (@Entity/@Column/…) compile.
@@ -406,7 +476,14 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     }
 
     // ── 3) The in-process runner (TAP, optional name filtering) ─────────────
-    const runnerPath = path.join(testDir, '__runner.mjs');
+    // The engine pass has none: its driver (`testEntry`) is the program, and it
+    // loads SES from the run's directory, which is all the child may read.
+    if (enginePass) {
+      const ses = loadSesSource();
+      if (ses === null) return { kind: 'unavailable', reason: 'Sandbox unavailable: ses (hardened JavaScript) not installed.' };
+      await fs.writeFile(path.join(testDir, ENGINE_SES_PATH), ses);
+    }
+    const runnerPath = enginePass ? testEntry : path.join(testDir, '__runner.mjs');
     const runnerSrc = `
 import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
@@ -424,7 +501,7 @@ for await (const chunk of stream.compose(tap)) {
 }
 process.exitCode = failed ? 1 : 0;
 `;
-    await fs.writeFile(runnerPath, runnerSrc);
+    if (!enginePass) await fs.writeFile(runnerPath, runnerSrc);
 
     // ── 4) The guards, written next to the runner ───────────────────────────
     // The network guard is written on every run, closed unless the caller
@@ -461,7 +538,7 @@ process.exitCode = failed ? 1 : 0;
     // spawns one child per file and the option filters there — the flag would
     // match the parent's file-level test instead and skip the whole suite.
     const namePattern = testNamePattern(input.patterns);
-    if (namePattern && inProcessIsolationSupported()) {
+    if (namePattern && inProcessIsolationSupported() && !enginePass) {
       args.push(`--test-name-pattern=${namePattern}`);
     }
     args.push(runnerPath);

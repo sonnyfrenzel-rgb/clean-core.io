@@ -53,6 +53,7 @@ test.describe('every choice has one address', () => {
     'it.open-questions': `${BASE}?view=it&origin=it.next-step#not-determined`,
     'management.open-questions': `${BASE}?view=management&origin=it.next-step#not-determined`,
     'it.target': `${BASE}?view=it&origin=it.next-step#it-target-profile`,
+    'it.standard-fit': `${BASE}?view=it&origin=it.next-step#standard`,
     'economics.rates': `${BASE}/tco?view=it&origin=it.next-step#economics-step-rates`,
     'economics.cadence': `${BASE}/tco?view=it&origin=it.next-step#economics-cadence`,
     'economics.effort': `${BASE}/tco?view=it&origin=it.next-step#economics-step-effort`,
@@ -92,6 +93,7 @@ test.describe('every choice has one address', () => {
     expect(CHOICES['testing.sap-result'].anchor).toBe(PAGE_ANCHOR_IDS.testing.sapResult);
     expect(CHOICES['testing.hand'].anchor).toBe(PAGE_ANCHOR_IDS.testing.hand);
     expect(CHOICES['it.target'].anchor).toBe(IT_SECTION_IDS.profile);
+    expect(CHOICES['it.standard-fit'].anchor).toBe(IT_SECTION_IDS.standard);
     expect(CHOICES['it.open-questions'].anchor).toBe(IT_SECTION_IDS.questions);
     expect(CHOICES['management.confirm'].anchor).toBe(MANAGEMENT_IDS.decision);
     expect(CHOICES['business.walk'].anchor).toBe(BUSINESS_MAP_ID);

@@ -3,9 +3,10 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 import ChainList from '@/components/transformation/ChainList';
 import { tfCostLine, tfTipsMeta, wt } from '@/lib/workspace-messages';
-import { GENERATION_MAX_MODEL_CALLS, QUALITY_ANCHOR, type ChainSlot, type QualityTip } from '@/lib/transformation-chain';
+import { GENERATION_MAX_MODEL_CALLS, QUALITY_ANCHOR, type ChainSlot, type DecisionWarning, type QualityTip } from '@/lib/transformation-chain';
 
 /**
  * Before the run (roadmap 3.0.12, owner 12.10.2026; design §14, mockup state
@@ -22,6 +23,7 @@ import { GENERATION_MAX_MODEL_CALLS, QUALITY_ANCHOR, type ChainSlot, type Qualit
  */
 export default function QualityTips({
   tips,
+  warning = null,
   settled,
   slots,
   canGenerate,
@@ -31,6 +33,12 @@ export default function QualityTips({
   onGenerate,
 }: {
   tips: QualityTip[];
+  /**
+   * The decision warning (`decisionWarning`): a generation against the
+   * decision on record, or SAP standard not weighed yet. A warning, never a
+   * gate — "Generate now" stays (owner, 12.10.2026).
+   */
+  warning?: DecisionWarning | null;
   /** Every count has been read: "nothing open" can be said. */
   settled: boolean;
   slots: ChainSlot[];
@@ -55,6 +63,25 @@ export default function QualityTips({
           </h2>
           {tips.length > 0 ? <span className="text-[12px] font-semibold text-cc-ink-muted">{tfTipsMeta(tips.length)}</span> : null}
         </div>
+        {warning ? (
+          <div data-decision-warning={warning.kind} className="mt-3">
+            <CcMessageStrip
+              state="warning"
+              headline={warning.text}
+              actions={
+                <a
+                  href={warning.link.href}
+                  data-decision-warning-link={warning.kind}
+                  className="text-[13px] font-semibold whitespace-nowrap text-cc-information underline underline-offset-2"
+                >
+                  {warning.link.label}
+                </a>
+              }
+            >
+              {wt('transformation.warnDecision.lead')}
+            </CcMessageStrip>
+          </div>
+        ) : null}
         {tips.length > 0 ? (
           <>
             <p className="m-0 mt-1 text-[13px] font-medium text-cc-ink-muted">{wt('transformation.tipsLead')}</p>

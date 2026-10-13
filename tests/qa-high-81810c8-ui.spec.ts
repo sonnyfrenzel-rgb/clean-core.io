@@ -51,7 +51,13 @@ test.describe('183ed4edf700 · no transformation without its test suite', () => 
     expect(gate).toBeGreaterThan(0);
     expect(binding).toBeGreaterThan(gate);
     const between = src.slice(gate, binding);
-    expect(between).toMatch(/if \(!tests\)\s*\{\s*throw new Error\('[^']*Nothing was saved/);
+    // 3.0.12: the generation screen records the failed check first — a
+    // statement on the page's own stage log (`setStageLog`), no write and no
+    // request — and nothing else may stand between the refusal and the throw.
+    // The record is required, not optional (QA d73b56e40c71): the refusal
+    // branch must call recordCheck('tests', 'failed') and then throw.
+    expect(between).toMatch(/if \(!tests\)\s*\{\s*recordCheck\('tests', 'failed'\);\s*throw new Error\('[^']*Nothing was saved/);
+    expect(src).toMatch(/const recordCheck = useCallback\(\(key: string, state: GenerationCheckState, result\?: string\) => \{\s*setStageLog\(/);
   });
 });
 

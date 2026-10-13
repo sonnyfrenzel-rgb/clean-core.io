@@ -240,6 +240,34 @@ export function decisionOptionOf(text: string | null | undefined): DecisionOptio
   return null;
 }
 
+/**
+ * The stored decision record (`project.decision`, roadmap 8.4) as the
+ * PLATFORM KNOWLEDGE block reads it — and as Transformation's quality tips
+ * read it, so the prompt's warning and the tip's warning agree. `null` when
+ * none is stored.
+ */
+export function recordedDecisionOf(decision: unknown): ContextDecision['record'] {
+  if (!decision || typeof decision !== 'object') return null;
+  const stored = decision as { decisionId?: unknown; revision?: unknown; status?: unknown; summary?: unknown; bindings?: unknown };
+  if (typeof stored.decisionId !== 'string' || typeof stored.revision !== 'number') return null;
+  const bindings = Array.isArray(stored.bindings) ? (stored.bindings as Array<{ key?: unknown; revision?: unknown } | null>) : [];
+  const option = bindings.find((b) => b && b.key === 'option');
+  const optionText = option && typeof option.revision === 'string' ? option.revision : null;
+  return {
+    id: stored.decisionId,
+    revision: stored.revision,
+    status: typeof stored.status === 'string' ? stored.status : 'draft',
+    summary: typeof stored.summary === 'string' ? stored.summary : '',
+    option: optionText,
+    optionKind: decisionOptionOf(optionText),
+  };
+}
+
+/** A record that still stands: neither withdrawn nor superseded. */
+export function decisionRecordIsLive(record: ContextDecision['record']): boolean {
+  return !!record && record.status !== 'withdrawn' && record.status !== 'superseded';
+}
+
 const ROUTE_WORD: Record<ContextDecision['route']['chosen'], string> = {
   'in-app-rap': 'in-app RAP on ABAP Cloud (developer extensibility)',
   'side-by-side-cap': 'side-by-side on SAP BTP (Node.js / CAP)',
@@ -327,7 +355,7 @@ function routeSection(input: TransformationContextInput): Draft {
   const rec = decision.record;
   const items: string[] = [];
   if (rec) {
-    const live = rec.status !== 'withdrawn' && rec.status !== 'superseded';
+    const live = decisionRecordIsLive(rec);
     items.push(
       `   Decision record ${rec.id} revision ${rec.revision} (${rec.status}): "${oneLine(rec.summary, MAX_PROPOSAL)}"${rec.option ? `; option: ${oneLine(rec.option, 120)}` : '; no option chosen'}.`,
     );

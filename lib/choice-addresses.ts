@@ -86,6 +86,7 @@ export const STATIC_CHOICE_KEYS = [
   'it.open-questions',
   'management.open-questions',
   'it.target',
+  'it.standard-fit',
   'economics.rates',
   'economics.cadence',
   'economics.effort',
@@ -146,6 +147,9 @@ export const CHOICES: Readonly<Record<StaticChoiceKey, ChoiceAddress>> = Object.
   }),
   // C7
   'it.target': c(VIEW('it'), 'it-target-profile', 'nav.choice.itTarget', VIEW_PLACE('it')),
+  // IT's Standard fit section (ADR-096) — asked from Transformation's tips when
+  // no decision on record weighed SAP standard against a rebuild.
+  'it.standard-fit': c(VIEW('it'), 'standard', 'nav.choice.itStandardFit', VIEW_PLACE('it')),
   // C8–C13 — Economics' four steps and what is inside them.
   'economics.rates': c(TOOL('tco'), 'economics-step-rates', 'nav.choice.economicsRates', PHASE_LABEL('tco')),
   'economics.cadence': c(TOOL('tco'), 'economics-cadence', 'nav.choice.economicsCadence', PHASE_LABEL('tco')),

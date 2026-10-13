@@ -25,7 +25,9 @@ import { probeBasis, type MutantExecution } from '@/lib/testing-mutation';
 import { runMutationProbe, MUTANT_CALL_TIMEOUT_MS } from '@/lib/testing-mutation-run';
 import type { SandboxFile } from '@/lib/test-sandbox/files';
 import { engineRunInputs } from '@/lib/test-sandbox/engine-suite';
-import { mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
+import { engineVerdicts, mergeEngineVerdicts, planEngineRun, type EngineRunPlan } from '@/lib/engine-case-run';
+import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
+import { signedSourceOf, type HandoverProject } from '@/lib/handover';
 
 /**
  * POST /api/run-tests
@@ -392,10 +394,14 @@ export async function POST(req: Request) {
   const patterns = sandboxPatterns(selectedTestIds);
   // 3.0.12 (owner, 12.10.2026) — the engine cases run through the call contract
   // in the same executor as the suite, never in this service. Planned from the
-  // stored cases and the generated files; a draft run plans it too, against
-  // the draft's code.
+  // stored cases the engine reproduces from the signed source — recomputed, never
+  // the client-written entries (QA e04537f4bb66, 0297134b3b87) — and the
+  // generated files; a draft run plans it too, against the draft's code.
   const enginePlanOutcome = planEngineRun(
-    (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
+    engineCaseProvenance(
+      (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter((t: unknown): t is Record<string, unknown> => !!t && typeof t === 'object'),
+      deriveEngineCasesOf(signedSourceOf(projectData as unknown as HandoverProject)?.source ?? null),
+    ).verified,
     files,
     Array.isArray(selectedTestIds) ? selectedTestIds.map((id: unknown) => String(id)) : null,
   );
@@ -526,7 +532,7 @@ export async function POST(req: Request) {
       if (enginePlan) {
         // The same derivation the runner makes, through the same core, named local-emulator like the run.
         const inputs = engineRunInputs(files, enginePlan.cases, enginePlan.contractModule);
-        const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns });
+        const pass = await executeLocally(target, { files: inputs.files, suiteCode: inputs.suiteCode, patterns: enginePlan.patterns, engine: inputs.engine });
         const hashed = hashRunInputs(inputs.files, inputs.suiteCode);
         execution.engine =
           pass.kind === 'ran'
@@ -554,9 +560,13 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
     const { stdout, stderr, exitCode } = execution;
 
     // 3.0.12 — the engine pass folded in: a case the call contract ran takes the
-    // contract's verdict; the model's test for it stays an extra check.
+    // contract's verdict; the model's test for it stays an extra check. The
+    // engine pass reports answers, not verdicts: they are judged here, against
+    // the cases this route planned (`engineVerdicts`).
     const engineMerge =
-      execution.engine && execution.engine.ran ? mergeEngineVerdicts(parseTapOutput(stdout), parseTapOutput(execution.engine.stdout)) : null;
+      execution.engine && execution.engine.ran && enginePlan
+        ? mergeEngineVerdicts(parseTapOutput(stdout), engineVerdicts(execution.engine.stdout, enginePlan.cases, enginePlan.patterns))
+        : null;
     const testResults = engineMerge ? engineMerge.results : parseTapOutput(stdout);
     const engineSummary = execution.engine
       ? execution.engine.ran
@@ -856,11 +866,11 @@ ${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner
  */
 async function executeLocally(
   target: RunnerTarget,
-  input: { files: SandboxFile[]; suiteCode: string; patterns: string[] },
+  input: { files: SandboxFile[]; suiteCode: string; patterns: string[]; engine?: { contractModule: string } },
 ): Promise<SandboxRunOutcome> {
   if (target.kind === 'isolated') throw new Error('An isolated runner is configured; nothing runs in the application service.');
   if (target.kind === 'unavailable') return { kind: 'unavailable', reason: target.reason };
-  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true });
+  return executeSandboxRun({ files: input.files, suiteCode: input.suiteCode, patterns: input.patterns, allowUnsandboxed: true, ...(input.engine ? { engine: input.engine } : {}) });
 }
 
 /**

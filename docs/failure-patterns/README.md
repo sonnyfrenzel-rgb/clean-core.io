@@ -176,7 +176,11 @@ file given with `--adapter`.
   instances are shared within one probe), `factory: [args]` or `method`.
 - `$name` placeholders in `args` and `rowTemplate` are filled by the probe.
 - A matcher is `{ path, equals | in | notIn | truthy | falsy | gt | lt | exists }`;
-  a call that throws always counts as refused.
+  a refusal is a structured answer that matches it. A call that throws is not a
+  refusal — it only threw — unless the adapter documents that the package
+  refuses by throwing, with `"throws": true` in the matcher; even then a
+  TypeError, ReferenceError or SyntaxError is a crash, not a refusal.
+  `lenient-numeric` never accepts a throw as a refusal.
 - The fixture adapters under `tests/fixtures/acceptance/*/acceptance-adapter.json`
   map every probe and are the reference for each probe's keys.
 
@@ -191,7 +195,11 @@ have not been mapped. Until they are, those packages get the static scan only.
 ### Safety: what runs, and where
 
 A generated package is third-party code. The harness never imports it into its
-own process. Each probe runs in a separate `node` child with:
+own process. For each probe it starts a separate `node` child — the executor,
+`scripts/acceptance/child/executor.mjs` — which loads the package and calls into
+it when asked, and does nothing else: the probe itself, its expectations and its
+verdict stay in the harness process (`scripts/acceptance/lib/probes.mjs`). The
+child runs with:
 
 - the permission model on (`--permission`, or `--experimental-permission` on
   older Node): read access to a temporary copy of the package and to
@@ -207,8 +215,30 @@ own process. Each probe runs in a separate `node` child with:
   `USERNAME`),
   `NODE_ENV=test` (unset for the import probe, as CI runs `npm test`), and a hard
   timeout that kills the process;
-- a per-run nonce on the result line, taken out of the environment before the
-  package loads, so the package cannot print a forged verdict.
+- requests on its stdin and answers on a pipe of its own (file descriptor 3),
+  one answer per request, matched by a fresh id; its stdout is discarded and the
+  job is never in its environment;
+- the package itself in a SES compartment (Hardened JavaScript, the `ses`
+  package): the harness bundles the mapped modules with esbuild, the executor
+  calls `lockdown()` — every JavaScript intrinsic frozen — before any of the
+  package exists in the process, and evaluates the bundle in a `Compartment`
+  whose global object has no `process`, no Node module but hardened stand-ins
+  (`crypto.randomUUID`, `url` string conversions, and `http`/`https`/`net`
+  servers whose `listen` binds nothing and is reported), no-op `console`, a
+  clock the harness sets, and an inert `Function` constructor
+  (`createConfinement` in `child/engine-cases-core.mjs`).
+
+The answer pipe, stdout, stderr and the collector live outside the compartment,
+and nothing inside it leads back to them, so the package can no longer rewrite
+an answer on its way out — not through `process.stdout`, a socket prototype,
+`Object.prototype`, `JSON` or a Function constructor
+(`tests/fixtures/acceptance/hostile-package/` and
+`tests/fixtures/engine-cases/hostile/` try each of these; unconfined they work,
+in the compartment none does). Verdicts are made in the harness process from the
+answers, and a line on the pipe the harness did not ask for still discards the
+whole run as `not-runnable`. A package that needs a Node module or global the
+compartment does not provide — `fs`, `Buffer`, an npm package — is
+`not-runnable` with that reason, never a pass.
 
 Network is the gap. Node's permission model only covers network from v25 on.
 The harness self-tests whether a socket is refused under the permission flag;
@@ -221,6 +251,10 @@ static scan alone. A package whose imports cannot be resolved is reported as
 "not runnable without its dependencies"; the harness never installs anything.
 
 The harness detects; it does not prove against a package written to defeat it.
+What the compartment does not stop: a package that answers differently when it
+recognises a probe's input (it sees its arguments), one that spins or exhausts
+memory (the timeout and the process end it, as `not-runnable`), and a flaw in
+SES or V8 itself.
 
 ### Engine cases through the call contract
 
@@ -230,12 +264,15 @@ types and checks — `lib/testing-engine-cases.ts`) against the call contract th
 generated code exports (`srv/engine-contract.*`: `CONTRACT`, `validate`,
 `simulate`, `getRun` — `lib/engine-call-contract.ts`, code-draft rule 24). No
 model-written assertion is involved: each example carries its input and the
-expected outcome in machine form, the child (`child/engine-cases-child.mjs`)
-calls the contract, and the parent judges (`child/engine-cases-core.mjs`). It
-uses this harness's sandbox (`runChild` with `entry: 'engine-cases-child.mjs'`)
-under the same execution rule; a package without the contract reads
-"Not run — the code does not export the call contract", and a field the
-contract marks as internal is "Not run" with that reason.
+expected outcome in machine form, the executor (`child/executor.mjs`) calls the
+contract and reports what it answered (`collectEngineCase`), and the harness
+process judges it (`judgeEngineCase`, both in `child/engine-cases-core.mjs`).
+It uses this harness's sandbox (`startExecutor`) under the same execution rule;
+a package without the contract reads "Not run — the code does not export the
+call contract", a field the contract marks as internal is "Not run" with that
+reason, and a case of which only some examples could run is "Not run" and says
+how much of it ran. `validate` and `simulate` refuse with `ok: false`; a throw
+from them is a crash and fails the example.
 
 ```bash
 node scripts/acceptance/engine-cases.mjs <unpacked-package-dir> [--cases file] [--out dir] [--timeout ms] [--trusted-fixture] [--static-only]
@@ -255,7 +292,9 @@ result (FP-RUN-01), `Math.round(...)/100` (FP-PREC-02), `parseInt`/`parseFloat`
 message naming an SAP API in a file with no outbound call (FP-CLAIM-01), SAP's
 own event namespace (FP-CLAIM-02), declared but unimported dependencies
 (FP-META-04). A static hit is counted next to the pattern as a suspect; it never
-changes a probe's verdict.
+changes a probe's verdict. The walk is bounded (depth, directory entries, source
+files, bytes read — `SCAN_LIMITS`); a scan that hit a bound says so in the
+report's `static.limits` and covers only the files it reached.
 
 ## How this relates to the other layers
 
@@ -281,7 +320,7 @@ shared vocabulary between them:
 
 1. Add the entry to `catalogue.json` with origin, probe, layers.
 2. Add it to the index table above.
-3. If it gets a harness probe: implement it in `scripts/acceptance/child/probes.mjs`,
+3. If it gets a harness probe: implement it in `scripts/acceptance/lib/probes.mjs`,
    register it in `PROBE_PATTERNS` in `scripts/acceptance/run.mjs`, map it in both
    fixture adapters, and make the flawed fixture exhibit it.
 

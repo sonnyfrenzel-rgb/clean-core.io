@@ -153,11 +153,25 @@ test.describe('the runner image', () => {
     ]);
   });
 
-  test('esbuild in the runner is the version the app pins', () => {
+  test('esbuild and ses in the runner are the versions the app pins', () => {
+    // ses (Apache-2.0): the engine pass's compartment (QA 342adaac5625). The core reads its
+    // dist file from the image's node_modules and hands it to the sandboxed child.
     const runnerPkg = JSON.parse(read('runner/package.json'));
     const lock = JSON.parse(read('package-lock.json'));
-    expect(runnerPkg.dependencies).toEqual({ esbuild: lock.packages['node_modules/esbuild'].version });
-    expect(Object.keys(JSON.parse(read('runner/package-lock.json')).packages[''].dependencies)).toEqual(['esbuild']);
+    expect(runnerPkg.dependencies).toEqual({
+      esbuild: lock.packages['node_modules/esbuild'].version,
+      ses: lock.packages['node_modules/ses'].version,
+    });
+    const runnerLock = JSON.parse(read('runner/package-lock.json'));
+    expect(Object.keys(runnerLock.packages[''].dependencies)).toEqual(['esbuild', 'ses']);
+    expect(runnerLock.packages['node_modules/ses'].version).toBe(lock.packages['node_modules/ses'].version);
+    expect(runnerLock.packages['node_modules/ses'].license).toBe('Apache-2.0');
+    // the image copies the runner's node_modules into its working directory, where the core reads ses from
+    const df = read('runner/Dockerfile');
+    expect(df).toContain('WORKDIR /srv');
+    expect(df).toContain('COPY --from=build /build/runner/node_modules ./node_modules');
+    expect(read('lib/test-sandbox/core.ts')).toContain("export const SES_DIST_PATH = ['node_modules', 'ses', 'dist', 'ses.cjs'] as const;");
+    expect(read('lib/test-sandbox/core.ts')).toContain('fssync.readFileSync(path.join(process.cwd(), ...SES_DIST_PATH)');
   });
 });
 
