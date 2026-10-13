@@ -51,7 +51,7 @@ for (const id of ids) {
   if (!files.length) continue;
   const code = files.map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
   for (const deployment of ['private', 'public'] as const) {
-    const evidence = buildAbapEvidence(code, files[0], deployment);
+    const evidence = buildAbapEvidence(code, files[0], deployment, undefined, ENGINE.startsWith("v") ? ENGINE : `v${ENGINE}`);
     const route = routeExtensibility(evidence, deployment, ENGINE);
     rows.push({
       id,
