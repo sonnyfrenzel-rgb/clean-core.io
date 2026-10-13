@@ -450,7 +450,12 @@ A body is refused — and the unit goes to repair with that reason — when it:
    writes the guard function with a `values` argument for the computed operands, and the body calls it at
    the original's line (`Unit.bodyCalls`, `Scaffold.required`, `fillGuardsOf`;
    `lib/transformation/guard-basis.ts`). A derived check is no RAP validation; the logic method calls its
-   predicate. A literal the unit's own non-check statements also use (`WHEN 'SHIP'` before
+   predicate. A work area that `LOOP AT … INTO`/`ASSIGNING`, `READ TABLE … INTO`/`ASSIGNING` or
+   `SELECT … INTO` fills is written by that statement — unless its rows are input records, of a structure
+   the contract maps to `record`: `LOOP AT gt_effects INTO ls_parent` over a table the program builds
+   itself makes `ls_parent-kind` a computed value handed in through `values`, because `Rec` has no field of
+   `ty_effect` (defect E, A/B 13.10.2026; `SCAFFOLD_VERSION` 4). A scalar or a DDIC row read by `SELECT` is
+   no record field either. A literal the unit's own non-check statements also use (`WHEN 'SHIP'` before
    `IF ls_parent-kind = 'SHIP' AND lv_qty > …`) is no evidence of an inlined check and is not looked for
    (A/B 13.10.2026);
 8. reads a field its parameters' types do not have (`unknown-field`, Node): `sel`, `st`, `args`, `record`

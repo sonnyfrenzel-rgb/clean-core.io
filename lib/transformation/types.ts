@@ -25,8 +25,12 @@ export const PLAN_VERSION = 1;
  * 3 (3.0.12, abapGit package): the RAP scaffold writes abapGit's metadata file for every object
  * (`abapgit-files.ts`), the table as abapGit XML instead of `.tabl.astabl`, the root package's
  * `package.devc.xml`, and a transparent table name within 16 characters. The Node scaffold's text is unchanged.
+ * 4 (3.0.12, defect E of the fill A/B 13.10.2026): a work area that LOOP, READ TABLE or SELECT fills from an
+ * internal table the program builds itself is a computed value, not an input record — a check on it is called
+ * in the body with the value in `values` (`guard-basis.ts`). Both scaffolds' guard text changes where a check
+ * reads such a work area (its values, its doc line); nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 3;
+export const SCAFFOLD_VERSION = 4;
 
 /* -------------------------------------------------------------- budgets */
 

@@ -44,7 +44,7 @@ test('A: a literal the routine also uses outside the check is no evidence of an 
     '    if (child.reference !== parent.eid) continue;',
     "    if (parent.kind === 'SHIP' && child.kind === 'RECEIPT') lvQty = dec.add(lvQty, child.qty);",
     '  }',
-    `  if (${g.helper}(sel, st, null, { lvQty })) {`,
+    `  if (${g.helper}(sel, st, null, { lsParentKind: parent.kind, lvQty, lsParentQty: parent.qty })) {`,
     "    args.cvCode.value = 'RETURNS_EXCEED_SHIPMENT';",
     '    return;',
     '  }',
@@ -53,7 +53,7 @@ test('A: a literal the routine also uses outside the check is no evidence of an 
   ].join('\n');
   expect(guardBodyOf(prep)(u.id, faithful, [])).toBeNull();
   // Not calling the guard is still refused.
-  expect(guardBodyOf(prep)(u.id, faithful.replace(`${g.helper}(sel, st, null, { lvQty })`, "parent.kind === 'SHIP' && dec.compare(lvQty, parent.qty) > 0"), [])).toContain(`does not call ${g.helper}`);
+  expect(guardBodyOf(prep)(u.id, faithful.replace(`${g.helper}(sel, st, null, { lsParentKind: parent.kind, lvQty, lsParentQty: parent.qty })`, "parent.kind === 'SHIP' && dec.compare(lvQty, parent.qty) > 0"), [])).toContain(`does not call ${g.helper}`);
 });
 
 test('B: a derived predicate reads its values through member calls; names it is not given stay refused', () => {
@@ -109,4 +109,50 @@ test('C: a refused object with a reason is a refusal, whatever the reason says; 
     ['U02', null, 'return;'],
     ['U03', null, 'return;'],
   ]);
+});
+
+/**
+ * E (A/B 13.10.2026, SD program, U16): `LOOP AT gt_effects INTO ls_parent` did not count as a write of
+ * `ls_parent`, so `ls_parent-kind` read as raw input and the predicate had to take it from `record: Rec` —
+ * a type `ty_effect` is no part of. A work area filled from an internal table the program builds itself is
+ * a computed value and goes in through `values`; a row of the program's input stays raw.
+ */
+const workAreas = fs.readFileSync(path.join(__dirname, 'fixtures', 'transformation', 'work-area-shape.abap'), 'utf8');
+
+function preparedFrom(src: string): EngineLedPrepared {
+  const prep = prepareEngineLed({ source: src, track: 'node', program: null, decisions: [], contextText: 'PLATFORM KNOWLEDGE (test)' });
+  if (!prep.ok) throw new Error(prep.reason);
+  return prep;
+}
+
+test('E: a row of an internal table the program builds is a computed value; the predicate reads it from values', () => {
+  const prep = prepared();
+  const g = guardOf(prep, unitOf(prep, 'checkConservation').id);
+  expect(g.basis).toBe('derived');
+  expect(g.operands.map((o) => o.key)).toEqual(['lsParentKind', 'lvQty', 'lsParentQty']);
+  expect(g.basisReason).toBe('ls_parent is a row of the internal table gt_effects, filled at L38 in CHECK_CONSERVATION');
+  // The fill request names every value the body hands in.
+  const unit = prep.fillUnits.find((u) => u.unitId === unitOf(prep, 'checkConservation').id)!;
+  expect(unit.guards.find((x) => x.id === g.id)!.values).toEqual(['lsParentKind', 'lvQty', 'lsParentQty']);
+  // The predicate is written from values alone — `Rec` has no field of ty_effect.
+  const guard = guardBodyOf(prep);
+  expect(guard(g.regionId!, "return values.lsParentKind === 'SHIP' && dec.compare(String(values.lvQty), String(values.lsParentQty)) > 0;", [])).toBeNull();
+  expect(prep.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content).toMatch(/lsParentKind: GuardValue;[\s\S]*lsParentQty: GuardValue;/);
+});
+
+test('E: LOOP, ASSIGNING, READ TABLE and SELECT fill a work area; a row of the input stays raw', () => {
+  const prep = preparedFrom(workAreas);
+  const at = (condition: string) => prep.plan.guards.find((g) => g.condition === condition)!;
+  // A row of the input (gt_orders, read from the database): raw, checked at the step's entry from `record`.
+  const order = at('ls_order-netwr > 1000');
+  expect([order.basis, order.placement, order.operands]).toEqual(['raw', 'entry', []]);
+  // Rows of gt_totals, which the program computes: derived, called in the body with the value.
+  const total = at('<ls_total>-sum > 5000');
+  expect([total.basis, total.placement, total.operands.map((o) => o.key)]).toEqual(['derived', 'body', ['lsTotalSum']]);
+  const first = at('ls_first-sum > 9000');
+  expect([first.basis, first.placement, first.operands.map((o) => o.key)]).toEqual(['derived', 'body', ['lsFirstSum']]);
+  expect(first.basisReason).toContain('a row of the internal table gt_totals');
+  // A field read into a variable by SELECT SINGLE is no record field: derived, handed in.
+  const customer = at("lv_kunnr = 'BLOCKED'");
+  expect([customer.basis, customer.placement, customer.operands.map((o) => o.key)]).toEqual(['derived', 'body', ['lvKunnr']]);
 });

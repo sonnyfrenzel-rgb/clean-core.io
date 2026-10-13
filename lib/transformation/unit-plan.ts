@@ -309,6 +309,15 @@ export function readContractFields(facts: EngineFacts, notCarried: readonly NotC
 
 const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|ALSM_EXCEL_TO_INTERNAL_TABLE)\b/i;
 
+export interface RecordInput {
+  /** The structures whose rows are input records (lower case). */
+  structures: Set<string>;
+  /** Components the original computes after the input is read — results, never request fields. */
+  computed: Set<string>;
+  /** The line structure of a data object (a work area, a field symbol, a table), lower case; null when unknown. */
+  lineStructureOf: (dataObject: string) => string | null;
+}
+
 /**
  * What the original takes as input data (coordinator, 12.10.2026): the
  * structures it fills from a database read, an upload or file read, a SPLIT of
@@ -317,7 +326,7 @@ const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|AL
  * = …`, `ADD … TO ls-rem_num`). A computed component is a result, never a
  * request field.
  */
-export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string> } {
+export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): RecordInput {
   const { statements } = facts;
   const fixtures = notCarried.filter((n) => n.reason === 'fixture');
   const inFixture = (line: number) => fixtures.some((n) => line >= n.lineStart && line <= n.lineEnd);
@@ -343,6 +352,38 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
     let t = typeOf.get(lower(v)) ?? null;
     for (let i = 0; t && i < 4 && tableOf.has(t); i++) t = tableOf.get(t)!;
     return t;
+  };
+  // The line structure of any data object a work area can be — field symbols and `LIKE` included —
+  // for `lineStructureOf` only (defect E); the record reading above keeps its own, narrower map.
+  const declaredAs = new Map<string, { type: string; like: boolean }>();
+  const structureNames = new Set<string>();
+  for (const st of statements) {
+    if (!['TYPES', 'DATA', 'CLASS-DATA', 'STATICS', 'FIELD-SYMBOLS'].includes(st.keyword)) continue;
+    const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+    const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
+    if (begin) structureNames.add(lower(begin[1]));
+    if (begin || st.keyword === 'TYPES') continue;
+    const m = /^(<?[\w/]+>?)\s+(TYPE|LIKE)\s+(?:(?:STANDARD|SORTED|HASHED|ANY|INDEX)\s+)?(?:(?:TABLE|LINE)\s+OF\s+(?:REF\s+TO\s+)?)?([\w/]+)/i.exec(rest);
+    if (m && !declaredAs.has(lower(m[1]))) declaredAs.set(lower(m[1]), { type: lower(m[3]), like: m[2].toUpperCase() === 'LIKE' });
+  }
+  const resolve = (v: string): string | null => {
+    let name = lower(v);
+    for (let i = 0; i < 4; i++) {
+      const d = declaredAs.get(name);
+      if (!d) return structureOf(name);
+      if (!d.like) {
+        let t: string | null = d.type;
+        for (let j = 0; t && j < 4 && tableOf.has(t); j++) t = tableOf.get(t)!;
+        return t;
+      }
+      name = d.type;
+    }
+    return null;
+  };
+  // Only a declared structure (BEGIN OF) has rows a record maps: `lv_kunnr TYPE c` is a scalar.
+  const lineStructureOf = (v: string): string | null => {
+    const t = resolve(v);
+    return t && structureNames.has(t) ? t : null;
   };
 
   // Data objects the original fills from outside or from its demo data.
@@ -400,7 +441,7 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
     const writer = /^(?:ADD|SUBTRACT)\b.*\b(?:TO|FROM)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^(?:MULTIPLY|DIVIDE)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^COMPUTE\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t);
     if (writer) computed.add(lower(writer[1].slice(writer[1].lastIndexOf('-') + 1)));
   }
-  return { structures, computed };
+  return { structures, computed, lineStructureOf };
 }
 
 /** The CSV delimiter a constant of the original declares (`gc_sep VALUE ';'`), else a comma. */
@@ -698,7 +739,15 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   // ---- guards
   const inLoop = loopLines(statements);
   const constants = statements.filter((st) => st.keyword === 'CONSTANTS').map((st) => /^CONSTANTSs*:?s*([w/]+)/i.exec(st.text)?.[1] ?? '').filter(Boolean);
-  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants);
+  // A work area holds an input record when its rows are of a structure the contract maps to `record`
+  // (defect E): a row of an internal table the program builds itself is a computed value.
+  const recordInput = recordInputOf(facts, notCarried);
+  const isInputRecord = (workArea: string, table: string | null) =>
+    [workArea, table].some((n) => {
+      const s = n ? recordInput.lineStructureOf(n) : null;
+      return !!s && recordInput.structures.has(s);
+    });
+  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants, isInputRecord);
   const guards: PlanGuard[] = readGuardsFrom(statements).map((g) => {
     const rule = ruleIdOnLine(ruleSet.rules, g.line);
     const d = rule ? decision(rule) : 'keep';
