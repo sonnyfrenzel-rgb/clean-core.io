@@ -1,7 +1,7 @@
 /**
  * SAP identifiers with SAP's own title, protocol and release — each read from a
- * public SAP page that states it (roadmap 3.0.12; PP, CO, FI and SD reviews of
- * v3.0.10, 12.10.2026).
+ * public SAP page that states it (roadmap 3.0.12; the PP, CO, FI and SD
+ * review of v3.0.10, 12.10.2026).
  *
  * Why it exists: in all four reviews a model named an SAP identifier for
  * something it is not — F2358 and F2234 for apps they are not, F1814 as

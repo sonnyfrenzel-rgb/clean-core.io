@@ -71,7 +71,7 @@ CALL FUNCTION 'WS_DOWNLOAD' EXPORTING filename = 'b.txt' TABLES data_tab = lt_x.
 `;
 
 const route = (code: string, deployment: 'public' | 'private', engine: string) =>
-  routeExtensibility(buildAbapEvidence(code, 'zx.abap', deployment), deployment, engine);
+  routeExtensibility(buildAbapEvidence(code, 'zx.abap', deployment, undefined, engine), deployment, engine);
 
 /* ------------------------------------------------------------- the router */
 
@@ -105,7 +105,7 @@ test.describe('the route: a frontend file feature never forces side-by-side (F14
     const r = route(DOWNLOAD_ONLY, 'private', OLD);
     expect(r.recommendedRoute).toBe(SIDE_BY_SIDE_ROUTE);
     expect(r.rationale).toBe('Frontend GUI file services are used. Decoupled web client uploads on SAP BTP are required.');
-    expect(routeDrivers(buildAbapEvidence(DOWNLOAD_ONLY, 'zx.abap', 'private'), 'private', OLD).map((d) => d.kind)).toEqual(['gui-download']);
+    expect(routeDrivers(buildAbapEvidence(DOWNLOAD_ONLY, 'zx.abap', 'private', undefined, OLD), 'private', OLD).map((d) => d.kind)).toEqual(['gui-download']);
   });
 
   test('with another driver the route names that driver, not the file feature', () => {
@@ -140,14 +140,17 @@ test.describe('the route: a frontend file feature never forces side-by-side (F14
       if (!files.length) continue;
       const code = files.map((f) => fs.readFileSync(path.join(dir, id, f), 'utf8')).join('\n');
       for (const deployment of ['private', 'public'] as const) {
-        const evidence = buildAbapEvidence(code, files[0], deployment);
+        // Each side with its own engine's evidence, as a run of it signs:
+        // since 3.0.12 the evidence is version-gated too (the RFC detector).
+        const evidenceBefore = buildAbapEvidence(code, files[0], deployment, undefined, OLD);
+        const evidence = buildAbapEvidence(code, files[0], deployment, undefined, NEW);
         const now = routeExtensibility(evidence, deployment, NEW);
-        const before = routeExtensibility(evidence, deployment, OLD);
+        const before = routeExtensibility(evidenceBefore, deployment, OLD);
         const why = circularReason(now.rationale);
         if (why) offenders.push(`${id}/${deployment}: ${why}`);
         if (now.recommendedRoute !== before.recommendedRoute) {
           moved += 1;
-          const old = routeDrivers(evidence, deployment, OLD).map((d) => d.kind);
+          const old = routeDrivers(evidenceBefore, deployment, OLD).map((d) => d.kind);
           const left = routeDrivers(evidence, deployment, NEW);
           const allDropped = old.length > 0 && old.every((k) => DROPPED.has(k));
           if (before.recommendedRoute !== SIDE_BY_SIDE_ROUTE || now.recommendedRoute !== IN_APP_ROUTE || left.length > 0 || !allDropped) {

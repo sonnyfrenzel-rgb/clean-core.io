@@ -122,12 +122,15 @@ test.describe('the level facet counts statements as statements, not as Unknown',
   test('levelFacetCounts: Unknown only for named objects; statements and no-object findings apart', () => {
     const rows = findingRows(findings);
     const counts = levelFacetCounts(rows, levelOf);
-    // AUTHORITY-CHECK and COMMIT WORK; SUBMIT (lv_prog) and the hard-coded
-    // file paths ('C:\temp\…', one row) name nothing.
+    // AUTHORITY-CHECK and COMMIT WORK; SUBMIT (lv_prog), the hard-coded
+    // file paths ('C:\temp\…', one row) and — since engine 3.0.12
+    // (DSAG B1) — the security review task on the AUTHORITY-CHECK whose result
+    // nobody reads name nothing.
     expect(counts.statements).toBe(2);
-    expect(counts.noObject).toBe(2);
+    expect(counts.noObject).toBe(3);
     expect(rows.filter((r) => noLevelReason(r.finding)?.kind === 'no-object').map((r) => r.finding.kind).sort()).toEqual([
       'hardcoded-value',
+      'security-review',
       'submit',
     ]);
     // Every named object of this source is answered by SAP's data: no Unknown.

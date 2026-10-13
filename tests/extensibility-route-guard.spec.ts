@@ -36,8 +36,10 @@ const CUSTOM_WRITE_ONLY = [
   'UPDATE zcust_log FROM ls_row.',
 ].join('\n');
 
+// Evidence and route of one engine, as a run of that engine signs them: since
+// 3.0.12 the evidence itself is version-gated (a local RFC is no outbound call).
 function route(code: string, deployment: 'public' | 'private', engine: string = APP_VERSION) {
-  return routeExtensibility(buildAbapEvidence(code, 'z_custom_persist.abap', deployment), deployment, engine);
+  return routeExtensibility(buildAbapEvidence(code, 'z_custom_persist.abap', deployment, undefined, engine), deployment, engine);
 }
 
 /** An engine before 3.0.12 — the rule a run signed then keeps. */
@@ -46,7 +48,7 @@ const OLD = 'v3.0.11';
 const NEW = ON_STACK_CONSTRUCTS_FROM;
 
 const driversOf = (code: string, deployment: 'public' | 'private', engine: string) =>
-  routeDrivers(buildAbapEvidence(code, 'z.abap', deployment), deployment, engine).map((d) => d.kind);
+  routeDrivers(buildAbapEvidence(code, 'z.abap', deployment, undefined, engine), deployment, engine).map((d) => d.kind);
 
 test.describe('custom persistence is judged by deployment, not by the construct', () => {
   test('Private Edition keeps custom persistence on-stack', () => {
@@ -182,11 +184,25 @@ test.describe('from 3.0.12 only an RFC call to another system forces Side-by-Sid
         expect(driversOf(code, deployment, NEW)).toEqual([]);
         const r = route(code, deployment, NEW);
         expect(r.recommendedRoute).toBe('In-App (ABAP Cloud)');
-        expect(r.rationale).toMatch(/stay in this system \(1×/);
         expect(r.assumptions.join('\n')).not.toMatch(/RFC destinations are not yet migrated/);
       }
-      expect(route(RFC_GROUP, deployment, NEW).rationale).toMatch(/CL_ABAP_PARALLEL/);
-      expect(route(RFC_NONE, deployment, NEW).rationale).not.toMatch(/CL_ABAP_PARALLEL/);
+    });
+
+    // The evidence of a 3.0.12 run carries no `rfc-call` finding for a local
+    // destination at all (`rfcDestinationOf`, the RFC detector of the DSAG
+    // review), so the router's own reading of a local `rfc-call` is checked
+    // here on an engine-3.0.11 finding handed to the 3.0.12 router — the
+    // router unit, not a pair a run signs.
+    test(`the router reads an rfc-call finding with a local destination as staying in this system — ${deployment}`, () => {
+      const routed = (code: string) =>
+        routeExtensibility(buildAbapEvidence(code, 'z.abap', deployment, undefined, OLD), deployment, NEW);
+      for (const code of [RFC_NONE, RFC_GROUP]) {
+        const r = routed(code);
+        expect(r.recommendedRoute).toBe('In-App (ABAP Cloud)');
+        expect(r.rationale).toMatch(/stay in this system \(1×/);
+      }
+      expect(routed(RFC_GROUP).rationale).toMatch(/CL_ABAP_PARALLEL/);
+      expect(routed(RFC_NONE).rationale).not.toMatch(/CL_ABAP_PARALLEL/);
     });
   }
 
