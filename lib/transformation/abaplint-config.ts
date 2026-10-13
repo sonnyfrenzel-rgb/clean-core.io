@@ -1,3 +1,4 @@
+import { cleanAbapAbaplintRules } from '@/lib/clean-abap-rules';
 /**
  * The abaplint configuration of the ABAP Cloud route (roadmap 3.0.12, DSAG
  * ABAP guide review B5): the one the server runs on a RAP package
@@ -47,15 +48,14 @@ export const ABAPLINT_RULES = {
 } as const;
 
 /**
- * INTEGRATION HOOK — rules merged in beside the ones above. Another 3.0.12
- * branch adds the Clean ABAP rules as `cleanAbapAbaplintRules()` in
- * `lib/clean-abap-rules.ts`; at integration this returns them, and both the
- * server's check and the delivered `abaplint.json` carry them. A key the rules
- * above already set keeps their value: the Cloud check and its object types
- * are not configurable from there.
+ * The Clean ABAP rules (`lib/clean-abap-rules.ts`: the adopted ones only, each
+ * citing its section of SAP's style guide), merged in beside the ones above, so
+ * both the server's check and the delivered `abaplint.json` carry them. A key the
+ * rules above already set keeps their value: the Cloud check and its object
+ * types are not configurable from there.
  */
 export function additionalAbaplintRules(): Record<string, unknown> {
-  return {};
+  return cleanAbapAbaplintRules();
 }
 
 /** The configuration, with `extra` rules merged under the ones this module sets. */
