@@ -44,3 +44,12 @@ tests/prozess-benchmark/** text eol=lf
 # recorded. No line-ending conversion in either direction, so the copy stays the
 # upstream file.
 lib/generated/aff-schemas/** -text
+
+# tests/security-audit-guard.spec.ts holds the security agent's mail to the app's
+# mail shell character for character: it reads the RESPONSIVE_STYLES template out
+# of lib/email-layout.ts as text and compares it with the value the .mjs copy
+# evaluates to. A template literal's value never carries a CR (ECMAScript
+# normalises CRLF to LF in template text), so a CRLF working copy of the source
+# made the two differ on every line while the content was identical (2026-10-13).
+lib/email-layout.ts text eol=lf
+scripts/security/lib/mail-shell.mjs text eol=lf
