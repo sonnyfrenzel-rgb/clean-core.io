@@ -311,11 +311,14 @@ export async function POST(request: NextRequest) {
         const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);
         await assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS);
       }
-    } catch (rateErr: any) {
-      return NextResponse.json(
-        { error: rateErr.message || 'Too many requests.' },
-        { status: rateErr.status || 429 },
-      );
+    } catch (rateErr: unknown) {
+      // Only the limiter's own refusal is the caller's to read; anything else
+      // (a store error, say) is logged here and answered without its text.
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ error: rateErr.message || 'Too many requests.' }, { status: rateErr.status || 429 });
+      }
+      logger.error('gemini rate limit check failed', { route: 'api/gemini', error: rateErr instanceof Error ? rateErr.name : 'unknown' });
+      return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
     }
 
     // Server-side MFA gate. `users/{uid}` is read once, here, and handed to the

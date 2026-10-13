@@ -100,3 +100,15 @@ test.describe('the administrators’ hourly model-call limit', () => {
     expect(body).toContain('timestamps: decision.timestamps');
   });
 });
+
+test('only the limiter\'s own refusal reaches the caller; another error is answered without its text (SEC-2026-831)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app/api/gemini/route.ts'), 'utf8').replace(/\r\n/g, '\n');
+  const at = src.indexOf('} catch (rateErr');
+  expect(at).toBeGreaterThan(0);
+  const block = src.slice(at, src.indexOf('\n    }\n', at));
+  expect(block).toMatch(/if \(rateErr instanceof QuotaError\) \{\n\s*return NextResponse\.json\(\{ error: rateErr\.message/);
+  // Outside that branch nothing of the error's message is returned.
+  const rest = block.slice(block.indexOf('}', block.indexOf('instanceof QuotaError')));
+  expect(rest).not.toMatch(/rateErr\.message/);
+  expect(rest).toMatch(/status: 503/);
+});
