@@ -28,6 +28,11 @@ const PROGRAM = [
   'DATA lt_mara TYPE STANDARD TABLE OF mara.',
   'SELECT * FROM mara INTO TABLE lt_mara UP TO 10 ROWS.',
   "UPDATE mara SET mtart = 'FERT' WHERE matnr = '4711'.",
+  // A write to the program's own table: charged in the Public Edition, free in
+  // the Private Edition (score rule 3.0.9), so the two deployments answer
+  // differently under every route rule — before 3.0.12 the standard write
+  // alone told them apart by route, from 3.0.12 it no longer does.
+  "INSERT zcc_signed_log FROM ls_log.",
   "CALL FUNCTION 'POPUP_TO_CONFIRM'.",
 ].join('\n');
 
@@ -42,6 +47,9 @@ function signedProject(route = privateRoute, sha: string | null = SHA_A, extra: 
     originalRecommendation: route.recommendedRoute as SignedRouteProject['originalRecommendation'],
     extensibilityRoute: route.recommendedRoute,
     auditMetadata: sha === null ? undefined : ({ inputFingerprint: { sha256: sha } } as SignedRouteProject['auditMetadata']),
+    // The engine the fixture routes were computed with: a run recomputes with
+    // its own version, and an unstamped one is read as a run before 3.0.9.
+    analyzerVersion: APP_VERSION,
     ...extra,
   };
 }

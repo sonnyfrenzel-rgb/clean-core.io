@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
-import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { ON_STACK_CONSTRUCTS_FROM, routeExtensibility } from '../lib/abap/extensibility-router';
 import { readCallGraph } from '../lib/abap/call-graph';
 import { buildProcessSkeleton, type ProcessSkeleton } from '../lib/abap/process-skeleton';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
@@ -60,8 +60,13 @@ START-OF-SELECTION.
     for (const deployment of ['private', 'public'] as const) {
       const nav = routeExtensibility(buildAbapEvidence(navigation, 'znav.abap', deployment), deployment, APP_VERSION);
       expect(nav.recommendedRoute, deployment).toMatch(/In-App/);
-      const bdc = routeExtensibility(buildAbapEvidence(batchInput, 'zbdc.abap', deployment), deployment, APP_VERSION);
-      expect(bdc.recommendedRoute, deployment).toMatch(/Side-by-Side/);
+      // Batch input chose side-by-side under an engine before 3.0.12; from then
+      // on it is rework on-stack (`ON_STACK_CONSTRUCTS_FROM`, DSAG guide C1).
+      const bdcOld = routeExtensibility(buildAbapEvidence(batchInput, 'zbdc.abap', deployment), deployment, 'v3.0.11');
+      expect(bdcOld.recommendedRoute, deployment).toMatch(/Side-by-Side/);
+      const bdc = routeExtensibility(buildAbapEvidence(batchInput, 'zbdc.abap', deployment), deployment, ON_STACK_CONSTRUCTS_FROM);
+      expect(bdc.recommendedRoute, deployment).toMatch(/In-App/);
+      expect(bdc.rationale, deployment).toContain('The BDC screen automation (1×');
       expect(nav.cleanCoreScore, deployment).toBeGreaterThan(bdc.cleanCoreScore);
     }
   });

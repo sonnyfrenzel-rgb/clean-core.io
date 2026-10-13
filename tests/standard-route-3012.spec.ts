@@ -128,7 +128,13 @@ test.describe('the route: a frontend file feature never forces side-by-side (F14
   test('the router\'s rationale is never circular — over the 300 benchmark cases, both editions', () => {
     const dir = path.join(ROOT, 'tests/prozess-benchmark/cases');
     const offenders: string[] = [];
-    let changedWithoutSoleFileDriver = 0;
+    // From 3.0.12 two rules move routes: a frontend file feature
+    // (`GUI_FILE_NO_ROUTE_DRIVER_FROM`) and BDC, native SQL, a local RFC and
+    // Public Edition table writes (`ON_STACK_CONSTRUCTS_FROM`). Every move goes
+    // off-stack -> on-stack, and only where every driver it had is one of those.
+    const DROPPED = new Set(['gui-download', 'bdc', 'native-sql', 'custom-table-write', 'standard-table-write', 'rfc-call']);
+    let changedOtherwise = 0;
+    let moved = 0;
     for (const id of fs.readdirSync(dir).filter((n) => /^BM-\d{3}$/.test(n))) {
       const files = fs.readdirSync(path.join(dir, id)).filter((n) => n.endsWith('.abap')).sort();
       if (!files.length) continue;
@@ -139,15 +145,21 @@ test.describe('the route: a frontend file feature never forces side-by-side (F14
         const before = routeExtensibility(evidence, deployment, OLD);
         const why = circularReason(now.rationale);
         if (why) offenders.push(`${id}/${deployment}: ${why}`);
-        // A route moves only where the file feature was its sole driver.
         if (now.recommendedRoute !== before.recommendedRoute) {
+          moved += 1;
           const old = routeDrivers(evidence, deployment, OLD).map((d) => d.kind);
-          if (!(old.length === 1 && old[0] === 'gui-download')) changedWithoutSoleFileDriver += 1;
+          const left = routeDrivers(evidence, deployment, NEW);
+          const allDropped = old.length > 0 && old.every((k) => DROPPED.has(k));
+          if (before.recommendedRoute !== SIDE_BY_SIDE_ROUTE || now.recommendedRoute !== IN_APP_ROUTE || left.length > 0 || !allDropped) {
+            changedOtherwise += 1;
+          }
         }
       }
     }
     expect(offenders).toEqual([]);
-    expect(changedWithoutSoleFileDriver).toBe(0);
+    expect(changedOtherwise).toBe(0);
+    // Measured 13.10.2026: 28 Private and 133 Public Edition routes move on-stack.
+    expect(moved).toBe(161);
   });
 });
 

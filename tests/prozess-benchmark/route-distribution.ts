@@ -7,10 +7,16 @@
  *   npx tsx tests/prozess-benchmark/route-distribution.ts [--engine <version>] [--out <file.json>] [--compare <before.json>]
  *
  * `--engine` picks the route rule the way a run's engine version does
- * (`lib/abap/extensibility-router.ts`, `GUI_FILE_NO_ROUTE_DRIVER_FROM`): run it
- * once with an engine before 3.0.12 and once with 3.0.12 to see what the GUI
- * file rule changes. `--compare` lists every case whose route differs from a
- * saved run and says whether a frontend file feature was its only driver there.
+ * (`lib/abap/extensibility-router.ts`, `GUI_FILE_NO_ROUTE_DRIVER_FROM` and
+ * `ON_STACK_CONSTRUCTS_FROM`): run it once with an engine before 3.0.12 and
+ * once with 3.0.12 to see what the 3.0.12 rules change — from then on only an
+ * RFC call to another system chooses side-by-side. `--compare` lists every
+ * case whose route differs from a saved run, with its drivers before and
+ * after, and says whether a frontend file feature was its only driver there.
+ *
+ * Measured on 13.10.2026 (300 cases, `--engine 3.0.11` vs `3.0.12`):
+ * side-by-side 42 -> 14 in Private Edition and 147 -> 14 in Public Edition;
+ * all 161 changes go from side-by-side to on-stack, none the other way.
  *
  * Not a spec and not part of CI: a measurement, not a ratchet.
  */

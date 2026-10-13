@@ -24,7 +24,7 @@
  * Pure: no React, no fetch. The component draws the model; the spec drives it.
  */
 import type { ArchitectureContract, ContractField, TargetRoute } from './architecture-contract';
-import { routeDrivers, type RouteDriver } from './abap/extensibility-router';
+import { routeDrivers, type RfcTarget, type RouteDriver } from './abap/extensibility-router';
 import { APP_VERSION } from './version';
 
 /** The part of a findings row the canvas reads (`ItFindingRow`, structurally). */
@@ -38,6 +38,8 @@ export interface CanvasFinding {
   successor: string | null;
   successorType?: string | null;
   successorConfidence?: string | null;
+  /** Where an RFC finding calls (`ItFindingRow.rfcTarget`), which picks whether it drives the route from 3.0.12. */
+  rfcTarget?: RfcTarget;
 }
 
 export type SuccessorTag = 'odata' | 'cds' | 'other';
