@@ -82,7 +82,8 @@ test.describe('failure-pattern catalogue', () => {
       expect(p.probe.expected.length, `${p.id} probe expected`).toBeGreaterThan(5);
       expect(p.origin.length, `${p.id} origin`).toBeGreaterThan(0);
       for (const o of p.origin) {
-        expect(['FI', 'CO', 'PP', 'SD'], `${p.id} origin case`).toContain(o.case);
+        // DSAG: a pattern taken from the DSAG ABAP guideline (roadmap 3.0.12, owner 13.10.2026).
+        expect(['FI', 'CO', 'PP', 'SD', 'DSAG'], `${p.id} origin case`).toContain(o.case);
         expect(o.ids.length, `${p.id} origin ids`).toBeGreaterThan(0);
       }
       expect(p.layers.length, `${p.id} layers`).toBeGreaterThan(0);
