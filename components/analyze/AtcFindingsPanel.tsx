@@ -204,6 +204,7 @@ function AtcQualityGateNote({ gate }: { gate: ReturnType<typeof atcQualityGate> 
             <span className="tabular-nums font-semibold">{gate.baseline.length}</span> other findings may be baselined as
             legacy, so that new findings stand out from them — once a person has checked that none of them is a
             security finding worded in a way our reading missed.
+            {gate.state === 'unreviewed' ? ' Until then the gate is not cleared, and this screen does not clear it: that check is made in ATC.' : ''}
           </li>
         </ul>
         <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">

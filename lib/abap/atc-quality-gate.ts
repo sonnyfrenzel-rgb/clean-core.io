@@ -12,8 +12,8 @@
  * What this module does with an import, and what it does not:
  *   - Every finding of the import is legacy as far as this product can tell —
  *     an import is a snapshot, so all of it was there before. Each finding is
- *     put in exactly one of two groups: `baseline` (may be baselined) or
- *     `security` (never baselined).
+ *     put in exactly one of two groups: `baseline` (may be baselined once a
+ *     person has checked it) or `security` (never baselined).
  *   - Whether a finding is a security finding is OUR READING of ATC's check
  *     identifier, check title and message — ATC exports carry no "security"
  *     column. The reading is named as one wherever it is shown, and it goes
@@ -88,7 +88,11 @@ export function isSecurityFinding(f: Pick<AtcFinding, 'checkId' | 'checkTitle' |
 }
 
 export interface AtcQualityGate {
-  /** Not security findings in our reading: may be baselined as legacy once a person has checked the reading, so new ones stand out. */
+  /**
+   * Not security findings in our reading — not "not security findings". They
+   * may be baselined as legacy only once a person has checked the reading, so
+   * new ones stand out; until then they hold `state` at `unreviewed`.
+   */
   baseline: AtcFinding[];
   /** Security findings without an ATC exemption: open, never baselined. */
   securityOpen: AtcFinding[];
@@ -96,10 +100,14 @@ export interface AtcQualityGate {
   securityExempted: AtcFinding[];
   /**
    * `holds` while a security finding is open — the gate does not let the
-   * release pass; `no-open-security` when the import names none. Never "passed":
-   * the import says only what failed the checks that ran.
+   * release pass. `unreviewed` while none is open in our reading but other
+   * findings are: the reading goes by words and can miss a security finding,
+   * so only a person's check of those can clear them (QA review of 5a559787,
+   * f45d35bb0e72 — this module never decides that on its own).
+   * `no-open-security` when the import names no open finding at all. Never
+   * "passed": the import says only what failed the checks that ran.
    */
-  state: 'holds' | 'no-open-security';
+  state: 'holds' | 'unreviewed' | 'no-open-security';
 }
 
 export function atcQualityGate(atc: Pick<AtcReport, 'findings'>): AtcQualityGate {
@@ -115,6 +123,6 @@ export function atcQualityGate(atc: Pick<AtcReport, 'findings'>): AtcQualityGate
     baseline,
     securityOpen,
     securityExempted,
-    state: securityOpen.length > 0 ? 'holds' : 'no-open-security',
+    state: securityOpen.length > 0 ? 'holds' : baseline.length > 0 ? 'unreviewed' : 'no-open-security',
   };
 }
