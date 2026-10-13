@@ -134,11 +134,17 @@ test.describe('the lease branch of /api/gemini', () => {
   };
 
   test('without a lease the call is limited exactly as before; with one, the hourly counter is not touched', () => {
-    expect(src).toContain('assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000)');
-    // The limiter sits in the branch without a lease.
-    const branch = src.slice(at('if (lease) {'), at('assertRateLimit(`gemini:${decodedToken.uid}`'));
+    expect(src).toContain('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
+    // The limiter sits in the branch without a lease, and that branch has no
+    // exemption: an administrator is counted too, in a bucket of its own chosen
+    // before the one call (SEC-2026-827).
+    const branch = src.slice(at('if (lease) {'), at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)'));
     expect(branch).toContain('peekLease(');
-    expect(branch).toContain('} else if (!decodedToken.admin) {');
+    const unleased = branch.slice(branch.indexOf('} else {'));
+    expect(branch.indexOf('} else {'), 'the branch without a lease is unconditional').toBeGreaterThan(-1);
+    expect(unleased).not.toMatch(/else if/);
+    expect(unleased).toContain('const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);');
+    expect(src).not.toMatch(/!decodedToken\.admin/);
     expect(src.match(/assertRateLimit\(/g)).toHaveLength(1);
   });
 
@@ -171,7 +177,7 @@ test.describe('the lease branch of /api/gemini', () => {
     expect(src).not.toContain('request.json()');
     const read = at('readBoundedJson(new Response(request.body');
     expect(read).toBeLessThan(at('leaseReferenceOf(body, isFirestoreId)'));
-    expect(read).toBeLessThan(at('assertRateLimit(`gemini:${decodedToken.uid}`'));
+    expect(read).toBeLessThan(at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)'));
     expect(src).toMatch(/bodyErr instanceof ResponseLimitError\) \{\s*return NextResponse\.json\([^\n]*\{ status: 413 \}\)/);
     // The bound never refuses a prompt the length check admits.
     expect(src).toContain('maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024');
@@ -222,7 +228,13 @@ test.describe('the lease route', () => {
   });
 
   test('a new lease costs one unit of the same hourly model limit, and a refused charge undoes the lease', () => {
-    const charge = at('assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000)');
+    // The same bucket and ceiling as /api/gemini, chosen the same way — an
+    // administrator's lease costs a unit of the administrators' bucket
+    // (SEC-2026-827); there is no exemption around the charge.
+    const charge = at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
+    expect(src.slice(charge - 200, charge)).toContain('const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);');
+    expect(src).not.toMatch(/!decodedToken\.admin/);
+    expect(src.match(/assertRateLimit\(/g)).toHaveLength(2);
     expect(charge).toBeGreaterThan(at("if (outcome.kind === 'reused')"));
     expect(src.slice(charge, charge + 600)).toContain('voidLease(db,');
   });
