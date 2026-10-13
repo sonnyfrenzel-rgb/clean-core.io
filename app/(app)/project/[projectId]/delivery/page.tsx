@@ -93,6 +93,7 @@ import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, sco
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
 import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
+import { abapGitRepoSettingsXml } from '@/lib/transformation/abapgit-files';
 
 /**
  * Why the business rules' states are not in the package — the codes the
@@ -442,23 +443,8 @@ export default function DeliveryPage() {
         // and `VERSION` are not fields of this file at all, and `START_CLASS` was
         // additionally hard-wired to ZCL_DEMO_RAP_TEST — a class out of a demo,
         // shipped inside every customer's package. It is gone rather than guessed.
-        bundle.file(".abapgit.xml", `<?xml version="1.0" encoding="utf-8"?>
-<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
- <asx:values>
-  <DATA>
-   <MASTER_LANGUAGE>E</MASTER_LANGUAGE>
-   <STARTING_FOLDER>/src/</STARTING_FOLDER>
-   <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>
-   <IGNORE>
-    <item>/README.md</item>
-    <item>/STATUS.md</item>
-    <item>/manifest.json</item>
-    <item>/abaplint.json</item>
-    <item>/docs/</item>
-   </IGNORE>
-  </DATA>
- </asx:values>
-</asx:abap>`);
+        // One builder for this file and the RAP scaffold's (lib/transformation/abapgit-files.ts), so the two never differ.
+        bundle.file(".abapgit.xml", abapGitRepoSettingsXml());
 
         if (!isModular && project.generatedCode) {
           bundle.file("src/zcl_demo_rap_behavior.clas.abap", project.generatedCode, 'generated');

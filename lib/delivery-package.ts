@@ -42,6 +42,7 @@ import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
 import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './transformation/check-words';
+import { abapGitXmlHolds } from './transformation/abapgit-check';
 
 /* ------------------------------------------------------------------ types */
 
@@ -828,9 +829,15 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
     };
   }
   if (/\.clas\.abap$/i.test(p) && /test/i.test(p)) return { kind: 'test-suite', status: 'implemented', note: 'ABAP Unit class — runs only inside an SAP system.' };
-  if (/\.(abap|asddls|asbdef|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
+  if (/\.(abap|asddls|asbdef|asdcls|srvdsrv|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
+  // A table is its abapGit XML: abapGit has no source form of a table (3.0.12, importable package).
+  if (/^src\/.+\.tabl\.xml$/i.test(p)) {
+    return { kind: 'abap-object', status: 'implemented', note: abapGitXmlHolds(p, e.content) ? "Table definition in abapGit's serializer format (structure checked) — not imported into or activated in an SAP system." : "Table definition — not in the structure abapGit's serializer writes; not imported into an SAP system." };
+  }
   if (/\.xml$/i.test(p) && p.startsWith('src/')) {
-    return { kind: 'abap-metadata', status: 'implemented', note: 'Generated, not produced by an abapGit serializer; names and attributes may need adjusting.' };
+    return abapGitXmlHolds(p, e.content)
+      ? { kind: 'abap-metadata', status: 'implemented', note: "In abapGit's serializer format (structure checked against it) — not imported into an SAP system." }
+      : { kind: 'abap-metadata', status: 'implemented', note: 'Generated, not produced by an abapGit serializer; names and attributes may need adjusting.' };
   }
   return { kind: 'other', status: 'implemented', note: null };
 }
@@ -1024,9 +1031,13 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^abaplint\.json$/, () => 'abaplint rules for the sources under src/.'],
   [/\.asddls$/i, () => 'CDS data definition (for abapGit).'],
   [/\.asbdef$/i, () => 'RAP behavior definition (for abapGit).'],
-  [/\.assrvd$/i, () => 'RAP service definition (for abapGit).'],
+  [/\.asdcls$/i, () => 'CDS access control (for abapGit).'],
+  [/\.(?:srvdsrv|assrvd)$/i, () => 'RAP service definition (for abapGit).'],
   [/\.assrvb$/i, () => 'RAP service binding (for abapGit).'],
-  [/^src\/.+\.xml$/i, () => 'abapGit object metadata — generated, not produced by an abapGit serializer.'],
+  [/^src\/package\.devc\.xml$/i, () => 'abapGit package metadata of the root folder (its description).'],
+  [/^src\/.+\.tabl\.xml$/i, () => "Database table in abapGit's format (abapGit has no source form of a table)."],
+  [/^src\/.+\.srvb\.xml$/i, () => "RAP service binding in abapGit's format (OData V4 UI, not published)."],
+  [/^src\/.+\.xml$/i, () => 'abapGit object metadata (name, description, language).'],
 ];
 
 function describe(path: string, reading: PackageReading, facts: DeliveryFacts): string {
@@ -1103,15 +1114,23 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
     lines.push('');
   } else if (reading.kind === 'abap') {
     lines.push('## abapGit layout — what is verified, and what is not', '');
+    const metadata = entries.filter((e) => /^src\/.+\.xml$/i.test(e.path));
+    const checked = metadata.length > 0 && metadata.every((e) => abapGitXmlHolds(e.path, e.content));
     lines.push(
-      'The repository configuration file `.abapgit.xml` follows the format documented at https://docs.abapgit.org/user-guide/repo-settings/dot-abapgit.html, and the sources sit under the `/src/` folder it names.',
+      'The repository configuration file `.abapgit.xml` follows the format documented at https://docs.abapgit.org/user-guide/repo-settings/dot-abapgit.html, and the sources sit under the `/src/` folder it names (folder logic PREFIX: every object goes into the package you link the repository to).',
       '',
-      'What has **not** been verified: nobody imported this package into an SAP system. The object metadata files (`*.clas.xml` and the rest) were generated here, not produced by an abapGit serializer, so names, packages and attributes may need adjusting before the objects activate.',
+      checked
+        ? "Every object carries its abapGit metadata file (`<name>.<type>.xml`), written in the structure abapGit's serializer writes and checked against it; the table is abapGit's `.tabl.xml`. What has **not** been verified: nobody imported this package into an SAP system or activated its objects there — only that proves the package."
+        : 'What has **not** been verified: nobody imported this package into an SAP system. The object metadata files (`*.clas.xml` and the rest) were generated here, not produced by an abapGit serializer, so names, packages and attributes may need adjusting before the objects activate.',
       '',
     );
     lines.push('## Getting started', '');
     let n = 1;
-    if (entries.some((e) => e.path === '.abapgit.xml')) lines.push(`${n++}. Link the repository with abapGit and import \`/src\` into a development package.`);
+    if (entries.some((e) => e.path === '.abapgit.xml')) {
+      lines.push(
+        `${n++}. Import with abapGit into a development package whose ABAP language version is ABAP for Cloud Development: on SAP S/4HANA on-premise or SAP Cloud ERP Private with the open-source abapGit (New Offline, Import ZIP, or push this package to a Git repository and link it with New Online); on SAP BTP ABAP Environment or SAP S/4HANA Cloud Public Edition with the abapGit version SAP ships for ABAP Cloud (in ADT), whose supported object types SAP documents.`,
+      );
+    }
     lines.push(`${n++}. Activate the objects in ADT and fix what does not activate.`);
     const unit = entries.find((e) => /\.clas\.abap$/i.test(e.path) && /test/i.test(e.path));
     if (unit) lines.push(`${n++}. Run the ABAP Unit class \`${unit.path.split('/').pop()!.replace(/\.clas\.abap$/i, '').toUpperCase()}\` in ADT.`);

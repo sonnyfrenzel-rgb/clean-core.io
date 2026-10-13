@@ -77,12 +77,14 @@ export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
  * `scaffold-rap.ts`), so the list is the scaffold's, not a prompt's: the
  * ERP-side event publisher exists only where the design names a change SAP has
  * no event for (design §6.2), and the RAP scaffold writes its service
- * definition and binding in their abapGit forms. Every engine-led package
- * carries its trace.
+ * definition and binding in their abapGit forms and an abapGit metadata file
+ * for every object. Every engine-led package carries its trace.
  */
 export const ENGINE_LED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
   abapCloud: [
     { label: 'logic or behavior class (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
+    // 3.0.12, importable package: abapGit creates no object without its metadata file.
+    { label: 'class metadata for abapGit (*.clas.xml)', match: 'extension', suffix: '.clas.xml' },
     { label: 'CDS data definition (*.ddls.asddls)', match: 'extension', suffix: '.ddls.asddls' },
     { label: 'behavior definition (*.bdef.asbdef)', match: 'extension', suffix: '.bdef.asbdef' },
     { label: 'traceability (traceability.json)', match: 'name', name: 'traceability.json' },

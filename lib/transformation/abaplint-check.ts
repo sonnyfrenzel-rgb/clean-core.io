@@ -10,8 +10,14 @@
  *   - ABAP source of classes and interfaces (`*.abap`): parsed under ABAP
  *     Cloud; a statement ABAP Cloud does not have is a parser error;
  *   - CDS data definitions (`*.ddls.asddls`): parsed by abaplint's CDS parser;
- *   - **not read**: tables in their source form (`*.tabl.astabl` — abaplint
- *     reads a table's XML only), behavior definitions (abaplint reads only the
+ *   - tables (`*.tabl.xml`, abapGit's form and the only one abaplint reads):
+ *     the fields, the delivery class and size category (`xml_consistency`),
+ *     the name within 16 characters (`allowed_object_naming`);
+ *   - the metadata of every object (`*.<type>.xml`) is read with its object:
+ *     a class's or interface's name and description (`xml_consistency`), every
+ *     name's length (`allowed_object_naming`), one format per object (`aff_and_xml`);
+ *   - **not read**: tables in a source form (`*.tabl.astabl`, written before
+ *     scaffold version 3 — abapGit and abaplint read a table's XML only), behavior definitions (abaplint reads only the
  *     entity names, no grammar), access controls (`*.dcls.asdcls`), service
  *     definitions and bindings, job catalog entries and templates — abaplint
  *     knows these types but has no parser for their content. Each is listed
@@ -63,13 +69,14 @@ export const MAX_ABAPLINT_ISSUES = 40;
 const READ: ReadonlyArray<[RegExp, string]> = [
   [/\.(?:clas|intf)(?:\.[a-z_]+)?\.abap$/i, 'ABAP'],
   [/\.ddls\.asddls$/i, 'CDS'],
+  [/\.tabl\.xml$/i, 'TABL'],
 ];
 
 const NOT_READ: ReadonlyArray<[RegExp, string]> = [
   [/\.tabl\.astabl$/i, 'abaplint reads a table from its XML form only, not from its source (.astabl)'],
   [/\.bdef\.asbdef$/i, 'abaplint reads only the entity names of a behavior definition; it has no parser for it'],
   [/\.dcls\.asdcls$/i, 'abaplint has no parser for access controls'],
-  [/\.srvd\.[a-z]+$/i, 'abaplint has no parser for service definitions'],
+  [/\.srvd\.(?!xml$)[a-z]+$/i, 'abaplint has no parser for service definitions'],
   [/\.srvb\.[a-z]+$/i, 'abaplint has no parser for service bindings'],
   [/\.saj[ct]\.[a-z]+$/i, 'abaplint has no parser for job catalog entries and templates'],
 ];
@@ -114,7 +121,7 @@ export function abaplintPackageCheck(files: ReadonlyArray<{ path: string; conten
     else if (!/\.xml$/i.test(f.path)) base.notRun.push({ path: f.path, reason: 'not an object abaplint checks here' });
   }
   if (read.length === 0) {
-    base.reason = src.length === 0 ? 'The package has no src/ folder: there was no ABAP object to check.' : 'No file of the package is one abaplint reads (ABAP classes and interfaces, CDS data definitions).';
+    base.reason = src.length === 0 ? 'The package has no src/ folder: there was no ABAP object to check.' : 'No file of the package is one abaplint reads (ABAP classes and interfaces, CDS data definitions, tables).';
     return base;
   }
   try {

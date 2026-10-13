@@ -55,7 +55,7 @@ function nounOf(kind: string, scope: CheckScopeWord | undefined): { one: string;
   }
   if (kind === 'guards') return { one: 'body guard', many: 'body guards', of: '' };
   if (kind === 'lint') return { one: 'lint check', many: 'lint checks', of: '' };
-  if (kind === 'formats') return { one: 'object file', many: 'object files', of: "against SAP's ABAP file formats (AFF schemas)" };
+  if (kind === 'formats') return { one: 'object file', many: 'object files', of: "against SAP's ABAP file formats (AFF schemas) and abapGit's serializer format" };
   return { one: kind, many: kind, of: '' };
 }
 

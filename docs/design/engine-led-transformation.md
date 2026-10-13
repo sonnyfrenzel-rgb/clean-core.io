@@ -246,9 +246,19 @@ in the customer namespace and the body is a fill unit of its own.
 | `src/z<name>_r.bdef.asbdef` | behavior definition: `strict ( 2 )`, `managed` or `unmanaged` per the design's route; **one `validation` per carried guard** (`validation val_br_003_g0120 on save { create; update; field … }`), determinations for derived fields (COMPUTE/ADD read by the engine), actions for steps triggered by a user command (event callbacks), `etag`, locks |
 | `src/zbp_<name>_r.clas.abap` + `.locals_imp.abap` | behavior pool: `CLASS lhc_<entity> DEFINITION` with every method signature engine-written; **method bodies between fill markers**; each method header comment names ABAP lines, rule ids, guard ids |
 | `src/zcl_<name>_logic.clas.abap` | one method per routine unit (same markers), so the logic is unit-testable apart from the BO |
-| `src/z<name>_srvd.srvd.assrvd`, `src/z<name>_srvb.srvb.assrvb` | service definition / binding (OData V4 UI) |
+| `src/z<name>_srvd.srvd.srvdsrv`, `src/z<name>_srvb.srvb.xml` | service definition / binding (OData V4 UI), in abapGit's file names |
 | `src/ztc_<name>.clas.testclasses.abap` | ABAP Unit class: one `FOR TESTING` method per engine case with given/when/then comments and the expected value from the case; the *when* line (the call into the logic class) is engine-written when the case maps to a logic method by the call contract, otherwise a fill unit of kind `event` with the case as input |
 | `.abapgit.xml` | as delivery writes it today (not model-written) |
+| `src/<name>.<type>.xml`, `src/package.devc.xml` | since scaffold version 3 (3.0.12, importable package): abapGit's metadata file for every object, in the structure abapGit's serializer writes; the table is `src/z<name>_rec.tabl.xml` only (abapGit has no source form of a table; name ≤ 16 characters); the service definition's source is `.srvd.srvdsrv` (abapGit's extension) |
+
+Format per type (evidence, 13.10.2026): abapGit is the import route a customer has today — the
+open-source abapGit on S/4HANA on-premise and SAP Cloud ERP Private, the abapGit SAP ships for
+ABAP Cloud on BTP ABAP Environment and S/4HANA Cloud Public Edition. abapGit reads SAP's ABAP file
+formats (AFF JSON) only for the types in its AFF registry (abapGit/abapGit@37f226f4
+`src/objects/aff/zcl_abapgit_aff_registry.clas.abap`): of the types here only INTF, and only behind
+the experimental "AFF" switch. So every object is abapGit XML; the formats check
+(`lib/transformation/abapgit-check.ts`) holds each XML file against abapGit's serializer structure
+and each AFF JSON file, should one appear, against SAP's schema. Sources: `lib/transformation/abapgit-files.ts`.
 
 Guard condition texts translate ABAP to ABAP Cloud; that is a fill (the validation body), the
 validation's existence, name, trigger and message class are engine-owned.
