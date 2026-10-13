@@ -357,11 +357,18 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
         else if (/\.(ts|tsx)$/.test(entry.name)) {
           // Without a lookbehind, which is ES2018 and this repo targets ES2017.
           const hits = read(rel).match(/[A-Za-z_$][\w$]*\.exports\b/g) || [];
-          // In the runner's engine pass, `loaded.exports` is the confinement
-          // handing back a generated module's exports, not a project's field.
-          // Exempt there only: anywhere else it still counts as a reader.
-          const moduleExports = rel === 'lib/test-sandbox/engine-suite.ts' ? ['module.exports', 'loaded.exports'] : ['module.exports'];
-          if (hits.some((h) => !moduleExports.includes(h))) readers.push(rel);
+          // In the runner's engine pass and its probe pass, `loaded.exports`
+          // is the confinement (`confinement.load(bundle)`) handing back a
+          // generated module's exports, not a project's field. Exempt in those
+          // two files only, and only as often as each reads it today: a further
+          // `loaded.exports` there, or one anywhere else, still counts.
+          const confinementReads: Record<string, number> = {
+            'lib/test-sandbox/engine-suite.ts': 1,
+            'lib/test-sandbox/probe-suite.ts': 1,
+          };
+          const loadedReads = hits.filter((h) => h === 'loaded.exports').length;
+          const exempt = loadedReads === (confinementReads[rel] ?? 0);
+          if (hits.some((h) => h !== 'module.exports' && !(h === 'loaded.exports' && exempt))) readers.push(rel);
         }
       }
     };
