@@ -298,3 +298,15 @@ test('a rejected token is summarised in the log, not written one line each; anyt
   for (const ours of ['internal-error', 'invalid-credential', 'project-not-found']) expect(codes).not.toContain(ours);
   for (const theirs of ['auth/argument-error', 'auth/id-token-expired', 'auth/id-token-revoked']) expect(codes).toContain(theirs);
 });
+
+/* ---------------------------------------------------------- cost ceiling */
+
+test('the deploy pins max instances, the bound the limiter relies on, at the values the services had', () => {
+  const deploy = read('.github/workflows/deploy.yml');
+  expect(deploy).toMatch(/^\s+--max-instances=\$\{\{ steps\.env-ctx\.outputs\.max_instances \}\}\s*$/m);
+  const main = deploy.slice(deploy.indexOf('echo "service=clean-core" >>'), deploy.indexOf(';;', deploy.indexOf('echo "service=clean-core" >>')));
+  const dev = deploy.slice(deploy.indexOf('echo "service=clean-core-dev" >>'), deploy.indexOf(';;', deploy.indexOf('echo "service=clean-core-dev" >>')));
+  expect(main).toContain('echo "max_instances=20" >> "$GITHUB_OUTPUT"');
+  expect(dev).toContain('echo "max_instances=10" >> "$GITHUB_OUTPUT"');
+  expect(deploy).toContain('lib/attempt-limit.ts');
+});
