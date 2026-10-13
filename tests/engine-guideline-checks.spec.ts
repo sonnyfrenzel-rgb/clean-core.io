@@ -132,6 +132,46 @@ test.describe('B1 security review tasks', () => {
     expect(kinds(validated)).toEqual([]);
   });
 
+  test('a file-name validation counts only for the path it validates, and only before the access (QA 03501b79: c3d35aa21511, 77c2e71a5328)', () => {
+    const src = `REPORT zx.\nPARAMETERS p_file TYPE string.\nDATA: lv_path TYPE string, lv_other TYPE string.\nlv_path = |/usr/sap/in/{ p_file }|.\nOPEN DATASET lv_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.\n`;
+    // Another path validated elsewhere does not cover this one.
+    const otherPath = src.replace(
+      'OPEN DATASET',
+      "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = lv_other.\nOPEN DATASET",
+    );
+    expect(readSecurityReviewTasks(otherPath).map((t) => [t.kind, t.lineStart])).toEqual([['file-path-from-input', 6]]);
+    // The same path validated only after it was opened.
+    const after = `${src}CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'Z_IN' CHANGING physical_filename = lv_path.\n`;
+    expect(readSecurityReviewTasks(after).map((t) => [t.kind, t.lineStart])).toEqual([['file-path-from-input', 5]]);
+    // FILE_GET_NAME resolving a logical name into the path before the access.
+    const resolved = src.replace(
+      'OPEN DATASET',
+      "CALL FUNCTION 'FILE_GET_NAME' EXPORTING logical_filename = 'Z_IN' IMPORTING file_name = lv_path.\nOPEN DATASET",
+    );
+    expect(kinds(resolved)).toEqual([]);
+  });
+
+  test('every name of a chained PARAMETERS or SELECT-OPTIONS statement is input (QA 03501b79: ad73c7129e31)', () => {
+    const sql = `REPORT zx.\nPARAMETERS: p_unused TYPE c, p_where TYPE string.\nSELECT * FROM kna1 INTO TABLE @DATA(r) WHERE (p_where).\n`;
+    expect(readSecurityReviewTasks(sql).map((t) => [t.kind, t.subject])).toEqual([['dynamic-sql-from-input', 'p_where']]);
+    const file = `REPORT zx.\nSELECT-OPTIONS: s_kunnr FOR lv_kunnr.\nPARAMETERS: p_x TYPE c,\n            p_file TYPE string.\nOPEN DATASET p_file FOR INPUT IN BINARY MODE.\n`;
+    expect(readSecurityReviewTasks(file).map((t) => [t.kind, t.subject])).toEqual([['file-path-from-input', 'p_file']]);
+  });
+
+  test('explicit client handling is described as such; only ALL CLIENTS is stated as access to every client (QA 03501b79: c2cba4457a09, 9e858929f5c0)', () => {
+    const own = readSecurityReviewTasks(`REPORT zx.\nSELECT * FROM kna1 USING CLIENT @sy-mandt INTO TABLE @DATA(r).\n`);
+    const specified = readSecurityReviewTasks(`REPORT zx.\nSELECT * FROM kna1 CLIENT SPECIFIED INTO TABLE @DATA(r) WHERE mandt = @sy-mandt.\n`);
+    for (const [task] of [own, specified]) {
+      expect(task.kind).toBe('cross-client-access');
+      // The syntax permits another client; it does not establish one.
+      expect(`${task.title} ${task.detail}`).not.toMatch(/reads or changes data of a client other than|across clients/i);
+      expect(task.detail).toMatch(/can|may/);
+      expect(task.check).toMatch(/^Check which client/);
+    }
+    const [all] = readSecurityReviewTasks(`REPORT zx.\nSELECT * FROM kna1 USING ALL CLIENTS INTO TABLE @DATA(r).\n`);
+    expect(all.detail).toMatch(/all clients/);
+  });
+
   test('INSERT REPORT, GENERATE SUBROUTINE POOL, EDITOR-CALL FOR REPORT, COMMUNICATION', () => {
     const src = [
       'REPORT zx.',

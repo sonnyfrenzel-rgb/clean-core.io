@@ -48,12 +48,30 @@ test.describe('ATC quality gate', () => {
     expect(isSecurityFinding(findings[2])).toBe(false);
   });
 
+  test('a credential or encryption finding under a customer check id is a security finding (QA 03501b79: a7381891b061)', () => {
+    const plain = f({ checkId: 'Z_ATC_042', checkTitle: 'Plain-text password in custom configuration', message: 'Password is stored without encryption', priority: 'error' });
+    const gate = atcQualityGate({ findings: [plain] });
+    expect(gate.securityOpen).toEqual([plain]);
+    expect(gate.baseline).toEqual([]);
+    for (const message of [
+      'Credentials written to the application log',
+      'Secret key held in a constant',
+      'Data sent unencrypted over HTTP',
+      'Sensitive personal data written to the spool',
+      'Privilege escalation through SUBMIT',
+      'Missing permission check before update',
+    ]) expect(isSecurityFinding(f({ message })), message).toBe(true);
+  });
+
   test('the panel shows the gate, names the reading as ours, and claims no pass', () => {
     const src = read('components/analyze/AtcFindingsPanel.tsx').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\s+/g, ' ');
     expect(src).toContain('<AtcQualityGateNote gate={gate} />');
     expect(src).toMatch(/never baselined/);
     expect(src).toMatch(/our reading of ATC&apos;s check name and message/);
     expect(src).toMatch(/not a security sign-off/);
+    // The reading goes by words and can miss one: the baseline waits for a person (QA 03501b79: a7381891b061).
+    expect(src).toMatch(/the reading goes by words, so it can miss one/);
+    expect(src).toMatch(/once a person has checked that none of them is a security finding/);
     expect(src).not.toMatch(/passed ATC|ATC found no issues|security verified/i);
   });
 });

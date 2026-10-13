@@ -172,9 +172,20 @@ export function readSecurityReviewTasksFrom(
     return base !== '' && tainted.has(base);
   };
 
-  // A program that resolves or validates its file names through the logical
-  // file name modules has done what the task would ask for.
-  const validatesFileNames = statements.some((s) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text));
+  // A path resolved or validated through the logical file name modules before
+  // it is opened has had what the task would ask for. The call counts for the
+  // names it passes as actual parameters and for the accesses after it — a
+  // call that validates another path, or this one only after the file was
+  // opened, does not (QA 03501b79). Order is the order of the source, not of
+  // execution.
+  const fileNameChecks = statements
+    .filter((s) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text))
+    .map((s) => ({
+      lineStart: s.lineStart,
+      names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))),
+    }));
+  const validatedBefore = (operand: string, line: number): boolean =>
+    fileNameChecks.some((c) => c.lineStart < line && c.names.has(baseName(operand)));
 
   const adbcLines = new Set(options.adbcLines ?? []);
   const adbcSeen = new Set<number>();
@@ -219,13 +230,20 @@ export function readSecurityReviewTasksFrom(
       }
 
       // DSAG ABAP guideline: security/security-secure-development.md § Mandantensicherheit: Datentrennungen garantieren
+      // The syntax permits another client; only USING ALL CLIENTS states one.
+      // Which client a CLIENT SPECIFIED or USING CLIENT statement reaches is
+      // the review question, not a reading (QA 03501b79: `USING CLIENT
+      // @sy-mandt` is the logged-on client).
       if (/\bCLIENT\s+SPECIFIED\b|\bUSING\s+(?:ALL\s+CLIENTS\b|CLIENTS\s+IN\b|CLIENT\b)/i.test(code)) {
+        const all = /\bUSING\s+ALL\s+CLIENTS\b/i.test(code);
         tasks.push({
           kind: 'cross-client-access',
           ...at(statement),
-          title: 'Database access across clients',
-          detail: 'CLIENT SPECIFIED or USING CLIENT switches off the automatic client handling of ABAP SQL: the statement reads or changes data of a client other than the logged-on one, or of all clients.',
-          check: 'Check that the access to another client is a requirement of the program and that it is guarded: which client is used, who may choose it, and an authorization check for the cross-client access.',
+          title: all ? 'Database access to all clients (USING ALL CLIENTS)' : 'Database access with explicit client handling',
+          detail: all
+            ? 'USING ALL CLIENTS switches off the automatic client handling of ABAP SQL: the statement reads or changes the data of all clients.'
+            : 'CLIENT SPECIFIED or USING CLIENT switches off the automatic client handling of ABAP SQL: the statement itself says which client it reads or changes, and that can be a client other than the logged-on one.',
+          check: 'Check which client the statement reaches. If it can be another client than the logged-on one, check that this is a requirement of the program and that it is guarded: who may choose the client, and an authorization check for the cross-client access.',
           severity: 'Medium',
         });
       }
@@ -247,7 +265,7 @@ export function readSecurityReviewTasksFrom(
 
     // OPEN / DELETE DATASET — DSAG ABAP guideline: security/security-secure-development.md § Sichere Dateizugriffe und Pfadtraversal-Schutz
     const dataset = new RegExp(String.raw`^(OPEN|DELETE)\s+DATASET\s+(${OPERAND})`, 'i').exec(code);
-    if (dataset && fromInput(dataset[2]) && !validatesFileNames) {
+    if (dataset && fromInput(dataset[2]) && !validatedBefore(dataset[2], statement.lineStart)) {
       tasks.push({
         kind: 'file-path-from-input',
         ...at(statement),
