@@ -61,14 +61,31 @@ test('the seeded project counts findings as Analyze does and names the places in
   await expect(tool.locator('[data-change-places="3"]')).toHaveCount(1);
 });
 
-test('the demo says 25 findings wherever it counts findings, and never 31', async ({ page }) => {
+test('the demo counts its distinct findings wherever it counts findings, never its places in the code',async ({ page }) => {
   test.setTimeout(240_000);
   const { distinctFindings, findings: places } = DEMO_RELEASE.figures;
   // A review task (3.0.12: security review, no target) is a finding without a
   // target route: the plan counts only the findings that have one.
+  //
+  // The expectation is pinned, not derived from the demo build under test (QA
+  // review of c38f8043f118, ed2da06e1128): a build that dropped findings or
+  // their routes would show its own smaller number. Where 25 comes from — the
+  // demo's 26 distinct findings (`lib/demo-release.json`, regenerated v3.0.12
+  // and held by tests/demo-release-guard.spec.ts) less exactly one review task,
+  // the security review of `CALL TRANSACTION 'ME21N'` written without
+  // `WITH`/`WITHOUT AUTHORITY-CHECK`, which has no target route. Every other
+  // distinct finding names one to three target options. A regenerated demo
+  // changes both numbers on purpose, and this line with them.
+  const DEMO_DISTINCT_FINDINGS = 26;
+  const DEMO_FINDINGS_WITH_TARGET = 25;
+  expect(distinctFindings, 'the demo was regenerated: re-derive the pinned counts below').toBe(DEMO_DISTINCT_FINDINGS);
   const demo = buildDemoProject();
-  const withTarget = findingRows(demo.analyze.findings).filter((r) => (r.finding.targetOptions ?? []).length > 0).length;
-  expect(withTarget).toBeLessThanOrEqual(distinctFindings);
+  const rows = findingRows(demo.analyze.findings);
+  expect(rows).toHaveLength(DEMO_DISTINCT_FINDINGS);
+  expect(rows.filter((r) => (r.finding.targetOptions ?? []).length > 0)).toHaveLength(DEMO_FINDINGS_WITH_TARGET);
+  const reviewTasks = rows.filter((r) => (r.finding.targetOptions ?? []).length === 0).map((r) => r.finding.title);
+  expect(reviewTasks).toEqual([expect.stringMatching(/^Security review: CALL TRANSACTION ME21N without WITH or WITHOUT AUTHORITY-CHECK/)]);
+  const withTarget = DEMO_FINDINGS_WITH_TARGET;
   await page.goto('/demo/transformation', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-transformation-object-page]')).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(`${withTarget} findings with a target route`)).toBeVisible();

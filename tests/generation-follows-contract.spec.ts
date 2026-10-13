@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
+import ts from 'typescript';
 import {
   buildArchitectureContract,
   contractCoverage,
@@ -265,15 +266,72 @@ function generationBody(): string {
 }
 
 /**
- * Where the generation first asks a model (3.0.12, step E): the engine-led
- * fills (`runGeneration`) or the single call it falls back to
- * (`runSingleCall`, which holds the `callGemini` of today's prompt).
+ * What asks a model: `callGemini` itself, the engine-led fills
+ * (`runGeneration`, whose fills go through `leasedFillModel`'s `callGemini`),
+ * a request to `/api/gemini` written out by hand — and every function of the
+ * page that reaches one of those, however many page functions lie between
+ * (`runSingleCall` holds the `callGemini` of today's prompt). Read from the
+ * page's syntax tree, so a new helper wrapping `callGemini` counts without a
+ * line here (QA review of c38f8043f118, f16d49ed3a35: the list named only the
+ * two dispatch functions, so a direct `callGemini()` before the refusal check
+ * went unseen).
  */
-function firstModelCall(body: string): number {
-  const at = ['runGeneration(', 'runSingleCall('].map((s) => body.indexOf(s)).filter((i) => i > -1);
+const MODEL_CALLS = ['callGemini', 'runGeneration'];
+
+function modelCallersOf(src: string): Set<string> {
+  const sf = ts.createSourceFile(PAGE, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const local = new Map<string, string>();
+  const visit = (n: ts.Node) => {
+    if (ts.isFunctionDeclaration(n) && n.name) local.set(n.name.text, n.getText(sf));
+    else if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      const init = n.initializer;
+      const fnLike = ts.isArrowFunction(init) || ts.isFunctionExpression(init)
+        || (ts.isCallExpression(init) && init.arguments.some((a) => ts.isArrowFunction(a) || ts.isFunctionExpression(a)));
+      if (fnLike) local.set(n.name.text, init.getText(sf));
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  const callers = new Set(MODEL_CALLS);
+  const asks = (text: string) => text.includes('/api/gemini') || [...callers].some((name) => new RegExp(`\\b${name}\\s*\\(`).test(text));
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const [name, text] of local) {
+      if (!callers.has(name) && asks(text)) {
+        callers.add(name);
+        grew = true;
+      }
+    }
+  }
+  return callers;
+}
+
+/** Where the generation first asks a model, by any of the paths `modelCallersOf` finds. */
+function firstModelCall(body: string, src: string = readFileSync(PAGE, 'utf8')): number {
+  const names = [...modelCallersOf(src)].filter((name) => name !== 'generateTransformation');
+  const at = [
+    ...names.map((name) => body.search(new RegExp(`\\b${name}\\s*\\(`))),
+    body.indexOf('/api/gemini'),
+  ].filter((i) => i > -1);
   expect(at.length, 'the generation asks no model').toBeGreaterThan(0);
   return Math.min(...at);
 }
+
+test('the model-call scan finds every path to a model, not only the two dispatch functions', () => {
+  const src = readFileSync(PAGE, 'utf8');
+  const callers = modelCallersOf(src);
+  // The page's own fallback reaches `callGemini` — found from the tree, not from a list.
+  expect(callers.has('runSingleCall'), 'runSingleCall no longer reads as a model call').toBe(true);
+  // A direct call, a hand-written request and a new helper ahead of the dispatch all count.
+  const page = `const helper = useCallback(async () => { await callGemini(p); }, []);
+const outer = async () => { await helper(); };
+const generateTransformation = useCallback(async () => {`;
+  const at = (body: string) => firstModelCall(body, page + body);
+  expect(at('a; await callGemini(p); if (!decision.ok) {} await runGeneration(x);')).toBe('a; await '.length);
+  expect(at("a; await fetch('/api/gemini'); await runGeneration(x);")).toBe("a; await fetch('".length);
+  expect(at('a; await outer(); await runGeneration(x);')).toBe('a; await '.length);
+  expect(at('a; await helper(); await runGeneration(x);')).toBe('a; await '.length);
+});
 
 test('the generation does not take its direction from the project document', () => {
   const body = generationBody();

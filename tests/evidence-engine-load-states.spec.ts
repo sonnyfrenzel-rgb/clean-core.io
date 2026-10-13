@@ -38,7 +38,7 @@ import { seedStageProject, signInThroughForm, type SeededProject } from './helpe
 const EVIDENCE = '**/api/projects/*/evidence';
 /** A finding title only `lib/abap/evidence-model.ts` writes. */
 const ENGINE_MARKER = 'Direct Write to SAP Standard Table';
-const CHUNKS = '**/_next/static/chunks/**/*.js';
+const CHUNK_PATH = /^\/_next\/static\/chunks\/.+\.js$/;
 
 interface EvidenceGate {
   /** Resolves when the browser asked for the project's evidence. */
@@ -75,48 +75,41 @@ async function gateEvidence(page: Page, mode: 'hold' | 'abort'): Promise<Evidenc
 }
 
 /**
- * Counts the engine chunks the page fetches.
+ * Counts the engine chunks the page fetches over its whole life.
  *
- * `count()` first lets every chunk still on its way arrive, then stops
- * intercepting. A page loads chunks after it has drawn — since 3.0.12 the
- * Analyze page fetches the synced SAP name lists (`loadSapNameLists`, ~0.5 MB,
- * a chunk of its own by design) once its report is up — and a count taken
- * while such a chunk was still being read would miss it if it were the engine,
- * and would leave this route's `route.fetch` running into the end of the test
- * ("route.fetch: Test ended", reported against the next test).
+ * A page loads chunks after it has drawn — since 3.0.12 the Analyze page
+ * fetches the synced SAP name lists (`loadSapNameLists`, ~0.5 MB, a chunk of
+ * its own by design) once its report is up. Any end the count picks while the
+ * page is still open is a window: a chunk the page has scheduled but not yet
+ * asked for starts after it and goes uncounted — first an empty in-flight set
+ * (QA ff6207664654), then a three-second quiet period (QA c9aa0d12c931).
  *
- * An empty in-flight set is not the end: a chunk the page has scheduled but
- * not yet asked for would start after the count unrouted and go uncounted (QA
- * ff6207664654). So the count keeps intercepting until no chunk request has
- * started for `CHUNK_QUIET_MS` and none is on its way.
+ * So the count does not pick a moment; it ends the page. Every chunk request
+ * the page starts is recorded as it starts (the `request` event — nothing is
+ * intercepted, so no `route.fetch` can run into the end of the test), and
+ * `count()` closes the page before it reads the record. A closed page starts
+ * no request, so the record is every chunk the page ever asked for, however
+ * late it asked. Only then are the recorded chunks read — through the
+ * context's own request client, not the page — and searched for the engine.
+ * `count()` is therefore the last thing a test does with its page.
  */
-const CHUNK_QUIET_MS = 3000;
 async function countEngineChunks(page: Page): Promise<{ count: () => Promise<number> }> {
-  let seen = 0;
-  let lastStart = Date.now();
-  const inFlight = new Set<Promise<void>>();
-  const handler = (route: Route): Promise<void> => {
-    lastStart = Date.now();
-    const done = (async () => {
-      const response = await route.fetch();
-      const body = await response.text();
-      if (body.includes(ENGINE_MARKER)) seen++;
-      await route.fulfill({ response, body });
-    })();
-    inFlight.add(done);
-    return done.finally(() => inFlight.delete(done));
-  };
-  await page.route(CHUNKS, handler);
+  const chunkUrls = new Set<string>();
+  page.on('request', (request) => {
+    if (CHUNK_PATH.test(new URL(request.url()).pathname)) chunkUrls.add(request.url());
+  });
   return {
     count: async () => {
-      for (;;) {
-        while (inFlight.size) await Promise.allSettled([...inFlight]);
-        const quietFor = Date.now() - lastStart;
-        if (quietFor >= CHUNK_QUIET_MS) break;
-        await page.waitForTimeout(CHUNK_QUIET_MS - quietFor);
+      const context = page.context();
+      await page.close();
+      // A guard that saw no chunk at all proves nothing: the page loads its own code as chunks.
+      expect(chunkUrls.size, 'the page loaded no chunk at all — the request record is not listening').toBeGreaterThan(0);
+      let seen = 0;
+      for (const url of chunkUrls) {
+        const response = await context.request.get(url);
+        expect(response.ok(), `the chunk ${url} could not be read back`).toBe(true);
+        if ((await response.text()).includes(ENGINE_MARKER)) seen++;
       }
-      await page.unroute(CHUNKS, handler);
-      while (inFlight.size) await Promise.allSettled([...inFlight]);
       return seen;
     },
   };
