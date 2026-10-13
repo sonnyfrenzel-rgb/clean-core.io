@@ -15,8 +15,13 @@ import type { DeclaredDecimal, GuardEffect, SelectionInput } from '../abap/origi
 
 /* ------------------------------------------------------------- versions */
 
-/** The plan's rules (granularity, folding, fixtures, budgets). A new value changes unit ids. */
-export const PLAN_VERSION = 1;
+/**
+ * The plan's rules (granularity, folding, fixtures, budgets). A new value changes unit ids.
+ * 2 (3.0.13): a structure component the original only recalculates from its own value (`y = y + x`,
+ * `ADD x TO y`) is a record field of the request, not a computed result, and starts at zero when the
+ * original gives it no value (`recordInputOf`, `withInitialBase` in unit-plan.ts).
+ */
+export const PLAN_VERSION = 2;
 /**
  * The engine-written package text. Enters the generation binding (§12.2); a new value does not make a draft stale.
  * 2 (3.0.12, DSAG ABAP guide review): the RAP scaffold checks authorization (`#CHECK`, access controls, handlers
@@ -25,8 +30,12 @@ export const PLAN_VERSION = 1;
  * 3 (3.0.12, abapGit package): the RAP scaffold writes abapGit's metadata file for every object
  * (`abapgit-files.ts`), the table as abapGit XML instead of `.tabl.astabl`, the root package's
  * `package.devc.xml`, and a transparent table name within 16 characters. The Node scaffold's text is unchanged.
+ * 4 (3.0.13, probes that reach the written functions): the Node scaffold's `test/acceptance-shims.ts` gains
+ * entry points that run the whole process (`listOf`, `exportOf`, `recalcOf`, `writeOf`), and
+ * `acceptance-adapter.json` maps the display-filter, recalculation and negative-write probes onto them where
+ * the original shows the pattern, naming the unit each one reaches (`fill-probes.ts`). The RAP text is unchanged.
  */
-export const SCAFFOLD_VERSION = 3;
+export const SCAFFOLD_VERSION = 4;
 
 /* -------------------------------------------------------------- budgets */
 

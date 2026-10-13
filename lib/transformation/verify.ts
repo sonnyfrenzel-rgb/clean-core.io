@@ -14,8 +14,10 @@
  *     case's rule id (`EngineCaseTrace.ruleId`); a case without a rule, or with
  *     a rule no unit carries, tests the engine-written input contract, decimal
  *     code or run store;
- *   - a failing **probe** by the adapter: the unit the adapter names for it, or
- *     the units filled in the modules the probe calls; otherwise engine code.
+ *   - a failing **probe** by the adapter: the units the adapter names for it
+ *     (since 3.0.13 the display-filter, recalculation and negative-write probes
+ *     name the written functions their run reaches, `fill-probes.ts`), or the
+ *     units filled in the modules the probe calls; otherwise engine code.
  *
  * A failure that maps to no unit is returned with `unitId: null` — the
  * orchestrator reports it as a scaffold finding and never sends it to the
@@ -215,8 +217,9 @@ export function mapEngineFailures(
 export const PROBE_TEST_PREFIX = 'PRB_';
 
 /**
- * Failing probes onto units: the adapter's `unit` for the probe when it names
- * one, otherwise the units filled in the modules its callables name.
+ * Failing probes onto units: the adapter's `unit` or `units` for the probe when
+ * it names them (the probes of the written functions name the units their run
+ * reaches), otherwise the units filled in the modules its callables name.
  */
 export function mapProbeFailures(
   results: readonly RunnerResult[],
@@ -233,7 +236,10 @@ export function mapProbeFailures(
     const cfg = (a.probes?.[probe] ?? {}) as Record<string, unknown>;
     let owners: string[] = [];
     if (typeof cfg.unit === 'string') owners = [cfg.unit];
-    else {
+    else if (Array.isArray(cfg.units) && cfg.units.some((u) => typeof u === 'string')) {
+      // The probes of the written functions (`fill-probes.ts`, 3.0.13) name the units their run reaches.
+      owners = [...new Set(cfg.units.filter((u): u is string => typeof u === 'string'))];
+    } else {
       const named = new Set<string>();
       JSON.stringify(cfg, (k, v) => {
         if (k === 'module' && typeof v === 'string') named.add(v);

@@ -10,8 +10,9 @@
  *     engine-written code (rounding, decimal quantities, run ids, empty
  *     selection, lenient numbers, CSV escaping, import side effects) map to the
  *     scaffold's own exports; a probe whose subject only the fills write (a
- *     display filter, an additive recalculation, a negative write) is
- *     `notApplicable` with the reason.
+ *     display filter, an additive recalculation, a negative write) runs the
+ *     whole process where the original shows the pattern (`fill-probes.ts`,
+ *     3.0.13) and is `notApplicable` with the reason where it does not.
  *   - `engineCaseScope(cases)` — which engine cases the scaffold alone can
  *     answer (input contract, exact arithmetic, run identity) and which need
  *     the business logic of the fills (guards, record counts, a check's predicate asked directly). Track C's verify
@@ -65,6 +66,8 @@ export interface AdapterOptions {
   /** Modules the import probe loads (never `srv/server.ts`, the one file that listens). */
   modules: Record<string, string>;
   delimiter: string;
+  /** The display-filter, recalculation and negative-write entries (`fillProbeConfigs`, fill-probes.ts). */
+  fill?: Partial<Record<'display-filter' | 'recalc-additive' | 'negative-write', Record<string, unknown>>>;
 }
 
 /** The field the lenient-numeric probe sets: an obligatory whole number first, then a record decimal, then an obligatory decimal input. */
@@ -143,9 +146,11 @@ export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'> & 
     rowTemplate: { order: '4711', material: '$quoteText', text: '$newlineText', note: '$formulaText' },
     delimiter: options.delimiter,
   };
-  probes['display-filter'] = { notApplicable: 'the list, its totals and its export are written by the model fills, not by the engine; verify mode maps this probe once the fills exist' };
-  probes['recalc-additive'] = { notApplicable: 'a recalculation is business logic of the model fills; the engine writes no recalculation' };
-  probes['negative-write'] = { notApplicable: 'the package writes no database table itself; a write the original performs is a port the fills implement' };
+  // The probes whose subject the model fills write (3.0.13): mapped by `fillProbeConfigs` where the original
+  // shows the pattern; without that reading (a caller that names none) they are not applicable, as before.
+  probes['display-filter'] = options.fill?.['display-filter'] ?? { notApplicable: 'the list, its totals and its export are written by the model fills, not by the engine' };
+  probes['recalc-additive'] = options.fill?.['recalc-additive'] ?? { notApplicable: 'a recalculation is business logic of the model fills; the engine writes no recalculation' };
+  probes['negative-write'] = options.fill?.['negative-write'] ?? { notApplicable: 'the package writes no database table itself; a write the original performs is a port the fills implement' };
   return { package: options.packageName, modules: options.modules, probes };
 }
 
