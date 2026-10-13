@@ -359,9 +359,14 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
           const hits = read(rel).match(/[A-Za-z_$][\w$]*\.exports\b/g) || [];
           // In the runner's engine pass, `loaded.exports` is the confinement
           // handing back a generated module's exports, not a project's field.
-          // Exempt there only: anywhere else it still counts as a reader.
-          const moduleExports = rel === 'lib/test-sandbox/engine-suite.ts' ? ['module.exports', 'loaded.exports'] : ['module.exports'];
-          if (hits.some((h) => !moduleExports.includes(h))) readers.push(rel);
+          // Exactly that one occurrence is exempt: a second one in the same
+          // file, or one anywhere else, still counts as a reader.
+          const rest = hits.filter((h) => h !== 'module.exports');
+          if (rel === 'lib/test-sandbox/engine-suite.ts') {
+            const known = rest.indexOf('loaded.exports');
+            if (known >= 0) rest.splice(known, 1);
+          }
+          if (rest.length > 0) readers.push(rel);
         }
       }
     };
