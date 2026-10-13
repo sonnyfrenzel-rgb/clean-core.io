@@ -10,7 +10,7 @@ import {
 
 /**
  * Every sentence of the business SOP with its basis — owner 11.10.2026, on the
- * external review of the FI Collection Worklist package (F-06: "good technical
+ * external review of the FI case (F-06: "good technical
  * evidence becomes false certainty in the business SOP").
  *
  * The process documentation already marks each statement Reconstructed, Model

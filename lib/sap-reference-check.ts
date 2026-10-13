@@ -145,7 +145,7 @@ interface KnownSapId {
   listedOnly?: boolean;
 }
 
-/** The review's primary sources (FI_Collection_Worklist_Review.md §10, retrieved 11.10.2026). */
+/** The review's primary sources (the FI review, §10, retrieved 11.10.2026). */
 const S1: SapSource = { label: 'SAP KBA 3696098', url: 'https://userapps.support.sap.com/sap/support/knowledge/en/3696098' };
 const S2: SapSource = { label: 'SAP KBA 3409472', url: 'https://userapps.support.sap.com/sap/support/knowledge/en/3409472' };
 const S3: SapSource = {

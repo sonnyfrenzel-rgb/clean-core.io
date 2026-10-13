@@ -413,7 +413,7 @@ test.describe('“name found in catalog”, never “verified”, for a name-onl
 /* ------------------------------------------------ AUFK by context */
 
 const PP_PROGRAM = [
-  'REPORT zpp_kit.',
+  'REPORT zpp_sim.',
   'DATA: lt_aufk TYPE STANDARD TABLE OF aufk,',
   '      lt_afko TYPE STANDARD TABLE OF afko,',
   '      lt_resb TYPE STANDARD TABLE OF resb.',
@@ -459,7 +459,7 @@ test.describe('AUFK is mapped by what else the program reads (PP review)', () =>
 
 // Line 1 REPORT, 2 DATA, 3 blank, 4–8 FORM enrich … ENDFORM, 9 blank, 10–12 FORM out … ENDFORM.
 const SOURCE = [
-  'REPORT zsd_cockpit.',
+  'REPORT zsd_orders.',
   'DATA gv_total TYPE p DECIMALS 2.',
   '',
   'FORM enrich.',

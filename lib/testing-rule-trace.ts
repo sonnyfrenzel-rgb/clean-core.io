@@ -4,7 +4,7 @@
  * with an expected result the model states from the original, and every case
  * says which rule it checks, on which lines.
  *
- * Owner, 11.10.2026, after the external review of FI_Collection_Worklist
+ * Owner, 11.10.2026, after the external review of the FI case
  * (F-01, F-02, F-05): the generated service gave a credit memo a hard-coded
  * foreign reference document and let totals and CSV ignore the customer
  * filter the list used — and all ten generated tests passed. They tested the

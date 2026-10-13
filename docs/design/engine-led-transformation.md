@@ -346,7 +346,7 @@ instruction header), response schema `TRANSFORMATION_FILL_SCHEMA` in `lib/model-
 {
   "schema": "cc.fill.v1",
   "track": "node",                       // or "rap"
-  "program": "ZCO_CC_CLOSE_SIMULATION",
+  "program": "Z_CO_CASE",
   "context": "…contextPackText(ctx, 3000)…",
   "rules": "…CODE_DRAFT_BUSINESS_RULES subset: 13, 15–24 …",   // from lib/code-draft-rules.ts, unchanged
   "units": [
@@ -407,7 +407,7 @@ Node (TypeScript):
 ```ts
 /**
  * Validate the allocation policy.
- * ABAP: ZCO_CC_CLOSE_SIMULATION L500–L540 (FORM VALIDATE_POLICY)
+ * ABAP: Z_CO_CASE L500–L540 (FORM VALIDATE_POLICY)
  * Rules: BR-009 (keep), BR-010 (change — owner's proposal below)
  * Guards: G-0506 → guard_BR_009_G0506
  */
@@ -477,7 +477,7 @@ Measured on 12.10.2026 with the engine of `feat/3.0.12-prompt` (0abfc377), Node 
 the build plan turns them into `scripts/transformation/measure.ts`, §17 Track B). Sources: the CO, SD
 and PP review programs (outside the repository) and the PO starter example.
 
-| | CO `ZCO_CC_CLOSE_SIMULATION` | PP/MM kit simulation | SD order cockpit | PO demo `Z_MM_PO_APPROVAL` |
+| | CO case | PP/MM case | SD case | PO demo `Z_MM_PO_APPROVAL` |
 |---|---:|---:|---:|---:|
 | Lines / characters | 2,027 / 79,009 | 2,500 / 84,801 | 616 / 21,307 | 669 / 19,615 |
 | Business rules (rule + control) | 66 (42 + 24) | 47 (39 + 8) | 17 (16 + 1) | 12 (11 + 1) |
@@ -700,7 +700,7 @@ what is different in factual terms:
 
 ### 15.2 Layout
 
-- **Header row**: "Writing the code for ZCO_CC_CLOSE_SIMULATION" · elapsed `m:ss` (`formatElapsed`,
+- **Header row**: "Writing the code for Z_CO_CASE" · elapsed `m:ss` (`formatElapsed`,
   real time since the click) · *Cancel* (ghost). No percentage anywhere (DESIGN.md §2.8: phases, not
   percentages that do not exist). Real denominators are shown where they exist ("14 of 35 functions
   written").

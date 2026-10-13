@@ -22,7 +22,7 @@ import { deliveryFactsOf, recordedCostSentence, ruleFactsOf, scoreFactsOf, type 
 
 /**
  * The delivery package tells the truth (owner, 11.10.2026; external review of
- * the FI_Collection_Worklist bundle, F-04, F-05, F-08, F-09, F-10).
+ * the FI case's bundle, F-04, F-05, F-08, F-09, F-10).
  *
  * The fixture has the shape of the reviewed bundle — an Express service on
  * synthetic data with a CDS schema and no @sap/cds, an ABAP publisher, a
@@ -33,7 +33,7 @@ import { deliveryFactsOf, recordedCostSentence, ruleFactsOf, scoreFactsOf, type 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-const SOURCE = 'REPORT zfi_ar_collection_worklist.\nSELECT * FROM bsid INTO TABLE @DATA(lt).\nWRITE / lines( lt ).\n';
+const SOURCE = 'REPORT zfi_case.\nSELECT * FROM bsid INTO TABLE @DATA(lt).\nWRITE / lines( lt ).\n';
 
 const SERVICE = `import express from 'express';
 import pino from 'pino';
@@ -57,7 +57,7 @@ export default app;
 `;
 
 const MODEL_PACKAGE_JSON = JSON.stringify({
-  name: 'ar-collections-worklist-modernized',
+  name: 'fi-case-modernized',
   version: '1.0.0',
   main: 'srv/service.ts',
   type: 'module',
@@ -103,7 +103,7 @@ const CASES = Array.from({ length: 10 }, (_, i) => ({ id: `TC_${String(i + 1).pa
 function fiProject(extra: Partial<Project> & Record<string, unknown> = {}): HandoverProject {
   return {
     id: 'p-fi',
-    name: 'FI_Collection_Worklist',
+    name: 'FI case',
     userId: 'owner-uid',
     legacyCode: SOURCE,
     activeRunId: 'run-fi-0001',
@@ -120,7 +120,7 @@ function fiProject(extra: Partial<Project> & Record<string, unknown> = {}): Hand
     testCases: CASES,
     auditMetadata: {
       inputFingerprint: {
-        sha256: sha256Hex(SOURCE), fileName: 'zfi_ar_collection_worklist.abap', lineCount: 3, byteSize: SOURCE.length,
+        sha256: sha256Hex(SOURCE), fileName: 'zfi_case.abap', lineCount: 3, byteSize: SOURCE.length,
         uploadedAt: '2026-10-11T12:00:00.000Z', objectType: 'Report',
       },
       modelCard: { provider: null, model: null, modelParticipation: 'none', engineVersion: 'v3.0.9', byokUsed: false },

@@ -2,7 +2,7 @@
  * A test run that gave no result, and testing closed without a passing run —
  * what is on record, and when it counts (ADR-094, owner 11.10.2026).
  *
- * Owner report of 11.10.2026 (FI_Collection_Worklist): "The test runner failed,
+ * Owner report of 11.10.2026 (the FI case): "The test runner failed,
  * yet I am asked again and again to run the tests and tests count as open.
  * Negative cases need a way to come to a conclusion anyway." Two gaps lay under
  * it, and this module holds the record of both:

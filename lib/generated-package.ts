@@ -250,7 +250,7 @@ export function replaceFileContent(files: GeneratedFile[], index: number, conten
  * used to say `./app` for both. Asked to repair a suite of a package, the model
  * did as told and moved the import to `./app`, which no package contains: every
  * repair failed with `Could not resolve "./app"`, and the run never got past the
- * compiler (owner report 11.10.2026, FI_Collection_Worklist — the repaired suite
+ * compiler (owner report 11.10.2026, the FI case — the repaired suite
  * was the original with one quote fixed and the import changed to `./app`).
  */
 export function suiteRepairImportHint(code: string | null | undefined): string {

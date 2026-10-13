@@ -1,6 +1,6 @@
 /**
  * What counts as a business statement — owner 11.10.2026, on the external
- * review of the FI Collection Worklist package (F-07): "526 business
+ * review of the FI case (F-07): "526 business
  * statements, among them local structure definitions, field assignments and UI
  * label texts". The engine's sentences (`buildBusinessStatements`) are all
  * correct and all anchored; they are not all business statements. A reader of

@@ -387,7 +387,7 @@ const heading = (level: 2 | 3, anchor: string, title: string): string[] => [`<a 
  * The Markdown the workspace file `docs/process-documentation.md`, the
  * delivery bundle (`process-documentation.md`) and the dashboard export carry.
  *
- * Owner 11.10.2026 (external review of the FI Collection Worklist package,
+ * Owner 11.10.2026 (external review of the FI case,
  * F-07 and §8): readable first. It opens with the business page — what the
  * program does, what it does not do, the limits of the reading, owner and
  * approval, and the questions a reader asks, each a link into the document —
@@ -467,7 +467,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
   };
   // The order a run takes, not the order the map stores its elements in: that
   // order draws one branch of a decision to the end before the other, and the
-  // CO close simulation read as if the authorization check and the live read
+  // CO case read as if the authorization check and the live read
   // ran after the result was shown (CO review F02, 12.10.2026).
   const when = (condition: string) => (condition ? `, only when \`${condition}\`` : '');
   const at = (split: DocStep) => (isGate(split) && split.anchor ? `, decided at ${shortLines([split.anchor])}` : '');
@@ -532,7 +532,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     '',
   );
   // One story with "In short" (SD review, 12.10.2026): "In short" counts the
-  // rule register (`deriveBusinessRules` — 17 for the SD cockpit), this list
+  // rule register (`deriveBusinessRules` — 17 for the SD case), this list
   // groups the sentences in which the code states its conditions (11 there).
   // Both are right and they count different things; the heading says which
   // this list is, and the line under it names the register's count and where

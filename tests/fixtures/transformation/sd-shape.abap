@@ -1,10 +1,10 @@
 *&---------------------------------------------------------------------*
 *& Hand-written fixture for tests/transformation-*.spec.ts, modelled on
-*& the shape of an SD order cockpit: END-OF-SELECTION, an ALV with a
+*& the shape of an SD order program: END-OF-SELECTION, an ALV with a
 *& user-command callback, a dialog module, a discount in percent, a
 *& database update on the user's command. Not a customer program.
 *&---------------------------------------------------------------------*
-REPORT zfx_sd_cockpit.
+REPORT zfx_sd_orders.
 
 TYPES: BEGIN OF ty_order,
          vbeln TYPE vbeln_va,

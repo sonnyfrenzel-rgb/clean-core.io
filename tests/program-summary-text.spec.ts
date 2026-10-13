@@ -335,7 +335,7 @@ ${CO_SHAPED}`);
  * background job" although it calls a screen and downloads to the user's PC.
  * Written here, smaller than the reviewed program, with the same shape.
  */
-const SD_COCKPIT = `REPORT zsd_order_cockpit.
+const SD_COCKPIT = `REPORT zsd_order_overview.
 TABLES vbak.
 DATA: gt_orders TYPE STANDARD TABLE OF vbap,
       gt_bdcdata TYPE STANDARD TABLE OF bdcdata,

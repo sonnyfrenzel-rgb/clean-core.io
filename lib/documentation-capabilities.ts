@@ -1,7 +1,7 @@
 /**
  * What the program can and cannot do, read from the engine — and the check
  * that holds a model's sentence against it (owner 11.10.2026, external review
- * of the FI Collection Worklist package, F-06).
+ * of the FI case, F-06).
  *
  * The review found a business SOP that upgraded technical facts into practice:
  * internal arithmetic checks became "cross-checked against company ledger

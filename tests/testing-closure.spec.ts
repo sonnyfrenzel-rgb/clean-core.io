@@ -27,7 +27,7 @@ import { deliveryTestingTitle, lastRun } from '../components/testing/testing-sum
 import type { StandardFit } from '../lib/standard-fit';
 
 /**
- * ADR-094 — owner report of 11.10.2026 (FI_Collection_Worklist): "The test
+ * ADR-094 — owner report of 11.10.2026 (the FI case): "The test
  * runner failed, yet I am asked again and again to run the tests and tests count
  * as open. Negative cases need a way to come to a conclusion anyway."
  *
@@ -51,9 +51,9 @@ const CASES = Array.from({ length: 10 }, (_, i) => ({ id: `TC_${String(i + 1).pa
 function base(extra: Partial<Project> = {}): Project {
   return {
     id: 'p1',
-    name: 'FI_Collection_Worklist',
+    name: 'FI case',
     userId: 'owner-uid',
-    legacyCode: 'REPORT zfi_ar_collection_worklist.\nWRITE 1.',
+    legacyCode: 'REPORT zfi_case.\nWRITE 1.',
     activeRunId: 'run-1',
     extensibilityRoute: 'Side-by-Side (SAP BTP)',
     solutionDesign: 'design',
@@ -411,7 +411,7 @@ test.describe('closed without a passing run: done, never proven', () => {
     const src = {
       mode: 'project' as const,
       base: '/project/p1',
-      program: 'ZFI_AR_COLLECTION_WORKLIST',
+      program: 'ZFI_CASE',
       date: '2026-10-11',
       project: c,
       hasRun: true,

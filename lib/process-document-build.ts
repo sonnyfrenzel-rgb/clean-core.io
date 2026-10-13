@@ -415,7 +415,7 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   //
   // In the order a run takes, not the order the map stores its elements in:
   // that order draws one arm of a decision to the end of the process before
-  // the other, and the CO close simulation read as if the authorization check
+  // the other, and the CO case read as if the authorization check
   // and the live read ran after the result was shown (CO review F02,
   // 12.10.2026). The order is the package documentation's (`readingOrder`), so
   // the two documents agree; an element it does not know keeps its place at

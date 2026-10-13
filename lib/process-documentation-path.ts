@@ -7,7 +7,7 @@ import type { DocStep } from '@/lib/process-documentation';
  * The package's "How the process works" used to number the top-level steps in
  * the order the map stores its elements. That order is a depth-first drawing
  * order: the first branch of a decision is drawn to the end of the process,
- * and the second branch is appended after it. The CO close simulation read
+ * and the second branch is appended after it. The CO case read
  * "load demo data → simulate → export → display → authorize → read live
  * data", which tells a reader the authorization check and the live read run
  * after the result is shown. In the code they are the other branch of
