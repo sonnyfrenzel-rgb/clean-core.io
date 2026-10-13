@@ -169,6 +169,7 @@ test.describe('every runnable example carries its machine form', () => {
       op: 'simulate',
       set: [{ field: 'GT_RECEIVERS', to: { special: 'empty' } }],
       expect: { kind: 'refused', rule: 'L18', field: 'GT_RECEIVERS', notRules: ['BR-001'] },
+      check: { guard: 'G-0018', holds: true, field: 'GT_RECEIVERS' },
     });
     const sender = find('guard-breaks-one', (c) => c.engineCase.trace.lines[0].start === 30);
     expect(sender.engineCase.examples[0].call).toEqual({
@@ -176,12 +177,15 @@ test.describe('every runnable example carries its machine form', () => {
       mode: 'append',
       set: [{ field: 'GS_RECEIVER-KOSTL', to: { sameAs: 'P_SENDER' } }],
       expect: { kind: 'records-delta', delta: 0 },
+      // a CHECK skips when its condition fails: on the breaking value the predicate does not hold
+      check: { guard: 'G-0030', holds: false, field: 'GS_RECEIVER-KOSTL' },
     });
     const quotaR2 = find('guard-exclusion-necessary', (c) => c.engineCase.trace.ruleId === 'BR-001');
     expect(quotaR2.engineCase.examples[1].call).toEqual({
       op: 'simulate',
       set: [{ field: 'GV_QUOTA_SUM', to: { value: '100.000000' } }],
       expect: { kind: 'not-refused-by', rule: 'BR-001', field: 'GV_QUOTA_SUM' },
+      check: { guard: expect.stringMatching(/^G-\d{4}$/), holds: false, field: 'GV_QUOTA_SUM' },
     });
   });
 

@@ -50,7 +50,7 @@
 import type { BusinessRule } from './abap/business-rule-set';
 import { readOriginalContract, type OriginalContract } from './abap/original-contract';
 import { readStatements } from './abap/statement-reader';
-import type { CallExpect, CallValue, EngineCaseCall } from './engine-call-contract';
+import type { CallExpect, CallValue, EngineCaseCall, EngineCheckCall } from './engine-call-contract';
 import type { VerifiedEngineCase } from './engine-case-provenance';
 
 /* ------------------------------------------------------------------ types */
@@ -383,9 +383,12 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
   const keptCall = (input: string, kept: string): EngineCaseCall => {
     if (internal) return { op: 'compute', compute: asIs(input), set: [], expect: { kind: 'equals', value: kept } };
     const g = stoppedBy(kept);
-    return g
-      ? { op: 'simulate', set: [{ field: NAME, to: { value: input } }], expect: guardRefusal(g) }
-      : { op: 'validate', set: [{ field: NAME, to: { value: input } }], expect: { kind: 'accepted', field: NAME, normalized: kept } };
+    const set = [{ field: NAME, to: { value: input } }];
+    // A check that skips the record is no refusal: the record appended with the value is left out of the result.
+    if (g?.outcome === 'skips') return { op: 'simulate', mode: 'append', set, expect: { kind: 'records-delta', delta: 0 } };
+    return g && g.outcome === 'refuses'
+      ? { op: 'simulate', set, expect: guardRefusal(g) }
+      : { op: 'validate', set, expect: { kind: 'accepted', field: NAME, normalized: kept } };
   };
   const refusedCall = (input: string): EngineCaseCall =>
     internal
@@ -484,7 +487,8 @@ function precisionCases(f: Field, guards: readonly GuardCase[], fields: readonly
 
 /* --------------------------------------------------------------- guards */
 
-type GuardOutcome = 'refuses' | 'skips';
+/** `stops`: a RETURN or EXIT outside a loop ends the routine early — no refusal a request outcome would show. */
+type GuardOutcome = 'refuses' | 'skips' | 'stops';
 
 interface GuardCase {
   /** The engine's business rule on the guard's line, when there is one (`BR-004`). */
@@ -592,7 +596,11 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
     const rule = ruleOnLine(rules, g.line);
     const rejectsWhen: GuardCase['rejectsWhen'] = g.effect === 'check' ? 'fails' : 'holds';
     const outcome: GuardOutcome =
-      g.effect === 'continue' || (g.effect === 'check' && inLoop.has(g.line)) ? 'skips' : 'refuses';
+      g.effect === 'continue' || (g.effect === 'check' && inLoop.has(g.line))
+        ? 'skips'
+        : (g.effect === 'return' || g.effect === 'exit') && !inLoop.has(g.line)
+          ? 'stops'
+          : 'refuses';
     const cond = g.condition.trim();
     let subject: string | null = null;
     let operator: string | null = null;
@@ -603,8 +611,9 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
     let numeric = false;
     let breakingCall: CallValue | null = null;
     let passingCall: CallValue | 'base' = 'base';
-    const initial = cond.match(/^([\w/~-]+)\s+IS\s+(NOT\s+)?INITIAL$/i);
-    const cmp = cond.match(/^([\w/~-]+)\s*(>=|<=|<>|=|>|<|\bGE\b|\bLE\b|\bNE\b|\bEQ\b|\bGT\b|\bLT\b)\s*('(?:[^']|'')*'|[\w/~.-]+)$/i);
+    // A subject is a field, a component (`ls_rcv-quota`) or a field symbol's component (`<ls_rcv>-quota`).
+    const initial = cond.match(/^((?:<[\w/~]+>|[\w/~]+)(?:-[\w/~]+)*)\s+IS\s+(NOT\s+)?INITIAL$/i);
+    const cmp = cond.match(/^((?:<[\w/~]+>|[\w/~]+)(?:-[\w/~]+)*)\s*(>=|<=|<>|=|>|<|\bGE\b|\bLE\b|\bNE\b|\bEQ\b|\bGT\b|\bLT\b)\s*('(?:[^']|'')*'|[\w/~.-]+)$/i);
     if (initial) {
       subject = initial[1];
       const isInitialHolds = !initial[2];
@@ -620,7 +629,9 @@ function readGuardCases(source: string, contract: OriginalContract, rules: reado
       const raw = cmp[3];
       const quoted = /^'.*'$/.test(raw);
       const literalFromRule = rule?.literal ?? null;
-      if (quoted || /^[-+]?\d+(\.\d+)?$/.test(raw)) operand = quoted ? raw.slice(1, -1).replace(/''/g, "'") : raw;
+      // ABAP's flag constants are literals: abap_true is 'X', abap_false and space are blank.
+      if (/^(?:abap_true|abap_false|space)$/i.test(raw)) operand = /^abap_true$/i.test(raw) ? 'X' : ' ';
+      else if (quoted || /^[-+]?\d+(\.\d+)?$/.test(raw)) operand = quoted ? raw.slice(1, -1).replace(/''/g, "'") : raw;
       else if (literalFromRule !== null) operand = literalFromRule; // a constant: the engine read its value
       else {
         operand = raw;
@@ -686,7 +697,20 @@ function guardSet(g: GuardCase, value: CallValue | 'base'): EngineCaseCall['set'
 }
 
 const guardName = (g: GuardCase) => g.ruleId ?? `the check at L${g.line}`;
-const outcomeWord = (g: GuardCase) => (g.outcome === 'skips' ? 'skipped' : 'refused');
+const outcomeWord = (g: GuardCase) => (g.outcome === 'skips' ? 'skipped' : g.outcome === 'stops' ? 'stopped' : 'refused');
+
+/** The plan's id of the check on this line (`G-0061`, `guardIdOf` in lib/transformation/unit-plan.ts). */
+const guardIdOf = (g: GuardCase) => `G-${String(g.line).padStart(4, '0')}`;
+
+/**
+ * The example as a question to the check's predicate (3.0.12): does the original's condition hold on the
+ * breaking (`breaks`) or the passing value? The answer comes from the condition alone.
+ */
+const checkOf = (g: GuardCase, breaks: boolean): EngineCheckCall => {
+  const call: EngineCheckCall = { guard: guardIdOf(g), holds: breaks === (g.rejectsWhen === 'holds') };
+  if (g.subject) call.field = g.subject.toUpperCase();
+  return call;
+};
 const guardInputWord = (g: GuardCase, value: string) => (g.subject ? `${g.subject.toUpperCase()} ${/^(empty|filled|equal|different|greater|less|a value)/.test(value) ? value : `= ${value}`}` : value);
 
 /** Other guards on the same subject that the breaking value also breaks — the case would not isolate its own. */
@@ -717,7 +741,9 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
   const how =
     g.outcome === 'skips'
       ? `skips the record and goes on with the next (${g.ending}, L${g.line})`
-      : `stops processing — the input is refused (${g.ending})`;
+      : g.outcome === 'stops'
+        ? `ends the routine early (${g.ending}) — no refusal: the run goes on after the routine, so only the check's predicate shows it`
+        : `stops processing — the input is refused (${g.ending})`;
   const clash = alsoBroken(g, all);
   const clashNote =
     clash.length > 0
@@ -743,8 +769,10 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
         !breakSet
           ? null
           : g.outcome === 'skips'
-            ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 } }
-            : { op: 'simulate', set: breakSet, expect: guardRefusal(g, all) },
+            ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 }, check: checkOf(g, true) }
+            : g.outcome === 'stops'
+              ? { op: 'check', set: breakSet, expect: { kind: 'holds' }, check: checkOf(g, true) }
+              : { op: 'simulate', set: breakSet, expect: guardRefusal(g, all), check: checkOf(g, true) },
       ),
     ],
   });
@@ -764,14 +792,14 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
                 input: `record A appended to a request that passes every check: ${guardInputWord(g, g.passing)}; ${othersWord}`,
                 expected: 'A is in the result: one record more than without it',
               },
-              breakSet ? { op: 'simulate', mode: 'append', set: passSet, expect: { kind: 'records-delta', delta: 1 } } : null,
+              breakSet ? { op: 'simulate', mode: 'append', set: passSet, expect: { kind: 'records-delta', delta: 1 }, check: checkOf(g, false) } : null,
             ),
             withCall(
               {
                 input: `record B appended instead: identical to A except ${guardInputWord(g, g.breaking)}`,
                 expected: 'B is excluded: no record more than without it. With B included the count would be one higher — the case fails if the exclusion is lost',
               },
-              breakSet ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 } } : null,
+              breakSet ? { op: 'simulate', mode: 'append', set: breakSet, expect: { kind: 'records-delta', delta: 0 }, check: checkOf(g, true) } : null,
             ),
           ],
         })
@@ -780,16 +808,27 @@ function guardCases(g: GuardCase, all: readonly GuardCase[]): Array<Omit<EngineT
           family: 'guard',
           trace,
           derivedFrom,
-          name: `${id}: the refusal comes from the checked value alone`,
-          description: `The check at L${g.line} (${g.condition}) refuses the input. The same input with only ${subjectWord} moved to the other side of the condition must pass it — so the refused value is what the refusal depends on (PP review TC_10).${unruled}`,
+          name: g.outcome === 'stops' ? `${id}: the early end comes from the checked value alone` : `${id}: the refusal comes from the checked value alone`,
+          description:
+            g.outcome === 'stops'
+              ? `The check at L${g.line} (${g.condition}) ends the routine early. The same input with only ${subjectWord} moved to the other side of the condition must go past it — so the checked value is what the early end depends on (PP review TC_10).${unruled}`
+              : `The check at L${g.line} (${g.condition}) refuses the input. The same input with only ${subjectWord} moved to the other side of the condition must pass it — so the refused value is what the refusal depends on (PP review TC_10).${unruled}`,
           examples: [
             withCall(
-              { input: `request R1: ${guardInputWord(g, g.breaking)}; ${othersWord}`, expected: `refused by ${id}` },
-              breakSet ? { op: 'simulate', set: breakSet, expect: guardRefusal(g) } : null,
+              { input: `request R1: ${guardInputWord(g, g.breaking)}; ${othersWord}`, expected: `${outcomeWord(g)} by ${id}` },
+              !breakSet
+                ? null
+                : g.outcome === 'stops'
+                  ? { op: 'check', set: breakSet, expect: { kind: 'holds' }, check: checkOf(g, true) }
+                  : { op: 'simulate', set: breakSet, expect: guardRefusal(g), check: checkOf(g, true) },
             ),
             withCall(
               { input: `request R2: R1 with ${guardInputWord(g, g.passing)} only`, expected: `not refused by ${id}: processing goes past L${g.line}` },
-              breakSet ? { op: 'simulate', set: passSet, expect: { ...notRefusedBy(g) } } : null,
+              !breakSet
+                ? null
+                : g.outcome === 'stops'
+                  ? { op: 'check', set: passSet, expect: { kind: 'holds' }, check: checkOf(g, false) }
+                  : { op: 'simulate', set: passSet, expect: { ...notRefusedBy(g) }, check: checkOf(g, false) },
             ),
           ],
         });

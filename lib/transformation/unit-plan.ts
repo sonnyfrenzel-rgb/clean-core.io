@@ -547,6 +547,15 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
     usedFns.add(f);
     return f;
   };
+  // RAP methods share one logic class: two routines of the same name (in different classes) get distinct ones.
+  const usedRap = new Set<string>(['run_steps']);
+  const uniqueRap = (base: string) => {
+    let r = base;
+    let n = 2;
+    while (usedRap.has(r)) r = `${base.slice(0, 30 - String(n).length - 1)}_${n++}`;
+    usedRap.add(r);
+    return r;
+  };
 
   const orchestrator: Unit = {
     id: 'U00',
@@ -585,7 +594,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
       id,
       kind,
       fn,
-      rapName: rapNameOf(r.name),
+      rapName: uniqueRap(rapNameOf(r.name)),
       file: `srv/steps/${id.slice(1)}-${kebab(r.name)}.ts`,
       title: titleOf(r.name),
       stepId: null,

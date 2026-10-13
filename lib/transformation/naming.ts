@@ -38,7 +38,15 @@ export function titleOf(name: string): string {
   return s[0].toUpperCase() + s.slice(1);
 }
 
+/**
+ * Method names ABAP gives a special meaning (an instance constructor may not have CHANGING parameters and
+ * is called by NEW with its IMPORTING ones), and the names the RAP scaffold writes itself.
+ */
+const RAP_SPECIAL = new Set(['constructor', 'class_constructor', 'run_steps', 'run_process', 'get_instance_authorizations']);
+
+/** The ABAP method name of a routine: lower snake case, at most 30 characters, never a special method's name. */
 export function rapNameOf(name: string): string {
-  return (words(name).join('_') || 'step').slice(0, 30);
+  const base = (words(name).join('_') || 'step').slice(0, 30);
+  return RAP_SPECIAL.has(base) ? `${base.slice(0, 25)}_unit` : base;
 }
 

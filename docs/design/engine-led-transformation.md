@@ -864,6 +864,19 @@ on the stub in 11–15 s. Where E differs from the table above:
   standard-fit warning, as the PLATFORM KNOWLEDGE block already says. A decision record against a
   rebuild still warns.
 
+**Reach of the checks (13.10.2026).** `scripts/transformation/measure-reach.ts` measures which fill
+regions the engine cases and probes actually test, by mutation (`scripts/transformation/reach.ts`: a
+region is reached when a throwing or a wrong-answer mutant of it alone changes a check's verdict), on
+the empty scaffold, the Gemini test stub's fills and hand-written reference fills
+(`tests/fixtures/transformation/reference-fills/`). Since then the call contract of the Node scaffold
+exports `check(guard, request, values)`: a guard case asks the check's predicate directly where the
+request cannot carry the value (a system field such as SY-SUBRC, a computed decimal, the record table)
+and for a RETURN or EXIT outside a loop, which ends a routine and is no refusal (runtime op `check`; a
+contract without it leaves the example not run). A field symbol's component (`<ls_rcv>-quota`) is a
+subject a case can set, and a value a skipping check drops is expected as a skipped record. A failing
+case traced by its line goes back to the unit that writes the predicate. The base values are unchanged:
+an obligatory input without a value in the original still has none, and its cases stay not run.
+
 ## 18. Migration of stored drafts
 
 - Packages stored before this change keep their binding (v2, no `path`) and are shown as today. The

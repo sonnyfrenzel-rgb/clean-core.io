@@ -1,0 +1,40 @@
+{
+  "note": "Hand-written reference fills for sd-shape.abap: what a model that ports the program faithfully would write into each fill region. Test data for the reach measurement (scripts/transformation/reach.ts) — never shipped, never an expectation of a check.",
+  "bodies": {
+    "U00": [
+      "const r = readOrders(sel, st);",
+      "if (r) return r;",
+      "st.rows = st.records.map((o) => ({ vbeln: o.vbeln, kunnr: o.kunnr, netwr: o.netwr }));"
+    ],
+    "U00.G0024": "return sel.discnt !== null && dec.compare(sel.discnt, '30') > 0;",
+    "U00.G0077": "return st.local.gvOk === 'BACK';",
+    "U01": [
+      "const hit = (x: { option: string; low: string; high: string | null }, v: string) =>",
+      "  x.option === 'EQ' ? v === x.low : x.option === 'NE' ? v !== x.low : x.option === 'BT' ? v >= x.low && v <= (x.high ?? x.low) : false;",
+      "const inc = sel.kunnr.filter((x) => x.sign === 'I');",
+      "const exc = sel.kunnr.filter((x) => x.sign === 'E');",
+      "st.records = st.records.filter((o) => {",
+      "  const v = String(o.kunnr ?? '');",
+      "  return (inc.length === 0 || inc.some((x) => hit(x, v))) && !exc.some((x) => hit(x, v));",
+      "});"
+    ],
+    "U01.G0039": "return st.records.length === 0;",
+    "U02": [
+      "if (args.ivUcomm === 'DISC') {",
+      "  const index = (args.isSelfield as { tabindex?: unknown } | null)?.tabindex;",
+      "  return applyDiscount(sel, st, { ivIndex: index });",
+      "}"
+    ],
+    "U03": [
+      "const i = Number(args.ivIndex);",
+      "const order = Number.isInteger(i) && i >= 1 ? st.records[i - 1] : undefined;",
+      "if (stop_G0065(sel, st, null, { sySubrc: order ? 0 : 4 }) || !order) return;",
+      "const disc = sel.discnt ?? '0.00';",
+      "const lvNew = dec.sub(order.netwr, dec.div(dec.mul(order.netwr, disc, 6), '100', 6), 2);",
+      "const updates = (st.result.updates as Array<Record<string, unknown>> | undefined) ?? [];",
+      "updates.push({ vbeln: order.vbeln, netwr: lvNew });",
+      "st.result.updates = updates;"
+    ],
+    "U03.G0065": "return Number(values.sySubrc) !== 0;"
+  }
+}

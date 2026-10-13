@@ -256,3 +256,40 @@ test('more than 120 units refuse the plan (the single-call fallback runs, §16.2
   const source = `REPORT zfx_many.\nDATA lv_x TYPE i.\nSTART-OF-SELECTION.\n${calls}\n${forms}\n`;
   expect(() => planUnits(source)).toThrow(PlanRefusal);
 });
+
+test('a routine named CONSTRUCTOR never becomes the RAP logic class constructor; RAP names stay unique and within 30 characters', () => {
+  // abaplint check_syntax on Z_ORDER_INTEGRITY_CHECK: `METHODS constructor IMPORTING is_sel … CHANGING cs_st` —
+  // an instance constructor cannot have CHANGING parameters, and NEW zcl_…_logic( ) then lacks is_sel.
+  const big = (n: string) => `${n}.\n${Array.from({ length: 12 }, (_, j) => `  lv_x = lv_x + ${j}.`).join('\n')}\n`;
+  const source = [
+    'REPORT zfx_ctor.',
+    'DATA lv_x TYPE i.',
+    'CLASS lcl_order DEFINITION.',
+    '  PUBLIC SECTION.',
+    '    METHODS constructor.',
+    '    METHODS class_constructor_like.',
+    'ENDCLASS.',
+    'CLASS lcl_order IMPLEMENTATION.',
+    `  ${big('METHOD constructor')}  ENDMETHOD.`,
+    `  ${big('METHOD class_constructor_like')}  ENDMETHOD.`,
+    'ENDCLASS.',
+    'START-OF-SELECTION.',
+    '  DATA(lo_order) = NEW lcl_order( ).',
+    '  lo_order->class_constructor_like( ).',
+    '  PERFORM constructor.',
+    '  PERFORM class_constructor.',
+    big('FORM constructor') + 'ENDFORM.',
+    big('FORM class_constructor') + 'ENDFORM.',
+    '',
+  ].join('\n');
+  const { plan } = planOf(source);
+  const rap = plan.units.filter((u) => u.kind !== 'orchestrator').map((u) => u.rapName);
+  expect(rap.length).toBeGreaterThanOrEqual(3);
+  for (const name of rap) {
+    expect(['constructor', 'class_constructor', 'run_steps', 'run_process']).not.toContain(name);
+    expect(name.length).toBeLessThanOrEqual(30);
+  }
+  expect(new Set(rap).size).toBe(rap.length);
+  // The original's name stays the unit's anchor in the trace.
+  expect(plan.units.filter((u) => /^(?:LCL_ORDER=>)?CONSTRUCTOR$|CONSTRUCTOR$/.test(u.routine ?? '')).length).toBeGreaterThan(0);
+});
