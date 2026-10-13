@@ -15,8 +15,13 @@ import { engineVersionAtLeast } from '../score-rule';
  *     (`extensibility-router.ts`);
  *   - a `FILE_VALIDATE_NAME` / `FILE_GET_NAME` call covers a file path only
  *     when its failure stops the program: without `EXCEPTIONS` (an unhandled
- *     exception ends the program), or with them and sy-subrc read by the very
- *     next statement (`security-review.ts`).
+ *     exception ends the program), or with them and the very next statement
+ *     deciding on sy-subrc (`security-review.ts`);
+ *   - the result of an AUTHORITY-CHECK counts as evaluated only when the next
+ *     statement decides on sy-subrc (`IF`, `CHECK`, `CASE`, `ASSERT`, …), not
+ *     when it merely mentions it (`decidesOnSubrc`, `security-review.ts`);
+ *   - the flow from input to a dynamic clause or a path is followed to a fixed
+ *     point, not for eight passes (`taintedNames`, `security-review.ts`).
  *
  * Each changes what a run signs, so a run made by an older engine keeps the
  * evidence and the route it was signed with: whatever rebuilds a signed run

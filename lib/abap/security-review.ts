@@ -72,12 +72,42 @@ export interface SecurityReviewOptions {
    */
   adbcLines?: readonly number[];
   /**
-   * From engine 3.0.13 (`PRECISION_FIXES_FROM`, set by `buildAbapEvidence`): a
-   * file-name validation covers a path only when its failure stops the
-   * program — see `validationStops` below. Off, any earlier call counts, as
-   * runs of v3.0.12 signed it.
+   * From engine 3.0.13 (`PRECISION_FIXES_FROM`, set by `buildAbapEvidence`):
+   *
+   *   - a file-name validation covers a path only when its failure stops the
+   *     program — see `validationStops` below;
+   *   - the result of an AUTHORITY-CHECK or of a file-name validation counts as
+   *     evaluated only when the next statement decides on sy-subrc
+   *     (`decidesOnSubrc`), not when it merely mentions it;
+   *   - the flow from input is followed to a fixed point, however long the
+   *     chain and in whatever order the source writes it (`taintedNames`).
+   *
+   * Off, the reading is the one runs of v3.0.12 signed: any earlier validation
+   * counts, any mention of sy-subrc counts, and the flow is followed for eight
+   * passes in source order.
    */
-  validationOutcomeRead?: boolean;
+  precisionFixes?: boolean;
+}
+
+/**
+ * True when a statement decides on sy-subrc: a condition that branches on it
+ * (`IF`, `ELSEIF`, `CHECK`, `CASE`, `ASSERT`), or a conditional expression that
+ * reads it and raises (`COND`/`SWITCH … THROW`). A statement that only mentions
+ * sy-subrc — `WRITE sy-subrc.`, `lv_rc = sy-subrc.` — decides nothing, and
+ * neither does a value kept for a later statement: anything in between can
+ * overwrite what is read there.
+ */
+export function decidesOnSubrc(statement: AbapStatement | undefined): boolean {
+  if (statement === undefined) return false;
+  const code = maskLiterals(statement.text).trim();
+  if (!/\bSY-SUBRC\b/i.test(code)) return false;
+  if (/^(?:IF|ELSEIF|CHECK|CASE|ASSERT)\b/i.test(code)) return true;
+  return /\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code);
+}
+
+/** What v3.0.12 counted as reading sy-subrc: any mention of it. */
+function mentionsSubrc(statement: AbapStatement | undefined): boolean {
+  return statement !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(statement.text));
 }
 
 export function readSecurityReviewTasks(source: string, options: SecurityReviewOptions = {}): SecurityReviewTask[] {
@@ -100,6 +130,7 @@ export function readSecurityReviewTasksFrom(
   /* ---------------------------------------------- authorization checks */
   // DSAG ABAP guideline: security/security-secure-development.md § Berechtigungsprüfungen richtig implementieren
   const graph = readCallGraphFrom(statements, readBlocks(statements));
+  const subrcRead = options.precisionFixes ? decidesOnSubrc : mentionsSubrc;
   const indexAt = new Map<number, number>();
   statements.forEach((s, i) => {
     if (s.keyword === 'AUTHORITY-CHECK' && !indexAt.has(s.lineStart)) indexAt.set(s.lineStart, i);
@@ -113,9 +144,10 @@ export function readSecurityReviewTasksFrom(
 
     // The return code has to be read by the statement right after the check:
     // anything in between can overwrite sy-subrc, and a check nobody reads
-    // decides nothing.
+    // decides nothing. From 3.0.13 that statement has to decide on it
+    // (`decidesOnSubrc`); a mention alone is not a decision.
     const next = statements[index + 1];
-    const evaluated = next !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(next.text));
+    const evaluated = subrcRead(next);
     if (!evaluated) {
       tasks.push({
         kind: 'authority-result-not-evaluated',
@@ -173,7 +205,7 @@ export function readSecurityReviewTasksFrom(
   }
 
   /* ------------------------------------------- input and what it reaches */
-  const tainted = taintedNames(source, statements, graph.forms.flatMap((f) => f.parameters.map((p) => p.name)));
+  const tainted = taintedNames(source, statements, graph.forms.flatMap((f) => f.parameters.map((p) => p.name)), options.precisionFixes === true);
   const fromInput = (operand: string): boolean => {
     const base = baseName(operand);
     return base !== '' && tainted.has(base);
@@ -192,14 +224,14 @@ export function readSecurityReviewTasksFrom(
   // of 5a559787, 7e158fe18264). Without EXCEPTIONS a failing module raises an
   // exception nobody handles, and the program ends there. With EXCEPTIONS the
   // failure only sets sy-subrc, and the statement right after the call has to
-  // read it — the rule of `authority-result-not-evaluated` above. A call whose
-  // sy-subrc nobody reads validated nothing.
+  // decide on it — the rule of `authority-result-not-evaluated` above, through
+  // the same `decidesOnSubrc`. A call whose sy-subrc nobody decides on
+  // validated nothing.
   const isFileNameCheck = (s: AbapStatement) => /^CALL\s+FUNCTION\s+'(?:FILE_VALIDATE_NAME|FILE_GET_NAME(?:_USING_PATH)?)'/i.test(s.text);
   const validationStops = (index: number): boolean => {
-    if (!options.validationOutcomeRead) return true;
+    if (!options.precisionFixes) return true;
     if (!/\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text))) return true;
-    const next = statements[index + 1];
-    return next !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(next.text));
+    return decidesOnSubrc(statements[index + 1]);
   };
   const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationStops(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
@@ -432,8 +464,13 @@ function mentions(text: string, names: Set<string>): boolean {
  * parameters of a function module (its interface comment block). The flow is
  * followed through assignments, `CONCATENATE … INTO`, `APPEND … TO`,
  * `INSERT … INTO TABLE` and `MOVE … TO`, to a fixed point.
+ *
+ * Each pass walks the flows in source order, so a chain the source writes
+ * backwards grows by one name per pass. From 3.0.13 (`toFixedPoint`) the passes
+ * run until nothing grows — at most one per flow, plus the one that finds
+ * nothing new. Before, they stopped after eight, as runs of v3.0.12 signed it.
  */
-function taintedNames(source: string, statements: AbapStatement[], formParameters: string[]): Set<string> {
+function taintedNames(source: string, statements: AbapStatement[], formParameters: string[], toFixedPoint: boolean): Set<string> {
   const names = new Set<string>(formParameters.map((n) => n.toUpperCase()));
 
   for (const statement of statements) {
@@ -479,7 +516,8 @@ function taintedNames(source: string, statements: AbapStatement[], formParameter
       flows.push({ target: target(m[2]), from: m[1] });
     }
   }
-  for (let pass = 0; pass < 8; pass++) {
+  const passes = toFixedPoint ? flows.length + 1 : 8;
+  for (let pass = 0; pass < passes; pass++) {
     let grew = false;
     for (const flow of flows) {
       if (!flow.target || names.has(flow.target)) continue;
