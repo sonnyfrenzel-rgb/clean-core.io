@@ -15,7 +15,9 @@ import {
  *
  * Server-free: the bound is the shared reader (`readBoundedJson`) with the
  * constant the route passes, exercised on real `Request` bodies; the route's
- * use of it is checked in its source.
+ * use of it is checked in its source. The route's own 413, answered before the
+ * process is opened, is executed against the emulators in
+ * tests/process-states-route.spec.ts.
  */
 
 const ROOT = path.resolve(__dirname, '..');

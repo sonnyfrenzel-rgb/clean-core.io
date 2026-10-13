@@ -78,7 +78,11 @@ if (COMPARE && existsSync(COMPARE)) {
   const before = JSON.parse(readFileSync(COMPARE, 'utf8')) as { rows: Row[] };
   const key = (r: Row) => `${r.id}:${r.deployment}`;
   const old = new Map(before.rows.map((r) => [key(r), r]));
-  const changed = rows.filter((r) => old.get(key(r))?.route !== r.route);
+  const current = new Set(rows.map(key));
+  // A case added since the saved run, or removed from it, is reported as such — never dereferenced as a changed route.
+  const added = rows.filter((r) => !old.has(key(r))).map(key);
+  const removed = before.rows.filter((r) => !current.has(key(r))).map(key);
+  const changed = rows.filter((r) => old.has(key(r)) && old.get(key(r))!.route !== r.route);
   const report = changed.map((r) => {
     const o = old.get(key(r))!;
     return {
@@ -90,7 +94,7 @@ if (COMPARE && existsSync(COMPARE)) {
       guiFileWasSoleDriver: o.drivers.length === 1 && o.drivers[0] === 'gui-download',
     };
   });
-  console.log(JSON.stringify({ changed: report.length, notSoleGuiDriver: report.filter((r) => !r.guiFileWasSoleDriver), changes: report }, null, 2));
+  console.log(JSON.stringify({ changed: report.length, added, removed, notSoleGuiDriver: report.filter((r) => !r.guiFileWasSoleDriver), changes: report }, null, 2));
 }
 
 if (OUT) writeFileSync(OUT, JSON.stringify({ summary, rows }, null, 2));

@@ -5,11 +5,13 @@ import { initializeFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminDocExists, adminSetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import type { ProcessRevisionRecord } from '../lib/process-revisions';
 import {
+  PROCESS_STATES_BODY_LIMITS,
+  PROCESS_STATE_COLLECTION,
   markAffectedDerivations,
   readProcessStates,
   subjectIdsOf,
@@ -140,6 +142,23 @@ test.beforeAll(async () => {
   await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
     ...unsigned, runHash, signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!),
   });
+});
+
+test('a body over the bound is answered 413 by the route, before the process is opened', async ({ request }) => {
+  // Revision 1 does not exist yet, so opening the process answers 409 'no-baseline'.
+  // A small body shows that answer…
+  const small = await request.post(path, { headers: headers(), data: { baseRevision: 0, choices: [] } });
+  expect(small.status(), await small.text()).toBe(409);
+  expect((await small.json()).code).toBe('no-baseline');
+  // …and an oversized one gets 413 instead: the bounded read answered before
+  // `open()` ran. Not JSON at all, so a parse before the bound would be a 400.
+  const over = await request.post(path, {
+    headers: headers(),
+    data: 'x'.repeat(PROCESS_STATES_BODY_LIMITS.maxBytes + 1),
+  });
+  expect(over.status(), await over.text()).toBe(413);
+  expect((await over.json()).code).toBe('too-large');
+  expect(await adminDocExists(`projects/${PROJECT_ID}/${PROCESS_STATE_COLLECTION}`, '1'), 'a refused body wrote a revision').toBe(false);
 });
 
 test('a process that was never reconstructed has nothing to confirm', async ({ request }) => {

@@ -1,5 +1,5 @@
 {
-  "note": "Hand-written reference fills for co-shape.abap: what a model that ports the program faithfully would write into each fill region. Test data for the reach measurement (scripts/transformation/reach.ts) — never shipped, never an expectation of a check.",
+  "note": "Hand-written reference fills for co-shape.abap: what a model that ports the program faithfully would write into each fill region. Test data for the reach measurement (scripts/transformation/reach.ts) — no app, library or runner file reads it (held by tests/transformation-fill-reach.spec.ts), so no check expects it.",
   "bodies": {
     "U00": [
       "if (!sel.demo) {",

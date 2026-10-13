@@ -84,11 +84,19 @@ async function gateEvidence(page: Page, mode: 'hold' | 'abort'): Promise<Evidenc
  * while such a chunk was still being read would miss it if it were the engine,
  * and would leave this route's `route.fetch` running into the end of the test
  * ("route.fetch: Test ended", reported against the next test).
+ *
+ * An empty in-flight set is not the end: a chunk the page has scheduled but
+ * not yet asked for would start after the count unrouted and go uncounted (QA
+ * ff6207664654). So the count keeps intercepting until no chunk request has
+ * started for `CHUNK_QUIET_MS` and none is on its way.
  */
+const CHUNK_QUIET_MS = 3000;
 async function countEngineChunks(page: Page): Promise<{ count: () => Promise<number> }> {
   let seen = 0;
+  let lastStart = Date.now();
   const inFlight = new Set<Promise<void>>();
   const handler = (route: Route): Promise<void> => {
+    lastStart = Date.now();
     const done = (async () => {
       const response = await route.fetch();
       const body = await response.text();
@@ -101,7 +109,12 @@ async function countEngineChunks(page: Page): Promise<{ count: () => Promise<num
   await page.route(CHUNKS, handler);
   return {
     count: async () => {
-      while (inFlight.size) await Promise.allSettled([...inFlight]);
+      for (;;) {
+        while (inFlight.size) await Promise.allSettled([...inFlight]);
+        const quietFor = Date.now() - lastStart;
+        if (quietFor >= CHUNK_QUIET_MS) break;
+        await page.waitForTimeout(CHUNK_QUIET_MS - quietFor);
+      }
       await page.unroute(CHUNKS, handler);
       while (inFlight.size) await Promise.allSettled([...inFlight]);
       return seen;
