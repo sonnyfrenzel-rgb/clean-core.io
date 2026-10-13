@@ -119,3 +119,28 @@ test.describe('reach of the written functions (mutation)', () => {
     expect(fs.readFileSync(path.join(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8')).toBe(po);
   });
 });
+
+/*
+ * QA 590580a89557: the reference fills say no shipped code reads them. Held
+ * here: no file of the app, its libraries, its public assets or the runner
+ * names the directory, so neither a build nor a check can pick them up.
+ */
+test('no app, library, public or runner file reads the reference fills', () => {
+  const ROOT = path.join(__dirname, '..');
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(ts|tsx|js|mjs|cjs|json)$/.test(e.name) && fs.readFileSync(p, 'utf8').includes('reference-fills')) offenders.push(path.relative(ROOT, p));
+    }
+  };
+  for (const d of ['app', 'lib', 'components', 'hooks', 'public', 'runner']) walk(path.join(ROOT, d));
+  for (const f of ['middleware.ts', 'next.config.mjs']) {
+    if (fs.readFileSync(path.join(ROOT, f), 'utf8').includes('reference-fills')) offenders.push(f);
+  }
+  expect(offenders).toEqual([]);
+  // The guard sees what it guards: the directory exists where the measurement reads it.
+  expect(fs.existsSync(REF)).toBe(true);
+});
