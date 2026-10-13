@@ -28,7 +28,7 @@ import { engineVersionAtLeast } from '../score-rule';
  * passes that run's engine version (`engineVersionOfProject`). The corrections
  * go live when `APP_VERSION` (`lib/version.ts`) reaches this version. Same
  * pattern as `GUIDELINE_CHECKS_FROM`; `tests/engine-version-rebuild.spec.ts`
- * holds a v3.0.12 run to what that engine answered.
+ * holds a run of engine 3.0.12 to what that engine answered.
  *
  * Pure: no imports beyond the version comparison.
  */

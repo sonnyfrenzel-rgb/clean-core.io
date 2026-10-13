@@ -82,7 +82,7 @@ export interface SecurityReviewOptions {
    *   - the flow from input is followed to a fixed point, however long the
    *     chain and in whatever order the source writes it (`taintedNames`).
    *
-   * Off, the reading is the one runs of v3.0.12 signed: any earlier validation
+   * Off, the reading is the one runs of engine 3.0.12 signed: any earlier validation
    * counts, any mention of sy-subrc counts, and the flow is followed for eight
    * passes in source order.
    */
@@ -105,7 +105,7 @@ export function decidesOnSubrc(statement: AbapStatement | undefined): boolean {
   return /\b(?:COND|SWITCH)\b[\s\S]*\bTHROW\b/i.test(code);
 }
 
-/** What v3.0.12 counted as reading sy-subrc: any mention of it. */
+/** What engine 3.0.12 counted as reading sy-subrc: any mention of it. */
 function mentionsSubrc(statement: AbapStatement | undefined): boolean {
   return statement !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(statement.text));
 }
@@ -468,7 +468,7 @@ function mentions(text: string, names: Set<string>): boolean {
  * Each pass walks the flows in source order, so a chain the source writes
  * backwards grows by one name per pass. From 3.0.13 (`toFixedPoint`) the passes
  * run until nothing grows — at most one per flow, plus the one that finds
- * nothing new. Before, they stopped after eight, as runs of v3.0.12 signed it.
+ * nothing new. Before, they stopped after eight, as runs of engine 3.0.12 signed it.
  */
 function taintedNames(source: string, statements: AbapStatement[], formParameters: string[], toFixedPoint: boolean): Set<string> {
   const names = new Set<string>(formParameters.map((n) => n.toUpperCase()));
