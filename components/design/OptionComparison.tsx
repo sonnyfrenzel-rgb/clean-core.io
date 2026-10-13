@@ -31,7 +31,8 @@ export default function OptionComparison({ design }: { design: unknown }) {
     >
       <div className="flex flex-wrap items-center gap-2">
         <h3 id="design-options-title" className="m-0 cc-text-h3 text-cc-ink">Standard, RAP and CAP compared</h3>
-        <CcProvenanceChip value="proposed" />
+        {/* Only over a comparison the model wrote: an absent or unreadable one proposes nothing (QA 5a559787: 9af97544d758). */}
+        {view.state === 'absent' || view.state === 'malformed' ? null : <CcProvenanceChip value="proposed" />}
       </div>
       {view.state === 'absent' ? (
         <p data-design-not-written="Options compared" className="m-0 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2 text-[13px] text-cc-ink-muted">

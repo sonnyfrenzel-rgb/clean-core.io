@@ -2,6 +2,7 @@ import type { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
 import { engineVersionAtLeast, scoreRuleFor } from '../score-rule';
 import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
+import { precisionFixesApply } from './precision-fixes-gate';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
@@ -524,6 +525,15 @@ export function routeExtensibility(
   const standardWriteRemedy = deploymentModel === 'public'
     ? 'a released API or a RAP action of a released business object'
     : 'a released write API, a BAPI or a RAP action';
+  // From 3.0.13 (`PRECISION_FIXES_FROM`) such a write is named whichever
+  // finding chose the route. Before, an outbound RFC, a modification or a
+  // custom-table write took the rationale and the In-App track, and the write
+  // that has to be replaced in any case went unsaid there (QA review of
+  // 5a559787, 3fe882da065d). A run of an earlier engine keeps its words.
+  const standardWritesAlwaysNamed = precisionFixesApply(engineVersion) && standardWrites.length > 0;
+  const standardWritesTooSentence = needsBtp
+    ? ` ${standardWrites.length} direct write(s) to SAP standard tables have to be replaced by ${standardWriteRemedy} as well.`
+    : '';
 
   // Constructs that force no side-by-side split but do not run unchanged in
   // ABAP Cloud either: classic enhancements, dynpros, classic ALV, SUBMIT,
@@ -612,6 +622,8 @@ export function routeExtensibility(
   // Rationale
   let rationale = '';
   let namedNotRead = false;
+  // Set by the branches whose sentence is about the standard-table writes.
+  let rationaleNamesStandardWrites = false;
   if (modifications.length > 0) {
     rationale = `Detected ${modifications.length} core modification(s) to SAP standard code. Modifications are clean core level D: they must be reset to standard via SPAU and the requirement rebuilt on a released extension point before any cloud target is reachable.`;
     // `!needsBtp` for the same reason the two private branches moved below the
@@ -633,6 +645,7 @@ export function routeExtensibility(
     // The rule of runs made before 3.0.12, kept word for word
     // (`ON_STACK_CONSTRUCTS_FROM`).
     rationale = `Direct writes to standard SAP tables are strictly prohibited in S/4HANA Public Cloud. Side-by-Side integration is required.`;
+    rationaleNamesStandardWrites = true;
   } else if (outboundRfc.length > 0) {
     rationale = `RFC integrations are present. These should be externalized via SAP Integration Suite destination service.`;
   } else if (guiFileRule && fileAccess.length > 0) {
@@ -670,6 +683,7 @@ export function routeExtensibility(
     // does not fix a write to SAP's rows, since a side-by-side service cannot
     // make one either.
     rationale = `Direct writes to standard SAP tables are present. They are not allowed in SAP S/4HANA Cloud Public Edition and are not clean core in any edition, but leaving the stack does not fix them: a side-by-side service cannot write SAP's tables either. The write is replaced on-stack by ${standardWriteRemedy}, so it forces no side-by-side split.`;
+    rationaleNamesStandardWrites = true;
   } else if (standardWrites.length > 0) {
     // Not "wrappable". A wrapper ("Tier 2" in the words of runs before 3.0.12) encapsulates an unreleased SAP object
     // so that ABAP Cloud code may reach it; it does not make a direct write to
@@ -679,6 +693,7 @@ export function routeExtensibility(
     rationale = legacyRule
       ? `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`
       : `Direct writes to standard SAP tables are present. In SAP Cloud ERP Private the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
+    rationaleNamesStandardWrites = true;
   } else if (findings.length > 0) {
     rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
   } else if (includesNotRead.length > 0) {
@@ -696,6 +711,11 @@ export function routeExtensibility(
   // WORK never learned that the commit has to go (QA review of dd8e996,
   // a0ae65b2b30d).
   rationale = `${rationale}${commitSentence}`;
+  if (standardWritesAlwaysNamed && !rationaleNamesStandardWrites) {
+    rationale = needsBtp
+      ? `${rationale} The ${standardWrites.length} direct write(s) to SAP standard tables are not fixed by this route: a side-by-side service cannot write SAP's tables either, so each is replaced by ${standardWriteRemedy}.`
+      : `${rationale} The ${standardWrites.length} direct write(s) to SAP standard tables are not clean core in any edition: each is replaced on-stack by ${standardWriteRemedy}.`;
+  }
   // From 3.0.12: what native SQL, BDC and a local RFC mean for the route,
   // whichever branch chose it — each names its finding and line and says what
   // replaces it on-stack (`ON_STACK_CONSTRUCTS_FROM`).
@@ -755,7 +775,7 @@ export function routeExtensibility(
       checkpointName: legacyRule ? 'In-App Developer Extensibility (Tier 1)' : 'In-App Developer Extensibility (ABAP Cloud)',
       question: 'Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?',
       evaluation: needsBtp
-        ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.${commitSentence}`
+        ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.${standardWritesAlwaysNamed ? standardWritesTooSentence : ''}${commitSentence}`
         : standardWritesOnStack
         ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by ${standardWriteRemedy}.${commitSentence}`
         : onStackRework
@@ -802,7 +822,7 @@ export function routeExtensibility(
     fitDetails: modificationBlocks
       ? `Not reachable as it stands. ${modifications.length} core modification(s) sit inside SAP standard code and have to be reset via SPAU before any ABAP Cloud target applies.`
       : needsBtp
-      ? `Requires refactoring: ${btpTriggerList} must be replaced with released APIs or decoupled.`
+      ? `Requires refactoring: ${btpTriggerList} must be replaced with released APIs or decoupled.${standardWritesAlwaysNamed ? standardWritesTooSentence : ''}`
       : standardWritesOnStack
       ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by ${standardWriteRemedy}.`
       : onStackRework
@@ -881,7 +901,7 @@ export function routeExtensibility(
   if (modificationBlocks) {
     assumptions.push(`The recommended route is where the requirement goes once the ${modifications.length} core modification(s) have been reset to SAP standard. Until then neither track is reachable: the code runs inside SAP's own program.`);
   }
-  if (standardWrites.length > 0 && !needsBtp) {
+  if (standardWrites.length > 0 && (!needsBtp || standardWritesAlwaysNamed)) {
     // A wrapper ("Tier 2" before 3.0.12) wraps an unreleased SAP object so ABAP Cloud may *use* it. It does
     // not turn a direct modification of SAP's rows into a supported operation,
     // and this line told the reader it did (dbbc1bf8f01d and its three carries).

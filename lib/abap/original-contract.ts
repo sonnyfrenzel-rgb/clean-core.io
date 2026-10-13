@@ -116,7 +116,10 @@ function decimalOf(statement: AbapStatement): DeclaredDecimal | null {
  */
 const ALIASING = /^(?:DATA|TYPES|STATICS|CLASS-DATA|CONSTANTS|PARAMETERS)\s*:?\s*([\w/]+(?:-[\w/]+)*)\s+(TYPE|LIKE)\s+([\w/]+(?:-[\w/]+)*)(?:\s+(?:VALUE|READ-ONLY|OBLIGATORY|DEFAULT)\b.*)?$/i;
 
-const PROCEDURE_OPENS = new Set(['METHOD', 'FORM', 'FUNCTION', 'MODULE']);
+/** The name any declaration introduces, whatever its type — for shadowing a global inside a procedure. */
+const DECLARED_NAME = /^(?:DATA|TYPES|STATICS|CONSTANTS)\s*:?\s*(?!(?:BEGIN|END)\s+OF\b)([\w/]+(?:-[\w/]+)*)\b/i;
+
+const PROCEDURE_OPENS =new Set(['METHOD', 'FORM', 'FUNCTION', 'MODULE']);
 const PROCEDURE_CLOSES = new Set(['ENDMETHOD', 'ENDFORM', 'ENDFUNCTION', 'ENDMODULE']);
 
 function aliasOf(statement: AbapStatement, known: { get(name: string): DeclaredDecimal | undefined }): DeclaredDecimal | null {
@@ -225,9 +228,18 @@ export function readOriginalContract(source: string): OriginalContract {
   // MODULE is local to it: it shadows a global of the same name there and is
   // gone once the procedure ends, so a later procedure resolves the name
   // against the global again (QA c38f8043).
+  //
+  // A local declaration of any other type shadows the global too: its name is
+  // held with `null`, so a `LIKE` of it in the procedure stops there instead
+  // of falling through to a packed global of the same name (QA 5a559787).
   const global = new Map<string, DeclaredDecimal>();
-  let local: Map<string, DeclaredDecimal> | null = null;
-  const known = { get: (name: string) => local?.get(name) ?? global.get(name) };
+  let local: Map<string, DeclaredDecimal | null> | null = null;
+  const known = {
+    get: (name: string) => {
+      if (local?.has(name)) return local.get(name) ?? undefined;
+      return global.get(name);
+    },
+  };
   for (const statement of statements) {
     if (statement.nativeSql) continue;
     if (PROCEDURE_OPENS.has(statement.keyword)) local = new Map();
@@ -236,6 +248,9 @@ export function readOriginalContract(source: string): OriginalContract {
     if (d) {
       decimals.push(d);
       (local ?? global).set(d.name.toLowerCase(), d);
+    } else if (local) {
+      const declared = DECLARED_NAME.exec(statement.text);
+      if (declared) local.set(declared[1].toLowerCase(), null);
     }
     const i = inputOf(statement);
     if (i) inputs.push(i);

@@ -37,7 +37,19 @@ test.describe('ATC quality gate', () => {
     expect(gate.securityOpen).toHaveLength(0);
     expect(gate.securityExempted).toEqual([exempted]);
     expect(gate.baseline).not.toContain(exempted);
-    expect(gate.state).toBe('no-open-security');
+    // The legacy finding beside it waits for a person (QA 5a559787: f45d35bb0e72).
+    expect(gate.state).toBe('unreviewed');
+    expect(atcQualityGate({ findings: [exempted] }).state).toBe('no-open-security');
+  });
+
+  test('a finding our words miss is never cleared by the gate alone (QA 5a559787: f45d35bb0e72)', () => {
+    const payroll = f({ checkId: 'Z_HR_007', checkTitle: 'Payroll export', message: 'Employee salary table written to a public spool', priority: 'error' });
+    expect(isSecurityFinding(payroll)).toBe(false);
+    const gate = atcQualityGate({ findings: [payroll] });
+    expect(gate.baseline).toEqual([payroll]);
+    expect(gate.state).toBe('unreviewed');
+    expect(gate.state).not.toBe('no-open-security');
+    expect(atcQualityGate({ findings: [] }).state).toBe('no-open-security');
   });
 
   test('an exempted legacy finding is still baseline, and nothing is lost or counted twice', () => {
@@ -72,6 +84,7 @@ test.describe('ATC quality gate', () => {
     // The reading goes by words and can miss one: the baseline waits for a person (QA 03501b79: a7381891b061).
     expect(src).toMatch(/the reading goes by words, so it can miss one/);
     expect(src).toMatch(/once a person has checked that none of them is a security finding/);
+    expect(src).toMatch(/gate\.state === 'unreviewed' \? ' Until then the gate is not cleared, and this screen does not clear it/);
     expect(src).not.toMatch(/passed ATC|ATC found no issues|security verified/i);
   });
 });
