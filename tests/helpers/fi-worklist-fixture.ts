@@ -1,5 +1,5 @@
 /**
- * A generated service shaped like the reviewed FI_Collection_Worklist package
+ * A generated service shaped like the reviewed package of the FI case
  * (external review 11.10.2026, F-01/F-02) — compact, with the same numbers:
  * 15 open items worth 7,135 EUR, of which customer 0000100001 holds 9 worth
  * 4,780 EUR; and the same two defects:
@@ -201,7 +201,7 @@ export const FIXED_SERVICE = HEADER + ENGINE + ITEMS + FIXED_LOGIC + FIXED_ROUTE
 export function packageOf(service: string): string {
   return JSON.stringify([
     { path: 'srv/service.ts', content: service },
-    { path: 'package.json', content: '{ "name": "fi-collections", "dependencies": { "express": "^4.19.2" } }' },
+    { path: 'package.json', content: '{ "name": "fi-case", "dependencies": { "express": "^4.19.2" } }' },
   ]);
 }
 

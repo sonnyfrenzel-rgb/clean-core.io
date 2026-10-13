@@ -16,7 +16,7 @@ import { businessStatementView } from '../lib/abap/business-statement-kind';
  * condition, action, entity, status and branch context unchanged, or it does
  * not fold. The five pairs are the test.
  *
- * The source below is a reduction of the reviewed CO close simulation to the
+ * The source below is a hand-written reduction of the CO case to the
  * branches the five pairs come from, same statements and same nesting, so the
  * deterministic engine writes the same sentences. Server-free: no page, no
  * model call.

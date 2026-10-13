@@ -1,8 +1,8 @@
 # Failure-pattern library
 
 Generated delivery packages fail in recurring ways. Four external reviews of
-v3.0.10 packages (FI collection worklist, CO cost allocation, PP/MM kit
-simulation, SD order cockpit; October 2026) found the same classes of error
+v3.0.10 packages (one FI, one CO, one PP/MM and one SD case; October 2026)
+found the same classes of error
 again and again: wrong SAP identifiers, an architecture argued from a GUI file
 call, guards of the original lost in the new code, binary floating point where
 the original declares packed decimals, run results without a stable identity,
@@ -187,7 +187,7 @@ file given with `--adapter`.
 - The fixture adapters under `tests/fixtures/acceptance/*/acceptance-adapter.json`
   map every probe and are the reference for each probe's keys.
 
-`adapters/sd-legacy-order-cockpit.json` maps the SD package's exported functions.
+`adapters/sd-case.json` maps the SD package's exported functions.
 It was written from the package's exported names and the review's probe
 description, not by copying code, and has not been executed (see below). No
 adapter exists yet for the FI, CO and PP packages: in the PP package the run id

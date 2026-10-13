@@ -5,8 +5,8 @@ import { layerFacts, sopStatementLine, SOP_BASIS } from '@/lib/sop-provenance';
 
 /**
  * The business SOP as the delivery package's `business-documentation.md` —
- * owner 11.10.2026, on the external review of the FI Collection Worklist
- * package (F-06, F-07).
+ * owner 11.10.2026, on the external review of the FI case
+ * (F-06, F-07).
  *
  * The file used to print the model's JSON as it came: a RACI with job titles
  * keyed by node ids, and 48 tasks headed "Task: `nd-316-0`", each a paragraph

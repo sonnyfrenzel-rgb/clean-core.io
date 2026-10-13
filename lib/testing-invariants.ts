@@ -1,7 +1,7 @@
 /**
  * Invariant tests for a shared selection — written by the product, not by a model.
  *
- * External review of FI_Collection_Worklist, F-02: `WorklistItems` read the
+ * External review of the FI case, F-02: `WorklistItems` read the
  * customer filter `kunnr`, `CustomerAgingTotals` and `ExportWorklistFile` did
  * not. For customer 0000100001 the list showed 9 items worth 4,780 EUR, the
  * totals endpoint 7,135 EUR and the CSV 15 rows. The original builds the list,

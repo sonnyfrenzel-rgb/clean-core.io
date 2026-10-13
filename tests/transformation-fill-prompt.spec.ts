@@ -46,7 +46,7 @@ function unit(n: number, lines: number, over: Partial<FillRequestUnit> = {}): Fi
 }
 
 const CONTEXT = Array.from({ length: 80 }, (_, i) => `Context line ${i}: the route is side-by-side (CAP), decided by the owner.`).join('\n');
-const OPTS = { track: 'node' as const, program: 'ZCO_CC_CLOSE_SIMULATION', context: CONTEXT };
+const OPTS = { track: 'node' as const, program: 'Z_CO_CASE', context: CONTEXT };
 
 test.describe('the rules a body follows', () => {
   test('only the body rules, by number and word for word; the scaffold-owned rules are not asked for', () => {

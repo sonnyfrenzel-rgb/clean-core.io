@@ -29,8 +29,8 @@ import { TESTING_RESPONSE_SCHEMA } from '../lib/model-response-schema';
  * (QA review of 11e3bc7d90e8): nothing ties the test's assertion to the stated
  * result, and that result is the model's reading of the original.
  *
- * The source below is the credit-reference rule of ZFI_AR_COLLECTION_WORKLIST
- * (original lines 534–566) in small: a reference validates identity with the
+ * The source below is the credit-reference rule of the FI case (original
+ * lines 534–566) in small, hand-written: a reference validates identity with the
  * full key and the customer; it never overrides the posted terms.
  */
 

@@ -16,7 +16,7 @@ import { programSummaryFactsOf } from '../lib/program-summary-facts';
 
 /**
  * SD review (12.10.2026): three places where the 3.0.11 documentation of an
- * SD order cockpit contradicted the release notes. Each is fixed generically
+ * SD order-processing program contradicted the release notes. Each is fixed generically
  * and held here on a hand-written fixture, not on the reviewed program.
  *
  *   (a) A `CASE` without `WHEN OTHERS` (radio buttons) read as three optional
@@ -193,7 +193,7 @@ test.describe('(c) a component include is a structure definition, not a missing 
     '         INCLUDE TYPE bdcmsgcoll.',
     'TYPES:   flag TYPE c LENGTH 1,',
     '       END OF ty_row.',
-    'INCLUDE zsd_cockpit_top.',
+    'INCLUDE zsd_orders_top.',
     'START-OF-SELECTION.',
     '  PERFORM run.',
     'FORM run.',
@@ -211,7 +211,7 @@ test.describe('(c) a component include is a structure definition, not a missing 
     expect(statementKind(structure as string)).toBe('structure');
     expect(statementKind(type as string)).toBe('structure');
     // A real source include is still said, as before.
-    expect(texts.some((t) => /^The report needs the include zsd_cockpit_top\b/i.test(t))).toBe(true);
+    expect(texts.some((t) => /^The report needs the include zsd_orders_top\b/i.test(t))).toBe(true);
   });
 
   test('the business reading of the documentation does not carry them; the appendix does', () => {

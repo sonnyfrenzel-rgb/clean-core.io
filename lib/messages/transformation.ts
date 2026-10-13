@@ -161,7 +161,7 @@ export function tfCostLine(maxCalls: number, keySource: 'byok' | 'community' | n
   return `No analysis run used · up to ${plural(maxCalls, 'model call')}${key} for this generation`;
 }
 
-/** "Writing the code for ZCO_CC_CLOSE_SIMULATION". */
+/** "Writing the code for Z_CO_CASE". */
 export function tfRunTitle(program: string | null | undefined): string {
   const name = typeof program === 'string' ? program.trim() : '';
   return name ? `Writing the code for ${name}` : 'Writing the code';

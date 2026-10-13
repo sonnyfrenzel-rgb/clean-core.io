@@ -16,7 +16,7 @@ import { isListedStep, readingPath, type PathItem } from '../lib/process-documen
  * documentation follows the order a run takes, not the order the map stores
  * its elements in.
  *
- * The CO close simulation read "load demo data → simulate → export → display
+ * The CO case read "load demo data → simulate → export → display
  * → authorize → read live data": the map draws the first branch of
  * `IF p_demo = gc_x` to the end of the process and appends the second one,
  * and the list numbered them in that order. The fixture has the same shape —

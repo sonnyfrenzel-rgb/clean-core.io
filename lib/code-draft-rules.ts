@@ -2,7 +2,7 @@
  * Rules for the Transformation code draft, and a deterministic lint over what
  * the model wrote.
  *
- * External review of FI_Collection_Worklist, F-01 and F-02 (owner, 11.10.2026):
+ * External review of the FI case, F-01 and F-02 (owner, 11.10.2026):
  * the generated service looked up a credit memo's reference with
  *
  *     const referenceItem01 = filteredItems.find(i => i.belnr === '1900000001');

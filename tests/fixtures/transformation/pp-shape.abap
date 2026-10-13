@@ -1,10 +1,10 @@
 *&---------------------------------------------------------------------*
 *& Hand-written fixture for tests/transformation-*.spec.ts, modelled on
-*& the shape of a PP/MM kit simulation: packed quantities with three
+*& the shape of a PP/MM simulation: packed quantities with three
 *& places, a skipping CONTINUE and CHECK inside loops, an early RETURN,
 *& one large demo-data routine. Not a customer program.
 *&---------------------------------------------------------------------*
-REPORT zfx_pp_kit.
+REPORT zfx_pp_sim.
 
 TYPES ty_qty TYPE p LENGTH 12 DECIMALS 3.
 TYPES: BEGIN OF ty_comp,

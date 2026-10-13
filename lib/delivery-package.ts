@@ -1,6 +1,6 @@
 /**
  * The delivery package tells the truth (owner, 11.10.2026; external review of
- * the FI_Collection_Worklist bundle, findings F-04, F-05, F-08, F-09, F-10).
+ * the FI case's bundle, findings F-04, F-05, F-08, F-09, F-10).
  *
  * The bundle used to carry a README written before its files were known: it
  * named `srv/service.cds` and `npm run dev` whether or not the package had

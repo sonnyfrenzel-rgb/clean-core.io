@@ -22,8 +22,8 @@ import { raciFileTable } from '../lib/raci-edit';
 import { processStepsOf } from '../lib/business-summary';
 
 /**
- * Owner 11.10.2026, on the external review of the FI Collection Worklist
- * delivery package (F-06, F-07, §6.1, §8): a documentation is a help — correct,
+ * Owner 11.10.2026, on the external review of the FI case's delivery
+ * package (F-06, F-07, §6.1, §8): a documentation is a help — correct,
  * consumable, exportable. These specs hold, without a server:
  *
  *   1. readable first — every rendering opens with the business page (what it

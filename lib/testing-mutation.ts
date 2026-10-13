@@ -1,7 +1,7 @@
 /**
  * The mutation probe: does the suite constrain the behaviour at all?
  *
- * External review of FI_Collection_Worklist, F-05: all ten generated tests
+ * External review of the FI case, F-05: all ten generated tests
  * passed although a credit memo took a hard-coded foreign reference (F-01) and
  * the totals and the CSV ignored the customer filter (F-02). The reviewer's
  * question was the right one: *would a wrong reference or a dropped export
