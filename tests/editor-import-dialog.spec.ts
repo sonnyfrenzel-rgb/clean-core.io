@@ -21,7 +21,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
  */
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.resolve(ROOT, 'tmp', 'editor-import-dialog');
+// One directory per worker process: the suite runs fully parallel, so several
+// workers run this beforeAll at once, and esbuild rewrites the bundle in place.
+// A shared file can be read by one worker while another is half-way through
+// writing it ("Unterminated string constant" in a full run). Same as score-hero.
+const OUT = path.resolve(ROOT, 'tmp', 'editor-import-dialog', String(process.pid));
 
 const dialogStandIn: Plugin = {
   name: 'dialog-stand-in',
