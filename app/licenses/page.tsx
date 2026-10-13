@@ -9,7 +9,7 @@ import type { SapReferenceKey } from '@/lib/sap-references';
 export const metadata: Metadata = withTwitterCard({
   title: 'Third-Party Notices & Licenses | Clean-Core.io',
   description:
-    'Open-source software and data Clean-Core.io is built on, with its attributions — SAP Cloudification Repository and SAP Architecture Center (Apache-2.0), DSAG ABAP-Leitfaden (CC BY 4.0), SAP ABAP samples and file formats, Clean ABAP.',
+    'Licenses and attributions for the software and data behind Clean-Core.io: SAP Cloudification Repository, SAP Architecture Center, DSAG guide, Clean ABAP.',
   alternates: {
     canonical: 'https://clean-core.io/licenses',
   },

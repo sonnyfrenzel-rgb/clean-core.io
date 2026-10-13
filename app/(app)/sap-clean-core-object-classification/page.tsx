@@ -15,7 +15,7 @@ import { ABCD_META, GRADES, type CloudReadinessGrade } from '@/lib/abap/abcd-cla
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Object Classification (A–D) | Clean-Core.io',
-  description: 'SAP classifies clean core objects into levels A–D by release status, upgrade safety and extensibility compliance, the levels that replaced the three-tier model. How we derive it.',
+  description: "SAP's clean core levels A–D grade objects by release status and upgrade safety; in 2025 they replaced the three-tier model. How Clean-Core.io derives them.",
   alternates: {
     canonical: 'https://clean-core.io/sap-clean-core-object-classification',
   },
