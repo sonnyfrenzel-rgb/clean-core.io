@@ -5,7 +5,7 @@ import { Cloud, Shield } from 'lucide-react';
 import CcSelect from '@/components/cc/Select';
 import { pinnedReleaseOptions } from '@/lib/assessment-profile';
 import { wt } from '@/lib/workspace-messages';
-import { CLOUD_ERP_PRIVATE_FIRST } from '@/lib/sap-naming';
+import { CLOUD_ERP_PRIVATE } from '@/lib/sap-naming';
 
 export type TargetEdition = 'public' | 'private';
 
@@ -25,10 +25,11 @@ export type TargetEdition = 'public' | 'private';
 export const TARGET_EDITION_OPTIONS: readonly { value: TargetEdition; title: string; text: string }[] = [
   {
     value: 'private',
-    // The first mention on every screen that asks (`lib/sap-naming.ts`): the
-    // card is where the reader meets the name (QA 5a559787: 28ab38ac9d05).
-    title: CLOUD_ERP_PRIVATE_FIRST,
-    text: 'Also SAP S/4HANA on-premise. Released APIs first; where SAP offers none, custom code may wrap the unreleased object, with an influence request to SAP.',
+    // The title is a label, so the short name (`lib/sap-naming.ts`); the former
+    // name stands first in the text under it, as on the Analyze page's
+    // deployment cards (owner decision 13.10.2026; QA 5a559787: 28ab38ac9d05).
+    title: CLOUD_ERP_PRIVATE,
+    text: 'Formerly SAP S/4HANA Cloud Private Edition; also SAP S/4HANA on-premise. Released APIs first; where SAP offers none, custom code may wrap the unreleased object, with an influence request to SAP.',
   },
   {
     value: 'public',
