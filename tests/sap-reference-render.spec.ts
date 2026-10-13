@@ -190,6 +190,12 @@ test.describe('SAP documentation on GitHub (CC BY 4.0)', () => {
     expect(html).toContain('SAP-docs/s4hana-fixture/docs/other.md@ffffffff');
     expect(html).toContain('href="https://api.sap.com/"');
     expect(html.match(/data-sap-id-citation/g)).toHaveLength(1);
+    // The citation carries the same attribution CC BY asks for: the document's
+    // own link, the licence link, and the full attribution as its title.
+    expect(html).toContain(`href="${OTHER}"`);
+    expect(html).toContain('href="https://creativecommons.org/licenses/by/4.0/"');
+    expect(html).toContain('CC BY 4.0</a>');
+    expect(html).toContain(`title="${attribution(OTHER)}"`);
   });
 
   test('a mark without an attributed source carries no citation', () => {
