@@ -240,7 +240,7 @@ export default function LicensesPage() {
                 {SAP_REFERENCES.map((s) => {
                   const r = SAP_REFERENCE_REVIEWED[s.key];
                   return (
-                    <li key={s.key} className="rounded-2xl border border-cc-line bg-cc-surface p-4 space-y-1.5">
+                    <li key={s.key} className="rounded-2xl border border-cc-line bg-cc-surface p-4 space-y-2">
                       <p>
                         <strong>{s.title}</strong> —{' '}
                         <a href={`https://github.com/${r.repo}/tree/${r.commit}`} className={LINK} target="_blank" rel="noopener noreferrer">github.com/{r.repo}</a>{' '}
