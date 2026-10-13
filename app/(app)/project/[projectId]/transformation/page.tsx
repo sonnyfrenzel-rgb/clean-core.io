@@ -1290,6 +1290,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { createRunnerVerifier, runnerOverHttp, affFormatsCheck },
         { guardBodyOf, candidateFiles, assembleEngineLed },
         { sha256Hex },
+        { affSchemaSource },
       ] = await Promise.all([
         import('@/lib/transformation/scaffold-client'),
         import('@/lib/transformation/lease-client'),
@@ -1297,6 +1298,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         import('@/lib/transformation/verify'),
         import('@/lib/transformation/engine-led'),
         import('@/lib/artefact-digest'),
+        import('@/lib/transformation/aff-schemas'),
       ]);
       const prep = await prepareScaffold(
         {
@@ -1378,7 +1380,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             generatedCodeLints(candidate, { decimalFields: packedDecimalFields(legacyCode) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
           runOnRunner: runnerOverHttp(projectId as string, postJson),
           // The generated ABAP object files against SAP's file formats; no schema is in this build until the AFF sync lands, so every file reads "not run".
-          formats: prep.scaffold.track === 'rap' ? affFormatsCheck(() => null) : undefined,
+          formats: prep.scaffold.track === 'rap' ? affFormatsCheck(affSchemaSource) : undefined,
         });
         const result = await runGeneration({
           units: prep.fillUnits,

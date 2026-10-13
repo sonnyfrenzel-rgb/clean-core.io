@@ -5,6 +5,7 @@ import { buildRapScaffold } from '../lib/transformation';
 import { affCheck, affCount, affFileNameOf, AFF_NOT_RUN, type AffSchemaSource } from '../lib/transformation/aff-check';
 import { affFormatsCheck, createRunnerVerifier } from '../lib/transformation/verify';
 import { checkPhrase } from '../lib/transformation/check-words';
+import { AFF_SCHEMAS, affSchemaSource } from '../lib/transformation/aff-schemas';
 import { fixture, planOf, ROOT } from './helpers/transformation-scaffold';
 
 /**
@@ -142,4 +143,12 @@ test('without the hook (Node track) the verifier says nothing about file formats
   const outcome = await verify(new Map(), { round: 0, signal: new AbortController().signal });
   expect(outcome.checks.some((c) => c.kind === 'formats')).toBe(false);
   expect(outcome.notRun.some((n) => n.kind === 'formats')).toBe(false);
+});
+
+test('the browser\'s schema table holds every schema the sync copied, and answers by type and version', () => {
+  const dir = path.resolve(__dirname, '..', 'lib/generated/aff-schemas');
+  const copied = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
+  expect(Object.keys(AFF_SCHEMAS).sort()).toEqual(copied);
+  expect(affSchemaSource('DDLS', '1')).toBe(AFF_SCHEMAS['ddls-v1']);
+  expect(affSchemaSource('ddls', '9')).toBeNull();
 });

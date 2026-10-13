@@ -268,8 +268,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     checks.length > 0
       ? ['  // The original checks (read by the engine):', ...authorityLines(checks).map((l) => `  //   ${l}`)]
       : ['  // The original makes no AUTHORITY-CHECK: decide who may read these records before you replace the condition.'];
-  // SAP sample: abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#r_traveltp_cd.dcls.asdcls and
-  // #dmo#c_traveltp_cd.dcls.asdcls — a mapping role per view, the projection inheriting the root's conditions. The
+  // SAP sample: SAP-samples/abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#r_traveltp_cd.dcls.asdcls
+  // and #dmo#c_traveltp_cd.dcls.asdcls — a mapping role per view, the projection inheriting the root's conditions. The
   // sample's root grants `where true` and the projection inherits with `default true`; the scaffold grants
   // `where false` and inherits with `default false`, so nothing is readable until a developer writes the condition.
   files.push({
@@ -317,7 +317,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       `define behavior for ${root.toUpperCase()} alias Rec`,
       `persistent table ${table}`,
       'lock master',
-      // SAP sample: abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#r_traveltp_cd.bdef.asbdef
+      // SAP sample: SAP-samples/abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#r_traveltp_cd.bdef.asbdef
       'authorization master ( instance, global )',
       'etag master local_last_changed',
       '{',
@@ -422,7 +422,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     checks.length > 0
       ? `the original checks ${checkedObjects} (${checks.map((c) => `L${c.lineStart}`).join(', ')})`
       : 'the original makes no AUTHORITY-CHECK - decide who may change these records';
-  // SAP sample: abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#bp_r_traveltp_cd.clas.locals_imp.abap —
+  // SAP sample: SAP-samples/abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#bp_r_traveltp_cd.clas.locals_imp.abap
   // global and instance authorization answer per requested operation from is_*_granted helpers that hold the
   // AUTHORITY-CHECK, and report a message when they deny. Where the sample then simulates full authorization
   // ("not to be used in productive code"), the scaffold denies: the helpers return abap_false until a developer
@@ -660,7 +660,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         '',
       ].join('\n'),
     });
-    // SAP sample: abap-cheat-sheets@d43eb13c 22_Released_ABAP_Classes.md "Application Jobs" — typed constants of
+    // SAP sample: SAP-samples/abap-cheat-sheets@d43eb13c 22_Released_ABAP_Classes.md
+    // "Application Jobs" — typed constants of
     // CL_APJ_DT_CREATE_CONTENT, an existence check before each create, the long text of CX_APJ_DT_CONTENT. The sample
     // keeps catalog creation and the job in one class; the scaffold keeps the one-time setup apart from the job.
     const catalog = `Z${s.toUpperCase()}_JOB_CAT`;

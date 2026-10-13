@@ -3417,6 +3417,25 @@
       "measured": {
         "lines": 873
       }
+    },
+    {
+      "path": "tests/fixtures/aff/README.md",
+      "kind": "notice",
+      "purpose": "Provenance of the AFF schema and example fixtures used by the file-format check's specs: source repository, commit, MIT licence",
+      "audience": "Developers",
+      "saysToday": "The fixtures are copied unchanged from SAP/abap-file-formats at the recorded commit under its MIT licence.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Licence and provenance of copied third-party files must stay next to them.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [],
+      "measured": {
+        "lines": 11
+      }
     }
   ],
   "served": [
