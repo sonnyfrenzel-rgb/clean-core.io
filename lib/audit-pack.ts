@@ -17,6 +17,7 @@
 
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { csvCell } from '@/lib/csv-formula';
 import { buildEvidenceChain } from '@/lib/evidence-chain';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { profileCoverage } from '@/lib/assessment-profile';
@@ -109,17 +110,6 @@ const ARCH_LABELS: Record<string, string> = {
   keep: 'Keep',
   standard: 'Move to SAP standard',
 };
-
-/**
- * Guard a CSV cell against spreadsheet formula injection: a value that a
- * spreadsheet would evaluate (leading =, +, -, @, tab, or CR) is prefixed with a
- * single quote, then quoted and its inner quotes doubled per RFC 4180.
- */
-function csvCell(value: unknown): string {
-  let s = String(value ?? '');
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return `"${s.replace(/"/g, '""')}"`;
-}
 
 /**
  * Normalise a value for a Markdown table cell: collapse newlines, and

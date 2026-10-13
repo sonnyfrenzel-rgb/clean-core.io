@@ -18,6 +18,7 @@
 
 import { deriveBusinessRules } from './abap/business-rule-set';
 import { ruleAnchor } from './rule-anchor';
+import { csvCell } from './csv-formula';
 import { readProcessStates, subjectIdsOf, type ProcessStateView, type StateEntry, type StateSubject } from './process-states';
 import { ruleTraceOf } from './testing-rule-trace';
 import { formatTextDate } from './format';
@@ -316,13 +317,13 @@ export const RULE_REGISTER_COLUMNS = Object.freeze([
  * a semicolon (the delimiter a German spreadsheet assumes), a quote or a line
  * break inside a rule's meaning or an account's note can never split or shift
  * a row (owner, 12.10.2026: the package has had CSV-delimiter findings
- * before). A value a spreadsheet would evaluate (leading =, +, -, @, tab or
- * CR) is prefixed with a single quote — the audit pack's `03-findings.csv`
- * guard, since notes are typed by accounts and meanings quote ABAP.
+ * before). A value a spreadsheet would evaluate (=, +, -, @ — also after
+ * leading spaces — or a leading tab or CR) is prefixed with a single quote: the
+ * same guard as the audit pack's `03-findings.csv` (`lib/csv-formula.ts`), since
+ * notes are typed by accounts and meanings quote ABAP.
  */
 export function ruleCsvField(value: string): string {
-  const s = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-  return `"${s.replace(/"/g, '""')}"`;
+  return csvCell(value);
 }
 
 /**
