@@ -168,7 +168,8 @@ Read with `gcloud run services describe clean-core --region=europe-west1`
 | In front of it | **Cloud Run domain mapping**: no load balancer, no backend services, no Cloud Armor policies (`gcloud compute backend-services list` and `security-policies list` both return 0 items) | describe; `lib/rate-limit.ts:110` says the same |
 
 Limits that already exist: the Firestore hourly limit `gemini:<uid>` at 20/h
-(`route.ts:270`, admins exempt), the generation lease (3 an hour, 48 calls,
+(`route.ts:270`, admins exempt at the time; since 3.0.13 they have an hourly
+model-call limit of their own, `gemini-admin:<uid>` at 200/h, SEC-2026-827), the generation lease (3 an hour, 48 calls,
 4 in flight, 15 minutes; `lib/transformation/lease.ts:43-50`), and the lease
 route's own `transformation-lease-route:<uid>` limit at 30/h. **Nothing**
 limits attempts. `middleware.ts` sets the CSP and headers only, and nothing

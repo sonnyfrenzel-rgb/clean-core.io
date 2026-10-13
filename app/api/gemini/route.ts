@@ -11,6 +11,7 @@ import {
   getAdminDb,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { MODEL_HOURLY_WINDOW_MS, modelHourlyLimit } from '@/lib/model-hourly-limit';
 import {
   isModelStage,
   modelStageEnabled,
@@ -272,8 +273,13 @@ export async function POST(request: NextRequest) {
         if (!peek.ok) {
           return NextResponse.json({ error: peek.error, code: peek.code }, { status: peek.status });
         }
-      } else if (!decodedToken.admin) {
-        // Skip rate limiting for admin users
+      } else {
+        // Every account has an hourly model-call limit, administrators included:
+        // an account with the admin claim is counted in a bucket of its own with
+        // a higher ceiling (`lib/model-hourly-limit.ts`, SEC-2026-827), by the
+        // same Firestore-backed window. The bucket is chosen first, so there is
+        // one call to the limiter for both.
+        //
         // Keyed on the account alone. The key used to carry the client address
         // as well, which makes the ceiling per account *and* address: the same
         // account reaching the shared community key through a second address got
@@ -282,7 +288,8 @@ export async function POST(request: NextRequest) {
         // no bound on an account at all. The address is not a second identity of
         // the caller here — the account is the thing being metered, and it is
         // already established by the verified token.
-        await assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000);
+        const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);
+        await assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS);
       }
     } catch (rateErr: any) {
       return NextResponse.json(

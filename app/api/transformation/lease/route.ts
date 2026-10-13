@@ -8,6 +8,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { MODEL_HOURLY_WINDOW_MS, modelHourlyLimit } from '@/lib/model-hourly-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { modelStageEnabled, MODEL_STAGE_LABELS, STAGE_DISABLED_CODE } from '@/lib/model-stages';
@@ -173,15 +174,16 @@ export async function POST(req: NextRequest) {
     }
 
     // The one unit of the account's hourly model limit this generation costs
-    // — the same key and ceiling as a call to /api/gemini without a lease.
-    if (!decodedToken.admin) {
-      try {
-        await assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000);
-      } catch (rateErr: unknown) {
-        await voidLease(db, { projectId, uid: decodedToken.uid, leaseId: outcome.lease.leaseId, issuedAt: now });
-        const q = rateErr as { message?: string; status?: number };
-        return NextResponse.json({ error: q?.message || 'Too many requests.', code: 'model-hourly-limit' }, { status: q?.status || 429 });
-      }
+    // — the same bucket and ceiling as a call to /api/gemini without a lease,
+    // the administrators' own bucket for an account with the admin claim
+    // (`lib/model-hourly-limit.ts`, SEC-2026-827).
+    try {
+      const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);
+      await assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS);
+    } catch (rateErr: unknown) {
+      await voidLease(db, { projectId, uid: decodedToken.uid, leaseId: outcome.lease.leaseId, issuedAt: now });
+      const q = rateErr as { message?: string; status?: number };
+      return NextResponse.json({ error: q?.message || 'Too many requests.', code: 'model-hourly-limit' }, { status: q?.status || 429 });
     }
     return NextResponse.json({ lease: leaseView(outcome.lease), reused: false });
   } catch (err: unknown) {
