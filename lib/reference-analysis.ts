@@ -129,7 +129,7 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
     .filter((l) => l.trim() && !/^\s*\*/.test(l)).length;
 
   const started = Date.now();
-  const evidence = buildAbapEvidence(code, REFERENCE_FILE, 'private');
+  const evidence = buildAbapEvidence(code, REFERENCE_FILE, 'private', undefined, APP_VERSION);
   const durationMs = Math.max(1, Date.now() - started);
   // Produced now, by this engine — so by this engine's score rule.
   const route = routeExtensibility(evidence, 'private', APP_VERSION);

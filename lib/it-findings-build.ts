@@ -112,14 +112,21 @@ function rowOf(
  * not show a Public Cloud level here and a PCE level in its run (owner
  * decision 30.09.2026). Omitted, the default file — the run route's own
  * default for a project that names no edition.
+ *
+ * `engineVersion` is the engine of the run the rows stand for
+ * (`engineVersionOfProject`, roadmap 3.0.12): a run signed by an older engine
+ * shows the findings it signed, without the checks of a later one. Omitted,
+ * the current engine — every caller outside the specs names it
+ * (`tests/engine-version-callers.spec.ts`).
  */
 export function findingsOf(
   source: string,
   fileName: string,
   deployment?: 'public' | 'private',
   catalogSnapshot?: string,
+  engineVersion?: string | null,
 ): ItFindingsSource {
-  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshot);
+  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshot, engineVersion);
   const rules = deriveBusinessRules(source);
   const facts = buildProcessFacts(source);
   const containers = facts.structure.containers;

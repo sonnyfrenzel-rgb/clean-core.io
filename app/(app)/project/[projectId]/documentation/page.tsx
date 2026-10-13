@@ -23,6 +23,7 @@ import { businessSopPrompt, enrichBusinessLayer, sopStepInfos } from '@/lib/busi
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import LevelDRegister from '@/components/documentation/LevelDRegister';
@@ -1602,6 +1603,7 @@ export default function DocumentationPage() {
                    this reads it and never writes it. */
                 usage={project?.usageReport ?? null}
                 catalogTarget={project ? catalogLookupTargetOf(project) : null}
+                engineVersion={engineVersionOfProject(project)}
                 plane={resolved.plane}
                 onPlaneChange={openPlane}
                 selected={resolved.node}

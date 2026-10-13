@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildDemoProject } from '@/lib/demo-project';
 import { findingsOf } from '@/lib/it-findings-build';
+import { APP_VERSION } from '@/lib/version';
 import { levelsOf } from '@/lib/workspace-row-facts';
 import { DEMO_SOURCE_FILE } from '@/lib/demo-marks';
 import type { WorkspaceDemoRow } from '@/components/workspace/WorkspaceListReport';
@@ -33,7 +34,7 @@ function computeDemoListRow(): WorkspaceDemoRow {
   const source = fs
     .readFileSync(path.join(process.cwd(), 'public', 'starter-examples', DEMO_SOURCE_FILE), 'utf8')
     .replace(/\r\n/g, '\n');
-  const findings = findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot);
+  const findings = findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot, APP_VERSION);
   const levels = levelsOf(findings);
   return {
     lines: demo.totalLines,

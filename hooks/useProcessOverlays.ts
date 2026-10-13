@@ -63,9 +63,15 @@ export function useProcessOverlays(
   usage: UsageReport | null | undefined,
   /** The project's target profile — the levels are graded under it (`useAbcdCatalogLookup`). */
   catalogTarget: CatalogLookupTarget | null,
+  /**
+   * The engine of the project's signed run (`engineVersionOfProject`, roadmap
+   * 3.0.12): the findings overlay shows what that run signed, without the
+   * checks of a later engine.
+   */
+  engineVersion: string | null,
 ): OverlayDefinition[] {
   const [held, setHeld] = useState<{ key: string; value: Derived }>({ key: '', value: EMPTY });
-  const key = useMemo(() => (source ? sha256Hex(source) : ''), [source]);
+  const key = useMemo(() => (source ? `${engineVersion ?? ''}:${sha256Hex(source)}` : ''), [source, engineVersion]);
   const fileName = model.fileName;
 
   useEffect(() => {
@@ -81,7 +87,7 @@ export function useProcessOverlays(
       if (cancelled) return;
       const calls = callsModule.readCallGraph(source);
       const sites = objectSites(tablesModule.readTableDependencies(source), calls);
-      const findings = evidenceModule.buildAbapEvidence(source, fileName).findings;
+      const findings = evidenceModule.buildAbapEvidence(source, fileName, undefined, undefined, engineVersion).findings;
       if (cancelled) return;
       setHeld({ key, value: { sites, findings, calls } });
     };
@@ -93,7 +99,7 @@ export function useProcessOverlays(
     return () => {
       cancelled = true;
     };
-  }, [source, key, fileName]);
+  }, [source, key, fileName, engineVersion]);
 
   const derived = held.key === key ? held.value : EMPTY;
 

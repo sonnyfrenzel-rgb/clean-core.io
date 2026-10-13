@@ -402,6 +402,10 @@ export async function POST(req: NextRequest) {
       targetDeployment as 'public' | 'private',
       // Roadmap 7.10 - the object states come from the snapshot the profile names.
       catalogSnapshot.registryKey,
+      // A new run, made by this engine and stamped with it below
+      // (`analyzerVersion: APP_VERSION`) — the version-gated checks of this
+      // engine are the ones it signs.
+      APP_VERSION,
     );
     // Scored by this engine's rule; the run signs `analyzerVersion: APP_VERSION`
     // below, which is how a recomputation later finds the same rule.

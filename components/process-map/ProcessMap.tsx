@@ -170,6 +170,12 @@ export interface ProcessMapProps {
    */
   catalogTarget: CatalogLookupTarget | null;
   /**
+   * The engine the findings overlay is built with — `engineVersionOfProject(project)`,
+   * so the map shows the findings the project's run signed (roadmap 3.0.12).
+   * Required for the same reason as `catalogTarget`.
+   */
+  engineVersion: string | null;
+  /**
    * Roadmap 3.2 — keep the draft as a revision. Handed straight to the editor.
    *
    * Omitted here means omitted there, and the editor's footer says saving is not
@@ -235,6 +241,7 @@ export default function ProcessMap({
   measuredAt = null,
   usage = null,
   catalogTarget,
+  engineVersion,
   save,
   openLatest,
   layout = 'workspace',
@@ -307,7 +314,7 @@ export default function ProcessMap({
     () => buildOverlays(model, nav, rules.byNode, !rules.ready ? 'loading' : rules.failed ? 'failed' : 'ready'),
     [model, nav, rules.byNode, rules.ready, rules.failed],
   );
-  const evidenceOverlays = useProcessOverlays(source, model, nav, usage, catalogTarget);
+  const evidenceOverlays = useProcessOverlays(source, model, nav, usage, catalogTarget, engineVersion);
   const overlays = useMemo(
     () => [...modelOverlays, ...evidenceOverlays],
     [modelOverlays, evidenceOverlays],

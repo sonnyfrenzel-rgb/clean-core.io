@@ -83,6 +83,7 @@ import {
 } from '@/lib/demo-tour';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { routeLabel } from '@/lib/sap-naming';
 import AnalysisReady from '@/components/workspace/AnalysisReady';
 import { ResultReadyTag } from '@/components/workspace/ToolBar';
@@ -538,6 +539,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         model={processMap}
         source={source}
         catalogTarget={catalogLookupTargetOf(project)}
+        engineVersion={engineVersionOfProject(project)}
         plane={plane}
         onPlaneChange={setPlane}
         selected={selected}

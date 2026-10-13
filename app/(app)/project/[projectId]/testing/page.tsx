@@ -65,6 +65,7 @@ import { readProgram } from '@/components/testing/program-reading';
 import { coveringTestRunReceipt, viaContractOfRun } from '@/lib/test-receipt';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
 import TestingClosureCard from '@/components/testing/TestingClosureCard';
 import { CLOSED_NOT_VERIFIED, failureSentence, testingClosureReading } from '@/lib/testing-closure';
@@ -1091,6 +1092,8 @@ export default function TestingSandboxPage() {
   const [tickState, setTickState] = useState<{ code: string; ticks: StripTick[] } | null>(null);
   const evidenceFile = project?.auditMetadata?.inputFingerprint?.fileName || 'main.abap';
   const evidenceDeployment = targetEditionOf(project?.s4Deployment);
+  /** The engine of the signed run (roadmap 3.0.12): an older run keeps the findings it signed. */
+  const evidenceEngine = engineVersionOfProject(project);
   useEffect(() => {
     const code = project?.legacyCode;
     if (typeof code !== 'string' || !code.trim()) return undefined;
@@ -1098,7 +1101,7 @@ export default function TestingSandboxPage() {
     import('@/lib/abap/evidence-model')
       .then(({ buildAbapEvidence }) => {
         if (!live) return;
-        const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment);
+        const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment, undefined, evidenceEngine);
         setTickState({
           code,
           ticks: report.findings.flatMap((f) => {
@@ -1114,7 +1117,7 @@ export default function TestingSandboxPage() {
     return () => {
       live = false;
     };
-  }, [project?.legacyCode, evidenceFile, evidenceDeployment]);
+  }, [project?.legacyCode, evidenceFile, evidenceDeployment, evidenceEngine]);
   /** Ticks only for the source they were computed from. */
   const findingTicks: StripTick[] = tickState && tickState.code === project?.legacyCode ? tickState.ticks : [];
 

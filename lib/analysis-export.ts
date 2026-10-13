@@ -28,6 +28,7 @@ import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
@@ -404,7 +405,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
 
             ${(() => {
               // Evidence Findings table for Confluence export — deduplicated, sorted by severity
-              const evidenceForExport = legacyCode ? buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private').findings : [];
+              const evidenceForExport = legacyCode ? buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private', undefined, engineVersionOfProject(project)).findings : [];
               if (evidenceForExport.length === 0) return '';
               const sevOrd: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
               const grp = new Map<string, { f: typeof evidenceForExport[0]; lines: number[]; snippets: string[] }>();

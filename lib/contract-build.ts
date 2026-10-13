@@ -1,7 +1,7 @@
 import { buildAbapEvidence, type AbapEvidenceReport } from '@/lib/abap/evidence-model';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
-import { signedEngineVersionOf } from '@/lib/score-rule';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import {
   buildArchitectureContract,
   targetRouteOf,
@@ -133,7 +133,12 @@ function routeOfProject(state: ContractProjectState) {
   // The catalog of the project's target profile, the one the signed run read
   // (roadmap 7.10; owner decision 30.09.2026). Read from the default list, a
   // PCE project's contract stood on other object states than its run.
-  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshotKeyForProject(state));
+  //
+  // And the engine of the signed run (roadmap 3.0.12): a run made by an older
+  // engine is rebuilt with that engine's checks and route rule, so the contract
+  // stands on the findings the run signed (`lib/run-engine-version.ts`).
+  const engineVersion = engineVersionOfProject(state);
+  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshotKeyForProject(state), engineVersion);
   // The router needs a model to score with. `private` is the conservative one —
   // it is the deployment under which fewer constructs are driven off the stack,
   // so an unbound target cannot produce a *stronger* recommendation than a
@@ -142,8 +147,8 @@ function routeOfProject(state: ContractProjectState) {
   // The signed run's engine version picks the score rule; the contract reads
   // only the route, which no score rule changes, but no caller picks a rule
   // silently (lib/score-rule.ts).
-  const route = routeExtensibility(evidence, deployment || 'private', signedEngineVersionOf(state));
-  return { source, deployment, evidence, route, recommended: targetRouteOf(route) };
+  const route = routeExtensibility(evidence, deployment || 'private', engineVersion);
+  return { source, deployment, evidence, route, engineVersion, recommended: targetRouteOf(route) };
 }
 
 /**
@@ -195,7 +200,7 @@ export function contractOfProject(
 ): ContractBuild {
   const routed = routeOfProject(state);
   if (!routed) return { ok: false, code: 'no-source' };
-  const { source, deployment, evidence, route, recommended } = routed;
+  const { source, deployment, evidence, route, engineVersion, recommended } = routed;
 
   const deviation = declaredDeviation(state, recommended);
   if (deviation.kind === 'off-track') return { ok: false, code: 'off-track', decided: deviation.decided };
@@ -211,7 +216,7 @@ export function contractOfProject(
       route,
       deviation: deviation.deviation,
       inputsDiffer: inputsDifferingFromRun(inputManifest, source, deployment),
-      engineVersion: signedEngineVersionOf(state),
+      engineVersion,
     }),
   };
 }

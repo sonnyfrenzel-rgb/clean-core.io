@@ -11,6 +11,7 @@ import RequirementsEntryCard from '@/components/requirements/RequirementsEntryCa
 import SectionBoundary from '@/components/SectionBoundary';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
+import { APP_VERSION } from '@/lib/version';
 import { ARCHITECTURE_OF_ROUTE } from '@/lib/design-recommendation';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { detectFindings } from '@/lib/abap/findings-detector';
@@ -77,7 +78,7 @@ export default function DemoDesign({
   const model = useMemo(
     () =>
       data?.contract
-        ? architectureCanvasModel({ contract: data.contract, findings: data.findings, deployment: demo.deployment })
+        ? architectureCanvasModel({ contract: data.contract, findings: data.findings, deployment: demo.deployment, engineVersion: APP_VERSION })
         : null,
     [data, demo.deployment],
   );

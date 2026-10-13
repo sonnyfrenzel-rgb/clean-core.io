@@ -118,7 +118,7 @@ async function main() {
     const code = fs.readFileSync(path.join(EXAMPLES_DIR, file), 'utf8');
     let route = 'n/a';
     try {
-      const evidence = buildAbapEvidence(code, file, 'public');
+      const evidence = buildAbapEvidence(code, file, 'public', undefined, APP_VERSION);
       const rep: any = routeExtensibility(evidence, 'public', APP_VERSION);
       route = rep.recommendedRoute;
       const isAbapCloud = !String(route).includes('BTP');

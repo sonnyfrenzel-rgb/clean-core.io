@@ -496,7 +496,7 @@ export function buildDemoProject(): DemoProject {
   // The catalog of the demo's target profile, not the default list: the demo
   // assumes the Private Edition, and a run of it would read the PCE snapshot.
   const catalogSnapshot = catalogSnapshotKeyForProject({ s4Deployment: DEMO_DEPLOYMENT });
-  const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
+  const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot, APP_VERSION);
   // The demo is made by this engine, so by this engine's score rule — the
   // breakdown below reads the same one, or the check after it refuses.
   const route = routeExtensibility(evidence, DEMO_DEPLOYMENT, APP_VERSION);

@@ -49,7 +49,7 @@ export function buildDemoDesign(demo: Pick<DemoProject, 'deployment' | 'catalogS
   const built = contractOfProject({ legacyCode: source, s4Deployment: demo.deployment, analyzerVersion: APP_VERSION }, null);
   const data: DemoDesignData = {
     contract: built.ok ? built.contract : null,
-    findings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot).rows,
+    findings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot, APP_VERSION).rows,
     source,
   };
   assertNoTrustChain(data);
