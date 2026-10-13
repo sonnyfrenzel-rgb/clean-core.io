@@ -176,7 +176,7 @@ export default function LicensesPage() {
               <p>
                 Clean-Core.io includes the IDs and titles of SAP communication scenarios extracted from a few documents of
                 SAP&rsquo;s documentation sources on GitHub (<a href="https://github.com/SAP-docs" className={LINK} target="_blank" rel="noopener noreferrer">github.com/SAP-docs</a>),
-                © SAP SE or an SAP affiliate company and contributors. Each fact is shown with the document and the commit it was read from.
+                © SAP SE or an SAP affiliate company and contributors. In the app, each fact&rsquo;s mark names the document and the commit it was read from and links to it; an export lists those documents and commits in an attribution section.
               </p>
               <p>
                 Licensed under the <strong>Creative Commons Attribution 4.0 International</strong> licence (CC BY 4.0), as each

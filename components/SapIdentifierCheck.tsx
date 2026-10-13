@@ -14,6 +14,7 @@ import {
   type SapIdCheck,
   type SapIdStatus,
   sapIdentifierSourcesNote,
+  sapIdCitations,
 } from '@/lib/sap-reference-check';
 import { loadSapNameLists, onSapNameListsChange, sapNameListsVersion } from '@/lib/sap-identifiers';
 
@@ -53,17 +54,22 @@ const STATE: Record<SapIdStatus, { state: Exclude<SemanticState, 'success'>; hol
 
 export function SapIdMark({ check }: { check: SapIdCheck }) {
   const s = STATE[check.status];
+  // CC BY 4.0: an attributed fact carries its document and commit in the mark itself,
+  // visible where the fact stands, with the full attribution as the title (QA bdf1b45234a6).
+  const citations = sapIdCitations(check);
+  const ownCited = !!check.attribution;
   return (
     <span
       data-sap-id-check={check.status}
       data-sap-id={check.id}
+      title={citations.length ? citations.map((c) => c.attribution).join(' | ') : undefined}
       className={cn('ml-1 inline cc-text-meta font-normal not-italic', STATE_CLASSES[s.state].text)}
     >
       <span className="mr-1 inline-flex align-middle">
         <CcStateDot state={s.state} hollow={s.hollow} />
       </span>
       {sapIdMark(check)}
-      {check.source?.url ? (
+      {check.source?.url && !ownCited ? (
         <>
           {' '}
           <a
@@ -76,20 +82,36 @@ export function SapIdMark({ check }: { check: SapIdCheck }) {
           </a>
         </>
       ) : null}
-      {check.attribution ? (
-        <>
-          {' '}
-          {/* SAP's GitHub documentation is CC BY 4.0: the licence is linked wherever its facts are shown. */}
-          <a
-            href="https://creativecommons.org/licenses/by/4.0/"
-            target="_blank"
-            rel="noopener noreferrer license"
-            className="underline underline-offset-2 hover:text-cc-ink"
-          >
-            licence
-          </a>
-        </>
-      ) : null}
+      {citations.map((c, i) => (
+        <span key={i} data-sap-id-citation="" className="[overflow-wrap:anywhere]">
+          {'; source: '}
+          {c.url ? (
+            <a
+              href={c.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-cc-mono underline underline-offset-2 hover:text-cc-ink"
+            >
+              {c.short ?? c.url}
+            </a>
+          ) : (
+            c.attribution
+          )}
+          {c.ccBy ? (
+            <>
+              {', '}
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer license"
+                className="underline underline-offset-2 hover:text-cc-ink"
+              >
+                CC BY 4.0
+              </a>
+            </>
+          ) : null}
+        </span>
+      ))}
     </span>
   );
 }
