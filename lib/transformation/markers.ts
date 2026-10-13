@@ -274,7 +274,7 @@ function nodeBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   const available = new Set(ctx.available);
   const allow = new Set(NEEDS_ALLOWLIST);
   for (const n of ctx.needs ?? []) if (allow.has(n)) available.add(n);
-  const roots = new Set([...available].map((n) => n.split('.')[0]));
+  const roots = new Set([...[...available].map((n) => n.split('.')[0]), ...(ctx.params ?? [])]);
   const foreign = new Set<string>();
   const calls = /(^|[^.\w$])(new\s+)?([A-Za-z_$][\w$]*)((?:\s*\??\.\s*[A-Za-z_$][\w$]*)*)\s*(?:\?\.\s*)?\(/g;
   for (let m = calls.exec(body); m !== null; m = calls.exec(body)) {

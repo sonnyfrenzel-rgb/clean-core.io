@@ -211,6 +211,9 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
   const unitId = regionId.split('.')[0];
   const unit = prep.plan.units.find((u) => u.id === unitId);
   const helperOf = (id: string) => prep.plan.guards.find((g) => g.id === id)?.helper;
+  // A derived check's predicate reads the values the body hands in (`scaffold-node.ts` `guardsFile`).
+  const predicateOf = prep.plan.guards.find((g) => g.regionId === regionId && regionId !== unitId);
+  const params = predicateOf && predicateOf.basis === 'derived' && predicateOf.operands.length > 0 ? ['values'] : [];
   return {
     track: prep.scaffold.track,
     available: prep.scaffold.available[regionId] ?? [],
@@ -218,6 +221,7 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     sliceChars: prep.sliceChars[regionId] ?? prep.sliceChars[unitId] ?? 2_000,
     guardCalls: regionId === unitId ? (unit?.guardCalls ?? []).map(helperOf).filter((h): h is string => !!h) : [],
     required: prep.scaffold.required[regionId] ?? [],
+    ...(params.length > 0 ? { params } : {}),
   };
 }
 

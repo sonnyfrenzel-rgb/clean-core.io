@@ -349,6 +349,12 @@ export interface BodyGuardContext {
   guardCalls?: readonly string[];
   /** Guards the body must call (placement `body`); a body that skips one, or writes its condition inline, is refused. */
   required?: readonly RequiredGuard[];
+  /**
+   * Parameters of the region's own signature beyond the step parameters every body has (`sel`, `st`, `record`, …):
+   * `values` for the predicate of a derived check (`when_G0345(sel, st, record, values)`). A member call on one
+   * (`values.lvCode.trim()`) reads the region's input and is no foreign call.
+   */
+  params?: readonly string[];
 }
 
 /** A guard a fill body must call at the original's position. */
