@@ -332,7 +332,7 @@ test.describe('the lease route', () => {
 
   test('a lease is issued to the run the request names; Cancel closes it behind auth and the second factor (13.10.2026)', () => {
     expect(src).toMatch(/issueLease\(db, \{ projectId, uid: decodedToken\.uid, generationToken, runId: isRunId\(runId\) \? runId : null, plannedCalls, now \}\)/);
-    expect(src).toMatch(/if \(runId !== undefined && !isRunId\(runId\)\) \{\s*return NextResponse\.json\(/);
+    expect(src).toMatch(/if \(runId !== undefined && !\(isRunId\(runId\) && isFirestoreId\(runId\)\)\) \{\s*return NextResponse\.json\(/);
     const del = src.slice(src.indexOf('export async function DELETE'));
     expect(del).toContain('signedInOwner(req)');
     expect(del).toContain('closeLease(db, { projectId, leaseId }, { uid: who.uid })');
