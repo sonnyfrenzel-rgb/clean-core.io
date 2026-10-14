@@ -94,6 +94,7 @@ import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
 import { abaplintConfigJson } from '@/lib/transformation/abaplint-config';
 import { abapGitRepoSettingsXml, singleCallRapClassFiles } from '@/lib/transformation/abapgit-files';
+import { placeModelTestClasses } from '@/lib/testing-abap-unit';
 import { deliverableClassXml } from '@/lib/transformation/abapgit-check';
 
 /**
@@ -469,7 +470,13 @@ export default function DeliveryPage() {
 
       // Add Test Suite (if not already included inside modular files)
       if (project.testSuite?.code) {
-        if (isAbapCloud) {
+        // 3.0.13 (6): in an engine-led package the model's local test classes go into the test include of the
+        // class under test, so the source and the metadata name the same class — not into a global ZCL_DEMO_RAP_TEST
+        // whose metadata names a class its source does not define.
+        const placed = isAbapCloud && source.kind === 'package' ? placeModelTestClasses(source.files, project.testSuite.code) : null;
+        if (placed) {
+          bundle.file(placed.path, placed.content, 'generated');
+        } else if (isAbapCloud) {
           for (const f of singleCallRapClassFiles('test', project.testSuite.code)) bundle.file(f.path, f.content, f.origin);
         } else {
           const testPath = isModular ? "test.ts" : "src/test.ts";

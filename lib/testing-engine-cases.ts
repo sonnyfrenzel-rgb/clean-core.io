@@ -1192,7 +1192,7 @@ export function engineCasePromptSection(cases: readonly EngineTestCase[], route:
       `  ${c.id} — ${c.name}\n` + c.engineCase.examples.map((e) => `      input: ${e.input}\n      expected: ${e.expected}`).join('\n'),
   );
   return `
-        ENGINE CASES (fixed by Clean-Core.io from the ORIGINAL's declared types and guards; do not change them). The product runs them itself through the call contract (srv/engine-contract); your tests for them are an extra check:
+        ENGINE CASES (fixed by Clean-Core.io from the ORIGINAL's declared types and guards; do not change them). ${route === 'node' ? 'The product runs them itself through the call contract (srv/engine-contract); your tests for them are an extra check:' : 'On the ABAP route nothing in the product runs them: your ABAP Unit test method is the only test of each case, and a method that skips or does not call the class under test is not counted as a test:'}
         - Write exactly one test per case below, titled with its id first: ${title}. Assert EVERY example with the literal expected value given.
         - The field names are the ORIGINAL's; map each to the generated code's own name for it. Use exact decimal comparison on strings or scaled integers — never compare binary floats.
         - If the generated code has no way to express a case's input (no such field, no such channel), the test must skip with the reason (t.skip('…') / a skipped ABAP Unit method) — never pass without asserting.

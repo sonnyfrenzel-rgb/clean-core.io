@@ -122,3 +122,17 @@ export interface EngineCaseCall {
 
 /** What an engine case reads when the code has no call contract to run it against. */
 export const NOT_RUN_NO_CONTRACT = 'Not run — the code does not export the call contract';
+
+/**
+ * The same, on the ABAP route (3.0.13): the call contract is the Node.js
+ * package's, and Clean-Core.io has no ABAP runtime — an engine case runs there
+ * only as an ABAP Unit test method, in the reader's system.
+ */
+export const NOT_RUN_ABAP_UNIT =
+  'Not run — Clean-Core.io has no ABAP runtime; on the ABAP route this case runs only as an ABAP Unit test method in your system';
+
+/** Why an engine case has no verdict when no call contract runs it, said for the route the project is on. */
+export function notRunWithoutContract(route: 'node' | 'abap', contract: { path: string | null; missing: readonly string[] }): string {
+  if (route === 'abap') return NOT_RUN_ABAP_UNIT;
+  return `${NOT_RUN_NO_CONTRACT}${contract.path ? ` (${contract.path} lacks ${contract.missing.join(', ')})` : ''}`;
+}
