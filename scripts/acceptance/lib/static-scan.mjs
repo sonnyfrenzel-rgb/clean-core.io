@@ -169,6 +169,30 @@ function importedPackages(text) {
  * @param {string} pkgDir
  * @param {{ maxDepth?: number, maxEntries?: number, maxFiles?: number, maxBytes?: number, maxFileBytes?: number }} [bounds]
  */
+/**
+ * The packages SAP CAP loads itself because the package's own `cds` configuration names them (3.0.13, CAP shell):
+ * `auth: 'xsuaa'` loads @sap/xssec, `db: 'hana'` @cap-js/hana, `db: 'sqlite'` @cap-js/sqlite. Only when the code
+ * imports @sap/cds — otherwise nothing loads them, and they are unused like any other.
+ */
+function capLoadedPackages(pkg, imported) {
+  const out = new Set();
+  if (!imported.has('@sap/cds') || !pkg.cds || typeof pkg.cds !== 'object') return out;
+  const kinds = new Set();
+  const visit = (node, depth) => {
+    if (!node || typeof node !== 'object' || depth > 4) return;
+    for (const [key, value] of Object.entries(node)) {
+      if ((key === 'auth' || key === 'db') && typeof value === 'string') kinds.add(value);
+      else if ((key === 'auth' || key === 'db') && value && typeof value === 'object' && typeof value.kind === 'string') kinds.add(value.kind);
+      else visit(value, depth + 1);
+    }
+  };
+  visit(pkg.cds.requires, 0);
+  if (kinds.has('xsuaa') || kinds.has('ias')) out.add('@sap/xssec');
+  if (kinds.has('hana')) out.add('@cap-js/hana');
+  if (kinds.has('sqlite')) out.add('@cap-js/sqlite');
+  return out;
+}
+
 export function staticScan(pkgDir, bounds = {}) {
   const findings = [];
   const walked = walk(pkgDir, { ...SCAN_LIMITS, ...bounds });
@@ -217,8 +241,9 @@ export function staticScan(pkgDir, bounds = {}) {
       findings.push({ check: 'package-json-unreadable', pattern: 'FP-META-04', file: 'package.json', line: 1, excerpt: '', note: 'package.json is not valid JSON' });
     }
     if (pkg && pkg.dependencies && typeof pkg.dependencies === 'object') {
+      const loaded = capLoadedPackages(pkg, imported);
       for (const dep of Object.keys(pkg.dependencies)) {
-        if (!imported.has(dep)) {
+        if (!imported.has(dep) && !loaded.has(dep)) {
           findings.push({ check: 'unused-dependency', pattern: 'FP-META-04', file: 'package.json', line: 1, excerpt: dep, note: 'a declared dependency no source file imports' });
         }
       }

@@ -43,7 +43,26 @@ export interface ShapeField {
   /** The initial value as a TypeScript expression. */
   init: string;
   line: number;
+  /**
+   * The ABAP scalar type behind the declaration, through every `TYPES` alias (`ty_raw` → `p LENGTH 12
+   * DECIMALS 6`), for the CAP data model and the per-structure input contract (3.0.13, CAP shell); null for a
+   * structure, a table, a reference, or a type the source does not declare (a dictionary type such as `vkorg`
+   * is `{ type: 'vkorg', dictionary: true }` — its length is in the dictionary, not here).
+   */
+  scalar: AbapScalar | null;
 }
+
+/** An ABAP scalar type as the source declares it. */
+export interface AbapScalar {
+  /** Lower case: `p`, `i`, `int8`, `c`, `n`, `d`, `t`, `string`, `f`, `decfloat34`, or a dictionary name. */
+  type: string;
+  length: number | null;
+  decimals: number | null;
+  /** A name the source does not declare and that is no built-in type: a dictionary type or data element. */
+  dictionary: boolean;
+}
+
+const BUILTIN_SCALARS = new Set(['p', 'i', 'int1', 'int2', 'int4', 'int8', 'b', 's', 'c', 'n', 'd', 't', 'string', 'xstring', 'x', 'f', 'decfloat16', 'decfloat34', 'utclong']);
 
 export interface ShapeStructure {
   /** As the original names it, lower case. */
@@ -200,6 +219,25 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     return `{ ${parts.join(', ')} }`;
   }
 
+  /** The scalar behind a declaration, through aliases; null for anything that is not one. */
+  const scalarOf = (rest: string, depth = 0): AbapScalar | null => {
+    if (depth > 6) return null;
+    const t = readTypeExpr(rest);
+    if (t.ref || t.table || !t.type || t.type.includes('-')) return null;
+    if (t.like) {
+      const g = globalByName.get(t.type);
+      return g && !t.lineOf ? scalarOf(g.rest, depth + 1) : null;
+    }
+    if (structByName.has(t.type) || tableType.has(t.type)) return null;
+    const alias = scalarAlias.get(t.type);
+    if (alias) {
+      const inner = scalarOf(alias.rest, depth + 1);
+      // `TYPE ty_x LENGTH 5` on an alias of a generic type keeps the outer length.
+      return inner ? { ...inner, length: t.length ?? inner.length, decimals: t.decimals ?? inner.decimals } : null;
+    }
+    return { type: t.type, length: t.length, decimals: t.decimals, dictionary: !BUILTIN_SCALARS.has(t.type) };
+  };
+
   const fieldOf = (d: Decl): ShapeField => {
     const r = resolve(d.rest);
     // `VALUE 'X'`, `VALUE 100`, `VALUE abap_true`: the start value the original gives a scalar.
@@ -214,7 +252,7 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
       .replace(/\s+WITH\s+(?:NON-UNIQUE\s+|UNIQUE\s+)?(?:DEFAULT\s+)?KEY\b.*$/i, '')
       .replace(/\s+/g, ' ')
       .trim();
-    return { name: d.name, key: camelName(d.name), abap: abap || 'TYPE c', ts: r.ts, init, line: d.line };
+    return { name: d.name, key: camelName(d.name), abap: abap || 'TYPE c', ts: r.ts, init, line: d.line, scalar: r.ts === 'string' ? scalarOf(d.rest) : null };
   };
 
   const seen = new Set<string>();

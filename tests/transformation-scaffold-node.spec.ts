@@ -62,12 +62,23 @@ test('the files of §6.2, one step file per unit; package.json declares exactly 
     for (const u of plan.units) expect(paths).toContain(u.file);
     const pkg = JSON.parse(files.find((f) => f.path === 'package.json')!.content);
     expect(pkg.type).toBe('module');
-    expect(pkg.dependencies).toEqual({});
-    const bare = new Set<string>();
-    for (const f of files.filter((x) => /\.(ts|mjs)$/.test(x.path))) {
-      for (const m of f.content.matchAll(/^import\s[^'"]*['"]([^'"]+)['"]/gm)) if (!m[1].startsWith('.') && !m[1].startsWith('node:')) bare.add(m[1]);
-    }
-    expect([...bare]).toEqual([]);
+    // Scaffold version 7: the CAP shell (srv/service.ts, srv/access.ts) imports @sap/cds and declares it; the core
+    // imports nothing beyond Node. A dependency nothing imports is one CAP itself loads (its xsuaa auth, its HANA
+    // database) — named here, so no other one can slip in.
+    const CAP_SHELL = new Set(['srv/service.ts', 'srv/service.js', 'srv/access.ts']);
+    const bareOf = (fs_: typeof files) => {
+      const out = new Set<string>();
+      for (const f of fs_.filter((x) => /\.(ts|mjs|js)$/.test(x.path))) {
+        for (const m of f.content.matchAll(/^(?:import\s[^'"]*|export\s[^'"\n]*\bfrom\s+)['"]([^'"]+)['"]/gm)) if (!m[1].startsWith('.') && !m[1].startsWith('node:')) out.add(m[1]);
+      }
+      return out;
+    };
+    expect([...bareOf(files.filter((f) => !CAP_SHELL.has(f.path)))]).toEqual([]);
+    expect([...bareOf(files.filter((f) => CAP_SHELL.has(f.path)))]).toEqual(['@sap/cds']);
+    const loadedByCap = new Set(['@sap/xssec', '@cap-js/hana']);
+    for (const dep of Object.keys(pkg.dependencies)) expect(dep === '@sap/cds' || loadedByCap.has(dep), dep).toBe(true);
+    expect(pkg.dependencies['@sap/cds']).toBeTruthy();
+    expect(pkg.scripts.start).toBe('cds-serve');
     // No server on import: only srv/server.ts listens, and only when started directly.
     for (const f of files.filter((x) => x.path.endsWith('.ts'))) {
       if (f.path === 'srv/server.ts') expect(f.content).toMatch(/import\.meta\.url === pathToFileURL\(process\.argv\[1\]\)\.href/);
@@ -99,12 +110,15 @@ test('branded decimals carry the declared places and bounds; the input contract 
   const types = files.find((f) => f.path === 'srv/lib/types.ts')!.content;
   expect(types).toContain('"QUOTA": { name: "QUOTA", digits: 7, places: 2, max: "99999.99", line: 14 }');
   expect(types).toContain('export type Quota = Dec<"QUOTA">;');
-  expect(types).toMatch(/quota: Dec<"QUOTA">;/);
+  // Scaffold version 7: QUOTA is a component of TY_RCV, whose table GT_RCV is a list of its own (rcv) — its bound
+  // and places travel with the list's column in the input contract (below), the row is TY_RCV's interface.
+  expect(types).toMatch(/rcv: TyRcv\[\];/);
   expect(types).toMatch(/gjahr: string;/);
   expect(types).not.toMatch(/latest|lastResult/i);
   const contract = files.find((f) => f.path === 'srv/lib/input-contract.ts')!.content;
   expect(contract).toContain('export const CSV_DELIMITER = ";";');
   expect(contract).toContain('{ original: "P_GJAHR", key: "gjahr", where: "selection", kind: "digits", digits: 4');
+  expect(contract).toContain('{ original: "QUOTA", key: "quota", where: "record", kind: "packed", digits: 7, places: 2, max: "99999.99", obligatory: true');
   expect(contract).not.toMatch(/\bparse(Int|Float)\s*\(/);
   const guards = files.find((f) => f.path === 'srv/lib/guards.ts')!.content;
   expect(guards).toContain('export function guard_BR_002_G0029(');
@@ -227,13 +241,13 @@ test('the call contract on the scaffold alone: one validator, refusals named, a 
        const empty = c.simulate({});
        const unknown = c.validate({ ...base, extra: 1 });
        const year = c.validate({ ...base, gjahr: '2026x' });
-       const quota = c.validate({ ...base, records: [{ ...base.records[0], quota: '100000.00' }] });
+       const quota = c.validate({ ...base, rcv: [{ ...base.rcv[0], quota: '100000.00' }] });
        const csvRaw = requestFromCsv('kostl;quota;amount\\r\\nC1;12.345;10\\r\\n', { kokrs: 'A100', gjahr: '2026', sender: 'C9' });
        const csv = validateRequest(csvRaw);
        const headerOnly = validateRequest(requestFromCsv('kostl;quota;amount\\r\\n', { kokrs: 'A100', gjahr: '2026', sender: 'C9' }));
        console.log(JSON.stringify({ base, v: v.ok, s, run: run && { runId: run.runId, complete: run.complete }, empty: empty.ok, emptyErrors: empty.errors.map((e) => e.rule),
          unknown: unknown.errors.map((e) => e.field), year: year.errors.map((e) => [e.field, e.rule]), quota: quota.errors.map((e) => e.field),
-         csv: csv.ok && csv.normalized.records[0], headerOnly: headerOnly.ok, compute: c.compute('GV_TOTAL', '0.1', '+', '0.2'),
+         csv: csv.ok && csv.normalized.rcv[0], headerOnly: headerOnly.ok, compute: c.compute('GV_TOTAL', '0.1', '+', '0.2'),
          overflow: (() => { try { c.compute('QUOTA', '99999.99', '+', '0.01'); return 'accepted'; } catch (e) { return 'refused'; } })() }));`,
     );
     expect(got.v).toBe(true);
@@ -244,7 +258,8 @@ test('the call contract on the scaffold alone: one validator, refusals named, a 
     expect(got.emptyErrors).toContain('INPUT');
     expect(got.unknown).toEqual(['extra']);
     expect(got.year).toEqual([['gjahr', 'L24']]);
-    expect(got.quota).toEqual(['records[0].quota']);
+    // Scaffold version 7: GT_RCV is a list of its own (rcv), typed by TY_RCV — no longer one record list.
+    expect(got.quota).toEqual(['rcv[0].quota']);
     expect(got.csv).toEqual({ quota: '12.35', amount: '10.00', kostl: 'C1' });
     expect(got.headerOnly).toBe(false);
     expect(got.compute).toBe('0.30');
@@ -338,7 +353,7 @@ test('hand-filled bodies make a guard case pass; the spliced package still compi
   const scaffold = buildNodeScaffold(plan, facts);
   const bodies = [
     { regionId: 'U00', body: 'const r = validatePolicy(sel, st);\nif (r) return r;' },
-    { regionId: 'U02.G0061', body: "return st.records.some((r) => dec.compare(r.quota, '100') > 0);" },
+    { regionId: 'U02.G0061', body: "return st.local.gtRcv.some((r) => dec.compare(r.quota, '100') > 0);" },
   ];
   const spliced = spliceBodies(scaffold, bodies, (id) => ({ track: 'node', available: scaffold.available[id] ?? [], sliceChars: 400 }));
   expect(spliced.refused).toEqual([]);

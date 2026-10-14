@@ -25,6 +25,7 @@ import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import type * as TS from 'typescript';
+import { CAP_TYPES_STANDIN } from '../transformation/cap-api-declaration';
 
 export interface TypeFinding {
   /** The candidate's own path (`srv/steps/u03-check-limit.ts`). */
@@ -117,6 +118,9 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
   // A directory that does not exist, outside the project: the candidate's imports resolve only among its own files.
   const base = path.join(os.tmpdir(), 'cc-type-check-candidate').replace(/\\/g, '/');
   const virtual = new Map<string, string>();
+  // The CAP shell (3.0.13) references @cap-js/cds-types; here Clean-Core.io's declaration of the API it uses
+  // stands in for it (`cap-api-declaration.ts`) — a package that ships its own copy keeps its own.
+  for (const f of CAP_TYPES_STANDIN) virtual.set(`${base}/${f.path}`, f.content);
   for (const f of files) virtual.set(`${base}/${norm(f.path)}`, f.content);
   const key = (p: string) => p.replace(/\\/g, '/');
   const inVirtual = (p: string) => key(p).startsWith(`${base}/`) || key(p) === base;

@@ -23,6 +23,7 @@
  */
 
 import type { EngineTestCase } from '../testing-engine-cases';
+import { listOfPath } from './input-lists';
 import type { AcceptanceAdapter, ContractField, UnitPlan } from './types';
 
 export interface ContractModel {
@@ -47,16 +48,20 @@ export const hasRecords = (plan: Pick<UnitPlan, 'fields'>) => plan.fields.some((
 /** The `CONTRACT` of `srv/engine-contract.ts`. */
 export function contractModel(plan: Pick<UnitPlan, 'fields'> & Partial<Pick<UnitPlan, 'missingBaseValues'>>): ContractModel {
   const baseRequest: Record<string, unknown> = {};
-  const record: Record<string, unknown> = {};
+  // One base row per list the record fields name: `records` until scaffold version 7, one list per input
+  // structure since (`claims[].price`, input-lists.ts).
+  const rows = new Map<string, Record<string, unknown>>();
   const fields: Record<string, string | null> = {};
   for (const f of plan.fields) {
     fields[f.original] = f.path;
+    const list = f.where === 'record' ? listOfPath(f.path) ?? 'records' : null;
+    if (list && !rows.has(list)) rows.set(list, {});
     const value = baseValueOf(f);
     if (value === undefined) continue;
     if (f.where === 'selection') baseRequest[f.key] = value;
-    else if (f.where === 'record') record[f.key] = value;
+    else if (list) rows.get(list)![f.key] = value;
   }
-  if (hasRecords(plan)) baseRequest.records = [record];
+  for (const [list, row] of rows) baseRequest[list] = [row];
   if (Object.keys(baseRequest).length === 0) baseRequest.run = true;
   return { version: 1, baseRequest, fields, missingBaseValues: [...(plan.missingBaseValues ?? [])] };
 }
@@ -128,7 +133,7 @@ export function acceptanceAdapter(plan: Pick<UnitPlan, 'fields' | 'decimals'> & 
   const numeric = numericProbeField(plan);
   if (numeric && numeric.path) {
     const request = structuredClone(contract.baseRequest);
-    if (numeric.where === 'record') (request.records as Array<Record<string, unknown>>)[0][numeric.key] = '$value';
+    if (numeric.where === 'record') (request[listOfPath(numeric.path) ?? 'records'] as Array<Record<string, unknown>>)[0][numeric.key] = '$value';
     else request[numeric.key] = '$value';
     probes['lenient-numeric'] = {
       call: { module: 'contract', export: 'validate' },

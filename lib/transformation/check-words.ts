@@ -358,6 +358,55 @@ export function typeCheckOf(raw: unknown): NodeTypeCheck | null {
   return { v: 1, typescript: version, config: 'shipped', files: nat(a.files) ?? 0, failedFiles: nat(a.failedFiles) ?? 0, errors, runnable: errors === 0, findings };
 }
 
+/**
+ * `cds compile` of a Node package's CAP shell (`cds-compile.ts`, roadmap 3.0.13): SAP's CDS compiler over the
+ * package's `.cds` files, then the OData transformation of its services. Written by the server onto the
+ * generation binding (`binding.cdsCompile`) — whether it ran (`ran`) and, if so, what it said. Where the compiler
+ * is not installed (Clean-Core.io's production server) the record says it did not run and why; the CAP
+ * capabilities then stay `proposed` (delivery-package.ts).
+ */
+export type CdsCompileCheck =
+  | { v: 1; ran: true; compiler: string; files: number; errors: number; warnings: number; services: string[]; findings: Array<{ path: string; line: number; severity: string; id: string; message: string }>; compiles: boolean }
+  | { v: 1; ran: false; reason: string };
+
+/** A stored `cds compile` record, shape-checked; null when there is none or it is malformed. */
+export function cdsCompileOf(raw: unknown): CdsCompileCheck | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const a = raw as Record<string, unknown>;
+  if (a.v !== 1) return null;
+  if (a.ran === false) {
+    const reason = text(a.reason, 500);
+    return reason ? { v: 1, ran: false, reason } : null;
+  }
+  const errors = nat(a.errors);
+  const compiler = text(a.compiler, 40);
+  if (a.ran !== true || errors === null || !compiler) return null;
+  const findings = Array.isArray(a.findings)
+    ? a.findings.slice(0, 50).flatMap((f) => {
+        const x = (f ?? {}) as Record<string, unknown>;
+        const path = text(x.path, 200);
+        return path ? [{ path, line: nat(x.line) ?? 0, severity: text(x.severity, 10) ?? '', id: text(x.id, 60) ?? '', message: text(x.message, 400) ?? '' }] : [];
+      })
+    : [];
+  const services = Array.isArray(a.services) ? a.services.slice(0, 20).flatMap((s) => (text(s, 120) ? [text(s, 120)!] : [])) : [];
+  return { v: 1, ran: true, compiler, files: nat(a.files) ?? 0, errors, warnings: nat(a.warnings) ?? 0, services, findings, compiles: errors === 0 };
+}
+
+/** The record from the compiler's result (`cdsCompileCandidate`); null when the package has no CDS file. */
+export function cdsCompileRecordOf(
+  r: { ran: true; compiler: string; files: number; errors: number; warnings: number; services: string[]; findings: Array<{ path: string; line: number; severity: string; id: string; message: string }> } | { ran: false; reason: string } | null | undefined,
+): CdsCompileCheck | null {
+  if (!r) return null;
+  if (!r.ran) return /no \.cds file/.test(r.reason) ? null : { v: 1, ran: false, reason: r.reason.slice(0, 500) };
+  return { v: 1, ran: true, compiler: r.compiler, files: r.files, errors: r.errors, warnings: r.warnings, services: r.services.slice(0, 20), findings: r.findings.slice(0, 50), compiles: r.errors === 0 };
+}
+
+/** "cds compile: 0 errors in 4 CDS files (@sap/cds-compiler 7.1.2)" — or why it did not run. */
+export function cdsCompilePhrase(c: CdsCompileCheck): string {
+  if (!c.ran) return c.reason.replace(/\.$/, '');
+  return `cds compile: ${plural(c.errors, 'error')}${c.warnings ? `, ${plural(c.warnings, 'warning')}` : ''} in ${plural(c.files, 'CDS file')} (@sap/cds-compiler ${c.compiler})`;
+}
+
 /** The record from the compiler's result (`typeCheckCandidate`); null when it did not run. */
 export function typeCheckRecordOf(r: { ran: true; typescript: string; files: number; failedFiles: number; errors: number; findings: TypeFindingWords[] } | { ran: false; reason: string } | null | undefined): NodeTypeCheck | null {
   if (!r || !r.ran) return null;

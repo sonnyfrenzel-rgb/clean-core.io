@@ -72,6 +72,7 @@ import { rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
+import { programArchitecture } from './architecture';
 import { sliceFor } from './abap-slice';
 import { readRapContract, simpleTypeName, structureComponents, tableLineOf, typeDefinition, type RapContract, type RapParam } from './rap-contract';
 import type { AuthorityCheck } from '../abap/call-graph';
@@ -394,7 +395,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const record = plan.fields.filter((f) => f.where === 'record');
   const carried = plan.guards.filter((g) => g.carried);
   // Architecture (3.0.13 item 5): a business object only where the original writes a table; a report or simulation is a query.
-  const writes = facts.graph.databaseWrites.length > 0;
+  const writes = programArchitecture(facts) === 'writing';
   const architecture: RapClassContract['architecture'] = writes ? 'managed-bo' : 'custom-entity';
   const files: ScaffoldFile[] = [];
   const available: Record<string, string[]> = {};

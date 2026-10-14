@@ -14,7 +14,7 @@
  * Pure: no imports beyond the check words.
  */
 
-import { activationOf, typeCheckOf, type AbapActivation, type NodeTypeCheck } from './check-words';
+import { activationOf, cdsCompileOf, typeCheckOf, type AbapActivation, type CdsCompileCheck, type NodeTypeCheck } from './check-words';
 import type { GenerationStatus } from './types';
 
 export type GenerationPath = 'engine-led' | 'single-call';
@@ -82,6 +82,8 @@ export interface GenerationRecord {
   activation?: AbapActivation | null;
   /** The server's type check of the stored Node package (3.0.13, `binding.typeCheck`); read only from a stored binding. */
   typeCheck?: NodeTypeCheck | null;
+  /** The server's `cds compile` of the stored package's CAP shell (3.0.13, `binding.cdsCompile`); read only from a stored binding. */
+  cdsCompile?: CdsCompileCheck | null;
 }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? (v.length > max ? `${v.slice(0, max - 1)}…` : v) : '');
@@ -208,7 +210,8 @@ export function storedGenerationRecord(binding: unknown): (GenerationRecord & { 
   if (!rec || 'error' in rec) return null;
   const activation = storedActivation(binding);
   const typeCheck = storedTypeCheck(binding);
-  return { ...rec, ...(activation ? { activation } : {}), ...(typeCheck ? { typeCheck } : {}), contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
+  const cdsCompile = storedCdsCompile(binding);
+  return { ...rec, ...(activation ? { activation } : {}), ...(typeCheck ? { typeCheck } : {}), ...(cdsCompile ? { cdsCompile } : {}), contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
 }
 
 /**
@@ -218,6 +221,12 @@ export function storedGenerationRecord(binding: unknown): (GenerationRecord & { 
 export function storedTypeCheck(binding: unknown): NodeTypeCheck | null {
   if (!binding || typeof binding !== 'object') return null;
   return typeCheckOf((binding as { typeCheck?: unknown }).typeCheck);
+}
+
+/** The server's `cds compile` of a stored Node generation (`generationBinding.cdsCompile`, 3.0.13), or null. */
+export function storedCdsCompile(binding: unknown): CdsCompileCheck | null {
+  if (!binding || typeof binding !== 'object') return null;
+  return cdsCompileOf((binding as { cdsCompile?: unknown }).cdsCompile);
 }
 
 /**
