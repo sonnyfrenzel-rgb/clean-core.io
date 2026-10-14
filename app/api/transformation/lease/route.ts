@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     if (typeof generationToken !== 'string' || generationToken.length === 0 || generationToken.length > 256) {
       return NextResponse.json({ error: 'Name the generation this lease is for: generationToken.', code: 'no-generation-token' }, { status: 400 });
     }
-    if (runId !== undefined && !isRunId(runId)) {
+    if (runId !== undefined && !(isRunId(runId) && isFirestoreId(runId))) {
       return NextResponse.json({ error: 'runId must be 8 to 64 letters, digits, - or _.', code: 'bad-request' }, { status: 400 });
     }
     if (typeof plannedCalls !== 'number' || !Number.isInteger(plannedCalls) || plannedCalls < 1 || plannedCalls > LEASE_MAX_PLANNED_CALLS) {
