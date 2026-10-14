@@ -18,6 +18,7 @@ import type { Project, DesignData } from '@/lib/types';
 import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
 import { cleanAndParseJSON } from '@/lib/design-response';
+import { CERTIFIED_SNAPSHOT_NOTE, MVCC_REFUSAL, postCheckDesign, type DesignPostCheck } from '@/lib/design-post-checks';
 import { formatIsoDate } from '@/lib/format';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { EXPORT_CSS } from '@/lib/export-style';
@@ -132,10 +133,14 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
   // Check if JSON
   let isJson = false;
   let data: DesignData | null = null;
+  let post: DesignPostCheck<DesignData> | null = null;
   const trimmedDesignText = currentProject.solutionDesign.trim();
   if (trimmedDesignText.startsWith('{') || (trimmedDesignText.includes('{') && trimmedDesignText.includes('}'))) {
     try {
-      data = cleanAndParseJSON(currentProject.solutionDesign) as DesignData;
+      // The scaffold's object names, no MVCC consistency promise (3.0.13, `lib/design-post-checks.ts`) —
+      // the same checks as the package's solution-design.md.
+      post = postCheckDesign(cleanAndParseJSON(currentProject.solutionDesign) as DesignData, currentProject.legacyCode ?? null);
+      data = post.design;
       isJson = true;
     } catch {}
   }
@@ -320,6 +325,8 @@ export function buildDesignExportHtml(currentProject: Project): string | null {
             <h2>Data Synchronization Pattern</h2>
             <p><strong>Pattern:</strong> <strong>${esc(data.dataSync?.patternName)}</strong></p>
             <p>${esc(dataSyncText)}</p>
+            ${post?.mvccRefused.length ? `<p class="muted">${esc(MVCC_REFUSAL)}</p>` : ''}
+            ${post?.twoCutoffs ? `<p class="muted">${esc(CERTIFIED_SNAPSHOT_NOTE)}</p>` : ''}
 
             ${apiMappingSection}
 

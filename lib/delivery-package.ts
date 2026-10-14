@@ -38,6 +38,7 @@ import { formatTextDate } from './format';
 import { SCORE_FLOOR } from './clean-core-score';
 import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, type DecisionOption } from './decision-options';
 import type { ScoreHeroModel } from './score-hero';
+import type { DecisionWeighing } from './decision-weighing';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
@@ -185,6 +186,12 @@ export interface DecisionFacts {
   reasons: Array<{ label: string; text: string }>;
   /** The engine's recommendation — a recommendation, never a decision. */
   recommendation: { option: string; code: string | null; reasoning: string | null } | null;
+  /**
+   * 3.0.13 (SD review A04) — what was weighed: the engine's reading of keep,
+   * the standard, rebuild in-app, rebuild side by side and retire
+   * (`lib/decision-weighing.ts`). Absent in facts built before it.
+   */
+  weighing?: DecisionWeighing | null;
   /** ADR-092: the cost revision the decision was priced on, in one or two sentences. */
   cost: string;
   /**
@@ -1610,6 +1617,16 @@ export function buildDecisionRecord(facts: DeliveryFacts): string {
     lines.push(`- The engine's recommendation (not a decision): ${d.recommendation.option}${d.recommendation.reasoning ? ` — ${d.recommendation.reasoning}` : ''}`);
   }
   lines.push('');
+  // 3.0.13 (SD review A04): what was weighed, option by option — the engine's
+  // readings, and the design's comparison beside them as a proposal.
+  if (d.weighing) {
+    const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+    lines.push('### The weighing', '');
+    lines.push("The engine's reading of each option, from the signed run — no figure is filled in that Economics does not hold. The design's comparison is model text and stands beside it as a proposal.", '');
+    lines.push("| Option | Engine's reading | Why | Design's comparison (proposal) |", '|---|---|---|---|');
+    for (const r of d.weighing.rows) lines.push(`| ${r.label} | ${r.reading} | ${cell(r.why)} | ${r.proposal ? cell(r.proposal) : '—'} |`);
+    lines.push('');
+  }
   if (d.bindings.length) {
     lines.push('### What the decision is bound to', '');
     for (const b of d.bindings) lines.push(`- ${b.label}: ${b.value}`);

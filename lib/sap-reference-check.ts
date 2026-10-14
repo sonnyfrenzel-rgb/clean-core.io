@@ -917,6 +917,19 @@ export function sapIdentifierSourcesNote(): string {
 }
 
 /**
+ * Whether the target release or edition of an identifier was checked — the
+ * last column of the identifier table (SD review 3.0.12, 2.5: a compact
+ * candidate matrix instead of long warnings inside sentences). Only what the
+ * source states counts: a release SAP's source gives, or the product it
+ * documents; otherwise "not checked".
+ */
+export function releaseCheckedWords(c: SapIdCheck): string {
+  if (c.sapRelease) return `release stated by the source: ${c.sapRelease}`;
+  if (c.product) return `edition stated by the source: ${c.product}; release not checked`;
+  return 'not checked';
+}
+
+/**
  * The SAP identifiers of a whole document as a markdown section — ID, kind,
  * state, SAP's name and the source with its address. Empty when there are none.
  */
@@ -925,7 +938,7 @@ export function sapReferenceAppendixMarkdown(...texts: unknown[]): string {
   if (!checks.length) return '';
   let md = `## SAP identifiers named in this document\n`;
   md += `Model proposal. Each identifier was checked against SAP data this product holds. "Verified" means a public SAP page lists the identifier with what the text says of it (title, protocol, release) — not that it covers this use. "Name found in catalog" means the name is in a list and nothing more was checked.\n\n`;
-  md += `| Identifier | Kind | State | SAP's name | Source |\n| :--- | :--- | :--- | :--- | :--- |\n`;
+  md += `| Identifier | Kind | State | SAP's name | Source | Release / edition checked |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
   for (const c of checks) {
     const src = c.source ? (c.source.url ? `[${c.source.label}](${c.source.url})` : c.source.label) : '—';
     const said =
@@ -941,7 +954,7 @@ export function sapReferenceAppendixMarkdown(...texts: unknown[]): string {
     const other = o
       ? ` — sources differ: ${o.source.url ? `[${o.source.label}](${o.source.url})` : o.source.label}${o.product ? ` (${o.product})` : ''} titles it “${o.title}”`
       : '';
-    md += `| \`${c.id}\` | ${SAP_ID_KIND_LABEL[c.kind]} | ${sapIdStateWord(c)}${said} | ${name}${facts ? ` (${facts})` : ''}${c.caveat ? ` — ${c.caveat}` : ''}${other} | ${src}${c.attribution ? ` (${SAP_DOCS_LICENCE_SHORT})` : ''} |\n`;
+    md += `| \`${c.id}\` | ${SAP_ID_KIND_LABEL[c.kind]} | ${sapIdStateWord(c)}${said} | ${name}${facts ? ` (${facts})` : ''}${c.caveat ? ` — ${c.caveat}` : ''}${other} | ${src}${c.attribution ? ` (${SAP_DOCS_LICENCE_SHORT})` : ''} | ${releaseCheckedWords(c)} |\n`;
   }
   md += `\n${sapIdentifierSourcesNote()}\n`;
   const attributions = [...new Set(checks.flatMap(attributionsOf))].sort();

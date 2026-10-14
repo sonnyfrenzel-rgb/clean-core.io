@@ -28,6 +28,8 @@ import {
   type HandoverProject,
 } from './handover';
 import { ARCHITECTURE_OPTION } from './decision-draft';
+import { decisionWeighing } from './decision-weighing';
+import { circularReason } from './design-option-comparison';
 import { decisionCardView } from './decision-card';
 import { decisionHeadline } from './decision-manager';
 import { costRevisionWords, type DecisionCostBasis, type NoCheapestCode } from './decision-cost';
@@ -166,6 +168,23 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
     : null;
   const reasons: DecisionFacts['reasons'] = [];
   const override = str(project.architectJustifiedOverride);
+  // A reason that only restates the choice ("…, as the signed-off target
+  // architecture says") is not given as a reason (SD review 3.0.12, A04).
+  const pushReason = (label: string, text: string) => {
+    const circular = circularReason(text);
+    reasons.push(circular ? { label: `${label} (restates the choice, not a reason)`, text } : { label, text });
+  };
+  const weighingOf = (decision: Parameters<typeof decisionWeighing>[0]['decision'], status: Parameters<typeof decisionWeighing>[0]['status']) =>
+    decisionWeighing({
+      subject: str(project.name) ?? 'this program',
+      hasRun: Boolean(str(project.activeRunId)),
+      decision,
+      status,
+      engineRoute: recCode,
+      engineReasoning: str(project.recommendationJustification),
+      usage: (project.usageReport as Parameters<typeof decisionWeighing>[0]['usage']) ?? null,
+      design: project.solutionDesign ?? null,
+    });
 
   if (stored) {
     const view = decisionCardView(stored);
@@ -177,8 +196,10 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
         ? 'confirmed'
         : 'confirmed-earlier-run'
       : stored.status;
-    if (str(stored.summary)) reasons.push({ label: 'Summary of the decision record', text: sapNamesForDisplay(stored.summary) });
-    if (override) reasons.push({ label: 'Justification given at the sign-off in Design', text: override });
+    const weighing = weighingOf(stored, stored.status);
+    reasons.push({ label: 'The weighing', text: weighing.reason });
+    if (str(stored.summary)) pushReason('Summary of the decision record', sapNamesForDisplay(stored.summary));
+    if (override) pushReason('Justification given at the sign-off in Design', override);
     return {
       state,
       option: optionRevision ? decisionHeadline(optionRevision) : null,
@@ -197,12 +218,15 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
         value: b.shown ?? `not determined — ${b.reason ?? 'no reason recorded'}`,
       })),
       reversibility: `${view.reversible.answer} — ${view.reversible.detail}`,
+      weighing,
     };
   }
 
   const target = signedOffTarget(project);
   if (target) {
-    if (override) reasons.push({ label: 'Justification given at the sign-off in Design', text: override });
+    const weighing = weighingOf(null, null);
+    reasons.push({ label: 'The weighing', text: weighing.reason });
+    if (override) pushReason('Justification given at the sign-off in Design', override);
     const code = str(project.targetArchitecture);
     return {
       state: 'signed-off',
@@ -219,6 +243,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
       conditions: [],
       bindings: [],
       reversibility: null,
+      weighing,
     };
   }
 
@@ -237,6 +262,7 @@ export function decisionFactsOf(project: HandoverProject): DecisionFacts {
     conditions: [],
     bindings: [],
     reversibility: null,
+    weighing: weighingOf(null, null),
   };
 }
 
