@@ -136,6 +136,32 @@ function assignsDecisionOnSubrc(code: string): boolean {
   return SUBRC_COMPARED.test(decision);
 }
 
+/**
+ * True when the statements from `index` on decide on sy-subrc: the statement
+ * at `index` decides on it (`decidesOnSubrc`), or it only copies sy-subrc into
+ * a variable (`lv_rc = sy-subrc.`, `DATA(lv_rc) = sy-subrc.`, `MOVE sy-subrc TO
+ * lv_rc.`) and the very next statement decides on that copy (`IF lv_rc <> 0.`).
+ * A copy is a decision only when it controls what follows; a copy nobody
+ * decides on right away decides nothing (QA leftovers of hotfix 2, roadmap
+ * 3.0.13).
+ */
+export function decidesOnSubrcAt(statements: readonly AbapStatement[], index: number): boolean {
+  const first = statements[index];
+  if (decidesOnSubrc(first)) return true;
+  if (first === undefined) return false;
+  const code = maskLiterals(first.text).trim().replace(/\.$/, '').trim();
+  const copy = /^(?:DATA\(\s*([\w/]+)\s*\)|([\w/]+))\s*=\s*SY-SUBRC$/i.exec(code)
+    ?? /^MOVE\s+SY-SUBRC\s+TO\s+()([\w/]+)$/i.exec(code);
+  if (!copy) return false;
+  const name = (copy[1] || copy[2]).toUpperCase();
+  const then = statements[index + 1];
+  if (then === undefined) return false;
+  // The name as a whole operand: not `lv_rc2`, not a component `ls_x-lv_rc`.
+  const named = (flags: string) => new RegExp(String.raw`(^|[^\w/-])${name}(?![\w/])`, flags);
+  if (!named('i').test(maskLiterals(then.text))) return false;
+  return decidesOnSubrc({ ...then, text: then.text.replace(named('gi'), '$1sy-subrc') });
+}
+
 /** What engine 3.0.12 counted as reading sy-subrc: any mention of it. */
 function mentionsSubrc(statement: AbapStatement | undefined): boolean {
   return statement !== undefined && /\bSY-SUBRC\b/i.test(maskLiterals(statement.text));
@@ -161,7 +187,7 @@ export function readSecurityReviewTasksFrom(
   /* ---------------------------------------------- authorization checks */
   // DSAG ABAP guideline: security/security-secure-development.md § Berechtigungsprüfungen richtig implementieren
   const graph = readCallGraphFrom(statements, readBlocks(statements));
-  const subrcRead = options.precisionFixes ? decidesOnSubrc : mentionsSubrc;
+  const subrcRead = (index: number) => (options.precisionFixes ? decidesOnSubrcAt(statements, index) : mentionsSubrc(statements[index]));
   const indexAt = new Map<number, number>();
   statements.forEach((s, i) => {
     if (s.keyword === 'AUTHORITY-CHECK' && !indexAt.has(s.lineStart)) indexAt.set(s.lineStart, i);
@@ -178,7 +204,7 @@ export function readSecurityReviewTasksFrom(
     // decides nothing. From 3.0.13 that statement has to decide on it
     // (`decidesOnSubrc`); a mention alone is not a decision.
     const next = statements[index + 1];
-    const evaluated = subrcRead(next);
+    const evaluated = subrcRead(index + 1);
     if (!evaluated) {
       tasks.push({
         kind: 'authority-result-not-evaluated',
@@ -237,9 +263,14 @@ export function readSecurityReviewTasksFrom(
 
   /* ------------------------------------------- input and what it reaches */
   const tainted = taintedNames(source, statements, graph.forms.flatMap((f) => f.parameters.map((p) => p.name)), options.precisionFixes === true);
-  const fromInput = (operand: string): boolean => {
+  // From 3.0.13 a tainted name the source overwrites unconditionally with a
+  // value from no input, before the clause, no longer reaches it
+  // (`overwrittenCleanBefore`; QA leftovers of hotfix 2, roadmap 3.0.13).
+  const paths = options.precisionFixes ? controlPaths(statements) : [];
+  const fromInput = (operand: string, access: number): boolean => {
     const base = baseName(operand);
-    return base !== '' && tainted.has(base);
+    if (base === '' || !tainted.has(base)) return false;
+    return !(options.precisionFixes && overwrittenCleanBefore(statements, paths, base, access, tainted));
   };
 
   // A path resolved or validated through the logical file name modules before
@@ -262,7 +293,7 @@ export function readSecurityReviewTasksFrom(
   const validationStops = (index: number): boolean => {
     if (!options.precisionFixes) return true;
     if (!/\bEXCEPTIONS\b/i.test(maskLiterals(statements[index].text))) return true;
-    return decidesOnSubrc(statements[index + 1]);
+    return decidesOnSubrcAt(statements, index + 1);
   };
   const fileNameChecks = statements.flatMap((s, index) => isFileNameCheck(s) && validationStops(index)
     ? [{ index, names: new Set([...maskLiterals(s.text).matchAll(new RegExp(String.raw`=\s*(${OPERAND})`, 'g'))].map((m) => baseName(m[1]))) }]
@@ -277,7 +308,7 @@ export function readSecurityReviewTasksFrom(
   const adbcLines = new Set(options.adbcLines ?? []);
   const adbcSeen = new Set<number>();
 
-  for (const statement of statements) {
+  for (const [position, statement] of statements.entries()) {
     if (statement.nativeSql && !/^EXEC\s+SQL\b/i.test(statement.text)) continue;
     const code = maskLiterals(statement.text);
     const keyword = statement.keyword;
@@ -302,7 +333,7 @@ export function readSecurityReviewTasksFrom(
       const clause = new RegExp(String.raw`\b(WHERE|FROM|SET|FIELDS|BY|HAVING|UPDATE|MODIFY|DELETE|INSERT|JOIN|SINGLE|SELECT|DISTINCT)\s*\(\s*(${OPERAND})\s*\)`, 'gi');
       let m: RegExpExecArray | null;
       while ((m = clause.exec(code))) {
-        if (fromInput(m[2]) && !dynamic.includes(m[2])) dynamic.push(m[2]);
+        if (fromInput(m[2], position) && !dynamic.includes(m[2])) dynamic.push(m[2]);
       }
       if (dynamic.length) {
         tasks.push({
@@ -352,7 +383,7 @@ export function readSecurityReviewTasksFrom(
 
     // OPEN / DELETE DATASET — DSAG ABAP guideline: security/security-secure-development.md § Sichere Dateizugriffe und Pfadtraversal-Schutz
     const dataset = new RegExp(String.raw`^(OPEN|DELETE)\s+DATASET\s+(${OPERAND})`, 'i').exec(code);
-    if (dataset && fromInput(dataset[2]) && !validatedBefore(dataset[2], statements.indexOf(statement))) {
+    if (dataset && fromInput(dataset[2], position) && !validatedBefore(dataset[2], position)) {
       tasks.push({
         kind: 'file-path-from-input',
         ...at(statement),
@@ -425,6 +456,69 @@ export function readSecurityReviewTasksFrom(
 }
 
 /* ------------------------------------------------------------ input flow */
+
+const OPENS = /^(?:IF|CASE|DO|WHILE|LOOP|TRY|FORM|METHOD|FUNCTION|MODULE|AT|PROVIDE|ON\s+CHANGE\s+OF|CATCH\s+SYSTEM-EXCEPTIONS)\b/i;
+const CLOSES = /^(?:ENDIF|ENDCASE|ENDDO|ENDWHILE|ENDLOOP|ENDTRY|ENDFORM|ENDMETHOD|ENDFUNCTION|ENDMODULE|ENDAT|ENDPROVIDE|ENDON|ENDCATCH)\b/i;
+const BRANCHES = /^(?:ELSE|ELSEIF|WHEN|CATCH(?!\s+SYSTEM-EXCEPTIONS\b)|CLEANUP)\b/i;
+
+/**
+ * For each statement, the control blocks it stands in, outermost first, each
+ * with the branch of it (`IF` 0, the first `ELSEIF` 1, …): `["3.0", "7.1"]`.
+ * Every block has its own number, so a statement whose path is a prefix of
+ * another's runs on every way to it inside the same routine — an
+ * unconditional statement before it. A `SELECT … ENDSELECT` loop is not
+ * read as a block.
+ */
+function controlPaths(statements: readonly AbapStatement[]): string[][] {
+  const stack: Array<{ id: number; branch: number }> = [];
+  let next = 0;
+  return statements.map((s) => {
+    const code = maskLiterals(s.text).trim();
+    if (CLOSES.test(code)) {
+      stack.pop();
+      return stack.map((f) => `${f.id}.${f.branch}`);
+    }
+    if (BRANCHES.test(code) && stack.length > 0) {
+      stack[stack.length - 1].branch += 1;
+      return stack.map((f) => `${f.id}.${f.branch}`);
+    }
+    // `AT SELECTION-SCREEN` and `AT LINE-SELECTION` are events, not blocks with ENDAT.
+    if (OPENS.test(code) && !/^AT\s+(?:SELECTION-SCREEN|LINE-SELECTION|USER-COMMAND|PF\d+)\b/i.test(code)
+      && !/^(?:METHOD|FORM|FUNCTION|MODULE)\b[\s\S]*\bDEFINITION\b/i.test(code)) {
+      stack.push({ id: next++, branch: 0 });
+    }
+    return stack.map((f) => `${f.id}.${f.branch}`);
+  });
+}
+
+/**
+ * True when the last statement before `access` that writes `name` assigns it a
+ * value that comes from no input (`lv_where = 'MANDT = 1'.`, `CLEAR lv_where.`)
+ * and runs on every way to `access` — it stands in the same block and branch,
+ * or in one that encloses it. What reaches the clause then is that value, not
+ * the input.
+ */
+function overwrittenCleanBefore(
+  statements: readonly AbapStatement[],
+  paths: readonly string[][],
+  name: string,
+  access: number,
+  tainted: Set<string>,
+): boolean {
+  for (let i = access - 1; i >= 0; i--) {
+    const s = statements[i];
+    if (!writtenNames(s.text).has(name)) continue;
+    const at = paths[i] ?? [];
+    const target = paths[access] ?? [];
+    if (at.length > target.length || at.some((p, k) => target[k] !== p)) return false;
+    const code = codeWithEmbedded(s.text);
+    if (/^CLEAR\b/i.test(code)) return true;
+    const assigned = new RegExp(String.raw`^(?:DATA\(\s*[\w/]+\s*\)|${OPERAND})\s*=\s*([\s\S]*)$`, 'i').exec(code);
+    if (!assigned) return false;
+    return !mentions(assigned[1], tainted);
+  }
+  return false;
+}
 
 /** `ls_x-field` → `LS_X`; `me->mv_x` → `MV_X`; `<fs>` → `<FS>`; `p_x-low` → `P_X`. */
 function baseName(operand: string): string {
