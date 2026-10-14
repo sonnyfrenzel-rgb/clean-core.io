@@ -512,6 +512,19 @@ export async function POST(request: NextRequest) {
                   abortSignal: callSignal,
                 }
               : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
+          }).catch((providerErr: unknown) => {
+            // A failed attempt is a call too: its duration is logged, its
+            // counts are null (QA review of 6500c65c81c7).
+            logger.warn('gemini usage', modelUsageLog({
+              usage: undefined,
+              model,
+              stage: stage ?? null,
+              responseShape: shape ?? null,
+              leased: lease !== null,
+              durationMs: Date.now() - attemptAt,
+              failed: true,
+            }));
+            throw providerErr;
           });
           // Where the time of a call went (input, output, thinking): counts
           // only, never the prompt or the answer (`lib/model-usage-log.ts`).

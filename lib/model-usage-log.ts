@@ -25,6 +25,8 @@ export type ModelUsageFields = {
   candidatesTokenCount: number | null;
   thoughtsTokenCount: number | null;
   totalTokenCount: number | null;
+  /** The provider call threw: no answer, and no counts unless it sent some. */
+  failed: boolean;
 };
 
 const count = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -36,6 +38,7 @@ export function modelUsageLog(input: {
   responseShape?: string | null;
   leased: boolean;
   durationMs: number;
+  failed?: boolean;
 }): ModelUsageFields {
   const u = (typeof input.usage === 'object' && input.usage !== null ? input.usage : {}) as Record<string, unknown>;
   return {
@@ -49,5 +52,6 @@ export function modelUsageLog(input: {
     candidatesTokenCount: count(u.candidatesTokenCount),
     thoughtsTokenCount: count(u.thoughtsTokenCount),
     totalTokenCount: count(u.totalTokenCount),
+    failed: input.failed === true,
   };
 }

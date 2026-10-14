@@ -344,6 +344,14 @@ test.describe('the lease route', () => {
     expect(get).toContain('readLeaseWindow(db, who.uid');
   });
 
+  test('a lease bought after Cancel, or before a failure, is closed when the generation ends (QA review of 6500c65c81c7)', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
+    const fin = page.slice(page.indexOf('generationInFlight.current = false;'));
+    const close = fin.indexOf('if (failed) closeLeaseRef.current?.();');
+    expect(close).toBeGreaterThan(-1);
+    expect(close).toBeLessThan(fin.indexOf('closeLeaseRef.current = null;'));
+  });
+
   test('the page sends a fresh run id per click and closes the lease on Cancel', () => {
     const page = code('app/(app)/project/[projectId]/transformation/page.tsx');
     expect(page).toMatch(/requestGenerationLease\(projectId as string, generationToken, [^\n]*, newGenerationRunId\(\)\)/);

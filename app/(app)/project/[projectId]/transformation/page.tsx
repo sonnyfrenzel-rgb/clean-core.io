@@ -1508,6 +1508,9 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     } finally {
       generationInFlight.current = false;
       abortRef.current = null;
+      // A lease bought after Cancel was clicked, or before any later failure,
+      // is closed here: Cancel only closes the lease it could already see.
+      if (failed) closeLeaseRef.current?.();
       closeLeaseRef.current = null;
       setCancelling(false);
       setPlanNonce((n) => n + 1);

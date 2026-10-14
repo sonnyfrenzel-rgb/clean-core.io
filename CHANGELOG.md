@@ -26,8 +26,8 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
   RAP path gets typed CDS, one validation per guard, determinations, a behavior pool and an ABAP
   Unit skeleton.
 - **Step-wise fills under a lease.** The model writes only function bodies, from that routine's
-  ABAP lines, its rules and the facts the earlier tools established, in small calls (at most
-  14,000 characters each, at most four in flight, one lease of at most 48 calls per generation).
+  ABAP lines, its rules and the facts the earlier tools established, in small calls (usually up
+  to 14,000 characters; a routine that cannot be split goes alone, up to 28,000; at most four in flight, one lease of at most 48 calls per generation).
   A body is spliced between markers and refused if a character of the scaffold moves. Failing
   functions alone go back, for at most two repair rounds. Where no scaffold can be built, the
   single model call remains as the fallback.
