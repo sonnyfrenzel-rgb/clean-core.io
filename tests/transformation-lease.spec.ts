@@ -344,6 +344,14 @@ test.describe('the lease route', () => {
     expect(get).toContain('readLeaseWindow(db, who.uid');
   });
 
+  test('Cancel before the lease request buys no lease, and the error strip retries through the start gate (QA review of 4459238f2ef0)', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
+    expect(page).toMatch(/if \(controller\.signal\.aborted\) throw Object\.assign\(new Error\('cancelled'\), \{ name: 'AbortError' \}\);\s*try \{\s*lease = await requestGenerationLease\(/);
+    const strip = page.slice(page.indexOf('data-transformation-error=""'));
+    expect(strip.slice(0, 600)).toContain('actions={canStart ? (');
+    expect(strip.slice(0, 600)).toContain('onClick={startGeneration}');
+  });
+
   test('a lease bought after Cancel, or before a failure, is closed when the generation ends (QA review of 6500c65c81c7)', () => {
     const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
     const fin = page.slice(page.indexOf('generationInFlight.current = false;'));

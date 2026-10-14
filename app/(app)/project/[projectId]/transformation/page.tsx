@@ -1368,6 +1368,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         //    — and the in-flight slots — of a run that was cancelled. The
         //    user's own limit is said as such; any other refusal falls back to
         //    the single call, which keeps today's metering.
+        // Cancel clicked while the contract was read: no lease is bought. The
+        // lease request itself is not aborted — its answer names the lease
+        // that `finally` closes (QA review of 4459238f2ef0).
+        if (controller.signal.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
         try {
           lease = await requestGenerationLease(projectId as string, generationToken, Math.min(prep.plannedCalls, LEASE_MAX_PLANNED_CALLS), newGenerationRunId());
           const bought = lease;
@@ -2150,8 +2154,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           <CcMessageStrip
             state="error"
             announce
-            actions={canGenerate ? (
-              <CcButton onClick={() => generateTransformation()} icon={<RefreshCw size={16} aria-hidden="true" />}>
+            actions={canStart ? (
+              <CcButton onClick={startGeneration} icon={<RefreshCw size={16} aria-hidden="true" />}>
                 Try again
               </CcButton>
             ) : undefined}
