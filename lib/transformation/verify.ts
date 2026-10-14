@@ -32,7 +32,7 @@
  */
 
 import type { CheckCount, CheckFailure, CheckKind, CheckScope, Verify, VerifyOutcome } from './orchestrator';
-import type { AbapActivation, AbapFinding } from './check-words';
+import type { AbapActivation, AbapFinding, TypeFindingWords } from './check-words';
 
 export { affFormatsCheck } from './aff-check';
 export { packageFormatsHook } from './abapgit-check';
@@ -310,6 +310,64 @@ export function abapCheckCount(a: AbapActivation, ms: number): CheckCount {
   return { kind: 'abap', total: a.files, failed: a.failedFiles, passed: Math.max(0, a.files - a.failedFiles), notRun: 0, ms };
 }
 
+/* -------------------------------------------- the type check of a Node candidate (3.0.13) */
+
+/** What the route answers for the type check (`lib/test-sandbox/type-check.ts`); the same shape, data only. */
+export type TypeCheckAnswer =
+  | { ran: true; typescript: string; files: number; failedFiles: number; errors: number; findings: TypeFindingWords[] }
+  | { ran: false; reason: string };
+
+/** At most this many errors are named in one function's repair reason; the count is complete. */
+export const TYPE_FINDINGS_PER_UNIT = 8;
+
+/**
+ * The compiler's errors onto the functions whose fill markers enclose them —
+ * each function's repair reason names its errors by the line of its own body,
+ * with the compiler's code and message. An error in engine-written code is one
+ * failure per file with `unitId: null`: a scaffold finding, never sent to the
+ * model.
+ */
+export function mapTypeFindings(findings: readonly TypeFindingWords[], spans: readonly MarkerSpan[]): CheckFailure[] {
+  const byUnit = new Map<string, Array<{ f: TypeFindingWords; bodyLine: number }>>();
+  const byFile = new Map<string, TypeFindingWords[]>();
+  for (const f of findings) {
+    const p = normPath(f.path);
+    const span = spans.find((s) => s.path === p && f.line > s.beginLine && f.line < s.endLine);
+    if (span) {
+      const list = byUnit.get(span.unitId) ?? [];
+      list.push({ f, bodyLine: f.line - span.beginLine });
+      byUnit.set(span.unitId, list);
+    } else {
+      const list = byFile.get(p) ?? [];
+      list.push(f);
+      byFile.set(p, list);
+    }
+  }
+  const out: CheckFailure[] = [];
+  for (const [unitId, list] of byUnit) {
+    const shown = list.slice(0, TYPE_FINDINGS_PER_UNIT).map((x) => `body line ${x.bodyLine} — ${x.f.code} ${x.f.message}`);
+    const more = list.length > shown.length ? `; and ${list.length - shown.length} more` : '';
+    out.push({
+      unitId,
+      check: 'types',
+      failure: `the TypeScript compiler (the package's own tsconfig.json) does not accept this body — ${list.length} type error${list.length === 1 ? '' : 's'}: ${shown.join('; ')}${more}`,
+    });
+  }
+  for (const [path, list] of byFile) {
+    out.push({
+      unitId: null,
+      check: 'types',
+      failure: `${path}: ${list.length} type error${list.length === 1 ? '' : 's'} outside the written functions, first at line ${list[0].line} — ${list[0].code} ${list[0].message}`,
+    });
+  }
+  return out;
+}
+
+/** The type check as the generation screen counts it: the candidate's TypeScript files, passed or failed. */
+export function typeCheckCount(t: Extract<TypeCheckAnswer, { ran: true }>, ms: number): CheckCount {
+  return { kind: 'types', total: t.files, failed: t.failedFiles, passed: Math.max(0, t.files - t.failedFiles), notRun: 0, ms };
+}
+
 /* ------------------------------------------------------------ the verifier */
 
 /** What `POST /api/run-tests { mode: 'verify' }` answers (see the route). */
@@ -321,6 +379,11 @@ export interface VerifyRunAnswer {
    * route on the candidate it was handed. Absent on a Node candidate and from a server before 3.0.13.
    */
   abap?: { ran: true; activation: AbapActivation } | { ran: false; reason: string };
+  /**
+   * The type check of a Node candidate (3.0.13, A1): the TypeScript compiler with the package's own
+   * tsconfig.json, run by the route on the candidate. Absent on an ABAP candidate and from a server before 3.0.13.
+   */
+  types?: TypeCheckAnswer;
   engine:
     | { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null; scope?: CheckScope; guard?: string | null }> }
     | { ran: false; reason: string };
@@ -348,6 +411,13 @@ export interface RunnerVerifierDeps {
   formats?: (files: readonly FileLike[]) => { count: CheckCount; failures: CheckFailure[] };
   /** Told the activation check of every round (null when it did not run), so the page can store the last one's words. */
   onActivation?: (activation: AbapActivation | null) => void;
+  /**
+   * The route of the candidate (3.0.13). On `node` the type check must answer: a round in which it did not run
+   * says so (`types` not run) — the generation is then not verified, never complete.
+   */
+  track?: 'node' | 'rap';
+  /** Told the type check of every round (null when it did not run), so the page can say the last one's words. */
+  onTypeCheck?: (types: TypeCheckAnswer | null) => void;
   now?: () => number;
 }
 
@@ -378,7 +448,9 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
     }
 
     const notRun = (kind: CheckKind, reason: string) => outcome.notRun.push({ kind, reason });
+    const node = deps.track === 'node';
     if (!deps.runOnRunner) {
+      if (node) notRun('types', 'Type check not run: no server check was given to this check.');
       notRun('cases', 'Engine cases not run: no test runner was given to this check.');
       notRun('probes', 'Failure-pattern probes not run: no test runner was given to this check.');
       return outcome;
@@ -390,11 +462,26 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err);
       deps.onActivation?.(null);
+      deps.onTypeCheck?.(null);
+      if (node) notRun('types', `Type check not run: the verify route did not answer (${why}).`);
       notRun('cases', `Engine cases and probes not run: the test runner is not reachable (${why}). Run them in Testing.`);
       notRun('probes', `Engine cases and probes not run: the test runner is not reachable (${why}). Run them in Testing.`);
       return outcome;
     }
     const ms = now() - t0;
+    if (answer.types) {
+      if (answer.types.ran) {
+        outcome.checks.push(typeCheckCount(answer.types, ms));
+        outcome.failures.push(...mapTypeFindings(answer.types.findings, spans));
+        deps.onTypeCheck?.(answer.types);
+      } else {
+        notRun('types', answer.types.reason);
+        deps.onTypeCheck?.(null);
+      }
+    } else if (node) {
+      notRun('types', 'Type check not run: the server answered without one.');
+      deps.onTypeCheck?.(null);
+    }
     if (answer.abap) {
       if (answer.abap.ran) {
         outcome.checks.push(abapCheckCount(answer.abap.activation, ms));

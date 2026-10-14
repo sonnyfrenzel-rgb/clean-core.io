@@ -268,6 +268,16 @@ export function decisionRecordIsLive(record: ContextDecision['record']): boolean
   return !!record && record.status !== 'withdrawn' && record.status !== 'superseded';
 }
 
+/**
+ * The live decision on record a rebuild contradicts (retire, standard, keep), as the scaffold's first-line
+ * header names it (3.0.13, B6, `lib/transformation/decision-header.ts`); null when there is none.
+ */
+export function againstDecisionOf(projectDecision: unknown): { id: string; option: string } | null {
+  const rec = recordedDecisionOf(projectDecision);
+  if (!rec || !decisionRecordIsLive(rec) || !rec.optionKind || rec.optionKind === 'rebuild') return null;
+  return { id: rec.id, option: rec.optionKind };
+}
+
 const ROUTE_WORD: Record<ContextDecision['route']['chosen'], string> = {
   'in-app-rap': 'in-app RAP on ABAP Cloud (developer extensibility)',
   'side-by-side-cap': 'side-by-side on SAP BTP (Node.js / CAP)',

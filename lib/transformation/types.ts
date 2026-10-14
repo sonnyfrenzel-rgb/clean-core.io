@@ -543,12 +543,14 @@ export interface Trace {
   notCarried: NotCarried[];
   openRules: string[];
   droppedRules: string[];
-  /** 3.0.13 (6): the golden master (`ltc_golden_master`) — the original's demo cases carried as ABAP Unit test data, and whether their rows reach the logic. Absent when none was written. */
-  goldenMaster?: { cases: number; rowsPassed: boolean };
+  /** 3.0.13 (6, A4): the golden master — the original's demo cases carried as test data (ABAP Unit `ltc_golden_master`, or Node's test/fixtures/original-demo.json), and whether their rows reach the logic. Absent when none was written. */
+  goldenMaster?: { cases: number; rowsPassed: boolean; carrier?: 'abap-unit' | 'node-test' };
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
-    /** `not-activatable` since 3.0.13: abaplint's parser or syntax errors were left in an ABAP package. */
-    status: 'complete' | 'partial' | 'not-activatable';
+    /** See `GenerationStatus`. */
+    status: GenerationStatus;
+    /** Node route (3.0.13): what of the type check, engine cases and probes did not run — why the status is `not-verified`. */
+    unverified?: string[];
     units: number;
     written: number;
     repaired: number;
@@ -561,6 +563,15 @@ export interface Trace {
     rounds: number;
   };
 }
+
+/**
+ * The status of an engine-led generation. `complete`: every function written and nothing below holds;
+ * `partial`: a function left as a stub; `not-activatable` (3.0.13, ABAP route): abaplint's parser or syntax
+ * errors were left; `not-runnable` (3.0.13, Node route): the TypeScript compiler, with the package's own
+ * tsconfig.json, finds type errors; `not-verified` (3.0.13, Node route): every function written and compiling,
+ * but the type check, the engine cases or the probes did not run (or ran in part) — never evidence.
+ */
+export type GenerationStatus = 'complete' | 'partial' | 'not-activatable' | 'not-runnable' | 'not-verified';
 
 /** What Track C reports per region after the fills, for `traceOf`. */
 export interface FillOutcome {
@@ -667,7 +678,7 @@ export type GenerationEvent =
   | {
       t: 'check';
       /** `abap` (3.0.13): abaplint's parser and syntax check of an ABAP candidate. */
-      kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
+      kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap' | 'types';
       total: number;
       failed: number;
       /** Split of `total` (step E): passed, failed, not run — absent on the guards and the lints. */

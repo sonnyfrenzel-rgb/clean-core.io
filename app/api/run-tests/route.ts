@@ -1061,9 +1061,25 @@ async function verifyCandidateResponse(input: {
     });
   }
 
+  // 3.0.13 (A1): a Node candidate is type-checked here, with the options of its own tsconfig.json — the runner
+  // only bundles it (esbuild strips types and checks none). Its errors are the repair reasons of the functions
+  // that hold them; the answer carries the check whether or not the runner can run the cases.
+  const { typeCheckCandidate } = await import('@/lib/test-sandbox/type-check');
+  const typed = typeCheckCandidate(candidate);
+  const types = typed.ran
+    ? { ran: true as const, typescript: typed.typescript, files: typed.files, failedFiles: typed.failedFiles, errors: typed.errors, findings: typed.findings }
+    : { ran: false as const, reason: typed.reason };
+
   const target = resolveRunnerTarget('mock', readRunnerConfig());
   if (target.kind === 'unavailable') {
-    return NextResponse.json({ output: '', error: target.reason, exitCode: 1, code: 'runner-unavailable' }, { status: target.status });
+    return NextResponse.json({
+      mode: 'verify',
+      draftId: draft.draftId,
+      buildError: null,
+      types,
+      engine: { ran: false, reason: `Engine cases not run: ${target.reason}` },
+      probes: { ran: false, reason: `Failure-pattern probes not run: ${target.reason}` },
+    });
   }
 
   const files = candidate;
@@ -1107,10 +1123,21 @@ async function verifyCandidateResponse(input: {
       mode: 'verify',
       draftId: draft.draftId,
       buildError: null,
+      types,
       engine: { ran: false, reason: engineNotRun ?? 'Engine cases not run.' },
       probes: { ran: false, reason: probe.reason },
     });
   }
+  /** The runner gave no usable report: the cases and probes did not run, and say why; the type check stands. */
+  const runnerNotRun = (reason: string) =>
+    NextResponse.json({
+      mode: 'verify',
+      draftId: draft.draftId,
+      buildError: null,
+      types,
+      engine: { ran: false, reason: `Engine cases not run: ${reason}` },
+      probes: { ran: false, reason: `Failure-pattern probes not run: ${reason}` },
+    });
 
   let probeStdout: string | null = null;
   let probeReason: string | null = probe.ok ? null : probe.reason;
@@ -1126,7 +1153,7 @@ async function verifyCandidateResponse(input: {
     );
     if (!call.ok) {
       logger.error('run-tests: the isolated runner did not deliver a usable verify report', { projectId, reason: call.reason });
-      return NextResponse.json({ output: '', error: call.reason, exitCode: 1, code: 'runner-error' }, { status: call.status });
+      return runnerNotRun(call.reason);
     }
     runner = { kind: 'isolated', revision: call.report.revision };
     if (call.report.outcome === 'build-error') buildError = call.report.buildError || 'Compilation failed.';
@@ -1150,9 +1177,7 @@ async function verifyCandidateResponse(input: {
   } else {
     runner = { kind: 'local-emulator', revision: 'local-emulator' };
     const outcome = await executeLocally(target, { files, suiteCode, patterns: [] });
-    if (outcome.kind === 'unavailable') {
-      return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1, code: 'runner-unavailable' }, { status: 500 });
-    }
+    if (outcome.kind === 'unavailable') return runnerNotRun(outcome.reason);
     if (outcome.kind === 'build-error') buildError = outcome.message;
     if (probe.ok && !buildError) {
       // The same derivation and the same confined pass the runner runs.
@@ -1184,6 +1209,7 @@ async function verifyCandidateResponse(input: {
     draftId: draft.draftId,
     runner,
     buildError,
+    types,
     engine: engineStdout !== null ? { ran: true, results: engineResults, cases: caseInfo } : { ran: false, reason: engineReason ?? 'Engine cases not run.' },
     probes:
       probe.ok && !buildError && probeStdout !== null

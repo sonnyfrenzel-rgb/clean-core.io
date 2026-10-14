@@ -52,8 +52,11 @@ import {
   activationStatusPhrase,
   checkPhrase,
   hasPageReportedChecks,
+  notVerifiedPhrase,
   orderedChecks,
+  typeCheckStatusPhrase,
   type AbapActivation,
+  type NodeTypeCheck,
 } from './transformation/check-words';
 import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap-stubs';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
@@ -1305,7 +1308,18 @@ export function generationLine(g: DeliveryFacts['generation'] | null): string | 
   const e = g.engine;
   if (!e) return null;
   // 3.0.13: on the ABAP route the server's activation check is the status — a record from before keeps its words.
-  const activation = g.activation ? `; ${activationStatusPhrase(g.activation)}` : e.status === 'not-activatable' ? '; generated — not activatable' : '';
+  // 3.0.13: on the Node route the server's type check, and whether the cases ran, are the status as well.
+  const activation = g.activation
+    ? `; ${activationStatusPhrase(g.activation)}`
+    : e.status === 'not-activatable'
+      ? '; generated — not activatable'
+      : g.typeCheck && !g.typeCheck.runnable
+        ? `; ${typeCheckStatusPhrase(g.typeCheck)}`
+        : e.status === 'not-runnable'
+          ? '; generated — not runnable'
+          : e.status === 'not-verified'
+            ? `; ${notVerifiedPhrase(e.unverified?.length ? e.unverified : ['the checks did not run in full'])}`
+            : '';
   return `Engine scaffold and model-written function bodies — ${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}${e.status === 'partial' ? '; partial' : ''}${activation}. See "How this code was built" and TRACE.md.`;
 }
 
@@ -1325,6 +1339,9 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
     `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${generationStatusWords(g)}**.`,
   );
   if (g.activation) lines.push(...activationLines(g.activation));
+  if (g.typeCheck) lines.push(...typeCheckLines(g.typeCheck));
+  for (const u of e.unverified ?? []) lines.push(`- Not verified: ${u}. A case that did not run is no evidence.`);
+  for (const s of e.sapIds ?? []) lines.push(`- SAP identifier in \`${s.unitId}\` to check before use: ${s.id} — ${s.state}${s.sapName ? ` (SAP: ${s.sapName})` : ''}.`);
   for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
   for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
   for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
@@ -1342,7 +1359,18 @@ function generationStatusWords(g: NonNullable<DeliveryFacts['generation']>): str
   const e = g.engine!;
   if (g.activation && !g.activation.activatable) return activationStatusPhrase(g.activation);
   if (e.status === 'not-activatable') return 'generated — not activatable';
+  if (g.typeCheck && !g.typeCheck.runnable) return typeCheckStatusPhrase(g.typeCheck);
+  if (e.status === 'not-runnable') return 'generated — not runnable';
+  if (e.status === 'not-verified') return notVerifiedPhrase(e.unverified?.length ? e.unverified : ['the checks did not run in full']);
   return e.status;
+}
+
+/** The server's type check in STATUS.md (Node route, 3.0.13), with the first errors by file and line. */
+function typeCheckLines(t: NodeTypeCheck): string[] {
+  const out = [`- Type check (Clean-Core.io's server, before saving): ${typeCheckStatusPhrase(t)}. Repeat it with \`npm run typecheck\`.`];
+  for (const f of t.findings.slice(0, 12)) out.push(`  - \`${f.path}:${f.line}\` ${f.code} — ${f.message}`);
+  if (t.errors > 12) out.push(`  - … and ${t.errors - 12} more.`);
+  return out;
 }
 
 /** The activation check in STATUS.md, with where the raw findings are. */

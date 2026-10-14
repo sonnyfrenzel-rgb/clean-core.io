@@ -453,7 +453,8 @@ test.describe('a prompt the route would refuse is never sent (QA finding 804d092
     expect(sent.some((p) => p.includes('"U02"'))).toBe(false);
     const u02 = result.units.find((u) => u.unitId === 'U02')!;
     expect(u02.state).toBe('not-written');
-    expect(u02.reason).toMatch(/^not written — its prompt has [\d,]+ characters, more than the 28,000 a fill call may carry$/);
+    // 3.0.13 (B7): the ABAP slice is never cut to fit, and the reason says so.
+    expect(u02.reason).toMatch(/^not written — its prompt has [\d,]+ characters with its whole ABAP slice, more than the 28,000 a fill call may carry — the slice is not sent cut$/);
     expect(result.units.filter((u) => u.state === 'written').map((u) => u.unitId).sort()).toEqual(['U01', 'U03']);
     expect(result.status).toBe('partial');
   });

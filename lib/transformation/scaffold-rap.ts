@@ -70,6 +70,7 @@ import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './marker
 import { goldenMasterForScaffold } from './golden-master';
 import { rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
+import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
 import { sliceFor } from './abap-slice';
 import { readRapContract, simpleTypeName, structureComponents, tableLineOf, typeDefinition, type RapContract, type RapParam } from './rap-contract';
@@ -88,6 +89,8 @@ export const OPEN_MARKER = '@cc-open';
 
 export interface RapScaffoldOptions {
   cases?: EngineCaseDerivation;
+  /** 3.0.13 (B6): the live decision on record this rebuild contradicts — every main file says so in its first line. */
+  against?: AgainstDecision | null;
 }
 
 // rapShortName and rapTableName live in rap-names.ts (no scaffold behind them, for the client bundle); re-exported here.
@@ -1647,6 +1650,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   files.push(...meta);
 
   for (const file of files) file.content = defuseMarkers(file.content);
+  // 3.0.13 (B6): a rebuild against a live decision on record says so in the first line of every main file.
+  files.splice(0, files.length, ...withDraftHeader(files, options.against));
   const guards: RapClassContract['guards'] = {};
   for (const p of predicates.values()) {
     guards[p.guard.id] = { predicate: p.name, call: callOf(p), calledBy: engineCalled.has(p.guard.id) ? 'engine' : 'body', written: p.condition !== null ? 'engine' : 'model' };

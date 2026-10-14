@@ -30,6 +30,10 @@ import { sha256Hex } from '../artefact-digest';
 import { engineCaseProvenance } from '../engine-case-provenance';
 import { ENGINE_RUNTIME_JS } from '../test-sandbox/engine-runtime';
 import { deriveEngineCases, ENGINE_CASES_FILE, engineCasesFile, type EngineCaseDerivation } from '../testing-engine-cases';
+import { readAbapShapes, shapeComment, type AbapShapes } from './abap-shapes';
+import { withDraftHeader, type AgainstDecision } from './decision-header';
+import { originalDemoCases, type OriginalDemoCases } from './golden-master';
+import { nodeDemoFiles } from './node-demo';
 import { acceptanceAdapter, contractModel } from './call-contract';
 import { fillProbeConfigs } from './fill-probes';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
@@ -47,6 +51,10 @@ export interface NodeScaffoldOptions {
   cases?: EngineCaseDerivation;
   /** The run the package is built from (§12.3). */
   runId?: string | null;
+  /** The live decision on record this rebuild contradicts: every main file says so in its first line (3.0.13, B6). */
+  against?: AgainstDecision | null;
+  /** The original's demo cases (`originalDemoCases`); read from the source when absent, none when null (A4). */
+  originalDemo?: OriginalDemoCases | null;
 }
 
 /** Helpers every body may call (§8.2 `available.helpers`). */
@@ -85,7 +93,15 @@ function decimalTypeName(f: ContractField): string {
 
 /* ------------------------------------------------------------- lib/types */
 
-function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string): string {
+/** The names types.ts declares itself; a structure of the original that shares one is suffixed (`abap-shapes.ts`). */
+function typesReserved(plan: UnitPlan): Set<string> {
+  return new Set([
+    'Dec', 'DecimalField', 'Range', 'Selection', 'Rec', 'Request', 'RunState', 'StepResult', 'Locals', 'Refusal',
+    ...plan.fields.filter((f) => f.kind === 'packed').map(decimalTypeName),
+  ]);
+}
+
+function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes): string {
   const packed = plan.fields.filter((f) => f.kind === 'packed');
   const selection = plan.fields.filter((f) => f.where === 'selection');
   const record = plan.fields.filter((f) => f.where === 'record');
@@ -130,13 +146,46 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   if (plan.fields.length === 0) lines.push('  run?: boolean;');
   lines.push('}');
   lines.push('');
-  lines.push('/** One input record, validated. */');
+  // The structure each record field comes from (A3, 3.0.13): the request carries one record list in this
+  // version, so a record holds the input fields of every input structure together — each field says whose it is.
+  const ownerOf = (line: number) => shapes.structures.find((s) => line > s.line && line < s.lineEnd);
+  const owners = [...new Set(record.map((f) => ownerOf(f.line)).filter((s): s is NonNullable<typeof s> => !!s))];
+  lines.push('/**');
+  lines.push(' * One input record, validated.');
+  if (owners.length > 1) {
+    lines.push(` * The request carries one record list: a record holds the input fields of ${owners.map((s) => `${s.name.toUpperCase()} (${s.tsName}, L${s.line}–${s.lineEnd})`).join(', ')}`);
+    lines.push(' * together — each field names the structure it comes from. Rows of each structure, typed: the interfaces below.');
+  } else if (owners.length === 1) {
+    lines.push(` * Its fields are the input components of ${owners[0].name.toUpperCase()} (${owners[0].tsName}, L${owners[0].line}–${owners[0].lineEnd}).`);
+  }
+  lines.push(' */');
   lines.push('export interface Rec {');
-  for (const f of record) lines.push(`  /** ${f.original} — ${f.declaration}, L${f.line}. */\n  ${f.key}: ${fieldType(f)};`);
+  for (const f of record) {
+    const owner = ownerOf(f.line);
+    lines.push(`  /** ${f.original} — ${f.declaration}, L${f.line}${owner ? `, of ${owner.name.toUpperCase()}` : ''}. */\n  ${f.key}: ${fieldType(f)};`);
+  }
   lines.push('}');
   lines.push('');
   lines.push('/** A validated request: the selection and the records. */');
   lines.push('export type Request = Selection & { records: Rec[] };');
+  lines.push('');
+  // Every structure the original declares, typed by its components (scalars as text: numbers are computed through dec.*).
+  for (const s of shapes.structures) {
+    lines.push(`/** ${s.name.toUpperCase()} — the original's structure, L${s.line}–${s.lineEnd}. Numbers are text at their places (compute with dec.*). */`);
+    lines.push(`export interface ${s.tsName} {`);
+    for (const f of s.fields) lines.push(`  /** ${shapeComment(f)} */\n  ${f.key}: ${f.ts};`);
+    lines.push('}');
+    lines.push('');
+  }
+  lines.push("/** The original's global data, typed by its declarations: what the steps share in one run (st.local). */");
+  lines.push('export interface Locals {');
+  for (const g of shapes.globals) lines.push(`  /** ${shapeComment(g)} */\n  ${g.key}: ${g.ts};`);
+  lines.push('}');
+  lines.push('');
+  lines.push('/** A fresh run: every global at its ABAP initial value (or the VALUE the original declares). */');
+  lines.push('export function initialLocals(): Locals {');
+  lines.push(shapes.globals.length ? `  return {\n${shapes.globals.map((g) => `    ${g.key}: ${g.init},`).join('\n')}\n  };` : '  return {};');
+  lines.push('}');
   lines.push('');
   lines.push('/** What one run carries through the steps. No module-level state: a new RunState per run. */');
   lines.push('export interface RunState {');
@@ -149,8 +198,8 @@ function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: s
   lines.push('  issues: Array<{ severity: string; message: string; rule?: string }>;');
   lines.push('  /** Regions of the package still left as stubs when this run reached them. */');
   lines.push('  notFilled: string[];');
-  lines.push('  /** Working data of the steps (the original\'s global variables). */');
-  lines.push('  local: Record<string, unknown>;');
+  lines.push("  /** Working data of the steps: the original's global data, typed (Locals). */");
+  lines.push('  local: Locals;');
   lines.push('}');
   lines.push('');
   lines.push('/** A step refuses the input (Refusal), or goes on (nothing). */');
@@ -302,6 +351,27 @@ export function validateRequest(raw: unknown): Validation {
   }
   if (errors.length > 0) return { ok: false, errors, normalized: null };
   return { ok: true, errors: [], normalized: { ...(out as unknown as Selection), records: records as unknown as Rec[] } };
+}
+
+/**
+ * The selection alone, through the same contract (3.0.13): the original's demo cases (srv/fixtures.ts) bring
+ * their input as the original's own tables, not as request records, so only their selection is validated here.
+ */
+export function validateSelection(raw: unknown): { ok: boolean; errors: InputError[]; selection: Selection | null } {
+  const errors: InputError[] = [];
+  if (!isObj(raw)) return { ok: false, errors: [{ field: null, rule: 'INPUT', message: 'the selection is not an object' }], selection: null };
+  const specs = FIELDS.filter((f) => f.where === 'selection');
+  const known = new Set(specs.map((f) => f.key));
+  for (const key of Object.keys(raw)) {
+    if (!known.has(key)) errors.push({ field: key, rule: 'INPUT', message: key + ': the original offers no such option' });
+  }
+  const out: Record<string, unknown> = {};
+  for (const spec of specs) {
+    const v = normalise(spec, raw[spec.key], spec.key, errors);
+    if (v !== undefined) out[spec.key] = v;
+  }
+  if (errors.length > 0) return { ok: false, errors, selection: null };
+  return { ok: true, errors: [], selection: out as unknown as Selection };
 }
 
 /** A CSV upload of records plus the selection in the query, as the raw request validateRequest reads. */
@@ -661,7 +731,8 @@ function processFile(plan: UnitPlan, facts: EngineFacts): Built {
   out.push("import * as dec from './lib/decimal.ts';");
   out.push("import { NotImplementedFill, Refusal } from './lib/errors.ts';");
   out.push(`import { ${['checked', 'checkSelection', ...guardImports(orch, plan).filter((n) => n !== 'checked')].join(', ')} } from './lib/guards.ts';`);
-  out.push("import type { Rec, RunState, Selection, StepResult } from './lib/types.ts';");
+  out.push("import { initialLocals } from './lib/types.ts';");
+  out.push("import type { Locals, Rec, RunState, Selection, StepResult } from './lib/types.ts';");
   for (const s of steps) out.push(`import { ${s.fn} } from './${s.file.replace('srv/', '')}';`);
   out.push('');
   const doc = [
@@ -685,9 +756,12 @@ function processFile(plan: UnitPlan, facts: EngineFacts): Built {
   out.push('  state: RunState;');
   out.push('}');
   out.push('');
-  out.push('/** One run: a fresh state, the selection checks, then runSteps. A stub is recorded, never hidden. */');
-  out.push('export function runProcess(sel: Selection, records: Rec[]): ProcessOutcome {');
-  out.push('  const st: RunState = { selection: sel, records: records.slice(), rows: [], result: {}, issues: [], notFilled: [], local: {} };');
+  out.push('/**');
+  out.push(' * One run: a fresh state, the selection checks, then runSteps. A stub is recorded, never hidden.');
+  out.push(" * `seed`: globals the run starts with instead of their initial value — the original's demo tables (srv/fixtures.ts).");
+  out.push(' */');
+  out.push('export function runProcess(sel: Selection, records: Rec[], seed: Partial<Locals> = {}): ProcessOutcome {');
+  out.push('  const st: RunState = { selection: sel, records: records.slice(), rows: [], result: {}, issues: [], notFilled: [], local: { ...initialLocals(), ...seed } };');
   out.push('  const done = (refusal: Refusal | null): ProcessOutcome => {');
   out.push('    const notFilled = [...new Set(st.notFilled)];');
   out.push('    return { refusal, complete: notFilled.length === 0, notFilled, state: st };');
@@ -887,7 +961,7 @@ function engineContractFile(plan: UnitPlan): string {
     "import * as guards from './lib/guards.ts';",
     "import { validateRequest, type InputError } from './lib/input-contract.ts';",
     "import { createRunStore } from './lib/run-store.ts';",
-    "import { DECIMALS, type Request, type Selection } from './lib/types.ts';",
+    "import { DECIMALS, initialLocals, type Request, type Selection } from './lib/types.ts';",
     "import { simulateRequest, type RunResult } from './simulate.ts';",
     '',
     `export const CONTRACT = ${JSON.stringify(model, null, 2)};`,
@@ -989,7 +1063,7 @@ function checkExport(plan: UnitPlan): string[] {
     '  const given = (values ?? {}) as Record<string, unknown>;',
     '  const asked = spec.table !== null ? given[spec.table] : undefined;',
     "  const empty = typeof asked === 'object' && asked !== null && (asked as { special?: unknown }).special === 'empty';",
-    '  const st = { selection, records: empty ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local: {} };',
+    '  const st = { selection, records: empty ? [] : records.slice(), rows: [], result: {}, issues: [], notFilled: [] as string[], local: initialLocals() };',
     '  const missingValues = spec.operands.filter((o) => !(o.name in given)).map((o) => o.name);',
     '  if (missingValues.length > 0) return { ok: false, missingValues, errors: [] as InputError[] };',
     '  const unsupported = spec.operands.filter((o) => o.form === null).map((o) => o.name);',
@@ -1116,42 +1190,14 @@ for (const c of cases) {
   test(c.id + ' ' + c.name, async (t) => {
     const r = await runEngineCase(contract, c, state);
     if (r.status === 'Not run') {
-      t.skip(r.reason);
+      // A case that did not run is no evidence (3.0.13, A5): said as such, never counted as passed.
+      t.skip('NOT RUN - not evidence: ' + r.reason);
       return;
     }
     assert.equal(r.status, 'Passed', JSON.stringify(r.examples.filter((e) => e.status === 'fail')));
   });
 }
 `;
-
-function fixturesFile(plan: UnitPlan): ScaffoldFile | null {
-  const fixtures = plan.notCarried.filter((n) => n.reason === 'fixture');
-  if (fixtures.length === 0) return null;
-  return {
-    path: 'srv/fixtures.ts',
-    owner: 'engine',
-    content: [
-      '/**',
-      " * The original's demo data is not carried over in this version (owner, 12.10.2026): its routines",
-      ` * (${fixtures.map((f) => `${f.routine} L${f.lineStart}–L${f.lineEnd}`).join(', ')}) are fixtures.`,
-      ' * This loader reads test/fixtures/original-demo.json; until the engine extracts the demo cases it holds no records.',
-      ' * Written by Clean-Core.io (engine).',
-      ' */',
-      "import fs from 'node:fs';",
-      '',
-      'export interface OriginalDemo {',
-      '  note: string;',
-      '  routines: string[];',
-      '  records: Array<Record<string, unknown>>;',
-      '}',
-      '',
-      'export function loadOriginalDemo(file: URL = new URL(\'../test/fixtures/original-demo.json\', import.meta.url)): OriginalDemo {',
-      "  return JSON.parse(fs.readFileSync(file, 'utf8')) as OriginalDemo;",
-      '}',
-      '',
-    ].join('\n'),
-  };
-}
 
 /* ------------------------------------------------------------- db, misc */
 
@@ -1257,7 +1303,8 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/lib/decimal.ts', content: DECIMAL_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/csv.ts', content: CSV_TS, owner: 'engine' });
   files.push({ path: 'srv/lib/run-store.ts', content: RUN_STORE_TS, owner: 'engine' });
-  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan)), owner: 'engine' });
+  const shapes = readAbapShapes(facts.statements, facts.blocks, typesReserved(plan));
+  files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes), owner: 'engine' });
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan), owner: 'engine' });
   add(guardsFile(plan));
   for (const u of plan.units) {
@@ -1271,23 +1318,9 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
   files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan), owner: 'engine' });
-  const fixtures = fixturesFile(plan);
-  if (fixtures) {
-    files.push(fixtures);
-    files.push({
-      path: 'test/fixtures/original-demo.json',
-      owner: 'engine',
-      content: `${JSON.stringify(
-        {
-          note: 'Demo data of the original is not carried over in this version; the engine extracts it as cases later (roadmap 3.0.16).',
-          routines: plan.notCarried.filter((n) => n.reason === 'fixture').map((n) => n.routine),
-          records: [],
-        },
-        null,
-        2,
-      )}\n`,
-    });
-  }
+  // The original's demo cases (3.0.13, A4): the golden master as data, a loader that runs one case through the
+  // process with the case's tables as the run's globals, and a test that runs them all (`node-demo.ts`).
+  files.push(...nodeDemoFiles(plan, shapes, options.originalDemo === undefined ? originalDemoCases(facts.source) : options.originalDemo));
   files.push({ path: 'db/schema.cds', content: schemaCds(plan, facts), owner: 'engine' });
   files.push({
     path: ENGINE_CASES_FILE,
@@ -1314,6 +1347,8 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   // traceability.json and TRACE.md are not part of the scaffold: they say who filled each function, so they
   // are written after the fills (`withTrace`, trace.ts) and stay outside the digest.
   for (const file of files) file.content = defuseMarkers(file.content);
+  // Engine-written and before the digest: the regions are found in the files as they ship (B6).
+  files.splice(0, files.length, ...withDraftHeader(files, options.against));
   const required: Record<string, RequiredGuard[]> = {};
   for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'node', facts.statements);
   return { track: 'node', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter, notCarried: plan.notCarried, available, required };

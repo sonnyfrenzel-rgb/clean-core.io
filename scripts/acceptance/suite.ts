@@ -46,9 +46,8 @@
  *
  * GATES. RAP: `lib/transformation/abap-check.ts` (`abapCheck`), the activation
  * gate the product runs: parser and syntax errors fail it, findings that name SAP
- * objects the check cannot see are counted apart. Node: `lib/transformation/node-type-check.ts`
- * (`nodeTypeCheck`) when it exists, else "not run" - looked up at run time so
- * the suite works before and after that module lands.
+ * objects the check cannot see are counted apart. Node: `lib/test-sandbox/type-check.ts`
+ * (`typeCheckCandidate`), the candidate compiled under its own tsconfig.json.
  *
  * PRIVACY. The reports carry the reviewers' scenario IDs and verdicts, never
  * their values, but the folder is still gitignored, and `--seal` keeps only the
@@ -71,6 +70,7 @@ import { affSchemaSource } from '../../lib/transformation/aff-schemas';
 import { preflight } from '../../lib/transformation/preflight';
 import { checkSummaryOf } from '../../lib/transformation/check-words';
 import { abapCheck } from '../../lib/transformation/abap-check';
+import { typeCheckCandidate } from '../../lib/test-sandbox/type-check';
 import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '../../lib/transformation/lease';
 import { generatedCodeLints, packedDecimalFields } from '../../lib/generated-code-lints';
 import { geminiTestStubFillText } from '../../lib/gemini-test-stub';
@@ -80,7 +80,7 @@ import { thinkingConfigFor } from '../../lib/model-thinking';
 import { modelCompletion, MODEL_INCOMPLETE_CODE } from '../../lib/model-completion';
 import { modelDeadline, MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE } from '../../lib/model-deadline';
 import { isTransientModelError } from '../../lib/model-retry';
-import type { GenerationEvent } from '../../lib/transformation/types';
+import type { GenerationEvent, GenerationStatus } from '../../lib/transformation/types';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const HERE = __dirname;
@@ -138,7 +138,8 @@ export interface RunRecord {
   program: string;
   track: Track;
   run: number;
-  status: 'complete' | 'partial' | 'not-activatable' | 'blocked' | 'fallback' | 'failed' | 'cap-reached';
+  /** The package's own status (GenerationStatus: complete, partial, not-activatable, not-runnable, not-verified) or why there is none. */
+  status: GenerationStatus | 'blocked' | 'fallback' | 'failed' | 'cap-reached';
   reason: string | null;
   durationMs: number;
   prepareMs: number;
@@ -420,35 +421,6 @@ export function realModel(opts: { apiKey: string; model: string; priceIn: number
 
 type FileLike = { path: string; content: string };
 
-/** A module another track of work provides, looked up at run time (absent: null). */
-async function optionalModule(rel: string): Promise<Record<string, unknown> | null> {
-  for (const ext of ['.ts', '.mjs', '.js']) {
-    const file = path.join(ROOT, `${rel}${ext}`);
-    if (fs.existsSync(file)) return (await import(pathToFileURL(file).href)) as Record<string, unknown>;
-  }
-  return null;
-}
-
-function gateFrom(kind: GateResult['kind'], tool: string, raw: unknown): GateResult {
-  const r = (raw ?? {}) as Record<string, unknown>;
-  const n = (k: string) => (typeof r[k] === 'number' ? (r[k] as number) : null);
-  const parserErrors = n('parserErrors');
-  const syntaxErrors = n('syntaxErrors');
-  const typeErrors = n('typeErrors');
-  const ran = r.state !== 'not-run' && (parserErrors !== null || syntaxErrors !== null || typeErrors !== null);
-  const errors = (parserErrors ?? 0) + (syntaxErrors ?? 0) + (typeErrors ?? 0);
-  return {
-    kind,
-    tool,
-    state: !ran ? 'not-run' : errors === 0 ? 'passed' : 'failed',
-    parserErrors,
-    syntaxErrors,
-    typeErrors,
-    otherFindings: n('otherFindings'),
-    reason: typeof r.reason === 'string' ? r.reason : null,
-  };
-}
-
 export async function abapGate(files: FileLike[]): Promise<GateResult> {
   // The activation gate of 3.0.13 item 1 (lib/transformation/abap-check.ts): abaplint with the
   // package's shipped config and the SAP stubs; parser and syntax errors make it not activatable.
@@ -469,11 +441,20 @@ export async function abapGate(files: FileLike[]): Promise<GateResult> {
 }
 
 export async function nodeGate(files: FileLike[]): Promise<GateResult> {
-  const mod = await optionalModule('lib/transformation/node-type-check');
-  if (mod && typeof mod.nodeTypeCheck === 'function') {
-    return gateFrom('node-type-check', 'lib/transformation/node-type-check.ts', await (mod.nodeTypeCheck as (f: FileLike[]) => unknown)(files));
-  }
-  return { kind: 'node-type-check', tool: 'none', state: 'not-run', parserErrors: null, syntaxErrors: null, typeErrors: null, otherFindings: null, reason: 'no type check is available yet (lib/transformation/node-type-check.ts)' };
+  // The compile gate of the Node route (3.0.13, Node core): the candidate under its own tsconfig.json, in process.
+  const tool = 'lib/test-sandbox/type-check.ts (typeCheckCandidate)';
+  const r = typeCheckCandidate(files);
+  if (!r.ran) return { kind: 'node-type-check', tool, state: 'not-run', parserErrors: null, syntaxErrors: null, typeErrors: null, otherFindings: null, reason: r.reason };
+  return {
+    kind: 'node-type-check',
+    tool: `${tool}; TypeScript ${r.typescript}`,
+    state: r.errors === 0 ? 'passed' : 'failed',
+    parserErrors: null,
+    syntaxErrors: null,
+    typeErrors: r.errors,
+    otherFindings: null,
+    reason: r.errors > 0 ? `${r.failedFiles} of ${r.files} file(s) do not compile` : null,
+  };
 }
 
 /** Unpack the package where the harness reads it: a fresh directory under the run folder, never a link. */

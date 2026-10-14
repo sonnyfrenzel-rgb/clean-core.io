@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { prepareEngineLed, guardBodyOf, type EngineLedPrepared } from '../lib/transformation/engine-led';
+import { prepareEngineLed, guardBodyOf, localsNamedIn, type EngineLedPrepared } from '../lib/transformation/engine-led';
 import { bundleFills, fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { parameterShapes, parametersOf, regionSignature, typeDeclarations, typesText } from '../lib/transformation/type-shapes';
 
@@ -62,8 +62,12 @@ test('every fill request carries the types its signature and callees name, down 
   // RAP since scaffold version 6: "types" is the logic class around the body (scaffold-rap.ts, tests/transformation-rap-contract.spec.ts).
   expect(fillInstructionHeader('rap')).not.toContain('"types" of a unit declares every type its signature and callees name');
   expect(fillInstructionHeader('rap')).toContain('"types" of a unit is the logic class around the body');
-  // The same text the scaffold's declarations give — one source of truth.
-  expect(u.types).toBe(typesText(typeDeclarations(prep.scaffold.files), [unitOf(prep, 'checkConservation').signature, ...u.available.callees], ['Dec']));
+  // The same text the scaffold's declarations give — one source of truth; of the original's globals
+  // (`Locals`, 3.0.13) only those the function's own ABAP names, the rest counted.
+  const only = { Locals: localsNamedIn(`${u.abap.text}\n${u.abap.declarations ?? ''}`) };
+  expect(u.types).toBe(typesText(typeDeclarations(prep.scaffold.files), [unitOf(prep, 'checkConservation').signature, ...u.available.callees], ['Dec'], only));
+  expect(u.types!).toContain('interface Locals {\n  gtEffects: TyEffect[];');
+  expect(u.types!).toMatch(/\/\/ … \d+ more fields? this function's ABAP does not read/);
 });
 
 test('a body that reads a field its parameter types do not have is refused — the invented names of the A/B', () => {

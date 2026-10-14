@@ -90,19 +90,28 @@ test.describe('bundles: ≤ 4 units and ≤ 14,000 characters per call', () => {
     expect(rest[0].prompt.length).toBeLessThanOrEqual(FILL_PROMPT_MAX_CHARS);
   });
 
-  test('a unit past the hard slice budget is cut — context first, then the end of its slice — and the cut is said', () => {
+  test('a unit past the leased cap gives up context lines, each named — never its ABAP (3.0.13, B7)', () => {
     const huge = unit(1, 440, { abap: { ranges: [{ lineStart: 1, lineEnd: 440, routine: 'LOAD' }], text: abapText(1, 440, 70) } });
     expect(huge.abap.text.length).toBeGreaterThan(LEASED_PROMPT_MAX_CHARS);
     const [b] = bundleFills([huge], OPTS);
-    expect(b.prompt.length).toBeLessThanOrEqual(LEASED_PROMPT_MAX_CHARS);
-    expect(b.trimmed.map((t) => t.what)).toEqual(['context', 'abap']);
-    expect(b.prompt).toContain('cut to fit the prompt budget');
+    // The whole slice travels: a body written from part of a routine reads as the whole routine.
+    expect(b.request.units[0].abap.text).toBe(huge.abap.text);
+    expect(b.prompt).not.toContain('cut to fit the prompt budget');
+    // So the call is over the cap — the orchestrator does not send it and says why (orchestrator spec).
+    expect(b.prompt.length).toBeGreaterThan(LEASED_PROMPT_MAX_CHARS);
+    expect(b.trimmed.map((t) => t.what)).toEqual(['context']);
+    expect(b.trimmed[0].dropped?.length).toBeGreaterThan(0);
   });
 
-  test('the context pack is cut to 3,000 characters at a line end, saying how many lines went', () => {
+  test('the context pack is cut to 3,000 characters at a line end, saying how many lines went and naming them', () => {
     const cut = cutContext(CONTEXT, FILL_CONTEXT_MAX_CHARS);
     expect(cut.text.length).toBeLessThanOrEqual(FILL_CONTEXT_MAX_CHARS);
-    expect(cut.text).toMatch(/\[\d+ context lines dropped to fit the prompt budget\]$/);
+    expect(cut.text).toMatch(/\[\d+ context lines dropped to fit the prompt budget: "[^"]+"(?:; "[^"]+")*(?: and \d+ more)?\]$/);
+    // The first dropped line is named by its first words.
+    const firstDropped = CONTEXT.split('\n')[cut.text.split('\n').length - 1];
+    expect(cut.dropped?.length).toBe(CONTEXT.split('\n').length - (cut.text.split('\n').length - 1));
+    expect(firstDropped).toContain(cut.dropped![0].replace(/…$/, ''));
+    expect(cut.text).toContain(`"${cut.dropped![0]}"`);
     expect(cutContext('short', 3000)).toEqual({ text: 'short', cut: 0 });
   });
 

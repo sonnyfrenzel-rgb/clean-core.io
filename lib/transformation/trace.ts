@@ -11,7 +11,7 @@
  */
 
 import { rangeWords } from './unit-plan';
-import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './check-words';
+import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from './check-words';
 import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
 import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
@@ -33,12 +33,24 @@ function filledByOf(regionIds: readonly string[], outcomes: ReadonlyMap<string, 
   return 'model';
 }
 
-/** The golden master the engine wrote into a test include (golden-master.ts), or null. */
-function goldenMasterOf(files: readonly ScaffoldFile[]): { cases: number; rowsPassed: boolean } | null {
+/**
+ * The golden master the engine wrote (golden-master.ts), or null: on the ABAP route the local test class in a
+ * test include, on the Node route `test/fixtures/original-demo.json` with its runner (node-demo.ts).
+ */
+function goldenMasterOf(files: readonly ScaffoldFile[]): NonNullable<Trace['goldenMaster']> | null {
   for (const f of files) {
     if (!/\.clas\.testclasses\.abap$/i.test(f.path)) continue;
     const g = goldenMasterInInclude(f.content);
-    if (g && g.cases > 0) return g;
+    if (g && g.cases > 0) return { ...g, carrier: 'abap-unit' };
+  }
+  const demo = files.find((f) => f.path === 'test/fixtures/original-demo.json');
+  if (demo && files.some((f) => f.path === 'test/original-demo.test.mjs')) {
+    try {
+      const cases = (JSON.parse(demo.content) as { cases?: unknown }).cases;
+      if (Array.isArray(cases) && cases.length > 0) return { cases: cases.length, rowsPassed: true, carrier: 'node-test' };
+    } catch {
+      return null;
+    }
   }
   return null;
 }
@@ -163,7 +175,10 @@ export function traceMarkdown(trace: Trace): string {
   if (unreachable.length) lines.push(`- Not carried over — never reached in the original: ${unreachable.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
   const fixtureWords = fixtures.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ');
   const gm = trace.goldenMaster;
-  if (gm && gm.cases > 0) {
+  if (gm && gm.cases > 0 && gm.carrier === 'node-test') {
+    // 3.0.13 (A4): on Node the golden master is test data plus a runner (node-demo.ts).
+    lines.push(`- Demo cases of the original, carried as test data: ${gm.cases} case${gm.cases === 1 ? '' : 's'} in test/fixtures/original-demo.json${fixtures.length ? `, read from ${fixtureWords}` : ''}, each run through the process by test/original-demo.test.mjs (a case with no place in the port is not run and not counted as a test).`);
+  } else if (gm && gm.cases > 0) {
     // 3.0.13 (6): the golden master wrote the original's demo cases as ABAP Unit test data (golden-master.ts).
     lines.push(
       `- Demo cases of the original, carried as ABAP Unit test data: ${gm.cases} case${gm.cases === 1 ? '' : 's'} in the test class ${GOLDEN_MASTER_TEST_CLASS}${fixtures.length ? `, read from ${fixtureWords}` : ''}` +
@@ -173,7 +188,16 @@ export function traceMarkdown(trace: Trace): string {
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
   if (g) {
-    const state = g.status === 'not-activatable' ? 'generated — not activatable (abaplint finds parser or syntax errors; see STATUS.md)' : g.status === 'complete' ? 'complete' : 'partial';
+    const state =
+      g.status === 'not-activatable'
+        ? 'generated — not activatable (abaplint finds parser or syntax errors; see STATUS.md)'
+        : g.status === 'not-runnable'
+          ? 'generated — not runnable (the TypeScript compiler finds type errors with the package’s tsconfig.json; see STATUS.md)'
+          : g.status === 'not-verified'
+            ? notVerifiedPhrase(g.unverified?.length ? g.unverified : ['the checks did not run in full'])
+            : g.status === 'complete'
+              ? 'complete'
+              : 'partial';
     lines.push(`- Generation: ${state} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
     for (const c of orderedChecks(g.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
     if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
