@@ -158,8 +158,9 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         function: {
           name: req.track === 'node' ? u.fn : u.rapName,
           file: u.file,
-          signature: u.signature,
-          returns: returnsOf(u.signature),
+          // RAP (scaffold version 6): the method's own ABAP signature, not the Node one.
+          signature: scaffold.rap?.signatures[u.id] ?? u.signature,
+          returns: scaffold.rap ? '' : returnsOf(u.signature),
         },
         abap: { ranges: slice.ranges, text: slice.text, declarations: slice.declarations, callSites: slice.callSites },
         rules: u.rules
@@ -171,7 +172,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
             text: r.text,
             ...(r.decision === 'change' && r.proposal ? { proposal: r.proposal } : {}),
           })),
-        guards: fillGuardsOf(plan, u.id),
+        // A predicate the engine wrote has no region: the model is not asked for it.
+        guards: fillGuardsOf(plan, u.id).map((g) => (g.regionId && !regionIds.has(g.regionId) ? { ...g, regionId: null } : g)),
         facts: {
           decimals: plan.decimals
             .filter((d) => sliceUpper.includes(d.name.toUpperCase()))
@@ -180,7 +182,7 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         },
         available: { helpers: available.filter((n) => !calleeNames.has(n)), callees },
         // The fields of every type the signature and the callees' signatures name (defect D, 13.10.2026).
-        ...(decls ? { types: typesText(decls, [u.signature, ...callees], ['Dec']) } : {}),
+        ...(decls ? { types: typesText(decls, [u.signature, ...callees], ['Dec']) } : scaffold.rap?.unitTypes[u.id] ? { types: scaffold.rap.unitTypes[u.id] } : {}),
       });
     }
     // Predicate regions take the slice length of the unit that owns them.
@@ -260,6 +262,7 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     required: prep.scaffold.required[regionId] ?? [],
     ...(params.length > 0 ? { params } : {}),
     ...(Object.keys(shapes).length > 0 ? { shapes } : {}),
+    ...(prep.scaffold.rap?.regions[regionId] ? { abap: prep.scaffold.rap.regions[regionId] } : {}),
   };
 }
 

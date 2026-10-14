@@ -38,8 +38,18 @@ export const PLAN_VERSION = 2;
  * entry points that run the whole process (`listOf`, `exportOf`, `recalcOf`, `writeOf`), and
  * `acceptance-adapter.json` maps the display-filter, recalculation and negative-write probes onto them where
  * the original shows the pattern, naming the unit each one reaches (`fill-probes.ts`). The RAP text is unchanged.
+ * 6 (3.0.13, generated ABAP that activates — two external reviews of the SD example): the RAP logic class
+ * carries a typed contract (`rap-contract.ts`): the original's TYPES as declared, its globals and selection
+ * inputs as attributes under their names, its constants, one method per routine with the FORM's own
+ * parameters, the run's selection, input and result structures, a refusal exception. Every carried guard runs
+ * in the logic path: an engine-written predicate (the original's condition), called by the engine at the
+ * method's entry or with the selection where that is exact, and by the body at the original's line otherwise —
+ * no save validation with an empty selection. A program that writes no table becomes a custom entity with a
+ * query provider instead of a managed business object; one that writes keeps the business object, run by an
+ * action with the selection as its parameter. The access interface types each call from its call sites. The
+ * Node scaffold's text is unchanged; nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 5;
+export const SCAFFOLD_VERSION = 6;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -374,6 +384,43 @@ export interface BodyGuardContext {
    * as `tsc` would refuse it — the name was invented (A/B 13.10.2026, defect D).
    */
   shapes?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * RAP only (scaffold version 6): the names the logic class declares around this region — a body that calls a
+   * method the class or the access interface does not have, or reads an original's global, selection input or
+   * parameter-like name the class does not declare, is refused (`scaffold-rap.ts`, `rap-contract.ts`).
+   */
+  abap?: AbapRegionNames;
+}
+
+/** The names a RAP fill region can reach (scaffold version 6). Lower case. */
+export interface AbapRegionNames {
+  /** Instance attributes and constants: the original's globals, selection inputs and constants, the engine's own. */
+  attributes: string[];
+  /** The parameters of the region's method. */
+  params: string[];
+  /** Every method of the logic class. */
+  methods: string[];
+  /** The methods of the access interface (`mo_access->…`). */
+  access: string[];
+}
+
+/**
+ * The typed contract of the RAP logic class (scaffold version 6, roadmap 3.0.13 item 2): what a fill request
+ * names per unit and what the body guards check. Absent on the Node track and on an older scaffold.
+ */
+export interface RapClassContract {
+  logicClass: string;
+  /** The refusal exception a body raises where the original refuses (`MESSAGE … TYPE 'E'`). */
+  refusal: string;
+  /** `METHODS check_stamp IMPORTING iv_stamp TYPE ty_stamp CHANGING cv_code TYPE ty_code.` by region id. */
+  signatures: Record<string, string>;
+  /** The declarations a unit's body reads — types, constants, attributes, callee and predicate signatures, access methods — by unit id. */
+  unitTypes: Record<string, string>;
+  regions: Record<string, AbapRegionNames>;
+  /** Per carried guard id: its predicate, the call a body writes, and who calls it. */
+  guards: Record<string, { predicate: string; call: string; calledBy: 'engine' | 'body'; written: 'engine' | 'model' }>;
+  /** `custom-entity` for a program that writes no table, `managed-bo` for one that does. */
+  architecture: 'custom-entity' | 'managed-bo';
 }
 
 /** A guard a fill body must call at the original's position. */
@@ -398,7 +445,10 @@ export type BodyRefusalCode =
   | 'binary-number'
   | 'guard-missing'
   | 'guard-inlined'
-  | 'unknown-field';
+  | 'unknown-field'
+  | 'cloud-statement'
+  | 'unknown-name'
+  | 'sap-select';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;
@@ -446,6 +496,8 @@ export interface Scaffold {
   available: Record<string, string[]>;
   /** The guards each body region must call (placement `body`); `spliceBodies` applies them. */
   required: Record<string, RequiredGuard[]>;
+  /** RAP only, since scaffold version 6: the logic class's typed contract. */
+  rap?: RapClassContract;
 }
 
 /** The harness adapter (`docs/failure-patterns/README.md`, `scripts/acceptance/run.mjs`). */
