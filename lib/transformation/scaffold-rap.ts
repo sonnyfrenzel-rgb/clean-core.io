@@ -1369,8 +1369,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       '    METHODS run_process FOR MODIFY IMPORTING keys FOR ACTION Rec~run_process.',
       'ENDCLASS.',
     ];
-    // SAP sample: SAP-samples/abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#bp_r_traveltp_cd.clas.locals_imp.abap —
-    // global and instance authorization answer per requested operation from is_*_granted helpers that hold the
+    // SAP sample: SAP-samples/abap-platform-refscen-flight@93f76917 src/colldraft/#dmo#bp_r_traveltp_cd.clas.locals_imp.abap
+    // Global and instance authorization answer per requested operation from is_*_granted helpers that hold the
     // AUTHORITY-CHECK; the scaffold denies until a developer writes the check (fail closed, FP-GUARD-05).
     // An instance denial says it in its result (auth-unauthorized); the global one also reports a message.
     const denied = () =>
@@ -1485,8 +1485,8 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         '',
       ].join('\n'),
     });
-    // SAP sample: SAP-samples/abap-cheat-sheets@d43eb13c 22_Released_ABAP_Classes.md "Application Jobs" — typed constants of
-    // CL_APJ_DT_CREATE_CONTENT, an existence check before each create, the long text of CX_APJ_DT_CONTENT.
+    // SAP sample: SAP-samples/abap-cheat-sheets@d43eb13c 22_Released_ABAP_Classes.md
+    // "Application Jobs": typed constants of CL_APJ_DT_CREATE_CONTENT, an existence check before each create, the long text of CX_APJ_DT_CONTENT.
     const catalog = `Z${s.toUpperCase()}_JOB_CAT`;
     const template = `Z${s.toUpperCase()}_JOB_TMPL`;
     const jobText = `Job of ${program}`.replace(/'/g, "''").slice(0, 60);
