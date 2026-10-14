@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { buildAbapEvidence, rfcDestinationOf } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
 import { PRECISION_FIXES_FROM, precisionFixesApply } from '../lib/abap/precision-fixes-gate';
 import { readSecurityReviewTasks } from '../lib/abap/security-review';
 
@@ -166,6 +167,36 @@ test.describe('a statement that only mentions sy-subrc does not count as evaluat
     expect(authTasks('WRITE sy-subrc.', false)).toBe(0);
   });
 
+  test('a copy of sy-subrc counts only when the very next statement decides on the copy (QA leftovers of hotfix 2)', () => {
+    // The copy controls the protected operation: evaluated.
+    for (const after of [
+      'lv_rc = sy-subrc.\nIF lv_rc <> 0. RETURN. ENDIF.',
+      'DATA(lv_rc) = sy-subrc.\nCHECK lv_rc = 0.',
+      'MOVE sy-subrc TO lv_rc.\nIF lv_rc IS NOT INITIAL. RAISE EXCEPTION NEW zcx_no_auth( ). ENDIF.',
+    ]) {
+      expect(authTasks(after, true), after).toBe(0);
+    }
+    // A copy nobody decides on right away, or a decision on another name: not evaluated.
+    for (const after of [
+      'DATA(lv_rc) = sy-subrc.',
+      'DATA(lv_rc) = sy-subrc.\nWRITE lv_rc.',
+      'lv_rc = sy-subrc.\nIF lv_rc2 <> 0. RETURN. ENDIF.',
+      'lv_rc = sy-subrc.\nIF lv_other <> 0. RETURN. ENDIF.',
+      "lv_rc = sy-subrc.\nlv_text = 'lv_rc <> 0'.",
+      'lv_rc = sy-subrc.\nCLEAR lv_x.\nIF lv_rc <> 0. RETURN. ENDIF.',
+    ]) {
+      expect(authTasks(after, true), after).toBe(1);
+    }
+    // The same rule for a file-name validation with EXCEPTIONS.
+    const src = (after: string) => ['REPORT zfile.', 'PARAMETERS p_file TYPE string.',
+      "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'ZLOG' CHANGING physical_filename = p_file EXCEPTIONS OTHERS = 1.",
+      after, 'OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
+    const fileTasks = (after: string) =>
+      readSecurityReviewTasks(src(after), { precisionFixes: true }).filter((t) => t.kind === 'file-path-from-input').length;
+    expect(fileTasks('DATA(lv_rc) = sy-subrc.\nIF lv_rc <> 0. RETURN. ENDIF.')).toBe(0);
+    expect(fileTasks('DATA(lv_rc) = sy-subrc.\nWRITE lv_rc.')).toBe(1);
+  });
+
   test('after a file-name validation with EXCEPTIONS, the same rule decides whether the path is covered', () => {
     const src = (after: string) => ['REPORT zfile.', 'PARAMETERS p_file TYPE string.',
       "CALL FUNCTION 'FILE_VALIDATE_NAME' EXPORTING logical_filename = 'ZLOG' CHANGING physical_filename = p_file EXCEPTIONS validation_failed = 1 OTHERS = 2.",
@@ -217,6 +248,33 @@ test.describe('the flow from input is followed however long the chain and in wha
   const fileTasks = (reversed: boolean, precisionFixes: boolean) =>
     readSecurityReviewTasks(chain(reversed), { precisionFixes }).filter((t) => t.kind === 'file-path-from-input').length;
 
+  test('a tainted name overwritten unconditionally by a constant before the clause no longer reaches it (QA leftovers of hotfix 2)', () => {
+    const src = (between: string[]) => ['REPORT zdyn.', 'PARAMETERS p_where TYPE string.', 'DATA lv_where TYPE string.',
+      'lv_where = p_where.', ...between, 'SELECT * FROM vbak INTO TABLE @DATA(lt) WHERE (lv_where).', ''].join('\n');
+    const dyn = (between: string[], precisionFixes: boolean) =>
+      readSecurityReviewTasks(src(between), { precisionFixes }).filter((t) => t.kind === 'dynamic-sql-from-input').length;
+    // Overwritten on every way to the clause: the input no longer reaches it.
+    expect(dyn(["lv_where = `VBELN <> ''`."], true)).toBe(0);
+    expect(dyn(['CLEAR lv_where.'], true)).toBe(0);
+    // What v3.0.12 signed: once tainted, always tainted.
+    expect(dyn(["lv_where = `VBELN <> ''`."], false)).toBe(1);
+    // Untouched, or overwritten only on one branch, or again from input: still a task.
+    expect(dyn([], true)).toBe(1);
+    expect(dyn(["IF sy-uname = 'X'.", "lv_where = `VBELN <> ''`.", 'ENDIF.'], true)).toBe(1);
+    expect(dyn(["IF sy-uname = 'X'.", "lv_where = `VBELN <> ''`.", 'ELSE.', 'WRITE / lv_where.', 'ENDIF.'], true)).toBe(1);
+    expect(dyn(["lv_where = `VBELN <> ''`.", 'lv_where = p_where.'], true)).toBe(1);
+    expect(dyn(["lv_where = |{ p_where } AND VBELN <> ''|."], true)).toBe(1);
+    // Overwritten in a block that encloses the clause: on every way to it.
+    const nested = ['REPORT zdyn.', 'PARAMETERS p_where TYPE string.', 'DATA lv_where TYPE string.', 'lv_where = p_where.',
+      'DO 3 TIMES.', "  lv_where = `VBELN <> ''`.", "  IF sy-index = 2.", '    SELECT * FROM vbak INTO TABLE @DATA(lt) WHERE (lv_where).', '  ENDIF.', 'ENDDO.', ''].join('\n');
+    expect(readSecurityReviewTasks(nested, { precisionFixes: true }).filter((t) => t.kind === 'dynamic-sql-from-input')).toEqual([]);
+    // The same for a file path.
+    const path = ['REPORT zfile.', 'PARAMETERS p_file TYPE string.', 'DATA lv_file TYPE string.', 'lv_file = p_file.',
+      "lv_file = '/usr/sap/trans/data/out.txt'.", 'OPEN DATASET lv_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.', ''].join('\n');
+    expect(readSecurityReviewTasks(path, { precisionFixes: true }).filter((t) => t.kind === 'file-path-from-input')).toEqual([]);
+    expect(readSecurityReviewTasks(path, { precisionFixes: false }).filter((t) => t.kind === 'file-path-from-input')).toHaveLength(1);
+  });
+
   test('a chain written forwards reaches the path in both engines', () => {
     expect(fileTasks(false, true)).toBe(1);
     expect(fileTasks(false, false)).toBe(1);
@@ -233,5 +291,27 @@ test.describe('the flow from input is followed however long the chain and in wha
       .filter((f) => f.kind === 'security-review').length;
     expect(tasks(NEW)).toBe(1);
     expect(tasks(OLD)).toBe(0);
+  });
+});
+
+test.describe("the IDoc sentence attributes SAP's classification only to SAP's modules (QA leftovers of hotfix 2)", () => {
+  const program = (...modules: string[]) => ['REPORT zidoc.', ...modules.map((m) => `CALL FUNCTION '${m}' EXPORTING x = 1.`), ''].join('\n');
+  const why = (code: string, engine: string) =>
+    recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code), undefined, engine).justification;
+
+  test('a module in a customer or partner namespace is not said to be in SAP\'s classification file', () => {
+    const own = why(program('Z_SEND_IDOC'), NEW);
+    expect(own).toContain('IDoc function modules in a customer or partner namespace are called (Z_SEND_IDOC)');
+    expect(own).not.toMatch(/IDoc function modules are called/);
+    expect(why(program('/ACME/SEND_IDOC'), NEW)).toContain('customer or partner namespace are called (/ACME/SEND_IDOC)');
+    // What v3.0.12 signed.
+    expect(why(program('Z_SEND_IDOC'), OLD)).toMatch(/^IDoc function modules are called \(Z_SEND_IDOC\)\. SAP's classification file lists/);
+  });
+
+  test('SAP\'s module keeps the classification; a customer module beside it is named apart', () => {
+    expect(why(program('MASTER_IDOC_DISTRIBUTE'), NEW)).toMatch(/^IDoc function modules are called \(MASTER_IDOC_DISTRIBUTE\)\. SAP's classification file lists/);
+    const mixed = why(program('MASTER_IDOC_DISTRIBUTE', 'Y_IDOC_POST'), NEW);
+    expect(mixed).toMatch(/^IDoc function modules are called \(MASTER_IDOC_DISTRIBUTE\)\./);
+    expect(mixed).toContain('Y_IDOC_POST is in a customer or partner namespace, which SAP\'s classification file does not cover: its level is the level of what it calls.');
   });
 });

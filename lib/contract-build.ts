@@ -200,7 +200,7 @@ export function contractOfProject(
 ): ContractBuild {
   const routed = routeOfProject(state);
   if (!routed) return { ok: false, code: 'no-source' };
-  const { source, deployment, evidence, route, engineVersion, recommended } = routed;
+  const { source, deployment, evidence, route, recommended } = routed;
 
   const deviation = declaredDeviation(state, recommended);
   if (deviation.kind === 'off-track') return { ok: false, code: 'off-track', decided: deviation.decided };
@@ -216,7 +216,9 @@ export function contractOfProject(
       route,
       deviation: deviation.deviation,
       inputsDiffer: inputsDifferingFromRun(inputManifest, source, deployment),
-      engineVersion,
+      // The same engine the evidence above was rebuilt with (`routeOfProject`),
+      // named where the guard can read it (tests/engine-version-callers.spec.ts).
+      engineVersion: engineVersionOfProject(state),
     }),
   };
 }

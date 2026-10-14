@@ -67,6 +67,12 @@ export const LEASE_SLOT_STALE_MS = MODEL_CALL_DEADLINE_MS + 30_000;
 /** Leases per account and window. */
 export const LEASES_PER_WINDOW = 3;
 export const LEASE_WINDOW_MS = 60 * 60 * 1000;
+/**
+ * How long a lease may wait for the hourly charge of the request that issued
+ * it (`charged: false`). Past this the request is taken to have died between
+ * the issue and the charge: the lease is not reused, and a new run supersedes it.
+ */
+export const LEASE_CHARGE_PENDING_MS = 60_000;
 /** The most fill calls a plan may say it needs (120 units ÷ ≤ 4 per call, rounded up generously). */
 export const LEASE_MAX_PLANNED_CALLS = 40;
 
@@ -105,6 +111,14 @@ export interface LeaseRecord {
   /** When each in-flight call took its slot (epoch ms). Absent on a lease from before 13.10.2026. */
   slots?: number[];
   status: LeaseStatus;
+  /**
+   * `false` from the issue until the hourly charge of the issuing request
+   * succeeded (QA leftovers of hotfix 2, roadmap 3.0.13): a pending lease is
+   * neither reused nor usable for a call, so a concurrent retry of the same run
+   * cannot get it before it is paid for. Absent on a lease from before — those
+   * were charged before they were returned.
+   */
+  charged?: boolean;
   /** Epoch milliseconds. */
   createdAt: number;
   expiresAt: number;
@@ -170,6 +184,7 @@ export function isLeaseRecord(value: unknown): value is LeaseRecord {
     isCount(v.inFlight) &&
     (v.slots === undefined || (Array.isArray(v.slots) && v.slots.every(isCount))) &&
     (v.status === 'open' || v.status === 'superseded' || v.status === 'closed') &&
+    (v.charged === undefined || typeof v.charged === 'boolean') &&
     isCount(v.createdAt) &&
     isCount(v.expiresAt)
   );
@@ -216,6 +231,9 @@ export function decideLeaseCall(lease: unknown, ctx: { uid: string; projectId: s
         ? 'A newer generation of this project replaced this lease. Only the newest generation may call the model.'
         : 'This generation lease is closed.',
     );
+  }
+  if (lease.charged === false) {
+    return refuse(429, LEASE_CODES.busy, 'This generation lease is still being prepared. Retry in a moment.');
   }
   if (ctx.now >= lease.expiresAt) {
     return refuse(403, LEASE_CODES.expired, 'This generation lease has expired. Start the generation again.');
@@ -271,7 +289,21 @@ export function decideLeaseIssue(input: {
       input.now < l.expiresAt &&
       l.used < l.budget,
   );
-  if (same) return { kind: 'reuse', lease: same };
+  if (same && same.charged === false) {
+    // Issued to this run, its charge not yet through: a concurrent retry waits
+    // rather than takes a lease nobody has paid for. A pending lease whose
+    // request died long ago is neither reused nor waited for — the new lease
+    // below supersedes it.
+    if (input.now - same.createdAt < LEASE_CHARGE_PENDING_MS) {
+      return {
+        kind: 'refuse',
+        status: 429,
+        code: LEASE_CODES.busy,
+        error: 'This generation is still being prepared. Retry in a moment.',
+        retryAfterSeconds: Math.max(1, Math.ceil((same.createdAt + LEASE_CHARGE_PENDING_MS - input.now) / 1000)),
+      };
+    }
+  } else if (same) return { kind: 'reuse', lease: same };
 
   const recent = input.windowIssued
     .filter((t): t is number => typeof t === 'number' && Number.isFinite(t))
@@ -305,6 +337,8 @@ export function newLeaseRecord(input: {
   plannedCalls: number;
   budget: number;
   now: number;
+  /** `false` while the issuing request's hourly charge is pending (`charged` on the record). */
+  charged: boolean;
 }): LeaseRecord {
   return {
     v: LEASE_RECORD_VERSION,
@@ -319,6 +353,7 @@ export function newLeaseRecord(input: {
     inFlight: 0,
     slots: [],
     status: 'open',
+    charged: input.charged,
     createdAt: input.now,
     expiresAt: input.now + leaseTtlMs(input.budget),
   };

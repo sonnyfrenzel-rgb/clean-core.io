@@ -57,6 +57,15 @@ test.describe('A/B/C/D readiness derivation', () => {
     expect(gradeFromInventory({ type: 'Class' })).toBe('Unknown');
   });
 
+  test('what the changelog says about a Dynpro\'s level is what gradeFromInventory does (QA leftovers of hotfix 2)', () => {
+    // A high-criticality screen reads C, so "estimates as level B" may not stand unqualified.
+    expect(gradeFromInventory({ type: 'Dynpro', criticality: 'High' })).toBe('C');
+    const changelog = readFileSync(join(__dirname, '..', 'CHANGELOG.md'), 'utf8').replace(/\s+/g, ' ');
+    const sentence = /a classic Dynpro or SAP GUI screen estimates as level B[^.]*\./.exec(changelog)?.[0] ?? '';
+    expect(sentence).not.toBe('');
+    expect(sentence).toMatch(/level C when its criticality is high/);
+  });
+
   test('no heuristic yields A: only a released catalog state does (C4)', () => {
     const heuristic = [
       ...['High', 'Medium', 'Low', undefined].flatMap((riskLevel) =>

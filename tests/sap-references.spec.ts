@@ -204,46 +204,81 @@ test.describe('code that cites an SAP reference cites a registered citation', ()
   }
 
   /** A comment, not a quotation of one: `//` at the start of the line or after code, never right after a backtick or quote. */
-  function comments(prefix: string): { at: string; text: string }[] {
+  function commentsIn(file: string, text: string, prefix: string): { at: string; text: string }[] {
     const out: { at: string; text: string }[] = [];
     const marker = prefix.trim();
-    for (const file of ['app', 'components', 'lib', 'hooks', 'scripts'].filter((d) => fs.existsSync(path.join(ROOT, d))).flatMap((d) => walk(d))) {
-      read(file)
-        .split(/\r?\n/)
-        .forEach((line, i) => {
-          const at = line.indexOf(marker);
-          if (at < 0 || (at > 0 && /[`'"]/.test(line[at - 1]))) return;
-          if (at > 0 && !/[\s;{}(),]/.test(line[at - 1])) return;
-          out.push({ at: `${file}:${i + 1}`, text: line.slice(at).replace(/\s+$/, '') });
-        });
-    }
+    text.split(/\r?\n/).forEach((line, i) => {
+      const at = line.indexOf(marker);
+      if (at < 0 || (at > 0 && /[`'"]/.test(line[at - 1]))) return;
+      if (at > 0 && !/[\s;{}(),]/.test(line[at - 1])) return;
+      out.push({ at: `${file}:${i + 1}`, text: line.slice(at).replace(/\s+$/, '') });
+    });
     return out;
+  }
+  function comments(prefix: string): { at: string; text: string }[] {
+    return ['app', 'components', 'lib', 'hooks', 'scripts']
+      .filter((d) => fs.existsSync(path.join(ROOT, d)))
+      .flatMap((d) => walk(d))
+      .flatMap((file) => commentsIn(file, read(file), prefix));
+  }
+
+  const SAMPLE_ALLOWED = new Set(
+    SAP_REFERENCE_CITATIONS.filter((c) => c.status !== 'not-adopted' && c.source !== 'styleguides').flatMap((c) =>
+      c.refs.map((r) => sapSampleComment(c.source, r.path)),
+    ),
+  );
+  const CLEAN_ABAP_ALLOWED = new Set(
+    SAP_REFERENCE_CITATIONS.filter((c) => c.status !== 'not-adopted' && c.source === 'styleguides').flatMap((c) =>
+      c.refs.filter((r) => r.section).map((r) => cleanAbapComment(r.section!)),
+    ),
+  );
+
+  /**
+   * Every comment with the prefix is read: one that does not parse is reported
+   * as malformed instead of skipped (QA leftovers of hotfix 2 — the shape
+   * filter used to drop `// SAP sample: flight` and `// Clean ABAP:` unread,
+   * the rule `tests/dsag-citations.spec.ts` already holds for its prefix).
+   */
+  function sampleProblems(found: { at: string; text: string }[]): string[] {
+    return found.flatMap((c) => {
+      if (!/^\/\/ SAP sample: \S+@[0-9a-f]{8} \S+$/.test(c.text)) return [`${c.at} malformed citation: ${c.text}`];
+      return SAMPLE_ALLOWED.has(c.text) ? [] : [`${c.at} ${c.text}`];
+    });
+  }
+  function cleanAbapProblems(found: { at: string; text: string }[]): string[] {
+    return found.flatMap((c) => {
+      if (!c.text.startsWith(CLEAN_ABAP_COMMENT_PREFIX) || c.text.trim().length <= CLEAN_ABAP_COMMENT_PREFIX.trim().length) {
+        return [`${c.at} malformed citation: ${c.text}`];
+      }
+      return CLEAN_ABAP_ALLOWED.has(c.text) ? [] : [`${c.at} ${c.text}`];
+    });
   }
 
   test('every "// SAP sample:" comment names the reviewed commit and a file an adopted row cites', () => {
-    const allowed = new Set(
-      SAP_REFERENCE_CITATIONS.filter((c) => c.status !== 'not-adopted' && c.source !== 'styleguides').flatMap((c) =>
-        c.refs.map((r) => sapSampleComment(c.source, r.path)),
-      ),
-    );
-    const unknown = comments(SAP_SAMPLE_COMMENT_PREFIX)
-      .filter((c) => /^\/\/ SAP sample: \S+@[0-9a-f]{8} \S+/.test(c.text))
-      .filter((c) => !allowed.has(c.text))
-      .map((c) => `${c.at} ${c.text}`);
+    const unknown = sampleProblems(comments(SAP_SAMPLE_COMMENT_PREFIX));
     expect(unknown, 'cite `// SAP sample: <repo>@<sha8 of the reviewed commit> <path>` with a path a row of lib/sap-reference-citations.ts adopts').toEqual([]);
   });
 
   test('every "// Clean ABAP:" comment names a section a styleguides row adopts', () => {
-    const allowed = new Set(
-      SAP_REFERENCE_CITATIONS.filter((c) => c.status !== 'not-adopted' && c.source === 'styleguides').flatMap((c) =>
-        c.refs.filter((r) => r.section).map((r) => cleanAbapComment(r.section!)),
-      ),
-    );
-    const unknown = comments(CLEAN_ABAP_COMMENT_PREFIX)
-      .filter((c) => c.text.startsWith(CLEAN_ABAP_COMMENT_PREFIX) && c.text.length > CLEAN_ABAP_COMMENT_PREFIX.length)
-      .filter((c) => !allowed.has(c.text))
-      .map((c) => `${c.at} ${c.text}`);
+    const unknown = cleanAbapProblems(comments(CLEAN_ABAP_COMMENT_PREFIX));
     expect(unknown, 'add a clean-abap-<section> row to lib/sap-reference-citations.ts first, heading exactly as in CleanABAP.md').toEqual([]);
+  });
+
+  test('a comment with a citation prefix that does not parse is reported, not skipped (QA leftovers of hotfix 2)', () => {
+    const sample = (line: string) => sampleProblems(commentsIn('lib/x.ts', line, SAP_SAMPLE_COMMENT_PREFIX));
+    const clean = (line: string) => cleanAbapProblems(commentsIn('lib/x.ts', line, CLEAN_ABAP_COMMENT_PREFIX));
+    const good = [...SAMPLE_ALLOWED][0];
+    expect(good).toBeDefined();
+    expect(sample(`    ${good}`)).toEqual([]);
+    for (const bad of ['// SAP sample: flight', '// SAP sample: SAP-samples/abap-platform-refscen-flight src/x', '// SAP sample:']) {
+      expect(sample(`    ${bad}`), bad).toEqual([`lib/x.ts:1 malformed citation: ${bad}`]);
+    }
+    // Well formed but not registered: reported as before.
+    expect(sample('    // SAP sample: SAP-samples/x@0123abcd src/none')).toEqual(['lib/x.ts:1 // SAP sample: SAP-samples/x@0123abcd src/none']);
+    expect(clean(`    ${cleanAbapComment('Prefer RETURNING to EXPORTING')}`).every((p) => !p.includes('malformed'))).toBe(true);
+    for (const bad of ['// Clean ABAP:', '// Clean ABAP:Prefer RETURNING to EXPORTING']) {
+      expect(clean(`    ${bad}`), bad).toEqual([`lib/x.ts:1 malformed citation: ${bad}`]);
+    }
   });
 
   test('the comment helpers produce what the checks accept', () => {

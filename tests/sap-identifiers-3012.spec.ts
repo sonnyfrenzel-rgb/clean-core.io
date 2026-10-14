@@ -442,6 +442,23 @@ test.describe('AUFK is mapped by what else the program reads (PP review)', () =>
     expect(successorInContext('RESB', ['RESB', 'AFKO'])).toBeNull();
   });
 
+  test('RESB beside AUFK alone is a reservation; AFRU is a production-order table for RESB too (QA leftovers of hotfix 2)', () => {
+    expect(successorInContext('RESB', ['RESB', 'AUFK'])?.entry.view).toBe('I_ReservationDocumentItem');
+    expect(successorInContext('RESB', ['RESB', 'AUFK', 'AFRU'])).toBeNull();
+    expect(successorInContext('RESB', ['RESB', 'AFRU'])).toBeNull();
+    // What v3.0.12 signed.
+    expect(successorInContext('RESB', ['RESB', 'AUFK'], { precisionFixes: false })).toBeNull();
+    expect(successorInContext('RESB', ['RESB', 'AFRU'], { precisionFixes: false })?.entry.view).toBe('I_ReservationDocumentItem');
+    // The evidence follows the engine version.
+    const PM = ['REPORT zpm.', 'DATA: lt_aufk TYPE STANDARD TABLE OF aufk, lt_resb TYPE STANDARD TABLE OF resb.',
+      'SELECT * FROM aufk INTO TABLE lt_aufk WHERE autyp = 30.',
+      'SELECT * FROM resb INTO TABLE lt_resb FOR ALL ENTRIES IN lt_aufk WHERE aufnr = lt_aufk-aufnr.'].join('\n');
+    const resb = (engine: string) =>
+      buildAbapEvidence(PM, 'z.abap', 'private', undefined, engine).findings.find((f) => f.objectName === 'RESB' && f.sapReplacement)?.sapReplacement?.objectName;
+    expect(resb('v3.0.13')).toBe('I_ReservationDocumentItem');
+    expect(resb('v3.0.12')).toBe('I_ProductionOrderComponent');
+  });
+
   test('the data coupling names the production order successor beside AFKO and RESB, the internal order otherwise', () => {
     const pp = extractDataCoupling(PP_PROGRAM).find((e) => e.tableName === 'AUFK')!;
     expect(pp.recommendation).toContain('I_ManufacturingOrder');

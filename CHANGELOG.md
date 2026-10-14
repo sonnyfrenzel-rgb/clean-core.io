@@ -155,7 +155,8 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
   an asynchronous RFC that stays in the system is no RFC call; it is a finding of its own that
   names `CL_ABAP_PARALLEL` for ABAP Cloud while SAP's release data lists it as released.
 - **Levels:** ALV, Dynpro and SAP GUI findings are worded by SAP Note 3578329 — level B through
-  the listed classic APIs; a classic Dynpro or SAP GUI screen estimates as level B, not D. An
+  the listed classic APIs; a classic Dynpro or SAP GUI screen estimates as level B, not D
+  (level C when its criticality is high). An
   estimate never yields level A: level A needs a released object from SAP's catalog.
 - Design and Transformation tips name the ABAP Cloud successor of a classic concept (application
   log, background job, mail, BOPF, table maintenance); Documentation lists every modification and

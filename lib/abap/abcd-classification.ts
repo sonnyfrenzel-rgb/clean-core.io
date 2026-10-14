@@ -144,8 +144,9 @@ export function gradeFromInventory(item: { criticality?: string; type?: string }
   // SAP GUI, Dynpro and ALV grid used through documented classic APIs as
   // "leverage classic APIs" (owner, 13.10.2026), and SAP's classification file
   // lists the GUI classes it builds on (CL_GUI_ALV_GRID, CL_SALV_TABLE,
-  // CL_GUI_*_CONTAINER) as classicAPI. An estimate stays at most B; a high
-  // criticality still reads C, and only a catalog lookup can say otherwise.
+  // CL_GUI_*_CONTAINER) as classicAPI. A screen of low or medium criticality, or
+  // of none stated, estimates as B; one of high criticality as C, like any other
+  // object — never D, and only a catalog lookup can say otherwise.
   const screen = t.includes('dynpro') || t.includes('screen');
   // F-05: Unknown when the criticality signal is missing (no silent Medium default).
   const crit = item.criticality;

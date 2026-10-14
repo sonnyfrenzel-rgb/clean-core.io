@@ -19,13 +19,9 @@
  * reads as current.
  */
 
-export const SAP_API_CATALOG_VERSION = '2024.FPS02';
-
-/** The day the entries below were last reviewed by hand (not a sync date). */
-export const SAP_API_CATALOG_REVIEWED = '2026-10-12';
-
-/** The words shown beside a hit in this layer. */
-export const SAP_API_CATALOG_STAMP = `this product's curated SAP API catalog, compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not synced from SAP`;
+// The release and review date live in a module of their own, so a client
+// component can show the stamp without pulling the catalog into the browser.
+export { SAP_API_CATALOG_VERSION, SAP_API_CATALOG_REVIEWED, SAP_API_CATALOG_STAMP } from './sap-api-catalog-stamp';
 
 export type SapApiObjectType = 'CDS View' | 'OData API' | 'BAPI' | 'Fiori App' | 'Business Event' | 'Unknown';
 
@@ -170,6 +166,11 @@ export interface ContextualSuccessor {
   when?: readonly string[];
   /** The rule applies only when the program reads none of these. */
   unless?: readonly string[];
+  /**
+   * `unless` as runs of engine 3.0.12 signed it, where it differs. Read only
+   * when the caller says the corrections of `PRECISION_FIXES_FROM` do not apply.
+   */
+  unlessBefore3013?: readonly string[];
   entry: SapApiEntry;
   /** Said with the successor: what the context is and why. */
   context: string;
@@ -189,7 +190,11 @@ export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze(
   },
   {
     table: 'RESB',
-    unless: ['AFKO', 'AFPO', 'AFVC', 'AUFK'],
+    // The same tables that make AUFK a production order (QA leftovers of
+    // hotfix 2, roadmap 3.0.13): AUFK beside RESB alone is no production order,
+    // so RESB there is a reservation; AFRU (confirmations) is one.
+    unless: PRODUCTION_ORDER_TABLES,
+    unlessBefore3013: ['AFKO', 'AFPO', 'AFVC', 'AUFK'],
     entry: { view: 'I_ReservationDocumentItem', type: 'CDS View' },
     context: 'reservation context: the program reads no production order table',
   },
@@ -202,6 +207,8 @@ export const CONTEXT_SUCCESSORS: readonly ContextualSuccessor[] = Object.freeze(
 export function successorInContext(
   table: string,
   tablesInProgram: Iterable<string>,
+  /** `precisionFixes: false` reads the rules as engine 3.0.12 signed them (`PRECISION_FIXES_FROM`). */
+  options: { precisionFixes?: boolean } = {},
 ): { entry: SapApiEntry; context: string; readHere: string[] } | null {
   const key = (table || '').trim().toUpperCase();
   const read = new Set([...tablesInProgram].map((t) => String(t).toUpperCase()));
@@ -209,7 +216,8 @@ export function successorInContext(
     if (rule.table !== key) continue;
     const hits = (rule.when ?? []).filter((t) => read.has(t));
     if (rule.when && hits.length === 0) continue;
-    if (rule.unless && rule.unless.some((t) => read.has(t))) continue;
+    const unless = options.precisionFixes === false && rule.unlessBefore3013 ? rule.unlessBefore3013 : rule.unless;
+    if (unless && unless.some((t) => read.has(t))) continue;
     return { entry: rule.entry, context: rule.context, readHere: hits };
   }
   return null;

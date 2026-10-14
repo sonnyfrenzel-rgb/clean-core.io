@@ -22,6 +22,17 @@ import { engineVersionAtLeast } from '../score-rule';
  *     when it merely mentions it (`decidesOnSubrc`, `security-review.ts`);
  *   - the flow from input to a dynamic clause or a path is followed to a fixed
  *     point, not for eight passes (`taintedNames`, `security-review.ts`);
+ *   - a copy of sy-subrc (`lv_rc = sy-subrc.`) counts as deciding on it only
+ *     when the very next statement decides on the copy (`decidesOnSubrcAt`),
+ *     and a tainted name the source overwrites unconditionally with a value
+ *     from no input before a dynamic clause or a path no longer reaches it
+ *     (`overwrittenCleanBefore`, `security-review.ts`; QA leftovers of hotfix 2);
+ *   - RESB beside AUFK alone is a reservation, and AFRU counts as a
+ *     production-order table for RESB too (`successorInContext`,
+ *     `sap-api-catalog.ts`);
+ *   - the IDoc sentence of the architecture recommendation says SAP's
+ *     classification only of SAP's modules, never of one in a customer or
+ *     partner namespace (`recommendArchitecture`, `code-assessment.ts`);
  *   - a finding in code a constant gate locks away (`IF gc_live_probe <> 'X'.
  *     MESSAGE … TYPE 'E'.` with the constant blank) carries `unreachable`, and
  *     the score table labels it — still charged (SD review of 14.10.2026,

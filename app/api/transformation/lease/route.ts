@@ -18,7 +18,7 @@ import { generationRevision, generationStateOf } from '@/lib/generation-revision
 import { platformContextOf } from '@/lib/transformation-context-build';
 import type { InputManifest } from '@/lib/input-manifest';
 import { LEASE_MAX_PLANNED_CALLS, isRunId, leaseView } from '@/lib/transformation/lease';
-import { closeLease, issueLease, readLeaseWindow, voidLease } from '@/lib/transformation/lease-store';
+import { closeLease, confirmLeaseCharge, issueLease, readLeaseWindow, voidLease } from '@/lib/transformation/lease-store';
 
 /**
  * POST /api/transformation/lease — one generation's model budget
@@ -173,7 +173,10 @@ export async function POST(req: NextRequest) {
     }
 
     const now = Date.now();
-    const outcome = await issueLease(db, { projectId, uid: decodedToken.uid, generationToken, runId: isRunId(runId) ? runId : null, plannedCalls, now });
+    // Issued unpaid (`charged: false`): until the charge below went through, a
+    // concurrent retry of this run is answered lease-busy and a call under the
+    // lease is refused, so nobody uses a lease whose charge may still fail.
+    const outcome = await issueLease(db, { projectId, uid: decodedToken.uid, generationToken, runId: isRunId(runId) ? runId : null, plannedCalls, now, charged: false });
     if (outcome.kind === 'refused') {
       return NextResponse.json(
         { error: outcome.error, code: outcome.code, ...(outcome.retryAfterSeconds ? { retryAfterSeconds: outcome.retryAfterSeconds } : {}) },
@@ -196,7 +199,8 @@ export async function POST(req: NextRequest) {
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.', code: 'model-hourly-limit' }, { status: q?.status || 429 });
     }
-    return NextResponse.json({ lease: leaseView(outcome.lease), reused: false });
+    const paid = await confirmLeaseCharge(db, { projectId, leaseId: outcome.lease.leaseId });
+    return NextResponse.json({ lease: leaseView(paid ?? outcome.lease), reused: false });
   } catch (err: unknown) {
     logger.error('transformation lease failed', { route: 'api/transformation/lease', error: errMessage(err) });
     return NextResponse.json({ error: 'The generation could not be prepared. Please try again.' }, { status: 500 });

@@ -6,6 +6,17 @@ import CcAnchor from '@/components/cc/Anchor';
 import type { ArchitectureCanvasModel, CanvasSuccessor } from '@/lib/architecture-canvas';
 import { BTP, BUSINESS_AI_PLATFORM } from '@/lib/sap-naming';
 import { successorSource } from '@/lib/successor-source';
+import { SAP_API_CATALOG_REVIEWED, SAP_API_CATALOG_VERSION } from '@/lib/abap/sap-api-catalog-stamp';
+
+/**
+ * The review stamp a curated successor carries wherever it is shown (QA
+ * leftovers of hotfix 2, roadmap 3.0.13; `SAP_API_CATALOG_STAMP`): the mapping
+ * is hand-written for one release and not refreshed by any sync, so it never
+ * reads as current.
+ */
+export const CURATED_SUCCESSOR_STAMP = `Curated mapping compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not synced from SAP`;
+
+const isCurated = (s: CanvasSuccessor) => successorSource(s.confidence) === 'curated';
 
 /**
  * The target architecture as one picture — proposal B "Canvas first" of the
@@ -175,8 +186,8 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
   const succ = model.successors.slice(0, MAX_SUCCESSORS);
   // Who names the successors (PRV-01): SAP's catalog, Clean-Core.io's curated
   // mapping, or both — a curated pairing is never captioned as SAP's.
-  const anyCurated = model.successors.some((s) => successorSource(s.confidence) === 'curated');
-  const allCurated = anyCurated && model.successors.every((s) => successorSource(s.confidence) === 'curated');
+  const anyCurated = model.successors.some(isCurated);
+  const allCurated = anyCurated && model.successors.every(isCurated);
   const successorOrigin = allCurated
     ? "Imported from Clean-Core.io's curated mapping"
     : anyCurated
@@ -185,7 +196,7 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
   const succMore = model.successors.length - succ.length;
   const succRows = Math.max(1, Math.ceil(succ.length / 2));
   const bTop = 56;
-  const bHeight = 74 + succRows * 56 + (succMore > 0 ? 18 : 0);
+  const bHeight = 74 + succRows * 56 + (succMore > 0 ? 18 : 0) + (anyCurated ? 18 : 0);
   const bBottom = bTop + bHeight;
 
   const gaps = model.gaps.slice(0, MAX_GAPS);
@@ -308,8 +319,13 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
         );
       })}
       {succMore > 0 ? (
-        <text x={48} y={bBottom - 10} fontFamily={SANS} fontSize={11} fill={C.muted}>
+        <text x={48} y={bBottom - (anyCurated ? 28 : 10)} fontFamily={SANS} fontSize={11} fill={C.muted}>
           + {succMore} more — listed under Evidence
+        </text>
+      ) : null}
+      {anyCurated ? (
+        <text x={48} y={bBottom - 10} fontFamily={SANS} fontSize={11} fill={C.muted} data-curated-stamp="">
+          {CURATED_SUCCESSOR_STAMP}
         </text>
       ) : null}
 
@@ -580,6 +596,7 @@ function TallCanvas({ model, targetLine }: ArchitectureCanvasProps) {
                   <span className="block pl-4 text-cc-ink-muted">
                     {s.replaces.join(' / ')}
                     <Lines lines={s.lines} />
+                    {isCurated(s) ? ' · curated' : null}
                   </span>
                 </li>
               ))}
@@ -587,6 +604,11 @@ function TallCanvas({ model, targetLine }: ArchitectureCanvasProps) {
           ) : (
             <p className="m-0 text-[12px] text-cc-ink-muted">The catalog names no released successor for this code.</p>
           )}
+          {model.successors.some(isCurated) ? (
+            <p className="m-0 mt-1 text-[12px] text-cc-ink-muted" data-curated-stamp="">
+              {CURATED_SUCCESSOR_STAMP}
+            </p>
+          ) : null}
         </div>
         {model.gaps.length ? (
           <div className="mt-2 rounded-cc-row border border-dashed px-3 py-2 text-[13px]" style={{ borderColor: 'var(--cc-warning-line)' }}>

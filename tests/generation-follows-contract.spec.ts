@@ -281,10 +281,18 @@ const MODEL_CALLS = ['callGemini', 'runGeneration'];
 function modelCallersOf(src: string): Set<string> {
   const sf = ts.createSourceFile(PAGE, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const local = new Map<string, string>();
+  // Another name for a model call (QA leftovers of hotfix 2): `const send =
+  // callGemini;`, `const send = api.callGemini;`, `import { callGemini as send }`
+  // — the alias asks a model whenever what it names does.
+  const aliases = new Map<string, string>();
   const visit = (n: ts.Node) => {
+    if (ts.isImportSpecifier(n) && n.propertyName) aliases.set(n.name.text, n.propertyName.text);
     if (ts.isFunctionDeclaration(n) && n.name) local.set(n.name.text, n.getText(sf));
     else if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
-      const init = n.initializer;
+      let init = n.initializer;
+      while (ts.isParenthesizedExpression(init) || ts.isAsExpression(init) || ts.isNonNullExpression(init)) init = init.expression;
+      if (ts.isIdentifier(init)) aliases.set(n.name.text, init.text);
+      else if (ts.isPropertyAccessExpression(init)) aliases.set(n.name.text, init.name.text);
       const fnLike = ts.isArrowFunction(init) || ts.isFunctionExpression(init)
         || (ts.isCallExpression(init) && init.arguments.some((a) => ts.isArrowFunction(a) || ts.isFunctionExpression(a)));
       if (fnLike) local.set(n.name.text, init.getText(sf));
@@ -298,6 +306,12 @@ function modelCallersOf(src: string): Set<string> {
     grew = false;
     for (const [name, text] of local) {
       if (!callers.has(name) && asks(text)) {
+        callers.add(name);
+        grew = true;
+      }
+    }
+    for (const [name, target] of aliases) {
+      if (!callers.has(name) && callers.has(target)) {
         callers.add(name);
         grew = true;
       }
@@ -331,6 +345,20 @@ const generateTransformation = useCallback(async () => {`;
   expect(at("a; await fetch('/api/gemini'); await runGeneration(x);")).toBe("a; await fetch('".length);
   expect(at('a; await outer(); await runGeneration(x);')).toBe('a; await '.length);
   expect(at('a; await helper(); await runGeneration(x);')).toBe('a; await '.length);
+});
+
+test('a model call under another name is still a model call (QA leftovers of hotfix 2)', () => {
+  const head = 'const generateTransformation = useCallback(async () => {';
+  const at = (decl: string, body: string) => firstModelCall(body, [decl, `${head}${body}`].join('\n'));
+  const body = 'a; await send(p); if (!decision.ok) {} await runGeneration(x);';
+  expect(at('const send = callGemini;', body)).toBe('a; await '.length);
+  expect(at('const send = gemini.callGemini;', body)).toBe('a; await '.length);
+  expect(at("import { callGemini as send } from '@/lib/gemini';", body)).toBe('a; await '.length);
+  // An alias of an alias, and a helper that calls the alias.
+  expect(at(['const ask = callGemini;', 'const send = ask;'].join('\n'), body)).toBe('a; await '.length);
+  expect(at(['const ask = callGemini;', 'const send = async () => { await ask(p); };'].join('\n'), body)).toBe('a; await '.length);
+  // A name that is no model call stays none.
+  expect(at('const send = logEvent;', body)).toBe(body.indexOf('runGeneration'));
 });
 
 test('the generation does not take its direction from the project document', () => {

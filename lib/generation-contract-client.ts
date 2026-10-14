@@ -38,8 +38,13 @@ export interface ContractAnswer {
  * refusal, because the alternative — falling back to the project's route field
  * — is the defect this step removes, and a network hiccup is not a licence to
  * guess the most permissive target.
+ *
+ * `signal` is the generation's: *Cancel* while the contract is read ends the
+ * read, and the caller gets an `AbortError` — a cancel, never a refusal the
+ * screen would show as the contract's answer (QA leftovers of hotfix 2).
  */
-export async function fetchGenerationDecision(projectId: string): Promise<ContractAnswer> {
+export async function fetchGenerationDecision(projectId: string, signal?: AbortSignal): Promise<ContractAnswer> {
+  const cancelled = () => Object.assign(new Error('cancelled'), { name: 'AbortError' });
   const refusal = (sentence: string, remedy: string): ContractAnswer => ({
     contract: null,
     decision: { ok: false, code: 'no-contract', sentence, remedy },
@@ -51,8 +56,10 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
     // PLATFORM KNOWLEDGE block (roadmap 3.0.12).
     res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract?for=generation`, {
       headers: await authHeader(),
+      signal,
     });
   } catch {
+    if (signal?.aborted) throw cancelled();
     return refusal(
       'The architecture contract of this project could not be read, so there is no target to generate against. Nothing was generated.',
       'Check the connection and open this stage again.',
@@ -60,12 +67,14 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
   }
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    if (signal?.aborted) throw cancelled();
     return refusal(
       body?.error || 'The architecture contract of this project could not be read. Nothing was generated.',
       'Open the analysis, make sure a run and a target deployment are bound, and come back.',
     );
   }
   const json = (await res.json().catch(() => null)) as ContractAnswer | null;
+  if (signal?.aborted) throw cancelled();
   if (!json?.decision) {
     return refusal(
       'The contract endpoint answered with something this stage cannot read, so no target was established. Nothing was generated.',
