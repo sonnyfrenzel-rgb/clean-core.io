@@ -41,6 +41,8 @@ import { stageHref } from '@/lib/workspace-back-href';
 import { formatTextDate } from '@/lib/format';
 import { TRANSFORMATION_MESSAGES as M, tfUnitAgain, tfUnitWaiting, tfUnitWriting } from '@/lib/messages/transformation';
 import { decisionRecordIsLive, recordedDecisionOf } from '@/lib/transformation-context';
+/** The live decision a rebuild contradicts, for the scaffold's first-line header (3.0.13, B6) — the page reads it here. */
+export { againstDecisionOf } from '@/lib/transformation-context';
 import { standardFitAssessed } from '@/lib/standard-fit-gate';
 import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '@/lib/transformation/lease';
 import { explainCode } from '@/lib/transformation/error-codes';
@@ -800,9 +802,10 @@ export function pendingEngineChecks(): GenerationCheck[] {
  * a Node candidate has none — so it is added after the lint checks the first time it reports.
  */
 export function setCheck(checks: GenerationCheck[], key: string, state: GenerationCheckState, result?: string): GenerationCheck[] {
-  if (key === 'abap' && !checks.some((c) => c.key === 'abap')) {
+  // The type check of a Node candidate (3.0.13) the same way: an ABAP candidate has none.
+  if ((key === 'abap' || key === 'types') && !checks.some((c) => c.key === key)) {
     const at = checks.findIndex((c) => c.key === 'lint') + 1;
-    const row: GenerationCheck = { key: 'abap', label: M['transformation.check.abap'], state: 'pending' };
+    const row: GenerationCheck = { key, label: M[key === 'abap' ? 'transformation.check.abap' : 'transformation.check.types'], state: 'pending' };
     checks = at > 0 ? [...checks.slice(0, at), row, ...checks.slice(at)] : [...checks, row];
   }
   return checks.map((c) => (c.key === key ? { ...c, state, ...(result !== undefined ? { result } : {}) } : c));

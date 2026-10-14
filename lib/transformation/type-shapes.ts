@@ -21,8 +21,11 @@
  *     `values.x` against (a closed interface has no other property, as `tsc`
  *     would say).
  *
- * Pure: text in, text out. No TypeScript compiler (a devDependency, absent in
- * production), no network.
+ * Since 3.0.13 the candidate is also type-checked (`lib/test-sandbox/type-check.ts`,
+ * on the server, in the verify route): these shapes keep the prompt and the
+ * guards honest before a call; the type check says what `tsc` says after it.
+ *
+ * Pure: text in, text out. No TypeScript compiler, no network.
  */
 
 export interface TypeDeclaration {
@@ -104,15 +107,35 @@ function namesIn(text: string, decls: ReadonlyMap<string, TypeDeclaration>): str
  * one block of text. `skip` names types the prompt need not spell out (the
  * generic `Dec`, whose meaning the rules carry).
  */
-export function typesText(decls: ReadonlyMap<string, TypeDeclaration>, roots: readonly string[], skip: readonly string[] = []): string {
+export function typesText(
+  decls: ReadonlyMap<string, TypeDeclaration>,
+  roots: readonly string[],
+  skip: readonly string[] = [],
+  only: Readonly<Record<string, ReadonlySet<string>>> = {},
+): string {
   const order: string[] = [];
   const add = (n: string) => {
     if (!skip.includes(n) && decls.has(n) && !order.includes(n)) order.push(n);
   };
+  // `only`: of these interfaces, just the named fields (3.0.13: `Locals` holds every global of the original; a
+  // function is shown the globals its own ABAP reads, and the types those name — the rest stays out of the prompt).
+  const textOf = (n: string): string => {
+    const d = decls.get(n)!;
+    const keep = only[n];
+    if (!keep || d.kind !== 'interface') return d.text;
+    const lines = d.text.split('\n');
+    const fields = lines.slice(1, -1).filter((l) => {
+      const m = /^\s*([A-Za-z_$][\w$]*)\??:/.exec(l);
+      return m ? keep.has(m[1]) : false;
+    });
+    const left = d.fields.length - fields.length;
+    const head = lines[0].replace(/\s*\{\s*\}?$/, ' {');
+    return `${head}${fields.length ? `\n${fields.join('\n')}` : ''}${left > 0 ? `\n  // … ${left} more field${left === 1 ? '' : 's'} this function's ABAP does not read` : ''}\n}`;
+  };
   for (const r of roots) for (const n of namesIn(r, decls)) add(n);
   // Every type a listed one names, until none is new (Selection → Range, StepResult → Refusal → RefusalError).
-  for (let i = 0; i < order.length; i++) for (const m of namesIn(decls.get(order[i])!.text.replace(/\/\/[^\n]*/g, ''), decls)) add(m);
-  return order.map((n) => decls.get(n)!.text).join('\n');
+  for (let i = 0; i < order.length; i++) for (const m of namesIn(textOf(order[i]).replace(/\/\/[^\n]*/g, ''), decls)) add(m);
+  return order.map(textOf).join('\n');
 }
 
 /** The parameters of a TypeScript signature: `(sel: Selection, st: RunState, record: Rec | null = null)` → name and type text. */

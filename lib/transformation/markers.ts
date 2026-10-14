@@ -452,6 +452,86 @@ export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   return out;
 }
 
+/* ------------------------------------------------- line references (3.0.13, B5) */
+
+/** What a line reference the function was not given is marked with — said once, after the reference. */
+export const FOREIGN_LINE_NOTE = ' (not a line of this function’s ABAP)';
+
+/** The comment spans of a body: `//` and `/* *\/` in TypeScript, `*` lines and `"` tails in ABAP. */
+function commentSpans(body: string, track: 'node' | 'rap'): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  if (track === 'rap') {
+    let at = 0;
+    for (const line of body.split('\n')) {
+      if (/^\*/.test(line)) out.push([at, at + line.length]);
+      else {
+        // A `"` outside a literal starts the comment.
+        let q: string | null = null;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (q) {
+            if (c === q) q = null;
+            continue;
+          }
+          if (c === "'" || c === '`' || c === '|') q = c;
+          else if (c === '"') {
+            out.push([at + i, at + line.length]);
+            break;
+          }
+        }
+      }
+      at += line.length + 1;
+    }
+    return out;
+  }
+  const mask = codeMask(`${body}\n;`);
+  for (let i = 0; i < body.length; ) {
+    if (mask[i]) {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j < body.length && !mask[j]) j++;
+    // Strings are not code either; a comment starts with its marker.
+    let k = i;
+    while (k < j && /\s/.test(body[k])) k++;
+    if (body.startsWith('//', k) || body.startsWith('/*', k)) out.push([k, j]);
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * The model's line references in a body's comments (`L812`, `L500–540`, `line 812`) checked against the lines
+ * the function was given — its ABAP slice, its declarations and call sites, its guards (3.0.13, B5). A reference
+ * outside them is marked where it stands (`FOREIGN_LINE_NOTE`), so TRACE and a reviewer never read it as the
+ * engine's anchor. Only comments are touched: code and string literals stay as the model wrote them.
+ * Idempotent. Returns the body and the references marked.
+ */
+export function markForeignLineRefs(body: string, track: 'node' | 'rap', allowed: ReadonlySet<number>): { body: string; marked: string[] } {
+  if (allowed.size === 0) return { body, marked: [] };
+  const spans = commentSpans(body, track);
+  if (spans.length === 0) return { body, marked: [] };
+  const marked: string[] = [];
+  const edits: Array<{ at: number; text: string }> = [];
+  const ref = /\b(?:L|lines?\s+)(\d{1,5})(?:\s*[–-]\s*L?(\d{1,5}))?\b/g;
+  for (const [s, e] of spans) {
+    const text = body.slice(s, e);
+    for (const m of text.matchAll(ref)) {
+      const end = s + (m.index ?? 0) + m[0].length;
+      if (body.startsWith(FOREIGN_LINE_NOTE, end)) continue;
+      const lines = [Number(m[1]), ...(m[2] ? [Number(m[2])] : [])];
+      if (lines.every((n) => allowed.has(n))) continue;
+      marked.push(m[0]);
+      edits.push({ at: end, text: FOREIGN_LINE_NOTE });
+    }
+  }
+  if (edits.length === 0) return { body, marked };
+  let out = body;
+  for (const ed of edits.sort((a, b) => b.at - a.at)) out = `${out.slice(0, ed.at)}${ed.text}${out.slice(ed.at)}`;
+  return { body: out, marked };
+}
+
 /* ----------------------------------------------------------------- splice */
 
 /**

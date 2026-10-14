@@ -11,7 +11,7 @@
  */
 
 import { rangeWords } from './unit-plan';
-import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './check-words';
+import { ENGINE_CODE_NOTE, checkPhrase, notVerifiedPhrase, orderedChecks } from './check-words';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
 export interface TraceOptions {
@@ -151,7 +151,16 @@ export function traceMarkdown(trace: Trace): string {
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
   if (g) {
-    const state = g.status === 'not-activatable' ? 'generated — not activatable (abaplint finds parser or syntax errors; see STATUS.md)' : g.status === 'complete' ? 'complete' : 'partial';
+    const state =
+      g.status === 'not-activatable'
+        ? 'generated — not activatable (abaplint finds parser or syntax errors; see STATUS.md)'
+        : g.status === 'not-runnable'
+          ? 'generated — not runnable (the TypeScript compiler finds type errors with the package’s tsconfig.json; see STATUS.md)'
+          : g.status === 'not-verified'
+            ? notVerifiedPhrase(g.unverified?.length ? g.unverified : ['the checks did not run in full'])
+            : g.status === 'complete'
+              ? 'complete'
+              : 'partial';
     lines.push(`- Generation: ${state} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
     for (const c of orderedChecks(g.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
     if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);

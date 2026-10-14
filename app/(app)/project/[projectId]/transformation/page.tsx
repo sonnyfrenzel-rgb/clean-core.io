@@ -50,7 +50,8 @@ import type { Preflight } from '@/lib/transformation/preflight';
 import { remainingFillEstimate, remainingWords, type ObservedCall } from '@/lib/transformation/duration-estimate';
 import { LEASE_MAX_PLANNED_CALLS } from '@/lib/transformation/lease';
 import type { CheckSummary, UnitRow } from '@/lib/transformation/engine-led';
-import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks, type AbapActivation } from '@/lib/transformation/check-words';
+import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks, typeCheckRecordOf, type AbapActivation } from '@/lib/transformation/check-words';
+import type { TypeCheckAnswer } from '@/lib/transformation/verify';
 import type { GenerationEvent } from '@/lib/transformation/types';
 import { storedGenerationRecord } from '@/lib/transformation/generation-record';
 import { abapLines, fileGroups, traceOfFiles, unitsOfFile } from '@/lib/transformation/trace-view';
@@ -99,6 +100,7 @@ import {
   type GenerationPathKey,
   qualityTips,
   decisionWarning,
+  againstDecisionOf,
   setCheck,
   withChecks,
   originalFactsLines,
@@ -1324,7 +1326,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
         { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck },
-        { guardBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
+        { guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
         { preflight },
@@ -1345,6 +1347,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           program: projectRef.current?.name ?? null,
           decisions: generation.inputs.context.decisions ?? [],
           contextText: platformKnowledge,
+          // A live decision on record that builds nothing (retire, standard, keep): every main file says so first (B6).
+          against: againstDecisionOf((projectRef.current as { decision?: unknown } | null)?.decision),
         },
         controller.signal,
       );
@@ -1430,7 +1434,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             const ofKind = orderedChecks([...checkSummaries.values()].filter((c) => c.kind === e.kind));
             const result = ofKind.map(checkPhrase).join(' · ');
             const state =
-              e.kind === 'guards' || e.kind === 'lint' || e.kind === 'abap' ? (e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed') : checkStateOf(ofKind);
+              e.kind === 'guards' || e.kind === 'lint' || e.kind === 'abap' || e.kind === 'types' ? (e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed') : checkStateOf(ofKind);
             setStageLog((log) => {
               const base = log.checks?.state === 'active' ? log : withChecks(enterStage(log, 'checks', at), log.checks?.checks ?? pendingEngineChecks());
               return withChecks(base, setCheck(base.checks?.checks ?? pendingEngineChecks(), e.kind, state, result));
@@ -1443,9 +1447,16 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         // check is what the package says about itself; the server checks again when it stores.
         const runOnRunner = runnerOverHttp(projectId as string, postJson);
         let lastActivation: AbapActivation | null = null;
+        // 3.0.13 (A1): on the Node route the route type-checks every candidate with the package's own tsconfig.json;
+        // the last round's check decides whether the package is runnable.
+        let lastTypeCheck: TypeCheckAnswer | null = null;
         const verify = createRunnerVerifier({
+          track: prep.scaffold.track,
           onActivation: (a) => {
             lastActivation = a;
+          },
+          onTypeCheck: (t) => {
+            lastTypeCheck = t;
           },
           candidate: (bodies) => candidateFiles(prep, bodies),
           units: prep.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id), kind: prep.plan.units.find((p) => p.id === u.unitId)?.kind })),
@@ -1462,7 +1473,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           bundleOptions: { track: prep.scaffold.track, program: prep.plan.program, context: platformKnowledge },
           model: leasedFillModel(leaseNow),
           guardBody: guardBodyOf(prep),
+          normalizeBody: normalizeBodyOf(prep),
           verify,
+          // Complete only when these ran in full (3.0.13, A2/A5): a skipped or not-run case is never evidence.
+          ...(prep.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
           // The scaffold as the engine wrote it, before any fill: reported, never blocking (3.0.13).
           ...(prep.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prep.scaffold.files, runOnRunner) } : {}),
           // The lease's own budget, as the server answered it (a fresh lease per
@@ -1494,6 +1508,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           checks: [...checkSummaries.values()],
           budget: leaseNow.budget,
           activation: lastActivation,
+          typeCheck: typeCheckRecordOf(lastTypeCheck),
         });
         enterPhase('storing');
         setStageLog((log) => enterStage(log, 'storing', Date.now()));

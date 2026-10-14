@@ -24,8 +24,8 @@ import {
   type ClosureBasis,
 } from './testing-closure';
 import { isAbapUnitRoute } from './test-runnability';
-import { storedActivation, storedContextDigest } from './transformation/generation-record';
-import { activationClosureRefusal } from './transformation/check-words';
+import { storedActivation, storedContextDigest, storedTypeCheck } from './transformation/generation-record';
+import { activationClosureRefusal, typeCheckClosureRefusal } from './transformation/check-words';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -1208,6 +1208,9 @@ export function testingClosureBasis(project: Project | null): TestingClosureBasi
   // stored ABAP package says so (a package stored before 3.0.13 carries no check and is not refused for it).
   const notActivatable = activationClosureRefusal(storedActivation((project as { generationBinding?: unknown }).generationBinding));
   if (notActivatable) return { ok: false, code: 'not-activatable', error: notActivatable };
+  // 3.0.13 (A1): the same for a stored Node package the server's type check finds errors in.
+  const notRunnable = typeCheckClosureRefusal(storedTypeCheck((project as { generationBinding?: unknown }).generationBinding));
+  if (notRunnable) return { ok: false, code: 'not-runnable', error: notRunnable };
   const key = subjectKey(testRunSubjectOf(project));
   const outside = outsideReading(project);
   if (outside.state === 'current' && !outside.verifies) {

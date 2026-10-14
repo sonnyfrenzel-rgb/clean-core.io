@@ -14,7 +14,8 @@
  * Pure: no imports beyond the check words.
  */
 
-import { activationOf, type AbapActivation } from './check-words';
+import { activationOf, typeCheckOf, type AbapActivation, type NodeTypeCheck } from './check-words';
+import type { GenerationStatus } from './types';
 
 export type GenerationPath = 'engine-led' | 'single-call';
 
@@ -34,9 +35,15 @@ export interface EngineLedRecord {
   /**
    * `complete`: every function written and, on the ABAP route since 3.0.13, no parser or syntax error in the
    * package's own objects; `partial`: a function left as a stub; `not-activatable` (3.0.13, ABAP route): the
-   * server's activation check found errors — the server sets it, whatever the page sent (`withAbaplint`).
+   * server's activation check found errors — the server sets it, whatever the page sent (`withAbaplint`);
+   * `not-runnable` (3.0.13, Node route): the server's type check found errors (`withTypeCheck`);
+   * `not-verified` (3.0.13, Node route): the type check, engine cases or probes did not run in full.
    */
-  status: 'complete' | 'partial' | 'not-activatable';
+  status: GenerationStatus;
+  /** Why it is `not-verified`: what did not run (Node route, 3.0.13). */
+  unverified?: string[];
+  /** SAP identifiers the written bodies name, not verified or contradicting SAP's sources (3.0.13, B4). */
+  sapIds?: Array<{ unitId: string; id: string; state: string; sapName: string | null }>;
   units: number;
   written: number;
   repaired: number;
@@ -73,6 +80,8 @@ export interface GenerationRecord {
    * from a stored binding, never from what the page sends; absent on a binding from before — its words stay.
    */
   activation?: AbapActivation | null;
+  /** The server's type check of the stored Node package (3.0.13, `binding.typeCheck`); read only from a stored binding. */
+  typeCheck?: NodeTypeCheck | null;
 }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? (v.length > max ? `${v.slice(0, max - 1)}…` : v) : '');
@@ -97,6 +106,8 @@ function checkOf(x: Record<string, unknown>): EngineLedRecord['checks'][number] 
   return out;
 }
 
+const STATUSES = new Set<GenerationStatus>(['complete', 'partial', 'not-activatable', 'not-runnable', 'not-verified']);
+
 function engineOf(raw: unknown): EngineLedRecord | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const e = raw as Record<string, unknown>;
@@ -104,15 +115,23 @@ function engineOf(raw: unknown): EngineLedRecord | null {
   const scaffoldDigest = digest(e.scaffoldDigest);
   const planDigest = digest(e.planDigest);
   if (!scaffoldDigest || !planDigest) return null;
+  const sapIds = list(e.sapIds, 40, (x) =>
+    typeof x.unitId === 'string' && typeof x.id === 'string'
+      ? { unitId: str(x.unitId, 40), id: str(x.id, 80), state: str(x.state, 80), sapName: typeof x.sapName === 'string' ? str(x.sapName, 200) : null }
+      : null,
+  );
+  const unverified = Array.isArray(e.unverified) ? e.unverified.slice(0, 12).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [];
   return {
-    status: e.status === 'complete' ? 'complete' : e.status === 'not-activatable' ? 'not-activatable' : 'partial',
+    status: STATUSES.has(e.status as GenerationStatus) ? (e.status as GenerationStatus) : 'partial',
+    ...(unverified.length > 0 ? { unverified } : {}),
+    ...(sapIds.length > 0 ? { sapIds } : {}),
     units: int(e.units, 1_000),
     written: int(e.written, 1_000),
     repaired: int(e.repaired, 1_000),
     notWritten: list(e.notWritten, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), reason: str(x.reason, 500) } : null)),
     failing: list(e.failing, 200, (x) => (typeof x.unitId === 'string' ? { unitId: str(x.unitId, 40), title: str(x.title, 200), failure: str(x.failure, 500) } : null)),
-    checks: list(e.checks, 8, checkOf),
-    notRun: list(e.notRun, 8, (x) => (typeof x.kind === 'string' ? { kind: str(x.kind, 20), reason: str(x.reason, 500) } : null)),
+    checks: list(e.checks, 12, checkOf),
+    notRun: list(e.notRun, 12, (x) => (typeof x.kind === 'string' ? { kind: str(x.kind, 20), reason: str(x.reason, 500) } : null)),
     scaffoldFindings: Array.isArray(e.scaffoldFindings) ? e.scaffoldFindings.slice(0, 50).filter((s): s is string => typeof s === 'string').map((s) => str(s, 500)) : [],
     callsUsed: int(e.callsUsed, 1_000),
     budget: int(e.budget, 1_000),
@@ -188,7 +207,17 @@ export function storedGenerationRecord(binding: unknown): (GenerationRecord & { 
   const rec = generationRecordOf({ path: b.path, fallbackReason: b.fallbackReason, engine: b.engine, basis: b.basis, elapsedMs: b.elapsedMs });
   if (!rec || 'error' in rec) return null;
   const activation = storedActivation(binding);
-  return { ...rec, ...(activation ? { activation } : {}), contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
+  const typeCheck = storedTypeCheck(binding);
+  return { ...rec, ...(activation ? { activation } : {}), ...(typeCheck ? { typeCheck } : {}), contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
+}
+
+/**
+ * The server's type check of a stored Node generation (`generationBinding.typeCheck`, 3.0.13), or null — a
+ * binding from before, an ABAP package, or a store where the compiler did not run.
+ */
+export function storedTypeCheck(binding: unknown): NodeTypeCheck | null {
+  if (!binding || typeof binding !== 'object') return null;
+  return typeCheckOf((binding as { typeCheck?: unknown }).typeCheck);
 }
 
 /**

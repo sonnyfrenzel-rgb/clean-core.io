@@ -79,6 +79,7 @@ import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './marker
 import { goldenMasterForScaffold } from './golden-master';
 import { rangeWords, type EngineFacts } from './unit-plan';
 import { requiredGuardsOf } from './scaffold-node';
+import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { accessPointsOf, type AccessPoint } from './access-layer';
 import type { AuthorityCheck } from '../abap/call-graph';
 import { NAME_MAX, abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
@@ -93,6 +94,8 @@ export const OPEN_MARKER = '@cc-open';
 
 export interface RapScaffoldOptions {
   cases?: EngineCaseDerivation;
+  /** 3.0.13 (B6): the live decision on record this rebuild contradicts — every main file says so in its first line. */
+  against?: AgainstDecision | null;
 }
 
 /** The short name every object of the package carries: ≤ 12 characters, so every name stays ≤ 30. */
@@ -841,6 +844,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   files.push(...meta);
 
   for (const file of files) file.content = defuseMarkers(file.content);
+  files.splice(0, files.length, ...withDraftHeader(files, options.against));
   const required: Record<string, RequiredGuard[]> = {};
   for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'rap', facts.statements);
   return { track: 'rap', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter: null, notCarried: plan.notCarried, available, required };

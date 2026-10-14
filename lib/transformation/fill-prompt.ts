@@ -18,11 +18,13 @@
  *     rules with the owner's decisions, its guards, its decimal facts and the
  *     names it may call.
  *
- * Every prompt is at most 14,000 characters. Bundles hold 1–4 units in the
- * order given (the orchestrator orders leaves first, so neighbours in the call
- * tree travel together). A unit that alone would overflow first gives up
- * context-pack lines from the end, then the end of its ABAP slice — each cut
- * is said in the prompt and returned in `trimmed`, never silent.
+ * A prompt of several units is at most 14,000 characters. Bundles hold 1–4
+ * units in the order given (the orchestrator orders leaves first, so
+ * neighbours in the call tree travel together). A unit too large to share a
+ * call goes alone, up to `LEASED_PROMPT_MAX_CHARS`; one that would overflow
+ * even that gives up context-pack lines from the end — named in the prompt and
+ * returned in `trimmed`, never silent. Its ABAP slice is never cut (3.0.13,
+ * B7): a unit that does not fit with its whole slice is not sent, and says why.
  *
  * The answer is JSON (`TRANSFORMATION_FILL_SCHEMA`), validated here before any
  * body is spliced: only units that were asked for, one answer each, a string
@@ -142,8 +144,11 @@ export interface FillBundle {
   unitIds: string[];
   request: FillRequest;
   prompt: string;
-  /** What was cut to stay within the budget, per unit — said in the prompt as well. */
-  trimmed: Array<{ unitId: string; what: 'context' | 'abap'; chars: number }>;
+  /**
+   * What was left out to stay within the budget, per unit — said in the prompt as well. Since 3.0.13 only
+   * context lines (named in `dropped`); the ABAP slice is never cut.
+   */
+  trimmed: Array<{ unitId: string; what: 'context'; chars: number; dropped?: string[] }>;
 }
 
 export interface BundleOptions {
@@ -172,36 +177,46 @@ function cutRepair(r: FillRepair): FillRepair {
   };
 }
 
-/** The context pack cut to `max` characters at a line end, saying how many lines were dropped. */
-export function cutContext(context: string, max: number): { text: string; cut: number } {
+/** The words a dropped context line is named by: its first words, at most 48 characters. */
+const contextTopic = (line: string) => {
+  const t = line.replace(/^[\s\-*#•]+/, '').replace(/\s+/g, ' ').trim();
+  return t.length > 48 ? `${t.slice(0, 47)}…` : t;
+};
+
+/**
+ * The context pack cut to `max` characters at a line end. The note says how
+ * many lines were dropped and names them by their first words (3.0.13, B7:
+ * what was left out is said, never only counted); `dropped` returns the same.
+ */
+export function cutContext(context: string, max: number): { text: string; cut: number; dropped?: string[] } {
   if (context.length <= max) return { text: context, cut: 0 };
-  if (max <= 0) return { text: '', cut: context.length };
   const lines = context.split('\n');
+  if (max <= 0) return { text: '', cut: context.length, dropped: lines.filter((l) => l.trim()).map(contextTopic) };
+  // Room for the note: the count and, as far as it fits, the dropped lines' first words.
+  const noteRoom = Math.min(400, Math.max(60, Math.floor(max / 4)));
   const kept: string[] = [];
   let used = 0;
   for (const line of lines) {
-    // Room for the note line below.
-    if (used + line.length + 1 > max - 60) break;
+    if (used + line.length + 1 > max - noteRoom) break;
     kept.push(line);
     used += line.length + 1;
   }
-  const dropped = lines.length - kept.length;
-  const text = `${kept.join('\n')}\n[${dropped} context line${dropped === 1 ? '' : 's'} dropped to fit the prompt budget]`;
-  return { text: text.length <= max ? text : text.slice(0, max), cut: context.length - kept.join('\n').length };
-}
-
-/** A unit's ABAP slice cut at a line end so the unit costs at most `excess` characters fewer. */
-function cutAbap(unit: FillRequestUnit, excess: number): { unit: FillRequestUnit; cut: number } {
-  const lines = unit.abap.text.split('\n');
-  let removed = 0;
-  let removedLines = 0;
-  while (lines.length > 1 && removed < excess + 80) {
-    const last = lines.pop()!;
-    removed += last.length + 1;
-    removedLines++;
+  const droppedLines = lines.slice(kept.length);
+  const topics = droppedLines.filter((l) => l.trim()).map(contextTopic);
+  const n = droppedLines.length;
+  const head = `[${n} context line${n === 1 ? '' : 's'} dropped to fit the prompt budget`;
+  let named = '';
+  let shown = 0;
+  for (const t of topics) {
+    const next = `${named ? `${named}; ` : ''}"${t}"`;
+    if (head.length + next.length + 20 > noteRoom) break;
+    named = next;
+    shown++;
   }
-  const text = `${lines.join('\n')}\n[${removedLines} ABAP line${removedLines === 1 ? '' : 's'} at the end of this slice cut to fit the prompt budget]`;
-  return { unit: { ...unit, abap: { ...unit.abap, text } }, cut: removed };
+  const rest = topics.length - shown;
+  const note = `${head}${named ? `: ${named}${rest > 0 ? ` and ${rest} more` : ''}` : ''}]`;
+  const text = `${kept.join('\n')}\n${note}`;
+  return { text: text.length <= max ? text : text.slice(0, max), cut: context.length - kept.join('\n').length, dropped: topics };
 }
 
 function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[]): FillRequest {
@@ -262,29 +277,20 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [] });
       continue;
     }
-    // Alone and still too large: give up context, then the end of the slice.
+    // Alone and still too large: give up context lines from the end — each one
+    // named in the prompt and in `trimmed` (3.0.13, B7). The ABAP is never cut:
+    // a body written from part of its routine reads as the whole routine. A
+    // unit that does not fit even without context goes out over the cap; the
+    // orchestrator does not send it and says why (`lease-prompt-too-large`).
     const trimmed: FillBundle['trimmed'] = [];
     let ctx = context;
-    let u = unit;
-    let over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
+    const over = fillPrompt(requestOf(opts, ctx, [unit])).length - maxAlone;
     if (over > 0 && ctx.length > 0) {
-      const cut = cutContext(ctx, Math.max(0, ctx.length - over - 80));
-      trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length });
+      const cut = cutContext(ctx, Math.max(0, ctx.length - over - 120));
+      trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length, ...(cut.dropped?.length ? { dropped: cut.dropped } : {}) });
       ctx = cut.text;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
     }
-    // JSON escaping makes a character of the slice cost more than one in the
-    // prompt, so the cut is measured again until it fits.
-    let abapCut = 0;
-    for (let i = 0; over > 0 && i < 20; i++) {
-      const cut = cutAbap(unit, over + abapCut);
-      abapCut = cut.cut;
-      u = cut.unit;
-      over = fillPrompt(requestOf(opts, ctx, [u])).length - maxAlone;
-      if (cut.unit.abap.text.split('\n').length <= 2) break;
-    }
-    if (abapCut > 0) trimmed.push({ unitId: unit.unitId, what: 'abap', chars: abapCut });
-    const request = requestOf(opts, ctx, [u]);
+    const request = requestOf(opts, ctx, [unit]);
     bundles.push({ unitIds: [unit.unitId], request, prompt: fillPrompt(request), trimmed });
   }
   close();

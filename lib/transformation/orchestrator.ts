@@ -63,7 +63,7 @@ import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types
 export type FillModel = (prompt: string, signal: AbortSignal) => Promise<string>;
 
 /** `abap` (3.0.13): abaplint's parser and syntax check of an ABAP candidate with the shipped configuration (`abap-check.ts`). */
-export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
+export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats' | 'abap' | 'types';
 
 export interface CheckFailure {
   /** The unit the failure belongs to, or null when it is in engine-written code. */
@@ -116,12 +116,23 @@ export interface OrchestratorInput {
   model: FillModel;
   /** Track B's body guards: the reason a body is refused, or null when it may be spliced. */
   guardBody: (unitId: string, body: string, needs: readonly string[]) => string | null;
+  /**
+   * A deterministic touch on every answered body before the guards read it (3.0.13, B5: a line reference in a
+   * comment that is not among the function's ABAP lines is marked as such). Identity when absent.
+   */
+  normalizeBody?: (regionId: string, body: string) => string;
   verify: Verify;
   /**
    * The checks of the scaffold before any fill (3.0.13, ABAP route: the activation check). Reported, never
    * blocking: a failure here is in engine-written code — Clean-Core.io's, never sent to the model.
    */
   scaffoldCheck?: (signal: AbortSignal) => Promise<Pick<VerifyOutcome, 'failures'> | null>;
+  /**
+   * The checks that must have run, in full, for the generation to be complete (3.0.13, A2/A5) — on the Node
+   * route the type check, the engine cases and the probes. A check in this list that did not run, or ran with
+   * a result not run (a skipped case), leaves the generation `partial` and is named in `unverified`.
+   */
+  mustRun?: readonly CheckKind[];
   /** Model calls this generation may make (the lease's budget). */
   budget: number;
   maxInFlight?: number;
@@ -166,6 +177,11 @@ export interface GenerationRunResult {
   /** What the scaffold check found before the fills (3.0.13) — engine-written code only; empty when it found nothing or did not run. */
   scaffoldBaseline?: string[];
   checksNotRun: VerifyOutcome['notRun'];
+  /**
+   * What of `mustRun` did not run in the last round, one phrase each ("engine cases: 26 of 26 not run — …").
+   * Not empty: the generation is not verified — never complete, whatever passed (3.0.13, A2/A5).
+   */
+  unverified?: string[];
   /** The largest number of model calls that were in flight at once. */
   maxInFlightSeen: number;
 }
@@ -380,7 +396,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         // and asking again would build the same prompt (QA finding 804d0920fff4).
         if (b.prompt.length > maxPromptChars) {
           onAnswer(b, {
-            error: `its prompt has ${b.prompt.length.toLocaleString('en-US')} characters, more than the ${maxPromptChars.toLocaleString('en-US')} a fill call may carry`,
+            // 3.0.13 (B7): its ABAP is never sent cut, so a function too large for one call is not written, and says so.
+            error: `its prompt has ${b.prompt.length.toLocaleString('en-US')} characters with its whole ABAP slice, more than the ${maxPromptChars.toLocaleString('en-US')} a fill call may carry — the slice is not sent cut`,
             code: 'lease-prompt-too-large',
             final: true,
           });
@@ -431,7 +448,13 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     if ('error' in outcome) return unusable(b.unitIds, `the model call failed: ${outcome.error}`, outcome.code ?? null, outcome.status ?? null);
     const parsed = parseFillAnswer(outcome.text, b.unitIds);
     if (!parsed.ok) return unusable(b.unitIds, parsed.reason, 'answer-unusable');
-    for (const answer of parsed.units) {
+    const normalize = input.normalizeBody ?? ((_: string, body: string) => body);
+    for (const raw of parsed.units) {
+      const answer = {
+        ...raw,
+        body: raw.refused ? raw.body : normalize(raw.unitId, raw.body),
+        ...(raw.guards ? { guards: Object.fromEntries(Object.entries(raw.guards).map(([id, b]) => [id, normalize(`${raw.unitId}.${id.replace('-', '')}`, b)])) } : {}),
+      };
       const st = states.get(answer.unitId)!;
       if (answer.refused) {
         if (round === 0) {
@@ -487,6 +510,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
 
   const scaffoldFindings: string[] = [];
   let checksNotRun: VerifyOutcome['notRun'] = [];
+  let lastChecks: CheckCount[] = [];
+  let checksRan = false;
   let rounds = 0;
   let stop: StopReason = 'passed';
 
@@ -541,11 +566,14 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         outcome = await input.verify(bodies, { round: rounds, signal: checks.signal });
       } catch (err) {
         const reason = `the checks could not run: ${err instanceof Error ? err.message : String(err)}`;
-        outcome = { checks: [], failures: [], notRun: (['lint', 'cases', 'probes'] as const).map((kind) => ({ kind, reason })) };
+        const kinds = new Set<CheckKind>(['lint', 'cases', 'probes', ...(input.mustRun ?? [])]);
+        outcome = { checks: [], failures: [], notRun: [...kinds].map((kind) => ({ kind, reason })) };
       }
       if (cancelled()) break;
       for (const c of outcome.checks) emit({ t: 'check', ...c });
       checksNotRun = outcome.notRun;
+      lastChecks = outcome.checks;
+      checksRan = true;
 
       // Failures back onto their units; a failure no written unit owns is ours.
       for (const s of states.values()) if (s.body !== null) s.failures = s.predicateGaps.map((p) => `body guards: ${p}`);
@@ -623,7 +651,9 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     };
   });
   if (stop === 'cancelled') emit({ t: 'failed', message: 'Cancelled — nothing was stored. Calls already sent were counted against this generation.' });
-  const complete = stop !== 'cancelled' && units.every((u) => u.state === 'written' && u.failures.length === 0) && scaffoldFindings.length === 0;
+  const unverified = unverifiedOf(input.mustRun ?? [], checksRan ? lastChecks : [], checksRan ? checksNotRun : null);
+  const complete =
+    stop !== 'cancelled' && units.every((u) => u.state === 'written' && u.failures.length === 0) && scaffoldFindings.length === 0 && unverified.length === 0;
   return {
     status: stop === 'cancelled' ? 'cancelled' : complete ? 'complete' : 'partial',
     units,
@@ -633,6 +663,50 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     scaffoldFindings: [...scaffoldFindings],
     scaffoldBaseline,
     checksNotRun,
+    unverified,
     maxInFlightSeen,
   };
+}
+
+const KIND_WORDS: Record<CheckKind, string> = {
+  lint: 'lint checks',
+  cases: 'engine cases',
+  probes: 'failure-pattern probes',
+  formats: 'file-format checks',
+  abap: 'activation check',
+  types: 'type check',
+};
+
+/**
+ * What of the checks that must run did not, in the last round's outcome (`notRun: null` — no round of checks
+ * ran at all). A check absent from the outcome did not run; one whose results were skipped or not run ran
+ * only in part: a skipped case is never evidence (3.0.13, A5).
+ */
+export function unverifiedOf(mustRun: readonly CheckKind[], checks: readonly CheckCount[], notRun: VerifyOutcome['notRun'] | null): string[] {
+  const out: string[] = [];
+  for (const kind of mustRun) {
+    const words = KIND_WORDS[kind] ?? kind;
+    if (notRun === null) {
+      out.push(`${words} not run: no round of checks ran`);
+      continue;
+    }
+    const why = notRun.find((n) => n.kind === kind);
+    if (why) {
+      out.push(`${words} not run — ${why.reason.replace(/\.$/, '')}`);
+      continue;
+    }
+    const ofKind = checks.filter((c) => c.kind === kind);
+    if (ofKind.length === 0) {
+      out.push(`${words} not run: no result`);
+      continue;
+    }
+    const total = ofKind.reduce((n, c) => n + c.total, 0);
+    const open = ofKind.reduce((n, c) => n + (c.notRun ?? 0), 0);
+    if (total === 0) out.push(`${words}: none ran`);
+    else if (open > 0) {
+      const reason = ofKind.map((c) => c.notRunReason).find((r) => !!r);
+      out.push(`${words}: ${open} of ${total} not run${reason ? ` — ${reason.replace(/\.$/, '')}` : ''}`);
+    }
+  }
+  return out;
 }

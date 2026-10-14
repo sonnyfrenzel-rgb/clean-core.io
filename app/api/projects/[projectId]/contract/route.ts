@@ -381,6 +381,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // recorded as passed, failed or not run — the page cannot report this check for itself.
     const lint = decision.isAbapCloud ? await import('@/lib/transformation/abaplint-check') : null;
     const abaplint = lint ? lint.abaplintPackageCheck(JSON.parse(code) as Array<{ path: string; content: string }>) : null;
+    // Roadmap 3.0.13 (A1): an engine-led Node package is type-checked here with its own tsconfig.json — the page
+    // cannot report this check for itself. Type errors make the record `not-runnable`, whatever the page said.
+    const nodeEngine = !decision.isAbapCloud && record?.path === 'engine-led' && record.engine;
+    const typed = nodeEngine ? (await import('@/lib/test-sandbox/type-check')).typeCheckCandidate(JSON.parse(code) as Array<{ path: string; content: string }>) : null;
+    const words = nodeEngine ? await import('@/lib/transformation/check-words') : null;
+    const typeCheck = typed && words ? words.typeCheckRecordOf(typed) : null;
 
     // Roadmap 3.0.12, step E (design §12.2): the binding names how the package
     // was made and the PLATFORM KNOWLEDGE block it was made from — its digest is
@@ -393,7 +399,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
             path: record.path,
             contextDigest: sha256Hex(platform.stamp.text),
             fallbackReason: record.fallbackReason,
-            engine: record.engine && lint && abaplint ? lint.withAbaplint(record.engine, abaplint) : record.engine,
+            engine:
+              record.engine && lint && abaplint
+                ? lint.withAbaplint(record.engine, abaplint)
+                : record.engine && words && typed
+                  ? words.withTypeCheck(record.engine, typeCheck, typed.ran ? null : typed.reason)
+                  : record.engine,
             scaffoldVersion: record.engine?.scaffoldVersion ?? null,
             scaffoldDigest: record.engine?.scaffoldDigest ?? null,
             basis: record.basis,
@@ -401,6 +412,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
           }
         : {}),
       ...(abaplint ? { abaplint } : {}),
+      ...(typeCheck ? { typeCheck } : {}),
     };
     const fields = {
       generatedCode: code,

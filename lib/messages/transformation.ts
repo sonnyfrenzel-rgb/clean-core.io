@@ -125,6 +125,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.check.guards': 'Body guards — no body touched engine-written code',
   'transformation.check.lint': 'Lint checks of the candidate',
   'transformation.check.abap': 'Activation check — abaplint, parser and syntax, with the package’s own abaplint.json',
+  'transformation.check.types': 'Type check — the TypeScript compiler, with the package’s own tsconfig.json',
   'transformation.check.cases': 'Engine cases through the call contract',
   'transformation.check.probes': 'Failure-pattern probes',
   'transformation.unitsTitle': 'Functions',

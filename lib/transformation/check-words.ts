@@ -46,11 +46,11 @@ export const ENGINE_CODE_NOTE =
  * trace, not that the checks ran (QA review of c38f8043, 05d1530a1092). Only
  * abaplint is run by the server itself when it stores the package.
  */
-const SERVER_RUN_KINDS = new Set(['abaplint', 'abaplint-syntax', 'abaplint-sap', 'abaplint-unread']);
+const SERVER_RUN_KINDS = new Set(['abaplint', 'abaplint-syntax', 'abaplint-sap', 'abaplint-unread', 'tsc']);
 
 /** Said once under the checks of a stored record when any of them is the page's report. */
 export const PAGE_REPORTED_NOTE =
-  "Every check listed here except abaplint is the report of the browser that generated the package: Clean-Core.io's server stored it as sent and did not run those checks again.";
+  "Every check listed here except abaplint and the server's type check (tsc) is the report of the browser that generated the package: Clean-Core.io's server stored it as sent and did not run those checks again.";
 
 /** True when a stored record lists a check (run or not run) that the server did not run itself. */
 export function hasPageReportedChecks(e: { checks: readonly { kind: string }[]; notRun: readonly { kind: string }[] }): boolean {
@@ -76,6 +76,8 @@ function nounOf(kind: string, scope: CheckScopeWord | undefined): { one: string;
   if (kind === 'abaplint') return { one: 'ABAP file', many: 'ABAP files', of: 'checked by abaplint for parser and syntax errors (shipped config)' };
   if (kind === 'abap') return { one: 'ABAP file', many: 'ABAP files', of: 'checked by abaplint for parser and syntax errors (shipped config)' };
   if (kind === 'formats') return { one: 'object file', many: 'object files', of: "against SAP's ABAP file formats (AFF schemas) and abapGit's serializer format" };
+  if (kind === 'types') return { one: 'TypeScript file', many: 'TypeScript files', of: "type-checked with the package's tsconfig.json (tsc --noEmit)" };
+  if (kind === 'tsc') return { one: 'TypeScript file', many: 'TypeScript files', of: "type-checked by Clean-Core.io's server before saving (the package's tsconfig.json)" };
   return { one: kind, many: kind, of: '' };
 }
 
@@ -121,7 +123,7 @@ export function checkStateOf(checks: readonly CheckLike[]): 'met' | 'warning' | 
 
 /** The order the phrases of one kind are said in: the written functions first, then the engine's own code. */
 export function orderedChecks<T extends CheckLike>(checks: readonly T[]): T[] {
-  const rank = (c: CheckLike) => ['guards', 'lint', 'abap', 'abaplint', 'cases', 'probes', 'formats'].indexOf(c.kind) * 3 + (c.scope === 'fills' ? 0 : c.scope === 'engine-code' ? 1 : 2);
+  const rank = (c: CheckLike) => ['guards', 'lint', 'types', 'tsc', 'abap', 'abaplint', 'cases', 'probes', 'formats'].indexOf(c.kind) * 3 + (c.scope === 'fills' ? 0 : c.scope === 'engine-code' ? 1 : 2);
   return [...checks].sort((a, b) => rank(a) - rank(b));
 }
 
@@ -307,3 +309,120 @@ export function isAbapPackage(files: ReadonlyArray<{ path: string }>): boolean {
 export const ABAP_CASES_NOT_RUN = 'Engine cases not run here: on the ABAP route they are ABAP Unit test data, and ABAP Unit runs only in your SAP system.';
 /** Why the failure-pattern probes do not run here on the ABAP route. */
 export const ABAP_PROBES_NOT_RUN = 'Failure-pattern probes not run here: they call Node code, and this package is ABAP.';
+
+/* ------------------------------------------- the type check of a Node package (3.0.13) */
+
+/** One TypeScript error of a Node package: its file, line, code (`TS2339`) and message. */
+export interface TypeFindingWords {
+  path: string;
+  line: number;
+  code: string;
+  message: string;
+}
+
+/**
+ * The type check of a Node package (`lib/test-sandbox/type-check.ts`, roadmap
+ * 3.0.13, A1): the TypeScript compiler with the options of the package's own
+ * `tsconfig.json` over its `srv/` and `test/` TypeScript. Written by the server
+ * onto the generation binding (`binding.typeCheck`) when it stores a Node
+ * package; the page's own check of the last round goes into its status only.
+ */
+export interface NodeTypeCheck {
+  v: 1;
+  /** The TypeScript version that ran. */
+  typescript: string;
+  config: 'shipped';
+  files: number;
+  failedFiles: number;
+  errors: number;
+  /** 0 errors: the package compiles under its own tsconfig.json. Derived, never read. */
+  runnable: boolean;
+  findings: TypeFindingWords[];
+}
+
+/** A stored type-check record, shape-checked; null when there is none or it is malformed. */
+export function typeCheckOf(raw: unknown): NodeTypeCheck | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const a = raw as Record<string, unknown>;
+  const errors = nat(a.errors);
+  const version = text(a.typescript, 40);
+  if (a.v !== 1 || a.config !== 'shipped' || errors === null || !version) return null;
+  const findings: TypeFindingWords[] = Array.isArray(a.findings)
+    ? a.findings.slice(0, 200).flatMap((f): TypeFindingWords[] => {
+        const x = (f ?? {}) as Record<string, unknown>;
+        const line = nat(x.line);
+        const path = text(x.path, 200);
+        return path && line !== null ? [{ path, line, code: text(x.code, 12) ?? '', message: text(x.message, 400) ?? '' }] : [];
+      })
+    : [];
+  return { v: 1, typescript: version, config: 'shipped', files: nat(a.files) ?? 0, failedFiles: nat(a.failedFiles) ?? 0, errors, runnable: errors === 0, findings };
+}
+
+/** The record from the compiler's result (`typeCheckCandidate`); null when it did not run. */
+export function typeCheckRecordOf(r: { ran: true; typescript: string; files: number; failedFiles: number; errors: number; findings: TypeFindingWords[] } | { ran: false; reason: string } | null | undefined): NodeTypeCheck | null {
+  if (!r || !r.ran) return null;
+  return { v: 1, typescript: r.typescript, config: 'shipped', files: r.files, failedFiles: r.failedFiles, errors: r.errors, runnable: r.errors === 0, findings: r.findings.slice(0, 50) };
+}
+
+/** "TypeScript 5.9.3, the package's tsconfig.json". */
+export const typeCheckSource = (t: Pick<NodeTypeCheck, 'typescript'>) => `TypeScript ${t.typescript}, the package's tsconfig.json`;
+
+/**
+ * The status of a Node generation in one phrase, as the record, STATUS.md,
+ * TRACE.md and the generation screen say it: "generated — not runnable: 3
+ * type errors in 2 files (TypeScript 5.9.3, the package's tsconfig.json)".
+ */
+export function typeCheckStatusPhrase(t: NodeTypeCheck): string {
+  if (t.runnable) return `compiles: 0 type errors in ${plural(t.files, 'TypeScript file')} (${typeCheckSource(t)})`;
+  return `generated — not runnable: ${plural(t.errors, 'type error')} in ${plural(t.failedFiles, 'file')} (${typeCheckSource(t)})`;
+}
+
+/**
+ * "generated — not verified: …" — a Node package whose type check, engine
+ * cases or probes did not run (or ran in part). A case that was skipped or not
+ * run is never evidence (A5); the phrase names what did not run and why.
+ */
+export function notVerifiedPhrase(reasons: readonly string[]): string {
+  const shown = reasons.slice(0, 3).map((r) => r.replace(/\.$/, ''));
+  return `generated — not verified: ${shown.join('; ')}${reasons.length > shown.length ? `; and ${reasons.length - shown.length} more` : ''}`;
+}
+
+/**
+ * The engine-led record of a Node package with the server's type check in place of anything the page sent
+ * under `tsc` (3.0.13): the page cannot report this check for itself. With the check, the status is the
+ * server's too — type errors make it `not-runnable`, whatever the page said; a check that could not run
+ * leaves a `complete` record `not-verified`.
+ */
+export function withTypeCheck<
+  T extends {
+    status?: string;
+    unverified?: string[];
+    notWritten?: unknown;
+    checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number }>;
+    notRun: Array<{ kind: string; reason: string }>;
+  },
+>(engine: T, t: NodeTypeCheck | null, notRunReason: string | null = null): T {
+  const out: T = {
+    ...engine,
+    checks: [...engine.checks.filter((c) => c.kind !== 'tsc'), ...(t ? [{ kind: 'tsc', total: t.files, failed: t.failedFiles, passed: Math.max(0, t.files - t.failedFiles), notRun: 0 }] : [])],
+    notRun: [...engine.notRun.filter((n) => n.kind !== 'tsc'), ...(t ? [] : [{ kind: 'tsc', reason: (notRunReason ?? 'The type check did not run on the server.').slice(0, 500) }])],
+  };
+  if (typeof engine.status !== 'string') return out;
+  const stubs = Array.isArray(engine.notWritten) && engine.notWritten.length > 0;
+  if (t && !t.runnable) out.status = 'not-runnable';
+  else if (engine.status === 'not-runnable') {
+    // The page saw errors the server does not: the status is the functions' and the runs' again.
+    out.status = stubs ? 'partial' : (engine.unverified?.length ?? 0) > 0 ? 'not-verified' : 'complete';
+  }
+  if (!t && out.status === 'complete') {
+    out.status = 'not-verified';
+    out.unverified = [...(engine.unverified ?? []), `type check not run on the server — ${(notRunReason ?? 'it did not run').replace(/\.$/, '')}`];
+  }
+  return out;
+}
+
+/** Why Testing cannot be closed on a stored Node package, or null: code that does not compile has no test a closure could conclude. */
+export function typeCheckClosureRefusal(t: NodeTypeCheck | null): string | null {
+  if (!t || t.runnable) return null;
+  return `Testing cannot be closed: the stored package is ${typeCheckStatusPhrase(t)}. A suite is not concluded on code that does not compile — generate the code again in Transformation, then test it.`;
+}

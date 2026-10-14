@@ -22,19 +22,23 @@
 
 import { deriveEngineCases } from '../testing-engine-cases';
 import { LEASED_PROMPT_MAX_CHARS, bundleFills } from './fill-prompt';
-import { bodyGuards, spliceBodies } from './markers';
+import { bodyGuards, markForeignLineRefs, spliceBodies } from './markers';
 import { buildNodeScaffold } from './scaffold-node';
 import { buildRapScaffold } from './scaffold-rap';
+import type { AgainstDecision } from './decision-header';
+import { checkSapReferences, sapIdStateWord } from '../sap-reference-check';
 import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts } from './unit-plan';
+import { camelName } from './naming';
 import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
-import { checkSummaryOf, type AbapActivation } from './check-words';
+import { checkSummaryOf, type AbapActivation, type NodeTypeCheck } from './check-words';
 import {
   PlanRefusal,
   type BodyGuardContext,
   type FillOutcome,
   type FillRequestUnit,
+  type GenerationStatus,
   type RegionBody,
   type RuleDecisionInput,
   type Scaffold,
@@ -74,6 +78,8 @@ export interface EngineLedRequest {
   decisions: readonly RuleDecisionInput[];
   /** The PLATFORM KNOWLEDGE block every fill prompt carries (cut to 3,000 characters by the prompt). */
   contextText: string;
+  /** The live decision on record this rebuild contradicts (`againstDecisionOf`); every main file then says so first (B6). */
+  against?: AgainstDecision | null;
 }
 
 /** What the screen shows when the scaffold is written (§15.2 "Engine scaffold"). */
@@ -135,7 +141,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
     const facts = readEngineFacts(req.source);
     const plan = planUnits(req.source, { decisions: req.decisions, program: req.program }, facts);
     const cases = deriveEngineCases(facts.source, facts.ruleSet.rules);
-    const scaffold = req.track === 'node' ? buildNodeScaffold(plan, facts, { cases }) : buildRapScaffold(plan, facts, { cases });
+    const against = req.against ?? null;
+    const scaffold = req.track === 'node' ? buildNodeScaffold(plan, facts, { cases, against }) : buildRapScaffold(plan, facts, { cases, against });
     const regionIds = new Set(scaffold.regions.map((r) => r.regionId));
     const byId = new Map(plan.units.map((u) => [u.id, u]));
     const fillUnits: FillRequestUnit[] = [];
@@ -180,7 +187,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
         },
         available: { helpers: available.filter((n) => !calleeNames.has(n)), callees },
         // The fields of every type the signature and the callees' signatures name (defect D, 13.10.2026).
-        ...(decls ? { types: typesText(decls, [u.signature, ...callees], ['Dec']) } : {}),
+        // Of the original's globals (`Locals`), only those this function's ABAP names (3.0.13, A3).
+        ...(decls ? { types: typesText(decls, [u.signature, ...callees], ['Dec'], { Locals: localsNamedIn(`${slice.text}\n${slice.declarations}`) }) } : {}),
       });
     }
     // Predicate regions take the slice length of the unit that owns them.
@@ -227,6 +235,13 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
   }
 }
 
+/** The property names (`gtClaims`) of every ABAP name an ABAP text mentions — `Locals` keeps those it declares. */
+export function localsNamedIn(abap: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of abap.matchAll(/[A-Za-z_][\w/]*/g)) out.add(camelName(m[0].toLowerCase()));
+  return out;
+}
+
 /* -------------------------------------------------------------- the guards */
 
 const declarationCache = new WeakMap<Pick<Scaffold, 'files'>, Map<string, TypeDeclaration>>();
@@ -271,6 +286,34 @@ export function guardBodyOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold' | 
   };
 }
 
+/**
+ * The lines a fill region was given (3.0.13, B5): its ABAP slice and ranges, the declarations and call sites
+ * the slice carries, and the lines of its guards — a body's comment may cite these and no others.
+ */
+export function givenLinesOf(prep: Pick<EngineLedPrepared, 'fillUnits'>, regionId: string): Set<number> {
+  const u = prep.fillUnits.find((x) => x.unitId === regionId.split('.')[0]);
+  const out = new Set<number>();
+  if (!u) return out;
+  for (const r of u.abap.ranges) for (let n = r.lineStart; n <= r.lineEnd && n - r.lineStart < 5_000; n++) out.add(n);
+  for (const text of [u.abap.text, u.abap.declarations ?? '']) for (const m of text.matchAll(/^\s*(\d{1,5})\s/gm)) out.add(Number(m[1]));
+  for (const c of u.abap.callSites ?? []) out.add(c.line);
+  for (const g of u.guards ?? []) {
+    const line = (g as { line?: unknown }).line;
+    if (typeof line === 'number') out.add(line);
+  }
+  return out;
+}
+
+/** The orchestrator's `normalizeBody`: line references a body's comments make outside its given lines, marked (B5). */
+export function normalizeBodyOf(prep: Pick<EngineLedPrepared, 'fillUnits' | 'scaffold'>) {
+  const cache = new Map<string, Set<number>>();
+  return (regionId: string, body: string): string => {
+    const key = regionId.split('.')[0];
+    if (!cache.has(key)) cache.set(key, givenLinesOf(prep, regionId));
+    return markForeignLineRefs(body, prep.scaffold.track, cache.get(key)!).body;
+  };
+}
+
 /** The candidate package with these bodies (by region) spliced in — what the checks read. */
 export function candidateFiles(prep: Pick<EngineLedPrepared, 'scaffold'>, bodies: ReadonlyMap<string, string>): ScaffoldFile[] {
   const result = spliceBodies(prep.scaffold, [...bodies].map(([regionId, body]) => ({ regionId, body })), () => null);
@@ -286,7 +329,7 @@ export function candidateFiles(prep: Pick<EngineLedPrepared, 'scaffold'>, bodies
  * a check of the written functions (`lib/transformation/check-words.ts`).
  */
 export interface CheckSummary {
-  kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
+  kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap' | 'types';
   total: number;
   failed: number;
   passed?: number;
@@ -304,7 +347,14 @@ export interface EngineLedSummary {
    * either way — except, on the ABAP route since 3.0.13, abaplint's parser and syntax errors: with one left after
    * the last round the package is `not-activatable` (the server checks again when it stores, `withAbaplint`).
    */
-  status: 'complete' | 'partial' | 'not-activatable';
+  status: GenerationStatus;
+  /** Node route (3.0.13): what of the type check, engine cases and probes did not run — why it is `not-verified`. */
+  unverified?: string[];
+  /**
+   * SAP identifiers the written bodies name that are not verified against SAP's sources, or contradict them
+   * (3.0.13, B4: `lib/sap-reference-check.ts` over the model-written text) — with the function that names them.
+   */
+  sapIds?: Array<{ unitId: string; id: string; state: string; sapName: string | null }>;
   units: number;
   written: number;
   repaired: number;
@@ -360,6 +410,8 @@ export function assembleEngineLed(
     budget: number;
     /** The activation check of the last round (ABAP route, 3.0.13); absent or null when it did not run. */
     activation?: AbapActivation | null;
+    /** The type check of the last round (Node route, 3.0.13); null when it did not run. */
+    typeCheck?: NodeTypeCheck | null;
   },
 ): EngineLedPackage {
   const bodies: RegionBody[] = [];
@@ -395,9 +447,42 @@ export function assembleEngineLed(
       t.note = `checks still failing: ${u.failures[0]}`;
     }
   }
+  // Node route (3.0.13, A1/A2/A5): complete only when the type check ran with 0 errors and the engine cases and
+  // probes ran in full; a type error makes it not runnable, anything that did not run makes it not verified.
+  const node = prep.scaffold.track === 'node';
+  const fromRun = result.unverified ?? [];
+  const unverified = node ? [...(!options.typeCheck && !fromRun.some((u) => u.startsWith('type check')) ? ['type check not run'] : []), ...fromRun] : [];
+  const status: GenerationStatus =
+    options.activation && !options.activation.activatable
+      ? 'not-activatable'
+      : node && options.typeCheck && !options.typeCheck.runnable
+        ? 'not-runnable'
+        : notWritten.length > 0
+          ? 'partial'
+          : node && unverified.length > 0
+            ? 'not-verified'
+            : 'complete';
+  // B4 (3.0.13): every SAP identifier a written body names, checked against SAP's sources; the ones not
+  // verified, or contradicting SAP, are findings of that function — said in STATUS.md and TRACE.md.
+  const sapIds: NonNullable<EngineLedSummary['sapIds']> = [];
+  for (const b of bodies) {
+    if (refusedNow.has(b.regionId)) continue;
+    const unitId = b.regionId.split('.')[0];
+    for (const c of checkSapReferences(b.body)) {
+      if (c.status !== 'mismatch' && c.status !== 'unverified') continue;
+      if (sapIds.some((x) => x.unitId === unitId && x.id.toUpperCase() === c.id.toUpperCase())) continue;
+      sapIds.push({ unitId, id: c.id, state: sapIdStateWord(c), sapName: c.sapName });
+    }
+  }
+  for (const t of trace.units) {
+    const named = sapIds.filter((x) => x.unitId === t.unitId);
+    if (named.length > 0) t.note = [t.note, `SAP identifiers to check: ${named.map((x) => `${x.id} (${x.state}${x.sapName ? `; SAP: ${x.sapName}` : ''})`).join(', ')}`].filter(Boolean).join('; ');
+  }
   const summary: EngineLedSummary = {
     // Partial is a function left as a stub (owner, Q4); a check that still fails on a written body is a finding.
-    status: options.activation && !options.activation.activatable ? 'not-activatable' : notWritten.length === 0 ? 'complete' : 'partial',
+    status,
+    ...(node && unverified.length > 0 ? { unverified } : {}),
+    ...(sapIds.length > 0 ? { sapIds: sapIds.slice(0, 40) } : {}),
     units: result.units.length,
     written: result.units.filter((u) => u.state === 'written').length - refusedNow.size,
     repaired: result.units.filter((u) => u.state === 'written' && u.filledBy !== 'model' && u.filledBy !== 'not-filled').length,
@@ -432,6 +517,7 @@ export function assembleEngineLed(
 function summaryForTrace(s: EngineLedSummary): NonNullable<Trace['generation']> {
   return {
     status: s.status,
+    ...(s.unverified?.length ? { unverified: s.unverified } : {}),
     written: s.written,
     repaired: s.repaired,
     units: s.units,
