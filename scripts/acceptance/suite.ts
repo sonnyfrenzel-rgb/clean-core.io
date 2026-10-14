@@ -495,11 +495,13 @@ interface HarnessOutcome {
 
 /** The engine cases and the failure-pattern probes, by the repository's harness under its own execution rule. */
 export async function runHarnessChecks(pkgDir: string, derived: number): Promise<HarnessOutcome> {
-  const engine = (await import(pathToFileURL(path.join(HERE, 'engine-cases.mjs')).href)) as { runEngineCases: (o: Record<string, unknown>) => Promise<{ summary: { passed: number; failed: number; notRun: number }; cases: Array<{ reason?: string }>; sandbox: { reason: string } }> };
-  const harness = (await import(pathToFileURL(path.join(HERE, 'run.mjs')).href)) as { runHarness: (o: Record<string, unknown>) => Promise<{ summary: Record<string, number>; patterns: Record<string, { status: string }>; sandbox: { executed: boolean; reason: string } }> };
+  // The harness is loaded inside each try: a harness that cannot be loaded is a check that did not run, with the
+  // reason, never a stopped suite (under Playwright a worker that already loaded engine-cases-core.mjs through its
+  // own transform hands the native import a copy without named exports).
   const engineCases: RunRecord['engineCases'] = { derived, passed: 0, failed: 0, notRun: derived, reason: null };
   if (fs.existsSync(path.join(pkgDir, 'test', 'engine-cases.json'))) {
     try {
+      const engine = (await import(pathToFileURL(path.join(HERE, 'engine-cases.mjs')).href)) as { runEngineCases: (o: Record<string, unknown>) => Promise<{ summary: { passed: number; failed: number; notRun: number }; cases: Array<{ reason?: string }>; sandbox: { reason: string } }> };
       const r = await engine.runEngineCases({ pkg: pkgDir, timeout: 20_000, trustedFixture: false, staticOnly: false });
       Object.assign(engineCases, r.summary);
       engineCases.reason = r.summary.notRun > 0 ? (r.cases.find((c) => c.reason)?.reason ?? r.sandbox.reason) : null;
@@ -509,6 +511,7 @@ export async function runHarnessChecks(pkgDir: string, derived: number): Promise
   } else engineCases.reason = 'the package carries no test/engine-cases.json';
   const probes: RunRecord['probes'] = { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: null, byPattern: {} };
   try {
+    const harness = (await import(pathToFileURL(path.join(HERE, 'run.mjs')).href)) as { runHarness: (o: Record<string, unknown>) => Promise<{ summary: Record<string, number>; patterns: Record<string, { status: string }>; sandbox: { executed: boolean; reason: string } }> };
     const r = await harness.runHarness({ pkg: pkgDir, timeout: 20_000, trustedFixture: false, staticOnly: false });
     probes.pass = r.summary.pass ?? 0;
     probes.fail = r.summary.fail ?? 0;
