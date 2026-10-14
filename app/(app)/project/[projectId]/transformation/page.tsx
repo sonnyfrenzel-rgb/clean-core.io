@@ -2286,10 +2286,10 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       {showTips && hasPackage ? (
         <details className="group mt-6 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc" data-generate-again="">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 cc-text-h3 text-cc-ink [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-w-0 cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 cc-text-h3 text-cc-ink [&::-webkit-details-marker]:hidden">
             <ChevronRight size={16} aria-hidden={true} className="shrink-0 transition-transform group-open:rotate-90" />
             Generate again
-            <span className="cc-text-meta font-medium text-cc-ink-muted">what a new run would use, what could still raise its quality, its plan and limits</span>
+            <span className="min-w-0 basis-full cc-text-meta font-medium text-cc-ink-muted sm:basis-auto">what a new run would use, what could still raise its quality, its plan and limits</span>
           </summary>
           <div className="border-t border-cc-line p-4">{tipsPanel}</div>
         </details>

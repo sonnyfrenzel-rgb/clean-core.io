@@ -527,21 +527,21 @@ export default function TransformationObjectPage({
                   {groups.map((g) => (
                     <li key={g.key} className="min-w-0 rounded-cc-row border border-cc-line bg-cc-surface" data-package-group={g.key}>
                       <details className="group">
-                        <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                        <summary className="grid cursor-pointer list-none grid-cols-[36px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 px-3 py-2 sm:grid-cols-[36px_minmax(0,1fr)_auto] [&::-webkit-details-marker]:hidden">
                           <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-cc-row border [&_svg]:h-[18px] [&_svg]:w-[18px]', FILE_TONE[g.type])}>
                             {FILE_ICON[g.type]}
                           </span>
-                          <span className="min-w-0 flex-1">
+                          <span className="min-w-0">
                             <span className="block break-all cc-text-identifier font-cc-mono text-cc-ink">{g.name}</span>
                             <span className="block cc-text-meta font-medium text-cc-ink-muted">
                               {g.kind} · {g.files.length} {g.files.length === 1 ? 'file' : 'files'} · {g.lines} {g.lines === 1 ? 'line' : 'lines'}
                             </span>
                           </span>
-                          <span className="shrink-0" data-package-author={g.author}>
+                          <span className="col-start-2 min-w-0 sm:col-start-auto" data-package-author={g.author}>
                             {g.author === 'engine' ? (
                               <CcProvenanceChip value="reconstructed" note="built by the engine" />
                             ) : g.author === 'model' ? (
-                              <CcProvenanceChip value="proposed" note="function bodies by the model" />
+                              <CcProvenanceChip value="proposed" note="bodies by the model" />
                             ) : (
                               <CcProvenanceChip value="proposed" />
                             )}
@@ -549,7 +549,7 @@ export default function TransformationObjectPage({
                         </summary>
                         <ul className="m-0 list-none border-t border-cc-line px-3 py-2">
                           {g.files.map((c) => (
-                            <li key={c.path} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 py-0.5 cc-text-cell" data-package-file={c.path}>
+                            <li key={c.path} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 py-1 cc-text-cell" data-package-file={c.path}>
                               <span className="min-w-0 break-all font-cc-mono text-[12px] text-cc-ink">{c.path}</span>
                               <span className="cc-text-meta font-medium text-cc-ink-muted">
                                 {c.role} · {c.lines} {c.lines === 1 ? 'line' : 'lines'} · {formatBytes(c.bytes)}
