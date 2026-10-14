@@ -409,10 +409,10 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   /* ---------------------------------------------------------- the contract */
   const unitsWithBody = plan.units.filter((u) => !plan.units.some((p) => p.part?.parent === u.id));
   const parentsOfParts = plan.units.filter((u) => plan.units.some((p) => p.part?.parent === u.id));
-  const reservedNames = new Set(['run', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
+  const reservedNames = new Set(['run', 'run_with_state', 'run_steps', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages', 'ty_run_selection', 'ty_run_input', 'ty_run_result']);
   const contract = readRapContract(facts, reservedNames);
   const attributeNames = new Set([...contract.globals.map((g) => g.name), ...contract.selection.map((f) => f.name), ...contract.constantNames]);
-  const takenMethod = new Set<string>([...attributeNames, 'run', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages']);
+  const takenMethod = new Set<string>([...attributeNames, 'run', 'run_with_state', 'check_selection', 'load_input', 'constructor', 'mo_access', 'ms_input', 'mt_messages']);
   const methodOf = new Map<string, string>();
   for (const u of plan.units) {
     let name = u.rapName;
@@ -689,6 +689,21 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     return lines;
   };
 
+  /* ------------------------------------------------------- the golden master */
+  // The original's demo cases as ABAP Unit test data (golden-master.ts, 3.0.13 item 6). The test drives
+  // run_with_state: the selection and the original's tables in one structure (ty_run_result), the run's globals out.
+  const golden = goldenMasterForScaffold(facts.source, {
+    logicClass: logic,
+    runMethod: 'run_with_state',
+    selectionType: 'ty_run_selection',
+    stateType: 'ty_run_result',
+    accessDouble: hasAccess ? 'ltd_access' : null,
+    selection: contract.selection.map((f) => ({ original: f.name.toUpperCase(), component: f.name, range: f.kind === 'range' })),
+    stateComponents: contract.globals.map((g) => g.name),
+    program: plan.program,
+  });
+  const demoFlag = golden?.master.demoFlag ? contract.selection.find((f) => f.name === golden.master.demoFlag!.toLowerCase() && f.kind === 'parameter') : undefined;
+
   /* ------------------------------------------------------- the logic class */
   const defs: string[] = [];
   const impls: string[] = [];
@@ -720,6 +735,24 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       ],
       { returning: 'rs_result TYPE ty_run_result', raising },
     ),
+    "    \"! The run as ABAP Unit drives it with the original's demo cases: the selection, and the original's tables in cs_st;",
+    '    "! cs_st holds every global of the original afterwards. No counterpart in the original.',
+    ...methodsStatement(
+      'run_with_state',
+      [
+        { name: 'is_sel', direction: 'importing', phrase: 'TYPE ty_run_selection', original: '' },
+        { name: 'cs_st', direction: 'changing', phrase: 'TYPE ty_run_result', original: '' },
+      ],
+      { raising },
+    ),
+  );
+  impls.push(
+    '  METHOD run_with_state.',
+    '    DATA(ls_sel) = is_sel.',
+    ...(demoFlag ? [`    " The test hands in the data the original's demo routines build: the run takes the original's demo path (${demoFlag.name.toUpperCase()}).`, `    ls_sel-${demoFlag.name} = 'X'.`] : []),
+    `    cs_st = run( is_selection = ls_sel${inputs.length > 0 ? ' is_input = CORRESPONDING #( cs_st )' : ''} ).`,
+    '  ENDMETHOD.',
+    '',
   );
   impls.push(
     '  METHOD run.',
@@ -752,6 +785,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
   const allMethods = [
     ...new Set([
       'run',
+      'run_with_state',
       ...(selectionLines.length ? ['check_selection'] : []),
       ...(inputs.length ? ['load_input'] : []),
       ...(hasAccess ? ['constructor'] : []),
@@ -1573,13 +1607,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       'ENDCLASS.',
       '',
       // 3.0.13 (6): the original's own demo cases as test data, one method per case calling the run entry (golden-master.ts).
-      ...(goldenMasterForScaffold(facts.source, {
-        logicClass: logic,
-        accessDouble: hasAccess ? 'ltd_access' : null,
-        selection: selection.map((f) => ({ original: f.original, component: abapField(f), range: f.kind === 'range' })),
-        stateComponents: ['records', 'not_filled'],
-        program: plan.program,
-      })?.testClass.lines ?? []),
+      ...(golden?.testClass.lines ?? []),
     ].join('\n'),
   });
 

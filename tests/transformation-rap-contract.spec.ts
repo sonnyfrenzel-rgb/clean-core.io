@@ -4,6 +4,7 @@ import path from 'node:path';
 import * as abaplint from '@abaplint/core';
 import { buildRapScaffold } from '../lib/transformation';
 import { abaplintConfig } from '../lib/transformation/abaplint-config';
+import { abapCheck } from '../lib/transformation/abap-check';
 import { bodyGuards, spliceBodies } from '../lib/transformation/markers';
 import { prepareEngineLed, guardContextOf } from '../lib/transformation/engine-led';
 import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
@@ -52,8 +53,9 @@ test.describe('the typed contract of the logic class', () => {
   test("every routine's method carries its FORM's own parameters, with their types", () => {
     expect(logic).toMatch(/METHODS check_stamp\n\s+IMPORTING\n\s+iv_stamp TYPE ty_stamp\n\s+CHANGING\n\s+cv_code TYPE ty_code\n\s+RAISING zcx_fx_contract_access\./);
     expect(logic).toMatch(/METHODS round_ratio\n\s+IMPORTING\n\s+iv_num TYPE ty_i\n\s+iv_den TYPE ty_i\n\s+CHANGING\n\s+cv_value TYPE ty_i/);
-    // The 3.0.12 contract is gone: no method takes the selection and a state.
-    expect(logic).not.toMatch(/is_sel TYPE|CHANGING cs_st|ty_state|ty_rec\b/);
+    // The 3.0.12 contract is gone: no routine's method takes the selection and a state (only the test entry run_with_state does).
+    expect(logic).not.toMatch(/ty_selection\b|ty_state\b|ty_rec\b/);
+    for (const u of plan.units) expect(scaffold.rap!.signatures[u.id] ?? '', u.id).not.toMatch(/is_sel|cs_st/);
     expect(scaffold.rap?.signatures.U02).toBe('METHODS check_stamp IMPORTING iv_stamp TYPE ty_stamp CHANGING cv_code TYPE ty_code RAISING zcx_fx_contract_access.');
   });
 
@@ -187,9 +189,13 @@ test.describe('abaplint with the shipped configuration: 0 parser and 0 syntax er
   };
   for (const [name, source] of Object.entries(sources)) {
     test(name, () => {
-      const r = lint(rap(source()).scaffold.files);
+      const files = rap(source()).scaffold.files;
+      const r = lint(files);
       expect(r.parser).toEqual([]);
       expect(r.syntax).toEqual([]);
+      // The activation gate the generation records (abap-check.ts) agrees.
+      const gate = abapCheck(files);
+      expect(gate.ran && gate.activation).toMatchObject({ parserErrors: 0, syntaxErrors: 0, activatable: true });
     });
   }
 

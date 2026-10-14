@@ -3,6 +3,8 @@
  * analyse the package's own classes: without a superclass or interface definition abaplint stops at the class header
  * and reports nothing inside it. Signatures follow SAP's documentation of the released APIs; they are test stubs for
  * the check, not SAP's code, and they are added to the registry as dependencies, so no finding is reported on them.
+ * Wider than the gate's own stubs (lib/transformation/abap-sap-stubs.ts, superclasses only): with the interfaces the
+ * query provider, the job and the behavior pool implement declared too, the check also reads those classes' bodies.
  */
 export const SAP_STUBS: Record<string, string> = {
   'if_message.intf.abap': `INTERFACE if_message PUBLIC.

@@ -39,6 +39,7 @@ const cxRoot = [
   HEAD,
   'CLASS cx_root DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.',
   '  PUBLIC SECTION.',
+  '    INTERFACES if_message.',
   '    DATA textid TYPE sotr_conc READ-ONLY.',
   '    DATA previous TYPE REF TO cx_root READ-ONLY.',
   '    DATA is_resumable TYPE abap_bool READ-ONLY.',
@@ -54,7 +55,21 @@ const cxRoot = [
   '  ENDMETHOD.',
   '  METHOD get_longtext.',
   '  ENDMETHOD.',
+  '  METHOD if_message~get_text.',
+  '  ENDMETHOD.',
+  '  METHOD if_message~get_longtext.',
+  '  ENDMETHOD.',
   'ENDCLASS.',
+  '',
+].join('\n');
+
+/** IF_MESSAGE, which CX_ROOT implements: an exception class of the package redefines its get_text (3.0.13, the refusal). */
+const ifMessage = [
+  HEAD,
+  'INTERFACE if_message PUBLIC.',
+  '  METHODS get_text RETURNING VALUE(result) TYPE string.',
+  '  METHODS get_longtext IMPORTING preserve_newlines TYPE abap_bool OPTIONAL RETURNING VALUE(result) TYPE string.',
+  'ENDINTERFACE.',
   '',
 ].join('\n');
 
@@ -96,6 +111,7 @@ const behaviorHandler = [
 
 /** The stub files, by file name (abapGit naming, so abaplint reads each as a class). */
 export const SAP_STUB_FILES: ReadonlyArray<{ name: string; object: string; content: string }> = [
+  { name: 'if_message.intf.abap', object: 'IF_MESSAGE', content: ifMessage },
   { name: 'cx_root.clas.abap', object: 'CX_ROOT', content: cxRoot },
   { name: 'cx_static_check.clas.abap', object: 'CX_STATIC_CHECK', content: cxChild('cx_static_check') },
   { name: 'cx_dynamic_check.clas.abap', object: 'CX_DYNAMIC_CHECK', content: cxChild('cx_dynamic_check') },

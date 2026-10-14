@@ -179,9 +179,29 @@ test('RAP regions use ABAP comment markers and splice the same way', () => {
   expect(region.stub).toMatch(/^RAISE EXCEPTION NEW zcx_fx_co_alloc_nofill\( unit = 'U02' \)\.$/);
   const file = s.files.find((f) => f.path === region.file)!;
   expect(file.content).toContain(`"! @cc-fill BEGIN U02 ${region.hash}`);
-  const r = spliceBodies(s, [{ regionId: 'U02', body: "IF is_sel-sender IS INITIAL.\n  RETURN.\nENDIF.\nIF me->when_g0066( is_sel = is_sel iv_lv_sum = `0` ) = abap_true.\n  RETURN.\nENDIF." }], (id) => ({ track: 'rap', available: s.available[id] ?? [], sliceChars: 2_000 }));
+  // Scaffold version 6: the body calls the unit's guards with the original's own operands (G-0054 runs at the entry already).
+  const body = [
+    'DATA lv_sum TYPE ty_sum.',
+    'LOOP AT gt_rcv INTO DATA(ls_rcv).',
+    '  IF when_g0058( ls_rcv = ls_rcv ) = abap_true.',
+    "    RAISE EXCEPTION NEW zcx_fx_co_alloc_refusal( guard = 'G-0058' text = 'e003(zco)' ).",
+    '  ENDIF.',
+    '  IF when_g0061( ls_rcv = ls_rcv ) = abap_true.',
+    "    RAISE EXCEPTION NEW zcx_fx_co_alloc_refusal( guard = 'G-0061' text = 'e004(zco)' ).",
+    '  ENDIF.',
+    '  lv_sum = lv_sum + ls_rcv-quota.',
+    'ENDLOOP.',
+    'IF me->when_g0066( lv_sum = lv_sum ) = abap_true.',
+    "  RAISE EXCEPTION NEW zcx_fx_co_alloc_refusal( guard = 'G-0066' text = 'e006(zco)' ).",
+    'ENDIF.',
+  ].join('\n');
+  const r = spliceBodies(s, [{ regionId: 'U02', body }], (id) => ({ track: 'rap', available: s.available[id] ?? [], sliceChars: 2_000 }));
+  expect(r.refused).toEqual([]);
   expect(r.ok).toBe(true);
   expect(r.applied).toEqual(['U02']);
+  // The 3.0.12 contract is refused: a name the class does not declare.
+  const old = spliceBodies(s, [{ regionId: 'U02', body: `${body}\nIF is_sel-sender IS INITIAL.\n  RETURN.\nENDIF.` }], (id) => ({ track: 'rap', available: s.available[id] ?? [], sliceChars: 2_000 }));
+  expect(old.refused.flatMap((x) => x.reasons.map((y) => y.code))).toContain('unknown-name');
 });
 
 test('text quoted from the original cannot open a region', () => {

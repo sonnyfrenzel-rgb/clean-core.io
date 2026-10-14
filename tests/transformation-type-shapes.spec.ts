@@ -59,7 +59,9 @@ test('every fill request carries the types its signature and callees name, down 
   const [b] = bundleFills([u], { track: 'node', program: prep.plan.program, context: 'x' });
   expect(b.prompt).toContain('"types":"interface Selection {');
   expect(fillInstructionHeader('node')).toContain('"types" of a unit declares every type its signature and callees name: read and write only those fields.');
-  expect(fillInstructionHeader('rap')).not.toContain('"types"');
+  // RAP since scaffold version 6: "types" is the logic class around the body (scaffold-rap.ts, tests/transformation-rap-contract.spec.ts).
+  expect(fillInstructionHeader('rap')).not.toContain('"types" of a unit declares every type its signature and callees name');
+  expect(fillInstructionHeader('rap')).toContain('"types" of a unit is the logic class around the body');
   // The same text the scaffold's declarations give — one source of truth.
   expect(u.types).toBe(typesText(typeDeclarations(prep.scaffold.files), [unitOf(prep, 'checkConservation').signature, ...u.available.callees], ['Dec']));
 });

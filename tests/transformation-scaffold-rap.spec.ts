@@ -18,32 +18,27 @@ function rap(source: string, decisions: Parameters<typeof planOf>[1] = {}) {
 
 const file = (s: ReturnType<typeof rap>['scaffold'], suffix: string) => s.files.find((f) => f.path.endsWith(suffix))!.content;
 
-test('the abapGit layout of one business object; every name within 30 characters', () => {
+/** The CO shape writing its allocation back: a program that writes a table keeps the business object (scaffold version 6). */
+const coWriting = () => fixture('co-shape').replace('gv_total = gv_total + lv_share.', 'gv_total = gv_total + lv_share.\n    MODIFY zco_receivers FROM <ls_rcv>.');
+
+test('the abapGit layout of a read-only program: a custom entity and its query, no table; every name within 30 characters', () => {
   const { scaffold } = rap(fixture('co-shape'));
   const paths = scaffold.files.map((f) => f.path).sort();
   expect(paths).toEqual(
     [
       '.abapgit.xml',
       'src/package.devc.xml',
-      'src/zbp_fx_co_alloc_r.clas.abap',
-      'src/zbp_fx_co_alloc_r.clas.locals_imp.abap',
-      'src/zbp_fx_co_alloc_r.clas.xml',
       'src/zcl_fx_co_alloc_logic.clas.abap',
       'src/zcl_fx_co_alloc_logic.clas.testclasses.abap',
       'src/zcl_fx_co_alloc_logic.clas.xml',
+      'src/zcl_fx_co_alloc_query.clas.abap',
+      'src/zcl_fx_co_alloc_query.clas.xml',
       'src/zcx_fx_co_alloc_nofill.clas.abap',
       'src/zcx_fx_co_alloc_nofill.clas.xml',
-      'src/zfx_co_alloc_c.ddls.asddls',
-      'src/zfx_co_alloc_c.ddls.xml',
-      'src/zfx_co_alloc_c.dcls.asdcls',
-      'src/zfx_co_alloc_c.dcls.xml',
-      'src/zfx_co_alloc_r.bdef.asbdef',
-      'src/zfx_co_alloc_r.bdef.xml',
-      'src/zfx_co_alloc_r.ddls.asddls',
-      'src/zfx_co_alloc_r.ddls.xml',
-      'src/zfx_co_alloc_r.dcls.asdcls',
-      'src/zfx_co_alloc_r.dcls.xml',
-      'src/zfx_co_alloc_rec.tabl.xml',
+      'src/zcx_fx_co_alloc_refusal.clas.abap',
+      'src/zcx_fx_co_alloc_refusal.clas.xml',
+      'src/zfx_co_alloc_ce.ddls.asddls',
+      'src/zfx_co_alloc_ce.ddls.xml',
       'src/zfx_co_alloc_srvb.srvb.xml',
       'src/zfx_co_alloc_srvd.srvd.srvdsrv',
       'src/zfx_co_alloc_srvd.srvd.xml',
@@ -55,10 +50,15 @@ test('the abapGit layout of one business object; every name within 30 characters
   }
   expect(rapShortName('/ABC/ZVERY_LONG_PROGRAM_NAME_FOR_TESTS').length).toBeLessThanOrEqual(12);
   expect(scaffold.adapter).toBeNull();
+  // The same program writing its table: the business object of scaffold version 2, with the action's parameter.
+  const writing = rap(coWriting()).scaffold.files.map((f) => f.path);
+  for (const suffix of ['zfx_co_alloc_rec.tabl.xml', 'zfx_co_alloc_r.bdef.asbdef', 'zfx_co_alloc_r.ddls.asddls', 'zfx_co_alloc_c.ddls.asddls', 'zfx_co_alloc_p.ddls.asddls', 'zbp_fx_co_alloc_r.clas.locals_imp.abap']) {
+    expect(writing).toContain(`src/${suffix}`);
+  }
 });
 
 test('packed record fields are abap.dec(2L−1, d) from their declaration', () => {
-  const { scaffold, plan } = rap(fixture('co-shape'));
+  const { scaffold, plan } = rap(coWriting());
   // abapGit's table XML (scaffold version 3): DEC with 2L−1 digits in L bytes — `abap.dec(2L−1, d)` in ADT's source.
   const table = file(scaffold, '.tabl.xml');
   const field = (name: string) => table.slice(table.indexOf(`<FIELDNAME>${name}</FIELDNAME>`), table.indexOf('</DD03P>', table.indexOf(`<FIELDNAME>${name}</FIELDNAME>`)));
@@ -71,42 +71,39 @@ test('packed record fields are abap.dec(2L−1, d) from their declaration', () =
     expect(table).toContain(`<DECIMALS>${String(f.places).padStart(6, '0')}</DECIMALS>`);
   }
   const logic = file(scaffold, '_logic.clas.abap');
-  expect(logic).toContain('quota TYPE p LENGTH 4 DECIMALS 2,');
+  expect(logic).toContain('    TYPES quota TYPE p LENGTH 4 DECIMALS 2.');
   expect(file(scaffold, 'r.ddls.asddls')).toContain('define root view entity ZFX_CO_ALLOC_R');
+  // The read-only program's entity types its elements as declared too.
+  expect(file(rap(fixture('co-shape')).scaffold, '_ce.ddls.asddls')).toContain('      quota : abap.dec( 7, 2 );');
 });
 
-test('one validation per carried raw check that refuses — none for a dropped rule, none for a check on a computed value', () => {
+test('every carried guard runs in the logic path — no save validation; none for a dropped rule', () => {
   const open = rap(fixture('co-shape'));
-  // Derived and skipping checks are no validation: the logic method calls their predicate where the original checks.
-  const carried = open.plan.guards.filter((g) => g.carried && g.placement !== 'body' && g.outcome === 'refuses');
-  expect(carried.map((g) => g.id)).toEqual(['G-0029', 'G-0054', 'G-0058', 'G-0061']);
   const logic = file(open.scaffold, '_logic.clas.abap');
-  expect(logic).toContain('METHODS when_g0066 IMPORTING is_sel TYPE ty_selection is_rec TYPE ty_rec OPTIONAL iv_lv_sum TYPE string OPTIONAL RETURNING VALUE(rv_holds) TYPE abap_bool.');
-  expect(logic).toContain('"! The body calls, where the original checks: when_g0066( ) (L66).');
-  expect(open.scaffold.required.U02).toEqual([{ id: 'G-0066', helper: 'when_g0066', line: 66, op: '>', literals: ['100'] }]);
-  const bdef = file(open.scaffold, '.bdef.asbdef');
-  const validations = bdef.match(/^\s+validation \w+ on save/gm) ?? [];
-  expect(validations).toHaveLength(carried.length);
-  expect(bdef).toContain('validation val_br_003_g0061 on save');
-  expect(bdef).toContain('strict ( 2 );');
-  expect(bdef).toContain('determination run_process on save');
-  const pool = file(open.scaffold, 'locals_imp.abap');
-  expect(pool.match(/FOR VALIDATE ON SAVE/g) ?? []).toHaveLength(carried.length);
-  expect(pool).toContain('lo_logic->when_g0061(');
+  // G-0029 (the selection screen) runs in check_selection, G-0054 at validate_policy's entry: both exact, both engine-written.
+  expect(open.scaffold.rap!.guards['G-0029']).toMatchObject({ calledBy: 'engine', written: 'engine' });
+  expect(open.scaffold.rap!.guards['G-0054']).toMatchObject({ calledBy: 'engine', written: 'engine' });
+  // Inside the loop and on the computed sum: the body calls them where the original checks.
+  expect(open.scaffold.required.U02.map((r) => r.id)).toEqual(['G-0058', 'G-0061', 'G-0066']);
+  expect(open.scaffold.required.U02.find((r) => r.id === 'G-0066')).toEqual({ id: 'G-0066', helper: 'when_g0066', line: 66, op: '>', literals: ['100'] });
+  expect(logic).toMatch(/METHODS when_g0066\n\s+IMPORTING\n\s+lv_sum TYPE ty_sum\n\s+RETURNING VALUE\(rv_holds\) TYPE abap_bool\./);
+  expect(logic).toContain('rv_holds = xsdbool( lv_sum > 100 ).');
+  expect(logic).toContain('"! The body calls, where the original checks: when_g0058 (L58), when_g0061 (L61), when_g0066 (L66).');
+  expect(logic).not.toMatch(/FOR VALIDATE ON SAVE|validation /);
 
   const dropped = rap(fixture('co-shape'), { decisions: [{ id: 'BR-003', answer: 'drop', note: null }] });
-  const bdef2 = file(dropped.scaffold, '.bdef.asbdef');
-  expect(bdef2).not.toContain('val_br_003_');
-  expect((bdef2.match(/^\s+validation \w+ on save/gm) ?? []).length).toBe(carried.length - 1);
+  expect(dropped.scaffold.rap!.guards['G-0061']).toBeUndefined();
+  expect(file(dropped.scaffold, '_logic.clas.abap')).not.toContain('when_g0061');
+  expect(dropped.scaffold.required.U02.map((r) => r.id)).toEqual(['G-0058', 'G-0066']);
   expect(dropped.scaffold.regions.map((r) => r.regionId)).not.toContain('U02.G0061');
 });
 
-test('the logic class: one method per unit and one predicate per carried guard, bodies between markers', () => {
+test('the logic class: one method per unit with its FORM signature, bodies between markers', () => {
   const { scaffold, plan } = rap(poDemo());
   const logic = file(scaffold, '_logic.clas.abap');
-  for (const u of plan.units) expect(logic).toContain(`METHODS ${u.rapName} IMPORTING is_sel TYPE ty_selection CHANGING cs_st TYPE ty_state.`);
-  const carried = plan.guards.filter((g) => g.carried);
-  expect(scaffold.regions).toHaveLength(plan.units.length + carried.length);
+  for (const u of plan.units) expect(logic).toMatch(new RegExp(`\\n    METHODS ${u.rapName}(?:\\.|\\n)`));
+  const modelPredicates = Object.values(scaffold.rap!.guards).filter((g) => g.written === 'model').length;
+  expect(scaffold.regions).toHaveLength(plan.units.length + modelPredicates);
   for (const r of scaffold.regions) expect(r.file).toBe('src/zcl_mm_po_approv_logic.clas.abap');
   expect(logic).toMatch(/"! @cc-fill BEGIN U01 [0-9a-f]{8}\n\s+RAISE EXCEPTION NEW zcx_mm_po_approv_nofill\( unit = 'U01' \)\.\n\s+"! @cc-fill END U01/);
 });
