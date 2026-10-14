@@ -50,6 +50,10 @@ import {
   activationJson,
   activationMarkdown,
   activationStatusPhrase,
+  CAP_CHECK_AND_START,
+  CAP_TO_CHECK,
+  CAP_YOURS,
+  CAP_YOURS_SENTENCE,
   cdsCompilePhrase,
   checkPhrase,
   hasPageReportedChecks,
@@ -78,7 +82,7 @@ import { TARGET_EDITION_NAMES } from './sap-naming';
  *     stub, only raises an exception (an SAP access still to be bound) or has
  *     an empty body, or an object abaplint cannot activate. The note says which.
  */
-export type PackageStatus = 'implemented' | 'stub' | 'proposed' | 'missing' | 'open';
+export type PackageStatus = 'implemented' | 'stub' | 'proposed' | 'missing' | 'open' | 'to-check';
 
 export const PACKAGE_STATUS_LEGEND: Readonly<Record<PackageStatus, string>> = Object.freeze({
   implemented: 'Holds working code or configuration for what it names. Not a statement that it was run or approved.',
@@ -86,7 +90,13 @@ export const PACKAGE_STATUS_LEGEND: Readonly<Record<PackageStatus, string>> = Ob
   proposed: 'Describes or models something this package does not run.',
   missing: 'Named by the architecture or the build, not in this package.',
   open: 'Generated, but not finished: a method is a stub, only raises an exception or is empty, or abaplint finds a parser or syntax error in it. The note says which.',
+  'to-check': 'To be checked in your environment: complete in this package, but nothing here verified it — SAP CAP is installed by you, and the evidence says how to check and start it.',
 });
+
+/** A status in a sentence or a table cell: the words for `to-check`, the key for the rest. */
+export function packageStatusWords(status: PackageStatus): string {
+  return status === 'to-check' ? CAP_TO_CHECK : status;
+}
 
 /** Who wrote a file. */
 export type FileOrigin =
@@ -970,19 +980,25 @@ export function packageCapabilities(reading: PackageReading, facts: DeliveryFact
   const caps: Capability[] = [];
   const capProposed = capArchitectureProposed(reading, facts);
   // The CAP shell is there: @sap/cds, a service model, and something that starts CAP. Roadmap 3.0.13: it is
-  // "implemented" only when it also compiles — `cds compile` on record with 0 errors (`cds-compile.ts`).
+  // "implemented" only when it also compiles — `cds compile` on record with 0 errors (`cds-compile.ts`). Where the
+  // compile did not run (Clean-Core.io's production server has no SAP CDS compiler) or none is on record, it is
+  // `to-check`: the reader is told that CAP is theirs to install and how to check it, not about a check that did
+  // not happen (owner decision 14.10.2026). A compile that ran with errors is reported as it ran.
   const capShell = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
   const compile = facts.cdsCompile ?? null;
   const compiled = compile?.ran === true && compile.errors === 0;
   const capRunning = capShell && compiled;
-  const compileWords = compile ? cdsCompilePhrase(compile) : 'no cds compile of this package is on record';
+  const capToCheck = capShell && compile?.ran !== true;
+  const compileWords = compile?.ran ? cdsCompilePhrase(compile) : CAP_TO_CHECK;
   if (capProposed || reading.capRuntime) {
     caps.push({
       key: 'cap-runtime',
       label: 'SAP CAP runtime',
-      status: capRunning ? 'implemented' : 'proposed',
+      status: capRunning ? 'implemented' : capToCheck ? 'to-check' : 'proposed',
       evidence: capRunning
         ? `@sap/cds in package.json and a service model (${reading.serviceCds.join(', ')}) that the start script serves; ${compileWords}. Clean-Core.io has not started the runtime.`
+        : capToCheck
+          ? `@sap/cds in package.json and a service model (${reading.serviceCds.join(', ')}) that the start script serves. ${CAP_YOURS_SENTENCE}`
         : capShell
           ? `@sap/cds in package.json and a service model (${reading.serviceCds.join(', ')}) that the start script serves, but ${compileWords} — not verified.`
           : reading.capRuntime && reading.serviceCds.length
@@ -994,9 +1010,9 @@ export function packageCapabilities(reading: PackageReading, facts: DeliveryFact
     caps.push({
       key: 'service-model',
       label: 'CDS service model',
-      status: reading.serviceCds.length ? (capRunning ? 'implemented' : 'proposed') : 'missing',
+      status: reading.serviceCds.length ? (capRunning ? 'implemented' : capToCheck ? 'to-check' : 'proposed') : 'missing',
       evidence: reading.serviceCds.length
-        ? `${reading.serviceCds.join(', ')}${capRunning ? ` — ${compileWords}` : capShell ? ` — ${compileWords}` : reading.capRuntime ? ' — nothing in the package is shown to serve it' : ' — no runtime serves it'}.`
+        ? `${reading.serviceCds.join(', ')}${capToCheck ? ` — ${CAP_TO_CHECK} with \`npm run compile\`` : capShell ? ` — ${compileWords}` : reading.capRuntime ? ' — nothing in the package is shown to serve it' : ' — no runtime serves it'}.`
         : 'No .cds file in the package defines a service.',
     });
   }
@@ -1088,9 +1104,11 @@ export function implementationStatement(reading: PackageReading, facts: Delivery
   }
   if (reading.kind !== 'node') return 'Delivered implementation: none — the package holds documents only.';
   const capShell = reading.capRuntime && reading.capServed && reading.serviceCds.length > 0;
-  // 3.0.13: a CAP service is one that compiles (`cds compile` on record with 0 errors); otherwise it says so.
+  // 3.0.13: a CAP service is one that compiles (`cds compile` on record with 0 errors); a compile that ran with
+  // errors says so; where none ran here, the service is to be checked where CAP is installed (owner, 14.10.2026).
   const capRunning = capShell && facts.cdsCompile?.ran === true && facts.cdsCompile.errors === 0;
-  const what = capRunning ? 'CAP service' : capShell ? 'CAP service not verified by cds compile' : reading.express.length ? 'Express service' : 'Node.js code';
+  const capToCheck = capShell && facts.cdsCompile?.ran !== true;
+  const what = capRunning ? 'CAP service' : capToCheck ? `CAP service (${CAP_TO_CHECK})` : capShell ? 'CAP service not verified by cds compile' : reading.express.length ? 'Express service' : 'Node.js code';
   // CO review F10: no SAP client says where the data does not come from, not that it is synthetic.
   const data = reading.sapClient.length ? 'with an SAP client in the code (no connection verified)' : 'on data whose source is not recorded';
   const delivered = `delivered implementation: ${what} ${data}`;
@@ -1231,6 +1249,12 @@ export function buildReadme(entries: readonly BundleEntry[], reading: PackageRea
     let n = 1;
     lines.push(`${n++}. Install Node.js ${PACKAGE_NODE_MAJOR} and run \`npm install\`. No lockfile ships: commit yours, and CI switches to \`npm ci\`.`);
     const has = (s: string) => scripts.some(([name]) => name === s);
+    // SAP CAP is the reader's to install (owner decision 14.10.2026): how to check and start it, said plainly.
+    if (reading.capRuntime) {
+      lines.splice(lines.length - 1, 0, `${CAP_YOURS}: \`npm install\` installs it from package.json. Clean-Core.io never starts the CAP runtime.`, '');
+      if (has('compile')) lines.push(`${n++}. \`npm run compile\` — checks the CAP model and service with SAP's CDS compiler.`);
+      lines.push(`${n++}. \`cds watch\`${has('watch') ? ' (or `npm run watch`)' : ''} — starts the CAP service locally.`);
+    }
     if (has('build')) lines.push(`${n++}. \`npm run build\``);
     if (has('test')) lines.push(`${n++}. \`npm test\` — what the last run on the platform gave is in \`STATUS.md\`.`);
     if (has('start')) lines.push(`${n++}. \`npm start\` — ${dataMode(reading).sentence}`);
@@ -1406,8 +1430,13 @@ function typeCheckLines(t: NodeTypeCheck): string[] {
   return out;
 }
 
-/** The CAP shell's `cds compile` in STATUS.md (3.0.13): what ran, or why it did not; never a compile that did not happen. */
+/**
+ * The CAP shell in STATUS.md (3.0.13): the server's `cds compile` where it ran; where it did not (production has no
+ * SAP CDS compiler), that CAP is the reader's to install and how to check and start it — never a compile that did
+ * not happen, and no "not run" about it either (owner decision 14.10.2026).
+ */
 function cdsCompileLines(c: CdsCompileCheck): string[] {
+  if (!c.ran) return [`- CAP shell: ${CAP_YOURS_SENTENCE} Clean-Core.io never starts the CAP runtime.`];
   const out = [`- CAP shell (Clean-Core.io's server, before saving): ${cdsCompilePhrase(c)}. Repeat it with \`npm run compile\`; Clean-Core.io never starts the CAP runtime.`];
   if (c.ran) for (const f of c.findings.slice(0, 12)) out.push(`  - \`${f.path}:${f.line}\` ${f.severity} ${f.id} — ${f.message}`);
   return out;
@@ -1479,7 +1508,9 @@ export function nextSteps(reading: PackageReading, facts: DeliveryFacts, capabil
     );
   }
   const cap = capabilities.find((c) => c.key === 'cap-runtime');
-  if (cap && cap.status !== 'implemented') {
+  if (cap && cap.status === 'to-check') {
+    out.push(`Check the CAP service in your environment: ${CAP_YOURS}. Run ${CAP_CHECK_AND_START}.`);
+  } else if (cap && cap.status !== 'implemented') {
     out.push('Either build the proposed CAP architecture (service model and @sap/cds runtime) or record that the delivered implementation is the target.');
   }
   if (reading.publisher.length) {
@@ -1574,7 +1605,7 @@ export function buildStatus(facts: DeliveryFacts, inputs: StatusInputs): string 
   lines.push(implementationStatement(reading, facts), '');
   if (capabilities.length) {
     lines.push('| Capability | Status | Evidence |', '|---|---|---|');
-    for (const c of capabilities) lines.push(`| ${c.label} | ${c.status} | ${c.evidence.replace(/\|/g, '\\|')} |`);
+    for (const c of capabilities) lines.push(`| ${c.label} | ${packageStatusWords(c.status)} | ${c.evidence.replace(/\|/g, '\\|')} |`);
     lines.push('');
   }
   const count = (st: PackageStatus) => files.filter((f) => f.status === st).length;

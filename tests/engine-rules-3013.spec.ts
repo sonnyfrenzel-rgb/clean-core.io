@@ -85,11 +85,36 @@ CALL FUNCTION 'JOB_CLOSE' EXPORTING jobcount = lv_count jobname = lv_name sdlstr
     expect(ofKind(code, 'system-time', OLD)).toHaveLength(0);
   });
 
-  test('a stored stamp alone is a lesser risk', () => {
-    const found = ofKind(`REPORT zstamp.\nls_row-erdat = sy-datum.`, 'system-time');
+  test('a stored stamp alone is no finding, but a note that stays visible (owner decision 14.10.2026)', () => {
+    const code = `REPORT zstamp.\nls_row-erdat = sy-datum.\nUPDATE zlog SET aedat = sy-datum WHERE id = lv_id.\nAPPEND VALUE #( erzet = sy-uzeit ) TO lt_log.`;
+    const report = evidence(code, NEW);
+    expect(report.findings.filter((f) => f.kind === 'system-time')).toHaveLength(0);
+    expect(report.notes).toHaveLength(1);
+    expect(report.notes![0].kind).toBe('system-time-stamp');
+    expect(report.notes![0].lines).toEqual([2, 3, 4]);
+    expect(report.notes![0].text).toBe("3 fields store the server's date or time as a stamp (erdat, aedat, erzet) — fine in UTC unless a later step reads them as the local day.");
+    expect(scoreAndRoute(code)).toEqual(scoreAndRoute(code, OLD));
+    // A run of engine 3.0.12 has neither the finding nor the note.
+    expect(evidence(code, OLD).notes).toBeUndefined();
+  });
+
+  test('a decision and a stamp in one program: the finding names only the decision, the stamp is the note', () => {
+    const code = `REPORT zmixed.\nIF lv_due < sy-datum. ENDIF.\nls_row-erdat = sy-datum.\nlv_deadline = sy-datum + 30.`;
+    const report = evidence(code, NEW);
+    const found = report.findings.filter((f) => f.kind === 'system-time');
     expect(found).toHaveLength(1);
-    expect(found[0].severity).toBe('Low');
-    expect(found[0].title).toContain('is stored');
+    expect(found[0].severity).toBe('Medium');
+    expect(found[0].technicalDetail).toContain('on lines 2, 4.');
+    expect(found[0].technicalDetail).not.toContain('stored');
+    expect(report.notes?.map((n) => n.lines)).toEqual([[3]]);
+    expect(report.notes![0].text).toMatch(/^1 field stores .* \(erdat\) — fine in UTC unless a later step reads it as the local day\.$/);
+  });
+
+  test('many comparisons in one program are one finding, with a short recommendation', () => {
+    const many = Array.from({ length: 20 }, (_, i) => `IF lv_d${i} < sy-datum. ENDIF.`).join('\n');
+    const found = ofKind(`REPORT zmany.\n${many}`, 'system-time');
+    expect(found).toHaveLength(1);
+    expect(found[0].recommendation.length).toBeLessThanOrEqual(260);
   });
 });
 

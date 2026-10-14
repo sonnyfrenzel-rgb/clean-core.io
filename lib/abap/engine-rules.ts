@@ -26,6 +26,8 @@ export interface SystemTimeLine {
   use: SystemTimeUse;
   /** `SY-DATUM` or `SY-UZEIT`; for a job, the scheduling parameter. */
   field: string;
+  /** For a stored value: the field it is kept in, lower-cased (`erdat` for `ls_row-erdat = sy-datum`). */
+  target?: string;
   text: string;
 }
 
@@ -36,8 +38,11 @@ const JOB_SCHEDULE_PARAMETERS = /\b(SDLSTRTDT|SDLSTRTTM|LASTSTRTDT|LASTSTRTTM)\b
 
 /**
  * Where `sy-datum` / `sy-uzeit` decides something: in a comparison (a
- * condition, a WHERE clause), in date arithmetic (a deadline), or stored in a
- * field (`ls_row-erdat = sy-datum`, a `SET` clause, a component in `VALUE #( )`).
+ * condition, a WHERE clause), in date arithmetic (a deadline) — or is only
+ * stored in a field (`ls_row-erdat = sy-datum`, a `SET` clause, a component in
+ * `VALUE #( )`). The evidence model makes a finding of the first two and of a
+ * scheduled job; a stored stamp is a note beside the findings (owner decision
+ * 14.10.2026: as little noise as possible about small things, without hiding them).
  * Both are the application server's date and time, which in a cloud system is
  * UTC: a rule written against the user's day tips at the wrong hour, and a
  * scheduled job shifts with it. A display (`WRITE`) and a value handed to a
@@ -76,11 +81,17 @@ export function readSystemTimeUses(statements: readonly AbapStatement[], units: 
         : nextToken === '+' || nextToken === '-' || prevToken === '+' || prevToken === '-' ? 'deadline'
         : prevToken === '=' && !PARAMETER_PASSING.test(before) && storedField(before) ? 'write'
         : null;
-      if (use) found = { line: statement.lineStart, unit, use, field, text };
+      if (use) found = { line: statement.lineStart, unit, use, field, ...(use === 'write' ? { target: storedTarget(before) } : {}), text };
     }
     if (found) out.push(found);
   }
   return out;
+}
+
+/** The name of the field a stored value is kept in: the last component of the left side (`ls_row-erdat` → `erdat`). */
+function storedTarget(before: string): string {
+  const target = before.replace(/=\s*$/, '').trimEnd().match(/([\w\/~>-]+)$/)?.[1] ?? '';
+  return (target.split(/->|-|~/).pop() ?? target).toLowerCase();
 }
 
 /** The left side of the `=` in front of the value is a field that is kept: a structure component or a `SET` column. */

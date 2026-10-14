@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { ChevronRight } from 'lucide-react';
-import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import type { EvidenceFinding, EvidenceNote } from '@/lib/abap/evidence-model';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { normaliseSeverity } from '@/lib/severity';
 import { severityChartMark } from '@/lib/chart-colors';
@@ -224,6 +224,7 @@ export default function EvidenceFindingsTable({
   levels = NO_LEVELS,
   steps = [],
   notAssessed = [],
+  notes = [],
   pointsOf,
   sideTop,
   sideBottom,
@@ -240,6 +241,11 @@ export default function EvidenceFindingsTable({
   steps?: readonly ProcessStepBand[];
   /** Where each kind of construct not assessed begins. */
   notAssessed?: ReadonlyArray<{ label: string; firstLine: number }>;
+  /**
+   * What the engine noted without making it a finding (a stored date stamp):
+   * one quiet line each under the list, with its lines — visible, not counted.
+   */
+  notes?: readonly EvidenceNote[];
   /**
    * What a kind of finding takes off the score — the hero's deductions, for the
    * Points column of Findings by kind (ADR-093). Absent where the deductions do
@@ -626,6 +632,19 @@ export default function EvidenceFindingsTable({
                 </div>
               </>
             )}
+            {notes.length ? (
+              <ul className="m-0 mt-3 list-none p-0 cc-text-meta text-cc-ink-muted" data-evidence-notes={notes.length}>
+                {notes.map((n) => (
+                  <li key={n.kind} data-evidence-note={n.kind}>
+                    Note, not a finding: {n.text}{' '}
+                    <span className="font-cc-mono">
+                      Line{n.lines.length === 1 ? '' : 's'} {n.lines.slice(0, 12).join(', ')}
+                      {n.lines.length > 12 ? ', …' : ''}.
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </ObjectSection>
         </div>
 

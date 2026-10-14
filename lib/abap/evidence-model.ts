@@ -104,6 +104,15 @@ export interface AbapEvidenceReport {
    * spotless while calling BAPIs and writing files.
    */
   coverage: CoverageReport;
+  /**
+   * What the engine saw and keeps visible without making it a finding — a
+   * small thing the reader should know, not a defect to rework (owner decision
+   * 14.10.2026: as little noise as possible about small things, but do not hide
+   * them). From engine 3.0.13 (`PRECISION_FIXES_FROM`); absent before it and
+   * when there is nothing to note. Not part of the signed run, which signs
+   * `findings` only; the screens recompute it from the stored source.
+   */
+  notes?: EvidenceNote[];
   summary: {
     criticalCount: number;
     highCount: number;
@@ -111,6 +120,16 @@ export interface AbapEvidenceReport {
     lowCount: number;
     infoCount: number;
   };
+}
+
+/** One note beside the findings — see `AbapEvidenceReport.notes`. */
+export interface EvidenceNote {
+  /** `system-time-stamp`: fields that keep the server's date or time as a stamp. */
+  kind: 'system-time-stamp';
+  /** One short sentence, ready to show. */
+  text: string;
+  /** Every line the note is about, in source order. */
+  lines: number[];
 }
 
 // Layered catalog: curated entries win, SAP Cloudification Repository underneath.
@@ -388,6 +407,7 @@ export function buildAbapEvidence(
   const LEVEL_B_UI = 'SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as clean core level B where they are used through documented classic APIs: they may stay while the users work in SAP GUI (on-premise or SAP Cloud ERP Private).';
   const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is SAP S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
   const findings: EvidenceFinding[] = [];
+  const notes: EvidenceNote[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
   const isPublicCloud = deployment === 'public';
@@ -1526,27 +1546,40 @@ export function buildAbapEvidence(
   function addEngineRuleFindings(read: ReturnType<typeof readStatements>, units: ReturnType<typeof readProgramUnits>): void {
     // (1) The server's date and time deciding something — one finding per
     // program unit, so two programs read as one file answer as they did apart.
+    // A value only stored (erdat = sy-datum, a created-on stamp) decides
+    // nothing here: it is one note for the program, not a finding (owner
+    // decision 14.10.2026).
     const allTimeUses = readSystemTimeUses(read, units);
-    for (const unit of [...new Set(allTimeUses.map((u) => u.unit))]) {
-      const timeUses = allTimeUses.filter((u) => u.unit === unit);
+    const decisions = allTimeUses.filter((u) => u.use !== 'write');
+    const USE_WORDS: Record<string, string> = {
+      comparison: 'compared', deadline: 'used for a deadline', 'job-schedule': 'used to schedule a job (JOB_CLOSE)',
+    };
+    for (const unit of [...new Set(decisions.map((u) => u.unit))]) {
+      const timeUses = decisions.filter((u) => u.unit === unit);
       const first = timeUses[0];
-      const USE_WORDS: Record<string, string> = {
-        comparison: 'compared', deadline: 'used for a deadline', write: 'stored', 'job-schedule': 'used to schedule a job (JOB_CLOSE)',
-      };
       const uses = [...new Set(timeUses.map((u) => u.use))].map((u) => USE_WORDS[u]).join(', ');
       const lines = timeUses.map((u) => u.line);
       addFinding({
         kind: 'system-time',
-        title: `The server's date or time ${timeUses.some((u) => u.use !== 'write') ? 'decides' : 'is stored'} (${[...new Set(timeUses.filter((u) => u.use !== 'job-schedule').map((u) => u.field.toLowerCase()))].join(', ') || 'job start'})`,
-        // A stored stamp (erdat = sy-datum) is a lesser risk than a decision taken on the server's day.
-        severity: timeUses.some((u) => u.use !== 'write') ? 'Medium' : 'Low',
+        title: `The server's date or time decides (${[...new Set(timeUses.filter((u) => u.use !== 'job-schedule').map((u) => u.field.toLowerCase()))].join(', ') || 'job start'})`,
+        severity: 'Medium',
         confidence: 'Medium',
         lineStart: first.line,
         snippet: first.text,
         technicalDetail: `sy-datum and sy-uzeit are the application server's date and time — in a cloud system, UTC. Here they are ${uses}, on line${lines.length > 1 ? 's' : ''} ${lines.slice(0, 12).join(', ')}${lines.length > 12 ? ', …' : ''}. A rule meant for the user's or the company's day tips at the wrong hour, and a job scheduled for a date or time starts shifted.`,
         cleanCoreImpact: 'Not a clean core level question: a correctness risk that surfaces when the system moves to UTC, as SAP Cloud ERP systems run. It changes neither the score nor the route.',
-        recommendation: 'Decide whose day the rule means. For the user\'s day use sy-datlo / sy-timlo; in ABAP Cloud read the time stamp from cl_abap_context_info (or utclong_current( )) and convert it with an explicit time zone — the user\'s (cl_abap_context_info=>get_user_time_zone( )) or a configured company time zone. Add a day-boundary test case: run the logic at 23:30 and at 00:30 local time with the system clock in UTC, and check that the decision does not change between the two runs only because of the clock.',
+        recommendation: 'Decide whose day the rule means: sy-datlo / sy-timlo for the user\'s day; in ABAP Cloud, cl_abap_context_info with an explicit time zone. Add a day-boundary test case: 23:30 and 00:30 local time, system clock in UTC.',
         targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+    const stamps = allTimeUses.filter((u) => u.use === 'write');
+    if (stamps.length) {
+      const fields = [...new Set(stamps.map((u) => u.target).filter((t): t is string => Boolean(t)))];
+      const n = Math.max(fields.length, 1);
+      notes.push({
+        kind: 'system-time-stamp',
+        text: `${n} field${n === 1 ? ' stores' : 's store'} the server's date or time as a stamp${fields.length ? ` (${fields.slice(0, 6).join(', ')}${fields.length > 6 ? ', …' : ''})` : ''} — fine in UTC unless a later step reads ${n === 1 ? 'it' : 'them'} as the local day.`,
+        lines: stamps.map((u) => u.line),
       });
     }
 
@@ -1671,5 +1704,5 @@ export function buildAbapEvidence(
   // The catalog answers the local function-module calls it lists (roadmap
   // 3.0.6); the rest stay not assessed.
   const coverage = assessCoverage(code, { answerCall: (name) => functionModuleCatalogAnswer(name, catalogSnapshot) });
-  return { findings, coverage, summary };
+  return { findings, coverage, ...(notes.length ? { notes } : {}), summary };
 }

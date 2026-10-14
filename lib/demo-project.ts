@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { countSourceLines } from '@/lib/source-lines';
-import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
+import { buildAbapEvidence, type EvidenceFinding, type EvidenceNote } from '@/lib/abap/evidence-model';
 import { routeExtensibility, type ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import { APP_VERSION } from '@/lib/version';
 import { scoreRuleFor, type ScoreRule } from '@/lib/score-rule';
@@ -169,6 +169,8 @@ export interface DemoProject {
     findings: EvidenceFinding[];
     summary: { criticalCount: number; highCount: number; mediumCount: number; lowCount: number; infoCount: number };
     coverage: CoverageReport;
+    /** What the engine noted without making it a finding (`AbapEvidenceReport.notes`). */
+    notes: EvidenceNote[];
     /** The engine's own sentence about what it did not check, or null. */
     caveat: string | null;
     /**
@@ -528,6 +530,7 @@ export function buildDemoProject(): DemoProject {
       findings: evidence.findings,
       summary: evidence.summary,
       coverage: evidence.coverage,
+      notes: evidence.notes ?? [],
       caveat: coverageCaveat(evidence.coverage),
       cleanCoreScore: route.cleanCoreScore,
       ...analyzeView,

@@ -1236,6 +1236,7 @@ export default function AnalyzePage() {
             levels={{ status: levelLookup.status, of: levelOf }}
             steps={processSteps}
             notAssessed={notAssessedItems}
+            notes={evidenceReport?.notes ?? []}
             pointsOf={pointsOfKind}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             sideTopLabel={`Route · ${shortRoute(evidenceRoute) ?? 'not determined'}`}
@@ -1329,6 +1330,7 @@ export default function AnalyzePage() {
             levels={{ status: levelLookup.status, of: levelOf }}
             steps={processSteps}
             notAssessed={notAssessedItems}
+            notes={evidenceReport?.notes ?? []}
             pointsOf={pointsOfKind}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             sideTopLabel={`Route · ${shortRoute(shownRoute) ?? 'not determined'}`}

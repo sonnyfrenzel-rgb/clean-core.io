@@ -388,8 +388,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const words = nodeEngine ? await import('@/lib/transformation/check-words') : null;
     const typeCheck = typed && words ? words.typeCheckRecordOf(typed) : null;
     // Roadmap 3.0.13 (CAP shell): `cds compile` of the package's model and service, where SAP's compiler is installed —
-    // not on the production server (SAP Developer License, `lib/transformation/cds-compile.ts`): there the record says
-    // it did not run, and the CAP capabilities stay "proposed".
+    // not on the production server (SAP Developer License, `lib/transformation/cds-compile.ts`): there the record keeps
+    // why, the reader is told that SAP CAP is theirs to install and how to check it, and the CAP capabilities read
+    // "to be checked in your environment" (owner decision 14.10.2026).
     const cdsCompile =
       nodeEngine && words ? words.cdsCompileRecordOf((await import('@/lib/transformation/cds-compile')).cdsCompileCandidate(JSON.parse(code) as Array<{ path: string; content: string }>)) : null;
 

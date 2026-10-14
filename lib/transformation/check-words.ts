@@ -362,8 +362,10 @@ export function typeCheckOf(raw: unknown): NodeTypeCheck | null {
  * `cds compile` of a Node package's CAP shell (`cds-compile.ts`, roadmap 3.0.13): SAP's CDS compiler over the
  * package's `.cds` files, then the OData transformation of its services. Written by the server onto the
  * generation binding (`binding.cdsCompile`) — whether it ran (`ran`) and, if so, what it said. Where the compiler
- * is not installed (Clean-Core.io's production server) the record says it did not run and why; the CAP
- * capabilities then stay `proposed` (delivery-package.ts).
+ * is not installed (Clean-Core.io's production server: `@sap/cds-compiler` is under the SAP Developer License and
+ * is a devDependency only) the record keeps why, but the reader is not told about a check that did not happen
+ * (owner decision 14.10.2026): they are told that SAP CAP is theirs to install, and how to check and start the
+ * package (`CAP_YOURS`); the CAP capabilities read "to be checked in your environment" (delivery-package.ts).
  */
 export type CdsCompileCheck =
   | { v: 1; ran: true; compiler: string; files: number; errors: number; warnings: number; services: string[]; findings: Array<{ path: string; line: number; severity: string; id: string; message: string }>; compiles: boolean }
@@ -401,9 +403,23 @@ export function cdsCompileRecordOf(
   return { v: 1, ran: true, compiler: r.compiler, files: r.files, errors: r.errors, warnings: r.warnings, services: r.services.slice(0, 20), findings: r.findings.slice(0, 50), compiles: r.errors === 0 };
 }
 
-/** "cds compile: 0 errors in 4 CDS files (@sap/cds-compiler 7.1.2)" — or why it did not run. */
+/**
+ * SAP CAP in the customer's environment (owner decision 14.10.2026): `@sap/cds` and its CDS compiler are installed
+ * by the customer, not by Clean-Core.io, and that is where the package is checked and started. Said wherever the
+ * server's compile did not run, instead of naming the check.
+ */
+export const CAP_YOURS = 'SAP CAP (@sap/cds and its CDS compiler) is installed by you, not by Clean-Core.io';
+/** The three commands that install, check and start the package where CAP is installed. */
+export const CAP_CHECK_AND_START = '`npm install`, then `npm run compile` to check the model and `cds watch` to start the service';
+/** The capability status's words where nothing here checked it. */
+export const CAP_TO_CHECK = 'to be checked in your environment';
+
+/** "SAP CAP (…) is installed by you, not by Clean-Core.io — check and start the package with `npm install`, …". */
+export const CAP_YOURS_SENTENCE = `${CAP_YOURS} — check and start the package with ${CAP_CHECK_AND_START}.`;
+
+/** "cds compile: 0 errors in 4 CDS files (@sap/cds-compiler 7.1.2)" — or, where it did not run, that CAP is the reader's to install and check. */
 export function cdsCompilePhrase(c: CdsCompileCheck): string {
-  if (!c.ran) return c.reason.replace(/\.$/, '');
+  if (!c.ran) return `${CAP_TO_CHECK}: ${CAP_YOURS_SENTENCE.replace(/\.$/, '')}`;
   return `cds compile: ${plural(c.errors, 'error')}${c.warnings ? `, ${plural(c.warnings, 'warning')}` : ''} in ${plural(c.files, 'CDS file')} (@sap/cds-compiler ${c.compiler})`;
 }
 
