@@ -28,6 +28,13 @@ test('the abapGit layout of a read-only program: a custom entity and its query, 
     [
       '.abapgit.xml',
       'src/package.devc.xml',
+      // The customer table it reads (ZCO_RECEIVERS) is not in the package: read through the access layer (scaffold version 7).
+      'src/zif_fx_co_alloc_access.intf.abap',
+      'src/zif_fx_co_alloc_access.intf.xml',
+      'src/zcl_fx_co_alloc_access.clas.abap',
+      'src/zcl_fx_co_alloc_access.clas.xml',
+      'src/zcx_fx_co_alloc_access.clas.abap',
+      'src/zcx_fx_co_alloc_access.clas.xml',
       'src/zcl_fx_co_alloc_logic.clas.abap',
       'src/zcl_fx_co_alloc_logic.clas.testclasses.abap',
       'src/zcl_fx_co_alloc_logic.clas.xml',

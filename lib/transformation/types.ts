@@ -60,8 +60,17 @@ export const PLAN_VERSION = 2;
  * APIs (placeholder definitions, mock data) or refusals with their reason, `mta.yaml` and `xs-security.json`.
  * Checked by `cds compile` where the compiler is installed (`cds-compile.ts`) and by the type check. The RAP text
  * is unchanged; stored packages keep their version and their request shape; nothing signed changes (§12.3).
+ * 8 (3.0.13, contract gaps of the second real acceptance run, 14.10.2026): RAP — `INCLUDE STRUCTURE` inside a
+ * structure is carried (BDCDATA and BDCMSGCOLL, which ABAP Cloud lacks, as local components), and a customer
+ * table the original reads gets a read method in the access layer (a body's SELECT on it is refused, naming the
+ * method). Node — one representation of a decimal: every `dec.*` helper takes decimal text, a number or a
+ * `Scaled`; every guard helper and predicate takes (sel, st, record, values), `values` typed per value as the
+ * original declares it (`abap-shapes.ts` `typeOf`) and `{}` when a check reads none; a step's arguments are typed
+ * from its FORM; steps, process and guards import every type of `srv/lib/types.ts`, and `tsconfig.json` has no
+ * DOM library. Merged on top of 7: both hold — named input lists and typed values/four-parameter checks.
+ * Nothing signed changes (§12.3).
  */
-export const SCAFFOLD_VERSION = 7;
+export const SCAFFOLD_VERSION = 8;
 
 /* -------------------------------------------------------------- budgets */
 
@@ -414,6 +423,13 @@ export interface AbapRegionNames {
   methods: string[];
   /** The methods of the access interface (`mo_access->…`). */
   access: string[];
+  /**
+   * The tables the package ships itself (lower case). A body's SELECT on any other customer table is refused
+   * (3.0.13, acceptance run 14.10.2026); absent on a scaffold before version 7.
+   */
+  tables?: string[];
+  /** Customer tables the original reads → the access method that reads them (`zmm_vend_block` → `read_zmm_vend_block`). */
+  customerReads?: Record<string, string>;
 }
 
 /**
@@ -460,7 +476,8 @@ export type BodyRefusalCode =
   | 'unknown-field'
   | 'cloud-statement'
   | 'unknown-name'
-  | 'sap-select';
+  | 'sap-select'
+  | 'customer-select';
 
 export interface BodyRefusal {
   code: BodyRefusalCode;

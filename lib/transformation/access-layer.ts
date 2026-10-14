@@ -9,9 +9,13 @@
  * exceptions. The scaffold writes one interface method per SAP object the
  * original touches, named after what it does there (`read_ekko`,
  * `call_bapi_po_create1`), never after an API the package does not call
- * (rule 23). Customer objects (`Z*`, `Y*`) are the package's own and get no
+ * (rule 23). Customer objects (`Z*`, `Y*`) the original writes or calls get no
  * method; neither do the job, popup and ALV modules (the delivery choice reads
- * those) nor the commit modules (the RAP framework owns the LUW).
+ * those) nor the commit modules (the RAP framework owns the LUW). A customer
+ * table the original reads does (3.0.13, acceptance run 14.10.2026): the
+ * package does not ship its definition, so a body's `SELECT` on it could not
+ * compile — it is read through `read_<table>` like an SAP table, and a body that
+ * selects from it is refused with that method's name (`markers.ts`).
  *
  * Pure, no network, no model.
  */
@@ -27,10 +31,14 @@ export interface AccessPoint {
   object: string;
   /** Lines of the original where it happens, ascending. */
   lines: number[];
+  /** A customer table (`Z*`, `Y*`) of the original's system: not in the package, read through the layer all the same. */
+  customer?: boolean;
 }
 
 /** At most this many methods: an original touching more is listed in the interface's ABAP Doc. */
 export const MAX_ACCESS_POINTS = 20;
+/** Customer tables read, listed besides the SAP objects (3.0.13). */
+export const MAX_CUSTOMER_READS = 10;
 
 const CUSTOMER = /^(?:[ZY]|\/[ZY])/;
 const NOT_ACCESS = /^(?:JOB_OPEN|JOB_SUBMIT|JOB_CLOSE|POPUP_|REUSE_ALV_|BAPI_TRANSACTION_COMMIT$|BAPI_TRANSACTION_ROLLBACK$)/;
@@ -49,7 +57,11 @@ function tablesRead(text: string): string[] {
 export function accessPointsOf(facts: { statements: readonly AbapStatement[]; graph: CallGraphReport }): { points: AccessPoint[]; more: string[] } {
   const byKey = new Map<string, AccessPoint>();
   const add = (kind: AccessPoint['kind'], object: string, line: number) => {
-    if (CUSTOMER.test(object)) return;
+    // A customer table the original reads is not part of the package either (acceptance run 14.10.2026, PO:
+    // the body wrote `SELECT … FROM zmm_vend_block` and the class did not compile): it is read through the layer.
+    // Customer writes and function modules stay the package's own business, as before.
+    const customer = CUSTOMER.test(object);
+    if (customer && kind !== 'read') return;
     const verb = kind === 'read' ? 'read' : kind === 'write' ? 'write' : 'call';
     const key = `${verb}:${object}`;
     const hit = byKey.get(key);
@@ -57,20 +69,26 @@ export function accessPointsOf(facts: { statements: readonly AbapStatement[]; gr
       if (!hit.lines.includes(line)) hit.lines.push(line);
       return;
     }
-    byKey.set(key, { method: methodName(verb, object), kind, object, lines: [line] });
+    byKey.set(key, { method: methodName(verb, object), kind, object, lines: [line], ...(customer ? { customer: true } : {}) });
   };
   for (const s of facts.statements) for (const t of tablesRead(s.text)) add('read', t, s.lineStart);
   for (const w of facts.graph.databaseWrites) add('write', w.table, w.lineStart);
   for (const f of facts.graph.functionModules) if (f.name && !NOT_ACCESS.test(f.name)) add('call', f.name, f.lineStart);
-  const all = [...byKey.values()].sort((a, b) => a.lines[0] - b.lines[0] || a.method.localeCompare(b.method));
+  // The SAP objects up to the cap; the customer tables read (up to their own cap) on top — a body cannot reach
+  // them any other way, so they never give way to an SAP object (the PO demo touches 20 SAP objects already).
+  const byLine = (a: AccessPoint, b: AccessPoint) => a.lines[0] - b.lines[0] || a.method.localeCompare(b.method);
+  const sap = [...byKey.values()].filter((p) => !p.customer).sort(byLine);
+  const customer = [...byKey.values()].filter((p) => p.customer).sort(byLine);
+  const listed = [...sap.slice(0, MAX_ACCESS_POINTS), ...customer.slice(0, MAX_CUSTOMER_READS)].sort(byLine);
+  const more = [...sap.slice(MAX_ACCESS_POINTS), ...customer.slice(MAX_CUSTOMER_READS)].sort(byLine);
   // Two objects that cut to the same method name keep the first; the second is numbered.
   const seen = new Set<string>();
-  for (const p of all) {
+  for (const p of [...listed, ...more]) {
     p.lines.sort((a, b) => a - b);
     let name = p.method;
     for (let i = 2; seen.has(name); i++) name = `${p.method.slice(0, 27)}_${i}`;
     p.method = name;
     seen.add(name);
   }
-  return { points: all.slice(0, MAX_ACCESS_POINTS), more: all.slice(MAX_ACCESS_POINTS).map((p) => p.object) };
+  return { points: listed, more: more.map((p) => p.object) };
 }

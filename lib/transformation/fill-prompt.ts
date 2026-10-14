@@ -89,11 +89,14 @@ export function fillRulesText(track: 'node' | 'rap' = 'node'): string {
  */
 export function fillGuardLines(track: 'node' | 'rap'): string[] {
   if (track === 'node') {
+    // Since scaffold version 7 (acceptance run 14.10.2026) every helper and predicate has these four parameters:
+    // the old "left out when none" gave raw checks (sel, st, record?) while bodies called them with four, and
+    // predicates of raw checks read `values` that did not exist.
     return [
-      '- Guards: helper and predicate take (sel, st, record, values) — record: the row the condition reads, or null; values: { the keys under "values" }, left out when none.',
+      '- Guards: every helper and predicate takes (sel, st, record, values) — record: the row the condition reads, or null; values: { the keys under "values" }, {} when there are none.',
       '- placement "entry"/"selection": the stub calls it already; never again.',
       '- placement "body": call the helper where the original checks ("line"), never its condition: guard_… returns Refusal | null (`const r = guard_G0345(sel, st, null, { lvCode }); if (r) return r;`); stop_…/skip_… return true where the original ends the step/skips the record.',
-      '- A guard with a "regionId": write its predicate when_<id without "-">(sel, st, record, values): boolean, true exactly when "condition" holds, reading only sel, st, record, values.<key>, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+      '- A guard with a "regionId": write its predicate when_<id without "-">(sel, st, record, values): boolean, true exactly when "condition" holds, under "guards": [ { "id": "G-0506", "body": "…" } ], reading sel, st (globals: st.local), record and values.<key> of the keys listed.',
     ];
   }
   // Scaffold version 6 (3.0.13): every guard has a predicate when_g<line> with the original's local operands as
@@ -118,6 +121,7 @@ export function fillRapLines(): string[] {
     '- ABAP Cloud has no WRITE, ULINE, SKIP, NEW-LINE, NEW-PAGE, FORMAT, MESSAGE, DESCRIBE, FORM, PERFORM, CALL FUNCTION, CALL SCREEN, SUBMIT, TABLES, OCCURS, header lines or SELECT on an SAP table: never write them.',
     '- MESSAGE … TYPE \'E\', \'A\' or \'X\' becomes the RAISE EXCEPTION NEW … refusal the class names (guard and the original\'s text); MESSAGE … TYPE \'I\', \'S\' or \'W\' becomes APPEND <text> TO mt_messages; a list (WRITE, ULINE) is left out — its data is in the attributes the run returns; DESCRIBE TABLE t LINES n becomes n = lines( t ).',
     '- SAP is reached only through mo_access-><method>( … ) with the parameters "types" lists; never call SAP directly and never an access method that is not listed.',
+    '- A customer table (Z…, Y…) the original reads is not in this package: read it through its access method (SELECT … FROM zmm_x becomes mo_access->read_zmm_x( CHANGING ct_rows = lt_rows ) and a READ TABLE or LOOP on lt_rows), never by SELECT.',
     '- Numbers keep the types the class declares (packed with its DECIMALS, i, n, d): compute and compare them as the original does, never through text and never TYPE f.',
   ];
 }
@@ -142,6 +146,8 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
           // Defect F (A/B 13.10.2026): "on a decimal value" read as permission for Number() on a TYPE i field.
           '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
           '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
+          // The helpers' declarations (runtime-node.ts DECIMAL_TS, CSV_TS), so a call has the arguments they take (3.0.13).
+          '- dec.* take decimal text, a number or a dec.parse result: dec.round/format/neg/abs(a, places), dec.percentOf(amount, rate, places), dec.max/min(a, b), dec.fits(a, bound), dec.parse/must(a); csv.row(values, delim?), csv.table(columns, rows, delim?).',
         ]
       : []),
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',

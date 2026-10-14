@@ -403,6 +403,25 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
     for (const m of s.text.matchAll(/\b(?:FROM|JOIN)\s+@?(\/?[A-Za-z][\w/]*)/gi)) if (!/^(?:\/?[zy])/i.test(m[1]) && !/^@/.test(m[1])) sapTables.push(m[1].toUpperCase());
   }
   if (sapTables.length > 0) out.push(refusal('sap-select', `a SELECT on SAP tables (${[...new Set(sapTables)].slice(0, 6).join(', ')}) — SAP is read through mo_access, with the methods the class lists`));
+  // A customer table the package does not ship (acceptance run 14.10.2026, PO: `SELECT … FROM zmm_vend_block`):
+  // read through the access method the layer has for it, never selected directly.
+  if (ctx.abap?.tables) {
+    const own = new Set(ctx.abap.tables.map((t) => t.toLowerCase()));
+    const reads = ctx.abap.customerReads ?? {};
+    const undeclared = new Map<string, string | null>();
+    for (const s of statements) {
+      if (!/^(?:SELECT|OPEN\s+CURSOR|WITH)\b/i.test(s.text)) continue;
+      for (const m of s.text.matchAll(/\b(?:FROM|JOIN)\s+@?(\/?[A-Za-z][\w/]*)/gi)) {
+        const t = m[1].toLowerCase();
+        if (!/^\/?[zy]/.test(t) || own.has(t)) continue;
+        undeclared.set(t, reads[t] ?? null);
+      }
+    }
+    if (undeclared.size > 0) {
+      const words = [...undeclared].slice(0, 6).map(([t, method]) => (method ? `${t.toUpperCase()} (read it with mo_access->${method}( ))` : `${t.toUpperCase()} (not in this package and not in the access layer)`));
+      out.push(refusal('customer-select', `a SELECT on customer tables this package does not ship: ${words.join(', ')}`));
+    }
+  }
   if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));
   return out;
 }

@@ -58,6 +58,7 @@ export const TYPE_FINDINGS_MAX = 200;
 /** The compiler options of the scaffold's `tsconfig.json` (`scaffold-node.ts` `TSCONFIG`; a spec holds them equal). */
 export const CANDIDATE_TS_OPTIONS = {
   target: 'ES2022',
+  lib: ['ES2022'],
   module: 'NodeNext',
   moduleResolution: 'NodeNext',
   strict: true,
@@ -125,7 +126,7 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
   const key = (p: string) => p.replace(/\\/g, '/');
   const inVirtual = (p: string) => key(p).startsWith(`${base}/`) || key(p) === base;
 
-  const converted = ts.convertCompilerOptionsFromJson({ ...CANDIDATE_TS_OPTIONS, types: [...CANDIDATE_TS_OPTIONS.types] }, base);
+  const converted = ts.convertCompilerOptionsFromJson({ ...CANDIDATE_TS_OPTIONS, lib: [...CANDIDATE_TS_OPTIONS.lib], types: [...CANDIDATE_TS_OPTIONS.types] }, base);
   const options: TS.CompilerOptions = { ...converted.options, typeRoots: [lib.typeRoots], noEmit: true };
   const host = ts.createCompilerHost(options, true);
   const realGetSourceFile = host.getSourceFile.bind(host);

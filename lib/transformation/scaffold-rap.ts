@@ -790,6 +790,9 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
     ]),
   ];
   const attributesList = [...attributeNames, ...(hasAccess ? ['mo_access'] : []), ...(inputs.length ? ['ms_input'] : []), 'mt_messages'];
+  // The tables this package ships, and the customer tables the original reads with the method that reads them:
+  // a body's SELECT on any other customer table is refused, naming that method (acceptance run 14.10.2026, PO).
+  const tableNames = { tables: [table], customerReads: Object.fromEntries(accessMethods.filter((m) => m.point.customer).map((m) => [m.point.object.toLowerCase(), m.point.method])) };
 
   for (const u of [...unitsWithBody, ...parentsOfParts]) {
     const name = methodOf.get(u.id)!;
@@ -820,7 +823,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       const callees = u.callees.map((id) => methodOf.get(id) ?? id);
       const preds = u.guards.filter((id) => predicates.has(id)).map((id) => predicates.get(id)!.name);
       available[u.id] = [logic, 'me', ...(hasAccess ? ['mo_access'] : []), ...callees, ...preds, ...(u.kind === 'orchestrator' && inputs.length ? ['load_input'] : []), refusal];
-      regionNames[u.id] = { attributes: attributesList, params: params.map((p) => p.name), methods: allMethods, access: accessNames };
+      regionNames[u.id] = { attributes: attributesList, params: params.map((p) => p.name), methods: allMethods, access: accessNames, ...tableNames };
     }
     impls.push('  ENDMETHOD.', '');
   }
@@ -842,7 +845,7 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       impls.push(`    " Not written by the engine: ${docText(p.why ?? 'the condition reads names the class does not declare')}.`);
       impls.push(regionText('rap', g.regionId!, `${p.name}|${g.line}|${g.condition}`, '    ', `RAISE EXCEPTION NEW ${cx}( unit = '${g.regionId}' ).`));
       available[g.regionId!] = [logic, 'me'];
-      regionNames[g.regionId!] = { attributes: attributesList, params: p.params.map((x) => x.name), methods: allMethods, access: [] };
+      regionNames[g.regionId!] = { attributes: attributesList, params: p.params.map((x) => x.name), methods: allMethods, access: [], tables: [table] };
     }
     impls.push('  ENDMETHOD.', '');
   }
@@ -1047,11 +1050,14 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
       owner: 'engine',
       content: [
         head,
-        `"! Every SAP object ${docText(program)} reads, writes or calls, behind one interface: the logic never calls SAP itself,`,
+        `"! Every SAP object ${docText(program)} reads, writes or calls${access.points.some((p) => p.customer) ? ', and every customer table it reads,' : ''} behind one interface: the logic never calls SAP itself,`,
         '"! so ABAP Unit can replace this layer with a test double, and a released API can replace the original object in one place.',
         ...(access.more.length > 0 ? [`"! Not listed (more than ${access.points.length}): ${access.more.slice(0, 20).join(', ')}.`] : []),
         `INTERFACE ${accessIf} PUBLIC.`,
-        ...accessMethods.flatMap((m) => [`  "! ${verb(m.point)} ${m.point.object} where the original does, ${anchor(m.point)}; a failure raises ${accessCx} instead of a return code.`, ...accessSignature(m)]),
+        ...accessMethods.flatMap((m) => [
+          `  "! ${verb(m.point)} ${m.point.object}${m.point.customer ? ' (a customer table of the original system, not in this package)' : ''} where the original does, ${anchor(m.point)}; a failure raises ${accessCx} instead of a return code.`,
+          ...accessSignature(m),
+        ]),
         'ENDINTERFACE.',
         '',
       ].join('\n'),
@@ -1071,8 +1077,15 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
         '',
         ...accessMethods.flatMap((m) => [
           `  METHOD ${accessIf}~${m.point.method}.`,
-          `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object} at ${anchor(m.point)}. Connect a released API here (Analyze names`,
-          "    \" SAP's successor where its Cloudification Repository has one); until then this raises.",
+          ...(m.point.customer
+            ? [
+                `    " ${OPEN_MARKER} ACCESS: the original reads ${m.point.object}, a customer table this package does not ship, at ${anchor(m.point)}.`,
+                '    " Read it here (or through a CDS view over it) once it exists in the target system; until then this raises.',
+              ]
+            : [
+                `    " ${OPEN_MARKER} ACCESS: the original ${verb(m.point).toLowerCase()} ${m.point.object} at ${anchor(m.point)}. Connect a released API here (Analyze names`,
+                "    \" SAP's successor where its Cloudification Repository has one); until then this raises.",
+              ]),
           `    RAISE EXCEPTION NEW ${accessCx}( object = '${m.point.object}' ).`,
           '  ENDMETHOD.',
           '',

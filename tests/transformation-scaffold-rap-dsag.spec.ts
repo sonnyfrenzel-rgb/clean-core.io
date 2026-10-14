@@ -5,13 +5,13 @@ import { CODE_DRAFT_BUSINESS_RULES } from '../lib/code-draft-rules';
 import { generatedCodeLints } from '../lib/generated-code-lints';
 import { buildRapScaffold, planUnits, readEngineFacts } from '../lib/transformation';
 import { abapDeliveryOf } from '../lib/transformation/abap-delivery';
-import { accessPointsOf } from '../lib/transformation/access-layer';
+import { accessPointsOf, MAX_ACCESS_POINTS } from '../lib/transformation/access-layer';
 import { abaplintCheckEntries, abaplintPackageCheck, withAbaplint } from '../lib/transformation/abaplint-check';
 import { ABAPLINT_ALLOWED_OBJECT_TYPES, ABAPLINT_CONFIG, abaplintConfig, abaplintConfigJson } from '../lib/transformation/abaplint-config';
 import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { OPEN_MARKER } from '../lib/transformation/scaffold-rap';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
-import { fixture, planOf, poDemo, ROOT } from './helpers/transformation-scaffold';
+import { FIXTURES, fixture, planOf, poDemo, ROOT } from './helpers/transformation-scaffold';
 
 /**
  * The RAP scaffold against the DSAG ABAP guide (roadmap 3.0.12; owner decision
@@ -120,15 +120,20 @@ test.describe('C3 — authorization is checked and denied until filled', () => {
 });
 
 test.describe('B4 — the access layer', () => {
-  test('one method per SAP object the original reads, writes or calls; customer objects and UI modules get none', () => {
+  test('one method per SAP object the original reads, writes or calls; customer writes, customer calls and UI modules get none', () => {
     const { points } = accessPointsOf(readEngineFacts(NIGHTLY));
     expect(points.map((p) => [p.method, p.kind, p.object, p.lines])).toEqual([['read_bsid', 'read', 'BSID', [12]]]);
     const po = accessPointsOf(readEngineFacts(poDemo())).points;
     expect(po.map((p) => p.method)).toEqual(expect.arrayContaining(['read_eban', 'write_eban', 'read_lfa1']));
     for (const p of po) {
-      expect(p.object).not.toMatch(/^[ZY]/);
+      // A customer object only as a table the original reads — the package does not ship it (scaffold version 7).
+      if (/^[ZY]/.test(p.object)) expect([p.kind, p.customer]).toEqual(['read', true]);
+      else expect(p.customer).toBeUndefined();
       expect(p.method.length).toBeLessThanOrEqual(30);
     }
+    // Listed on top of the SAP objects: the PO demo touches 20 of those, and its customer tables still get their reads.
+    expect(po.filter((p) => !p.customer)).toHaveLength(MAX_ACCESS_POINTS);
+    expect(po.filter((p) => p.customer).map((p) => p.method)).toEqual(expect.arrayContaining(['read_zmm_vend_block', 'read_zmm_budget']));
   });
 
   test('interface, default implementation and exception; the logic takes the layer through its constructor', () => {
@@ -147,10 +152,13 @@ test.describe('B4 — the access layer', () => {
     // Fills may call the layer; ABAP Unit gets a double.
     for (const u of plan.units) expect(scaffold.available[u.id]).toContain('mo_access');
     expect(file(scaffold, '.testclasses.abap')).toContain('INTERFACES zif_mm_po_approv_access PARTIALLY IMPLEMENTED.');
-    // A program that touches no SAP object gets no layer.
+    // A program that touches no SAP object and reads no customer table gets no layer.
+    const plain = rap(fs.readFileSync(path.join(FIXTURES, 'conservation-shape.abap'), 'utf8')).scaffold;
+    expect(plain.files.some((f) => f.path.includes('_access'))).toBe(false);
+    expect(file(plain, '_logic.clas.abap')).not.toContain('mo_access');
+    // One that reads only its own customer table gets a layer of that one read (scaffold version 7).
     const co = rap(fixture('co-shape')).scaffold;
-    expect(co.files.some((f) => f.path.includes('_access'))).toBe(false);
-    expect(file(co, '_logic.clas.abap')).not.toContain('mo_access');
+    expect(file(co, '_access.intf.abap')).toContain('METHODS read_zco_receivers');
   });
 
   test('rule 25 asks for it — in the code-draft rules, and in the RAP fill prompt only', () => {
@@ -340,6 +348,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 5: the Node scaffold's probe entry points (tests/transformation-fill-probes.spec.ts); one number for both tracks.
   // 6: the typed RAP contract, guards in the logic path, a custom entity for a read-only program (tests/transformation-rap-contract.spec.ts).
   // 7: the CAP shell and one input list per source structure on the Node track (tests/transformation-cap-shell.spec.ts).
-  expect(SCAFFOLD_VERSION).toBe(7);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(7);
+  // 8: the contract gaps of the second real acceptance run (tests/transformation-contract-gaps.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(8);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(8);
 });

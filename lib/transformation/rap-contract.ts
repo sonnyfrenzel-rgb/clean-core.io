@@ -190,6 +190,49 @@ export function formParameters(text: string): Array<{ name: string; section: 'ta
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/<>]/g, '\\$&');
 
+/**
+ * SAP dictionary structures ABAP Cloud does not have, which an original includes into a structure of its own
+ * (`DATA: BEGIN OF gt_bdcdata OCCURS 0. INCLUDE STRUCTURE bdcdata. DATA: END OF gt_bdcdata.`): their components,
+ * with SAP's names and lengths, so the batch input the original builds stays a typed structure of the class
+ * (acceptance run 14.10.2026, SD order cockpit: `ty_bdcdata` was declared with no components and the class did
+ * not compile). The component list is SAP's dictionary definition; nothing is invented.
+ */
+export const SAP_STRUCTURE_EQUIVALENTS: Readonly<Record<string, ReadonlyArray<{ name: string; phrase: string }>>> = {
+  bdcdata: [
+    { name: 'program', phrase: 'TYPE c LENGTH 40' },
+    { name: 'dynpro', phrase: 'TYPE n LENGTH 4' },
+    { name: 'dynbegin', phrase: 'TYPE c LENGTH 1' },
+    { name: 'fnam', phrase: 'TYPE c LENGTH 132' },
+    { name: 'fval', phrase: 'TYPE c LENGTH 132' },
+  ],
+  bdcmsgcoll: [
+    { name: 'tcode', phrase: 'TYPE c LENGTH 20' },
+    { name: 'dyname', phrase: 'TYPE c LENGTH 40' },
+    { name: 'dynumb', phrase: 'TYPE c LENGTH 4' },
+    { name: 'msgtyp', phrase: 'TYPE c LENGTH 1' },
+    { name: 'msgspra', phrase: 'TYPE c LENGTH 1' },
+    { name: 'msgid', phrase: 'TYPE c LENGTH 20' },
+    { name: 'msgnr', phrase: 'TYPE c LENGTH 3' },
+    { name: 'msgv1', phrase: 'TYPE c LENGTH 100' },
+    { name: 'msgv2', phrase: 'TYPE c LENGTH 100' },
+    { name: 'msgv3', phrase: 'TYPE c LENGTH 100' },
+    { name: 'msgv4', phrase: 'TYPE c LENGTH 100' },
+    { name: 'env', phrase: 'TYPE c LENGTH 4' },
+    { name: 'fldname', phrase: 'TYPE c LENGTH 132' },
+  ],
+};
+
+/**
+ * The TYPES statements of `INCLUDE STRUCTURE x` inside a structure: a structure the program declares itself is
+ * included by name; an SAP structure ABAP Cloud lacks is spelled out (`SAP_STRUCTURE_EQUIVALENTS`); any other
+ * dictionary structure is included by name, for the developer's system to resolve.
+ */
+function includedComponents(structure: string, declared: ReadonlySet<string>): string[] {
+  const name = structure.toLowerCase();
+  const sap = declared.has(name) ? undefined : SAP_STRUCTURE_EQUIVALENTS[name];
+  return sap ? sap.map((c) => `TYPES ${c.name} ${c.phrase}`) : [`TYPES INCLUDE TYPE ${name}`];
+}
+
 /** Whether a routine's statements write to a data object (an assignment, CLEAR, APPEND … TO, …) — a USING parameter so written becomes CHANGING. */
 function writesTo(statements: readonly AbapStatement[], name: string): boolean {
   const n = escapeRe(name);
@@ -280,6 +323,14 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     const kw = st.keyword;
     if (NOT_CARRIED.test(kw)) {
       if (kw !== 'TYPE-POOLS' && kw !== 'TYPE-POOL') skipped.push({ line: st.lineStart, text: st.text.slice(0, 80) });
+      continue;
+    }
+    // `INCLUDE STRUCTURE bdcdata.` between `DATA: BEGIN OF … END OF` is a statement of its own (keyword INCLUDE):
+    // read before the keyword filter, or the structure ends up with no components (acceptance run 14.10.2026, SD).
+    if (kw === 'INCLUDE' && structStack.length > 0) {
+      const inc = /^INCLUDE\s+(?:STRUCTURE|TYPE)\s+([\w/]+)/i.exec(st.text);
+      const s = structStack[structStack.length - 1];
+      if (inc && s.kind !== 'CONSTANTS') types.push(...includedComponents(inc[1], typeNames));
       continue;
     }
     if (kw !== 'TYPES' && kw !== 'DATA' && kw !== 'CONSTANTS' && kw !== 'CLASS-DATA' && kw !== 'STATICS' && kw !== 'RANGES' && kw !== 'PARAMETERS' && kw !== 'PARAMETER' && kw !== 'SELECT-OPTIONS') continue;
@@ -379,7 +430,7 @@ export function readRapContract(facts: Pick<EngineFacts, 'statements' | 'blocks'
     const inc = /^INCLUDE\s+(?:STRUCTURE|TYPE)\s+([\w/]+)/i.exec(rest);
     if (inc && structStack.length > 0) {
       const s = structStack[structStack.length - 1];
-      if (s.kind !== 'CONSTANTS') types.push(`TYPES INCLUDE TYPE ${inc[1]}`);
+      if (s.kind !== 'CONSTANTS') types.push(...includedComponents(inc[1], typeNames));
       continue;
     }
     const d = splitDecl(rest);

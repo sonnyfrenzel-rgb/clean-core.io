@@ -12,7 +12,7 @@ test('every exported function is in the trace; every unit function maps to its A
   const { facts, plan } = planOf(fixture('co-shape'), { decisions: [{ id: 'BR-003', answer: 'change', note: 'Quotas up to 120 are allowed.' }] });
   const scaffold = buildNodeScaffold(plan, facts);
   const trace = traceOf(plan, scaffold, []);
-  const exported = scaffold.files.filter((f) => f.path.endsWith('.ts')).flatMap((f) => [...f.content.matchAll(/^export\s+function\s+(\w+)/gm)].map((m) => `${f.path}#${m[1]}`));
+  const exported = scaffold.files.filter((f) => f.path.endsWith('.ts')).flatMap((f) => [...f.content.matchAll(/^export\s+(?:async\s+)?function\s+(\w+)/gm)].map((m) => `${f.path}#${m[1]}`));
   expect(trace.functions.map((f) => `${f.file}#${f.name}`).sort()).toEqual(exported.sort());
   for (const u of plan.units) {
     const fn = trace.functions.find((f) => f.file === u.file && f.name === u.fn)!;

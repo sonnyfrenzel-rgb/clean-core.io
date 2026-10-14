@@ -180,7 +180,10 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
             ...(r.decision === 'change' && r.proposal ? { proposal: r.proposal } : {}),
           })),
         // A predicate the engine wrote has no region: the model is not asked for it.
-        guards: fillGuardsOf(plan, u.id).map((g) => (g.regionId && !regionIds.has(g.regionId) ? { ...g, regionId: null } : g)),
+        guards: fillGuardsOf(plan, u.id)
+          .map((g) => (g.regionId && !regionIds.has(g.regionId) ? { ...g, regionId: null } : g))
+          // Node: the keys of `values` as the package declares them (`G0036Values` also holds the routine's parameters a check reads).
+          .map((g) => (decls ? { ...g, values: decls.get(`${g.id.replace('-', '')}Values`)?.fields ?? [] } : g)),
         facts: {
           decimals: plan.decimals
             .filter((d) => sliceUpper.includes(d.name.toUpperCase()))
@@ -269,7 +272,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
   const helperOf = (id: string) => prep.plan.guards.find((g) => g.id === id)?.helper;
   // A derived check's predicate reads the values the body hands in (`scaffold-node.ts` `guardsFile`).
   const predicateOf = prep.plan.guards.find((g) => g.regionId === regionId && regionId !== unitId);
-  const params = predicateOf && predicateOf.basis === 'derived' && predicateOf.operands.length > 0 ? ['values'] : [];
+  // Since scaffold version 7 every Node predicate has `values` (`{}` when its check reads none).
+  const params = predicateOf && (prep.scaffold.track === 'node' || (predicateOf.basis === 'derived' && predicateOf.operands.length > 0)) ? ['values'] : [];
   // The fields of the region's parameters, read from the package the body lands in (defect D).
   const signature = prep.scaffold.track === 'node' ? regionSignature(prep.scaffold.files, regionId) : null;
   const shapes = signature ? parameterShapes(declarationsOf(prep.scaffold), signature) : {};
