@@ -94,6 +94,10 @@ test.describe('every adopted section is unchanged since adoption', () => {
       for (const s of c.sections) {
         const now = dsagSection(s.file, s.heading);
         expect(now, `${c.id}: "${s.file} § ${s.heading}" is gone from the guide — review the rule by hand`).not.toBeNull();
+        // The heading as the guide writes it, exactly: `dsagSection` forgives
+        // surrounding blanks and Unicode composition, the registry may not —
+        // a code citation is compared with it character for character.
+        expect(now!.heading, `${c.id}: write the heading exactly as the guide does`).toBe(s.heading);
         expect(now!.url).toMatch(/^https:\/\/1dsag\.github\.io\/ABAP-Leitfaden\/.+#[^#\s]+$/);
         expect(now!.hash, `${c.id}: DSAG changed "${s.file} § ${s.heading}" (${now!.url}) — review the adopted rule by hand, then record the new hash`).toBe(s.hashAtAdoption);
       }

@@ -113,27 +113,84 @@ function enclosingFunctions(node: ts.Node): ts.SignatureDeclaration[] {
   return out;
 }
 
+const bindingNames = (b: ts.BindingName): string[] =>
+  ts.isIdentifier(b) ? [b.text] : b.elements.flatMap((e) => (ts.isOmittedExpression(e) ? [] : bindingNames(e.name)));
+
+/** The nearest enclosing function that declares `name` as a parameter, with that parameter. */
+function parameterOfEnclosing(name: string, node: ts.Node): { fn: ts.SignatureDeclaration; param: ts.ParameterDeclaration } | null {
+  for (const fn of enclosingFunctions(node)) {
+    const param = fn.parameters.find((p) => bindingNames(p.name).includes(name));
+    if (param) return { fn, param };
+  }
+  return null;
+}
+
 function isParameterOfEnclosing(name: string, node: ts.Node): boolean {
-  const names = (b: ts.BindingName): string[] =>
-    ts.isIdentifier(b) ? [b.text] : b.elements.flatMap((e) => (ts.isOmittedExpression(e) ? [] : names(e.name)));
-  return enclosingFunctions(node).some((fn) => fn.parameters.some((p) => names(p.name).includes(name)));
+  return parameterOfEnclosing(name, node) !== null;
+}
+
+/**
+ * May a caller of the enclosing function leave the forwarded version out? A
+ * parameter `engineVersion?` or `engineVersion = …`, a destructured
+ * `{ engineVersion = … }`, or a property `engineVersion?` of the parameter's
+ * type, where the type is written in the signature or declared in the file.
+ */
+function forwardedOptional(root: string, leaf: string, call: ts.Node, sf: ts.SourceFile): boolean {
+  const found = parameterOfEnclosing(root, call);
+  if (!found) return false;
+  const { param } = found;
+  if (ts.isIdentifier(param.name)) {
+    if (root === leaf) return !!param.questionToken || !!param.initializer;
+    // `o.engineVersion`: the property's optionality in the parameter's type.
+    if (param.questionToken) return true;
+    let members: ts.NodeArray<ts.TypeElement> | undefined;
+    if (param.type && ts.isTypeLiteralNode(param.type)) members = param.type.members;
+    else if (param.type && ts.isTypeReferenceNode(param.type) && ts.isIdentifier(param.type.typeName)) {
+      const typeName = param.type.typeName.text;
+      sf.forEachChild((n) => {
+        if (ts.isInterfaceDeclaration(n) && n.name.text === typeName) members = n.members;
+        if (ts.isTypeAliasDeclaration(n) && n.name.text === typeName && ts.isTypeLiteralNode(n.type)) members = n.type.members;
+      });
+    }
+    const member = members?.find((m) => m.name && ts.isIdentifier(m.name) && m.name.text === leaf);
+    return !!member?.questionToken;
+  }
+  // `{ engineVersion }` / `{ engineVersion = null }` destructured in the signature.
+  const element = ts.isObjectBindingPattern(param.name)
+    ? param.name.elements.find((e) => ts.isIdentifier(e.name) && e.name.text === root)
+    : undefined;
+  return !!element?.initializer || !!param.questionToken;
 }
 
 function isRebuildCall(expr: ts.Expression | undefined): boolean {
   return !!expr && ts.isCallExpression(expr) && REBUILD_SOURCES.has(calleeName(expr.expression) ?? '');
 }
 
-function constInitialiser(name: string, sf: ts.SourceFile): ts.Expression | undefined {
-  let found: ts.Expression | undefined;
-  const visit = (n: ts.Node) => {
-    if (!found && ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === name && n.initializer) found = n.initializer;
-    ts.forEachChild(n, visit);
-  };
-  visit(sf);
-  return found;
+/**
+ * The initialiser of the `const` that `name` refers to at `at`, resolved
+ * lexically: the nearest enclosing block (or the file) that declares it, and
+ * nothing when a parameter of an enclosing function shadows it first. A `let`
+ * or `var` is not a constant (QA leftovers of hotfix 2: the first declaration
+ * of the name anywhere in the file used to answer, whatever scope the call
+ * stood in).
+ */
+function constInitialiser(name: string, at: ts.Node): ts.Expression | undefined {
+  for (let n: ts.Node | undefined = at.parent; n; n = n.parent) {
+    if (ts.isFunctionLike(n) && n.parameters.some((p) => bindingNames(p.name).includes(name))) return undefined;
+    const statements = ts.isBlock(n) || ts.isSourceFile(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n) ? n.statements : undefined;
+    for (const st of statements ?? []) {
+      if (!ts.isVariableStatement(st)) continue;
+      for (const d of st.declarationList.declarations) {
+        if (!bindingNames(d.name).includes(name)) continue;
+        const isConst = (st.declarationList.flags & ts.NodeFlags.Const) !== 0;
+        return isConst && ts.isIdentifier(d.name) ? d.initializer : undefined;
+      }
+    }
+  }
+  return undefined;
 }
 
-function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.SourceFile, place: string): { ok: boolean; source: string } {
+function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.SourceFile, place: string, guarded: (fn: string) => boolean): { ok: boolean; source: string } {
   if (!expr) return { ok: false, source: 'missing' };
   if (isRebuildCall(expr)) return { ok: true, source: 'rebuild' };
   if (ts.isIdentifier(expr) && expr.text === 'APP_VERSION') {
@@ -145,8 +202,17 @@ function versionSource(expr: ts.Expression | undefined, call: ts.Node, sf: ts.So
   // signature (QA review of c38f8043f118, 80028f747c66).
   const root = ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression) ? expr.expression.text : ts.isIdentifier(expr) ? expr.text : null;
   const leaf = ts.isPropertyAccessExpression(expr) ? expr.name.text : ts.isIdentifier(expr) ? expr.text : null;
-  if (root && leaf === FORWARDED_NAME && isParameterOfEnclosing(root, call)) return { ok: true, source: 'forwarded' };
-  if (ts.isIdentifier(expr) && isRebuildCall(constInitialiser(expr.text, sf))) return { ok: true, source: 'rebuild' };
+  if (root && leaf === FORWARDED_NAME && isParameterOfEnclosing(root, call)) {
+    // A wrapper whose callers may leave the version out hands the default on:
+    // forwarded is fine only from a parameter a caller must fill, or from a
+    // function this guard checks itself (QA leftovers of hotfix 2).
+    const wrapper = functionName(parameterOfEnclosing(root, call)!.fn) ?? '<anonymous>';
+    if (forwardedOptional(root, leaf, call, sf) && !guarded(wrapper)) {
+      return { ok: false, source: `forwarded from an optional parameter of ${wrapper}, whose callers this guard does not check` };
+    }
+    return { ok: true, source: 'forwarded' };
+  }
+  if (ts.isIdentifier(expr) && isRebuildCall(constInitialiser(expr.text, expr))) return { ok: true, source: 'rebuild' };
   return { ok: false, source: expr.getText(sf) };
 }
 
@@ -172,7 +238,7 @@ function callsInText(rel: string, text: string): Call[] {
             : undefined;
           version = !prop ? undefined : ts.isPropertyAssignment(prop) ? prop.initializer : (prop.name as ts.Identifier);
         }
-        const { ok, source } = versionSource(version, node, sf, place);
+        const { ok, source } = versionSource(version, node, sf, place, (fn) => Object.hasOwn(POSITIONAL, fn) || NAMED.has(fn));
         const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
         calls.push({ file: rel, line, name, ok, source, place });
       }
@@ -230,6 +296,42 @@ test.describe('Engine version — every caller names it (3.0.12)', () => {
     expect(verdict('export function f(engineVersion: string) { return findingsOf(s, f, d, k, engineVersion.trim); }')).toEqual([[false, 'engineVersion.trim']]);
     expect(verdict('export function f(project: P) { return architectureCanvasModel({ contract, engineVersion: APP_VERSION }); }'))
       .toEqual([[false, 'APP_VERSION outside a new run (lib/some-rebuild.ts#f)']]);
+  });
+
+  test('a constant is resolved in the scope the call stands in (QA leftovers of hotfix 2)', () => {
+    const verdict = (body: string) => callsInText('lib/some-rebuild.ts', body).map((c) => [c.ok, c.source]);
+    // Another function's constant of the same name is not this one.
+    expect(verdict([
+      'export function a(project: P) { const e = engineVersionOfProject(project); return e; }',
+      'export function b(project: P) { const e = APP_VERSION; return buildAbapEvidence(s, f, d, k, e); }',
+    ].join('\n'))).toEqual([[false, 'e']]);
+    expect(verdict([
+      'export function a(project: P) { const e = engineVersionOfProject(project); return e; }',
+      'export function b(project: P) { return buildAbapEvidence(s, f, d, k, e); }',
+    ].join('\n'))).toEqual([[false, 'e']]);
+    // A parameter shadows a module constant.
+    expect(verdict('const e = engineVersionOfProject(p0); export function b(e: string) { return buildAbapEvidence(s, f, d, k, e); }')).toEqual([[false, 'e']]);
+    // A `let` can be reassigned: it is no rebuild source.
+    expect(verdict('export function b(project: P) { let e = engineVersionOfProject(project); e = APP_VERSION; return buildAbapEvidence(s, f, d, k, e); }')).toEqual([[false, 'e']]);
+    // The constant of the enclosing scope, and of a block around it, still count.
+    expect(verdict('export function b(project: P) { const e = engineVersionOfProject(project); if (x) { return buildAbapEvidence(s, f, d, k, e); } }')).toEqual([[true, 'rebuild']]);
+    expect(verdict('const e = engineVersionOfProject(p0); export function b() { return buildAbapEvidence(s, f, d, k, e); }')).toEqual([[true, 'rebuild']]);
+  });
+
+  test('a wrapper that forwards an optional version is refused unless the guard checks its callers (QA leftovers of hotfix 2)', () => {
+    const verdict = (body: string) => callsInText('lib/some-rebuild.ts', body).map((c) => [c.ok, c.source]);
+    const unchecked = (fn: string) => `forwarded from an optional parameter of ${fn}, whose callers this guard does not check`;
+    // Its callers may leave the version out, and nothing reads them.
+    expect(verdict('export function wrap(engineVersion?: string) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[false, unchecked('wrap')]]);
+    expect(verdict('export function wrap(engineVersion: string | null = null) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[false, unchecked('wrap')]]);
+    expect(verdict('export function wrap(o: { engineVersion?: string }) { return findingsOf(s, f, d, k, o.engineVersion); }')).toEqual([[false, unchecked('wrap')]]);
+    expect(verdict('interface O { engineVersion?: string }\nexport function wrap(o: O) { return findingsOf(s, f, d, k, o.engineVersion); }')).toEqual([[false, unchecked('wrap')]]);
+    expect(verdict('export function wrap({ engineVersion = null }: O) { return engineDesignContext({ contract, engineVersion }); }')).toEqual([[false, unchecked('wrap')]]);
+    // Required: every caller has to fill it, and TypeScript says so.
+    expect(verdict('export function wrap(engineVersion: string | null) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[true, 'forwarded']]);
+    expect(verdict('interface O { engineVersion: string | null }\nexport function wrap(o: O) { return findingsOf(s, f, d, k, o.engineVersion); }')).toEqual([[true, 'forwarded']]);
+    // A function this guard checks may forward its optional version: its own callers are read.
+    expect(verdict('export function findingsOf(s: string, f: string, d: D, k: K, engineVersion?: string) { return buildAbapEvidence(s, f, d, k, engineVersion); }')).toEqual([[true, 'forwarded']]);
   });
 });
 

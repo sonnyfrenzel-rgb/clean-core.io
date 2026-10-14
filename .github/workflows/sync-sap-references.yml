@@ -29,6 +29,15 @@ on:
 permissions:
   contents: read
 
+# One sync at a time (QA leftovers of hotfix 2, roadmap 3.0.13): a manual run
+# started while the scheduled one is still going would force-push the same bot
+# branch from another state. A later run waits; one still pending when a newer
+# one queues is dropped, which loses nothing — the newer one syncs the same
+# upstream heads.
+concurrency:
+  group: sync-sap-references
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest

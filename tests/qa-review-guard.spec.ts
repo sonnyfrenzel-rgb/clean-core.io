@@ -1330,6 +1330,13 @@ test.describe('weekly pipeline health', () => {
     expect(push).toMatch(/push --force "https:\/\/x-access-token:\$\{GH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" HEAD:chore\/sync-sap-references/);
     const { BOT_BRANCHES } = await lib('health.mjs');
     expect(BOT_BRANCHES).toContain('chore/sync-sap-references');
+    // One run at a time for the whole workflow, never cancelling one that runs:
+    // two runs would force-push the bot branch from different states (QA leftovers of hotfix 2).
+    const concurrency = wf.slice(wf.indexOf('\nconcurrency:'), wf.indexOf('\njobs:'));
+    expect(wf.indexOf('\nconcurrency:'), 'a workflow-level concurrency group').toBeGreaterThan(-1);
+    expect(concurrency).toMatch(/\n  group: sync-sap-references\n/);
+    expect(concurrency).toMatch(/\n  cancel-in-progress: false\n/);
+    expect(wf.match(/^\s*concurrency:/gm) ?? []).toHaveLength(1);
   });
 
   test('every scheduled sync workflow pushes to a branch the weekly health check watches', async () => {
