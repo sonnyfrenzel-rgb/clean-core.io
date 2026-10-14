@@ -128,11 +128,15 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.check.probes': 'Failure-pattern probes',
   'transformation.unitsTitle': 'Functions',
   'transformation.unitsWaiting': 'Waiting for the scaffold',
-  'transformation.unit.waiting': 'waiting',
-  'transformation.unit.writing': 'writing…',
+  'transformation.unit.waitingSlot': 'waiting for a free slot — this generation already has its calls running',
   'transformation.unit.written': 'written',
   'transformation.unit.refused': 'not written — declined',
-  'transformation.unit.again': 'asked again',
+  // Before the click (owner, 13.10.2026): the plan and its limits.
+  'transformation.planTitle': 'Plan and limits',
+  'transformation.planReading': 'Reading the plan…',
+  'transformation.planUnavailable': 'The plan could not be read before the start; the limits below still apply.',
+  'transformation.planNotWritten': 'These functions will not be written, and why:',
+  'transformation.planBlocked': 'This generation cannot succeed as planned, so it does not start.',
   'transformation.cancel': 'Cancel',
   'transformation.cancelling': 'Cancelling…',
   'transformation.cancelled': 'Cancelled. Nothing was saved; calls already sent finish on the server and count against this generation.',
@@ -192,9 +196,10 @@ export function tfShowAllUnits(total: number): string {
   return `Show all ${plural(total, 'function')}`;
 }
 
-/** "up to 4 at a time · up to 22 model calls under this generation's lease". */
-export function tfFillsNote(budget: number): string {
-  return `up to 4 at a time · up to ${plural(budget, 'model call')} under this generation’s lease`;
+/** "writing 30 functions, up to 4 at a time · up to 22 model calls under this generation's lease". */
+export function tfFillsNote(budget: number, functions?: number): string {
+  const what = typeof functions === 'number' && functions > 0 ? `writing ${plural(functions, 'function')}, ` : '';
+  return `${what}up to 4 at a time · up to ${plural(budget, 'model call')} under this generation’s lease`;
 }
 
 /** The fallback's note on the screen, in STATUS and above the result (design §16.2). */
@@ -225,4 +230,19 @@ export function tfElapsed(clock: string): string {
 /** "Done · 0:42" — a finished step's word and duration. */
 export function tfTook(word: string, clock: string): string {
   return `${word} · ${clock}`;
+}
+
+/** "waiting for a free slot (4 calls run at once)" — a function whose call has not started yet. */
+export function tfUnitWaiting(inFlight: number): string {
+  return `waiting for a free slot (${count(inFlight)} calls run at once)`;
+}
+
+/** "writing — the model is working (usually 8–20 seconds)". */
+export function tfUnitWriting(usually: string): string {
+  return `writing — the model is working (${usually})`;
+}
+
+/** "asked again: the first answer could not be used (no JSON)". */
+export function tfUnitAgain(reason: string | null): string {
+  return `asked again: the first answer could not be used${reason ? ` (${reason})` : ''}`;
 }

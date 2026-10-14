@@ -3419,6 +3419,29 @@
       }
     },
     {
+      "path": "docs/design/gemini-attempt-limit.md",
+      "kind": "plan",
+      "purpose": "Analysis and as-built record of the request-attempt limit for /api/gemini (3.0.13): the measured cost of a refused request per path, the options weighed (in-memory per instance, a Firestore counter, Cloud Armor), and the limiter as built",
+      "audience": "Sonny, agents",
+      "saysToday": "Owner approved the in-memory per-account limiter on 13.10.2026: 60 attempts a minute and 300 an hour per instance, before the body is read; its worst case is bounded by the --max-instances the deploy pins.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Written for 3.0.13 against the current product; deploy.yml, lib/attempt-limit.ts and the attempt-limit specs point to it as the reason for the limit and its ceiling.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        ".github/workflows/deploy.yml",
+        "lib/attempt-limit.ts",
+        "app/api/gemini/route.ts"
+      ],
+      "measured": {
+        "lines": 401
+      }
+    },
+    {
       "path": "tests/fixtures/aff/README.md",
       "kind": "notice",
       "purpose": "Provenance of the AFF schema and example fixtures used by the file-format check's specs: source repository, commit, MIT licence",

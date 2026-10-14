@@ -138,6 +138,7 @@ for (const width of [1280, 390] as const) {
     await expect(page.locator('[data-unit-anchor]').first()).toContainText(/L\d+/);
     await noSideScroll(page);
     await shot(page, `done-${width}`);
+    await shot(page, `done-${width}-full`, true);
 
     const stored = (await adminGetDoc('projects', account.projectId)) as Stored;
     expect(stored.status).toBe('transformed');

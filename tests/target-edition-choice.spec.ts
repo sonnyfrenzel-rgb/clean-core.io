@@ -7,6 +7,7 @@ import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEFAULT_TARGET_EDITION, targetEditionOf } from '../lib/target-edition';
+import { CLOUD_ERP_PRIVATE } from '../lib/sap-naming';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -20,7 +21,8 @@ import { signInViaLanding } from './helpers/sign-in';
  * score, design, management overview — against an edition nobody chose.
  */
 
-const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+// CRLF in a Windows checkout; the source patterns below match on a bare line feed.
+const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8').replace(/\r\n/g, '\n');
 
 test.describe('the target edition of a new project', () => {
   test('a missing target reads as the server default, the same on client and route', () => {
@@ -44,6 +46,16 @@ test.describe('the target edition of a new project', () => {
       // The write comes before the push into the workspace that signs the run.
       expect(src.indexOf('s4Deployment: edition'), file).toBeLessThan(src.indexOf('?first=1'));
     }
+  });
+
+  test('the Private card: the short name as its label, the former name first in its text (owner 13.10.2026; QA 5a559787: 28ab38ac9d05)', () => {
+    expect(CLOUD_ERP_PRIVATE).toBe('SAP Cloud ERP Private');
+    const src = read('components/TargetEditionChoice.tsx');
+    const privateCard = /value: 'private',[\s\S]*?\n {2}\},/.exec(src)?.[0] ?? '';
+    expect(privateCard).toMatch(/\n\s*title: CLOUD_ERP_PRIVATE,\n/);
+    // The first mention on the screen carries the former name, at the head of
+    // the card's text; tests/capture-screens.spec.ts clicks the card by it.
+    expect(privateCard).toMatch(/\n\s*text: 'Formerly SAP S\/4HANA Cloud Private Edition; /);
   });
 
   test('no client start path invents Private for a project without a target', () => {

@@ -17,8 +17,13 @@ import {
   LEASE_WINDOW_COLLECTION,
   LEASE_WINDOW_MS,
   LEASES_PER_WINDOW,
+  LEASE_SLOT_STALE_MS,
   decideLeaseCall,
+  decideLeaseClose,
   decideLeaseIssue,
+  inFlightAt,
+  isRunId,
+  leaseWindowStatus,
   leaseBudget,
   leaseTtlMs,
   leaseReferenceOf,
@@ -26,7 +31,7 @@ import {
   newLeaseRecord,
   type LeaseRecord,
 } from '../lib/transformation/lease';
-import { acquireLeaseCall, issueLease, peekLease, readLease, releaseLeaseCall } from '../lib/transformation/lease-store';
+import { acquireLeaseCall, closeLease, issueLease, peekLease, readLease, readLeaseWindow, releaseLeaseCall } from '../lib/transformation/lease-store';
 import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 
@@ -71,8 +76,12 @@ test.describe('the decisions', () => {
     // 13.10.2026, production: a 1,848-line program planned 29 fill calls (budget
     // 48); its calls took 9–292 s, the flat 15-minute lease expired after 25 of
     // them and the next call was refused 403 lease-expired.
-    expect(leaseTtlMs(10)).toBe(LEASE_TTL_MS);
+    // 13.10.2026: the deadline is 870 s (900 s request limit), so one wave
+    // already nearly fills the 15-minute floor; the cap is 180 minutes.
+    expect(leaseTtlMs(4)).toBe(Math.max(LEASE_TTL_MS, MODEL_CALL_DEADLINE_MS));
+    expect(leaseTtlMs(10)).toBe(Math.max(LEASE_TTL_MS, 3 * MODEL_CALL_DEADLINE_MS));
     expect(leaseTtlMs(26)).toBe(7 * MODEL_CALL_DEADLINE_MS);
+    expect(LEASE_MAX_TTL_MS).toBe(180 * 60 * 1000);
     expect(leaseTtlMs(LEASE_MAX_CALLS)).toBe(12 * MODEL_CALL_DEADLINE_MS);
     for (let budget = 1; budget <= LEASE_MAX_CALLS; budget++) {
       const ttl = leaseTtlMs(budget);
@@ -110,8 +119,14 @@ test.describe('the decisions', () => {
       l = { ...l, used: l.used + 1 };
     }
     expect(decideLeaseCall(l, ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-exhausted' });
-    expect(decideLeaseCall(lease({ inFlight: LEASE_MAX_IN_FLIGHT }), ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-busy' });
-    expect(decideLeaseCall(lease({ inFlight: LEASE_MAX_IN_FLIGHT - 1 }), ctx()).ok).toBe(true);
+    // The slots carry their times (13.10.2026); four live slots are a full lease.
+    const held = (k: number) => Array.from({ length: k }, () => T0 + 500);
+    expect(decideLeaseCall(lease({ inFlight: LEASE_MAX_IN_FLIGHT, slots: held(LEASE_MAX_IN_FLIGHT) }), ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-busy' });
+    expect(decideLeaseCall(lease({ inFlight: LEASE_MAX_IN_FLIGHT - 1, slots: held(LEASE_MAX_IN_FLIGHT - 1) }), ctx()).ok).toBe(true);
+    // A lease stored before the slot times is judged by its count, as before.
+    const legacy = { ...lease({ inFlight: LEASE_MAX_IN_FLIGHT }) } as LeaseRecord;
+    delete legacy.slots;
+    expect(decideLeaseCall(legacy, ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-busy' });
   });
 
   test('the same generation gets its open lease back for nothing; a 4th new lease in an hour is refused', () => {
@@ -136,6 +151,53 @@ test.describe('the decisions', () => {
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + 5, open: [lease({ used: 26 })], windowIssued: [] }).kind).toBe('issue');
   });
 
+  test('every click is its own run: a restart never reuses the cancelled run\'s lease or its slots (13.10.2026)', () => {
+    // Production, project 7LqEjpKuPDSnA2HeSkQ4: the restart asked at the same
+    // generation token, got the cancelled run's open lease back with four slots
+    // still held by that run's server-side calls, and every call was lease-busy.
+    const cancelled = lease({ runId: 'run-aaaaaaaa', inFlight: LEASE_MAX_IN_FLIGHT, slots: [T0, T0, T0, T0], used: 4 });
+    const restart = decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, now: T0 + 5, open: [cancelled], windowIssued: [T0] });
+    expect(restart).toMatchObject({ kind: 'issue', budget: 26, supersede: ['L1'] });
+    // The run's own retry of the lease request is still idempotent, for nothing.
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-aaaaaaaa', plannedCalls: 9, now: T0 + 5, open: [cancelled], windowIssued: [T0] })).toEqual({
+      kind: 'reuse',
+      lease: cancelled,
+    });
+    // A request that names a run never takes over a lease of none, and the other way round.
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, now: T0 + 5, open: [lease()], windowIssued: [] }).kind).toBe('issue');
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + 5, open: [cancelled], windowIssued: [] }).kind).toBe('issue');
+    // The new lease starts with nothing in flight.
+    const fresh = newLeaseRecord({ leaseId: 'L2', projectId: 'P1', uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, budget: 26, now: T0 + 5 });
+    expect(fresh).toMatchObject({ runId: 'run-bbbbbbbb', inFlight: 0, slots: [], used: 0 });
+    expect(decideLeaseCall(fresh, ctx({ now: T0 + 6 })).ok).toBe(true);
+    // The superseded lease's late calls are refused.
+    expect(decideLeaseCall({ ...cancelled, status: 'superseded' }, ctx())).toMatchObject({ ok: false, code: 'lease-closed' });
+    expect(isRunId('run-bbbbbbbb')).toBe(true);
+    for (const bad of ['short', 'has space here', 'x'.repeat(65), 42, null]) expect(isRunId(bad)).toBe(false);
+  });
+
+  test('Cancel closes only the owner\'s own open lease', () => {
+    expect(decideLeaseClose(lease(), { uid: 'owner', projectId: 'P1' })).toBe('close');
+    expect(decideLeaseClose(lease(), { uid: 'stranger', projectId: 'P1' })).toBe('nothing');
+    expect(decideLeaseClose(lease(), { uid: 'owner', projectId: 'P2' })).toBe('nothing');
+    expect(decideLeaseClose(lease({ status: 'superseded' }), { uid: 'owner', projectId: 'P1' })).toBe('nothing');
+    expect(decideLeaseClose(null, { uid: 'owner', projectId: 'P1' })).toBe('nothing');
+  });
+
+  test('a slot older than the deadline + 30 s is free again: a dead instance does not block a run', () => {
+    expect(LEASE_SLOT_STALE_MS).toBe(MODEL_CALL_DEADLINE_MS + 30_000);
+    const stuck = lease({ inFlight: LEASE_MAX_IN_FLIGHT, slots: [T0, T0, T0, T0 + 1000] });
+    expect(decideLeaseCall(stuck, ctx({ now: T0 + LEASE_SLOT_STALE_MS - 1 }))).toMatchObject({ ok: false, code: 'lease-busy' });
+    expect(inFlightAt(stuck, T0 + LEASE_SLOT_STALE_MS)).toBe(1);
+    expect(decideLeaseCall(stuck, ctx({ now: T0 + LEASE_SLOT_STALE_MS })).ok).toBe(true);
+  });
+
+  test('the hour\'s generations as the start screen reads them', () => {
+    expect(leaseWindowStatus([], T0)).toEqual({ used: 0, limit: LEASES_PER_WINDOW, nextFreeInSeconds: null });
+    expect(leaseWindowStatus([T0 - LEASE_WINDOW_MS - 1, T0 - 10], T0)).toEqual({ used: 1, limit: 3, nextFreeInSeconds: null });
+    expect(leaseWindowStatus([T0 - 600_000, T0 - 10, T0 - 5, 'x'], T0)).toEqual({ used: 3, limit: 3, nextFreeInSeconds: Math.ceil((LEASE_WINDOW_MS - 600_000) / 1000) });
+  });
+
   test('a lease is named as { projectId, leaseId } and nothing else; the client sees no token and no account', () => {
     expect(leaseReferenceOf({ prompt: 'x' }, isFirestoreId)).toBeNull();
     expect(leaseReferenceOf({ lease: { projectId: 'P1', leaseId: 'L1' } }, isFirestoreId)).toEqual({ projectId: 'P1', leaseId: 'L1' });
@@ -158,11 +220,17 @@ test.describe('the lease branch of /api/gemini', () => {
   };
 
   test('without a lease the call is limited exactly as before; with one, the hourly counter is not touched', () => {
-    expect(src).toContain('assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000)');
-    // The limiter sits in the branch without a lease.
-    const branch = src.slice(at('if (lease) {'), at('assertRateLimit(`gemini:${decodedToken.uid}`'));
+    expect(src).toContain('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
+    // The limiter sits in the branch without a lease, and that branch has no
+    // exemption: an administrator is counted too, in a bucket of its own chosen
+    // before the one call (SEC-2026-827).
+    const branch = src.slice(at('if (lease) {'), at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)'));
     expect(branch).toContain('peekLease(');
-    expect(branch).toContain('} else if (!decodedToken.admin) {');
+    const unleased = branch.slice(branch.indexOf('} else {'));
+    expect(branch.indexOf('} else {'), 'the branch without a lease is unconditional').toBeGreaterThan(-1);
+    expect(unleased).not.toMatch(/else if/);
+    expect(unleased).toContain('const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);');
+    expect(src).not.toMatch(/!decodedToken\.admin/);
     expect(src.match(/assertRateLimit\(/g)).toHaveLength(1);
   });
 
@@ -195,7 +263,7 @@ test.describe('the lease branch of /api/gemini', () => {
     expect(src).not.toContain('request.json()');
     const read = at('readBoundedJson(new Response(request.body');
     expect(read).toBeLessThan(at('leaseReferenceOf(body, isFirestoreId)'));
-    expect(read).toBeLessThan(at('assertRateLimit(`gemini:${decodedToken.uid}`'));
+    expect(read).toBeLessThan(at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)'));
     expect(src).toMatch(/bodyErr instanceof ResponseLimitError\) \{\s*return NextResponse\.json\([^\n]*\{ status: 413 \}\)/);
     // The bound never refuses a prompt the length check admits.
     expect(src).toContain('maxBytes: MAX_PROMPT_LENGTH * 6 + 64 * 1024');
@@ -259,13 +327,61 @@ test.describe('the lease route', () => {
   });
 
   test('a new lease costs one unit of the same hourly model limit, and a refused charge undoes the lease', () => {
-    const charge = at('assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000)');
+    // The same bucket and ceiling as /api/gemini, chosen the same way — an
+    // administrator's lease costs a unit of the administrators' bucket
+    // (SEC-2026-827); there is no exemption around the charge.
+    const charge = at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
+    expect(src.slice(charge - 200, charge)).toContain('const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);');
+    expect(src).not.toMatch(/!decodedToken\.admin/);
+    expect(src.match(/assertRateLimit\(/g)).toHaveLength(2);
     expect(charge).toBeGreaterThan(at("if (outcome.kind === 'reused')"));
     expect(src.slice(charge, charge + 600)).toContain('voidLease(db,');
   });
 
   test('the route is behind the second factor in the gated-route list', () => {
     expect(fs.readFileSync(path.join(ROOT, 'tests/helpers/gated-routes.ts'), 'utf8')).toContain("file: 'app/api/transformation/lease/route.ts'");
+  });
+
+  test('a lease is issued to the run the request names; Cancel closes it behind auth and the second factor (13.10.2026)', () => {
+    expect(src).toMatch(/issueLease\(db, \{ projectId, uid: decodedToken\.uid, generationToken, runId: isRunId\(runId\) \? runId : null, plannedCalls, now \}\)/);
+    expect(src).toMatch(/if \(runId !== undefined && !\(isRunId\(runId\) && isFirestoreId\(runId\)\)\) \{\s*return NextResponse\.json\(/);
+    const del = src.slice(src.indexOf('export async function DELETE'));
+    expect(del).toContain('signedInOwner(req)');
+    expect(del).toContain('closeLease(db, { projectId, leaseId }, { uid: who.uid })');
+    const gate = src.slice(src.indexOf('async function signedInOwner'), src.indexOf('export async function DELETE'));
+    expect(gate).toContain('verifyRequestAuth(req)');
+    expect(gate).toContain('assertMfaSatisfied(req, decodedToken)');
+    const get = src.slice(src.indexOf('export async function GET'));
+    expect(get).toContain('signedInOwner(req)');
+    expect(get).toContain('readLeaseWindow(db, who.uid');
+  });
+
+  test('Cancel before the lease request buys no lease, and the error strip retries through the start gate (QA review of 4459238f2ef0)', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
+    expect(page).toMatch(/if \(controller\.signal\.aborted\) throw Object\.assign\(new Error\('cancelled'\), \{ name: 'AbortError' \}\);\s*try \{\s*lease = await requestGenerationLease\(/);
+    const strip = page.slice(page.indexOf('data-transformation-error=""'));
+    expect(strip.slice(0, 600)).toContain('actions={canStart ? (');
+    expect(strip.slice(0, 600)).toContain('onClick={startGeneration}');
+  });
+
+  test('a lease bought after Cancel, or before a failure, is closed when the generation ends (QA review of 6500c65c81c7)', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'), 'utf8');
+    const fin = page.slice(page.indexOf('generationInFlight.current = false;'));
+    const close = fin.indexOf('if (failed) closeLeaseRef.current?.();');
+    expect(close).toBeGreaterThan(-1);
+    expect(close).toBeLessThan(fin.indexOf('closeLeaseRef.current = null;'));
+  });
+
+  test('the page sends a fresh run id per click and closes the lease on Cancel', () => {
+    const page = code('app/(app)/project/[projectId]/transformation/page.tsx');
+    expect(page).toMatch(/requestGenerationLease\(projectId as string, generationToken, [^\n]*, newGenerationRunId\(\)\)/);
+    expect(page).toContain('closeLeaseRef.current = () => closeGenerationLease(bought);');
+    const cancel = page.slice(page.indexOf('const cancelGeneration = useCallback'), page.indexOf('const cancelGeneration = useCallback') + 400);
+    expect(cancel).toMatch(/abortRef\.current\.abort\(\);\s*closeLeaseRef\.current\?\.\(\);/);
+    const client = code('lib/transformation/lease-client.ts');
+    expect(client).toContain("method: 'DELETE'");
+    expect(client).toContain('keepalive: true');
+    expect(client).toContain('JSON.stringify({ projectId, generationToken, plannedCalls, runId })');
   });
 });
 
@@ -358,6 +474,55 @@ test.describe('the store, against the Firestore emulator', () => {
     // Never below zero, however often a slot is given back.
     for (let i = 0; i < 8; i++) await releaseLeaseCall(db(), ref);
     expect((await readLease(db(), ref))?.inFlight).toBe(0);
+  });
+
+  test('a new run at the same token gets a fresh lease; Cancel closes it; the stale slot frees itself (13.10.2026)', async () => {
+    const uid = id('lease-owner');
+    const projectId = id('lease-project');
+    const now = Date.now();
+    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now });
+    if (a.kind !== 'issued') throw new Error('not issued');
+    const refA = { projectId, leaseId: a.lease.leaseId };
+    for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refA, { uid, now: now + 1 })).ok).toBe(true);
+    expect(await acquireLeaseCall(db(), refA, { uid, now: now + 2 })).toMatchObject({ ok: false, code: 'lease-busy' });
+
+    // The same run asking again gets its lease back; a new run gets its own, with nothing in flight.
+    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now: now + 3 })).toMatchObject({ kind: 'reused' });
+    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-bbbbbbbb', plannedCalls: 9, now: now + 4 });
+    expect(b).toMatchObject({ kind: 'issued', superseded: [a.lease.leaseId], lease: { inFlight: 0, used: 0, runId: 'run-bbbbbbbb' } });
+    if (b.kind !== 'issued') return;
+    const refB = { projectId, leaseId: b.lease.leaseId };
+    const got = await acquireLeaseCall(db(), refB, { uid, now: now + 5 });
+    expect(got.ok).toBe(true);
+    // The old run's late releases touch only its own record.
+    for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) await releaseLeaseCall(db(), refA);
+    expect((await readLease(db(), refB))?.inFlight).toBe(1);
+    if (got.ok) await releaseLeaseCall(db(), { ...refB, slotAt: got.slotAt });
+    expect((await readLease(db(), refB))?.inFlight).toBe(0);
+
+    // Cancel: only the owner closes, and a closed lease answers no call.
+    expect(await closeLease(db(), refB, { uid: id('stranger') })).toBe(false);
+    expect(await closeLease(db(), refB, { uid })).toBe(true);
+    expect(await acquireLeaseCall(db(), refB, { uid, now: now + 6 })).toMatchObject({ ok: false, code: 'lease-closed' });
+    expect(await closeLease(db(), refB, { uid })).toBe(false);
+
+    // A slot held by a call that never released is free after the deadline + 30 s.
+    const c = await issueLease(db(), { projectId: id('lease-project'), uid: id('lease-owner'), generationToken: 'tok', runId: 'run-cccccccc', plannedCalls: 9, now });
+    if (c.kind !== 'issued') throw new Error('not issued');
+    const refC = { projectId: c.lease.projectId, leaseId: c.lease.leaseId };
+    for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refC, { uid: c.lease.uid, now })).ok).toBe(true);
+    expect(await acquireLeaseCall(db(), refC, { uid: c.lease.uid, now: now + LEASE_SLOT_STALE_MS - 1 })).toMatchObject({ ok: false, code: 'lease-busy' });
+    const after = await acquireLeaseCall(db(), refC, { uid: c.lease.uid, now: now + LEASE_SLOT_STALE_MS });
+    expect(after.ok).toBe(true);
+    expect((await readLease(db(), refC))?.inFlight).toBe(1);
+  });
+
+  test('the hour\'s generations are read without being written', async () => {
+    const uid = id('lease-owner');
+    const now = Date.now();
+    expect(await readLeaseWindow(db(), uid, now)).toEqual({ used: 0, limit: LEASES_PER_WINDOW, nextFreeInSeconds: null });
+    await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok', runId: 'run-dddddddd', plannedCalls: 9, now });
+    expect(await readLeaseWindow(db(), uid, now + 1)).toMatchObject({ used: 1, nextFreeInSeconds: null });
   });
 });
 

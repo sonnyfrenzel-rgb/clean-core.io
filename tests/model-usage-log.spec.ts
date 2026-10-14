@@ -47,6 +47,7 @@ test('the line carries the four counts, the duration, the stage, the shape and t
     candidatesTokenCount: 2100,
     thoughtsTokenCount: 18_400,
     totalTokenCount: 24_412,
+    failed: false,
   });
   expect(JSON.stringify(fields)).not.toContain('secret');
 });
@@ -69,4 +70,14 @@ test('the route logs it after every provider call, from usageMetadata, with neit
   expect(args).toContain('durationMs: Date.now() - attemptAt,');
   expect(args).not.toMatch(/\bprompt\b|\btext\b|contents/);
   expect(src).toMatch(/const attemptAt = Date\.now\(\);\s*const result = await ai!\.models\.generateContent\(\{/);
+});
+
+test('a provider call that throws is logged too, as failed, with its duration and no counts (QA review of 6500c65c81c7)', () => {
+  expect(modelUsageLog({ usage: undefined, model: 'm', leased: true, durationMs: 270_000, failed: true })).toMatchObject({ failed: true, durationMs: 270_000, totalTokenCount: null });
+  const call = src.slice(src.indexOf('const result = await ai!.models.generateContent({'), src.indexOf('}, undefined, undefined, callSignal);'));
+  const caught = call.slice(call.indexOf('.catch((providerErr: unknown) => {'));
+  expect(caught.indexOf("logger.warn('gemini usage', modelUsageLog({")).toBeGreaterThan(-1);
+  expect(caught).toContain('failed: true,');
+  expect(caught.indexOf('throw providerErr;')).toBeGreaterThan(caught.indexOf('failed: true,'));
+  expect(caught.slice(0, caught.indexOf('throw providerErr;'))).not.toMatch(/\bprompt\b|\btext\b|contents/);
 });

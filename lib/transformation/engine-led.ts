@@ -21,12 +21,13 @@
  */
 
 import { deriveEngineCases } from '../testing-engine-cases';
-import { bundleFills } from './fill-prompt';
+import { LEASED_PROMPT_MAX_CHARS, bundleFills } from './fill-prompt';
 import { bodyGuards, spliceBodies } from './markers';
 import { buildNodeScaffold } from './scaffold-node';
 import { buildRapScaffold } from './scaffold-rap';
 import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts } from './unit-plan';
+import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
 import { checkSummaryOf } from './check-words';
 import {
@@ -41,9 +42,28 @@ import {
   type Trace,
   type UnitPlan,
 } from './types';
-import type { GenerationRunResult, UnitOutcome } from './orchestrator';
+import { fillOrder, type GenerationRunResult, type UnitOutcome } from './orchestrator';
+import type { PreflightInput } from './preflight';
 
 /* ------------------------------------------------------------ preparation */
+
+/**
+ * The plan's facts for the pre-flight check (owner, 13.10.2026): the fill
+ * calls of the first wave bundled exactly as the orchestrator bundles them
+ * (plan order, the page's bundle options), and the calls whose prompt the
+ * route would refuse.
+ */
+export function preflightFactsOf(prep: EngineLedPrepared, context: string): Omit<PreflightInput, 'window'> {
+  const order = fillOrder(prep.plan.units);
+  const byId = new Map(prep.fillUnits.map((u) => [u.unitId, u]));
+  const ordered = [...order.map((id) => byId.get(id)).filter((u): u is FillRequestUnit => !!u), ...prep.fillUnits.filter((u) => !order.includes(u.unitId))];
+  const bundles = bundleFills(ordered, { track: prep.scaffold.track, program: prep.plan.program, context });
+  return {
+    functions: prep.fillUnits.length,
+    fillCalls: Math.max(1, bundles.length),
+    oversize: bundles.filter((b) => b.prompt.length > LEASED_PROMPT_MAX_CHARS).map((b) => ({ unitIds: b.unitIds, chars: b.prompt.length })),
+  };
+}
 
 export interface EngineLedRequest {
   source: string;
@@ -120,6 +140,7 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
     const byId = new Map(plan.units.map((u) => [u.id, u]));
     const fillUnits: FillRequestUnit[] = [];
     const sliceChars: Record<string, number> = {};
+    const decls = req.track === 'node' ? declarationsOf(scaffold) : null;
     for (const u of plan.units) {
       // A unit with no region of its own (the parent of split parts) is engine-written throughout.
       if (!regionIds.has(u.id)) continue;
@@ -158,6 +179,8 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
             .map((d) => ({ name: d.name, digits: d.digits, decimals: d.decimals, type: `Dec<'${d.name.toUpperCase()}',${d.digits},${d.decimals}>` })),
         },
         available: { helpers: available.filter((n) => !calleeNames.has(n)), callees },
+        // The fields of every type the signature and the callees' signatures name (defect D, 13.10.2026).
+        ...(decls ? { types: typesText(decls, [u.signature, ...callees], ['Dec']) } : {}),
       });
     }
     // Predicate regions take the slice length of the unit that owns them.
@@ -206,11 +229,28 @@ export function prepareEngineLed(req: EngineLedRequest, now: () => number = () =
 
 /* -------------------------------------------------------------- the guards */
 
+const declarationCache = new WeakMap<Pick<Scaffold, 'files'>, Map<string, TypeDeclaration>>();
+/** The scaffold's own type declarations (`type-shapes.ts`), read once per scaffold. */
+function declarationsOf(scaffold: Pick<Scaffold, 'files'>): Map<string, TypeDeclaration> {
+  let d = declarationCache.get(scaffold);
+  if (!d) {
+    d = typeDeclarations(scaffold.files);
+    declarationCache.set(scaffold, d);
+  }
+  return d;
+}
+
 /** The body-guard context of one fill region (§9.2) — what it may call, its slice, the guards it must call. */
 export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold' | 'sliceChars'>, regionId: string, needs: readonly string[] = []): BodyGuardContext {
   const unitId = regionId.split('.')[0];
   const unit = prep.plan.units.find((u) => u.id === unitId);
   const helperOf = (id: string) => prep.plan.guards.find((g) => g.id === id)?.helper;
+  // A derived check's predicate reads the values the body hands in (`scaffold-node.ts` `guardsFile`).
+  const predicateOf = prep.plan.guards.find((g) => g.regionId === regionId && regionId !== unitId);
+  const params = predicateOf && predicateOf.basis === 'derived' && predicateOf.operands.length > 0 ? ['values'] : [];
+  // The fields of the region's parameters, read from the package the body lands in (defect D).
+  const signature = prep.scaffold.track === 'node' ? regionSignature(prep.scaffold.files, regionId) : null;
+  const shapes = signature ? parameterShapes(declarationsOf(prep.scaffold), signature) : {};
   return {
     track: prep.scaffold.track,
     available: prep.scaffold.available[regionId] ?? [],
@@ -218,6 +258,8 @@ export function guardContextOf(prep: Pick<EngineLedPrepared, 'plan' | 'scaffold'
     sliceChars: prep.sliceChars[regionId] ?? prep.sliceChars[unitId] ?? 2_000,
     guardCalls: regionId === unitId ? (unit?.guardCalls ?? []).map(helperOf).filter((h): h is string => !!h) : [],
     required: prep.scaffold.required[regionId] ?? [],
+    ...(params.length > 0 ? { params } : {}),
+    ...(Object.keys(shapes).length > 0 ? { shapes } : {}),
   };
 }
 

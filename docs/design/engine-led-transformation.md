@@ -439,9 +439,14 @@ A body is refused — and the unit goes to repair with that reason — when it:
    touched; a body that *re-implements* the condition of a guard it must call is refused (rule 7);
 4. calls a name that is neither in `available` nor in `needs` ∩ allowlist;
 5. is longer than 4× its ABAP slice or 16,000 characters;
-6. uses `Number(`, `parseFloat(`, `parseInt(` or arithmetic operators on a `Dec` value (lint
+6. uses `Number(`, `parseFloat(`, `parseInt(` on any value, or arithmetic operators on a `Dec` value (lint
    `lenient number parsing` / `binary decimals` from `lib/generated-code-lints.ts`, raised to a
-   refusal inside fills);
+   refusal inside fills). Whole numbers included, on purpose (defect F, A/B 13.10.2026): a TYPE i
+   component of a record reaches a body as unvalidated text, and `Number('1x')` is NaN, which passes
+   every range check (U10's `priority < 1 || priority > 99`). The header says numbers arrive as text and
+   names the helpers; the refusal names what to write instead — `dec.compare(a, b)`, `dec.add/sub/mul/div`,
+   `dec.isZero`, `/^\d+$/.test(x)`, and a date check through `new Date(…).toJSON()` (null for no date,
+   where `toISOString` throws) — so a repair round can follow it (`BINARY_NUMBER_MESSAGE`);
 7. does not call a guard its unit must call in the body, or writes that guard's comparison itself
    (`guard-missing`, `guard-inlined`). Rule 15 as fixed by QA finding 4e9d1315469d: a check on **raw**
    input (selection inputs, constants, input records) runs before any calculation — at the step's entry or
@@ -450,7 +455,19 @@ A body is refused — and the unit goes to repair with that reason — when it:
    writes the guard function with a `values` argument for the computed operands, and the body calls it at
    the original's line (`Unit.bodyCalls`, `Scaffold.required`, `fillGuardsOf`;
    `lib/transformation/guard-basis.ts`). A derived check is no RAP validation; the logic method calls its
-   predicate.
+   predicate. A work area that `LOOP AT … INTO`/`ASSIGNING`, `READ TABLE … INTO`/`ASSIGNING` or
+   `SELECT … INTO` fills is written by that statement — unless its rows are input records, of a structure
+   the contract maps to `record`: `LOOP AT gt_effects INTO ls_parent` over a table the program builds
+   itself makes `ls_parent-kind` a computed value handed in through `values`, because `Rec` has no field of
+   `ty_effect` (defect E, A/B 13.10.2026; `SCAFFOLD_VERSION` 4). A scalar or a DDIC row read by `SELECT` is
+   no record field either. A literal the unit's own non-check statements also use (`WHEN 'SHIP'` before
+   `IF ls_parent-kind = 'SHIP' AND lv_qty > …`) is no evidence of an inlined check and is not looked for
+   (A/B 13.10.2026);
+8. reads a field its parameters' types do not have (`unknown-field`, Node): `sel`, `st`, `args`, `record`
+   and `values` are typed by closed interfaces of the scaffold, and `st.gt_effects` is as invented as `tsc`
+   would say. The shapes are read from the scaffold itself (`lib/transformation/type-shapes.ts`) — the same
+   text every fill request carries under `types` — so prompt and check have one source of truth. A
+   derived predicate's own `values` parameter is a root of member calls (`values.lvCode.trim()`).
 
 The call contract's base request takes each value from the original — the selection DEFAULT, the demo
 data, a fixed list in the code, a value that satisfies the original's checks — never a placeholder; an
@@ -551,7 +568,22 @@ So the calls of one generation run under a **lease**:
   model stage `transformation` enabled, the generation token is current; charges **one** unit of
   `gemini:<uid>`; limits leases to **3 per hour per account** (`transformation-lease:<uid>`); writes
   `projects/{id}/transformation_leases/{leaseId}` with `{ uid, budget: min(48, plannedCalls × 2 + 8),
-  used: 0, inFlight: 0, expiresAt: now + leaseTtlMs(budget) }` (15 min at least, 60 at most: every call of the budget, 4 at a time, each allowed the route's 270 s deadline; since 13.10.2026, when a flat 15 min ended a 29-call generation after 25 calls); one open lease per project.
+  used: 0, inFlight: 0, expiresAt: now + leaseTtlMs(budget) }` (15 min at least, 180 at most: every call of the budget, 4 at a time, each allowed the route's deadline — 870 s since the app service's request limit became 900 s on 13.10.2026; introduced when a flat 15 min ended a 29-call generation after 25 calls); one open lease per project.
+- **Runs and slots (13.10.2026).** Every click of *Generate* is its own run with a random `runId`;
+  an open lease is returned only to the same run (a retry of the lease request itself), and a new run
+  supersedes it with a fresh lease (in flight 0) — a restart after *Cancel* had reused the cancelled
+  run's lease, whose four slots its server-side calls still held, and every call was `lease-busy`.
+  *Cancel* closes the run's lease (`DELETE /api/transformation/lease`, owner only, best effort). Each
+  in-flight slot carries the time it was taken; a slot older than the deadline + 30 s is free again.
+  The browser counts only calls the server counted, and a `lease-busy` refusal waits for a slot
+  without using the call's one retry. `GET /api/transformation/lease` tells the start screen how many
+  of the hour's generations are used; the start screen shows the plan and its limits and keeps a plan
+  that cannot succeed from starting (`lib/transformation/preflight.ts`); every code is explained from
+  one table (`lib/transformation/error-codes.ts`).
+- **Thinking LOW on fill calls (13.10.2026).** Fill and repair calls (`transformation-fill`) send
+  `thinkingConfig: { thinkingLevel: LOW }`: A/B on the SD program, 39 calls — p50 5.4 s / p90 9.7 s
+  instead of 121–246 s, about a tenth of the cost, at least as usable. A unit too large to share a
+  14,000-character call goes alone and uncut up to 28,000 characters before anything is cut.
 - `/api/gemini` accepts an optional `leaseId`. With a valid lease (same uid, not expired, `used <
   budget`, `inFlight < 4`), it skips the per-call limiter and increments `used`/`inFlight` in a
   transaction, decrementing `inFlight` when done. Without one it behaves exactly as today. The prompt
@@ -614,7 +646,7 @@ id it was built from so a reader can verify that run's pack separately.
 | Body guards | browser (`markers.ts`) | each fill answer | refused → repair |
 | Lints | browser (`lib/generated-code-lints.ts`, `feat/3.0.12-lints`) | candidate files | findings mapped to units by file + line |
 | Engine cases | runner (`/api/run-tests`, `mode: 'verify'`) | `test/engine-cases.json` through the call contract | failing cases → the units on their call path (trace) |
-| Failure-pattern probes | runner (harness of `feat/3.0.12-acceptance`, adapter from the scaffold) | `acceptance-adapter.json` | `fail` → the unit the adapter names; `not-runnable` → finding, no repair |
+| Failure-pattern probes | runner (harness of `feat/3.0.12-acceptance`, adapter from the scaffold) | `acceptance-adapter.json` | `fail` → the units the adapter names (since 3.0.13 the display filter, recalculation and negative write name the written functions they reach, `fill-probes.ts`); `not-runnable` → finding, no repair |
 
 Candidate packages are not stored yet, so the runner runs them as a **generation candidate**: a
 `RepairDraft` with `target: 'generation'` and no parent stand (`lib/repair-draft.ts`,
@@ -871,11 +903,65 @@ on the stub in 11–15 s. Where E differs from the table above:
 - **The phase does not go stale on a changed context digest.** The Built-on card marks every tool whose
   state differs from the generation's basis *Stale*, but `staleness()` in `lib/workflow-steps.ts` is pure
   over the project document, and the basis compares against data the page loads (the rule register,
-  the requirements). Bringing that into the phase is a later step, not 3.0.12.
+  the requirements). Bringing that into the phase is a later step, not 3.0.12. *Built in 3.0.13 — see
+  "Stale on a changed context digest, as built" below.*
 - **The decision warning** reads `standardFitAssessed` (`lib/standard-fit-gate.ts`, merged from
   `feat/3.0.12-standard`): a solution design that weighed the standard against RAP and CAP ends the
   standard-fit warning, as the PLATFORM KNOWLEDGE block already says. A decision record against a
   rebuild still warns.
+
+**Stale on a changed context digest, as built (3.0.13, item 3).** The phase reads the digest the way
+§12.2 asks. `GET /api/projects/{id}/contract?for=context` answers `{ contextDigest }` only: the
+PLATFORM KNOWLEDGE block built now by `platformContextOf`, digested the way the store digests it into the
+binding — the block itself never leaves the server, and the read has its own rate budget
+(`project-context`) so browsing the stages cannot use up a generation's. `loadProjectAndHydrate` asks for
+it beside the run, only when the binding names a context (`storedContextDigest`), into `_contextDigest`
+(in memory, never persisted). `staleness().context` compares the two server digests, and
+`workflowSteps` reads the Transformation phase `stale` with its own sentence ("Generated before a rule
+decision, the decision record or an accepted requirement changed — regenerate it …") — so the tool bar,
+the rail, the workspace, the steering page and Delivery all say it, as §2 of ARCHITECTURE.md requires.
+Unknown is never stale: a bare project document (the dashboard list reads no context — one contract
+build per listed project would cost more than the row is worth), a failed read, or a package from before
+3.0.12 (§18). A source change still wins and names the source. After a store the page takes the binding's
+digest as the current one (`withStoredGeneration`). The stale line names the *kind* of cause, not the
+count: the binding stores one digest for the whole block, and the slot-level comparison stays on the
+Built-on card — which now compares the date and **every** fact of a tool in the form the record keeps
+them (`basisSlotChanged` in `generation-record.ts`; QA caa5712913ad: only the first fact was compared).
+Delivery is not blocked by it: a changed decision makes the draft out of date, not its hand-over unsafe;
+the server's audit-pack gate is unchanged. Held by `tests/transformation-context-stale.spec.ts`.
+
+**Probes that reach the written functions, as built (3.0.13, item 4).** Until 3.0.13 the adapter declared
+the display-filter, recalculation and negative-write probes not applicable, so every probe that ran judged
+engine-written code. `lib/transformation/fill-probes.ts` now reads from the original where each pattern
+stands and maps the probe onto scaffold entry points that run **the whole process** — the written
+functions — on the probe's request (`test/acceptance-shims.ts`: `listOf`, `exportOf`, `recalcOf`,
+`writeOf`, engine-written):
+
+| Probe | Mapped when the original … | The probe's request | Expectation (from the pattern) |
+|---|---|---|---|
+| `display-filter` (FP-SCOPE-01) | has a SELECT-OPTION `FOR` a text component of its input records and applies it (`… IN s_x`) in a carried unit | the base request with two records that differ only in that component (`PRB-A`, `PRB-B`), once without and once with the range on `PRB-A` | the list (`rows`) and the export hold only the match — or the run is refused |
+| `recalc-additive` (FP-MEAN-05) | recalculates a packed record component from its own value with one operand the request can set (`<ls>-y = <ls>-y + p_add`, `ADD 1 TO ls-y`) | one record with the existing value 125, the operand set to 10 (or the literal) | the value shown (the row's, else the record's) is 135 |
+| `negative-write` (FP-GUARD-05) | writes a database table (UPDATE, INSERT/MODIFY … FROM) and refuses, before it, a negative value of a numeric request field the write carries (`IF ls-netwr < 0. MESSAGE e…`) | the base request with that field at −1; the base value as the control | −1 refused, the control accepted |
+
+A run that reaches a function still left as a stub has nothing to judge: the entry points answer with no
+list or value (`writeOf` throws, so the control reads not runnable), and the probe reads *Not run* with the
+reason — never a pass, never a fail. Each probe names the units it reaches (`units`): the unit whose ABAP
+lines hold the pattern (a folded helper's lines belong to the unit it folds into), and the orchestrator as
+well when the main block performs that routine only inside an IF, CASE or loop — the orchestrator decides
+whether it runs. `mapProbeFailures` sends a failure to exactly those units, so the repair round sends back
+the function the probe reached. The probes run in the same confined probe pass: the runner protocol, the
+driver, the outcome lines and `probeVerdicts` are unchanged — the new entry points are package files the
+pass bundles with the adapter's other modules, so **the runner needs no redeploy**. Where the original shows
+none of the patterns the probe stays `notApplicable` with the reason (CO, PP and SD shapes, the PO demo).
+
+Two version gates. **`SCAFFOLD_VERSION` 4**: the Node scaffold's shims and adapter text. **`PLAN_VERSION`
+2**: a structure component the original only recalculates from its own value is a record field of the
+request (`recordInputOf` → `accumulated`), starting at zero when the original gives it no value. Under plan
+1 it was dropped from the request as "computed", so no port could add to the existing value — FP-MEAN-05
+written into the contract itself. A component also computed any other way stays a result. Held by
+`tests/transformation-fill-probes.spec.ts` (fixture `tests/fixtures/transformation/probe-shape.abap` with
+reference fills: all three pass; the scaffold alone: all three Not run; one broken function each: the
+probe fails and names that unit).
 
 **Reach of the checks (13.10.2026).** `scripts/transformation/measure-reach.ts` measures which fill
 regions the engine cases and probes actually test, by mutation (`scripts/transformation/reach.ts`: a

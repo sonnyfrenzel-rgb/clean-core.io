@@ -3,6 +3,26 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 13.10.2026 — 3.0.13 prepared (unreleased)
+
+**Built (dev 13.10.2026, main on Sonny's go):** engine 3.0.13 behind `PRECISION_FIXES_FROM` — `'NONE'` read as the
+whole literal, a direct standard-table write named beside an outbound RFC, sy-subrc counted only where the next
+statement decides on it, a file-name validation only where its failure stops the program, the input flow to a
+fixed point; a v3.0.12 frozen oracle (300 programs and probes, both editions); a method-local declaration
+shadowing a packed global. Transformation: the phase stale on a changed context digest, the Built-on card
+comparing every fact, probes that reach the written functions (display filter, additive recalculation, negative
+write). `/api/gemini`: a per-account attempt limit before the body is read, `--max-instances` pinned in the
+deploy, an hourly limit for administrators, only the limiter's own refusal passed to the caller. The ATC gate's
+`unreviewed` state; acceptance-script fixes. Security: SEC-2026-811 to -816, -827, -830, -831 fixed. The v3.0.12
+hotfix (abaplint as a production dependency, the model deadline, lease length and leased prompt cap, token
+usage log) merged in. Demo headline figures unchanged (32 findings, score 37, in-app); on the 300-case benchmark
+no route moves. No `firestore.rules` change. CHANGELOG has the details.
+
+**Open:** acceptance with a real model key against the external reviews' probe sets; importing the abapGit
+package in a real SAP system. (ORD research dropped by the owner, 13.10.2026.) A value decided on sy-subrc and
+assigned (`rv_ok = xsdbool( sy-subrc = 0 )`, the RAP global-authorization `COND #( WHEN sy-subrc = 0 … )`) counts
+as evaluated (1484c6de), so benchmark BM-153 and BM-255 keep no review task.
+
 ## Session 12.–13.10.2026 — 3.0.12 released
 
 **Built (dev 13.10.2026, main on Sonny's go):** the engine-led transformation (ADR-101) — engine-written Node and RAP

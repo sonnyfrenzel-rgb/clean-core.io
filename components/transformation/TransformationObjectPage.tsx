@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Braces, Check, CircleDashed, Container, FileCode2, FileText, Folder, Layers, TriangleAlert, Boxes, FlaskConical } from 'lucide-react';
+import { ArrowRight, Braces, Check, CircleDashed, Container, FileCode2, FileText, Folder, Layers, Boxes, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -21,6 +21,7 @@ import {
   findingTarget,
   formatBytes,
   notGeneratedReasons,
+  packageGroups,
   packageShape,
   planByKind,
   transformationFigures,
@@ -346,12 +347,15 @@ export default function TransformationObjectPage({
   const linesOf = useMemo(() => new Map(findingRows(findings).map((r) => [r.finding.id, r.lines])), [findings]);
   const reasons = useMemo(() => notGeneratedReasons(findings, coverage), [findings, coverage]);
   const cards = useMemo(() => (files ?? []).map(fileCard), [files]);
+  const groups = useMemo(() => packageGroups(files ?? []), [files]);
+  // Engine-led: the engine built the frame, the model wrote function bodies into it.
+  const engineLed = groups.some((g) => g.author !== 'whole-model');
   const generated = files !== null && files.length > 0;
   const shown = allChanges ? ordered : ordered.slice(0, FIRST_CHANGES);
   const maxKind = Math.max(1, ...kinds.map((k) => k.total));
 
   // The tool's anchor bar (ADR-091): the sections `lib/page-anchors.ts` names, by the same counts as the sections.
-  const anchors = transformationAnchors({ files: files === null ? null : files.length, findings: figures.findings, kinds: kinds.length, extra: extraAnchors });
+  const anchors = transformationAnchors({ files: files === null ? null : groups.length, findings: figures.findings, kinds: kinds.length, extra: extraAnchors });
 
   // The facet's bar: findings per target, in the flow's colours.
   const stack = flow.targets.map((t) => ({ kind: t.kind, count: t.count, label: t.label }));
@@ -362,9 +366,9 @@ export default function TransformationObjectPage({
       <div className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         <Facet
           label="Generated package"
-          why={{ provenance: 'proposed', basis: 'Written by the model against the plan. Not compiled and not run here.' }}
-          figure={files === null ? '—' : files.length}
-          unit={files === null ? 'files · none in a demo' : `${files.length === 1 ? 'file' : 'files'} · ${codeKind}`}
+          why={{ provenance: 'proposed', basis: engineLed ? 'The engine built the frame; the model wrote the function bodies. Not compiled and not run here.' : 'Written by the model against the plan. Not compiled and not run here.' }}
+          figure={files === null ? '—' : groups.length}
+          unit={files === null ? 'objects · none in a demo' : `${groups.length === 1 ? 'object' : 'objects'} · ${files.length} ${files.length === 1 ? 'file' : 'files'} · ${codeKind}`}
           sub={
             generated ? (
               <span className="flex flex-wrap items-center gap-2">
@@ -497,8 +501,8 @@ export default function TransformationObjectPage({
                   // the class and says your own system gives the verdict
                   // (carried QA finding 4aa2e074b134; the browser-side
                   // "simulated run" is gone since 02.10.2026).
-                  ? 'Written by the model against the plan below. Not compiled and not run here; the Testing tool writes ABAP Unit scenarios for it, which run only in your own system — that gives them a verdict.'
-                  : 'Written by the model against the plan below. Not compiled and not run here; the Testing tool runs it against mocks.'
+                  ? `${engineLed ? 'The engine built the frame of every object; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool writes ABAP Unit scenarios for it, which run only in your own system — that gives them a verdict.`
+                  : `${engineLed ? 'The engine built the frame of every module; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool runs it against mocks.`
             }
           >
             {files === null ? (
@@ -515,24 +519,45 @@ export default function TransformationObjectPage({
             ) : (
               <>
                 <p className="m-0 mb-3 flex items-center gap-2 cc-text-meta font-medium text-cc-ink-muted">
-                  <Folder size={14} aria-hidden={true} /> Project files · <span className="font-cc-mono">{packageShape(files)}</span>
+                  <Folder size={14} aria-hidden={true} /> {groups.length} {groups.length === 1 ? 'object' : 'objects'} in {files.length} files · <span className="font-cc-mono">{packageShape(files)}</span>
                 </p>
-                <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2 xl:grid-cols-3" data-package-files="">
-                  {cards.map((c) => (
-                    <li key={c.path} className="flex min-w-0 gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3" data-package-file={c.path}>
-                      <span className={cn('flex h-12 w-11 shrink-0 items-center justify-center rounded-cc-row border', FILE_TONE[c.type])}>
-                        {FILE_ICON[c.type]}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="break-all cc-text-identifier font-cc-mono text-cc-ink">{c.path}</div>
-                        <div className="cc-text-cell text-cc-ink-muted">{c.role}</div>
-                        <div className="mt-1">
-                          <CcProvenanceChip value="proposed" />
-                        </div>
-                        <div className="mt-1 cc-text-meta font-medium text-cc-ink-muted">
-                          {c.lines} {c.lines === 1 ? 'line' : 'lines'} · {formatBytes(c.bytes)}
-                        </div>
-                      </div>
+                {/* By object, not file by file (dev acceptance 14.10.2026): a class
+                    with its local classes and metadata is one row; open it for the files. */}
+                <ul className="m-0 flex list-none flex-col gap-2 p-0" data-package-files="" data-package-groups={groups.length}>
+                  {groups.map((g) => (
+                    <li key={g.key} className="min-w-0 rounded-cc-row border border-cc-line bg-cc-surface" data-package-group={g.key}>
+                      <details className="group">
+                        <summary className="grid cursor-pointer list-none grid-cols-[36px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 px-3 py-2 sm:grid-cols-[36px_minmax(0,1fr)_auto] [&::-webkit-details-marker]:hidden">
+                          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-cc-row border [&_svg]:h-[18px] [&_svg]:w-[18px]', FILE_TONE[g.type])}>
+                            {FILE_ICON[g.type]}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block break-all cc-text-identifier font-cc-mono text-cc-ink">{g.name}</span>
+                            <span className="block cc-text-meta font-medium text-cc-ink-muted">
+                              {g.kind} · {g.files.length} {g.files.length === 1 ? 'file' : 'files'} · {g.lines} {g.lines === 1 ? 'line' : 'lines'}
+                            </span>
+                          </span>
+                          <span className="col-start-2 min-w-0 sm:col-start-auto" data-package-author={g.author}>
+                            {g.author === 'engine' ? (
+                              <CcProvenanceChip value="reconstructed" note="built by the engine" />
+                            ) : g.author === 'model' ? (
+                              <CcProvenanceChip value="proposed" note="bodies by the model" />
+                            ) : (
+                              <CcProvenanceChip value="proposed" />
+                            )}
+                          </span>
+                        </summary>
+                        <ul className="m-0 list-none border-t border-cc-line px-3 py-2">
+                          {g.files.map((c) => (
+                            <li key={c.path} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 py-1 cc-text-cell" data-package-file={c.path}>
+                              <span className="min-w-0 break-all font-cc-mono text-[12px] text-cc-ink">{c.path}</span>
+                              <span className="cc-text-meta font-medium text-cc-ink-muted">
+                                {c.role} · {c.lines} {c.lines === 1 ? 'line' : 'lines'} · {formatBytes(c.bytes)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
                     </li>
                   ))}
                 </ul>
@@ -617,14 +642,20 @@ export default function TransformationObjectPage({
                 {
                   done: generated,
                   text: 'Code generated',
-                  note: generated ? `${files!.length} files, model proposal` : files === null ? 'not in a demo' : 'not yet',
+                  note: generated
+                    ? engineLed
+                      ? `${groups.length} objects — frame by the engine, function bodies by the model`
+                      : `${files!.length} files, model proposal`
+                    : files === null ? 'not in a demo' : 'not yet',
                 },
+                // The grounding audit is a checklist in this browser, not a step
+                // of the code's status (dev acceptance 14.10.2026); its count stays
+                // in the status line above and on its facet.
                 {
-                  done: openSignOffs === 0 && generated,
-                  text: 'Grounding audit checked by hand',
-                  note: openSignOffs === null ? 'no audit in a demo' : `${openSignOffs} not ticked · this browser only, not saved`,
+                  done: false,
+                  text: 'Compiled and run',
+                  note: track === 'in-app' ? 'not here — only in your own system; Testing writes the ABAP Unit scenarios' : 'not here; mocks only in Testing',
                 },
-                { done: false, text: 'Compiled and run', note: 'not here; mocks only in Testing' },
               ].map((s, i) => (
                 <li key={s.text} className="flex items-start gap-3 py-1 cc-text-cell text-cc-ink">
                   <span
@@ -644,15 +675,7 @@ export default function TransformationObjectPage({
             </ol>
           </section>
 
-          <div
-            className="flex items-start gap-2 rounded-cc-card border border-cc-warning-border bg-cc-warning-bg px-4 py-3 cc-text-cell text-cc-ink"
-            data-not-compiled=""
-          >
-            <TriangleAlert size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-warning" />
-            <span>
-              <b>Not compiled and not run here.</b> Nothing has checked this code against a system of yours.
-            </span>
-          </div>
+{/* "Not compiled and not run here" was said twice: the status list says it. */}
 
           <section aria-labelledby="tf-not-generated-title" className={sectionCls}>
             <h2 id="tf-not-generated-title" className="m-0 px-4 pt-4 cc-text-h2 text-cc-ink">

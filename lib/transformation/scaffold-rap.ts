@@ -833,6 +833,6 @@ export function buildRapScaffold(plan: UnitPlan, facts: EngineFacts, options: Ra
 
   for (const file of files) file.content = defuseMarkers(file.content);
   const required: Record<string, RequiredGuard[]> = {};
-  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'rap');
+  for (const u of plan.units) if (u.bodyCalls.length > 0) required[u.id] = requiredGuardsOf(u, plan, 'rap', facts.statements);
   return { track: 'rap', version: SCAFFOLD_VERSION, files, units: plan.units, regions: findRegions(files), digest: scaffoldDigest(files), adapter: null, notCarried: plan.notCarried, available, required };
 }

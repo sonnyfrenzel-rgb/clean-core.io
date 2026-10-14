@@ -20,6 +20,14 @@
  *     4 s for a 429) and asks the same call once more. A refusal of the lease
  *     itself (used up, expired, closed, not this account's) stops the
  *     generation: no further call could succeed.
+ *   - **`lease-busy` is not a failure** (13.10.2026): the server's four slots
+ *     are taken, so the call waits (`BUSY_WAIT_MS`, abortable, at most
+ *     `BUSY_MAX_WAIT_MS` in all) and asks again — without using the call's
+ *     one retry, and without counting against the budget.
+ *   - **Only calls the server counted count**: a refusal before the lease
+ *     counted the call (`serverCountedCall`, `error-codes.ts`) gives its call
+ *     back to the budget. Counting every `lease-busy` in the browser used up
+ *     a 48-call budget in seconds (13.10.2026).
  *   - **Retry per unit**: a unit whose answer was unusable (no JSON, not
  *     answered, the call failed) is asked once more, alone. Unusable twice →
  *     the stub stays and the unit is *not written* with that reason.
@@ -46,6 +54,8 @@
 
 import { decideGenerationRepair, GENERATION_REPAIR_MAX_ROUNDS } from '../repair-draft';
 import { LEASED_PROMPT_MAX_CHARS, bundleFills, parseFillAnswer, type BundleOptions, type FillBundle } from './fill-prompt';
+import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
+import { serverCountedCall } from './error-codes';
 
 import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types';
 
@@ -131,6 +141,9 @@ export interface UnitOutcome {
   failures: string[];
   /** The accepted predicate bodies of the unit's guards, by fill region (`U02.G0506`, design §9.1). */
   predicates: Record<string, string>;
+  /** The code of why there is no body (`error-codes.ts`), and the HTTP status when a server said it. */
+  code?: string | null;
+  status?: number | null;
 }
 
 export type StopReason = 'passed' | 'round-limit' | 'budget' | 'no-progress' | 'lease' | 'cancelled';
@@ -152,11 +165,15 @@ export interface GenerationRunResult {
 export const ORCHESTRATOR_MAX_IN_FLIGHT = 4;
 export const REPAIR_MAX_ROUNDS = GENERATION_REPAIR_MAX_ROUNDS;
 export const RETRY_WAIT_MS = { transient: 2_000, rateLimited: 4_000 } as const;
+/** How long a call the server answered `lease-busy` waits before it asks again. */
+export const BUSY_WAIT_MS = 5_000;
+/** The most one call waits for a free slot in all: a slot is freed at the latest when a running call reaches the route's deadline. */
+export const BUSY_MAX_WAIT_MS = MODEL_CALL_DEADLINE_MS + 30_000;
 
 /** Codes of `/api/gemini` that refuse the lease itself: no later call can succeed. */
 const LEASE_STOP_CODES = new Set(['lease-invalid', 'lease-closed', 'lease-expired', 'lease-exhausted', 'lease-stage']);
 
-export type ModelErrorKind = 'aborted' | 'lease' | 'retry-transient' | 'retry-rate' | 'fatal';
+export type ModelErrorKind = 'aborted' | 'lease' | 'busy' | 'retry-transient' | 'retry-rate' | 'fatal';
 
 /** How a failed model call is handled, read from the error `callGemini` throws (`status`, `code`). */
 export function modelErrorKind(err: unknown, signal?: AbortSignal): ModelErrorKind {
@@ -165,10 +182,21 @@ export function modelErrorKind(err: unknown, signal?: AbortSignal): ModelErrorKi
   const code = typeof e.code === 'string' ? e.code : '';
   if (LEASE_STOP_CODES.has(code)) return 'lease';
   const status = typeof e.status === 'number' ? e.status : 0;
-  if (code === 'lease-busy' || status === 429) return 'retry-rate';
+  if (code === 'lease-busy') return 'busy';
+  if (status === 429) return 'retry-rate';
   const message = typeof e.message === 'string' ? e.message : '';
   if (status === 503 || status === 500 || /\b(429|503)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|fetch failed|network/i.test(message)) return 'retry-transient';
   return 'fatal';
+}
+
+/** The code and status of a failed model call, as the orchestrator reports them. */
+export function modelErrorFacts(err: unknown): { code: string | null; status: number | null } {
+  const e = (err ?? {}) as { code?: unknown; status?: unknown; message?: unknown };
+  const status = typeof e.status === 'number' && e.status > 0 ? e.status : null;
+  if (typeof e.code === 'string' && e.code) return { code: e.code, status };
+  const message = typeof e.message === 'string' ? e.message : '';
+  if (status === null && /fetch failed|network|Failed to fetch/i.test(message)) return { code: 'network-error', status };
+  return { code: null, status };
 }
 
 /**
@@ -216,6 +244,8 @@ interface UnitState {
   filledBy: FilledBy;
   /** Why there is no body, when there is none. */
   reason: string | null;
+  code: string | null;
+  status: number | null;
   /** The unit is out of the loop: declined by the model or unusable twice. */
   final: boolean;
   failures: string[];
@@ -257,47 +287,77 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     ...input.units.filter((u) => !order.includes(u.unitId)),
   ];
   const states = new Map<string, UnitState>(
-    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, final: false, failures: [], predicates: new Map(), predicateGaps: [] } as UnitState]),
+    ordered.map((u) => [u.unitId, { unitId: u.unitId, body: null, refusedBody: null, filledBy: 'not-filled', reason: null, code: null, status: null, final: false, failures: [], predicates: new Map(), predicateGaps: [] } as UnitState]),
   );
 
   let callsUsed = 0;
   let inFlight = 0;
   let maxInFlightSeen = 0;
   let stoppedBy: 'lease' | 'budget' | null = null;
+  /** The code that ended the lease, when a lease refusal stopped the generation. */
+  let leaseStop: { code: string | null; status: number | null } | null = null;
+  let callSeq = 0;
   const halted = () => calls.signal.aborted || stoppedBy !== null;
 
-  type CallOutcome = { text: string } | { error: string; final?: boolean };
+  type CallOutcome = { text: string } | { error: string; code?: string | null; status?: number | null; final?: boolean };
   const maxPromptChars = input.maxPromptChars ?? LEASED_PROMPT_MAX_CHARS;
+  const ended = (): CallOutcome => (cancelled() ? { error: 'cancelled', code: 'cancelled' } : { error: 'the lease ended', ...(leaseStop ?? {}) });
 
-  /** One model call, asked once more after a 429 or a transient error. */
-  async function call(prompt: string): Promise<CallOutcome> {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      if (calls.signal.aborted) return { error: cancelled() ? 'cancelled' : 'the lease ended' };
+  /**
+   * One model call, asked once more after a 429 or a transient error. A
+   * `lease-busy` refusal waits for a free slot and asks again without using
+   * that retry; a refusal the server did not count gives its call back.
+   */
+  async function call(prompt: string, unitIds: readonly string[]): Promise<CallOutcome> {
+    let busyWaited = 0;
+    for (let attempt = 0; attempt < 2; ) {
+      if (calls.signal.aborted) return ended();
       if (callsUsed >= input.budget) {
         stoppedBy = stoppedBy ?? 'budget';
-        return { error: `the generation's ${input.budget} model calls are used up` };
+        return { error: `the generation's ${input.budget} model calls are used up`, code: 'call-budget-used' };
       }
       callsUsed++;
       inFlight++;
       maxInFlightSeen = Math.max(maxInFlightSeen, inFlight);
+      const callId = ++callSeq;
+      emit({ t: 'call', callId, state: 'start', at: now() });
       let failure: unknown;
       try {
-        return { text: await input.model(prompt, calls.signal) };
+        const text = await input.model(prompt, calls.signal);
+        emit({ t: 'call', callId, state: 'end', at: now(), admitted: true });
+        return { text };
       } catch (err) {
         failure = err;
       } finally {
         inFlight--;
       }
       const kind = modelErrorKind(failure, calls.signal);
+      const facts = modelErrorFacts(failure);
+      // Refused before the lease counted it: the call is given back.
+      const admitted = kind === 'aborted' || serverCountedCall(facts.code, facts.status);
+      if (!admitted) callsUsed--;
+      emit({ t: 'call', callId, state: 'end', at: now(), admitted });
       const message = failure instanceof Error ? failure.message : String(failure);
-      if (kind === 'aborted') return { error: cancelled() ? 'cancelled' : 'the lease ended' };
+      if (kind === 'aborted') return ended();
       if (kind === 'lease') {
         stoppedBy = 'lease';
+        leaseStop = facts;
         calls.abort();
-        return { error: cut(message || 'the lease ended', 300) };
+        return { error: cut(message || 'the lease ended', 300), ...facts };
       }
-      if (kind === 'fatal' || attempt === 1) return { error: cut(message || 'the model call failed', 300) };
-      await sleep(kind === 'retry-rate' ? RETRY_WAIT_MS.rateLimited : RETRY_WAIT_MS.transient, calls.signal);
+      if (kind === 'busy' && busyWaited < BUSY_MAX_WAIT_MS) {
+        // Not a failed attempt: this generation's own calls hold the slots, and one frees soon.
+        for (const id of unitIds) {
+          emit({ t: 'fill', unitId: id, state: 'waiting-slot', at: now(), ...(facts.code ? { code: facts.code } : {}), ...(facts.status ? { status: facts.status } : {}) });
+        }
+        await sleep(BUSY_WAIT_MS, calls.signal);
+        busyWaited += BUSY_WAIT_MS;
+        if (!calls.signal.aborted) for (const id of unitIds) emit({ t: 'fill', unitId: id, state: 'writing', at: now() });
+        continue;
+      }
+      if (kind === 'fatal' || attempt === 1) return { error: cut(message || 'the model call failed', 300), ...facts };
+      await sleep(kind === 'retry-transient' ? RETRY_WAIT_MS.transient : RETRY_WAIT_MS.rateLimited, calls.signal);
+      attempt++;
     }
     return { error: 'the model call failed' };
   }
@@ -313,12 +373,13 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         if (b.prompt.length > maxPromptChars) {
           onAnswer(b, {
             error: `its prompt has ${b.prompt.length.toLocaleString('en-US')} characters, more than the ${maxPromptChars.toLocaleString('en-US')} a fill call may carry`,
+            code: 'lease-prompt-too-large',
             final: true,
           });
           continue;
         }
         for (const id of b.unitIds) emit({ t: 'fill', unitId: id, state: 'writing', at: now() });
-        onAnswer(b, await call(b.prompt));
+        onAnswer(b, await call(b.prompt, b.unitIds));
       }
     };
     await Promise.all(Array.from({ length: Math.min(maxInFlight, bundles.length) }, worker));
@@ -332,10 +393,15 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
    * unit as it was.
    */
   function take(b: FillBundle, outcome: CallOutcome, round: 0 | 1 | 2): string[] {
-    const unusable = (ids: readonly string[], reason: string) => {
+    const unusable = (ids: readonly string[], reason: string, code: string | null, status: number | null = null) => {
       for (const id of ids) {
-        if (round === 0) states.get(id)!.reason = reason;
-        emit({ t: 'fill', unitId: id, state: 'unusable', at: now() });
+        if (round === 0) {
+          const st = states.get(id)!;
+          st.reason = reason;
+          st.code = code;
+          st.status = status;
+        }
+        emit({ t: 'fill', unitId: id, state: 'unusable', at: now(), reason, ...(code ? { code } : {}), ...(status ? { status } : {}) });
       }
       return [...ids];
     };
@@ -347,22 +413,26 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         if (round === 0) {
           st.final = true;
           st.reason = `not written — ${outcome.error}`;
+          st.code = outcome.code ?? null;
+          st.status = outcome.status ?? null;
         }
-        emit({ t: 'fill', unitId: id, state: 'unusable', at: now() });
+        emit({ t: 'fill', unitId: id, state: 'unusable', at: now(), reason: outcome.error, ...(outcome.code ? { code: outcome.code } : {}) });
       }
       return [];
     }
-    if ('error' in outcome) return unusable(b.unitIds, `the model call failed: ${outcome.error}`);
+    if ('error' in outcome) return unusable(b.unitIds, `the model call failed: ${outcome.error}`, outcome.code ?? null, outcome.status ?? null);
     const parsed = parseFillAnswer(outcome.text, b.unitIds);
-    if (!parsed.ok) return unusable(b.unitIds, parsed.reason);
+    if (!parsed.ok) return unusable(b.unitIds, parsed.reason, 'answer-unusable');
     for (const answer of parsed.units) {
       const st = states.get(answer.unitId)!;
       if (answer.refused) {
         if (round === 0) {
           st.final = true;
           st.reason = `the model declined: ${answer.refused.reason}`;
+          st.code = 'model-declined';
+          st.status = null;
         }
-        emit({ t: 'fill', unitId: answer.unitId, state: 'refused', at: now() });
+        emit({ t: 'fill', unitId: answer.unitId, state: 'refused', at: now(), reason: `the model declined: ${answer.refused.reason}`, code: 'model-declined' });
         continue;
       }
       const refusal = input.guardBody(answer.unitId, answer.body, answer.needs);
@@ -371,14 +441,18 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
         if (st.body === null) {
           st.refusedBody = answer.body;
           st.reason = `the body was refused by the checks on fills: ${refusal}`;
+          st.code = 'body-refused';
+          st.status = null;
           st.failures = [`body guards: ${refusal}`];
         }
-        emit({ t: 'fill', unitId: answer.unitId, state: 'refused', at: now() });
+        emit({ t: 'fill', unitId: answer.unitId, state: 'refused', at: now(), reason: `the body was refused by the checks on fills: ${refusal}`, code: 'body-refused' });
         continue;
       }
       st.body = answer.body;
       st.refusedBody = null;
       st.reason = null;
+      st.code = null;
+      st.status = null;
       st.filledBy = filledByRound(round);
       // The guards' predicates (design §9.1): each a region of its own, checked like a body.
       st.predicateGaps = [];
@@ -397,7 +471,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       st.failures = st.predicateGaps.map((p) => `body guards: ${p}`);
       emit({ t: 'fill', unitId: answer.unitId, state: 'written', at: now() });
     }
-    return unusable(parsed.missing, 'the answer did not include this function');
+    return unusable(parsed.missing, 'the answer did not include this function', 'answer-unusable');
   }
 
   const bundle = (units: FillRequestUnit[], repair: Map<string, FillRepair> | null, unitsPerCall?: number) =>
@@ -509,6 +583,9 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
           : stoppedBy === 'lease'
             ? 'not written — the lease ended'
             : `not written — the generation's ${input.budget} model calls are used up`;
+      const end = stop === 'cancelled' ? { code: 'cancelled', status: null } : stoppedBy === 'lease' ? (leaseStop ?? { code: null, status: null }) : { code: 'call-budget-used', status: null };
+      st.code = end.code;
+      st.status = end.status;
     }
   }
   const units: UnitOutcome[] = ordered.map((u) => {
@@ -522,6 +599,8 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
       reason: written ? null : st.reason,
       failures: written ? st.failures : [],
       predicates: written ? Object.fromEntries(st.predicates) : {},
+      code: written ? null : st.code,
+      status: written ? null : st.status,
     };
   });
   if (stop === 'cancelled') emit({ t: 'failed', message: 'Cancelled — nothing was stored. Calls already sent were counted against this generation.' });

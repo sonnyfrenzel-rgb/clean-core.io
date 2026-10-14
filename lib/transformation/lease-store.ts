@@ -4,8 +4,11 @@ import {
   LEASE_WINDOW_COLLECTION,
   LEASE_WINDOW_MS,
   decideLeaseCall,
+  decideLeaseClose,
   decideLeaseIssue,
   isLeaseRecord,
+  leaseWindowStatus,
+  liveSlots,
   newLeaseRecord,
   type LeaseRecord,
   type LeaseReference,
@@ -39,7 +42,7 @@ export type IssueOutcome =
  */
 export async function issueLease(
   db: Firestore,
-  args: { projectId: string; uid: string; generationToken: string; plannedCalls: number; now: number },
+  args: { projectId: string; uid: string; generationToken: string; runId?: string | null; plannedCalls: number; now: number },
 ): Promise<IssueOutcome> {
   const col = leasesOf(db, args.projectId);
   const winRef = windowOf(db, args.uid);
@@ -51,6 +54,7 @@ export async function issueLease(
     const decision = decideLeaseIssue({
       uid: args.uid,
       generationToken: args.generationToken,
+      runId: args.runId ?? null,
       plannedCalls: args.plannedCalls,
       now: args.now,
       open,
@@ -65,6 +69,7 @@ export async function issueLease(
       projectId: args.projectId,
       uid: args.uid,
       generationToken: args.generationToken,
+      runId: args.runId ?? null,
       plannedCalls: args.plannedCalls,
       budget: decision.budget,
       now: args.now,
@@ -103,30 +108,59 @@ export async function peekLease(db: Firestore, ref: LeaseReference, ctx: { uid: 
   return decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now });
 }
 
+/** A lease reference with the time of the slot one call holds (`acquireLeaseCall`), so its release frees exactly that slot. */
+export type HeldLeaseSlot = LeaseReference & { slotAt?: number };
+
 /**
- * Count one call against the lease: `used` and `inFlight` go up by one, in
- * the transaction that checks the budget and the in-flight cap — so two calls
- * racing for the 48th call or the 5th slot cannot both get it.
+ * Count one call against the lease: `used` goes up by one and the call takes
+ * a slot (its time joins `slots`; stale slots leave), in the transaction that
+ * checks the budget and the in-flight cap — so two calls racing for the 48th
+ * call or the 5th slot cannot both get it.
  */
-export async function acquireLeaseCall(db: Firestore, ref: LeaseReference, ctx: { uid: string; now: number }): Promise<{ ok: true; lease: LeaseRecord } | LeaseRefusal> {
+export async function acquireLeaseCall(
+  db: Firestore,
+  ref: LeaseReference,
+  ctx: { uid: string; now: number },
+): Promise<{ ok: true; lease: LeaseRecord; slotAt: number } | LeaseRefusal> {
   const docRef = leasesOf(db, ref.projectId).doc(ref.leaseId);
   return db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(docRef);
     const decision = decideLeaseCall(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId, now: ctx.now });
     if (!decision.ok) return decision;
-    const lease = { ...decision.lease, used: decision.lease.used + 1, inFlight: decision.lease.inFlight + 1 };
+    const was = decision.lease;
+    if (Array.isArray(was.slots)) {
+      const slots = [...liveSlots(was.slots, ctx.now), ctx.now];
+      const lease = { ...was, used: was.used + 1, inFlight: slots.length, slots };
+      tx.update(docRef, { used: lease.used, inFlight: lease.inFlight, slots });
+      return { ok: true as const, lease, slotAt: ctx.now };
+    }
+    // A lease from before the slot times: counted as it always was.
+    const lease = { ...was, used: was.used + 1, inFlight: was.inFlight + 1 };
     tx.update(docRef, { used: lease.used, inFlight: lease.inFlight });
-    return { ok: true as const, lease };
+    return { ok: true as const, lease, slotAt: ctx.now };
   });
 }
 
-/** The call is over (answered, refused by the provider, or aborted): one slot is free again. Never below zero. */
-export async function releaseLeaseCall(db: Firestore, ref: LeaseReference): Promise<void> {
+/**
+ * The call is over (answered, refused by the provider, or aborted): its slot
+ * is free again — the one it took, when it names it; stale slots leave too.
+ * Never below zero, and only this lease's record is touched.
+ */
+export async function releaseLeaseCall(db: Firestore, ref: HeldLeaseSlot, now: number = Date.now()): Promise<void> {
   const docRef = leasesOf(db, ref.projectId).doc(ref.leaseId);
   await db.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(docRef);
     const data = snap.exists ? snap.data() : null;
     if (!isLeaseRecord(data)) return;
+    if (Array.isArray(data.slots)) {
+      const slots = [...data.slots];
+      const at = typeof ref.slotAt === 'number' ? slots.indexOf(ref.slotAt) : -1;
+      if (at >= 0) slots.splice(at, 1);
+      else if (typeof ref.slotAt !== 'number' && slots.length > 0) slots.splice(slots.indexOf(Math.min(...slots)), 1);
+      const live = liveSlots(slots, now);
+      tx.update(docRef, { slots: live, inFlight: live.length });
+      return;
+    }
     tx.update(docRef, { inFlight: Math.max(0, data.inFlight - 1) });
   });
 }
@@ -136,4 +170,26 @@ export async function readLease(db: Firestore, ref: LeaseReference): Promise<Lea
   const snap = await leasesOf(db, ref.projectId).doc(ref.leaseId).get();
   const data = snap.exists ? snap.data() : null;
   return isLeaseRecord(data) ? data : null;
+}
+
+/**
+ * *Cancel*: the run's lease is closed, by its owner only — late calls of it
+ * are refused from now on, and its releases go on touching only this record.
+ * `false` when there was nothing of the caller's to close.
+ */
+export async function closeLease(db: Firestore, ref: LeaseReference, ctx: { uid: string }): Promise<boolean> {
+  const docRef = leasesOf(db, ref.projectId).doc(ref.leaseId);
+  return db.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(docRef);
+    if (decideLeaseClose(snap.exists ? snap.data() : null, { uid: ctx.uid, projectId: ref.projectId }) !== 'close') return false;
+    tx.update(docRef, { status: 'closed' });
+    return true;
+  });
+}
+
+/** The account's hourly window of leases, read without writing — the start screen's "generations left this hour". */
+export async function readLeaseWindow(db: Firestore, uid: string, now: number): Promise<ReturnType<typeof leaseWindowStatus>> {
+  const snap = await windowOf(db, uid).get();
+  const issued = snap.exists && Array.isArray(snap.data()?.issued) ? (snap.data()!.issued as unknown[]) : [];
+  return leaseWindowStatus(issued, now);
 }

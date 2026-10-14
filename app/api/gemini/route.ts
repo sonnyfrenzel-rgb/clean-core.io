@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
+import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import {
   verifyRequestAuth,
   QuotaError,
@@ -10,6 +11,7 @@ import {
   getAdminDb,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { MODEL_HOURLY_WINDOW_MS, modelHourlyLimit } from '@/lib/model-hourly-limit';
 import {
   isModelStage,
   modelStageEnabled,
@@ -34,10 +36,12 @@ import { resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
-import { LEASE_CODES, leaseReferenceOf, type LeaseReference } from '@/lib/transformation/lease';
-import { acquireLeaseCall, peekLease, releaseLeaseCall } from '@/lib/transformation/lease-store';
+import { LEASE_CODES, leaseReferenceOf } from '@/lib/transformation/lease';
+import { acquireLeaseCall, peekLease, releaseLeaseCall, type HeldLeaseSlot } from '@/lib/transformation/lease-store';
+import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@/lib/attempt-limit';
 import { LEASED_PROMPT_MAX_CHARS } from '@/lib/transformation/fill-prompt';
 import { modelUsageLog } from '@/lib/model-usage-log';
+import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE, modelDeadline, modelTimeoutMessage, type ModelDeadline } from '@/lib/model-deadline';
 
 /**
@@ -199,7 +203,7 @@ async function callWithRetry<T>(
 
 export async function POST(request: NextRequest) {
   // The generation lease whose in-flight slot this call holds, given back in `finally`.
-  let heldLease: LeaseReference | null = null;
+  let heldLease: HeldLeaseSlot | null = null;
   // The deadline of the model call (`lib/model-deadline.ts`), counted from the
   // request's arrival, so the route answers before Cloud Run ends it at 300 s.
   const arrivedAt = Date.now();
@@ -211,6 +215,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Authentication required.' },
         { status: 401 },
+      );
+    }
+
+    // The attempt limit (docs/design/gemini-attempt-limit.md): every attempt of
+    // this account counts, leased or not, admin or not, whatever the gates below
+    // answer — and past the allowance it ends here, before the body is read and
+    // before any Firestore access. In memory, per instance; never skipped under
+    // the emulator flag.
+    const attempt = geminiAttemptLimiter.attempt(decodedToken.uid);
+    if (!attempt.ok) {
+      return NextResponse.json(
+        { error: attemptLimitMessage(attempt.retryAfterSeconds), code: ATTEMPT_LIMIT_CODE },
+        { status: 429, headers: { 'Retry-After': String(attempt.retryAfterSeconds) } },
       );
     }
 
@@ -277,8 +294,13 @@ export async function POST(request: NextRequest) {
         if (!peek.ok) {
           return NextResponse.json({ error: peek.error, code: peek.code }, { status: peek.status });
         }
-      } else if (!decodedToken.admin) {
-        // Skip rate limiting for admin users
+      } else {
+        // Every account has an hourly model-call limit, administrators included:
+        // an account with the admin claim is counted in a bucket of its own with
+        // a higher ceiling (`lib/model-hourly-limit.ts`, SEC-2026-827), by the
+        // same Firestore-backed window. The bucket is chosen first, so there is
+        // one call to the limiter for both.
+        //
         // Keyed on the account alone. The key used to carry the client address
         // as well, which makes the ceiling per account *and* address: the same
         // account reaching the shared community key through a second address got
@@ -287,18 +309,28 @@ export async function POST(request: NextRequest) {
         // no bound on an account at all. The address is not a second identity of
         // the caller here — the account is the thing being metered, and it is
         // already established by the verified token.
-        await assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000);
+        const hourly = modelHourlyLimit(decodedToken.uid, decodedToken.admin === true);
+        await assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS);
       }
-    } catch (rateErr: any) {
-      return NextResponse.json(
-        { error: rateErr.message || 'Too many requests.' },
-        { status: rateErr.status || 429 },
-      );
+    } catch (rateErr: unknown) {
+      // Only the limiter's own refusal is the caller's to read; anything else
+      // (a store error, say) is logged here and answered without its text.
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ error: rateErr.message || 'Too many requests.' }, { status: rateErr.status || 429 });
+      }
+      logger.error('gemini rate limit check failed', { route: 'api/gemini', error: rateErr instanceof Error ? rateErr.name : 'unknown' });
+      return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
     }
 
-    // Server-side MFA gate
+    // Server-side MFA gate. `users/{uid}` is read once, here, and handed to the
+    // account gate and the stage switch below, which used to read it again each
+    // (docs/design/gemini-attempt-limit.md: 4 → 2 reads on a leased call). Read
+    // inside this try, where the gate read it before, so a failed read is
+    // answered as it was.
+    let profile: DocumentSnapshot;
     try {
-      await assertMfaSatisfied(request, decodedToken);
+      profile = await (await getAdminDb()).db.collection('users').doc(decodedToken.uid).get();
+      await assertMfaSatisfied(request, decodedToken, { profile });
     } catch (mfaErr: any) {
       return NextResponse.json(
         { error: mfaErr.message || 'MFA verification required.' },
@@ -314,6 +346,7 @@ export async function POST(request: NextRequest) {
         requireApproved: true,
         requireCurrentTerms: true,
         isAdminClaim: decodedToken.admin === true,
+        profile,
       });
     } catch (gateErr: any) {
       if (gateErr instanceof QuotaError) {
@@ -354,8 +387,6 @@ export async function POST(request: NextRequest) {
       if (!isModelStage(stage)) {
         return NextResponse.json({ error: `Unknown model stage: ${stage}.` }, { status: 400 });
       }
-      const { db } = await getAdminDb();
-      const profile = await db.collection('users').doc(decodedToken.uid).get();
       if (!modelStageEnabled(profile.exists ? (profile.data() as { modelStages?: Record<string, boolean> }) : null, stage)) {
         return NextResponse.json(
           {
@@ -481,7 +512,8 @@ export async function POST(request: NextRequest) {
       if (!counted.ok) {
         return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
       }
-      heldLease = lease;
+      // The slot this call took, by its time, so the release frees exactly it.
+      heldLease = { ...lease, slotAt: counted.slotAt };
     }
     const abortSignal = lease ? request.signal : undefined;
     // Every call, leased or not, is stopped at the deadline: the whole
@@ -490,6 +522,8 @@ export async function POST(request: NextRequest) {
     deadline = modelDeadline(Math.max(1_000, MODEL_CALL_DEADLINE_MS - (Date.now() - arrivedAt)), abortSignal);
     const callSignal = deadline.signal;
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
+    // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); every other shape keeps the default.
+    const thinkingConfig = thinkingConfigFor(shape);
     const answer: ModelAnswer = stubbed
       ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER), shape === 'transformation-fill' ? prompt : undefined)
       : await callWithRetry(async () => {
@@ -504,9 +538,23 @@ export async function POST(request: NextRequest) {
               ? {
                   responseMimeType: 'application/json',
                   ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
+                  ...(thinkingConfig ? { thinkingConfig } : {}),
                   abortSignal: callSignal,
                 }
-              : { abortSignal: callSignal },
+              : { ...(thinkingConfig ? { thinkingConfig } : {}), abortSignal: callSignal },
+          }).catch((providerErr: unknown) => {
+            // A failed attempt is a call too: its duration is logged, its
+            // counts are null (QA review of 6500c65c81c7).
+            logger.warn('gemini usage', modelUsageLog({
+              usage: undefined,
+              model,
+              stage: stage ?? null,
+              responseShape: shape ?? null,
+              leased: lease !== null,
+              durationMs: Date.now() - attemptAt,
+              failed: true,
+            }));
+            throw providerErr;
           });
           // Where the time of a call went (input, output, thinking): counts
           // only, never the prompt or the answer (`lib/model-usage-log.ts`).

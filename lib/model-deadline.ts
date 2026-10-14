@@ -2,9 +2,9 @@
  * How long one `/api/gemini` request may wait for the model, and the signal
  * that ends it.
  *
- * Cloud Run ends every request of the app service at 300 seconds (the
- * platform default; `.github/workflows/deploy.yml` sets no `--timeout` for
- * `clean-core`). The route itself had no bound: the provider call carried no
+ * Cloud Run ended every request of the app service at 300 seconds (the
+ * platform default) until 13.10.2026; since then deploy.yml sets
+ * `--timeout=900` for the app service. The route itself had no bound: the provider call carried no
  * timeout, and `callWithRetry` asks again up to three times after a 429 or a
  * 503 with 2 s, 4 s and 8 s between — so one request could run for 4 × the
  * provider's own wait plus 14 s. On 13.10.2026 an engine-led Transformation
@@ -24,11 +24,15 @@
  * Pure: no Next, no SDK.
  */
 
-/** The app service's request limit on Cloud Run (the platform default; deploy.yml sets none). */
-export const CLOUD_RUN_REQUEST_TIMEOUT_MS = 300_000;
+/**
+ * The app service's request limit on Cloud Run: `--timeout=900` in deploy.yml
+ * (owner decision 13.10.2026 — a fill call took up to 292 s against the 300 s
+ * default). `tests/model-deadline.spec.ts` fails when the two disagree.
+ */
+export const CLOUD_RUN_REQUEST_TIMEOUT_MS = 900_000;
 
 /** The longest one `/api/gemini` request runs, counted from its arrival, before it answers itself — retries and backoff included. */
-export const MODEL_CALL_DEADLINE_MS = 270_000;
+export const MODEL_CALL_DEADLINE_MS = 870_000;
 
 /** The code of the route's answer when the deadline ended the call. */
 export const MODEL_TIMEOUT_CODE = 'model-timeout';

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { NextRequest } from 'next/server';
 import { getClientIp } from '../lib/rate-limit';
+import { modelHourlyLimit } from '../lib/model-hourly-limit';
 
 /**
  * The address a rate limit is keyed on is the one the client did not choose
@@ -49,6 +50,16 @@ test('the shared Gemini key is metered per account, not per account and address'
   // verified token already establishes it; a limit on the address is a separate
   // question with a separate key.
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/gemini/route.ts'), 'utf8');
-  expect(src, 'the per-account ceiling is gone').toContain('assertRateLimit(`gemini:${decodedToken.uid}`');
+  // The key is chosen by `modelHourlyLimit` from the verified account and the
+  // admin claim alone (SEC-2026-827), and it is exactly bucket + account.
+  expect(src, 'the per-account ceiling is gone').toContain('modelHourlyLimit(decodedToken.uid, decodedToken.admin === true)');
+  expect(src).toContain('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
   expect(src, 'the address is back in the cost-guard key').not.toContain('gemini:${decodedToken.uid}:');
+  expect(modelHourlyLimit('uid-1', false).key).toBe('gemini:uid-1');
+  expect(modelHourlyLimit('uid-1', true).key).toBe('gemini-admin:uid-1');
+  const lib = fs.readFileSync(path.resolve(__dirname, '..', 'lib/model-hourly-limit.ts'), 'utf8');
+  expect(lib, 'the address is back in the cost-guard key').not.toContain('${uid}:');
+  expect(lib.slice(lib.indexOf('export function modelHourlyLimit(')), 'the key takes more than the account').toMatch(
+    /^export function modelHourlyLimit\(uid: string, isAdmin: boolean\): ModelHourlyLimit \{/,
+  );
 });

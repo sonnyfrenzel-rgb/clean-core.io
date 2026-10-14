@@ -12,12 +12,24 @@
  *   - a lease is good for at most **48 calls** (`min(48, plannedCalls × 2 + 8)`),
  *     at most **4 in flight**, for one project and one generation token;
  *   - a lease lasts long enough for its budget (`leaseTtlMs`): 15 minutes at
- *     least, more for a large plan, never more than 60;
+ *     least, more for a large plan, never more than 180 (since the 900 s
+ *     request limit of 13.10.2026: 12 waves × the 870 s deadline = 174 min);
+ *   - every in-flight slot carries the time it was taken (`slots`), and a
+ *     slot older than the route's deadline + 30 s is free again — a slot held
+ *     by an instance that died never blocks a run;
  *   - an account gets at most **3 leases per hour**;
  *   - a project has at most one open lease: a new one supersedes the old,
  *     whose calls are refused from then on;
- *   - asking again for the same project and generation token while its lease
- *     is open returns that lease and charges nothing (idempotent).
+ *   - every click of *Generate* is its own run with its own random `runId`;
+ *     asking again for the same project, generation token **and run** while
+ *     its lease is open returns that lease and charges nothing (an idempotent
+ *     retry of the lease request itself). A new run at the same token gets a
+ *     new lease (in flight 0) and supersedes the old one — it never inherits
+ *     the in-flight slots of a run that was cancelled (13.10.2026: a restart
+ *     reused the cancelled run's lease, whose four slots were still held by
+ *     its server-side calls, and every call of the new run was refused
+ *     `lease-busy`);
+ *   - *Cancel* closes the run's lease (`decideLeaseClose`), owner only.
  *
  * A call to `/api/gemini` that names a valid lease does not touch the hourly
  * counter; it is counted against the lease instead. A lease that is not the
@@ -48,13 +60,19 @@ export const LEASE_MAX_CALLS = 48;
 export const LEASE_MAX_IN_FLIGHT = 4;
 /** The shortest a lease is valid. */
 export const LEASE_TTL_MS = 15 * 60 * 1000;
-/** The longest a lease is valid. */
-export const LEASE_MAX_TTL_MS = 60 * 60 * 1000;
+/** The longest a lease is valid: room for 12 waves of calls, each allowed the route's whole deadline. */
+export const LEASE_MAX_TTL_MS = 180 * 60 * 1000;
+/** A slot older than this is free again: its call has ended, whatever became of the release (the route's deadline + 30 s). */
+export const LEASE_SLOT_STALE_MS = MODEL_CALL_DEADLINE_MS + 30_000;
 /** Leases per account and window. */
 export const LEASES_PER_WINDOW = 3;
 export const LEASE_WINDOW_MS = 60 * 60 * 1000;
 /** The most fill calls a plan may say it needs (120 units ÷ ≤ 4 per call, rounded up generously). */
 export const LEASE_MAX_PLANNED_CALLS = 40;
+
+/** A run id: what the browser draws for one click of *Generate* (`crypto.randomUUID()` or the like). */
+export const RUN_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
+export const isRunId = (v: unknown): v is string => typeof v === 'string' && RUN_ID_PATTERN.test(v);
 
 /** The refusal codes, one per reason a reader or a client branches on. */
 export const LEASE_CODES = {
@@ -77,10 +95,15 @@ export interface LeaseRecord {
   projectId: string;
   uid: string;
   generationToken: string;
+  /** The run (one click of *Generate*) the lease was issued to; null on a lease from before 13.10.2026 or a request that named none. */
+  runId?: string | null;
   plannedCalls: number;
   budget: number;
   used: number;
+  /** The in-flight count as last written; `slots` decides when present. */
   inFlight: number;
+  /** When each in-flight call took its slot (epoch ms). Absent on a lease from before 13.10.2026. */
+  slots?: number[];
   status: LeaseStatus;
   /** Epoch milliseconds. */
   createdAt: number;
@@ -139,11 +162,13 @@ export function isLeaseRecord(value: unknown): value is LeaseRecord {
     typeof v.projectId === 'string' &&
     typeof v.uid === 'string' &&
     typeof v.generationToken === 'string' &&
+    (v.runId === undefined || v.runId === null || typeof v.runId === 'string') &&
     isCount(v.plannedCalls) &&
     isCount(v.budget) &&
     v.budget <= LEASE_MAX_CALLS &&
     isCount(v.used) &&
     isCount(v.inFlight) &&
+    (v.slots === undefined || (Array.isArray(v.slots) && v.slots.every(isCount))) &&
     (v.status === 'open' || v.status === 'superseded' || v.status === 'closed') &&
     isCount(v.createdAt) &&
     isCount(v.expiresAt)
@@ -162,6 +187,16 @@ export function leaseReferenceOf(body: unknown, isId: (s: unknown) => s is strin
     return refuse(400, LEASE_CODES.invalid, 'The generation lease is named in a shape this route does not accept: { projectId, leaseId }.');
   }
   return { projectId: l.projectId, leaseId: l.leaseId };
+}
+
+/** The slots still held at `now`: taken less than `LEASE_SLOT_STALE_MS` ago. */
+export function liveSlots(slots: readonly number[], now: number): number[] {
+  return slots.filter((t) => now - t < LEASE_SLOT_STALE_MS);
+}
+
+/** Calls of this lease in flight at `now` — from the slots' times, or the stored count on a lease without them. */
+export function inFlightAt(lease: LeaseRecord, now: number): number {
+  return Array.isArray(lease.slots) ? liveSlots(lease.slots, now).length : lease.inFlight;
 }
 
 /**
@@ -188,7 +223,7 @@ export function decideLeaseCall(lease: unknown, ctx: { uid: string; projectId: s
   if (lease.used >= lease.budget) {
     return refuse(429, LEASE_CODES.exhausted, `This generation has used all ${lease.budget} model calls of its lease.`);
   }
-  if (lease.inFlight >= LEASE_MAX_IN_FLIGHT) {
+  if (inFlightAt(lease, ctx.now) >= LEASE_MAX_IN_FLIGHT) {
     return refuse(429, LEASE_CODES.busy, `At most ${LEASE_MAX_IN_FLIGHT} model calls of one generation run at once. Retry when one has finished.`);
   }
   return { ok: true, lease };
@@ -212,10 +247,16 @@ export interface LeaseRefusalDecision {
 /**
  * Issue, reuse or refuse. `open` are the project's leases with status open (any
  * age); `windowIssued` the account's issue times in the window.
+ *
+ * Reused only for the same account, generation token **and run**: a request
+ * that names no run matches only a lease that names none (a client from before
+ * the run id), so a run never takes over the lease — and the in-flight slots —
+ * of another run.
  */
 export function decideLeaseIssue(input: {
   uid: string;
   generationToken: string;
+  runId?: string | null;
   plannedCalls: number;
   now: number;
   open: readonly unknown[];
@@ -223,7 +264,12 @@ export function decideLeaseIssue(input: {
 }): LeaseIssueDecision {
   const usable = input.open.filter(isLeaseRecord).filter((l) => l.status === 'open');
   const same = usable.find(
-    (l) => l.uid === input.uid && l.generationToken === input.generationToken && input.now < l.expiresAt && l.used < l.budget,
+    (l) =>
+      l.uid === input.uid &&
+      l.generationToken === input.generationToken &&
+      (l.runId ?? null) === (input.runId ?? null) &&
+      input.now < l.expiresAt &&
+      l.used < l.budget,
   );
   if (same) return { kind: 'reuse', lease: same };
 
@@ -255,6 +301,7 @@ export function newLeaseRecord(input: {
   projectId: string;
   uid: string;
   generationToken: string;
+  runId?: string | null;
   plannedCalls: number;
   budget: number;
   now: number;
@@ -265,14 +312,28 @@ export function newLeaseRecord(input: {
     projectId: input.projectId,
     uid: input.uid,
     generationToken: input.generationToken,
+    runId: input.runId ?? null,
     plannedCalls: Math.min(Math.max(1, Math.floor(input.plannedCalls) || 1), LEASE_MAX_PLANNED_CALLS),
     budget: input.budget,
     used: 0,
     inFlight: 0,
+    slots: [],
     status: 'open',
     createdAt: input.now,
     expiresAt: input.now + leaseTtlMs(input.budget),
   };
+}
+
+/**
+ * May this account close this lease? Only its own, and only while it is open;
+ * the same "nothing to close" for a lease that is not there and one that is
+ * not the caller's, so a lease id cannot be probed. Closing is what *Cancel*
+ * does: from then on the lease's late calls are refused (`lease-closed`) and
+ * their releases touch only this record.
+ */
+export function decideLeaseClose(lease: unknown, ctx: { uid: string; projectId: string }): 'close' | 'nothing' {
+  if (!isLeaseRecord(lease) || lease.uid !== ctx.uid || lease.projectId !== ctx.projectId) return 'nothing';
+  return lease.status === 'open' ? 'close' : 'nothing';
 }
 
 /** What a client is told about its lease — never the token or the account. */
@@ -284,5 +345,22 @@ export function leaseView(lease: LeaseRecord): { projectId: string; leaseId: str
     used: lease.used,
     expiresAt: lease.expiresAt,
     maxInFlight: LEASE_MAX_IN_FLIGHT,
+  };
+}
+
+/**
+ * Where the account stands in its hourly window of leases — what the start
+ * screen says before the click (owner, 13.10.2026): how many generations of
+ * the hour are used and, when none is left, when the next one is.
+ */
+export function leaseWindowStatus(windowIssued: readonly unknown[], now: number): { used: number; limit: number; nextFreeInSeconds: number | null } {
+  const recent = windowIssued
+    .filter((t): t is number => typeof t === 'number' && Number.isFinite(t))
+    .filter((t) => t > now - LEASE_WINDOW_MS)
+    .sort((a, b) => a - b);
+  return {
+    used: Math.min(recent.length, LEASES_PER_WINDOW),
+    limit: LEASES_PER_WINDOW,
+    nextFreeInSeconds: recent.length >= LEASES_PER_WINDOW ? Math.max(1, Math.ceil((recent[0] + LEASE_WINDOW_MS - now) / 1000)) : null,
   };
 }

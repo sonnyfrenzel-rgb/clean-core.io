@@ -91,7 +91,7 @@ export function isSplit(c: CheckLike): boolean {
  */
 export function checkPhrase(c: CheckLike): string {
   const n = nounOf(c.kind, c.scope);
-  if (c.kind === 'guards') return `body guards: ${plural(c.total, 'body', 'bodies')}, ${c.failed} refused`;
+  if (c.kind === 'guards') return `body guards: ${plural(c.total, 'body', 'bodies')} checked${c.failed > 0 ? `, ${c.failed} refused and sent back for repair` : ', none refused'}`;
   if (c.kind === 'lint') return `lint checks: ${c.total === 0 ? 'no finding' : plural(c.total, 'finding')}`;
   const threw = c.baseThrew ? `; the base request threw in the written functions (${c.baseThrew})` : '';
   if (!isSplit(c)) {

@@ -309,15 +309,28 @@ export function readContractFields(facts: EngineFacts, notCarried: readonly NotC
 
 const UPLOAD_CALL = /\b(?:GUI_UPLOAD|WS_UPLOAD|UPLOAD|TEXT_CONVERT_XLS_TO_SAP|ALSM_EXCEL_TO_INTERNAL_TABLE)\b/i;
 
+export interface RecordInput {
+  /** The structures whose rows are input records (lower case). */
+  structures: Set<string>;
+  /** Components the original computes after the input is read — results, never request fields. */
+  computed: Set<string>;
+  /** Components the original only recalculates from their own value (plan 2) — input data, never computed. */
+  accumulated: Set<string>;
+  /** The line structure of a data object (a work area, a field symbol, a table), lower case; null when unknown. */
+  lineStructureOf: (dataObject: string) => string | null;
+}
+
 /**
  * What the original takes as input data (coordinator, 12.10.2026): the
  * structures it fills from a database read, an upload or file read, a SPLIT of
  * an input line, or its demo-data routines — and, among their components, the
  * ones it computes afterwards (assigned outside the demo data: `ls-calc_discount
- * = …`, `ADD … TO ls-rem_num`). A computed component is a result, never a
- * request field.
+ * = …`, `ls-total = a * b`). A computed component is a result, never a
+ * request field. Since plan 2 a component the original only recalculates from
+ * its own value (`ADD … TO ls-rem_num`, `ls-y = ls-y + x`) is `accumulated`:
+ * input data the program builds on, so it stays a record field.
  */
-export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): { structures: Set<string>; computed: Set<string> } {
+export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarried[] = []): RecordInput {
   const { statements } = facts;
   const fixtures = notCarried.filter((n) => n.reason === 'fixture');
   const inFixture = (line: number) => fixtures.some((n) => line >= n.lineStart && line <= n.lineEnd);
@@ -343,6 +356,38 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
     let t = typeOf.get(lower(v)) ?? null;
     for (let i = 0; t && i < 4 && tableOf.has(t); i++) t = tableOf.get(t)!;
     return t;
+  };
+  // The line structure of any data object a work area can be — field symbols and `LIKE` included —
+  // for `lineStructureOf` only (defect E); the record reading above keeps its own, narrower map.
+  const declaredAs = new Map<string, { type: string; like: boolean }>();
+  const structureNames = new Set<string>();
+  for (const st of statements) {
+    if (!['TYPES', 'DATA', 'CLASS-DATA', 'STATICS', 'FIELD-SYMBOLS'].includes(st.keyword)) continue;
+    const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '');
+    const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
+    if (begin) structureNames.add(lower(begin[1]));
+    if (begin || st.keyword === 'TYPES') continue;
+    const m = /^(<?[\w/]+>?)\s+(TYPE|LIKE)\s+(?:(?:STANDARD|SORTED|HASHED|ANY|INDEX)\s+)?(?:(?:TABLE|LINE)\s+OF\s+(?:REF\s+TO\s+)?)?([\w/]+)/i.exec(rest);
+    if (m && !declaredAs.has(lower(m[1]))) declaredAs.set(lower(m[1]), { type: lower(m[3]), like: m[2].toUpperCase() === 'LIKE' });
+  }
+  const resolve = (v: string): string | null => {
+    let name = lower(v);
+    for (let i = 0; i < 4; i++) {
+      const d = declaredAs.get(name);
+      if (!d) return structureOf(name);
+      if (!d.like) {
+        let t: string | null = d.type;
+        for (let j = 0; t && j < 4 && tableOf.has(t); j++) t = tableOf.get(t)!;
+        return t;
+      }
+      name = d.type;
+    }
+    return null;
+  };
+  // Only a declared structure (BEGIN OF) has rows a record maps: `lv_kunnr TYPE c` is a scalar.
+  const lineStructureOf = (v: string): string | null => {
+    const t = resolve(v);
+    return t && structureNames.has(t) ? t : null;
   };
 
   // Data objects the original fills from outside or from its demo data.
@@ -384,10 +429,23 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
   }
 
   // Components the original computes after the input is read (outside its demo data).
+  //
+  // Plan 2 (roadmap 3.0.13, item 4): a component the original only *recalculates from its own value*
+  // (`<ls>-menge = <ls>-menge + lv_add`, `ADD lv_add TO ls-menge`, `ls-menge += 1`, and the same with minus)
+  // is not a result but input data that the program builds on: its existing value comes with the record.
+  // Under plan 1 it was dropped from the request, so a port could never add to the existing value and
+  // had to start from nothing — the failure pattern FP-MEAN-05 written into the contract itself.
+  // A component that is also computed any other way stays computed.
   const computed = new Set<string>();
+  const accumulated = new Set<string>();
   for (const st of statements) {
     if (inFixture(st.lineStart) || st.keyword === 'SELECT' || st.keyword === 'SPLIT' || st.keyword === 'READ') continue;
     const t = st.text.replace(/\.$/, '');
+    const update = selfUpdateOf(t);
+    if (update) {
+      accumulated.add(update.component);
+      continue;
+    }
     const assign = /^<?[\w/~]+>?((?:-[\w/~]+)+)\s*((?:[-+*/]|&&)?)=(?!=)\s*([\s\S]*)$/.exec(t);
     if (assign) {
       // Computed: arithmetic, a function, an operator-assignment, or a value set by the logic (a literal, a status).
@@ -400,7 +458,59 @@ export function recordInputOf(facts: EngineFacts, notCarried: readonly NotCarrie
     const writer = /^(?:ADD|SUBTRACT)\b.*\b(?:TO|FROM)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^(?:MULTIPLY|DIVIDE)\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t) ?? /^COMPUTE\s+<?[\w/~]+>?((?:-[\w/~]+)+)/i.exec(t);
     if (writer) computed.add(lower(writer[1].slice(writer[1].lastIndexOf('-') + 1)));
   }
-  return { structures, computed };
+  for (const c of computed) accumulated.delete(c);
+  return { structures, computed, accumulated, lineStructureOf };
+}
+
+/**
+ * Plan 2: a record field the original only recalculates from its own value starts, when nothing else
+ * gives it a value, at its type's initial value — zero for a packed number, as in ABAP. The base request
+ * can then carry it; the field is no longer listed as missing. Returns the missing list without them.
+ */
+function withInitialBase(fields: ContractField[], accumulated: ReadonlySet<string>, missing: string[]): string[] {
+  const filled = new Set<string>();
+  for (const f of fields) {
+    if (f.where !== 'record' || f.kind !== 'packed' || f.base !== null || !accumulated.has(f.original.toLowerCase())) continue;
+    f.base = { value: f.places > 0 ? `0.${'0'.repeat(f.places)}` : '0', source: 'kind' };
+    filled.add(f.original);
+  }
+  return missing.filter((m) => !filled.has(m));
+}
+
+/** One statement that recalculates a structure component from its own value — see `recordInputOf`. */
+export interface SelfUpdate {
+  /** The data object as written (`<ls_item>`, `ls_item`). */
+  holder: string;
+  /** The component, lower case (`menge`). */
+  component: string;
+  /** `+` adds to the existing value, `-` takes from it. */
+  sign: '+' | '-';
+  /** The operand added or taken, as written (`lv_add`, `<ls_item>-delta`, `1`). */
+  operand: string;
+}
+
+/**
+ * `<ls>-y = <ls>-y + x`, `<ls>-y = x + <ls>-y`, `<ls>-y += x`, `ADD x TO <ls>-y` (and minus, `SUBTRACT x FROM`),
+ * on one component with exactly one operand; null for anything else.
+ */
+export function selfUpdateOf(text: string): SelfUpdate | null {
+  const t = text.trim().replace(/\.$/, '').replace(/\s+/g, ' ');
+  const target = '(<?[\\w/~]+>?)-([\\w/~]+)';
+  const operand = "(<?[\\w/~]+>?(?:-[\\w/~]+)*|'-?\\d+(?:\\.\\d+)?'|-?\\d+(?:\\.\\d+)?)";
+  const lowerComp = (s: string) => s.toLowerCase();
+  let m = new RegExp(`^${target}\\s*=\\s*${target}\\s*([-+])\\s*${operand}$`, 'i').exec(t);
+  if (m && m[1].toLowerCase() === m[3].toLowerCase() && m[2].toLowerCase() === m[4].toLowerCase()) {
+    return { holder: m[1], component: lowerComp(m[2]), sign: m[5] as '+' | '-', operand: m[6] };
+  }
+  m = new RegExp(`^${target}\\s*=\\s*${operand}\\s*\\+\\s*${target}$`, 'i').exec(t);
+  if (m && m[1].toLowerCase() === m[4].toLowerCase() && m[2].toLowerCase() === m[5].toLowerCase()) {
+    return { holder: m[1], component: lowerComp(m[2]), sign: '+', operand: m[3] };
+  }
+  m = new RegExp(`^${target}\\s*([-+])=\\s*${operand}$`, 'i').exec(t);
+  if (m) return { holder: m[1], component: lowerComp(m[2]), sign: m[3] as '+' | '-', operand: m[4] };
+  m = new RegExp(`^(ADD|SUBTRACT)\\s+${operand}\\s+(?:TO|FROM)\\s+${target}$`, 'i').exec(t);
+  if (m) return { holder: m[3], component: lowerComp(m[4]), sign: m[1].toUpperCase() === 'ADD' ? '+' : '-', operand: m[2] };
+  return null;
 }
 
 /** The CSV delimiter a constant of the original declares (`gc_sep VALUE ';'`), else a comma. */
@@ -698,7 +808,15 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
   // ---- guards
   const inLoop = loopLines(statements);
   const constants = statements.filter((st) => st.keyword === 'CONSTANTS').map((st) => /^CONSTANTSs*:?s*([w/]+)/i.exec(st.text)?.[1] ?? '').filter(Boolean);
-  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants);
+  // A work area holds an input record when its rows are of a structure the contract maps to `record`
+  // (defect E): a row of an internal table the program builds itself is a computed value.
+  const recordInput = recordInputOf(facts, notCarried);
+  const isInputRecord = (workArea: string, table: string | null) =>
+    [workArea, table].some((n) => {
+      const s = n ? recordInput.lineStructureOf(n) : null;
+      return !!s && recordInput.structures.has(s);
+    });
+  const basisReader = guardBasisReader(statements, blocks.containers, contract.inputs.map((i) => i.name), constants, isInputRecord);
   const guards: PlanGuard[] = readGuardsFrom(statements).map((g) => {
     const rule = ruleIdOnLine(ruleSet.rules, g.line);
     const d = rule ? decision(rule) : 'keep';
@@ -771,7 +889,7 @@ export function planUnits(source: string, input: PlanInput = {}, given?: EngineF
 
   // ---- the request and its base values (from the original only; base-values.ts)
   const fields = readContractFields(facts, notCarried);
-  const missingBaseValues = assignBaseValues(fields, facts, notCarried);
+  const missingBaseValues = withInitialBase(fields, recordInputOf(facts, notCarried).accumulated, assignBaseValues(fields, facts, notCarried));
 
   // ---- split above the hard budget (§7.2), then budgets from the slices
   const plan: UnitPlan = {

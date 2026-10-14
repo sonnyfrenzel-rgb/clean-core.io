@@ -10,6 +10,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.13] — unreleased
+
+Engine 3.0.13 reads more precisely what it already reported, Transformation knows when its package
+is out of date and probes the functions the model wrote, and `/api/gemini` counts every attempt —
+from the QA and security reviews of v3.0.12. This entry is completed with the release.
+
+### Engine (from 3.0.13; a run signed by an earlier engine keeps what it signed)
+
+- **`DESTINATION 'NONE'` is the whole literal.** `'NONE''X'` is another destination, and the
+  backtick literal `` `NONE` `` is the local one, as the router already read it.
+- **A direct write to an SAP standard table is always named.** When an outbound RFC, a
+  modification or a custom-table write chooses the route, the rationale, the In-App checkpoint, the
+  In-App fit and the assumptions still say that the standard-table writes have to be replaced.
+- **An authorization check counts as evaluated only when the next statement decides on sy-subrc**
+  (`IF`, `ELSEIF`, `CHECK`, `CASE`, `ASSERT`, or `COND`/`SWITCH … THROW`); a statement that only
+  mentions or stores it keeps the review task (SEC-2026-812).
+- **A file-name validation covers a path only when its failure stops the program:**
+  `FILE_VALIDATE_NAME` / `FILE_GET_NAME` without `EXCEPTIONS`, or with them and sy-subrc decided by
+  the very next statement (SEC-2026-814).
+- **The flow from input to a dynamic clause or a path is followed to a fixed point**, however long
+  the chain and in whatever order the source writes it, instead of for eight passes
+  (SEC-2026-813).
+- **A method-local declaration of any type shadows a packed global** of the same name when the
+  code draft and the engine cases read the original's decimal places (not part of the signed run).
+- `tests/fixtures/engine-v3.0.12-frozen.json` holds what the v3.0.12 engine answered for the 300
+  benchmark programs and the probes, in both editions; a 3.0.13 change that leaks past its gate
+  fails there, as the v3.0.11 oracle does for 3.0.12. On the 300-case benchmark no route changes;
+  the standard-table sentence joins the rationale of 5 programs and the stricter sy-subrc reading
+  adds a review task to 2.
+
+### Transformation
+
+- **The phase goes stale on a changed context.** The server compares the digest of the platform
+  knowledge a package was generated on with the one it would build now; the tool bar, the rail,
+  the workspace and Delivery read *stale* after a rule decision, the decision record or an
+  accepted requirement changed. Unknown is never stale. The Built-on card compares the date and
+  every fact, not the first fact alone.
+- **Probes that reach the written functions:** a display filter, an additive recalculation and a
+  negative write are read from where the original applies them and run through new scaffold entry
+  points over the whole process. Each names the units it reaches; a failure goes back to them, and
+  a run that reaches a stub reads *not run*, never passed or failed.
+
+### Model calls
+
+- **A per-account attempt limit at `/api/gemini`**, before the body is read: 60 a minute and 300
+  an hour per instance, leased calls and administrators included, answered 429 with a
+  `Retry-After`. The account document is read once per request. The deploy pins the services'
+  maximum instance count, which bounds the limit's worst case.
+- **Administrators have an hourly model-call limit of their own** (200 an hour, in a bucket apart
+  from the 20 of every other account); a new generation lease is charged to the same bucket
+  (SEC-2026-827, SEC-2026-830).
+- **Only the limiter's own refusal reaches the caller;** any other error in the usage check is
+  logged and answered without its text (SEC-2026-831).
+
+### Checks and screens
+
+- **The ATC gate never clears a finding its words do not classify.** Such findings put the gate in
+  a third state, *unreviewed*, which only a person's check in ATC clears (SEC-2026-811).
+- **An absent or unreadable option comparison is not labelled proposed.**
+- **The SAP Cloud ERP Private target card** keeps the short label and names the former product name
+  first in its text, as the Analyze deployment cards do.
+- **Acceptance scripts:** the report is written into a real directory and never through a link
+  (SEC-2026-815); the CSV probe accepts a formula cell only in the neutralised form the app writes
+  (SEC-2026-816).
+- **Guards that read what they claim:** citations checked on every occurrence on a line, the
+  level D register checked in the signed audit-pack bytes, the generation stages rendered in order.
+
 ## [v3.0.12] — 2026-10-13
 
 Transformation is led by the engine: it writes the package's skeleton from what it already knows
@@ -26,8 +93,8 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
   RAP path gets typed CDS, one validation per guard, determinations, a behavior pool and an ABAP
   Unit skeleton.
 - **Step-wise fills under a lease.** The model writes only function bodies, from that routine's
-  ABAP lines, its rules and the facts the earlier tools established, in small calls (at most
-  14,000 characters each, at most four in flight, one lease of at most 48 calls per generation).
+  ABAP lines, its rules and the facts the earlier tools established, in small calls (usually up
+  to 14,000 characters; a routine that cannot be split goes alone, up to 28,000; at most four in flight, one lease of at most 48 calls per generation).
   A body is spliced between markers and refused if a character of the scaffold moves. Failing
   functions alone go back, for at most two repair rounds. Where no scaffold can be built, the
   single model call remains as the fallback.
@@ -151,6 +218,17 @@ levels follow the DSAG ABAP guideline and SAP's own sources, each cited with its
 - **Test races:** specs that bundle a component write into their own process's folder, so
   parallel workers no longer read a half-written bundle; the benchmark's route distribution builds
   each side's evidence with that side's engine.
+
+### v3.0.12 hotfix (13.10.2026)
+
+- **`@abaplint/core` is a production dependency.** The server loads it from `node_modules`, and
+  the production image installs no devDependencies, so every Transformation store answered 500. A
+  guard holds every server-external package out of devDependencies.
+- **A model call ends before Cloud Run does.** `/api/gemini` stops the provider call 270 s after
+  the request arrived and answers 504 `model-timeout`; a generation lease lasts as long as its
+  call budget needs (15 to 60 minutes) instead of a flat 15.
+- **A leased call carries at most 28,000 characters** (413 `lease-prompt-too-large` above it); the
+  orchestrator never sends a larger one. Every model call logs its token counts, never its text.
 
 ## [v3.0.11] — 2026-10-12
 

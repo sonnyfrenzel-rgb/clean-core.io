@@ -266,6 +266,26 @@ test.describe('packed fields typed through a local type (coordinator, 12.10.2026
     expect(scoped.find((d) => d.name === 'lv_copy')).toMatchObject({ decimals: 2, line: 12 });
   });
 
+  test('a local of another type shadows a packed global too: LIKE it is no packed field (QA 5a559787: 4c0c63393904)', () => {
+    const scoped = readOriginalContract([
+      'REPORT z.',
+      'DATA gv_amount TYPE p LENGTH 8 DECIMALS 2.',
+      'FORM a.',
+      '  DATA gv_amount TYPE string.',
+      '  DATA lv_copy LIKE gv_amount.',
+      'ENDFORM.',
+      'FORM b.',
+      '  DATA: BEGIN OF ls_s,',
+      '          x TYPE i,',
+      '        END OF ls_s.',
+      '  DATA lv_global LIKE gv_amount.',
+      'ENDFORM.',
+    ].join('\n')).decimals;
+    expect(scoped.find((d) => d.name === 'lv_copy')).toBeUndefined();
+    // Outside that procedure the global is the one meant again.
+    expect(scoped.find((d) => d.name === 'lv_global')).toMatchObject({ decimals: 2, line: 11 });
+  });
+
   test('a chained DATA statement is still read declaration by declaration', () => {
     const chained = readOriginalContract('REPORT z.\nDATA: a TYPE p LENGTH 5 DECIMALS 2,\n      b TYPE p LENGTH 3 DECIMALS 1.').decimals;
     expect(chained.map((d) => [d.name, d.line, d.decimals])).toEqual([['a', 2, 2], ['b', 3, 1]]);

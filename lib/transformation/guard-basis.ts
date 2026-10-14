@@ -64,12 +64,67 @@ export function operandsOf(condition: string): string[] {
 
 const baseOf = (operand: string) => operand.split('-')[0];
 
-/** Every write of a data object: `x = …`, `x-comp = …`, `ADD … TO x`, `COMPUTE x = …`, `MOVE … TO x`. */
-function writesOf(statements: readonly AbapStatement[]): Array<{ base: string; line: number }> {
-  const out: Array<{ base: string; line: number }> = [];
+/**
+ * Whether a work area holds one of the program's input records — a row of a
+ * structure the input contract maps to `record` (`recordInputOf`). `table` is
+ * the internal table a LOOP or READ TABLE reads, null for a SELECT.
+ */
+export type InputRecordTest = (workArea: string, table: string | null) => boolean;
+
+const NAME = String.raw`@?(?:(?:DATA|FIELD-SYMBOL)\(\s*)?(<?[A-Za-z_/][\w/~]*>?)`;
+
+/**
+ * The work areas a statement fills from a table or a database read (defect E, 13.10.2026):
+ * `LOOP AT itab INTO wa` / `ASSIGNING <fs>` (no target: the header line `itab`),
+ * `READ TABLE itab INTO wa` / `ASSIGNING <fs>`, `SELECT … INTO wa` / `INTO TABLE itab` /
+ * `INTO (@a, @b)`. Lower case; the table read, or null for a SELECT.
+ */
+function workAreasOf(text: string): { targets: string[]; table: string | null } | null {
+  const loop = /^LOOP\s+AT\s+(?!SCREEN\b)(?:GROUP\s+)?([\w/~<>-]+?)(?:\[\])?(?:\s|$)/i.exec(text);
+  const read = /^READ\s+TABLE\s+([\w/~<>-]+?)(?:\[\])?(?:\s|$)/i.exec(text);
+  if (loop || read) {
+    const table = (loop ?? read)![1].toLowerCase();
+    if (/\bREFERENCE\s+INTO\b/i.test(text) || /\bTRANSPORTING\s+NO\s+FIELDS\b/i.test(text)) return null;
+    const into = new RegExp(String.raw`\b(?:INTO|ASSIGNING)\s+(?:CASTING\s+)?${NAME}`, 'i').exec(text);
+    if (into) return { targets: [into[1].toLowerCase()], table };
+    // Without a target, a LOOP fills the table's header line.
+    return loop ? { targets: [table], table } : null;
+  }
+  if (/^SELECT\b/i.test(text)) {
+    const list = /\b(?:INTO|APPENDING)\s*\(([^)]*)\)/i.exec(text);
+    if (list) {
+      const targets = list[1].split(',').map((t) => /<?[A-Za-z_/][\w/~]*>?/.exec(t.replace(/^\s*@?(?:DATA\()?/i, ''))?.[0].toLowerCase()).filter((t): t is string => !!t);
+      return { targets, table: null };
+    }
+    const into = new RegExp(String.raw`\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?${NAME}`, 'i').exec(text);
+    if (into) return { targets: [into[1].toLowerCase()], table: null };
+  }
+  return null;
+}
+
+/**
+ * Every write of a data object: `x = …`, `x-comp = …`, `ADD … TO x`, `COMPUTE x = …`, `MOVE … TO x`,
+ * and a work area filled by LOOP, READ TABLE or SELECT — unless the work area holds an input record
+ * (`isInputRecord`): a row of the program's input is raw input, the predicate reads it from `record`;
+ * a row of an internal table the program builds itself is a computed value, handed in through `values`.
+ */
+function writesOf(statements: readonly AbapStatement[], isInputRecord: InputRecordTest): Array<{ base: string; line: number; from?: string }> {
+  const out: Array<{ base: string; line: number; from?: string }> = [];
+  // The table a work area was last filled from: an inline `FIELD-SYMBOL(<fs>)` has no declaration of its own,
+  // and a `SELECT … INTO @<fs>-comp` inside the loop fills a row of that table.
+  const tableOfArea = new Map<string, string>();
   for (const st of statements) {
     if (st.nativeSql) continue;
     const text = st.text.replace(/\.$/, '');
+    const filled = st.keyword === 'LOOP' || st.keyword === 'READ' || st.keyword === 'SELECT' ? workAreasOf(text) : null;
+    if (filled) {
+      for (const target of filled.targets) {
+        const table = filled.table ?? tableOfArea.get(target) ?? null;
+        if (filled.table) tableOfArea.set(target, filled.table);
+        if (!isInputRecord(target, table)) out.push({ base: target, line: st.lineStart, from: table ?? undefined });
+      }
+      continue;
+    }
     const assign = /^(<?[A-Za-z_/][\w/~]*>?)(?:-[\w/~]+)*\s*(?:[-+*/]|&&)?=(?!=)\s*/.exec(text);
     if (assign && !/^(?:IF|ELSEIF|WHEN|CHECK|WHILE|WHERE|AND|OR|DATA|TYPES|CONSTANTS|PARAMETERS|SELECT-OPTIONS|FIELD-SYMBOLS|METHODS|CLASS-DATA|STATICS)$/i.test(st.keyword)) {
       out.push({ base: assign[1].toLowerCase(), line: st.lineStart });
@@ -91,10 +146,18 @@ export interface GuardBasisReader {
 
 /**
  * A reader over one source: `inputs` are the selection inputs and `constants`
- * the declared constants (lower case) — both raw by definition.
+ * the declared constants (lower case) — both raw by definition. `isInputRecord`
+ * says which work areas hold input records; without it, every work area a LOOP,
+ * READ TABLE or SELECT fills is a computed value.
  */
-export function guardBasisReader(statements: readonly AbapStatement[], containers: readonly Container[], inputs: readonly string[], constants: readonly string[]): GuardBasisReader {
-  const writes = writesOf(statements);
+export function guardBasisReader(
+  statements: readonly AbapStatement[],
+  containers: readonly Container[],
+  inputs: readonly string[],
+  constants: readonly string[],
+  isInputRecord: InputRecordTest = () => false,
+): GuardBasisReader {
+  const writes = writesOf(statements, isInputRecord);
   const raw = new Set([...inputs, ...constants].map((n) => n.toLowerCase()));
   return {
     basisOf(line, condition) {
@@ -119,7 +182,7 @@ export function guardBasisReader(statements: readonly AbapStatement[], container
         if (write) {
           derived.push({ name: operand, key: camelName(operand) });
           const there = containerAt(containers as Container[], write.line);
-          reason ??= `${base} is written at L${write.line}${there ? ` in ${there.name}` : ''}`;
+          reason ??= `${base} is ${write.from ? `a row of the internal table ${write.from}, filled` : 'written'} at L${write.line}${there ? ` in ${there.name}` : ''}`;
         }
       }
       const literals = [...condition.matchAll(/'((?:[^']|'')*)'|(?<![\w.-])(-?\d+(?:\.\d+)?)(?![\w.])/g)].map((m) => (m[1] !== undefined ? m[1].replace(/''/g, "'") : m[2]));

@@ -67,7 +67,6 @@ export async function assertRateLimit(
   await db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
     const now = Date.now();
-    const windowStart = now - windowMs;
     // F-10: expiresAt drives a Firestore TTL policy on `rate_limits` so windows
     // self-delete instead of accumulating forever (see docs/DATA-RETENTION.md).
     // That policy did not exist until 18.09.2026, and this comment was the only
@@ -80,13 +79,9 @@ export async function assertRateLimit(
       return;
     }
 
-    const data = snap.data()!;
-    const timestamps: number[] = (data.timestamps || []).filter(
-      (t: number) => t > windowStart,
-    );
-
-    if (timestamps.length >= maxRequests) {
-      const retryAfterSeconds = Math.ceil((timestamps[0] + windowMs - now) / 1000);
+    const decision = admitToWindow(snap.data()!.timestamps, now, maxRequests, windowMs);
+    if (!decision.admitted) {
+      const { retryAfterSeconds } = decision;
       throw new QuotaError(
         refusal
           ? refusal(retryAfterSeconds)
@@ -95,9 +90,34 @@ export async function assertRateLimit(
       );
     }
 
-    timestamps.push(now);
-    tx.set(ref, { timestamps, updatedAt: FieldValue.serverTimestamp(), expiresAt });
+    tx.set(ref, { timestamps: decision.timestamps, updatedAt: FieldValue.serverTimestamp(), expiresAt });
   });
+}
+
+export type WindowDecision =
+  | { readonly admitted: true; readonly timestamps: number[] }
+  | { readonly admitted: false; readonly retryAfterSeconds: number };
+
+/**
+ * The counting rule of `assertRateLimit`, without the store: drop what has left
+ * the window, refuse once `maxRequests` remain inside it, otherwise admit and
+ * record `now`. Pure, so the rule can be checked without Firestore.
+ */
+export function admitToWindow(
+  stored: unknown,
+  now: number,
+  maxRequests: number,
+  windowMs: number,
+): WindowDecision {
+  const windowStart = now - windowMs;
+  const timestamps: number[] = (Array.isArray(stored) ? stored : []).filter(
+    (t: unknown): t is number => typeof t === 'number' && t > windowStart,
+  );
+  if (timestamps.length >= maxRequests) {
+    return { admitted: false, retryAfterSeconds: Math.ceil((timestamps[0] + windowMs - now) / 1000) };
+  }
+  timestamps.push(now);
+  return { admitted: true, timestamps };
 }
 
 /**

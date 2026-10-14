@@ -11,7 +11,7 @@ import { maskLiterals, readStatements } from './statement-reader';
 import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
-import { unreachableCodeMarked } from './unreachable-code-gate';
+import { precisionFixesApply } from './precision-fixes-gate';
 import { gateOfLine, readConstantGates } from './constant-gates';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
@@ -180,8 +180,13 @@ function calledModule(text: string, pattern: string): string | null {
  *   `DESTINATION IN GROUP` (parallel processing on this system's servers).
  *   Neither leaves the system; the router reads both as local as well.
  * - `remote`: any other destination, a literal or a variable.
+ *
+ * `wholeLiteral` — from 3.0.13 (`PRECISION_FIXES_FROM`): `NONE` is read as the
+ * whole literal, in quotes or backticks, as `rfcCallTarget` in the router
+ * reads it. Before, `'NONE''X'` (the destination NONE'X) counted as local and
+ * the backtick literal `` `NONE` `` as remote.
  */
-export function rfcDestinationOf(text: string): 'remote' | 'local' | null {
+export function rfcDestinationOf(text: string, wholeLiteral = false): 'remote' | 'local' | null {
   const masked = maskLiterals(text);
   if (!/^\s*CALL\s+FUNCTION\b/i.test(masked)) return null;
   const end = masked.search(/\b(?:EXPORTING|IMPORTING|TABLES|CHANGING|EXCEPTIONS|PARAMETER-TABLE|EXCEPTION-TABLE)\b/i);
@@ -192,6 +197,7 @@ export function rfcDestinationOf(text: string): 'remote' | 'local' | null {
   // holds the literal the mask blanked.
   const operand = text.slice(at.index + at[0].length);
   if (/^IN\s+GROUP\b/i.test(operand)) return 'local';
+  if (wholeLiteral) return /^(?:'\s*NONE\s*'(?!')|`\s*NONE\s*`)/i.test(operand) ? 'local' : 'remote';
   if (/^'NONE'/i.test(operand)) return 'local';
   return 'remote';
 }
@@ -348,6 +354,8 @@ export function buildAbapEvidence(
   engineVersion?: string | null,
 ): AbapEvidenceReport {
   const guideline = guidelineChecksApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  // From 3.0.13 (`PRECISION_FIXES_FROM`); a run of an earlier engine keeps what it signed.
+  const fixes = precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion);
   /**
    * Is this object on SAP's list of classic APIs (the classification file,
    * `classicAPI`)? SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as
@@ -771,7 +779,7 @@ export function buildAbapEvidence(
     // Remote Function Calls (RFC). From 3.0.12 only the statement's own
     // DESTINATION addition to another system counts (`rfcDestinationOf`).
     if (guideline
-      ? rfcDestinationOf(text) === 'remote'
+      ? rfcDestinationOf(text, fixes) === 'remote'
       : /\bCALL\s+FUNCTION\b[\s\S]+?\bDESTINATION\b/i.test(codeText)) {
       const fmMatch = text.match(/\bCALL\s+FUNCTION\s+'?([\w\/]+)'?/i);
       const fmName = fmMatch ? fmMatch[1].toUpperCase() : 'UNKNOWN';
@@ -1133,7 +1141,7 @@ export function buildAbapEvidence(
     // the A–D letter, because findings go into the signed run.
     {
       const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
-      if (local && (guideline ? rfcDestinationOf(text) !== 'remote' : !/\bDESTINATION\b/i.test(codeText))) {
+      if (local && (guideline ? rfcDestinationOf(text, fixes) !== 'remote' : !/\bDESTINATION\b/i.test(codeText))) {
         const fm = local[1].toUpperCase();
         const answer = functionModuleCatalogAnswer(fm, catalogSnapshot);
         // Only an earlier finding of this kind stands in for it: the update-task
@@ -1345,7 +1353,7 @@ export function buildAbapEvidence(
     const adbcLines = dependencies.adbc.map((execution) => execution.line);
     // One reading of the statements for the three detectors.
     const read = readStatements(code);
-    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines })) {
+    for (const task of readSecurityReviewTasksFrom(code, read, { adbcLines, precisionFixes: fixes })) {
       addFinding({
         kind: 'security-review',
         title: `Security review: ${task.title}`,
@@ -1389,7 +1397,7 @@ export function buildAbapEvidence(
     for (const stmt of statements) {
       const text = stmt.text.trim();
       if (!/^CALL\s+FUNCTION\b[\s\S]*?\bSTARTING\s+NEW\s+TASK\b/i.test(maskLiterals(text))) continue;
-      if (rfcDestinationOf(text) === 'remote') continue;
+      if (rfcDestinationOf(text, fixes) === 'remote') continue;
       const fmName = /^CALL\s+FUNCTION\s+'([\w/]+)'/i.exec(text)?.[1]?.toUpperCase();
       const where = /\bIN\s+GROUP\b/i.test(maskLiterals(text)) ? 'on the application servers of a server group (DESTINATION IN GROUP)' : 'in a new session on this system';
       addFinding({
@@ -1474,10 +1482,10 @@ export function buildAbapEvidence(
     infoCount: findings.filter(f => f.severity === 'Info').length,
   };
 
-  // From 3.0.13 (`UNREACHABLE_CODE_FROM`): a finding behind a constant gate is
-  // marked, never dropped — it keeps its points, and the table says why no run
-  // reaches it. A run of an earlier engine keeps the findings it signed.
-  if (unreachableCodeMarked(engineVersion === undefined ? APP_VERSION : engineVersion)) {
+  // From 3.0.13 (`PRECISION_FIXES_FROM`, SD review CR-A6): a finding behind a
+  // constant gate is marked, never dropped — it keeps its points, and the table
+  // says why no run reaches it. A run of an earlier engine keeps the findings it signed.
+  if (precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion)) {
     const gates = readConstantGates(code);
     if (gates.unreachable.length) {
       for (const finding of findings) {

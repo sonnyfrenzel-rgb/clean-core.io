@@ -33,9 +33,13 @@ for (const rel of [
     if (gated >= 0) {
       expect(src.slice(gated, src.indexOf('export async function')), 'the shared gate is not metered')
         .toContain('assertRateLimit(');
+      // 3.0.13 (2e200605): the contract GET passes the gate a bucket of its own
+      // for the context-digest read (`authorise(req, 'project-context')`); the
+      // gate meters every bucket per account, so the call may carry one.
       for (const handler of src.split('export async function ').slice(1)) {
-        expect(handler.indexOf('authorise(req)'), 'a handler skips the metered gate').toBeGreaterThanOrEqual(0);
-        expect(handler.indexOf('authorise(req)')).toBeLessThan(handler.indexOf('loadProjectAndRun('));
+        const at = handler.search(/\bauthorise\(req[,)]/);
+        expect(at, 'a handler skips the metered gate').toBeGreaterThanOrEqual(0);
+        expect(at).toBeLessThan(handler.indexOf('loadProjectAndRun('));
       }
     }
   });
