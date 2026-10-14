@@ -366,7 +366,7 @@ export default function TransformationObjectPage({
       <div className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         <Facet
           label="Generated package"
-          why={{ provenance: 'proposed', basis: 'Written by the model against the plan. Not compiled and not run here.' }}
+          why={{ provenance: 'proposed', basis: engineLed ? 'The engine built the frame; the model wrote the function bodies. Not compiled and not run here.' : 'Written by the model against the plan. Not compiled and not run here.' }}
           figure={files === null ? '—' : groups.length}
           unit={files === null ? 'objects · none in a demo' : `${groups.length === 1 ? 'object' : 'objects'} · ${files.length} ${files.length === 1 ? 'file' : 'files'} · ${codeKind}`}
           sub={
@@ -502,7 +502,7 @@ export default function TransformationObjectPage({
                   // (carried QA finding 4aa2e074b134; the browser-side
                   // "simulated run" is gone since 02.10.2026).
                   ? `${engineLed ? 'The engine built the frame of every object; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool writes ABAP Unit scenarios for it, which run only in your own system — that gives them a verdict.`
-                  : 'Written by the model against the plan below. Not compiled and not run here; the Testing tool runs it against mocks.'
+                  : `${engineLed ? 'The engine built the frame of every module; the model wrote the function bodies, marked below.' : 'Written by the model against the plan below.'} Not compiled and not run here; the Testing tool runs it against mocks.`
             }
           >
             {files === null ? (
