@@ -24,7 +24,8 @@ import {
   type ClosureBasis,
 } from './testing-closure';
 import { isAbapUnitRoute } from './test-runnability';
-import { storedContextDigest } from './transformation/generation-record';
+import { storedActivation, storedContextDigest } from './transformation/generation-record';
+import { activationClosureRefusal } from './transformation/check-words';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -1203,6 +1204,10 @@ export function testingClosureBasis(project: Project | null): TestingClosureBasi
   if (testing.state === 'done') {
     return { ok: false, code: 'testing-done', error: 'Testing is already done for this suite; there is nothing to close.' };
   }
+  // 3.0.13: code abaplint cannot activate has no test a closure could conclude — the server's check of the
+  // stored ABAP package says so (a package stored before 3.0.13 carries no check and is not refused for it).
+  const notActivatable = activationClosureRefusal(storedActivation((project as { generationBinding?: unknown }).generationBinding));
+  if (notActivatable) return { ok: false, code: 'not-activatable', error: notActivatable };
   const key = subjectKey(testRunSubjectOf(project));
   const outside = outsideReading(project);
   if (outside.state === 'current' && !outside.verifies) {

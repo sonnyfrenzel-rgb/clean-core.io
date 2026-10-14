@@ -8,7 +8,7 @@ import { formatTextDate } from '@/lib/format';
 import { tfBuiltOnMeta, tfNotWritten, tfSingleCallNote, wt } from '@/lib/workspace-messages';
 import type { ChainSlot } from '@/lib/transformation-chain';
 import { basisSlotChanged, type BasisSlot, type GenerationRecord } from '@/lib/transformation/generation-record';
-import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from '@/lib/transformation/check-words';
+import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, activationPlainWords, checkPhrase, hasPageReportedChecks, orderedChecks, unresolvedSentence } from '@/lib/transformation/check-words';
 
 /**
  * After the run (roadmap 3.0.12, step E; design §15.4, §16.2, §18): what the
@@ -83,6 +83,15 @@ export default function BuiltOnCard({
                 </li>
               ))}
             </ul>
+          </CcMessageStrip>
+        </div>
+      ) : null}
+      {record.activation ? (
+        // Roadmap 3.0.13: the server's activation check of the stored ABAP package, in plain words.
+        <div className="mt-3" data-activation={record.activation.activatable ? 'activatable' : 'not-activatable'}>
+          <CcMessageStrip state={record.activation.activatable ? 'information' : 'error'}>
+            {activationPlainWords(record.activation)}
+            {unresolvedSentence(record.activation) ? ` ${unresolvedSentence(record.activation)}` : ''}
           </CcMessageStrip>
         </div>
       ) : null}

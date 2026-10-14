@@ -62,7 +62,8 @@ import type { FillRepair, FillRequestUnit, GenerationEvent, Unit } from './types
 /** One model call: the prompt in, the answer text out; must honour the signal. */
 export type FillModel = (prompt: string, signal: AbortSignal) => Promise<string>;
 
-export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats';
+/** `abap` (3.0.13): abaplint's parser and syntax check of an ABAP candidate with the shipped configuration (`abap-check.ts`). */
+export type CheckKind = 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
 
 export interface CheckFailure {
   /** The unit the failure belongs to, or null when it is in engine-written code. */
@@ -116,6 +117,11 @@ export interface OrchestratorInput {
   /** Track B's body guards: the reason a body is refused, or null when it may be spliced. */
   guardBody: (unitId: string, body: string, needs: readonly string[]) => string | null;
   verify: Verify;
+  /**
+   * The checks of the scaffold before any fill (3.0.13, ABAP route: the activation check). Reported, never
+   * blocking: a failure here is in engine-written code — Clean-Core.io's, never sent to the model.
+   */
+  scaffoldCheck?: (signal: AbortSignal) => Promise<Pick<VerifyOutcome, 'failures'> | null>;
   /** Model calls this generation may make (the lease's budget). */
   budget: number;
   maxInFlight?: number;
@@ -157,6 +163,8 @@ export interface GenerationRunResult {
   stop: StopReason;
   /** Failures in engine-written code: our bug, never sent to the model (§13.2 step 2). */
   scaffoldFindings: string[];
+  /** What the scaffold check found before the fills (3.0.13) — engine-written code only; empty when it found nothing or did not run. */
+  scaffoldBaseline?: string[];
   checksNotRun: VerifyOutcome['notRun'];
   /** The largest number of model calls that were in flight at once. */
   maxInFlightSeen: number;
@@ -482,7 +490,18 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
   let rounds = 0;
   let stop: StopReason = 'passed';
 
+  const scaffoldBaseline: string[] = [];
   try {
+    // ── The scaffold as the engine wrote it, before any fill (3.0.13) ─────
+    if (input.scaffoldCheck && !cancelled()) {
+      try {
+        const base = await input.scaffoldCheck(checks.signal);
+        for (const f of base?.failures ?? []) scaffoldBaseline.push(`before the fills, ${f.check}: ${f.failure}`);
+      } catch {
+        // Reported, never blocking: a scaffold check that cannot run leaves the generation as it was.
+      }
+    }
+
     // ── Fills: one wave, then each unusable unit once more, alone ─────────
     const unusable: string[] = [];
     await runBundles(bundle(ordered, null), (b, o) => unusable.push(...take(b, o, 0)));
@@ -612,6 +631,7 @@ export async function runGeneration(input: OrchestratorInput): Promise<Generatio
     rounds,
     stop,
     scaffoldFindings: [...scaffoldFindings],
+    scaffoldBaseline,
     checksNotRun,
     maxInFlightSeen,
   };

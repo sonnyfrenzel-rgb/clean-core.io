@@ -11,8 +11,10 @@
  * contract — never into a run or the audit pack (§12.3). It is the page's
  * report of a model-written package: provenance stays `proposed`.
  *
- * Pure: no imports beyond types.
+ * Pure: no imports beyond the check words.
  */
+
+import { activationOf, type AbapActivation } from './check-words';
 
 export type GenerationPath = 'engine-led' | 'single-call';
 
@@ -29,7 +31,12 @@ export interface BasisSlot {
 }
 
 export interface EngineLedRecord {
-  status: 'complete' | 'partial';
+  /**
+   * `complete`: every function written and, on the ABAP route since 3.0.13, no parser or syntax error in the
+   * package's own objects; `partial`: a function left as a stub; `not-activatable` (3.0.13, ABAP route): the
+   * server's activation check found errors — the server sets it, whatever the page sent (`withAbaplint`).
+   */
+  status: 'complete' | 'partial' | 'not-activatable';
   units: number;
   written: number;
   repaired: number;
@@ -61,6 +68,11 @@ export interface GenerationRecord {
   basis: BasisSlot[];
   /** Total time of the generation, as the page measured it (ms), or null. */
   elapsedMs: number | null;
+  /**
+   * The server's activation check of the stored ABAP package (3.0.13, `binding.abaplint.activation`). Read only
+   * from a stored binding, never from what the page sends; absent on a binding from before — its words stay.
+   */
+  activation?: AbapActivation | null;
 }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? (v.length > max ? `${v.slice(0, max - 1)}…` : v) : '');
@@ -93,7 +105,7 @@ function engineOf(raw: unknown): EngineLedRecord | null {
   const planDigest = digest(e.planDigest);
   if (!scaffoldDigest || !planDigest) return null;
   return {
-    status: e.status === 'complete' ? 'complete' : 'partial',
+    status: e.status === 'complete' ? 'complete' : e.status === 'not-activatable' ? 'not-activatable' : 'partial',
     units: int(e.units, 1_000),
     written: int(e.written, 1_000),
     repaired: int(e.repaired, 1_000),
@@ -175,7 +187,19 @@ export function storedGenerationRecord(binding: unknown): (GenerationRecord & { 
   if (b.path !== 'engine-led' && b.path !== 'single-call') return null;
   const rec = generationRecordOf({ path: b.path, fallbackReason: b.fallbackReason, engine: b.engine, basis: b.basis, elapsedMs: b.elapsedMs });
   if (!rec || 'error' in rec) return null;
-  return { ...rec, contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
+  const activation = storedActivation(binding);
+  return { ...rec, ...(activation ? { activation } : {}), contextDigest: typeof b.contextDigest === 'string' ? b.contextDigest : null };
+}
+
+/**
+ * The server's activation check of a stored generation (`generationBinding.abaplint.activation`, 3.0.13), or
+ * null — a binding from before, a Node package, or a store where abaplint did not run.
+ */
+export function storedActivation(binding: unknown): AbapActivation | null {
+  if (!binding || typeof binding !== 'object') return null;
+  const lint = (binding as { abaplint?: unknown }).abaplint;
+  if (!lint || typeof lint !== 'object') return null;
+  return activationOf((lint as { activation?: unknown }).activation);
 }
 
 /**

@@ -1,14 +1,19 @@
 /**
  * abaplint over a RAP package, on the server (roadmap 3.0.12, DSAG ABAP guide
- * review B5: record which checks actually ran).
+ * review B5: record which checks actually ran; roadmap 3.0.13, item 1: the
+ * activation check).
  *
- * `@abaplint/core` parses the package's ABAP under ABAP Cloud syntax
- * (`abaplint-config.ts`) and the result is recorded as passed, failed or not
- * run — never a pass for what it did not read. What it reads and what it does
- * not, measured on @abaplint/core 2.120:
+ * `@abaplint/core` reads the package's ABAP with exactly the configuration the
+ * package ships (`abaplint-config.ts`) and the result is recorded as passed,
+ * failed or not run — never a pass for what it did not read. What it reads
+ * and what it does not, measured on @abaplint/core 2.120:
  *
  *   - ABAP source of classes and interfaces (`*.abap`): parsed under ABAP
- *     Cloud; a statement ABAP Cloud does not have is a parser error;
+ *     Cloud (a statement ABAP Cloud does not have is a parser error), and
+ *     since 3.0.13 checked semantically (`check_syntax`, `unknown_types`)
+ *     with the SAP classes the package inherits from as declarations
+ *     (`abap-sap-stubs.ts`); see `abap-check.ts` for how a reference to an SAP
+ *     object the check cannot see is counted apart;
  *   - CDS data definitions (`*.ddls.asddls`): parsed by abaplint's CDS parser;
  *   - tables (`*.tabl.xml`, abapGit's form and the only one abaplint reads):
  *     the fields, the delivery class and size category (`xml_consistency`),
@@ -21,17 +26,19 @@
  *     entity names, no grammar), access controls (`*.dcls.asdcls`), service
  *     definitions and bindings, job catalog entries and templates — abaplint
  *     knows these types but has no parser for their content. Each is listed
- *     as not run, with that reason;
- *   - **not run for any file**: the semantic syntax check (`check_syntax`). It
- *     needs the definitions of SAP's released objects, which are not here; run
- *     without them it reports every SAP class as unknown.
+ *     as not run, with that reason.
  *
- * The record says what ran. Server-only: `@abaplint/core` is large and is
- * imported only by the route that stores a generation.
+ * The record says what ran. Since 3.0.13 it carries `activation`
+ * (`AbapActivation`): the parser and syntax errors in the package's own
+ * objects — what makes a generation "complete" or "generated — not
+ * activatable". A record from before has no `activation` and keeps its words.
+ *
+ * Server-only: `@abaplint/core` is large and is imported only by the routes
+ * that check or store a generation.
  */
 
-import * as abaplint from '@abaplint/core';
-import { ABAPLINT_CONFIG } from './abaplint-config';
+import { abapCheck } from './abap-check';
+import { unresolvedSentence, type AbapActivation } from './check-words';
 
 export type AbaplintState = 'passed' | 'failed' | 'not-run';
 
@@ -53,7 +60,7 @@ export interface AbaplintRecord {
   /** Of those, files with at least one issue. */
   failedFiles: number;
   issueCount: number;
-  /** The first issues, in path and line order. */
+  /** The first issues, in path and line order (a reference to an SAP object the check cannot see is not one). */
   issues: AbaplintIssue[];
   /** Files abaplint did not read, and why. */
   notRun: Array<{ path: string; reason: string }>;
@@ -61,6 +68,8 @@ export interface AbaplintRecord {
   checksNotRun: Array<{ check: string; reason: string }>;
   /** Why nothing ran at all; null when something did. */
   reason: string | null;
+  /** The activation check (3.0.13): parser and syntax errors in the package's own objects. Absent on a record from before. */
+  activation?: AbapActivation;
 }
 
 /** At most this many issues are recorded; the count is complete. */
@@ -81,17 +90,12 @@ const NOT_READ: ReadonlyArray<[RegExp, string]> = [
   [/\.saj[ct]\.[a-z]+$/i, 'abaplint has no parser for job catalog entries and templates'],
 ];
 
+/**
+ * What a record from before 3.0.13 said about the semantic check, which did
+ * not run then. Kept for those records' words; a record written since runs it.
+ */
 export const CHECK_SYNTAX_NOT_RUN =
   "The semantic syntax check (abaplint check_syntax) did not run: it needs the definitions of SAP's released objects, which the check does not have.";
-
-const versionOf = (): string | null => {
-  try {
-    const v = (abaplint.Registry as unknown as { abaplintVersion?: () => string }).abaplintVersion?.();
-    return typeof v === 'string' ? v : null;
-  } catch {
-    return null;
-  }
-};
 
 /**
  * abaplint over the package's files under `src/` (abapGit layout). A package
@@ -109,7 +113,7 @@ export function abaplintPackageCheck(files: ReadonlyArray<{ path: string; conten
     issueCount: 0,
     issues: [],
     notRun: [],
-    checksNotRun: [{ check: 'check_syntax', reason: CHECK_SYNTAX_NOT_RUN }],
+    checksNotRun: [],
     reason: null,
   };
   const src = files.map((f) => ({ path: f.path.replace(/\\/g, '/').replace(/^\.?\//, ''), content: f.content })).filter((f) => f.path.startsWith('src/'));
@@ -124,54 +128,75 @@ export function abaplintPackageCheck(files: ReadonlyArray<{ path: string; conten
     base.reason = src.length === 0 ? 'The package has no src/ folder: there was no ABAP object to check.' : 'No file of the package is one abaplint reads (ABAP classes and interfaces, CDS data definitions, tables).';
     return base;
   }
-  try {
-    const registry = new abaplint.Registry(new abaplint.Config(JSON.stringify(ABAPLINT_CONFIG)));
-    // Every src/ file is added, so the object-type rules see the whole package; only `read` counts as checked.
-    for (const f of src) registry.addFile(new abaplint.MemoryFile(f.path.slice('src/'.length), f.content));
-    registry.parse();
-    const issues = registry
-      .findIssues()
-      .map((i) => ({ path: `src/${i.getFilename()}`, line: i.getStart().getRow(), rule: i.getKey(), message: i.getMessage() }))
-      .sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line || a.rule.localeCompare(b.rule));
-    const failed = new Set(issues.map((i) => i.path));
-    return {
-      ...base,
-      state: issues.length > 0 ? 'failed' : 'passed',
-      abaplint: versionOf(),
-      checked: read.length,
-      failedFiles: [...failed].length,
-      issueCount: issues.length,
-      issues: issues.slice(0, MAX_ABAPLINT_ISSUES).map((i) => ({ ...i, message: i.message.slice(0, 300) })),
-    };
-  } catch (err) {
-    return { ...base, reason: `abaplint stopped: ${err instanceof Error ? err.message.slice(0, 300) : 'unknown error'}` };
-  }
+  const r = abapCheck(src);
+  if (!r.ran) return { ...base, reason: r.reason };
+  // A reference to an SAP object the check cannot see is not an issue of the package; it is counted in `activation`.
+  const issues = r.findings.filter((f) => f.kind !== 'unresolved').map((f) => ({ path: f.path, line: f.line, rule: f.rule, message: f.message }));
+  const failed = new Set(issues.map((i) => i.path));
+  return {
+    ...base,
+    state: issues.length > 0 ? 'failed' : 'passed',
+    abaplint: r.activation.abaplint,
+    checked: read.length,
+    failedFiles: failed.size,
+    issueCount: issues.length,
+    issues: issues.slice(0, MAX_ABAPLINT_ISSUES),
+    activation: r.activation,
+  };
 }
 
 /**
  * The check as the generation record lists checks (`{ kind, total, failed }`)
- * and checks not run (`{ kind, reason }`): `abaplint` is the parse under ABAP
- * Cloud syntax (total = files read, failed = files with an issue);
- * `abaplint-syntax` is the semantic check, which never runs here, and names the
- * files abaplint did not read.
+ * and checks not run (`{ kind, reason }`).
+ *
+ * A record with `activation` (3.0.13): `abaplint` counts the files of the
+ * package's own objects three ways (passed, failed with a parser or syntax
+ * error, not run 0); what the check could not see is said under
+ * `abaplint-sap`, the files abaplint has no parser for under `abaplint-unread`.
+ * A record from before: as it was — the parse only, `abaplint-syntax` not run.
  */
-export function abaplintCheckEntries(r: AbaplintRecord): { checks: Array<{ kind: string; total: number; failed: number }>; notRun: Array<{ kind: string; reason: string }> } {
-  const unread = r.notRun.length > 0 ? ` abaplint did not read ${r.notRun.length} file${r.notRun.length === 1 ? '' : 's'} (${[...new Set(r.notRun.map((n) => n.path.split('.').slice(-2).join('.')))].join(', ')}).` : '';
-  const syntax = { kind: 'abaplint-syntax', reason: `${CHECK_SYNTAX_NOT_RUN}${unread}`.slice(0, 500) };
-  if (r.state === 'not-run') return { checks: [], notRun: [{ kind: 'abaplint', reason: (r.reason ?? 'abaplint did not run.').slice(0, 500) }, syntax] };
-  return { checks: [{ kind: 'abaplint', total: r.checked, failed: r.failedFiles }], notRun: [syntax] };
+export function abaplintCheckEntries(r: AbaplintRecord): { checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number }>; notRun: Array<{ kind: string; reason: string }> } {
+  const unreadFiles = r.notRun.length > 0 ? `abaplint did not read ${r.notRun.length} file${r.notRun.length === 1 ? '' : 's'} (${[...new Set(r.notRun.map((n) => n.path.split('.').slice(-2).join('.')))].join(', ')}).` : '';
+  if (r.state === 'not-run') {
+    return { checks: [], notRun: [{ kind: 'abaplint', reason: (r.reason ?? 'abaplint did not run.').slice(0, 500) }] };
+  }
+  const a = r.activation;
+  if (!a) {
+    const syntax = { kind: 'abaplint-syntax', reason: `${CHECK_SYNTAX_NOT_RUN}${unreadFiles ? ` ${unreadFiles}` : ''}`.slice(0, 500) };
+    return { checks: [{ kind: 'abaplint', total: r.checked, failed: r.failedFiles }], notRun: [syntax] };
+  }
+  const notRun: Array<{ kind: string; reason: string }> = [];
+  const unresolved = unresolvedSentence(a);
+  if (unresolved) notRun.push({ kind: 'abaplint-sap', reason: unresolved.slice(0, 500) });
+  if (unreadFiles) notRun.push({ kind: 'abaplint-unread', reason: unreadFiles.slice(0, 500) });
+  return { checks: [{ kind: 'abaplint', total: a.files, failed: a.failedFiles, passed: Math.max(0, a.files - a.failedFiles), notRun: 0 }], notRun };
 }
+
+const ABAPLINT_KINDS = new Set(['abaplint', 'abaplint-syntax', 'abaplint-sap', 'abaplint-unread']);
 
 /**
  * The engine-led record's checks with the server's abaplint result in place
  * of anything the page sent under that kind: the page cannot report its own.
+ * With the activation check, the record's status is the server's too: a
+ * package with a parser or syntax error in its own objects is
+ * `not-activatable`, whatever the page said.
  */
-export function withAbaplint<T extends { checks: Array<{ kind: string; total: number; failed: number }>; notRun: Array<{ kind: string; reason: string }> }>(engine: T, r: AbaplintRecord): T {
+export function withAbaplint<
+  T extends { status?: string; checks: Array<{ kind: string; total: number; failed: number; passed?: number; notRun?: number }>; notRun: Array<{ kind: string; reason: string }> },
+>(engine: T, r: AbaplintRecord): T {
   const entries = abaplintCheckEntries(r);
-  const ours = (kind: string) => kind === 'abaplint' || kind === 'abaplint-syntax';
-  return {
+  const out = {
     ...engine,
-    checks: [...engine.checks.filter((c) => !ours(c.kind)), ...entries.checks],
-    notRun: [...engine.notRun.filter((n) => !ours(n.kind)), ...entries.notRun],
+    checks: [...engine.checks.filter((c) => !ABAPLINT_KINDS.has(c.kind)), ...entries.checks],
+    notRun: [...engine.notRun.filter((n) => !ABAPLINT_KINDS.has(n.kind)), ...entries.notRun],
   };
+  if (r.activation && typeof engine.status === 'string') {
+    if (!r.activation.activatable) out.status = 'not-activatable';
+    else if (engine.status === 'not-activatable') {
+      // The page saw errors the server does not: the status is the functions' again.
+      const notWritten = (engine as { notWritten?: unknown }).notWritten;
+      out.status = Array.isArray(notWritten) && notWritten.length > 0 ? 'partial' : 'complete';
+    }
+  }
+  return out;
 }
