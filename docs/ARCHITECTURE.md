@@ -133,11 +133,14 @@ Client surfaces receive resolved grades, never the maps:
 
 The ATC severity per level is stored as `atcReading` — *our* reading, not an SAP-published mapping. No SAP source stating it outright could be cited; what SAP does document is the recommendation to run ATC in blocking mode for Priority 1 and 2 findings. Do not present it as SAP doctrine without a source.
 
+Since 3.0.13 every catalog grade also carries what SAP's clean core ATC check ("Usage of APIs", Note 3565942) is *expected* to report for that object — `expectedAtcMessage()`, said apart from the grade ("ATC expected: classic API · priority 3 (information)", or "ATC: not determined" where no public source says). It derives no grade. Where the two disagree (an object that is `notToBeReleased` and `classicAPI`: our D, ATC's classic API), `docs/design/abcd-vs-atc.md` records the research, the owner decision list for §9 No. 18 and a manual test recipe.
+
 ### 4.3 Enhancement and modification detection
 
 The clean core level concept turns on *which extension technology* was used, which is also what SAP's ATC check "Allowed Enhancement Technologies" examines. Two evidence kinds cover it:
 
 - `enhancement` — `ENHANCEMENT`, `ENHANCEMENT-POINT`, `ENHANCEMENT-SECTION` (level D technologies, High severity); `GET`/`CALL BADI` and `CL_EXITHANDLER=>GET_INSTANCE` (level B, Low severity — an SAP-provided extension point must not be penalised like a modification).
+- `own-enhancement-point` (from engine 3.0.13) — an `ENHANCEMENT-POINT`/`-SECTION` declared in a program of the customer namespace for spots of the customer namespace: it enhances no SAP object, so it is not level D and costs no points; on-stack rework only, since ABAP Cloud has no enhancement points (`isOwnEnhancementPoint`, `lib/abap/engine-rules.ts`).
 - `modification` — `*{ INSERT|REPLACE|DELETE` markers, Critical.
 
 **Modification markers are full-line comments, which `tokenize()` drops by design** (`declaration-parser.ts`). They are matched against the raw source in a separate pass after the statement loop. Removing that pass makes the most severe clean core violation invisible to the engine — `tests/enhancement-detection.spec.ts` guards it.

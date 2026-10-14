@@ -16,6 +16,7 @@ import { gateOfLine, readConstantGates } from './constant-gates';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
 import { readLegacyTechnology } from './legacy-technology';
+import { isOwnEnhancementPoint, readAbapProxies, readFormOutput, readHookImplementations, readProgramUnits, readSystemTimeUses } from './engine-rules';
 
 export type EvidenceKind =
   | 'table-access'
@@ -49,7 +50,15 @@ export type EvidenceKind =
   | 'ddic-cds-view'
   // From engine 3.0.12: asynchronous RFC on this system (`STARTING NEW TASK`
   // with no destination, `DESTINATION 'NONE'` or `DESTINATION IN GROUP`).
-  | 'parallel-processing';
+  | 'parallel-processing'
+  // From engine 3.0.13 (`PRECISION_FIXES_FROM`): the four small engine rules
+  // (`engine-rules.ts`) and the customer's own enhancement point. None costs
+  // score points or chooses the route.
+  | 'system-time'
+  | 'hook-implementation'
+  | 'form-output'
+  | 'abap-proxy'
+  | 'own-enhancement-point';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -356,6 +365,17 @@ export function buildAbapEvidence(
   const guideline = guidelineChecksApply(engineVersion === undefined ? APP_VERSION : engineVersion);
   // From 3.0.13 (`PRECISION_FIXES_FROM`); a run of an earlier engine keeps what it signed.
   const fixes = precisionFixesApply(engineVersion === undefined ? APP_VERSION : engineVersion);
+  // From 3.0.13: the statements read once for the engine rules, and the program
+  // units they stand in — the program an enhancement point is declared in
+  // decides whether it is the customer's own.
+  const fixesRead = fixes ? readStatements(code) : null;
+  const fixesUnits = fixesRead ? readProgramUnits(fixesRead, fileName) : null;
+  const programNameAt = (line: number): string => {
+    if (!fixesRead || !fixesUnits) return '';
+    let unit = 0;
+    for (let i = 0; i < fixesRead.length && fixesRead[i].lineStart <= line; i++) unit = fixesUnits.unitOf[i];
+    return fixesUnits.names[unit] ?? '';
+  };
   /**
    * Is this object on SAP's list of classic APIs (the classification file,
    * `classicAPI`)? SAP Note 3578329 counts SAP GUI, Dynpro and the ALV grid as
@@ -1214,7 +1234,29 @@ export function buildAbapEvidence(
 
     // Explicit and implicit enhancement points / sections
     const enhPoint = codeText.match(/^ENHANCEMENT-(POINT|SECTION)\s+([\w\/]+)/i);
-    if (enhPoint) {
+    // From 3.0.13 (`PRECISION_FIXES_FROM`): an enhancement point the customer
+    // declares in its own program, for its own spots, enhances no SAP object —
+    // it is an option the customer offers in its own code. It is no level D
+    // technology and costs no points; ABAP Cloud has no enhancement points, so
+    // it is rework where the code moves there (roadmap 3.0.13, suspected defect).
+    const programName = enhPoint && fixes ? programNameAt(stmt.line) : '';
+    if (enhPoint && fixes && isOwnEnhancementPoint(codeText, programName)) {
+      const kindWord = enhPoint[1].toLowerCase();
+      addFinding({
+        kind: 'own-enhancement-point',
+        title: `Own enhancement ${kindWord} ${enhPoint[2].toUpperCase()} in ${programName}`,
+        severity: 'Low',
+        confidence: 'High',
+        objectName: enhPoint[2].toUpperCase(),
+        objectType: kindWord === 'point' ? 'Own Enhancement Point' : 'Own Enhancement Section',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `ENHANCEMENT-${enhPoint[1].toUpperCase()} declared in the customer's own program ${programName}, for enhancement spots in the customer namespace. No SAP object is enhanced here.`,
+        cleanCoreImpact: 'An enhancement option the customer offers in its own code couples nothing to SAP: it is not the level D case of an enhancement of SAP code. The Enhancement Framework is classic ABAP, though, and ABAP Cloud has no enhancement points.',
+        recommendation: 'Keep it while the program stays classic ABAP. Where the program moves to ABAP Cloud, offer the extension through a BAdI of your own (an enhancement spot with a BAdI definition) or a plain interface the callers implement.',
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    } else if (enhPoint) {
       const kindWord = enhPoint[1].toLowerCase();
       addFinding({
         kind: 'enhancement',
@@ -1334,6 +1376,7 @@ export function buildAbapEvidence(
     // "concatenation is union").
     const before = findings.length;
     addGuidelineFindings();
+    if (fixesRead && fixesUnits) addEngineRuleFindings(fixesRead, fixesUnits);
     const added = findings.splice(before);
     for (const finding of added) {
       const at = findings.findIndex((f) => f.lineStart > finding.lineStart);
@@ -1470,6 +1513,135 @@ export function buildAbapEvidence(
           targetOptions: ['Developer Extensibility / RAP'],
         });
       }
+    }
+  }
+
+  /**
+   * From 3.0.13 (`PRECISION_FIXES_FROM`) — the four small engine rules of
+   * roadmap 3.0.13 (owner decision 14.10.2026), read by `engine-rules.ts` and
+   * placed by line with the guideline findings above. None of these kinds costs
+   * score points or chooses the route.
+   */
+  function addEngineRuleFindings(read: ReturnType<typeof readStatements>, units: ReturnType<typeof readProgramUnits>): void {
+    // (1) The server's date and time deciding something — one finding per
+    // program unit, so two programs read as one file answer as they did apart.
+    const allTimeUses = readSystemTimeUses(read, units);
+    for (const unit of [...new Set(allTimeUses.map((u) => u.unit))]) {
+      const timeUses = allTimeUses.filter((u) => u.unit === unit);
+      const first = timeUses[0];
+      const USE_WORDS: Record<string, string> = {
+        comparison: 'compared', deadline: 'used for a deadline', write: 'stored', 'job-schedule': 'used to schedule a job (JOB_CLOSE)',
+      };
+      const uses = [...new Set(timeUses.map((u) => u.use))].map((u) => USE_WORDS[u]).join(', ');
+      const lines = timeUses.map((u) => u.line);
+      addFinding({
+        kind: 'system-time',
+        title: `The server's date or time ${timeUses.some((u) => u.use !== 'write') ? 'decides' : 'is stored'} (${[...new Set(timeUses.filter((u) => u.use !== 'job-schedule').map((u) => u.field.toLowerCase()))].join(', ') || 'job start'})`,
+        // A stored stamp (erdat = sy-datum) is a lesser risk than a decision taken on the server's day.
+        severity: timeUses.some((u) => u.use !== 'write') ? 'Medium' : 'Low',
+        confidence: 'Medium',
+        lineStart: first.line,
+        snippet: first.text,
+        technicalDetail: `sy-datum and sy-uzeit are the application server's date and time — in a cloud system, UTC. Here they are ${uses}, on line${lines.length > 1 ? 's' : ''} ${lines.slice(0, 12).join(', ')}${lines.length > 12 ? ', …' : ''}. A rule meant for the user's or the company's day tips at the wrong hour, and a job scheduled for a date or time starts shifted.`,
+        cleanCoreImpact: 'Not a clean core level question: a correctness risk that surfaces when the system moves to UTC, as SAP Cloud ERP systems run. It changes neither the score nor the route.',
+        recommendation: 'Decide whose day the rule means. For the user\'s day use sy-datlo / sy-timlo; in ABAP Cloud read the time stamp from cl_abap_context_info (or utclong_current( )) and convert it with an explicit time zone — the user\'s (cl_abap_context_info=>get_user_time_zone( )) or a configured company time zone. Add a day-boundary test case: run the logic at 23:30 and at 00:30 local time with the system clock in UTC, and check that the decision does not change between the two runs only because of the clock.',
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    // (2) Exit, BAdI and VOFM implementations: logic in the hook, or delegated.
+    const HOOK_WORDS: Record<string, string> = {
+      'user-exit': 'user exit', 'customer-exit': 'customer exit', badi: 'BAdI implementation', vofm: 'VOFM routine',
+    };
+    // The methods of one BAdI implementation are one hook: grouped by class and
+    // interface, so a BAdI with fourteen methods is one finding, not fourteen.
+    const hookGroups: Array<{ kind: string; name: string; block: number; members: ReturnType<typeof readHookImplementations> }> = [];
+    for (const hook of readHookImplementations(read, fileName)) {
+      const name = hook.kind === 'badi' ? `${hook.owner ? `${hook.owner} · ` : ''}${hook.name.split('~')[0]}` : hook.name;
+      // One CLASS … IMPLEMENTATION block and one interface make one group.
+      const block = hook.ownerBlock ?? 0;
+      const group = hook.kind === 'badi' ? hookGroups.find((g) => g.kind === 'badi' && g.name === name && g.block === block) : undefined;
+      if (group) group.members.push(hook);
+      else hookGroups.push({ kind: hook.kind, name, block, members: [hook] });
+    }
+    for (const group of hookGroups) {
+      const what = HOOK_WORDS[group.kind];
+      const What = `${what.charAt(0).toUpperCase()}${what.slice(1)}`;
+      const first = group.members[0];
+      const last = group.members[group.members.length - 1];
+      const inHook = group.members.reduce((n, m) => n + m.statements, 0);
+      const includes = [...new Set(group.members.flatMap((m) => m.includes))];
+      const delegatedMembers = group.members.filter((m) => m.delegatedTo);
+      const delegatedTo = [...new Set(delegatedMembers.map((m) => m.delegatedTo!))];
+      const allDelegated = delegatedMembers.length === group.members.length;
+      const ownLogic = group.members.filter((m) => !m.delegatedTo).reduce((n, m) => n + m.statements, 0);
+      const methods = group.kind === 'badi' ? ` (${group.members.length} method${group.members.length === 1 ? '' : 's'} with code)` : '';
+      const plural = (n: number) => `${n} statement${n === 1 ? '' : 's'}`;
+      const title = allDelegated
+        ? `${What} ${group.name}${methods}: delegated to ${delegatedTo.join(', ')}`
+        : includes.length && inHook === 0
+        ? `${What} ${group.name}: logic in include ${includes.join(', ')}`
+        : `${What} ${group.name}${methods}: ${plural(ownLogic)} of logic in the hook`;
+      addFinding({
+        kind: 'hook-implementation',
+        title,
+        severity: allDelegated ? 'Info' : 'Low',
+        confidence: 'Medium',
+        lineStart: first.lineStart,
+        lineEnd: last.lineEnd,
+        snippet: statements.find((s) => s.line === first.lineStart)?.text.trim() ?? first.name,
+        technicalDetail: [
+          `The ${what} ${group.name} (lines ${first.lineStart}–${last.lineEnd}) holds ${plural(inHook)} of executable code${group.kind === 'badi' ? ` in ${group.members.map((m) => m.name.split('~')[1] ?? m.name).join(', ')}` : ''}.`,
+          includes.length ? `Its logic stands in the include${includes.length > 1 ? 's' : ''} ${includes.join(', ')}${inHook === 0 ? ', which this source does not show: the statements there are not counted' : ''}.` : '',
+          allDelegated ? `Delegated to a class: yes (${delegatedTo.join(', ')}).`
+            : delegatedMembers.length ? `Delegated to a class: in part — ${delegatedMembers.length} of ${group.members.length} methods hand their work to ${delegatedTo.join(', ')}.`
+            : 'Delegated to a class: no.',
+        ].filter(Boolean).join(' '),
+        cleanCoreImpact: 'How much logic stands in the hook decides the effort of a move, not the level: the hook\'s level is that of the extension technology (a BAdI is level B; a user exit or a VOFM routine is customer code in an SAP include).',
+        recommendation: allDelegated
+          ? `The logic moves with ${delegatedTo.join(', ')}; on a move only the call in the hook is re-pointed to the successor extension point.`
+          : `Move the ${plural(ownLogic || inHook)} of logic into a class of your own and leave only the call in the hook. The logic can then be tested on its own, and a move to a released extension point re-points one call instead of rebuilding the hook.`,
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    // (3) Form output: the level follows the print program's data access.
+    const FORM_WORDS: Record<string, string> = { sapscript: 'SAPscript', 'smart-forms': 'Smart Forms', 'adobe-forms': 'Adobe Forms (Interactive Forms by Adobe)' };
+    for (const use of readFormOutput(read, units)) {
+      const name = FORM_WORDS[use.technology];
+      addFinding({
+        kind: 'form-output',
+        title: `Form output with ${name} (${use.modules.join(', ')})`,
+        severity: 'Info',
+        confidence: 'High',
+        lineStart: use.lineStart,
+        snippet: statements.find((s) => s.line === use.lineStart)?.text.trim() ?? use.modules[0],
+        technicalDetail: `The program prints through ${name}: ${use.modules.join(', ')} on line${use.lines.length > 1 ? 's' : ''} ${use.lines.join(', ')}. SAP's classification file lists the form function modules as classic APIs.`,
+        cleanCoreImpact: 'The form call does not decide the level: the print program\'s level follows the data it reads and writes, graded where those accesses stand. A form technology is no clean core violation in itself.',
+        recommendation: `Optional, not needed for clean core: move the output to SAP S/4HANA output management (output determination with Adobe-based form templates) when the form has to change anyway. ${use.technology === 'adobe-forms' ? 'The form is already an Adobe form, so the form itself can largely stay.' : `A ${name} form is redrawn as an Adobe form for that.`}`,
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
+    // (4) ABAP proxies, and the question behind every interface.
+    for (const proxy of readAbapProxies(read)) {
+      addFinding({
+        kind: 'abap-proxy',
+        title: `ABAP ${proxy.direction} proxy ${proxy.name}`,
+        severity: 'Low',
+        confidence: 'Medium',
+        objectName: proxy.name,
+        objectType: proxy.direction === 'consumer' ? 'ABAP Consumer Proxy' : 'ABAP Provider Proxy',
+        lineStart: proxy.lineStart,
+        snippet: statements.find((s) => s.line === proxy.lineStart)?.text.trim() ?? proxy.name,
+        technicalDetail: proxy.direction === 'consumer'
+          ? `${proxy.name} is a generated consumer proxy: the program calls a service of another system through it.`
+          : `${proxy.name} is the generated interface of a provider (inbound) proxy: another system calls this code through it.`,
+        cleanCoreImpact: 'A proxy class is generated from the service interface (Enterprise Services Repository or WSDL) and regenerated in the target system against that definition — it is not moved as code. The implementation around it is.',
+        recommendation: 'Regenerate the proxy in the target system from the service definition instead of transporting the generated class. First ask the process owner whether the process behind this interface still runs: if nothing calls it or uses its answer any more, it is a candidate to retire rather than to move.',
+        targetOptions: ['Integration Suite', 'Retire'],
+        needsBusinessDecision: true,
+      });
     }
   }
 
