@@ -1,6 +1,7 @@
 import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
+import { readDemoSwitches } from '@/lib/abap/demo-switches';
 import { assessCoverage } from '@/lib/abap/coverage';
 import { buildProcessSkeleton, type LaneEvidence, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { readDataScope, type DataScopeReport } from '@/lib/abap/data-scope';
@@ -1076,8 +1077,15 @@ export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocume
   const stepLabel = (stepId: string | null) => (stepId && fr ? fr.steps.find((s) => s.id === stepId)?.label ?? null : null);
   const rules: PdRule[] = [];
   const ruleIdsShown = new Set<string>();
+  // Roadmap 3.0.13 (SD review CR-A3): the values a demo-case switch sets are
+  // test data, not values fixed for the business — the arms are counted apart.
+  const demoCaseRanges = readDemoSwitches(source)?.cases ?? [];
+  const inDemoCase = (anchors: ReadonlyArray<{ lineStart: number }>) =>
+    demoCaseRanges.length > 0 && anchors.length > 0
+    && anchors.every((a) => demoCaseRanges.some((c) => a.lineStart >= c.lineStart && a.lineStart <= c.lineEnd));
   for (const r of fr?.requirements ?? []) {
     if (!['rule', 'decision', 'fixed-values'].includes(r.basis.kind)) continue;
+    if (r.basis.kind === 'fixed-values' && inDemoCase(r.anchors)) continue;
     const s = r.statement;
     let condition = '';
     let effect = '';

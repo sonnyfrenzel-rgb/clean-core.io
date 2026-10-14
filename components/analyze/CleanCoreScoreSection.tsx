@@ -306,7 +306,11 @@ function deductionDetail(d: HeroDeduction): string {
     : d.count > 1
       ? `first ${d.first}, each further ${d.additional}`
       : `${d.first} for the first`;
-  return `${plural(d.count, 'finding', 'findings')}${objects} · ${rule}`;
+  // Engine 3.0.13 on (SD review CR-A6): charged all the same, but said.
+  const locked = d.unreachable
+    ? ` · ${d.unreachable.lines.length === d.lines.length ? 'all' : plural(d.unreachable.lines.length, 'line', 'lines')} unreachable (behind constant ${d.unreachable.gates.map((g) => g.constant).join(', ')})`
+    : '';
+  return `${plural(d.count, 'finding', 'findings')}${objects} · ${rule}${locked}`;
 }
 
 /** Line chips: the first few lines a row comes from, and how many more. */

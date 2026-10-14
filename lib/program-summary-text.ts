@@ -65,6 +65,11 @@ export interface SummaryInput {
   kind: 'parameter' | 'range' | 'switch';
   required: boolean;
   line: number;
+  /**
+   * Roadmap 3.0.13: every use of the input stands in code no run reaches
+   * (`constant-gates.ts`) — it selects nothing a run does. Absent otherwise.
+   */
+  lockedOnly?: true;
 }
 
 export interface SummaryFixedList {
@@ -124,6 +129,19 @@ export interface ProgramSummaryFacts {
    * 12.10.2026). Absent in facts stored before it was read.
    */
   headerClaim?: { heading: string; text: string; lineStart: number; lineEnd: number } | null;
+  /**
+   * Roadmap 3.0.13 (SD review CR-A1/D01): reads that stand behind a constant
+   * gate no run passes — kept out of `reads`, which says what a run reads, and
+   * named here with the gate. Absent when the source has no such gate.
+   */
+  locked?: {
+    reads: SummaryObject[];
+    gate: { constant: string; value: string; line: number; stopLine: number | null; routine: string | null };
+  } | null;
+  /** Roadmap 3.0.13 (CR-A3): the demo flag and the demo-case switches counted apart from `rules`. Absent without a demo flag. */
+  demo?: { flag: string; line: number; switches: number } | null;
+  /** Roadmap 3.0.13 (CR-A2): rules and bounds the header comment states — candidates, not code facts. Absent when it states none. */
+  headerRules?: { rules: number; bounds: number; range: string; lineStart: number; lineEnd: number } | null;
 }
 
 export type SummaryBasis = 'reconstructed' | 'not-determined' | 'confirmed';
@@ -236,7 +254,7 @@ function selectionWords(inputs: readonly SummaryInput[]): string[] {
   // A label the program wrote, or a name the glossary turned into words; a
   // bare field name ("Anlkl", "Afabe") says nothing to a reader and is left out.
   const readable = (i: SummaryInput) => i.labelFrom === 'screen' || /\s/.test(i.label.trim()) || READABLE_ONE_WORD.test(i.label.trim());
-  const business = inputs.filter((i) => i.kind !== 'switch' && readable(i) && !TECHNICAL_INPUT.test(`${i.label} ${i.name}`));
+  const business = inputs.filter((i) => i.kind !== 'switch' && !i.lockedOnly && readable(i) && !TECHNICAL_INPUT.test(`${i.label} ${i.name}`));
   const required = business.filter((i) => i.required);
   const chosen = (required.length ? required : business).slice(0, 6);
   const words = [...new Set(chosen.map((i) => labelWord(i.label)).filter((w) => w.length > 1))];
@@ -372,6 +390,18 @@ function purposeLine(f: ProgramSummaryFacts): SummaryLine {
   // first — a cockpit: what it shows is its purpose, the changes follow in their
   // own slot (SD review, 12.10.2026).
   const shown = flow.onCommandOnly ? shownAs(f) : '';
+  // Roadmap 3.0.13 (SD review CR-A1/D01): when every table read stands behind a
+  // constant gate no run passes, the purpose says what a run does — it reads no
+  // table — and where its data comes from, not the locked path.
+  if (!what && f.locked && f.locked.reads.length) {
+    const own = f.demo ? `; it works on data the program builds itself (demo switch ${f.demo.flag})` : '';
+    return {
+      key: 'purpose',
+      text: `A ${readOnly}${noun} that reads no database table on the path a run can take${own}${selected}${shown}.`,
+      anchors: anchorsOf([f.demo?.line, f.locked.gate.line]),
+      basis: 'reconstructed',
+    };
+  }
   const text = what
     ? `A ${readOnly}${noun} on ${what}${selected}${shown}.`
     : f.inputs.length || f.outputs.list
@@ -470,6 +500,27 @@ function readsLine(f: ProgramSummaryFacts): SummaryLine | null {
   };
 }
 
+/**
+ * The reads no run makes (roadmap 3.0.13): named, with the gate that keeps them
+ * locked, so a reader learns they exist and why they do not count.
+ */
+function lockedLine(f: ProgramSummaryFacts): SummaryLine | null {
+  const locked = f.locked;
+  if (!locked || !locked.reads.length) return null;
+  const main = locked.reads.filter((o) => o.kind === 'business' || o.kind === 'custom');
+  const named = objectWords(main.length ? main : locked.reads, 3);
+  const what = joinAnd([...named.words, ...(named.rest > 0 ? [plural(named.rest, 'more table')] : [])]) || plural(locked.reads.length, 'table');
+  const g = locked.gate;
+  const value = /^space$/i.test(g.value) ? 'blank (space)' : g.value;
+  const where = g.routine ? ` ${g.routine.toLowerCase()}` : ' the routine';
+  return {
+    key: 'reads',
+    text: `Its reads of ${what} are locked: the constant ${g.constant} is ${value}, so the check at L${g.line} always ends${where}${g.stopLine ? ` with an error at L${g.stopLine}` : ''} — no run reaches them.`,
+    anchors: anchorsOf([g.line, g.stopLine, ...locked.reads.slice(0, 2).map((o) => o.line)]),
+    basis: 'reconstructed',
+  };
+}
+
 function resultLine(f: ProgramSummaryFacts): SummaryLine | null {
   const o = f.outputs;
   const also = [
@@ -515,13 +566,26 @@ function triggerLine(f: ProgramSummaryFacts): SummaryLine {
 
 function rulesLine(f: ProgramSummaryFacts): SummaryLine | null {
   if (f.rules === null) return null;
+  // Roadmap 3.0.13: demo-case switches are counted apart (CR-A3), and the rules
+  // the header states are named as what they are — candidates (CR-A2).
+  const apart = f.demo && f.demo.switches > 0
+    ? `; ${plural(f.demo.switches, 'demo-case switch', 'demo-case switches')} (${f.demo.flag}) ${f.demo.switches === 1 ? 'is' : 'are'} counted apart — test data, not rules`
+    : '';
+  const h = f.headerRules;
+  const stated = h && h.rules + h.bounds > 0
+    ? ` The header comment states ${joinAnd([
+        h.rules ? `${plural(h.rules, 'rule')}${h.range ? ` (${h.range})` : ''}` : '',
+        h.bounds ? plural(h.bounds, 'input bound') : '',
+      ].filter(Boolean))} — candidates in the rule register, stated in the header, not read from code.`
+    : '';
+  const anchors = h ? [{ lineStart: h.lineStart, lineEnd: h.lineEnd }] : [];
   if (f.rules === 0) {
-    return { key: 'rules', text: 'No business rule fixed in the code was found.', anchors: [], basis: 'reconstructed' };
+    return { key: 'rules', text: `No business rule fixed in the code was found${apart}.${stated}`, anchors, basis: 'reconstructed' };
   }
   return {
     key: 'rules',
-    text: `${capital(plural(f.rules, 'business rule'))} ${f.rules === 1 ? 'is' : 'are'} fixed in the code.`,
-    anchors: [],
+    text: `${capital(plural(f.rules, 'business rule'))} ${f.rules === 1 ? 'is' : 'are'} fixed in the code${apart}.${stated}`,
+    anchors,
     basis: 'reconstructed',
   };
 }
@@ -544,6 +608,8 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   lines.push(changesLine(f));
   const reads = readsLine(f);
   if (reads) lines.push(reads);
+  const locked = lockedLine(f);
+  if (locked) lines.push(locked);
   const result = resultLine(f);
   if (result) lines.push(result);
   lines.push(triggerLine(f));

@@ -573,7 +573,7 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
       const parts = text.split(connector === 'AND' ? /\s+AND\s+/i : /\s+OR\s+/i);
       const other = connector === 'AND' ? /\sOR\s/i : /\sAND\s/i;
       if (parts.length > 1 && !other.test(text) && !/\bBETWEEN\b/i.test(text)) {
-        const clauses = parts.map((part) => conditionClause(part, subrc));
+        const clauses = connector === 'AND' ? noneOfClauses(parts, subrc) : parts.map((part) => conditionClause(part, subrc));
         if (clauses.every((clause) => !clause.startsWith('the condition'))) {
           return `${clauses.slice(0, -1).join(', ')} ${word} ${clauses[clauses.length - 1]}`;
         }
@@ -623,6 +623,40 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
   const exists = /^line_exists\(\s*([A-Za-z0-9_\-<>]+)\[/i.exec(text);
   if (exists) return `a matching row exists in ${plain(exists[1])}`;
   return literally;
+}
+
+/**
+ * The clauses of an `AND` chain, with every run of `f <> a AND f <> b …` on one
+ * field said as one clause (SD review of 14.10.2026, D02): `discrete <> 'X'
+ * AND discrete <> space` rejects a value that is neither `X` nor blank, and was
+ * read clause by clause as "is not set and is set" — a contradiction where the
+ * code names the values it lets through. Now: "the field is_claim-discrete is
+ * neither X nor blank". Values stay verbatim; a blank is said. Whether the
+ * other values are refused is the branch's effect, said by the sentence.
+ */
+function noneOfClauses(parts: readonly string[], subrc?: (value: string, equal: boolean) => string | null): string[] {
+  const unequal = (part: string) => /^(\S+)\s*(?:<>|\bNE\b)\s*(\S+)$/i.exec(part.trim());
+  const out: string[] = [];
+  for (let i = 0; i < parts.length; ) {
+    const head = unequal(parts[i]);
+    let j = i + 1;
+    if (head && !/^sy-subrc$/i.test(head[1])) {
+      while (j < parts.length && unequal(parts[j])?.[1].toLowerCase() === head[1].toLowerCase()) j += 1;
+    }
+    if (head && j - i >= 2) {
+      const values = parts.slice(i, j).map((p) => {
+        const right = unequal(p)![2];
+        return FALSE_VALUES.test(right) ? 'blank' : valueText(right);
+      });
+      const listed = values.length === 2 ? `neither ${values[0]} nor ${values[1]}` : `none of ${values.slice(0, -1).join(', ')} and ${values[values.length - 1]}`;
+      out.push(`${nounPhrase(head[1])} is ${listed}`);
+      i = j;
+      continue;
+    }
+    out.push(conditionClause(parts[i], subrc));
+    i += 1;
+  }
+  return out;
 }
 
 /**

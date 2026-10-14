@@ -16,7 +16,8 @@
  * takes the same rows from `ruleRegisterFromView` / `ruleRegisterFromSource`.
  */
 
-import { deriveBusinessRules } from './abap/business-rule-set';
+import { deriveBusinessRules, type BusinessRuleSet } from './abap/business-rule-set';
+import { HEADER_RULE_LABEL, type HeaderRuleCandidate } from './abap/header-rules';
 import { ruleAnchor } from './rule-anchor';
 import { csvCell } from './csv-formula';
 import { readProcessStates, subjectIdsOf, type ProcessStateView, type StateEntry, type StateSubject } from './process-states';
@@ -126,9 +127,45 @@ export type RuleRegister =
       basis: 'confirmations' | 'source';
       rows: RuleRow[];
       counts: { keep: number; change: number; drop: number; clarify: number; undecided: number };
+      apart?: RuleRegisterApart;
     }
-  | { state: 'not-detected'; reason: string }
+  | { state: 'not-detected'; reason: string; apart?: RuleRegisterApart }
   | { state: 'not-read'; reason: string };
+
+/**
+ * Roadmap 3.0.13 (SD review CR-A2/CR-A3): what the register lists apart from
+ * its rows — the demo-case switches (test data, not rules) and the rules the
+ * header comment states (candidates, not read from code). Present only when
+ * there is one of either.
+ */
+export interface RuleRegisterApart {
+  demoFlag: string | null;
+  demoCases: Array<{ id: string; label: string; routine: string | null; evidence: string }>;
+  headerRules: HeaderRuleCandidate[];
+}
+
+function apartOf(set: Pick<BusinessRuleSet, 'demoCases' | 'headerRules'>): RuleRegisterApart | null {
+  const demo = set.demoCases?.rules ?? [];
+  const header = set.headerRules ?? [];
+  if (!demo.length && !header.length) return null;
+  return {
+    demoFlag: set.demoCases?.flag ?? null,
+    demoCases: demo.map((d) => ({ id: d.id, label: d.label, routine: d.routine, evidence: lineWords(d.anchor.lineStart, d.anchor.lineEnd) })),
+    headerRules: header,
+  };
+}
+
+const lineWords = (from: number, to: number) => (to > from ? `lines ${from} to ${to}` : `line ${from}`);
+
+/** The rule set of a source the register may read, or null (too large, unreadable). */
+function ruleSetOf(source: string | null | undefined): BusinessRuleSet | null {
+  if (!source || !source.trim() || new TextEncoder().encode(source).length > MAX_RULE_READ_BYTES) return null;
+  try {
+    return deriveBusinessRules(source);
+  } catch {
+    return null;
+  }
+}
 
 /** What the register needs to know about the tests: the cases, and the covering run's verdicts when there is one. */
 export interface RuleTestInput {
@@ -185,12 +222,19 @@ export function ruleRegisterFromView(
   view: ProcessStateView | null,
   reason = 'the confirmed process states could not be read.',
   tests: RuleTestInput = NO_TESTS,
+  /** The signed source, when the caller holds it — for what the register lists apart (3.0.13). */
+  source?: string | null,
 ): RuleRegister {
   if (!view) return { state: 'not-read', reason };
-  const { rules } = subjectIdsOf(view.subjects);
-  if (rules.length === 0) return { state: 'not-detected', reason: NO_RULES };
-  const read = readProcessStates(view.entries, { elements: [], rules });
-  return { state: 'read', basis: 'confirmations', rows: rowsOf(view.subjects, read.bySubject, tests), counts: read.counts };
+  const set = source ? ruleSetOf(source) : null;
+  const apart = set ? apartOf(set) : null;
+  // A stored record may still name a rule the engine now counts as a demo switch.
+  const demoIds = new Set((apart?.demoCases ?? []).map((d) => d.id));
+  const subjects = demoIds.size ? view.subjects.filter((s) => !(s.kind === 'rule' && demoIds.has(s.subject))) : view.subjects;
+  const { rules } = subjectIdsOf(subjects);
+  if (rules.length === 0) return { state: 'not-detected', reason: NO_RULES, ...(apart ? { apart } : {}) };
+  const read = readProcessStates(view.entries.filter((e) => !demoIds.has(e.subject)), { elements: [], rules });
+  return { state: 'read', basis: 'confirmations', rows: rowsOf(subjects, read.bySubject, tests), counts: read.counts, ...(apart ? { apart } : {}) };
 }
 
 /** The process-states route's limit: `deriveBusinessRules` is quadratic in the source, and this may run in the browser. */
@@ -215,7 +259,8 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
   } catch {
     return { state: 'not-read', reason: 'the rule reader could not walk the source.' };
   }
-  if (set.rules.length === 0) return { state: 'not-detected', reason: NO_RULES };
+  const apart = apartOf(set);
+  if (set.rules.length === 0) return { state: 'not-detected', reason: NO_RULES, ...(apart ? { apart } : {}) };
   const subjects: StateSubject[] = set.rules.map((rule) => ({
     subject: rule.id,
     kind: 'rule',
@@ -228,6 +273,7 @@ export function ruleRegisterFromSource(source: string, tests: RuleTestInput = NO
     basis: 'source',
     rows: rowsOf(subjects, {}, tests),
     counts: { keep: 0, change: 0, drop: 0, clarify: 0, undecided: subjects.length },
+    ...(apart ? { apart } : {}),
   };
 }
 
@@ -277,6 +323,7 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
   lines.push('', '## Rules', '');
   if (register.state !== 'read') {
     lines.push(`**${RULE_STATE_WORDS[register.state]}** — ${register.reason}`);
+    if (register.state === 'not-detected' && register.apart) lines.push(...apartMarkdown(register.apart));
     return lines;
   }
   lines.push(
@@ -293,6 +340,41 @@ export function ruleRegisterMarkdown(register: RuleRegister): string[] {
     lines.push(
       `| ${row.id} \`${row.label.replace(/`/g, "'")}\` | ${RULE_STATE_WORDS[row.state]} | ${cell(row.meaning)} | ${cell(w.proposal)} | ${cell(w.decision)} | ${cell(w.implementation)} | ${cell(w.test)} | ${cell(w.evidence)} | ${w.revision} |`,
     );
+  }
+  if (register.apart) lines.push(...apartMarkdown(register.apart));
+  return lines;
+}
+
+/**
+ * What the register lists apart (roadmap 3.0.13): the rules the header states,
+ * as candidates a reader checks against the code, and the demo-case switches,
+ * counted so that none of them goes missing — neither is a row of the table.
+ */
+function apartMarkdown(apart: RuleRegisterApart): string[] {
+  const lines: string[] = [];
+  if (apart.headerRules.length) {
+    lines.push(
+      '',
+      '## Rules stated in the header comment — candidates',
+      '',
+      `${HEADER_RULE_LABEL}. The program's author wrote these in its header comment; the engine did not read them from a condition in the code, so each is a candidate until a reader finds it in the code and confirms it. ${apart.headerRules.length} in all.`,
+      '',
+      '| Candidate | Stated in the header | Evidence |',
+      '|---|---|---|',
+    );
+    for (const c of apart.headerRules) lines.push(`| ${c.id} | ${cell(c.text)} | Header comment, ${lineWords(c.lineStart, c.lineEnd)} |`);
+  }
+  if (apart.demoCases.length) {
+    lines.push(
+      '',
+      '## Demo-case switches — counted apart',
+      '',
+      `${apart.demoCases.length} ${apart.demoCases.length === 1 ? 'entry selects' : 'entries select'} the program's own demo data${apart.demoFlag ? ` (demo switch ${apart.demoFlag})` : ''}: an arm of the switch on the demo case, a check on the demo parameters, or a constant naming demo data. They are test data, not business rules, and are not rows of the table above; their numbers stay free, so every rule keeps the number a decision is stored against.`,
+      '',
+      '| Entry | Condition | Routine | Evidence |',
+      '|---|---|---|---|',
+    );
+    for (const d of apart.demoCases) lines.push(`| ${d.id} | \`${d.label.replace(/`/g, "'").replace(/\|/g, '\\|')}\` | ${d.routine ?? '—'} | Source, ${d.evidence} |`);
   }
   return lines;
 }

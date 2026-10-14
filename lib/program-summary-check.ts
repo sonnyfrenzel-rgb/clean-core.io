@@ -35,9 +35,23 @@ export interface PurposeCheck {
   problems: string[];
 }
 
-// "posted items" describes the data it reads, not a posting it makes.
-const POSTS = /\b(?:posts?|posted(?! (?:items?|documents?|amounts?|entries|data|values?|balances?|lines?|costs?))|posting(?! (?:date|period|key|keys))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
+// "posted items" describes the data it reads, not a posting it makes — and so do
+// "already posted credits" and "previously posted invoices" (SD review of
+// 14.10.2026, CR-A4/D01: a header naming the posted credits its simulation
+// considers was dropped as claiming a posting).
+const POSTS = /\b(?:posts?|(?<!\b(?:already|previously|earlier|formerly|existing|prior) )posted(?! (?:items?|documents?|amounts?|entries|data|values?|balances?|lines?|costs?|credits?|invoices?|payments?|receipts?|quantit(?:y|ies)|goods))|posting(?! (?:date|period|key|keys))|books?\b(?! of)|booked|creates? (?:an? |the )?(?:accounting |FI |financial |purchase |sales )?(?:documents?|orders?)|updates? the (?:ledger|account|balance|master)|writes? back|settles?\b|clears? (?:the |all )?(?:open )?items?|changes? (?:the )?(?:master|data|records?|documents?) in SAP)\b/i;
 const DOES_NOT_POST = /\b(?:does not|doesn't|do not|never|cannot|can't|no longer) (?:post|change|update|book)\b|\bread-only\b|\bnon-posting\b|\bno (?:[\w-]+ ){0,3}(?:are |is )?(?:posted|booked|changed)\b|\bwithout posting\b/i;
+/*
+ * A negated statement claims nothing (SD review of 14.10.2026, CR-A4): "It never
+ * dispatches an order, changes a work center, reserves people, posts a
+ * confirmation or changes an SAP document" and "No creation of a credit memo
+ * request, billing document or FI posting" list what the program does not do.
+ * The whole clause after the negation is set aside — a list joined by commas
+ * and "or" stays inside it — up to the end of the sentence, a semicolon, or an
+ * "and"/"but" that starts a new statement: "It does not change data and posts
+ * documents" still claims a posting.
+ */
+const NEGATED_CLAUSE = /\b(?:does not|doesn't|do not|don't|never|cannot|can't|no longer|without|no creation of|not(?! only))\b[^.;!?]*?(?=,?\s+(?:and|but)\s+|[.;!?]|$)/gi;
 const MAIL = /\b(?:(?:e-?)?mail(?:s|ed|ing)?|sends? (?:a |an |the )?(?:letter|reminder|notice|notification|correspondence|message))\b/i;
 const APPROVAL = /\b(?:approval workflow|approves?|sign-?off|four[- ]eyes|release strategy)\b/i;
 const MONEY = /(?:[$€£]\s?\d|\b\d[\d.,]*\s?(?:EUR|USD|GBP|CHF|k€|million|bn)\b|\bsav(?:e|es|ing|ings)\b|\bROI\b|\bcost reduction\b|\b\d+\s?% (?:faster|cheaper|accura\w*|less)\b|\baccuracy\b)/i;
@@ -224,6 +238,7 @@ export function checkPurposeProposal(text: string, facts: ProgramSummaryFacts): 
   // left is checked — "It does not change data and posts documents" still claims a posting.
   // English and German alike (SD review, 12.10.2026).
   const undenied = t
+    .replace(NEGATED_CLAUSE, ' ')
     .replace(new RegExp(DOES_NOT_POST.source, 'gi'), ' ')
     .replace(new RegExp(DOES_NOT_POST_DE.source, 'giu'), ' ');
   if (changes === 'none' && (POSTS.test(undenied) || POSTS_DE.test(undenied))) {

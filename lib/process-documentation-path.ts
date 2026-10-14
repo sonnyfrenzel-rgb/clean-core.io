@@ -167,10 +167,18 @@ function walkTopLevel(steps: readonly DocStep[]): { items: PathItem[]; order: st
       // depth, as it does after a check whose exit has an end of its own —
       // nesting everything after it as "optional" would bury the main path one
       // level deeper at every check. The check stands under the rules.
+      //
+      // Not a check (SD review of 14.10.2026, D04): `IF p_export = 'X'. PERFORM
+      // export. ENDIF.` as the last statement of the level — the arm that holds
+      // the condition runs the step, the arm without one is the plain fall
+      // through to the end. That is an optional step, not a check that ends the
+      // run; read as a check it was listed as if every run exported.
       if (arms.length === 2 && isGate(node)) {
         const end = arms.find((a) => /^end\b/i.test(byId.get(a.to)?.kind ?? ''));
         const go = arms.find((a) => a !== end);
-        if (end && go && reach(go.to, stop).has(end.to)) {
+        const optionalTail = !!end && !!go && /^IF\b/i.test(node.technicalName) && !!go.when && !end.when
+          && /^end\b(?!.*early)/i.test(byId.get(end.to)?.kind ?? '');
+        if (end && go && !optionalTail && reach(go.to, stop).has(end.to)) {
           at = go.to;
           continue;
         }

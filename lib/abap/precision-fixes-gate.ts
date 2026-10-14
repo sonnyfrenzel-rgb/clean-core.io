@@ -21,7 +21,11 @@ import { engineVersionAtLeast } from '../score-rule';
  *     statement decides on sy-subrc (`IF`, `CHECK`, `CASE`, `ASSERT`, …), not
  *     when it merely mentions it (`decidesOnSubrc`, `security-review.ts`);
  *   - the flow from input to a dynamic clause or a path is followed to a fixed
- *     point, not for eight passes (`taintedNames`, `security-review.ts`).
+ *     point, not for eight passes (`taintedNames`, `security-review.ts`);
+ *   - a finding in code a constant gate locks away (`IF gc_live_probe <> 'X'.
+ *     MESSAGE … TYPE 'E'.` with the constant blank) carries `unreachable`, and
+ *     the score table labels it — still charged (SD review of 14.10.2026,
+ *     CR-A6; `constant-gates.ts`, `evidence-model.ts`).
  *
  * Each changes what a run signs, so a run made by an older engine keeps the
  * evidence and the route it was signed with: whatever rebuilds a signed run

@@ -29,6 +29,8 @@ import { CLOUD_ERP_PRIVATE } from './sap-naming';
 /** A finding as the hero needs it: what the score counts, and the line it stands on. */
 export interface HeroFinding extends ScoredFinding {
   lineStart: number;
+  /** From engine 3.0.13: the finding stands behind a constant gate no run passes (`EvidenceFinding.unreachable`). */
+  unreachable?: { gateLine: number; constant: string };
 }
 
 /** A kind of construct not assessed: its words, how often, and where it first stands. */
@@ -55,6 +57,12 @@ export interface HeroDeduction {
   cap: number;
   /** The kind's cap held the deduction down. */
   capped: boolean;
+  /**
+   * Counted findings that stand in code no run reaches (engine 3.0.13 on,
+   * SD review CR-A6): still charged — the code ships and one edit opens it —
+   * but labelled. Null when there is none, and for every run of an earlier engine.
+   */
+  unreachable: { lines: number[]; gates: Array<{ constant: string; line: number }> } | null;
 }
 
 /** Writes to the program's own Z/Y tables that cost nothing under the run's rule. */
@@ -104,6 +112,18 @@ function where(findings: readonly HeroFinding[]): { objects: string[]; lines: nu
   };
 }
 
+/** The counted findings behind a constant gate, with the gates; null when none is. */
+function unreachableOf(findings: readonly HeroFinding[]): HeroDeduction['unreachable'] {
+  const locked = findings.filter((f) => f.unreachable && Number.isFinite(f.unreachable.gateLine));
+  if (!locked.length) return null;
+  const gates = new Map<string, { constant: string; line: number }>();
+  for (const f of locked) gates.set(`${f.unreachable!.constant}@${f.unreachable!.gateLine}`, { constant: f.unreachable!.constant, line: f.unreachable!.gateLine });
+  return {
+    lines: distinct(locked.map((f) => f.lineStart).filter((l) => Number.isFinite(l) && l > 0)).sort((a, b) => a - b),
+    gates: [...gates.values()].sort((a, b) => a.line - b.line),
+  };
+}
+
 /**
  * The hero's table, from the breakdown the page already computed with the
  * signed run's rule. `gaps` are the coverage report's gaps the breakdown
@@ -130,6 +150,7 @@ export function scoreHeroModel(
       additional: table.additional,
       cap: table.cap,
       capped: table.first + (line.count - 1) * table.additional > table.cap,
+      unreachable: unreachableOf(counted),
     };
   });
 

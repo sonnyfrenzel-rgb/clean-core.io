@@ -326,7 +326,8 @@ function answeredQuestions(inShort: ProgramSummary, counts: BusinessPageInput['c
   const strip = (text: string | null) => (text ?? '').replace(/^It /, '').replace(/\.$/, '');
   const purpose = slot('purpose') ?? '';
   const selection = /selected by ([^.;]+)/.exec(purpose)?.[1] ?? null;
-  const reads = strip(slot('reads'));
+  // What a run reads — not the reads a constant gate locks away (3.0.13), which share the slot.
+  const reads = strip(inShort.lines.find((l) => l.key === 'reads' && /^It reads\b/.test(l.text))?.text ?? null);
   const changes = strip(slot('changes'));
   // No count here: the chapters count, and a second count of the same thing
   // is the disagreement the CO review found (87 rules on one page, 36 in the file).

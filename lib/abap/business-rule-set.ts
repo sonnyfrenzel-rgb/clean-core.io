@@ -3,6 +3,8 @@ import { containerAt, type BlockKind, type Container } from './block-structure';
 import type { Branch } from './control-flow';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readDecisionTable } from './decision-table';
+import { isDemoSubject, readDemoSwitches, type DemoSwitches } from './demo-switches';
+import { readHeaderRules, type HeaderRuleCandidate } from './header-rules';
 import {
   buildProcessSkeletonFrom,
   type ProcessSkeleton,
@@ -272,9 +274,35 @@ export interface DecisionTable {
   ruleIds: string[];
 }
 
+/**
+ * Roadmap 3.0.13 (SD review CR-A3): a register entry that is a demo-case
+ * switch — an arm of the `CASE` on the demo case, a check on the demo
+ * parameters, or a constant naming demo data. Not a business rule; listed
+ * apart with its number, its condition and its first lines.
+ */
+export interface DemoCaseEntry {
+  id: string;
+  label: string;
+  routine: string | null;
+  anchor: RuleAnchor;
+}
+
 export interface BusinessRuleSet {
   program: string | null;
   rules: BusinessRule[];
+  /**
+   * Roadmap 3.0.13. The demo switches of a program that runs on its own demo
+   * data (`demo-switches.ts`): kept out of `rules`, counted here. Present only
+   * when the source has some, so every other reading stays byte for byte what
+   * it was.
+   */
+  demoCases?: { flag: string; selectors: string[]; rules: DemoCaseEntry[] };
+  /**
+   * Roadmap 3.0.13 (CR-A2). Rules and bounds the header comment states
+   * (`header-rules.ts`) — what the author says, not what the engine read.
+   * Present only when the header states some.
+   */
+  headerRules?: HeaderRuleCandidate[];
   /**
    * Roadmap 3.0.7 (e). Present only when the source holds one, so the reading
    * of a source without any stays byte for byte what it was.
@@ -309,6 +337,23 @@ export function deriveBusinessRulesFrom(
   skeleton: ProcessSkeleton,
 ): BusinessRuleSet {
   return new RuleSetBuilder(source, facts, skeleton).build();
+}
+
+/**
+ * Is this rule a demo switch? Every value it holds is tested on the demo flag
+ * or a demo-case selector — or it is a constant nothing tests whose value
+ * names demo data (`'DEMO-SD-20261012-R01'`).
+ */
+function isDemoRule(rule: BusinessRule, demo: DemoSwitches): boolean {
+  if (!rule.parameters.length) return false;
+  if (rule.parameters.every((p) => isDemoSubject(demo, p.subject))) return true;
+  const declarationOnly = rule.typeBasis.length > 0 && rule.typeBasis.every((t) => t.basis === 'declaration-only');
+  return declarationOnly && rule.parameters.every((p) => p.origin === 'constant' && /DEMO/i.test(p.literal));
+}
+
+function demoCaseOf(rule: BusinessRule): DemoCaseEntry {
+  const anchor = rule.sentences[0]?.anchors[0] ?? { lineStart: 0, lineEnd: 0, quote: '' };
+  return { id: rule.id, label: rule.label, routine: rule.sources[0]?.routine ?? null, anchor: { ...anchor } };
 }
 
 /** Every rule that names this skeleton node — the reverse of `processElements`. */
@@ -523,7 +568,7 @@ class RuleSetBuilder {
   private index: RuleSetIndex;
 
   constructor(
-    source: string,
+    private source: string,
     private facts: ProcessFacts,
     private skeleton: ProcessSkeleton,
   ) {
@@ -559,9 +604,18 @@ class RuleSetBuilder {
     const tableValues = new Set(
       this.tables.flatMap(({ table }) => table.rows.flatMap((r) => (r.constant ? [r.constant.toUpperCase()] : []))),
     );
-    const rules = groups.flatMap((group, i) =>
+    const numberedRules = groups.flatMap((group, i) =>
       this.onlyTableValues(group, tableValues) ? [] : [this.rule(`BR-${String(i + 1).padStart(3, '0')}`, group)],
     );
+    // Roadmap 3.0.13 (SD review CR-A3): the arms of a demo-case switch and the
+    // checks on the demo parameters are test data, not rules a business keeps
+    // or drops. Counted apart, numbered first like the table values above, so
+    // every other rule keeps the number a confirmation is stored against.
+    const demo = readDemoSwitches(this.source);
+    const demoRules = demo ? numberedRules.filter((rule) => isDemoRule(rule, demo)) : [];
+    const rules = demoRules.length ? numberedRules.filter((rule) => !demoRules.includes(rule)) : numberedRules;
+    // The rules the header comment states (CR-A2) — candidates, never code facts.
+    const headerRules = readHeaderRules(this.source);
     const decisionTables = this.finishDecisionTables(rules);
 
     const withoutProcessElement: Record<NoProcessElementReason, number> = {
@@ -578,6 +632,10 @@ class RuleSetBuilder {
       program: this.program,
       rules,
       ...(decisionTables.length ? { decisionTables } : {}),
+      ...(demoRules.length && demo
+        ? { demoCases: { flag: demo.flag.name, selectors: demo.selectors, rules: demoRules.map(demoCaseOf) } }
+        : {}),
+      ...(headerRules.length ? { headerRules } : {}),
       counts: {
         candidates: this.candidates.length,
         rules: rules.length,
