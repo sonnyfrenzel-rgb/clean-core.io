@@ -54,9 +54,16 @@ FORM close_items.
 ENDFORM.
 `;
 
+/**
+ * The CO shape writing its allocation back. Since scaffold version 6 a program that writes no table is a custom
+ * entity with a query provider (no table, no business object); the table and business-object checks below use this.
+ */
+const CO_WRITING = () => fixture('co-shape').replace('gv_total = gv_total + lv_share.', 'gv_total = gv_total + lv_share.\n    MODIFY zco_receivers FROM <ls_rcv>.');
+
 /** The four demo packages, and a job-only one so the job classes' metadata is covered too. */
 const DEMOS = {
   CO: () => fixture('co-shape'),
+  'CO writing': CO_WRITING,
   PP: () => fixture('pp-shape'),
   SD: () => fixture('sd-shape'),
   PO: () => poDemo(),
@@ -86,8 +93,8 @@ for (const [demo, source] of Object.entries(DEMOS)) {
       if (ext) expect(paths, `${p} has no source`).toContain(`src/${n.name}.${ext}`);
     }
     // Object names: the table within 16 characters, everything else within 30.
-    const table = paths.find((p) => p.endsWith('.tabl.xml'))!;
-    expect(affFileNameOf(table)!.name.length).toBeLessThanOrEqual(16);
+    const table = paths.find((p) => p.endsWith('.tabl.xml'));
+    if (table) expect(affFileNameOf(table)!.name.length).toBeLessThanOrEqual(16);
 
     const results = packageFormatsCheck(scaffold.files, schemas);
     expect(results.filter((r) => r.status === 'failed')).toEqual([]);
@@ -107,7 +114,7 @@ test('abaplint reads the table and the metadata, and the package passes it', () 
     expect(r.checked).toBe(scaffold.files.filter((f) => /\.(?:clas|intf)(?:\.\w+)?\.abap$|\.ddls\.asddls$|\.tabl\.xml$/.test(f.path)).length);
   }
   // A table that breaks what abaplint checks on its XML is a finding: a name longer than 16 characters.
-  const scaffold = scaffoldOf(fixture('co-shape'));
+  const scaffold = scaffoldOf(CO_WRITING());
   const longName = 'zfx_co_alloc_recx';
   const broken = scaffold.files.map((f) =>
     f.path.endsWith('.tabl.xml') ? { path: `src/${longName}.tabl.xml`, content: f.content.replace(/ZFX_CO_ALLOC_REC/g, longName.toUpperCase()) } : f,
@@ -118,7 +125,7 @@ test('abaplint reads the table and the metadata, and the package passes it', () 
 });
 
 test('the table XML carries every record field with its type, as abapGit serializes it', () => {
-  const { facts, plan } = planOf(fixture('co-shape'));
+  const { facts, plan } = planOf(CO_WRITING());
   const scaffold = buildRapScaffold(plan, facts);
   const xml = scaffold.files.find((f) => f.path.endsWith('.tabl.xml'))!.content;
   const doc = parseXml(xml);
@@ -161,7 +168,7 @@ test("the metadata files have the elements of abapGit's serializer output", () =
 });
 
 test("the formats check fails what abapGit's reader and deserializers, as their source reads, would refuse", () => {
-  const scaffold = scaffoldOf(fixture('co-shape'));
+  const scaffold = scaffoldOf(CO_WRITING());
   const replace = (suffix: string, edit: (s: string) => string) => scaffold.files.map((f) => (f.path.endsWith(suffix) ? { ...f, content: edit(f.content) } : f));
   const failed = (files: ReadonlyArray<{ path: string; content: string }>) => packageFormatsCheck(files, schemas).filter((r) => r.status === 'failed');
 
@@ -210,7 +217,7 @@ test("an AFF JSON metadata file is held against SAP's schema; an object with bot
   const tooLong = JSON.stringify({ ...JSON.parse(example), header: { description: 'y'.repeat(70), originalLanguage: 'en' } });
   expect(packageFormatsCheck([{ ...files[0], content: tooLong }, files[1]], schemas)[0]).toMatchObject({ status: 'failed', schemaPath: '#/properties/header/properties/description/maxLength' });
   // abaplint refuses an object with both an AFF JSON and an abapGit XML file.
-  const scaffold = scaffoldOf(fixture('co-shape'));
+  const scaffold = scaffoldOf(CO_WRITING());
   const both = [...scaffold.files, { path: 'src/zfx_co_alloc_r.ddls.json', content: example }];
   expect(abaplintPackageCheck(both).issues.map((i) => i.rule)).toContain('aff_and_xml');
 });

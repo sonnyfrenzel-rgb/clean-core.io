@@ -33,6 +33,7 @@ import { codeMask } from '../ts-source-scan';
 import {
   BODY_MAX_CHARS,
   BODY_SLICE_FACTOR,
+  type AbapRegionNames,
   type BodyGuardContext,
   type BodyRefusal,
   type FillRegion,
@@ -386,7 +387,89 @@ function rapBodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
   }
   if (foreign.length > 0) out.push(refusal('foreign-call', `calls outside the logic class: ${[...new Set(foreign)].slice(0, 6).join(', ')}`));
   if (statements.some((s) => /\bTYPE\s+f\b/i.test(s.text))) out.push(refusal('binary-number', 'TYPE f is binary floating point — amounts and quantities are packed'));
+  // Scaffold version 6 (3.0.13): what ABAP Cloud does not have, a SELECT on SAP's tables, names the class does not declare.
+  const cloud = statements.filter((s) => ABAP_NOT_CLOUD.test(s.text) || ABAP_NOT_CLOUD_DECL.test(s.text)).map((s) => s.text.split(/\s+/).slice(0, 2).join(' '));
+  if (cloud.length > 0) {
+    out.push(
+      refusal(
+        'cloud-statement',
+        `statements ABAP Cloud does not have: ${[...new Set(cloud)].slice(0, 6).join(', ')} — a list is left out (its data is in the attributes), a message of TYPE E/A/X is the refusal exception, of TYPE I/S/W a line in mt_messages, DESCRIBE TABLE is lines( )`,
+      ),
+    );
+  }
+  const sapTables: string[] = [];
+  for (const s of statements) {
+    if (!/^(?:SELECT|OPEN\s+CURSOR|WITH)\b/i.test(s.text)) continue;
+    for (const m of s.text.matchAll(/\b(?:FROM|JOIN)\s+@?(\/?[A-Za-z][\w/]*)/gi)) if (!/^(?:\/?[zy])/i.test(m[1]) && !/^@/.test(m[1])) sapTables.push(m[1].toUpperCase());
+  }
+  if (sapTables.length > 0) out.push(refusal('sap-select', `a SELECT on SAP tables (${[...new Set(sapTables)].slice(0, 6).join(', ')}) — SAP is read through mo_access, with the methods the class lists`));
+  if (ctx.abap) out.push(...unknownAbapNames(body, statements, ctx.abap));
   return out;
+}
+
+/** Statements ABAP Cloud does not have (the SD review: 81 WRITE, 19 MESSAGE, 4 ULINE, 2 DESCRIBE in one class). */
+const ABAP_NOT_CLOUD =
+  /^(?:WRITE|ULINE|SKIP|NEW-LINE|NEW-PAGE|FORMAT|MESSAGE|DESCRIBE|PRINT-CONTROL|TOP-OF-PAGE|END-OF-PAGE|TABLES|RANGES|REFRESH|SUPPRESS|SET\s+(?:PF-STATUS|TITLEBAR|SCREEN|CURSOR)|CALL\s+(?:SCREEN|SELECTION-SCREEN|DIALOG)|LEAVE\s+(?:TO\s+SCREEN|TO\s+TRANSACTION|PROGRAM|LIST-PROCESSING|SCREEN)|STOP|ON\s+CHANGE\s+OF|LOOP\s+AT\s+SCREEN|MODIFY\s+SCREEN)\b/i;
+/** Declarations ABAP Cloud does not have: header lines and OCCURS. */
+const ABAP_NOT_CLOUD_DECL = /^(?:DATA|STATICS|TYPES)\b[\s\S]*\b(?:OCCURS\s+\d+|WITH\s+HEADER\s+LINE)\b/i;
+
+/** Built-in functions and constructor operators a body may call besides the class's methods. */
+const ABAP_BUILTINS = new Set(
+  (
+    'abs ceil floor frac sign trunc round rescale ipow sqrt exp log log10 sin cos tan asin acos atan sinh cosh tanh nmax nmin ' +
+    'lines strlen xstrlen numofchar dbmaxlen charlen boolc boolx xsdbool condense concat_lines_of escape find find_end find_any_of find_any_not_of ' +
+    'insert match matches repeat replace reverse segment shift_left shift_right substring substring_after substring_before substring_from substring_to ' +
+    'to_lower to_upper to_mixed from_mixed translate cmax cmin count count_any_of count_any_not_of distance contains contains_any_of contains_any_not_of ' +
+    'line_exists line_index char_off utclong_current utclong_add utclong_diff value conv corresponding cond switch reduce filter exact ref cast new'
+  ).split(' '),
+);
+
+/**
+ * Names a RAP body uses that the class does not declare (3.0.13): a method of the class or the access layer that
+ * does not exist (`mo_access->select_vbak_header( )`, `build_demo( )`), and a global, selection input or
+ * parameter-like name (`gt_…`, `p_…`, `s_…`, `is_sel`, `iv_…`) that is neither an attribute, a parameter of the
+ * method nor declared in the body. Cheap and textual; the full syntax check runs after the splice.
+ */
+function unknownAbapNames(body: string, statements: ReturnType<typeof readStatements>, names: AbapRegionNames): BodyRefusal[] {
+  const code = statements
+    .map((s) => s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''"))
+    .join('\n');
+  const lower = (xs: readonly string[]) => new Set(xs.map((x) => x.toLowerCase()));
+  const methods = lower(names.methods);
+  const access = lower(names.access);
+  const known = lower([...names.attributes, ...names.params, ...names.methods, 'me', 'mo_access']);
+  const declared = new Set<string>();
+  for (const m of code.matchAll(/\b(?:DATA|FINAL|FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/gi)) declared.add(m[1].toLowerCase());
+  for (const s of statements) {
+    const d = /^(?:DATA|STATICS|CONSTANTS|FIELD-SYMBOLS|TYPES)\s*:?\s*(?:BEGIN\s+OF\s+)?(<?[\w/]+>?)/i.exec(s.text);
+    if (d) declared.add(d[1].toLowerCase());
+  }
+  const unknown: string[] = [];
+  for (const m of code.matchAll(/\bmo_access->([\w]+)\s*\(/gi)) if (!access.has(m[1].toLowerCase())) unknown.push(`mo_access->${m[1]}( )`);
+  for (const m of code.matchAll(/\bme->([\w]+)\s*\(/gi)) if (!methods.has(m[1].toLowerCase())) unknown.push(`me->${m[1]}( )`);
+  // A bare method call `name( …` — not after NEW, a constructor operator, a component selector or a reference.
+  for (const m of code.matchAll(/(^|[^\w>~=\-#])([A-Za-z_][\w]*)\(\s/g)) {
+    const name = m[2].toLowerCase();
+    const before = code.slice(Math.max(0, (m.index ?? 0) - 12), (m.index ?? 0) + m[1].length);
+    if (/\b(?:NEW|VALUE|CONV|CORRESPONDING|COND|SWITCH|REDUCE|FILTER|EXACT|REF|CAST)\s+$/i.test(before)) continue;
+    if (methods.has(name) || ABAP_BUILTINS.has(name) || declared.has(name)) continue;
+    unknown.push(`${m[2]}( )`);
+  }
+  // Global, selection and parameter-like names: an attribute, a parameter of this method or a local — or invented.
+  for (const s of statements) {
+    const text = s.text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, "''");
+    for (const m of text.matchAll(/(^|[^\w\-~>=])((?:g[tvsdcor]|[iecr][vstor]|[ps])_[A-Za-z0-9_]+)\b(\s*=(?!=))?/g)) {
+      const name = m[2].toLowerCase();
+      // `name = …` inside parentheses (a call, a VALUE) is a formal parameter or a component, not a data object of this body.
+      const at = (m.index ?? 0) + m[1].length;
+      const depth = (text.slice(0, at).match(/\(/g) ?? []).length - (text.slice(0, at).match(/\)/g) ?? []).length;
+      if (m[3] && depth > 0) continue;
+      if (known.has(name) || declared.has(name)) continue;
+      unknown.push(m[2]);
+    }
+  }
+  if (unknown.length === 0) return [];
+  return [refusal('unknown-name', `uses names the logic class does not declare: ${[...new Set(unknown)].slice(0, 8).join(', ')} — call only the methods, attributes and access methods "types" lists`)];
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
@@ -460,7 +543,7 @@ export function bodyGuards(body: string, ctx: BodyGuardContext): BodyRefusal[] {
  * (null: the body is taken unchecked — for the engine's own tests only).
  */
 export function spliceBodies(
-  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'> & { required?: Scaffold['required'] },
+  scaffold: Pick<Scaffold, 'files' | 'digest' | 'track'> & { required?: Scaffold['required']; rap?: Scaffold['rap'] },
   bodies: readonly RegionBody[],
   guardContext: (regionId: string) => BodyGuardContext | null,
 ): SpliceResult {
@@ -480,7 +563,8 @@ export function spliceBodies(
     }
     const given = guardContext(b.regionId);
     // The guards this region must call come from the scaffold, whatever the caller passes (rule 15).
-    const ctx = given ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])] } : null;
+    const abap = given?.abap ?? scaffold.rap?.regions[b.regionId];
+    const ctx = given ? { ...given, required: [...(given.required ?? []), ...(scaffold.required?.[b.regionId] ?? [])], ...(abap ? { abap } : {}) } : null;
     const reasons = ctx ? bodyGuards(b.body, ctx) : b.body.includes(MARKER_TAG) ? [refusal('marker', `the body contains ${MARKER_TAG}`)] : [];
     if (reasons.length > 0) {
       refused.push({ regionId: b.regionId, reasons });

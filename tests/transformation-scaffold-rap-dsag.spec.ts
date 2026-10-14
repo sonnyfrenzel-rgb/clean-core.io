@@ -57,11 +57,17 @@ const NIGHTLY_WITH_LIST = NIGHTLY.replace(
 
 test.describe('C3 — authorization is checked and denied until filled', () => {
   test('both views check authorization; nothing is #NOT_REQUIRED any more', () => {
-    const { scaffold } = rap(fixture('co-shape'));
-    for (const f of scaffold.files.filter((x) => x.path.endsWith('.ddls.asddls'))) {
+    const { scaffold } = rap(poDemo());
+    const views = scaffold.files.filter((x) => /_[rc]\.ddls\.asddls$/.test(x.path));
+    expect(views).toHaveLength(2);
+    for (const f of views) {
       expect(f.content, f.path).toContain('@AccessControl.authorizationCheck: #CHECK');
       expect(f.content, f.path).not.toContain('#NOT_REQUIRED');
     }
+    // A program that writes no table is a custom entity (scaffold version 6): its query provider denies reading until filled.
+    const query = file(rap(fixture('co-shape')).scaffold, '_query.clas.abap');
+    expect(query).toContain(`" ${OPEN_MARKER} AUTH: reading is denied until you check authorization here`);
+    expect(query).toContain('rv_granted = abap_false.');
   });
 
   test("the root's access control grants nothing until replaced and names the original's AUTHORITY-CHECK", () => {
@@ -80,7 +86,7 @@ test.describe('C3 — authorization is checked and denied until filled', () => {
     const projection = file(scaffold, 'zmm_po_approv_c.dcls.asdcls');
     expect(projection).toContain('where inheriting conditions from entity ZMM_PO_APPROV_R default false;');
     // A program without an AUTHORITY-CHECK says so instead of naming none.
-    expect(file(rap(fixture('co-shape')).scaffold, '_r.dcls.asdcls')).toContain('The original makes no AUTHORITY-CHECK');
+    expect(file(rap(NIGHTLY).scaffold, '_r.dcls.asdcls')).toContain('The original makes no AUTHORITY-CHECK');
   });
 
   test('the behavior handlers deny create, update and delete until a developer checks authorization', () => {
@@ -129,7 +135,7 @@ test.describe('B4 — the access layer', () => {
     const { scaffold, plan } = rap(poDemo());
     const intf = file(scaffold, 'zif_mm_po_approv_access.intf.abap');
     expect(intf).toContain('INTERFACE zif_mm_po_approv_access PUBLIC.');
-    expect(intf).toMatch(/"! Reads EBAN where the original does, L\d+.*\n {2}METHODS read_eban IMPORTING is_sel TYPE zcl_mm_po_approv_logic=>ty_selection CHANGING ct_rows TYPE STANDARD TABLE RAISING zcx_mm_po_approv_access\./);
+    expect(intf).toMatch(/"! Reads EBAN where the original does, L\d+.*\n {2}METHODS read_eban\n {4}IMPORTING\n {6}is_selection TYPE zcl_mm_po_approv_logic=>ty_run_selection OPTIONAL\n {4}CHANGING\n {6}ct_rows TYPE STANDARD TABLE\n {4}RAISING zcx_mm_po_approv_access\./);
     const impl = file(scaffold, 'zcl_mm_po_approv_access.clas.abap');
     expect(impl).toContain('INTERFACES zif_mm_po_approv_access.');
     expect(impl).toContain(`" ${OPEN_MARKER} ACCESS: the original reads EBAN at L`);
@@ -187,7 +193,8 @@ test.describe('B3 — an Application Job where the original runs in the backgrou
     expect(job).toContain("( selname = 'S_DATE' kind = if_apj_dt_exec_object=>select_option");
     expect(job).toContain('mandatory_ind = abap_true');
     expect(job).toContain(`${OPEN_MARKER} JOB: check type and length of P_BUKRS, S_DATE`);
-    expect(job).toContain('->run_steps( EXPORTING is_sel = ls_sel CHANGING cs_st = ls_st ).');
+    expect(job).toContain('DATA(ls_result) = NEW zcl_fx_nightly_c_logic( )->run( is_selection = ls_sel ).');
+    expect(job).toContain("ls_sel-p_bukrs = ls_par-low.");
     expect(job).toContain('their method signatures are');
     const setup = file(scaffold, '_job_setup.clas.abap');
     expect(setup).toContain("CONSTANTS lc_catalog TYPE cl_apj_dt_create_content=>ty_catalog_name VALUE 'ZFX_NIGHTLY_C_JOB_CAT'.");
@@ -331,6 +338,7 @@ test('the scaffold version moved with the engine-written text', () => {
   // 3: the abapGit metadata of every object (tests/transformation-abapgit-package.spec.ts).
   // 4: a check on a work area filled from an internal table is called in the body (tests/transformation-fill-guards.spec.ts, E).
   // 5: the Node scaffold's probe entry points (tests/transformation-fill-probes.spec.ts); one number for both tracks.
-  expect(SCAFFOLD_VERSION).toBe(5);
-  expect(rap(fixture('co-shape')).scaffold.version).toBe(5);
+  // 6: the typed RAP contract, guards in the logic path, a custom entity for a read-only program (tests/transformation-rap-contract.spec.ts).
+  expect(SCAFFOLD_VERSION).toBe(6);
+  expect(rap(fixture('co-shape')).scaffold.version).toBe(6);
 });

@@ -80,9 +80,11 @@ test('A and B: the header says how a body calls a guard and what a predicate rea
   expect(node).toContain('`const r = guard_G0345(sel, st, null, { lvCode }); if (r) return r;`');
   expect(node).toContain('when_<id without "-">(sel, st, record, values): boolean');
   expect(node).toContain('values.<key>');
+  // RAP since scaffold version 6: the predicate takes the original's own operands as typed parameters, and "types" shows the call.
   const rap = fillInstructionHeader('rap');
-  expect(rap).toContain('IF when_g0345( is_sel = is_sel iv_lv_code = lv_code ) = abap_true.');
-  expect(rap).toContain('reading only is_sel, is_rec and its iv_ parameters');
+  expect(rap).toContain('IF when_g0387( iv_stamp = iv_stamp ) = abap_true. <the original\'s statements inside that IF> ENDIF.');
+  expect(rap).toContain('"types" lists its signature and the exact call');
+  expect(rap).not.toContain('is_sel = is_sel');
   // The schema types "refused" as an object, so the model cannot answer null: the header asks to leave it out.
   expect(node).toContain('"refused" only on a unit you refuse');
   expect(node).not.toContain('"refused": null');
@@ -198,6 +200,7 @@ test('F: the Node header says numbers arrive as text, forbids Number() on any va
   expect(node).toContain('- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.');
   // The old line ("… on a decimal value") read as permission for Number() on a whole number.
   expect(node).not.toContain('never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value');
-  // RAP has no Number(): its line is unchanged.
-  expect(fillInstructionHeader('rap')).toContain('- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.');
+  // RAP has no Number() and no dec.* helpers (scaffold version 6): numbers keep the types the class declares.
+  expect(fillInstructionHeader('rap')).toContain('- Numbers keep the types the class declares (packed with its DECIMALS, i, n, d): compute and compare them as the original does, never through text and never TYPE f.');
+  expect(fillInstructionHeader('rap')).not.toContain('dec.*');
 });

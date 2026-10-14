@@ -200,8 +200,8 @@ export function intfXml(name: string, description: string): string {
   ]);
 }
 
-/** `<name>.ddls.xml`; SOURCE_TYPE `W` a view entity, `P` a projection view. */
-export function ddlsXml(name: string, description: string, sourceType: 'W' | 'P'): string {
+/** `<name>.ddls.xml`; SOURCE_TYPE `W` a view entity, `P` a projection view, `Q` a custom entity, `A` an abstract entity. */
+export function ddlsXml(name: string, description: string, sourceType: 'W' | 'P' | 'Q' | 'A'): string {
   return objectXml('DDLS', [
     [
       'DDLS',

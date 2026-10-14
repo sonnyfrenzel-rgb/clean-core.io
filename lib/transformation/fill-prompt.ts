@@ -94,11 +94,29 @@ export function fillGuardLines(track: 'node' | 'rap'): string[] {
       '- A guard with a "regionId": write its predicate when_<id without "-">(sel, st, record, values): boolean, true exactly when "condition" holds, reading only sel, st, record, values.<key>, under "guards": [ { "id": "G-0506", "body": "…" } ].',
     ];
   }
+  // Scaffold version 6 (3.0.13): every guard has a predicate when_g<line> with the original's local operands as
+  // typed parameters, listed with its exact call in the unit's "types"; the engine writes most predicates itself.
   return [
-    '- Guards: predicate methods when_<id lower case, without "-">( is_sel = … is_rec = … iv_… = … ) RETURNING rv_holds — is_rec: the row the condition reads (optional); one iv_ per key under "values" in snake case (lvQty: iv_lv_qty).',
-    '- placement "entry"/"selection": the engine calls it already; never again.',
-    '- placement "body": call it where the original checks ("line"), never its condition: IF when_g0345( is_sel = is_sel iv_lv_code = lv_code ) = abap_true. … ENDIF.',
-    '- A guard with a "regionId": write its predicate body, rv_holds = abap_true exactly when "condition" holds, reading only is_sel, is_rec and its iv_ parameters, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+    '- Guards: each guard of a unit has a predicate when_<id lower case, without "-"> that returns the original\'s condition; "types" lists its signature and the exact call. A guard marked "the engine calls it already": never call it again.',
+    '- Every other guard: call it at the original\'s line ("line"), never its condition: IF when_g0387( iv_stamp = iv_stamp ) = abap_true. <the original\'s statements inside that IF> ENDIF. — the parameters take your values of the names the original checks.',
+    '- A guard with a "regionId": also write its predicate body, rv_holds = xsdbool( <the condition> ), reading only its parameters, the attributes and constants, under "guards": [ { "id": "G-0506", "body": "…" } ].',
+  ];
+}
+
+/**
+ * The ABAP Cloud rules of a RAP body (3.0.13, after two external reviews of the SD example: 107 parser errors from
+ * WRITE, MESSAGE, ULINE and DESCRIBE; bodies written against globals, parameters and access methods the class did
+ * not have). The class's contract travels per unit in "types" (`scaffold.rap.unitTypes`).
+ */
+export function fillRapLines(): string[] {
+  return [
+    '- "types" of a unit is the logic class around the body, engine-written and fixed: its types, constants, attributes, the methods you may call with their exact signatures, its guards and the SAP access methods. Use only those names; declare your own locals (DATA, inline DATA( ), FIELD-SYMBOLS).',
+    '- The original\'s globals and selection inputs are attributes under their original names (gt_claims, gv_status, p_org, s_show): read and write them as the original does. There is no is_sel, cs_st, ty_selection or ty_state.',
+    '- A PERFORM of the original is a call of its method with the signature shown: check_stamp( EXPORTING iv_stamp = p_eff CHANGING cv_code = lv_code ). A routine that is not listed was folded into this unit: write its lines in place. Where the original runs demo-data routines, call load_input( ) if the class lists it, else leave them out.',
+    '- ABAP Cloud has no WRITE, ULINE, SKIP, NEW-LINE, NEW-PAGE, FORMAT, MESSAGE, DESCRIBE, FORM, PERFORM, CALL FUNCTION, CALL SCREEN, SUBMIT, TABLES, OCCURS, header lines or SELECT on an SAP table: never write them.',
+    '- MESSAGE … TYPE \'E\', \'A\' or \'X\' becomes the RAISE EXCEPTION NEW … refusal the class names (guard and the original\'s text); MESSAGE … TYPE \'I\', \'S\' or \'W\' becomes APPEND <text> TO mt_messages; a list (WRITE, ULINE) is left out — its data is in the attributes the run returns; DESCRIBE TABLE t LINES n becomes n = lines( t ).',
+    '- SAP is reached only through mo_access-><method>( … ) with the parameters "types" lists; never call SAP directly and never an access method that is not listed.',
+    '- Numbers keep the types the class declares (packed with its DECIMALS, i, n, d): compute and compare them as the original does, never through text and never TYPE f.',
   ];
 }
 
@@ -115,7 +133,7 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     'Rules for every body:',
     `- Do not write ${forbidden}, and never the text "@cc-fill".`,
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
-    ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : []),
+    ...(track === 'node' ? ['- "types" of a unit declares every type its signature and callees name: read and write only those fields.'] : fillRapLines()),
     ...fillGuardLines(track),
     ...(track === 'node'
       ? [
@@ -123,7 +141,7 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
           '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
           '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
         ]
-      : ['- Amounts and quantities only through the dec.* helpers — never Number(), parseFloat(), parseInt() or arithmetic operators on a decimal value.']),
+      : []),
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
     '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [] } ] } — one entry per unit asked for; "refused" only on a unit you refuse.',
