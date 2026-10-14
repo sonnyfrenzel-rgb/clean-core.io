@@ -8,6 +8,7 @@ import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 import { isFirestoreId } from '../lib/firestore-id';
 import {
+  LEASE_CHARGE_PENDING_MS,
   LEASE_CODES,
   LEASE_COLLECTION,
   LEASE_MAX_CALLS,
@@ -22,6 +23,7 @@ import {
   decideLeaseClose,
   decideLeaseIssue,
   inFlightAt,
+  isLeaseRecord,
   isRunId,
   leaseWindowStatus,
   leaseBudget,
@@ -31,7 +33,7 @@ import {
   newLeaseRecord,
   type LeaseRecord,
 } from '../lib/transformation/lease';
-import { acquireLeaseCall, closeLease, issueLease, peekLease, readLease, readLeaseWindow, releaseLeaseCall } from '../lib/transformation/lease-store';
+import { acquireLeaseCall, closeLease, confirmLeaseCharge, issueLease, peekLease, readLease, readLeaseWindow, releaseLeaseCall } from '../lib/transformation/lease-store';
 import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 
@@ -55,7 +57,7 @@ function code(rel: string): string {
 
 const T0 = 1_760_000_000_000;
 const lease = (over: Partial<LeaseRecord> = {}): LeaseRecord => ({
-  ...newLeaseRecord({ leaseId: 'L1', projectId: 'P1', uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, budget: leaseBudget(9), now: T0 }),
+  ...newLeaseRecord({ leaseId: 'L1', projectId: 'P1', uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, budget: leaseBudget(9), now: T0, charged: true }),
   ...over,
 });
 const ctx = (over: Partial<{ uid: string; projectId: string; now: number }> = {}) => ({ uid: 'owner', projectId: 'P1', now: T0 + 1000, ...over });
@@ -90,7 +92,7 @@ test.describe('the decisions', () => {
       expect(ttl).toBeLessThanOrEqual(LEASE_MAX_TTL_MS);
     }
     for (const odd of [0, -1, 1.5, Number.NaN, 10_000]) expect(leaseTtlMs(odd)).toBeLessThanOrEqual(LEASE_MAX_TTL_MS);
-    const big = newLeaseRecord({ leaseId: 'L9', projectId: 'P1', uid: 'owner', generationToken: 'tok-9', plannedCalls: 29, budget: leaseBudget(29), now: T0 });
+    const big = newLeaseRecord({ leaseId: 'L9', projectId: 'P1', uid: 'owner', generationToken: 'tok-9', plannedCalls: 29, budget: leaseBudget(29), now: T0, charged: true });
     // The production run's last call was refused 15 min 46 s after the lease.
     expect(decideLeaseCall(big, ctx({ now: T0 + (15 * 60 + 46) * 1000 })).ok).toBe(true);
   });
@@ -167,13 +169,36 @@ test.describe('the decisions', () => {
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, now: T0 + 5, open: [lease()], windowIssued: [] }).kind).toBe('issue');
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + 5, open: [cancelled], windowIssued: [] }).kind).toBe('issue');
     // The new lease starts with nothing in flight.
-    const fresh = newLeaseRecord({ leaseId: 'L2', projectId: 'P1', uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, budget: 26, now: T0 + 5 });
+    const fresh = newLeaseRecord({ leaseId: 'L2', projectId: 'P1', uid: 'owner', generationToken: 'tok-1', runId: 'run-bbbbbbbb', plannedCalls: 9, budget: 26, now: T0 + 5, charged: true });
     expect(fresh).toMatchObject({ runId: 'run-bbbbbbbb', inFlight: 0, slots: [], used: 0 });
     expect(decideLeaseCall(fresh, ctx({ now: T0 + 6 })).ok).toBe(true);
     // The superseded lease's late calls are refused.
     expect(decideLeaseCall({ ...cancelled, status: 'superseded' }, ctx())).toMatchObject({ ok: false, code: 'lease-closed' });
     expect(isRunId('run-bbbbbbbb')).toBe(true);
     for (const bad of ['short', 'has space here', 'x'.repeat(65), 42, null]) expect(isRunId(bad)).toBe(false);
+  });
+
+  test('a lease whose charge is pending is neither reused nor usable; once paid it is both (QA leftovers of hotfix 2)', () => {
+    // Two concurrent requests of one run: the first issued the lease and is
+    // still charging. The second must not get the lease before it is paid for —
+    // the charge may still be refused, and the lease voided under it.
+    const pending = lease({ runId: 'run-aaaaaaaa', charged: false });
+    const retry = decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-aaaaaaaa', plannedCalls: 9, now: T0 + 5, open: [pending], windowIssued: [T0] });
+    expect(retry).toMatchObject({ kind: 'refuse', status: 429, code: 'lease-busy' });
+    expect(retry.kind === 'refuse' && retry.retryAfterSeconds).toBe(Math.ceil((LEASE_CHARGE_PENDING_MS - 5) / 1000));
+    expect(decideLeaseCall(pending, ctx())).toMatchObject({ ok: false, status: 429, code: 'lease-busy' });
+    // Paid: reused for nothing, usable.
+    const paid = { ...pending, charged: true };
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-aaaaaaaa', plannedCalls: 9, now: T0 + 5, open: [paid], windowIssued: [T0] })).toEqual({ kind: 'reuse', lease: paid });
+    expect(decideLeaseCall(paid, ctx()).ok).toBe(true);
+    // A lease stored before the flag was charged before it was returned.
+    const legacy = { ...pending } as LeaseRecord;
+    delete legacy.charged;
+    expect(decideLeaseCall(legacy, ctx()).ok).toBe(true);
+    // A pending lease whose request died long ago blocks nothing: a new lease supersedes it.
+    expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', runId: 'run-aaaaaaaa', plannedCalls: 9, now: T0 + LEASE_CHARGE_PENDING_MS, open: [pending], windowIssued: [T0] }))
+      .toMatchObject({ kind: 'issue', supersede: ['L1'] });
+    expect(isLeaseRecord({ ...pending, charged: 'yes' })).toBe(false);
   });
 
   test('Cancel closes only the owner\'s own open lease', () => {
@@ -338,12 +363,23 @@ test.describe('the lease route', () => {
     expect(src.slice(charge, charge + 600)).toContain('voidLease(db,');
   });
 
+  test('a lease is issued unpaid and becomes usable only after its charge went through (QA leftovers of hotfix 2, roadmap 3.0.13)', () => {
+    const issued = at('issueLease(db,');
+    expect(src.slice(issued, src.indexOf(');', issued))).toContain('charged: false');
+    const charge = at('assertRateLimit(hourly.key, hourly.max, MODEL_HOURLY_WINDOW_MS)');
+    const confirm = at('confirmLeaseCharge(db, { projectId, leaseId: outcome.lease.leaseId })');
+    expect(confirm).toBeGreaterThan(charge);
+    // The void of a refused charge returns before the confirmation.
+    expect(at('voidLease(db,')).toBeLessThan(confirm);
+    expect(src.slice(confirm)).toMatch(/^confirmLeaseCharge[\s\S]*?leaseView\(paid \?\? outcome\.lease\), reused: false/);
+  });
+
   test('the route is behind the second factor in the gated-route list', () => {
     expect(fs.readFileSync(path.join(ROOT, 'tests/helpers/gated-routes.ts'), 'utf8')).toContain("file: 'app/api/transformation/lease/route.ts'");
   });
 
   test('a lease is issued to the run the request names; Cancel closes it behind auth and the second factor (13.10.2026)', () => {
-    expect(src).toMatch(/issueLease\(db, \{ projectId, uid: decodedToken\.uid, generationToken, runId: isRunId\(runId\) \? runId : null, plannedCalls, now \}\)/);
+    expect(src).toMatch(/issueLease\(db, \{ projectId, uid: decodedToken\.uid, generationToken, runId: isRunId\(runId\) \? runId : null, plannedCalls, now, charged: false \}\)/);
     expect(src).toMatch(/if \(runId !== undefined && !\(isRunId\(runId\) && isFirestoreId\(runId\)\)\) \{\s*return NextResponse\.json\(/);
     const del = src.slice(src.indexOf('export async function DELETE'));
     expect(del).toContain('signedInOwner(req)');
@@ -418,22 +454,22 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now });
+    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now, charged: true, charged: true });
     expect(a.kind).toBe('issued');
     if (a.kind !== 'issued') return;
     expect(a.lease).toMatchObject({ budget: 26, used: 0, inFlight: 0, status: 'open' });
 
-    const again = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now: now + 1 });
+    const again = await issueLease(db(), { projectId, uid, generationToken: 'tok-a', plannedCalls: 9, now: now + 1, charged: true, charged: true });
     expect(again).toMatchObject({ kind: 'reused', lease: { leaseId: a.lease.leaseId } });
 
-    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok-b', plannedCalls: 9, now: now + 2 });
+    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok-b', plannedCalls: 9, now: now + 2, charged: true, charged: true });
     expect(b).toMatchObject({ kind: 'issued', superseded: [a.lease.leaseId] });
     expect((await readLease(db(), { projectId, leaseId: a.lease.leaseId }))?.status).toBe('superseded');
     expect(await peekLease(db(), { projectId, leaseId: a.lease.leaseId }, { uid, now: now + 3 })).toMatchObject({ ok: false, code: 'lease-closed' });
 
-    const c = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-c', plannedCalls: 9, now: now + 3 });
+    const c = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-c', plannedCalls: 9, now: now + 3, charged: true, charged: true });
     expect(c.kind).toBe('issued');
-    const d = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-d', plannedCalls: 9, now: now + 4 });
+    const d = await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok-d', plannedCalls: 9, now: now + 4, charged: true, charged: true });
     expect(d).toMatchObject({ kind: 'refused', status: 429, code: 'lease-hourly-limit' });
   });
 
@@ -441,7 +477,7 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 40, now });
+    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 40, now, charged: true, charged: true });
     if (issued.kind !== 'issued') throw new Error('not issued');
     const ref = { projectId, leaseId: issued.lease.leaseId };
     expect(issued.lease.budget).toBe(LEASE_MAX_CALLS);
@@ -463,7 +499,7 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 9, now });
+    const issued = await issueLease(db(), { projectId, uid, generationToken: 'tok', plannedCalls: 9, now, charged: true, charged: true });
     if (issued.kind !== 'issued') throw new Error('not issued');
     const ref = { projectId, leaseId: issued.lease.leaseId };
     const raced = await Promise.all(Array.from({ length: 6 }, () => acquireLeaseCall(db(), ref, { uid, now: now + 1 })));
@@ -480,15 +516,15 @@ test.describe('the store, against the Firestore emulator', () => {
     const uid = id('lease-owner');
     const projectId = id('lease-project');
     const now = Date.now();
-    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now });
+    const a = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now, charged: true, charged: true });
     if (a.kind !== 'issued') throw new Error('not issued');
     const refA = { projectId, leaseId: a.lease.leaseId };
     for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refA, { uid, now: now + 1 })).ok).toBe(true);
     expect(await acquireLeaseCall(db(), refA, { uid, now: now + 2 })).toMatchObject({ ok: false, code: 'lease-busy' });
 
     // The same run asking again gets its lease back; a new run gets its own, with nothing in flight.
-    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now: now + 3 })).toMatchObject({ kind: 'reused' });
-    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-bbbbbbbb', plannedCalls: 9, now: now + 4 });
+    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-aaaaaaaa', plannedCalls: 9, now: now + 3, charged: true, charged: true })).toMatchObject({ kind: 'reused' });
+    const b = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-bbbbbbbb', plannedCalls: 9, now: now + 4, charged: true, charged: true });
     expect(b).toMatchObject({ kind: 'issued', superseded: [a.lease.leaseId], lease: { inFlight: 0, used: 0, runId: 'run-bbbbbbbb' } });
     if (b.kind !== 'issued') return;
     const refB = { projectId, leaseId: b.lease.leaseId };
@@ -507,7 +543,7 @@ test.describe('the store, against the Firestore emulator', () => {
     expect(await closeLease(db(), refB, { uid })).toBe(false);
 
     // A slot held by a call that never released is free after the deadline + 30 s.
-    const c = await issueLease(db(), { projectId: id('lease-project'), uid: id('lease-owner'), generationToken: 'tok', runId: 'run-cccccccc', plannedCalls: 9, now });
+    const c = await issueLease(db(), { projectId: id('lease-project'), uid: id('lease-owner'), generationToken: 'tok', runId: 'run-cccccccc', plannedCalls: 9, now, charged: true, charged: true });
     if (c.kind !== 'issued') throw new Error('not issued');
     const refC = { projectId: c.lease.projectId, leaseId: c.lease.leaseId };
     for (let i = 0; i < LEASE_MAX_IN_FLIGHT; i++) expect((await acquireLeaseCall(db(), refC, { uid: c.lease.uid, now })).ok).toBe(true);
@@ -517,11 +553,33 @@ test.describe('the store, against the Firestore emulator', () => {
     expect((await readLease(db(), refC))?.inFlight).toBe(1);
   });
 
+  test('a concurrent retry of the same run does not get the lease before its charge went through (QA leftovers of hotfix 2)', async () => {
+    const uid = id('lease-owner');
+    const projectId = id('lease-project');
+    const now = Date.now();
+    const first = await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-pppppppp', plannedCalls: 9, now, charged: false });
+    if (first.kind !== 'issued') throw new Error('not issued');
+    const ref = { projectId, leaseId: first.lease.leaseId };
+    // Between the issue and the charge: the retry is busy, a call is refused.
+    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-pppppppp', plannedCalls: 9, now: now + 1, charged: false }))
+      .toMatchObject({ kind: 'refused', status: 429, code: 'lease-busy' });
+    expect(await acquireLeaseCall(db(), ref, { uid, now: now + 1 })).toMatchObject({ ok: false, code: 'lease-busy' });
+    expect((await readLease(db(), ref))?.used).toBe(0);
+    // Charged: the retry gets the same lease for nothing, and calls run.
+    expect(await confirmLeaseCharge(db(), ref)).toMatchObject({ leaseId: ref.leaseId, charged: true });
+    expect(await issueLease(db(), { projectId, uid, generationToken: 'tok', runId: 'run-pppppppp', plannedCalls: 9, now: now + 2, charged: false }))
+      .toMatchObject({ kind: 'reused', lease: { leaseId: ref.leaseId, charged: true } });
+    expect((await acquireLeaseCall(db(), ref, { uid, now: now + 3 })).ok).toBe(true);
+    // One issue in the window, however often the run asked.
+    expect(await readLeaseWindow(db(), uid, now + 4)).toMatchObject({ used: 1 });
+    expect(await confirmLeaseCharge(db(), { projectId, leaseId: 'no-such-lease' })).toBeNull();
+  });
+
   test('the hour\'s generations are read without being written', async () => {
     const uid = id('lease-owner');
     const now = Date.now();
     expect(await readLeaseWindow(db(), uid, now)).toEqual({ used: 0, limit: LEASES_PER_WINDOW, nextFreeInSeconds: null });
-    await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok', runId: 'run-dddddddd', plannedCalls: 9, now });
+    await issueLease(db(), { projectId: id('lease-project'), uid, generationToken: 'tok', runId: 'run-dddddddd', plannedCalls: 9, now, charged: true, charged: true });
     expect(await readLeaseWindow(db(), uid, now + 1)).toMatchObject({ used: 1, nextFreeInSeconds: null });
   });
 });

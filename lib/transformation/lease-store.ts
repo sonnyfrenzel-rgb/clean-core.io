@@ -42,7 +42,20 @@ export type IssueOutcome =
  */
 export async function issueLease(
   db: Firestore,
-  args: { projectId: string; uid: string; generationToken: string; runId?: string | null; plannedCalls: number; now: number },
+  args: {
+    projectId: string;
+    uid: string;
+    generationToken: string;
+    runId?: string | null;
+    plannedCalls: number;
+    now: number;
+    /**
+     * Whether the lease is paid for when it is written. The route issues it
+     * `false` and calls `confirmLeaseCharge` once the hourly charge went
+     * through; until then it is neither reused nor usable (roadmap 3.0.13).
+     */
+    charged: boolean;
+  },
 ): Promise<IssueOutcome> {
   const col = leasesOf(db, args.projectId);
   const winRef = windowOf(db, args.uid);
@@ -73,6 +86,7 @@ export async function issueLease(
       plannedCalls: args.plannedCalls,
       budget: decision.budget,
       now: args.now,
+      charged: args.charged,
     });
     for (const id of decision.supersede) tx.update(col.doc(id), { status: 'superseded' });
     tx.create(newRef, lease as unknown as Record<string, unknown>);
@@ -99,6 +113,22 @@ export async function voidLease(db: Firestore, args: { projectId: string; uid: s
         tx.update(winRef, { issued });
       }
     }
+  });
+}
+
+/**
+ * The hourly charge of the request that issued this lease went through: from
+ * now on it is reused for a retry of its run and usable for calls. The record
+ * as it stands after the write; `null` when there is no such lease.
+ */
+export async function confirmLeaseCharge(db: Firestore, ref: LeaseReference): Promise<LeaseRecord | null> {
+  const docRef = leasesOf(db, ref.projectId).doc(ref.leaseId);
+  return db.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(docRef);
+    const data = snap.exists ? snap.data() : null;
+    if (!isLeaseRecord(data)) return null;
+    if (data.charged === false) tx.update(docRef, { charged: true });
+    return { ...data, charged: true };
   });
 }
 
