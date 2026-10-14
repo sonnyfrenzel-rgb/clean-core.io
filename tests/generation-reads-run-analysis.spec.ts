@@ -162,7 +162,9 @@ test('the Transformation stage generates from it instead of saying the inputs ar
   const button = page.locator('[data-generate-now]');
   const running = page.locator('[data-generation-screen]');
   await expect(button.or(running).first()).toBeVisible({ timeout: 90000 });
-  if ((await running.count()) === 0 && (await button.isEnabled())) await button.click();
+  // "Generate now" waits until the plan before the click is read (3.0.13, QA leftovers of hotfix 2).
+  await expect.poll(async () => (await running.count()) > 0 || (await button.isEnabled()), { timeout: 90_000 }).toBe(true);
+  if ((await running.count()) === 0) await button.click();
 
   expect(await modelAsked, 'the stage never reached the model call — it stopped before generating').toBe(true);
   await expect(page.getByText(STRIP)).toHaveCount(0);

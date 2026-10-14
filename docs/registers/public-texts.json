@@ -3442,6 +3442,28 @@
       }
     },
     {
+      "path": "docs/design/abcd-vs-atc.md",
+      "kind": "plan",
+      "purpose": "Research record for 3.0.13 'Level C/D against what ATC reports': how the clean core level A-D compares with what SAP's clean core ATC check (Usage of APIs, Note 3565942) is expected to report, the owner decision list and a manual test recipe",
+      "audience": "Sonny, agents",
+      "saysToday": "Research done 14.10.2026 from public sources only, not yet verified in an SAP system; expectedAtcMessage() derives no grade, only the customer's own enhancement point changes one (engine-version gated).",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Written for 3.0.13 against the current product; docs/ARCHITECTURE.md and lib/abap/abcd-classification.ts point to it for the ATC expectation beside the grade.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ARCHITECTURE.md",
+        "lib/abap/abcd-classification.ts"
+      ],
+      "measured": {
+        "lines": 170
+      }
+    },
+    {
       "path": "tests/fixtures/aff/README.md",
       "kind": "notice",
       "purpose": "Provenance of the AFF schema and example fixtures used by the file-format check's specs: source repository, commit, MIT licence",

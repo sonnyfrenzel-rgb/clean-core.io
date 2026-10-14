@@ -69,15 +69,18 @@ test('the demo counts its distinct findings wherever it counts findings, never i
   //
   // The expectation is pinned, not derived from the demo build under test (QA
   // review of c38f8043f118, ed2da06e1128): a build that dropped findings or
-  // their routes would show its own smaller number. Where 25 comes from — the
-  // demo's 26 distinct findings (`lib/demo-release.json`, regenerated v3.0.12
+  // their routes would show its own smaller number. Where 26 comes from — the
+  // demo's 27 distinct findings (`lib/demo-release.json`, regenerated v3.0.12
   // and held by tests/demo-release-guard.spec.ts) less exactly one review task,
   // the security review of `CALL TRANSACTION 'ME21N'` written without
   // `WITH`/`WITHOUT AUTHORITY-CHECK`, which has no target route. Every other
   // distinct finding names one to three target options. A regenerated demo
-  // changes both numbers on purpose, and this line with them.
-  const DEMO_DISTINCT_FINDINGS = 26;
-  const DEMO_FINDINGS_WITH_TARGET = 25;
+  // changes both numbers on purpose, and this line with them. 27 and 26 since
+  // the 3.0.13 engine rules (lib/abap/engine-rules.ts): "The server's date or
+  // time decides (sy-datum, sy-uzeit)" is one more distinct finding, with a
+  // target route.
+  const DEMO_DISTINCT_FINDINGS = 27;
+  const DEMO_FINDINGS_WITH_TARGET = 26;
   expect(distinctFindings, 'the demo was regenerated: re-derive the pinned counts below').toBe(DEMO_DISTINCT_FINDINGS);
   const demo = buildDemoProject();
   const rows = findingRows(demo.analyze.findings);

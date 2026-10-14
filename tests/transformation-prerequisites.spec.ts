@@ -96,7 +96,11 @@ async function generate(page: Page) {
   const running = page.locator('[data-generation-screen], [data-transformation-error], [data-transformation-answer="generated"]');
   await expect(button.or(running).first()).toBeVisible({ timeout: 90_000 });
   if ((await running.count()) > 0) return;
-  if (await button.isEnabled()) await button.click();
+  // The button waits until the plan before the click is read (3.0.13, QA leftovers of hotfix 2: a click
+  // before it lands would start a plan the pre-flight check has not seen) - so wait for it, then click,
+  // unless the generation started by itself meanwhile.
+  await expect.poll(async () => (await running.count()) > 0 || (await button.isEnabled()), { timeout: 90_000 }).toBe(true);
+  if ((await running.count()) === 0) await button.click();
 }
 
 /** The reason is on the page as text — not a title attribute — and its one action is there. */
