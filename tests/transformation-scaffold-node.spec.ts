@@ -279,7 +279,12 @@ test('the probes are not vacuous: a scaffold with float rounding and no formula 
   const { files, dir: clean } = nodePackage(fixture('co-shape'));
   fs.rmSync(clean, { recursive: true, force: true });
   const broken = files.map((f) => {
-    if (f.path === 'srv/lib/decimal.ts') return { ...f, content: f.content.replace('export function percentOf(amount: string, ratePercent: string, places: number): string {', 'export function percentOf(amount: string, ratePercent: string, places: number): string {\n  return (Math.round(+amount * +ratePercent) / 100).toFixed(places);') };
+    // Scaffold version 7: the helpers take a Decimal (decimal text, a number or a Scaled).
+    const head = 'export function percentOf(amount: Decimal, ratePercent: Decimal, places: number): string {';
+    if (f.path === 'srv/lib/decimal.ts') {
+      expect(f.content).toContain(head);
+      return { ...f, content: f.content.replace(head, `${head}\n  return (Math.round(+String(amount) * +String(ratePercent)) / 100).toFixed(places);`) };
+    }
     if (f.path === 'srv/lib/csv.ts') return { ...f, content: f.content.replace('export function neutralise(text: string): string {', 'export function neutralise(text: string): string {\n  return text;') };
     return f;
   });

@@ -135,7 +135,36 @@ export function typesText(
   for (const r of roots) for (const n of namesIn(r, decls)) add(n);
   // Every type a listed one names, until none is new (Selection → Range, StepResult → Refusal → RefusalError).
   for (let i = 0; i < order.length; i++) for (const m of namesIn(textOf(order[i]).replace(/\/\/[^\n]*/g, ''), decls)) add(m);
-  return order.map(textOf).join('\n');
+  return order.map((n) => groupedFields(textOf(n))).join('\n');
+}
+
+/**
+ * Neighbouring fields of one type and no comment on one line — `org, cid, payer: string;` (3.0.13). Since the
+ * steps' arguments are typed, a function's types name the original's structures (`TyClaim`, `TyRow`), and one
+ * field per line pushed the largest SD function past the leased prompt cap (B7: no unit loses its context).
+ */
+function groupedFields(text: string): string {
+  const out: string[] = [];
+  let run: { names: string[]; type: string } | null = null;
+  const flush = () => {
+    if (run) out.push(`  ${run.names.join(', ')}: ${run.type};`);
+    run = null;
+  };
+  for (const line of text.split('\n')) {
+    const m = /^ {2}([A-Za-z_$][\w$]*): (.+);$/.exec(line);
+    if (m && !m[2].includes('//')) {
+      if (run && run.type === m[2]) run.names.push(m[1]);
+      else {
+        flush();
+        run = { names: [m[1]], type: m[2] };
+      }
+      continue;
+    }
+    flush();
+    out.push(line);
+  }
+  flush();
+  return out.join('\n');
 }
 
 /** The parameters of a TypeScript signature: `(sel: Selection, st: RunState, record: Rec | null = null)` → name and type text. */

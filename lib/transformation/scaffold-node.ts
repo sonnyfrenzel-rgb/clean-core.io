@@ -30,7 +30,7 @@ import { sha256Hex } from '../artefact-digest';
 import { engineCaseProvenance } from '../engine-case-provenance';
 import { ENGINE_RUNTIME_JS } from '../test-sandbox/engine-runtime';
 import { deriveEngineCases, ENGINE_CASES_FILE, engineCasesFile, type EngineCaseDerivation } from '../testing-engine-cases';
-import { readAbapShapes, shapeComment, type AbapShapes } from './abap-shapes';
+import { NUMERIC_SYSTEM_FIELDS, readAbapShapes, shapeComment, type AbapShapes } from './abap-shapes';
 import { withDraftHeader, type AgainstDecision } from './decision-header';
 import { originalDemoCases, type OriginalDemoCases } from './golden-master';
 import { nodeDemoFiles } from './node-demo';
@@ -39,6 +39,7 @@ import { fillProbeConfigs } from './fill-probes';
 import { defuseMarkers, findRegions, regionText, scaffoldDigest } from './markers';
 import { CSV_TS, DECIMAL_TS, ERRORS_TS, RUN_STORE_TS } from './runtime-node';
 import { camelName, pascalName, rangeWords, type EngineFacts } from './unit-plan';
+import { operandsOf } from './guard-basis';
 import { SCAFFOLD_VERSION, type ContractField, type PlanGuard, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /** The Node major of the container; the same as `PACKAGE_NODE_MAJOR` (lib/delivery-package.ts, not imported to keep this module small — a spec holds them equal). */
@@ -99,6 +100,22 @@ function typesReserved(plan: UnitPlan): Set<string> {
     'Dec', 'DecimalField', 'Range', 'Selection', 'Rec', 'Request', 'RunState', 'StepResult', 'Locals', 'Refusal',
     ...plan.fields.filter((f) => f.kind === 'packed').map(decimalTypeName),
   ]);
+}
+
+/**
+ * Every type srv/lib/types.ts exports — what a step, the process and the guards import (3.0.13, acceptance run
+ * 14.10.2026): a body that names the original's structure (`TyPolicy`) or `Range` found nothing, and `Range`
+ * then silently meant the DOM's.
+ */
+function typeExportNames(plan: UnitPlan, shapes: AbapShapes): string[] {
+  const packed = plan.fields.filter((f) => f.kind === 'packed').map(decimalTypeName);
+  return [...new Set(['Dec', 'DecimalField', 'Range', 'Selection', 'Rec', 'Request', 'Locals', 'RunState', 'StepResult', ...packed, ...shapes.structures.map((s) => s.tsName)])];
+}
+
+/** A value a guard reads or a step takes, typed as the original declares it where `line` reads it (`abap-shapes.ts`). */
+function declaredType(shapes: AbapShapes, name: string, line: number, fallback: string): string {
+  const ts = shapes.typeOf(name, line);
+  return ts ?? fallback;
 }
 
 function typesFile(plan: UnitPlan, contextDigest: string | null, ruleRevision: string, shapes: AbapShapes): string {
@@ -449,8 +466,27 @@ function subjectPath(plan: UnitPlan, subject: string | null): string | null {
 }
 
 const predicateName = (g: PlanGuard) => `when_${g.id.replace('-', '')}`;
-/** The `values` type of a derived guard (`G0066Values`), or null for a raw one. */
-const guardValuesType = (g: PlanGuard) => (g.basis === 'derived' && g.operands.length > 0 ? `${g.id.replace('-', '')}Values` : null);
+
+/**
+ * The values a check of the Node package reads (3.0.13): a derived check's computed operands, and — for a check
+ * that reads only the input — the parameters of its routine it names (`IF iv_amount IS INITIAL` in a FORM with
+ * `USING iv_amount`). The predicate has no `args`; the engine hands them in at the step's entry (acceptance run
+ * 14.10.2026: predicates read `args`, "Cannot find name 'args'"). A parameter's component is handed in only where
+ * the parameter's type is known, so the hand-over compiles.
+ */
+function nodeGuardOperands(g: PlanGuard, plan: Pick<UnitPlan, 'units'>, shapes: AbapShapes): Array<{ name: string; key: string }> {
+  if (g.basis === 'derived') return g.operands;
+  const u = plan.units.find((x) => x.id === g.unitId);
+  if (!u || u.part || u.parameters.length === 0) return [];
+  const params = new Set(u.parameters.map((p) => p.name.toLowerCase()));
+  return operandsOf(g.condition)
+    .filter((o) => params.has(o.split('-')[0]) && (!o.includes('-') || shapes.typeOf(o, g.line) !== null))
+    .map((o) => ({ name: o, key: camelName(o) }));
+}
+
+/** The `values` type of a guard that reads values (`G0066Values`), or null for one that reads none. */
+const guardValuesType = (g: PlanGuard, plan: Pick<UnitPlan, 'units'>, shapes: AbapShapes) =>
+  nodeGuardOperands(g, plan, shapes).length > 0 ? `${g.id.replace('-', '')}Values` : null;
 
 /** "guard_BR_004_G0066 (L66, values { lvSum }); skip_G0074 (L74)". */
 function bodyCallWords(u: Unit, plan: UnitPlan): string {
@@ -507,7 +543,7 @@ interface Built {
   regions: Array<{ regionId: string; available: string[] }>;
 }
 
-function guardsFile(plan: UnitPlan): Built {
+function guardsFile(plan: UnitPlan, shapes: AbapShapes): Built {
   const carried = plan.guards.filter((g) => g.carried);
   const regions: Built['regions'] = [];
   const out: string[] = [];
@@ -515,10 +551,12 @@ function guardsFile(plan: UnitPlan): Built {
   out.push(" * The original's checks that refuse, stop or skip — one predicate and one wrapper each (rule 15).");
   out.push(' * The wrappers (name, rule id, line, effect) are written by Clean-Core.io (engine); each predicate');
   out.push(" * between fill markers says whether the original's condition holds, and is a model proposal.");
+  out.push(' * Every wrapper and predicate takes (sel, st, record, values): values holds what a derived check reads,');
+  out.push(' * typed as the original declares it, and is empty ({}) for a check that reads only the input.');
   out.push(' */');
   out.push("import * as dec from './decimal.ts';");
   out.push("import { NotImplementedFill, Refusal } from './errors.ts';");
-  out.push("import type { Rec, RunState, Selection } from './types.ts';");
+  out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from './types.ts';`);
   out.push('');
   out.push('/** Run a check or a step; a stub (not written by the generation) is recorded on the run and skipped. */');
   out.push('export function checked<T>(st: RunState, fn: () => T): T | null {');
@@ -533,20 +571,29 @@ function guardsFile(plan: UnitPlan): Built {
   out.push('  }');
   out.push('}');
   out.push('');
-  out.push('/** A computed value a derived check reads, as the step computed it. */');
+  out.push('/** A computed value a derived check reads whose declaration the engine could not read. */');
   out.push('export type GuardValue = string | number | boolean | null;');
+  out.push('/** The values of a check that reads only the input: none. */');
+  out.push('export type NoValues = Record<never, never>;');
   for (const g of carried) {
     const pred = predicateName(g);
-    const valuesType = guardValuesType(g);
+    const valuesType = guardValuesType(g, plan, shapes);
     if (valuesType) {
+      // Each value typed as the original declares it where it checks (3.0.13, acceptance run 14.10.2026:
+      // `GuardValue` everywhere, and a faithful `dec.compare(values.lvSum, '100')` did not compile). A routine's
+      // parameter has the type of its argument (`argsInterface`), `unknown` where the FORM does not say.
+      const raw = g.basis !== 'derived';
       out.push('');
-      out.push(`/** The values ${g.helper} reads, computed by the step before L${g.line}. */`);
-      out.push(`export interface ${valuesType} {\n${g.operands.map((o) => `  /** ${o.name} */\n  ${o.key}: GuardValue;`).join('\n')}\n}`);
+      out.push(raw ? `/** The parameters of its routine ${g.helper} reads, handed in at the step's entry. */` : `/** The values ${g.helper} reads, computed by the step before L${g.line}. */`);
+      const fields = nodeGuardOperands(g, plan, shapes).map((o) => `  /** ${o.name} */\n  ${o.key}: ${declaredType(shapes, o.name, g.line, raw ? 'unknown' : 'GuardValue')};`);
+      out.push(`export interface ${valuesType} {\n${fields.join('\n')}\n}`);
     }
-    const valuesParam = valuesType ? `, values: ${valuesType}` : '';
-    const valuesArg = valuesType ? ', values' : '';
+    // One signature for every check (3.0.13): (sel, st, record, values) — the prompt says so, and a body's
+    // `guard_X(sel, st, null, {})` on a check with no values used to fail with "Expected 2-3 arguments, but got 4".
+    const valuesParam = valuesType ? `, values: ${valuesType}` : ', values: NoValues = {}';
+    const valuesArg = ', values';
     const recordParam = valuesType ? 'record: Rec | null' : 'record: Rec | null = null';
-    const sig = `export function ${pred}(sel: Selection, st: RunState, record: Rec | null${valuesParam}): boolean`;
+    const sig = `export function ${pred}(sel: Selection, st: RunState, ${recordParam}${valuesParam}): boolean`;
     const doc = guardDoc(g, plan);
     out.push('');
     out.push(doc);
@@ -588,12 +635,18 @@ function guardsFile(plan: UnitPlan): Built {
 
 /* ----------------------------------------------------------------- steps */
 
-function argsInterface(u: Unit): string | null {
+function argsInterface(u: Unit, shapes: AbapShapes): string | null {
   if (u.parameters.length === 0 || u.part) return null;
   const name = `${u.fn[0].toUpperCase()}${u.fn.slice(1)}Args`;
+  // Typed as the FORM declares each parameter (3.0.13, acceptance run 14.10.2026: every argument was `unknown`,
+  // and a faithful `dec.compare(args.ivNum, '0')` did not compile); `unknown` only where the FORM says nothing.
+  const at = u.abap[0]?.lineStart ?? 0;
   const members = u.parameters.map((p) => {
     const key = camelName(p.name);
-    const type = p.direction === 'changing' ? '{ value: unknown }' : p.direction === 'tables' ? 'unknown[]' : 'unknown';
+    const declared = shapes.typeOf(p.name, at);
+    const of = declared ?? (p.direction === 'tables' ? 'unknown[]' : 'unknown');
+    const row = p.direction === 'tables' && !/\[\]$|^Array</.test(of) ? 'unknown[]' : of;
+    const type = p.direction === 'changing' ? `{ value: ${of} }` : p.direction === 'tables' ? row : of;
     return `  /** ${p.name.toUpperCase()} (${p.direction.toUpperCase()}). */\n  ${key}: ${type};`;
   });
   return `export interface ${name} {\n${members.join('\n')}\n}`;
@@ -624,16 +677,24 @@ function unitDoc(u: Unit, plan: UnitPlan): string {
   ].join('\n');
 }
 
-function guardCallLines(u: Unit, plan: UnitPlan): string[] {
+function guardCallLines(u: Unit, plan: UnitPlan, shapes: AbapShapes): string[] {
   const out: string[] = [];
   for (const id of u.guardCalls) {
     const g = plan.guards.find((x) => x.id === id)!;
     const v = id.replace('-', '').toLowerCase();
+    // The routine's parameters the check reads, from the step's own arguments (`nodeGuardOperands`).
+    const handed = nodeGuardOperands(g, plan, shapes).map((o) => {
+      const [base, ...components] = o.name.split('-');
+      const p = u.parameters.find((x) => x.name.toLowerCase() === base);
+      const arg = `args.${camelName(base)}${p?.direction === 'changing' ? '.value' : ''}`;
+      return `${o.key}: ${[arg, ...components.map(camelName)].join('.')}`;
+    });
+    const call = `${g.helper}(sel, st, null${handed.length ? `, { ${handed.join(', ')} }` : ''})`;
     if (g.outcome === 'refuses') {
-      out.push(`  const ${v} = checked(st, () => ${g.helper}(sel, st, null));`);
+      out.push(`  const ${v} = checked(st, () => ${call});`);
       out.push(`  if (${v}) return ${v};`);
     } else {
-      out.push(`  if (checked(st, () => ${g.helper}(sel, st, null))) return;`);
+      out.push(`  if (checked(st, () => ${call})) return;`);
     }
   }
   return out;
@@ -649,7 +710,7 @@ function guardImports(u: Unit, plan: UnitPlan): string[] {
   return [...names];
 }
 
-function stepFile(u: Unit, plan: UnitPlan): Built {
+function stepFile(u: Unit, plan: UnitPlan, shapes: AbapShapes): Built {
   const libDir = u.file.startsWith('srv/steps/') ? '../lib/' : './lib/';
   const callees = u.callees.map((id) => plan.units.find((x) => x.id === id)!).filter(Boolean);
   const out: string[] = [];
@@ -659,19 +720,19 @@ function stepFile(u: Unit, plan: UnitPlan): Built {
   out.push(`import { NotImplementedFill, Refusal } from '${libDir}errors.ts';`);
   out.push(`import { ${guardImports(u, plan).join(', ')} } from '${libDir}guards.ts';`);
   out.push(`import { DECIMALS } from '${libDir}types.ts';`);
-  out.push(`import type { Dec, Rec, RunState, Selection, StepResult } from '${libDir}types.ts';`);
+  out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from '${libDir}types.ts';`);
   for (const c of callees) {
     const rel = u.file.startsWith('srv/steps/') ? `./${c.file.replace('srv/steps/', '')}` : `./${c.file.replace('srv/', '')}`;
     out.push(`import { ${c.fn} } from '${rel}';`);
   }
   out.push('');
-  const args = argsInterface(u);
+  const args = argsInterface(u, shapes);
   if (args) {
     out.push(args);
     out.push('');
   }
   const doc = unitDoc(u, plan);
-  const guardLines = guardCallLines(u, plan);
+  const guardLines = guardCallLines(u, plan, shapes);
   out.push(doc);
   out.push(`${u.signature} {`);
   out.push(...guardLines);
@@ -683,19 +744,19 @@ function stepFile(u: Unit, plan: UnitPlan): Built {
 }
 
 /** The parent of a split routine: engine-written, calls its parts in order with one shared local state. */
-function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan): ScaffoldFile {
+function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan, shapes: AbapShapes): ScaffoldFile {
   const out: string[] = [];
   out.push(`// ${u.id} ${u.title} — split above the hard budget; generated by Clean-Core.io (engine).`);
   const guardNames = u.guardCalls.map((id) => plan.guards.find((g) => g.id === id)!.helper);
   if (guardNames.length > 0) out.push(`import { checked, ${guardNames.join(', ')} } from '../lib/guards.ts';`);
-  out.push("import type { RunState, Selection, StepResult } from '../lib/types.ts';");
+  out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from '../lib/types.ts';`);
   for (const p of parts) out.push(`import { ${p.fn} } from './${p.file.replace('srv/steps/', '')}';`);
   out.push('');
-  const args = argsInterface(u);
+  const args = argsInterface(u, shapes);
   if (args) out.push(args, '');
   out.push(unitDoc(u, plan));
   out.push(`${u.signature} {`);
-  out.push(...guardCallLines(u, plan));
+  out.push(...guardCallLines(u, plan, shapes));
   out.push('  const local: Record<string, unknown> = {};');
   for (const p of parts) {
     out.push(`  const r${p.part!.index} = ${p.fn}(sel, st, local);`);
@@ -708,7 +769,7 @@ function splitParentFile(u: Unit, parts: Unit[], plan: UnitPlan): ScaffoldFile {
 
 /* ---------------------------------------------------------- process, app */
 
-function processFile(plan: UnitPlan, facts: EngineFacts): Built {
+function processFile(plan: UnitPlan, facts: EngineFacts, shapes: AbapShapes): Built {
   const orch = plan.units.find((u) => u.kind === 'orchestrator')!;
   const steps = plan.units.filter((u) => u.kind !== 'orchestrator' && !u.part);
   const fnOf = new Map<string, Unit>();
@@ -732,7 +793,7 @@ function processFile(plan: UnitPlan, facts: EngineFacts): Built {
   out.push("import { NotImplementedFill, Refusal } from './lib/errors.ts';");
   out.push(`import { ${['checked', 'checkSelection', ...guardImports(orch, plan).filter((n) => n !== 'checked')].join(', ')} } from './lib/guards.ts';`);
   out.push("import { initialLocals } from './lib/types.ts';");
-  out.push("import type { Locals, Rec, RunState, Selection, StepResult } from './lib/types.ts';");
+  out.push(`import type { ${typeExportNames(plan, shapes).join(', ')} } from './lib/types.ts';`);
   for (const s of steps) out.push(`import { ${s.fn} } from './${s.file.replace('srv/', '')}';`);
   out.push('');
   const doc = [
@@ -741,7 +802,7 @@ function processFile(plan: UnitPlan, facts: EngineFacts): Built {
     ...(reading.length ? reading : [' *   (no PERFORM at program level)']),
     ' */',
   ].join('\n');
-  const guardLines = guardCallLines(orch, plan);
+  const guardLines = guardCallLines(orch, plan, shapes);
   out.push(doc);
   out.push(`${orch.signature} {`);
   out.push(...guardLines);
@@ -948,7 +1009,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 `;
 
-function engineContractFile(plan: UnitPlan): string {
+function engineContractFile(plan: UnitPlan, shapes: AbapShapes): string {
   const model = contractModel(plan);
   return [
     '/**',
@@ -1015,7 +1076,7 @@ function engineContractFile(plan: UnitPlan): string {
     '  return out;',
     '}',
     '',
-    ...checkExport(plan),
+    ...checkExport(plan, shapes),
   ].join('\n');
 }
 
@@ -1026,11 +1087,11 @@ function engineContractFile(plan: UnitPlan): string {
  * (`SY-SUBRC`) as a number, a declared decimal as a decimal string at its places; any other computed value
  * is `unsupported` and the case is not run. A predicate still a stub answers `notFilled`.
  */
-function checkExport(plan: UnitPlan): string[] {
+function checkExport(plan: UnitPlan, shapes: AbapShapes): string[] {
   const decimals = new Set(plan.decimals.map((d) => d.name.toUpperCase()));
   const recordTable = plan.fields.some((f) => f.where === 'record');
   const fieldNames = new Set(plan.fields.map((f) => f.original));
-  type CheckSpec = { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> };
+  type CheckSpec = { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | 'text' | null }> };
   const table: Record<string, CheckSpec> = {};
   for (const g of plan.guards) {
     if (!g.carried || !g.regionId) continue;
@@ -1041,16 +1102,18 @@ function checkExport(plan: UnitPlan): string[] {
       predicate: predicateName(g),
       record: g.outcome === 'skips',
       table: isTable ? subject : null,
-      operands: (g.basis === 'derived' ? g.operands : []).map((o) => {
+      operands: nodeGuardOperands(g, plan, shapes).map((o) => {
         const name = o.name.toUpperCase();
         const comp = name.includes('-') ? name.slice(name.lastIndexOf('-') + 1) : name;
-        return { name, key: o.key, form: name.startsWith('SY-') ? 'number' : decimals.has(name) || decimals.has(comp) ? 'decimal' : null };
+        // A system field as the guard's values type it (abap-shapes.ts): a count or return code a number, sy-datum text.
+        const sy = name.startsWith('SY-') ? (NUMERIC_SYSTEM_FIELDS.has(comp.toLowerCase()) ? 'number' : 'text') : null;
+        return { name, key: o.key, form: sy ?? (decimals.has(name) || decimals.has(comp) ? 'decimal' : null) };
       }),
     };
   }
   return [
     '/** The carried checks: the predicate, whether it reads a record, the record table it tests, the values it reads. */',
-    `const CHECKS: Record<string, { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | null }> }> = ${JSON.stringify(table, null, 2)};`,
+    `const CHECKS: Record<string, { predicate: string; record: boolean; table: string | null; operands: Array<{ name: string; key: string; form: 'number' | 'decimal' | 'text' | null }> }> = ${JSON.stringify(table, null, 2)};`,
     '',
     "/** Does the predicate of the original's check `guard` (`G-0061`) hold on this request? `values`: the computed values it reads, by original name. */",
     'export function check(guard: string, request: unknown, values: Record<string, unknown> = {}) {',
@@ -1072,7 +1135,7 @@ function checkExport(plan: UnitPlan): string[] {
     '  for (const o of spec.operands) {',
     '    const raw = String(given[o.name]);',
     "    const decimal = DECIMALS[o.name] ?? DECIMALS[o.name.slice(o.name.lastIndexOf('-') + 1)];",
-    "    handed[o.key] = o.form === 'number' ? Number(raw) : decimal && dec.parse(raw) ? dec.round(raw, decimal.places) : raw;",
+    "    handed[o.key] = o.form === 'number' ? Number(raw) : o.form === 'text' ? raw : decimal && dec.parse(raw) ? dec.round(raw, decimal.places) : raw;",
     '  }',
     '  const record = spec.record ? (st.records[0] ?? null) : null;',
     '  const predicate = (guards as unknown as Record<string, (...args: unknown[]) => unknown>)[spec.predicate];',
@@ -1248,6 +1311,8 @@ const TSCONFIG = `${JSON.stringify(
   {
     compilerOptions: {
       target: 'ES2022',
+      // No DOM (3.0.13): its global `Range` stood in for the package's own when a step forgot the import.
+      lib: ['ES2022'],
       module: 'NodeNext',
       moduleResolution: 'NodeNext',
       strict: true,
@@ -1306,18 +1371,18 @@ export function buildNodeScaffold(plan: UnitPlan, facts: EngineFacts, options: N
   const shapes = readAbapShapes(facts.statements, facts.blocks, typesReserved(plan));
   files.push({ path: 'srv/lib/types.ts', content: typesFile(plan, contextDigest, ruleRevisionOf(plan), shapes), owner: 'engine' });
   files.push({ path: 'srv/lib/input-contract.ts', content: inputContractFile(plan), owner: 'engine' });
-  add(guardsFile(plan));
+  add(guardsFile(plan, shapes));
   for (const u of plan.units) {
     if (u.kind === 'orchestrator') continue;
     const parts = plan.units.filter((p) => p.part?.parent === u.id);
-    if (parts.length > 0) files.push(splitParentFile(u, parts, plan));
-    else add(stepFile(u, plan));
+    if (parts.length > 0) files.push(splitParentFile(u, parts, plan, shapes));
+    else add(stepFile(u, plan, shapes));
   }
-  add(processFile(plan, facts));
+  add(processFile(plan, facts, shapes));
   files.push({ path: 'srv/simulate.ts', content: SIMULATE_TS, owner: 'engine' });
   files.push({ path: 'srv/app.ts', content: APP_TS, owner: 'engine' });
   files.push({ path: 'srv/server.ts', content: SERVER_TS, owner: 'engine' });
-  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan), owner: 'engine' });
+  files.push({ path: 'srv/engine-contract.ts', content: engineContractFile(plan, shapes), owner: 'engine' });
   // The original's demo cases (3.0.13, A4): the golden master as data, a loader that runs one case through the
   // process with the case's tables as the run's globals, and a test that runs them all (`node-demo.ts`).
   files.push(...nodeDemoFiles(plan, shapes, options.originalDemo === undefined ? originalDemoCases(facts.source) : options.originalDemo));

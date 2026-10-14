@@ -76,7 +76,10 @@ test('B: a derived predicate reads its values through member calls; names it is 
 
 test('A and B: the header says how a body calls a guard and what a predicate reads', () => {
   const node = fillInstructionHeader('node');
-  expect(node).toContain('helper and predicate take (sel, st, record, values)');
+  // Since scaffold version 7 every helper and predicate has all four parameters; values is {} when a check reads none.
+  expect(node).toContain('every helper and predicate takes (sel, st, record, values)');
+  expect(node).toContain('{} when there are none');
+  expect(node).not.toContain('left out when none');
   expect(node).toContain('`const r = guard_G0345(sel, st, null, { lvCode }); if (r) return r;`');
   expect(node).toContain('when_<id without "-">(sel, st, record, values): boolean');
   expect(node).toContain('values.<key>');
@@ -139,7 +142,8 @@ test('E: a row of an internal table the program builds is a computed value; the 
   // The predicate is written from values alone — `Rec` has no field of ty_effect.
   const guard = guardBodyOf(prep);
   expect(guard(g.regionId!, "return values.lsParentKind === 'SHIP' && dec.compare(String(values.lvQty), String(values.lsParentQty)) > 0;", [])).toBeNull();
-  expect(prep.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content).toMatch(/lsParentKind: GuardValue;[\s\S]*lsParentQty: GuardValue;/);
+  // Typed as the original declares them (scaffold version 7): ls_parent is a ty_effect row, its components text.
+  expect(prep.scaffold.files.find((f) => f.path === 'srv/lib/guards.ts')!.content).toMatch(/lsParentKind: string;\n {2}\/\*\* lv_qty \*\/\n {2}lvQty: string;\n {2}\/\*\* ls_parent-qty \*\/\n {2}lsParentQty: string;/);
 });
 
 test('E: LOOP, ASSIGNING, READ TABLE and SELECT fill a work area; a row of the input stays raw', () => {

@@ -24,12 +24,20 @@
  * `'00000000'` for a date, `[]` for a table, every component initial for a
  * structure), so a step reads what the original's step would read.
  *
+ * `typeOf(name, line)` (3.0.13, acceptance run 14.10.2026): the same types
+ * for any data object where a line reads it — a FORM's parameters, its DATA,
+ * FIELD-SYMBOLS and inline `INTO DATA(…)`, a structure's component, a system
+ * field (`sy-subrc` a number, `sy-datum` text). The guards' `values` and the
+ * steps' arguments are typed from it, so a faithful body's `dec.compare(
+ * values.lvSum, '100')` compiles instead of failing on `GuardValue`/`unknown`.
+ *
  * Pure: statements in, declarations out. No network, no model.
  */
 
 import type { AbapStatement } from '../abap/statement-reader';
 import type { BlockStructure } from '../abap/block-structure';
 import { camelName, pascalName } from './naming';
+import { formParameters, SAP_STRUCTURE_EQUIVALENTS } from './rap-contract';
 
 export interface ShapeField {
   /** As the original writes it, lower case. */
@@ -59,7 +67,18 @@ export interface AbapShapes {
   structures: ShapeStructure[];
   /** The program's global data objects (DATA outside FORM, METHOD, MODULE, CLASS). */
   globals: ShapeField[];
+  /**
+   * The TypeScript type of a data object as the original declares it where `line` reads it — `lv_sum`,
+   * `ls_op-effort`, `<ls_row>`, `cv_code`, `sy-subrc` — or null when no declaration says (see `typeAt`).
+   */
+  typeOf(name: string, line: number): string | null;
 }
+
+/**
+ * System fields that hold a count or a return code: a number in the port (`check` hands them in as one). Every
+ * other system field (`sy-datum`, `sy-uname`, `sy-langu`) is text, like the original's character types.
+ */
+export const NUMERIC_SYSTEM_FIELDS: ReadonlySet<string> = new Set(['subrc', 'tabix', 'index', 'dbcnt', 'fdpos', 'tfill', 'lsind', 'linno', 'colno', 'pagno', 'linct', 'linsz', 'cpage', 'staro', 'stepl', 'loopc']);
 
 const NUMERIC_INITIAL: Record<string, string> = { i: '0', int1: '0', int2: '0', int4: '0', int8: '0', b: '0', s: '0', f: '0', decfloat16: '0', decfloat34: '0' };
 const LOCAL_BLOCKS = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
@@ -101,14 +120,72 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   const structDecls: Array<{ name: string; line: number; lineEnd: number; data: boolean; components: Decl[] }> = [];
   const globalDecls: Decl[] = [];
   const stack: Array<(typeof structDecls)[number]> = [];
+  // The data objects of each FORM or METHOD (3.0.13, acceptance run 14.10.2026): its parameters, DATA,
+  // FIELD-SYMBOLS and inline declarations, so a guard's values and a step's arguments get the declared type.
+  const procedures: Array<{ lineStart: number; lineEnd: number }> = [];
+  const localDecls = new Map<number, Map<string, Decl>>();
+  const localTypeNames = new Set<string>();
+  let localStructDepth = 0;
+  const procedureOf = (i: number) => {
+    const p = [...(blocks.enclosing[i] ?? [])].reverse().find((b) => b.kind === 'form' || b.kind === 'method' || b.kind === 'module');
+    if (p && !procedures.some((x) => x.lineStart === p.lineStart)) procedures.push({ lineStart: p.lineStart, lineEnd: p.lineEnd });
+    return p ?? null;
+  };
+  const declareLocal = (proc: number, d: Decl) => {
+    const m = localDecls.get(proc) ?? new Map<string, Decl>();
+    if (!m.has(d.name)) m.set(d.name, d);
+    localDecls.set(proc, m);
+  };
 
   statements.forEach((st, i) => {
+    if (st.keyword === 'FORM') {
+      // The opening statement is not inside its own block: the FORM's block is the one its next statement is in.
+      const form = (blocks.enclosing[i + 1] ?? []).find((b) => b.kind === 'form' && b.openIndex === i);
+      if (form) {
+        procedureOf(i + 1);
+        for (const p of formParameters(st.text)) {
+          const typed = p.phrase ? p.phrase.replace(/^STRUCTURE\s+/i, 'TYPE ') : 'TYPE any';
+          const lineType = /^TYPE\s+([\w/]+)$/i.exec(typed)?.[1];
+          // TABLES p STRUCTURE s: a table of s (unless s is a table type of the program already).
+          const tables = lineType && !tableType.has(lineType.toLowerCase()) ? `TYPE STANDARD TABLE OF ${lineType}` : lineType ? typed : 'TYPE STANDARD TABLE';
+          declareLocal(form.lineStart, { name: p.name, rest: p.section === 'tables' ? tables : typed, line: st.lineStart });
+        }
+      }
+      return;
+    }
+    const proc = procedureOf(i);
+    if (proc) {
+      // `LOOP AT t INTO DATA(x)`, `READ TABLE t … ASSIGNING FIELD-SYMBOL(<x>)`: a row of the table read.
+      const inline = /^(?:LOOP\s+AT|READ\s+TABLE)\s+([\w/]+)(?:\[\])?\b[\s\S]*?\b(?:INTO\s+DATA|ASSIGNING\s+FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/i.exec(st.text);
+      if (inline) declareLocal(proc.lineStart, { name: inline[2].toLowerCase(), rest: `LIKE LINE OF ${inline[1].toLowerCase()}`, line: st.lineStart });
+      if (st.keyword === 'FIELD-SYMBOLS' || st.keyword === 'STATICS' || (st.keyword === 'DATA' && localStructDepth === 0)) {
+        const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '').replace(/\.\s*$/, '');
+        const m = /^(<?[\w/]+>?)(\(\d+\))?(?:\s+([\s\S]*))?$/.exec(rest);
+        if (m && !/^(?:BEGIN|END)$/i.test(m[1])) declareLocal(proc.lineStart, { name: m[1].toLowerCase(), rest: `${m[2] ?? ''}${m[3] ? (m[2] ? ' ' : '') + m[3] : ''}`.trim(), line: st.lineStart });
+      }
+      if (st.keyword === 'TYPES') {
+        const m = /^TYPES\s*:?\s*(?:BEGIN\s+OF\s+)?([\w/]+)/i.exec(st.text);
+        if (m && !/^TYPES\s*:?\s*END\s+OF/i.test(st.text)) localTypeNames.add(m[1].toLowerCase());
+      }
+    }
+    if (st.keyword === 'INCLUDE' && stack.length > 0) {
+      // `INCLUDE STRUCTURE bdcdata.` inside `DATA: BEGIN OF … END OF`: the included components (rap-contract.ts).
+      const inc = /^INCLUDE\s+(?:STRUCTURE|TYPE)\s+([\w/]+)/i.exec(st.text);
+      const own = inc ? structDecls.find((s) => s.name === inc[1].toLowerCase()) : undefined;
+      const sap = inc ? SAP_STRUCTURE_EQUIVALENTS[inc[1].toLowerCase()] : undefined;
+      if (own) stack[stack.length - 1].components.push(...own.components);
+      else if (sap) stack[stack.length - 1].components.push(...sap.map((c) => ({ name: c.name, rest: c.phrase, line: st.lineStart })));
+      return;
+    }
     if (st.keyword !== 'TYPES' && st.keyword !== 'DATA') return;
     const local = (blocks.enclosing[i] ?? []).some((b) => LOCAL_BLOCKS.has(b.kind));
     const rest = st.text.slice(st.keyword.length).replace(/^\s*:?\s*/, '').replace(/\.\s*$/, '');
     const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(rest);
     if (begin) {
-      if (local && stack.length === 0) return;
+      if (local && stack.length === 0) {
+        localStructDepth++;
+        return;
+      }
       const s = { name: begin[1].toLowerCase(), line: st.lineStart, lineEnd: st.lineStart, data: st.keyword === 'DATA', components: [] as Decl[] };
       if (stack.length > 0) {
         // A nested structure is a component typed by itself.
@@ -120,6 +197,10 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     }
     const end = /^END\s+OF\s+([\w/]+)/i.exec(rest);
     if (end) {
+      if (stack.length === 0 && localStructDepth > 0) {
+        localStructDepth--;
+        return;
+      }
       const s = stack.pop();
       if (s) {
         s.lineEnd = st.lineStart;
@@ -160,19 +241,23 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   const globalByName = new Map(globalDecls.map((g) => [g.name, g]));
 
   /** The TypeScript type and initial value of a declaration's type expression. */
-  const resolve = (rest: string, depth = 0): { ts: string; init: string } => {
+  // `scope`: the data objects of the procedure a declaration is in, for its LIKE (globals otherwise).
+  const resolve = (rest: string, depth = 0, scope?: ReadonlyMap<string, Decl>): { ts: string; init: string } => {
     if (depth > 6) return { ts: 'unknown', init: 'null' };
     const t = readTypeExpr(rest);
     if (t.ref || !t.type) return { ts: 'unknown', init: 'null' };
     if (t.type.includes('-')) return { ts: 'unknown', init: 'null' };
+    // Generic types (a FORM's `TYPE any`, `TYPE STANDARD TABLE`): nothing the port may assume.
+    if (!t.like && t.type === 'table') return { ts: 'unknown[]', init: '[]' };
+    if (!t.like && GENERIC.has(t.type)) return { ts: 'unknown', init: 'null' };
     if (t.table) {
-      const line = resolve(`TYPE ${t.type}`, depth + 1);
+      const line = resolve(`${t.like ? 'LIKE' : 'TYPE'} ${t.type}`, depth + 1, scope);
       return { ts: line.ts === 'unknown' ? 'unknown[]' : /[|&]/.test(line.ts) ? `Array<${line.ts}>` : `${line.ts}[]`, init: '[]' };
     }
     if (t.like) {
-      const g = globalByName.get(t.type);
+      const g = scope?.get(t.type) ?? globalByName.get(t.type);
       if (!g) return { ts: 'unknown', init: 'null' };
-      const of = resolve(g.rest, depth + 1);
+      const of = resolve(g.rest, depth + 1, scope);
       if (t.lineOf) return of.ts.endsWith('[]') ? { ts: of.ts.slice(0, -2), init: initOfTs(of.ts.slice(0, -2)) } : { ts: 'unknown', init: 'null' };
       return of;
     }
@@ -185,6 +270,8 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
     if (tt) return resolve(tt.rest, depth + 1);
     const alias = scalarAlias.get(t.type);
     if (alias) return resolve(alias.rest, depth + 1);
+    // A type a FORM declares for itself is not in srv/lib/types.ts: never guessed as text.
+    if (scope && localTypeNames.has(t.type)) return { ts: 'unknown', init: 'null' };
     return { ts: 'string', init: scalarInitial(t.type, t.length, t.decimals) };
   };
 
@@ -228,8 +315,31 @@ export function readAbapShapes(statements: readonly AbapStatement[], blocks: Pic
   }
   const globalKeys = new Set<string>();
   const globals = globalDecls.map(fieldOf).filter((g) => (globalKeys.has(g.key) ? false : (globalKeys.add(g.key), true)));
-  return { structures, globals };
+
+  const byTsName = new Map(structures.map((s) => [s.tsName, s]));
+  const typeOf = (name: string, line: number): string | null => {
+    const [base, ...components] = name.toLowerCase().trim().split('-');
+    if (!base) return null;
+    if (base === 'sy') return components.length === 1 ? (NUMERIC_SYSTEM_FIELDS.has(components[0]) ? 'number' : 'string') : null;
+    // The innermost FORM or METHOD around the line, then the program's globals.
+    const proc = procedures.filter((p) => line >= p.lineStart && line <= p.lineEnd).sort((a, b) => b.lineStart - a.lineStart)[0];
+    const scope = proc ? localDecls.get(proc.lineStart) : undefined;
+    const decl = scope?.get(base) ?? globalByName.get(base);
+    if (!decl) return null;
+    let ts = resolve(decl.rest, 0, scope).ts;
+    for (const c of components) {
+      const s = byTsName.get(ts);
+      const f = s?.fields.find((x) => x.key === camelName(c));
+      if (!f) return null;
+      ts = f.ts;
+    }
+    return ts;
+  };
+  return { structures, globals, typeOf };
 }
+
+/** Generic ABAP types: a parameter so typed takes anything (`clike` and its kin are text in the port). */
+const GENERIC = new Set(['any', 'data', 'object']);
 
 /** The ABAP initial value of a scalar, as the port holds it (text). */
 function scalarInitial(type: string, length: number | null, decimals: number | null): string {

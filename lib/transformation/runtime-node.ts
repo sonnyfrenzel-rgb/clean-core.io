@@ -66,6 +66,13 @@ export interface Scaled {
   d: number;
 }
 
+/**
+ * A decimal value as a body holds one: its text at the field's places ("12.50" - the one representation of a
+ * packed field, a record field, a global and a check's value), a finite number (a count, sy-subrc), or what
+ * parse returned. Every helper takes any of them, so a value a step computed passes as it is.
+ */
+export type Decimal = string | number | Scaled;
+
 const TEN = BigInt(10);
 const ZERO = BigInt(0);
 const ONE = BigInt(1);
@@ -73,10 +80,14 @@ const TWO = BigInt(2);
 const pow10 = (n: number): bigint => TEN ** BigInt(n);
 const STRICT = /^([-+]?)(\d+)(?:\.(\d+))?$/;
 
+const isScaled = (x: unknown): x is Scaled => typeof x === 'object' && x !== null && typeof (x as Scaled).v === 'bigint' && typeof (x as Scaled).d === 'number';
+
 /** "-12.345" -> { v: -12345n, d: 3 }; null when it is not a plain decimal (no exponent, no unit, no spaces inside). */
-export function parse(text: string): Scaled | null {
-  if (typeof text !== 'string') return null;
-  const m = STRICT.exec(text.trim());
+export function parse(text: Decimal | null | undefined): Scaled | null {
+  if (isScaled(text)) return text;
+  const raw = typeof text === 'number' ? (Number.isFinite(text) && !/e/i.test(String(text)) ? String(text) : '') : text;
+  if (typeof raw !== 'string') return null;
+  const m = STRICT.exec(raw.trim());
   if (!m) return null;
   const frac = m[3] ?? '';
   const v = BigInt(m[2] + frac);
@@ -84,14 +95,18 @@ export function parse(text: string): Scaled | null {
 }
 
 /** Like parse, but throws a RangeError naming the value. */
-export function must(text: string): Scaled {
+export function must(text: Decimal): Scaled {
   const p = parse(text);
   if (!p) throw new RangeError('not a decimal: ' + String(text));
   return p;
 }
 
-/** A scaled integer as a decimal string with exactly d places; never "-0". */
-export function format(v: bigint, d: number): string {
+/**
+ * A decimal with exactly d places; never "-0". A bigint is a scaled integer (format(1250n, 2) is "12.50");
+ * any other value is rounded commercially to d places (format("12.5", 2) is "12.50").
+ */
+export function format(v: bigint | Decimal, d: number): string {
+  if (typeof v !== 'bigint') return round(v, d);
   const neg = v < ZERO;
   const abs = neg ? -v : v;
   const s = abs.toString().padStart(d + 1, '0');
@@ -116,32 +131,32 @@ function at(x: Scaled, d: number): bigint {
 }
 
 /** A decimal rounded commercially to places. */
-export function round(text: string, places: number): string {
+export function round(text: Decimal, places: number): string {
   return format(at(must(text), places), places);
 }
 
-export function add(a: string, b: string, places: number): string {
+export function add(a: Decimal, b: Decimal, places: number): string {
   const x = must(a);
   const y = must(b);
   const d = Math.max(x.d, y.d);
   return format(at({ v: at(x, d) + at(y, d), d }, places), places);
 }
 
-export function sub(a: string, b: string, places: number): string {
+export function sub(a: Decimal, b: Decimal, places: number): string {
   const x = must(a);
   const y = must(b);
   const d = Math.max(x.d, y.d);
   return format(at({ v: at(x, d) - at(y, d), d }, places), places);
 }
 
-export function mul(a: string, b: string, places: number): string {
+export function mul(a: Decimal, b: Decimal, places: number): string {
   const x = must(a);
   const y = must(b);
   return format(at({ v: x.v * y.v, d: x.d + y.d }, places), places);
 }
 
 /** a / b at places, rounded commercially; throws on division by zero. */
-export function div(a: string, b: string, places: number): string {
+export function div(a: Decimal, b: Decimal, places: number): string {
   const x = must(a);
   const y = must(b);
   if (y.v === ZERO) throw new RangeError('division by zero');
@@ -149,7 +164,7 @@ export function div(a: string, b: string, places: number): string {
 }
 
 /** -1, 0 or 1. */
-export function compare(a: string, b: string): number {
+export function compare(a: Decimal, b: Decimal): number {
   const x = must(a);
   const y = must(b);
   const d = Math.max(x.d, y.d);
@@ -158,14 +173,17 @@ export function compare(a: string, b: string): number {
   return l === r ? 0 : l < r ? -1 : 1;
 }
 
-export const isZero = (a: string): boolean => must(a).v === ZERO;
-export const neg = (a: string, places: number): string => sub('0', a, places);
-export const abs = (a: string, places: number): string => (must(a).v < ZERO ? neg(a, places) : round(a, places));
-export const max = (a: string, b: string): string => (compare(a, b) >= 0 ? a : b);
-export const min = (a: string, b: string): string => (compare(a, b) <= 0 ? a : b);
+/** A value as text at its own places ("12.50" stays "12.50", 3 is "3"). */
+const asText = (a: Decimal): string => (typeof a === 'string' ? a : format(must(a).v, must(a).d));
+
+export const isZero = (a: Decimal): boolean => must(a).v === ZERO;
+export const neg = (a: Decimal, places: number): string => sub('0', a, places);
+export const abs = (a: Decimal, places: number): string => (must(a).v < ZERO ? neg(a, places) : round(a, places));
+export const max = (a: Decimal, b: Decimal): string => (compare(a, b) >= 0 ? asText(a) : asText(b));
+export const min = (a: Decimal, b: Decimal): string => (compare(a, b) <= 0 ? asText(a) : asText(b));
 
 /** Does a value at its places fit the bound of its type (|value| <= max)? */
-export function fits(text: string, bound: string): boolean {
+export function fits(text: Decimal, bound: Decimal): boolean {
   const x = must(text);
   const m = must(bound);
   const d = Math.max(x.d, m.d);
@@ -174,7 +192,7 @@ export function fits(text: string, bound: string): boolean {
 }
 
 /** amount x rate % at places, rounded commercially. */
-export function percentOf(amount: string, ratePercent: string, places: number): string {
+export function percentOf(amount: Decimal, ratePercent: Decimal, places: number): string {
   const a = must(amount);
   const r = must(ratePercent);
   return format(divRound(a.v * r.v * pow10(places), pow10(a.d + r.d + 2)), places);

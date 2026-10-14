@@ -50,7 +50,8 @@ test('every fill request carries the types its signature and callees name, down 
   for (const decl of ['interface Selection {', 'interface RunState {', 'interface CheckConservationArgs {', 'type StepResult = Refusal | void;', 'class Refusal {', 'interface RefusalError {', 'interface Rec {']) {
     expect(u.types!, decl).toContain(decl);
   }
-  expect(u.types!).toContain('cvCode: { value: unknown }; // CV_CODE (CHANGING)');
+  // Typed as the FORM declares it (scaffold version 7; `unknown` before).
+  expect(u.types!).toContain('cvCode: { value: string }; // CV_CODE (CHANGING)');
   // A caller sees its callee's Args: the main path calls checkConservation.
   const caller = prep.fillUnits.find((x) => x.unitId === unitOf(prep, 'runSteps').id)!;
   expect(caller.available.callees.join('\n')).toContain('args: CheckConservationArgs');

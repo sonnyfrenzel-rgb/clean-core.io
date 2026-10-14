@@ -119,8 +119,12 @@ test.describe('bundles: ≤ 4 units and ≤ 14,000 characters per call', () => {
     const repair = new Map<string, FillRepair>([
       ['U02', { unitId: 'U02', round: 1, failure: 'f'.repeat(5000), previousBody: 'return x;' }],
     ]);
-    const [b] = bundleFills([unit(1, 10), unit(2, 10)], { ...OPTS, repair });
-    const u1 = b.request.units[0];
+    // Since scaffold version 7 the header names the helpers' signatures: the two units and the 2,000-character repair
+    // (26 characters under the cap before) may now travel in two calls — each is read from the call that carries it.
+    const bundles = bundleFills([unit(1, 10), unit(2, 10)], { ...OPTS, repair });
+    expect(bundles.flatMap((x) => x.unitIds)).toEqual(['U01', 'U02']);
+    const u1 = bundles.find((x) => x.unitIds.includes('U01'))!.request.units.find((x) => x.unitId === 'U01')!;
+    const b = bundles.find((x) => x.unitIds.includes('U02'))!;
     expect(u1.rules.map((r) => r.decision)).toEqual(['keep', 'change']);
     expect(u1.rules[1].proposal).toBe('Skip the item and report it.');
     expect(b.request.repair).toHaveLength(1);
