@@ -463,8 +463,15 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
     if (own) said.add(sentence.id);
     const does = own ? ` — ${sentence.text}` : '';
     const proposal = step.businessName ? ' (name: Model proposal)' : '';
-    return `**${docStepName(step)}**${proposal}${note}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
+    return `**${docStepName(step)}**${proposal}${note}${lockedNote(step)}${does} (${step.anchor ? shortLines([step.anchor]) : NOT_DETERMINED_LABEL})`;
   };
+  // Roadmap 3.0.13 (SD review CR-A1): a routine a constant gate always stops is
+  // said to be locked wherever the main path lists it.
+  const gate = summaryFacts?.locked?.gate ?? null;
+  const lockedNote = (step: DocStep): string =>
+    gate && gate.routine && gate.stopLine && step.technicalName.toUpperCase() === gate.routine
+      ? ` — locked: the constant ${gate.constant} is ${/^space$/i.test(gate.value) ? 'blank (space)' : gate.value}, so the check at L${gate.line} always stops it with an error at L${gate.stopLine}; nothing after that runs`
+      : '';
   // The order a run takes, not the order the map stores its elements in: that
   // order draws one branch of a decision to the end before the other, and the
   // CO case read as if the authorization check and the live read

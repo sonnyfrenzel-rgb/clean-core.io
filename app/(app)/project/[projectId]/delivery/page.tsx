@@ -527,7 +527,7 @@ export default function DeliveryPage() {
       ]);
       const ruleTests = ruleTestInputOf(project as HandoverProject);
       const rules = statesRead.ok
-        ? ruleFactsOf(statesRead.view, undefined, ruleTests)
+        ? ruleFactsOf(statesRead.view, undefined, ruleTests, typeof project.legacyCode === 'string' ? project.legacyCode : null)
         : statesRead.code === 'no-baseline'
           ? ruleFactsFromSource(typeof project.legacyCode === 'string' ? project.legacyCode : '', ruleTests)
           : ruleFactsOf(null, RULES_UNREAD[statesRead.code] ?? 'the confirmed process states could not be read.');

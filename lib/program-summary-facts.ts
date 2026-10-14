@@ -7,7 +7,10 @@ import { FUNCTION_TERMS_EN, TABLE_TERMS_EN, TRANSACTION_TERMS_EN } from '@/lib/a
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { capabilityPresence } from '@/lib/documentation-capabilities';
 import { isCustomerObject } from '@/lib/abap/abcd-classification';
-import { readStatements, type AbapStatement } from '@/lib/abap/statement-reader';
+import { maskLiterals, readStatements, type AbapStatement } from '@/lib/abap/statement-reader';
+import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@/lib/abap/constant-gates';
+import { readDemoSwitches } from '@/lib/abap/demo-switches';
+import { headerRuleRange, readHeaderRules } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
 import {
   PROGRAM_SUMMARY_FACTS_VERSION,
@@ -386,7 +389,43 @@ export interface ProgramSummaryReaders {
   skeleton?: Pick<ProcessSkeleton, 'luw'>;
   calls?: CallGraphReport;
   tables?: TableDependencyReport;
-  ruleSet?: Pick<BusinessRuleSet, 'rules' | 'program'> | null;
+  ruleSet?: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null;
+}
+
+/**
+ * Roadmap 3.0.13: the inputs whose every use stands in code no run reaches —
+ * `P_DOC`, read only by the locked live probe, selects nothing a run does.
+ */
+function markLockedInputs(inputs: SummaryInput[], statements: readonly AbapStatement[], gates: ConstantGateReport): SummaryInput[] {
+  if (!gates.unreachable.length) return inputs;
+  return inputs.map((input) => {
+    const word = new RegExp(`(?<![\\w/-])${input.name.replace(/[/]/g, '\\/')}(?![\\w/])`, 'i');
+    const uses = statements.filter((s) => !/^(?:PARAMETERS?|SELECT-OPTIONS|SELECTION-SCREEN)\b/i.test(s.text) && word.test(maskLiterals(s.text)));
+    return uses.length > 0 && uses.every((s) => isUnreachableLine(gates, s.lineStart)) ? { ...input, lockedOnly: true as const } : input;
+  });
+}
+
+/** The demo flag and the switches the rule set counted apart; nothing without a demo flag. */
+function demoFacts(text: string, ruleSet: Pick<BusinessRuleSet, 'demoCases'> | null): Pick<ProgramSummaryFacts, 'demo'> {
+  const switches = ruleSet?.demoCases?.rules.length ?? 0;
+  if (!ruleSet?.demoCases) return {};
+  const demo = readDemoSwitches(text);
+  return { demo: { flag: ruleSet.demoCases.flag, line: demo?.flag.line ?? 0, switches } };
+}
+
+/** The header's rule candidates, counted; nothing when the header states none. */
+function headerRuleFacts(ruleSet: Pick<BusinessRuleSet, 'headerRules'> | null): Pick<ProgramSummaryFacts, 'headerRules'> {
+  const h = ruleSet?.headerRules ?? [];
+  if (!h.length) return {};
+  return {
+    headerRules: {
+      rules: h.filter((c) => c.kind === 'rule').length,
+      bounds: h.filter((c) => c.kind === 'bound').length,
+      range: headerRuleRange(h),
+      lineStart: Math.min(...h.map((c) => c.lineStart)),
+      lineEnd: Math.max(...h.map((c) => c.lineEnd)),
+    },
+  };
 }
 
 export function programSummaryFactsOf(source: string, readers: ProgramSummaryReaders = {}): ProgramSummaryFacts {
@@ -395,7 +434,7 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const calls = readers.calls ?? readCallGraph(text);
   const tables = readers.tables ?? readTableDependencies(text);
   const skeleton = readers.skeleton ?? buildProcessSkeleton(text);
-  let ruleSet: Pick<BusinessRuleSet, 'rules' | 'program'> | null = readers.ruleSet ?? null;
+  let ruleSet: Pick<BusinessRuleSet, 'rules' | 'program' | 'demoCases' | 'headerRules'> | null = readers.ruleSet ?? null;
   if (!readers.ruleSet) {
     try {
       ruleSet = deriveBusinessRules(text);
@@ -418,7 +457,17 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
   const program = ruleSet?.program ?? (head ? head[2].toUpperCase() : null);
 
   const command = commandOnlyReader(text, calls);
-  const reads = capability.reads.map((r) => objectOf(r.name, r.line));
+  // Roadmap 3.0.13 (SD review CR-A1/D01): a read behind a constant gate no run
+  // passes is not something the program reads; it is named apart, with the gate.
+  const gates = readConstantGates(text);
+  const allReads = capability.reads.map((r) => objectOf(r.name, r.line));
+  const lockedRead = (o: { line: number }) => gates.unreachable.length > 0 && isUnreachableLine(gates, o.line);
+  const reads = allReads.filter((o) => !lockedRead(o));
+  const lockedReads = allReads.filter(lockedRead);
+  // The gate behind the first locked read; without one, a gate that always stops its routine.
+  const lockingGate = lockedReads.length
+    ? gates.gates[gates.unreachable.find((r) => lockedReads[0].line >= r.lineStart && lockedReads[0].line <= r.lineEnd)!.gate]
+    : gates.gates.find((g) => g.always && g.stop && g.routineKind !== 'event') ?? null;
   // A write that runs only on a user's command is marked (SD review, 12.10.2026).
   // A table written anywhere in the normal flow is not command-only, whichever write came first.
   const writtenInFlow = new Set([
@@ -506,11 +555,29 @@ export function programSummaryFactsOf(source: string, readers: ProgramSummaryRea
       firstCall(FILE_UPLOAD) ?? classLine(/CL_GUI_FRONTEND_SERVICES\s*=>\s*GUI_UPLOAD/i),
       classLine(/\bCL_GUI_(?:ALV_GRID|CUSTOM_CONTAINER|DOCKING_CONTAINER|DIALOGBOX_CONTAINER)\b/i),
     ].filter((l): l is number => !!l).sort((a, b) => a - b)[0] ?? null,
-    inputs: inputsOf(ctx, texts.fields),
+    inputs: markLockedInputs(inputsOf(ctx, texts.fields), readStatements(text), gates),
     screenTitles: texts.titles,
     fixedLists: fixedListsOf(calls, ctx),
     rules: ruleCount,
     headerClaim: headerClaimOf(text),
+    // Roadmap 3.0.13 — present only when the source has them, so every other
+    // program's facts stay byte for byte what they were.
+    ...(lockingGate
+      ? {
+          locked: {
+            reads: lockedReads,
+            gate: {
+              constant: lockingGate.constant,
+              value: lockingGate.value,
+              line: lockingGate.lineStart,
+              stopLine: lockingGate.stop?.line ?? null,
+              routine: lockingGate.routine,
+            },
+          },
+        }
+      : {}),
+    ...demoFacts(text, ruleSet),
+    ...headerRuleFacts(ruleSet),
     authority: [...new Set(calls.authorityChecks.map((a) => a.object).filter((o): o is string => !!o).map((o) => o.toUpperCase()))],
   };
 }

@@ -270,8 +270,10 @@ export function ruleFactsOf(
   view: ProcessStateView | null,
   reason = 'the confirmed process states could not be read.',
   tests?: RuleTestInput,
+  /** The project's source, for what the register lists apart — demo-case switches, header candidates (3.0.13). */
+  source?: string | null,
 ): RuleFacts {
-  return ruleRegisterFromView(view, reason, tests);
+  return ruleRegisterFromView(view, reason, tests, source);
 }
 
 /**

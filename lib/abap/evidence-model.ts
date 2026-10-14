@@ -11,6 +11,8 @@ import { maskLiterals, readStatements } from './statement-reader';
 import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
+import { unreachableCodeMarked } from './unreachable-code-gate';
+import { gateOfLine, readConstantGates } from './constant-gates';
 import { readSecurityReviewTasksFrom } from './security-review';
 import { readSapCodeCopySignals } from './sap-code-copy';
 import { readLegacyTechnology } from './legacy-technology';
@@ -75,6 +77,12 @@ export interface EvidenceFinding {
   };
   /** Set when a finding requires explicit business/architect decision */
   needsBusinessDecision?: boolean;
+  /**
+   * From engine 3.0.13: the finding stands in code no run reaches — behind a
+   * constant gate (`constant-gates.ts`). It still counts; this says why no run
+   * makes it. Absent everywhere else, and in every run of an earlier engine.
+   */
+  unreachable?: { gateLine: number; constant: string };
 }
 
 export interface AbapEvidenceReport {
@@ -1465,6 +1473,19 @@ export function buildAbapEvidence(
     lowCount: findings.filter(f => f.severity === 'Low').length,
     infoCount: findings.filter(f => f.severity === 'Info').length,
   };
+
+  // From 3.0.13 (`UNREACHABLE_CODE_FROM`): a finding behind a constant gate is
+  // marked, never dropped — it keeps its points, and the table says why no run
+  // reaches it. A run of an earlier engine keeps the findings it signed.
+  if (unreachableCodeMarked(engineVersion === undefined ? APP_VERSION : engineVersion)) {
+    const gates = readConstantGates(code);
+    if (gates.unreachable.length) {
+      for (const finding of findings) {
+        const gate = gateOfLine(gates, finding.lineStart);
+        if (gate) finding.unreachable = { gateLine: gate.lineStart, constant: gate.constant };
+      }
+    }
+  }
 
   // The catalog answers the local function-module calls it lists (roadmap
   // 3.0.6); the rest stay not assessed.
