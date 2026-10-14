@@ -18,8 +18,20 @@
  * meantime and refuses one written for another documentation.
  */
 
-/** How long the stage waits for the business layer it writes on opening, in ms. Below the service's 120 s request timeout. */
-export const BUSINESS_LAYER_CEILING_MS = 90_000;
+import { MODEL_CALL_DEADLINE_MS } from './model-deadline';
+
+/**
+ * How long the stage waits for one model answer of the business layer, in ms.
+ *
+ * It was 90 s, set when Cloud Run ended a request at 120 s; the SD example
+ * stopped there (dev acceptance 14.10.2026). Since hotfix 2 the route itself
+ * ends a model call at `MODEL_CALL_DEADLINE_MS` and answers with
+ * `model-timeout` while Cloud Run still holds the request, so the page waits
+ * that long and a margin for the answer to arrive — the route's sentence is
+ * the one the reader gets, not a guess of the page's. A program written in
+ * parts (`lib/business-layer-parts.ts`) has this per part.
+ */
+export const BUSINESS_LAYER_CEILING_MS = MODEL_CALL_DEADLINE_MS + 15_000;
 
 const inFlight = new Map<string, Promise<void>>();
 
@@ -73,6 +85,16 @@ export function claimBusinessLayerLease(projectId: string, tab: string): boolean
     /* a private window keeps no lease; the page's own guard still holds */
   }
   return true;
+}
+
+/** Renews this tab's lease before each part of a layer written in parts, so a long generation is not taken for a closed tab. */
+export function renewBusinessLayerLease(projectId: string, tab: string): void {
+  if (otherTabWritingBusinessLayer(projectId, tab)) return;
+  try {
+    window.localStorage.setItem(businessLayerLeaseKey(projectId), JSON.stringify({ tab, at: Date.now() }));
+  } catch {
+    /* no storage, no lease to renew */
+  }
 }
 
 export function releaseBusinessLayerLease(projectId: string, tab: string): void {

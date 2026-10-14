@@ -179,7 +179,7 @@ export const TRANSFORMATION_FILL_SCHEMA = {
  * `transformation` stage — its switch and its receipt — but answer in a shape
  * of their own; the request names it beside the stage.
  */
-export const RESPONSE_SHAPES = ['transformation-fill'] as const;
+export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business'] as const;
 export type ResponseShape = (typeof RESPONSE_SHAPES)[number];
 
 export function isResponseShape(value: unknown): value is ResponseShape {
@@ -189,6 +189,10 @@ export function isResponseShape(value: unknown): value is ResponseShape {
 /** The stage each shape belongs to: a shape is only valid under its own stage. */
 export const RESPONSE_SHAPE_STAGE: Record<ResponseShape, ModelStage> = {
   'transformation-fill': 'transformation',
+  // Roadmap 3.0.13: the business layer (SOP and RACI) of Documentation — no
+  // schema (its answer is a JSON block in text), named so the route can give it
+  // a thinking level of its own (`lib/model-thinking.ts`).
+  'documentation-business': 'documentation',
 };
 
 /** The schema for a stage's JSON answer, or `undefined` where the stage has none. */

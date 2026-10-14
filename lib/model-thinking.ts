@@ -11,8 +11,33 @@ import { ThinkingLevel, type ThinkingConfig } from '@google/genai';
  * of 6 on the same units; the default declined more). MINIMAL is refused by
  * the model (400). Every other shape keeps the provider's default.
  *
+ * The business layer of Documentation (`documentation-business`, roadmap
+ * 3.0.13) keeps the provider's default too: nothing about it has been
+ * measured, and the fill measurement says nothing about an answer that writes
+ * business prose with a basis for every sentence. Its level is configurable —
+ * `GEMINI_THINKING_DOCUMENTATION_BUSINESS` = `low`, `medium` or `high` on the
+ * service — so the measurement `lib/business-layer-parts.ts` describes (latency,
+ * thinking tokens and usable rows per part size, default against LOW) can be
+ * run and its result set without a release. Unset or anything else: default.
+ *
  * Server-only (the route); pure apart from the SDK's enum.
  */
-export function thinkingConfigFor(shape: string | undefined): ThinkingConfig | undefined {
-  return shape === 'transformation-fill' ? { thinkingLevel: ThinkingLevel.LOW } : undefined;
+export const DOCUMENTATION_BUSINESS_THINKING_ENV = 'GEMINI_THINKING_DOCUMENTATION_BUSINESS';
+
+const CONFIGURABLE: Record<string, ThinkingLevel> = {
+  low: ThinkingLevel.LOW,
+  medium: ThinkingLevel.MEDIUM,
+  high: ThinkingLevel.HIGH,
+};
+
+export function thinkingConfigFor(
+  shape: string | undefined,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): ThinkingConfig | undefined {
+  if (shape === 'transformation-fill') return { thinkingLevel: ThinkingLevel.LOW };
+  if (shape === 'documentation-business') {
+    const level = CONFIGURABLE[(env[DOCUMENTATION_BUSINESS_THINKING_ENV] ?? '').trim().toLowerCase()];
+    return level ? { thinkingLevel: level } : undefined;
+  }
+  return undefined;
 }
