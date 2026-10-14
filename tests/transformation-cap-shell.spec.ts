@@ -178,7 +178,7 @@ test.describe('the gate reads the compile: implemented only when the shell compi
       cdsCompile,
     }) as unknown as Parameters<typeof packageCapabilities>[1];
 
-  test('compiled (here, where the compiler is installed) → implemented; not run (the production server) → proposed, with the reason', () => {
+  test('compiled (here, where the compiler is installed) → implemented; not run (the production server) → to be checked in your environment, never implemented', () => {
     const p = prep(poDemo());
     const reading = readPackage(p.scaffold.files, 'side-by-side');
     expect(reading.capRuntime && reading.capServed && reading.capShellFiles).toBe(true);
@@ -188,9 +188,20 @@ test.describe('the gate reads the compile: implemented only when the shell compi
     expect(cap(compiled, 'cap-runtime').status).toBe('implemented');
     expect(cap(compiled, 'service-model').status).toBe('implemented');
     const notRun = cdsCompileRecordOf({ ran: false, reason: 'cds compile not run: the compiler is not installed on this server.' });
-    expect(cap(notRun, 'cap-runtime').status).toBe('proposed');
-    expect(cap(notRun, 'cap-runtime').evidence).toContain('cds compile not run');
-    expect(cap(null, 'cap-runtime').status).toBe('proposed');
+    // Owner decision 14.10.2026: production names no compile check that did not run; it says CAP is the reader's
+    // to install and how to check and start it — and the capability is not implemented, since nothing verified it.
+    for (const record of [notRun, null]) {
+      expect(cap(record, 'cap-runtime').status).toBe('to-check');
+      expect(cap(record, 'service-model').status).toBe('to-check');
+      const evidence = cap(record, 'cap-runtime').evidence;
+      expect(evidence).toContain('SAP CAP (@sap/cds and its CDS compiler) is installed by you, not by Clean-Core.io');
+      expect(evidence).toContain('`npm install`, then `npm run compile` to check the model and `cds watch` to start the service');
+      expect(evidence).not.toMatch(/cds compile\b(?!r)|not run|not verified/i);
+    }
+    // A compile that ran with errors is reported as it ran, and is not implemented either.
+    const failed = cdsCompileRecordOf({ ran: true, compiler: '9.0.0', files: 2, errors: 1, warnings: 0, services: [], findings: [{ path: 'srv/service.cds', line: 1, severity: 'Error', id: 'x', message: 'x' }] });
+    expect(cap(failed, 'cap-runtime').status).toBe('proposed');
+    expect(cap(failed, 'cap-runtime').evidence).toContain('cds compile: 1 error in 2 CDS files (@sap/cds-compiler 9.0.0)');
     // The remote definitions are placeholders: no SAP connection is claimed.
     expect(cap(compiled, 'sap-data').status).toBe('proposed');
   });

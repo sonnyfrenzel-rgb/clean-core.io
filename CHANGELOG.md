@@ -39,8 +39,21 @@ from the QA and security reviews of v3.0.12. This entry is completed with the re
   fails there, as the v3.0.11 oracle does for 3.0.12. On the 300-case benchmark no route changes;
   the standard-table sentence joins the rationale of 5 programs and the stricter sy-subrc reading
   adds a review task to 2.
+- **The server's date and time is a finding only where it decides something** — a comparison, a
+  deadline, a scheduled job (one finding per program, a short remedy). A value only stored
+  (`erdat = sy-datum`) is one note under the findings instead: "N fields store the server's date
+  or time as a stamp — fine in UTC unless a later step reads them as the local day", with its
+  lines (owner decision 14.10.2026). On the 300-case benchmark: 175 → 96 findings, 104 programs
+  carry the note; no score or route changes.
 
 ### Transformation
+
+- **SAP CAP is yours to install.** Where Clean-Core.io's server has no SAP CDS compiler (production:
+  `@sap/cds-compiler` is under the SAP Developer License and stays a devDependency), STATUS.md,
+  the README and the Built-on card say that SAP CAP (@sap/cds and its CDS compiler) is installed by
+  you, and how to check and start the package (`npm install`, `npm run compile`, `cds watch`); the
+  CAP capabilities read *to be checked in your environment*, never implemented. Where the compile
+  ran (CI, specs, acceptance suite), its result is reported as before (owner decision 14.10.2026).
 
 - **The phase goes stale on a changed context.** The server compares the digest of the platform
   knowledge a package was generated on with the one it would build now; the tool bar, the rail,

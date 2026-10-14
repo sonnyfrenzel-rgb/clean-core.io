@@ -9,11 +9,12 @@
  * it on every scaffold (PO, the fixtures, the SD and PM programs where they are on the machine) — and is NOT
  * part of the production server: `@sap/cds-compiler` is licensed under the SAP Developer License, which grants
  * use for developing applications, not running SAP's tool as part of a service for third parties outside SAP
- * BTP. On the server the check therefore answers `ran: false` with that reason, the package's record says the
- * compile did not run there, and the CAP capabilities stay `proposed` (delivery-package.ts) — never
- * `implemented` on a compile that did not happen. The CDS files are written by the engine alone (no fill
- * region), so the specs' compile of every scaffold shape is the compile of what ships; the package carries
- * `npm run compile` for the reader's own check.
+ * BTP. On the server the check therefore answers `ran: false` with that reason, kept on the record; the reader is
+ * not told about a check that did not happen but that SAP CAP is theirs to install, with how to check and start
+ * the package (`CAP_YOURS_SENTENCE`, check-words.ts), and the CAP capabilities read "to be checked in your
+ * environment" (`to-check`, delivery-package.ts) — never `implemented` on a compile that did not happen (owner
+ * decision 14.10.2026). The CDS files are written by the engine alone (no fill region), so the specs' compile of
+ * every scaffold shape is the compile of what ships; the package carries `npm run compile` for the reader's own check.
  *
  * Loaded with `createRequire` at run time, never bundled (like the TypeScript compiler, type-check.ts).
  * Server-only. Never throws.

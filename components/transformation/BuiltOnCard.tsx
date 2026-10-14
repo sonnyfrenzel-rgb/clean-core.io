@@ -8,7 +8,7 @@ import { formatTextDate } from '@/lib/format';
 import { tfBuiltOnMeta, tfNotWritten, tfSingleCallNote, wt } from '@/lib/workspace-messages';
 import type { ChainSlot } from '@/lib/transformation-chain';
 import { basisSlotChanged, type BasisSlot, type GenerationRecord } from '@/lib/transformation/generation-record';
-import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, activationPlainWords, checkPhrase, hasPageReportedChecks, orderedChecks, unresolvedSentence } from '@/lib/transformation/check-words';
+import { CAP_YOURS_SENTENCE, ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, activationPlainWords, cdsCompilePhrase, checkPhrase, hasPageReportedChecks, orderedChecks, unresolvedSentence } from '@/lib/transformation/check-words';
 
 /**
  * After the run (roadmap 3.0.12, step E; design §15.4, §16.2, §18): what the
@@ -92,6 +92,15 @@ export default function BuiltOnCard({
           <CcMessageStrip state={record.activation.activatable ? 'information' : 'error'}>
             {activationPlainWords(record.activation)}
             {unresolvedSentence(record.activation) ? ` ${unresolvedSentence(record.activation)}` : ''}
+          </CcMessageStrip>
+        </div>
+      ) : null}
+      {record.cdsCompile ? (
+        // Roadmap 3.0.13, CAP shell: the server's cds compile where it ran; where it did not (production has no SAP
+        // CDS compiler), that CAP is the reader's to install and how to check and start it (owner, 14.10.2026).
+        <div className="mt-3" data-cds-compile={record.cdsCompile.ran ? (record.cdsCompile.compiles ? 'compiles' : 'errors') : 'yours'}>
+          <CcMessageStrip state={record.cdsCompile.ran && !record.cdsCompile.compiles ? 'error' : 'information'}>
+            {record.cdsCompile.ran ? `${cdsCompilePhrase(record.cdsCompile)}.` : CAP_YOURS_SENTENCE.replace(/`/g, '')}
           </CcMessageStrip>
         </div>
       ) : null}

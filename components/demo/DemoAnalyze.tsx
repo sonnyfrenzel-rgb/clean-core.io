@@ -180,6 +180,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         levels={levels}
         steps={a.processSteps}
         notAssessed={notAssessedItems}
+        notes={a.notes ?? []}
         pointsOf={pointsOfKind}
         fileName={fileName}
         sideTopLabel={`Route · ${shortRoute(route) ?? 'not determined'}`}

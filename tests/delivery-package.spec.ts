@@ -348,7 +348,7 @@ export default app;
     expect(manifest.implementation).not.toContain('proposed');
   });
 
-  test('a CAP shell without a cds compile on record, or with errors, or where the compiler did not run, is proposed and says why (3.0.13)', () => {
+  test('a CAP shell with a cds compile with errors is proposed and says why (3.0.13); without a compile here it is to be checked in your environment, and says how (owner, 14.10.2026)', () => {
     const pkg = JSON.parse(PACKAGE) as Array<{ path: string; content: string }>;
     const json = JSON.parse(MODEL_PACKAGE_JSON);
     json.dependencies['@sap/cds'] = '^8.0.0';
@@ -356,19 +356,41 @@ export default app;
       f.path === 'package.json' ? { ...f, content: JSON.stringify(json) } : f.path === 'srv/service.ts' ? { ...f, content: CAP_ENTRY } : f,
     );
     cap.push({ path: 'srv/service.cds', content: 'using fi from \'../db/schema\';\nservice WorklistService { entity Items as projection on fi.Items; }\n' });
-    const cases: Array<[Record<string, unknown> | undefined, RegExp]> = [
-      [undefined, /no cds compile of this package is on record — not verified/],
-      [{ ...COMPILED, errors: 3, findings: [{ path: 'srv/service.cds', line: 2, severity: 'Error', id: 'ref-undefined-def', message: 'x' }] }, /cds compile: 3 errors in 2 CDS files .* — not verified/],
-      [{ v: 1, ran: false, reason: 'cds compile not run: the compiler is not installed on this server.' }, /cds compile not run: the compiler is not installed on this server — not verified/],
-    ];
-    for (const [record, words] of cases) {
+    const build = (record: Record<string, unknown> | undefined) => {
       const out = finished(withFailure(fiProject({ generatedCode: JSON.stringify(cap), ...(record ? { generationBinding: { cdsCompile: record } } : {}) })));
       const manifest = JSON.parse(out.file('manifest.json')!);
       const capability = (k: string) => manifest.capabilities.find((c: { key: string }) => c.key === k);
-      expect(capability('cap-runtime').status).toBe('proposed');
-      expect(capability('cap-runtime').evidence).toMatch(words);
-      expect(capability('service-model').status).toBe('proposed');
-      expect(manifest.implementation).toContain('CAP service not verified by cds compile');
+      return { out, manifest, capability };
+    };
+    // A compile that ran with errors: reported as it ran.
+    const failed = build({ ...COMPILED, errors: 3, findings: [{ path: 'srv/service.cds', line: 2, severity: 'Error', id: 'ref-undefined-def', message: 'x' }] });
+    expect(failed.capability('cap-runtime').status).toBe('proposed');
+    expect(failed.capability('cap-runtime').evidence).toMatch(/cds compile: 3 errors in 2 CDS files .* — not verified/);
+    expect(failed.capability('service-model').status).toBe('proposed');
+    expect(failed.manifest.implementation).toContain('CAP service not verified by cds compile');
+    expect(failed.out.file('STATUS.md')).toContain('cds compile: 3 errors in 2 CDS files');
+
+    // No compile here (the production server has no SAP CDS compiler), or none on record: not implemented — to be
+    // checked in the reader's environment, with how; no word about a compile that did not run.
+    for (const record of [undefined, { v: 1, ran: false, reason: 'cds compile not run: the compiler is not installed on this server.' }]) {
+      const { out, manifest, capability } = build(record);
+      expect(capability('cap-runtime').status).toBe('to-check');
+      expect(capability('service-model').status).toBe('to-check');
+      expect(capability('cap-runtime').evidence).toContain('SAP CAP (@sap/cds and its CDS compiler) is installed by you, not by Clean-Core.io');
+      expect(capability('cap-runtime').evidence).toContain('`npm install`, then `npm run compile` to check the model and `cds watch` to start the service');
+      expect(capability('service-model').evidence).toBe('srv/service.cds — to be checked in your environment with `npm run compile`.');
+      expect(manifest.implementation).toContain('CAP service (to be checked in your environment)');
+      expect(manifest.statusLegend['to-check']).toMatch(/^To be checked in your environment/);
+      const status = out.file('STATUS.md')!;
+      expect(status).toContain('| SAP CAP runtime | to be checked in your environment |');
+      expect(status).toContain('Check the CAP service in your environment: SAP CAP (@sap/cds and its CDS compiler) is installed by you, not by Clean-Core.io. Run `npm install`, then `npm run compile`');
+      const readme = out.file('README.md')!;
+      expect(readme).toContain('SAP CAP (@sap/cds and its CDS compiler) is installed by you, not by Clean-Core.io: `npm install` installs it from package.json.');
+      expect(readme).toMatch(/\d\. `cds watch` .*— starts the CAP service locally\./);
+      for (const text of [status, readme, JSON.stringify(manifest)]) {
+        expect(text).not.toMatch(/cds compile not run|no cds compile|compile did not run/i);
+      }
+      expect(manifest.implementation).not.toContain('implemented');
     }
   });
 
