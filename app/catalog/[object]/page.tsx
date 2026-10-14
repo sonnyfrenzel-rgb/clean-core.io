@@ -3,7 +3,7 @@ import { DESCRIPTION_MAX, TITLE_MAX, firstThatFits, withTwitterCard } from '@/li
 import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
-import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
+import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META, expectedAtcMessage } from '@/lib/abap/abcd-classification';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import CcTag from '@/components/cc/Tag';
 import { publicButton } from '@/components/landing/public-button';
@@ -295,6 +295,8 @@ export default async function CatalogObjectPage({
               ? `SAP state: ${graded.state}`
               : 'listed in neither SAP file — SAP-internal'}
           </CcTag>
+          {/* What SAP's ATC check is expected to say, apart from the grade (roadmap 3.0.13). */}
+          <CcTag>{expectedAtcMessage(graded).text}</CcTag>
         </div>
       )}
 

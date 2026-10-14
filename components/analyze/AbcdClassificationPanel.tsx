@@ -14,7 +14,7 @@ import type { ProvenanceValue } from '@/lib/provenance';
 import { getAuth } from '@/lib/firebase';
 import type { DataCouplingEntry, CodeInventoryItem } from '@/lib/types';
 import {
-  ABCD_META, GRADES, ALL_GRADES, gradeDistribution, gradeFromCoupling, gradeFromInventory,
+  ABCD_META, GRADES, ALL_GRADES, expectedAtcMessage, gradeDistribution, gradeFromCoupling, gradeFromInventory,
   gradeKey, couplingUse,
   type CloudReadinessGrade, type GradedObject, type ObjectUse, type GradeProvenance,
 } from '@/lib/abap/abcd-classification';
@@ -161,6 +161,9 @@ export default function AbcdClassificationPanel({
       provenance: useCatalog ? looked.provenance : ('heuristic' as const),
       sapState: useCatalog ? looked.state : undefined,
       objectGrade: useCatalog ? looked.objectGrade : undefined,
+      // What SAP's own ATC check is expected to report, said apart from the
+      // grade (roadmap 3.0.13): an estimate has no SAP state to read it from.
+      atc: expectedAtcMessage(useCatalog ? looked : null),
     };
   });
 
@@ -304,6 +307,9 @@ export default function AbcdClassificationPanel({
                 <span className="cc-text-meta text-cc-ink">{ABCD_META[it.grade].short}</span>
                 <span title={gradeOrigin(it)}>
                   <CcProvenanceChip value={PROVENANCE_CHIP[it.provenance].value} note={PROVENANCE_CHIP[it.provenance].note} />
+                </span>
+                <span className="cc-text-meta text-cc-ink-muted" data-atc-expected={it.atc.priority ?? 'not-determined'}>
+                  {it.atc.text}
                 </span>
               </span>
             ),

@@ -83,6 +83,12 @@ const KIND_LABELS: Record<string, string> = {
   'gateway-classic-service': 'classic SAP Gateway (SEGW) services',
   'ddic-cds-view': 'DDIC-based CDS views',
   'parallel-processing': 'parallel processing with asynchronous RFC',
+  // The kinds of 3.0.13 (`PRECISION_FIXES_FROM`, `engine-rules.ts`).
+  'system-time': "decisions on the server's date and time",
+  'hook-implementation': 'exit, BAdI and VOFM implementations',
+  'form-output': 'form output',
+  'abap-proxy': 'ABAP proxies',
+  'own-enhancement-point': 'enhancement points in your own code',
 };
 
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
@@ -401,6 +407,25 @@ export function onStackSentences(
 }
 
 /**
+ * The effort sentence for exit, BAdI and VOFM implementations (3.0.13): per
+ * hook, the statements of logic in it and whether it is delegated to a class,
+ * taken from the finding's title, which `evidence-model.ts` writes as
+ * "<hook>: delegated to <class>" or "<hook>: <n> statements of logic in the hook".
+ */
+function hookSentence(hooks: readonly AbapEvidenceReport['findings'][number][]): string {
+  const delegated = hooks.filter((f) => /: delegated to /.test(f.title));
+  const inHook = hooks.filter((f) => !/: delegated to /.test(f.title));
+  const parts: string[] = [];
+  if (inHook.length) {
+    parts.push(`${inHook.length} exit, BAdI or VOFM implementation(s) hold their logic in the hook (${inHook.map((f) => f.title).join('; ')}): moving them means moving that logic statement by statement, which is where the effort lies.`);
+  }
+  if (delegated.length) {
+    parts.push(`${delegated.length} delegate to a class (${delegated.map((f) => f.title).join('; ')}): the logic moves with the class, and only the call in the hook is re-pointed.`);
+  }
+  return parts.join(' ');
+}
+
+/**
  * `engineVersion` is the version the run is (or was) made with: `APP_VERSION`
  * for a new run, the run's own `analyzerVersion` when a signed run is
  * recomputed. It picks the score rule (`lib/score-rule.ts`) — a run signed
@@ -568,6 +593,9 @@ export function routeExtensibility(
     // 03501b79fb3d, 62bd4e9b8079 / 6946241ed28c). Runs of an earlier engine
     // have no such findings; the gate keeps their rule word for word anyway.
     ...(legacyRule ? [] : ['parallel-processing', 'bopf', 'gateway-classic-service', 'ddic-cds-view']),
+    // From 3.0.13: an enhancement point in the customer's own code is no level
+    // D technology, but ABAP Cloud has no enhancement points either.
+    ...(precisionFixesApply(engineVersion) ? ['own-enhancement-point'] : []),
     ...(localRfc.length > 0 ? ['rfc-call'] : []),
   ]);
   const reworkKinds = [...new Set([
@@ -726,6 +754,14 @@ export function routeExtensibility(
   // What a frontend file feature means for the route, whichever branch chose
   // it — upload and download apart, because they have different remedies.
   if (!guiFileRule && fileAccess.length > 0) rationale = `${rationale} ${guiFileSentence(fileAccess)}`;
+  // From 3.0.13 (`PRECISION_FIXES_FROM`, roadmap 3.0.13 rule 2): how much of
+  // an exit, BAdI or VOFM implementation's logic stands in the hook decides the
+  // effort of moving it — the statements in the hook and whether it is
+  // delegated to a class are said, whichever branch chose the route.
+  if (precisionFixesApply(engineVersion)) {
+    const hooks = findings.filter((f) => f.kind === 'hook-implementation');
+    if (hooks.length > 0) rationale = `${rationale} ${hookSentence(hooks)}`;
+  }
   // Every other branch named what it found; with an include not uploaded it
   // also says what it could not have found.
   if (includesNotRead.length > 0 && !namedNotRead) {

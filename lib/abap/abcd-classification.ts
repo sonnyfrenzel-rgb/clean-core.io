@@ -497,6 +497,64 @@ export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | nu
   return { ...object, use };
 }
 
+/* ------------------------------------------------------------------ *
+ * What SAP's own check is expected to report — said apart from the grade
+ * ------------------------------------------------------------------ */
+
+/**
+ * What the clean core ATC check "Usage of APIs" (SAP Note 3565942, check
+ * variant ABAP_CLEAN_CORE_DEVELOPMENT) is expected to report for one graded
+ * object — kept apart from the grade on purpose (roadmap 3.0.13, "Level C/D
+ * against what ATC reports"; `docs/design/abcd-vs-atc.md`).
+ *
+ * The grade is our merge of SAP's two files; the ATC check reads the
+ * classification file first, and the public sources say it reports an object
+ * that file lists as classic API as information (priority 3), one it lists as
+ * noAPI as an error (priority 1), and an SAP object it does not list as
+ * "internal API", a warning (priority 2) — whatever the release file says
+ * about ABAP Cloud. Where no public source says what the check reports (a
+ * deprecated object, a direct write, a type reference, the customer's own
+ * objects, an estimate), the answer is "not determined", never a guess. Not
+ * verified in an SAP system yet: the doc above carries the recipe for that.
+ *
+ * Informational only: no grade is derived from it, so the level rule's
+ * fingerprint (`level-rule-version.ts`) does not move.
+ */
+export interface AtcExpectation {
+  /** The ATC priority expected, 1 (error) to 3 (information); `0` for no finding; `null` when not determined. */
+  priority: 0 | 1 | 2 | 3 | null;
+  /** The finding in plain words, e.g. "internal API"; `null` when there is none or it is not determined. */
+  finding: string | null;
+  /** The line a surface prints: "ATC expected: internal API · priority 2 (warning)" or "ATC: not determined". */
+  text: string;
+}
+
+const ATC_NOT_DETERMINED: AtcExpectation = { priority: null, finding: null, text: 'ATC: not determined' };
+const PRIORITY_WORD: Record<1 | 2 | 3, string> = { 1: 'error', 2: 'warning', 3: 'information' };
+
+function atcExpected(priority: 1 | 2 | 3, finding: string): AtcExpectation {
+  return { priority, finding, text: `ATC expected: ${finding} · priority ${priority} (${PRIORITY_WORD[priority]})` };
+}
+
+export function expectedAtcMessage(
+  g: Pick<GradedObject, 'grade' | 'provenance' | 'use' | 'cloudView' | 'classicView'> | null | undefined,
+): AtcExpectation {
+  if (!g || g.grade === 'Unknown') return ATC_NOT_DETERMINED;
+  if (g.provenance === 'heuristic' || g.provenance === 'own-object') return ATC_NOT_DETERMINED;
+  // A table the code reads, writes or names as a type: SAP's check has
+  // messages of its own for database reads and updates, and no public source
+  // we could read gives their priority (`docs/design/abcd-vs-atc.md`).
+  if (g.use) return ATC_NOT_DETERMINED;
+  if (g.cloudView === 'usable') return { priority: 0, finding: null, text: 'ATC expected: no finding (released API)' };
+  if (g.classicView === 'classic-api') return atcExpected(3, 'classic API');
+  if (g.classicView === 'not-recommended') return atcExpected(1, 'noAPI');
+  if (g.classicView !== 'unlisted') return ATC_NOT_DETERMINED;
+  if (g.cloudView === 'not-usable' || (g.cloudView === 'unlisted' && g.provenance === 'catalog-residual')) {
+    return atcExpected(2, 'internal API');
+  }
+  return ATC_NOT_DETERMINED;
+}
+
 /** Customer objects (Z*, Y*) carry no SAP classification — SAP data cannot apply. */
 export function isCustomerObject(name: string): boolean {
   const n = (name || '').toUpperCase().trim();

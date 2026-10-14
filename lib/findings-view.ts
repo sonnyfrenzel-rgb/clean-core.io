@@ -138,6 +138,12 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   'gateway-classic-service': { one: 'Classic SAP Gateway service (SEGW)', many: 'Classic SAP Gateway services (SEGW)' },
   'ddic-cds-view': { one: 'DDIC-based CDS view', many: 'DDIC-based CDS views' },
   'parallel-processing': { one: 'Parallel processing (asynchronous RFC)', many: 'Parallel processing (asynchronous RFC)' },
+  // From engine 3.0.13 (`PRECISION_FIXES_FROM`, lib/abap/engine-rules.ts).
+  'system-time': { one: "Decision on the server's date or time", many: "Decisions on the server's date or time" },
+  'hook-implementation': { one: 'Exit, BAdI or VOFM implementation', many: 'Exit, BAdI and VOFM implementations' },
+  'form-output': { one: 'Form output', many: 'Form output' },
+  'abap-proxy': { one: 'ABAP proxy', many: 'ABAP proxies' },
+  'own-enhancement-point': { one: 'Enhancement point in your own code', many: 'Enhancement points in your own code' },
 };
 
 export function kindLabel(kind: string, count: number): string {
