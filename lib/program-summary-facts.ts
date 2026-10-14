@@ -10,7 +10,7 @@ import { isCustomerObject } from '@/lib/abap/abcd-classification';
 import { maskLiterals, readStatements, type AbapStatement } from '@/lib/abap/statement-reader';
 import { isUnreachableLine, readConstantGates, type ConstantGateReport } from '@/lib/abap/constant-gates';
 import { readDemoSwitches } from '@/lib/abap/demo-switches';
-import { headerRuleRange, readHeaderRules } from '@/lib/abap/header-rules';
+import { headerRuleRange } from '@/lib/abap/header-rules';
 import { containerAt, readBlocks, type Container } from '@/lib/abap/block-structure';
 import {
   PROGRAM_SUMMARY_FACTS_VERSION,

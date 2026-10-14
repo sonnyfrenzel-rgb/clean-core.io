@@ -1518,45 +1518,7 @@ class SkeletonBuilder {
         }
       }
     }
-    this.mainBlockSteps();
     for (const [name, set] of this.effects) if (set.size === 0) this.helpers.add(name);
-  }
-
-  /**
-   * A routine the main event block performs is a step of the run unless it only
-   * clears (roadmap 3.0.13, SD review of 14.10.2026, D04; 3.0.17 P1 in part).
-   * `START-OF-SELECTION. … PERFORM build_demo. … PERFORM resolve_event_roots. …`
-   * — the demo data the run works on, and the step that resolves which event
-   * every reversal goes back to — filled only tables of the program, so neither
-   * had an effect of its own: both were folded away, and the main path skipped
-   * two of its steps. Filling or changing the program's own tables is the work
-   * of the run there. A routine that only initialises — `CLEAR`, `REFRESH`,
-   * `FREE`, declarations and plain assignments — stays folded.
-   */
-  private mainBlockSteps(): void {
-    const MAIN_EVENTS = /^(?:START-OF-SELECTION|END-OF-SELECTION)$/i;
-    const INITIALISING = /^(?:CLEAR|REFRESH|FREE|DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS|RANGES)\b|^[\w/<>-]+(?:\[\])?\s*=\s*[^()]*$/i;
-    const mainBlocks = this.structure.containers.filter((c) => c.kind === 'event' && MAIN_EVENTS.test(c.name));
-    if (!mainBlocks.length) return;
-    for (const statement of this.statements) {
-      if (statement.keyword !== 'PERFORM') continue;
-      if (!mainBlocks.some((c) => statement.lineStart >= c.lineStart && statement.lineStart <= c.lineEnd)) continue;
-      // A FORM written after the event block lies inside its range too; only the block's own statements count.
-      if (this.structure.enclosing[statement.index]?.some((b) => b.kind === 'form' || b.kind === 'method' || b.kind === 'module')) continue;
-      const name = /^PERFORM\s+([\w/]+)/i.exec(statement.text)?.[1]?.toUpperCase();
-      const effects = name ? this.effects.get(name) : undefined;
-      const block = name ? this.formBlocks.get(name) : undefined;
-      if (!name || !effects || effects.size > 0 || !block) continue;
-      const [from, to] = bodyRange(block);
-      let initialisesOnly = true;
-      for (let i = from; i <= to; i++) {
-        if (!INITIALISING.test(this.statements[i].text)) {
-          initialisesOnly = false;
-          break;
-        }
-      }
-      if (!initialisesOnly) effects.add('compute');
-    }
   }
 
   private batchInputDetail(index: number): Record<string, string[]> {
