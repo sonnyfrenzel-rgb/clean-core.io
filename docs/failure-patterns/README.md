@@ -115,8 +115,17 @@ The review-specific acceptance sets named in the roadmap (CO E01–E18 with its 
 reference scenarios, PP E01–E08 / A01–A14 with its 26 reference scenarios, the FI
 checks around credit note 1900000018 and the 9 items / 4,780 EUR selection, the
 SD probes) are case data, not generic probes. Where one of them is an instance
-of a pattern, the pattern's `origin` names it; the scenario data itself stays
-with the case, outside this repository.
+of a pattern, the pattern's `origin` names it. The scenario data itself is never
+public: the pre-release acceptance suite (`scripts/acceptance/suite.ts`, run list
+`scripts/acceptance/programs.json`) keeps it sealed in
+`scripts/acceptance/scenarios/<program>.enc.json` (`scripts/acceptance/scenarios.mjs
+check|seal|open`), with the plaintext only in the gitignored `.acceptance/`.
+
+```bash
+npx tsx scripts/acceptance/suite.ts                       # dry: stub model, every program
+npx tsx scripts/acceptance/suite.ts --mode real --runs 3 --cap-usd 10 \
+  --price-in <USD/1M in> --price-out <USD/1M out+thinking> --seal
+```
 
 ## The acceptance harness
 

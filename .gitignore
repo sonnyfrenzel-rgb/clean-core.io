@@ -42,3 +42,6 @@ survey-backup-*.json
 
 # Release acceptance runs (scripts/release/acceptance.mjs) — local evidence, not committed
 .release/
+
+# Acceptance suite (scripts/acceptance/suite.mjs): plaintext scenarios, extracted sources and run reports. Never commit.
+.acceptance/
