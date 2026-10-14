@@ -15,7 +15,7 @@
  *   2. **The scaffold's object names** (`alignRapDesignNames`). The design named
  *      `zi_returncreditclaim_r` where the package delivers `zsd_return_cr_r`.
  *      The RAP scaffold names every object from one short name
- *      (`rapShortName`, `lib/transformation/scaffold-rap.ts` — imported, never
+ *      (`rapShortName`, `lib/transformation/rap-names.ts`, re-exported by `scaffold-rap.ts` — imported, never
  *      copied); the design's artifact list is rewritten to those names, and
  *      every other mention of a renamed object (endpoint paths, roadmap) with
  *      it. An artifact the scaffold does not generate is kept and said to be
@@ -39,7 +39,7 @@
  * Pure: no React, no Firestore, no model.
  */
 
-import { rapShortName, rapTableName } from './transformation/scaffold-rap';
+import { rapShortName, rapTableName } from './transformation/rap-names';
 import { programNameOf } from './abap/callback-registrations';
 import { readStatements } from './abap/statement-reader';
 import { findSapIdentifiers, occurrencesToMark, sapIdMark, sapIdStateWord, type SapIdCheck } from './sap-reference-check';

@@ -75,7 +75,8 @@ import { sliceFor } from './abap-slice';
 import { readRapContract, simpleTypeName, structureComponents, tableLineOf, typeDefinition, type RapContract, type RapParam } from './rap-contract';
 import type { AuthorityCheck } from '../abap/call-graph';
 import type { AbapStatement } from '../abap/statement-reader';
-import { NAME_MAX, abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
+import { rapShortName, rapTableName } from './rap-names';
+import { abapGitRepoSettingsXml, bdefXml, clasXml, dclsXml, ddlsXml, devcXml, intfXml, srvbXml, srvdXml, tablXml, type TableField } from './abapgit-files';
 import { SCAFFOLD_VERSION, type AbapRegionNames, type ContractField, type PlanGuard, type RapClassContract, type RequiredGuard, type Scaffold, type ScaffoldFile, type Unit, type UnitPlan } from './types';
 
 /**
@@ -89,11 +90,8 @@ export interface RapScaffoldOptions {
   cases?: EngineCaseDerivation;
 }
 
-/** The short name every object of the package carries: ≤ 12 characters, so every name stays ≤ 30. */
-export function rapShortName(program: string | null): string {
-  const base = (program ?? 'program').toLowerCase().replace(/^\/[\w]+\//, '').replace(/^[zy]/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return (base || 'program').slice(0, 12).replace(/_+$/, '');
-}
+// rapShortName and rapTableName live in rap-names.ts (no scaffold behind them, for the client bundle); re-exported here.
+export { rapShortName, rapTableName };
 
 /** Field names a transparent table may not have (abaplint `xml_consistency`, confirmed by activation: DAY, HOUR). */
 const RESERVED_TABLE_FIELDS = new Set(['zone', 'handler', 'section', 'parameter', 'day', 'hour']);
@@ -158,12 +156,6 @@ function declaredTableField(f: ContractField, contract: RapContract): TableField
   const element = simpleTypeName(phrase);
   if (element && /^[a-z]\w*$/i.test(element) && !/^(?:string|xstring|c|n|p|x|f|t)$/i.test(element)) return { name, dataElement: element.toUpperCase() };
   return tableField(f);
-}
-
-/** A transparent table's name has at most 16 characters (abaplint `getAllowedNaming` of TABL): `z<short>_rec`, the short name cut where it would not fit. */
-export function rapTableName(short: string): string {
-  const room = NAME_MAX.TABL - 'z'.length - '_rec'.length;
-  return `z${short.length <= room ? short : short.slice(0, room).replace(/_+$/, '')}_rec`;
 }
 
 /** The ABAP type of a contract field — for the engine cases' arithmetic in the test class. */
