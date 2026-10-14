@@ -795,8 +795,16 @@ export function pendingEngineChecks(): GenerationCheck[] {
   ];
 }
 
-/** One check set to its result. */
+/**
+ * One check set to its result. The activation check of an ABAP candidate (3.0.13) is not in the pending list —
+ * a Node candidate has none — so it is added after the lint checks the first time it reports.
+ */
 export function setCheck(checks: GenerationCheck[], key: string, state: GenerationCheckState, result?: string): GenerationCheck[] {
+  if (key === 'abap' && !checks.some((c) => c.key === 'abap')) {
+    const at = checks.findIndex((c) => c.key === 'lint') + 1;
+    const row: GenerationCheck = { key: 'abap', label: M['transformation.check.abap'], state: 'pending' };
+    checks = at > 0 ? [...checks.slice(0, at), row, ...checks.slice(at)] : [...checks, row];
+  }
   return checks.map((c) => (c.key === key ? { ...c, state, ...(result !== undefined ? { result } : {}) } : c));
 }
 

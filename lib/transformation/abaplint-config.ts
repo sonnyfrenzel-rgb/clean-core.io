@@ -1,4 +1,5 @@
 import { cleanAbapAbaplintRules } from '@/lib/clean-abap-rules';
+import { SAP_STUBS_FOLDER } from './abap-sap-stubs';
 /**
  * The abaplint configuration of the ABAP Cloud route (roadmap 3.0.12, DSAG
  * ABAP guide review B5): the one the server runs on a RAP package
@@ -21,12 +22,13 @@ import { cleanAbapAbaplintRules } from '@/lib/clean-abap-rules';
  *   - `errorForAllowed` and `keypath` are gone: no abaplint syntax setting
  *     carries those names.
  *
- * `dependencies` stays empty and `check_syntax` off: the semantic check needs
- * the definitions of SAP's released objects, which neither the server nor this
- * file brings along — run without them it reports every SAP class as unknown.
- * The check record says so as a check not run.
+ * Since 3.0.13 `check_syntax` and `unknown_types` run (an ABAP package is
+ * "complete" only when it has no parser and no syntax error in its own
+ * objects), and `dependencies` names `checks/sap-stubs/` — the SAP classes the
+ * package inherits from, as declarations (`abap-sap-stubs.ts`). Other SAP
+ * objects are not there; a reference the check cannot resolve is counted apart.
  *
- * Pure, no imports — the Delivery page imports it without abaplint itself.
+ * Pure, no abaplint import — the Delivery page imports it without abaplint itself.
  */
 
 /** Object types the RAP scaffold writes (DEVC: the root package's `package.devc.xml`), and the ones its Application Job may add. abaplint knows every one. */
@@ -38,6 +40,16 @@ export const ABAPLINT_RULES = {
   parser_error: true,
   /** A CDS data definition that does not parse. */
   cds_parser_error: true,
+  /**
+   * The semantic syntax check over the package's own objects (3.0.13): a method called with a parameter it
+   * does not have, a variable that is not declared, a type that is not there. SAP's released objects are not in
+   * the check — `errorNamespace` makes a reference to them void, and the classes the package inherits from are
+   * declared in `checks/sap-stubs/` (the dependency below); what still cannot be resolved is counted apart
+   * (`abap-check.ts`), never as an error of the package.
+   */
+  check_syntax: true,
+  /** A type the package uses and declares nowhere (`DATA ls_x TYPE ty_claim` without `ty_claim`). */
+  unknown_types: true,
   /** An object type ABAP Cloud does not support. */
   cloud_types: true,
   allowed_object_types: { allowed: [...ABAPLINT_ALLOWED_OBJECT_TYPES] },
@@ -73,7 +85,9 @@ export function additionalAbaplintRules(): Record<string, unknown> {
 export function abaplintConfig(extra: Record<string, unknown> = additionalAbaplintRules()) {
   return {
     global: { files: '/src/**/*.*' },
-    dependencies: [] as unknown[],
+    // The SAP classes the package inherits from, as declarations only (`abap-sap-stubs.ts`): delivered with the
+    // package, so its own CI reads exactly what the server's check read.
+    dependencies: [{ folder: `/${SAP_STUBS_FOLDER}`, files: '/*.*' }] as Array<{ folder: string; files: string }>,
     syntax: { version: 'Cloud', errorNamespace: '^(Z|Y|LCL_|TY_|LIF_|LTD_|LTC_|LHC_|LSC_)' },
     rules: { ...extra, ...ABAPLINT_RULES } as Record<string, unknown>,
   };

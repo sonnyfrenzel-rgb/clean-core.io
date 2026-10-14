@@ -50,7 +50,7 @@ import type { Preflight } from '@/lib/transformation/preflight';
 import { remainingFillEstimate, remainingWords, type ObservedCall } from '@/lib/transformation/duration-estimate';
 import { LEASE_MAX_PLANNED_CALLS } from '@/lib/transformation/lease';
 import type { CheckSummary, UnitRow } from '@/lib/transformation/engine-led';
-import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks } from '@/lib/transformation/check-words';
+import { checkPhrase, checkStateOf, checkSummaryOf, orderedChecks, type AbapActivation } from '@/lib/transformation/check-words';
 import type { GenerationEvent } from '@/lib/transformation/types';
 import { storedGenerationRecord } from '@/lib/transformation/generation-record';
 import { abapLines, fileGroups, traceOfFiles, unitsOfFile } from '@/lib/transformation/trace-view';
@@ -1323,7 +1323,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         { prepareScaffold },
         { requestGenerationLease, leasedFillModel, newGenerationRunId, closeGenerationLease },
         { runGeneration },
-        { createRunnerVerifier, runnerOverHttp, packageFormatsHook },
+        { createRunnerVerifier, runnerOverHttp, packageFormatsHook, abapScaffoldCheck },
         { guardBodyOf, candidateFiles, assembleEngineLed, preflightFactsOf },
         { sha256Hex },
         { affSchemaSource },
@@ -1430,7 +1430,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             const ofKind = orderedChecks([...checkSummaries.values()].filter((c) => c.kind === e.kind));
             const result = ofKind.map(checkPhrase).join(' · ');
             const state =
-              e.kind === 'guards' || e.kind === 'lint' ? (e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed') : checkStateOf(ofKind);
+              e.kind === 'guards' || e.kind === 'lint' || e.kind === 'abap' ? (e.failed === 0 ? 'met' : e.kind === 'guards' ? 'warning' : 'failed') : checkStateOf(ofKind);
             setStageLog((log) => {
               const base = log.checks?.state === 'active' ? log : withChecks(enterStage(log, 'checks', at), log.checks?.checks ?? pendingEngineChecks());
               return withChecks(base, setCheck(base.checks?.checks ?? pendingEngineChecks(), e.kind, state, result));
@@ -1438,12 +1438,20 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
             if (e.kind === 'guards') enterPhase('checking');
           }
         };
+        // The runner half, and on the ABAP route the activation check (3.0.13): the route answers abaplint's parser and
+        // syntax errors of every candidate, and they go back to the functions that hold them. The last round's
+        // check is what the package says about itself; the server checks again when it stores.
+        const runOnRunner = runnerOverHttp(projectId as string, postJson);
+        let lastActivation: AbapActivation | null = null;
         const verify = createRunnerVerifier({
+          onActivation: (a) => {
+            lastActivation = a;
+          },
           candidate: (bodies) => candidateFiles(prep, bodies),
           units: prep.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id), kind: prep.plan.units.find((p) => p.id === u.unitId)?.kind })),
           lint: (candidate) =>
             generatedCodeLints(candidate, { decimalFields: packedDecimalFields(legacyCode) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
-          runOnRunner: runnerOverHttp(projectId as string, postJson),
+          runOnRunner,
           // The generated ABAP object files against abapGit's serializer format (every metadata file the RAP scaffold writes) and
           // SAP's file formats (AFF JSON, against the schemas the weekly sync copies).
           formats: prep.scaffold.track === 'rap' ? packageFormatsHook(affSchemaSource) : undefined,
@@ -1455,6 +1463,8 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           model: leasedFillModel(leaseNow),
           guardBody: guardBodyOf(prep),
           verify,
+          // The scaffold as the engine wrote it, before any fill: reported, never blocking (3.0.13).
+          ...(prep.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prep.scaffold.files, runOnRunner) } : {}),
           // The lease's own budget, as the server answered it (a fresh lease per
           // run, so `used` is 0 unless this very run asked for it twice).
           budget: Math.max(0, leaseNow.budget - leaseNow.used),
@@ -1483,6 +1493,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           runId: projectRef.current?.activeRunId ?? null,
           checks: [...checkSummaries.values()],
           budget: leaseNow.budget,
+          activation: lastActivation,
         });
         enterPhase('storing');
         setStageLog((log) => enterStage(log, 'storing', Date.now()));

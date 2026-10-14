@@ -493,7 +493,8 @@ export interface Trace {
   droppedRules: string[];
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
-    status: 'complete' | 'partial';
+    /** `not-activatable` since 3.0.13: abaplint's parser or syntax errors were left in an ABAP package. */
+    status: 'complete' | 'partial' | 'not-activatable';
     units: number;
     written: number;
     repaired: number;
@@ -611,7 +612,8 @@ export type GenerationEvent =
   | { t: 'call'; callId: number; state: 'start' | 'end'; at: number; admitted?: boolean }
   | {
       t: 'check';
-      kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';
+      /** `abap` (3.0.13): abaplint's parser and syntax check of an ABAP candidate. */
+      kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
       total: number;
       failed: number;
       /** Split of `total` (step E): passed, failed, not run — absent on the guards and the lints. */

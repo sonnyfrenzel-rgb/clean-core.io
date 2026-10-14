@@ -15,6 +15,7 @@ import { sandboxFilesFromStoredCode, sandboxPatterns } from '@/lib/test-sandbox/
 import { engineDigest, hashRunInputs, MAX_RUN_INPUT_BYTES, MAX_RUN_PATTERNS, type RunnerProxy } from '@/lib/test-sandbox/protocol';
 import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor, type RunnerTarget } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
+import { ABAP_CASES_NOT_RUN, ABAP_PROBES_NOT_RUN, isAbapPackage } from '@/lib/transformation/check-words';
 import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability';
 import { registerCapability, revokeCapability } from '@/lib/s4-proxy-capability-store';
 import { credentialHeaders } from '@/lib/s4-proxy';
@@ -1041,12 +1042,31 @@ async function verifyCandidateResponse(input: {
   draft: RepairDraft;
 }): Promise<NextResponse> {
   const { projectId, projectData, draft } = input;
+
+  // 3.0.13 — an ABAP candidate is checked here, by abaplint with the configuration the package ships
+  // (`lib/transformation/abap-check.ts`): its parser and syntax errors are the repair reasons of the functions
+  // that hold them. Nothing of it runs on the Node runner, so the runner is not asked, and the engine cases and
+  // probes say why they did not run on this route — not the Node runner's reasons.
+  const candidate = sandboxFilesFromStoredCode(draft.generatedCode);
+  if (isAbapPackage(candidate)) {
+    const { abapCheck } = await import('@/lib/transformation/abap-check');
+    const checked = abapCheck(candidate);
+    return NextResponse.json({
+      mode: 'verify',
+      draftId: draft.draftId,
+      buildError: null,
+      abap: checked.ran ? { ran: true, activation: checked.activation } : { ran: false, reason: checked.reason },
+      engine: { ran: false, reason: ABAP_CASES_NOT_RUN },
+      probes: { ran: false, reason: ABAP_PROBES_NOT_RUN },
+    });
+  }
+
   const target = resolveRunnerTarget('mock', readRunnerConfig());
   if (target.kind === 'unavailable') {
     return NextResponse.json({ output: '', error: target.reason, exitCode: 1, code: 'runner-unavailable' }, { status: target.status });
   }
 
-  const files = sandboxFilesFromStoredCode(draft.generatedCode);
+  const files = candidate;
 
   // The engine cases of the signed source, planned exactly as a recorded run
   // plans them (QA round 3): recomputed from the signed source, branded by

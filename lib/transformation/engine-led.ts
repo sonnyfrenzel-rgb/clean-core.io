@@ -29,7 +29,7 @@ import { sliceFor } from './abap-slice';
 import { fillGuardsOf, planUnits, readEngineFacts } from './unit-plan';
 import { parameterShapes, regionSignature, typeDeclarations, typesText, type TypeDeclaration } from './type-shapes';
 import { traceJson, traceMarkdown, withTrace } from './trace';
-import { checkSummaryOf } from './check-words';
+import { checkSummaryOf, type AbapActivation } from './check-words';
 import {
   PlanRefusal,
   type BodyGuardContext,
@@ -286,7 +286,7 @@ export function candidateFiles(prep: Pick<EngineLedPrepared, 'scaffold'>, bodies
  * a check of the written functions (`lib/transformation/check-words.ts`).
  */
 export interface CheckSummary {
-  kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats';
+  kind: 'guards' | 'lint' | 'cases' | 'probes' | 'formats' | 'abap';
   total: number;
   failed: number;
   passed?: number;
@@ -299,8 +299,12 @@ export interface CheckSummary {
 
 /** What the server writes into the binding of an engine-led generation (§12.2), and STATUS.md reads. */
 export interface EngineLedSummary {
-  /** `complete`: every function written; `partial`: at least one left as a stub (Q4). Failing checks are findings either way. */
-  status: 'complete' | 'partial';
+  /**
+   * `complete`: every function written; `partial`: at least one left as a stub (Q4). Failing checks are findings
+   * either way — except, on the ABAP route since 3.0.13, abaplint's parser and syntax errors: with one left after
+   * the last round the package is `not-activatable` (the server checks again when it stores, `withAbaplint`).
+   */
+  status: 'complete' | 'partial' | 'not-activatable';
   units: number;
   written: number;
   repaired: number;
@@ -349,7 +353,14 @@ function fillOutcomesOf(prep: Pick<EngineLedPrepared, 'scaffold'>, result: Gener
 export function assembleEngineLed(
   prep: Pick<EngineLedPrepared, 'plan' | 'scaffold' | 'sliceChars' | 'rows'>,
   result: GenerationRunResult,
-  options: { contextDigest?: string | null; runId?: string | null; checks: CheckSummary[]; budget: number },
+  options: {
+    contextDigest?: string | null;
+    runId?: string | null;
+    checks: CheckSummary[];
+    budget: number;
+    /** The activation check of the last round (ABAP route, 3.0.13); absent or null when it did not run. */
+    activation?: AbapActivation | null;
+  },
 ): EngineLedPackage {
   const bodies: RegionBody[] = [];
   for (const u of result.units) {
@@ -386,7 +397,7 @@ export function assembleEngineLed(
   }
   const summary: EngineLedSummary = {
     // Partial is a function left as a stub (owner, Q4); a check that still fails on a written body is a finding.
-    status: notWritten.length === 0 ? 'complete' : 'partial',
+    status: options.activation && !options.activation.activatable ? 'not-activatable' : notWritten.length === 0 ? 'complete' : 'partial',
     units: result.units.length,
     written: result.units.filter((u) => u.state === 'written').length - refusedNow.size,
     repaired: result.units.filter((u) => u.state === 'written' && u.filledBy !== 'model' && u.filledBy !== 'not-filled').length,
@@ -394,7 +405,7 @@ export function assembleEngineLed(
     failing,
     checks: options.checks.map(checkSummaryOf),
     notRun: result.checksNotRun.map((n) => ({ kind: n.kind, reason: n.reason })),
-    scaffoldFindings: result.scaffoldFindings,
+    scaffoldFindings: [...(result.scaffoldBaseline ?? []), ...result.scaffoldFindings],
     callsUsed: result.callsUsed,
     budget: options.budget,
     rounds: result.rounds,

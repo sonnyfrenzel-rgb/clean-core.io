@@ -127,6 +127,15 @@ export default function TestingClosureCard({
         ? 'Testing was closed earlier for another code, suite or analysis run; that closure no longer applies.'
         : null;
 
+  if (!basis.ok && basis.code === 'not-activatable') {
+    // Roadmap 3.0.13: said, not hidden — the reader sees why testing cannot be closed on this package.
+    return (
+      <div data-testing-closure="not-activatable" className="mt-4">
+        <CcMessageStrip state="warning">{basis.error}</CcMessageStrip>
+      </div>
+    );
+  }
+
   if (!basis.ok) {
     return before ? (
       <p data-testing-closure="before" className="m-0 mt-4 cc-text-cell text-cc-ink-muted">

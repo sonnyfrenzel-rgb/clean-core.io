@@ -32,6 +32,7 @@
  */
 
 import type { CheckCount, CheckFailure, CheckKind, CheckScope, Verify, VerifyOutcome } from './orchestrator';
+import type { AbapActivation, AbapFinding } from './check-words';
 
 export { affFormatsCheck } from './aff-check';
 export { packageFormatsHook } from './abapgit-check';
@@ -254,12 +255,72 @@ export function mapProbeFailures(
   return out;
 }
 
+/* ------------------------------------------------- the activation check (3.0.13) */
+
+/** At most this many findings are named in one function's repair reason; the count is complete. */
+export const ABAP_FINDINGS_PER_UNIT = 8;
+
+/**
+ * abaplint's parser and syntax errors onto the functions whose fill markers
+ * enclose them — each function's repair reason names its errors by the line of
+ * its own body (the model sees the body, not the class), with abaplint's
+ * message. An error in engine-written code is one failure per file with
+ * `unitId: null`: a scaffold finding, never sent to the model.
+ */
+export function mapAbapFindings(findings: readonly AbapFinding[], spans: readonly MarkerSpan[]): CheckFailure[] {
+  const errors = findings.filter((f) => f.kind === 'parser' || f.kind === 'syntax');
+  const byUnit = new Map<string, Array<{ f: AbapFinding; bodyLine: number }>>();
+  const byFile = new Map<string, AbapFinding[]>();
+  for (const f of errors) {
+    const p = normPath(f.path);
+    const span = spans.find((s) => s.path === p && f.line > s.beginLine && f.line < s.endLine);
+    if (span) {
+      const list = byUnit.get(span.unitId) ?? [];
+      list.push({ f, bodyLine: f.line - span.beginLine });
+      byUnit.set(span.unitId, list);
+    } else {
+      const list = byFile.get(p) ?? [];
+      list.push(f);
+      byFile.set(p, list);
+    }
+  }
+  const words = (f: AbapFinding) => `${f.kind === 'parser' ? 'parser error' : 'syntax error'}: ${f.message}`;
+  const out: CheckFailure[] = [];
+  for (const [unitId, list] of byUnit) {
+    const shown = list.slice(0, ABAP_FINDINGS_PER_UNIT).map((x) => `body line ${x.bodyLine} — ${words(x.f)}`);
+    const more = list.length > shown.length ? `; and ${list.length - shown.length} more` : '';
+    out.push({
+      unitId,
+      check: 'abap',
+      failure: `abaplint (ABAP Cloud, the package's own abaplint.json) cannot activate this body — ${list.length} error${list.length === 1 ? '' : 's'}: ${shown.join('; ')}${more}`,
+    });
+  }
+  for (const [path, list] of byFile) {
+    out.push({
+      unitId: null,
+      check: 'abap',
+      failure: `${path}: ${list.length} abaplint error${list.length === 1 ? '' : 's'} outside the written functions, first at line ${list[0].line} — ${words(list[0])}`,
+    });
+  }
+  return out;
+}
+
+/** The activation check as the generation screen counts it: the files of the package's own objects, passed or failed. */
+export function abapCheckCount(a: AbapActivation, ms: number): CheckCount {
+  return { kind: 'abap', total: a.files, failed: a.failedFiles, passed: Math.max(0, a.files - a.failedFiles), notRun: 0, ms };
+}
+
 /* ------------------------------------------------------------ the verifier */
 
 /** What `POST /api/run-tests { mode: 'verify' }` answers (see the route). */
 export interface VerifyRunAnswer {
   mode: 'verify';
   buildError?: string | null;
+  /**
+   * The activation check of an ABAP candidate (3.0.13): abaplint with the shipped configuration, run by the
+   * route on the candidate it was handed. Absent on a Node candidate and from a server before 3.0.13.
+   */
+  abap?: { ran: true; activation: AbapActivation } | { ran: false; reason: string };
   engine:
     | { ran: true; results: RunnerResult[]; cases: Array<{ id: string; ruleId: string | null; scope?: CheckScope; guard?: string | null }> }
     | { ran: false; reason: string };
@@ -285,6 +346,8 @@ export interface RunnerVerifierDeps {
   runOnRunner?: (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer>;
   /** The file-format check of the RAP track (`abapgit-check.ts`, `packageFormatsHook`: AFF JSON and abapGit XML); absent on the Node track, which writes no ABAP object files. */
   formats?: (files: readonly FileLike[]) => { count: CheckCount; failures: CheckFailure[] };
+  /** Told the activation check of every round (null when it did not run), so the page can store the last one's words. */
+  onActivation?: (activation: AbapActivation | null) => void;
   now?: () => number;
 }
 
@@ -326,11 +389,22 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       answer = await deps.runOnRunner(files, ctx.signal);
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err);
+      deps.onActivation?.(null);
       notRun('cases', `Engine cases and probes not run: the test runner is not reachable (${why}). Run them in Testing.`);
       notRun('probes', `Engine cases and probes not run: the test runner is not reachable (${why}). Run them in Testing.`);
       return outcome;
     }
     const ms = now() - t0;
+    if (answer.abap) {
+      if (answer.abap.ran) {
+        outcome.checks.push(abapCheckCount(answer.abap.activation, ms));
+        outcome.failures.push(...mapAbapFindings(answer.abap.activation.findings, spans));
+        deps.onActivation?.(answer.abap.activation);
+      } else {
+        notRun('abap', answer.abap.reason);
+        deps.onActivation?.(null);
+      }
+    }
     if (answer.buildError) {
       // Code that does not compile fails every case; the error names the file.
       const m = answer.buildError.match(/([\w./-]+\.(?:ts|mjs|js)):(\d+)/);
@@ -394,6 +468,26 @@ export function createRunnerVerifier(deps: RunnerVerifierDeps): Verify {
       notRun('probes', answer.probes.reason);
     }
     return outcome;
+  };
+}
+
+/**
+ * The scaffold's activation check before any fill (3.0.13; `scaffoldCheck` of
+ * the orchestrator): the same route, handed the scaffold as the engine wrote
+ * it. Every error it finds is in engine-written code — reported as such, never
+ * a repair reason.
+ */
+export function abapScaffoldCheck(
+  files: readonly FileLike[],
+  runOnRunner: (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer>,
+): (signal: AbortSignal) => Promise<Pick<VerifyOutcome, 'failures'> | null> {
+  return async (signal) => {
+    const answer = await runOnRunner(files, signal);
+    if (!answer.abap?.ran) return null;
+    const a = answer.abap.activation;
+    if (a.activatable) return { failures: [] };
+    const failures = mapAbapFindings(a.findings, []);
+    return { failures: [{ unitId: null, check: 'abap', failure: `${a.parserErrors} parser and ${a.syntaxErrors} syntax errors in the scaffold (abaplint ${a.abaplint}, shipped config)` }, ...failures] };
   };
 }
 
