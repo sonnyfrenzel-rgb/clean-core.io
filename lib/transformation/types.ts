@@ -491,6 +491,8 @@ export interface Trace {
   notCarried: NotCarried[];
   openRules: string[];
   droppedRules: string[];
+  /** 3.0.13 (6): the golden master (`ltc_golden_master`) — the original's demo cases carried as ABAP Unit test data, and whether their rows reach the logic. Absent when none was written. */
+  goldenMaster?: { cases: number; rowsPassed: boolean };
   /** How the generation went (step E): written, repaired, not written with the reason, the checks. Absent on the scaffold alone. */
   generation?: {
     /** `not-activatable` since 3.0.13: abaplint's parser or syntax errors were left in an ABAP package. */

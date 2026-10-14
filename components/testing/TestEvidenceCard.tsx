@@ -33,6 +33,7 @@ export default function TestEvidenceCard({
   coverageNote,
   assessments,
   caseOrigins = null,
+  abapUnit = null,
   invariant,
   mutation,
   probe,
@@ -46,6 +47,8 @@ export default function TestEvidenceCard({
   assessments: AssessmentCounts | null;
   /** 3.0.12 — cases written by the model and cases derived by the engine, counted apart. */
   caseOrigins?: EngineCaseCounts | null;
+  /** 3.0.13 — on the ABAP route: which test methods are tests, and the original's demo cases carried over. */
+  abapUnit?: string[] | null;
   invariant: InvariantPlan;
   /** The probe on the covering receipt, or this session's. */
   mutation: MutationProbeReport | null;
@@ -79,6 +82,11 @@ export default function TestEvidenceCard({
             {caseOrigins ? (
               <span data-test-evidence-case-origins={caseOrigins.engine} className="block mt-1 text-cc-ink">
                 {engineCaseCountsSentence(caseOrigins)}
+              </span>
+            ) : null}
+            {abapUnit && abapUnit.length > 0 ? (
+              <span data-test-evidence-abap-unit="" className="block mt-1 text-cc-ink">
+                {abapUnit.join(' ')}
               </span>
             ) : null}
           </dd>

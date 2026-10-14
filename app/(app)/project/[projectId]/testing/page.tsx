@@ -86,7 +86,8 @@ import { ruleEntries } from '@/lib/rules-editor';
 import { assessCase, countAssessments, ruleCoverage, ruleTraceOf, type CaseAssessmentReading } from '@/lib/testing-rule-trace';
 import { invariantPlan } from '@/lib/testing-invariants';
 import { countEngineCases, engineCaseOf } from '@/lib/testing-engine-cases';
-import { NOT_RUN_NO_CONTRACT, callContractPresence } from '@/lib/engine-call-contract';
+import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from '@/lib/testing-abap-unit';
+import { callContractPresence, notRunWithoutContract } from '@/lib/engine-call-contract';
 import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 import { probeBasis } from '@/lib/testing-mutation';
 
@@ -305,6 +306,11 @@ export default function TestingSandboxPage() {
   }, [ruleStatesOutcome]);
   const generatedCodeText = typeof project?.generatedCode === 'string' ? project.generatedCode : null;
   const sharedSelection = useMemo(() => invariantPlan(generatedCodeText), [generatedCodeText]);
+  // 3.0.13 (6): read once per stored package and suite, not on every render.
+  const abapUnitEvidence = useMemo(() => {
+    const e = abapTestEvidenceOfProject({ extensibilityRoute: project?.extensibilityRoute, generatedCode: generatedCodeText, testSuite: project?.testSuite });
+    return e ? abapTestEvidenceSentences(e) : null;
+  }, [project?.extensibilityRoute, generatedCodeText, project?.testSuite]);
   /** 3.0.12 — does the generated code export the call contract the engine cases run against? Read, never run. */
   const callContract = useMemo(() => callContractPresence(sandboxFilesFromStoredCode(generatedCodeText ?? '')), [generatedCodeText]);
   const [showTestCode, setShowTestCode] = useState(false);
@@ -1172,7 +1178,7 @@ export default function TestingSandboxPage() {
     if (engineCase && (!verdict || verdict === 'Not run') && !callContract.present) {
       return {
         value: 'not-assessable',
-        sentence: `${NOT_RUN_NO_CONTRACT}${callContract.path ? ` (${callContract.path} lacks ${callContract.missing.join(', ')})` : ''}, and the suite has no verdict for it.`,
+        sentence: `${notRunWithoutContract(isAbapCloud ? 'abap' : 'node', callContract)}, and the suite has no verdict for it.`,
       };
     }
     return assessCase({
@@ -1205,6 +1211,8 @@ export default function TestingSandboxPage() {
         : 'The rules of the original are being read from the signed source.',
     assessments: testCases.length > 0 ? countAssessments(testCases.map((tc) => assessmentOf(tc as unknown as ScenarioCase).value)) : null,
     /** 3.0.12 — engine cases and model cases, counted apart. */
+    /** 3.0.13 — on the ABAP route: which test methods are tests, and the original's demo cases carried over. */
+    abapUnit: abapUnitEvidence,
     caseOrigins: testCases.length > 0 ? countEngineCases(testCases as unknown as Array<Record<string, unknown>>) : null,
     mutation: coveringReceipt?.mutation ?? probe.report,
     probeBasis: probeBasisReading.ok ? null : probeBasisReading.reason,
@@ -1640,6 +1648,7 @@ export default function TestingSandboxPage() {
                 coverageNote={evidence.coverageNote}
                 assessments={evidence.assessments}
                 caseOrigins={evidence.caseOrigins}
+                abapUnit={evidence.abapUnit}
                 invariant={sharedSelection}
                 mutation={evidence.mutation}
                 probe={{ state: probe.state, error: probe.error }}

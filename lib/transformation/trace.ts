@@ -12,6 +12,8 @@
 
 import { rangeWords } from './unit-plan';
 import { ENGINE_CODE_NOTE, checkPhrase, orderedChecks } from './check-words';
+import { GOLDEN_MASTER_TEST_CLASS } from './golden-master';
+import { goldenMasterInInclude } from '../testing-abap-unit';
 import { SCAFFOLD_VERSION, type FillOutcome, type FilledBy, type Scaffold, type ScaffoldFile, type Trace, type UnitPlan } from './types';
 
 export interface TraceOptions {
@@ -31,9 +33,20 @@ function filledByOf(regionIds: readonly string[], outcomes: ReadonlyMap<string, 
   return 'model';
 }
 
+/** The golden master the engine wrote into a test include (golden-master.ts), or null. */
+function goldenMasterOf(files: readonly ScaffoldFile[]): { cases: number; rowsPassed: boolean } | null {
+  for (const f of files) {
+    if (!/\.clas\.testclasses\.abap$/i.test(f.path)) continue;
+    const g = goldenMasterInInclude(f.content);
+    if (g && g.cases > 0) return g;
+  }
+  return null;
+}
+
 /** The trace of a scaffold with the fills' outcomes (none: every fill region is `not-filled`). */
 export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regions' | 'digest' | 'track'>, outcomes: readonly FillOutcome[], options: TraceOptions = {}): Trace {
   const byRegion = new Map(outcomes.map((o) => [o.regionId, o.state]));
+  const goldenMaster = goldenMasterOf(scaffold.files);
   const ruleDecision = new Map(plan.rules.map((r) => [r.id, r]));
   const guardByName = new Map<string, (typeof plan.guards)[number]>();
   for (const g of plan.guards) {
@@ -110,6 +123,7 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
     notCarried: plan.notCarried,
     openRules: plan.rules.filter((r) => r.decision === 'open').map((r) => r.id),
     droppedRules: plan.rules.filter((r) => r.decision === 'drop').map((r) => r.id),
+    ...(goldenMaster ? { goldenMaster } : {}),
   };
 }
 
@@ -147,7 +161,15 @@ export function traceMarkdown(trace: Trace): string {
   const fixtures = trace.notCarried.filter((n) => n.reason === 'fixture');
   const unreachable = trace.notCarried.filter((n) => n.reason === 'unreachable');
   if (unreachable.length) lines.push(`- Not carried over — never reached in the original: ${unreachable.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
-  if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtures.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ')}.`);
+  const fixtureWords = fixtures.map((n) => `${n.routine} (L${n.lineStart}–L${n.lineEnd})`).join(', ');
+  const gm = trace.goldenMaster;
+  if (gm && gm.cases > 0) {
+    // 3.0.13 (6): the golden master wrote the original's demo cases as ABAP Unit test data (golden-master.ts).
+    lines.push(
+      `- Demo cases of the original, carried as ABAP Unit test data: ${gm.cases} case${gm.cases === 1 ? '' : 's'} in the test class ${GOLDEN_MASTER_TEST_CLASS}${fixtures.length ? `, read from ${fixtureWords}` : ''}` +
+        (gm.rowsPassed ? '.' : ' — their input rows are not yet passed to the logic, so each case runs the logic without its data.'),
+    );
+  } else if (fixtures.length) lines.push(`- Demo data of the original, not carried over in this version: ${fixtureWords}.`);
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
   if (g) {
