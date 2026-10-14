@@ -252,6 +252,10 @@ const CIRCULAR_PATTERNS: readonly RegExp[] = [
   /\b(?:because|since|as|given that)\b[^.;]{0,40}\b(?:target|chosen|recommended|selected|decided)\b[^.;]{0,30}\b(?:architecture|route|option|platform|track|target)?\b[^.;]{0,10}\b(?:is|was|=)\s+(?:the\s+)?(?:an?\s+)?(?:sap\s+)?(?:cap|rap|btp|side-by-side|in-app|standard)\b/i,
   /\b(?:because|since|as)\b[^.;]{0,20}\b(?:cap|rap|btp|side-by-side|in-app)\b[^.;]{0,20}\b(?:is|was)\s+(?:the\s+)?(?:target|chosen|recommended|selected)\b/i,
   /\b(?:the\s+)?(?:target|route|architecture)\s+(?:is|was)\s+(?:cap|rap|btp|side-by-side|in-app)\s*,?\s*(?:so|therefore|hence)\b/i,
+  // "as the signed-off target architecture says", "because the confirmed design says RAP" (SD review 3.0.12 A04):
+  // the sign-off or the design given as the reason for itself. The decision record's summary read this way and
+  // no check saw it — the patterns above wanted "is CAP" after the target, never "says".
+  /\b(?:because|since|as|given that)\b[^.;]{0,40}\b(?:signed[- ]off|confirmed|approved|chosen|selected|agreed)\b[^.;]{0,30}\b(?:target|architecture|design|route|decision|option)\b[^.;]{0,20}\b(?:says|said|states|stated|requires|required|foresees|prescribes|specifies|names|named)\b/i,
 ];
 
 /** The content words of a sentence once the options and the filler are taken out. */

@@ -16,6 +16,7 @@ import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
 import { OPTION_COMPARISON_PROMPT_RULE, OPTION_COMPARISON_SCHEMA } from '@/lib/design-option-comparison';
+import { DESIGN_CONSISTENCY_PROMPT_RULE, RAP_TEMPLATE_PROMPT_RULE, programOfSource, rapObjectNamesPromptRule } from '@/lib/design-post-checks';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -356,7 +357,7 @@ interface DesignData {
     runtimePlatform: string; // Value MUST be: "SAP S/4HANA Core (Developer Extensibility)"
   };
   nodeAppBlueprint: {
-    projectStructure: Array<{ path: string; purpose: string }>; // Recommended RAP artifact layout: CDS projection views, Behavior Definitions (BDEF), Service Definitions (SRVD), Service Bindings (SRVB), and Behavior Implementation classes (ABP).
+    projectStructure: Array<{ path: string; purpose: string }>; // The RAP artifact layout: CDS root and projection views, Behavior Definition (BDEF), Service Definition (SRVD), Service Binding (SRVB), and the Behavior Implementation class (ABP). ${rapObjectNamesPromptRule(programOfSource(engineEvidenceRef.current.source ?? projData?.legacyCode ?? null))}
     apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // Exposed RAP UI service operations or REST service definitions
   };
   cloudServices: Array<{
@@ -366,7 +367,7 @@ interface DesignData {
   }>;
   dataSync: {
     patternName: string; // E.g. "Transactional DB Access", "ABAP CDS Projection Join"
-    description: string; // Rationale on how standard transactional lock (ENQUEUE/DEQUEUE) is preserved natively within SAP LUW (Logical Unit of Work).
+    description: string; // How reads stay consistent and how the SAP LUW (Logical Unit of Work) and its locks (ENQUEUE/DEQUEUE) are kept — see CONSISTENCY below; never MVCC as a guarantee.
   };
   securityHardening: Array<{
     category: string; // e.g. IAM, Authorization, Dictionary, Audit
@@ -384,6 +385,8 @@ ${OPTION_COMPARISON_SCHEMA}
 ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
+
+${DESIGN_CONSISTENCY_PROMPT_RULE} ${RAP_TEMPLATE_PROMPT_RULE}
 
 ${designContext}
 
@@ -434,6 +437,8 @@ ${OPTION_COMPARISON_SCHEMA}
 ${SAP_REFERENCE_PROMPT_RULES}
 
 OPTIONS: ${OPTION_COMPARISON_RULE} ${OPTION_COMPARISON_PROMPT_RULE}
+
+${DESIGN_CONSISTENCY_PROMPT_RULE}
 
 ${designContext}
 

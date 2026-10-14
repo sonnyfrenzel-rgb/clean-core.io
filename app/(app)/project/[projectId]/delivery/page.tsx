@@ -82,13 +82,13 @@ import {
 import { deliveryTestingTitle, lastRun, countsLine } from '@/components/testing/testing-summary';
 import { outsideReading, outsideShortfall } from '@/lib/sap-test-results';
 import { closureHandoverLine, failureSentence, testingClosureReading } from '@/lib/testing-closure';
-import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
 import { referencePatternsReadme } from '@/lib/sap-reference-architectures';
 import { createDeliveryBundle, finishDeliveryPackage } from '@/lib/delivery-package';
 import { ENGINE_CASES_FILE, engineCasesFile } from '@/lib/testing-engine-cases';
 import { deriveEngineCasesOf, engineCaseProvenance } from '@/lib/engine-case-provenance';
 import { packedDecimalFields } from '@/lib/generated-code-lints';
+import { developerGuidelinesMarkdown, type GuidelineFinding } from '@/lib/developer-guidelines';
 import { deliveryFactsOf, ruleFactsFromSource, ruleFactsOf, ruleTestInputOf, scoreFactsOf, type ScoreEvidence } from '@/lib/delivery-facts';
 import { readProcessStatesOutcome, type StatesReadRefusal } from '@/lib/process-states-client';
 import { auditPackSealState, type AuditPackSealState } from '@/lib/audit-pack-seal';
@@ -142,42 +142,6 @@ const DOCUMENTATION_FILE = `process-${DOCUMENTATION_LABEL.toLowerCase()}.md`;
 
 /** An in-text link, as the settings page draws one. */
 const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
-
-const generateDeveloperGuidelines = (project: Project) => {
-  const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
-  if (isAbapCloud) {
-    return `# Developer Extensibility Guidelines - ${project.name}
-
-## Overview
-ABAP Cloud / Developer Extensibility model for S/4HANA. All code must align with SAP Clean Core.
-
-## Development Rules
-1. **Zero Database Coupling**: Direct SELECT/INSERT/UPDATE on standard tables (VBAK, BSEG, KNA1, etc.) is blocked.
-2. **Released API Consumption**: Use released CDS views or standard APIs:
-   - VBAK -> Use CDS view 'I_SalesOrder'
-   - BSEG -> Use CDS view 'I_JournalEntryItem'
-   - KNA1 -> Use CDS view 'I_Customer'
-3. **RAP Service Tiering**:
-   - Encapsulate business logic in Behavior Implementations (ZCL_DEMO_RAP_BEHAVIOR).
-   - Expose services via Service Definitions (SRVD) and Service Bindings (SRVB) using OData V4.
-4. **Automated Testing**: Every RAP object must have a local ABAP Unit test class (ZCL_DEMO_RAP_TEST) with >=85% code coverage.
-5. **Linter Gate**: Run local 'abaplint.json' check variant before releasing any transport.
-`;
-  } else {
-    return `# Side-by-Side Extensibility Guidelines - ${project.name}
-
-## Overview
-Side-by-Side Extensibility on ${BTP_FIRST} using CAP (Node.js/TypeScript). S/4HANA core remains decoupled.
-
-## Development Rules
-1. **Decoupled Architecture**: Direct DB access is blocked. Integrate via released OData APIs through SAP Destination service destinations on ${BTP}.
-2. **Endpoint Security**: Secure every service endpoint with SAP XSUAA and enforce JWT verification. What the package wires today is listed in STATUS.md.
-3. **Testing**: Mock ERP data for local development. Run the test suite before container packaging.
-4. **CI/CD Quality Gates**: Run the GitHub Actions pipeline in .github/workflows on every PR.
-5. **Containerization**: Build the container from the root Dockerfile once the open steps in STATUS.md are done; it is not approved for production.
-`;
-  }
-};
 
 /**
  * The seal the audit-pack route just wrote, read back from the server. The route
@@ -500,7 +464,7 @@ export default function DeliveryPage() {
       if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign, { code: project.legacyCode }));
       if (project.documentation) docs.file(DOCUMENTATION_FILE, formatDocumentationToMarkdown(project.documentation));
       if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation, project.documentation));
-      docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
+      // developer-guidelines.md is written below, once the engine's findings are read (lib/developer-guidelines.ts).
 
       // The linter of the ABAP route. The Node route's CI comes from the templates.
       if (isAbapCloud) {
@@ -525,6 +489,15 @@ export default function DeliveryPage() {
         readProcessStatesOutcome(projectId as string),
         readScoreEvidence(projectId as string),
       ]);
+      // From the package and the engine's findings — the tables this program uses, the classes the
+      // package carries — not a template naming BSEG and a demo class (SD review 3.0.12, CR-D7).
+      docs.file("developer-guidelines.md", developerGuidelinesMarkdown({
+        projectName: project.name,
+        isAbapCloud,
+        paths: bundle.entries.map((e) => e.path),
+        findings: evidenceRead.evidence ? (evidenceRead.evidence.findings as readonly GuidelineFinding[]) : null,
+        findingsUnread: evidenceRead.unread,
+      }));
       const ruleTests = ruleTestInputOf(project as HandoverProject);
       const rules = statesRead.ok
         ? ruleFactsOf(statesRead.view, undefined, ruleTests)
@@ -1094,13 +1067,21 @@ export default function DeliveryPage() {
               <DeliveryArtefactCard
                 icon={<BookOpen size={18} aria-hidden="true" />}
                 title="Developer guide"
-                detail="General rules for the chosen route — a fixed template, not read from this code."
+                detail="Rules for the chosen route, with the SAP standard tables this program uses — read from the engine's findings."
                 action={
                   <CcButton
                     variant="ghost"
                     density="compact"
-                    onClick={() => {
-                      const blob = new Blob([generateDeveloperGuidelines(project)], { type: "text/markdown;charset=utf-8" });
+                    onClick={async () => {
+                      const evidenceRead = await readScoreEvidence(projectId as string);
+                      const guide = developerGuidelinesMarkdown({
+                        projectName: project.name,
+                        isAbapCloud,
+                        paths: null,
+                        findings: evidenceRead.evidence ? (evidenceRead.evidence.findings as readonly GuidelineFinding[]) : null,
+                        findingsUnread: evidenceRead.unread,
+                      });
+                      const blob = new Blob([guide], { type: "text/markdown;charset=utf-8" });
                       const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
                       saveAs(blob, `${fileName}_Developer_Guidelines.md`);
                     }}
