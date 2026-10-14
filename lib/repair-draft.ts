@@ -446,15 +446,26 @@ export function isGenerationDraft(draft: Pick<RepairDraft, 'target'>): boolean {
  * Failures in engine-written code never reach this decision (they are
  * scaffold findings, §13.2 step 2); a unit the model declined or could not
  * answer twice is not in `failing` (it stays a stub).
+ *
+ * Gate repairs (owner decision 14.10.2026, quality over cost; a call costs
+ * ≈ $0.005): with `gate`, the units that fail the gate — the activation check's
+ * parser/syntax errors (RAP), the type check's errors (Node) — get more: when
+ * the lease's budget is used they may still go back on its gate-repair calls
+ * (`gate.callsLeft`, at most 16), and after round 2 they alone get a third
+ * round with the gate's mapped reasons only. Every other failure stops where it
+ * did. A unit going back for a gate error is marked `gate`, and its gate
+ * failures lead its failure text, so the 2,000-character cut never drops them.
  */
 export const GENERATION_REPAIR_MAX_ROUNDS = 2;
+/** The third round, for units that fail the gate only (owner decision 14.10.2026). */
+export const GENERATION_GATE_REPAIR_ROUND = 3;
 export const GENERATION_REPAIR_FAILURE_MAX_CHARS = 2_000;
 
 export type GenerationRepairStop = 'passed' | 'no-progress' | 'lease' | 'budget' | 'round-limit';
 
 export type GenerationRepairDecision =
   | { kind: 'stop'; reason: GenerationRepairStop; signature: string }
-  | { kind: 'repair'; round: 1 | 2; units: Array<{ unitId: string; failure: string }>; signature: string };
+  | { kind: 'repair'; round: 1 | 2 | 3; units: Array<{ unitId: string; failure: string; gate?: boolean }>; signature: string };
 
 /** One value for "these functions fail with these failures" — what "the same failures twice" compares. */
 export function failureSignature(failing: ReadonlyArray<{ unitId: string; failures: readonly string[] }>): string {
@@ -469,23 +480,49 @@ export function decideGenerationRepair(input: {
   failing: ReadonlyArray<{ unitId: string; failures: readonly string[] }>;
   /** The signature before the last round, or null before round 1. */
   previousSignature: string | null;
+  /** Calls left of the lease's budget. */
   callsLeft: number;
   leaseEnded: boolean;
+  /**
+   * Gate repairs (owner decision 14.10.2026): which failure line is a gate error, and the lease's gate-repair
+   * calls still left. Absent: two rounds within the budget, as before.
+   */
+  gate?: { isGate: (failure: string) => boolean; callsLeft: number };
 }): GenerationRepairDecision {
   const signature = failureSignature(input.failing);
   if (input.failing.length === 0) return { kind: 'stop', reason: 'passed', signature };
   if (input.previousSignature !== null && signature === input.previousSignature) return { kind: 'stop', reason: 'no-progress', signature };
   if (input.leaseEnded) return { kind: 'stop', reason: 'lease', signature };
-  if (input.callsLeft <= 0) return { kind: 'stop', reason: 'budget', signature };
-  if (input.roundsDone >= GENERATION_REPAIR_MAX_ROUNDS) return { kind: 'stop', reason: 'round-limit', signature };
-  const failure = (f: readonly string[]) => {
-    const text = f.join('\n');
+  const gate = input.gate;
+  const gateOf = (f: readonly string[]) => (gate ? f.filter((x) => gate.isGate(x)) : []);
+  const gateUnits = input.failing.filter((f) => gateOf(f.failures).length > 0);
+  // The gate's reasons first, so the cut at 2,000 characters keeps them; in the gate's own round, only they.
+  const failure = (f: readonly string[], onlyGate = false) => {
+    const g = gateOf(f);
+    const text = (onlyGate ? g : [...g, ...f.filter((x) => !g.includes(x))]).join('\n');
     return text.length > GENERATION_REPAIR_FAILURE_MAX_CHARS ? `${text.slice(0, GENERATION_REPAIR_FAILURE_MAX_CHARS - 1)}…` : text;
   };
+  const gateRound = (round: 1 | 2 | 3): GenerationRepairDecision => ({
+    kind: 'repair',
+    round,
+    units: gateUnits.map((f) => ({ unitId: f.unitId, failure: failure(f.failures, round === GENERATION_GATE_REPAIR_ROUND), gate: true })),
+    signature,
+  });
+  if (input.callsLeft <= 0) {
+    // The budget is used: only units failing the gate may go on, on the gate-repair calls.
+    if (gate && gateUnits.length > 0 && gate.callsLeft > 0 && input.roundsDone < GENERATION_GATE_REPAIR_ROUND) {
+      return gateRound((input.roundsDone + 1) as 1 | 2 | 3);
+    }
+    return { kind: 'stop', reason: 'budget', signature };
+  }
+  if (input.roundsDone >= GENERATION_REPAIR_MAX_ROUNDS) {
+    if (gate && gateUnits.length > 0 && input.roundsDone < GENERATION_GATE_REPAIR_ROUND) return gateRound(GENERATION_GATE_REPAIR_ROUND);
+    return { kind: 'stop', reason: 'round-limit', signature };
+  }
   return {
     kind: 'repair',
     round: (input.roundsDone + 1) as 1 | 2,
-    units: input.failing.map((f) => ({ unitId: f.unitId, failure: failure(f.failures) })),
+    units: input.failing.map((f) => ({ unitId: f.unitId, failure: failure(f.failures), ...(gateOf(f.failures).length > 0 ? { gate: true } : {}) })),
     signature,
   };
 }

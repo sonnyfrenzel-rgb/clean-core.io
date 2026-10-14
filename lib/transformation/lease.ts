@@ -11,6 +11,9 @@
  *     (`gemini:<uid>`), charged by `/api/transformation/lease`;
  *   - a lease is good for at most **48 calls** (`min(48, plannedCalls × 2 + 8)`),
  *     at most **4 in flight**, for one project and one generation token;
+ *   - and for **16 calls more that only repairs of gate errors may spend**,
+ *     once the 48 are used (`LEASE_GATE_REPAIR_CALLS`, owner decision
+ *     14.10.2026): at most 64 calls per generation;
  *   - a lease lasts long enough for its budget (`leaseTtlMs`): 15 minutes at
  *     least, more for a large plan, never more than 180 (since the 900 s
  *     request limit of 13.10.2026: 12 waves × the 870 s deadline = 174 min);
@@ -56,6 +59,20 @@ export const LEASE_WINDOW_COLLECTION = 'transformation_lease_windows';
 
 /** The most model calls one lease buys (fills, retries and repairs together). */
 export const LEASE_MAX_CALLS = 48;
+/**
+ * Calls a lease holds apart for repairs of gate errors only — the activation check's parser and syntax errors on
+ * the RAP route, the type check's errors on the Node route (`GATE_CHECKS`, `fill-prompt.ts`).
+ *
+ * Owner decision 14.10.2026 — quality over cost: in the third real acceptance run two Node generations (SD, CO)
+ * used all 48 calls, and a single syntax slip stayed because no call was left to repair it. So a lease carries
+ * 16 calls more (≈ $0.005 a call, ≈ $0.08 a generation at most), granted with the lease and spent only by a call
+ * marked `gateRepair` whose prompt is a repair of gate errors (`isGateRepairPrompt`, checked by `/api/gemini`),
+ * and only once the 48 are used. Never a general raise: a fill, a retry or any other repair cannot reach them,
+ * and the hourly limits stay — one lease per unit of the hourly model limit, `LEASES_PER_WINDOW` an hour.
+ */
+export const LEASE_GATE_REPAIR_CALLS = 16;
+/** The hard maximum of model calls of one generation: its budget and its gate-repair calls together. */
+export const LEASE_MAX_CALLS_PER_GENERATION = LEASE_MAX_CALLS + LEASE_GATE_REPAIR_CALLS;
 /** The most calls of one lease in flight at once (§8.3). */
 export const LEASE_MAX_IN_FLIGHT = 4;
 /** The shortest a lease is valid. */
@@ -90,6 +107,8 @@ export const LEASE_CODES = {
   stage: 'lease-stage',
   /** A leased prompt above `LEASED_PROMPT_MAX_CHARS` (`fill-prompt.ts`): this call is refused, the lease is not touched. */
   promptTooLarge: 'lease-prompt-too-large',
+  /** A call marked `gateRepair` whose prompt is not a repair of gate errors (`isGateRepairPrompt`): refused, the lease is not touched. */
+  gateRepair: 'lease-gate-repair-invalid',
   hourly: 'lease-hourly-limit',
 } as const;
 
@@ -106,6 +125,13 @@ export interface LeaseRecord {
   plannedCalls: number;
   budget: number;
   used: number;
+  /**
+   * Calls held apart for gate repairs (`LEASE_GATE_REPAIR_CALLS`, owner decision 14.10.2026), spent only by a
+   * marked gate-repair call once `used` has reached `budget`. Absent on a lease from before: none.
+   */
+  gateRepairBudget?: number;
+  /** Gate-repair calls spent beyond `budget`. Absent on a lease from before: none. */
+  gateRepairUsed?: number;
   /** The in-flight count as last written; `slots` decides when present. */
   inFlight: number;
   /** When each in-flight call took its slot (epoch ms). Absent on a lease from before 13.10.2026. */
@@ -181,6 +207,8 @@ export function isLeaseRecord(value: unknown): value is LeaseRecord {
     isCount(v.budget) &&
     v.budget <= LEASE_MAX_CALLS &&
     isCount(v.used) &&
+    (v.gateRepairBudget === undefined || (isCount(v.gateRepairBudget) && v.gateRepairBudget <= LEASE_GATE_REPAIR_CALLS)) &&
+    (v.gateRepairUsed === undefined || (isCount(v.gateRepairUsed) && v.gateRepairUsed <= (isCount(v.gateRepairBudget) ? v.gateRepairBudget : 0))) &&
     isCount(v.inFlight) &&
     (v.slots === undefined || (Array.isArray(v.slots) && v.slots.every(isCount))) &&
     (v.status === 'open' || v.status === 'superseded' || v.status === 'closed') &&
@@ -214,12 +242,31 @@ export function inFlightAt(lease: LeaseRecord, now: number): number {
   return Array.isArray(lease.slots) ? liveSlots(lease.slots, now).length : lease.inFlight;
 }
 
+/** Gate-repair calls of this lease still left (none on a lease from before 14.10.2026). */
+export function gateRepairLeft(lease: Pick<LeaseRecord, 'gateRepairBudget' | 'gateRepairUsed'>): number {
+  return Math.max(0, (lease.gateRepairBudget ?? 0) - (lease.gateRepairUsed ?? 0));
+}
+
+/**
+ * Which of the lease's calls a call that may run spends: `budget` while any of the lease's budget is left — a
+ * gate repair too — and `gate-repair` (the calls held apart, owner decision 14.10.2026) only for a call marked
+ * `gateRepair` once the budget is used.
+ */
+export type LeasePool = 'budget' | 'gate-repair';
+
 /**
  * May this call run under this lease? Checked before the provider call (and
  * again inside the transaction that counts it). The same answer for "no such
  * lease" and "another account's lease", so a lease id cannot be probed.
+ *
+ * `gateRepair`: the call is a repair of gate errors (the route has checked its prompt with `isGateRepairPrompt`);
+ * only such a call may spend the gate-repair calls, and only after the budget — never more than
+ * `LEASE_MAX_CALLS_PER_GENERATION` in all.
  */
-export function decideLeaseCall(lease: unknown, ctx: { uid: string; projectId: string; now: number }): { ok: true; lease: LeaseRecord } | LeaseRefusal {
+export function decideLeaseCall(
+  lease: unknown,
+  ctx: { uid: string; projectId: string; now: number; gateRepair?: boolean },
+): { ok: true; lease: LeaseRecord; pool: LeasePool } | LeaseRefusal {
   if (!isLeaseRecord(lease) || lease.uid !== ctx.uid || lease.projectId !== ctx.projectId) {
     return refuse(403, LEASE_CODES.invalid, 'This generation lease does not exist for this account. Start the generation again.');
   }
@@ -238,13 +285,26 @@ export function decideLeaseCall(lease: unknown, ctx: { uid: string; projectId: s
   if (ctx.now >= lease.expiresAt) {
     return refuse(403, LEASE_CODES.expired, 'This generation lease has expired. Start the generation again.');
   }
-  if (lease.used >= lease.budget) {
-    return refuse(429, LEASE_CODES.exhausted, `This generation has used all ${lease.budget} model calls of its lease.`);
+  const pool: LeasePool | null =
+    lease.used < lease.budget
+      ? 'budget'
+      : ctx.gateRepair === true && gateRepairLeft(lease) > 0 && lease.used + (lease.gateRepairUsed ?? 0) < LEASE_MAX_CALLS_PER_GENERATION
+        ? 'gate-repair'
+        : null;
+  if (pool === null) {
+    const extra = lease.gateRepairBudget ?? 0;
+    return refuse(
+      429,
+      LEASE_CODES.exhausted,
+      ctx.gateRepair === true && extra > 0
+        ? `This generation has used all ${lease.budget} model calls of its lease and its ${extra} calls for gate repairs.`
+        : `This generation has used all ${lease.budget} model calls of its lease.`,
+    );
   }
   if (inFlightAt(lease, ctx.now) >= LEASE_MAX_IN_FLIGHT) {
     return refuse(429, LEASE_CODES.busy, `At most ${LEASE_MAX_IN_FLIGHT} model calls of one generation run at once. Retry when one has finished.`);
   }
-  return { ok: true, lease };
+  return { ok: true, lease, pool };
 }
 
 export type LeaseIssueDecision =
@@ -350,6 +410,8 @@ export function newLeaseRecord(input: {
     plannedCalls: Math.min(Math.max(1, Math.floor(input.plannedCalls) || 1), LEASE_MAX_PLANNED_CALLS),
     budget: input.budget,
     used: 0,
+    gateRepairBudget: LEASE_GATE_REPAIR_CALLS,
+    gateRepairUsed: 0,
     inFlight: 0,
     slots: [],
     status: 'open',
@@ -372,12 +434,23 @@ export function decideLeaseClose(lease: unknown, ctx: { uid: string; projectId: 
 }
 
 /** What a client is told about its lease — never the token or the account. */
-export function leaseView(lease: LeaseRecord): { projectId: string; leaseId: string; budget: number; used: number; expiresAt: number; maxInFlight: number } {
+export function leaseView(lease: LeaseRecord): {
+  projectId: string;
+  leaseId: string;
+  budget: number;
+  used: number;
+  gateRepairBudget: number;
+  gateRepairUsed: number;
+  expiresAt: number;
+  maxInFlight: number;
+} {
   return {
     projectId: lease.projectId,
     leaseId: lease.leaseId,
     budget: lease.budget,
     used: lease.used,
+    gateRepairBudget: lease.gateRepairBudget ?? 0,
+    gateRepairUsed: lease.gateRepairUsed ?? 0,
     expiresAt: lease.expiresAt,
     maxInFlight: LEASE_MAX_IN_FLIGHT,
   };

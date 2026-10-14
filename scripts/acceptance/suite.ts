@@ -77,7 +77,7 @@ import { checkSummaryOf, typeCheckRecordOf, isAbapPackage, ABAP_CASES_NOT_RUN, A
 import { sandboxFilesFromStoredCode } from '../../lib/test-sandbox/files';
 import { abapCheck } from '../../lib/transformation/abap-check';
 import { typeCheckCandidate } from '../../lib/test-sandbox/type-check';
-import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '../../lib/transformation/lease';
+import { LEASE_GATE_REPAIR_CALLS, LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '../../lib/transformation/lease';
 import { generatedCodeLints, packedDecimalFields } from '../../lib/generated-code-lints';
 import { geminiTestStubFillText } from '../../lib/gemini-test-stub';
 import { PRODUCT_GEMINI_MODEL } from '../../lib/constants';
@@ -876,6 +876,8 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
       ...(prepared.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
       ...(prepared.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prepared.scaffold.files, runOnRunner) } : {}),
       budget: LEASE_MAX_CALLS,
+      // As a lease grants them (owner decision 14.10.2026): calls only repairs of gate errors may spend.
+      gateRepairBudget: LEASE_GATE_REPAIR_CALLS,
       maxInFlight: LEASE_MAX_IN_FLIGHT,
       onEvent,
     });
@@ -895,6 +897,7 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
       runId: null,
       checks: [...checkSummaries.values()],
       budget: LEASE_MAX_CALLS,
+      gateRepairBudget: LEASE_GATE_REPAIR_CALLS,
       activation: lastActivation,
       typeCheck: typeCheckRecordOf(lastTypeCheck),
     });

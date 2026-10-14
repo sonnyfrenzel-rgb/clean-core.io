@@ -1406,7 +1406,11 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);
   if (hasPageReportedChecks(e)) lines.push(`- ${PAGE_REPORTED_NOTE}`);
   for (const f of e.scaffoldFindings) lines.push(`- Finding in engine-written code (Clean-Core.io's, not the model's): ${f}`);
-  lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);
+  // Owner decision 14.10.2026: a lease also holds calls for repairs of gate errors only — said apart, so the count
+  // never reads as more calls than the budget allowed.
+  lines.push(
+    `- Model calls: ${e.callsUsed} of ${e.budget}${e.gateRepairBudget ? ` and ${e.gateRepairBudget} held for repairs of activation or type-check errors (${e.gateRepairCallsUsed ?? 0} of those used)` : ''} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`,
+  );
   lines.push('- Every function, its ABAP lines, its rules and who wrote it: `TRACE.md` and `traceability.json`.', '');
   return lines;
 }

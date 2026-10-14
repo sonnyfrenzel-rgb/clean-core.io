@@ -62,20 +62,33 @@ export const FILL_REPAIR_PREVIOUS_MAX_CHARS = 4_000;
  * The code-draft rules a function body has to follow. 16 (input contract),
  * 18 (run store), 20 (CSV), 22 (app factory) and 24 (call contract) are
  * engine-written in the scaffold (§6.2) and are therefore not asked for.
+ *
+ * 13 (one selection for every endpoint) neither, since 14.10.2026: a body has
+ * no endpoint — every step receives the one validated selection (`sel`, rule
+ * 16) from the engine-written input contract, and the endpoints are the app
+ * factory's (22). Its 390 characters went to the rules the real acceptance
+ * runs asked for (`fillRapLines`, the Node type lines), so the largest units of
+ * the seven acceptance programs keep their whole ABAP and context under the
+ * leased cap (`tests/transformation-fill-prompt.spec.ts`).
  */
-export const FILL_RULE_NUMBERS = [11, 12, 13, 14, 15, 17, 19, 21, 23] as const;
+export const FILL_RULE_NUMBERS = [11, 12, 14, 15, 17, 19, 21, 23] as const;
 /** RAP bodies also get rule 25: the scaffold's access layer (`mo_access`) is where SAP is reached (3.0.12, DSAG B4). */
 export const FILL_RULE_NUMBERS_RAP = [...FILL_RULE_NUMBERS, 25] as const;
 
-/** The rules above, word for word from `CODE_DRAFT_BUSINESS_RULES`. */
-export function fillRulesText(track: 'node' | 'rap' = 'node'): string {
+/**
+ * The rules above, word for word from `CODE_DRAFT_BUSINESS_RULES` — or, `brief`, each by its number and title only
+ * (the words before its first colon): what a single unit too large for the leased cap gives up after its context
+ * lines, said in the prompt and in `trimmed` (14.10.2026), so its ABAP still travels whole.
+ */
+export function fillRulesText(track: 'node' | 'rap' = 'node', brief = false): string {
   const lines = CODE_DRAFT_BUSINESS_RULES.split('\n').map((l) => l.trim()).filter(Boolean);
   const byNumber = new Map<number, string>();
   for (const line of lines) {
     const m = line.match(/^(\d+)\.\s/);
     if (m) byNumber.set(Number(m[1]), line);
   }
-  return (track === 'rap' ? FILL_RULE_NUMBERS_RAP : FILL_RULE_NUMBERS).map((n) => byNumber.get(n)).filter((l): l is string => !!l).join('\n');
+  const rules = (track === 'rap' ? FILL_RULE_NUMBERS_RAP : FILL_RULE_NUMBERS).map((n) => byNumber.get(n)).filter((l): l is string => !!l);
+  return (brief ? rules.map((l) => (l.includes(':') ? l.slice(0, l.indexOf(':')) : l)) : rules).join('\n');
 }
 
 /**
@@ -120,14 +133,22 @@ export function fillRapLines(): string[] {
     '- A PERFORM of the original is a call of its method with the signature shown: check_stamp( EXPORTING iv_stamp = p_eff CHANGING cv_code = lv_code ). A routine that is not listed was folded into this unit: write its lines in place. Where the original runs demo-data routines, call load_input( ) if the class lists it, else leave them out.',
     '- ABAP Cloud has no WRITE, ULINE, SKIP, NEW-LINE, NEW-PAGE, FORMAT, MESSAGE, DESCRIBE, FORM, PERFORM, CALL FUNCTION, CALL SCREEN, SUBMIT, TABLES, OCCURS, header lines or SELECT on an SAP table: never write them.',
     '- MESSAGE … TYPE \'E\', \'A\' or \'X\' becomes the RAISE EXCEPTION NEW … refusal the class names (guard and the original\'s text); MESSAGE … TYPE \'I\', \'S\' or \'W\' becomes APPEND <text> TO mt_messages; a list (WRITE, ULINE) is left out — its data is in the attributes the run returns; DESCRIBE TABLE t LINES n becomes n = lines( t ).',
+    // Owner decision 14.10.2026: the parser errors of three real acceptance runs (14.10.2026) — "mo_access" (a call with
+    // its parameter groups out of order, commas, or a tail after the parenthesis) and "lv_buffer" (WRITE … TO's
+    // additions left behind an assignment) — each measured with abaplint against ABAP Cloud.
+    '- WRITE x TO y becomes y = |{ x }|, its options inside the braces: |{ x DECIMALS = 2 }|, |{ x CURRENCY = lv_waers }|, |{ x DATE = USER }| — never an addition after an assignment.',
     '- SAP is reached only through mo_access-><method>( … ) with the parameters "types" lists; never call SAP directly and never an access method that is not listed.',
+    '- A method call is one statement: parameter groups in the order EXPORTING, IMPORTING, CHANGING, RECEIVING, no commas, and nothing after its ")" but "." — mo_access->read_x( EXPORTING iv_key = lv_key IMPORTING es_row = ls_row ). (no INTO, WHERE or TO behind it).',
     '- A customer table (Z…, Y…) the original reads is not in this package: read it through its access method (SELECT … FROM zmm_x becomes mo_access->read_zmm_x( CHANGING ct_rows = lt_rows ) and a READ TABLE or LOOP on lt_rows), never by SELECT.',
     '- Numbers keep the types the class declares (packed with its DECIMALS, i, n, d): compute and compare them as the original does, never through text and never TYPE f.',
   ];
 }
 
-/** The fixed instruction header (§8.2). */
-export function fillInstructionHeader(track: 'node' | 'rap'): string {
+/** The words that open the code-draft rules in a header whose rules are titles only (`briefRules`). */
+export const FILL_BRIEF_RULES_NOTE = 'CODE-DRAFT RULES (by number, titles only: their full text was left out to fit this call):';
+
+/** The fixed instruction header (§8.2); `briefRules` only for a single unit past the leased cap (`bundleFills`). */
+export function fillInstructionHeader(track: 'node' | 'rap', opts: { briefRules?: boolean } = {}): string {
   const lang = track === 'node' ? 'TypeScript' : 'ABAP Cloud';
   const forbidden =
     track === 'node'
@@ -135,7 +156,7 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
       : 'METHOD/ENDMETHOD, CLASS, DEFINITION or IMPLEMENTATION statements, signatures';
   return [
     `You write the ${lang} BODY of each function named under "units" of the request below — the statements between its braces and nothing else.`,
-    'The package around them is written by Clean-Core.io from the original ABAP program and is fixed: the signatures, the guard calls, the decimal, input, run and CSV helpers and the file layout cannot be changed by you.',
+    'Everything around the bodies is written by Clean-Core.io and fixed: signatures, guard calls, helpers, file layout.',
     'Rules for every body:',
     `- Do not write ${forbidden}, and never the text "@cc-fill".`,
     '- Call only names listed under "available" for that unit (helpers and callees). If you need another allowlisted helper, name it under "needs".',
@@ -145,6 +166,12 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
       ? [
           // Defect F (A/B 13.10.2026): "on a decimal value" read as permission for Number() on a TYPE i field.
           '- Numbers reach a body as text (packed, TYPE i, digits). Never Number(), parseFloat() or parseInt() on any value — NaN passes every range check — nor arithmetic operators on a decimal.',
+          // Owner decision 14.10.2026: the type errors of three real acceptance runs (14.10.2026) — 46 of 85 were
+          // number/text mix-ups (TS2322, TS2367: sy-subrc compared with '0'), then Scaled | null (TS2345), wrong
+          // arities (TS2554) and `args`/`values` read where they do not exist (TS2304).
+          '- Types as declared: a number field (sy-subrc, sy-tabix, counts) takes and compares numbers (values.sySubrc !== 0), never text like \'0\'; a string field takes text (String(n)); a flag in st.local or a structure is \'X\' or \'\'.',
+          '- dec.parse returns Scaled | null: null-check it or use dec.must; dec.* return text — store dec.format(x, places), never a Scaled, in a string.',
+          '- Call helpers, guards and callees with exactly the arguments declared, in order (sel, st, …); a guard gets only its values keys. `args` exists only where the signature declares it, `values` only in a predicate. Never cast with `as`.',
           '- Use dec.compare(a, b) (exact; throws on a non-number), dec.add/sub/mul/div(a, b, places), dec.isZero(a); digits: /^\\d+$/.test(x); a date: new Date(`${y}-${m}-${d}T00:00:00Z`).toJSON()?.slice(0, 10) === `${y}-${m}-${d}`.',
           // The helpers' declarations (runtime-node.ts DECIMAL_TS, CSV_TS), so a call has the arguments they take (3.0.13).
           '- dec.* take decimal text, a number or a dec.parse result: dec.round/format/neg/abs(a, places), dec.percentOf(amount, rate, places), dec.max/min(a, b), dec.fits(a, bound), dec.parse/must(a); csv.row(values, delim?), csv.table(columns, rows, delim?).',
@@ -153,14 +180,50 @@ export function fillInstructionHeader(track: 'node' | 'rap'): string {
     '- Implement each rule as its decision says: "keep" and "open" as the original does; "change" as the owner\'s proposal says, not as the original does.',
     '- If you cannot write a body faithfully from the ABAP shown, answer "refused": { "reason": "…" } for that unit instead of guessing.',
     '- Answer with JSON only: { "units": [ { "unitId", "body", "guards": [], "needs": [] } ] } — one entry per unit asked for; "refused" only on a unit you refuse.',
-    'CODE-DRAFT RULES (by number, unchanged):',
-    fillRulesText(track),
+    opts.briefRules ? FILL_BRIEF_RULES_NOTE : 'CODE-DRAFT RULES (by number, unchanged):',
+    fillRulesText(track, opts.briefRules === true),
   ].join('\n');
 }
 
+/** What separates the header from the serialised request in every fill prompt. */
+export const FILL_REQUEST_MARK = '\n\nREQUEST (JSON):\n';
+
 /** The prompt string sent to `/api/gemini`: the header and the request serialised. */
-export function fillPrompt(request: FillRequest): string {
-  return `${fillInstructionHeader(request.track)}\n\nREQUEST (JSON):\n${JSON.stringify(request)}`;
+export function fillPrompt(request: FillRequest, opts: { briefRules?: boolean } = {}): string {
+  return `${fillInstructionHeader(request.track, opts)}${FILL_REQUEST_MARK}${JSON.stringify(request)}`;
+}
+
+/** The checks whose failures are gate errors: the activation check of an ABAP candidate, the type check of a Node one. */
+export const GATE_CHECKS = ['abap', 'types'] as const;
+/** A unit's failure line from the gate, as the orchestrator writes it (`<check>: <failure>`). */
+export const isGateFailureLine = (line: string): boolean => GATE_CHECKS.some((c) => line.startsWith(`${c}: `));
+
+/**
+ * Is this prompt a repair of gate errors only (owner decision 14.10.2026)? The request carries a repair entry for
+ * every unit it asks for, and each entry's failure names a gate error (`abap: …` or `types: …`). `/api/gemini`
+ * reads this before it lets a call marked `gateRepair` spend the lease's gate-repair calls: a fresh fill, or a
+ * repair of anything but the gate, never can. Pure; any prompt that is not a fill prompt answers false.
+ */
+export function isGateRepairPrompt(prompt: unknown): boolean {
+  if (typeof prompt !== 'string') return false;
+  const at = prompt.indexOf(FILL_REQUEST_MARK);
+  if (at < 0) return false;
+  let request: unknown;
+  try {
+    request = JSON.parse(prompt.slice(at + FILL_REQUEST_MARK.length));
+  } catch {
+    return false;
+  }
+  if (!isPlainObject(request) || request.schema !== 'cc.fill.v1' || !Array.isArray(request.units) || !Array.isArray(request.repair)) return false;
+  const asked = request.units.map((u) => (isPlainObject(u) ? u.unitId : null));
+  if (asked.length === 0 || asked.some((id) => typeof id !== 'string')) return false;
+  const gateRepaired = new Set(
+    request.repair
+      .filter((r): r is Record<string, unknown> => isPlainObject(r) && typeof r.unitId === 'string' && typeof r.failure === 'string')
+      .filter((r) => (r.failure as string).split('\n').some(isGateFailureLine))
+      .map((r) => r.unitId as string),
+  );
+  return asked.every((id) => gateRepaired.has(id as string));
 }
 
 export interface FillBundle {
@@ -172,7 +235,9 @@ export interface FillBundle {
    * What was left out to stay within the budget, per unit — said in the prompt as well. Since 3.0.13 only
    * context lines (named in `dropped`); the ABAP slice is never cut.
    */
-  trimmed: Array<{ unitId: string; what: 'context'; chars: number; dropped?: string[] }>;
+  trimmed: Array<{ unitId: string; what: 'context' | 'rules'; chars: number; dropped?: string[] }>;
+  /** The header carries the code-draft rules by title only (`fillInstructionHeader` `briefRules`). */
+  briefRules?: boolean;
 }
 
 export interface BundleOptions {
@@ -264,8 +329,8 @@ function requestOf(opts: BundleOptions, context: string, units: FillRequestUnit[
  * goes alone, and alone it may use up to `LEASED_PROMPT_MAX_CHARS` (28,000)
  * uncut (13.10.2026: cutting a unit to 14,000 dropped 108 of its ABAP lines,
  * and the model then — rightly — declined it every time). Never drops a unit;
- * a unit too large even for that is cut (context first, then its ABAP slice
- * from the end) and the cut is reported.
+ * a unit too large even for that gives up the code-draft rules' text (titles
+ * stay), then context lines — never its ABAP — and what it gave up is reported.
  */
 export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptions): FillBundle[] {
   const perCall = Math.max(1, Math.min(opts.unitsPerCall ?? FILL_UNITS_PER_CALL, 6));
@@ -301,21 +366,29 @@ export function bundleFills(units: readonly FillRequestUnit[], opts: BundleOptio
       bundles.push({ unitIds: [unit.unitId], request: aloneRequest, prompt: alonePrompt, trimmed: [] });
       continue;
     }
-    // Alone and still too large: give up context lines from the end — each one
-    // named in the prompt and in `trimmed` (3.0.13, B7). The ABAP is never cut:
-    // a body written from part of its routine reads as the whole routine. A
-    // unit that does not fit even without context goes out over the cap; the
-    // orchestrator does not send it and says why (`lease-prompt-too-large`).
-    const trimmed: FillBundle['trimmed'] = [];
-    let ctx = context;
-    const over = fillPrompt(requestOf(opts, ctx, [unit])).length - maxAlone;
-    if (over > 0 && ctx.length > 0) {
-      const cut = cutContext(ctx, Math.max(0, ctx.length - over - 120));
-      trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length, ...(cut.dropped?.length ? { dropped: cut.dropped } : {}) });
-      ctx = cut.text;
-    }
-    const request = requestOf(opts, ctx, [unit]);
-    bundles.push({ unitIds: [unit.unitId], request, prompt: fillPrompt(request), trimmed });
+    // Alone and still too large (14.10.2026): first the code-draft rules travel
+    // by their titles only, then — if that is not enough — context lines go from
+    // the end; each said in the prompt and in `trimmed` (3.0.13, B7). The
+    // generic rule text goes before the project's platform knowledge. The ABAP is
+    // never cut: a body written from part of its routine reads as the whole
+    // routine. A unit that does not fit even so goes out over the cap with its
+    // full header; the orchestrator does not send it and says why
+    // (`lease-prompt-too-large`).
+    const rulesChars = alonePrompt.length - fillPrompt(aloneRequest, { briefRules: true }).length;
+    const withContext = (briefRules: boolean): FillBundle => {
+      const trimmed: FillBundle['trimmed'] = briefRules ? [{ unitId: unit.unitId, what: 'rules', chars: rulesChars }] : [];
+      let ctx = context;
+      const over = fillPrompt(requestOf(opts, ctx, [unit]), { briefRules }).length - maxAlone;
+      if (over > 0 && ctx.length > 0) {
+        const cut = cutContext(ctx, Math.max(0, ctx.length - over - 120));
+        trimmed.push({ unitId: unit.unitId, what: 'context', chars: ctx.length - cut.text.length, ...(cut.dropped?.length ? { dropped: cut.dropped } : {}) });
+        ctx = cut.text;
+      }
+      const request = requestOf(opts, ctx, [unit]);
+      return { unitIds: [unit.unitId], request, prompt: fillPrompt(request, { briefRules }), trimmed, ...(briefRules ? { briefRules } : {}) };
+    };
+    const brief = withContext(true);
+    bundles.push(brief.prompt.length <= maxAlone ? brief : withContext(false));
   }
   close();
   return bundles;

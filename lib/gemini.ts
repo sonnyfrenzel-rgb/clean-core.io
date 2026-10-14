@@ -44,6 +44,11 @@ export interface CallOptions {
   lease?: LeaseReference;
   /** The answer shape within the stage (`lib/model-response-schema.ts`). */
   responseShape?: ResponseShape;
+  /**
+   * A leased call that repairs gate errors (owner decision 14.10.2026): it may spend the lease's gate-repair calls
+   * once its budget is used. The route honours the mark only on a prompt that is such a repair (`isGateRepairPrompt`).
+   */
+  gateRepair?: boolean;
 }
 
 export interface GeminiResult {
@@ -110,6 +115,7 @@ export async function callGeminiWithReceipt(
       ...(stage ? { stage } : {}),
       ...(options?.responseShape ? { responseShape: options.responseShape } : {}),
       ...(options?.lease ? { lease: { projectId: options.lease.projectId, leaseId: options.lease.leaseId } } : {}),
+      ...(options?.lease && options.gateRepair ? { gateRepair: true } : {}),
       // No `userId` and no `idToken` in the body. The route has never read
       // either — `app/api/gemini/route.ts:106` derives the identity from
       // `verifyRequestAuth(request)` and the handler destructures only the four

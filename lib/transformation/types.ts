@@ -538,7 +538,7 @@ export interface AcceptanceAdapter {
 
 /* ---------------------------------------------------------------- trace */
 
-export type FilledBy = 'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'not-filled';
+export type FilledBy = 'engine' | 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'not-filled';
 
 export interface TraceUnit {
   unitId: string;
@@ -605,7 +605,7 @@ export type GenerationStatus = 'complete' | 'partial' | 'not-activatable' | 'not
 /** What Track C reports per region after the fills, for `traceOf`. */
 export interface FillOutcome {
   regionId: string;
-  state: 'model' | 'model-repair-1' | 'model-repair-2' | 'refused' | 'unusable' | 'not-sent';
+  state: 'model' | 'model-repair-1' | 'model-repair-2' | 'model-repair-3' | 'refused' | 'unusable' | 'not-sent';
 }
 
 /* --------------------------------------------------------- fill contract */
@@ -651,7 +651,7 @@ export interface FillRequestUnit {
 /** A repair round's addition to a unit (§13.2 step 3). */
 export interface FillRepair {
   unitId: string;
-  round: 1 | 2;
+  round: 1 | 2 | 3;
   /** ≤ 2,000 characters. */
   failure: string;
   previousBody: string | null;
@@ -719,7 +719,7 @@ export type GenerationEvent =
       baseThrew?: string | null;
       ms: number;
     }
-  | { t: 'repair'; round: 1 | 2; unitIds: string[]; state: 'start' | 'done'; fixed?: number }
+  | { t: 'repair'; round: 1 | 2 | 3; unitIds: string[]; state: 'start' | 'done'; fixed?: number }
   | { t: 'fallback'; reason: string }
   | { t: 'stored' }
   | { t: 'failed'; message: string };

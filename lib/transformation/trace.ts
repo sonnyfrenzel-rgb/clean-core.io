@@ -28,6 +28,7 @@ function filledByOf(regionIds: readonly string[], outcomes: ReadonlyMap<string, 
   const states = regionIds.map((id) => outcomes.get(id));
   if (states.length === 0) return 'engine';
   if (states.some((s) => s === undefined || s === 'refused' || s === 'unusable' || s === 'not-sent')) return 'not-filled';
+  if (states.includes('model-repair-3')) return 'model-repair-3';
   if (states.includes('model-repair-2')) return 'model-repair-2';
   if (states.includes('model-repair-1')) return 'model-repair-1';
   return 'model';
@@ -148,6 +149,7 @@ const FILLED_WORD: Record<FilledBy, string> = {
   model: 'model proposal',
   'model-repair-1': 'model proposal (repair round 1)',
   'model-repair-2': 'model proposal (repair round 2)',
+  'model-repair-3': 'model proposal (repair round 3, gate errors)',
   'not-filled': 'not written — stub',
 };
 

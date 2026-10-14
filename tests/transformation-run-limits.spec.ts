@@ -17,7 +17,7 @@ import {
   remainingWords,
 } from '../lib/transformation/duration-estimate';
 import { preflight, type Preflight } from '../lib/transformation/preflight';
-import { LEASE_CODES, LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT, LEASES_PER_WINDOW, leaseBudget, leaseTtlMs } from '../lib/transformation/lease';
+import { LEASE_CODES, LEASE_GATE_REPAIR_CALLS, LEASE_MAX_CALLS, LEASE_MAX_CALLS_PER_GENERATION, LEASE_MAX_IN_FLIGHT, LEASES_PER_WINDOW, leaseBudget, leaseTtlMs } from '../lib/transformation/lease';
 import { LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 import { MODEL_CALL_DEADLINE_MS, MODEL_TIMEOUT_CODE } from '../lib/model-deadline';
 import { MODEL_INCOMPLETE_CODE } from '../lib/model-completion';
@@ -187,7 +187,9 @@ test.describe('before the click: the plan, its limits, and whether it can succee
     expect(p.budget).toBe(leaseBudget(30));
     const v = Object.fromEntries(p.limits.map((l) => [l.key, l.value]));
     expect(v.functions).toBe('30 functions in 30 fill calls');
-    expect(v.budget).toBe(`${LEASE_MAX_CALLS} model calls — 30 for the plan, 18 for retries and repairs (at most ${LEASE_MAX_CALLS})`);
+    expect(v.budget).toBe(
+      `${LEASE_MAX_CALLS} model calls — 30 for the plan, 18 for retries and repairs (at most ${LEASE_MAX_CALLS}); ${LEASE_GATE_REPAIR_CALLS} more only to repair activation or type-check errors (at most ${LEASE_MAX_CALLS_PER_GENERATION} per generation)`,
+    );
     expect(v.parallel).toBe('at most 4 calls');
     expect(v.deadline).toBe(`at most ${MODEL_CALL_DEADLINE_MS / 1000} seconds`);
     expect(v['time-limit']).toBe(`${Math.round(leaseTtlMs(p.budget) / 60_000)} minutes for the whole generation`);

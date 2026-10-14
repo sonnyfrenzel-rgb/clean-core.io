@@ -378,6 +378,9 @@ export interface EngineLedSummary {
   scaffoldFindings: string[];
   callsUsed: number;
   budget: number;
+  /** The calls held for gate repairs beyond `budget`, and how many were spent (owner decision 14.10.2026). */
+  gateRepairBudget?: number;
+  gateRepairCallsUsed?: number;
   rounds: number;
   stop: GenerationRunResult['stop'];
   scaffoldVersion: number;
@@ -420,6 +423,8 @@ export function assembleEngineLed(
     runId?: string | null;
     checks: CheckSummary[];
     budget: number;
+    /** The lease's calls held for gate repairs (owner decision 14.10.2026); 0 or absent: none. */
+    gateRepairBudget?: number;
     /** The activation check of the last round (ABAP route, 3.0.13); absent or null when it did not run. */
     activation?: AbapActivation | null;
     /** The type check of the last round (Node route, 3.0.13); null when it did not run. */
@@ -505,6 +510,7 @@ export function assembleEngineLed(
     scaffoldFindings: [...(result.scaffoldBaseline ?? []), ...result.scaffoldFindings],
     callsUsed: result.callsUsed,
     budget: options.budget,
+    ...(options.gateRepairBudget ? { gateRepairBudget: options.gateRepairBudget, gateRepairCallsUsed: result.gateRepairCallsUsed ?? 0 } : {}),
     rounds: result.rounds,
     stop: result.stop,
     scaffoldVersion: prep.scaffold.version,

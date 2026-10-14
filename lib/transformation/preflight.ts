@@ -13,7 +13,16 @@
 import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
 import { explainCode, type CodeExplanation } from './error-codes';
 import { LEASED_PROMPT_MAX_CHARS } from './fill-prompt';
-import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT, LEASE_MAX_PLANNED_CALLS, LEASES_PER_WINDOW, leaseBudget, leaseTtlMs } from './lease';
+import {
+  LEASE_GATE_REPAIR_CALLS,
+  LEASE_MAX_CALLS,
+  LEASE_MAX_CALLS_PER_GENERATION,
+  LEASE_MAX_IN_FLIGHT,
+  LEASE_MAX_PLANNED_CALLS,
+  LEASES_PER_WINDOW,
+  leaseBudget,
+  leaseTtlMs,
+} from './lease';
 import { expectedFillDuration, expectedWords, minutesWords } from './duration-estimate';
 
 export interface PreflightInput {
@@ -89,7 +98,9 @@ export function preflight(input: PreflightInput): Preflight {
     {
       key: 'budget',
       label: 'Call budget',
-      value: `${n(budget)} model calls — ${n(Math.min(planned, budget))} for the plan, ${n(retries)} for retries and repairs (at most ${n(LEASE_MAX_CALLS)})`,
+      // Owner decision 14.10.2026: the calls held for gate repairs are said apart — only repairs of activation or
+      // type-check errors can spend them, so they are no general raise of the budget.
+      value: `${n(budget)} model calls — ${n(Math.min(planned, budget))} for the plan, ${n(retries)} for retries and repairs (at most ${n(LEASE_MAX_CALLS)}); ${n(LEASE_GATE_REPAIR_CALLS)} more only to repair activation or type-check errors (at most ${n(LEASE_MAX_CALLS_PER_GENERATION)} per generation)`,
       attention: blocked?.code === 'plan-too-large',
     },
     { key: 'parallel', label: 'At once', value: `at most ${LEASE_MAX_IN_FLIGHT} calls` },
