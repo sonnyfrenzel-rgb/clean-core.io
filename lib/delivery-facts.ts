@@ -15,6 +15,7 @@
 
 import { storedGenerationRecord } from './transformation/generation-record';
 import { countEngineCases, engineCaseCountsSentence, engineCaseOf, engineCasesNotCoveredSentence } from './testing-engine-cases';
+import { abapTestEvidenceOfProject, abapTestEvidenceSentences } from './testing-abap-unit';
 import { deriveEngineCasesOf, engineCaseProvenance, engineCasesNotCountedSentence } from './engine-case-provenance';
 import { formatTextDate } from './format';
 import { sha256Hex } from './artefact-digest';
@@ -299,6 +300,14 @@ export function ruleFactsFromSource(source: string, tests?: RuleTestInput): Rule
  * nothing. Never "passed" without a receipt.
  */
 export function testFactsOf(project: HandoverProject, phases: readonly RailStep[]): TestFacts {
+  const facts = testFactsWithEngineCases(project, phases);
+  // 3.0.13 (6): on the ABAP route, the test methods that are tests — calling the code under test, not skipping —
+  // counted apart from those that are not, and the original's demo cases carried over (lib/testing-abap-unit.ts).
+  const abap = abapTestEvidenceOfProject(project);
+  return abap ? { ...facts, detail: [...facts.detail, ...abapTestEvidenceSentences(abap)] } : facts;
+}
+
+function testFactsWithEngineCases(project: HandoverProject, phases: readonly RailStep[]): TestFacts {
   const facts = testFactsWithoutOrigins(project, phases);
   // 3.0.12 — STATUS.md says how many cases the engine derived from the
   // original and how many the model wrote, counted apart.

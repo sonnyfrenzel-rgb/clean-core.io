@@ -17,6 +17,8 @@ import { materialRules, materialTables, ruleTracePromptSection, withRuleTrace, t
 import { withInvariants } from '@/lib/testing-invariants';
 import { TESTING_PROMPT_LIMIT, TESTING_PROMPT_MARGIN, codeForTestingPrompt, testingCodeNote } from '@/lib/testing-prompt-code';
 import { deriveEngineCases, engineCasePromptSection, withEngineCases, type EngineTestCase } from '@/lib/testing-engine-cases';
+import { abapTestProblemsSentence, checkAbapTestClass } from '@/lib/testing-abap-unit';
+import { sandboxFilesFromStoredCode } from '@/lib/test-sandbox/files';
 
 /** What the testing stage asks the model for, in the retry and failure sentences. */
 const TEST_SUITE_NOUN = 'test suite';
@@ -147,6 +149,9 @@ ${generatedText}
         
         CRITICAL GUIDELINES FOR ABAP UNIT:
         - The test class MUST use clean ABAP Cloud syntax: \`CLASS ltcl_test DEFINITION FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.\`
+        - It is a LOCAL test class (never PUBLIC): it goes into the test include of the class under test. Do not name a class ltd_access, ltc_engine_cases or ltc_golden_master — the product writes those itself.
+        - Call ONLY methods the classes and interfaces shown above declare, with ONLY the parameter names they declare. A method that does not exist does not activate — the product checks every call against the declarations and refuses the class otherwise.
+        - Every class and method name has at most 30 characters.
         - Use local test doubles and stubs to mock standard released table/view accesses.
         - TEST CASE ID NAMING CONVENTION (CRITICAL): The test method name in the local test class MUST incorporate or refer to the test case ID (e.g. \`methods tc_01_create_sales_order for testing.\`) so they can be mapped programmatically.
         - Use \`cl_abap_unit_test=>fail( ... )\` or \`cl_aunit_assert=>assert_equals( ... )\` or \`cl_aunit_assert=>assert_initial( ... )\` for assertion checking.
@@ -210,71 +215,96 @@ ${generatedText}
       // Only the code under test, within what is left of the prompt limit
       // (dev acceptance 14.10.2026: the SD package went past it).
       const codeView = codeForTestingPrompt(project?.generatedCode, Math.max(0, TESTING_PROMPT_LIMIT - TESTING_PROMPT_MARGIN - buildPrompt('').length));
-      const prompt = buildPrompt(`${codeView.text}${testingCodeNote(codeView)}`);
-      
-      // The same standard as the Transformation stage (owner report
-      // 03.10.2026, `lib/model-json.ts`): the request carries the stage's
-      // schema (`lib/model-response-schema.ts`), the parse tolerates the
-      // spelling slips it can read without guessing — a fence, prose around
-      // the object, an escape such as ABAP's `\{` inside a string — and an
-      // answer that is still unusable (not JSON, cut off, empty) gets one
-      // automatic second call. A content-filter block, a rate limit or a
-      // switched-off stage is not retried: the same request meets the same
-      // refusal. Nothing is stored from a failed attempt.
-      //
-      // A plain `JSON.parse(responseText || '{}')` used to stand here: an
-      // empty answer became `{}`, passed the shape check (every field may be
-      // absent) and was stored as a suite with no scenarios.
-      const MAX_ATTEMPTS = 2;
-      let result: Record<string, unknown> | null = null;
-      let failure: UnusableAnswer = 'not-json';
-      let attempts = 0;
-      while (!result && attempts < MAX_ATTEMPTS) {
-        if (attempts > 0) setRetrying(retryNotice(failure, TEST_SUITE_NOUN));
-        attempts++;
-        let responseText: string;
-        try {
-          responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
-        } catch (callErr) {
-          const unusable = unusableFromModelError(callErr);
-          if (!unusable) throw callErr;
-          failure = unusable;
-          continue;
-        }
-        const read = parseModelJsonObject(responseText);
-        if (read.ok) result = read.value;
-        else failure = read.reason;
-      }
-      if (!result) {
-        throw new Error(unusableAnswerMessage(failure, attempts, TEST_SUITE_NOUN));
-      }
+      const basePrompt = buildPrompt(`${codeView.text}${testingCodeNote(codeView)}`);
+      // 3.0.13 (6): the model's ABAP Unit class is checked against the declarations of the package it tests
+      // (`lib/testing-abap-unit.ts`). A class that calls an undeclared method or parameter, declares a name over
+      // 30 characters, or is not a local test class gets one repair round with the problems named; then it is refused.
+      const packageSources = isAbapCloud && typeof project?.generatedCode === 'string' ? sandboxFilesFromStoredCode(project.generatedCode) : [];
+      let repairReason: string | null = null;
+      let checkedAnswer: Record<string, unknown> | null = null;
+      for (let round = 0; round < 2 && !checkedAnswer; round++) {
+        const prompt = repairReason
+          ? `${basePrompt}\n\nYOUR PREVIOUS ABAP UNIT TEST CLASS WAS REFUSED, because it does not fit the classes under test:\n${repairReason}\nWrite the whole answer again with a test class that calls only declared methods and parameters.`
+          : basePrompt;
 
-      // Parsing is not validation. `JSON.parse` proves the answer was JSON and
-      // nothing else, and every `|| []` / `|| {}` fallback below waves a truthy
-      // object of the wrong shape straight through — which is how `testCases`
-      // came to be an object that `testing/page.tsx` asked for `.map`
-      // (roadmap 17.2; the same defect `0cb64a5` fixed in `documentation`).
-      // The gate belongs here, before the write, so a refused answer changes
-      // nothing: no Firestore update, no `status: 'testing'`, and the suite
-      // that was there before is still there.
-      const shape = checkTestSuiteShape(result);
-      if (!shape.ok) {
-        throw new Error(testSuiteRejectionMessage(shape.problems));
+        // The same standard as the Transformation stage (owner report
+        // 03.10.2026, `lib/model-json.ts`): the request carries the stage's
+        // schema (`lib/model-response-schema.ts`), the parse tolerates the
+        // spelling slips it can read without guessing — a fence, prose around
+        // the object, an escape such as ABAP's `\{` inside a string — and an
+        // answer that is still unusable (not JSON, cut off, empty) gets one
+        // automatic second call. A content-filter block, a rate limit or a
+        // switched-off stage is not retried: the same request meets the same
+        // refusal. Nothing is stored from a failed attempt.
+        //
+        // A plain `JSON.parse(responseText || '{}')` used to stand here: an
+        // empty answer became `{}`, passed the shape check (every field may be
+        // absent) and was stored as a suite with no scenarios.
+        const MAX_ATTEMPTS = 2;
+        let result: Record<string, unknown> | null = null;
+        let failure: UnusableAnswer = 'not-json';
+        let attempts = 0;
+        while (!result && attempts < MAX_ATTEMPTS) {
+          if (attempts > 0) setRetrying(retryNotice(failure, TEST_SUITE_NOUN));
+          attempts++;
+          let responseText: string;
+          try {
+            responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
+          } catch (callErr) {
+            const unusable = unusableFromModelError(callErr);
+            if (!unusable) throw callErr;
+            failure = unusable;
+            continue;
+          }
+          const read = parseModelJsonObject(responseText);
+          if (read.ok) result = read.value;
+          else failure = read.reason;
+        }
+        if (!result) {
+          throw new Error(unusableAnswerMessage(failure, attempts, TEST_SUITE_NOUN));
+        }
+
+        // Parsing is not validation. `JSON.parse` proves the answer was JSON and
+        // nothing else, and every `|| []` / `|| {}` fallback below waves a truthy
+        // object of the wrong shape straight through — which is how `testCases`
+        // came to be an object that `testing/page.tsx` asked for `.map`
+        // (roadmap 17.2; the same defect `0cb64a5` fixed in `documentation`).
+        // The gate belongs here, before the write, so a refused answer changes
+        // nothing: no Firestore update, no `status: 'testing'`, and the suite
+        // that was there before is still there.
+        const shape = checkTestSuiteShape(result);
+        if (!shape.ok) {
+          throw new Error(testSuiteRejectionMessage(shape.problems));
+        }
+
+        // An answer without a single scenario is no suite. It used to be stored
+        // — over the suite that was there — and only then reported.
+        const scenarios = (result as { testCases?: unknown[] }).testCases;
+        if (!scenarios || scenarios.length === 0) {
+          throw new Error('The model answered without a single test scenario. Nothing was saved — the previous version is untouched. Generate again.');
+        }
+
+        if (packageSources.length > 0) {
+          const suite = (result as { testSuite?: { code?: unknown } }).testSuite;
+          const check = checkAbapTestClass(typeof suite?.code === 'string' ? suite.code : '', packageSources);
+          if (!check.ok) {
+            repairReason = abapTestProblemsSentence(check.problems);
+            if (round === 1) throw new Error(`${repairReason} Nothing was saved — the previous version is untouched.`);
+            setRetrying('The ABAP Unit test class calls what the class under test does not declare — asking the model once more with the problems named…');
+            continue;
+          }
+        }
+        checkedAnswer = result;
       }
+      if (!checkedAnswer) throw new Error('The model answered without a usable test suite. Nothing was saved — the previous version is untouched. Generate again.');
 
       // The shape check has run, so each field is absent or of its type.
-      const answer = result as {
-        testCases?: Array<Record<string, unknown>>;
+      const answer = checkedAnswer as {
+        testCases: Array<Record<string, unknown>>;
         testSuite?: TestSuite;
         coverageEstimate?: CoverageEstimate;
         manualTestingRequirements?: ManualTestRequirement[];
       };
-
-      // An answer without a single scenario is no suite. It used to be stored
-      // — over the suite that was there — and only then reported.
-      if (!answer.testCases || answer.testCases.length === 0) {
-        throw new Error('The model answered without a single test scenario. Nothing was saved — the previous version is untouched. Generate again.');
-      }
 
       // A malformed `derivedFrom` is dropped and recorded as not stated; the
       // scenario itself is kept exactly as the model wrote it.
