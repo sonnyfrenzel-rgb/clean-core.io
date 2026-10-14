@@ -68,12 +68,22 @@ export function traceOf(plan: UnitPlan, scaffold: Pick<Scaffold, 'files' | 'regi
       });
     }
   }
+  // Where each unit lives in this package (3.0.13): on the ABAP route the method of the class that holds it —
+  // never the Node module the plan names for the other route (`srv/steps/*.ts`).
+  const abapHome = (u: (typeof plan.units)[number]): { fn: string; file: string } | null => {
+    if (scaffold.track !== 'rap') return null;
+    const region = scaffold.regions.find((r) => r.unitId === u.id && r.regionId === u.id);
+    const fn = functions.find((f) => f.file.endsWith('.abap') && f.name.toLowerCase() === u.rapName.toLowerCase() && (!region || f.file === region.file));
+    const file = fn?.file ?? region?.file ?? scaffold.files.find((f) => /_logic\.clas\.abap$/i.test(f.path))?.path;
+    return file ? { fn: u.rapName, file } : null;
+  };
   const units: Trace['units'] = plan.units.map((u) => {
     const regions = scaffold.regions.filter((r) => r.unitId === u.id).map((r) => r.regionId);
+    const home = abapHome(u);
     return {
       unitId: u.id,
-      fn: u.fn,
-      file: u.file,
+      fn: home?.fn ?? u.fn,
+      file: home?.file ?? u.file,
       title: u.title,
       kind: u.kind,
       abap: u.abap,
@@ -122,9 +132,14 @@ export function traceMarkdown(trace: Trace): string {
   const lines: string[] = [];
   const written = trace.units.filter((u) => u.filledBy !== 'not-filled' && u.filledBy !== 'engine').length;
   const stubs = trace.units.filter((u) => u.filledBy === 'not-filled').length;
+  const abap = trace.units.some((u) => u.file.endsWith('.abap'));
   lines.push(`# How this code was built — ${trace.program ?? 'the program'}`);
   lines.push('');
-  lines.push('Clean-Core.io wrote the frame of every function from the original (types, input checks, guards, run store, CSV, call contract); a model wrote the business logic between the fill markers. A model-written body is a proposal, never proven.');
+  lines.push(
+    abap
+      ? 'Clean-Core.io wrote the frame of every method from the original (the classes, types, input checks, guards and the access layer); a model wrote the business logic between the fill markers. A model-written body is a proposal, never proven.'
+      : 'Clean-Core.io wrote the frame of every function from the original (types, input checks, guards, run store, CSV, call contract); a model wrote the business logic between the fill markers. A model-written body is a proposal, never proven.',
+  );
   lines.push('');
   lines.push(`- Functions anchored to ABAP lines: ${trace.units.length} (${written} written by the model, ${stubs} left as stubs).`);
   lines.push(`- Open rules (kept as the original until decided): ${trace.openRules.length ? trace.openRules.join(', ') : 'none'}.`);
@@ -136,7 +151,8 @@ export function traceMarkdown(trace: Trace): string {
   lines.push(`- Source sha256 ${trace.sourceSha256}; scaffold v${trace.scaffoldVersion}, digest ${trace.scaffoldDigest.slice(0, 16)}…${trace.runId ? `; built from run ${trace.runId}` : ''}.`);
   const g = trace.generation;
   if (g) {
-    lines.push(`- Generation: ${g.status === 'complete' ? 'complete' : 'partial'} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
+    const state = g.status === 'not-activatable' ? 'generated — not activatable (abaplint finds parser or syntax errors; see STATUS.md)' : g.status === 'complete' ? 'complete' : 'partial';
+    lines.push(`- Generation: ${state} — ${g.written} of ${g.units} functions written, ${g.repaired} after a repair round; ${g.callsUsed} model calls, ${g.rounds} repair round${g.rounds === 1 ? '' : 's'}.`);
     for (const c of orderedChecks(g.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
     if (g.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
     for (const n of g.notRun) lines.push(`- Not run (${n.kind}): ${n.reason}`);

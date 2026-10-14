@@ -41,7 +41,20 @@ import type { ScoreHeroModel } from './score-hero';
 import type { ScoreRule } from './score-rule';
 import { RULE_STATE_WORDS, ruleRegisterCsv, ruleRegisterMarkdown, ruleStateCounts, type RuleRegister } from './rule-register';
 import { generatedCodeLints, lintCountLine, type GeneratedCodeLintFinding } from './generated-code-lints';
-import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from './transformation/check-words';
+import {
+  ABAP_CHECK_JSON_PATH,
+  ABAP_CHECK_MD_PATH,
+  ENGINE_CODE_NOTE,
+  PAGE_REPORTED_NOTE,
+  activationJson,
+  activationMarkdown,
+  activationStatusPhrase,
+  checkPhrase,
+  hasPageReportedChecks,
+  orderedChecks,
+  type AbapActivation,
+} from './transformation/check-words';
+import { SAP_STUBS_FOLDER, sapStubPackageFiles } from './transformation/abap-sap-stubs';
 import { abapGitXmlHolds } from './transformation/abapgit-check';
 import { TARGET_EDITION_NAMES } from './sap-naming';
 
@@ -54,15 +67,19 @@ import { TARGET_EDITION_NAMES } from './sap-naming';
  *   - `stub` — present, but a sketch: it does not do what its name says, or it
  *     is not bound to anything that would call it;
  *   - `proposed` — describes or models something the package does not run;
- *   - `missing` — named by the architecture or the build, not in the package.
+ *   - `missing` — named by the architecture or the build, not in the package;
+ *   - `open` (3.0.13, ABAP) — generated, but not finished: a method that is a
+ *     stub, only raises an exception (an SAP access still to be bound) or has
+ *     an empty body, or an object abaplint cannot activate. The note says which.
  */
-export type PackageStatus = 'implemented' | 'stub' | 'proposed' | 'missing';
+export type PackageStatus = 'implemented' | 'stub' | 'proposed' | 'missing' | 'open';
 
 export const PACKAGE_STATUS_LEGEND: Readonly<Record<PackageStatus, string>> = Object.freeze({
   implemented: 'Holds working code or configuration for what it names. Not a statement that it was run or approved.',
   stub: 'Present, but a sketch: it does not do what its name says, or nothing binds or calls it.',
   proposed: 'Describes or models something this package does not run.',
   missing: 'Named by the architecture or the build, not in this package.',
+  open: 'Generated, but not finished: a method is a stub, only raises an exception or is empty, or abaplint finds a parser or syntax error in it. The note says which.',
 });
 
 /** Who wrote a file. */
@@ -778,6 +795,51 @@ function originOf(e: BundleEntry, facts: DeliveryFacts): FileOrigin {
   return 'generated';
 }
 
+/**
+ * The methods of an ABAP source that are not finished (3.0.13): a body that is
+ * empty, that only raises an exception (an access method the reader still
+ * binds to a released API), or that raises the generation's own "not filled"
+ * exception (a stub). Comments, blank lines and pragmas are not statements.
+ */
+export function abapUnfinishedMethods(content: string): Array<{ method: string; why: 'empty' | 'raises' | 'stub' }> {
+  const out: Array<{ method: string; why: 'empty' | 'raises' | 'stub' }> = [];
+  const re = /^[ \t]*METHOD\s+([\w~/]+)[^.\n]*\.([\s\S]*?)^[ \t]*ENDMETHOD\s*\./gim;
+  for (let m = re.exec(content); m !== null; m = re.exec(content)) {
+    const body = m[2]
+      .split('\n')
+      .filter((l) => !/^\s*(?:\*|")/.test(l))
+      .map((l) => l.replace(/"[^'`|]*$/, '').trim())
+      .join(' ')
+      .trim();
+    const statements = body.split(/\.(?=\s|$)/).map((x) => x.trim()).filter(Boolean);
+    if (statements.length === 0) out.push({ method: m[1], why: 'empty' });
+    else if (statements.every((x) => /^RAISE\s+EXCEPTION\b/i.test(x))) out.push({ method: m[1], why: statements.some((x) => /_nofill\b/i.test(x)) ? 'stub' : 'raises' });
+  }
+  return out;
+}
+
+const OPEN_WORDS: Record<'empty' | 'raises' | 'stub', [string, string]> = {
+  stub: ['is still a stub (not written)', 'are still stubs (not written)'],
+  raises: ['only raises an exception — an access still to be bound to a released API', 'only raise an exception — accesses still to be bound to a released API'],
+  empty: ['has an empty body', 'have an empty body'],
+};
+
+/** Why an ABAP source under `src/` is open, or nothing: its unfinished methods, and abaplint's errors in it. */
+export function abapOpenReasons(path: string, content: string, activation: AbapActivation | null): string[] {
+  const reasons: string[] = [];
+  const methods = abapUnfinishedMethods(content);
+  for (const why of ['stub', 'raises', 'empty'] as const) {
+    const of = methods.filter((m) => m.why === why).map((m) => m.method);
+    if (!of.length) continue;
+    const named = of.slice(0, 6).join(', ') + (of.length > 6 ? ` and ${of.length - 6} more` : '');
+    reasons.push(`${of.length} method${of.length === 1 ? '' : 's'} ${OPEN_WORDS[why][of.length === 1 ? 0 : 1]} (${named})`);
+  }
+  if (activation && activation.paths.includes(path) && activation.findings.some((f) => f.path === path && (f.kind === 'parser' || f.kind === 'syntax'))) {
+    reasons.push(`abaplint finds parser or syntax errors in it (${activationStatusPhrase(activation)}; see ${ABAP_CHECK_MD_PATH})`);
+  }
+  return reasons;
+}
+
 /** Kind, status and a note for one file — from its path, its content and what the package reads as. */
 export function classifyFile(e: BundleEntry, reading: PackageReading, facts: DeliveryFacts): { kind: FileKind; status: PackageStatus; note: string | null } {
   const p = e.path;
@@ -829,7 +891,15 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
       note: stub ? 'Fewer than five lines of code, or it throws "not implemented".' : null,
     };
   }
+  if (p.startsWith(`${SAP_STUBS_FOLDER}/`)) return { kind: 'lint-config', status: 'implemented', note: 'Declarations of SAP classes for abaplint only (abaplint.json names this folder); not part of the abapGit import.' };
+  if (p === ABAP_CHECK_JSON_PATH || p === ABAP_CHECK_MD_PATH) return { kind: 'documentation', status: 'implemented', note: "The server's abaplint check of the package before it was stored." };
   if (/\.clas\.abap$/i.test(p) && /test/i.test(p)) return { kind: 'test-suite', status: 'implemented', note: 'ABAP Unit class — runs only inside an SAP system.' };
+  if (/\.abap$/i.test(p) && p.startsWith('src/')) {
+    const open = abapOpenReasons(p, e.content, facts.generation?.activation ?? null);
+    return open.length
+      ? { kind: 'abap-object', status: 'open', note: `${open.join('; ')}. Not imported into or activated in an SAP system.` }
+      : { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
+  }
   if (/\.(abap|asddls|asbdef|asdcls|srvdsrv|assrvd|assrvb)$/i.test(p)) return { kind: 'abap-object', status: 'implemented', note: 'Not imported into or activated in an SAP system.' };
   // A table is its abapGit XML: abapGit has no source form of a table (3.0.12, abapGit package).
   if (/^src\/.+\.tabl\.xml$/i.test(p)) {
@@ -847,12 +917,19 @@ export function classifyFile(e: BundleEntry, reading: PackageReading, facts: Del
 export function packageCapabilities(reading: PackageReading, facts: DeliveryFacts): Capability[] {
   if (reading.kind === 'abap') {
     return [
-      {
-        key: 'abap-objects',
-        label: 'ABAP objects for an abapGit import',
-        status: 'implemented',
-        evidence: 'Sources and metadata under src/. Not imported into, activated in or run in an SAP system.',
-      },
+      facts.generation?.activation && !facts.generation.activation.activatable
+        ? {
+            key: 'abap-objects',
+            label: 'ABAP objects for an abapGit import',
+            status: 'open',
+            evidence: `Sources and metadata under src/, ${activationStatusPhrase(facts.generation.activation)} — see ${ABAP_CHECK_MD_PATH}. Not imported into, activated in or run in an SAP system.`,
+          }
+        : {
+            key: 'abap-objects',
+            label: 'ABAP objects for an abapGit import',
+            status: 'implemented',
+            evidence: 'Sources and metadata under src/. Not imported into, activated in or run in an SAP system.',
+          },
       {
         key: 'abap-unit',
         label: 'ABAP Unit tests',
@@ -1029,7 +1106,10 @@ const DESCRIPTIONS: Array<[RegExp, (reading: PackageReading, facts: DeliveryFact
   [/^test\/engine-cases\.json$/, () => 'Boundary cases Clean-Core.io derived from the original without a model (declared types, checks, input contract, run identity): input and expected outcome (also in machine form for the call contract srv/engine-contract), traced to a rule id or a declared field and line.'],
   [/^erp-triggers\/.+\.abap$/i, () => 'ABAP event publisher sketch — not bound to a BAdI or standard event, not compiled in SAP.'],
   [/^\.abapgit\.xml$/, () => 'abapGit repository settings (language, starting folder, folder logic).'],
-  [/^abaplint\.json$/, () => 'abaplint rules for the sources under src/.'],
+  [/^abaplint\.json$/, () => 'abaplint rules for the sources under src/ — the configuration the server checked the package with.'],
+  [/^checks\/sap-stubs\//, () => 'Declaration of an SAP class the objects inherit from, for abaplint only (not imported by abapGit).'],
+  [/^checks\/abaplint\.md$/, () => "The server's abaplint check of the package: parser and syntax errors, and what it could not see."],
+  [/^checks\/abaplint\.json$/, () => 'The same check as data.'],
   [/\.asddls$/i, () => 'CDS data definition (for abapGit).'],
   [/\.asbdef$/i, () => 'RAP behavior definition (for abapGit).'],
   [/\.asdcls$/i, () => 'CDS access control (for abapGit).'],
@@ -1217,7 +1297,9 @@ export function generationLine(g: DeliveryFacts['generation'] | null): string | 
   }
   const e = g.engine;
   if (!e) return null;
-  return `Engine scaffold and model-written function bodies — ${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}${e.status === 'partial' ? '; partial' : ''}. See "How this code was built" and TRACE.md.`;
+  // 3.0.13: on the ABAP route the server's activation check is the status — a record from before keeps its words.
+  const activation = g.activation ? `; ${activationStatusPhrase(g.activation)}` : e.status === 'not-activatable' ? '; generated — not activatable' : '';
+  return `Engine scaffold and model-written function bodies — ${e.written} of ${e.units} functions written${e.repaired ? `, ${e.repaired} after a repair round` : ''}${e.status === 'partial' ? '; partial' : ''}${activation}. See "How this code was built" and TRACE.md.`;
 }
 
 /** The "How this code was built" section of STATUS.md: counts, what is not written and why, the checks. */
@@ -1233,8 +1315,9 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   lines.push(
     'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is a model proposal, never proven.',
     '',
-    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${e.status}**.`,
+    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${generationStatusWords(g)}**.`,
   );
+  if (g.activation) lines.push(...activationLines(g.activation));
   for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
   for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
   for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
@@ -1245,6 +1328,19 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   lines.push(`- Model calls: ${e.callsUsed} of ${e.budget} under one lease; ${e.rounds} repair round${e.rounds === 1 ? '' : 's'}.`);
   lines.push('- Every function, its ABAP lines, its rules and who wrote it: `TRACE.md` and `traceability.json`.', '');
   return lines;
+}
+
+/** The generation's status in STATUS.md: the server's activation check where there is one (3.0.13), else the record's word. */
+function generationStatusWords(g: NonNullable<DeliveryFacts['generation']>): string {
+  const e = g.engine!;
+  if (g.activation && !g.activation.activatable) return activationStatusPhrase(g.activation);
+  if (e.status === 'not-activatable') return 'generated — not activatable';
+  return e.status;
+}
+
+/** The activation check in STATUS.md, with where the raw findings are. */
+function activationLines(a: AbapActivation): string[] {
+  return [`- Activation check (Clean-Core.io's server, before saving): ${activationStatusPhrase(a)}. Every finding: \`${ABAP_CHECK_MD_PATH}\` and \`${ABAP_CHECK_JSON_PATH}\`.`];
 }
 
 /** The "Code checks" section of STATUS.md: counts by severity, then every finding with its file and line. */
@@ -1680,6 +1776,14 @@ export interface FinishedPackage {
   lints: GeneratedCodeLintFinding[] | null;
 }
 
+/** `checks/abaplint.md`, with the ABAP sources added after the check (an ABAP Unit class from Testing) named as not checked. */
+function activationMarkdownFor(a: AbapActivation, entries: readonly BundleEntry[]): string {
+  const later = entries.filter((e) => /^src\/.+\.(?:abap|asddls)$/i.test(e.path) && a.paths.length > 0 && !a.paths.includes(e.path)).map((e) => e.path);
+  const md = activationMarkdown(a);
+  if (!later.length) return md;
+  return `${md}\nNot part of this check — added to the package after the code was stored (for example the ABAP Unit class written in Testing): ${later.map((p) => `\`${p}\``).join(', ')}. Run abaplint over the package to check them too.\n`;
+}
+
 /**
  * The finished package: the templates applied (Node packages), then README.md,
  * docs/decision.md, STATUS.md and manifest.json written from what is there.
@@ -1700,6 +1804,18 @@ export function finishDeliveryPackage(input: {
     const applied = applyNodeTemplates(entries, { name: facts.projectName, layout: input.layout });
     entries = applied.entries;
     notes = applied.notes;
+  }
+  // 3.0.13: the server's activation check travels with an ABAP package, and the SAP declarations its abaplint.json names.
+  const activation = facts.generation?.activation ?? null;
+  if (entries.some((e) => e.path === 'abaplint.json')) {
+    entries = [...entries.filter((e) => !e.path.startsWith(`${SAP_STUBS_FOLDER}/`)), ...sapStubPackageFiles().map((f) => ({ ...f, origin: 'template' as const }))];
+  }
+  if (activation) {
+    entries = [
+      ...entries.filter((e) => e.path !== ABAP_CHECK_JSON_PATH && e.path !== ABAP_CHECK_MD_PATH),
+      { path: ABAP_CHECK_MD_PATH, content: activationMarkdownFor(activation, entries), origin: 'engine' as const },
+      { path: ABAP_CHECK_JSON_PATH, content: activationJson(activation), origin: 'engine' as const },
+    ];
   }
   const reading = readPackage(entries, facts.route);
   const capabilities = packageCapabilities(reading, facts);

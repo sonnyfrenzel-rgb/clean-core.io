@@ -6,7 +6,7 @@ import { generatedCodeLints } from '../lib/generated-code-lints';
 import { buildRapScaffold, planUnits, readEngineFacts } from '../lib/transformation';
 import { abapDeliveryOf } from '../lib/transformation/abap-delivery';
 import { accessPointsOf } from '../lib/transformation/access-layer';
-import { abaplintCheckEntries, abaplintPackageCheck, CHECK_SYNTAX_NOT_RUN, withAbaplint } from '../lib/transformation/abaplint-check';
+import { abaplintCheckEntries, abaplintPackageCheck, withAbaplint } from '../lib/transformation/abaplint-check';
 import { ABAPLINT_ALLOWED_OBJECT_TYPES, ABAPLINT_CONFIG, abaplintConfig, abaplintConfigJson } from '../lib/transformation/abaplint-config';
 import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
 import { OPEN_MARKER } from '../lib/transformation/scaffold-rap';
@@ -268,7 +268,9 @@ test.describe('B5 — abaplint under ABAP Cloud syntax, recorded as passed, fail
     expect(r.checked).toBe(scaffold.files.filter((f) => /\.(?:clas|intf)(?:\.\w+)?\.abap$|\.ddls\.asddls$|\.tabl\.xml$/.test(f.path)).length);
     const unread = r.notRun.map((n) => n.path.split('.').slice(-2).join('.')).sort();
     expect(unread).toEqual(['bdef.asbdef', 'dcls.asdcls', 'dcls.asdcls', 'srvb.xml', 'srvd.srvdsrv']);
-    expect(r.checksNotRun).toEqual([{ check: 'check_syntax', reason: CHECK_SYNTAX_NOT_RUN }]);
+    // 3.0.13: the semantic check runs too, and the scaffold passes it — 0 parser, 0 syntax errors in its own objects.
+    expect(r.checksNotRun).toEqual([]);
+    expect(r.activation).toMatchObject({ config: 'shipped', parserErrors: 0, syntaxErrors: 0, activatable: true });
   });
 
   test('a statement ABAP Cloud does not have fails; an empty package is not run — never a pass', () => {
@@ -287,15 +289,16 @@ test.describe('B5 — abaplint under ABAP Cloud syntax, recorded as passed, fail
     expect(unreadOnly.notRun).toEqual([{ path: 'src/zx.dcls.asdcls', reason: 'abaplint has no parser for access controls' }]);
   });
 
-  test('the record the server writes: abaplint as a check, the semantic check as not run; the page cannot send its own', () => {
+  test('the record the server writes: abaplint as a check, what it could not see as not run; the page cannot send its own', () => {
     const passed = abaplintPackageCheck(rap(fixture('co-shape')).scaffold.files);
     const entries = abaplintCheckEntries(passed);
-    expect(entries.checks).toEqual([{ kind: 'abaplint', total: passed.checked, failed: 0 }]);
-    expect(entries.notRun.map((n) => n.kind)).toEqual(['abaplint-syntax']);
+    // 3.0.13: the files of the package's own objects, counted three ways (parser and syntax).
+    expect(entries.checks).toEqual([{ kind: 'abaplint', total: passed.activation!.files, failed: 0, passed: passed.activation!.files, notRun: 0 }]);
+    expect(entries.notRun.map((n) => n.kind)).toEqual(['abaplint-sap', 'abaplint-unread']);
     const forged = { checks: [{ kind: 'lint', total: 0, failed: 0 }, { kind: 'abaplint', total: 99, failed: 0 }], notRun: [] as Array<{ kind: string; reason: string }> };
     const merged = withAbaplint(forged, abaplintPackageCheck([]));
     expect(merged.checks).toEqual([{ kind: 'lint', total: 0, failed: 0 }]);
-    expect(merged.notRun.map((n) => n.kind)).toEqual(['abaplint', 'abaplint-syntax']);
+    expect(merged.notRun.map((n) => n.kind)).toEqual(['abaplint']);
     const route = fs.readFileSync(path.join(ROOT, 'app', 'api', 'projects', '[projectId]', 'contract', 'route.ts'), 'utf8');
     expect(route).toContain("decision.isAbapCloud ? await import('@/lib/transformation/abaplint-check') : null");
     expect(route).toContain('lint.withAbaplint(record.engine, abaplint)');

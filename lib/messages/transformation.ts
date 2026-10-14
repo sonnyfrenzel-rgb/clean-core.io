@@ -124,6 +124,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.stage.repairsNote': 'only the failing functions go back',
   'transformation.check.guards': 'Body guards — no body touched engine-written code',
   'transformation.check.lint': 'Lint checks of the candidate',
+  'transformation.check.abap': 'Activation check — abaplint, parser and syntax, with the package’s own abaplint.json',
   'transformation.check.cases': 'Engine cases through the call contract',
   'transformation.check.probes': 'Failure-pattern probes',
   'transformation.unitsTitle': 'Functions',
