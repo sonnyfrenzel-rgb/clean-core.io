@@ -13,6 +13,8 @@ import {
   loadPrograms,
   loadSource,
   main,
+  harnessNode,
+  localVerifyRoute,
   type ProgramEntry,
   type Row,
   type RunRecord,
@@ -132,8 +134,27 @@ test.describe('acceptance suite', () => {
     expect(mod.validateScenarioFile(proseAsMachine, ['po-mm-po-approval']).join()).toMatch(/machine expectation must be an object/);
   });
 
+  test('the harness step stays on this Node only when told to, and says so', () => {
+    const self = harnessNode({ ACCEPTANCE_HARNESS_NODE: 'self' });
+    if (Number(process.versions.node.split('.')[0]) >= 25) expect(self).toEqual({ binary: null, version: process.version, reason: null });
+    else expect(self).toMatchObject({ binary: null, version: process.version, reason: expect.stringMatching(/ACCEPTANCE_HARNESS_NODE=self/) });
+  });
+
+  test("the loop asks the route's own checks: abapCheck for an ABAP candidate, typeCheckCandidate for a Node one", async () => {
+    const route = localVerifyRoute();
+    const signal = new AbortController().signal;
+    const abap = await route([{ path: 'src/zcl_x.clas.abap', content: 'CLASS zcl_x DEFINITION PUBLIC.\nENDCLASS.\nCLASS zcl_x IMPLEMENTATION.\nENDCLASS.\n' }], signal);
+    expect(abap.abap).toBeDefined();
+    expect(abap.types).toBeUndefined();
+    const node = await route([{ path: 'src/a.ts', content: 'export const a: number = "x";\n' }], signal);
+    expect(node.abap).toBeUndefined();
+    expect(node.types).toBeDefined();
+    expect(node.engine.ran).toBe(false);
+  });
+
   test('dry run end to end on the public demo: both tracks, a report, and a diff on the second run', async () => {
-    test.setTimeout(120_000);
+    // The harness step may first fetch a Node 25 (npx, cached afterwards) when this Node is older.
+    test.setTimeout(420_000);
     const out = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-acceptance-'));
     try {
       const args = ['--programs', 'po-mm-po-approval', '--out', out];
@@ -156,6 +177,24 @@ test.describe('acceptance suite', () => {
       expect(fs.readFileSync(path.join(out, runs[1], 'suite-report.md'), 'utf8')).toContain('| po-mm-po-approval | rap |');
       // The unpacked packages are not left behind.
       expect(fs.existsSync(path.join(out, runs[1], 'packages'))).toBe(false);
+      // The loop runs the page's gate checks: the activation check on RAP, the type check on Node, every round.
+      const byTrack = (t: string) => second.runs.find((r) => r.track === t)!;
+      expect(byTrack('rap').loop.length).toBeGreaterThan(0);
+      expect(byTrack('rap').loop.every((l) => l.gate === 'abap')).toBe(true);
+      expect(byTrack('node').loop.every((l) => l.gate === 'types')).toBe(true);
+      // The stub's Node bodies do not compile: those errors are repair reasons of the units that hold them.
+      expect(byTrack('node').loop[0].gateToUnits.length).toBeGreaterThan(0);
+      expect(byTrack('node').checks.some((c) => c.kind === 'types')).toBe(true);
+      expect(byTrack('node').status).toBe('not-runnable');
+      // Raw gate findings per run, beside the report.
+      const findings = JSON.parse(fs.readFileSync(path.join(out, runs[1], 'gate-findings.json'), 'utf8')) as {
+        runs: Array<{ track: string; errors: Array<{ path: string; line: number; unit: string | null }>; lastRoundRepairReasons: Array<{ unitId: string | null; check: string }> }>;
+      };
+      const nodeFindings = findings.runs.find((r) => r.track === 'node')!;
+      expect(nodeFindings.errors.length).toBeGreaterThan(0);
+      expect(nodeFindings.errors[0]).toMatchObject({ path: expect.any(String), line: expect.any(Number) });
+      expect(nodeFindings.errors.some((e) => e.unit)).toBe(true);
+      expect(nodeFindings.lastRoundRepairReasons.some((r) => r.check === 'types' && r.unitId)).toBe(true);
     } finally {
       fs.rmSync(out, { recursive: true, force: true });
     }

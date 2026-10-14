@@ -21,9 +21,14 @@
  * Transformation page runs, in the page's order and with the page's arguments:
  * `prepareEngineLed` (engine facts → unit plan → scaffold → fill requests),
  * `preflightFactsOf` + `preflight`, `runGeneration` (the orchestrator: bundling,
- * ≤ 4 in flight, retries, body guards via `guardBodyOf`, the verify loop with
- * `createRunnerVerifier` + `generatedCodeLints` + — on the RAP track — the
- * package formats, at most two repair rounds), and `assembleEngineLed`. The
+ * ≤ 4 in flight, retries, body guards via `guardBodyOf`, `normalizeBodyOf`, the
+ * verify loop with `createRunnerVerifier` + `generatedCodeLints` + — on the RAP
+ * track — the package formats and the scaffold check, at most two repair
+ * rounds), and `assembleEngineLed` with the last round's activation / type
+ * check. Behind the verifier's `runOnRunner` stands `localVerifyRoute`: what
+ * `/api/run-tests` verify mode computes, with the route's functions — `abapCheck`
+ * on an ABAP candidate, `typeCheckCandidate` on a Node one — so their errors
+ * become the units' repair reasons exactly as on the page. The
  * model call goes to the provider directly with what `/api/gemini` sends for a
  * leased fill call: the same model constant, `responseSchemaForStage('transformation',
  * 'transformation-fill')`, `thinkingConfigFor('transformation-fill')` (LOW), JSON
@@ -37,12 +42,12 @@
  *
  * WHAT IS NOT THE PAGE. (1) The context pack is empty and there are no rule
  * decisions: the suite measures the engine-led path from the source alone, not
- * a project's earlier tools. (2) The runner checks inside the repair loop
- * (engine cases and probes on `/api/run-tests`) are not called — the loop sees
- * lints and formats; the cases and probes run once afterwards, locally, with the
- * repository's harness (`engine-cases.mjs`, `run.mjs`) under its own execution
- * rule (on Node < 25 a generated package is not executed, only scanned). (3) No
- * signing, no store.
+ * a project's earlier tools. (2) The runner half of the route inside the repair
+ * loop (engine cases and probes in the isolated runner) is not called — the loop
+ * sees lints, formats and the activation / type check; the cases and probes run
+ * once afterwards with the repository's harness (`harness-step.mjs`) under its
+ * own execution rule — in a Node 25 child when this Node is older, since only
+ * Node >= 25 denies a child network access. (3) No signing, no store.
  *
  * GATES. RAP: `lib/transformation/abap-check.ts` (`abapCheck`), the activation
  * gate the product runs: parser and syntax errors fail it, findings that name SAP
@@ -56,19 +61,20 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 import { GoogleGenAI } from '@google/genai';
 import JSZip from 'jszip';
 
-import { prepareEngineLed, preflightFactsOf, guardBodyOf, candidateFiles, assembleEngineLed, type CheckSummary, type EngineLedPrepared } from '../../lib/transformation/engine-led';
-import { runGeneration, type FillModel, type GenerationRunResult } from '../../lib/transformation/orchestrator';
-import { createRunnerVerifier } from '../../lib/transformation/verify';
+import { prepareEngineLed, preflightFactsOf, guardBodyOf, normalizeBodyOf, candidateFiles, assembleEngineLed, type CheckSummary, type EngineLedPrepared } from '../../lib/transformation/engine-led';
+import { runGeneration, type CheckKind, type FillModel, type GenerationRunResult, type Verify } from '../../lib/transformation/orchestrator';
+import { createRunnerVerifier, abapScaffoldCheck, markerSpans, unitAt, type TypeCheckAnswer, type VerifyRunAnswer } from '../../lib/transformation/verify';
 import { packageFormatsHook } from '../../lib/transformation/abapgit-check';
 import { affSchemaSource } from '../../lib/transformation/aff-schemas';
 import { preflight } from '../../lib/transformation/preflight';
-import { checkSummaryOf } from '../../lib/transformation/check-words';
+import { checkSummaryOf, typeCheckRecordOf, isAbapPackage, ABAP_CASES_NOT_RUN, ABAP_PROBES_NOT_RUN, type AbapActivation } from '../../lib/transformation/check-words';
+import { sandboxFilesFromStoredCode } from '../../lib/test-sandbox/files';
 import { abapCheck } from '../../lib/transformation/abap-check';
 import { typeCheckCandidate } from '../../lib/test-sandbox/type-check';
 import { LEASE_MAX_CALLS, LEASE_MAX_IN_FLIGHT } from '../../lib/transformation/lease';
@@ -153,7 +159,37 @@ export interface RunRecord {
   gate: GateResult;
   engineCases: { derived: number; passed: number; failed: number; notRun: number; reason: string | null };
   probes: { pass: number; fail: number; notRunnable: number; notApplicable: number; executed: boolean; reason: string | null; byPattern: Record<string, string> };
+  /** The Node that ran the harness step (cases and probes); null when it did not run (ABAP, nothing generated). */
+  harnessNode: string | null;
+  /** Each round of checks in the repair loop: what the gate check (abap / types) found and how much of it became repair reasons. */
+  loop: LoopRound[];
   scenarios: ScenarioTally;
+}
+
+/** One verify round of the orchestrator, as the suite saw it. Counts and unit ids only. */
+export interface LoopRound {
+  round: number;
+  /** The gate check that ran in this round ('abap' on RAP, 'types' on Node), or null when it did not. */
+  gate: 'abap' | 'types' | null;
+  /** Its files with errors, of its files. */
+  gateFailedFiles: number;
+  gateFiles: number;
+  /** Repair reasons of this round by check kind (lint, formats, abap, types, …), and how many name a unit. */
+  failures: Record<string, number>;
+  /** Gate failures handed to a unit — these are what the next repair round sends to the model. */
+  gateToUnits: string[];
+  /** Gate failures in engine-written code (no unit): reported, never sent to the model. */
+  gateUnowned: number;
+  notRun: string[];
+}
+
+/** One raw gate finding of the final package, for pattern analysis (gate-findings.json; never in the report). */
+export interface RawGateFinding {
+  path: string;
+  line: number;
+  unit: string | null;
+  kind: string;
+  message: string;
 }
 
 export interface ScenarioTally {
@@ -421,13 +457,20 @@ export function realModel(opts: { apiKey: string; model: string; priceIn: number
 
 type FileLike = { path: string; content: string };
 
-export async function abapGate(files: FileLike[]): Promise<GateResult> {
+/** The gate's findings onto the units whose fill markers enclose them (verify.ts `markerSpans` / `unitAt`). */
+function rawFindings(files: FileLike[], findings: ReadonlyArray<{ path: string; line: number; kind: string; message: string }>): RawGateFinding[] {
+  const spans = markerSpans(files);
+  return findings.map((f) => ({ path: f.path, line: f.line, unit: unitAt(spans, f.path, f.line), kind: f.kind, message: f.message }));
+}
+
+export async function abapGate(files: FileLike[], sink?: (findings: RawGateFinding[]) => void): Promise<GateResult> {
   // The activation gate of 3.0.13 item 1 (lib/transformation/abap-check.ts): abaplint with the
   // package's shipped config and the SAP stubs; parser and syntax errors make it not activatable.
   const tool = 'lib/transformation/abap-check.ts (abapCheck)';
   const r = abapCheck(files);
   if (!r.ran) return { kind: 'abap-activation', tool, state: 'not-run', parserErrors: null, syntaxErrors: null, typeErrors: null, otherFindings: null, reason: r.reason };
   const a = r.activation;
+  sink?.(rawFindings(files, a.findings));
   return {
     kind: 'abap-activation',
     tool: `${tool}; abaplint ${a.abaplint}`,
@@ -440,11 +483,12 @@ export async function abapGate(files: FileLike[]): Promise<GateResult> {
   };
 }
 
-export async function nodeGate(files: FileLike[]): Promise<GateResult> {
+export async function nodeGate(files: FileLike[], sink?: (findings: RawGateFinding[]) => void): Promise<GateResult> {
   // The compile gate of the Node route (3.0.13, Node core): the candidate under its own tsconfig.json, in process.
   const tool = 'lib/test-sandbox/type-check.ts (typeCheckCandidate)';
   const r = typeCheckCandidate(files);
   if (!r.ran) return { kind: 'node-type-check', tool, state: 'not-run', parserErrors: null, syntaxErrors: null, typeErrors: null, otherFindings: null, reason: r.reason };
+  sink?.(rawFindings(files, r.findings.map((f) => ({ path: f.path, line: f.line, kind: f.code, message: f.message }))));
   return {
     kind: 'node-type-check',
     tool: `${tool}; TypeScript ${r.typescript}`,
@@ -474,37 +518,102 @@ interface HarnessOutcome {
   probes: RunRecord['probes'];
 }
 
-/** The engine cases and the failure-pattern probes, by the repository's harness under its own execution rule. */
-export async function runHarnessChecks(pkgDir: string, derived: number): Promise<HarnessOutcome> {
-  // The harness is loaded inside each try: a harness that cannot be loaded is a check that did not run, with the
-  // reason, never a stopped suite (under Playwright a worker that already loaded engine-cases-core.mjs through its
-  // own transform hands the native import a copy without named exports).
-  const engineCases: RunRecord['engineCases'] = { derived, passed: 0, failed: 0, notRun: derived, reason: null };
-  if (fs.existsSync(path.join(pkgDir, 'test', 'engine-cases.json'))) {
-    try {
-      const engine = (await import(pathToFileURL(path.join(HERE, 'engine-cases.mjs')).href)) as { runEngineCases: (o: Record<string, unknown>) => Promise<{ summary: { passed: number; failed: number; notRun: number }; cases: Array<{ reason?: string }>; sandbox: { reason: string } }> };
-      const r = await engine.runEngineCases({ pkg: pkgDir, timeout: 20_000, trustedFixture: false, staticOnly: false });
-      Object.assign(engineCases, r.summary);
-      engineCases.reason = r.summary.notRun > 0 ? (r.cases.find((c) => c.reason)?.reason ?? r.sandbox.reason) : null;
-    } catch (err) {
-      engineCases.reason = `the case run stopped: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`;
-    }
-  } else engineCases.reason = 'the package carries no test/engine-cases.json';
-  const probes: RunRecord['probes'] = { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: null, byPattern: {} };
-  try {
-    const harness = (await import(pathToFileURL(path.join(HERE, 'run.mjs')).href)) as { runHarness: (o: Record<string, unknown>) => Promise<{ summary: Record<string, number>; patterns: Record<string, { status: string }>; sandbox: { executed: boolean; reason: string } }> };
-    const r = await harness.runHarness({ pkg: pkgDir, timeout: 20_000, trustedFixture: false, staticOnly: false });
-    probes.pass = r.summary.pass ?? 0;
-    probes.fail = r.summary.fail ?? 0;
-    probes.notRunnable = r.summary['not-runnable'] ?? 0;
-    probes.notApplicable = r.summary['not-applicable'] ?? 0;
-    probes.executed = r.sandbox.executed;
-    probes.reason = r.sandbox.executed ? null : r.sandbox.reason;
-    for (const [id, p] of Object.entries(r.patterns)) probes.byPattern[id] = p.status;
-  } catch (err) {
-    probes.reason = `the probe run stopped: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`;
+interface HarnessStepOutcome extends HarnessOutcome {
+  node: string;
+}
+
+/** Where the harness step runs: in this process (Node >= 25), under a Node 25 binary, or here with the reason that binary is missing. */
+export interface HarnessNode {
+  binary: string | null;
+  version: string;
+  reason: string | null;
+}
+
+let harnessNodeCache: HarnessNode | null = null;
+
+const nodeMajor = (v: string) => Number(v.replace(/^v/, '').split('.')[0]);
+
+/**
+ * The Node the harness step runs under. The execution rule (`lib/sandbox.mjs`, `decideExecution`) runs a generated
+ * package only when the platform refuses a socket under the permission model — Node >= 25. On an older local Node the
+ * step runs in a Node 25 child: `ACCEPTANCE_HARNESS_NODE` (a binary), else `npx --yes --package=node@25` (cached by
+ * npm after the first fetch); `ACCEPTANCE_HARNESS_NODE=self` keeps it in this process. Only the harness step runs
+ * there; the generation and the gates stay in this process.
+ */
+export function harnessNode(env: Record<string, string | undefined> = process.env): HarnessNode {
+  if (nodeMajor(process.version) >= 25) return { binary: null, version: process.version, reason: null };
+  if (env.ACCEPTANCE_HARNESS_NODE === 'self') return { binary: null, version: process.version, reason: 'ACCEPTANCE_HARNESS_NODE=self keeps the harness step on this Node' };
+  if (harnessNodeCache) return harnessNodeCache;
+  const versionOf = (bin: string) => {
+    const r = spawnSync(bin, ['-p', 'process.version'], { encoding: 'utf8', timeout: 30_000, windowsHide: true });
+    return r.status === 0 ? r.stdout.trim() : null;
+  };
+  let binary: string | null = null;
+  let why = '';
+  if (env.ACCEPTANCE_HARNESS_NODE) {
+    binary = env.ACCEPTANCE_HARNESS_NODE;
+    why = 'ACCEPTANCE_HARNESS_NODE';
+  } else {
+    // A fixed command, nothing interpolated; on Windows npx is npx.cmd, which only a shell starts.
+    const opts = { encoding: 'utf8' as const, timeout: 300_000, windowsHide: true };
+    const r =
+      process.platform === 'win32'
+        ? spawnSync('npx --yes --package=node@25 -- node -p process.execPath', { ...opts, shell: true })
+        : spawnSync('npx', ['--yes', '--package=node@25', '--', 'node', '-p', 'process.execPath'], opts);
+    const last = (r.stdout ?? '').trim().split(/\r?\n/).pop() ?? '';
+    if (r.status === 0 && last && fs.existsSync(last)) binary = last;
+    else why = `npx --package=node@25 failed (${r.error?.message ?? `exit ${r.status}`}: ${(r.stderr ?? '').trim().split(/\r?\n/).pop()?.slice(0, 160) ?? ''})`;
   }
-  return { engineCases, probes };
+  const version = binary ? versionOf(binary) : null;
+  harnessNodeCache =
+    binary && version && nodeMajor(version) >= 25
+      ? { binary, version, reason: null }
+      : { binary: null, version: process.version, reason: `no Node >= 25 for the harness step: ${binary ? `${why} gave ${version ?? 'nothing runnable'}` : why}` };
+  return harnessNodeCache;
+}
+
+/** Only what the harness step needs to start and find a temp directory. Nothing from the caller's secrets. */
+function harnessEnv(): NodeJS.ProcessEnv {
+  const env: Record<string, string | undefined> = {};
+  for (const k of ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'windir', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR', 'HOME', 'USERPROFILE']) if (process.env[k]) env[k] = process.env[k];
+  return env as NodeJS.ProcessEnv;
+}
+
+/** The engine cases and the failure-pattern probes, by the repository's harness under its own execution rule (`harness-step.mjs`). */
+export async function runHarnessChecks(pkgDir: string, derived: number, node: HarnessNode = harnessNode()): Promise<HarnessStepOutcome> {
+  const step = path.join(HERE, 'harness-step.mjs');
+  if (node.binary) {
+    const out = `${pkgDir}.harness.json`;
+    const r = spawnSync(node.binary, [step, pkgDir, String(derived), out], { cwd: ROOT, env: harnessEnv(), encoding: 'utf8', timeout: 600_000, windowsHide: true });
+    try {
+      if (r.status === 0 && fs.existsSync(out)) return JSON.parse(fs.readFileSync(out, 'utf8')) as HarnessStepOutcome;
+    } catch {
+      /* unreadable: said below */
+    } finally {
+      fs.rmSync(out, { force: true });
+    }
+    const why = `the harness step under ${node.version} stopped (${r.error?.message ?? `exit ${r.status}`}: ${(r.stderr ?? '').trim().split(/\r?\n/).pop()?.slice(0, 160) ?? ''})`;
+    return {
+      node: node.version,
+      engineCases: { derived, passed: 0, failed: 0, notRun: derived, reason: why },
+      probes: { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: why, byPattern: {} },
+    };
+  }
+  // In process: Node >= 25 here, or no Node 25 to be had (the rule then scans and says why; the reason says what was missing).
+  let r: HarnessStepOutcome;
+  try {
+    const mod = (await import(pathToFileURL(step).href)) as { harnessStep: (pkg: string, derived: number) => Promise<HarnessStepOutcome> };
+    r = await mod.harnessStep(pkgDir, derived);
+  } catch (err) {
+    // A harness that cannot be loaded is a check that did not run, never a stopped suite.
+    const why = `the harness step could not be loaded: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`;
+    r = { node: process.version, engineCases: { derived, passed: 0, failed: 0, notRun: derived, reason: why }, probes: { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: why, byPattern: {} } };
+  }
+  if (node.reason) {
+    if (r.engineCases.reason) r.engineCases.reason = `${r.engineCases.reason} — ${node.reason}`;
+    if (r.probes.reason) r.probes.reason = `${r.probes.reason} — ${node.reason}`;
+  }
+  return r;
 }
 
 /* ------------------------------------------------------------- scenarios */
@@ -552,7 +661,108 @@ interface RunContext {
   apiKey: string | null;
   workDir: string;
   patterns: Record<string, string[]>;
+  /** Raw gate findings per run, written to gate-findings.json beside the report. */
+  findings: GateFindingsRecord[];
 }
+
+/** One run's raw gate findings: the final package's, and the repair reasons the gate gave in the loop's last round. */
+export interface GateFindingsRecord {
+  program: string;
+  track: Track;
+  run: number;
+  tool: string;
+  state: GateResult['state'];
+  /** Errors only (parser/syntax on ABAP, every compiler error on Node), first 200, with their unit. */
+  errors: RawGateFinding[];
+  /** The same errors grouped by message (identifiers and numbers kept), most frequent first. */
+  topMessages: Array<{ message: string; count: number; units: string[] }>;
+  /** The ABAP check's other findings (unresolved SAP objects, lint) by kind; empty on Node. */
+  otherByKind: Record<string, number>;
+  /** The gate's repair reasons of the loop's last round, as the orchestrator handed them to the units. */
+  lastRoundRepairReasons: Array<{ unitId: string | null; check: string; failure: string }>;
+}
+
+const GATE_ERRORS_KEPT = 200;
+
+export function gateFindingsRecord(base: Pick<GateFindingsRecord, 'program' | 'track' | 'run' | 'tool' | 'state' | 'lastRoundRepairReasons'>, raw: readonly RawGateFinding[]): GateFindingsRecord {
+  const isError = (f: RawGateFinding) => (base.track === 'rap' ? f.kind === 'parser' || f.kind === 'syntax' : true);
+  const errors = raw.filter(isError);
+  const groups = new Map<string, { count: number; units: Set<string> }>();
+  for (const f of errors) {
+    const key = base.track === 'rap' ? `${f.kind}: ${f.message}` : `${f.kind} ${f.message}`;
+    const g = groups.get(key) ?? { count: 0, units: new Set<string>() };
+    g.count++;
+    g.units.add(f.unit ?? '(engine code)');
+    groups.set(key, g);
+  }
+  const otherByKind: Record<string, number> = {};
+  for (const f of raw) if (!isError(f)) otherByKind[f.kind] = (otherByKind[f.kind] ?? 0) + 1;
+  return {
+    ...base,
+    errors: errors.slice(0, GATE_ERRORS_KEPT),
+    topMessages: [...groups.entries()].sort((x, y) => y[1].count - x[1].count).slice(0, 40).map(([message, g]) => ({ message, count: g.count, units: [...g.units].sort() })),
+    otherByKind,
+  };
+}
+
+/** Why the route's runner half does not answer inside the suite's loop. */
+export const LOOP_CASES_NOT_RUN = 'Engine cases not run in the loop: the acceptance suite runs them once after the generation with the repository harness.';
+export const LOOP_PROBES_NOT_RUN = 'Failure-pattern probes not run in the loop: the acceptance suite runs them once after the generation with the repository harness.';
+
+/**
+ * What `POST /api/run-tests { mode: 'verify' }` answers for a candidate, computed here with the route's own functions
+ * in the route's order (`verifyCandidateResponse`, app/api/run-tests/route.ts): the candidate read back through
+ * `sandboxFilesFromStoredCode` as the route reads a draft's stored code; an ABAP package (`isAbapPackage`) checked
+ * by `abapCheck`, with the cases and probes not run for the route's own reasons; a Node package type-checked by
+ * `typeCheckCandidate`. The route's runner half (engine cases and probes in the isolated runner) needs a project,
+ * a signed source and a runner, so here it answers "not run" — the suite runs both once after the generation with
+ * the repository's harness. The answer goes into `createRunnerVerifier`, which maps it onto the units exactly as
+ * on the page (`mapAbapFindings`, `mapTypeFindings`).
+ */
+export function localVerifyRoute(): (files: readonly FileLike[], signal: AbortSignal) => Promise<VerifyRunAnswer> {
+  return async (files) => {
+    const candidate = sandboxFilesFromStoredCode(JSON.stringify(files.map((f) => ({ path: f.path, content: f.content }))));
+    if (isAbapPackage(candidate)) {
+      const checked = abapCheck(candidate);
+      return {
+        mode: 'verify',
+        buildError: null,
+        abap: checked.ran ? { ran: true, activation: checked.activation } : { ran: false, reason: checked.reason },
+        engine: { ran: false, reason: ABAP_CASES_NOT_RUN },
+        probes: { ran: false, reason: ABAP_PROBES_NOT_RUN },
+      };
+    }
+    const typed = typeCheckCandidate(candidate);
+    const types: TypeCheckAnswer = typed.ran
+      ? { ran: true, typescript: typed.typescript, files: typed.files, failedFiles: typed.failedFiles, errors: typed.errors, findings: typed.findings }
+      : { ran: false, reason: typed.reason };
+    return { mode: 'verify', buildError: null, types, engine: { ran: false, reason: LOOP_CASES_NOT_RUN }, probes: { ran: false, reason: LOOP_PROBES_NOT_RUN } };
+  };
+}
+
+/** The verifier wrapped so each round's outcome is counted (it is passed through unchanged). */
+function observed(verify: Verify, rounds: LoopRound[], last: { failures: Array<{ unitId: string | null; check: string; failure: string }> }): Verify {
+  return async (bodies, ctx) => {
+    const o = await verify(bodies, ctx);
+    const gateCheck = o.checks.find((c) => c.kind === 'abap' || c.kind === 'types');
+    const gateFailures = o.failures.filter((f) => f.check === 'abap' || f.check === 'types');
+    const failures: Record<string, number> = {};
+    for (const f of o.failures) failures[f.check] = (failures[f.check] ?? 0) + 1;
+    rounds.push({
+      round: ctx.round,
+      gate: gateCheck ? (gateCheck.kind as 'abap' | 'types') : null,
+      gateFailedFiles: gateCheck?.failed ?? 0,
+      gateFiles: gateCheck?.total ?? 0,
+      failures,
+      gateToUnits: [...new Set(gateFailures.map((f) => f.unitId).filter((u): u is string => !!u))].sort(),
+      gateUnowned: gateFailures.filter((f) => !f.unitId).length,
+      notRun: o.notRun.map((n: { kind: CheckKind; reason: string }) => `${n.kind}: ${n.reason.slice(0, 160)}`),
+    });
+    last.failures = gateFailures.map((f) => ({ unitId: f.unitId, check: f.check, failure: f.failure }));
+    return o;
+  };
+}
+
 
 export async function runOne(p: ProgramEntry, track: Track, run: number, source: string, scen: { file: ScenarioFile | null; reason: string | null }, ctx: RunContext): Promise<RunRecord> {
   const t0 = Date.now();
@@ -575,6 +785,8 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     gate: { kind: track === 'rap' ? 'abap-activation' : 'node-type-check', tool: 'none', state: 'not-run', parserErrors: null, syntaxErrors: null, typeErrors: null, otherFindings: null, reason: 'nothing was generated' },
     engineCases: { derived: 0, passed: 0, failed: 0, notRun: 0, reason: null },
     probes: { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: 'nothing was generated', byPattern: {} },
+    harnessNode: null,
+    loop: [],
     scenarios: judgeScenarios(scen.file, scen.reason, track, { pass: 0, fail: 0, notRunnable: 0, notApplicable: 0, executed: false, reason: 'nothing was generated', byPattern: {} }, {}),
   });
   const rec = empty();
@@ -620,12 +832,31 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     if (e.t !== 'check') return;
     checkSummaries.set(`${e.kind}:${e.scope ?? ''}`, checkSummaryOf<CheckSummary>({ kind: e.kind, total: e.total, failed: e.failed, passed: e.passed, notRun: e.notRun, scope: e.scope, notRunReason: e.notRunReason, baseThrew: e.baseThrew }));
   };
-  const verify = createRunnerVerifier({
-    candidate: (bodies) => candidateFiles(prepared, bodies),
-    units: prepared.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id), kind: prepared.plan.units.find((x) => x.id === u.unitId)?.kind })),
-    lint: (candidate) => generatedCodeLints(candidate, { decimalFields: packedDecimalFields(source) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
-    formats: prepared.scaffold.track === 'rap' ? packageFormatsHook(affSchemaSource) : undefined,
-  });
+  // The verifier as the page builds it (transformation/page.tsx): the route's checks behind `runOnRunner` — here
+  // `localVerifyRoute`, the route's own functions in process — with the activation check (RAP) and the type check
+  // (Node) mapped onto the units by `createRunnerVerifier` and handed back as repair reasons.
+  const runOnRunner = localVerifyRoute();
+  let lastActivation: AbapActivation | null = null;
+  let lastTypeCheck: TypeCheckAnswer | null = null;
+  const lastRound = { failures: [] as Array<{ unitId: string | null; check: string; failure: string }> };
+  const verify = observed(
+    createRunnerVerifier({
+      track: prepared.scaffold.track,
+      onActivation: (a) => {
+        lastActivation = a;
+      },
+      onTypeCheck: (t) => {
+        lastTypeCheck = t;
+      },
+      candidate: (bodies) => candidateFiles(prepared, bodies),
+      units: prepared.fillUnits.map((u) => ({ unitId: u.unitId, rules: u.rules.map((r) => r.id), kind: prepared.plan.units.find((x) => x.id === u.unitId)?.kind })),
+      lint: (candidate) => generatedCodeLints(candidate, { decimalFields: packedDecimalFields(source) }).map((f) => ({ path: f.file, line: f.line, message: `${f.severity} ${f.message}` })),
+      runOnRunner,
+      formats: prepared.scaffold.track === 'rap' ? packageFormatsHook(affSchemaSource) : undefined,
+    }),
+    rec.loop,
+    lastRound,
+  );
   const model =
     ctx.args.mode === 'real'
       ? realModel({ apiKey: ctx.apiKey ?? '', model: ctx.args.model, priceIn: ctx.args.priceIn ?? 0, priceOut: ctx.args.priceOut ?? 0, meter: ctx.meter, calls })
@@ -639,7 +870,11 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
       bundleOptions: { track: prepared.scaffold.track, program: prepared.plan.program, context: contextText },
       model,
       guardBody: guardBodyOf(prepared),
+      normalizeBody: normalizeBodyOf(prepared),
       verify,
+      // As on the page: on Node complete only when these ran in full; on RAP the scaffold's own activation check first.
+      ...(prepared.scaffold.track === 'node' ? { mustRun: ['types', 'cases', 'probes'] as const } : {}),
+      ...(prepared.scaffold.track === 'rap' ? { scaffoldCheck: abapScaffoldCheck(prepared.scaffold.files, runOnRunner) } : {}),
       budget: LEASE_MAX_CALLS,
       maxInFlight: LEASE_MAX_IN_FLIGHT,
       onEvent,
@@ -655,7 +890,14 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
   // 3. The package, as the page assembles it before storing.
   let files: FileLike[];
   try {
-    const pkg = assembleEngineLed(prepared, result, { contextDigest: null, runId: null, checks: [...checkSummaries.values()], budget: LEASE_MAX_CALLS });
+    const pkg = assembleEngineLed(prepared, result, {
+      contextDigest: null,
+      runId: null,
+      checks: [...checkSummaries.values()],
+      budget: LEASE_MAX_CALLS,
+      activation: lastActivation,
+      typeCheck: typeCheckRecordOf(lastTypeCheck),
+    });
     files = pkg.files;
     rec.checks = pkg.summary.checks;
     rec.functions = { total: pkg.summary.units, written: pkg.summary.written, notWritten: pkg.summary.notWritten.length, repaired: pkg.summary.repaired };
@@ -671,7 +913,12 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
   }
 
   // 4. Gate, cases and probes on the package.
-  rec.gate = track === 'rap' ? await abapGate(files) : await nodeGate(files);
+  let raw: RawGateFinding[] = [];
+  const sink = (f: RawGateFinding[]) => {
+    raw = f;
+  };
+  rec.gate = track === 'rap' ? await abapGate(files, sink) : await nodeGate(files, sink);
+  ctx.findings.push(gateFindingsRecord({ program: p.id, track, run, tool: rec.gate.tool, state: rec.gate.state, lastRoundRepairReasons: lastRound.failures }, raw));
   if (track === 'rap') {
     // An ABAP package carries its cases as ABAP Unit data; the JavaScript harness has nothing to run in it.
     const why = 'ABAP package: the cases are ABAP Unit data and the probes call JavaScript exports — running either needs an SAP system';
@@ -683,6 +930,7 @@ export async function runOne(p: ProgramEntry, track: Track, run: number, source:
     const h = await runHarnessChecks(pkgDir, prepared.facts.cases);
     rec.engineCases = h.engineCases;
     rec.probes = h.probes;
+    rec.harnessNode = h.node;
   }
   rec.scenarios = judgeScenarios(scen.file, scen.reason, track, rec.probes, ctx.patterns);
   return finish();
@@ -787,7 +1035,12 @@ export function toMarkdown(r: SuiteReport): string {
     L.push(`- functions: ${x.functions.written} of ${x.functions.total} written (${x.functions.repaired} after repair), stop \`${x.stop ?? '—'}\`, ${x.rounds} repair round(s)`);
     for (const n of x.notWritten.slice(0, 10)) L.push(`  - not written ${n.unitId}: ${cell(n.reason)}`);
     L.push(`- checks in the loop: ${x.checks.map((c) => `${c.kind}${c.scope ? `/${c.scope}` : ''} ${c.failed}/${c.total} failed`).join(', ') || 'none'}`);
+    for (const l of x.loop ?? []) {
+      const f = Object.entries(l.failures).map(([k, n]) => `${k} ${n}`).join(', ') || 'none';
+      L.push(`  - round ${l.round}: ${l.gate ? `${l.gate} ${l.gateFailedFiles}/${l.gateFiles} file(s) failed, ${l.gateToUnits.length} unit(s) sent back${l.gateUnowned ? `, ${l.gateUnowned} in engine code` : ''}` : 'no gate check'}; repair reasons: ${f}`);
+    }
     L.push(`- engine cases: ${x.engineCases.passed} passed, ${x.engineCases.failed} failed, ${x.engineCases.notRun} not run of ${x.engineCases.derived}${x.engineCases.reason ? ` — ${cell(x.engineCases.reason.slice(0, 200))}` : ''}`);
+    if (x.harnessNode) L.push(`- harness step under Node ${x.harnessNode}`);
     L.push(`- probes: ${x.probes.pass} pass, ${x.probes.fail} fail, ${x.probes.notRunnable} not runnable, ${x.probes.notApplicable} not applicable${x.probes.reason ? ` — ${cell(x.probes.reason.slice(0, 200))}` : ''}`);
     L.push(`- scenarios: ${x.scenarios.matched} matched, ${x.scenarios.failed} failed, ${x.scenarios.notJudged} not judged of ${x.scenarios.total}${x.scenarios.note ? ` — ${cell(x.scenarios.note)}` : ''}`);
     const fails = Object.entries(x.scenarios.verdicts).filter(([, v]) => v === 'fail').map(([id]) => id);
@@ -804,7 +1057,7 @@ export function toMarkdown(r: SuiteReport): string {
 
 const LIMITS = [
   "The context pack is empty and no rule decisions are given: the generation runs from the source alone, not from a project's earlier tools.",
-  "Inside the repair loop the checks are lints (and on RAP the package formats); the runner's engine cases and probes run once after the generation, locally, under the harness's execution rule — on Node < 25 a generated package is scanned, not executed, so its cases and probes read 'not run'.",
+  "Inside the repair loop the checks are the page's: lints, on RAP the package formats and the activation check (abapCheck), on Node the type check (typeCheckCandidate) — their errors are the units' repair reasons. The runner's engine cases and probes are not part of the loop: they run once after the generation with the repository's harness under its execution rule (in a Node 25 child when the local Node is older), so a Node package's status reads 'not verified' unless it is partial or not runnable.",
   'A scenario counts as matched only when an executed check judged it (a harness probe, or verdicts a gate module hands in). Prose expectations and ABAP reference cases are listed as not judged: ABAP Unit needs an SAP system.',
   'Model calls go to the provider directly with the fill call settings of /api/gemini; the route\'s own gates (account, lease in Firestore, hourly limits) are not part of the run.',
 ];
@@ -836,6 +1089,11 @@ function previousReport(outRoot: string, current: string, key: string | null): {
   return null;
 }
 
+/** The raw gate findings of every run, for pattern analysis: beside the report, in the gitignored run folder. */
+function gateFindingsFile(r: SuiteReport, findings: GateFindingsRecord[]) {
+  return { format: 'clean-core.acceptance-gate-findings/1', commit: r.commit, mode: r.mode, model: r.model, startedAt: r.startedAt, runs: findings };
+}
+
 /* ------------------------------------------------------------------ main */
 
 export async function main(argv: string[]): Promise<number> {
@@ -860,7 +1118,7 @@ export async function main(argv: string[]): Promise<number> {
   const workDir = path.join(runDir, 'packages');
   fs.mkdirSync(workDir, { recursive: true });
   const meter: Meter = { capUsd: args.capUsd, spentUsd: 0, capReached: false };
-  const ctx: RunContext = { args, meter, apiKey, workDir, patterns: await probePatterns() };
+  const ctx: RunContext = { args, meter, apiKey, workDir, patterns: await probePatterns(), findings: [] };
 
   console.log(`acceptance suite · ${args.mode} · ${selected.length} program(s) · ${args.runs} run(s) · cap ${fmtUsd(args.capUsd)} · ${commit.slice(0, 8)}`);
   const runs: RunRecord[] = [];
@@ -922,10 +1180,17 @@ export async function main(argv: string[]): Promise<number> {
   const { writeReportFiles } = (await import(pathToFileURL(path.join(HERE, 'lib', 'write-report.mjs')).href)) as { writeReportFiles: (dir: string, files: Record<string, string>) => string[] };
   if (args.seal && key) {
     const { seal } = require('../qa/lib/crypto.mjs') as { seal: (p: unknown, k: string) => unknown };
-    writeReportFiles(runDir, { 'suite-report.enc.json': `${JSON.stringify(seal({ ...report, markdown: toMarkdown(report) }, key))}\n` });
+    writeReportFiles(runDir, {
+      'suite-report.enc.json': `${JSON.stringify(seal({ ...report, markdown: toMarkdown(report) }, key))}\n`,
+      'gate-findings.enc.json': `${JSON.stringify(seal(gateFindingsFile(report, ctx.findings), key))}\n`,
+    });
     console.log(`sealed report: ${path.relative(ROOT, path.join(runDir, 'suite-report.enc.json'))}`);
   } else {
-    writeReportFiles(runDir, { 'suite-report.json': `${JSON.stringify(report, null, 2)}\n`, 'suite-report.md': toMarkdown(report) });
+    writeReportFiles(runDir, {
+      'suite-report.json': `${JSON.stringify(report, null, 2)}\n`,
+      'suite-report.md': toMarkdown(report),
+      'gate-findings.json': `${JSON.stringify(gateFindingsFile(report, ctx.findings), null, 2)}\n`,
+    });
     console.log(`report: ${path.relative(ROOT, path.join(runDir, 'suite-report.md'))}`);
   }
   const t = report.totals;
