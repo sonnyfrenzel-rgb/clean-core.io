@@ -19,13 +19,9 @@
  * reads as current.
  */
 
-export const SAP_API_CATALOG_VERSION = '2024.FPS02';
-
-/** The day the entries below were last reviewed by hand (not a sync date). */
-export const SAP_API_CATALOG_REVIEWED = '2026-10-12';
-
-/** The words shown beside a hit in this layer. */
-export const SAP_API_CATALOG_STAMP = `this product's curated SAP API catalog, compiled for ${SAP_API_CATALOG_VERSION}, reviewed ${SAP_API_CATALOG_REVIEWED}; not synced from SAP`;
+// The release and review date live in a module of their own, so a client
+// component can show the stamp without pulling the catalog into the browser.
+export { SAP_API_CATALOG_VERSION, SAP_API_CATALOG_REVIEWED, SAP_API_CATALOG_STAMP } from './sap-api-catalog-stamp';
 
 export type SapApiObjectType = 'CDS View' | 'OData API' | 'BAPI' | 'Fiori App' | 'Business Event' | 'Unknown';
 
