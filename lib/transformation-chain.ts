@@ -880,7 +880,7 @@ export function unitBoard(
         for (const id of e.unitIds) {
           if (!state.has(id)) continue;
           state.set(id, 'repair');
-          word.set(id, `repair round ${e.round}…`);
+          word.set(id, `repairing — round ${e.round} of 2`);
           code.set(id, clear);
         }
       } else {

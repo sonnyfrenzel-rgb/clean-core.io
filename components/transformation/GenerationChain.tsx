@@ -172,7 +172,16 @@ function UnitsPanel({ units }: { units: UnitBoard | null }) {
                     {r.rules.length > 0 ? ` · ${r.rules.slice(0, 4).join(' ')}${r.rules.length > 4 ? ' …' : ''}` : ''}
                   </span>
                 </span>
-                <span data-unit-word="" className={cn('col-start-2 text-[12px] font-semibold sm:col-start-auto', UNIT_STATE_CLASS[r.state])}>
+                {/* A reason is a sentence: it gets its own line under the title. In
+                    the status column it took the title's width (dev acceptance 14.10.2026). */}
+                <span
+                  data-unit-word=""
+                  className={cn(
+                    'col-start-2 text-[12px] font-semibold',
+                    r.state === 'not-written' ? 'sm:col-span-2' : 'sm:col-start-auto sm:text-right',
+                    UNIT_STATE_CLASS[r.state],
+                  )}
+                >
                   {r.word}
                 </span>
                 {r.code ? (

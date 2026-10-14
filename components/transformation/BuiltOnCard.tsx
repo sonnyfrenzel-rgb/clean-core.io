@@ -7,7 +7,7 @@ import { formatElapsed } from '@/lib/generation-progress';
 import { formatTextDate } from '@/lib/format';
 import { tfBuiltOnMeta, tfNotWritten, tfSingleCallNote, wt } from '@/lib/workspace-messages';
 import type { ChainSlot } from '@/lib/transformation-chain';
-import type { BasisSlot, GenerationRecord } from '@/lib/transformation/generation-record';
+import { storedFact, type BasisSlot, type GenerationRecord } from '@/lib/transformation/generation-record';
 import { ENGINE_CODE_NOTE, PAGE_REPORTED_NOTE, checkPhrase, hasPageReportedChecks, orderedChecks } from '@/lib/transformation/check-words';
 
 /**
@@ -41,7 +41,7 @@ export default function BuiltOnCard({
       </div>
     );
   }
-  const meta = tfBuiltOnMeta(formatTextDate(generatedAt), record.elapsedMs !== null ? formatElapsed(record.elapsedMs) : null);
+  const meta = tfBuiltOnMeta(formatTextDate(generatedAt), record.elapsedMs !== null ? `took ${formatElapsed(record.elapsedMs)} min` : null);
   const engine = record.engine;
   return (
     <section aria-labelledby="built-on-title" data-built-on={record.path} className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
@@ -100,7 +100,11 @@ function isStale(b: BasisSlot, now: readonly ChainSlot[]): boolean {
   const current = now.find((s) => s.key === b.key);
   if (!current || current.state === 'loading' || current.state === 'unread') return false;
   if ((current.when ?? '') !== b.when) return true;
-  return (current.facts[0]?.text ?? '') !== (b.facts[0] ?? '');
+  // Every stored fact, each as the record stores it: the record keeps a fact
+  // cut at 300 characters, and comparing the first fact uncut marked a long
+  // design reason stale right after the generation (dev acceptance 14.10.2026).
+  const now4 = current.facts.slice(0, 4).map((f) => storedFact(f.text));
+  return now4.length !== b.facts.length || now4.some((f, i) => f !== b.facts[i]);
 }
 
 function checksSentence(e: NonNullable<GenerationRecord['engine']>): string {

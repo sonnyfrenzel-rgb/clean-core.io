@@ -333,6 +333,16 @@ test.describe('the stages', () => {
     expect(board).toMatchObject({ written: 1, notWritten: 1 });
   });
 
+  test('a repair in progress says its round of two, and a reason gets its own line under the title (dev acceptance 14.10.2026)', () => {
+    const board = unitBoard(
+      [{ unitId: 'U01', title: 'Validate references', lines: 'L580-646', rules: [] }],
+      [{ t: 'fill', unitId: 'U01', state: 'written' }, { t: 'repair', round: 1, unitIds: ['U01'], state: 'start' }],
+    );
+    expect(board.rows[0].word).toBe('repairing — round 1 of 2');
+    const chain = fs.readFileSync(path.join(process.cwd(), 'components/transformation/GenerationChain.tsx'), 'utf8');
+    expect(chain).toContain("r.state === 'not-written' ? 'sm:col-span-2' : 'sm:col-start-auto sm:text-right'");
+  });
+
   test('the single call advances in order: entering one ends the one before; a failure stops the running one', () => {
     let log = enterStage({}, 'facts', 1000);
     log = withFacts(log, 'facts', originalFactsLines({ guards: [1, 2, 3], decimals: [1], inputs: [1, 2] }));

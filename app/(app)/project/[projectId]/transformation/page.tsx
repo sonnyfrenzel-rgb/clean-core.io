@@ -9,7 +9,7 @@ import { generatedCodeLints, lintCountLine, packedDecimalFields } from '@/lib/ge
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers, Download } from 'lucide-react';
+import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers, Download, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import StageFooter from '@/components/StageFooter';
 import CodeHighlighter from '@/components/CodeHighlighter';
@@ -2006,6 +2006,24 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           </section>
   );
 
+  // The world after the run: a stored package (not an unsaved draft) is the result.
+  const hasPackage = files.length > 0 && !unsavedDraft;
+  const tipsPanel = showTips ? (
+        <QualityTips
+          tips={tips}
+          warning={warning}
+          settled={settled}
+          slots={chainSlots(chainInputs)}
+          canGenerate={canStart}
+          busy={busy}
+          regenerate={files.length > 0}
+          plan={planView === undefined ? (planWanted ? { state: 'reading' } : null) : planView}
+          keySource={modelAvailability.keySource}
+          onGenerate={startGeneration}
+          conceptSource={legacySource}
+        />
+  ) : null;
+
   return (
     <StageFrame stage="transformation">
       {/* The quota used to be stated a third time here, as "Free
@@ -2105,22 +2123,11 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       {/* Roadmap 3.0.12 — what would raise the quality of the code, before the
-          run; never blocking, one line when nothing is open. */}
-      {showTips ? (
-        <QualityTips
-          tips={tips}
-          warning={warning}
-          settled={settled}
-          slots={chainSlots(chainInputs)}
-          canGenerate={canStart}
-          busy={busy}
-          regenerate={files.length > 0}
-          plan={planView === undefined ? (planWanted ? { state: 'reading' } : null) : planView}
-          keySource={modelAvailability.keySource}
-          onGenerate={startGeneration}
-          conceptSource={legacySource}
-        />
-      ) : null}
+          run; never blocking, one line when nothing is open. The world before
+          the run: with a package on record it moves, folded, below the result
+          (dev acceptance 14.10.2026 — after the run the result comes first). */}
+      {showTips && !hasPackage ? tipsPanel : null}
+
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
         Code copied to clipboard
@@ -2276,6 +2283,17 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         />
       </div>
       )}
+
+      {showTips && hasPackage ? (
+        <details className="group mt-6 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc" data-generate-again="">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 cc-text-h3 text-cc-ink [&::-webkit-details-marker]:hidden">
+            <ChevronRight size={16} aria-hidden={true} className="shrink-0 transition-transform group-open:rotate-90" />
+            Generate again
+            <span className="cc-text-meta font-medium text-cc-ink-muted">what a new run would use, what could still raise its quality, its plan and limits</span>
+          </summary>
+          <div className="border-t border-cc-line p-4">{tipsPanel}</div>
+        </details>
+      ) : null}
 
       {/* The grounding audit. It was a dark drawer from the right edge; it is
           a light `CcDialog` now (§1.1: the only dark surface that carries
