@@ -118,14 +118,14 @@ export const GEMINI_TEST_STUB_FILL_BODY = {
 export function geminiTestStubFillText(prompt: string): string {
   const marker = 'REQUEST (JSON):\n';
   const at = prompt.indexOf(marker);
-  type StubUnit = { unitId: string; decline: boolean; calls: string[]; predicates: string[] };
+  type StubUnit = { unitId: string; decline: boolean; calls: StubCall[]; predicates: string[] };
   let units: StubUnit[] = [];
   let track: 'node' | 'rap' = 'node';
   if (at >= 0) {
     try {
       const request = JSON.parse(prompt.slice(at + marker.length)) as {
         track?: unknown;
-        units?: Array<{ unitId?: unknown; abap?: { text?: unknown }; guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown }> }>;
+        units?: Array<{ unitId?: unknown; abap?: { text?: unknown }; guards?: Array<{ id?: unknown; helper?: unknown; placement?: unknown; regionId?: unknown; values?: unknown }> }>;
       };
       if (request.track === 'rap') track = 'rap';
       units = Array.isArray(request.units)
@@ -136,7 +136,9 @@ export function geminiTestStubFillText(prompt: string): string {
               return {
                 unitId: u.unitId as string,
                 decline: typeof u.abap?.text === 'string' && u.abap.text.includes(GEMINI_TEST_STUB_DECLINE),
-                calls: guards.filter((g) => g.placement === 'body' && typeof g.helper === 'string').map((g) => g.helper as string),
+                calls: guards
+                  .filter((g) => g.placement === 'body' && typeof g.helper === 'string')
+                  .map((g) => ({ helper: g.helper as string, values: Array.isArray(g.values) ? g.values.filter((v): v is string => typeof v === 'string' && /^[A-Za-z_$][\w$]*$/.test(v)) : [] })),
                 predicates: guards.filter((g) => typeof g.regionId === 'string' && typeof g.id === 'string').map((g) => g.id as string),
               };
             })
@@ -174,13 +176,26 @@ export const GEMINI_TEST_STUB_PREDICATE = {
   rap: '" gemini-test-stub\nresult = abap_false.',
 } as const;
 
+/** A guard the body must call: its helper and the keys of the values it reads (the request's `values`). */
+interface StubCall {
+  helper: string;
+  values: string[];
+}
+
 /**
  * The stub's body: the fixed statement, and — where the unit must call a
  * guard at the original's line (design §9.2 rule 7) — that call in a branch
  * that never runs, so the fill checks accept it as they would a model's body.
+ * On Node the call has the signature the scaffold declares (scaffold version 8:
+ * `(sel, st, record, values)`, each value the check reads and no other), so a
+ * dry run's type gate checks the call as it checks a model's; the values are
+ * the stub's (`undefined as never`) — the branch never runs.
  */
-function stubBody(track: 'node' | 'rap', calls: readonly string[]): string {
+function stubBody(track: 'node' | 'rap', calls: readonly StubCall[]): string {
   if (calls.length === 0) return GEMINI_TEST_STUB_FILL_BODY[track];
-  if (track === 'node') return `if (Date.now() < 0) {\n${calls.map((c) => `  ${c}();`).join('\n')}\n}\n${GEMINI_TEST_STUB_FILL_BODY.node}`;
-  return `IF 1 = 0.\n${calls.map((c) => `  ${c}( ).`).join('\n')}\nENDIF.\n${GEMINI_TEST_STUB_FILL_BODY.rap}`;
+  if (track === 'node') {
+    const call = (c: StubCall) => `  ${c.helper}(sel, st, null, { ${c.values.map((v) => `${v}: undefined as never`).join(', ')} });`;
+    return `if (Date.now() < 0) {\n${calls.map(call).join('\n')}\n}\n${GEMINI_TEST_STUB_FILL_BODY.node}`;
+  }
+  return `IF 1 = 0.\n${calls.map((c) => `  ${c.helper}( ).`).join('\n')}\nENDIF.\n${GEMINI_TEST_STUB_FILL_BODY.rap}`;
 }

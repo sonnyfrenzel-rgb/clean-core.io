@@ -15,12 +15,15 @@ import {
   main,
   harnessNode,
   localVerifyRoute,
+  nodeGate,
+  gateFindingsRecord,
   type ProgramEntry,
   type Row,
   type RunRecord,
   type ScenarioFile,
   type SuiteReport,
 } from '../scripts/acceptance/suite';
+import { prepareEngineLed, candidateFiles } from '../lib/transformation/engine-led';
 
 /**
  * The pre-release acceptance suite (scripts/acceptance/suite.ts, roadmap 3.0.13).
@@ -152,6 +155,20 @@ test.describe('acceptance suite', () => {
     expect(node.engine.ran).toBe(false);
   });
 
+  test("the Node gate's errors land on the unit whose fill markers enclose them, and are grouped for the report", async () => {
+    const source = fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+    const p = prepareEngineLed({ source, track: 'node', program: null, decisions: [], contextText: '' });
+    if (!p.ok) throw new Error(p.reason);
+    const unit = p.fillUnits[0].unitId;
+    const raw: Parameters<typeof gateFindingsRecord>[1][number][] = [];
+    const gate = await nodeGate(candidateFiles(p, new Map([[unit, "const notANumber: number = 'text';\nreturn undefined as never;"]])), (f) => raw.push(...f));
+    expect(gate.state).toBe('failed');
+    expect(raw.some((f) => f.unit === unit && f.kind === 'TS2322')).toBe(true);
+    const record = gateFindingsRecord({ program: 'po', track: 'node', run: 1, tool: gate.tool, state: gate.state, lastRoundRepairReasons: [] }, raw);
+    expect(record.errors.some((e) => e.unit === unit)).toBe(true);
+    expect(record.topMessages.some((m) => m.units.includes(unit))).toBe(true);
+  });
+
   test('dry run end to end on the public demo: both tracks, a report, and a diff on the second run', async () => {
     // The harness step may first fetch a Node 25 (npx, cached afterwards) when this Node is older.
     test.setTimeout(420_000);
@@ -182,19 +199,18 @@ test.describe('acceptance suite', () => {
       expect(byTrack('rap').loop.length).toBeGreaterThan(0);
       expect(byTrack('rap').loop.every((l) => l.gate === 'abap')).toBe(true);
       expect(byTrack('node').loop.every((l) => l.gate === 'types')).toBe(true);
-      // The stub's Node bodies do not compile: those errors are repair reasons of the units that hold them.
-      expect(byTrack('node').loop[0].gateToUnits.length).toBeGreaterThan(0);
+      // The stub's Node bodies call each check with the scaffold's signature (scaffold version 8,
+      // lib/gemini-test-stub.ts): the dry run's type gate runs and passes - it no longer fails on the stub itself.
+      expect(byTrack('node').loop[0].gateToUnits).toEqual([]);
       expect(byTrack('node').checks.some((c) => c.kind === 'types')).toBe(true);
-      expect(byTrack('node').status).toBe('not-runnable');
+      expect(byTrack('node').gate.state).toBe('passed');
+      expect(byTrack('node').gate.typeErrors).toBe(0);
       // Raw gate findings per run, beside the report.
       const findings = JSON.parse(fs.readFileSync(path.join(out, runs[1], 'gate-findings.json'), 'utf8')) as {
         runs: Array<{ track: string; errors: Array<{ path: string; line: number; unit: string | null }>; lastRoundRepairReasons: Array<{ unitId: string | null; check: string }> }>;
       };
       const nodeFindings = findings.runs.find((r) => r.track === 'node')!;
-      expect(nodeFindings.errors.length).toBeGreaterThan(0);
-      expect(nodeFindings.errors[0]).toMatchObject({ path: expect.any(String), line: expect.any(Number) });
-      expect(nodeFindings.errors.some((e) => e.unit)).toBe(true);
-      expect(nodeFindings.lastRoundRepairReasons.some((r) => r.check === 'types' && r.unitId)).toBe(true);
+      expect(nodeFindings.errors).toEqual([]);
     } finally {
       fs.rmSync(out, { recursive: true, force: true });
     }

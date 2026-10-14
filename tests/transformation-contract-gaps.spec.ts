@@ -6,7 +6,8 @@ import { abapCheck } from '../lib/transformation/abap-check';
 import { cdsCompileCandidate } from '../lib/transformation/cds-compile';
 import { candidateFiles, guardContextOf, prepareEngineLed, type EngineLedPrepared } from '../lib/transformation/engine-led';
 import { bodyGuards } from '../lib/transformation/markers';
-import { fillInstructionHeader } from '../lib/transformation/fill-prompt';
+import { bundleFills, fillInstructionHeader } from '../lib/transformation/fill-prompt';
+import { geminiTestStubFillText } from '../lib/gemini-test-stub';
 import { SCAFFOLD_VERSION } from '../lib/transformation/types';
 import { loadPrograms, loadSource } from '../scripts/acceptance/suite';
 import { poDemo } from './helpers/transformation-scaffold';
@@ -273,6 +274,33 @@ test.describe('the seven acceptance programs: every scaffold is gate-clean befor
       const cds = cdsCompileCandidate(node);
       expect(cds.ran, cds.ran ? '' : cds.reason).toBe(true);
       if (cds.ran) expect(cds.findings.filter((f) => f.severity === 'Error'), JSON.stringify(cds.findings.slice(0, 5))).toEqual([]);
+    });
+  }
+});
+
+/* ---------------------------------------------- the dry run's stub passes the Node gate */
+
+test.describe("a dry run's stub calls each check with the scaffold's signature", () => {
+  const sources = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '.', 'OneDrive', 'Desktop');
+  for (const program of loadPrograms()) {
+    test(`${program.id}: the stub's fills type-check on Node`, async () => {
+      test.skip(!program.source.repo && !fs.existsSync(path.join(sources, program.source.file ?? '')), `${program.source.file} is not on this machine`);
+      const p = prep(await loadSource(program, sources), 'node');
+      const regionOfGuard = new Map(p.plan.guards.filter((g) => g.regionId).map((g) => [g.id, g.regionId!]));
+      const bodies = new Map<string, string>();
+      let calls = 0;
+      for (const b of bundleFills(p.fillUnits, { track: 'node', program: p.plan.program, context: '' })) {
+        const answer = JSON.parse(geminiTestStubFillText(b.prompt)) as { units: Array<{ unitId: string; body: string; guards?: Array<{ id: string; body: string }> }> };
+        for (const u of answer.units) {
+          bodies.set(u.unitId, u.body);
+          calls += (u.body.match(/\(sel, st, null, \{/g) ?? []).length;
+          for (const g of u.guards ?? []) if (regionOfGuard.has(g.id)) bodies.set(regionOfGuard.get(g.id)!, g.body);
+        }
+      }
+      expect(bodies.size).toBeGreaterThan(0);
+      // Before: `stop_G0761()` — no arguments — and every dry run failed the type gate on its own stub.
+      expect(typeErrors(typeCheckCandidate(candidateFiles(p, bodies)))).toEqual([]);
+      if (program.id === 'sd-return-credit-recon') expect(calls).toBeGreaterThan(0);
     });
   }
 });

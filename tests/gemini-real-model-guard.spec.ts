@@ -86,7 +86,12 @@ test('no spec switches the stub default off', () => {
   // The default is set once, for the server Playwright starts. A spec that set it
   // to anything else — or started a server of its own without it — would reach
   // the real model for every call it makes, unlisted.
-  const allowed = new Set(['tests/gemini-test-stub-guard.spec.ts', rel(__filename)]);
+  // tests/gemini-route-deadline.spec.ts (3.0.13) unsets the default in its own process only, for a route it
+  // bundles with `@google/genai` replaced by a stand-in that never answers — it cannot reach a real model; the
+  // assertion below holds it to that seam.
+  const allowed = new Set(['tests/gemini-test-stub-guard.spec.ts', 'tests/gemini-route-deadline.spec.ts', rel(__filename)]);
+  const deadline = fs.readFileSync(path.join(ROOT, 'tests', 'gemini-route-deadline.spec.ts'), 'utf8');
+  expect(deadline, 'the deadline spec replaces the provider SDK at the bundle').toMatch(/b\.onResolve\(\{ filter: \/\^@google\\\/genai\$\/ \}/);
   for (const file of filesUnder(path.join(ROOT, 'tests'))) {
     if (allowed.has(rel(file))) continue;
     expect(fs.readFileSync(file, 'utf8'), `${rel(file)} touches the stub default`).not.toContain(GEMINI_TEST_STUB_DEFAULT_ENV);
