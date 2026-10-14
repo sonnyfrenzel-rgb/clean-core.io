@@ -62,6 +62,34 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessGenerating': 'Writing the SOP and the RACI (model)…',
   'doc.derivationTitle': 'How this was derived',
 
+  // Roadmap 3.0.13 — what the tool is doing from the moment it opens (`components/documentation/DocumentationProgress.tsx`).
+  'doc.progressTitle': 'What this tool is doing',
+  'doc.progressShowSteps': 'Show the steps',
+  'doc.stage.run': 'Reading the signed run',
+  'doc.stage.runNote': 'the analysis this is written for',
+  'doc.stage.process': 'Reading the process from the code',
+  'doc.stage.processNote': 'no model',
+  'doc.stage.description': 'Writing the process description',
+  'doc.stage.descriptionNote': 'no model',
+  'doc.stage.business': 'Writing the SOP and the RACI',
+  'doc.stage.businessNote': 'model',
+  'doc.stage.storing': 'Storing it in the project',
+  'doc.stage.storingNote': 'one write',
+  'doc.stage.waiting': 'waiting',
+  'doc.stage.done': 'done',
+  'doc.stage.stopped': 'stopped',
+  'doc.stage.notNeeded': 'not written',
+  'doc.stage.onRecord': 'Already on record for this run.',
+  'doc.stage.writtenNow': 'Written and stored now.',
+  'doc.stage.checkingModel': 'Checking whether a model is available for this stage…',
+  'doc.stage.startingModel': 'Starting the model call…',
+  'doc.endWritten': 'Written — the process description and the SOP and RACI are stored with this project.',
+  'doc.endUpToDate': 'Nothing to write — the process description and the SOP and RACI on record were written for this signed run.',
+  'doc.noSignedSource': 'There is no source the active run signed. Run the analysis in Analyze first.',
+  'doc.legacyOnRecord': 'A blueprint written before 3.0.5 is on record. Replace it with the code reading to continue.',
+  'doc.ownerWrites': 'The owner of this project writes it by opening this stage.',
+  'doc.otherTab': 'Another tab of this browser is writing the business layer right now.',
+
   // Roadmap 3.0.7, "Documentation lean" — one card for the model proposals.
   'doc.proposalsTitle': 'Model proposals',
   'doc.proposalsLead':
@@ -316,6 +344,41 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
  */
 export function docProposalsCostLine(model: string, byok: boolean): string {
   return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation writes the SOP and RACI once when none is on record; the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+}
+
+/** Roadmap 3.0.13 — the end of the progress card when a stage stopped. */
+export function docEndFailed(stage: string, reason: string): string {
+  return `Stopped at “${stage}”: ${reason}`;
+}
+
+/** Roadmap 3.0.13 — the end of the progress card when the rest has nothing to do. */
+export function docEndNothing(reason: string): string {
+  return `Nothing more to write — ${reason}`;
+}
+
+/** "Expected: about 1–3 minutes (estimate)." — said before the model call, and beside the elapsed time while it runs. */
+export function docExpectedLine(words: string): string {
+  return `Expected: ${words}.`;
+}
+
+/** "Written in 4 parts of up to 60 steps — 196 steps in all; one model call per part." */
+export function docPartsPlanLine(parts: number, perPart: number, steps: number): string {
+  return `Written in ${parts} parts of up to ${perPart} steps — ${steps} steps in all; one model call per part, the first names the roles, the others reuse them.`;
+}
+
+/** "One model call for 49 steps." */
+export function docWholePlanLine(steps: number): string {
+  return `One model call for ${steps} step${steps === 1 ? '' : 's'}.`;
+}
+
+/** "Part 2 of 4 · 52 steps" */
+export function docPartLabel(index: number, total: number, steps: number): string {
+  return `Part ${index + 1} of ${total} · ${steps} step${steps === 1 ? '' : 's'}`;
+}
+
+/** "The program is written in 4 parts, one model call each." — the cost line's addition for a large program. */
+export function docPartsCostLine(parts: number): string {
+  return `This program is too large for one answer: its SOP and RACI are written in ${parts} parts, one model call each.`;
 }
 
 /** "The model wrote 1 step the process does not have; it is not shown." (owner review 10.10.2026) */

@@ -33,7 +33,7 @@ import { StatementProposalPanel } from '@/components/documentation/StatementProp
 import ExportMenu, { type ExportMenuItem } from '@/components/requirements/ExportMenu';
 import { useBusinessGlance } from '@/hooks/useBusinessGlance';
 import { businessCallouts, type ProcessStepRef } from '@/lib/business-summary';
-import { docLegacyFileName, docProposalsCostLine, raciEditedLine, replaceDocBody, replaceSopBody, wt } from '@/lib/workspace-messages';
+import { docExpectedLine, docLegacyFileName, docPartsCostLine, docPartsPlanLine, docProposalsCostLine, docWholePlanLine, raciEditedLine, replaceDocBody, replaceSopBody, wt } from '@/lib/workspace-messages';
 import { layerWithRaciEdit, raciEditApplies, raciFileTable, type RaciEditRecord } from '@/lib/raci-edit';
 import { formatTextDate } from '@/lib/format';
 import type { RaciDraft } from '@/components/documentation/RaciEditor';
@@ -48,8 +48,21 @@ import {
   businessLayerInFlight,
   claimBusinessLayerLease,
   releaseBusinessLayerLease,
+  renewBusinessLayerLease,
   trackBusinessLayer,
 } from '@/lib/documentation-generation-lease';
+import {
+  BUSINESS_LAYER_PART_LIMITS,
+  businessLayerPartPrompt,
+  expectedBusinessLayerWords,
+  keepPartRows,
+  mergeBusinessLayerParts,
+  planBusinessLayerParts,
+  rolesOfLayer,
+} from '@/lib/business-layer-parts';
+import { documentationProgress, type DocPartView } from '@/lib/documentation-progress';
+import DocumentationProgress, { useDocStageClock } from '@/components/documentation/DocumentationProgress';
+import { formatElapsed } from '@/lib/generation-progress';
 import { modelAbsenceReason } from '@/lib/model-stages';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
@@ -294,8 +307,20 @@ export default function DocumentationPage() {
    */
   const tabId = useRef<string | null>(null);
   const [businessStartedAt, setBusinessStartedAt] = useState<number | null>(null);
-  const [businessElapsed, setBusinessElapsed] = useState(0);
   const [otherTabWriting, setOtherTabWriting] = useState(false);
+  /**
+   * Roadmap 3.0.13 — what the progress card shows of the business layer: the
+   * step it is in (the model call or the store), where a stop happened, the
+   * parts of a program written in parts, and what this visit wrote. The parts
+   * already answered are kept for *Try again* (`partAnswers`), keyed to the
+   * run and the documentation they were written for, so a retry asks only for
+   * the parts that are missing.
+   */
+  const [businessPhase, setBusinessPhase] = useState<'idle' | 'model' | 'storing'>('idle');
+  const [businessFailedAt, setBusinessFailedAt] = useState<'model' | 'storing' | null>(null);
+  const [businessParts, setBusinessParts] = useState<DocPartView[] | null>(null);
+  const [wrote, setWrote] = useState({ description: false, business: false });
+  const partAnswers = useRef<{ key: string; answers: Map<number, Record<string, unknown>> } | null>(null);
   const autoBusinessFor = useRef<string | null>(null);
   /**
    * The stored layer an owner asked to replace ("Regenerate SOP and RACI",
@@ -310,7 +335,7 @@ export default function DocumentationPage() {
    */
   const sopInputs = useRef<{ steps: ProcessStepRef[]; facts: CapabilityFacts | null }>({ steps: [], facts: null });
 
-  async function runBusinessGeneration(): Promise<void> {
+  async function runBusinessGeneration(onPart?: () => void): Promise<void> {
     const replacing = replaceLayer.current;
     replaceLayer.current = null;
     if (!project || !projectId) return;
@@ -318,25 +343,48 @@ export default function DocumentationPage() {
     // Written from the process description only: a legacy blueprint is not read any more.
     if (!engineDoc) {
       setBusinessDocError(wt('doc.businessNeedsDocumentation'));
+      setBusinessFailedAt('model');
       return;
     }
     const blocked = generationBlockers(project, 'documentation');
     if (blocked.length > 0) {
       setBusinessDocError(blocked.join(' '));
+      setBusinessFailedAt('model');
       return;
     }
 
     const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
 
+    // Roadmap 3.0.13: a program too large for one answer is written in parts
+    // (`lib/business-layer-parts.ts`); one that fits keeps its one call.
+    const plan = planBusinessLayerParts(engineDoc);
+    // The source the documentation was read from (its digest is the run's): for the routines a part's steps call.
+    const source = typeof project.legacyCode === 'string' ? project.legacyCode : null;
+    const answersKey = `${project.activeRunId ?? ''}|${sha256Hex(documentation)}`;
+    if (partAnswers.current?.key !== answersKey) partAnswers.current = { key: answersKey, answers: new Map() };
+    const answers = partAnswers.current.answers;
+
     setIsGeneratingBusinessDoc(true);
     setBusinessDocError('');
+    setBusinessFailedAt(null);
+    setBusinessPhase('model');
     setBusinessStartedAt(Date.now());
-    setBusinessElapsed(0);
-    // The ceiling: past it the page stops waiting, saves nothing and offers
-    // "Try again". The call itself may still finish on the server.
-    const ceiling = new AbortController();
-    const timer = setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS);
-    
+    setBusinessParts(plan.parts.map((p) => ({
+      index: p.index,
+      steps: p.stepIds.length,
+      state: answers.has(p.index) ? 'written' : 'waiting',
+      startedAt: null,
+      endedAt: null,
+    })));
+    const updatePart = (index: number, patch: Partial<DocPartView>) =>
+      setBusinessParts((prev) => (prev ? prev.map((v) => (v.index === index ? { ...v, ...patch } : v)) : prev));
+    // The ceiling, per call: past it the page stops waiting, saves nothing and
+    // offers "Try again". The route ends the call itself before it
+    // (`lib/model-deadline.ts`) and says so; this only catches an answer that never arrives.
+    const ceilings: AbortController[] = [];
+    let stopped = false;
+    let phase: 'model' | 'storing' = 'model';
+
     // Roadmap 3.0.5: the engine document goes in as its Markdown — the
     // business page, the process and, as its appendix, the elements with their
     // BPMN ids and every statement. `stepId` below is then the element id the
@@ -348,25 +396,83 @@ export default function DocumentationPage() {
       const prompt = businessSopPrompt(engineDoc);
 
       console.log('Generating business process compliance for project:', project.name);
-      let responseText: string;
-      try {
-        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation', ceiling.signal);
-      } catch (err) {
-        if (ceiling.signal.aborted) {
-          throw new Error(`The model did not answer within ${Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} seconds, so nothing was saved.`);
+      const writePart = async (index: number, roles: string[]): Promise<Record<string, unknown>> => {
+        const done = answers.get(index);
+        if (done) return done;
+        onPart?.();
+        updatePart(index, { state: 'writing', startedAt: Date.now() });
+        const ceiling = new AbortController();
+        ceilings.push(ceiling);
+        const timer = setTimeout(() => ceiling.abort(), BUSINESS_LAYER_CEILING_MS);
+        try {
+          let responseText: string;
+          try {
+            responseText = await callGemini(
+              plan.whole ? prompt : businessLayerPartPrompt(engineDoc, plan, index, roles, source),
+              PRODUCT_GEMINI_MODEL,
+              false,
+              'documentation',
+              ceiling.signal,
+              { responseShape: 'documentation-business' },
+            );
+          } catch (err) {
+            if (ceiling.signal.aborted && !stopped) {
+              throw new Error(`The model did not answer within ${Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} seconds, so nothing was saved.`);
+            }
+            throw err;
+          }
+
+          if (!responseText) {
+            throw new Error('Gemini returned an empty response.');
+          }
+
+          // Each list is read with `.map`: truthy is not enough (69cb77382430).
+          const shape = checkBusinessDocShape(extractJSON(responseText));
+          if (!shape.ok) {
+            throw new Error(`Invalid business documentation schema returned by AI: ${shape.problems.join(' ')}`);
+          }
+          const parsed = extractJSON(responseText) as Record<string, unknown>;
+          // A part keeps only the rows of its own elements; the one call keeps what it wrote.
+          const answer = plan.whole ? parsed : keepPartRows(parsed, plan.parts[index].stepIds);
+          answers.set(index, answer);
+          updatePart(index, { state: 'written', endedAt: Date.now() });
+          return answer;
+        } catch (err) {
+          updatePart(index, { state: 'failed', endedAt: Date.now() });
+          const message = err instanceof Error ? err.message : String(err);
+          throw new Error(plan.whole ? message : `Part ${index + 1} of ${plan.parts.length}: ${message}`);
+        } finally {
+          clearTimeout(timer);
         }
+      };
+      // The first part names the roles; the others reuse them, a few at a time.
+      const first = await writePart(0, []);
+      const roles = rolesOfLayer(first);
+      let next = 1;
+      const worker = async () => {
+        while (!stopped && next < plan.parts.length) {
+          const index = next++;
+          await writePart(index, roles);
+        }
+      };
+      try {
+        await Promise.all(Array.from({ length: Math.min(BUSINESS_LAYER_PART_LIMITS.parallel, plan.parts.length - 1) }, worker));
+      } catch (err) {
+        // One part stopped: the others are not waited for, and nothing is stored.
+        stopped = true;
+        for (const c of ceilings) c.abort();
         throw err;
       }
-      
-      if (!responseText) {
-        throw new Error('Gemini returned an empty response.');
+      // The parts joined (the one call as it came); the joined layer passes the same check as one answer.
+      const joinedText = JSON.stringify(plan.whole ? answers.get(0) ?? {} : mergeBusinessLayerParts(plan.parts.map((p) => answers.get(p.index) ?? {})));
+      phase = 'storing';
+      setBusinessPhase('storing');
+      const joined = checkBusinessDocShape(extractJSON(joinedText));
+      if (!joined.ok) {
+        throw new Error(`Invalid business documentation schema returned by AI: ${joined.problems.join(' ')}`);
       }
-      
-      // Each list is read with `.map`: truthy is not enough (69cb77382430).
-      const shape = checkBusinessDocShape(extractJSON(responseText));
-      if (!shape.ok) {
-        throw new Error(`Invalid business documentation schema returned by AI: ${shape.problems.join(' ')}`);
-      }
+      const responseText = joinedText;
+
       // Owner 11.10.2026: stored with the business name and the lines of every
       // step and the program's capability facts, so every rendering — the
       // delivery package's file included — names each step and judges each
@@ -414,14 +520,18 @@ export default function DocumentationPage() {
       const storedLayer = updatedCode.kept ?? storedText;
       setBusinessDocumentation(storedLayer);
       setProject(prev => prev ? { ...prev, businessDocumentation: storedLayer, ...updatedCode.cleanup } : null);
+      setWrote((w) => ({ ...w, business: true }));
+      partAnswers.current = null;
 
     } catch (err: unknown) {
       console.error('Business documentation generation error:', err);
       setBusinessDocError(err instanceof Error ? err.message : String(err));
+      setBusinessFailedAt(phase);
     } finally {
-      clearTimeout(timer);
+      stopped = true;
       setIsGeneratingBusinessDoc(false);
       setBusinessStartedAt(null);
+      setBusinessPhase('idle');
     }
   }
 
@@ -438,7 +548,8 @@ export default function DocumentationPage() {
       return;
     }
     setOtherTabWriting(false);
-    const run = runBusinessGeneration();
+    // A layer written in parts renews the lease before every part, so a long generation is not taken for a closed tab.
+    const run = runBusinessGeneration(() => renewBusinessLayerLease(leaseId, tab));
     await trackBusinessLayer(leaseId, run).finally(() => releaseBusinessLayerLease(leaseId, tab));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, project, documentation, engineDoc]);
@@ -709,6 +820,7 @@ export default function DocumentationPage() {
       // Shown only once it is stored: a document the transaction refused is
       // not this project's documentation.
       setDocumentation(stored);
+      setWrote((w) => ({ ...w, description: true }));
       setBusinessDocumentation('');
       setProject(prev => prev ? { ...prev, documentation: stored, status: 'documented', businessDocumentation: '', ...updatedCode } : null);
     } catch (err: unknown) {
@@ -771,8 +883,8 @@ export default function DocumentationPage() {
     void Promise.resolve().then(() => {
       if (cancelled) return;
       setIsGeneratingBusinessDoc(true);
+      setBusinessPhase('model');
       setBusinessStartedAt(Date.now());
-      setBusinessElapsed(0);
     });
     running.finally(async () => {
       if (cancelled) return;
@@ -782,6 +894,7 @@ export default function DocumentationPage() {
       } finally {
         if (!cancelled) {
           setIsGeneratingBusinessDoc(false);
+          setBusinessPhase('idle');
           setBusinessStartedAt(null);
         }
       }
@@ -790,12 +903,6 @@ export default function DocumentationPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  // The seconds waited, said while the model writes.
-  useEffect(() => {
-    if (businessStartedAt === null) return;
-    const tick = setInterval(() => setBusinessElapsed(Math.round((Date.now() - businessStartedAt) / 1000)), 1000);
-    return () => clearInterval(tick);
-  }, [businessStartedAt]);
 
   /**
    * Roadmap 2.9 — the open level and the selection live in the URL.
@@ -1122,9 +1229,112 @@ export default function DocumentationPage() {
     else void downloadBPMN();
   };
 
+  /**
+   * Roadmap 3.0.13 — what this tool is doing, from the first paint: the
+   * stages in their order, the elapsed time of the running one, the expected
+   * time before the model call, and a clear end (`lib/documentation-progress.ts`).
+   * Derived from the states above, never a timer; the clock below only moves
+   * the elapsed time while something runs.
+   */
+  const [openedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const businessPlan = useMemo(() => (engineDoc ? planBusinessLayerParts(engineDoc) : null), [engineDoc]);
+  const businessPlanLine = businessPlan
+    ? businessPlan.whole
+      ? docWholePlanLine(businessPlan.steps)
+      : docPartsPlanLine(businessPlan.parts.length, Math.max(...businessPlan.parts.map((p) => p.stepIds.length)), businessPlan.steps)
+    : null;
+  const businessExpected = businessPlan ? docExpectedLine(expectedBusinessLayerWords(businessPlan.parts.length)) : null;
+  const progressBlockers = project ? generationBlockers(project, 'documentation') : [];
+  const descriptionCurrent = Boolean(engineDoc && signedDigest && engineDoc.sourceSha256 === signedDigest);
+  const businessAbsence = !project
+    ? null
+    : !isOwner
+      ? wt('doc.ownerWrites')
+      : modelAvailability.loading
+        ? null
+        : !modelAvailability.enabled('documentation')
+          ? modelAbsenceReason(modelAvailability.keyAvailable ? 'stage-off' : 'no-key', 'documentation')
+          : otherTabWriting
+            ? wt('doc.otherTab')
+            : progressBlockers.length > 0
+              ? progressBlockers.join(' ')
+              : null;
+  const progress = documentationProgress({
+    loading,
+    loadError: loadError || null,
+    signedSource: Boolean(signedSource),
+    runFact: signedSource ? `${signedSource.source.split('\n').length} lines of ${signedSource.fileName}, signed by the active run.` : null,
+    map: { status: processMap.status, reason: processMap.reason, fact: engineDoc?.overview ?? null },
+    description: {
+      writing: isGeneratingDoc,
+      error: docError || null,
+      onRecord: descriptionCurrent,
+      legacy: !engineDoc && legacyBlueprint !== null,
+      reader: !!project && !isOwner,
+      blocked: progressBlockers.length > 0 ? progressBlockers.join(' ') : null,
+    },
+    business: {
+      phase: isGeneratingBusinessDoc ? (businessPhase === 'idle' ? 'model' : businessPhase) : 'idle',
+      error: businessDocError || null,
+      failedAt: businessFailedAt,
+      onRecord: Boolean(parsedBusinessDoc),
+      absence: businessAbsence,
+      availabilityLoading: modelAvailability.loading,
+      expected: businessExpected,
+      plan: businessPlanLine,
+      parts: businessParts,
+    },
+    wrote,
+  });
+  const stageTimes = useDocStageClock(progress.stages, now);
+  const progressRunning = progress.end.kind === 'running';
+  const [progressEndedAt, setProgressEndedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!progressRunning) return;
+    const tick = setInterval(() => setNow(Date.now()), 500);
+    return () => {
+      clearInterval(tick);
+      const at = Date.now();
+      setNow(at);
+      setProgressEndedAt(at);
+    };
+  }, [progressRunning]);
+  /** *Try again* where the stop happened: the business layer, the description, or the page itself. */
+  const retryProgress = (() => {
+    if (progress.end.kind !== 'failed') return undefined;
+    const stage = progress.end.stage;
+    if ((stage === 'business' || stage === 'storing') && isOwner && modelAvailability.enabled('documentation')) {
+      return () => void generateBusinessDocumentation();
+    }
+    if (stage === 'description' && isOwner) {
+      // As "Read again from the code": with a layer on record it asks first.
+      return () => {
+        if (businessDocumentation.trim()) setReplaceAsk('doc');
+        else void generateDocumentation();
+      };
+    }
+    if (stage === 'run' || stage === 'process') return () => window.location.reload();
+    return undefined;
+  })();
+  const progressCard = (
+    <DocumentationProgress
+      stages={progress.stages}
+      end={progress.end}
+      times={stageTimes}
+      parts={businessParts}
+      openedAt={openedAt}
+      endedAt={progressEndedAt}
+      now={now}
+      onRetry={retryProgress}
+      retrying={isGeneratingBusinessDoc || isGeneratingDoc}
+    />
+  );
+
   if (loading) return (
     <StageFrame stage="documentation">
       <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
+      {progressCard}
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </StageFrame>
   );
@@ -1150,7 +1360,8 @@ export default function DocumentationPage() {
    * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
    * route meters by the hour, not by the analysis run.
    */
-  const proposalsCostLine = docProposalsCostLine(PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok');
+  const proposalsCostLine = docProposalsCostLine(PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok')
+    + (businessPlan && !businessPlan.whole ? ` ${docPartsCostLine(businessPlan.parts.length)}` : '');
 
   const statementPanelProps = {
     view: statementProposal.view,
@@ -1217,8 +1428,9 @@ export default function DocumentationPage() {
   const businessPart = isGeneratingBusinessDoc ? (
     <div className="flex flex-col gap-2">
       <h3 className="m-0 cc-text-h3 text-cc-ink">{wt('doc.businessGenerating')}</h3>
-      <p role="status" className="m-0 cc-text-cell text-cc-ink-muted">
-        {businessStartedAt === null ? 0 : businessElapsed} s of at most {Math.round(BUSINESS_LAYER_CEILING_MS / 1000)} s.
+      <p role="status" data-business-layer-elapsed="" className="m-0 cc-text-cell text-cc-ink-muted tabular-nums">
+        {formatElapsed(businessStartedAt === null ? 0 : now - businessStartedAt)}
+        {businessExpected ? ` · ${businessExpected}` : ''}
       </p>
       <CcSkeleton shape="table" label="the business layer" count={3} />
     </div>
@@ -1401,6 +1613,8 @@ export default function DocumentationPage() {
           </div>
         ) : undefined}
       />
+
+      {progressCard}
 
       <ReplaceStoredBox
         open={replaceAsk !== null}

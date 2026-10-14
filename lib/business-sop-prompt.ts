@@ -38,13 +38,37 @@ export function sopFactsBlock(facts: CapabilityFacts | null): string {
     : 'What the program does not do: the engine found no capability absent.';
 }
 
-/** The whole prompt, from the stored engine documentation. */
-export function businessSopPrompt(doc: ProcessDocumentation): string {
+/**
+ * One part of a business layer written in parts (roadmap 3.0.13,
+ * `lib/business-layer-parts.ts`): which part, the element ids it writes rows
+ * for, and the roles the parts before it already use.
+ */
+export interface BusinessSopPart {
+  index: number;
+  total: number;
+  stepIds: readonly string[];
+  roles: readonly string[];
+}
+
+/** The block a part's prompt carries: its place, its element ids, the roles to reuse. */
+export function sopPartBlock(part: BusinessSopPart): string {
+  const roles = part.roles.length
+    ? `\n- Roles the earlier part already uses: ${part.roles.join(', ')}. REUSE them; add a role only where none of them fits, and keep the whole matrix at 7 roles or fewer.`
+    : '';
+  return `
+THIS IS PART ${part.index + 1} OF ${part.total}. The program is too large for one answer, so its business layer is written in ${part.total} parts and joined afterwards.
+- The documentation below covers this part's steps (the summary at its top is the whole program's).
+- Write raci_matrix and sop_details rows for EXACTLY these element ids, and for no other: ${part.stepIds.join(', ')}.${roles}
+`;
+}
+
+/** The whole prompt, from the stored engine documentation — or, with `part`, the prompt of one part of it. */
+export function businessSopPrompt(doc: ProcessDocumentation, part?: BusinessSopPart): string {
   const context = processDocumentationToMarkdown(doc);
   const facts = readCapabilityFacts(doc.facts);
   return `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.
 Based on the following ${SOP_STEPS_DESCRIPTION}, generate the corresponding Business SOP & RACI Matrix layer.
-
+${part ? sopPartBlock(part) : ''}
 CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 - Write exclusively in business and process terms. Describe WHAT happens for the business — never HOW it is implemented technically.
 - Do NOT mention any technical or IT concept. Forbidden terms: source code, API/OData/CDS/CAP/RAP/SDK, database/table/Z-table, JSON/schema/payload, HANA, deployment/pipeline, HTTP, latency/milliseconds, unit test, retry/rollback. All technical detail already lives in the separate Technical Blueprint and must NOT be repeated here.
