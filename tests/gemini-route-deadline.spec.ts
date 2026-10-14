@@ -46,7 +46,10 @@ class GoogleGenAI {
     };
   }
 }
-module.exports = { GoogleGenAI };
+// The enum the route reaches through lib/model-thinking.ts (the model's thinking level, 3.0.13):
+// the stand-in carries the SDK's values so the route builds its request as it does against the SDK.
+const ThinkingLevel = { THINKING_LEVEL_UNSPECIFIED: 'THINKING_LEVEL_UNSPECIFIED', MINIMAL: 'MINIMAL', LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH' };
+module.exports = { GoogleGenAI, ThinkingLevel };
 `;
 
 const DEADLINE_SHIM = `

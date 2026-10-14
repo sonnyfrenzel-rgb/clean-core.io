@@ -257,7 +257,7 @@ test.describe('what could not be read says so', () => {
 test.describe('the route’s own derivation, on the product’s largest example', () => {
   const EXAMPLE = 'public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
-  test('44 findings, 32 with an object, and not one requirement borrowed from a neighbour', () => {
+  test('45 findings, 32 with an object, and not one requirement borrowed from a neighbour', () => {
     const built = findingsOf(read(EXAMPLE), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
     const view = itFindingsView(built);
 
@@ -277,7 +277,9 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // tasks, both without an object — the CALL TRANSACTION to VA02 at line 467
     // without WITH/WITHOUT AUTHORITY-CHECK, and the EXEC SQL at line 655 (no
     // automatic client handling).
-    expect(built.rows.length).toBe(44);
+    // 45 since the 3.0.13 engine rules (lib/abap/engine-rules.ts, system-time): one finding without an
+    // object where the server's date or time decides (sy-datum / sy-uzeit).
+    expect(built.rows.length).toBe(45);
     expect(built.rows.filter((r) => r.objectName !== null).length).toBe(32);
     expect(built.rulesDerived).toBe(17);
     const batchInput = built.rows.find((r) => r.objectName === 'VBAK' && r.level === 'D');
@@ -303,9 +305,9 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // The honest state of the chain today: nothing is complete, and every chain
     // stops at the requirement. 17 of them have a rule in the same routine, and
     // that is reported as a neighbourhood and counted nowhere else.
-    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(44);
+    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(45);
     expect(view.chainCoverage.counted).toBe(0);
-    expect(view.requirementNote).toContain('17 of 44');
+    expect(view.requirementNote).toContain('17 of 45');
     expect(view.requirementNote).toContain('neighbourhood, not a cause');
 
     // C 22, B 2, Unknown 1 — measured 23.09.2026; D 1 since 10.10.2026, the
@@ -316,7 +318,7 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // Z_CREDIT_EXPOSURE_READ and Z_SD_LEGACY_LOG_WRITE not determined (customer).
     const dist = Object.fromEntries(view.distribution.slices.map((s) => [s.grade, s.count]));
     expect(dist).toMatchObject({ A: 0, B: 4, C: 24, D: 1, Unknown: 3 });
-    expect(view.distribution.coverage.sentence).toContain('32 of 44');
+    expect(view.distribution.coverage.sentence).toContain('32 of 45');
   });
 });
 
