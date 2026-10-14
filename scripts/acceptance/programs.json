@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "about": "The pre-release acceptance suite's run list (scripts/acceptance/suite.ts). Public: names, fingerprints and provenance labels only. The reviewers' expected values are sealed per program in scripts/acceptance/scenarios/<id>.enc.json (scripts/acceptance/scenarios.mjs), because the review documents and their scenario data are not public (docs/failure-patterns/README.md). A source that is not in the repository is read from the folder given with --sources (default: the owner's Desktop) and must match its sha256.",
+  "programs": [
+    {
+      "id": "sd-return-credit-recon",
+      "title": "SD returns credit reconciliation (ZSD_RETURN_CREDIT_RECON)",
+      "source": { "repo": null, "file": "SD_LE_Legacy_ABAP.txt", "entry": null, "sha256": "15abd6319d962bf6d27adb69cb1c2ffd03fe78b3baf03f0b1f9d5252f237e731", "lines": 1848 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": "scenarios/sd-return-credit-recon.enc.json", "provenance": ["external reviewer's oracle (Python port of the demo branch, 32 cases), not SAP-executed, 14.10.2026"] }
+    },
+    {
+      "id": "co-cc-close-simulation",
+      "title": "CO cost-centre close simulation (ZCO_CC_CLOSE_SIMULATION)",
+      "source": { "repo": null, "file": "CO_Legacy_ABAP_Download.zip", "entry": "zco_cc_close_simulation.abap", "sha256": "94886e3ae5e634893fa729236d124bb9744346e49c5fd85d996588146bd43687", "lines": 2027 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": "scenarios/co-cc-close-simulation.enc.json", "provenance": ["external CO review of v3.0.10, 12.10.2026: E01-E18 probes and its reference scenarios"] }
+    },
+    {
+      "id": "pp-material-kit-readiness",
+      "title": "PP/MM material kit readiness (ZPP_MATERIAL_KIT_READINESS)",
+      "source": { "repo": null, "file": "PP_MM_Legacy_ABAP.txt", "entry": null, "sha256": "7566c3902e88ab9866634e7d7b9bd9d29177f01d712d924a9fbf5fa08b2e20a1", "lines": 2500 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": "scenarios/pp-material-kit-readiness.enc.json", "provenance": ["external PP review of v3.0.10, 12.10.2026: E01-E08, A01-A14 and its reference scenarios"] }
+    },
+    {
+      "id": "fi-ar-collection-worklist",
+      "title": "FI AR collection worklist (ZFI_AR_COLLECTION_WORKLIST)",
+      "source": { "repo": null, "file": "zfi_ar_collection_worklist.abap", "entry": null, "sha256": "e46c840a7d301a8283e60859692e1149244ae2d0dadd43423891f1cafd8460ac", "lines": 1517 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": "scenarios/fi-ar-collection-worklist.enc.json", "provenance": ["external FI review of v3.0.10, 11.10.2026: the acceptance checks and its section 5"] }
+    },
+    {
+      "id": "sd-order-cockpit",
+      "title": "SD legacy order cockpit (ZSD_LEGACY_ORDER_COCKPIT)",
+      "source": { "repo": null, "file": "zsd_legacy_order_cockpit_abap.zip", "entry": "zsd_legacy_order_cockpit.abap", "sha256": "acf40006fc5779032d784fe924d442e3ec3cddd4d4495c9fd36c41b81bf05590", "lines": 616 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": "scenarios/sd-order-cockpit.enc.json", "provenance": ["external SD order-processing review of v3.0.10, 12.10.2026: the probes (rounding at 0.70, additive recalculation, negative PATCH, empty selection)"] }
+    },
+    {
+      "id": "po-mm-po-approval",
+      "title": "MM emergency purchase approval (Z_MM_PO_APPROVAL, the public demo)",
+      "source": { "repo": "public/starter-examples/Z_MM_PO_APPROVAL.abap", "file": null, "entry": null, "sha256": "b720228e36a59b09b84d9a8d71b9092c3189498da1d0f46d274429a8df5cd5b2", "lines": 669 },
+      "tracks": ["rap", "node"],
+      "holdout": false,
+      "scenarios": { "sealed": null, "provenance": ["no external review: gate, engine cases and regression against the previous run only"] }
+    },
+    {
+      "id": "pm-shutdown-slot-plan",
+      "title": "PM shutdown slot plan (ZPM_SHUTDOWN_SLOT_PLAN), holdout",
+      "source": { "repo": null, "file": "PM_Legacy_ABAP.txt", "entry": null, "sha256": "e4ad3f3bbba7d6cb6d92cf8090f77743e52bb3ecc8949e2835607d6f17f6ff1f", "lines": 1925 },
+      "tracks": ["rap", "node"],
+      "holdout": true,
+      "scenarios": { "sealed": null, "provenance": ["holdout: no tuned expectations — gate and case recognition only; never edited to raise a figure"] }
+    }
+  ]
+}
